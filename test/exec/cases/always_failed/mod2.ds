@@ -1,5 +1,7 @@
-#$test($result = 'type', $lineNum = 5, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod2.ds')
+#$test($result = 'type', $lineNum = 4,$chars = 4,  $errorKind = 'Required', $status = 1)
 
-source ../../_module4test/private.ds
-
-assert $_AAA    # _AAA is defined in module 'private.ds' but hidden from current module scope
+assert 23 is \
+   Bool \
+    .
+    
+    Int

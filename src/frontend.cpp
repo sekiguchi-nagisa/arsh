@@ -242,8 +242,8 @@ DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEnd
     }
     const char *fullpath = get<const char *>(ret);
     auto lex = Lexer::fromFullPath(fullpath, std::move(buf));
-    auto newScope =
-        this->loader.createGlobalScopeFromFullpath(fullpath, this->pool.getBuiltinModType());
+    auto newScope = this->loader.createGlobalScopeFromFullpath(this->pool, fullpath,
+                                                               this->pool.getBuiltinModType());
     return std::make_unique<FrontEnd::Context>(this->pool, std::move(lex), std::move(newScope),
                                                option, nullptr);
   } else {

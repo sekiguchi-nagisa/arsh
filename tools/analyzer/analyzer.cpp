@@ -51,7 +51,7 @@ AnalyzerContext::AnalyzerContext(const Source &src)
     : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
   auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
   this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), src.getSrcId());
-  this->scope->importForeignHandles(builtin, ImportedModKind::GLOBAL);
+  this->scope->importForeignHandles(this->getPool(), builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
 

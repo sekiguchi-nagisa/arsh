@@ -215,7 +215,7 @@ public:
     if (global) {
       setFlag(importOp, ImportedModKind::GLOBAL);
     }
-    parent.getScope()->importForeignHandles(*type, importOp);
+    parent.getScope()->importForeignHandles(parent.getPool(), *type, importOp);
     return *type;
   }
 

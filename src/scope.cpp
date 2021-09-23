@@ -43,9 +43,7 @@ NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(pool.get(e.typeId()));
-    if (!e.isInlined()) {
-      this->importForeignHandles(type, e.kind());
-    }
+    this->importForeignHandles(pool, type, e.kind());
   }
 }
 
@@ -120,19 +118,22 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
     }
   }
   return this->defineAlias(toTypeAliasFullName(name),
-                           FieldHandle::create(0, type, 0, FieldAttribute{}, 0));
+                           FieldHandle::create(0, type, 0, FieldAttribute{}));
 }
 
-std::string NameScope::importForeignHandles(const ModType &type, ImportedModKind k) {
+std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
+                                            ImportedModKind k) {
   const bool global = hasFlag(k, ImportedModKind::GLOBAL);
   auto holderName = toModHolderName(type.getModID(), global);
-  // check if already imported
-  {
-    auto *handle = this->find(holderName);
-    if (handle) {
-      assert(handle->isModHolder());
-      return "";
+  if (auto *handle = this->findMut(holderName); handle) { // check if already imported
+    assert(handle->isModHolder());
+    if (!handle->has(FieldAttribute::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
+      auto attr = handle->attr();
+      unsetFlag(attr, FieldAttribute::GLOBAL_MOD);
+      setFlag(attr, FieldAttribute::INLINED_MOD);
+      *handle = FieldHandle::withNewAttr(*handle, attr);
     }
+    return "";
   }
 
   // define module holder
@@ -148,9 +149,7 @@ std::string NameScope::importForeignHandles(const ModType &type, ImportedModKind
       continue;
     }
     const auto &handle = e.second;
-    auto ret = hasFlag(k, ImportedModKind::INLINED)
-                   ? this->addNewAlias(name.toString(), handle)
-                   : this->addNewForeignHandle(name.toString(), handle);
+    auto ret = this->addNewForeignHandle(name.toString(), handle);
     if (!ret) {
       if (isCmdFullName(name)) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
@@ -158,6 +157,20 @@ std::string NameScope::importForeignHandles(const ModType &type, ImportedModKind
         name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
       }
       return name.toString();
+    }
+  }
+
+  // resolve inlined imported symbols
+  unsigned int size = type.getChildSize();
+  for (unsigned int i = 0; i < size; i++) {
+    auto child = type.getChildAt(i);
+    if (child.isInlined()) {
+      auto &childType = pool.get(child.typeId());
+      assert(isa<ModType>(childType));
+      auto ret = this->importForeignHandles(pool, cast<ModType>(childType), k);
+      if (!ret.empty()) {
+        return ret;
+      }
     }
   }
   return "";
@@ -403,24 +416,26 @@ void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
   this->gvarCount = discardPoint.gvarCount;
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const ModType *modType) {
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const TypePool &pool, const char *name,
+                                                        const ModType *modType) {
   auto str = CStrPtr(strdup(name));
   auto ret = this->addNewModEntry(std::move(str));
   assert(is<const char *>(ret));
 
   if (modType) {
-    return this->createGlobalScopeFromFullpath(get<const char *>(ret), *modType);
+    return this->createGlobalScopeFromFullpath(pool, get<const char *>(ret), *modType);
   } else {
     return IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
   }
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath,
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(const TypePool &pool,
+                                                                    StringRef fullpath,
                                                                     const ModType &modType) {
   auto iter = this->indexMap.find(fullpath);
   if (iter != this->indexMap.end()) {
     auto scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), iter->second);
-    scope->importForeignHandles(modType, ImportedModKind::GLOBAL);
+    scope->importForeignHandles(pool, modType, ImportedModKind::GLOBAL);
     return scope;
   }
   return nullptr;

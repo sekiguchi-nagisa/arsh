@@ -1,0 +1,10 @@
+
+source $SCRIPT_DIR/inlined1.ds inlined
+
+say2() {
+    echo 'say2' $@
+}
+
+function hey3() : String { return 'hey3'; }
+
+typedef FloatArray = [Float]

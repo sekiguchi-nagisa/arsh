@@ -102,7 +102,7 @@ static void initEnv() {
 }
 
 DSState::DSState()
-    : builtinModScope(this->modLoader.createGlobalScope("(builtin)")),
+    : builtinModScope(this->modLoader.createGlobalScope(this->typePool, "(builtin)")),
       emptyFDObj(toObjPtr<UnixFdObject>(DSValue::create<UnixFdObject>(-1))),
       baseTime(std::chrono::system_clock::now()) {
   // init envs

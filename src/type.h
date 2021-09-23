@@ -279,6 +279,10 @@ public:
     return FieldHandle(commitID, fieldType, fieldIndex, attribute, modID);
   }
 
+  static FieldHandle withNewAttr(const FieldHandle &handle, FieldAttribute newAttr) {
+    return FieldHandle(handle.getCommitID(), handle, newAttr, handle.getModID());
+  }
+
   ~FieldHandle() = default;
 
   unsigned int getCommitID() const { return this->commitID; }

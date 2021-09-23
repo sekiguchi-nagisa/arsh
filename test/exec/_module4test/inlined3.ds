@@ -1,0 +1,4 @@
+
+source $SCRIPT_DIR/inlined2.ds
+
+var hello2 = 'hello2'

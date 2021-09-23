@@ -1,0 +1,28 @@
+
+source ../../_module4test/inlined2.ds
+
+assert $hello == 'hello module!!'
+
+assert $hey is () -> Void
+assert "$($hey())" == "hey!!"
+
+assert $hey2 is () -> String
+assert $hey2() == 'hey2'
+
+assert $hey3 is () -> String
+assert $hey3() == 'hey3'
+
+assert "$(say0 1 2)" == "_say!! 1 2"
+assert "$(say1 1 2)" == "say1 1 2"
+assert "$(say2 1 2)" == "say2 1 2"
+
+assert [$true] is BoolArray
+assert $@ is StrArray
+assert [3.42] is FloatArray
+
+# re-import
+source ../../_module4test/inlined1.ds inlined
+
+source ../../_module4test/module1.ds
+
+source ../../_module4test/inlined2.ds inlined

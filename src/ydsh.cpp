@@ -198,7 +198,7 @@ static void loadEmbeddedScript(DSState *state) {
   // rest some state
   auto &modType =
       state->modLoader.createModType(state->typePool, *state->builtinModScope, "(builtin)");
-  state->rootModScope = state->modLoader.createGlobalScope("(root)", &modType);
+  state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->lineNum = 1;
   state->setExitStatus(0);
 }
@@ -506,7 +506,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
 
   auto &modType = st->typePool.getBuiltinModType();
   auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX)
-                   ? st->modLoader.createGlobalScopeFromFullpath(fileName, modType)
+                   ? st->modLoader.createGlobalScopeFromFullpath(st->typePool, fileName, modType)
                    : nullptr;
   return evalScript(*st, scope, Lexer(fileName, std::move(buf), std::move(scriptDir)), discardPoint,
                     e);

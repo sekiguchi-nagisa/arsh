@@ -1,0 +1,7 @@
+
+#$test($result = 'type', $lineNum = 7, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod_undef4.ds')
+
+
+source ../../_module4test/inlined3.ds
+
+assert $hello == 'hello module!!'

@@ -103,7 +103,7 @@ public:
 
 public:
   TypeTest() : checker(this->pool, false, nullptr) {
-    this->scope = this->loader.createGlobalScope("(root)", nullptr);
+    this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 
   virtual void assertTypeName(const char *typeName, const DSType &type) {

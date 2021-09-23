@@ -1,7 +1,0 @@
-#$test($result = 'type', $lineNum = 4,$chars = 4,  $errorKind = 'Required', $status = 1)
-
-assert 23 is \
-   Bool \
-    .
-    
-    Int

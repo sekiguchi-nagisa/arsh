@@ -182,7 +182,7 @@ public:
    * @return
    * if found name conflict, return conflicted name
    */
-  std::string importForeignHandles(const ModType &type, ImportedModKind k);
+  std::string importForeignHandles(const TypePool &pool, const ModType &type, ImportedModKind k);
 
   const ModType &toModType(TypePool &pool) const;
 
@@ -217,6 +217,14 @@ private:
   unsigned int commitId() const { return this->handles.size(); }
 
   IntrusivePtr<NameScope> fromThis() { return IntrusivePtr<NameScope>(this); }
+
+  FieldHandle *findMut(const std::string &name) {
+    auto iter = this->handles.find(name);
+    if (iter != this->handles.end()) {
+      return &iter->second;
+    }
+    return nullptr;
+  }
 
   /**
    * just add newly created handle.
@@ -384,9 +392,11 @@ public:
 
   void discard(ModDiscardPoint discardPoint);
 
-  IntrusivePtr<NameScope> createGlobalScope(const char *name, const ModType *modType = nullptr);
+  IntrusivePtr<NameScope> createGlobalScope(const TypePool &pool, const char *name,
+                                            const ModType *modType = nullptr);
 
-  IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath, const ModType &modType);
+  IntrusivePtr<NameScope> createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
+                                                        const ModType &modType);
 
   const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
 

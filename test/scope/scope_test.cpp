@@ -612,12 +612,12 @@ TEST_F(ScopeTest, import1) {
   auto &modType = this->toModType(std::move(mod));
 
   // named import
-  auto s = this->top->importForeignHandles(modType, ImportedModKind{});
+  auto s = this->top->importForeignHandles(this->pool, modType, ImportedModKind{});
   ASSERT_EQ("", s);
   ASSERT_EQ(3, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(1, this->top->getHandles().size());
 
-  s = this->top->importForeignHandles(modType, ImportedModKind{});
+  s = this->top->importForeignHandles(this->pool, modType, ImportedModKind{});
   ASSERT_EQ("", s);
   ASSERT_EQ(3, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(1, this->top->getHandles().size());
@@ -632,12 +632,12 @@ TEST_F(ScopeTest, import1) {
   ASSERT_EQ(nullptr, handle);
 
   // global import
-  s = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
+  s = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
   ASSERT_EQ(3, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->top->getHandles().size());
 
-  s = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
+  s = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
   ASSERT_EQ(3, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->top->getHandles().size());
@@ -675,7 +675,7 @@ TEST_F(ScopeTest, import1) {
   mod2->defineHandle("GGG", this->pool.get(TYPE::Job), FieldAttribute{});
   auto &modType2 = this->toModType(std::move(mod2));
 
-  this->top->importForeignHandles(modType2, ImportedModKind{});
+  this->top->importForeignHandles(this->pool, modType2, ImportedModKind{});
 
   auto &modType3 = this->toModType(std::move(this->top));
   ASSERT_EQ(2, modType3.getChildSize());
@@ -736,7 +736,8 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(3, mod2->modId);
   mod2->defineHandle("BBB", this->pool.get(TYPE::Float), FieldAttribute::READ_ONLY);
   mod2->defineTypeAlias(this->pool, "float", this->pool.get(TYPE::Float));
-  auto s = mod2->importForeignHandles(modType, ImportedModKind::GLOBAL | ImportedModKind::INLINED);
+  auto s = mod2->importForeignHandles(this->pool, modType,
+                                      ImportedModKind::GLOBAL | ImportedModKind::INLINED);
 
   ASSERT_EQ("", s);
   ASSERT_EQ(4, mod2->getMaxGlobalVarIndex());
@@ -758,24 +759,30 @@ TEST_F(ScopeTest, import2) {
   auto &modType2 = this->toModType(std::move(mod2));
   ASSERT_EQ(3, modType2.getModID());
   handle = modType2.lookup("AAA");
+  ASSERT_FALSE(handle);
+
+  handle = modType2.lookupVisibleSymbolAtModule(this->pool, "AAA");
+  ASSERT_NO_FATAL_FAILURE(this->expect(
+      Handle{
+          .commitID = 0,
+          .type = TYPE::Int,
+          .index = 0,
+          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+          .modID = 2,
+      },
+      handle));
+
+  handle = modType2.lookup(toTypeAliasFullName("integer"));
+  ASSERT_FALSE(handle);
+
+  handle = modType2.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 3,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ALIAS | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
-          .modID = 3,
-      },
-      handle));
-
-  handle = modType2.lookup(toTypeAliasFullName("integer"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 4,
-          .type = TYPE::Int,
-          .index = 0,
           .attr = FieldAttribute::ALIAS,
-          .modID = 3,
+          .modID = 2,
       },
       handle));
 
@@ -807,7 +814,7 @@ TEST_F(ScopeTest, import2) {
       handle));
 
   // nested import
-  s = this->top->importForeignHandles(modType2, ImportedModKind::GLOBAL);
+  s = this->top->importForeignHandles(this->pool, modType2, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
   handle = this->top->lookup(toModHolderName(modType2.getModID(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -824,12 +831,12 @@ TEST_F(ScopeTest, import2) {
   handle = this->top->lookup("AAA");
   ASSERT_TRUE(
       handle->has(FieldAttribute::ALIAS | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
-  ASSERT_EQ(3, handle->getModID());
+  ASSERT_EQ(2, handle->getModID());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_TRUE(handle->has(FieldAttribute::ALIAS));
-  ASSERT_EQ(3, handle->getModID());
+  ASSERT_EQ(2, handle->getModID());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("_string"));
@@ -861,7 +868,7 @@ TEST_F(ScopeTest, conflict) {
   auto point = this->top->getDiscardPoint();
 
   this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), FieldAttribute{});
-  auto ret = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
+  auto ret = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("AAA", ret);
 
   auto *handle = this->top->lookup("AAA");

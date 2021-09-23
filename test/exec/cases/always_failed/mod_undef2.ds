@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 5, $chars = 13, $errorKind = 'UndefinedField', $status = 1, $fileName = './always_failed/mod3.ds')
+#$test($result = 'type', $lineNum = 5, $chars = 13, $errorKind = 'UndefinedField', $status = 1, $fileName = './always_failed/mod_undef2.ds')
 
 source ../../_module4test/private.ds as mod
 
