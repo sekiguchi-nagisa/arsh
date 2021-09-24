@@ -117,38 +117,57 @@ static bool readLine(std::string &line) {
 // for linenoise encoding function
 using namespace ydsh;
 
-static auto EAW = UnicodeUtil::HALF_WIDTH;
+struct WidthProperty {
+  UnicodeUtil ::AmbiguousCharWidth eaw{UnicodeUtil ::HALF_WIDTH};
+  unsigned char flagSeqWidth{4};
+  bool zwjSeqFallback{true};
+};
+
+static WidthProperty widthProperty;
 
 static constexpr const char PROPERTY_EAW[] = "○";
-static constexpr const char PROPERTY_FLAG_SEQ[] = "🇯🇵";
-
+static constexpr const char PROPERTY_EMOJI_FLAG_SEQ[] = "🇯🇵";
+static constexpr const char PROPERTY_EMOJI_ZWJ_SEQ[] = "👩🏼‍🏭";
 static const char *propertyStr[] = {
     PROPERTY_EAW,
-    PROPERTY_FLAG_SEQ,
+    PROPERTY_EMOJI_FLAG_SEQ,
+    PROPERTY_EMOJI_ZWJ_SEQ,
 };
 
 static int checkProperty(const char *str, size_t pos) {
   if (strcmp(str, PROPERTY_EAW) == 0) {
-    EAW = UnicodeUtil::HALF_WIDTH;
+    widthProperty.eaw = UnicodeUtil::HALF_WIDTH;
     if (pos - 1 == 2) {
-      EAW = UnicodeUtil::FULL_WIDTH;
+      widthProperty.eaw = UnicodeUtil::FULL_WIDTH;
     }
-  } else if (strcmp(str, PROPERTY_FLAG_SEQ) == 0) {
-    // FIXME:
+  } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
+    widthProperty.flagSeqWidth = pos - 1;
+  } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
+    widthProperty.zwjSeqFallback = pos - 1 > 2;
   }
   return 0;
 }
 
 static std::size_t graphemeWidth(const GraphemeScanner::Result &ret) {
   size_t width = 0;
+  unsigned int flagSeqCount = 0;
   for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    int w = UnicodeUtil::width(ret.codePoints[i], EAW);
+    int w = UnicodeUtil::width(ret.codePoints[i], widthProperty.eaw);
+    if (GraphemeBoundary::getBreakProperty(ret.codePoints[i]) ==
+        GraphemeBoundary::BreakProperty::Regional_Indicator) {
+      flagSeqCount++;
+    }
     if (w > 0) {
       width += w;
     }
   }
-  return width < 2 ? 1 : 2; // FIXME: emoji sequence
-  //  return width > 0 ? width : 1;
+  if (flagSeqCount == 2) {
+    return widthProperty.flagSeqWidth;
+  }
+  if (width > 2 && widthProperty.zwjSeqFallback) {
+    return width;
+  }
+  return width < 2 ? 1 : 2;
 }
 
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, std::size_t pos,
