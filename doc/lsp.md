@@ -1,8 +1,8 @@
-# Supported Feature of Language Server Protocol
+# Supported Features of Language Server Protocol
 
 ## ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
 
-| **Feature**  | ``definition`` | ``references`` | ``hover`` |
+| **Symbol**  | ``definition`` | ``references`` | ``hover`` |
 |----------------|---------|---------|-----|
 | variable (local/global) | ✔️ | ✔️ | ✔️ |
 | variable (for-in) | ✔️ | ✔️ | ✔️ |

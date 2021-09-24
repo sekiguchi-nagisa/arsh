@@ -17,6 +17,10 @@
 - add ``Float#compare`` method
     - total order Comparison equivalent to Java (Double.compare)
 
+#### Interactive
+
+- auto-detect emoji sequence width before prompt rendering
+
 #### LSP
 
 - basic support the following methods/notifications
