@@ -142,7 +142,7 @@ static int checkProperty(const char *str, size_t pos) {
     }
   } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
     widthProperty.flagSeqWidth = pos - 1;
-  } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
+  } else if (strcmp(str, PROPERTY_EMOJI_ZWJ_SEQ) == 0) {
     widthProperty.zwjSeqFallback = pos - 1 > 2;
   }
   return 0;
