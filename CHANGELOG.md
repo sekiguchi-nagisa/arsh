@@ -294,7 +294,7 @@
 
 #### API
 
-- **Breaking Change**: ``DSState_loadAndEval`` api dose not accept null file name
+- **Breaking Change**: ``DSState_loadAndEval`` api does not accept null file name
 - **Breaking Change**: ``DSState_loadModule`` api evaluate script in root module context
     - when specified by ``DS_MOD_SEPARATE_CTX``, evaluate script in separate module context
     - may report ``DS_ERROR_KIND_FILE_ERROR``
@@ -304,7 +304,7 @@
 - cannot load module when module path indicates anonymous pipe
 - in user-defined command, cannot pass ``UnixFD`` object to external command
 - code generation of ``finally`` block
-- cannot save history when ~/.ydsh_history dose not exist
+- cannot save history when ~/.ydsh_history does not exist
 - stack consumption of ``APPEND_MAP`` ins
 - not treat escaped newline as space
 - command argument parsing when following token is ``(``
@@ -393,14 +393,14 @@
     - ``new Regex('abc', 'im')``
 - **Breaking Change**: remove ``CONFIG_DIR`` variable
 - null character handling in builtin method/builtin command
-    - ``Regex`` constructor dose not accept strings having null characters
-    - ``UnixFD`` constructor dose not accept strings having null characters
+    - ``Regex`` constructor does not accept strings having null characters
+    - ``UnixFD`` constructor does not accept strings having null characters
     - not ignore null characters in builtin commands
 
 #### Module
 
 - ``completion``
-    - when command is not found, dose not kick corresponding completer
+    - when command is not found, does not kick corresponding completer
     - add ``compdef`` command for defining completer by decralative way
 
 #### API
@@ -515,9 +515,9 @@
 - tilde expansion behavior
     - ``~+``, ``~-`` is not expanded when ``PWD`` / ``OLDPWD`` is invalid
     - use ``HOME`` env in ``~`` if env is set
-- source statement dose not allow null characters
+- source statement does not allow null characters
 - when specified ``--parse-only`` option, not perform module loading
-- dose not always handle/ignore ``SIGBUS``, ``SIGSEGV``, ``SIGILL``, ``SIGFPE`` signals due to undefined behavior
+- does not always handle/ignore ``SIGBUS``, ``SIGSEGV``, ``SIGILL``, ``SIGFPE`` signals due to undefined behavior
 - operator precedence of ``throw`` expression
 
 #### Misc
@@ -579,7 +579,7 @@
 #### Interactive
 
 - before show prompt, insert newline when previous line is not terminated with newline
-- auto detect east asian ambiguous character width
+- auto-detect east asian ambiguous character width
 - auto sync window size
 
 ### Changed
@@ -676,7 +676,7 @@
 #### Core
 
 - add builtin 'CONFIG_DIR' variable for indicating system config directory
-- add builtin 'PIPESTATUS' variable for indicating latest status of pipeline
+- add builtin 'PIPESTATUS' variable for indicating the latest status of pipeline
 - add builtin 'COMP_HOOK' variable for user-defined completer
 - add builtin 'EDIT_HOOK' variable for user-defined line editing function
     - support CTRL-R for history search
@@ -754,7 +754,7 @@
     - more stabilize
     - dump module
 - introduce history module
-    - expose history buffer as HISTORY variable
+    - expose history buffer to HISTORY variable
     - move some history related variables into module
     - user-defined history command
     - add HISTIGNORE
@@ -839,7 +839,7 @@
 
 ### Changed
 
-- not show signal terminated message in mid pipeline
+- not show signal terminated message in mid-pipeline
 - debug logger format
 - error message of circular reference error
 - last pipe may cause SIGPIPE with child process
@@ -997,7 +997,7 @@
 
 ### Changed
 
-- when specified '-e' option, '--trace-exit' option dose not affect
+- when specified '-e' option, '--trace-exit' option does not affect
 - not maintain pending signal order (replace pending signal queue with bitset)
 - builtin kill command sends signal to process group
 - remove termination hook from public api
@@ -1184,7 +1184,7 @@
 
 - change naming convention of public api
 - remove __ADD__ method from string
-- backslash handling in double quoted string
+- backslash handling in double-quoted string
 - drop support ternary expression
 - drop support print exprression
 
@@ -1258,7 +1258,7 @@
 
 ### Added
 
-- add some string api(count, slice, indexOf, startsWith, .. etc)
+- add some string api(count, slice, indexOf, startsWith, ...etc.)
 - prompt string interpretation(PS1/PS2)
 - add some built-in command (command, eval, exec, pwd)
 - user-defined command
