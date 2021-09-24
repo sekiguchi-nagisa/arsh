@@ -37,7 +37,12 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
-void IndexBuilder::LazyMemberMap::buildCache(unsigned short targetModId) {
+void IndexBuilder::LazyMemberMap::buildCache(const DSType &recvType) {
+  if (!recvType.isModType()) {
+    return; // currently, only support Mod type
+  }
+
+  unsigned short targetModId = cast<ModType>(recvType).getModID();
   if (auto iter = this->cachedModIds.find(targetModId); iter != this->cachedModIds.end()) {
     return;
   }
@@ -48,35 +53,63 @@ void IndexBuilder::LazyMemberMap::buildCache(unsigned short targetModId) {
   }
   this->cachedModIds.emplace(targetModId);
   for (auto &decl : index->getDecls()) {
-    if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
-      continue;
-    }
-    auto key =
-        std::make_pair<unsigned int, std::string>(targetModId, decl.getMangledName().toString());
-    this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
-    if (decl.getKind() == DeclSymbol::Kind::MOD) {
-      // udc
-      key = {targetModId,
-             DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString())};
-      this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+    this->addDecl(recvType, decl);
+  }
+  for (auto &e : index->getInlinedModIds()) {
+    auto ret = this->getPool().getModTypeById(e);
+    assert(ret);
+    this->buildCache(*ret.asOk());
+  }
+}
 
-      // type alias
-      key = {targetModId,
-             DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString())};
-      this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
-    }
+void IndexBuilder::LazyMemberMap::addDecl(const DSType &recvType, const DeclSymbol &decl) {
+  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
+    return;
+  }
+  unsigned int typeId = recvType.typeId();
+  auto key = std::make_pair(typeId, decl.getMangledName().toString());
+  this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+  if (decl.getKind() == DeclSymbol::Kind::MOD) {
+    // udc
+    key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString())};
+    this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+
+    // type alias
+    key = {typeId,
+           DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString())};
+    this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
   }
 }
 
 ObserverPtr<const DeclSymbol> IndexBuilder::LazyMemberMap::find(const DSType &recvType,
                                                                 const std::string &memberName) {
-  if (recvType.isModType()) {
+  this->buildCache(recvType);
+  if (auto decl = this->findImpl(recvType, memberName)) {
+    return decl;
+  }
+
+  // if recvType is ModType, search inlined module
+  if (isa<ModType>(recvType)) {
     auto &modType = cast<ModType>(recvType);
-    this->buildCache(modType.getModID());
-    auto iter = this->map.find({modType.getModID(), memberName});
-    if (iter != this->map.end()) {
-      return iter->second;
+    unsigned int size = modType.getChildSize();
+    for (unsigned int i = 0; i < size; i++) {
+      auto child = modType.getChildAt(i);
+      if (child.isInlined()) {
+        auto &childType = this->getPool().get(child.typeId());
+        if (auto decl = this->findImpl(childType, memberName)) {
+          return decl;
+        }
+      }
     }
+  }
+  return nullptr;
+}
+
+ObserverPtr<const DeclSymbol>
+IndexBuilder::LazyMemberMap::findImpl(const DSType &recvType, const std::string &memberName) const {
+  auto iter = this->map.find({recvType.typeId(), memberName});
+  if (iter != this->map.end()) {
+    return iter->second;
   }
   return nullptr;
 }
@@ -155,6 +188,9 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
   if (!this->scope->isGlobal()) {
     return false;
   }
+  if (auto iter = this->inlinedModIds.find(foreignModId); iter != this->inlinedModIds.end()) {
+    return true;
+  }
   if (auto iter = this->globallyImportedModIds.find(foreignModId);
       iter != this->globallyImportedModIds.end()) {
     return true; // already imported
@@ -175,7 +211,7 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
   }
   // resolve inlined imported symbols
   for (auto &e : index->getInlinedModIds()) {
-    this->importForeignDecls(e, false);
+    this->importForeignDecls(e, inlined);
   }
   return true;
 }

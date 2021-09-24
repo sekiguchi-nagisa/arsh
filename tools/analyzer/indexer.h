@@ -26,7 +26,6 @@ class IndexBuilder {
 private:
   const unsigned short modId;
   const int version;
-  std::shared_ptr<TypePool> pool;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreigns;
@@ -88,16 +87,17 @@ private:
 
   private:
     /**
-     * (id, mangled name) => DeclSymbol reference
+     * (type id, mangled name) => DeclSymbol reference
      */
     MapType map;
 
     std::unordered_set<unsigned short> cachedModIds;
 
-    void buildCache(unsigned short modId);
+    std::shared_ptr<TypePool> pool;
 
   public:
-    explicit LazyMemberMap(const SymbolIndexes &indexes) : indexes(indexes) {}
+    LazyMemberMap(const SymbolIndexes &indexes, std::shared_ptr<TypePool> pool)
+        : indexes(indexes), pool(std::move(pool)) {}
 
     /**
      *
@@ -107,6 +107,16 @@ private:
      * @return
      */
     ObserverPtr<const DeclSymbol> find(const DSType &recvType, const std::string &memberName);
+
+    const TypePool &getPool() const { return *this->pool; }
+
+  private:
+    void buildCache(const DSType &recvType);
+
+    void addDecl(const DSType &recvType, const DeclSymbol &decl);
+
+    ObserverPtr<const DeclSymbol> findImpl(const DSType &recvType,
+                                           const std::string &memberName) const;
   };
 
   LazyMemberMap memberMap;
@@ -114,8 +124,8 @@ private:
 public:
   IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), pool(std::move(pool)),
-        scope(IntrusivePtr<ScopeEntry>::create(nullptr)), memberMap(indexes) {}
+      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create(nullptr)),
+        memberMap(indexes, std::move(pool)) {}
 
   SymbolIndex build() && {
     FlexBuffer<unsigned short> inlinedModIdList;
@@ -130,7 +140,7 @@ public:
             std::move(inlinedModIdList)};
   }
 
-  const TypePool &getPool() const { return *this->pool; }
+  const TypePool &getPool() const { return this->memberMap.getPool(); }
 
   auto intoScope() {
     this->scope = IntrusivePtr<ScopeEntry>::create(this->scope);
