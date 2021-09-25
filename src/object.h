@@ -1110,17 +1110,11 @@ public:
   }
 
   CompiledCode &operator=(CompiledCode &&o) noexcept {
-    this->swap(o);
+    if (this != std::addressof(o)) {
+      this->~CompiledCode();
+      new (this) CompiledCode(std::move(o));
+    }
     return *this;
-  }
-
-  void swap(CompiledCode &o) noexcept {
-    std::swap(static_cast<DSCode &>(*this), static_cast<DSCode &>(o));
-    std::swap(this->belongedModId, o.belongedModId);
-    std::swap(this->name, o.name);
-    std::swap(this->constPool, o.constPool);
-    std::swap(this->lineNumEntries, o.lineNumEntries);
-    std::swap(this->exceptionEntries, o.exceptionEntries);
   }
 
   unsigned short getBelongedModId() const { return this->belongedModId; }
