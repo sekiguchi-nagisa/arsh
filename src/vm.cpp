@@ -467,16 +467,6 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static const FieldHandle *lookupUdcImpl(const NameScope &scope, const TypePool &pool,
-                                        const ModType *belongType, const char *cmdName) {
-  std::string name = toCmdFullName(cmdName);
-  if (belongType == nullptr) {
-    return scope.lookup(name);
-  } else {
-    return belongType->lookupVisibleSymbolAtModule(pool, name);
-  }
-}
-
 static bool lookupUdcFromIndex(const DSState &state, unsigned int index, ResolvedCmd &cmd,
                                const ModType *modType, bool underlyingMod = false) {
   const FuncObject *udcObj = nullptr;
@@ -489,12 +479,14 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
   }
 
   auto &type = state.typePool.get(udcObj->getTypeID());
-  if (type.isModType()) {
+  if (type.isModType()) { // module object
     cmd = ResolvedCmd::fromMod(cast<ModType>(type), modType);
-  } else {
+  } else { // udc object
     assert(type.isVoidType());
     if (underlyingMod) {
-      modType = getUnderlyingModType(state.typePool, state.modLoader, &udcObj->getCode());
+      auto ret = state.typePool.getModTypeById(udcObj->getCode().getBelongedModId());
+      assert(ret);
+      modType = cast<ModType>(ret.asOk());
     }
     cmd = ResolvedCmd::fromUdc(*udcObj, modType);
   }
@@ -508,14 +500,23 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
  * @param name
  * @param cmd
  * @param modType
- * may be null
+ * if called from native code, may be null
  * @return
  */
 static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
                       const ModType *modType) {
-  auto handle = lookupUdcImpl(*state.rootModScope, state.typePool, modType, name);
-  if (handle) {
-    return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType, true);
+  if (!modType) {
+    auto ret = state.typePool.getModTypeById(1); // get root module
+    if (ret) {                                   // not found, if root module has not compiled yet
+      modType = cast<ModType>(ret.asOk());
+    }
+  }
+  if (modType) {
+    std::string fullname = toCmdFullName(name);
+    auto handle = modType->lookupVisibleSymbolAtModule(state.typePool, fullname);
+    if (handle) {
+      return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType, true);
+    }
   }
   return false;
 }

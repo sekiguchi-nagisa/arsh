@@ -146,13 +146,13 @@ public:
   const TypeTemplate &getOptionTemplate() const { return this->optionTemplate; }
 
   bool isArrayType(const DSType &type) const {
-    return type.isReifiedType() && static_cast<const ReifiedType &>(type).getNativeTypeInfo() ==
-                                       this->arrayTemplate.getInfo();
+    return type.isReifiedType() &&
+           cast<ReifiedType>(type).getNativeTypeInfo() == this->arrayTemplate.getInfo();
   }
 
   bool isMapType(const DSType &type) const {
-    return type.isReifiedType() && static_cast<const ReifiedType &>(type).getNativeTypeInfo() ==
-                                       this->mapTemplate.getInfo();
+    return type.isReifiedType() &&
+           cast<ReifiedType>(type).getNativeTypeInfo() == this->mapTemplate.getInfo();
   }
 
   TypeTempOrError getTypeTemplate(const std::string &typeName) const;
@@ -192,13 +192,10 @@ public:
   const ModType &getBuiltinModType() const {
     auto *type = this->getModTypeById(0).take();
     assert(type && type->isModType());
-    return static_cast<const ModType &>(*type);
+    return cast<ModType>(*type);
   }
 
-  TypeOrError getModTypeById(unsigned short modId) const {
-    auto name = toModTypeName(modId);
-    return this->getType(name);
-  }
+  TypeOrError getModTypeById(unsigned short modId) const;
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 

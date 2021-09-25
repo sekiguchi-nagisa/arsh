@@ -95,17 +95,13 @@ public:
 
   void discard(const DiscardPoint &point) { this->provider.discard(point); }
 
-  const std::string &getSourcePath() const {
-    return this->frontEnd.getCurrentLexer().getSourceName();
-  }
-
   int operator()(ObjPtr<FuncObject> &func);
 };
 
 int Compiler::operator()(ObjPtr<FuncObject> &func) {
   this->frontEnd.setupASTDump();
   if (!this->frontEndOnly()) {
-    this->codegen.initialize(this->frontEnd.getCurrentLexer());
+    this->codegen.initialize(this->frontEnd.getCurModId(), this->frontEnd.getCurrentLexer());
   }
   while (this->frontEnd) {
     auto ret = this->frontEnd();
@@ -119,7 +115,7 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
 
     switch (ret.kind) {
     case FrontEndResult::ENTER_MODULE:
-      this->codegen.enterModule(this->frontEnd.getCurrentLexer());
+      this->codegen.enterModule(this->frontEnd.getCurModId(), this->frontEnd.getCurrentLexer());
       break;
     case FrontEndResult::EXIT_MODULE:
       if (!this->codegen.exitModule(cast<SourceNode>(*ret.node))) {

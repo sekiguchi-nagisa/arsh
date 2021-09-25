@@ -271,6 +271,11 @@ const ModType &TypePool::createModType(unsigned short modID,
   return cast<ModType>(*type);
 }
 
+TypeOrError TypePool::getModTypeById(unsigned short modId) const {
+  auto name = toModTypeName(modId);
+  return this->getType(name);
+}
+
 class TypeDecoder {
 private:
   TypePool &pool;

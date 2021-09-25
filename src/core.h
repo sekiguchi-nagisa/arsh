@@ -112,21 +112,6 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  */
 void setJobControlSignalSetting(DSState &st, bool set);
 
-class ModuleLoader;
-
-/**
- *
- * @param pool
- * @param loader
- * @param code
- * may be null
- * @return
- * if cannot resolve underlying module type (if underlying module is not sealed (root module)),
- * return null
- */
-const ModType *getUnderlyingModType(const TypePool &pool, const ModuleLoader &loader,
-                                    const CompiledCode *code);
-
 const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
 
 inline const ModType *getCurRuntimeModule(const DSState &state) {

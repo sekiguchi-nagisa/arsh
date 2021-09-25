@@ -147,6 +147,8 @@ public:
     return this->contexts.back()->srcListNode;
   }
 
+  unsigned short getCurModId() const { return this->curScope()->modId; }
+
   bool hasUnconsumedPath() const {
     auto &e = this->getCurSrcListNode();
     return e && e->hasUnconsumedPath();

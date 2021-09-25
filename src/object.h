@@ -1058,6 +1058,8 @@ struct ExceptionEntry {
 
 class CompiledCode : public DSCode {
 private:
+  unsigned short belongedModId;
+
   /**
    * if CallableKind is toplevel, it is null
    */
@@ -1081,13 +1083,14 @@ private:
 public:
   NON_COPYABLE(CompiledCode);
 
-  CompiledCode(const char *name, DSCode code, DSValue *constPool, LineNumEntry *sourcePosEntries,
-               ExceptionEntry *exceptionEntries) noexcept
-      : DSCode(code), name(name == nullptr ? nullptr : strdup(name)), constPool(constPool),
-        lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {}
+  CompiledCode(unsigned short modId, const char *name, DSCode code, DSValue *constPool,
+               LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept
+      : DSCode(code), belongedModId(modId), name(name == nullptr ? nullptr : strdup(name)),
+        constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {
+  }
 
   CompiledCode(CompiledCode &&c) noexcept
-      : DSCode(std::move(c)), name(c.name), constPool(c.constPool),
+      : DSCode(std::move(c)), belongedModId(c.belongedModId), name(c.name), constPool(c.constPool),
         lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
     c.code = nullptr;
@@ -1113,11 +1116,14 @@ public:
 
   void swap(CompiledCode &o) noexcept {
     std::swap(static_cast<DSCode &>(*this), static_cast<DSCode &>(o));
+    std::swap(this->belongedModId, o.belongedModId);
     std::swap(this->name, o.name);
     std::swap(this->constPool, o.constPool);
     std::swap(this->lineNumEntries, o.lineNumEntries);
     std::swap(this->exceptionEntries, o.exceptionEntries);
   }
+
+  unsigned short getBelongedModId() const { return this->belongedModId; }
 
   StringRef getSourceName() const { return this->constPool[0].asStrRef(); }
 

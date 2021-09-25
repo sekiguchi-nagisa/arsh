@@ -125,18 +125,6 @@ void setJobControlSignalSetting(DSState &st, bool set) {
   st.sigVector.install(SIGTTOU, op, handler);
 }
 
-const ModType *getUnderlyingModType(const TypePool &pool, const ModuleLoader &loader,
-                                    const CompiledCode *code) {
-  if (code) {
-    auto key = code->getSourceName();
-    auto *e = loader.find(key);
-    if (e && e->isSealed()) {
-      return cast<ModType>(&pool.get(e->getTypeId()));
-    }
-  }
-  return nullptr;
-}
-
 const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int callLevel) {
   const CompiledCode *code = nullptr;
   unsigned int depth = 0;
@@ -152,7 +140,12 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
     depth++;
     return true;
   });
-  return getUnderlyingModType(state.typePool, state.modLoader, code);
+  if (code) {
+    auto ret = state.typePool.getModTypeById(code->getBelongedModId());
+    assert(ret);
+    return cast<ModType>(ret.asOk());
+  }
+  return nullptr;
 }
 
 class VariableBinder {

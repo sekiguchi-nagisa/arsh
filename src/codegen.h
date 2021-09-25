@@ -106,6 +106,11 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   unsigned char localVarNum;
 
+  unsigned short modId;
+
+  signed short stackDepthCount{0};
+  signed short maxStackDepth{0};
+
   ConstBuffer constBuffer;
   FlexBuffer<LineNumEntry> lineNumEntries;
   std::vector<CatchBuilder> catchBuilders;
@@ -122,11 +127,9 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   std::vector<Label> finallyLabels;
 
-  signed short stackDepthCount{0};
-  signed short maxStackDepth{0};
-
-  explicit CodeBuilder(const Lexer &lexer, CodeKind kind, unsigned char localVarNum)
-      : lexer(lexer), kind(kind), localVarNum(localVarNum) {}
+  explicit CodeBuilder(unsigned short modId, const Lexer &lexer, CodeKind kind,
+                       unsigned char localVarNum)
+      : lexer(lexer), kind(kind), localVarNum(localVarNum), modId(modId) {}
 
   CodeKind getCodeKind() const { return this->kind; }
 
@@ -138,6 +141,7 @@ struct CodeBuilder : public CodeEmitter<true> {
 
 class ModuleCommon {
 private:
+  unsigned short modId;
   DSValue scriptName;
   DSValue scriptDir;
 
@@ -149,8 +153,11 @@ public:
    * @param name
    * @param scriptDir
    */
-  ModuleCommon(const std::string &name, const char *scriptDir)
-      : scriptName(DSValue::createStr(name)), scriptDir(DSValue::createStr(scriptDir)) {}
+  ModuleCommon(unsigned short modId, const std::string &name, const char *scriptDir)
+      : modId(modId), scriptName(DSValue::createStr(name)),
+        scriptDir(DSValue::createStr(scriptDir)) {}
+
+  unsigned short getModId() const { return this->modId; }
 
   DSValue getScriptName() const { return this->scriptName; }
 
@@ -384,9 +391,9 @@ private:
   void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
                          const MethodHandle &matchHandle, const Label &mergeLabel);
 
-  void initToplevelCodeBuilder(const Lexer &lex, unsigned short localVarNum) {
+  void initToplevelCodeBuilder(unsigned short modId, const Lexer &lex, unsigned short localVarNum) {
     assert(lex.getScriptDir());
-    this->commons.emplace_back(lex.getSourceName(), lex.getScriptDir());
+    this->commons.emplace_back(modId, lex.getSourceName(), lex.getScriptDir());
     this->initCodeBuilder(CodeKind::TOPLEVEL, lex, localVarNum);
   }
 
@@ -396,7 +403,7 @@ private:
   }
 
   void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
-    this->builders.emplace_back(lex, kind, localVarNum);
+    this->builders.emplace_back(this->commons.back().getModId(), lex, kind, localVarNum);
     this->curBuilder().constBuffer.append(this->commons.back().getScriptName());
     this->curBuilder().constBuffer.append(this->commons.back().getScriptDir());
   }
@@ -475,7 +482,9 @@ public:
 
   const CodeGenError &getError() const { return this->error; }
 
-  void initialize(const Lexer &lexer) { this->initToplevelCodeBuilder(lexer, 0); }
+  void initialize(unsigned short modId, const Lexer &lexer) {
+    this->initToplevelCodeBuilder(modId, lexer, 0);
+  }
 
   bool generate(Node &node) {
     this->visit(node);
@@ -484,7 +493,9 @@ public:
 
   ObjPtr<FuncObject> finalize(unsigned int maxVarIndex, const ModType &modType);
 
-  void enterModule(const Lexer &lexer) { this->initToplevelCodeBuilder(lexer, 0); }
+  void enterModule(unsigned short modId, const Lexer &lexer) {
+    this->initToplevelCodeBuilder(modId, lexer, 0);
+  }
 
   bool exitModule(const SourceNode &node);
 };
