@@ -588,14 +588,14 @@ public:
   // entry point
   /**
    * entry point of toplevel code evaluation.
-   * @param code
-   * must be toplevel compiled code.
+   * @param func
+   * must be toplevel compiled function.
    * @param dsError
    * if not null, set error information
    * @return
    * if had uncaught exception, return false.
    */
-  static bool callToplevel(DSState &state, const CompiledCode &code, DSError *dsError);
+  static bool callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError);
 
   /**
    * execute command.
@@ -634,15 +634,15 @@ public:
 // entry point of code evaluation
 /**
  * entry point of toplevel code evaluation.
- * @param code
- * must be toplevel compiled code.
+ * @param func
+ * must be toplevel compiled function.
  * @param dsError
  * if not null, set error information
  * @return
  * if had uncaught exception, return false
  */
-inline bool callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
-  return VM::callToplevel(state, code, dsError);
+inline bool callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError) {
+  return VM::callToplevel(state, func, dsError);
 }
 
 /**

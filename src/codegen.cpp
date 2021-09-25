@@ -1346,16 +1346,20 @@ void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const cha
   this->error = CodeGenError(token, kind, CStrPtr(str));
 }
 
-CompiledCode ByteCodeGenerator::finalize(unsigned int maxVarIndex) {
+ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const ModType &modType) {
   unsigned char maxLocalSize = maxVarIndex;
   this->curBuilder().localVarNum = maxLocalSize;
   this->emitIns(OpCode::RETURN);
   auto code = this->finalizeCodeBuilder("");
-  if (!code) {
+  ObjPtr<FuncObject> func;
+  if (code) {
+    auto v = DSValue::create<FuncObject>(modType, std::move(code));
+    func = ObjPtr<FuncObject>(&typeAs<FuncObject>(v));
+  } else {
     this->reportError<TooLargeToplevel>({0, 0}, this->commons.back().getScriptName().asCStr());
   }
   this->commons.pop_back();
-  return code;
+  return func;
 }
 
 bool ByteCodeGenerator::exitModule(const SourceNode &node) {

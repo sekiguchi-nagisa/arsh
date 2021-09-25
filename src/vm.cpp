@@ -1911,11 +1911,19 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
 }
 
-bool VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
+bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError) {
+  // set module to global
   state.globals.resize(state.rootModScope->getMaxGlobalVarIndex());
-  state.stack.reset();
+  {
+    auto &type = state.typePool.get(func->getTypeID());
+    assert(isa<ModType>(type));
+    unsigned int index = cast<ModType>(type).getIndex();
+    state.setGlobal(index, DSValue(func));
+  }
 
-  state.stack.wind(0, 0, code);
+  // prepare stack
+  state.stack.reset();
+  state.stack.wind(0, 0, func->getCode());
 
   EvalOP op{};
   if (hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {

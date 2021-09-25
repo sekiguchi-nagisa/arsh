@@ -262,8 +262,12 @@ const ModType &TypePool::createModType(unsigned short modID,
   if (type == nullptr) {
     type = &this->newType<ModType>(this->get(TYPE::Module), modID, std::move(handles),
                                    std::move(children), index);
+  } else { // re-open (only allow root module)
+    assert(type->isModType());
+    auto &modType = const_cast<ModType &>(cast<ModType>(*type)); // FIXME: replace const_cast?
+    assert(modType.getModID() == 1);
+    modType.reopen(std::move(handles), std::move(children));
   }
-  assert(type->isModType());
   return cast<ModType>(*type);
 }
 

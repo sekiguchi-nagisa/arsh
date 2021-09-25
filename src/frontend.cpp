@@ -225,8 +225,7 @@ DefaultModuleProvider::newContext(Lexer &&lexer, FrontEndOption option,
 
 const ModType &DefaultModuleProvider::newModTypeFromCurContext(
     const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) {
-  return this->loader.createModType(this->pool, *ctx.back()->scope,
-                                    ctx.back()->lexer.getSourceName());
+  return this->loader.createModType(this->pool, *ctx.back()->scope);
 }
 
 FrontEnd::ModuleProvider::Ret

@@ -160,11 +160,7 @@ const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
 // ##     ModType     ##
 // #####################
 
-ModType::~ModType() {
-  if (this->getChildSize() >= 3) {
-    free(this->data.children.ptr);
-  }
-}
+ModType::~ModType() { this->disposeChildren(); }
 
 const FieldHandle *ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
   if (auto *handle = this->find(fieldName); handle) {

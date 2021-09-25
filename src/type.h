@@ -482,6 +482,8 @@ struct allow_enum_bitop<ImportedModKind> : std::true_type {};
 
 class ModType : public DSType {
 public:
+  friend class TypePool;
+
   class Imported {
   private:
     /**
@@ -529,17 +531,11 @@ public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
           std::unordered_map<std::string, FieldHandle> &&handles, FlexBuffer<Imported> &&children,
           unsigned int index)
-      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType), handleMap(std::move(handles)) {
+      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
     this->meta.u16_2.v1 = modID;
-    this->meta.u16_2.v2 = children.size();
+    this->meta.u16_2.v2 = 0;
     this->data.e3.index = index;
-    if (this->getChildSize() < 3) {
-      for (unsigned int i = 0; i < this->getChildSize(); i++) {
-        this->data.e3.v[i] = children[i];
-      }
-    } else {
-      this->data.children.ptr = children.take();
-    }
+    this->reopen(std::move(handles), std::move(children));
   }
 
   ~ModType();
@@ -609,6 +605,26 @@ private:
       return &iter->second;
     }
     return nullptr;
+  }
+
+  void reopen(std::unordered_map<std::string, FieldHandle> &&handles,
+              FlexBuffer<Imported> &&children) {
+    this->disposeChildren();
+    this->handleMap = std::move(handles);
+    this->meta.u16_2.v2 = children.size();
+    if (this->getChildSize() < 3) {
+      for (unsigned int i = 0; i < this->getChildSize(); i++) {
+        this->data.e3.v[i] = children[i];
+      }
+    } else {
+      this->data.children.ptr = children.take();
+    }
+  }
+
+  void disposeChildren() {
+    if (this->getChildSize() >= 3) {
+      free(this->data.children.ptr);
+    }
   }
 };
 

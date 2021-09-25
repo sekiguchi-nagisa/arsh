@@ -441,15 +441,16 @@ IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(const TypePo
   return nullptr;
 }
 
-const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope,
-                                           const std::string &fullpath) {
+const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope) {
+  assert(scope.modId < this->entries.size());
   auto &modType = scope.toModType(pool);
-  this->gvarCount++; // reserve module object entry
-  auto iter = this->indexMap.find(fullpath);
-  assert(iter != this->indexMap.end());
-  auto &e = this->entries[iter->second];
-  assert(!e.isSealed());
-  e.setModType(modType);
+  bool reopened = scope.inRootModule() && this->entries[scope.modId].isSealed();
+  if (!reopened) {
+    this->gvarCount++; // reserve module object entry
+    auto &e = this->entries[scope.modId];
+    assert(!e.isSealed());
+    e.setModType(modType);
+  }
   return modType;
 }
 

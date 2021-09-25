@@ -628,6 +628,29 @@ TEST_F(APITest, load4) {
   DSError_release(&e);
 }
 
+TEST_F(APITest, load5) {
+  auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
+
+  DSError e;
+  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  ASSERT_EQ(1, r);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSError_release(&e);
+
+  // use loaded moudle
+  std::string line = format(R"(
+true
+source %s as m
+assert $m.mod_load_success
+)",
+                            modName.c_str());
+
+  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
+  ASSERT_EQ(0, r);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSError_release(&e);
+}
+
 template <typename Func>
 static Output invoke(Func func) {
   IOConfig config;

@@ -67,6 +67,7 @@
     - `in`, `and`, `or`, `xor`, `elif`
 - do not complete if previous token is a comment
 - error message of for-expression
+- raise error when access loaded module via ``DSState_loadModule`` api
 
 ## [0.22.0] - 2021-06-27
 

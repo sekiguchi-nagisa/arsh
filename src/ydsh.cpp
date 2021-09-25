@@ -99,10 +99,10 @@ public:
     return this->frontEnd.getCurrentLexer().getSourceName();
   }
 
-  int operator()(CompiledCode &code);
+  int operator()(ObjPtr<FuncObject> &func);
 };
 
-int Compiler::operator()(CompiledCode &code) {
+int Compiler::operator()(ObjPtr<FuncObject> &func) {
   this->frontEnd.setupASTDump();
   if (!this->frontEndOnly()) {
     this->codegen.initialize(this->frontEnd.getCurrentLexer());
@@ -136,8 +136,12 @@ int Compiler::operator()(CompiledCode &code) {
     }
   }
   this->frontEnd.teardownASTDump();
-  if (!this->frontEndOnly()) {
-    code = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex());
+  assert(this->frontEnd.getContext().size() == 1);
+  {
+    auto &modType = this->provider.newModTypeFromCurContext(this->frontEnd.getContext());
+    if (!this->frontEndOnly()) {
+      func = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex(), modType);
+    }
   }
 
 END:
@@ -150,15 +154,11 @@ END:
 }
 
 static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope, Lexer &&lexer,
-                   const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
+                   const DiscardPoint &discardPoint, DSError *dsError, ObjPtr<FuncObject> &func) {
   Compiler compiler(state.modLoader, state.typePool, modScope, std::move(lexer), state.dumpTarget,
                     state.execMode, state.compileOption, dsError);
-  int ret = compiler(code);
-  if (ret == 0) {
-    if (!modScope->inBuiltinModule() && !modScope->inRootModule()) {
-      state.modLoader.createModType(state.typePool, *modScope, compiler.getSourcePath());
-    }
-  } else {
+  int ret = compiler(func);
+  if (ret != 0) {
     compiler.discard(discardPoint);
   }
   state.lineNum = compiler.lineNum();
@@ -167,23 +167,23 @@ static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope, Lexe
 
 static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope, Lexer &&lexer,
                       const DiscardPoint &point, DSError *dsError) {
-  CompiledCode code;
+  ObjPtr<FuncObject> func;
   int ret =
-      compile(state, scope ? scope : state.rootModScope, std::move(lexer), point, dsError, code);
-  if (!code) {
+      compile(state, scope ? scope : state.rootModScope, std::move(lexer), point, dsError, func);
+  if (!func) {
     return ret;
   }
 
   if (state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
     auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
     fprintf(fp, "### dump compiled code ###\n");
-    ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(code);
+    ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(func->getCode());
   }
 
   if (state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
     return 0;
   }
-  callToplevel(state, code, dsError);
+  callToplevel(state, func, dsError);
   return state.getMaskedExitStatus();
 }
 
@@ -196,8 +196,7 @@ static void loadEmbeddedScript(DSState *state) {
   assert(ret == 0);
 
   // rest some state
-  auto &modType =
-      state->modLoader.createModType(state->typePool, *state->builtinModScope, "(builtin)");
+  auto &modType = state->typePool.getBuiltinModType();
   state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->lineNum = 1;
   state->setExitStatus(0);

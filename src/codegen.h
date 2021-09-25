@@ -482,7 +482,7 @@ public:
     return !this->hasError();
   }
 
-  CompiledCode finalize(unsigned int maxVarIndex);
+  ObjPtr<FuncObject> finalize(unsigned int maxVarIndex, const ModType &modType);
 
   void enterModule(const Lexer &lexer) { this->initToplevelCodeBuilder(lexer, 0); }
 

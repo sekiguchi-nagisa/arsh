@@ -399,7 +399,7 @@ public:
   IntrusivePtr<NameScope> createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
                                                         const ModType &modType);
 
-  const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
+  const ModType &createModType(TypePool &pool, const NameScope &scope);
 
   unsigned int modSize() const { return this->indexMap.size(); }
 
