@@ -468,7 +468,7 @@ static NativeCode initCode(OpCode op) {
 }
 
 static bool lookupUdcFromIndex(const DSState &state, unsigned int index, ResolvedCmd &cmd,
-                               const ModType *modType, bool underlyingMod = false) {
+                               const ModType *modType) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
   if (v) {
@@ -483,11 +483,6 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
     cmd = ResolvedCmd::fromMod(cast<ModType>(type), modType);
   } else { // udc object
     assert(type.isVoidType());
-    if (underlyingMod) {
-      auto ret = state.typePool.getModTypeById(udcObj->getCode().getBelongedModId());
-      assert(ret);
-      modType = cast<ModType>(ret.asOk());
-    }
     cmd = ResolvedCmd::fromUdc(*udcObj, modType);
   }
   return true;
@@ -515,7 +510,7 @@ static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
     std::string fullname = toCmdFullName(name);
     auto handle = modType->lookupVisibleSymbolAtModule(state.typePool, fullname);
     if (handle) {
-      return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType, true);
+      return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType);
     }
   }
   return false;
