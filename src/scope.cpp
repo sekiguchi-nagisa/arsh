@@ -443,6 +443,7 @@ IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(const TypePo
 
 const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope) {
   assert(scope.modId < this->entries.size());
+  assert(scope.isGlobal());
   auto &modType = scope.toModType(pool);
   bool reopened = scope.inRootModule() && this->entries[scope.modId].isSealed();
   if (!reopened) {

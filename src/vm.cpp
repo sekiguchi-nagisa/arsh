@@ -522,7 +522,6 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref, const ModType
     auto fqn = hasFlag(this->resolveOp, USE_FQN) ? ref.find('\0') : StringRef::npos;
     const char *cmdName = ref.data();
     if (fqn != StringRef::npos) {
-      assert(cmdName[0] != '\0');
       auto ret = state.typePool.getType(cmdName);
       if (!ret || !ret.asOk()->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
         return ResolvedCmd::invalid();
