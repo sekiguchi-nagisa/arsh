@@ -118,7 +118,7 @@ static bool readLine(std::string &line) {
 using namespace ydsh;
 
 struct WidthProperty {
-  UnicodeUtil ::AmbiguousCharWidth eaw{UnicodeUtil ::HALF_WIDTH};
+  UnicodeUtil::AmbiguousCharWidth eaw{UnicodeUtil::HALF_WIDTH};
   unsigned char flagSeqWidth{4};
   bool zwjSeqFallback{true};
 };
@@ -153,8 +153,7 @@ static std::size_t graphemeWidth(const GraphemeScanner::Result &ret) {
   unsigned int flagSeqCount = 0;
   for (unsigned int i = 0; i < ret.codePointCount; i++) {
     int w = UnicodeUtil::width(ret.codePoints[i], widthProperty.eaw);
-    if (GraphemeBoundary::getBreakProperty(ret.codePoints[i]) ==
-        GraphemeBoundary::BreakProperty::Regional_Indicator) {
+    if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
       flagSeqCount++;
     }
     if (w > 0) {

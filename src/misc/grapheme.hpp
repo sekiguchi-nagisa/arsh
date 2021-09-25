@@ -72,11 +72,11 @@ public:
 
   /**
    * scan grapheme cluster boundary
-   * @param codePoint
+   * @param breakProperty
    * @return
    * if grapheme cluster boundary is between prev codePoint and codePoint, return true
    */
-  bool scanBoundary(int codePoint);
+  bool scanBoundary(BreakProperty breakProperty);
 };
 
 template <bool Bool>
@@ -109,8 +109,8 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
 template <bool Bool>
-bool GraphemeBoundary<Bool>::scanBoundary(int codePoint) {
-  auto after = getBreakProperty(codePoint);
+bool GraphemeBoundary<Bool>::scanBoundary(BreakProperty breakProperty) {
+  auto after = breakProperty;
   auto before = this->state;
   this->state = after;
 
@@ -240,6 +240,7 @@ public:
     StringRef ref;               // grapheme cluster
     unsigned int codePointCount; // count of containing code points
     int codePoints[MAX_GRAPHEME_CODE_POINTS];
+    typename GraphemeBoundary<Bool>::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
   };
 
   /**
@@ -275,15 +276,18 @@ bool GraphemeScanner<Bool>::next(Result &result) {
     size_t pos = this->curPos;
     size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
     int codePoint = toCodePoint(this->ref, this->curPos);
+    auto breakProperty = GraphemeBoundary<Bool>::getBreakProperty(codePoint);
     assert(result.codePointCount < std::size(result.codePoints));
     this->curPos = nextPos;
-    if (this->boundary.scanBoundary(codePoint)) {
+    if (this->boundary.scanBoundary(breakProperty)) {
       byteSize = pos - this->prevPos;
       result.ref = this->ref.substr(startPos, byteSize);
       this->prevPos = pos;
       return true;
     }
-    result.codePoints[result.codePointCount++] = codePoint;
+    unsigned int index = result.codePointCount++;
+    result.codePoints[index] = codePoint;
+    result.breakProperties[index] = breakProperty;
   }
   if (this->curPos == this->ref.size()) {
     byteSize = this->curPos - this->prevPos;

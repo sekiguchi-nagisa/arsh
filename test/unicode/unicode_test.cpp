@@ -380,7 +380,8 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
     output.emplace_back();
     GraphemeBoundary boundary;
     for (auto &codePoint : input) {
-      if (boundary.scanBoundary(codePoint)) {
+      auto property = GraphemeBoundary::getBreakProperty(codePoint);
+      if (boundary.scanBoundary(property)) {
         output.emplace_back();
       }
       output.back().push_back(codePoint);
