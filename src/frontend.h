@@ -119,7 +119,10 @@ private:
 
 public:
   FrontEnd(ModuleProvider &provider, Lexer &&lexer, FrontEndOption option = {},
-           ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
+           ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
+      : FrontEnd(provider, provider.newContext(std::move(lexer), option, ccHandler), option) {}
+
+  FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option);
 
   void setErrorListener(ErrorListener &r) { this->listener.reset(&r); }
 
@@ -213,6 +216,13 @@ public:
   newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
 
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
+
+  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option,
+           ModLoadOption loadOption);
+
+  TypePool &getPool() { return this->pool; }
+
+  const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
 
   void discard(const DiscardPoint &discardPoint) {
     discardAll(this->loader, *this->scope, this->pool, discardPoint);

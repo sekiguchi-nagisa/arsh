@@ -672,7 +672,7 @@ TEST_F(APITest, module2) {
   auto ret = invoke([&] { return DSState_loadModule(this->state, "fhjreuhfurie", 0, nullptr); });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
-                   "ydsh: cannot open file: fhjreuhfurie, by `No such file or directory'"));
+                   "ydsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
 
   DSError e;
   int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, &e);
@@ -736,7 +736,7 @@ TEST_F(APITest, module5) {
       [&] { return DSState_loadModule(this->state, "freijjfeir", DS_MOD_FULLPATH, nullptr); });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
-                   "ydsh: cannot open file: freijjfeir, by `No such file or directory'"));
+                   "ydsh: cannot load file: freijjfeir, by `No such file or directory'"));
 }
 
 TEST_F(APITest, module6) {

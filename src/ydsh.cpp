@@ -52,31 +52,36 @@ static FrontEndOption toOption(DSExecMode mode, CompileOption option) {
   return op;
 }
 
+static DSError toSuccess() {
+  return DSError{.kind = DS_ERROR_KIND_SUCCESS,
+                 .fileName = nullptr,
+                 .lineNum = 0,
+                 .chars = 0,
+                 .name = nullptr};
+}
+
 class Compiler {
 private:
-  DefaultModuleProvider provider;
+  DSExecMode mode;
+  CompileOption compileOption;
+  DefaultModuleProvider &provider;
   FrontEnd frontEnd;
   ErrorReporter reporter;
   NodeDumper uastDumper;
   NodeDumper astDumper;
   ByteCodeGenerator codegen;
-  DSExecMode mode;
 
 public:
-  Compiler(ModuleLoader &modLoader, TypePool &pool, const IntrusivePtr<NameScope> &root,
-           Lexer &&lexer, const DumpTarget &dumpTarget, DSExecMode execMode,
-           CompileOption compileOption, DSError *dsError)
-      : provider(modLoader, pool, root),
-        frontEnd(this->provider, std::move(lexer), toOption(execMode, compileOption)),
+  Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
+           const DumpTarget &dumpTarget, DSExecMode execMode, CompileOption compileOption,
+           DSError *dsError)
+      : mode(execMode), compileOption(compileOption), provider(moduleProvider),
+        frontEnd(this->provider, std::move(ctx), toOption(this->mode, this->compileOption)),
         reporter(newReporter(dsError)), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
         astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()),
-        codegen(pool, hasFlag(compileOption, CompileOption::ASSERT)), mode(execMode) {
+        codegen(this->provider.getPool(), hasFlag(this->compileOption, CompileOption::ASSERT)) {
     if (dsError != nullptr) {
-      *dsError = {.kind = DS_ERROR_KIND_SUCCESS,
-                  .fileName = nullptr,
-                  .lineNum = 0,
-                  .chars = 0,
-                  .name = nullptr};
+      *dsError = toSuccess();
     }
     this->frontEnd.setErrorListener(this->reporter);
     if (this->uastDumper) {
@@ -146,26 +151,40 @@ END:
     this->reporter.handleCodeGenError(this->frontEnd.getContext(), e);
     return 1;
   }
+  if (hasFlag(this->compileOption, CompileOption::LOAD_TO_ROOT)) {
+    auto ret = this->provider.getPool().getModTypeById(this->frontEnd.getCurModId());
+    assert(ret);
+    auto msg = this->provider.getScope()->importForeignHandles(
+        this->provider.getPool(), cast<ModType>(*ret.asOk()), ImportedModKind::GLOBAL);
+    if (!msg.empty()) {
+      auto node = std::make_unique<EmptyNode>(Token{0, 0});
+      auto error = createTCError<ConflictSymbol>(
+          *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
+      this->reporter.handleTypeError(this->frontEnd.getContext(), error);
+      return 1;
+    }
+  }
   return 0;
 }
 
-static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope, Lexer &&lexer,
-                   const DiscardPoint &discardPoint, DSError *dsError, ObjPtr<FuncObject> &func) {
-  Compiler compiler(state.modLoader, state.typePool, modScope, std::move(lexer), state.dumpTarget,
-                    state.execMode, state.compileOption, dsError);
+static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
+                   std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
+                   DSError *dsError, ObjPtr<FuncObject> &func) {
+  Compiler compiler(moduleProvider, std::move(ctx), state.dumpTarget, state.execMode, compileOption,
+                    dsError);
   int ret = compiler(func);
-  if (ret != 0) {
-    compiler.discard(discardPoint);
-  }
   state.lineNum = compiler.lineNum();
   return ret;
 }
 
-static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope, Lexer &&lexer,
+static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
+                      std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
                       const DiscardPoint &point, DSError *dsError) {
   ObjPtr<FuncObject> func;
-  int ret =
-      compile(state, scope ? scope : state.rootModScope, std::move(lexer), point, dsError, func);
+  int ret = compile(state, moduleProvider, std::move(ctx), compileOption, dsError, func);
+  if (ret != 0) {
+    moduleProvider.discard(point);
+  }
   if (!func) {
     return ret;
   }
@@ -428,21 +447,24 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
   GUARD_NULL(st, -1);
   GUARD_NULL(data, -1);
 
-  Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, ByteBuffer(data, data + size),
-              getCWD());
-  lexer.setLineNumOffset(st->lineNum);
-
   DiscardPoint discardPoint{
       .mod = st->modLoader.getDiscardPoint(),
       .scope = st->rootModScope->getDiscardPoint(),
       .type = st->typePool.getDiscardPoint(),
   };
-  return evalScript(*st, nullptr, std::move(lexer), discardPoint, e);
+
+  Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, ByteBuffer(data, data + size),
+              getCWD());
+  lexer.setLineNumOffset(st->lineNum);
+
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(st->execMode, st->compileOption),
+                                       nullptr);
+  return evalScript(*st, moduleProvider, std::move(ctx), st->compileOption, discardPoint, e);
 }
 
-static void reportFileError(const char *sourceName, bool isIO, int errNum, DSError *e) {
-  fprintf(stderr, "ydsh: %s: %s, by `%s'\n", isIO ? "cannot read file" : "cannot open file",
-          sourceName, strerror(errNum));
+static void reportFileError(const char *sourceName, int errNum, DSError *e) {
+  fprintf(stderr, "ydsh: cannot load file: %s, by `%s'\n", sourceName, strerror(errNum));
   if (e) {
     *e = {.kind = DS_ERROR_KIND_FILE_ERROR,
           .fileName = strdup(sourceName),
@@ -467,44 +489,37 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
       .type = st->typePool.getDiscardPoint(),
   };
 
-  FilePtr filePtr;
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
   CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
-  auto ret = st->modLoader.load(scriptDir.get(), fileName, filePtr, ModLoadOption{});
+  auto ret = moduleProvider.load(scriptDir.get(), fileName,
+                                 toOption(st->execMode, st->compileOption), ModLoadOption{});
   if (is<ModLoadingError>(ret)) {
-    int errNum = get<ModLoadingError>(ret).getErrNo();
-    if (get<ModLoadingError>(ret).isCircularLoad()) {
-      errNum = ETXTBSY;
-    }
-    if (errNum == ENOENT && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {
+    auto error = get<ModLoadingError>(ret);
+    if (error.isFileNotFound() && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {
+      if (e) {
+        *e = toSuccess();
+      }
       return 0;
     }
-    reportFileError(fileName, false, errNum, e);
+    int errNum = error.getErrNo();
+    if (error.isCircularLoad()) {
+      errNum = ETXTBSY;
+    }
+    reportFileError(fileName, errNum, e);
     return 1;
-  } else if (is<unsigned int>(ret)) {
-    return 0; // do nothing.
+  } else if (is<const ModType *>(ret)) {
+    if (e) {
+      *e = toSuccess();
+    }
+    return 0; // do nothing
   }
-  fileName = get<const char *>(ret);
-  char *real = strdup(fileName);
-  assert(*real == '/');
-  const char *ptr = strrchr(real, '/');
-  real[ptr == real ? 1 : (ptr - real)] = '\0';
-  scriptDir.reset(real);
-
-  // read data
-  assert(filePtr);
-  ByteBuffer buf;
-  if (!readAll(filePtr, buf)) {
-    reportFileError(fileName, true, errno, e);
-    return 1;
+  assert(is<std::unique_ptr<FrontEnd::Context>>(ret));
+  auto &ctx = get<std::unique_ptr<FrontEnd::Context>>(ret);
+  CompileOption compileOption = st->compileOption;
+  if (!hasFlag(option, DS_MOD_SEPARATE_CTX)) {
+    setFlag(compileOption, CompileOption::LOAD_TO_ROOT);
   }
-  filePtr.reset(nullptr);
-
-  auto &modType = st->typePool.getBuiltinModType();
-  auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX)
-                   ? st->modLoader.createGlobalScopeFromFullpath(st->typePool, fileName, modType)
-                   : nullptr;
-  return evalScript(*st, scope, Lexer(fileName, std::move(buf), std::move(scriptDir)), discardPoint,
-                    e);
+  return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {

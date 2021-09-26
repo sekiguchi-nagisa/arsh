@@ -33,10 +33,9 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
   }
 }
 
-FrontEnd::FrontEnd(FrontEnd::ModuleProvider &provider, Lexer &&lexer, FrontEndOption option,
-                   ObserverPtr<CodeCompletionHandler> ccHandler)
+FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option)
     : provider(provider), option(option) {
-  this->contexts.push_back(this->provider.newContext(std::move(lexer), this->option, ccHandler));
+  this->contexts.push_back(std::move(ctx));
   this->curScope()->clearLocalSize();
 }
 
@@ -230,8 +229,15 @@ const ModType &DefaultModuleProvider::newModTypeFromCurContext(
 
 FrontEnd::ModuleProvider::Ret
 DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEndOption option) {
+  return this->load(scriptDir, modPath, option, ModLoadOption::IGNORE_NON_REG_FILE);
+}
+
+FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
+                                                          const char *modPath,
+                                                          FrontEndOption option,
+                                                          ModLoadOption loadOption) {
   FilePtr filePtr;
-  auto ret = this->loader.load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
+  auto ret = this->loader.load(scriptDir, modPath, filePtr, loadOption);
   if (is<ModLoadingError>(ret)) {
     return get<ModLoadingError>(ret);
   } else if (is<const char *>(ret)) {

@@ -527,7 +527,7 @@ TEST_F(InteractiveTest, rc3) {
 TEST_F(InteractiveTest, rc4) {
   this->invoke("--quiet", "--rcfile", ".");
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "",
-                                              "ydsh: cannot open file: ., by `Is a directory'\n"));
+                                              "ydsh: cannot load file: ., by `Is a directory'\n"));
 }
 
 TEST_F(InteractiveTest, rc5) {
@@ -541,6 +541,18 @@ TEST_F(InteractiveTest, rc5) {
   const char *src = "assert $a[2] == '" INTERACTIVE_TEST_WORK_DIR "/rcfile1'";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src));
 
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, rc6) {
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IS_REPL"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/rcfile1 as mod"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $RC_VAR == $mod.RC_VAR;"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

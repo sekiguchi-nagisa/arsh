@@ -33,11 +33,10 @@
 
 namespace ydsh {
 
-struct PipeSet;
-
 enum class CompileOption : unsigned short {
   ASSERT = 1u << 0u,
   INTERACTIVE = 1u << 1u,
+  LOAD_TO_ROOT = 1u << 2u,
 };
 
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
@@ -85,6 +84,8 @@ template <>
 struct allow_enum_bitop<EvalOP> : std::true_type {};
 
 class VM;
+
+struct PipeSet;
 
 } // namespace ydsh
 
