@@ -420,7 +420,7 @@ void SymbolIndexer::visitForkNode(ForkNode &node) { this->visit(node.getExprNode
 
 void SymbolIndexer::visitCmdNode(CmdNode &node) {
   auto &cmdName = node.getNameNode().getValue();
-  if (!cmdName.empty() && cmdName[0] != '~' && !StringRef(cmdName).contains('/')) {
+  if (!cmdName.empty()) {
     NameInfo info(node.getNameNode().getToken(), cmdName);
     this->builder().addSymbol(info, DeclSymbol::Kind::CMD);
   }
