@@ -155,8 +155,6 @@ public:
     return this->addDecl(info, kind, type.getName());
   }
 
-  bool addUdcDecl(const NameInfo &info) { return this->addDecl(info, DeclSymbol::Kind::CMD, ""); }
-
   bool addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
   bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);

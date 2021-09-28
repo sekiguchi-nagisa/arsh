@@ -498,11 +498,26 @@ void SymbolIndexer::visitTryNode(TryNode &node) {
   this->visit(node.getFinallyNode());
 }
 
+static DeclSymbol::Kind fromVarDeclKind(VarDeclNode::Kind k) {
+  switch (k) {
+  case VarDeclNode::VAR:
+    return DeclSymbol::Kind::VAR;
+  case VarDeclNode::LET:
+    return DeclSymbol::Kind::LET;
+  case VarDeclNode::IMPORT_ENV:
+    return DeclSymbol::Kind::IMPORT_ENV;
+  case VarDeclNode::EXPORT_ENV:
+    return DeclSymbol::Kind::EXPORT_ENV;
+  default:
+    return DeclSymbol::Kind::VAR; // normally unreachable
+  }
+}
+
 void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
   this->visit(node.getExprNode());
   auto &type = node.getExprNode() ? node.getExprNode()->getType()
                                   : this->builder().getPool().get(TYPE::String);
-  this->builder().addDecl(node.getNameInfo(), type);
+  this->builder().addDecl(node.getNameInfo(), type, fromVarDeclKind(node.getKind()));
 }
 
 void SymbolIndexer::visitAssignNode(AssignNode &node) {
@@ -524,7 +539,7 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       NameInfo info(leftNode.getToken(), leftNode.getVarName());
-      this->builder().addDecl(info, leftNode.getType());
+      this->builder().addDecl(info, leftNode.getType(), DeclSymbol::Kind::EXPORT_ENV);
     }
     this->visit(node.getExprNode());
   } else {
@@ -539,7 +554,19 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   this->visit(node.getReturnTypeToken());
   this->visitEach(node.getParamTypeNodes());
   if (node.getVarIndex() > 0) {
-    this->builder().addDecl(node.getNameInfo(), *node.getFuncType(), DeclSymbol::Kind::FUNC);
+    std::string value = "(";
+    for (unsigned int i = 0; i < node.getParams().size(); i++) {
+      if (i > 0) {
+        value += ", ";
+      }
+      value += "$";
+      value += node.getParams()[i].getName();
+      value += " : ";
+      value += node.getParamTypeNodes()[i]->getType().getName();
+    }
+    value += ") : ";
+    value += node.getReturnTypeToken().getType().getName();
+    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
   }
   auto func = this->builder().intoScope();
   for (unsigned int i = 0; i < node.getParams().size(); i++) {
@@ -555,7 +582,7 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     return;
   }
   if (node.getUdcIndex() > 0) {
-    this->builder().addUdcDecl(node.getNameInfo());
+    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, "");
   }
   auto udc = this->builder().intoScope();
   this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -566,7 +593,8 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
     return;
   }
   if (node.getNameInfo()) {
-    this->builder().addDecl(*node.getNameInfo(), node.getModType(), DeclSymbol::Kind::MOD);
+    this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
+                            std::to_string(node.getModType().getModID()).c_str());
   } else {
     this->builder().importForeignDecls(node.getModType().getModID(), node.isInlined());
   }

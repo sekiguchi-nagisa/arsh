@@ -110,6 +110,9 @@ class DeclSymbol : public DeclBase {
 public:
   enum class Kind : unsigned char {
     VAR,
+    LET,
+    IMPORT_ENV,
+    EXPORT_ENV,
     FUNC,
     CMD,
     TYPE_ALIAS,

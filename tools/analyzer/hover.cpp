@@ -15,27 +15,48 @@
  */
 
 #include "hover.h"
+#include "source.h"
+#include <misc/num_util.hpp>
 
 namespace ydsh::lsp {
 
-std::string generateHoverContent(const DeclSymbol &decl) {
+static const char *getVarDeclKind(DeclSymbol::Kind k) {
+  switch (k) {
+  case DeclSymbol::Kind::VAR:
+    return "var";
+  case DeclSymbol::Kind::LET:
+    return "let";
+  case DeclSymbol::Kind::EXPORT_ENV:
+    return "export-env";
+  case DeclSymbol::Kind::IMPORT_ENV:
+    return "import-env";
+  default:
+    return "";
+  }
+}
+
+std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &decl) {
   std::string content = "```ydsh\n";
   std::string name = DeclSymbol::demangle(decl.getKind(), decl.getMangledName());
   switch (decl.getKind()) {
-  case DeclSymbol::Kind::VAR: { // FIXME: var, let, env...
-    content += "var ";
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::LET:
+  case DeclSymbol::Kind::EXPORT_ENV:
+  case DeclSymbol::Kind::IMPORT_ENV: {
+    content += getVarDeclKind(decl.getKind());
+    content += " ";
     content += name;
     content += " : ";
     content += decl.getInfo();
     break;
   }
-  case DeclSymbol::Kind::FUNC: { // FIXME: dirtect func, func type obj
+  case DeclSymbol::Kind::FUNC: {
     content += "function ";
     content += name;
-    content += "()";
+    content += decl.getInfo();
     break;
   }
-  case DeclSymbol::Kind::CMD: { // FIXME: udc, builtin ...
+  case DeclSymbol::Kind::CMD: { // FIXME: builtin ...
     content += name;
     content += "()";
     break;
@@ -47,7 +68,17 @@ std::string generateHoverContent(const DeclSymbol &decl) {
     content += decl.getInfo();
     break;
   }
-  case DeclSymbol::Kind::MOD: { // FIXME: path
+  case DeclSymbol::Kind::MOD: {
+    auto ref = decl.getInfo();
+    auto ret = convertToNum<int>(ref.begin(), ref.end());
+    assert(ret.second);
+    assert(ret.first <= UINT16_MAX && ret.first >= 0);
+    auto modId = static_cast<unsigned short>(ret.first);
+    auto src = srcMan.findById(modId);
+    assert(src);
+    content += "source ";
+    content += src->getPath();
+    content += " as ";
     content += name;
     break;
   }
