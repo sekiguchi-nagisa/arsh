@@ -179,8 +179,8 @@ inline std::string toCmdFullName(StringRef cmdName) {
   return name;
 }
 
-inline std::string toTypeAliasFullName(const std::string &alias) {
-  std::string name = alias;
+inline std::string toTypeAliasFullName(StringRef alias) {
+  std::string name = alias.toString();
   name += TYPE_ALIAS_SYMBOL_SUFFIX;
   return name;
 }

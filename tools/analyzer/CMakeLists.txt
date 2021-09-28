@@ -14,6 +14,7 @@ add_library(ydshd_static STATIC
         index.cpp
         indexer.cpp
         client.cpp
+        hover.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 

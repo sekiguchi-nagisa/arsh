@@ -156,7 +156,9 @@ public:
     bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
   };
 
-  static std::string mangle(Kind k, const std::string &name);
+  static std::string mangle(Kind k, StringRef name);
+
+  static std::string demangle(Kind k, StringRef mangledName);
 };
 
 class Symbol {

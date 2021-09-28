@@ -42,7 +42,7 @@ void DeclBase::addRef(SymbolRef ref) {
 // ##     DeclSymbol     ##
 // ########################
 
-std::string DeclSymbol::mangle(Kind k, const std::string &name) {
+std::string DeclSymbol::mangle(Kind k, StringRef name) {
   switch (k) {
   case DeclSymbol::Kind::CMD:
     return toCmdFullName(name);
@@ -53,7 +53,23 @@ std::string DeclSymbol::mangle(Kind k, const std::string &name) {
   case DeclSymbol::Kind::MOD:
     break;
   }
-  return name;
+  return name.toString();
+}
+
+std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
+  switch (k) {
+  case DeclSymbol::Kind::CMD:
+    mangledName.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+    break;
+  case DeclSymbol::Kind::TYPE_ALIAS:
+    mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+    break;
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::MOD:
+    break;
+  }
+  return mangledName.toString();
 }
 
 // #########################

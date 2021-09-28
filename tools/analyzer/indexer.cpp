@@ -26,11 +26,11 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   bool r1 = this->map.emplace(decl.getMangledName().toString(), decl.toRef()).second;
   if (decl.getKind() == DeclSymbol::Kind::MOD) {
     // register udc
-    std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString());
+    std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName());
     auto r2 = this->map.emplace(std::move(name), decl.toRef());
 
     // register type alias
-    name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString());
+    name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName());
     auto r3 = this->map.emplace(std::move(name), decl.toRef());
     r1 = r1 || r2.second || r3.second;
   }
@@ -71,12 +71,11 @@ void IndexBuilder::LazyMemberMap::addDecl(const DSType &recvType, const DeclSymb
   this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
   if (decl.getKind() == DeclSymbol::Kind::MOD) {
     // udc
-    key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString())};
+    key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName())};
     this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
 
     // type alias
-    key = {typeId,
-           DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString())};
+    key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName())};
     this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
   }
 }

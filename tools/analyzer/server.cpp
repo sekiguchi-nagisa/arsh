@@ -15,6 +15,7 @@
  */
 
 #include "server.h"
+#include "hover.h"
 #include "indexer.h"
 #include "source.h"
 
@@ -257,7 +258,7 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
             .contents =
                 MarkupContent{
                     .kind = MarkupKind::Markdown,
-                    .value = value.decl.getInfo().toString(),
+                    .value = generateHoverContent(value.decl),
                 },
             .range = toRange(src->getContent(), value.request.getToken()),
         };

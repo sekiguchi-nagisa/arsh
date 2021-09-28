@@ -155,11 +155,7 @@ public:
     return this->addDecl(info, kind, type.getName());
   }
 
-  bool addUdcDecl(const NameInfo &info) {
-    auto value = info.getName();
-    value += " is an user-defined command";
-    return this->addDecl(info, DeclSymbol::Kind::CMD, value.c_str());
-  }
+  bool addUdcDecl(const NameInfo &info) { return this->addDecl(info, DeclSymbol::Kind::CMD, ""); }
 
   bool addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
