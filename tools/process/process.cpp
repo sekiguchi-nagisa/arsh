@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
+#include <sys/ttydefaults.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
