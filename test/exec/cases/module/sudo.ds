@@ -6,11 +6,11 @@ source ../../../../share/ydsh/completion/printenv
 sudo() {}   # workaround for sudo not installed env
 
 assert complete 'sudo ' | grep '^mount$'
-assert complete 'sudo ' | grep '^shutdown$'
+assert complete 'sudo ' | grep '^halt$'
 assert complete 'sudo ' | grep '^umount$'
 assert complete 'sudo ' | grep '^sudo$'
 
-assert complete 'sudo shut' | grep 'shutdown'
+assert complete 'sudo hal' | grep 'halt'
 
 assert complete 'sudo printenv HO' | grep HOME
 
