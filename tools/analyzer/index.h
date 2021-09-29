@@ -162,6 +162,8 @@ public:
   static std::string mangle(Kind k, StringRef name);
 
   static std::string demangle(Kind k, StringRef mangledName);
+
+  static bool isVarName(Kind k);
 };
 
 class Symbol {

@@ -117,15 +117,8 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo
   if (!static_cast<bool>(nameInfo) || nameInfo.getToken().size == 0) {
     return "";
   }
-  switch (k) {
-  case DeclSymbol::Kind::VAR:
-  case DeclSymbol::Kind::FUNC:
-    if (nameInfo.getName()[0] == '%') {
-      return "";
-    }
-    break;
-  default:
-    break;
+  if (DeclSymbol::isVarName(k) && nameInfo.getName()[0] == '%') {
+    return "";
   }
   return DeclSymbol::mangle(k, nameInfo.getName());
 }

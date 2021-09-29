@@ -78,6 +78,20 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   return mangledName.toString();
 }
 
+bool DeclSymbol::isVarName(Kind k) {
+  switch (k) {
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::LET:
+  case DeclSymbol::Kind::EXPORT_ENV:
+  case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::MOD:
+    return true;
+  default:
+    return false;
+  }
+}
+
 // #########################
 // ##     SymbolIndex     ##
 // #########################
