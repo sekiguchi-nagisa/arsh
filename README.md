@@ -12,6 +12,7 @@ Currently, under heavy development. Language specification is subject to change 
 
 * Linux x86-64
 * cmake 3.8 or later
+* git (for fetching external projects)
 * autotools, libtool (for building re2c)
     * if cmake 3.12 or later, no longer need theme
 * make/ninja
