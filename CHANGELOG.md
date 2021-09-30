@@ -15,7 +15,7 @@
 #### Builtin
 
 - add ``Float#compare`` method
-    - total order Comparison equivalent to Java (Double.compare)
+    - total order comparison function equivalent to Java (Double.compare)
 
 #### Interactive
 
@@ -24,7 +24,6 @@
 #### LSP
 
 - basic support the following methods/notifications
-    - ``$/setTrace``
     - ``textDocument/didOpen``
     - ``textDocument/didChange``
     - ``textDocument/didClose``
@@ -44,10 +43,10 @@
     - source statement
 - **Breaking Change**: statically determine user-defined command
     - eliminate runtime user-defined command lookup
-    - disallow user-defined command call defined in backward of call-site
-- **Breaking Change**: change internal hash/equality function ``Map<Float, T>`` object
+    - disallow user-defined command call defined in backward of the call-site
+- **Breaking Change**: change internal hash/equality function of ``Map<Float, T>`` object
     - now check equality by total order
-    - change hash code behavior
+    - change hash code
         - hash(-0.0) != hash(0.0)
         - hash(NAN) == hash(NAN)
 - **Breaking Change**: fix string representation of ``Float`` object
