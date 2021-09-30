@@ -134,14 +134,14 @@ bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const ch
   return true;
 }
 
-bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
+const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
   std::string name = mangleSymbolName(kind, info);
   if (name.empty()) {
-    return false;
+    return nullptr;
   }
   auto *ref = this->scope->find(name);
   if (!ref) {
-    return false;
+    return nullptr;
   }
 
   DeclBase *decl;
@@ -149,7 +149,7 @@ bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
     auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), ref->getPos(),
                                  DeclSymbol::Compare());
     if (iter == this->decls.end()) {
-      return false;
+      return nullptr;
     }
     decl = &*iter;
     assert(decl->getPos() == ref->getPos());
@@ -161,19 +161,19 @@ bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
         (*iter).getPos() != request.pos) { // not found, register foreign decl
       auto *ret = this->memberMap.indexes.findDecl(request);
       if (!ret || !hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
-        return false;
+        return nullptr;
       }
       iter = this->foreigns.insert(iter, ForeignDecl(*ret));
     }
     decl = &*iter;
   }
-  if (!this->addSymbolImpl(info.getToken(), *decl)) {
-    return false;
+  if (auto *symbol = this->addSymbolImpl(info.getToken(), *decl)) {
+    auto symbolRef = SymbolRef::create(info.getToken(), this->modId);
+    assert(symbolRef.hasValue());
+    decl->addRef(symbolRef.unwrap());
+    return symbol;
   }
-  auto symbol = SymbolRef::create(info.getToken(), this->modId);
-  assert(symbol.hasValue());
-  decl->addRef(symbol.unwrap());
-  return true;
+  return nullptr;
 }
 
 bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined) {
@@ -208,17 +208,18 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
   return true;
 }
 
-bool IndexBuilder::addMember(const DSType &recv, const NameInfo &info, DeclSymbol::Kind kind) {
+const Symbol *IndexBuilder::addMember(const DSType &recv, const NameInfo &info,
+                                      DeclSymbol::Kind kind) {
   if (!recv.isModType()) {
-    return false; // currently, only support mod type
+    return nullptr; // currently, only support mod type
   }
   std::string name = mangleSymbolName(kind, info);
   if (name.empty()) {
-    return false;
+    return nullptr;
   }
   auto declPtr = this->memberMap.find(recv, name);
   if (!declPtr) {
-    return false;
+    return nullptr;
   }
 
   // search Foreign decls
@@ -230,13 +231,30 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &info, DeclSymbo
     iter = this->foreigns.insert(iter, ForeignDecl(*declPtr));
   }
   auto &decl = *iter;
-  if (!this->addSymbolImpl(info.getToken(), decl)) {
-    return false;
+  if (auto *symbol = this->addSymbolImpl(info.getToken(), decl)) {
+    auto symbolRef = SymbolRef::create(info.getToken(), this->modId);
+    assert(symbolRef.hasValue());
+    decl.addRef(symbolRef.unwrap());
+    return symbol;
   }
-  auto symbol = SymbolRef::create(info.getToken(), this->modId);
-  assert(symbol.hasValue());
-  decl.addRef(symbol.unwrap());
-  return true;
+  return nullptr;
+}
+
+const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
+  if (symbol.getDeclModId() == this->modId) {
+    auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), symbol.getDeclPos(),
+                                 DeclSymbol::Compare());
+    if (iter == this->decls.end() || iter->getPos() != symbol.getDeclPos()) {
+      return nullptr;
+    }
+    return &(*iter);
+  } else {
+    auto *index = this->memberMap.indexes.findDecl({
+        .modId = symbol.getDeclModId(),
+        .pos = symbol.getDeclPos(),
+    });
+    return index;
+  }
 }
 
 DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo,
@@ -278,10 +296,10 @@ DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameIn
   return &(*iter);
 }
 
-bool IndexBuilder::addSymbolImpl(Token token, const DeclBase &decl) {
+const Symbol *IndexBuilder::addSymbolImpl(Token token, const DeclBase &decl) {
   auto ret = Symbol::create(token, decl);
   if (!ret.hasValue()) {
-    return false;
+    return nullptr;
   }
   auto &symbol = ret.unwrap();
   auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
@@ -292,8 +310,8 @@ bool IndexBuilder::addSymbolImpl(Token token, const DeclBase &decl) {
             toString(iter->getToken()).c_str());
     }
   }
-  this->symbols.insert(iter, symbol);
-  return true;
+  iter = this->symbols.insert(iter, symbol);
+  return &(*iter);
 }
 
 // ###########################
@@ -410,11 +428,39 @@ void SymbolIndexer::visitNewNode(NewNode &node) { // FIXME: constructor name ?
 
 void SymbolIndexer::visitForkNode(ForkNode &node) { this->visit(node.getExprNode()); }
 
+static Optional<NameInfo> getConstArg(const std::vector<std::unique_ptr<Node>> &argsNode,
+                                      unsigned int offset = 0) {
+  const CmdArgNode *argNode = nullptr;
+  unsigned int offsetCount = 0;
+  for (unsigned int i = 0; i < argsNode.size() && offset <= offsetCount; i++) {
+    if (isa<CmdArgNode>(*argsNode[i]) && offset == offsetCount++) {
+      argNode = cast<CmdArgNode>(argsNode[i].get());
+      break;
+    }
+  }
+  if (argNode && argNode->getSegmentNodes().size() == 1 &&
+      isa<StringNode>(*argNode->getSegmentNodes()[0])) {
+    auto &strNode = cast<StringNode>(*argNode->getSegmentNodes()[0]);
+    return NameInfo(strNode.getToken(), strNode.getValue());
+  }
+  return {};
+}
+
 void SymbolIndexer::visitCmdNode(CmdNode &node) {
-  auto &cmdName = node.getNameNode().getValue();
-  if (!cmdName.empty()) {
+  const Symbol *symbol = nullptr;
+  if (auto &cmdName = node.getNameNode().getValue(); !cmdName.empty()) {
     NameInfo info(node.getNameNode().getToken(), cmdName);
-    this->builder().addSymbol(info, DeclSymbol::Kind::CMD);
+    symbol = this->builder().addSymbol(info, DeclSymbol::Kind::CMD);
+  }
+  if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
+    if (auto *decl = this->builder().findDecl(*symbol);
+        decl && decl->getKind() == DeclSymbol::Kind::MOD) { // resolve subcmd
+      auto ret = decl->getInfoAsModId();
+      if (ret.second) {
+        auto &type = *this->builder().getPool().getModTypeById(ret.first).asOk();
+        this->builder().addMember(type, nameInfo.unwrap(), DeclSymbol::Kind::CMD);
+      }
+    }
   }
   this->visitEach(node.getArgNodes());
 }

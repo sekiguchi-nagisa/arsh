@@ -18,6 +18,7 @@
 
 #include "index.h"
 #include <constant.h>
+#include <misc/num_util.hpp>
 
 namespace ydsh::lsp {
 
@@ -41,6 +42,15 @@ void DeclBase::addRef(SymbolRef ref) {
 // ########################
 // ##     DeclSymbol     ##
 // ########################
+
+std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
+  auto ref = this->getInfo();
+  auto value = convertToNum<int>(ref.begin(), ref.end());
+  if (value.second && value.first <= UINT16_MAX && value.first >= 0) {
+    return {static_cast<unsigned short>(value.first), true};
+  }
+  return {0, false};
+}
 
 std::string DeclSymbol::mangle(Kind k, StringRef name) {
   switch (k) {

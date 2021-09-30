@@ -652,12 +652,12 @@ typedef DDD = typeof(CCC)
   auto content = format(R"(source %s \
 as mod
 $mod.AAA + $mod.BBB()
-# CCC
+mod 2>&1 > /dev/null CCC 34
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -721,6 +721,20 @@ new [mod.DDD]()
   // clang-format off
   req = {
     .modId = modId,
+    .position = { .line = 3, .character = 23, }
+  };
+  result = {
+    DeclResult{
+      .modId = 2,
+      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
     .position = { .line = 4, .character = 10, }
   };
   result = {
@@ -748,12 +762,12 @@ typedef DDD = typeof(CCC)
   auto content = format(R"(source %s \
 as mod
 $mod.AAA + $mod.BBB()
-# CCC
+mod 2>&1 > /dev/null CCC 34
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
   ASSERT_EQ(1, modId);
 
   // references
@@ -775,6 +789,10 @@ new [mod.DDD]()
     RefsResult{
       .modId = modId,
       .range = {.start = {.line = 2, .character = 11}, .end = {.line = 2, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
     },
     RefsResult{
       .modId = modId,
@@ -842,10 +860,10 @@ new [mod.DDD]()
       .modId = 2,
       .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
     },
-//    RefsResult{
-//      .modId = 1,
-//      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-//    },
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 3, .character = 21}, .end = {.line = 3, .character = 24}}
+    },
   };
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
@@ -1000,12 +1018,12 @@ typedef DDD = typeof(CCC)
   auto content = format(R"(source %s \
 as mod
 $mod.AAA + $mod.BBB()
-# CCC
+mod CCC
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -1069,6 +1087,20 @@ new [mod.DDD]()
   // clang-format off
   req = {
     .modId = modId,
+    .position = { .line = 3, .character = 5, }
+  };
+  result = {
+    DeclResult{
+      .modId = 3,
+      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
     .position = { .line = 4, .character = 10, }
   };
   result = {
@@ -1099,12 +1131,12 @@ typedef DDD = typeof(CCC)
   auto content = format(R"(source %s \
 as mod
 $mod.AAA + $mod.BBB()
-# CCC
+mod CCC
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
   ASSERT_EQ(1, modId);
 
   // references
@@ -1126,6 +1158,10 @@ new [mod.DDD]()
     RefsResult{
       .modId = modId,
       .range = {.start = {.line = 2, .character = 11}, .end = {.line = 2, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
     },
     RefsResult{
       .modId = modId,
@@ -1193,10 +1229,10 @@ new [mod.DDD]()
       .modId = 3,
       .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
     },
-//    RefsResult{
-//      .modId = 1,
-//      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-//    },  //FIXME:
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 3, .character = 4}, .end = {.line = 3, .character = 7}}
+    },
   };
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));

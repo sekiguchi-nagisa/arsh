@@ -157,17 +157,19 @@ public:
 
   bool addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
-  bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+  const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
   bool importForeignDecls(unsigned short foreignModId, bool inlined);
 
-  bool addMember(const DSType &recv, const NameInfo &nameInfo,
-                 DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo,
+                          DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+
+  const DeclSymbol *findDecl(const Symbol &symbol) const;
 
 private:
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);
 
-  bool addSymbolImpl(Token token, const DeclBase &decl);
+  const Symbol *addSymbolImpl(Token token, const DeclBase &decl);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {

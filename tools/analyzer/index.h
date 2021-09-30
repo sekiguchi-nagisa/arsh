@@ -153,6 +153,13 @@ public:
 
   StringRef getInfo() const { return this->info.get(); }
 
+  /**
+   * for Kind::MOD
+   * @return
+   * if kind is not Kind::MOD, return {0, false}
+   */
+  std::pair<unsigned short, bool> getInfoAsModId() const;
+
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
 

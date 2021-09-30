@@ -16,7 +16,6 @@
 
 #include "hover.h"
 #include "source.h"
-#include <misc/num_util.hpp>
 
 namespace ydsh::lsp {
 
@@ -69,12 +68,9 @@ std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &
     break;
   }
   case DeclSymbol::Kind::MOD: {
-    auto ref = decl.getInfo();
-    auto ret = convertToNum<int>(ref.begin(), ref.end());
+    auto ret = decl.getInfoAsModId();
     assert(ret.second);
-    assert(ret.first <= UINT16_MAX && ret.first >= 0);
-    auto modId = static_cast<unsigned short>(ret.first);
-    auto src = srcMan.findById(modId);
+    auto src = srcMan.findById(ret.first);
     assert(src);
     content += "source ";
     content += src->getPath();
