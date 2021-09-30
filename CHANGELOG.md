@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.23.0] - 2021-09-30
 
 ### Added
