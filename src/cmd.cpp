@@ -2099,7 +2099,7 @@ static int isSourced(const VMState &st) {
     }
     return true;
   });
-  return top->getSourceName() == bottom->getSourceName() ? 1 : 0;
+  return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
 }
 
 enum class FullnameOp {
