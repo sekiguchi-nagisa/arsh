@@ -4,6 +4,8 @@
 |-----------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
 | HALT            |                                | [no change]                                  | stop evaluation of interpreter immediately         |
 | ASSERT          |                                | value1 value2 ->                             | assertion that value1 is true.                     |
+| ASSERT_ENABLED  | 2: offset1 offset2             | [no change]                                  | check if assertion enabled                         |
+| ASSERT_FAIL     |                                | value ->                                     | throw AssertionError                               |
 | PRINT           | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack |
 | INSTANCE_OF     | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
 | CHECK_CAST      | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
@@ -51,6 +53,7 @@
 | RETURN_UDC      |                                | value -> [empty]                             | return from user-defined command                   |
 | EXIT_SIG        |                                | [no change]                                  | exit from signal handler                           |
 | BRANCH          | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |
+| BRANCH_NOT      | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset | 
 | GOTO            | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index             |
 | THROW           |                                | value -> [empty]                             | throw exception                                    |
 | ENTER_FINALLY   | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction              |

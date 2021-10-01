@@ -143,16 +143,6 @@ bool VM::checkCast(DSState &state, const DSType &targetType) {
   return true;
 }
 
-bool VM::checkAssertion(DSState &state) {
-  auto msg = state.stack.pop();
-  auto ref = msg.asStrRef();
-  if (!state.stack.pop().asBool()) {
-    raiseError(state, TYPE::_AssertFail, ref.toString());
-    return false;
-  }
-  return true;
-}
-
 const char *VM::loadEnv(DSState &state, bool hasDefault) {
   DSValue dValue;
   if (hasDefault) {
@@ -1280,9 +1270,20 @@ bool VM::mainLoop(DSState &state) {
     // dispatch instruction
     vmdispatch(op) {
       vmcase(HALT) { return true; }
-      vmcase(ASSERT) {
-        TRY(checkAssertion(state));
+      vmcase(ASSERT_ENABLED) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
+        if (hasFlag(state.runtimeOption, RuntimeOption::ASSERT)) {
+          state.stack.pc() += 2;
+        } else {
+          state.stack.pc() += offset - 1;
+        }
         vmnext;
+      }
+      vmcase(ASSERT_FAIL) {
+        auto msg = state.stack.pop();
+        auto ref = msg.asStrRef();
+        raiseError(state, TYPE::_AssertFail, ref.toString());
+        vmerror;
       }
       vmcase(PRINT) {
         unsigned int v = read24(GET_CODE(state), state.stack.pc());
@@ -1572,6 +1573,15 @@ bool VM::mainLoop(DSState &state) {
       vmcase(BRANCH) {
         unsigned short offset = read16(GET_CODE(state), state.stack.pc());
         if (state.stack.pop().asBool()) {
+          state.stack.pc() += 2;
+        } else {
+          state.stack.pc() += offset - 1;
+        }
+        vmnext;
+      }
+      vmcase(BRANCH_NOT) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
+        if (!state.stack.pop().asBool()) {
           state.stack.pc() += 2;
         } else {
           state.stack.pc() += offset - 1;

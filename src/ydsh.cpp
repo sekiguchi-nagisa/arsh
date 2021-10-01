@@ -78,8 +78,7 @@ public:
       : mode(execMode), compileOption(compileOption), provider(moduleProvider),
         frontEnd(this->provider, std::move(ctx), toOption(this->mode, this->compileOption)),
         reporter(newReporter(dsError)), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
-        astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()),
-        codegen(this->provider.getPool(), hasFlag(this->compileOption, CompileOption::ASSERT)) {
+        astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()), codegen(this->provider.getPool()) {
     if (dsError != nullptr) {
       *dsError = toSuccess();
     }
@@ -374,14 +373,14 @@ unsigned int DSState_option(const DSState *st) {
   unsigned int option = 0;
 
   // get compile option
-  if (hasFlag(st->compileOption, CompileOption::ASSERT)) {
-    setFlag(option, DS_OPTION_ASSERT);
-  }
   if (hasFlag(st->compileOption, CompileOption::INTERACTIVE)) {
     setFlag(option, DS_OPTION_INTERACTIVE);
   }
 
   // get runtime option
+  if (hasFlag(st->runtimeOption, RuntimeOption::ASSERT)) {
+    setFlag(option, DS_OPTION_ASSERT);
+  }
   if (hasFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT)) {
     setFlag(option, DS_OPTION_TRACE_EXIT);
   }
@@ -395,14 +394,14 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
   GUARD_NULL(st);
 
   // set compile option
-  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
-    setFlag(st->compileOption, CompileOption::ASSERT);
-  }
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
     setFlag(st->compileOption, CompileOption::INTERACTIVE);
   }
 
   // set runtime option
+  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
+    setFlag(st->runtimeOption, RuntimeOption::ASSERT);
+  }
   if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
     setFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
   }
@@ -416,14 +415,14 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
   GUARD_NULL(st);
 
   // unset compile option
-  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
-    unsetFlag(st->compileOption, CompileOption::ASSERT);
-  }
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
     unsetFlag(st->compileOption, CompileOption::INTERACTIVE);
   }
 
   // unset runtime option
+  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
+    unsetFlag(st->runtimeOption, RuntimeOption::ASSERT);
+  }
   if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
     unsetFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
   }

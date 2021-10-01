@@ -3,6 +3,7 @@ source $SCRIPT_DIR/expect.ds
 
 # no assert
 assert ds --disable-assertion -c 'assert (12/0 == 12)'
+assert ds -c 'shctl unset assert; assert $false'
 
 # assert with message
 var cmd = "assert

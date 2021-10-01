@@ -34,18 +34,18 @@
 namespace ydsh {
 
 enum class CompileOption : unsigned short {
-  ASSERT = 1u << 0u,
-  INTERACTIVE = 1u << 1u,
-  LOAD_TO_ROOT = 1u << 2u,
+  INTERACTIVE = 1u << 0u,
+  LOAD_TO_ROOT = 1u << 1u,
 };
 
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
-  OP(DOTGLOB, (1u << 0u), "dotglob")                                                               \
-  OP(FASTGLOB, (1u << 1u), "fastglob")                                                             \
-  OP(HUP_EXIT, (1u << 2u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 3u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 4u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 5u), "traceonexit")
+  OP(ASSERT, (1u << 0u), "assert")                                                                 \
+  OP(DOTGLOB, (1u << 1u), "dotglob")                                                               \
+  OP(FASTGLOB, (1u << 2u), "fastglob")                                                             \
+  OP(HUP_EXIT, (1u << 3u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 4u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 5u), "nullglob")                                                             \
+  OP(TRACE_EXIT, (1u << 6u), "traceonexit")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -114,9 +114,9 @@ public:
    */
   DSValue prompt;
 
-  CompileOption compileOption{CompileOption::ASSERT};
+  CompileOption compileOption{};
 
-  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT};
+  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT};
 
   DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
@@ -440,8 +440,6 @@ private:
   }
 
   static bool checkCast(DSState &state, const DSType &targetType);
-
-  static bool checkAssertion(DSState &state);
 
   static const char *loadEnv(DSState &state, bool hasDefault);
 

@@ -817,12 +817,17 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 }
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
-  if (this->assertion) {
-    this->visit(node.getCondNode());
-    this->visit(node.getMessageNode());
-    this->emitSourcePos(node.getCondNode().getPos());
-    this->emit0byteIns(OpCode::ASSERT);
-  }
+  auto mergeLabel = makeLabel();
+  this->emitBranchIns(OpCode::ASSERT_ENABLED, mergeLabel);
+
+  this->visit(node.getCondNode());
+  this->emitBranchIns(OpCode::BRANCH_NOT, mergeLabel);
+
+  this->visit(node.getMessageNode());
+  this->emitSourcePos(node.getCondNode().getPos());
+  this->emit0byteIns(OpCode::ASSERT_FAIL);
+
+  this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitBlockNode(BlockNode &node) {

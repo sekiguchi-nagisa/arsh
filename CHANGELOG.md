@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+
+- add the following runtime option
+    - ``huponexit``: if on, when call ``exit`` command, send ``SIGHUP`` to managed jobs
+    - ``assert``: if on, check assertion
+        - now assertion is enabled/disabled at runtime
+
+### Fixed
+
+- ``is-sourced`` sub-command of ``shctl``
+
 ## [0.23.0] - 2021-09-30
 
 ### Added

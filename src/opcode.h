@@ -31,7 +31,8 @@ namespace ydsh {
  */
 #define OPCODE_LIST(OP)                                                                            \
   OP(HALT, 0, 0)                                                                                   \
-  OP(ASSERT, 0, -2)                                                                                \
+  OP(ASSERT_ENABLED, 2, 0)                                                                         \
+  OP(ASSERT_FAIL, 0, -1)                                                                           \
   OP(PRINT, 3, -1)                                                                                 \
   OP(INSTANCE_OF, 3, 0)                                                                            \
   OP(CHECK_CAST, 3, 0)                                                                             \
@@ -79,6 +80,7 @@ namespace ydsh {
   OP(RETURN_UDC, 0, 0)                                                                             \
   OP(EXIT_SIG, 0, 0)                                                                               \
   OP(BRANCH, 2, -1)                                                                                \
+  OP(BRANCH_NOT, 2, -1)                                                                            \
   OP(GOTO, 4, 0)                                                                                   \
   OP(THROW, 0, 0)                                                                                  \
   OP(ENTER_FINALLY, 2, 1)                                                                          \

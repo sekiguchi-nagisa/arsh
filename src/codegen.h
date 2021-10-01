@@ -168,8 +168,6 @@ class ByteCodeGenerator : protected NodeVisitor {
 private:
   TypePool &typePool;
 
-  bool assertion;
-
   const MethodHandle *handle_STR{nullptr};
 
   std::vector<CodeBuilder> builders;
@@ -179,7 +177,7 @@ private:
   CodeGenError error;
 
 public:
-  ByteCodeGenerator(TypePool &pool, bool assertion) : typePool(pool), assertion(assertion) {}
+  ByteCodeGenerator(TypePool &pool) : typePool(pool) {}
 
   ~ByteCodeGenerator() override = default;
 

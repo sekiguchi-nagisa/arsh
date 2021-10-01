@@ -4,6 +4,7 @@
 assert shctl show
 assert shctl show traceonexit | grep 'traceonexit.*  off'
 assert shctl show monitor | grep 'monitor.*  off'
+shctl show assert | grep 'assert.*  on' || _exit
 
 assert shctl show HUGA 2>&1 | grep 'ydsh: shctl: undefined runtime option: HUGA'
 shctl show HUGA
