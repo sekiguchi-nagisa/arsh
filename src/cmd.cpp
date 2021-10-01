@@ -577,7 +577,7 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
   int ret = parseExitStatus(state, argvObj);
 
-  if (hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
+  if (hasFlag(state.runtimeOption, RuntimeOption::HUP_EXIT)) {
     state.jobTable.send(SIGHUP);
   }
 

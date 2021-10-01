@@ -40,11 +40,12 @@ enum class CompileOption : unsigned short {
 };
 
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
-  OP(TRACE_EXIT, (1u << 0u), "traceonexit")                                                        \
-  OP(MONITOR, (1u << 1u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 2u), "nullglob")                                                             \
-  OP(DOTGLOB, (1u << 3u), "dotglob")                                                               \
-  OP(FASTGLOB, (1u << 4u), "fastglob")
+  OP(DOTGLOB, (1u << 0u), "dotglob")                                                               \
+  OP(FASTGLOB, (1u << 1u), "fastglob")                                                             \
+  OP(HUP_EXIT, (1u << 2u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 3u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 4u), "nullglob")                                                             \
+  OP(TRACE_EXIT, (1u << 5u), "traceonexit")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -115,7 +116,7 @@ public:
 
   CompileOption compileOption{CompileOption::ASSERT};
 
-  RuntimeOption runtimeOption{};
+  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT};
 
   DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
