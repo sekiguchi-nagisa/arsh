@@ -149,7 +149,7 @@ static bool checkDirectiveName(ApplyNode &node) {
 
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, TypePool &typePool)
     : TypeChecker(typePool, false, nullptr), sourceName(sourceName) {
-  this->curScope = IntrusivePtr<NameScope>::create(std::ref(this->varCount));
+  this->curScope = NameScopePtr::create(std::ref(this->varCount));
   this->setVarName("0", this->typePool.get(TYPE::String));
 }
 

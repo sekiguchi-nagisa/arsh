@@ -34,7 +34,7 @@ static void consumeAllInput(FrontEnd &frontEnd) {
 }
 
 static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
-  auto builtin = IntrusivePtr<NameScope>::create(gvarCount);
+  auto builtin = NameScopePtr::create(gvarCount);
   bindBuiltinVariables(nullptr, pool, *builtin);
 
   ModuleLoader loader; // dummy
@@ -50,7 +50,7 @@ static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
 AnalyzerContext::AnalyzerContext(const Source &src)
     : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
   auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
-  this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), src.getSrcId());
+  this->scope = NameScopePtr::create(std::ref(this->gvarCount), src.getSrcId());
   this->scope->importForeignHandles(this->getPool(), builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }

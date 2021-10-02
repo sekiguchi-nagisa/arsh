@@ -17,8 +17,8 @@
 #ifndef YDSH_TOOLS_ANALYZER_ANALYZER_H
 #define YDSH_TOOLS_ANALYZER_ANALYZER_H
 
-#include <frontend.h>
 #include <error_report.h>
+#include <frontend.h>
 #include <node.h>
 #include <scope.h>
 #include <type_pool.h>
@@ -31,7 +31,7 @@ namespace ydsh::lsp {
 class AnalyzerContext {
 private:
   std::shared_ptr<TypePool> pool;
-  IntrusivePtr<NameScope> scope;
+  NameScopePtr scope;
   int version;
   unsigned int gvarCount{0};
   TypeDiscardPoint typeDiscardPoint;
@@ -41,7 +41,7 @@ public:
 
   explicit AnalyzerContext(const Source &src);
 
-  const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
+  const NameScopePtr &getScope() const { return this->scope; }
 
   TypePool &getPool() { return *this->pool; }
 

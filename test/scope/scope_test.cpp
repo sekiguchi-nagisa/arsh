@@ -17,19 +17,17 @@ protected:
   TypePool pool;
   unsigned int gvarCount{0};
   unsigned int modCount{0};
-  IntrusivePtr<NameScope> builtin;
-  IntrusivePtr<NameScope> top;
+  NameScopePtr builtin;
+  NameScopePtr top;
 
   ScopeTest() {
-    this->builtin = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
+    this->builtin = NameScopePtr::create(std::ref(this->gvarCount));
     this->top = createGlobalScope();
   }
 
-  IntrusivePtr<NameScope> createGlobalScope() {
-    return IntrusivePtr<NameScope>::create(this->builtin, ++this->modCount);
-  }
+  NameScopePtr createGlobalScope() { return NameScopePtr::create(this->builtin, ++this->modCount); }
 
-  const ModType &toModType(IntrusivePtr<NameScope> &&scope) {
+  const ModType &toModType(NameScopePtr &&scope) {
     auto &type = scope->toModType(this->pool);
     this->gvarCount++;
     return type;

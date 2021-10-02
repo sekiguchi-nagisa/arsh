@@ -97,7 +97,7 @@ struct TypeFactory<Func_t<R, P...>> {
 class TypeTest : public ::testing::Test {
 public:
   ModuleLoader loader;
-  IntrusivePtr<NameScope> scope;
+  NameScopePtr scope;
   TypePool pool;
   TypeChecker checker;
 
