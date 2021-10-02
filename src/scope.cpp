@@ -30,7 +30,7 @@ namespace ydsh {
 NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
                                const ModType &modType) {
   assert(parent.isGlobal());
-  assert(parent.inBuiltinModule());
+  assert(parent.inRootModule());
   auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModID());
 
   // copy own handle
