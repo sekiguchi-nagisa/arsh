@@ -1926,7 +1926,7 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
     unsigned int index = modType.getIndex();
     state.setGlobal(index, DSValue(func));
 
-    if (hasFlag(state.compileOption, CompileOption::INTERACTIVE) && modType.isRoot()) {
+    if (state.isInteractive && modType.isRoot()) {
       setFlag(op, EvalOP::SKIP_TERM);
     }
   }

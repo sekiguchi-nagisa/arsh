@@ -22,15 +22,29 @@
 
 #include <ydsh/ydsh.h>
 
-#include "codegen.h"
+#include "compiler.h"
 #include "complete.h"
-#include "error_report.h"
-#include "frontend.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "vm.h"
 
 using namespace ydsh;
+
+static DSError initDSError() {
+  return DSError{.kind = DS_ERROR_KIND_SUCCESS,
+                 .fileName = nullptr,
+                 .lineNum = 0,
+                 .chars = 0,
+                 .name = nullptr};
+}
+
+static CompileDumpTarget newDumpTarget(const DSState::DumpTarget &org) {
+  return CompileDumpTarget{.fps = {
+                               org.files[0].get(),
+                               org.files[1].get(),
+                               org.files[2].get(),
+                           }};
+}
 
 static ErrorReporter newReporter(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
@@ -41,136 +55,17 @@ static ErrorReporter newReporter(DSError *e) {
 #endif
 }
 
-static FrontEndOption toOption(DSExecMode mode, CompileOption option) {
-  FrontEndOption op{};
-  if (mode == DS_EXEC_MODE_PARSE_ONLY) {
-    setFlag(op, FrontEndOption::PARSE_ONLY);
-  }
-  if (hasFlag(option, CompileOption::INTERACTIVE)) {
-    setFlag(op, FrontEndOption::TOPLEVEL);
-  }
-  return op;
-}
-
-static DSError toSuccess() {
-  return DSError{.kind = DS_ERROR_KIND_SUCCESS,
-                 .fileName = nullptr,
-                 .lineNum = 0,
-                 .chars = 0,
-                 .name = nullptr};
-}
-
-class Compiler {
-private:
-  DSExecMode mode;
-  CompileOption compileOption;
-  DefaultModuleProvider &provider;
-  FrontEnd frontEnd;
-  ErrorReporter reporter;
-  NodeDumper uastDumper;
-  NodeDumper astDumper;
-  ByteCodeGenerator codegen;
-
-public:
-  Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
-           const DumpTarget &dumpTarget, DSExecMode execMode, CompileOption compileOption,
-           DSError *dsError)
-      : mode(execMode), compileOption(compileOption), provider(moduleProvider),
-        frontEnd(this->provider, std::move(ctx), toOption(this->mode, this->compileOption)),
-        reporter(newReporter(dsError)), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
-        astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()), codegen(this->provider.getPool()) {
-    if (dsError != nullptr) {
-      *dsError = toSuccess();
-    }
-    this->frontEnd.setErrorListener(this->reporter);
-    if (this->uastDumper) {
-      this->frontEnd.setUASTDumper(this->uastDumper);
-    }
-    if (this->astDumper) {
-      this->frontEnd.setASTDumper(this->astDumper);
-    }
-  }
-
-  bool frontEndOnly() const {
-    return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
-  }
-
-  unsigned int lineNum() const { return this->frontEnd.getRootLineNum(); }
-
-  void discard(const DiscardPoint &point) { this->provider.discard(point); }
-
-  int operator()(ObjPtr<FuncObject> &func);
-};
-
-int Compiler::operator()(ObjPtr<FuncObject> &func) {
-  this->frontEnd.setupASTDump();
-  if (!this->frontEndOnly()) {
-    this->codegen.initialize(this->frontEnd.getCurModId(), this->frontEnd.getCurrentLexer());
-  }
-  while (this->frontEnd) {
-    auto ret = this->frontEnd();
-    if (!ret) {
-      return 1;
-    }
-
-    if (this->frontEndOnly()) {
-      continue;
-    }
-
-    switch (ret.kind) {
-    case FrontEndResult::ENTER_MODULE:
-      this->codegen.enterModule(this->frontEnd.getCurModId(), this->frontEnd.getCurrentLexer());
-      break;
-    case FrontEndResult::EXIT_MODULE:
-      if (!this->codegen.exitModule(cast<SourceNode>(*ret.node))) {
-        goto END;
-      }
-      break;
-    case FrontEndResult::IN_MODULE:
-      if (!this->codegen.generate(*ret.node)) {
-        goto END;
-      }
-      break;
-    default:
-      break;
-    }
-  }
-  this->frontEnd.teardownASTDump();
-  assert(this->frontEnd.getContext().size() == 1);
-  {
-    auto &modType = this->provider.newModTypeFromCurContext(this->frontEnd.getContext());
-    if (!this->frontEndOnly()) {
-      func = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex(), modType);
-    }
-  }
-
-END:
-  if (this->codegen.hasError()) {
-    auto &e = this->codegen.getError();
-    this->reporter.handleCodeGenError(this->frontEnd.getContext(), e);
-    return 1;
-  }
-  if (hasFlag(this->compileOption, CompileOption::LOAD_TO_ROOT)) {
-    auto ret = this->provider.getPool().getModTypeById(this->frontEnd.getCurModId());
-    assert(ret);
-    auto msg = this->provider.getScope()->importForeignHandles(
-        this->provider.getPool(), cast<ModType>(*ret.asOk()), ImportedModKind::GLOBAL);
-    if (!msg.empty()) {
-      auto node = std::make_unique<EmptyNode>(Token{0, 0});
-      auto error = createTCError<ConflictSymbol>(
-          *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
-      this->reporter.handleTypeError(this->frontEnd.getContext(), error);
-      return 1;
-    }
-  }
-  return 0;
-}
-
 static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
                    std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
                    DSError *dsError, ObjPtr<FuncObject> &func) {
-  Compiler compiler(moduleProvider, std::move(ctx), state.dumpTarget, state.execMode, compileOption,
-                    dsError);
+  if (dsError) {
+    *dsError = initDSError();
+  }
+
+  CompileDumpTarget dumpTarget = newDumpTarget(state.dumpTarget);
+  auto errorReporter = newReporter(dsError);
+  Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget);
+  compiler.setErrorListener(errorReporter);
   int ret = compiler(func);
   state.lineNum = compiler.lineNum();
   return ret;
@@ -188,16 +83,10 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
     return ret;
   }
 
-  if (state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
-    auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
-    fprintf(fp, "### dump compiled code ###\n");
-    ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(func->getCode());
-  }
-
   if (state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
     return 0;
   }
-  callToplevel(state, func, dsError);
+  VM::callToplevel(state, func, dsError);
   return state.getMaskedExitStatus();
 }
 
@@ -373,7 +262,7 @@ unsigned int DSState_option(const DSState *st) {
   unsigned int option = 0;
 
   // get compile option
-  if (hasFlag(st->compileOption, CompileOption::INTERACTIVE)) {
+  if (st->isInteractive) {
     setFlag(option, DS_OPTION_INTERACTIVE);
   }
 
@@ -395,7 +284,7 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
 
   // set compile option
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
-    setFlag(st->compileOption, CompileOption::INTERACTIVE);
+    st->isInteractive = true;
   }
 
   // set runtime option
@@ -416,7 +305,7 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
 
   // unset compile option
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
-    unsetFlag(st->compileOption, CompileOption::INTERACTIVE);
+    st->isInteractive = false;
   }
 
   // unset runtime option
@@ -441,6 +330,24 @@ void DSError_release(DSError *e) {
   }
 }
 
+static CompileOption getCompileOption(const DSState &st) {
+  CompileOption option{};
+  if (st.isInteractive) {
+    setFlag(option, CompileOption::PRINT_TOPLEVEL);
+  }
+  switch (st.execMode) {
+  case DS_EXEC_MODE_PARSE_ONLY:
+    setFlag(option, CompileOption::PARSE_ONLY);
+    break;
+  case DS_EXEC_MODE_CHECK_ONLY:
+    setFlag(option, CompileOption::CHECK_ONLY);
+    break;
+  default:
+    break;
+  }
+  return option;
+}
+
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size,
                  DSError *e) {
   GUARD_NULL(st, -1);
@@ -456,10 +363,10 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
               getCWD());
   lexer.setLineNumOffset(st->lineNum);
 
+  const auto compileOption = getCompileOption(*st);
   DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
-  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(st->execMode, st->compileOption),
-                                       nullptr);
-  return evalScript(*st, moduleProvider, std::move(ctx), st->compileOption, discardPoint, e);
+  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
+  return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
 static void reportFileError(const char *sourceName, int errNum, DSError *e) {
@@ -488,15 +395,16 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
       .type = st->typePool.getDiscardPoint(),
   };
 
+  CompileOption compileOption = getCompileOption(*st);
   DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
   CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
-  auto ret = moduleProvider.load(scriptDir.get(), fileName,
-                                 toOption(st->execMode, st->compileOption), ModLoadOption{});
+  auto ret =
+      moduleProvider.load(scriptDir.get(), fileName, toOption(compileOption), ModLoadOption{});
   if (is<ModLoadingError>(ret)) {
     auto error = get<ModLoadingError>(ret);
     if (error.isFileNotFound() && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {
       if (e) {
-        *e = toSuccess();
+        *e = initDSError();
       }
       return 0;
     }
@@ -508,13 +416,12 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     return 1;
   } else if (is<const ModType *>(ret)) {
     if (e) {
-      *e = toSuccess();
+      *e = initDSError();
     }
     return 0; // do nothing
   }
   assert(is<std::unique_ptr<FrontEnd::Context>>(ret));
   auto &ctx = get<std::unique_ptr<FrontEnd::Context>>(ret);
-  CompileOption compileOption = st->compileOption;
   if (!hasFlag(option, DS_MOD_SEPARATE_CTX)) {
     setFlag(compileOption, CompileOption::LOAD_TO_ROOT);
   }
@@ -530,7 +437,7 @@ int DSState_exec(DSState *st, char *const *argv) {
   for (; *argv != nullptr; argv++) {
     values.push_back(DSValue::createStr(*argv));
   }
-  execCommand(*st, std::move(values), false);
+  VM::execCommand(*st, std::move(values), false);
   return st->getMaskedExitStatus();
 }
 
@@ -709,7 +616,7 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
   auto args = makeArgs(DSValue::createInt(op), DSValue::createInt(index),
                        DSValue::createStr((value && *value) ? value : ""));
   auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  st->editOpReply = callFunction(*st, std::move(func), std::move(args));
+  st->editOpReply = VM::callFunction(*st, std::move(func), std::move(args));
   st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
   if (st->hasError()) {
     return 0;

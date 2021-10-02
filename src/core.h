@@ -70,10 +70,6 @@ struct VMHook {
   virtual void vmThrowHook(DSState &st) = 0;
 };
 
-struct DumpTarget {
-  FilePtr files[3];
-};
-
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
 
 /**

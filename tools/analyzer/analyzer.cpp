@@ -186,6 +186,11 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return false;
 }
 
+bool DiagnosticEmitter::handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &,
+                                           const CodeGenError &) {
+  return false; // do nothing
+}
+
 ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
                          const Source &src) {
   // prepare

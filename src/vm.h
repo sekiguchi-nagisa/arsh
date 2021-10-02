@@ -33,11 +33,6 @@
 
 namespace ydsh {
 
-enum class CompileOption : unsigned short {
-  INTERACTIVE = 1u << 0u,
-  LOAD_TO_ROOT = 1u << 1u,
-};
-
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
   OP(ASSERT, (1u << 0u), "assert")                                                                 \
   OP(DOTGLOB, (1u << 1u), "dotglob")                                                               \
@@ -71,9 +66,6 @@ enum class EvalRet : unsigned int {
   HAS_ERROR,     // still has uncaught error
   HANDLED_ERROR, // already handled uncaught error
 };
-
-template <>
-struct allow_enum_bitop<CompileOption> : std::true_type {};
 
 template <>
 struct allow_enum_bitop<RuntimeOption> : std::true_type {};
@@ -114,13 +106,15 @@ public:
    */
   DSValue prompt;
 
-  CompileOption compileOption{};
+  bool isInteractive{false};
 
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT};
 
   DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
-  DumpTarget dumpTarget;
+  struct DumpTarget {
+    FilePtr files[3];
+  } dumpTarget;
 
   /**
    * cache searched result.
@@ -630,59 +624,6 @@ public:
   static DSValue callFunction(DSState &state, DSValue &&funcObj,
                               std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 };
-
-// entry point of code evaluation
-/**
- * entry point of toplevel code evaluation.
- * @param func
- * must be toplevel compiled function.
- * @param dsError
- * if not null, set error information
- * @return
- * if had uncaught exception, return false
- */
-inline bool callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError) {
-  return VM::callToplevel(state, func, dsError);
-}
-
-/**
- * execute command.
- * @param argv
- * DSValue must be String_Object
- * @param propagate
- * if true, not handle uncaught exception
- * @return
- * if exit status is 0, return true.
- * otherwise, return false
- */
-inline DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
-  return VM::execCommand(state, std::move(argv), propagate);
-}
-
-/**
- * call method.
- * @param handle
- * @param recv
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-inline DSValue callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
-                          std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-  return VM::callMethod(state, handle, std::move(recv), std::move(args));
-}
-
-/**
- *
- * @param funcObj
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-inline DSValue callFunction(DSState &state, DSValue &&funcObj,
-                            std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-  return VM::callFunction(state, std::move(funcObj), std::move(args));
-}
 
 } // namespace ydsh
 

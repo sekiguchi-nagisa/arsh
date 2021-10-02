@@ -177,7 +177,7 @@ private:
   CodeGenError error;
 
 public:
-  ByteCodeGenerator(TypePool &pool) : typePool(pool) {}
+  explicit ByteCodeGenerator(TypePool &pool) : typePool(pool) {}
 
   ~ByteCodeGenerator() override = default;
 
@@ -500,19 +500,24 @@ public:
 
 class ByteCodeDumper {
 private:
+  /**
+   * may be null
+   */
   FILE *fp;
 
   const TypePool &typePool;
-  unsigned int maxGVarIndex;
+  unsigned int maxGVarIndex{0};
 
   std::vector<std::reference_wrapper<const CompiledCode>> mods;
   std::vector<std::reference_wrapper<const CompiledCode>> funcs;
 
 public:
-  ByteCodeDumper(FILE *fp, const TypePool &pool, unsigned int maxGVarIndex)
-      : fp(fp), typePool(pool), maxGVarIndex(maxGVarIndex) {}
+  ByteCodeDumper(FILE *fp, const TypePool &pool)
+      : fp(fp), typePool(pool) {}
 
-  void operator()(const CompiledCode &code);
+  void operator()(const CompiledCode &code, unsigned int maxGVarIndex);
+
+  explicit operator bool() const { return this->fp != nullptr; }
 
 private:
   void dumpModule(const CompiledCode &code);

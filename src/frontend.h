@@ -66,6 +66,8 @@ struct FrontEndResult {
   explicit operator bool() const { return this->kind != FAILED; }
 };
 
+struct ErrorListener;
+
 class FrontEnd {
 public:
   struct Context {
@@ -96,16 +98,6 @@ public:
     using Ret = Union<const ModType *, std::unique_ptr<Context>, ModLoadingError>;
 
     virtual Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) = 0;
-  };
-
-  struct ErrorListener {
-    virtual ~ErrorListener() = default;
-
-    virtual bool handleParseError(const std::vector<std::unique_ptr<Context>> &ctx,
-                                  const ParseError &parseError) = 0;
-
-    virtual bool handleTypeError(const std::vector<std::unique_ptr<Context>> &ctx,
-                                 const TypeCheckError &checkError) = 0;
   };
 
 private:

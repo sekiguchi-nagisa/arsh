@@ -1352,7 +1352,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   try {
     std::stable_sort(obj.refValues().begin(), obj.refValues().end(),
                      [&](const DSValue &x, const DSValue &y) {
-                       auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
+                       auto ret = VM::callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
                        if (ctx.hasError()) {
                          throw std::runtime_error(""); // FIXME: not use exception
                        }

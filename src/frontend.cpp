@@ -15,6 +15,7 @@
  */
 
 #include "frontend.h"
+#include "error_report.h"
 #include <cerrno>
 
 namespace ydsh {

@@ -1423,7 +1423,9 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
   return max;
 }
 
-void ByteCodeDumper::operator()(const CompiledCode &code) {
+void ByteCodeDumper::operator()(const CompiledCode &code, unsigned int gvarIndex) {
+  this->maxGVarIndex = gvarIndex;
+  fprintf(this->fp, "### dump compiled code ###\n");
   this->dumpModule(code);
   while (!this->mods.empty()) {
     auto ref = this->mods.front();

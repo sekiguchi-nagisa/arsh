@@ -2222,7 +2222,7 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     } else if (ref == "is-sourced") {
       return isSourced(state.getCallStack());
     } else if (ref == "is-interactive") {
-      return hasFlag(state.compileOption, CompileOption::INTERACTIVE) ? 0 : 1;
+      return state.isInteractive ? 0 : 1;
     } else if (ref == "function") {
       return printFuncName(state.getCallStack());
     } else if (ref == "show") {

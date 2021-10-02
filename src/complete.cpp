@@ -534,8 +534,8 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
   }
 
   // kick hook
-  auto ret =
-      callFunction(state, std::move(hook), makeArgs(std::move(argv), DSValue::createInt(index)));
+  auto ret = VM::callFunction(state, std::move(hook),
+                              makeArgs(std::move(argv), DSValue::createInt(index)));
   if (state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
     return false;
   }

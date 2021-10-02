@@ -412,7 +412,7 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
   if (!type.is(TYPE::String)) {
     auto *handle = state.typePool.lookupMethod(type, op);
     assert(handle != nullptr);
-    ret = callMethod(state, *handle, std::move(ret), makeArgs());
+    ret = VM::callMethod(state, *handle, std::move(ret), makeArgs());
   }
   return ret;
 }
@@ -468,7 +468,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
     auto &recv = state.typePool.get(ret.getTypeID());
     auto *handle = lookupCmdArg(recv, state.typePool);
     assert(handle != nullptr);
-    ret = TRY(callMethod(state, *handle, std::move(ret), makeArgs()));
+    ret = TRY(VM::callMethod(state, *handle, std::move(ret), makeArgs()));
   }
 
   if (ret.hasType(TYPE::String)) {

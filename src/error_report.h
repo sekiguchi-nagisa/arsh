@@ -23,6 +23,19 @@
 
 namespace ydsh {
 
+struct ErrorListener {
+  virtual ~ErrorListener() = default;
+
+  virtual bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                                const ParseError &parseError) = 0;
+
+  virtual bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                               const TypeCheckError &checkError) = 0;
+
+  virtual bool handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                                  const CodeGenError &codeGenError) = 0;
+};
+
 #define EACH_TERM_COLOR(C)                                                                         \
   C(Reset, 0)                                                                                      \
   C(Bold, 1)                                                                                       \
@@ -41,7 +54,7 @@ enum class TermColor : unsigned int { // ansi color code
 #undef GEN_ENUM
 };
 
-class ErrorReporter : public FrontEnd::ErrorListener {
+class ErrorReporter : public ErrorListener {
 private:
   DSError *dsError;
   FILE *fp;
@@ -58,7 +71,7 @@ public:
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                        const TypeCheckError &checkError) override;
   bool handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                          const CodeGenError &codeGenError);
+                          const CodeGenError &codeGenError) override;
 
 private:
   bool handleError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx, DSErrorKind type,
