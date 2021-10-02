@@ -1858,7 +1858,7 @@ static bool mayBeCmd(const Node &node) {
 }
 
 std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
-                                              IntrusivePtr<NameScope> global) {
+                                              NameScopePtr global) {
   // reset state
   this->curReturnType = nullptr;
   this->visitingDepth = 0;

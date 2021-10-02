@@ -31,6 +31,8 @@ namespace ydsh {
 
 class ArrayObject;
 
+using NameScopePtr = IntrusivePtr<NameScope>;
+
 enum class CodeCompOp : unsigned int {
   FILE = 1u << 0u,      /* complete file names (including directory) */
   DIR = 1u << 1u,       /* complete directory names (directory only) */
@@ -89,7 +91,7 @@ private:
   /**
    * for var name compeltion
    */
-  IntrusivePtr<NameScope> scope;
+  NameScopePtr scope;
 
   /**
    * for member completion
@@ -104,7 +106,7 @@ private:
   CodeCompOp fallbackOp{};
 
 public:
-  CodeCompletionHandler(DSState &state, IntrusivePtr<NameScope> scope);
+  CodeCompletionHandler(DSState &state, NameScopePtr scope);
 
   void addCompRequest(CodeCompOp op, std::string &&word) {
     this->compOp = op;
@@ -129,10 +131,9 @@ public:
     }
   }
 
-  void addVarNameRequest(std::string &&value, IntrusivePtr<NameScope> curScope);
+  void addVarNameRequest(std::string &&value, NameScopePtr curScope);
 
-  void addTypeNameRequest(std::string &&value, const DSType *type,
-                          IntrusivePtr<NameScope> curScope);
+  void addTypeNameRequest(std::string &&value, const DSType *type, NameScopePtr curScope);
 
   void addMemberRequest(const DSType &type, std::string &&value) {
     this->compOp = CodeCompOp::MEMBER;

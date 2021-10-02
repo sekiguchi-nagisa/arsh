@@ -39,6 +39,10 @@ struct ScopeDiscardPoint {
   unsigned int commitIdOffset;
 };
 
+class NameScope;
+
+using NameScopePtr = IntrusivePtr<NameScope>;
+
 class NameScope : public RefCount<NameScope> {
 public:
   const enum Kind : unsigned char {
@@ -55,7 +59,7 @@ public:
   /**
    * may be null
    */
-  const IntrusivePtr<NameScope> parent;
+  const NameScopePtr parent;
 
 private:
   unsigned int curLocalIndex{0};
@@ -85,17 +89,10 @@ public:
    * @param parent
    * @param modId
    */
-  NameScope(const IntrusivePtr<NameScope> &parent, unsigned short modId)
+  NameScope(const NameScopePtr &parent, unsigned short modId)
       : kind(GLOBAL), modId(modId), parent(parent), maxVarCount(parent->maxVarCount) {
     assert(this->parent->isGlobal());
   }
-
-  /**
-   * re-create global module scope from already created Mod Type
-   * @param parent
-   * @param modType
-   */
-  NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent, const ModType &modType);
 
   /**
    * for func/block scope construction
@@ -104,9 +101,16 @@ public:
    * @param parent
    * @param varCount
    */
-  NameScope(Kind kind, const IntrusivePtr<NameScope> &parent,
-            std::reference_wrapper<unsigned int> varCount)
+  NameScope(Kind kind, const NameScopePtr &parent, std::reference_wrapper<unsigned int> varCount)
       : kind(kind), modId(parent->modId), parent(parent), maxVarCount(varCount) {}
+
+  /**
+   * re-create global module scope from already created Mod Type
+   * @param parent
+   * only used parent->mexVarCount
+   * @param modType
+   */
+  static NameScopePtr reopen(const TypePool &pool, const NameScope &parent, const ModType &modType);
 
   bool isGlobal() const { return this->kind == GLOBAL; }
 
@@ -153,14 +157,14 @@ public:
    * @return
    * if illegal kind, (ex. BLOCK->GLOBAL, GLOBAL->GLOBAL) return null
    */
-  IntrusivePtr<NameScope> enterScope(Kind kind);
+  NameScopePtr enterScope(Kind kind);
 
   /**
    *
    * @return
    * return parent
    */
-  IntrusivePtr<NameScope> exitScope() { return this->parent; }
+  NameScopePtr exitScope() { return this->parent; }
 
   void clearLocalSize() {
     assert(this->isGlobal());
@@ -217,7 +221,7 @@ public:
 private:
   unsigned int commitId() const { return this->handles.size(); }
 
-  IntrusivePtr<NameScope> fromThis() { return IntrusivePtr<NameScope>(this); }
+  NameScopePtr fromThis() { return NameScopePtr(this); }
 
   FieldHandle *findMut(const std::string &name) {
     auto iter = this->handles.find(name);
@@ -393,11 +397,11 @@ public:
 
   void discard(ModDiscardPoint discardPoint);
 
-  IntrusivePtr<NameScope> createGlobalScope(const TypePool &pool, const char *name,
-                                            const ModType *modType = nullptr);
+  NameScopePtr createGlobalScope(const TypePool &pool, const char *name,
+                                 const ModType *modType = nullptr);
 
-  IntrusivePtr<NameScope> createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
-                                                        const ModType &modType);
+  NameScopePtr createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
+                                             const ModType &modType);
 
   const ModType &createModType(TypePool &pool, const NameScope &scope);
 

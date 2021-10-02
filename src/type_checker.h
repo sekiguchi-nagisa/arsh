@@ -143,7 +143,7 @@ class TypeChecker : protected NodeVisitor {
 protected:
   TypePool &typePool;
 
-  IntrusivePtr<NameScope> curScope;
+  NameScopePtr curScope;
 
   /**
    * contains current return type of current function
@@ -173,7 +173,7 @@ public:
   ~TypeChecker() override = default;
 
   std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
-                                   IntrusivePtr<NameScope> global);
+                                   NameScopePtr global);
 
   TypePool &getTypePool() { return this->typePool; }
 

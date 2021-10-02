@@ -74,10 +74,10 @@ public:
     Lexer lexer;
     Parser parser;
     TypeChecker checker;
-    IntrusivePtr<NameScope> scope;
+    NameScopePtr scope;
     std::unique_ptr<SourceListNode> srcListNode;
 
-    Context(TypePool &pool, Lexer &&lexer, IntrusivePtr<NameScope> scope, FrontEndOption option,
+    Context(TypePool &pool, Lexer &&lexer, NameScopePtr scope, FrontEndOption option,
             ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
         : lexer(std::move(lexer)), parser(this->lexer, ccHandler),
           checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
@@ -177,7 +177,7 @@ private:
     return this->contexts.back()->srcListNode;
   }
 
-  const IntrusivePtr<NameScope> &curScope() const { return this->contexts.back()->scope; }
+  const NameScopePtr &curScope() const { return this->contexts.back()->scope; }
 
   std::unique_ptr<Node> tryToParse();
 
@@ -192,10 +192,10 @@ class DefaultModuleProvider : public FrontEnd::ModuleProvider {
 private:
   ModuleLoader &loader;
   TypePool &pool;
-  IntrusivePtr<NameScope> scope;
+  NameScopePtr scope;
 
 public:
-  DefaultModuleProvider(ModuleLoader &loader, TypePool &pool, IntrusivePtr<NameScope> scope)
+  DefaultModuleProvider(ModuleLoader &loader, TypePool &pool, NameScopePtr scope)
       : loader(loader), pool(pool), scope(std::move(scope)) {}
 
   ~DefaultModuleProvider() override = default;
@@ -214,7 +214,7 @@ public:
 
   TypePool &getPool() { return this->pool; }
 
-  const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
+  const NameScopePtr &getScope() const { return this->scope; }
 
   void discard(const DiscardPoint &discardPoint) {
     discardAll(this->loader, *this->scope, this->pool, discardPoint);

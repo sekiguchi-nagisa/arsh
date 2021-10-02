@@ -90,9 +90,9 @@ public:
 
   TypePool typePool;
 
-  IntrusivePtr<NameScope> builtinModScope;
+  NameScopePtr builtinModScope;
 
-  IntrusivePtr<NameScope> rootModScope;
+  NameScopePtr rootModScope;
 
   const ObjPtr<UnixFdObject> emptyFDObj;
 

@@ -27,15 +27,15 @@ namespace ydsh {
 // ##     NameScope     ##
 // #######################
 
-NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent,
-                     const ModType &modType)
-    : kind(GLOBAL), modId(modType.getModID()), maxVarCount(parent->maxVarCount) {
-  assert(parent->isGlobal());
-  assert(parent->inBuiltinModule());
+NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
+                               const ModType &modType) {
+  assert(parent.isGlobal());
+  assert(parent.inBuiltinModule());
+  auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModID());
 
   // copy own handle
   for (auto &e : modType.getHandleMap()) {
-    this->addNewAlias(std::string(e.first), e.second);
+    scope->addNewAlias(std::string(e.first), e.second);
   }
 
   // import foreign module
@@ -43,8 +43,9 @@ NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(pool.get(e.typeId()));
-    this->importForeignHandles(pool, type, e.kind());
+    scope->importForeignHandles(pool, type, e.kind());
   }
+  return scope;
 }
 
 static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
@@ -65,18 +66,16 @@ static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
   return false;
 }
 
-IntrusivePtr<NameScope> NameScope::enterScope(Kind newKind) {
+NameScopePtr NameScope::enterScope(Kind newKind) {
   if (isAllowedScopePair(this->kind, newKind)) {
     if (this->kind == NameScope::GLOBAL && newKind == NameScope::FUNC) {
-      return IntrusivePtr<NameScope>::create(newKind, this->fromThis(), this->maxVarCount);
+      return NameScopePtr::create(newKind, this->fromThis(), this->maxVarCount);
     } else if (this->kind == NameScope::GLOBAL && newKind == NameScope::BLOCK) {
-      return IntrusivePtr<NameScope>::create(newKind, this->fromThis(),
-                                             std::ref(this->curLocalIndex));
+      return NameScopePtr::create(newKind, this->fromThis(), std::ref(this->curLocalIndex));
     } else if (this->kind == NameScope::FUNC && newKind == NameScope::BLOCK) {
-      return IntrusivePtr<NameScope>::create(newKind, this->fromThis(),
-                                             std::ref(this->curLocalIndex));
+      return NameScopePtr::create(newKind, this->fromThis(), std::ref(this->curLocalIndex));
     } else if (this->kind == NameScope::BLOCK && newKind == NameScope::BLOCK) {
-      auto scope = IntrusivePtr<NameScope>::create(newKind, this->fromThis(), this->maxVarCount);
+      auto scope = NameScopePtr::create(newKind, this->fromThis(), this->maxVarCount);
       scope->curLocalIndex = this->curLocalIndex;
       return scope;
     }
@@ -416,8 +415,8 @@ void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
   this->gvarCount = discardPoint.gvarCount;
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const TypePool &pool, const char *name,
-                                                        const ModType *modType) {
+NameScopePtr ModuleLoader::createGlobalScope(const TypePool &pool, const char *name,
+                                             const ModType *modType) {
   auto str = CStrPtr(strdup(name));
   auto ret = this->addNewModEntry(std::move(str));
   assert(is<const char *>(ret));
@@ -425,16 +424,15 @@ IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const TypePool &pool, co
   if (modType) {
     return this->createGlobalScopeFromFullpath(pool, get<const char *>(ret), *modType);
   } else {
-    return IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
+    return NameScopePtr::create(std::ref(this->gvarCount));
   }
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(const TypePool &pool,
-                                                                    StringRef fullpath,
-                                                                    const ModType &modType) {
+NameScopePtr ModuleLoader::createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
+                                                         const ModType &modType) {
   auto iter = this->indexMap.find(fullpath);
   if (iter != this->indexMap.end()) {
-    auto scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), iter->second);
+    auto scope = NameScopePtr::create(std::ref(this->gvarCount), iter->second);
     scope->importForeignHandles(pool, modType, ImportedModKind::GLOBAL);
     return scope;
   }

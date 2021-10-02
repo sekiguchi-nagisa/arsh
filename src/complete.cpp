@@ -118,7 +118,7 @@ static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
 // ##     CodeCompletionHandler     ##
 // ###################################
 
-CodeCompletionHandler::CodeCompletionHandler(DSState &state, IntrusivePtr<NameScope> scope)
+CodeCompletionHandler::CodeCompletionHandler(DSState &state, NameScopePtr scope)
     : state(state), scope(std::move(scope)) {}
 
 static bool isExprKeyword(TokenKind kind) {
@@ -638,14 +638,13 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
   }
 }
 
-void CodeCompletionHandler::addVarNameRequest(std::string &&value,
-                                              IntrusivePtr<NameScope> curScope) {
+void CodeCompletionHandler::addVarNameRequest(std::string &&value, NameScopePtr curScope) {
   this->scope = std::move(curScope);
   this->addCompRequest(CodeCompOp::VAR, std::move(value));
 }
 
 void CodeCompletionHandler::addTypeNameRequest(std::string &&value, const DSType *type,
-                                               IntrusivePtr<NameScope> curScope) {
+                                               NameScopePtr curScope) {
   this->scope = std::move(curScope);
   this->recvType = type;
   this->addCompRequest(CodeCompOp::TYPE, std::move(value));
@@ -716,10 +715,9 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
       .scope = st.rootModScope->getDiscardPoint(),
       .type = st.typePool.getDiscardPoint(),
   };
-  auto scope =
-      underlyingModType == nullptr
-          ? st.rootModScope
-          : IntrusivePtr<NameScope>::create(st.typePool, st.builtinModScope, *underlyingModType);
+  auto scope = underlyingModType == nullptr
+                   ? st.rootModScope
+                   : NameScope::reopen(st.typePool, *st.builtinModScope, *underlyingModType);
   CodeCompletionHandler handler(st, scope);
   if (empty(option)) {
     // prepare
