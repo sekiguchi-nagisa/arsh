@@ -69,13 +69,13 @@ static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
 NameScopePtr NameScope::enterScope(Kind newKind) {
   if (isAllowedScopePair(this->kind, newKind)) {
     if (this->kind == NameScope::GLOBAL && newKind == NameScope::FUNC) {
-      return NameScopePtr::create(newKind, this->fromThis(), this->maxVarCount);
+      return NameScope::block(newKind, this->fromThis(), this->maxVarCount);
     } else if (this->kind == NameScope::GLOBAL && newKind == NameScope::BLOCK) {
-      return NameScopePtr::create(newKind, this->fromThis(), std::ref(this->curLocalIndex));
+      return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
     } else if (this->kind == NameScope::FUNC && newKind == NameScope::BLOCK) {
-      return NameScopePtr::create(newKind, this->fromThis(), std::ref(this->curLocalIndex));
+      return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
     } else if (this->kind == NameScope::BLOCK && newKind == NameScope::BLOCK) {
-      auto scope = NameScopePtr::create(newKind, this->fromThis(), this->maxVarCount);
+      auto scope = NameScope::block(newKind, this->fromThis(), this->maxVarCount);
       scope->curLocalIndex = this->curLocalIndex;
       return scope;
     }

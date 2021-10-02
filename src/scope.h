@@ -73,6 +73,21 @@ private:
 
   std::unordered_map<std::string, FieldHandle> handles;
 
+  /**
+   * for func/block scope construction
+   * only called from enterScope()
+   * @param kind
+   * @param parent
+   * @param varCount
+   */
+  NameScope(Kind kind, const NameScopePtr &parent, std::reference_wrapper<unsigned int> varCount)
+      : kind(kind), modId(parent->modId), parent(parent), maxVarCount(varCount) {}
+
+  static NameScopePtr block(Kind kind, const NameScopePtr &parent,
+                            std::reference_wrapper<unsigned int> varCount) {
+    return NameScopePtr(new NameScope(kind, parent, varCount));
+  }
+
 public:
   /**
    * for module scope construction
@@ -95,17 +110,8 @@ public:
   }
 
   /**
-   * for func/block scope construction
-   * only called from enterScope()
-   * @param kind
-   * @param parent
-   * @param varCount
-   */
-  NameScope(Kind kind, const NameScopePtr &parent, std::reference_wrapper<unsigned int> varCount)
-      : kind(kind), modId(parent->modId), parent(parent), maxVarCount(varCount) {}
-
-  /**
    * re-create global module scope from already created Mod Type
+   * @param pool
    * @param parent
    * only used parent->mexVarCount
    * @param modType
