@@ -90,8 +90,8 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
   return state.getMaskedExitStatus();
 }
 
-static void loadEmbeddedScript(DSState *state) {
-  state->rootModScope = state->builtinModScope; // eval script in builtin module
+static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
+  state->rootModScope = builtin; // eval script in builtin module
 
   const char *embed_script = getEmbeddedScript();
   int ret = DSState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
@@ -100,6 +100,9 @@ static void loadEmbeddedScript(DSState *state) {
 
   // rest some state
   auto &modType = state->typePool.getBuiltinModType();
+  auto *handle = builtin->lookup(VAR_TERM_HOOK);
+  assert(handle);
+  state->termHookIndex = handle->getIndex();
   state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->lineNum = 1;
   state->setExitStatus(0);
@@ -145,8 +148,9 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 #undef EACH_DS_EXEC_MODE
 
   auto *ctx = new DSState();
-  bindBuiltinVariables(ctx, ctx->typePool, *ctx->builtinModScope);
-  loadEmbeddedScript(ctx);
+  auto buildtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
+  bindBuiltinVariables(ctx, ctx->typePool, *buildtin);
+  loadEmbeddedScript(ctx, buildtin);
 
   ctx->execMode = mode;
   return ctx;

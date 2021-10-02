@@ -717,7 +717,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   };
   auto scope = underlyingModType == nullptr
                    ? st.rootModScope
-                   : NameScope::reopen(st.typePool, *st.builtinModScope, *underlyingModType);
+                   : NameScope::reopen(st.typePool, *st.rootModScope, *underlyingModType);
   CodeCompletionHandler handler(st, scope);
   if (empty(option)) {
     // prepare

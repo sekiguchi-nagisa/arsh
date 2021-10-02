@@ -90,8 +90,6 @@ public:
 
   TypePool typePool;
 
-  NameScopePtr builtinModScope;
-
   NameScopePtr rootModScope;
 
   const ObjPtr<UnixFdObject> emptyFDObj;
@@ -102,7 +100,7 @@ public:
   DSValue editOpReply;
 
   /**
-   * maintain latest rendered prompt/
+   * maintain latest rendered prompt
    */
   DSValue prompt;
 
@@ -128,6 +126,8 @@ public:
    * otherwise current shell is sub-shell.
    */
   unsigned int subshellLevel{0};
+
+  unsigned int termHookIndex{0};
 
   std::string logicalWorkingDir;
 

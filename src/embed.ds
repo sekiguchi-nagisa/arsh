@@ -1,4 +1,4 @@
-# builtin variable definition
+# builtin variable definition (not call external command, sub-shell)
 
 if !(checkenv PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
