@@ -1982,16 +1982,16 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
 
   static auto cmdTrampoline = initCmdTrampoline();
 
+  EvalOP op = EvalOP::SKIP_TERM | EvalOP::HAS_RETURN;
+  if (propagate) {
+    setFlag(op, EvalOP::PROPAGATE);
+  }
+
   DSValue ret;
   auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
   prepareArguments(state.stack, std::move(obj), {0, {}});
   if (windStackFrame(state, 1, 1, cmdTrampoline)) {
-    startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr, ret);
-  }
-
-  if (!propagate) {
-    DSValue thrown = state.stack.takeThrownObject();
-    handleUncaughtException(state, thrown, nullptr);
+    startEval(state, op, nullptr, ret);
   }
   return ret;
 }
