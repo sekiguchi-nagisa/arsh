@@ -542,6 +542,10 @@ public:
 
   unsigned short getModID() const { return this->meta.u16_2.v1; }
 
+  bool isBuiltin() const { return this->getModID() == 0; }
+
+  bool isRoot() const { return this->getModID() == 1; }
+
   unsigned short getChildSize() const { return this->meta.u16_2.v2; }
 
   Imported getChildAt(unsigned int i) const {

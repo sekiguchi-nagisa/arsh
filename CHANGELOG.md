@@ -14,6 +14,7 @@
 ### Fixed
 
 - ``is-sourced`` sub-command of ``shctl``
+- accidentally skip termination handler in loaded module
 
 ## [0.23.0] - 2021-09-30
 
