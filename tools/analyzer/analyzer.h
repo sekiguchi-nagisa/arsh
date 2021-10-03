@@ -17,7 +17,6 @@
 #ifndef YDSH_TOOLS_ANALYZER_ANALYZER_H
 #define YDSH_TOOLS_ANALYZER_ANALYZER_H
 
-#include <error_report.h>
 #include <frontend.h>
 #include <node.h>
 #include <scope.h>
@@ -93,7 +92,7 @@ private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 };
 
-class DiagnosticEmitter : public ErrorListener {
+class DiagnosticEmitter : public FrontEnd::ErrorListener {
 public:
   ~DiagnosticEmitter() override = default;
 
@@ -101,9 +100,6 @@ public:
                         const ParseError &parseError) override;
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                        const TypeCheckError &checkError) override;
-
-  bool handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                          const CodeGenError &codeGenError) override;
 };
 
 struct NodeConsumer {

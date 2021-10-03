@@ -234,7 +234,6 @@ set(YDSH_SRC
         src/redir.cpp
         src/state.cpp
         src/complete.cpp
-        src/error_report.cpp
         src/paths.cpp
         src/compiler.cpp
         ${lexer_src}

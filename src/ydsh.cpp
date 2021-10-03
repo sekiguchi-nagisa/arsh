@@ -65,7 +65,7 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
   CompileDumpTarget dumpTarget = newDumpTarget(state.dumpTarget);
   auto errorReporter = newReporter(dsError);
   Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget);
-  compiler.setErrorListener(errorReporter);
+  compiler.setErrorReporter(errorReporter);
   int ret = compiler(func);
   state.lineNum = compiler.lineNum();
   return ret;

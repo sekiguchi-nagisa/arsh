@@ -66,8 +66,6 @@ struct FrontEndResult {
   explicit operator bool() const { return this->kind != FAILED; }
 };
 
-struct ErrorListener;
-
 class FrontEnd {
 public:
   struct Context {
@@ -84,6 +82,16 @@ public:
           scope(std::move(scope)) {
       this->checker.setCodeCompletionHandler(ccHandler);
     }
+  };
+
+  struct ErrorListener {
+    virtual ~ErrorListener() = default;
+
+    virtual bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                                  const ParseError &parseError) = 0;
+
+    virtual bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                                 const TypeCheckError &checkError) = 0;
   };
 
   struct ModuleProvider {

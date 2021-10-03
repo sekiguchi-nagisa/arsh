@@ -17,12 +17,62 @@
 #ifndef YDSH_COMPILER_H
 #define YDSH_COMPILER_H
 
+#include "cgerror.h"
 #include "codegen.h"
-#include "error_report.h"
 #include "frontend.h"
 #include "misc/flag_util.hpp"
+#include <ydsh/ydsh.h>
 
 namespace ydsh {
+
+#define EACH_TERM_COLOR(C)                                                                         \
+  C(Reset, 0)                                                                                      \
+  C(Bold, 1)                                                                                       \
+  /*C(Black,   30)*/                                                                               \
+  /*C(Red,     31)*/                                                                               \
+  C(Green, 32)                                                                                     \
+  C(Yellow, 33)                                                                                    \
+  C(Blue, 34)                                                                                      \
+  C(Magenta, 35)                                                                                   \
+  C(Cyan, 36) /*                                                                                   \
+  C(white,   37)*/
+
+enum class TermColor : unsigned int { // ansi color code
+#define GEN_ENUM(E, N) E,
+  EACH_TERM_COLOR(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+class ErrorReporter : public FrontEnd::ErrorListener {
+private:
+  DSError *dsError;
+  FILE *fp;
+  bool close;
+  bool tty;
+
+public:
+  ErrorReporter(DSError *dsError, FILE *fp, bool close);
+
+  ~ErrorReporter() override;
+
+  bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                        const ParseError &parseError) override;
+  bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                       const TypeCheckError &checkError) override;
+  bool handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
+                          const CodeGenError &codeGenError);
+
+private:
+  bool handleError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx, DSErrorKind type,
+                   const char *errorKind, Token errorToken, const char *message);
+
+  void printError(const Lexer &lexer, const char *kind, Token token, TermColor c,
+                  const char *message);
+
+  const char *color(TermColor c) const;
+
+  void printErrorLine(const Lexer &lexer, Token token) const;
+};
 
 enum class CompileOption : unsigned short {
   LOAD_TO_ROOT = 1u << 1u,
@@ -54,7 +104,7 @@ private:
   CompileOption compileOption;
   DefaultModuleProvider &provider;
   FrontEnd frontEnd;
-  ObserverPtr<ErrorListener> errorListener;
+  ObserverPtr<ErrorReporter> errorReporter;
   NodeDumper uastDumper;
   NodeDumper astDumper;
   ByteCodeGenerator codegen;
@@ -69,8 +119,8 @@ public:
            hasFlag(this->compileOption, CompileOption::CHECK_ONLY);
   }
 
-  void setErrorListener(ErrorListener &r) {
-    this->errorListener.reset(&r);
+  void setErrorReporter(ErrorReporter &r) {
+    this->errorReporter.reset(&r);
     this->frontEnd.setErrorListener(r);
   }
 
