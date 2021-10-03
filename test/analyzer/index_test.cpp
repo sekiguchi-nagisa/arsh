@@ -127,7 +127,7 @@ try { $false; } catch($e) {
   $e;
 }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
 
   // definition
 
@@ -329,7 +329,7 @@ hoge() { echo hello: $@; hoge; }
 hoge a b $(hoge) "$(hoge)" # hoge
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 5}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 6}));
 
   // definition
 

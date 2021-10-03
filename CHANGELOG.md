@@ -11,6 +11,13 @@
     - ``assert``: if on, check assertion
         - now assertion is enabled/disabled at runtime
 
+### Changed
+
+#### LSP
+
+- improve ``textDocument/hover``
+    - support builtin variables
+
 ### Fixed
 
 - ``is-sourced`` sub-command of ``shctl``

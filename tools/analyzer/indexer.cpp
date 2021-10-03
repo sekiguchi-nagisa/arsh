@@ -661,6 +661,12 @@ void SymbolIndexer::visit(Node &node) {
 void SymbolIndexer::enterModule(unsigned short modId, int version,
                                 const std::shared_ptr<TypePool> &p) {
   this->builders.emplace_back(modId, version, p, this->indexes);
+  if (!this->indexes.find(0)) {
+    this->builders.emplace_back(0, 0, p, this->indexes);
+    this->addBuiltinSymbols();
+    this->exitModule(nullptr);
+  }
+  this->builder().importForeignDecls(0, false);
 }
 
 void SymbolIndexer::exitModule(std::unique_ptr<Node> &&node) {
@@ -672,5 +678,39 @@ void SymbolIndexer::exitModule(std::unique_ptr<Node> &&node) {
 }
 
 void SymbolIndexer::consume(std::unique_ptr<Node> &&node) { this->visit(node); }
+
+static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandle> &entry) {
+  if (isTypeAliasFullName(entry.first)) {
+    assert(entry.second.has(FieldAttribute::ALIAS));
+    return DeclSymbol::Kind::TYPE_ALIAS;
+  } else if (isCmdFullName(entry.first)) {
+    return DeclSymbol::Kind::CMD;
+  } else {
+    if (entry.second.has(FieldAttribute::ENV)) {
+      return DeclSymbol::Kind::IMPORT_ENV;
+    }
+    if (entry.second.has(FieldAttribute::READ_ONLY)) {
+      return DeclSymbol::Kind::LET;
+    }
+    return DeclSymbol::Kind::VAR;
+  }
+}
+
+void SymbolIndexer::addBuiltinSymbols() {
+  auto &modType = this->builder().getPool().getBuiltinModType();
+  unsigned int offset = 0;
+  for (auto &e : modType.getHandleMap()) {
+    auto kind = resolveDeclKind(e);
+    auto name = DeclSymbol::demangle(kind, e.first);
+    NameInfo nameInfo(Token{offset, 1}, std::move(name));
+    auto &type = this->builder().getPool().get(e.second.getTypeID());
+    if (kind == DeclSymbol::Kind::CMD) {
+      this->builder().addDecl(nameInfo, kind, "");
+    } else {
+      this->builder().addDecl(nameInfo, type, kind);
+    }
+    offset += 5;
+  }
+}
 
 } // namespace ydsh::lsp

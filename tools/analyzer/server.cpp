@@ -91,6 +91,9 @@ void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
     return;
   }
   findDeclaration(this->indexes, request.unwrap(), [&](const FindDeclResult &ret) {
+    if (ret.decl.getModId() == 0) { // ignore builtin module symbol
+      return;
+    }
     auto s = this->srcMan.findById(ret.decl.getModId());
     assert(s);
     std::string uri = "file://";

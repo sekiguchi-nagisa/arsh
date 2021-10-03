@@ -1595,7 +1595,8 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   // insert return node if not found
   if (node.getBlockNode().getNodes().empty() ||
       !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
-    auto varNode = std::make_unique<VarNode>(Token{0, 1}, "?");
+    unsigned int lastPos = node.getBlockNode().getToken().endPos();
+    auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
     this->checkTypeAsExpr(*varNode);
     addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
   }

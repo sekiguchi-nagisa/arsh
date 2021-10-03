@@ -267,6 +267,8 @@ private:
   IndexBuilder &builder() { return this->builders.back(); }
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
+
+  void addBuiltinSymbols();
 };
 
 } // namespace ydsh::lsp

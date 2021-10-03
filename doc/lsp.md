@@ -11,7 +11,7 @@
 | variable (global import) | ✔️ | ✔️ | ✔️ |
 | variable (inlined import) | ✔️ | ✔️ | ✔️ |
 | variable (named import) | ✔️ | ✔️ | ✔️ |
-| builtin variable | - | - | ❌ |
+| builtin variable | - | - | ✔️ |
 | builtin constant | - | - | ❌ (show value) |
 | function  | ✔️ | ✔️ |✔️ |
 | function (global import) | ✔️ | ✔️ | ✔️ |
