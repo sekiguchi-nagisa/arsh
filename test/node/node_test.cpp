@@ -809,15 +809,15 @@ nodes:
       nodes:
         - nodeKind: Jump
           token:
-            pos: 0
-            size: 1
+            pos: 6
+            size: 0
           type: Nothing
           opKind: "RETURN"
           exprNode:
             nodeKind: Var
             token:
-              pos: 0
-              size: 1
+              pos: 6
+              size: 0
             type: Int
             varName: "?"
             index: 10
