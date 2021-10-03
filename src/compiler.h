@@ -57,13 +57,19 @@ class DefaultErrorConsumer : public ErrorConsumer {
 private:
   DSError *dsError;
   FILE *fp;
-  bool close;
   bool tty;
 
 public:
-  DefaultErrorConsumer(DSError *error, FILE *fp, bool close);
+  /**
+   *
+   * @param error
+   * @param fp
+   * may be null
+   * @param close
+   */
+  DefaultErrorConsumer(DSError *error, FILE *fp);
 
-  ~DefaultErrorConsumer() override;
+  ~DefaultErrorConsumer() override = default;
 
   bool colorSupported() const override;
 

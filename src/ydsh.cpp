@@ -49,9 +49,9 @@ static CompileDumpTarget newDumpTarget(const DSState::DumpTarget &org) {
 static DefaultErrorConsumer newErrorConsumer(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
   bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
-  return DefaultErrorConsumer(e, ignore ? fopen("/dev/null", "w") : stderr, ignore);
+  return DefaultErrorConsumer(e, ignore ? nullptr : stderr);
 #else
-  return DefaultErrorConsumer(e, stderr, false);
+  return DefaultErrorConsumer(e, stderr);
 #endif
 }
 

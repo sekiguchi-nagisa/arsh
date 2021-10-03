@@ -32,20 +32,16 @@ static bool isSupportedTerminal(int fd) {
   return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
-DefaultErrorConsumer::DefaultErrorConsumer(DSError *error, FILE *fp, bool close)
-    : dsError(error), fp(fp), close(close), tty(isSupportedTerminal(fileno(fp))) {}
-
-DefaultErrorConsumer::~DefaultErrorConsumer() {
-  if (this->close) {
-    fclose(this->fp);
-  }
-}
+DefaultErrorConsumer::DefaultErrorConsumer(DSError *error, FILE *fp)
+    : dsError(error), fp(fp), tty(isSupportedTerminal(fileno(fp))) {}
 
 bool DefaultErrorConsumer::colorSupported() const { return this->tty; }
 
 void DefaultErrorConsumer::consume(std::string &&message) {
-  fwrite(message.c_str(), sizeof(char), message.size(), this->fp);
-  fflush(this->fp);
+  if (this->fp) {
+    fwrite(message.c_str(), sizeof(char), message.size(), this->fp);
+    fflush(this->fp);
+  }
 }
 
 void DefaultErrorConsumer::consume(DSError &&error) {
