@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
+
 #include "compiler.h"
 
 namespace ydsh {
 
-// ###########################
-// ##     ErrorReporter     ##
-// ###########################
+// ##################################
+// ##     DefaultErrorConsumer     ##
+// ##################################
 
 /**
  * not allow dumb terminal
@@ -29,6 +31,34 @@ static bool isSupportedTerminal(int fd) {
   const char *term = getenv(ENV_TERM);
   return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
+
+DefaultErrorConsumer::DefaultErrorConsumer(DSError *error, FILE *fp, bool close)
+    : dsError(error), fp(fp), close(close), tty(isSupportedTerminal(fileno(fp))) {}
+
+DefaultErrorConsumer::~DefaultErrorConsumer() {
+  if (this->close) {
+    fclose(this->fp);
+  }
+}
+
+bool DefaultErrorConsumer::colorSupported() const { return this->tty; }
+
+void DefaultErrorConsumer::consume(std::string &&message) {
+  fwrite(message.c_str(), sizeof(char), message.size(), this->fp);
+  fflush(this->fp);
+}
+
+void DefaultErrorConsumer::consume(DSError &&error) {
+  if (this->dsError) {
+    *this->dsError = error;
+  } else {
+    DSError_release(&error);
+  }
+}
+
+// ###########################
+// ##     ErrorReporter     ##
+// ###########################
 
 static std::vector<std::string> split(const std::string &str) {
   std::vector<std::string> bufs;
@@ -59,34 +89,29 @@ static const char *toString(DSErrorKind kind) {
   }
 }
 
-ErrorReporter::ErrorReporter(DSError *e, FILE *fp, bool close)
-    : dsError(e), fp(fp), close(close), tty(isSupportedTerminal(fileno(fp))) {}
-
-ErrorReporter::~ErrorReporter() {
-  if (this->close) {
-    fclose(this->fp);
-  }
-}
-
 void ErrorReporter::printError(const Lexer &lex, const char *kind, Token token, TermColor c,
                                const char *message) {
-  unsigned lineNumOffset = lex.getLineNumOffset();
-  fprintf(this->fp, "%s:", lex.getSourceName().c_str());
+  std::string out;
+  out.reserve(256);
+  unsigned int lineNumOffset = lex.getLineNumOffset();
+  appendAs(out, "%s:", lex.getSourceName().c_str());
   if (lineNumOffset > 0) {
     auto srcPos = lex.getSrcPos(token);
-    fprintf(this->fp, "%d:%d:", srcPos.lineNum, srcPos.chars);
+    appendAs(out, "%d:%d:", srcPos.lineNum, srcPos.chars);
   }
-  fprintf(this->fp, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
-          this->color(TermColor::Reset), message);
+  appendAs(out, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
+           this->color(TermColor::Reset), message);
 
   if (lineNumOffset > 0) {
-    this->printErrorLine(lex, token);
+    this->printErrorLine(out, lex, token);
   }
-  fflush(this->fp);
+
+  // write output
+  this->consumer.consume(std::move(out));
 }
 
 const char *ErrorReporter::color(TermColor c) const {
-  if (this->tty) {
+  if (this->consumer.colorSupported()) {
 #define GEN_STR(E, C) "\033[" #C "m",
     const char *ansi[] = {EACH_TERM_COLOR(GEN_STR)};
 #undef GEN_STR
@@ -95,7 +120,7 @@ const char *ErrorReporter::color(TermColor c) const {
   return "";
 }
 
-void ErrorReporter::printErrorLine(const Lexer &lexer, Token errorToken) const {
+void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token errorToken) const {
   Token lineToken = lexer.getLineToken(errorToken);
   auto line = lexer.formatTokenText(lineToken);
   auto marker = lexer.formatLineMarker(lineToken, errorToken);
@@ -109,23 +134,22 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token errorToken) const {
                                         {omitLine ? size - 10 : size, size}};
   for (unsigned int i = 0; i < 2; i++) {
     if (i == 1 && omitLine) {
-      fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Yellow),
-              "\n| ~~~ omit error lines ~~~ |\n", this->color(TermColor::Reset));
+      appendAs(out, "%s%s%s\n", this->color(TermColor::Yellow), "\n| ~~~ omit error lines ~~~ |\n",
+               this->color(TermColor::Reset));
     }
 
     size_t start = pairs[i].first;
     size_t stop = pairs[i].second;
     for (size_t index = start; index < stop; index++) {
       // print error line
-      fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(),
-              this->color(TermColor::Reset));
+      appendAs(out, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(),
+               this->color(TermColor::Reset));
 
       // print line marker
-      fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
-              markers[index].c_str(), this->color(TermColor::Reset));
+      appendAs(out, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+               markers[index].c_str(), this->color(TermColor::Reset));
     }
   }
-  fflush(this->fp);
 }
 
 bool ErrorReporter::handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
@@ -167,14 +191,26 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
 
   auto srcPos = lexer.getSrcPos(errorToken);
   const char *sourceName = lexer.getSourceName().c_str();
-  if (this->dsError) {
-    *this->dsError = {.kind = type,
-                      .fileName = strdup(sourceName),
-                      .lineNum = srcPos.lineNum,
-                      .chars = srcPos.chars,
-                      .name = strdup(errorKind)};
-  }
+  this->consumer.consume(DSError{.kind = type,
+                                 .fileName = strdup(sourceName),
+                                 .lineNum = srcPos.lineNum,
+                                 .chars = srcPos.chars,
+                                 .name = strdup(errorKind)});
   return true;
+}
+
+void ErrorReporter::appendAs(std::string &out, const char *fmt, ...) {
+  va_list arg;
+
+  va_start(arg, fmt);
+  char *str = nullptr;
+  if (vasprintf(&str, fmt, arg) == -1) {
+    fatal_perror("broken");
+  }
+  va_end(arg);
+
+  out += str;
+  free(str);
 }
 
 // ######################
@@ -182,9 +218,11 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
 // ######################
 
 Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
-                   CompileOption compileOption, const CompileDumpTarget *dumpTarget)
+                   CompileOption compileOption, const CompileDumpTarget *dumpTarget,
+                   ErrorConsumer &consumer)
     : compileOption(compileOption), provider(moduleProvider),
       frontEnd(this->provider, std::move(ctx), toOption(this->compileOption)),
+      errorReporter(consumer),
       uastDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_UAST] : nullptr),
       astDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_AST] : nullptr),
       codegen(this->provider.getPool()),
@@ -196,6 +234,7 @@ Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontE
   if (this->astDumper) {
     this->frontEnd.setASTDumper(this->astDumper);
   }
+  this->frontEnd.setErrorListener(this->errorReporter);
 }
 
 int Compiler::operator()(ObjPtr<FuncObject> &func) {
@@ -243,7 +282,7 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
 END:
   if (this->codegen.hasError()) {
     auto &e = this->codegen.getError();
-    this->errorReporter &&this->errorReporter->handleCodeGenError(this->frontEnd.getContext(), e);
+    this->errorReporter.handleCodeGenError(this->frontEnd.getContext(), e);
     return 1;
   }
   if (hasFlag(this->compileOption, CompileOption::LOAD_TO_ROOT)) {
@@ -255,8 +294,7 @@ END:
       auto node = std::make_unique<EmptyNode>(Token{0, 0});
       auto error = createTCError<ConflictSymbol>(
           *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
-      this->errorReporter &&this->errorReporter->handleTypeError(this->frontEnd.getContext(),
-                                                                 error);
+      this->errorReporter.handleTypeError(this->frontEnd.getContext(), error);
       return 1;
     }
   }

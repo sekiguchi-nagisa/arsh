@@ -46,12 +46,12 @@ static CompileDumpTarget newDumpTarget(const DSState::DumpTarget &org) {
                            }};
 }
 
-static ErrorReporter newReporter(DSError *e) {
+static DefaultErrorConsumer newErrorConsumer(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
   bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
-  return ErrorReporter(e, ignore ? fopen("/dev/null", "w") : stderr, ignore);
+  return DefaultErrorConsumer(e, ignore ? fopen("/dev/null", "w") : stderr, ignore);
 #else
-  return ErrorReporter(e, stderr, false);
+  return DefaultErrorConsumer(e, stderr, false);
 #endif
 }
 
@@ -63,9 +63,8 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
   }
 
   CompileDumpTarget dumpTarget = newDumpTarget(state.dumpTarget);
-  auto errorReporter = newReporter(dsError);
-  Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget);
-  compiler.setErrorReporter(errorReporter);
+  auto errorConsumer = newErrorConsumer(dsError);
+  Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget, errorConsumer);
   int ret = compiler(func);
   state.lineNum = compiler.lineNum();
   return ret;

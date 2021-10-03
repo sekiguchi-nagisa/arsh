@@ -43,7 +43,17 @@ enum class TermColor : unsigned int { // ansi color code
 #undef GEN_ENUM
 };
 
-class ErrorReporter : public FrontEnd::ErrorListener {
+struct ErrorConsumer {
+  virtual ~ErrorConsumer() = default;
+
+  virtual bool colorSupported() const = 0;
+
+  virtual void consume(std::string &&message) = 0;
+
+  virtual void consume(DSError &&error) = 0;
+};
+
+class DefaultErrorConsumer : public ErrorConsumer {
 private:
   DSError *dsError;
   FILE *fp;
@@ -51,9 +61,25 @@ private:
   bool tty;
 
 public:
-  ErrorReporter(DSError *dsError, FILE *fp, bool close);
+  DefaultErrorConsumer(DSError *error, FILE *fp, bool close);
 
-  ~ErrorReporter() override;
+  ~DefaultErrorConsumer() override;
+
+  bool colorSupported() const override;
+
+  void consume(std::string &&message) override;
+
+  void consume(DSError &&error) override;
+};
+
+class ErrorReporter : public FrontEnd::ErrorListener {
+private:
+  ErrorConsumer &consumer;
+
+public:
+  explicit ErrorReporter(ErrorConsumer &consumer) : consumer(consumer) {}
+
+  ~ErrorReporter() override = default;
 
   bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                         const ParseError &parseError) override;
@@ -71,7 +97,10 @@ private:
 
   const char *color(TermColor c) const;
 
-  void printErrorLine(const Lexer &lexer, Token token) const;
+  void printErrorLine(std::string &out, const Lexer &lexer, Token token) const;
+
+  static void appendAs(std::string &out, const char *fmt, ...)
+      __attribute__((format(printf, 2, 3)));
 };
 
 enum class CompileOption : unsigned short {
@@ -104,7 +133,7 @@ private:
   CompileOption compileOption;
   DefaultModuleProvider &provider;
   FrontEnd frontEnd;
-  ObserverPtr<ErrorReporter> errorReporter;
+  ErrorReporter errorReporter;
   NodeDumper uastDumper;
   NodeDumper astDumper;
   ByteCodeGenerator codegen;
@@ -112,16 +141,12 @@ private:
 
 public:
   Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
-           CompileOption compileOption, const CompileDumpTarget *dumpTarget);
+           CompileOption compileOption, const CompileDumpTarget *dumpTarget,
+           ErrorConsumer &consumer);
 
   bool frontEndOnly() const {
     return hasFlag(this->compileOption, CompileOption::PARSE_ONLY) ||
            hasFlag(this->compileOption, CompileOption::CHECK_ONLY);
-  }
-
-  void setErrorReporter(ErrorReporter &r) {
-    this->errorReporter.reset(&r);
-    this->frontEnd.setErrorListener(r);
   }
 
   unsigned int lineNum() const { return this->frontEnd.getRootLineNum(); }
