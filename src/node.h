@@ -574,6 +574,10 @@ protected:
   AssignableNode(NodeKind kind, Token token) : Node(kind, token) {}
 
 public:
+  static bool classof(const Node *node) {
+    return node->getNodeKind() == NodeKind::Var || node->getNodeKind() == NodeKind::Access;
+  }
+
   ~AssignableNode() override = default;
 
   void setAttribute(const FieldHandle &handle) {
@@ -587,10 +591,6 @@ public:
 
   void dump(NodeDumper &dumper) const override;
 };
-
-inline bool isAssignable(const Node &node) {
-  return node.is(NodeKind::Var) || node.is(NodeKind::Access);
-}
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 private:
@@ -2251,7 +2251,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node);
 
 template <typename T>
 inline const T *findInnerNode(const Node *node) {
-  return static_cast<const T *>(findInnerNode(T::KIND, node));
+  return cast<T>(findInnerNode(T::KIND, node));
 }
 
 struct NodeVisitor {

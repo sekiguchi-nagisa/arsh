@@ -1410,8 +1410,8 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
 void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);
-  if (isAssignable(leftNode)) {
-    if (hasFlag(static_cast<AssignableNode &>(leftNode).attr(), FieldAttribute::READ_ONLY)) {
+  if (isa<AssignableNode>(leftNode)) {
+    if (hasFlag(cast<AssignableNode>(leftNode).attr(), FieldAttribute::READ_ONLY)) {
       this->reportError<ReadOnly>(leftNode);
     }
   } else {
