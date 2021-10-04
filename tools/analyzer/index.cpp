@@ -62,6 +62,7 @@ std::string DeclSymbol::mangle(Kind k, StringRef name) {
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
     break;
@@ -81,6 +82,7 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
     break;
@@ -94,6 +96,7 @@ bool DeclSymbol::isVarName(Kind k) {
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
     return true;

@@ -15,7 +15,6 @@
  */
 
 #include <cstdarg>
-#include <sys/utsname.h>
 
 #include <vector>
 
@@ -1081,20 +1080,6 @@ const DSType &TypeChecker::resolveCommonSuperType(const std::vector<const DSType
   return this->typePool.get(TYPE::Void);
 }
 
-static auto initConstVarMap() {
-  struct utsname name {};
-  if (uname(&name) == -1) {
-    fatal_perror("cannot get utsname");
-  }
-
-  StrRefMap<std::string> map = {
-      {CVAR_VERSION, X_INFO_VERSION_CORE}, {CVAR_DATA_DIR, SYSTEM_DATA_DIR},
-      {CVAR_MODULE_DIR, SYSTEM_MOD_DIR},   {CVAR_OSTYPE, name.sysname},
-      {CVAR_MACHTYPE, BUILD_ARCH},
-  };
-  return map;
-}
-
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto __v = E;                                                                                  \
@@ -1176,7 +1161,6 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   }
   case NodeKind::Var: {
     assert(this->lexer);
-    static const auto constMap = initConstVarMap();
     auto &varNode = cast<VarNode>(node);
     Token token = varNode.getToken();
     std::string value;
@@ -1189,8 +1173,8 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         break;
       }
     } else if (hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
-      auto iter = constMap.find(varNode.getVarName());
-      if (iter == constMap.end()) {
+      auto iter = getBuiltinConstMap().find(varNode.getVarName());
+      if (iter == getBuiltinConstMap().end()) {
         break;
       }
       value = iter->second;

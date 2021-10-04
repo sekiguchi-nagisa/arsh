@@ -592,6 +592,8 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+const StrRefMap<std::string> &getBuiltinConstMap();
+
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 private:
   std::string varName;

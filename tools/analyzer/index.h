@@ -113,6 +113,7 @@ public:
     LET,
     IMPORT_ENV,
     EXPORT_ENV,
+    CONST,
     FUNC,
     CMD,
     TYPE_ALIAS,

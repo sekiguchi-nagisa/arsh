@@ -17,6 +17,8 @@
 #include <cerrno>
 #include <cstdarg>
 
+#include <sys/utsname.h>
+
 #include "constant.h"
 #include "node.h"
 #include "scope.h"
@@ -234,6 +236,25 @@ void TupleNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 void AssignableNode::dump(NodeDumper &dumper) const {
   DUMP(index);
   dumper.dump("attribute", toString(this->attribute));
+}
+
+static auto initConstVarMap() {
+  struct utsname name {};
+  if (uname(&name) == -1) {
+    fatal_perror("cannot get utsname");
+  }
+
+  StrRefMap<std::string> map = {
+      {CVAR_VERSION, X_INFO_VERSION_CORE}, {CVAR_DATA_DIR, SYSTEM_DATA_DIR},
+      {CVAR_MODULE_DIR, SYSTEM_MOD_DIR},   {CVAR_OSTYPE, name.sysname},
+      {CVAR_MACHTYPE, BUILD_ARCH},
+  };
+  return map;
+}
+
+const StrRefMap<std::string> &getBuiltinConstMap() {
+  static auto constMap = initConstVarMap();
+  return constMap;
 }
 
 // #####################

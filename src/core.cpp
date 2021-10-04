@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <sys/utsname.h>
 #include <sys/wait.h>
 
 #include <algorithm>
@@ -23,6 +22,7 @@
 #include "logger.h"
 #include "misc/num_util.hpp"
 #include "vm.h"
+#include "node.h"
 #include <embed.h>
 
 extern char **environ; // NOLINT
@@ -279,11 +279,14 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
   }
 
   // set builtin variables
+  auto &constMap = getBuiltinConstMap();
+
   /**
    * for version detection
    * must be String_Object
    */
-  binder.bind(CVAR_VERSION, DSValue::createStr(X_INFO_VERSION_CORE));
+  assert(constMap.find(CVAR_VERSION) != constMap.end());
+  binder.bind(CVAR_VERSION, DSValue::createStr(constMap.find(CVAR_VERSION)->second));
 
   /**
    * uid of shell
@@ -297,30 +300,29 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
    */
   binder.bind("EUID", DSValue::createInt(geteuid()));
 
-  struct utsname name {};
-  if (uname(&name) == -1) {
-    fatal_perror("cannot get utsname");
-  }
+  /**
+   * must be String_Object
+   */
+  assert(constMap.find(CVAR_OSTYPE) != constMap.end());
+  binder.bind(CVAR_OSTYPE, DSValue::createStr(constMap.find(CVAR_OSTYPE)->second));
 
   /**
    * must be String_Object
    */
-  binder.bind(CVAR_OSTYPE, DSValue::createStr(name.sysname));
+  assert(constMap.find(CVAR_MACHTYPE) != constMap.end());
+  binder.bind(CVAR_MACHTYPE, DSValue::createStr(constMap.find(CVAR_MACHTYPE)->second));
 
   /**
    * must be String_Object
    */
-  binder.bind(CVAR_MACHTYPE, DSValue::createStr(BUILD_ARCH));
+  assert(constMap.find(CVAR_DATA_DIR) != constMap.end());
+  binder.bind(CVAR_DATA_DIR, DSValue::createStr(constMap.find(CVAR_DATA_DIR)->second));
 
   /**
    * must be String_Object
    */
-  binder.bind(CVAR_DATA_DIR, DSValue::createStr(SYSTEM_DATA_DIR));
-
-  /**
-   * must be String_Object
-   */
-  binder.bind(CVAR_MODULE_DIR, DSValue::createStr(SYSTEM_MOD_DIR));
+  assert(constMap.find(CVAR_MODULE_DIR) != constMap.end());
+  binder.bind(CVAR_MODULE_DIR, DSValue::createStr(constMap.find(CVAR_MODULE_DIR)->second));
 
   /**
    * dummy object for random number

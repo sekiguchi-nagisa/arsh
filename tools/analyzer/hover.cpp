@@ -19,7 +19,7 @@
 
 namespace ydsh::lsp {
 
-static const char *getVarDeclKind(DeclSymbol::Kind k) {
+static const char *getVarDeclPrefix(DeclSymbol::Kind k) {
   switch (k) {
   case DeclSymbol::Kind::VAR:
     return "var";
@@ -42,10 +42,17 @@ std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV: {
-    content += getVarDeclKind(decl.getKind());
+    content += getVarDeclPrefix(decl.getKind());
     content += " ";
     content += name;
     content += " : ";
+    content += decl.getInfo();
+    break;
+  }
+  case DeclSymbol::Kind::CONST: {
+    content += "const ";
+    content += name;
+    content += " = ";
     content += decl.getInfo();
     break;
   }

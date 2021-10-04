@@ -706,6 +706,13 @@ void SymbolIndexer::addBuiltinSymbols() {
     auto &type = this->builder().getPool().get(e.second.getTypeID());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
+    } else if (auto iter = getBuiltinConstMap().find(nameInfo.getName());
+               iter != getBuiltinConstMap().end()) {
+      assert(type.is(TYPE::String));
+      std::string value = "'";
+      value += iter->second;
+      value += "'";
+      this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str());
     } else {
       this->builder().addDecl(nameInfo, type, kind);
     }
