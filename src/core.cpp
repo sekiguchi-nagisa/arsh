@@ -21,8 +21,8 @@
 
 #include "logger.h"
 #include "misc/num_util.hpp"
-#include "vm.h"
 #include "node.h"
+#include "vm.h"
 #include <embed.h>
 
 extern char **environ; // NOLINT
@@ -218,9 +218,15 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
   binder.bind("PPID", DSValue::createInt(getppid()));
 
   /**
+   * dummy object for random number
+   * must be Int_Object
+   */
+  binder.bind("RANDOM", DSValue::createInt(0), FieldAttribute::READ_ONLY);
+
+  /**
    * must be Long_Object.
    */
-  binder.bind("SECONDS", DSValue::createInt(0), FieldAttribute::SECONDS);
+  binder.bind("SECONDS", DSValue::createInt(0), FieldAttribute());
 
   /**
    * for internal field splitting.
@@ -323,12 +329,6 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
    */
   assert(constMap.find(CVAR_MODULE_DIR) != constMap.end());
   binder.bind(CVAR_MODULE_DIR, DSValue::createStr(constMap.find(CVAR_MODULE_DIR)->second));
-
-  /**
-   * dummy object for random number
-   * must be Int_Object
-   */
-  binder.bind("RANDOM", DSValue::createInt(0), FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
 
   /**
    * dummy object for signal handler setting

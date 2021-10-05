@@ -29,31 +29,6 @@ struct DSState;
 
 namespace ydsh {
 
-/**
- * enum order is corresponding to builtin variable declaration order.
- */
-enum class BuiltinVarOffset : unsigned int {
-  SCRIPT_NAME, // SCRIPT_NAME
-  SCRIPT_DIR,  // SCRIPT_DIR
-  REPLY,       // REPLY (for read command)
-  REPLY_VAR,   // reply (fo read command)
-  PID,         // PID (current process)
-  PPID,        // PPID
-  SECONDS,     // SECONDS
-  IFS,         // IFS
-  COMPREPLY,   // COMPREPLY
-  PIPESTATUS,  // PIPESTATUS
-  EXIT_STATUS, // ?
-  SHELL_PID,   // $
-  ARGS,        // @
-  ARGS_SIZE,   // #
-  POS_0,       // 0 (for script name)
-  POS_1,       // 1 (for argument)
-               /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
-};
-
-inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
-
 struct VMHook {
   /**
    * hook for vm fetch event

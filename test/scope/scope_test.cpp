@@ -75,7 +75,7 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
   auto *handle = ret.asOk();
 
-  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), FieldAttribute::RANDOM);
+  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), FieldAttribute::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define alias
@@ -218,7 +218,7 @@ TEST_F(ScopeTest, global) {
   ASSERT_EQ(1, this->top->getMaxGlobalVarIndex());
 
   // define handle when defined in builtin
-  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::SECONDS);
+  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   auto *handle = this->top->lookup("AAA");
@@ -501,14 +501,13 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(0, block0->getCurLocalIndex());
 
   // define global
-  auto ret = this->top->defineHandle("GGG", this->pool.get(TYPE::Int),
-                                     FieldAttribute::RANDOM | FieldAttribute::READ_ONLY);
+  auto ret = this->top->defineHandle("GGG", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 0,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::RANDOM | FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -522,7 +521,7 @@ TEST_F(ScopeTest, func) {
           .commitID = 0,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::RANDOM | FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
           .modID = 1,
       },
       handle));
@@ -577,8 +576,7 @@ TEST_F(ScopeTest, func) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::RANDOM | FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY |
-                  FieldAttribute::ALIAS,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
           .modID = 1,
       },
       ret));
@@ -588,8 +586,7 @@ TEST_F(ScopeTest, func) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::RANDOM | FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY |
-                  FieldAttribute::ALIAS,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
           .modID = 1,
       },
       handle));

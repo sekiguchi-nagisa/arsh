@@ -289,7 +289,7 @@ TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", FieldAttribute::ENV));
   ASSERT_NO_FATAL_FAILURE(
       this->defineAndArchive("c", "((String, [String]) -> Void)!", FieldAttribute{}));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", FieldAttribute::RANDOM));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", FieldAttribute{}));
 }
 
 TEST_F(ArchiveTest, array) {
@@ -299,8 +299,7 @@ TEST_F(ArchiveTest, array) {
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1));
-  ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("bbb", type1, FieldAttribute::SECONDS | FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::ALIAS));
 
   //
   ret1 = this->pool().createArrayType(type1);
@@ -318,8 +317,7 @@ TEST_F(ArchiveTest, map) {
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1, FieldAttribute::READ_ONLY));
-  ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("bbb", type1, FieldAttribute::RANDOM | FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::ALIAS));
 
   //
   ret1 =
@@ -431,7 +429,7 @@ TEST_F(ArchiveTest, mod3) {
       auto &type1 = *ret1.asOk();
       ASSERT_NO_FATAL_FAILURE(define(ctx, "AAA", type1, FieldAttribute::ENV));
       ASSERT_NO_FATAL_FAILURE(
-          define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), FieldAttribute::RANDOM));
+          define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), FieldAttribute{}));
     });
     ASSERT_EQ(3, modType3.getModID());
     ASSERT_EQ(1, modType3.getChildSize());
@@ -459,7 +457,7 @@ TEST_F(ArchiveTest, mod3) {
   handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeID());
-  ASSERT_EQ(toString(FieldAttribute::GLOBAL | FieldAttribute::RANDOM), toString(handle->attr()));
+  ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModID(), handle->getModID());
 
   //

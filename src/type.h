@@ -220,13 +220,11 @@ public:
   OP(READ_ONLY, (1u << 0u))                                                                        \
   OP(GLOBAL, (1u << 1u))                                                                           \
   OP(ENV, (1u << 2u))                                                                              \
-  OP(RANDOM, (1u << 3u))                                                                           \
-  OP(SECONDS, (1u << 4u))                                                                          \
-  OP(MOD_CONST, (1u << 5u))                                                                        \
-  OP(ALIAS, (1u << 6u))                                                                            \
-  OP(NAMED_MOD, (1u << 7u))                                                                        \
-  OP(GLOBAL_MOD, (1u << 8u))                                                                       \
-  OP(INLINED_MOD, (1u << 9u))
+  OP(MOD_CONST, (1u << 3u))                                                                        \
+  OP(ALIAS, (1u << 4u))                                                                            \
+  OP(NAMED_MOD, (1u << 5u))                                                                        \
+  OP(GLOBAL_MOD, (1u << 6u))                                                                       \
+  OP(INLINED_MOD, (1u << 7u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
