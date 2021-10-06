@@ -629,7 +629,9 @@ private:
 public:
   AccessNode(std::unique_ptr<Node> &&recvNode, std::unique_ptr<VarNode> &&nameNode)
       : WithRtti(recvNode->getToken()), recvNode(std::move(recvNode)),
-        nameNode(std::move(nameNode)) {}
+        nameNode(std::move(nameNode)) {
+    this->updateToken(this->nameNode->getToken());
+  }
 
   Node &getRecvNode() const { return *this->recvNode; }
 

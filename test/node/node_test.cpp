@@ -273,7 +273,7 @@ nodes:
       nodeKind: Access
       token:
         pos: 0
-        size: 5
+        size: 10
       type:
       recvNode:
         nodeKind: String
@@ -458,7 +458,7 @@ nodes:
         nodeKind: Access
         token:
           pos: 7
-          size: 32
+          size: 37
         type:
         recvNode:
           nodeKind: Fork
