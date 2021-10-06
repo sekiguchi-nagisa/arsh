@@ -814,10 +814,7 @@ TEST_F(InteractiveTest, moduleError4) {
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod2.ds as mod", "", eout));
 
-  eout = "[runtime error]\n"
-         "IllegalAccessError: attemp to access uninitialized global variable\n"
-         "    from (stdin):3 '<toplevel>()'\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$mod", "", eout));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$mod", ": %mod2 = module(%mod2)"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
