@@ -36,6 +36,7 @@ enum class BuiltinVarOffset : unsigned int {
   REPLY_VAR,   // reply (fo read command)
   PID,         // PID (current process)
   PPID,        // PPID
+  MODULE,      // MODULE
   RANDOM,      // RANDOM
   SECONDS,     // SECONDS
   IFS,         // IFS

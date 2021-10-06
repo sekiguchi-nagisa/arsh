@@ -35,3 +35,8 @@ assert $mod.path == $mod1.mod3.path
 assert $mod.name == $mod1.mod3.name
 
 assert '45' is mod1.mod3.Path
+
+assert $mod1.module() is mod1
+assert $mod1.module() is typeof($mod1)
+assert $mod1.module() as String == $mod1 as String
+assert !($MODULE is mod1)

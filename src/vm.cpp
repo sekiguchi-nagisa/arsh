@@ -1771,6 +1771,18 @@ bool VM::mainLoop(DSState &state) {
         TRY(typeAs<RedirObject>(state.stack.peek()).redirect(state));
         vmnext;
       }
+      vmcase(LOAD_CUR_MOD) {
+        unsigned short modId = static_cast<const CompiledCode *>(CODE(state))->getBelongedModId();
+        auto ret = state.typePool.getModTypeById(modId);
+        assert(ret);
+        auto &modType = cast<ModType>(*ret.asOk());
+        unsigned int index = modType.getIndex();
+        auto value = state.getGlobal(index);
+        auto &func = typeAs<FuncObject>(value);
+        (void)func;
+        state.stack.push(std::move(value));
+        vmnext;
+      }
       vmcase(RAND) {
         std::random_device rand;
         std::default_random_engine engine(rand());

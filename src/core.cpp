@@ -218,6 +218,11 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
   binder.bind("PPID", DSValue::createInt(getppid()));
 
   /**
+   * dummy object for module
+   */
+  binder.bind("MODULE", DSValue::createDummy(pool.get(TYPE::Module)), FieldAttribute::READ_ONLY);
+
+  /**
    * dummy object for random number
    * must be Int_Object
    */

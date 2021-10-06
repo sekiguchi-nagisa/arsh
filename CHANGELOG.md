@@ -11,6 +11,10 @@
     - ``assert``: if on, check assertion
         - now assertion is enabled/disabled at runtime
 
+#### Builtin
+
+- add builtin ``MODULE`` variable for indicating current ``Module`` object
+
 ### Changed
 
 #### LSP

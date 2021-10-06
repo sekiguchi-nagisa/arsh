@@ -48,7 +48,7 @@ struct NodeDumpParam {
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-  static constexpr unsigned int GVAR_NUM = 55;
+  static constexpr unsigned int GVAR_NUM = 56;
 
   NodeDumpParam param;
 
@@ -753,7 +753,7 @@ nodes:
         size: 8
       type: Boolean
       varName: "false"
-      index: 45
+      index: 46
       attribute: "READ_ONLY | GLOBAL | ALIAS"
     iterNode:
       nodeKind: Empty
@@ -799,7 +799,7 @@ nodes:
         pos: 0
         size: 1
       name: "f"
-    udcIndex: 55
+    udcIndex: 56
     blockNode:
       nodeKind: Block
       token:
@@ -820,7 +820,7 @@ nodes:
               size: 0
             type: Int
             varName: "?"
-            index: 10
+            index: 12
             attribute: "GLOBAL | ALIAS"
           leavingBlock: false
       baseIndex: 0
@@ -981,7 +981,7 @@ nodes:
       varSize: 2
       maxVarSize: 2
     maxVarNum: 2
-    varIndex: 55
+    varIndex: 56
     funcType: "(Int, Int) -> Void"
 )"},
 };

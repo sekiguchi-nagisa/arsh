@@ -107,6 +107,7 @@ namespace ydsh {
   OP(NEW_REDIR, 0, 1)                                                                              \
   OP(ADD_REDIR_OP, 1, -1)                                                                          \
   OP(DO_REDIR, 0, 0)                                                                               \
+  OP(LOAD_CUR_MOD, 0, 1)                                                                           \
   OP(RAND, 0, 1)                                                                                   \
   OP(GET_SECOND, 0, 1)                                                                             \
   OP(SET_SECOND, 0, -1)                                                                            \

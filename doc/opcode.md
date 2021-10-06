@@ -80,6 +80,7 @@
 | NEW_REDIR       |                                | -> value                                     | create new RedireConfig                            |
 | ADD_REDIR_OP    | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR        |                                | value -> value                               | perform redirection                                |
+| LOAD_CUR_MOD    |                                | -> value                                     | load a current module                              |
 | RAND            |                                | -> value                                     | generate random number and push stack top          |
 | GET_SECOND      |                                | -> value                                     | get differential time between current and base     |
 | SET_SECOND      |                                | value ->                                     | set base time                                      |

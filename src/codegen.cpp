@@ -462,7 +462,9 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
   } else {
     if (hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
-      if (node.getIndex() == toIndex(BuiltinVarOffset::RANDOM)) {
+      if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {
+        this->emit0byteIns(OpCode::LOAD_CUR_MOD);
+      } else if (node.getIndex() == toIndex(BuiltinVarOffset::RANDOM)) {
         this->emit0byteIns(OpCode::RAND);
       } else if (node.getIndex() == toIndex(BuiltinVarOffset::SECONDS)) {
         this->emit0byteIns(OpCode::GET_SECOND);
@@ -1360,7 +1362,7 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const M
   unsigned char maxLocalSize = maxVarIndex;
   this->curBuilder().localVarNum = maxLocalSize;
   this->emitIns(OpCode::RETURN);
-  auto code = this->finalizeCodeBuilder("");
+  auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {
     auto v = DSValue::create<FuncObject>(modType, std::move(code));

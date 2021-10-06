@@ -21,3 +21,7 @@ function script() : String {
 
 assert $SCRIPT_NAME == $script()
 assert $SCRIPT_NAME != $mod3.name
+
+function module() : Module {
+    return $MODULE
+}
