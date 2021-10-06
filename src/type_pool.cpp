@@ -50,7 +50,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());
   this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
   this->initBuiltinType(TYPE::Func, "Func", false, TYPE::Any, info_Dummy());
-  this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
 

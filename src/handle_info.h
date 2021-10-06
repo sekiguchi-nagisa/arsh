@@ -36,7 +36,8 @@ namespace ydsh {
   OP(StringIter)                                                                                   \
   OP(Regex)                                                                                        \
   OP(Signal)                                                                                       \
-  OP(Signals)
+  OP(Signals)                                                                                      \
+  OP(Module)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \

@@ -259,6 +259,13 @@ function signal($this : Signals, $key : String) : Option<Signal>
 function list($this : Signals) : Array<Signal>
 ```
 
+## Module type
+```
+function scriptName($this : Module) : String
+
+function scriptDir($this : Module) : String
+```
+
 ## Array type
 ```
 function %OP_GET($this : Array<T0>, $index : Int) : T0

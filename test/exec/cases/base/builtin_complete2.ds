@@ -115,8 +115,8 @@ $assertArray($(env | grep ^P | while(read -r) {
 # field/method
 $assertArray(["_0", "_1"], $(complete "(1,2)."))
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
-$assertArray(["compAdd", 'compDelegate'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
-$assertArray(["hello", "hey", "hey2", "hey3"],
+$assertArray(["compAdd", 'compDelegate', 'scriptDir', 'scriptName'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
+$assertArray(["hello", "hey", "hey2", "hey3", 'scriptDir', 'scriptName'],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray(['abs', "toFloat"], $(complete '
     var a = 334.4 as Any

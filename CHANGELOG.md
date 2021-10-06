@@ -14,6 +14,9 @@
 #### Builtin
 
 - add builtin ``MODULE`` variable for indicating current ``Module`` object
+- add some methods to ``Module`` type
+    - ``scriptName``: get ``SCRIPT_NAME`` of module
+    - ``scriptDir``: get ``SCRIPT_DIR`` of module
 
 ### Changed
 

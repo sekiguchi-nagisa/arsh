@@ -1125,6 +1125,26 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
   RET(v);
 }
 
+// ####################
+// ##     Module     ##
+// ####################
+
+//!bind: function scriptName($this : Module) : String
+YDSH_METHOD module_name(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(module_name);
+
+  auto &obj = typeAs<FuncObject>(LOCAL(0));
+  RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_NAME]);
+}
+
+//!bind: function scriptDir($this : Module) : String
+YDSH_METHOD module_dir(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(module_dir);
+
+  auto &obj = typeAs<FuncObject>(LOCAL(0));
+  RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_DIR]);
+}
+
 // ###################
 // ##     Array     ##
 // ###################

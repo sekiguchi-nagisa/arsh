@@ -1777,10 +1777,7 @@ bool VM::mainLoop(DSState &state) {
         assert(ret);
         auto &modType = cast<ModType>(*ret.asOk());
         unsigned int index = modType.getIndex();
-        auto value = state.getGlobal(index);
-        auto &func = typeAs<FuncObject>(value);
-        (void)func;
-        state.stack.push(std::move(value));
+        state.stack.push(state.getGlobal(index));
         vmnext;
       }
       vmcase(RAND) {

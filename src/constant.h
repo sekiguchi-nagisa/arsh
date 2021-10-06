@@ -93,6 +93,9 @@ constexpr const char *CVAR_MODULE_DIR = "MODULE_DIR";
 constexpr const char *CVAR_OSTYPE = "OSTYPE";
 constexpr const char *CVAR_MACHTYPE = "MACHTYPE";
 
+constexpr const unsigned int CVAR_OFFSET_SCRIPT_NAME = 0;
+constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
+
 // =====  magic method  =====
 
 // constructor
