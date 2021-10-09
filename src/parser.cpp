@@ -186,7 +186,7 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
   } else if (!isEOSToken(this->curKind)) {
     message += "mismatched token `";
     message += toString(this->curKind);
-    message += "`, ";
+    message += "', ";
   }
   message += "expected ";
   message += e.message;
