@@ -472,7 +472,7 @@ private:
    *   if fallbackType is not null, return fallbackType.
    *   if fallbackType is null, return Nothing and report error
    */
-  const DSType &resolveCommonSuperType(const Node &node, const std::vector<const DSType *> &types,
+  const DSType &resolveCommonSuperType(const Node &node, std::vector<const DSType *> &&types,
                                        const DSType *fallbackType);
 
   /**

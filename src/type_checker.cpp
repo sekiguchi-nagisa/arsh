@@ -250,7 +250,8 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue() {
   for (unsigned int i = 0; i < jumpNodes.size(); i++) {
     types[i] = &jumpNodes[i]->getExprNode().getType();
   }
-  auto &retType = this->resolveCommonSuperType(jumpNodes[0]->getExprNode(), types, nullptr);
+  auto &retType =
+      this->resolveCommonSuperType(jumpNodes[0]->getExprNode(), std::move(types), nullptr);
   for (auto &jumpNode : jumpNodes) {
     this->checkTypeWithCoercion(retType, jumpNode->refExprNode());
   }
@@ -996,7 +997,8 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
   }
-  auto &type = this->resolveCommonSuperType(node, types, &this->typePool.get(TYPE::Void));
+  auto &type =
+      this->resolveCommonSuperType(node, std::move(types), &this->typePool.get(TYPE::Void));
 
   // apply coercion
   for (auto &armNode : node.getArmNodes()) {
@@ -1062,10 +1064,18 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   }
 }
 
+static void dedup(std::vector<const DSType *> &types) {
+  std::sort(types.begin(), types.end(),
+            [](const DSType *x, const DSType *y) { return x->typeId() < y->typeId(); });
+  auto iter = std::unique(types.begin(), types.end());
+  types.erase(iter, types.end());
+}
+
 const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
-                                                  const std::vector<const DSType *> &types,
+                                                  std::vector<const DSType *> &&types,
                                                   const DSType *fallbackType) {
-  for (auto &type : types) { // FIXME: reduce time complexity, currently O(n^2)
+  dedup(types);
+  for (auto &type : types) { // FIXME: reduce time complexity, currently worst case O(n^2)
     unsigned int size = types.size();
     unsigned int index = 0;
     for (; index < size; index++) {
