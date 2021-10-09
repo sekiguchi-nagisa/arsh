@@ -1,5 +1,5 @@
 
-#$test($result = 'type', $lineNum = 8, $chars = 15, $errorKind = 'Required', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 15, $errorKind = 'NoCommonSuper', $status = 1)
 
 for(;;) {
     if $true {

@@ -246,13 +246,16 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue() {
     return this->typePool.get(TYPE::Void);
   }
 
-  auto &firstType = jumpNodes[0]->getExprNode().getType();
-  for (auto &jumpNode : jumpNodes) {
-    if (firstType != jumpNode->getExprNode().getType()) {
-      this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
-    }
+  std::vector<const DSType *> types(jumpNodes.size());
+  for (unsigned int i = 0; i < jumpNodes.size(); i++) {
+    types[i] = &jumpNodes[i]->getExprNode().getType();
   }
-  if (auto ret = this->typePool.createOptionType(firstType); ret) {
+  auto &retType = this->resolveCommonSuperType(jumpNodes[0]->getExprNode(), types, nullptr);
+  for (auto &jumpNode : jumpNodes) {
+    this->checkTypeWithCoercion(retType, jumpNode->refExprNode());
+  }
+
+  if (auto ret = this->typePool.createOptionType(retType); ret) {
     return *std::move(ret).take();
   } else {
     return this->typePool.get(TYPE::Nothing);
@@ -993,7 +996,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
   }
-  auto &type = this->resolveCommonSuperType(types);
+  auto &type = this->resolveCommonSuperType(node, types, &this->typePool.get(TYPE::Void));
 
   // apply coercion
   for (auto &armNode : node.getArmNodes()) {
@@ -1059,25 +1062,36 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   }
 }
 
-const DSType &TypeChecker::resolveCommonSuperType(const std::vector<const DSType *> &types) {
-  for (auto &type : types) {
+const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
+                                                  const std::vector<const DSType *> &types,
+                                                  const DSType *fallbackType) {
+  for (auto &type : types) { // FIXME: reduce time complexity, currently O(n^2)
     unsigned int size = types.size();
     unsigned int index = 0;
     for (; index < size; index++) {
       auto &curType = types[index];
-      if (type->isSameOrBaseTypeOf(*curType)) {
+      if (type->isVoidType() || type->isSameOrBaseTypeOf(*curType)) {
         continue;
       }
-
-      if (!this->checkCoercion(*type, *curType)) {
-        break;
-      }
+      break;
     }
     if (index == size) {
       return *type;
     }
   }
-  return this->typePool.get(TYPE::Void);
+  if (fallbackType) {
+    return *fallbackType;
+  } else {
+    std::string value;
+    for (auto &t : types) {
+      if (!value.empty()) {
+        value += ", ";
+      }
+      value += t->getNameRef();
+    }
+    this->reportError<NoCommonSuper>(node, value.c_str());
+    return this->typePool.get(TYPE::Nothing);
+  }
 }
 
 #define TRY(E)                                                                                     \

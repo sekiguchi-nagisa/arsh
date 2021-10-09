@@ -462,12 +462,18 @@ private:
   void checkPatternType(ArmNode &node, PatternCollector &collector);
 
   /**
-   *
+   * @param node
+   * for error position
    * @param types
+   * @param fallbackType
+   * may be null
    * @return
-   * if not found, return void type.
+   * if not resolve common suprt type,
+   *   if fallbackType is not null, return fallbackType.
+   *   if fallbackType is null, return Nothing and report error
    */
-  const DSType &resolveCommonSuperType(const std::vector<const DSType *> &types);
+  const DSType &resolveCommonSuperType(const Node &node, const std::vector<const DSType *> &types,
+                                       const DSType *fallbackType);
 
   /**
    * evaluate constant expression
