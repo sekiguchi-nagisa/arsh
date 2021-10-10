@@ -1368,19 +1368,21 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
 //!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Array<T0>
 YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
-  auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  try {
-    std::stable_sort(obj.refValues().begin(), obj.refValues().end(),
-                     [&](const DSValue &x, const DSValue &y) {
-                       auto ret = VM::callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
-                       if (ctx.hasError()) {
-                         throw std::runtime_error(""); // FIXME: not use exception
-                       }
-                       return ret.asBool();
-                     });
-    RET(LOCAL(0));
-  } catch (...) {
+  auto &values = typeAs<ArrayObject>(LOCAL(0)).refValues();
+  std::stable_sort(values.begin(), values.end(), [&](const DSValue &x, const DSValue &y) {
+    if (ctx.hasError()) {
+      return false;
+    }
+    auto ret = VM::callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
+    if (ctx.hasError()) {
+      return false;
+    }
+    return ret.asBool();
+  });
+  if (ctx.hasError()) {
     RET_ERROR;
+  } else {
+    RET(LOCAL(0));
   }
 }
 
