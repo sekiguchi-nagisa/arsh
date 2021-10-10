@@ -1217,7 +1217,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
 }
 
 void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
-  auto &assignableNode = static_cast<AssignableNode &>(node.getLeftNode());
+  auto &assignableNode = cast<AssignableNode>(node.getLeftNode());
   unsigned int index = assignableNode.getIndex();
   if (node.isFieldAssign()) {
     auto &accessNode = cast<AccessNode>(node.getLeftNode());

@@ -1855,11 +1855,11 @@ void TypeChecker::visitErrorNode(ErrorNode &node) { node.setType(this->typePool.
 void TypeChecker::visitEmptyNode(EmptyNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
 static bool mayBeCmd(const Node &node) {
-  if (node.is(NodeKind::Cmd)) {
+  if (isa<CmdNode>(node)) {
     return true;
   }
-  if (node.is(NodeKind::Pipeline)) {
-    if (cast<const PipelineNode>(node).getNodes().back()->is(NodeKind::Cmd)) {
+  if (isa<PipelineNode>(node)) {
+    if (cast<PipelineNode>(node).getNodes().back()->is(NodeKind::Cmd)) {
       return true;
     }
   }
