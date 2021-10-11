@@ -621,8 +621,8 @@ public:
     str += this->toSerializedHandle();
     //        str += ", ";
     //        str += this->toParamNames();
-    str += ", ";
-    str += this->getActualFuncName();
+    //    str += ", ";
+    //    str += this->getActualFuncName();
     //        str += ", ";
     //        str += std::to_string((int) this->toDefaultFlag());
     str += ", ";
@@ -1025,7 +1025,7 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
   // generate NativeFuncInfo table
   OUT("static NativeFuncInfo infoTable[] = {\n");
-  OUT("    {nullptr, {}, nullptr, false},\n");
+  OUT("    {nullptr, {}, false},\n");
   for (TypeBind *bind : binds) {
     for (Element *e : bind->funcElements) {
       OUT("    %s,\n", e->emit().c_str());
@@ -1061,6 +1061,20 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     offsetCount += methodSize;
   }
+
+  // generate NativeFuncPtrTable
+  OUT("static native_func_t ptrTable[] = {\n");
+  OUT("    nullptr,\n");
+  for (TypeBind *bind : binds) {
+    for (Element *e : bind->funcElements) {
+      OUT("    %s,\n", e->getActualFuncName());
+    }
+  }
+  OUT("};\n");
+  OUT("const native_func_t *nativeFuncPtrTable() {\n"
+      "    return ptrTable;\n"
+      "}\n");
+  OUT("\n");
 
   OUT("} // namespace ydsh\n");
   OUT("\n");

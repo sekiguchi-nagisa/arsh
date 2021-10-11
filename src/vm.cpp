@@ -1235,6 +1235,8 @@ bool VM::checkVMEvent(DSState &state) {
   return true;
 }
 
+const native_func_t *nativeFuncPtrTable();
+
 #define vmdispatch(V) switch (V)
 
 #if 0
@@ -1517,7 +1519,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(CALL_BUILTIN) {
         unsigned int index = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        DSValue returnValue = nativeFuncInfoTable()[index].func_ptr(state);
+        DSValue returnValue = nativeFuncPtrTable()[index](state);
         TRY(!state.hasError());
         if (returnValue) {
           state.stack.push(std::move(returnValue));
@@ -1530,7 +1532,7 @@ bool VM::mainLoop(DSState &state) {
         unsigned int index = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
         auto old = state.stack.nativeWind(paramSize);
-        auto ret = nativeFuncInfoTable()[index].func_ptr(state);
+        auto ret = nativeFuncPtrTable()[index](state);
         state.stack.nativeUnwind(old);
         TRY(!state.hasError());
         if (ret) {

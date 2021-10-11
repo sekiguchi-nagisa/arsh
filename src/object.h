@@ -34,6 +34,8 @@
 #include "type.h"
 #include <config.h>
 
+struct DSState;
+
 namespace ydsh {
 
 class DSValue;

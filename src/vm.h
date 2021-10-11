@@ -412,6 +412,8 @@ enum class CmdCallAttr : unsigned int {
 template <>
 struct allow_enum_bitop<CmdCallAttr> : std::true_type {};
 
+using native_func_t = DSValue (*)(DSState &);
+
 class VM {
 private:
   static void pushExitStatus(DSState &state, int64_t status) {

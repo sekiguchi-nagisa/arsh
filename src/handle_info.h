@@ -17,8 +17,6 @@
 #ifndef YDSH_HANDLE_INFO_H
 #define YDSH_HANDLE_INFO_H
 
-struct DSState;
-
 namespace ydsh {
 
 // builtin type
@@ -88,10 +86,6 @@ enum class HandleInfo : char {
 #undef GEN_ENUM
 };
 
-class DSValue;
-
-using native_func_t = DSValue (*)(DSState &);
-
 /**
  * for method handle creation.
  */
@@ -105,11 +99,6 @@ struct NativeFuncInfo {
    * serialized function handle
    */
   const HandleInfo handleInfo[30];
-
-  /**
-   * bool func(RuntimeContext &ctx)
-   */
-  const native_func_t func_ptr;
 
   const bool hasRet;
 };
