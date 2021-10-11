@@ -17,9 +17,12 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/ttydefaults.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#if !defined(__CYGWIN__)
+#include <sys/ttydefaults.h>
+#endif
 
 #include <cctype>
 #include <cstdlib>
