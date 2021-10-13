@@ -20,13 +20,14 @@
 
 #include <unistd.h>
 
-#include <ydsh/ydsh.h>
-
+#include "binder.h"
 #include "compiler.h"
 #include "complete.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "vm.h"
+#include <embed.h>
+#include <ydsh/ydsh.h>
 
 using namespace ydsh;
 
@@ -89,10 +90,39 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
   return state.getMaskedExitStatus();
 }
 
+struct BindingConsumer {
+  DSState &state;
+
+  explicit BindingConsumer(DSState &st) : state(st) {}
+
+  void operator()(const FieldHandle &handle, int64_t v) {
+    this->state.setGlobal(handle.getIndex(), DSValue::createInt(v));
+  }
+
+  void operator()(const FieldHandle &handle, const std::string &v) {
+    this->state.setGlobal(handle.getIndex(), DSValue::createStr(v));
+  }
+
+  void operator()(const FieldHandle &handle, FILE *fp) {
+    int fd = fileno(fp);
+    assert(fd > -1);
+    this->state.setGlobal(handle.getIndex(), DSValue::create<UnixFdObject>(fd));
+  }
+
+  void operator()(const FieldHandle &handle, const DSType &type) {
+    auto value = DSValue::createDummy(type);
+    if (this->state.typePool.isArrayType(type)) {
+      value = DSValue::create<ArrayObject>(type);
+    } else if (this->state.typePool.isMapType(type)) {
+      value = DSValue::create<MapObject>(type);
+    }
+    this->state.setGlobal(handle.getIndex(), std::move(value));
+  }
+};
+
 static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
   state->rootModScope = builtin; // eval script in builtin module
 
-  const char *embed_script = getEmbeddedScript();
   int ret = DSState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
   (void)ret;
   assert(ret == 0);
@@ -148,7 +178,10 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 
   auto *ctx = new DSState();
   auto buildtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
-  bindBuiltinVariables(ctx, ctx->typePool, *buildtin);
+  //  bindBuiltinVariables(ctx, ctx->typePool, *buildtin);
+  BindingConsumer bindingConsumer(*ctx);
+  bindBuiltins(bindingConsumer, ctx->typePool, *buildtin);
+
   loadEmbeddedScript(ctx, buildtin);
 
   ctx->execMode = mode;

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include <core.h>
+#include <binder.h>
+#include <embed.h>
 #include <misc/files.h>
 
 #include "analyzer.h"
@@ -33,12 +34,23 @@ static void consumeAllInput(FrontEnd &frontEnd) {
   }
 }
 
+struct EmptyConsumer {
+  void operator()(const FieldHandle &, int64_t) {}
+
+  void operator()(const FieldHandle &, const std::string &) {}
+
+  void operator()(const FieldHandle &, FILE *) {}
+
+  void operator()(const FieldHandle &, const DSType &) {}
+};
+
 static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
   auto builtin = NameScopePtr::create(gvarCount);
-  bindBuiltinVariables(nullptr, pool, *builtin);
+  EmptyConsumer emptyConsumer;
+  bindBuiltins(emptyConsumer, pool, *builtin);
 
   ModuleLoader loader; // dummy
-  const char *embed = getEmbeddedScript();
+  const char *embed = embed_script;
   Lexer lexer("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
   DefaultModuleProvider provider(loader, pool, builtin);
   FrontEnd frontEnd(provider, std::move(lexer));

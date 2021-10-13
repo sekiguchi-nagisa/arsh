@@ -89,22 +89,6 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
   return getRuntimeModuleByLevel(state, 0);
 }
 
-class NameScope;
-
-/**
- * unsafe api. normally unused
- * @param state
- * @param pool
- * @param scope
- */
-void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope);
-
-/**
- * get content of embedded script
- * @return
- */
-const char *getEmbeddedScript();
-
 class SignalVector {
 private:
   /**
