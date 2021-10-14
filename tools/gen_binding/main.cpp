@@ -1007,17 +1007,17 @@ bool isDisallowType(HandleInfo info) {
   return std::any_of(std::begin(list), std::end(list), [&](auto &e) { return e == info; });
 }
 
-void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
-  FILE *fp = fopen(outFileName, "w");
+static void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+  FILE *fp = fopen(fileName, "w");
   if (fp == nullptr) {
-    fatal("cannot open output file: %s\n", outFileName);
+    fatal("cannot open output file: %s\n", fileName);
   }
 
   // write header
+  OUT("// this is an auto-generated file. not change it directly\n");
   OUT("#ifndef YDSH_BIND_H\n");
   OUT("#define YDSH_BIND_H\n");
   OUT("\n");
-  OUT("#include <builtin.h>\n");
   OUT("#include <constant.h>\n");
   OUT("\n");
   OUT("namespace ydsh {\n");
@@ -1062,6 +1062,25 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     offsetCount += methodSize;
   }
 
+  OUT("} // namespace ydsh\n");
+  OUT("\n");
+  OUT("#endif //YDSH_BIND_H\n");
+  fclose(fp);
+}
+
+static void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+  FILE *fp = fopen(fileName, "w");
+  if (fp == nullptr) {
+    fatal("cannot open output file: %s\n", fileName);
+  }
+
+  // write header
+  OUT("// this is an auto-generated file. not change it directly\n");
+  OUT("#include <builtin.h>\n");
+  OUT("\n");
+  OUT("namespace ydsh {\n");
+  OUT("\n");
+
   // generate NativeFuncPtrTable
   OUT("static native_func_t ptrTable[] = {\n");
   OUT("    nullptr,\n");
@@ -1078,8 +1097,13 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
   OUT("} // namespace ydsh\n");
   OUT("\n");
-  OUT("#endif //YDSH_BIND_H\n");
   fclose(fp);
+}
+
+void gencode(const char *headerFileName, const char *outFileName,
+             const std::vector<TypeBind *> &binds) {
+  genHeaderFile(headerFileName, binds);
+  genSourceFile(outFileName, binds);
 }
 
 void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
@@ -1110,7 +1134,8 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 #define EACH_OPT(OP)                                                                               \
   OP(DOC, "--doc", opt::NO_ARG, "generate interface documentation")                                \
   OP(BIND, "--bind", opt::NO_ARG, "generate function binding")                                     \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")
+  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
+  OP(HEADER, "--header", opt::HAS_ARG, "generated header file (only available --bind)")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -1135,6 +1160,7 @@ int main(int argc, char **argv) {
   auto end = argv + argc;
   opt::Result<OptionSet> result;
 
+  const char *headerFileName = nullptr;
   bool doc = false;
   while ((result = parser(begin, end))) {
     switch (result.value()) {
@@ -1148,6 +1174,9 @@ int main(int argc, char **argv) {
       usage(stdout, argv);
       parser.printOption(stdout);
       exit(0);
+    case OptionSet::HEADER:
+      headerFileName = result.arg();
+      break;
     }
   }
   if (result.error() != opt::END) {
@@ -1160,6 +1189,13 @@ int main(int argc, char **argv) {
     usage(stderr, argv);
     exit(1);
   }
+  if (!doc) {
+    if (!headerFileName) {
+      fprintf(stderr, "require --header option\n");
+      parser.printOption(stderr);
+      exit(1);
+    }
+  }
 
   const char *inputFileName = *begin;
   const char *outputFileName = *(++begin);
@@ -1170,7 +1206,7 @@ int main(int argc, char **argv) {
   if (doc) {
     gendoc(outputFileName, binds);
   } else {
-    gencode(outputFileName, binds);
+    gencode(headerFileName, outputFileName, binds);
   }
 
   exit(0);

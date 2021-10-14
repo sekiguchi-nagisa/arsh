@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   headerName += headerSuffix;
   headerName += "_H";
 
-  fprintf(fp, "// this is a auto-generated file. not change it directly\n");
+  fprintf(fp, "// this is an auto-generated file. not change it directly\n");
   fprintf(fp, "#ifndef %s\n", headerName.c_str());
   fprintf(fp, "#define %s\n", headerName.c_str());
   fputs("\n", fp);
