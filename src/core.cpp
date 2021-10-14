@@ -148,6 +148,92 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return nullptr;
 }
 
+class DefaultCompConsumer : public CompletionConsumer {
+private:
+  ArrayObject &reply;
+
+public:
+  explicit DefaultCompConsumer(ArrayObject &obj) : reply(obj) {}
+
+  void consume(std::string &&value) override { this->reply.append(DSValue::createStr(value)); }
+};
+
+static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
+                          const std::string &word) {
+  std::vector<DSValue> values;
+
+  // add cmd
+  values.push_back(DSValue::createStr(cmdNode.getNameNode().getValue()));
+
+  // add args
+  for (auto &e : cmdNode.getArgNodes()) {
+    if (isa<RedirNode>(*e)) {
+      continue;
+    }
+    values.push_back(DSValue::createStr(lex.toStrRef(e->getToken())));
+  }
+
+  // add last arg
+  if (!word.empty()) {
+    values.push_back(DSValue::createStr(word));
+  }
+
+  return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
+}
+
+static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
+                         const std::string &word, CompletionConsumer &results) {
+  auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
+  if (hook.isInvalid()) {
+    return false;
+  }
+
+  // prepare argument
+  auto argv = createArgv(state.typePool, lex, cmdNode, word);
+  unsigned int index = typeAs<ArrayObject>(argv).size();
+  if (!word.empty()) {
+    index--;
+  }
+
+  // kick hook
+  auto ret = VM::callFunction(state, std::move(hook),
+                              makeArgs(std::move(argv), DSValue::createInt(index)));
+  if (state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
+    return false;
+  }
+
+  for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
+    results(e.asCStr(), CompEscapOp::COMMAND_ARG);
+  }
+  return true;
+}
+
+unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, StringRef ref,
+                              CodeCompOp option) {
+  auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
+  auto &compreply = typeAs<ArrayObject>(result);
+
+  DefaultCompConsumer consumer(compreply);
+  CodeCompleter codeCompleter(consumer, st.modLoader, st.typePool, st.rootModScope,
+                              st.logicalWorkingDir);
+  codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
+                                         const std::string &word, CompletionConsumer &consumer) {
+    return kickCompHook(st, lex, cmdNode, word, consumer);
+  });
+  codeCompleter(underlyingModType, ref, option);
+
+  auto &values = compreply.refValues();
+  compreply.sortAsStrArray();
+  auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+    return x.asStrRef() == y.asStrRef();
+  });
+  values.erase(iter, values.end());
+
+  // override COMPREPLY
+  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result));
+  return values.size();
+}
+
 // ##########################
 // ##     SignalVector     ##
 // ##########################

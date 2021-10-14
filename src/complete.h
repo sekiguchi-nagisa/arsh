@@ -24,14 +24,10 @@
 #include "misc/string_ref.hpp"
 
 #include "parser.h"
-
-struct DSState;
+#include "scope.h"
+#include "type_pool.h"
 
 namespace ydsh {
-
-class ArrayObject;
-
-using NameScopePtr = IntrusivePtr<NameScope>;
 
 enum class CodeCompOp : unsigned int {
   FILE = 1u << 0u,      /* complete file names (including directory) */
@@ -62,9 +58,33 @@ struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 
 inline bool isKeyword(StringRef value) { return !value.startsWith("<") || !value.endsWith(">"); }
 
+enum class CompEscapOp {
+  NOP,
+  COMMAND_NAME,
+  COMMAND_NAME_PART,
+  COMMAND_ARG,
+};
+
+class CompletionConsumer {
+public:
+  virtual ~CompletionConsumer() = default;
+
+  void operator()(StringRef ref, CompEscapOp op);
+
+private:
+  virtual void consume(std::string &&) = 0;
+};
+
+using UserDefinedComp = std::function<bool(const Lexer &lex, const CmdNode &cmdNode,
+                                           const std::string &word, CompletionConsumer &consumer)>;
+
 class CodeCompletionHandler {
 private:
-  DSState &state;
+  ObserverPtr<const UserDefinedComp> userDefinedComp;
+
+  const TypePool &pool;
+
+  const std::string &logicalWorkdir;
 
   ObserverPtr<const Lexer> lex;
 
@@ -106,7 +126,8 @@ private:
   CodeCompOp fallbackOp{};
 
 public:
-  CodeCompletionHandler(DSState &state, NameScopePtr scope);
+  CodeCompletionHandler(const TypePool &pool, const std::string &logicalWorkdir, NameScopePtr scope)
+      : pool(pool), logicalWorkdir(logicalWorkdir), scope(std::move(scope)) {}
 
   void addCompRequest(CodeCompOp op, std::string &&word) {
     this->compOp = op;
@@ -162,24 +183,41 @@ public:
 
   CodeCompOp getCompOp() const { return this->compOp; }
 
-  void invoke(ArrayObject &results);
+  void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp.reset(&comp); }
+
+  void invoke(CompletionConsumer &results);
 };
 
 template <>
 struct allow_enum_bitop<CodeCompletionHandler::CMD_OR_KW_OP> : std::true_type {};
 
-/**
- * perform completion in specified unserlying module
- * @param st
- * @param underlyingModType
- * may be null
- * @param ref
- * @param option
- * @return
- * return size of completion result. (equivalent to size of $COMPREPLY)
- */
-unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, StringRef ref,
-                              CodeCompOp option = {});
+class CodeCompleter {
+private:
+  CompletionConsumer &consumer;
+  ModuleLoader &loader;
+  TypePool &pool;
+  NameScopePtr rootScope;
+  const DiscardPoint discardPoint;
+  const std::string &logicalWorkingDir;
+  UserDefinedComp userDefinedComp;
+
+public:
+  CodeCompleter(CompletionConsumer &consumer, ModuleLoader &loader, TypePool &pool,
+                NameScopePtr scope, const std::string &workDir)
+      : consumer(consumer), loader(loader), pool(pool), rootScope(std::move(scope)),
+        discardPoint({
+            .mod = this->loader.getDiscardPoint(),
+            .scope = this->rootScope->getDiscardPoint(),
+            .type = this->pool.getDiscardPoint(),
+        }),
+        logicalWorkingDir(workDir) {}
+
+  ~CodeCompleter() { discardAll(this->loader, *this->rootScope, this->pool, this->discardPoint); }
+
+  void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
+
+  void operator()(const ModType *underlyingModType, StringRef ref, CodeCompOp option = {});
+};
 
 } // namespace ydsh
 

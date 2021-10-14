@@ -18,26 +18,22 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "cmd.h"
 #include "complete.h"
 #include "frontend.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
-#include "vm.h"
+#include "paths.h"
+#include "signals.h"
 
 extern char **environ; // NOLINT
 
 namespace ydsh {
 
 // for input completion
-enum class EscapeOp {
-  NOP,
-  COMMAND_NAME,
-  COMMAND_NAME_PART,
-  COMMAND_ARG,
-};
 
-static bool needEscape(char ch, EscapeOp op) {
+static bool needEscap(char ch, CompEscapOp op) {
   switch (ch) {
   case ' ':
   case ';':
@@ -56,7 +52,7 @@ static bool needEscape(char ch, EscapeOp op) {
     return true;
   case '{':
   case '}':
-    if (op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
+    if (op == CompEscapOp::COMMAND_NAME || op == CompEscapOp::COMMAND_NAME_PART) {
       return true;
     }
     break;
@@ -69,9 +65,9 @@ static bool needEscape(char ch, EscapeOp op) {
   return false;
 }
 
-static std::string escape(StringRef ref, EscapeOp op) {
+static std::string escape(StringRef ref, CompEscapOp op) {
   std::string buf;
-  if (op == EscapeOp::NOP) {
+  if (op == CompEscapOp::NOP) {
     buf += ref;
     return buf;
   }
@@ -79,7 +75,7 @@ static std::string escape(StringRef ref, EscapeOp op) {
   auto iter = ref.begin();
   const auto end = ref.end();
 
-  if (op == EscapeOp::COMMAND_NAME) {
+  if (op == CompEscapOp::COMMAND_NAME) {
     char ch = *iter;
     if (isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
       buf += '\\';
@@ -90,10 +86,10 @@ static std::string escape(StringRef ref, EscapeOp op) {
 
   while (iter != end) {
     char ch = *(iter++);
-    if (ch == '\\' && iter != end && needEscape(*iter, op)) {
+    if (ch == '\\' && iter != end && needEscap(*iter, op)) {
       buf += '\\';
       ch = *(iter++);
-    } else if (needEscape(ch, op)) {
+    } else if (needEscap(ch, op)) {
       if ((ch >= 0 && ch < 32) || ch == 127) {
         char d[32];
         snprintf(d, std::size(d), "$'\\x%02x'", ch);
@@ -108,18 +104,14 @@ static std::string escape(StringRef ref, EscapeOp op) {
   return buf;
 }
 
-static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
-  assert(can.getTypeID() == static_cast<unsigned int>(TYPE::StringArray));
+void CompletionConsumer::operator()(StringRef ref, CompEscapOp op) {
   std::string estr = escape(ref, op);
-  can.append(DSValue::createStr(std::move(estr)));
+  this->consume(std::move(estr));
 }
 
 // ###################################
 // ##     CodeCompletionHandler     ##
 // ###################################
-
-CodeCompletionHandler::CodeCompletionHandler(DSState &state, NameScopePtr scope)
-    : state(state), scope(std::move(scope)) {}
 
 static bool isExprKeyword(TokenKind kind) {
   switch (kind) {
@@ -131,7 +123,8 @@ static bool isExprKeyword(TokenKind kind) {
   }
 }
 
-static void completeKeyword(const std::string &prefix, CodeCompOp option, ArrayObject &results) {
+static void completeKeyword(const std::string &prefix, CodeCompOp option,
+                            CompletionConsumer &results) {
   TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
@@ -147,50 +140,50 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option, ArrayO
       continue;
     }
     if (isKeyword(value) && value.startsWith(prefix)) {
-      append(results, value, EscapeOp::NOP);
+      results(value, CompEscapOp::NOP);
     }
   }
 }
 
-static void completeEnvName(const std::string &namePrefix, ArrayObject &results) {
+static void completeEnvName(const std::string &namePrefix, CompletionConsumer &results) {
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
     StringRef env(environ[i]);
     auto r = env.indexOf("=");
     assert(r != StringRef::npos);
     auto name = env.substr(0, r);
     if (name.startsWith(namePrefix)) {
-      append(results, name, EscapeOp::COMMAND_ARG);
+      results(name, CompEscapOp::COMMAND_ARG);
     }
   }
 }
 
-static void completeSigName(const std::string &prefix, ArrayObject &results) {
+static void completeSigName(const std::string &prefix, CompletionConsumer &results) {
   auto *list = getSignalList();
   for (unsigned int i = 0; list[i].name != nullptr; i++) {
     StringRef sigName = list[i].name;
     if (sigName.startsWith(prefix)) {
-      append(results, sigName, EscapeOp::NOP);
+      results(sigName, CompEscapOp::NOP);
     }
   }
 }
 
-static void completeUserName(const std::string &prefix, ArrayObject &results) {
+static void completeUserName(const std::string &prefix, CompletionConsumer &results) {
   setpwent();
   for (struct passwd *pw; (pw = getpwent()) != nullptr;) {
     StringRef pname = pw->pw_name;
     if (pname.startsWith(prefix)) {
-      append(results, pname, EscapeOp::NOP);
+      results(pname, CompEscapOp::NOP);
     }
   }
   endpwent();
 }
 
-static void completeGroupName(const std::string &prefix, ArrayObject &results) {
+static void completeGroupName(const std::string &prefix, CompletionConsumer &results) {
   setgrent();
   for (struct group *gp; (gp = getgrent()) != nullptr;) {
     StringRef gname = gp->gr_name;
     if (gname.startsWith(prefix)) {
-      append(results, gname, EscapeOp::NOP);
+      results(gname, CompEscapOp::NOP);
     }
   }
   endgrent();
@@ -212,8 +205,8 @@ static std::vector<std::string> computePathList(const char *pathVal) {
   return result;
 }
 
-static void completeUDC(const NameScope &scope, const std::string &cmdPrefix, ArrayObject &results,
-                        bool ignoreIdent) {
+static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
+                        CompletionConsumer &results, bool ignoreIdent) {
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &e : *curScope) {
       StringRef udc = e.first.c_str();
@@ -227,7 +220,7 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix, Ar
                           std::end(DENIED_REDEFINED_CMD_LIST), [&](auto &e) { return udc == e; })) {
             continue;
           }
-          append(results, udc, EscapeOp::COMMAND_NAME);
+          results(udc, CompEscapOp::COMMAND_NAME);
         }
       }
     }
@@ -235,7 +228,7 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix, Ar
 }
 
 static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
-                            const CodeCompOp option, ArrayObject &results) {
+                            const CodeCompOp option, CompletionConsumer &results) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     completeUDC(scope, cmdPrefix, results, hasFlag(option, CodeCompOp::NO_IDENT));
@@ -250,7 +243,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         continue;
       }
       if (builtin.startsWith(cmdPrefix)) {
-        append(results, builtin, EscapeOp::COMMAND_NAME);
+        results(builtin, CompEscapOp::COMMAND_NAME);
       }
     }
   }
@@ -279,7 +272,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           }
           fullpath += cmd.data();
           if (isExecutable(fullpath.c_str())) {
-            append(results, cmd, EscapeOp::COMMAND_NAME);
+            results(cmd, CompEscapOp::COMMAND_NAME);
           }
         }
       }
@@ -289,7 +282,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 }
 
 static void completeFileName(const char *baseDir, const std::string &prefix, const CodeCompOp op,
-                             ArrayObject &results) {
+                             CompletionConsumer &results) {
   const auto s = prefix.find_last_of('/');
 
   // complete tilde
@@ -301,7 +294,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         std::string name("~");
         name += entry->pw_name;
         name += '/';
-        append(results, name.c_str(), EscapeOp::NOP);
+        results(name.c_str(), CompEscapOp::NOP);
       }
     }
     endpwent();
@@ -373,15 +366,15 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         len++;
       }
       fileName.removePrefix(fileName.size() - len);
-      append(results, fileName,
-             hasFlag(op, CodeCompOp::EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
+      results(fileName, hasFlag(op, CodeCompOp::EXEC) ? CompEscapOp::COMMAND_NAME_PART
+                                                      : CompEscapOp::COMMAND_ARG);
     }
   }
   closedir(dir);
 }
 
 static void completeModule(const char *scriptDir, const std::string &prefix, bool tilde,
-                           ArrayObject &results) {
+                           CompletionConsumer &results) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
@@ -405,33 +398,34 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
  * @param results
  */
 static void completeVarName(const NameScope &scope, const std::string &prefix,
-                            ArrayObject &results) {
+                            CompletionConsumer &results) {
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &iter : *curScope) {
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
-        append(results, varName, EscapeOp::NOP);
+        results(varName, CompEscapOp::NOP);
       }
     }
   }
 }
 
-static void completeExpected(const std::vector<std::string> &expected, ArrayObject &results) {
+static void completeExpected(const std::vector<std::string> &expected,
+                             CompletionConsumer &results) {
   for (auto &e : expected) {
     if (isKeyword(e)) {
-      append(results, e, EscapeOp::NOP);
+      results(e, CompEscapOp::NOP);
     }
   }
 }
 
 static void completeMember(const TypePool &pool, const DSType &recvType, const std::string &word,
-                           ArrayObject &results) {
+                           CompletionConsumer &results) {
   // complete field
   std::function<bool(StringRef, const FieldHandle &)> fieldWalker = [&](StringRef name,
                                                                         const FieldHandle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.getModID() == 0 || !name.startsWith("_")) {
-        append(results, name, EscapeOp::NOP); // FIXME: module scope
+        results(name, CompEscapOp::NOP); // FIXME: module scope
       }
     }
     return true;
@@ -448,7 +442,7 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
     if (name.startsWith(word) && !isMagicMethodName(name)) {
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
-          append(results, name, EscapeOp::NOP);
+          results(name, CompEscapOp::NOP);
           break; // FIXME: support type constraint
         }
       }
@@ -457,14 +451,14 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
 }
 
 static void completeType(const TypePool &pool, const DSType *recvType, const NameScope &scope,
-                         const std::string &word, ArrayObject &results) {
+                         const std::string &word, CompletionConsumer &results) {
   if (recvType) {
     std::function<bool(StringRef, const FieldHandle &)> fieldWalker =
         [&](StringRef name, const FieldHandle &handle) {
           if (name.startsWith(word) && isTypeAliasFullName(name)) {
             if (handle.getModID() == 0 || handle.getModID() == scope.modId || name[0] != '_') {
               name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-              append(results, name, EscapeOp::NOP);
+              results(name, CompEscapOp::NOP);
             }
           }
           return true;
@@ -479,7 +473,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
       StringRef name = e.first;
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
         name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-        append(results, name, EscapeOp::NOP);
+        results(name, CompEscapOp::NOP);
       }
     }
   }
@@ -491,59 +485,9 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
     }
     StringRef name = t->getNameRef();
     if (name.startsWith(word) && std::all_of(name.begin(), name.end(), isalnum)) {
-      append(results, name, EscapeOp::NOP);
+      results(name, CompEscapOp::NOP);
     }
   }
-}
-
-static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
-                          const std::string &word) {
-  std::vector<DSValue> values;
-
-  // add cmd
-  values.push_back(DSValue::createStr(cmdNode.getNameNode().getValue()));
-
-  // add args
-  for (auto &e : cmdNode.getArgNodes()) {
-    if (isa<RedirNode>(*e)) {
-      continue;
-    }
-    values.push_back(DSValue::createStr(lex.toStrRef(e->getToken())));
-  }
-
-  // add last arg
-  if (!word.empty()) {
-    values.push_back(DSValue::createStr(word));
-  }
-
-  return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
-}
-
-static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
-                         const std::string &word, ArrayObject &results) {
-  auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
-  if (hook.isInvalid()) {
-    return false;
-  }
-
-  // prepare argument
-  auto argv = createArgv(state.typePool, lex, cmdNode, word);
-  unsigned int index = typeAs<ArrayObject>(argv).size();
-  if (!word.empty()) {
-    index--;
-  }
-
-  // kick hook
-  auto ret = VM::callFunction(state, std::move(hook),
-                              makeArgs(std::move(argv), DSValue::createInt(index)));
-  if (state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
-    return false;
-  }
-
-  for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    append(results, e.asCStr(), EscapeOp::COMMAND_ARG);
-  }
-  return true;
 }
 
 static bool hasCmdArg(const CmdNode &node) {
@@ -556,7 +500,7 @@ static bool hasCmdArg(const CmdNode &node) {
 }
 
 static bool completeSubcommand(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
-                               const std::string &word, ArrayObject &results) {
+                               const std::string &word, CompletionConsumer &results) {
   if (hasCmdArg(cmdNode)) {
     return false;
   }
@@ -576,7 +520,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-        append(results, name, EscapeOp::COMMAND_ARG);
+        results(name, CompEscapOp::COMMAND_ARG);
       }
     }
     return true;
@@ -585,7 +529,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   return true;
 }
 
-void CodeCompletionHandler::invoke(ArrayObject &results) {
+void CodeCompletionHandler::invoke(CompletionConsumer &results) {
   if (!this->hasCompRequest()) {
     return; // do nothing
   }
@@ -608,7 +552,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
   }
   if (hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
       hasFlag(this->compOp, CodeCompOp::DIR)) {
-    completeFileName(this->state.logicalWorkingDir.c_str(), this->compWord, this->compOp, results);
+    completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
     completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
@@ -624,16 +568,18 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     completeExpected(this->extraWords, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::MEMBER)) {
-    completeMember(this->state.typePool, *this->recvType, this->compWord, results);
+    completeMember(this->pool, *this->recvType, this->compWord, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
-    completeType(this->state.typePool, this->recvType, *this->scope, this->compWord, results);
+    completeType(this->pool, this->recvType, *this->scope, this->compWord, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
-    if (!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results) &&
-        !completeSubcommand(this->state.typePool, *this->scope, *this->cmdNode, this->compWord,
-                            results)) {
-      completeFileName(state.logicalWorkingDir.c_str(), this->compWord, this->fallbackOp, results);
+    if (this->userDefinedComp &&
+        this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, results)) {
+      return;
+    }
+    if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, results)) {
+      completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, results);
     }
   }
 }
@@ -705,45 +651,25 @@ static void consumeAllInput(FrontEnd &frontEnd) {
   }
 }
 
-unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, StringRef ref,
-                              CodeCompOp option) {
-  auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
-  auto &compreply = typeAs<ArrayObject>(result);
-
-  DiscardPoint discardPoint{
-      .mod = st.modLoader.getDiscardPoint(),
-      .scope = st.rootModScope->getDiscardPoint(),
-      .type = st.typePool.getDiscardPoint(),
-  };
+void CodeCompleter::operator()(const ModType *underlyingModType, StringRef ref, CodeCompOp option) {
   auto scope = underlyingModType == nullptr
-                   ? st.rootModScope
-                   : NameScope::reopen(st.typePool, *st.rootModScope, *underlyingModType);
-  CodeCompletionHandler handler(st, scope);
+                   ? this->rootScope
+                   : NameScope::reopen(this->pool, *this->rootScope, *underlyingModType);
+  CodeCompletionHandler handler(this->pool, this->logicalWorkingDir, scope);
+  handler.setUserDefinedComp(this->userDefinedComp);
   if (empty(option)) {
     // prepare
-    DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
+    DefaultModuleProvider provider(this->loader, this->pool, scope);
     FrontEnd frontEnd(provider, lex(ref), FrontEndOption::ERROR_RECOVERY,
                       ObserverPtr<CodeCompletionHandler>(&handler));
 
     // perform completion
     consumeAllInput(frontEnd);
-    handler.invoke(compreply);
+    handler.invoke(this->consumer);
   } else {
     handler.addCompRequest(option, ref.toString());
-    handler.invoke(compreply);
+    handler.invoke(this->consumer);
   }
-  discardAll(st.modLoader, *st.rootModScope, st.typePool, discardPoint);
-
-  auto &values = compreply.refValues();
-  compreply.sortAsStrArray();
-  auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-    return x.asStrRef() == y.asStrRef();
-  });
-  values.erase(iter, values.end());
-
-  // override COMPREPLY
-  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result));
-  return values.size();
 }
 
 } // namespace ydsh

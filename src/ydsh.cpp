@@ -22,7 +22,6 @@
 
 #include "binder.h"
 #include "compiler.h"
-#include "complete.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "vm.h"

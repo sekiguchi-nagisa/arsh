@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "complete.h"
 #include "misc/resource.hpp"
 #include "object.h"
 #include "opcode.h"
@@ -88,6 +89,19 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLe
 inline const ModType *getCurRuntimeModule(const DSState &state) {
   return getRuntimeModuleByLevel(state, 0);
 }
+
+/**
+ * perform completion in specified unserlying module
+ * @param st
+ * @param underlyingModType
+ * may be null
+ * @param ref
+ * @param option
+ * @return
+ * return size of completion result. (equivalent to size of $COMPREPLY)
+ */
+unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, StringRef ref,
+                              CodeCompOp option = {});
 
 class SignalVector {
 private:
