@@ -15,6 +15,7 @@
  */
 
 #include <string>
+#include <sys/resource.h>
 
 #include "cmd_desc.h"
 
