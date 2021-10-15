@@ -25,6 +25,7 @@
 
 #include <ydsh/ydsh.h>
 
+#include "cmd_desc.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "vm.h"
@@ -58,263 +59,47 @@ static int builtin_umask(DSState &state, ArrayObject &argvObj);
 static int builtin_unsetenv(DSState &state, ArrayObject &argvObj);
 static int builtin_wait(DSState &state, ArrayObject &argvObj);
 
-static constexpr struct {
-  const char *commandName;
-  builtin_command_t cmd_ptr;
-  const char *usage;
-  const char *detail;
-} builtinCommands[]{
-    {":", builtin_true, "", "    Null command.  Always success (exit status is 0)."},
-    {"__gets", builtin___gets, "", "    Read standard input and write to standard output."},
-    {"__puts", builtin___puts, "[-1 arg1] [-2 arg2]",
-     "    Print specified argument to standard output/error and print new line.\n"
-     "    Options:\n"
-     "        -1    print to standard output\n"
-     "        -2    print to standard error"},
-    {"_exit", builtin__exit, "[n]",
-     "    Exit the shell with a status of N.  If N is omitted, the exit\n"
-     "    status is $?. Unlike exit, it causes normal program termination\n"
-     "    without cleaning the resources."},
-    {"bg", builtin_fg_bg, "[job_spec ...]",
-     "    Move jobs to the background.\n"
-     "    If JOB_SPEC is not present, latest job is used."},
-    {"cd", builtin_cd, "[-LP] [dir]",
-     "    Changing the current directory to DIR.  The Environment variable\n"
-     "    HOME is the default DIR.  A null directory name is the same as\n"
-     "    the current directory.  If -L is specified, use logical directory \n"
-     "    (with symbolic link).  If -P is specified, use physical directory \n"
-     "    (without symbolic link).  Default is -L."},
-    {"checkenv", builtin_check_env, "variable ...",
-     "    Check existence of specified environmental variables.\n"
-     "    If all of variables are exist and not empty string, exit with 0."},
-    {"command", nullptr, "[-pVv] command [arg ...]",
-     "    Execute COMMAND with ARGs excepting user defined command.\n"
-     "    If -p option is specified, search command from default PATH.\n"
-     "    If -V or -v option are specified, print description of COMMAND.\n"
-     "    -V option shows more detailed information."},
-    {"complete", builtin_complete, "[-A action] line",
-     "    Show completion candidates.\n"
-     "    If -A option is specified, show completion candidates via ACTION.\n"
-     "    Actions:\n"
-     "        file       complete file names\n"
-     "        dir        complete directory names\n"
-     "        module     complete module names\n"
-     "        exec       complete executable file names\n"
-     "        tilde      expand tilde before completion. only available in \n"
-     "                   combination of file, module exec actions\n"
-     "        command    complete command names including external, user-defined, builtin ones\n"
-     "        cmd        equivalent to 'command'\n"
-     "        external   complete external commans\n"
-     "        builtin    complete builtin commands\n"
-     "        udc        complete user-defined commands\n"
-     "        variable   complete variable names\n"
-     "        var        equivalent to var\n"
-     "        type       complete type names\n"
-     "        env        complete environmental variables names\n"
-     "        signal     complete signal names\n"
-     "        user       complete user names\n"
-     "        group      complete group names\n"
-     "        stmt_kw    complete statement keywords\n"
-     "        expr_kw    complete expression keywords"},
-    {"echo", builtin_echo, "[-neE] [arg ...]",
-     "    Print argument to standard output and print new line.\n"
-     "    Options:\n"
-     "        -n    not print new line\n"
-     "        -e    interpret some escape sequence\n"
-     "                  \\\\    backslash\n"
-     "                  \\a    bell\n"
-     "                  \\b    backspace\n"
-     "                  \\c    ignore subsequent string\n"
-     "                  \\e    escape sequence\n"
-     "                  \\E    escape sequence\n"
-     "                  \\f    form feed\n"
-     "                  \\n    newline\n"
-     "                  \\r    carriage return\n"
-     "                  \\t    horizontal tab\n"
-     "                  \\v    vertical tab\n"
-     "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
-     "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
-     "                  \\unnnn\n"
-     "                        N is hex number. NNNN can be 1 to 4 number\n"
-     "                  \\Unnnnnnnn\n"
-     "                        N is hex number. NNNNNNNN can be 1 to 8 number\n"
-     "        -E    disable escape sequence interpretation"},
-    {"eval", nullptr, "[arg ...]", "    Evaluate ARGs as command."},
-    {"exec", nullptr, "[-c] [-a name] file [args ...]",
-     "    Execute FILE and replace this shell with specified program.\n"
-     "    If FILE is not specified, the redirections take effect in this shell.\n"
-     "    IF FILE execution fail, terminate this shell immediately\n"
-     "    Options:\n"
-     "        -c    cleaner environmental variable\n"
-     "        -a    specify set program name(default is FILE)"},
-    {"exit", builtin_exit, "[n]",
-     "    Exit the shell with a status of N.  If N is omitted, the exit\n"
-     "    status is $?."},
-    {"false", builtin_false, "", "    Always failure (exit status is 1)."},
-    {"fg", builtin_fg_bg, "[job_spec]",
-     "    Move job to the foreground.\n"
-     "    If JOB_SPEC is not present, latest job is used."},
-    {"hash", builtin_hash, "[-r] [command ...]",
-     "    Cache file path of specified commands.  If -r option is supplied,\n"
-     "    removes specified command path (if not specified, remove all cache).\n"
-     "    If option is not supplied, display all cached path."},
-    {"help", builtin_help, "[-s] [pattern ...]",
-     "    Display helpful information about builtin commands."},
-    {"kill", builtin_kill, "[-s signal] pid | jobspec ... or kill -l [signal...]",
-     "    Send a signal to a process or job.\n"
-     "    If signal is not specified, then SIGTERM is assumed.\n"
-     "    Options:\n"
-     "        -s sig    send a signal.  SIG is a signal name or signal number\n"
-     "        -l        list the signal names"},
-    {"pwd", builtin_pwd, "[-LP]",
-     "    Print the current working directory(absolute path).\n"
-     "    If -L specified, print logical working directory.\n"
-     "    If -P specified, print physical working directory\n"
-     "    (without symbolic link).  Default is -L."},
-    {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]",
-     "    Read from standard input.\n"
-     "    Options:\n"
-     "        -r         disable backslash escape\n"
-     "        -p         specify prompt string\n"
-     "        -f         specify field separator (if not, use IFS)\n"
-     "        -s         disable echo back\n"
-     "        -u         specify file descriptor\n"
-     "        -t timeout set timeout second (only available if input fd is a tty)"},
-    {"setenv", builtin_setenv, "[name=env ...]", "    Set environmental variables."},
-    {"shctl", builtin_shctl, "[subcommand]",
-     "    Query and set runtime information\n"
-     "    Subcommands:\n"
-     "        is-interactive      return 0 if shell is interactive mode.\n"
-     "        is-sourced          return 0 if current script is sourced.\n"
-     "        backtrace           print stack trace.\n"
-     "        function            print current function/command name.\n"
-     "        module              print full path of loaded modules or scripts.\n"
-     "        show  [OPTION ...]  print runtime option setting.\n"
-     "        set   OPTION ...    set/enable/on runtime option.\n"
-     "        unset OPTION ...    unset/disable/off runtime option.\n"
-     "        fullname [-l level] name or fullname [-m mod] name\n"
-     "                            resolve fully qualified command name and set to REPLY.\n"
-     "                            if no option specified, equivalent to `-l 0'\n"
-     "                            Options:\n"
-     "                                -l    resolve from call stack level specified by LEVEL "
-     "(0~).\n"
-     "                                -m    resolve from module specified by MOD."},
-    {"test", builtin_test, "[expr]",
-     "    Unary or Binary expressions.\n"
-     "    If expression is true, return 0\n"
-     "    If expression is false, return 1\n"
-     "    If operand or operator is invalid, return 2\n"
-     "\n"
-     "    String operators:\n"
-     "        -z STRING      check if string is empty\n"
-     "        -n STRING\n"
-     "        STRING         check if string is not empty\n"
-     "        STRING1 = STRING2\n"
-     "        STRING1 == STRING2\n"
-     "                       check if strings are equal\n"
-     "        STRING1 != STRING2\n"
-     "                       check if strings are not equal\n"
-     "        STRING1 < STRING2\n"
-     "                       check if STRING1 is less than STRING2 with dictionary order\n"
-     "        STRING1 > STRING2\n"
-     "                       check if STRING2 is greater than STRING2 with dictionary order\n"
-     "    Integer operators:\n"
-     "        INT1 -eq INT2  check if integers are equal\n"
-     "        INT1 -ne INT2  check if integers are not equal\n"
-     "        INT1 -lt INT2  check if INT1 is less than INT2\n"
-     "        INT1 -gt INT2  check if INT1 is greater than INT2\n"
-     "        INT1 -le INT2  check if INT1 is less than or equal to INT2\n"
-     "        INT1 -ge INT2  check if INT1 is greater than or equal to INT2\n"
-     "\n"
-     "    Integer value is signed int 64.\n"
-     "\n"
-     "    File operators:\n"
-     "        -a FILE\n"
-     "        -e FILE        check if file exists\n"
-     "        -b FILE        check if file is block device\n"
-     "        -c FILE        check if file is character device\n"
-     "        -d FILE        check if file is a directory\n"
-     "        -f FILE        check if file is a regular file\n"
-     "        -g FILE        check if file has set-group-id bit\n"
-     "        -h FILE\n"
-     "        -L FILE        check if file is a symbolic link\n"
-     "        -k FILE        check if file has sticky bit\n"
-     "        -p FILE        check if file is a named pipe\n"
-     "        -r FILE        check if file is readable\n"
-     "        -s FILE        check if file is not empty\n"
-     "        -S FILE        check if file is a socket\n"
-     "        -t FD          check if file descriptor is a terminal\n"
-     "        -u FILE        check if file has set-user-id bit\n"
-     "        -w FILE        check if file is writable\n"
-     "        -x FILE        check if file is executable\n"
-     "        -O FILE        check if file is effectively owned by user\n"
-     "        -G FILE        check if file is effectively owned by group\n"
-     "\n"
-     "        FILE1 -nt FILE2  check if file1 is newer than file2\n"
-     "        FILE1 -ot FILE2  check if file1 is older than file2\n"
-     "        FILE1 -ef FILE2  check if file1 and file2 refer to the same file"},
-    {"true", builtin_true, "", "    Always success (exit status is 0)."},
-    {"ulimit", builtin_ulimit,
-     "[-H | -S] [-a | -"
-#define DEF(O, R, S, N, D) O
-#include "ulimit-def.in"
-#undef DEF
-     " [value]]",
-     "    Set or show resource limits of the shell and processes started by the shell.\n"
-     "    If VALUE is `soft', `hard' and `unlimited', represent current soft limit\n"
-     "    and hard limit and no limit. If no option specified, assume `-f'.\n"
-     "    Options.\n"
-     "        -H    use `hard' resource limit\n"
-     "        -S    use `soft' resource limit (default)\n"
-     "        -a    show all resource limits"
-#define DEF(O, R, S, N, D) "\n        -" O "    " D
-#include "ulimit-def.in"
-#undef DEF
-    },
-    {"umask", builtin_umask, "[-p] [-S] [mode]",
-     "    Display or set file mode creation mask.\n"
-     "    Set the calling process's file mode creation mask to MODE.\n"
-     "    If MODE is omitted, prints current value of mask.\n"
-     "    Options.\n"
-     "        -p    if mode is omitted, print current mask in a form that may be reused as input\n"
-     "        -S    print current mask in a symbolic form"},
-    {"unsetenv", builtin_unsetenv, "[name ...]", "    Unset environmental variables."},
-    {"wait", builtin_wait, "[-n] [id ...]",
-     "    Wait for termination of processes or jobs.\n"
-     "    If ID is not specified, wait for termination of all managed jobs.\n"
-     "    Return the exit status of last ID. If ID is not found or not managed,\n"
-     "    the exit status is 127."},
-};
-
-unsigned int getBuiltinCommandSize() { return std::size(builtinCommands); }
-
-const char *getBuiltinCommandName(unsigned int index) {
-  assert(index < getBuiltinCommandSize());
-  return builtinCommands[index].commandName;
-}
-
 static auto initBuiltinMap() {
-  StrRefMap<unsigned int> map;
-  for (unsigned int i = 0; i < std::size(builtinCommands); i++) {
-    map.emplace(builtinCommands[i].commandName, i);
-  }
-  return map;
+  return StrRefMap<builtin_command_t>{
+      {":", builtin_true},
+      {"__gets", builtin___gets},
+      {"__puts", builtin___puts},
+      {"_exit", builtin__exit},
+      {"bg", builtin_fg_bg},
+      {"cd", builtin_cd},
+      {"checkenv", builtin_check_env},
+      {"complete", builtin_complete},
+      {"echo", builtin_echo},
+      {"exit", builtin_exit},
+      {"false", builtin_false},
+      {"fg", builtin_fg_bg},
+      {"hash", builtin_hash},
+      {"help", builtin_help},
+      {"kill", builtin_kill},
+      {"pwd", builtin_pwd},
+      {"read", builtin_read},
+      {"setenv", builtin_setenv},
+      {"shctl", builtin_shctl},
+      {"test", builtin_test},
+      {"true", builtin_true},
+      {"ulimit", builtin_ulimit},
+      {"umask", builtin_umask},
+      {"unsetenv", builtin_unsetenv},
+      {"wait", builtin_wait},
+  };
 }
 
 /**
  * return null, if not found builtin command.
  */
 builtin_command_t lookupBuiltinCommand(const char *commandName) {
-  /**
-   * builtin command name and index.
-   */
   static auto builtinMap = initBuiltinMap();
 
   auto iter = builtinMap.find(commandName);
   if (iter == builtinMap.end()) {
     return nullptr;
   }
-  return builtinCommands[iter->second].cmd_ptr;
+  return iter->second;
 }
 
 struct StrArrayIter {
@@ -359,8 +144,10 @@ std::string toPrintable(StringRef ref) {
 }
 
 static void printAllUsage(FILE *fp) {
-  for (const auto &e : builtinCommands) {
-    fprintf(fp, "%s %s\n", e.commandName, e.usage);
+  unsigned int size = getBuiltinCmdSize();
+  auto *cmdList = getBuiltinCmdDescList();
+  for (unsigned int i = 0; i < size; i++) {
+    fprintf(fp, "%s %s\n", cmdList[i].name, cmdList[i].usage);
   }
 }
 
@@ -369,12 +156,14 @@ static void printAllUsage(FILE *fp) {
  */
 static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   bool matched = false;
-  for (const auto &e : builtinCommands) {
-    const char *cmdName = e.commandName;
+  unsigned int size = getBuiltinCmdSize();
+  auto *cmdList = getBuiltinCmdDescList();
+  for (unsigned int i = 0; i < size; i++) {
+    const char *cmdName = cmdList[i].name;
     if (StringRef(cmdName).startsWith(prefix)) {
-      fprintf(fp, "%s: %s %s\n", cmdName, cmdName, e.usage);
+      fprintf(fp, "%s: %s %s\n", cmdName, cmdName, cmdList[i].usage);
       if (!isShortHelp) {
-        fprintf(fp, "%s\n", e.detail);
+        fprintf(fp, "%s\n", cmdList[i].detail);
       }
       matched = true;
     }

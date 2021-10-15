@@ -18,7 +18,7 @@
 #include <grp.h>
 #include <pwd.h>
 
-#include "cmd.h"
+#include "cmd_desc.h"
 #include "complete.h"
 #include "frontend.h"
 #include "logger.h"
@@ -236,9 +236,10 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 
   // complete builtin command
   if (hasFlag(option, CodeCompOp::BUILTIN)) {
-    unsigned int bsize = getBuiltinCommandSize();
+    unsigned int bsize = getBuiltinCmdSize();
+    auto *cmdList = getBuiltinCmdDescList();
     for (unsigned int i = 0; i < bsize; i++) {
-      StringRef builtin = getBuiltinCommandName(i);
+      StringRef builtin = cmdList[i].name;
       if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(builtin[0])) {
         continue;
       }

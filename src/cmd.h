@@ -45,16 +45,6 @@ struct GetOptState : public opt::GetOptState {
  */
 using builtin_command_t = int (*)(DSState &state, ArrayObject &argvObj);
 
-unsigned int getBuiltinCommandSize();
-
-/**
- *
- * @param index
- * must be less than getBuiltinCommandSize().
- * @return
- */
-const char *getBuiltinCommandName(unsigned int index);
-
 builtin_command_t lookupBuiltinCommand(const char *commandName);
 
 /**

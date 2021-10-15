@@ -222,6 +222,7 @@ set(YDSH_SRC
         src/object.cpp
         src/type.cpp
         src/cmd.cpp
+        src/cmd_desc.cpp
         src/core.cpp
         src/scope.cpp
         src/type_pool.cpp
