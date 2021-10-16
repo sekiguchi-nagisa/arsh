@@ -224,7 +224,7 @@ function assertArray(
     <(for $a in $y { echo $a; })
 }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 9}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 11}));
 
   // definition
 
@@ -329,7 +329,7 @@ hoge() { echo hello: $@; hoge; }
 hoge a b $(hoge) "$(hoge)" # hoge
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 6}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 7}));
 
   // definition
 
@@ -1419,12 +1419,12 @@ $b + $func(34)
 
 TEST_F(IndexTest, invalidUdc) {
   unsigned short modId;
-  const char *content = R"(
-eval() { eval echo hello; }  # already defined
-eval eval 34
+  const char *content = R"(hoge() {}
+hoge() { eval echo hello; }  # already defined
+hoge eval 34
 { f() {} }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 0}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
 
   // definition
 
@@ -1433,7 +1433,12 @@ eval eval 34
     .modId = modId,
     .position = { .line = 2, .character = 1, }
   };
-  std::vector<DeclResult> result = {};
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 4}},
+    },
+  };
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 
