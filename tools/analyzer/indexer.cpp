@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cmd_desc.h>
+
 #include "indexer.h"
 
 namespace ydsh::lsp {
@@ -716,6 +718,15 @@ void SymbolIndexer::addBuiltinSymbols() {
     } else {
       this->builder().addDecl(nameInfo, type, kind);
     }
+    offset += 5;
+  }
+
+  // add builtin command
+  unsigned int size = getBuiltinCmdSize();
+  auto *cmdList = getBuiltinCmdDescList();
+  for (unsigned int i = 0; i < size; i++) {
+    NameInfo nameInfo(Token{offset, 1}, cmdList[i].name);
+    this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_CMD, "");
     offset += 5;
   }
 }

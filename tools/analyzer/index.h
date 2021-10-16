@@ -115,6 +115,7 @@ public:
     EXPORT_ENV,
     CONST,
     FUNC,
+    BUILTIN_CMD,
     CMD,
     TYPE_ALIAS,
     MOD, // for named import
@@ -171,7 +172,9 @@ public:
 
   static std::string demangle(Kind k, StringRef mangledName);
 
-  static bool isVarName(Kind k);
+  static bool isVarName(Kind k) {
+    return k != Kind::CMD && k != Kind::BUILTIN_CMD && k != Kind::TYPE_ALIAS;
+  }
 };
 
 class Symbol {

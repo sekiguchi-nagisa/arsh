@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cmd_desc.h>
+
 #include "hover.h"
 #include "source.h"
 
@@ -32,6 +34,18 @@ static const char *getVarDeclPrefix(DeclSymbol::Kind k) {
   default:
     return "";
   }
+}
+
+static const BuiltinCmdDesc *findCmdDesc(const char *name) {
+  unsigned int size = getBuiltinCmdSize();
+  auto *cmdList = getBuiltinCmdDescList();
+  for (unsigned int i = 0; i < size; i++) {
+    StringRef cmdName = name;
+    if (cmdName == cmdList[i].name) {
+      return cmdList + i;
+    }
+  }
+  return nullptr;
 }
 
 std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &decl) {
@@ -62,7 +76,20 @@ std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &
     content += decl.getInfo();
     break;
   }
-  case DeclSymbol::Kind::CMD: { // FIXME: builtin ...
+  case DeclSymbol::Kind::BUILTIN_CMD: {
+    auto *cmd = findCmdDesc(name.c_str());
+    assert(cmd);
+    content = "```md\n";
+    content += name;
+    content += ": ";
+    content += name;
+    content += " ";
+    content += cmd->usage;
+    content += "\n";
+    content += cmd->detail;
+    break;
+  }
+  case DeclSymbol::Kind::CMD: {
     content += name;
     content += "()";
     break;

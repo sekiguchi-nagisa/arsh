@@ -54,6 +54,7 @@ std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
 
 std::string DeclSymbol::mangle(Kind k, StringRef name) {
   switch (k) {
+  case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
     return toCmdFullName(name);
   case DeclSymbol::Kind::TYPE_ALIAS:
@@ -72,6 +73,7 @@ std::string DeclSymbol::mangle(Kind k, StringRef name) {
 
 std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   switch (k) {
+  case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
     mangledName.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
     break;
@@ -88,21 +90,6 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
     break;
   }
   return mangledName.toString();
-}
-
-bool DeclSymbol::isVarName(Kind k) {
-  switch (k) {
-  case DeclSymbol::Kind::VAR:
-  case DeclSymbol::Kind::LET:
-  case DeclSymbol::Kind::EXPORT_ENV:
-  case DeclSymbol::Kind::IMPORT_ENV:
-  case DeclSymbol::Kind::CONST:
-  case DeclSymbol::Kind::FUNC:
-  case DeclSymbol::Kind::MOD:
-    return true;
-  default:
-    return false;
-  }
 }
 
 // #########################
