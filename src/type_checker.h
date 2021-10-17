@@ -112,23 +112,29 @@ class BreakGather {
 private:
   struct Entry {
     FlexBuffer<JumpNode *> jumpNodes;
-    Entry *next;
+    std::unique_ptr<Entry> next;
 
-    explicit Entry(Entry *prev) : next(prev) {}
-    ~Entry() { delete this->next; }
-  } * entry;
+    explicit Entry(std::unique_ptr<Entry> &&prev) : next(std::move(prev)) {}
+  };
+  std::unique_ptr<Entry> entry;
 
 public:
   BreakGather() : entry(nullptr) {}
-  ~BreakGather() { this->clear(); }
 
-  void clear();
+  void enter() { this->entry = std::make_unique<Entry>(std::move(this->entry)); }
 
-  void enter();
+  void clear() { this->entry = nullptr; }
 
-  void leave();
+  void leave() {
+    auto old = std::move(this->entry->next);
+    this->entry->next = nullptr;
+    this->entry = std::move(old);
+  }
 
-  void addJumpNode(JumpNode *node);
+  void addJumpNode(JumpNode *node) {
+    assert(this->entry != nullptr);
+    this->entry->jumpNodes.push_back(node);
+  }
 
   /**
    * call after enter()

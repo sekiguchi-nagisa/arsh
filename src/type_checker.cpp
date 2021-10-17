@@ -27,29 +27,6 @@
 namespace ydsh {
 
 // #########################
-// ##     BreakGather     ##
-// #########################
-
-void BreakGather::clear() { delete this->entry; }
-
-void BreakGather::enter() {
-  auto *e = new Entry(this->entry);
-  this->entry = e;
-}
-
-void BreakGather::leave() {
-  auto *old = this->entry->next;
-  this->entry->next = nullptr;
-  this->clear();
-  this->entry = old;
-}
-
-void BreakGather::addJumpNode(JumpNode *node) {
-  assert(this->entry != nullptr);
-  this->entry->jumpNodes.push_back(node);
-}
-
-// #########################
 // ##     TypeChecker     ##
 // #########################
 
