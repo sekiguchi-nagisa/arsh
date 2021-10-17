@@ -78,15 +78,15 @@ __cmd() {
     # keywords
     case $type {
     '--expr' => $eachEcho(['new', '"', '$(', '>(', '@(', '<(', '(', '[', '{',
-                           'do', 'for', 'if', 'case', 'try', 'while',
+                           'do', 'for', 'if', 'case', 'try', 'while', 'function',
                            'break', 'continue', 'return', 
                            '!', '+', '-', 'throw', 'coproc'])
     '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
-                           'do', 'for', 'if', 'case', 'try', 'while',
+                           'do', 'for', 'if', 'case', 'try', 'while', 'function',
                            'break', 'continue', 'return',
                            '!', '+', '-', 'throw', 'coproc',
 
-                           'function', 'interface', 'assert',
+                           'interface', 'assert',
                            'export-env', 'import-env',
                            'let', 'source', 'source!', 'typedef',
                            'var', ';'])

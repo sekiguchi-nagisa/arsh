@@ -197,13 +197,19 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
 }
 
 // parse rule definition
-std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
+std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   GUARD_DEEP_NESTING(guard);
 
   assert(CUR_KIND() == TokenKind::FUNCTION);
   unsigned int startPos = START_POS();
   this->consume(); // FUNCTION
-  auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+
+  NameInfo nameInfo({startPos, 0}, "");
+  if (CUR_KIND() == TokenKind::IDENTIFIER) { // named function
+    nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+  } else { // anonymous function
+    this->refetch(yycEXPR);
+  }
   auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo));
   TRY(this->expect(TokenKind::LP));
 
@@ -237,11 +243,29 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     }
     retTypeNode = std::move(type);
   }
-  if (!retTypeNode) {
+
+  if (!retTypeNode && !node->isAnonymousFunc()) {
     retTypeNode = newVoidTypeNode();
   }
   node->setReturnTypeToken(std::move(retTypeNode));
 
+  if (needBody) {
+    std::unique_ptr<Node> exprNode;
+    if (node->isAnonymousFunc()) {
+      TRY(this->expect(TokenKind::CASE_ARM));
+      exprNode = this->parse_expression();
+    } else {
+      exprNode = this->parse_block();
+    }
+    if (this->incompleteNode) {
+      node->setFuncBody(std::move(this->incompleteNode));
+      this->incompleteNode = std::move(node);
+      return nullptr;
+    } else if (this->hasError()) {
+      return nullptr;
+    }
+    node->setFuncBody(std::move(exprNode));
+  }
   return node;
 }
 
@@ -286,7 +310,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
       break;
     }
     case TokenKind::FUNCTION: {
-      auto funcNode = TRY(this->parse_funcDecl());
+      auto funcNode = TRY(this->parse_function(false));
       TRY(this->parse_statementEnd());
       node->addMethodDeclNode(funcNode.release());
       count++;
@@ -482,21 +506,6 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
   case TokenKind::LINE_END: {
     Token token = this->curToken; // not consume LINE_END token
     return std::make_unique<EmptyNode>(token);
-  }
-  case TokenKind::FUNCTION: {
-    auto node = TRY(this->parse_funcDecl());
-    auto blockNode = this->parse_block();
-    if (this->incompleteNode) {
-      assert(isa<BlockNode>(*this->incompleteNode));
-      blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
-      node->setBlockNode(std::move(blockNode));
-      this->incompleteNode = std::move(node);
-      return nullptr;
-    } else if (this->hasError()) {
-      return nullptr;
-    }
-    node->setBlockNode(std::move(blockNode));
-    return std::move(node);
   }
   case TokenKind::INTERFACE:
     return this->parse_interface();
@@ -1340,6 +1349,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     return std::move(tryNode);
   }
+  case TokenKind::FUNCTION:
+    return this->parse_function();
   case TokenKind::BREAK: {
     Token token = this->expect(TokenKind::BREAK); // always success
     std::unique_ptr<Node> exprNode;

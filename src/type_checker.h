@@ -127,7 +127,6 @@ public:
 
   void leave() {
     auto old = std::move(this->entry->next);
-    this->entry->next = nullptr;
     this->entry = std::move(old);
   }
 
@@ -140,7 +139,49 @@ public:
    * call after enter()
    * @return
    */
-  FlexBuffer<JumpNode *> &getJumpNodes() { return this->entry->jumpNodes; }
+  const FlexBuffer<JumpNode *> &getJumpNodes() const { return this->entry->jumpNodes; }
+};
+
+class FuncContext {
+private:
+  struct Entry {
+    const DSType *returnType;
+    FlexBuffer<JumpNode *> returnNodes;
+    std::unique_ptr<Entry> next;
+
+    explicit Entry(std::unique_ptr<Entry> &&prev, const DSType *type)
+        : returnType(type), next(std::move(prev)) {}
+  };
+  std::unique_ptr<Entry> entry;
+
+public:
+  FuncContext() : entry(nullptr) {}
+
+  void enter(const DSType *type) {
+    this->entry = std::make_unique<Entry>(std::move(this->entry), type);
+  }
+
+  void clear() { this->entry = nullptr; }
+
+  void leave() {
+    auto old = std::move(this->entry->next);
+    this->entry = std::move(old);
+  }
+
+  void addReturnNode(JumpNode *node) {
+    assert(this->entry != nullptr);
+    this->entry->returnNodes.push_back(node);
+  }
+
+  bool inFunc() const { return this->entry != nullptr; }
+
+  /**
+   * call after enter()
+   * @return
+   */
+  const FlexBuffer<JumpNode *> &getReturnNodes() const { return this->entry->returnNodes; }
+
+  const DSType *getReturnType() const { return this->entry->returnType; }
 };
 
 class CodeCompletionHandler;
@@ -151,11 +192,6 @@ protected:
 
   NameScopePtr curScope;
 
-  /**
-   * contains current return type of current function
-   */
-  const DSType *curReturnType{nullptr};
-
   int visitingDepth{0};
 
   bool toplevelPrinting;
@@ -165,6 +201,8 @@ protected:
   FlowContext fctx;
 
   BreakGather breakGather;
+
+  FuncContext funcContext;
 
   ObserverPtr<const Lexer> lexer;
 
@@ -282,7 +320,8 @@ private:
     this->resolveCastOp(cast<TypeOpNode>(*targetNode));
   }
 
-  const DSType &resolveCoercionOfJumpValue();
+  const DSType &resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
+                                           bool optional = true);
 
   /**
    *
@@ -338,14 +377,14 @@ private:
     });
   }
 
-  auto intoFunc(const DSType &returnType) {
-    this->curReturnType = &returnType;
+  auto intoFunc(const DSType *returnType) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
+    this->funcContext.enter(returnType);
     return finally([&] {
       this->curScope = this->curScope->exitScope();
       this->curScope = this->curScope->exitScope();
-      this->curReturnType = nullptr;
+      this->funcContext.leave();
     });
   }
 
@@ -376,11 +415,6 @@ private:
   void reportError(Token token, Arg &&...arg) {
     this->reportErrorImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
-
-  /**
-   * return null, if outside of function
-   */
-  const DSType *getCurrentReturnType() const { return this->curReturnType; }
 
   // for apply node type checking
   /**

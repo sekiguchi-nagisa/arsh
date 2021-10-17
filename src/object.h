@@ -1063,7 +1063,7 @@ private:
   unsigned short belongedModId;
 
   /**
-   * if CallableKind is toplevel, it is null
+   * must not be null
    */
   char *name{nullptr};
 
@@ -1085,11 +1085,10 @@ private:
 public:
   NON_COPYABLE(CompiledCode);
 
-  CompiledCode(unsigned short modId, const char *name, DSCode code, DSValue *constPool,
+  CompiledCode(unsigned short modId, const std::string &name, DSCode code, DSValue *constPool,
                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept
-      : DSCode(code), belongedModId(modId), name(name == nullptr ? nullptr : strdup(name)),
-        constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {
-  }
+      : DSCode(code), belongedModId(modId), name(strdup(name.c_str())), constPool(constPool),
+        lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {}
 
   CompiledCode(CompiledCode &&c) noexcept
       : DSCode(std::move(c)), belongedModId(c.belongedModId), name(c.name), constPool(c.constPool),
@@ -1124,7 +1123,7 @@ public:
   StringRef getSourceName() const { return this->constPool[0].asStrRef(); }
 
   /**
-   * may be null.
+   * must not be null.
    */
   const char *getName() const { return this->name; }
 

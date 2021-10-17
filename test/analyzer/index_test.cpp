@@ -321,6 +321,85 @@ TEST_F(IndexTest, scope3) {
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
+TEST_F(IndexTest, func1) {
+  unsigned short modId;
+  const char *content = R"(
+var a = function (
+$a : Int) =>
+$a + 34
+$a(234)
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 0, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 2}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 4, .character = 0, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 4}, .end = {.line = 1, .character = 5}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 4, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 4}, .end = {.line = 1, .character = 5}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 2}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 1, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 2}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 2}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
 TEST_F(IndexTest, cmd1) {
   unsigned short modId;
   const char *content = R"E(

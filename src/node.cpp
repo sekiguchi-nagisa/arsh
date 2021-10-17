@@ -848,6 +848,16 @@ void PrefixAssignNode::dump(NodeDumper &dumper) const {
 // ##     FunctionNode     ##
 // ##########################
 
+void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
+  if (isa<BlockNode>(*node)) {
+    this->blockNode.reset(cast<BlockNode>(node.release()));
+  } else {
+    this->blockNode = std::make_unique<BlockNode>(node->getPos());
+    this->blockNode->addNode(std::move(node));
+  }
+  this->updateToken(this->blockNode->getToken());
+}
+
 void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(funcName);
   DUMP(params);

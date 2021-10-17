@@ -147,6 +147,8 @@ public:
     return finally([&] { this->scope = this->scope->parent; });
   }
 
+  bool isGlobal() const { return this->scope->isGlobal(); }
+
   bool addDecl(const NameInfo &info, const DSType &type,
                DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
     if (type.isVoidType() || type.isNothingType()) {

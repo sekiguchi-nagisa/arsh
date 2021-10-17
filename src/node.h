@@ -1338,7 +1338,10 @@ private:
 public:
   explicit BlockNode(unsigned int startPos) : WithRtti({startPos, 1}) {}
 
-  void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
+  void addNode(std::unique_ptr<Node> &&node) {
+    this->updateToken(node->getToken());
+    this->nodes.push_back(std::move(node));
+  }
 
   void insertNodeToFirst(std::unique_ptr<Node> &&node);
 
@@ -1893,6 +1896,9 @@ private:
    */
   std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
 
+  /**
+   * may be null
+   */
   std::unique_ptr<TypeNode> returnTypeNode;
 
   std::unique_ptr<BlockNode> blockNode;
@@ -1932,15 +1938,14 @@ public:
 
   void setReturnTypeToken(std::unique_ptr<TypeNode> &&typeToken) {
     this->returnTypeNode = std::move(typeToken);
-    this->updateToken(this->returnTypeNode->getToken());
+    if (this->returnTypeNode) {
+      this->updateToken(this->returnTypeNode->getToken());
+    }
   }
 
-  TypeNode &getReturnTypeToken() { return *this->returnTypeNode; }
+  const std::unique_ptr<TypeNode> &getReturnTypeToken() const { return this->returnTypeNode; }
 
-  void setBlockNode(std::unique_ptr<BlockNode> &&node) {
-    this->blockNode = std::move(node);
-    this->updateToken(this->blockNode->getToken());
-  }
+  void setFuncBody(std::unique_ptr<Node> &&node);
 
   /**
    * return null before call setBlockNode()
@@ -1963,6 +1968,8 @@ public:
    * may be null
    */
   const FunctionType *getFuncType() const { return this->funcType; }
+
+  bool isAnonymousFunc() const { return this->funcName.getName().empty(); }
 
   void dump(NodeDumper &dumper) const override;
 };

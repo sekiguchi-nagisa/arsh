@@ -190,7 +190,7 @@ protected:
   std::unique_ptr<Node> toAccessNode(Token token) const;
 
   // parser rule definition.
-  std::unique_ptr<FunctionNode> parse_funcDecl();
+  std::unique_ptr<FunctionNode> parse_function(bool needBody = true);
   std::unique_ptr<Node> parse_interface();
 
   /**

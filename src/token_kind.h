@@ -258,6 +258,7 @@
   OP(CASE)                                                                                         \
   OP(TRY)                                                                                          \
   OP(WHILE)                                                                                        \
+  OP(FUNCTION)                                                                                     \
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
   OP(RETURN)                                                                                       \
@@ -276,7 +277,6 @@
   OP(LET)
 
 #define EACH_LA_statement(OP)                                                                      \
-  OP(FUNCTION)                                                                                     \
   OP(INTERFACE)                                                                                    \
   OP(ASSERT)                                                                                       \
   OP(EXPORT_ENV)                                                                                   \

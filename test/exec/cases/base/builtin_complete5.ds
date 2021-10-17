@@ -44,16 +44,16 @@ assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')
 
 ## keyword
 let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
-            'do', 'for', 'if', 'case', 'try', 'while',
+            'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return',
             '!', '+', '-', 'throw', 'coproc', 
 
-            'function', 'interface', 'typedef', 'assert',
+            'interface', 'typedef', 'assert',
             'export-env', 'import-env',
             'let', 'source', 'source!', 'var', ';']
 
 let expr = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
-            'do', 'for', 'if', 'case', 'try', 'while',
+            'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return',
             '!', '+', '-', 'throw', 'coproc']
 

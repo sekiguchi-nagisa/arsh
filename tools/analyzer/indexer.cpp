@@ -589,11 +589,11 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
 }
 
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  if (!this->isTopLevel()) {
+  if (!this->builder().isGlobal()) {
     return;
   }
-  this->visit(node.getReturnTypeToken());
   this->visitEach(node.getParamTypeNodes());
+  this->visit(node.getReturnTypeToken());
   if (node.getVarIndex() > 0) {
     std::string value = "(";
     for (unsigned int i = 0; i < node.getParams().size(); i++) {
@@ -606,7 +606,7 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
       value += node.getParamTypeNodes()[i]->getType().getName();
     }
     value += ") : ";
-    value += node.getReturnTypeToken().getType().getName();
+    value += node.getReturnTypeToken()->getType().getName();
     this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
   }
   auto func = this->builder().intoScope();

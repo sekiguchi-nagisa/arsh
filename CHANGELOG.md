@@ -10,6 +10,12 @@
     - ``huponexit``: if on, when call ``exit`` command, send ``SIGHUP`` to managed jobs
     - ``assert``: if on, check assertion
         - now assertion is enabled/disabled at runtime
+- support anonymous function
+    - define anonymous function like the follow
+      ```
+      function($a : Int) => $a * $a
+      ```
+    - currently, only allow top-level scope
 
 #### Builtin
 

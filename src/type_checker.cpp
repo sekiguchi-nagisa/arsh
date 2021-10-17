@@ -217,8 +217,8 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
   return false;
 }
 
-const DSType &TypeChecker::resolveCoercionOfJumpValue() {
-  auto &jumpNodes = this->breakGather.getJumpNodes();
+const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
+                                                      bool optional) {
   if (jumpNodes.empty()) {
     return this->typePool.get(TYPE::Void);
   }
@@ -233,10 +233,14 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue() {
     this->checkTypeWithCoercion(retType, jumpNode->refExprNode());
   }
 
-  if (auto ret = this->typePool.createOptionType(retType); ret) {
-    return *std::move(ret).take();
+  if (optional) {
+    if (auto ret = this->typePool.createOptionType(retType); ret) {
+      return *std::move(ret).take();
+    } else {
+      return this->typePool.get(TYPE::Nothing);
+    }
   } else {
-    return this->typePool.get(TYPE::Nothing);
+    return retType;
   }
 }
 
@@ -865,7 +869,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     {
       auto loop = this->intoLoop();
       this->checkTypeWithCurrentScope(node.getBlockNode());
-      auto &type = this->resolveCoercionOfJumpValue();
+      auto &type = this->resolveCoercionOfJumpValue(this->breakGather.getJumpNodes());
       node.setType(type);
     }
   }
@@ -1246,16 +1250,20 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
     this->reportError<InsideChild>(node);
   }
 
-  auto *returnType = this->getCurrentReturnType();
-  if (returnType == nullptr) {
+  if (!this->funcContext.inFunc()) {
     this->reportError<InsideFunc>(node);
     return;
   }
-  auto &exprType = this->checkType(*returnType, node.getExprNode());
-  if (exprType.isVoidType()) {
-    if (!node.getExprNode().is(NodeKind::Empty)) {
-      this->reportError<NotNeedExpr>(node.getExprNode());
-    }
+
+  // check return expr
+  auto *returnType = this->funcContext.getReturnType();
+  auto &exprType = returnType ? this->checkType(*returnType, node.getExprNode())
+                              : this->checkTypeExactly(node.getExprNode());
+  if (exprType.isVoidType() && !isa<EmptyNode>(node.getExprNode())) {
+    this->reportError<NotNeedExpr>(node.getExprNode());
+  }
+  if (!returnType) {
+    this->funcContext.addReturnNode(&node);
   }
 }
 
@@ -1492,54 +1500,85 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
 
-  if (!this->isTopLevel()) { // only available toplevel scope
+  if (!this->curScope->isGlobal()) { // only available toplevel scope
     this->reportError<OutsideToplevel>(node);
     return;
   }
 
-  // resolve return type, param type
-  auto &returnType = this->checkTypeExactly(node.getReturnTypeToken());
+  // resolve param type, return type
   unsigned int paramSize = node.getParamTypeNodes().size();
   std::vector<const DSType *> paramTypes(paramSize);
   for (unsigned int i = 0; i < paramSize; i++) {
     auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
     paramTypes[i] = &type;
   }
+  auto *returnType =
+      node.getReturnTypeToken() ? &this->checkTypeExactly(*node.getReturnTypeToken()) : nullptr;
 
-  // register function handle
+  // register function handle if named function
   const FunctionType *funcType = nullptr;
-  if (auto typeOrError = this->typePool.createFuncType(returnType, std::move(paramTypes));
-      typeOrError) {
-    funcType = cast<FunctionType>(std::move(typeOrError).take());
-    node.setFuncType(*funcType);
-    auto handle = this->addEntry(node.getNameInfo(), *funcType, FieldAttribute::READ_ONLY);
-    if (handle) {
-      node.setVarIndex(handle->getIndex());
+  if (returnType) {
+    if (auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes))) {
+      funcType = cast<FunctionType>(std::move(typeOrError).take());
+      node.setFuncType(*funcType);
+      if (const FieldHandle * handle;
+          !node.isAnonymousFunc() &&
+          (handle = this->addEntry(node.getNameInfo(), *funcType, FieldAttribute::READ_ONLY))) {
+        node.setVarIndex(handle->getIndex());
+      }
+    } else {
+      paramSize = 0; // function type creation failed.
     }
-  } else {
-    paramSize = 0; // function type creation failed.
   }
 
-  {
-    auto func = this->intoFunc(returnType);
-    // register parameter
-    for (unsigned int i = 0; i < paramSize; i++) {
-      this->addEntry(node.getParams()[i], funcType->getParamTypeAt(i), FieldAttribute());
-    }
-    // check type func body
-    this->checkTypeWithCurrentScope(node.getBlockNode());
-    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+  // func body
+  auto func = this->intoFunc(returnType);
+  // register parameter
+  for (unsigned int i = 0; i < paramSize; i++) {
+    auto &paramType = funcType ? funcType->getParamTypeAt(i) : *paramTypes[i];
+    this->addEntry(node.getParams()[i], paramType, FieldAttribute());
   }
+  // check type func body
+  this->checkTypeWithCurrentScope(
+      node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
+  node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
 
   // insert terminal node if not found
   BlockNode &blockNode = node.getBlockNode();
-  if (returnType.isVoidType() && !blockNode.getType().isNothingType()) {
-    auto emptyNode = std::make_unique<EmptyNode>();
-    emptyNode->setType(this->typePool.get(TYPE::Void));
-    addReturnNodeToLast(blockNode, this->typePool, std::move(emptyNode));
+  if (!blockNode.getType().isNothingType()) {
+    if (returnType && returnType->isVoidType()) {
+      auto emptyNode = std::make_unique<EmptyNode>();
+      emptyNode->setType(this->typePool.get(TYPE::Void));
+      addReturnNodeToLast(blockNode, this->typePool, std::move(emptyNode));
+    } else if (node.isAnonymousFunc()) {
+      std::unique_ptr<Node> lastNode;
+      if (blockNode.getNodes().empty()) {
+        lastNode = std::make_unique<EmptyNode>();
+        lastNode->setType(this->typePool.get(TYPE::Void));
+      } else {
+        lastNode = std::move(blockNode.refNodes().back());
+        blockNode.refNodes().pop_back();
+      }
+      addReturnNodeToLast(blockNode, this->typePool, std::move(lastNode));
+      assert(isa<JumpNode>(*blockNode.getNodes().back()));
+      this->checkTypeAsReturn(cast<JumpNode>(*blockNode.getNodes().back()));
+    }
   }
   if (!blockNode.getType().isNothingType()) {
     this->reportError<UnfoundReturn>(blockNode);
+  }
+
+  // resolve common return type
+  if (!returnType) {
+    assert(!funcType);
+    auto &type = this->resolveCoercionOfJumpValue(this->funcContext.getReturnNodes(), false);
+    if (auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes))) {
+      funcType = cast<FunctionType>(std::move(typeOrError).take());
+      node.setFuncType(*funcType);
+    }
+  }
+  if (node.isAnonymousFunc() && funcType) {
+    node.setType(*funcType);
   }
 }
 
@@ -1557,7 +1596,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   }
 
   {
-    auto func = this->intoFunc(this->typePool.get(TYPE::Int)); // pseudo return type
+    auto func = this->intoFunc(&this->typePool.get(TYPE::Int)); // pseudo return type
     // register dummy parameter (for propagating command attr)
     this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
@@ -1846,10 +1885,10 @@ static bool mayBeCmd(const Node &node) {
 std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
                                               NameScopePtr global) {
   // reset state
-  this->curReturnType = nullptr;
   this->visitingDepth = 0;
   this->fctx.clear();
   this->breakGather.clear();
+  this->funcContext.clear();
   this->errors.clear();
 
   // set scope

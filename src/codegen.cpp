@@ -96,8 +96,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
       .localSize = 0,
   }; // sentinel
 
-  return CompiledCode(this->modId, name.empty() ? nullptr : name.c_str(), code, constPool, entries,
-                      except);
+  return CompiledCode(this->modId, name, code, constPool, entries, except);
 }
 
 // ###############################
@@ -1316,7 +1315,9 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   auto func = DSValue::create<FuncObject>(*node.getFuncType(), std::move(code));
 
   this->emitLdcIns(func);
-  this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+  if (!node.isAnonymousFunc()) {
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+  }
 }
 
 void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) {} // do nothing
