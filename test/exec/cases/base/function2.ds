@@ -46,3 +46,21 @@ assert $a4 is (Int) => Any
 assert $a4(34) is Any
 assert $a4(-199) as Int == -199
 
+# subtype
+$a4 = $a1
+assert $a4 is (Int) => String
+assert $a4(333) is String
+assert $a4(333) as String == '<333>'
+assert ($a4 as (Int) -> String)(99) == '<99>'
+
+assert (function() -> 23) is () -> Int
+assert (function() -> 23) is () -> Int!
+assert (function() -> 23) is () -> Any
+assert (function() -> 23) is () -> Void
+assert (function() => {}) is () => Void
+assert ! (
+    (function () -> {}) is () -> Any
+)
+assert ! (
+    (function () -> {}) is () -> Any!
+)

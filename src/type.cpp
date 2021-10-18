@@ -110,6 +110,23 @@ std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
   return ret;
 }
 
+static bool isBaseTypeOf(const FunctionType &funcType1, const FunctionType &funcType2) {
+  unsigned int paramSize = funcType1.getParamSize();
+  if (paramSize != funcType2.getParamSize()) {
+    return false;
+  }
+  for (unsigned int i = 0; i < paramSize; i++) {
+    auto &paramType1 = funcType1.getParamTypeAt(i);
+    auto &paramType2 = funcType2.getParamTypeAt(i);
+    if (paramType1 != paramType2) {
+      return false;
+    }
+  }
+  auto &returnType1 = funcType1.getReturnType();
+  auto &returnType2 = funcType2.getReturnType();
+  return returnType1.isSameOrBaseTypeOf(returnType2) || returnType1.isVoidType();
+}
+
 bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   if (*this == targetType) {
     return true;
@@ -119,6 +136,9 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   }
   if (this->isOptionType()) {
     return cast<OptionType>(this)->getElementType().isSameOrBaseTypeOf(targetType);
+  }
+  if (this->isFuncType() && targetType.isFuncType()) {
+    return isBaseTypeOf(cast<FunctionType>(*this), cast<FunctionType>(targetType));
   }
   auto *type = targetType.getSuperType();
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
