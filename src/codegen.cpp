@@ -1393,7 +1393,7 @@ bool ByteCodeGenerator::exitModule(const SourceNode &node) {
   this->emitSourcePos(node.getPathToken().pos);
   this->emit0byteIns(OpCode::DUP);
   this->emit2byteIns(OpCode::STORE_GLOBAL, node.getModType().getIndex());
-  this->emit1byteIns(OpCode::CALL_FUNC, 0);
+  this->emitFuncCallIns(0, false);
   return !this->hasError();
 }
 
