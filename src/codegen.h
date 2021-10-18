@@ -263,13 +263,19 @@ private:
   }
 
   void emitFuncCallIns(unsigned char paramSize, bool hasRet) {
-    this->emitValIns(OpCode::CALL_FUNC, paramSize, hasRet ? 0 : 1);
+    this->emitValIns(OpCode::CALL_FUNC, paramSize, 0);
+    if (!hasRet) {
+      this->emit0byteIns(OpCode::POP);
+    }
   }
 
   void emitNativeCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
     assert(index <= UINT8_MAX);
-    this->emitValIns(OpCode::CALL_BUILTIN2, paramSize, hasRet ? -1 : 0);
+    this->emitValIns(OpCode::CALL_BUILTIN2, paramSize, -1);
     this->curBuilder().append8(index);
+    if (!hasRet) {
+      this->emit0byteIns(OpCode::POP);
+    }
   }
 
   /**
@@ -512,8 +518,7 @@ private:
   std::vector<std::reference_wrapper<const CompiledCode>> funcs;
 
 public:
-  ByteCodeDumper(FILE *fp, const TypePool &pool)
-      : fp(fp), typePool(pool) {}
+  ByteCodeDumper(FILE *fp, const TypePool &pool) : fp(fp), typePool(pool) {}
 
   void operator()(const CompiledCode &code, unsigned int maxGVarIndex);
 

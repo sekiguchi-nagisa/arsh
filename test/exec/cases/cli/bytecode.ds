@@ -4,7 +4,7 @@ source $SCRIPT_DIR/expect.ds
 var out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 12
+  code size: 13
   max stack depth: 1
   number of local variable: 0
   number of global variable: 58
@@ -14,7 +14,8 @@ Code:
    5: PUSH_INT  34
    7: CALL_BUILTIN2  1  %str
   10: POP
-  11: RETURN
+  11: PUSH_INVALID
+  12: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -28,7 +29,7 @@ $expect("$(ds --dump-code -c 'var a = 34; 34 as String')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 26
+  code size: 27
   max stack depth: 3
   number of local variable: 0
   number of global variable: 58
@@ -44,7 +45,8 @@ Code:
   22: POP
   23: EXIT_FINALLY
   24: POP
-  25: RETURN
+  25: PUSH_INVALID
+  26: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -61,7 +63,7 @@ DSCode: function f
 Code:
   0: LOAD_LOCAL  0
   2: INSTANCE_OF  [Int]
-  6: RETURN_V
+  6: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -76,7 +78,7 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 44
+  code size: 45
   max stack depth: 2
   number of local variable: 2
   number of global variable: 57
@@ -97,7 +99,8 @@ Code:
   32: RECLAIM_LOCAL  1  1
   35: GOTO  9
   40: RECLAIM_LOCAL  0  1
-  43: RETURN
+  43: PUSH_INVALID
+  44: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)

@@ -48,8 +48,7 @@
 | CALL_FUNC       | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_BUILTIN    | 1: index                       | -> value                                     | call builtin function                              |
 | CALL_BUILTIN2   | 2: param index                 | param1 ~ paramN -> result                    | call builtin function                              |
-| RETURN          |                                | -> [empty]                                   | return from callable                               |
-| RETURN_V        |                                | value -> [empty]                             | return value from callable                         |
+| RETURN          |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC      |                                | value -> [empty]                             | return from user-defined command                   |
 | RETURN_SIG      |                                | [no change]                                  | return from signal handler                         |
 | BRANCH          | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |

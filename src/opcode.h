@@ -76,7 +76,6 @@ namespace ydsh {
   OP(CALL_BUILTIN, 1, 1)                                                                           \
   OP(CALL_BUILTIN2, 2, 0)                                                                          \
   OP(RETURN, 0, 0)                                                                                 \
-  OP(RETURN_V, 0, 0)                                                                               \
   OP(RETURN_UDC, 0, 0)                                                                             \
   OP(RETURN_SIG, 0, 0)                                                                             \
   OP(BRANCH, 2, -1)                                                                                \

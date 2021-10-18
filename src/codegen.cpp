@@ -1103,10 +1103,11 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     if (this->inUDC()) {
       assert(node.getExprNode().getType().is(TYPE::Int));
       this->emit0byteIns(OpCode::RETURN_UDC);
-    } else if (node.getExprNode().getType().isVoidType()) {
-      this->emit0byteIns(OpCode::RETURN);
     } else {
-      this->emit0byteIns(OpCode::RETURN_V);
+      if (node.getExprNode().getType().isVoidType()) {
+        this->emit0byteIns(OpCode::PUSH_INVALID);
+      }
+      this->emit0byteIns(OpCode::RETURN);
     }
     break;
   }
@@ -1362,7 +1363,8 @@ void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const cha
 ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const ModType &modType) {
   unsigned char maxLocalSize = maxVarIndex;
   this->curBuilder().localVarNum = maxLocalSize;
-  this->emitIns(OpCode::RETURN);
+  this->emit0byteIns(OpCode::PUSH_INVALID);
+  this->emit0byteIns(OpCode::RETURN);
   auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {
@@ -1377,7 +1379,8 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const M
 
 bool ByteCodeGenerator::exitModule(const SourceNode &node) {
   this->curBuilder().localVarNum = node.getMaxVarNum();
-  this->emitIns(OpCode::RETURN);
+  this->emit0byteIns(OpCode::PUSH_INVALID);
+  this->emit0byteIns(OpCode::RETURN);
 
   auto code = this->finalizeCodeBuilder(node.getModType().toName());
   if (!code) {

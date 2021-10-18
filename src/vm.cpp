@@ -452,7 +452,7 @@ bool VM::forkAndEval(DSState &state) {
 static NativeCode initCode(OpCode op) {
   NativeCode::ArrayType code;
   code[0] = static_cast<char>(op);
-  code[1] = static_cast<char>(OpCode::RETURN_V);
+  code[1] = static_cast<char>(OpCode::RETURN);
   return NativeCode(code);
 }
 
@@ -1520,9 +1520,7 @@ bool VM::mainLoop(DSState &state) {
         state.stack.pc()++;
         DSValue returnValue = nativeFuncPtrTable()[index](state);
         TRY(!state.hasError());
-        if (returnValue) {
-          state.stack.push(std::move(returnValue));
-        }
+        state.stack.push(std::move(returnValue));
         vmnext;
       }
       vmcase(CALL_BUILTIN2) {
@@ -1534,19 +1532,10 @@ bool VM::mainLoop(DSState &state) {
         auto ret = nativeFuncPtrTable()[index](state);
         state.stack.nativeUnwind(old);
         TRY(!state.hasError());
-        if (ret) {
-          state.stack.push(std::move(ret));
-        }
+        state.stack.push(std::move(ret));
         vmnext;
       }
       vmcase(RETURN) {
-        state.stack.unwind();
-        if (state.stack.checkVMReturn()) {
-          return true;
-        }
-        vmnext;
-      }
-      vmcase(RETURN_V) {
         DSValue v = state.stack.pop();
         state.stack.unwind();
         state.stack.push(std::move(v));
@@ -1905,9 +1894,7 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   const bool subshell = oldLevel != state.subshellLevel;
   DSValue thrown;
   if (ret) {
-    if (hasFlag(op, EvalOP::HAS_RETURN)) {
-      value = state.stack.pop();
-    }
+    value = state.stack.pop();
   } else {
     if (!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
       return EvalRet::HAS_ERROR;
@@ -1988,7 +1975,7 @@ static NativeCode initCmdTrampoline() noexcept {
   code[1] = 0;
   code[2] = static_cast<char>(OpCode::PUSH_NULL);
   code[3] = static_cast<char>(OpCode::CALL_CMD_COMMON);
-  code[4] = static_cast<char>(OpCode::RETURN_V);
+  code[4] = static_cast<char>(OpCode::RETURN);
   return NativeCode(code);
 }
 
@@ -1997,7 +1984,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
 
   static auto cmdTrampoline = initCmdTrampoline();
 
-  EvalOP op = EvalOP::SKIP_TERM | EvalOP::HAS_RETURN;
+  EvalOP op = EvalOP::SKIP_TERM;
   if (propagate) {
     setFlag(op, EvalOP::PROPAGATE);
   }
@@ -2022,16 +2009,16 @@ DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&rec
   DSValue ret;
   NativeCode code;
   if (handle.isNative()) {
-    code = NativeCode(handle.getMethodIndex(), !handle.getReturnType().isVoidType());
+    code = NativeCode(handle.getMethodIndex());
   }
 
   if (handle.isNative() ? windStackFrame(state, size + 1, size + 1, code)
                         : prepareMethodCall(state, handle.getMethodIndex(), size)) {
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    if (!handle.getReturnType().isVoidType()) {
-      setFlag(op, EvalOP::HAS_RETURN);
-    }
     startEval(state, op, nullptr, ret);
+  }
+  if (handle.getReturnType().isVoidType()) {
+    ret = DSValue(); // clear return value
   }
   return ret;
 }
@@ -2047,10 +2034,10 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    if (!cast<FunctionType>(type).getReturnType().isVoidType()) {
-      setFlag(op, EvalOP::HAS_RETURN);
-    }
     startEval(state, op, nullptr, ret);
+  }
+  if (cast<FunctionType>(type).getReturnType().isVoidType()) {
+    ret = DSValue(); // clear return value
   }
   return ret;
 }
