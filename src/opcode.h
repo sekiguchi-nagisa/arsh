@@ -78,7 +78,7 @@ namespace ydsh {
   OP(RETURN, 0, 0)                                                                                 \
   OP(RETURN_V, 0, 0)                                                                               \
   OP(RETURN_UDC, 0, 0)                                                                             \
-  OP(EXIT_SIG, 0, 0)                                                                               \
+  OP(RETURN_SIG, 0, 0)                                                                             \
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
   OP(GOTO, 4, 0)                                                                                   \
