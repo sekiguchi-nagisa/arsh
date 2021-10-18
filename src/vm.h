@@ -56,9 +56,8 @@ enum class VMEvent : unsigned int {
 };
 
 enum class EvalOP : unsigned int {
-  PROPAGATE = 1u << 0u,  // propagate uncaught exception to caller (except for subshell).
-  SKIP_TERM = 1u << 1u,  // not call termination handler (except for subshell).
-  HAS_RETURN = 1u << 2u, // may have return value.
+  PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
+  SKIP_TERM = 1u << 1u, // not call termination handler (except for subshell).
 };
 
 enum class EvalRet : unsigned int {
