@@ -1,0 +1,11 @@
+
+#$test($result = 'type', $errorKind = 'NoCommonSuper', $lineNum = 6, $chars = 14, $status = 1)
+
+function ($i : Int) => {
+    if $i < 0 {
+      return 12
+    } elif $i > 0 {
+      return 'fre'
+    }
+    return 's'
+}

@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $errorKind = 'Required', $lineNum = 6, $chars = 1, $status = 1)
+
+function () : Int
+    =>
+'fre'
