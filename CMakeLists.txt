@@ -183,7 +183,7 @@ add_custom_command(OUTPUT ${bind_doc}
 
 set(bind_header ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.cpp)
-add_custom_command(OUTPUT ${bind_src}
+add_custom_command(OUTPUT ${bind_header} ${bind_src}
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
         --header ${bind_header}
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
