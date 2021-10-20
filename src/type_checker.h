@@ -145,6 +145,7 @@ public:
 class FuncContext {
 private:
   struct Entry {
+    unsigned int voidReturnCount{0};
     const DSType *returnType;
     FlexBuffer<JumpNode *> returnNodes;
     std::unique_ptr<Entry> next;
@@ -170,6 +171,9 @@ public:
 
   void addReturnNode(JumpNode *node) {
     assert(this->entry != nullptr);
+    if (node->getExprNode().getType().isVoidType()) {
+      this->entry->voidReturnCount++;
+    }
     this->entry->returnNodes.push_back(node);
   }
 
@@ -182,6 +186,8 @@ public:
   const FlexBuffer<JumpNode *> &getReturnNodes() const { return this->entry->returnNodes; }
 
   const DSType *getReturnType() const { return this->entry->returnType; }
+
+  unsigned int getVoidReturnCount() const { return this->entry->voidReturnCount; }
 };
 
 class CodeCompletionHandler;

@@ -1061,7 +1061,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
     unsigned int index = 0;
     for (; index < size; index++) {
       auto &curType = types[index];
-      if (type->isVoidType() || type->isSameOrBaseTypeOf(*curType)) {
+      if (type->isSameOrBaseTypeOf(*curType)) {
         continue;
       }
       break;
@@ -1552,7 +1552,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
       addReturnNodeToLast(blockNode, this->typePool, std::move(emptyNode));
     } else if (node.isAnonymousFunc()) {
       std::unique_ptr<Node> lastNode;
-      if (blockNode.getNodes().empty()) {
+      if (blockNode.getNodes().empty() || blockNode.getNodes().back()->getType().isVoidType() ||
+          this->funcContext.getVoidReturnCount() > 0) {
         lastNode = std::make_unique<EmptyNode>();
         lastNode->setType(this->typePool.get(TYPE::Void));
       } else {

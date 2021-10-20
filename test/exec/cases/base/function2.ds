@@ -20,11 +20,12 @@ assert (function($a : Int, $b : String) => {
 
 assert (function () -> {;}) is () -> Void
 assert (function () -> {}) is () -> Void
+assert (function () => 34 as Void) is ()->Void
 
 # single expression with return
 assert (function ($i : Int) => {
     if $i < 0 {
-        return 34
+        return
     } elif $i > 0 {
         return
     }
