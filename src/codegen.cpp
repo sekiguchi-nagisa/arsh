@@ -682,7 +682,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
   unsigned int paramSize = node.getArgsNode().getNodes().size();
 
   this->emitTypeIns(OpCode::NEW, node.getType());
-  if (this->typePool.isArrayType(node.getType()) || this->typePool.isMapType(node.getType())) {
+  if (node.getType().isArrayType() || node.getType().isMapType()) {
     return; // Array, Map type has no constructor
   }
 

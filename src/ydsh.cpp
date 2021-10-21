@@ -110,9 +110,9 @@ struct BindingConsumer {
 
   void operator()(const FieldHandle &handle, const DSType &type) {
     auto value = DSValue::createDummy(type);
-    if (this->state.typePool.isArrayType(type)) {
+    if (type.isArrayType()) {
       value = DSValue::create<ArrayObject>(type);
-    } else if (this->state.typePool.isMapType(type)) {
+    } else if (type.isMapType()) {
       value = DSValue::create<MapObject>(type);
     }
     this->state.setGlobal(handle.getIndex(), std::move(value));

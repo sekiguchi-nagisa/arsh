@@ -644,8 +644,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
   CallableTypes callableTypes;
-  if (!type.isOptionType() && !this->typePool.isArrayType(type) &&
-      !this->typePool.isMapType(type)) {
+  if (!type.isOptionType() && !type.isArrayType() && !type.isMapType()) {
     if (auto *handle = this->typePool.lookupConstructor(type); handle) {
       callableTypes = handle->toCallableTypes();
       node.setHandle(handle);

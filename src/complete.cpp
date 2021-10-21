@@ -481,7 +481,8 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
 
   // search TypePool
   for (auto &t : pool.getTypeTable()) {
-    if (t->isModType() || t->isReifiedType() || t->isOptionType() || t->isFuncType()) {
+    if (t->isModType() || t->isArrayType() || t->isMapType() || t->isOptionType() ||
+        t->isFuncType()) {
       continue;
     }
     StringRef name = t->getNameRef();

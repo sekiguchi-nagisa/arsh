@@ -189,9 +189,9 @@ bool VM::storeEnv(DSState &state) {
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
   DSValue value;
-  if (state.typePool.isArrayType(type)) {
+  if (type.isArrayType()) {
     value = DSValue::create<ArrayObject>(type);
-  } else if (state.typePool.isMapType(type)) {
+  } else if (type.isMapType()) {
     value = DSValue::create<MapObject>(type);
   } else if (type.isTupleType()) {
     value = DSValue::create<BaseObject>(cast<TupleType>(type));

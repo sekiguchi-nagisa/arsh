@@ -30,13 +30,13 @@ void Archiver::add(const DSType &type) {
   if (type.typeId() < this->builtinTypeIdCount && this->builtinTypeIdCount <= UINT8_MAX) {
     this->writeT(ArchiveType::PREDEFINED);
     this->write8(static_cast<uint8_t>(type.typeId()));
-  } else if (this->pool.isArrayType(type)) {
+  } else if (type.isArrayType()) {
     this->writeT(ArchiveType::ARRAY);
-    this->add(cast<ReifiedType>(type).getElementTypeAt(0));
-  } else if (this->pool.isMapType(type)) {
+    this->add(cast<ArrayType>(type).getElementType());
+  } else if (type.isMapType()) {
     this->writeT(ArchiveType::MAP);
-    this->add(cast<ReifiedType>(type).getElementTypeAt(0));
-    this->add(cast<ReifiedType>(type).getElementTypeAt(1));
+    this->add(cast<MapType>(type).getKeyType());
+    this->add(cast<MapType>(type).getValueType());
   } else if (type.isTupleType()) {
     this->writeT(ArchiveType::TUPLE);
     auto &tuple = cast<TupleType>(type);

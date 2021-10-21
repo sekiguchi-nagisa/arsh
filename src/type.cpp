@@ -87,11 +87,15 @@ void DSType::walkField(const TypePool &pool,
 std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
   std::vector<const DSType *> ret;
   switch (this->typeKind()) {
-  case TypeKind::Reified: {
-    auto &type = cast<ReifiedType>(*this);
-    for (unsigned int i = 0; i < type.getElementSize(); i++) {
-      ret.push_back(&type.getElementTypeAt(i));
-    }
+  case TypeKind::Array: {
+    auto &type = cast<ArrayType>(*this);
+    ret.push_back(&type.getElementType());
+    break;
+  }
+  case TypeKind::Map: {
+    auto &type = cast<MapType>(*this);
+    ret.push_back(&type.getKeyType());
+    ret.push_back(&type.getValueType());
     break;
   }
   case TypeKind::Tuple: {

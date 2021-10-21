@@ -90,7 +90,8 @@ enum class TYPE : unsigned int {
 #define EACH_TYPE_KIND(OP)                                                                         \
   OP(Function)                                                                                     \
   OP(Builtin)                                                                                      \
-  OP(Reified)                                                                                      \
+  OP(Array)                                                                                        \
+  OP(Map)                                                                                          \
   OP(Tuple)                                                                                        \
   OP(Option)                                                                                       \
   OP(Error)                                                                                        \
@@ -168,7 +169,9 @@ public:
    */
   bool isFuncType() const { return this->typeKind() == TypeKind::Function; }
 
-  bool isReifiedType() const { return this->typeKind() == TypeKind::Reified; }
+  bool isArrayType() const { return this->typeKind() == TypeKind::Array; }
+
+  bool isMapType() const { return this->typeKind() == TypeKind::Map; }
 
   bool isTupleType() const { return this->typeKind() == TypeKind::Tuple; }
 
@@ -384,44 +387,36 @@ public:
   static bool classof(const DSType *type) { return type->isBuiltinOrDerived(); }
 };
 
-/**
- * for Array, Map type
- */
-class ReifiedType : public BuiltinType {
+class ArrayType : public BuiltinType {
 private:
-  const unsigned int size;
-
-  const DSType *elementTypes[];
-
-  /**
-   * super type is always AnyType
-   */
-  ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-              std::vector<const DSType *> &&elementTypes)
-      : BuiltinType(TypeKind::Reified, id, ref, &superType, info), size(elementTypes.size()) {
-    for (unsigned int i = 0; i < this->size; i++) {
-      this->elementTypes[i] = elementTypes[i];
-    }
-  }
+  const DSType &elementType;
 
 public:
-  static ReifiedType *create(unsigned int id, StringRef ref, native_type_info_t info,
-                             const DSType &superType, std::vector<const DSType *> &&elementTypes) {
-    void *ptr = malloc(sizeof(ReifiedType) + sizeof(DSType *) * elementTypes.size());
-    return new (ptr) ReifiedType(id, ref, info, superType, std::move(elementTypes));
-  }
+  ArrayType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
+            const DSType &type)
+      : BuiltinType(TypeKind::Array, id, ref, &superType, info), elementType(type) {}
 
-  ~ReifiedType() = default;
+  const DSType &getElementType() const { return this->elementType; }
 
-  unsigned int getElementSize() const { return this->size; }
+  static bool classof(const DSType *type) { return type->isArrayType(); }
+};
 
-  const DSType &getElementTypeAt(unsigned int index) const { return *this->elementTypes[index]; }
+class MapType : public BuiltinType {
+private:
+  const DSType &keyType;
+  const DSType &valueType;
 
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
-  }
+public:
+  MapType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
+          const DSType &keyType, const DSType &valueType)
+      : BuiltinType(TypeKind::Map, id, ref, &superType, info), keyType(keyType),
+        valueType(valueType) {}
 
-  static bool classof(const DSType *type) { return type->isReifiedType(); }
+  const DSType &getKeyType() const { return this->keyType; }
+
+  const DSType &getValueType() const { return this->valueType; }
+
+  static bool classof(const DSType *type) { return type->isMapType(); }
 };
 
 class TupleType : public BuiltinType {
@@ -633,8 +628,6 @@ private:
 template <typename T, typename... Arg, enable_when<std::is_base_of_v<DSType, T>> = nullptr>
 inline T *constructType(Arg &&...arg) {
   if constexpr (std::is_same_v<FunctionType, T>) {
-    return T::create(std::forward<Arg>(arg)...);
-  } else if constexpr (std::is_same_v<ReifiedType, T>) {
     return T::create(std::forward<Arg>(arg)...);
   } else {
     return new T(std::forward<Arg>(arg)...);

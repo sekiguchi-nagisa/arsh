@@ -145,16 +145,6 @@ public:
 
   const TypeTemplate &getOptionTemplate() const { return this->optionTemplate; }
 
-  bool isArrayType(const DSType &type) const {
-    return type.isReifiedType() &&
-           cast<ReifiedType>(type).getNativeTypeInfo() == this->arrayTemplate.getInfo();
-  }
-
-  bool isMapType(const DSType &type) const {
-    return type.isReifiedType() &&
-           cast<ReifiedType>(type).getNativeTypeInfo() == this->mapTemplate.getInfo();
-  }
-
   TypeTempOrError getTypeTemplate(const std::string &typeName) const;
 
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,

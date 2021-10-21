@@ -188,10 +188,17 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    auto &reified = this->newType<ReifiedType>(typeName, typeTemplate.getInfo(),
-                                               this->get(TYPE::Any), std::move(elementTypes));
-    this->registerHandles(reified);
-    type = &reified;
+    if (this->arrayTemplate.getName() == typeTemplate.getName()) {
+      auto &arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
+                                                 this->get(TYPE::Any), *elementTypes[0]);
+      this->registerHandles(arrayType);
+      type = &arrayType;
+    } else if (this->mapTemplate.getName() == typeTemplate.getName()) {
+      auto &mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
+                                             *elementTypes[0], *elementTypes[1]);
+      this->registerHandles(mapType);
+      type = &mapType;
+    }
   }
   return Ok(type);
 }
