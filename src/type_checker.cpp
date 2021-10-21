@@ -1045,31 +1045,23 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   }
 }
 
-static void dedup(std::vector<const DSType *> &types) {
-  std::sort(types.begin(), types.end(),
-            [](const DSType *x, const DSType *y) { return x->typeId() < y->typeId(); });
-  auto iter = std::unique(types.begin(), types.end());
-  types.erase(iter, types.end());
-}
-
 const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
                                                   std::vector<const DSType *> &&types,
                                                   const DSType *fallbackType) {
-  dedup(types);
-  for (auto &type : types) { // FIXME: reduce time complexity, currently worst case O(n^2)
-    unsigned int size = types.size();
-    unsigned int index = 0;
-    for (; index < size; index++) {
-      auto &curType = types[index];
-      if (type->isSameOrBaseTypeOf(*curType)) {
-        continue;
-      }
+  std::sort(types.begin(), types.end(), [](const DSType *x, const DSType *y) {
+    return x != y && x->isSameOrBaseTypeOf(*y); // require week ordering
+  });
+
+  unsigned int count = 1;
+  for (; count < types.size(); count++) {
+    if (!types[0]->isSameOrBaseTypeOf(*types[count])) {
       break;
     }
-    if (index == size) {
-      return *type;
-    }
   }
+  if (count == types.size()) {
+    return *types[0];
+  }
+
   if (fallbackType) {
     return *fallbackType;
   } else {
