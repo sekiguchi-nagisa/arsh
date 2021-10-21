@@ -1049,7 +1049,10 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
                                                   std::vector<const DSType *> &&types,
                                                   const DSType *fallbackType) {
   std::sort(types.begin(), types.end(), [](const DSType *x, const DSType *y) {
-    return x != y && x->isSameOrBaseTypeOf(*y); // require week ordering
+    /**
+     *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)
+     */
+    return x != y && x->isSameOrBaseTypeOf(*y);
   });
 
   unsigned int count = 1;
