@@ -139,7 +139,8 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return true;
   }
   if (this->isOptionType()) {
-    return cast<OptionType>(this)->getElementType().isSameOrBaseTypeOf(targetType);
+    return cast<OptionType>(this)->getElementType().isSameOrBaseTypeOf(
+        targetType.isOptionType() ? cast<OptionType>(targetType).getElementType() : targetType);
   }
   if (this->isFuncType() && targetType.isFuncType()) {
     return isBaseTypeOf(cast<FunctionType>(*this), cast<FunctionType>(targetType));

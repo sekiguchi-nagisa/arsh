@@ -431,6 +431,9 @@ private:
 
   // runtime api
   static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
+    if (value.isInvalid()) {
+      return targetType.isOptionType();
+    }
     return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
   }
 

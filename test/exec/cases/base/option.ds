@@ -82,7 +82,10 @@ assert $ex is UnwrappingError
 
 # type
 assert !(new Int!() is Int)
+assert (23 as Int!) is Int
 assert new Int!() is Int!
+assert new Int!() is Any!
+assert new Any!() is Int!
 
 # nested option
 var no = [34 as Int!].get(0)
