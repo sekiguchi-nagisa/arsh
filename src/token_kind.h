@@ -175,7 +175,7 @@
   TOKEN(PTYPE_CLOSE, ")") /* ) */                                                                  \
   TOKEN(TYPE_MSEP, ":")   /* : */                                                                  \
   TOKEN(TYPE_OPT, "!")    /* ! */                                                                  \
-  TOKEN(TYPE_ARROW, "=>") /* => */
+  TOKEN(TYPE_ARROW, "->") /* -> */
 
 #define EACH_ASSIGN_OPERATOR(OP)                                                                   \
   OP(ASSIGN, 1, INFIX | RASSOC)                                                                    \
