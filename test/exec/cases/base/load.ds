@@ -36,6 +36,17 @@ try { $MODULE.load('echo $WWW')(); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert $/undefined/ =~ ($ex as Error).message()
 
+$ex = 234
+try { $MODULE.load('')(); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert $/require expression/ =~ ($ex as Error).message()
+
+$ex = 234
+try { $MODULE.load('# echo hello')(); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert $/require expression/ =~ ($ex as Error).message()
+
+
 # runtime error
 $ex = 234
 try { $mod.load('34 as Any as StrArray')(); } catch $e { $ex = $e; }

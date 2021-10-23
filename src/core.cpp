@@ -326,7 +326,7 @@ struct StrErrorConsumer : public ErrorConsumer {
 };
 
 static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
-  for (auto *ptr = funcObject.getCode().getConstPool(); ptr; ptr++) {
+  for (auto *ptr = funcObject.getCode().getConstPool(); *ptr; ptr++) {
     if (ptr->isObject() && ptr->get()->getKind() == ObjectKind::Func) {
       return toObjPtr<FuncObject>(*ptr);
     }
@@ -365,13 +365,15 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   }
 
   // get result
-  if (funcObj) {
-    funcObj = getFuncObj(*funcObj);
-    assert(funcObj);
+  if (funcObj && (funcObj = getFuncObj(*funcObj))) {
+    ;
     assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
     return Ok(funcObj);
   } else {
-    auto message = DSValue::createStr(errorConsumer.value);
+    if (errorConsumer.value.empty()) { // has no error, but empty code
+      errorConsumer.value = "require expression";
+    }
+    auto message = DSValue::createStr(std::move(errorConsumer.value));
     auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
                                        std::move(message));
     return Err(toObjPtr<ErrorObject>(error));
