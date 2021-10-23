@@ -669,7 +669,11 @@ TEST_F(APITest, module1) {
 }
 
 TEST_F(APITest, module2) {
-  auto ret = invoke([&] { return DSState_loadModule(this->state, "fhjreuhfurie", 0, nullptr); });
+  auto ret = invoke([&] {
+    int ret = DSState_loadModule(this->state, "fhjreuhfurie", 0, nullptr);
+    DSState_delete(&this->state);
+    return ret;
+  });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
                    "ydsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
@@ -684,7 +688,9 @@ TEST_F(APITest, module2) {
   DSError_release(&e);
 
   ret = invoke([&] {
-    return DSState_loadModule(this->state, "fhjreuhfurie", DS_MOD_IGNORE_ENOENT, nullptr);
+    int ret = DSState_loadModule(this->state, "fhjreuhfurie", DS_MOD_IGNORE_ENOENT, nullptr);
+    DSState_delete(&this->state);
+    return ret;
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED));
 }
@@ -713,8 +719,10 @@ TEST_F(APITest, module4) {
 
   // check error message
   auto ret = invoke([&] {
-    return DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT,
-                              nullptr);
+    int ret = DSState_loadModule(this->state, fileName.c_str(),
+                                 DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, nullptr);
+    DSState_delete(&this->state);
+    return ret;
   });
   ASSERT_NO_FATAL_FAILURE(
       this->expectRegex(ret, 1, WaitStatus::EXITED, "",
@@ -732,8 +740,11 @@ TEST_F(APITest, module5) {
   DSError_release(&e);
 
   // check error message
-  auto ret = invoke(
-      [&] { return DSState_loadModule(this->state, "freijjfeir", DS_MOD_FULLPATH, nullptr); });
+  auto ret = invoke([&] {
+    int ret = DSState_loadModule(this->state, "freijjfeir", DS_MOD_FULLPATH, nullptr);
+    DSState_delete(&this->state);
+    return ret;
+  });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
                    "ydsh: cannot load file: freijjfeir, by `No such file or directory'"));
@@ -748,8 +759,11 @@ TEST_F(APITest, module6) {
         \ \
 )",
                                        "echo moduel!!; exit 56");
-  auto ret = invoke(
-      [&] { return DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, nullptr); });
+  auto ret = invoke([&] {
+    int ret = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, nullptr);
+    DSState_delete(&this->state);
+    return ret;
+  });
   ASSERT_NO_FATAL_FAILURE(this->expect(ret, 56, WaitStatus::EXITED, "moduel!!"));
 }
 
