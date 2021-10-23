@@ -58,12 +58,8 @@ static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
       {NameScope::FUNC, NameScope::BLOCK},
       {NameScope::BLOCK, NameScope::BLOCK},
   };
-  for (auto &e : table) {
-    if (e.parent == parent && e.child == child) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(std::begin(table), std::end(table),
+                     [&](auto &e) { return e.parent == parent && e.child == child; });
 }
 
 NameScopePtr NameScope::enterScope(Kind newKind) {

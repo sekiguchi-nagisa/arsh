@@ -366,7 +366,6 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
 
   // get result
   if (funcObj && (funcObj = getFuncObj(*funcObj))) {
-    ;
     assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
     return Ok(funcObj);
   } else {
