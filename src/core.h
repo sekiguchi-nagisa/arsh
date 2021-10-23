@@ -23,6 +23,7 @@
 
 #include "complete.h"
 #include "misc/resource.hpp"
+#include "misc/result.hpp"
 #include "object.h"
 #include "opcode.h"
 
@@ -159,6 +160,19 @@ inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T &&...arg) {
   static_assert(sizeof...(arg) <= 3, "too long");
   return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
 }
+
+/**
+ * compile string as function
+ * @param state
+ * @param expr
+ * @param modType
+ * globally imported to fresh module-context
+ * @return
+ * compiled FuncObject.
+ * if compilation failed, return ErrorObject
+ */
+Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, StringRef expr,
+                                                               const ModType &modType);
 
 /**
  *

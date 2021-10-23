@@ -19,7 +19,9 @@
 #include <algorithm>
 #include <cassert>
 
+#include "compiler.h"
 #include "logger.h"
+#include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "node.h"
 #include "vm.h"
@@ -311,6 +313,69 @@ void SignalVector::clear() {
     sigaction(e.first, &action, nullptr);
   }
   this->data.clear();
+}
+
+struct StrErrorConsumer : public ErrorConsumer {
+  std::string value;
+
+  bool colorSupported() const override { return false; }
+
+  void consume(std::string &&message) override { this->value += message; }
+
+  void consume(DSError &&error) override { DSError_release(&error); }
+};
+
+static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
+  for (auto *ptr = funcObject.getCode().getConstPool(); ptr; ptr++) {
+    if (ptr->isObject() && ptr->get()->getKind() == ObjectKind::Func) {
+      return toObjPtr<FuncObject>(*ptr);
+    }
+  }
+  return nullptr;
+}
+
+/**
+ * compile string as function
+ * @param state
+ * @param expr
+ * @param modType
+ * globally imported to fresh module-context
+ * @return
+ * compiled FuncObject.
+ * if compilation failed, return ErrorObject
+ */
+Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, StringRef expr,
+                                                               const ModType &modType) {
+  // prepare
+  auto scope = NameScope::reopen(state.typePool, *state.rootModScope, modType);
+  CompileOption option = CompileOption::SINGLE_EXPR;
+  DefaultModuleProvider moduleProvider(state.modLoader, state.typePool, scope);
+  auto discardPoint = moduleProvider.getCurrentDiscardPoint();
+  Lexer lexer("(loaded)", ByteBuffer(expr.begin(), expr.end()), getCWD());
+  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(option), nullptr);
+
+  // compile
+  CompileDumpTarget dumpTarget(state.dumpTarget.files);
+  StrErrorConsumer errorConsumer;
+  Compiler compiler(moduleProvider, std::move(ctx), option, &dumpTarget, errorConsumer);
+  ObjPtr<FuncObject> funcObj;
+  int ret = compiler(funcObj);
+  if (ret != 0) {
+    moduleProvider.discard(discardPoint);
+  }
+
+  // get result
+  if (funcObj) {
+    funcObj = getFuncObj(*funcObj);
+    assert(funcObj);
+    assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
+    return Ok(funcObj);
+  } else {
+    auto message = DSValue::createStr(errorConsumer.value);
+    auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
+                                       std::move(message));
+    return Err(toObjPtr<ErrorObject>(error));
+  }
 }
 
 int xexecve(const char *filePath, char *const *argv, char *const *envp) {

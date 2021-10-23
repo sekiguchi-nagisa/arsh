@@ -16,6 +16,9 @@
       function($a : Int) => $a * $a
       ```
     - currently, only allow top-level scope
+- add runtime code loading api
+    - load string (single expression) as anonymous function via ``Module#load`` method
+    - loaded function can access global variables visible in caller module
 
 #### Builtin
 
@@ -23,6 +26,7 @@
 - add some methods to ``Module`` type
     - ``scriptName``: get ``SCRIPT_NAME`` of module
     - ``scriptDir``: get ``SCRIPT_DIR`` of module
+    - ``load``: load string as single expreesion function
 
 ### Changed
 

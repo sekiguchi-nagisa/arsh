@@ -269,7 +269,9 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
   this->frontEnd.teardownASTDump();
   assert(this->frontEnd.getContext().size() == 1);
   {
-    auto &modType = this->provider.newModTypeFromCurContext(this->frontEnd.getContext());
+    auto &modType = hasFlag(this->compileOption, CompileOption::SINGLE_EXPR)
+                        ? this->provider.getPool().getBuiltinModType()
+                        : this->provider.newModTypeFromCurContext(this->frontEnd.getContext());
     if (!this->frontEndOnly()) {
       func = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex(), modType);
     }

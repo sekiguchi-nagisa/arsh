@@ -1915,9 +1915,11 @@ private:
 
   const FunctionType *funcType{nullptr};
 
+  const bool singleExpr;
+
 public:
-  FunctionNode(unsigned int startPos, NameInfo &&funcName)
-      : WithRtti({startPos, 0}), funcName(std::move(funcName)) {}
+  FunctionNode(unsigned int startPos, NameInfo &&funcName, bool singleExpr = false)
+      : WithRtti({startPos, 0}), funcName(std::move(funcName)), singleExpr(singleExpr) {}
 
   ~FunctionNode() override = default;
 
@@ -1970,6 +1972,8 @@ public:
   const FunctionType *getFuncType() const { return this->funcType; }
 
   bool isAnonymousFunc() const { return this->funcName.getName().empty(); }
+
+  bool isSingleExpr() const { return this->singleExpr; }
 
   void dump(NodeDumper &dumper) const override;
 };

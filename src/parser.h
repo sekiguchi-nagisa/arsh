@@ -87,10 +87,13 @@ private:
 
   bool inStmtCompCtx{false};
 
+  const bool singleExpr;
+
   std::vector<bool> skippableNewlines; // if true, newline is skippable
 
 public:
-  explicit Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler = nullptr);
+  explicit Parser(Lexer &lexer, bool singleExpr = false,
+                  ObserverPtr<CodeCompletionHandler> handler = nullptr);
 
   ~Parser() = default;
 

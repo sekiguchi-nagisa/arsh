@@ -26,6 +26,7 @@ enum class FrontEndOption {
   PARSE_ONLY = 1 << 0,
   TOPLEVEL = 1 << 1,
   ERROR_RECOVERY = 1 << 2,
+  SINGLE_EXPR = 1 << 3,
 };
 
 template <>
@@ -77,7 +78,8 @@ public:
 
     Context(TypePool &pool, Lexer &&lexer, NameScopePtr scope, FrontEndOption option,
             ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-        : lexer(std::move(lexer)), parser(this->lexer, ccHandler),
+        : lexer(std::move(lexer)),
+          parser(this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
           checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
           scope(std::move(scope)) {
       this->checker.setCodeCompletionHandler(ccHandler);
@@ -223,6 +225,14 @@ public:
   TypePool &getPool() { return this->pool; }
 
   const NameScopePtr &getScope() const { return this->scope; }
+
+  DiscardPoint getCurrentDiscardPoint() const {
+    return DiscardPoint{
+        .mod = this->loader.getDiscardPoint(),
+        .scope = this->scope->getDiscardPoint(),
+        .type = this->pool.getDiscardPoint(),
+    };
+  }
 
   void discard(const DiscardPoint &discardPoint) {
     discardAll(this->loader, *this->scope, this->pool, discardPoint);

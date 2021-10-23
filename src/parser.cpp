@@ -67,10 +67,10 @@ namespace ydsh {
 // ##     Parser     ##
 // ####################
 
-Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
+Parser::Parser(Lexer &lexer, bool singleExpr, ObserverPtr<CodeCompletionHandler> handler)
+    : ccHandler(handler), singleExpr(singleExpr) {
   this->consumedKind = TokenKind::EOS;
   this->lexer = &lexer;
-  this->ccHandler = handler;
   if (this->ccHandler) {
     this->lexer->setComplete(true);
   }
@@ -80,13 +80,23 @@ Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
 std::unique_ptr<Node> Parser::operator()() {
   this->skippableNewlines.clear();
   this->skippableNewlines.push_back(false);
-  auto node = this->parse_statement();
-  if (this->incompleteNode) {
-    this->clear(); // force ignore parse error
-    this->lexer->setComplete(false);
-    node = std::move(this->incompleteNode);
+
+  if (this->singleExpr) {
+    auto exprNode = TRY(this->parse_expression());
+    TRY(this->expect(TokenKind::EOS));
+    NameInfo nameInfo({exprNode->getPos(), 0}, "");
+    auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo), true);
+    funcNode->setFuncBody(std::move(exprNode));
+    return funcNode;
+  } else {
+    auto node = this->parse_statement();
+    if (this->incompleteNode) {
+      this->clear(); // force ignore parse error
+      this->lexer->setComplete(false);
+      node = std::move(this->incompleteNode);
+    }
+    return node;
   }
-  return node;
 }
 
 void Parser::refetch(LexerMode mode) {

@@ -439,6 +439,7 @@ nodes:
     maxVarNum: 0
     varIndex: 0
     funcType: null
+    singleExpr: false
 )"},
 
     {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
@@ -983,6 +984,7 @@ nodes:
     maxVarNum: 2
     varIndex: 56
     funcType: "(Int, Int) -> Void"
+    singleExpr: false
 )"},
 };
 

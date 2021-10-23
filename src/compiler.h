@@ -114,6 +114,7 @@ enum class CompileOption : unsigned short {
   PARSE_ONLY = 1u << 2u,
   CHECK_ONLY = 1u << 3u,
   PRINT_TOPLEVEL = 1u << 4u,
+  SINGLE_EXPR = 1u << 5u,
 };
 
 template <>
@@ -127,11 +128,19 @@ inline FrontEndOption toOption(CompileOption option) {
   if (hasFlag(option, CompileOption::PRINT_TOPLEVEL)) {
     setFlag(op, FrontEndOption::TOPLEVEL);
   }
+  if (hasFlag(option, CompileOption::SINGLE_EXPR)) {
+    setFlag(op, FrontEndOption::SINGLE_EXPR);
+  }
   return op;
 }
 
 struct CompileDumpTarget {
   FILE *fps[3];
+
+  CompileDumpTarget(FILE *in, FILE *out, FILE *error) : fps{in, out, error} {}
+
+  explicit CompileDumpTarget(const FilePtr (&files)[3])
+      : CompileDumpTarget(files[0].get(), files[1].get(), files[2].get()) {}
 };
 
 class Compiler {

@@ -868,6 +868,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(maxVarNum);
   DUMP(varIndex);
   DUMP_PTR(funcType);
+  DUMP(singleExpr);
 }
 
 // ###########################

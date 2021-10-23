@@ -1572,7 +1572,13 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
       node.setFuncType(*funcType);
     }
   }
-  if (node.isAnonymousFunc() && funcType) {
+  if (node.isSingleExpr()) {
+    auto retType = this->typePool.createOptionType(this->typePool.get(TYPE::Any));
+    assert(retType);
+    auto typeOrError = this->typePool.createFuncType(*retType.asOk(), {});
+    assert(typeOrError);
+    node.setType(*typeOrError.asOk()); // always `() -> Any!' type
+  } else if (node.isAnonymousFunc() && funcType) {
     node.setType(*funcType);
   }
 }

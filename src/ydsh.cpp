@@ -38,14 +38,6 @@ static DSError initDSError() {
                  .name = nullptr};
 }
 
-static CompileDumpTarget newDumpTarget(const DSState::DumpTarget &org) {
-  return CompileDumpTarget{.fps = {
-                               org.files[0].get(),
-                               org.files[1].get(),
-                               org.files[2].get(),
-                           }};
-}
-
 static DefaultErrorConsumer newErrorConsumer(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
   bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
@@ -62,7 +54,7 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
     *dsError = initDSError();
   }
 
-  CompileDumpTarget dumpTarget = newDumpTarget(state.dumpTarget);
+  CompileDumpTarget dumpTarget(state.dumpTarget.files);
   auto errorConsumer = newErrorConsumer(dsError);
   Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget, errorConsumer);
   int ret = compiler(func);
@@ -177,7 +169,6 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 
   auto *ctx = new DSState();
   auto buildtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
-  //  bindBuiltinVariables(ctx, ctx->typePool, *buildtin);
   BindingConsumer bindingConsumer(*ctx);
   bindBuiltins(bindingConsumer, ctx->typePool, *buildtin);
 
@@ -388,18 +379,12 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
   GUARD_NULL(st, -1);
   GUARD_NULL(data, -1);
 
-  DiscardPoint discardPoint{
-      .mod = st->modLoader.getDiscardPoint(),
-      .scope = st->rootModScope->getDiscardPoint(),
-      .type = st->typePool.getDiscardPoint(),
-  };
-
+  const auto compileOption = getCompileOption(*st);
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, ByteBuffer(data, data + size),
               getCWD());
   lexer.setLineNumOffset(st->lineNum);
-
-  const auto compileOption = getCompileOption(*st);
-  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
   auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
@@ -420,14 +405,9 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
   GUARD_NULL(st, -1);
   GUARD_NULL(fileName, -1);
 
-  DiscardPoint discardPoint{
-      .mod = st->modLoader.getDiscardPoint(),
-      .scope = st->rootModScope->getDiscardPoint(),
-      .type = st->typePool.getDiscardPoint(),
-  };
-
   CompileOption compileOption = getCompileOption(*st);
   DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
   auto ret =
       moduleProvider.load(scriptDir.get(), fileName, toOption(compileOption), ModLoadOption{});
