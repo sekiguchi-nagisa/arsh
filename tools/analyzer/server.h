@@ -37,10 +37,10 @@ private:
   SourceManager srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
-  DiagnosticEmitter diagnosticEmitter;
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
+  bool diagVersionSupport{false};
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
@@ -92,11 +92,18 @@ private:
                               std::forward<Error>(ecallback));
   }
 
+  template <typename Param>
+  void notify(const std::string &name, Param &&param) {
+    Handler::notify(this->transport, name, param);
+  }
+
   SourcePtr resolveSource(const std::string &uriStr);
 
   void gotoDefinitionImpl(const Source &src, Position position, std::vector<Location> &result);
 
   void findReferenceImpl(const Source &src, Position position, std::vector<Location> &result);
+
+  DiagnosticEmitter newDiagnosticEmitter();
 
 public:
   // RPC method definitions
@@ -122,6 +129,11 @@ public:
   Reply<std::vector<Location>> findReference(const ReferenceParams &params);
 
   Reply<Union<Hover, std::nullptr_t>> hover(const HoverParams &params);
+
+  // server to client method
+  void publishDiagnostics(PublishDiagnosticsParams &&params) {
+    this->notify("textDocument/publishDiagnostics", params);
+  }
 };
 
 } // namespace ydsh::lsp

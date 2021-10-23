@@ -60,15 +60,14 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   this->prevType = &node->getType();
   if (this->checker().hasError()) {
     auto &errors = this->checker().getErrors();
-    // always report first error
-    this->listener &&this->listener->handleTypeError(this->contexts, errors.front());
-    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
-      for (size_t i = 1; this->listener && i < errors.size(); i++) {
-        this->listener->handleTypeError(this->contexts, errors[i]);
+    if (this->listener) {
+      for (size_t i = 0; i < errors.size(); i++) {
+        this->listener->handleTypeError(this->contexts, errors[i], i == 0);
       }
-      if (!this->checker().hasReachedCompNode()) {
-        return true;
-      }
+    }
+    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY) &&
+        !this->checker().hasReachedCompNode()) {
+      return true;
     }
     return false;
   } else if (this->astDumper) {

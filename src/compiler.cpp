@@ -155,7 +155,10 @@ bool ErrorReporter::handleParseError(const std::vector<std::unique_ptr<FrontEnd:
 }
 
 bool ErrorReporter::handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                                    const TypeCheckError &checkError) {
+                                    const TypeCheckError &checkError, bool firstAppear) {
+  if (!firstAppear) {
+    return false;
+  }
   return this->handleError(ctx, DS_ERROR_KIND_TYPE_ERROR, checkError.getKind(),
                            checkError.getToken(), checkError.getMessage());
 }
@@ -292,7 +295,7 @@ END:
       auto node = std::make_unique<EmptyNode>(Token{0, 0});
       auto error = createTCError<ConflictSymbol>(
           *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
-      this->errorReporter.handleTypeError(this->frontEnd.getContext(), error);
+      this->errorReporter.handleTypeError(this->frontEnd.getContext(), error, true);
       return 1;
     }
   }

@@ -158,10 +158,27 @@ struct TextEdit {
 };
 
 // for Initialize request
+struct PublishDiagnosticsClientCapabilities {
+  Optional<bool> versionSupport;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(versionSupport);
+  }
+};
+
+struct TextDocumentClientCapabilities {
+  Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(publishDiagnostics);
+  }
+};
 
 struct ClientCapabilities {
-  Optional<JSON> workspace;    // optional
-  Optional<JSON> textDocument; // optional
+  Optional<JSON> workspace;                              // optional
+  Optional<TextDocumentClientCapabilities> textDocument; // optional
 
   template <typename T>
   void jsonify(T &t) {
@@ -635,6 +652,19 @@ struct DidChangeTextDocumentParams {
   void jsonify(T &t) {
     JSONIFY(textDocument);
     JSONIFY(contentChanges);
+  }
+};
+
+struct PublishDiagnosticsParams {
+  DocumentURI uri;
+  Optional<int> version;
+  std::vector<Diagnostic> diagnostics;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(uri);
+    JSONIFY(version);
+    JSONIFY(diagnostics);
   }
 };
 

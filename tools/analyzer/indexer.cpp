@@ -660,7 +660,7 @@ void SymbolIndexer::visit(Node &node) {
   this->visitingDepth--;
 }
 
-void SymbolIndexer::enterModule(unsigned short modId, int version,
+bool SymbolIndexer::enterModule(unsigned short modId, int version,
                                 const std::shared_ptr<TypePool> &p) {
   this->builders.emplace_back(modId, version, p, this->indexes);
   if (!this->indexes.find(0)) {
@@ -669,17 +669,22 @@ void SymbolIndexer::enterModule(unsigned short modId, int version,
     this->exitModule(nullptr);
   }
   this->builder().importForeignDecls(0, false);
+  return true;
 }
 
-void SymbolIndexer::exitModule(std::unique_ptr<Node> &&node) {
+bool SymbolIndexer::exitModule(std::unique_ptr<Node> &&node) {
   assert(!this->builders.empty());
   auto index = std::move(this->builder()).build();
   this->builders.pop_back();
   this->indexes.add(std::move(index));
   this->visit(node);
+  return true;
 }
 
-void SymbolIndexer::consume(std::unique_ptr<Node> &&node) { this->visit(node); }
+bool SymbolIndexer::consume(std::unique_ptr<Node> &&node) {
+  this->visit(node);
+  return true;
+}
 
 static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandle> &entry) {
   if (isTypeAliasFullName(entry.first)) {

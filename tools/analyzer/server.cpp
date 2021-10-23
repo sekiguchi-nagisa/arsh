@@ -121,6 +121,13 @@ void LSPServer::findReferenceImpl(const Source &src, Position position,
   });
 }
 
+DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
+  return DiagnosticEmitter(
+      this->srcMan,
+      [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
+      this->diagVersionSupport);
+}
+
 // RPC method definitions
 
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
@@ -130,9 +137,19 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
   this->init = true;
 
+  // check client capability
   if (auto t = params.trace; t.hasValue()) {
     this->traceSetting = t.unwrap();
-  } // FIXME: check client capability
+  }
+  if (params.capabilities.textDocument.hasValue()) {
+    auto &textDocument = params.capabilities.textDocument.unwrap();
+    if (textDocument.publishDiagnostics.hasValue()) {
+      auto &diag = textDocument.publishDiagnostics.unwrap();
+      if (diag.versionSupport.hasValue()) {
+        this->diagVersionSupport = diag.versionSupport.unwrap();
+      }
+    }
+  }
 
   InitializeResult ret;
   ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
@@ -189,8 +206,9 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
       return;
     }
     AnalyzerAction action;
+    DiagnosticEmitter emitter = this->newDiagnosticEmitter();
     SymbolIndexer indexer(this->indexes);
-    action.emitter.reset(&this->diagnosticEmitter);
+    action.emitter.reset(&emitter);
     action.consumer.reset(&indexer);
     analyze(this->srcMan, this->archives, action, *src);
   }
@@ -221,8 +239,9 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   src = this->srcMan.update(src->getPath(), params.textDocument.version, std::move(content));
   this->archives.revert({src->getSrcId()});
   AnalyzerAction action;
+  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
   SymbolIndexer indexer(this->indexes);
-  action.emitter.reset(&this->diagnosticEmitter);
+  action.emitter.reset(&emitter);
   action.consumer.reset(&indexer);
   analyze(this->srcMan, this->archives, action, *src);
 }

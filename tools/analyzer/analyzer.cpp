@@ -187,15 +187,62 @@ ModResult AnalyzerContextProvider::addNewModEntry(CStrPtr &&ptr) {
 
 bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                          const ParseError &parseError) {
+  assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
   (void)ctx;
-  (void)parseError;
-  return false;
+  auto range = toRange(this->contexts.back().src->getContent(), parseError.getErrorToken());
+  if (!range.hasValue()) {
+    return false;
+  }
+  this->contexts.back().diagnostics.push_back(Diagnostic{
+      .range = range.unwrap(),
+      .severity = DiagnosticSeverity::Error,
+      .message = parseError.getMessage(),
+      .relatedInformation = {},
+  });
+  return true;
 }
+
 bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                                        const TypeCheckError &checkError) {
+                                        const TypeCheckError &checkError, bool firstAppear) {
+  if (!firstAppear) {
+    return false;
+  }
+  assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
   (void)ctx;
-  (void)checkError;
-  return false;
+  auto range = toRange(this->contexts.back().src->getContent(), checkError.getToken());
+  if (!range.hasValue()) {
+    return false;
+  }
+  this->contexts.back().diagnostics.push_back(Diagnostic{
+      .range = range.unwrap(),
+      .severity = DiagnosticSeverity::Error, // FIXME: support warning ?
+      .message = checkError.getMessage(),
+      .relatedInformation = {},
+  });
+  return true;
+}
+
+bool DiagnosticEmitter::enterModule(unsigned short modId, int version) {
+  auto src = this->srcMan.findById(modId);
+  assert(src);
+  this->contexts.emplace_back(src, version);
+  return true;
+}
+
+bool DiagnosticEmitter::exitModule() {
+  if (this->callback) {
+    PublishDiagnosticsParams params = {
+        .uri = this->contexts.back().src->getPath(),
+        .version = {},
+        .diagnostics = std::move(this->contexts.back().diagnostics),
+    };
+    if (this->supportVersion) {
+      params.version = std::move(this->contexts.back().version);
+    }
+    this->callback(std::move(params));
+  }
+  this->contexts.pop_back();
+  return true;
 }
 
 ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
@@ -206,14 +253,14 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
   FrontEnd frontEnd(provider, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
   if (action.emitter) {
     frontEnd.setErrorListener(*action.emitter);
+    action.emitter->enterModule(provider.current()->getModId(), provider.current()->getVersion());
   }
   if (action.dumper) {
     frontEnd.setASTDumper(*action.dumper);
   }
-  if (action.consumer) {
-    action.consumer->enterModule(provider.current()->getModId(), provider.current()->getVersion(),
-                                 provider.current()->getPoolPtr());
-  }
+  action.consumer &&action.consumer->enterModule(provider.current()->getModId(),
+                                                 provider.current()->getVersion(),
+                                                 provider.current()->getPoolPtr());
 
   // run front end
   frontEnd.setupASTDump();
@@ -225,30 +272,26 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
     }
     switch (ret.kind) {
     case FrontEndResult::IN_MODULE:
-      if (action.consumer) {
-        action.consumer->consume(std::move(ret.node));
-      }
+      action.consumer &&action.consumer->consume(std::move(ret.node));
       break;
     case FrontEndResult::ENTER_MODULE:
-      if (action.consumer) {
-        action.consumer->enterModule(provider.current()->getModId(),
-                                     provider.current()->getVersion(),
-                                     provider.current()->getPoolPtr());
-      }
+      action.emitter &&action.emitter->enterModule(provider.current()->getModId(),
+                                                   provider.current()->getVersion());
+      action.consumer &&action.consumer->enterModule(provider.current()->getModId(),
+                                                     provider.current()->getVersion(),
+                                                     provider.current()->getPoolPtr());
       break;
     case FrontEndResult::EXIT_MODULE:
-      if (action.consumer) {
-        action.consumer->exitModule(std::move(ret.node));
-      }
+      action.emitter &&action.emitter->exitModule();
+      action.consumer &&action.consumer->exitModule(std::move(ret.node));
       break;
     case FrontEndResult::FAILED:
       break;
     }
   }
   frontEnd.teardownASTDump();
-  if (action.consumer) {
-    action.consumer->exitModule(nullptr);
-  }
+  action.emitter &&action.emitter->exitModule();
+  action.consumer &&action.consumer->exitModule(nullptr);
   return std::move(*provider.current()).buildArchive(archives);
 }
 

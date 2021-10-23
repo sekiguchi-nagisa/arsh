@@ -185,10 +185,10 @@ public:
 
   ~SymbolIndexer() override = default;
 
-  void enterModule(unsigned short modId, int version,
+  bool enterModule(unsigned short modId, int version,
                    const std::shared_ptr<TypePool> &pool) override;
-  void exitModule(std::unique_ptr<Node> &&node) override;
-  void consume(std::unique_ptr<Node> &&node) override;
+  bool exitModule(std::unique_ptr<Node> &&node) override;
+  bool consume(std::unique_ptr<Node> &&node) override;
 
 protected:
   void visitTypeNode(TypeNode &node) override;

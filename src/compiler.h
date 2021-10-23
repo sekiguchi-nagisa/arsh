@@ -90,7 +90,7 @@ public:
   bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                         const ParseError &parseError) override;
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                       const TypeCheckError &checkError) override;
+                       const TypeCheckError &checkError, bool firstAppear) override;
   bool handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                           const CodeGenError &codeGenError);
 

@@ -23,6 +23,7 @@
 #include <type_pool.h>
 
 #include "archive.h"
+#include "lsp.h"
 #include "source.h"
 
 namespace ydsh::lsp {
@@ -92,23 +93,47 @@ private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 };
 
+using DiagnosticCallback = std::function<void(PublishDiagnosticsParams &&)>;
+
 class DiagnosticEmitter : public FrontEnd::ErrorListener {
+private:
+  SourceManager &srcMan;
+  DiagnosticCallback callback;
+  bool supportVersion;
+
+  struct Context {
+    SourcePtr src;
+    int version;
+    std::vector<Diagnostic> diagnostics;
+
+    Context(SourcePtr src, int version) : src(std::move(src)), version(version) {}
+  };
+
+  std::vector<Context> contexts;
+
 public:
+  DiagnosticEmitter(SourceManager &srcMan, DiagnosticCallback &&callback, bool supportVersion)
+      : srcMan(srcMan), callback(std::move(callback)), supportVersion(supportVersion) {}
+
   ~DiagnosticEmitter() override = default;
 
   bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                         const ParseError &parseError) override;
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                       const TypeCheckError &checkError) override;
+                       const TypeCheckError &checkError, bool firstAppear) override;
+
+  bool enterModule(unsigned short modId, int version);
+
+  bool exitModule();
 };
 
 struct NodeConsumer {
   virtual ~NodeConsumer() = default;
 
-  virtual void enterModule(unsigned short modID, int version,
+  virtual bool enterModule(unsigned short modID, int version,
                            const std::shared_ptr<TypePool> &pool) = 0;
-  virtual void exitModule(std::unique_ptr<Node> &&node) = 0;
-  virtual void consume(std::unique_ptr<Node> &&node) = 0;
+  virtual bool exitModule(std::unique_ptr<Node> &&node) = 0;
+  virtual bool consume(std::unique_ptr<Node> &&node) = 0;
 };
 
 struct AnalyzerAction {

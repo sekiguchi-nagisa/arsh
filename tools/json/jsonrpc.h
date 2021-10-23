@@ -369,6 +369,13 @@ public:
     return this->callImpl(transport, name, std::move(serializer).take(), std::move(func));
   }
 
+  template <typename Param>
+  void notify(Transport &transport, const std::string &name, Param &&param) {
+    JSONSerializer serializer;
+    serializer(param);
+    transport.notify(name, std::move(serializer).take());
+  }
+
 protected:
   ReplyImpl requestValidationError(const ValidationError &e);
 

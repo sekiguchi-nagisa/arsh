@@ -29,6 +29,10 @@
     - ``load``: load string as single expreesion function
     - ``fullname``: resolve fully qualified command name
 
+#### LSP
+
+- support ``textDocument/publishDiagnostics``
+
 ### Changed
 
 #### Builtin
