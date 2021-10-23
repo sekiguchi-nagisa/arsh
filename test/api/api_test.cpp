@@ -1023,6 +1023,7 @@ TEST_F(JobTest, jobctrl2) {
 }
 
 int main(int argc, char **argv) {
+  setenv("LSAN_OPTIONS", "verbosity=1:log_threads=1", 1);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
