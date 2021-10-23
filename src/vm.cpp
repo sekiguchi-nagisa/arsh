@@ -505,7 +505,8 @@ static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
   return false;
 }
 
-ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref, const ModType *modType) const {
+ResolvedCmd CmdResolver::operator()(const DSState &state, StringRef ref,
+                                    const ModType *modType) const {
   // first, check user-defined command
   if (hasFlag(this->resolveOp, FROM_UDC)) {
     auto fqn = hasFlag(this->resolveOp, USE_FQN) ? ref.find('\0') : StringRef::npos;

@@ -116,7 +116,7 @@ public:
   /**
    * cache searched result.
    */
-  FilePathCache pathCache;
+  mutable FilePathCache pathCache;
 
   unsigned int lineNum{1};
 
@@ -397,7 +397,8 @@ public:
    * if specified USE_FQN, always ignore
    * @return
    */
-  ResolvedCmd operator()(DSState &state, StringRef cmdName, const ModType *modType = nullptr) const;
+  ResolvedCmd operator()(const DSState &state, StringRef cmdName,
+                         const ModType *modType = nullptr) const;
 };
 
 template <>
