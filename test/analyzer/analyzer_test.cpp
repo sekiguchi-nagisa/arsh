@@ -80,12 +80,14 @@ static std::vector<std::string> getTargetCases(const char *dir) {
   ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
   // filter ignored cases
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [](const std::string &v) {
-                             StringRef ref = v;
-                             return ref.contains("mod") || ref.contains("subcmd") ||
-                                    ref.contains("shctl") || ref.contains("complete6");
-                           }),
+  ret.erase(std::remove_if(
+                ret.begin(), ret.end(),
+                [](const std::string &v) {
+                  const char *ignoredPattern[] = {"mod", "subcmd", "shctl", "complete6", "load"};
+                  StringRef ref = v;
+                  return std::any_of(std::begin(ignoredPattern), std::end(ignoredPattern),
+                                     [&ref](const char *pt) { return ref.contains(pt); });
+                }),
             ret.end());
   return ret;
 }

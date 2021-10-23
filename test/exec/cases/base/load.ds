@@ -40,3 +40,5 @@ assert $/undefined/ =~ ($ex as Error).message()
 $ex = 234
 try { $mod.load('34 as Any as StrArray')(); } catch $e { $ex = $e; }
 assert $ex is TypeCastError
+
+true
