@@ -1890,118 +1890,6 @@ static int isSourced(const VMState &st) {
   return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
 }
 
-enum class FullnameOp {
-  LEVEL,
-  MOD,
-};
-
-static std::pair<const ModType *, bool> parseModDest(const DSState &st, const ArrayObject &argvObj,
-                                                     FullnameOp op, StringRef opt) {
-  switch (op) {
-  case FullnameOp::LEVEL: { // parse num
-    auto pair = convertToNum<int64_t>(opt.begin(), opt.end());
-    if (!pair.second || pair.first < 0 || pair.first > UINT16_MAX) {
-      ERROR(argvObj, "require positive number (up to UINT16_MAX): %s", toPrintable(opt).c_str());
-      return {nullptr, false};
-    }
-    auto level = static_cast<unsigned int>(pair.first);
-    auto *ret = getRuntimeModuleByLevel(st, level);
-    if (!ret && level > 0) {
-      ERROR(argvObj, "too large call level: %s", toPrintable(opt).c_str());
-      return {nullptr, false};
-    }
-    return {ret, true};
-  }
-  case FullnameOp::MOD: { // parse module object string representation (ex. module(%mod4) )
-    if (opt.startsWith("module(") && opt.endsWith(")")) {
-      StringRef n = opt;
-      n.removePrefix(strlen("module("));
-      n.removeSuffix(1);
-      auto ret = st.typePool.getType(n);
-      if (ret && ret.asOk()->isModType()) {
-        return {static_cast<const ModType *>(ret.asOk()), true};
-      }
-    }
-    ERROR(argvObj, "invalid module object: %s", toPrintable(opt).c_str());
-    return {nullptr, false};
-  }
-  }
-  return {nullptr, true};
-}
-
-static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
-  // always clear
-  state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
-
-  auto op = FullnameOp::LEVEL;
-  StringRef optArg = "0";
-
-  GetOptState optState(2);
-  const int opt = optState(argvObj, "l:m:");
-  switch (opt) {
-  case 'l':
-    op = FullnameOp::LEVEL;
-    optArg = optState.optArg;
-    break;
-  case 'm':
-    op = FullnameOp::MOD;
-    optArg = optState.optArg;
-    break;
-  case ':':
-    ERROR(argvObj, "-%c: option require argument", optState.optOpt);
-    return 2;
-  case '?':
-    return invalidOptionError(argvObj, optState);
-  default:
-    break;
-  }
-
-  if (optState.index == argvObj.size()) {
-    ERROR(argvObj, "require command name");
-    return 1;
-  }
-
-  auto pair = parseModDest(state, argvObj, op, optArg);
-  if (!pair.second) {
-    return 1;
-  }
-  auto name = argvObj.getValues()[optState.index].asStrRef();
-  CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
-  DSValue reply;
-  auto cmd = resolver(state, name, pair.first);
-  switch (cmd.kind()) {
-  case ResolvedCmd::USER_DEFINED:
-  case ResolvedCmd::MODULE: {
-    unsigned int typeId = cmd.belongModTypeId();
-    assert(typeId > 0);
-    auto &type = state.typePool.get(typeId);
-    assert(type.isModType());
-    std::string fullname = type.getNameRef().toString();
-    fullname += '\0';
-    fullname += name.data();
-    reply = DSValue::createStr(std::move(fullname));
-    break;
-  }
-  case ResolvedCmd::BUILTIN_S:
-  case ResolvedCmd::BUILTIN:
-    reply = DSValue::createStr(name);
-    break;
-  case ResolvedCmd::EXTERNAL:
-    if (cmd.filePath() != nullptr && isExecutable(cmd.filePath())) {
-      reply = DSValue::createStr(cmd.filePath());
-    }
-    break;
-  case ResolvedCmd::INVALID:
-  case ResolvedCmd::ILLEGAL_UDC:
-    break;
-  }
-  bool ret = static_cast<bool>(reply);
-  if (ret) {
-    state.setGlobal(BuiltinVarOffset::REPLY, std::move(reply));
-  }
-  return ret ? 0 : 1;
-}
-
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
   if (argvObj.size() > 1) {
     auto ref = argvObj.getValues()[1].asStrRef();
@@ -2021,8 +1909,6 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
       return setOption(state, argvObj, false);
     } else if (ref == "module") {
       return showModule(state);
-    } else if (ref == "fullname") {
-      return resolveFullCommandName(state, argvObj);
     } else {
       ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
       return 2;

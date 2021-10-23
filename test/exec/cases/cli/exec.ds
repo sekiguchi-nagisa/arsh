@@ -15,11 +15,6 @@ $expect("$(ds -e hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execu
 # sourced
 $expect("$(ds -e shctl is-sourced 2>&1)", 1, "")
 
-# fullname
-$expect("$(ds -e shctl fullname exit)", 0, "")
-$expect("$(ds -e shctl fullname ps)", 0, "")
-$expect("$(ds -e shctl fullname _cmd_fallback_handler)", 1, "")
-
 # command
 $expect("$(ds -e command hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 $expect("$(ds -e command exit 999 2>&1)", 231, $'')

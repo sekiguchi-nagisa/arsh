@@ -839,7 +839,7 @@ TEST_F(InteractiveTest, illegalcmd) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("command -v f; assert $? == 1"));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("command -V f", "", "ydsh: command: f: uninitialized\n"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert !shctl fullname f; assert $REPLY == ''"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $MODULE.fullname('f')"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));

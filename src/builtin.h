@@ -1162,6 +1162,22 @@ YDSH_METHOD module_load(RuntimeContext &ctx) {
   }
 }
 
+//!bind: function fullname($this : Module, $name : String) : Option<String>
+YDSH_METHOD module_fullname(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(module_fullname);
+
+  auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
+  auto ref = LOCAL(1).asStrRef();
+  assert(type.isModType());
+  auto &modType = cast<ModType>(type);
+  auto path = resolveFullCommandName(ctx, ref, modType);
+  if (path.empty()) {
+    RET(DSValue::createInvalid());
+  } else {
+    RET(DSValue::createStr(std::move(path)));
+  }
+}
+
 // ###################
 // ##     Array     ##
 // ###################

@@ -378,6 +378,36 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   }
 }
 
+std::string resolveFullCommandName(const DSState &state, StringRef name, const ModType &modType) {
+  CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
+  auto cmd = resolver(state, name, &modType);
+  switch (cmd.kind()) {
+  case ResolvedCmd::USER_DEFINED:
+  case ResolvedCmd::MODULE: {
+    unsigned int typeId = cmd.belongModTypeId();
+    assert(typeId > 0);
+    auto &type = state.typePool.get(typeId);
+    assert(type.isModType());
+    std::string fullname = type.getNameRef().toString();
+    fullname += '\0';
+    fullname += name.data();
+    return fullname;
+  }
+  case ResolvedCmd::BUILTIN_S:
+  case ResolvedCmd::BUILTIN:
+    return name.toString();
+  case ResolvedCmd::EXTERNAL:
+    if (cmd.filePath() != nullptr && isExecutable(cmd.filePath())) {
+      return cmd.filePath();
+    }
+    break;
+  case ResolvedCmd::INVALID:
+  case ResolvedCmd::ILLEGAL_UDC:
+    break;
+  }
+  return "";
+}
+
 int xexecve(const char *filePath, char *const *argv, char *const *envp) {
   if (filePath == nullptr) {
     errno = ENOENT;

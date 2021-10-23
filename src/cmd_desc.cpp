@@ -148,14 +148,7 @@ static BuiltinCmdDesc table[] = {
      "        module              print full path of loaded modules or scripts.\n"
      "        show  [OPTION ...]  print runtime option setting.\n"
      "        set   OPTION ...    set/enable/on runtime option.\n"
-     "        unset OPTION ...    unset/disable/off runtime option.\n"
-     "        fullname [-l level] name or fullname [-m mod] name\n"
-     "                            resolve fully qualified command name and set to REPLY.\n"
-     "                            if no option specified, equivalent to `-l 0'\n"
-     "                            Options:\n"
-     "                                -l    resolve from call stack level specified by LEVEL "
-     "(0~).\n"
-     "                                -m    resolve from module specified by MOD."},
+     "        unset OPTION ...    unset/disable/off runtime option."},
     {"test", "[expr]",
      "    Unary or Binary expressions.\n"
      "    If expression is true, return 0\n"

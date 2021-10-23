@@ -266,6 +266,8 @@ function scriptName($this : Module) : String
 function scriptDir($this : Module) : String
 
 function load($this : Module, $expr : String) : Func<Option<Any>>
+
+function fullname($this : Module, $name : String) : Option<String>
 ```
 
 ## Array type

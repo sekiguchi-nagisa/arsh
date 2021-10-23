@@ -27,8 +27,14 @@
     - ``scriptName``: get ``SCRIPT_NAME`` of module
     - ``scriptDir``: get ``SCRIPT_DIR`` of module
     - ``load``: load string as single expreesion function
+    - ``fullname``: resolve fully qualified command name
 
 ### Changed
+
+#### Builtin
+
+- **Breaking Change**: remove ``fullname`` subcommand of ``shctl``
+    - now use ``Module#fullname`` method instead
 
 #### LSP
 

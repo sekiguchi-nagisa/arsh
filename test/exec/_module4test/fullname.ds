@@ -2,13 +2,11 @@
 source $SCRIPT_DIR/module1.ds as m
 
 function hey_() : String {
-    shctl fullname -m $m say0
-    return $REPLY
+    return $m.fullname('say0')!
 }
 
 function hey__() : String {
-    shctl fullname -m $m _say0
-    return $REPLY
+    return $m.fullname('_say0')!
 }
 
 
@@ -20,12 +18,10 @@ _say!!() {
     echo _say!! $@
 }
 
-function say_($l : Int) : String {
-    shctl fullname -l $l say!!
-    return $REPLY
+function say_() : String {
+    return $MODULE.fullname('say!!')!
 }
 
-function say__($l : Int) : String {
-    shctl fullname -l $l _say!!
-    return $REPLY
+function say__() : String {
+    return $MODULE.fullname('_say!!')!
 }

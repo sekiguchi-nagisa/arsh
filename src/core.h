@@ -175,6 +175,16 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
                                                                const ModType &modType);
 
 /**
+ * resolve fully qualified command name
+ * @param state
+ * @param name
+ * @param modType
+ * @return
+ * if not resolved, return empty string
+ */
+std::string resolveFullCommandName(const DSState &state, StringRef name, const ModType &modType);
+
+/**
  *
  * @param filePath
  * if null, not execute and set ENOENT.

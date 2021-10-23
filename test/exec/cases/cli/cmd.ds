@@ -11,20 +11,6 @@ $expect("$(ds -c '\' 2>&1)", 0, '') # do nothing
 
 $expect("$(ds -c '#echo hello' 2>&1)", 0, '') # do nothing
 
-# fullname
-$expect("$(ds -c '
-    f(){ echo !!! $@; };
-    assert shctl fullname f
-    assert "$(command -V $REPLY)" =~ $/user-defined/
-    assert $REPLY == "$(echo -e "%mod1\x00f")" : $REPLY
-    eval $REPLY a b c
-')", 0, '!!! a b c')
-
-$expect("$(ds -c '
-    assert ! shctl fullname _cmd_fallback_handler   # not resolve private builtin variable
-    assert $REPLY.empty()
-')", 1, '')
-
 
 # assertion
 var msg = "Assertion Error: `(12 == 4)'
