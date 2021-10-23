@@ -43,6 +43,9 @@ $assertArray(['&>', '&>>', '1>', '1>&2',  '1>>', '2>', '2>&1',  '2>>', '<', '<<<
 $assertArray([')', ','], $(complete 'function hoge($a : Int '))
 $assertArray([':'], $(complete 'function hoge($a '))
 $assertArray(['"', '$(', '${'], $(complete 'var a = "AAA'))
+$assertArray(['->'], $(complete 'var a : ()'))
+$assertArray(['=>'], $(complete 'function ()'))
+$assertArray(['=>'], $(complete 'case 234 { 34 '))
 
 # complete keyword
 ## perform sort command with 'C' locale
