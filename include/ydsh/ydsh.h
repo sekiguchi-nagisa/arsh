@@ -56,7 +56,7 @@ typedef enum {
  */
 DS_PUBLIC_API(DSState *) DSState_createWithMode(DSExecMode mode);
 
-#define DSState_create() DSState_createWithMode(DS_EXEC_MODE_NORMAL)
+static inline DSState *DSState_create() { return DSState_createWithMode(DS_EXEC_MODE_NORMAL); }
 
 /**
  * delete DSState. after release object, assign null to ctx.
@@ -252,25 +252,6 @@ DS_PUBLIC_API(void) DSError_release(DSError *e);
 DS_PUBLIC_API(int)
 DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
-/**
- * open file and evaluate. if e is not null, set error info.
- * set SCRIPT_DIR to dirname of fileName.
- * before evaluation reset line number.
- * equivalent to DSState_loadModule(DS_MOD_FULLPATH | DS_MOD_SEPARATE_CTX)
- * @param st
- * @param fileName
- * not null
- * @param e
- * may be null.
- * @return
- * exit status of most recently executed command(include exit, 0~255).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- * if fileName is already loaded file, return 1.
- * if fileName is already loaded module, return always 0 and do nothing.
- * if st is null, return -1 and not set error
- */
-DS_PUBLIC_API(int) DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
-
 /* for module loading option */
 /**
  * load module as fullpath. so not allow cascading module search
@@ -306,6 +287,27 @@ DS_PUBLIC_API(int) DSState_loadAndEval(DSState *st, const char *fileName, DSErro
  */
 DS_PUBLIC_API(int)
 DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
+
+/**
+ * open file and evaluate. if e is not null, set error info.
+ * set SCRIPT_DIR to dirname of fileName.
+ * before evaluation reset line number.
+ * equivalent to DSState_loadModule(DS_MOD_FULLPATH | DS_MOD_SEPARATE_CTX)
+ * @param st
+ * @param fileName
+ * not null
+ * @param e
+ * may be null.
+ * @return
+ * exit status of most recently executed command(include exit, 0~255).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ * if fileName is already loaded file, return 1.
+ * if fileName is already loaded module, return always 0 and do nothing.
+ * if st is null, return -1 and not set error
+ */
+static inline int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
+  return DSState_loadModule(st, sourceName, DS_MOD_FULLPATH | DS_MOD_SEPARATE_CTX, e);
+}
 
 /**
  * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)

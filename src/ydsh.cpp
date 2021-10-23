@@ -416,10 +416,6 @@ static void reportFileError(const char *sourceName, int errNum, DSError *e) {
   errno = errNum;
 }
 
-int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
-  return DSState_loadModule(st, sourceName, DS_MOD_FULLPATH | DS_MOD_SEPARATE_CTX, e);
-}
-
 int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
   GUARD_NULL(st, -1);
   GUARD_NULL(fileName, -1);
