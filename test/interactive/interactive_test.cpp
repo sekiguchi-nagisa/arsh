@@ -697,7 +697,7 @@ TEST_F(InteractiveTest, cmdSubstitution) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->withTimeout(400, [&] { this->sendLineAndExpect("var a = \"$(stty sane)\""); }));
+      this->withTimeout(600, [&] { this->sendLineAndExpect("var a = \"$(stty sane)\""); }));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": String = "));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -773,7 +773,7 @@ TEST_F(InteractiveTest, moduleError2) {
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
+  ASSERT_NO_FATAL_FAILURE(this->withTimeout(600, [&] {
     this->sendLineAndExpect("hey", "",
                             "[runtime error]\n"
                             "SystemError: execution error: hey: command not found\n"
