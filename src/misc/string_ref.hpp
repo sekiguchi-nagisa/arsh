@@ -38,13 +38,11 @@ public:
   static constexpr const size_type npos = -1;
 
 private:
-  const char *ptr_{nullptr};
-  size_type size_{0};
+  const char *ptr_;
+  size_type size_;
 
 public:
   constexpr StringRefBase() noexcept : ptr_(nullptr), size_(0) {}
-
-  StringRefBase(const StringRefBase &ref) noexcept = default;
 
   /**
    *
