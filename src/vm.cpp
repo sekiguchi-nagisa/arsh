@@ -572,7 +572,11 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
   str += cmdName;
   if (errnum == ENOENT) {
     str += ": command not found";
-    raiseError(state, TYPE::SystemError, std::move(str));
+    raiseError(state, TYPE::SystemError, std::move(str), 127);
+  } else if (errnum == EACCES) {
+    str += ": ";
+    str += strerror(errnum);
+    raiseError(state, TYPE::SystemError, std::move(str), 126);
   } else {
     raiseSystemError(state, errnum, std::move(str));
   }
@@ -591,8 +595,8 @@ static void raiseInvalidCmdError(DSState &state, StringRef ref) {
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
-int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
-                    DSValue &&redirConfig) {
+bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
+                     DSValue &&redirConfig) {
   // setup self pipe
   int selfpipe[2];
   if (pipe(selfpipe) < 0) {
@@ -607,7 +611,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
   auto proc = Proc::fork(state, pgid, rootShell);
   if (proc.pid() == -1) {
     raiseCmdError(state, argv[0], EAGAIN);
-    return 1;
+    return false;
   } else if (proc.pid() == 0) { // child
     close(selfpipe[READ_PIPE]);
     xexecve(filePath, argv, nullptr);
@@ -648,9 +652,10 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     }
     if (errNum2 != 0) {
       raiseCmdError(state, argv[0], errNum2);
-      return 1;
+      return false;
     }
-    return status;
+    pushExitStatus(state, status);
+    return true;
   }
 }
 
@@ -723,13 +728,12 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     argv[size] = nullptr;
 
     if (hasFlag(attr, CmdCallAttr::NEED_FORK)) {
-      int status = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
-      pushExitStatus(state, status);
+      return forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
     } else {
       xexecve(cmd.filePath(), argv, nullptr);
       raiseCmdError(state, argv[0], errno);
+      return false;
     }
-    return !state.hasError();
   }
   case ResolvedCmd::INVALID:
     raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
@@ -2059,12 +2063,12 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 
   auto &errorType = state.typePool.get(except.getTypeID());
   DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-  state.setExitStatus(1);
   if (errorType.is(TYPE::_ShellExit)) {
     kind = DS_ERROR_KIND_EXIT;
     state.setExitStatus(parseExitStatus(typeAs<ErrorObject>(except)));
   } else if (errorType.is(TYPE::_AssertFail)) {
     kind = DS_ERROR_KIND_ASSERTION_ERROR;
+    state.setExitStatus(1);
   }
 
   // get error line number

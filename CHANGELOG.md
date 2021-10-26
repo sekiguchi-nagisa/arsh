@@ -35,6 +35,12 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: change exit status of command error
+    - if command not found, set exit status to 127
+    - if permission error, set exit status to 126
+
 #### Builtin
 
 - **Breaking Change**: remove ``fullname`` subcommand of ``shctl``

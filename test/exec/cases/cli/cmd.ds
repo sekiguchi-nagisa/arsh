@@ -31,7 +31,7 @@ $msg = "[runtime error]
 SystemError: execution error: lajfeoifreo: command not found
     from (string):1 '<toplevel>()'"
 
-$expect("$(ds -c 'lajfeoifreo' 2>&1)", 1, $msg)
+$expect("$(ds -c 'lajfeoifreo' 2>&1)", 127, $msg)
 
 var cmd = "var a = \$'he\x00llo'; throw \$a"
 
@@ -59,4 +59,9 @@ SystemError: execution error: hoge: command not found
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'hoge | :' 2>&1)", 0, $msg)
-$expect("$(ds -c ': | hoge' 2>&1)", 1, $msg)
+$expect("$(ds -c ': | hoge' 2>&1)", 127, $msg)
+
+$msg = "[runtime error]
+SystemError: execution error: ./: Permission denied
+    from (string):1 '<toplevel>()'"
+$expect("$(ds -c ': | ./' 2>&1)", 126, $msg)

@@ -755,7 +755,7 @@ TEST_F(InteractiveTest, moduleError1) {
   }));
 
   this->send(CTRL_D);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, moduleError2) {
@@ -781,7 +781,7 @@ TEST_F(InteractiveTest, moduleError2) {
   }));
 
   this->send(CTRL_D);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, moduleError3) {

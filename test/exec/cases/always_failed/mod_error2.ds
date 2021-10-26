@@ -1,4 +1,4 @@
-#$test($result = 'throw', $lineNum = 9, $errorKind = 'SystemError', $status = 1, $fileName = $0)
+#$test($result = 'throw', $lineNum = 9, $errorKind = 'SystemError', $status = 127, $fileName = $0)
 
 source ../../_module4test/module1.ds
 

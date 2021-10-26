@@ -493,8 +493,8 @@ private:
 
   static bool forkAndEval(DSState &state);
 
-  static int forkAndExec(DSState &state, const char *filePath, char *const *argv,
-                         DSValue &&redirConfig);
+  static bool forkAndExec(DSState &state, const char *filePath, char *const *argv,
+                          DSValue &&redirConfig);
 
   static bool prepareSubCommand(DSState &state, const ModType &modType, DSValue &&argvObj,
                                 DSValue &&restoreFD);

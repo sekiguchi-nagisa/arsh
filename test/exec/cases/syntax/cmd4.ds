@@ -1,4 +1,4 @@
-#$test($result = 'throw', $lineNum = 4, $errorKind = 'SystemError', $status = 1)
+#$test($result = 'throw', $lineNum = 4, $errorKind = 'SystemError', $status = 127)
 
 12 + 23
 not-129999  # recognized as command 'not-129999'

@@ -10,17 +10,17 @@ assert "$(exec $'ps\x00' 2>&1)" == "ydsh: exec: contains null characters: ps\x00
 
 
 # not found builtin command
-$expect("$(ds -e hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
+$expect("$(ds -e hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 
 # sourced
 $expect("$(ds -e shctl is-sourced 2>&1)", 1, "")
 
 # command
-$expect("$(ds -e command hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
+$expect("$(ds -e command hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 $expect("$(ds -e command exit 999 2>&1)", 231, $'')
 
 # eval
-$expect("$(ds -e eval hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
+$expect("$(ds -e eval hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 $expect("$(ds -e eval exit 45 2>&1)", 45, $'')
 
 # exit
