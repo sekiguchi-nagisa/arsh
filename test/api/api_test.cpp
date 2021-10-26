@@ -32,8 +32,8 @@ TEST(BuiltinExecTest, case2) {
   DSState *state = DSState_create();
   auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("fheruifh", "hello").data());
-  ASSERT_EQ(1, ret);
+  int ret = DSState_exec(state, make_argv("./", "hello").data());
+  ASSERT_EQ(126, ret);
 }
 
 TEST(BuiltinExecTest, case3) {
@@ -182,7 +182,7 @@ echoechodwe \
 )";
   DSError e;
   int s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
-  ASSERT_EQ(1, s);
+  ASSERT_EQ(127, s);
   ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e.kind);
   ASSERT_EQ(5, e.lineNum);
   ASSERT_EQ(0, e.chars);
