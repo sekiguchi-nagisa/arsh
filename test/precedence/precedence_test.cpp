@@ -84,7 +84,7 @@ public:
   void visitBinaryOpNode(BinaryOpNode &node) override {
     this->open();
     this->visit(*node.getLeftNode());
-    this->append(TO_NAME(node.getOp()));
+    this->append(toString(node.getOp()));
     this->visit(*node.getRightNode());
     this->close();
   }
@@ -124,7 +124,7 @@ public:
   }
 
   void visitRedirNode(RedirNode &node) override {
-    this->append(TO_NAME(node.getRedirectOP()));
+    this->append(toString(node.getRedirectOP()));
     this->visit(node.getTargetNode());
   }
 

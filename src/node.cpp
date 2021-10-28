@@ -989,7 +989,7 @@ const char *resolveUnaryOpName(TokenKind op) {
   case TokenKind::NOT: // not
     return OP_NOT;
   default:
-    fatal("unsupported unary op: %s\n", TO_NAME(op));
+    fatal("unsupported unary op: %s\n", toString(op));
   }
 }
 
@@ -1028,7 +1028,7 @@ const char *resolveBinaryOpName(TokenKind op) {
   case TokenKind::UNMATCH:
     return OP_UNMATCH;
   default:
-    fatal("unsupported binary op: %s\n", TO_NAME(op));
+    fatal("unsupported binary op: %s\n", toString(op));
   }
 }
 
@@ -1053,7 +1053,7 @@ TokenKind resolveAssignOp(TokenKind op) {
   case TokenKind::NULL_ASSIGN:
     return TokenKind::NULL_COALE;
   default:
-    fatal("unsupported assign op: %s\n", TO_NAME(op));
+    fatal("unsupported assign op: %s\n", toString(op));
   }
 }
 

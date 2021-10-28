@@ -344,8 +344,6 @@ inline bool isEOSToken(TokenKind kind) { return kind == TokenKind::EOS; }
 
 const char *toString(TokenKind kind);
 
-#define TO_NAME(kind) toString(kind)
-
 // for operator precedence parsing
 
 enum class OperatorAttr : unsigned short {

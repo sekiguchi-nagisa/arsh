@@ -1988,14 +1988,14 @@ TEST(LexerTest_Lv2, NEW_LINE) {
   Token t;
   TokenKind k = lexer.nextToken(t);
 
-  ASSERT_STREQ(TO_NAME(TokenKind::ASSERT), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::ASSERT), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
 
   k = lexer.nextToken(t);
-  ASSERT_STREQ(TO_NAME(TokenKind::EOS), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::EOS), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
   k = lexer.nextToken(t);
-  ASSERT_STREQ(TO_NAME(TokenKind::EOS), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::EOS), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
 }
 
@@ -2005,20 +2005,20 @@ TEST(LexerTest_Lv2, NEW_LINE2) {
   Token t;
   TokenKind k = lexer.nextToken(t);
 
-  ASSERT_STREQ(TO_NAME(TokenKind::VAR), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::VAR), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
 
   k = lexer.nextToken(t);
-  ASSERT_STREQ(TO_NAME(TokenKind::IDENTIFIER), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::IDENTIFIER), toString(k));
   ASSERT_FALSE(lexer.isPrevNewLine());
 
   k = lexer.nextToken(t);
-  ASSERT_STREQ(TO_NAME(TokenKind::EOS), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::EOS), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
   ASSERT_FALSE(lexer.isPrevSpace());
 
   k = lexer.nextToken(t);
-  ASSERT_STREQ(TO_NAME(TokenKind::EOS), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::EOS), toString(k));
   ASSERT_TRUE(lexer.isPrevNewLine());
   ASSERT_FALSE(lexer.isPrevSpace());
 }
@@ -2032,7 +2032,7 @@ TEST(LexerTest_Lv3, IllegalChar) {
   Token t;
   TokenKind k = lexer.nextToken(t);
 
-  ASSERT_STREQ(TO_NAME(TokenKind::INVALID), TO_NAME(k));
+  ASSERT_STREQ(toString(TokenKind::INVALID), toString(k));
 }
 
 TEST(LineNumTest, case1) {
