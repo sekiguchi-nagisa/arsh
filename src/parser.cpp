@@ -605,7 +605,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
       node->updateToken(token);
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       auto ref = this->lexer->toStrRef(this->curToken);
-      if (ref == "a") {
+      if (!optional && ref == "a") {
         TRY(this->expect(TokenKind::AS)); // FIXME:
       } else if (StringRef("inlined").startsWith(ref) && !ref.empty()) {
         TRY(this->expect(TokenKind::INLINED)); // FIXME:

@@ -19,6 +19,9 @@
 - add runtime code loading api
     - load string (single expression) as anonymous function via ``Module#load`` method
     - loaded function can access global variables visible in caller module
+- complete infix keywords
+    - `as`, `is`, `and`, `or`, `xor`, `with`
+    - `in`, `elif`, `else`, `catch`, `finally`, `inlined`
 
 #### Builtin
 
