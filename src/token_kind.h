@@ -130,6 +130,7 @@
   TOKEN(IS, "is")                                                                                  \
   TOKEN(TYPEOF, "typeof")                                                                          \
   TOKEN(WITH, "with")                                                                              \
+  TOKEN(INLINED, "inlined") /* dummy for completion */                                             \
   /* identifier. */                                                                                \
   TOKEN(IDENTIFIER, "<Identifier>")                                                                \
   /* accessor */                                                                                   \
@@ -219,6 +220,14 @@
   OP(BACKGROUND, 2, INFIX)                                                                         \
   OP(DISOWN_BG, 2, INFIX)                                                                          \
   EACH_ASSIGN_OPERATOR(OP)
+
+#define EACH_INFIX_OPERATOR_KW(OP)                                                                 \
+  OP(AS)                                                                                           \
+  OP(IS)                                                                                           \
+  OP(AND)                                                                                          \
+  OP(OR)                                                                                           \
+  OP(XOR)                                                                                          \
+  OP(WITH)
 
 // for lookahead
 #define EACH_LA_interpolation(OP)                                                                  \
@@ -378,13 +387,12 @@ inline bool isRightAssoc(TokenKind kind) { return hasFlag(getOpAttr(kind), Opera
 
 inline bool isInfixKeyword(TokenKind kind) {
   switch (kind) {
+#define GEN_CASE(E) case TokenKind::E:
+    // clang-format off
+  EACH_INFIX_OPERATOR_KW(GEN_CASE)
+    // clang-format on
+#undef GEN_CASE
   case TokenKind::IN:
-  case TokenKind::IS:
-  case TokenKind::AS:
-  case TokenKind::WITH:
-  case TokenKind::AND:
-  case TokenKind::OR:
-  case TokenKind::XOR:
   case TokenKind::ELIF:
     return true;
   default:

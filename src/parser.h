@@ -147,6 +147,13 @@ protected:
     return false;
   }
 
+  template <unsigned int N>
+  bool tryCompleteInfixKeywords(const TokenKind (&kinds)[N]) {
+    return this->tryCompleteInfixKeywords(N, kinds);
+  }
+
+  bool tryCompleteInfixKeywords(unsigned int size, const TokenKind *kinds);
+
   bool inVarNameCompletionPoint() const;
 
   bool inTypeNameCompletionPoint() const;

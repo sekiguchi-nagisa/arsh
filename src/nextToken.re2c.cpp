@@ -257,6 +257,7 @@ INIT:
 
     <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
     <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
+    <EXPR> [a-z]+            { RET_OR_COMP(INVALID); }
 
     <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
     <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }

@@ -139,6 +139,30 @@ Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext
   return token;
 }
 
+bool Parser::tryCompleteInfixKeywords(unsigned int size, const TokenKind *kinds) {
+  if (this->inCompletionPoint() && this->lexer->getCompTokenKind() == TokenKind::INVALID) {
+    auto tokenRef = this->lexer->toStrRef(this->curToken);
+    if (!isKeyword(tokenRef)) {
+      return false;
+    }
+    TokenKind alters[32];
+    assert(size < std::size(alters));
+    unsigned int count = 0;
+    for (unsigned int i = 0; i < size; i++) {
+      TokenKind k = kinds[i];
+      StringRef kindStr = toString(k);
+      if (kindStr.startsWith(tokenRef)) {
+        alters[count++] = k;
+      }
+    }
+    if (count > 0) {
+      this->reportNoViableAlterError(count, alters, true);
+      return true;
+    }
+  }
+  return false;
+}
+
 bool Parser::inVarNameCompletionPoint() const {
   if (this->inCompletionPoint()) {
     auto compTokenKind = this->lexer->getCompTokenKind();
@@ -579,6 +603,13 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
       Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
       node->setInlined(true);
       node->updateToken(token);
+    } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
+      auto ref = this->lexer->toStrRef(this->curToken);
+      if (ref == "a") {
+        TRY(this->expect(TokenKind::AS)); // FIXME:
+      } else if (StringRef("inlined").startsWith(ref) && !ref.empty()) {
+        TRY(this->expect(TokenKind::INLINED)); // FIXME:
+      }
     }
     return std::move(node);
   }
@@ -708,6 +739,10 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
   } else if (CUR_KIND() == TokenKind::ELSE && this->lexer->getPrevMode().cond() == yycEXPR) {
     this->consume(); // ELSE
     elseNode = TRY(this->parse_block());
+  }
+
+  if (this->tryCompleteInfixKeywords({TokenKind::ELIF, TokenKind::ELSE})) {
+    return nullptr;
   }
   return std::make_unique<IfNode>(startPos, std::move(condNode), std::move(thenNode),
                                   std::move(elseNode));
@@ -1078,6 +1113,14 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
 
   auto node = TRY(this->parse_unaryExpression());
   while (!this->hasLineTerminator()) {
+    if (this->tryCompleteInfixKeywords({
+#define GEN_TABLE(E) TokenKind::E,
+            EACH_INFIX_OPERATOR_KW(GEN_TABLE)
+#undef GEN_TABLE
+        })) {
+      return nullptr;
+    }
+
     const auto info = getOpInfo(this->curKind);
     if (!hasFlag(info.attr, OperatorAttr::INFIX) || info.prece < basePrecedence) {
       break;
@@ -1356,6 +1399,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     if (CUR_KIND() == TokenKind::FINALLY) {
       this->consume(); // FINALLY
       tryNode->addFinallyNode(TRY(this->parse_block()));
+    }
+
+    if (this->tryCompleteInfixKeywords({TokenKind::CATCH, TokenKind::FINALLY})) {
+      return nullptr;
     }
     return std::move(tryNode);
   }

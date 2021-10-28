@@ -217,7 +217,7 @@ TEST_F(LexerTest_Lv1, elif_tok1) {
 TEST_F(LexerTest_Lv1, elif_tok2) {
   const char *text = "elifA";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "e"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "elif"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -1474,7 +1474,7 @@ TEST_F(LexerTest_Lv1, AND2) {
 TEST_F(LexerTest_Lv1, AND3) {
   const char *text = "andF";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "a"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "and"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -1533,7 +1533,7 @@ TEST_F(LexerTest_Lv1, OR2) {
 TEST_F(LexerTest_Lv1, OR3) {
   const char *text = "orA";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "o"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "or"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -1574,7 +1574,7 @@ TEST_F(LexerTest_Lv1, XOR3) { // invalid
 TEST_F(LexerTest_Lv1, XOR4) {
   const char *text = "xorT";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "x"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "xor"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -1770,7 +1770,7 @@ TEST_F(LexerTest_Lv1, AS3) {
 TEST_F(LexerTest_Lv1, AS4) {
   const char *text = "asO";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "a"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "as"));
 }
 
 TEST_F(LexerTest_Lv1, FUNC1) {
@@ -1815,7 +1815,7 @@ TEST_F(LexerTest_Lv1, IN3) {
 TEST_F(LexerTest_Lv1, IN4) {
   const char *text = "inQ";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "i"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "in"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -1841,7 +1841,7 @@ TEST_F(LexerTest_Lv1, IS3) {
 TEST_F(LexerTest_Lv1, IS4) {
   const char *text = "isW";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "i"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "is"));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
