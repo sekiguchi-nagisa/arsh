@@ -655,8 +655,9 @@ TEST_F(LexerTest_Lv1, regex2) {
 TEST_F(LexerTest_Lv1, invalid_regex1) {
   const char *text = "$/ho/ge/";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::REGEX_LITERAL, "$/ho/", TokenKind::INVALID, "g"));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REGEX_LITERAL, "$/ho/ge", TokenKind::DIV, "/", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, invalid_regex2) {

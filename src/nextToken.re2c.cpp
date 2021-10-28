@@ -132,7 +132,7 @@ TokenKind Lexer::nextToken(Token &token) {
     NO_ID = [^a-zA-Z_];
 
     REGEX_CHAR = "\\/" | [^\r\n\000/];
-    REGEX = "$/" REGEX_CHAR* "/" [ims]{0,3};
+    REGEX = "$/" REGEX_CHAR* "/" [_a-z]*;
 
     LINE_END = ";";
     NEW_LINE = [\r\n][ \t\r\n]*;

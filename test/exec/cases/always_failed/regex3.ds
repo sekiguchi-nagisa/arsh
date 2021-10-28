@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 1, $errorKind = 'RegexSyntax', $status = 1)
+
+$/de/and
