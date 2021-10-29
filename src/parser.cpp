@@ -122,8 +122,8 @@ void Parser::changeLexerModeToSTMT() {
 }
 
 Token Parser::expect(TokenKind kind, bool fetchNext) {
-  if (this->curKind == TokenKind::COMPLETION && !this->ccHandler->hasCompRequest()) {
-    this->ccHandler->addExpectedTokenRequest(kind);
+  if (this->inCompletionPoint() && !this->ccHandler->hasCompRequest()) {
+    this->ccHandler->addExpectedTokenRequest(this->lexer->toTokenText(this->curToken), kind);
   }
   return parse_base_type::expect(kind, fetchNext);
 }
@@ -199,7 +199,8 @@ bool Parser::inTypeNameCompletionPoint() const {
 
 void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
   if (allowComp && this->inCompletionPoint()) {
-    this->ccHandler->addExpectedTokenRequests(size, alters);
+    this->ccHandler->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size,
+                                              alters);
   }
   parse_base_type::reportNoViableAlterError(size, alters);
 }
@@ -1606,7 +1607,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
       } else if (this->inCompletionPointAt(TokenKind::EOS)) {
         TokenKind kinds[] = {EACH_LA_stringExpression(GEN_LA_ALTER)};
-        this->ccHandler->addExpectedTokenRequests(kinds);
+        this->ccHandler->addExpectedTokenRequests(std::string(), kinds);
       }
       E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER));
     }

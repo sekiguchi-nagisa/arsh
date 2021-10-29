@@ -123,6 +123,8 @@ $assertArray(['inlined'], $(complete 'source ./ i'))
 $assertArray(['inlined'], $(complete 'source ./ inl'))
 assert $(complete 'source ./ ').empty()
 assert $(complete 'source! ./ a').empty()
+assert $(complete 'for $a inn').empty()
+assert $(complete 'do {} whilee').empty()
 
 # complete empty token
 $assertArray([")"], $(complete 'for(var i = 0; $i < 23; $i++'))

@@ -134,21 +134,28 @@ public:
     this->compWord = std::move(word);
   }
 
-  void addExpectedTokenRequest(TokenKind kind) {
-    const char *value = toString(kind);
-    if (isKeyword(value)) {
-      this->compOp = CodeCompOp::EXPECT;
-      this->extraWords.emplace_back(value);
-    }
+  void addExpectedTokenRequest(std::string &&prefix, TokenKind kind) {
+    TokenKind kinds[] = {kind};
+    this->addExpectedTokenRequests(std::move(prefix), 1, kinds);
   }
 
   template <unsigned int N>
-  void addExpectedTokenRequests(const TokenKind (&kinds)[N]) {
-    this->addExpectedTokenRequests(N, kinds);
+  void addExpectedTokenRequests(std::string &&prefix, const TokenKind (&kinds)[N]) {
+    this->addExpectedTokenRequests(std::move(prefix), N, kinds);
   }
-  void addExpectedTokenRequests(unsigned int size, const TokenKind *kinds) {
+
+  void addExpectedTokenRequests(std::string &&prefix, unsigned int size, const TokenKind *kinds) {
+    unsigned count = 0;
     for (unsigned int i = 0; i < size; i++) {
-      this->addExpectedTokenRequest(kinds[i]);
+      const char *value = toString(kinds[i]);
+      if (isKeyword(value)) {
+        this->compOp = CodeCompOp::EXPECT;
+        this->extraWords.emplace_back(value);
+        count++;
+      }
+    }
+    if (count > 0) {
+      this->compWord = std::move(prefix);
     }
   }
 

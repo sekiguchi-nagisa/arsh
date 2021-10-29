@@ -410,11 +410,13 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
   }
 }
 
-static void completeExpected(const std::vector<std::string> &expected,
+static void completeExpected(const std::vector<std::string> &expected, const std::string &prefix,
                              CompletionConsumer &results) {
   for (auto &e : expected) {
     if (isKeyword(e)) {
-      results(e, CompEscapOp::NOP);
+      if (StringRef(e).startsWith(prefix)) {
+        results(e, CompEscapOp::NOP);
+      }
     }
   }
 }
@@ -567,7 +569,7 @@ void CodeCompletionHandler::invoke(CompletionConsumer &results) {
     completeVarName(*this->scope, this->compWord, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::EXPECT)) {
-    completeExpected(this->extraWords, results);
+    completeExpected(this->extraWords, this->compWord, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::MEMBER)) {
     completeMember(this->pool, *this->recvType, this->compWord, results);
