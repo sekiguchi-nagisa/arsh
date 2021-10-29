@@ -394,6 +394,7 @@ inline bool isInfixKeyword(TokenKind kind) {
 #undef GEN_CASE
   case TokenKind::IN:
   case TokenKind::ELIF:
+  case TokenKind::WHILE:
     return true;
   default:
     return false;

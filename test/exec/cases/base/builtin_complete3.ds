@@ -27,6 +27,7 @@ throw13(){}
 var14(){}
 while15(){}
 typed16(){}
+AAAA() {}
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
@@ -125,6 +126,7 @@ assert $(complete 'source ./ ').empty()
 assert $(complete 'source! ./ a').empty()
 assert $(complete 'for $a inn').empty()
 assert $(complete 'do {} whilee').empty()
+assert $(complete 'do {} whileA').empty()
 
 # complete empty token
 $assertArray([")"], $(complete 'for(var i = 0; $i < 23; $i++'))
