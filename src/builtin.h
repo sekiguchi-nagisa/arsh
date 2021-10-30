@@ -1145,9 +1145,9 @@ YDSH_METHOD module_dir(RuntimeContext &ctx) {
   RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_DIR]);
 }
 
-//!bind: function load($this : Module, $expr : String) : Func<Option<Any>>
-YDSH_METHOD module_load(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(module_load);
+//!bind: function func($this : Module, $expr : String) : Func<Option<Any>>
+YDSH_METHOD module_func(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(module_func);
 
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto ref = LOCAL(1).asStrRef();

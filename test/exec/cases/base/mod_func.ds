@@ -3,53 +3,53 @@ var AAA = 'aaa'
 
 BBB() { echo BBB: $@; }
 
-var aaa = $MODULE.load('$AAA')
+var aaa = $MODULE.func('$AAA')
 assert $aaa is () -> Any!
 assert $aaa()! as String == 'aaa'
 
-var bbb = $MODULE.load('BBB a b c')
+var bbb = $MODULE.func('BBB a b c')
 assert $bbb is () -> Any!
 assert $bbb()! as Bool
 assert "$($bbb())" == 'BBB: a b c'
 
-var ccc = $MODULE.load('$bbb() as Void')
+var ccc = $MODULE.func('$bbb() as Void')
 assert $ccc is () -> Any!
 assert ! $ccc()
 assert "$($ccc())" == 'BBB: a b c'
 
 # module
 source ../../_module4test/module1.ds
-assert "$($MODULE.load('say0 1234')())" == "_say!! 1234"
+assert "$($MODULE.func('say0 1234')())" == "_say!! 1234"
 
 source ../../_module4test/module1.ds as mod
-assert $mod.load('$hello')()! as String == 'hello module!!'
+assert $mod.func('$hello')()! as String == 'hello module!!'
 
 
 # compile error
 var ex = 34 as Any
-try { $MODULE.load('var _vvv = 34')(); } catch $e { $ex = $e; }
+try { $MODULE.func('var _vvv = 34')(); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert $/expected expression/ =~ ($ex as Error).message()
 
 $ex = 234
-try { $MODULE.load('echo $WWW')(); } catch $e { $ex = $e; }
+try { $MODULE.func('echo $WWW')(); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert $/undefined/ =~ ($ex as Error).message()
 
 $ex = 234
-try { $MODULE.load('')(); } catch $e { $ex = $e; }
+try { $MODULE.func('')(); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert $/require expression/ =~ ($ex as Error).message()
 
 $ex = 234
-try { $MODULE.load('# echo hello')(); } catch $e { $ex = $e; }
+try { $MODULE.func('# echo hello')(); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert $/require expression/ =~ ($ex as Error).message()
 
 
 # runtime error
 $ex = 234
-try { $mod.load('34 as Any as StrArray')(); } catch $e { $ex = $e; }
+try { $mod.func('34 as Any as StrArray')(); } catch $e { $ex = $e; }
 assert $ex is TypeCastError
 
 true
