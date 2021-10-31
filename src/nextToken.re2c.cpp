@@ -129,7 +129,6 @@ TokenKind Lexer::nextToken(Token &token) {
     CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
     ENV_ASSIGN = CMD "=";
-    NO_ID = [^a-zA-Z_];
 
     REGEX_CHAR = "\\/" | [^\r\n\000/];
     REGEX = "$/" REGEX_CHAR* "/" [_a-z]*;
@@ -156,7 +155,7 @@ INIT:
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "do"              { RET_OR_COMP(DO); }
-    <EXPR> "elif" / NO_ID    { MODE(STMT); RET(ELIF); }
+    <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
     <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
     <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
     <EXPR> "finally"         { RET(FINALLY); }
@@ -222,9 +221,9 @@ INIT:
     <EXPR> ">="              { MODE(STMT); RET(GE); }
     <EXPR> "=="              { MODE(STMT); RET(EQ); }
     <EXPR> "!="              { MODE(STMT); RET(NE); }
-    <EXPR> "and" / NO_ID     { MODE(STMT); RET(AND); }
-    <EXPR> "or" / NO_ID      { MODE(STMT); RET(OR); }
-    <EXPR> "xor" / NO_ID     { MODE(STMT); RET(XOR); }
+    <EXPR> "and"             { MODE(STMT); RET(AND); }
+    <EXPR> "or"              { MODE(STMT); RET(OR); }
+    <EXPR> "xor"             { MODE(STMT); RET(XOR); }
     <EXPR,CMD> "&&"          { MODE(STMT); RET(COND_AND); }
     <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
     <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
@@ -248,16 +247,16 @@ INIT:
     <EXPR> "??="             { MODE(STMT); RET(NULL_ASSIGN); }
     <EXPR> ("=>" | "->")     { MODE(STMT); RET(CASE_ARM); }
 
-    <EXPR> "as" / NO_ID      { RET(AS); }
-    <EXPR> "is" / NO_ID      { RET(IS); }
-    <EXPR> "in" / NO_ID      { MODE(STMT); RET(IN); }
-    <EXPR> "with" / NO_ID    { MODE(CMD); RET(WITH); }
+    <EXPR> "as"              { RET(AS); }
+    <EXPR> "is"              { RET(IS); }
+    <EXPR> "in"              { MODE(STMT); RET(IN); }
+    <EXPR> "with"            { MODE(CMD); RET(WITH); }
     <EXPR,CMD> "&"           { MODE(STMT); RET(BACKGROUND); }
     <EXPR,CMD> ("&!" | "&|") { MODE(STMT); RET(DISOWN_BG); }
 
     <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
     <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
-    <EXPR> [a-z]+            { RET_OR_COMP(INVALID); }
+    <EXPR> VAR_NAME          { RET_OR_COMP(INVALID); }
 
     <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
     <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
