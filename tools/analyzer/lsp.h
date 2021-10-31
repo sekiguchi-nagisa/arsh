@@ -368,9 +368,6 @@ struct SaveOptions {
   }
 };
 
-struct ColorProviderOptions {};
-struct FoldingRangeProviderOptions {};
-
 struct TextDocumentSyncOptions {
   Optional<bool> openClose;                // optional
   Optional<TextDocumentSyncKind> change;   // optional
@@ -385,15 +382,6 @@ struct TextDocumentSyncOptions {
     JSONIFY(willSave);
     JSONIFY(willSaveWaitUntil);
     JSONIFY(save);
-  }
-};
-
-struct StaticRegistrationOptions {
-  Optional<std::string> id; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(id);
   }
 };
 
