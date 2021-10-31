@@ -130,6 +130,8 @@ public:
 
   Reply<Union<Hover, std::nullptr_t>> hover(const HoverParams &params);
 
+  Reply<std::nullptr_t> complete(const CompletionParams &params);
+
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
     this->notify("textDocument/publishDiagnostics", params);

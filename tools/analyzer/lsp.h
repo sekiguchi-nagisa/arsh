@@ -656,6 +656,37 @@ struct PublishDiagnosticsParams {
   }
 };
 
+enum class CompletionTriggerKind : int {
+  Invoked = 1,
+  TriggerCharacter = 2,
+  TriggerForIncompleteCompletions = 3,
+};
+
+struct CompletionContext {
+  CompletionTriggerKind triggerKind;
+  Optional<std::string> triggerCharacter;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(triggerKind);
+    JSONIFY(triggerCharacter);
+  }
+};
+
+struct CompletionParams : public TextDocumentPositionParams,
+                          public WorkDoneProgressParams,
+                          public PartialResultParams {
+  Optional<CompletionContext> context;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
+    JSONIFY(context);
+  }
+};
+
 #undef JSONIFY
 
 } // namespace ydsh::lsp

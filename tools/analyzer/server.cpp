@@ -50,6 +50,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/definition", &LSPServer::gotoDefinition);
   this->bind("textDocument/references", &LSPServer::findReference);
   this->bind("textDocument/hover", &LSPServer::hover);
+  this->bind("textDocument/completion", &LSPServer::complete);
 }
 
 void LSPServer::run() {
@@ -162,6 +163,10 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.definitionProvider = true;
   ret.capabilities.referencesProvider = true;
   ret.capabilities.hoverProvider = true;
+  ret.capabilities.completionProvider = CompletionOptions{
+      .resolveProvider = {},
+      .triggerCharacters = std::vector<std::string>{".", "$"},
+  };
   return std::move(ret);
 }
 
@@ -291,6 +296,12 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
     }
   }
   return ret;
+}
+
+Reply<std::nullptr_t> LSPServer::complete(const CompletionParams &params) {
+  LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  return nullptr;
 }
 
 } // namespace ydsh::lsp
