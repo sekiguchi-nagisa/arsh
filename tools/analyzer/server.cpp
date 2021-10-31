@@ -215,10 +215,12 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
-  LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
   auto src = this->resolveSource(params.textDocument.uri);
   if (src) {
-    this->archives.revertIfUnused(src->getSrcId());
+    if (this->archives.revertIfUnused(src->getSrcId())) {
+      LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
+      this->indexes.remove(src->getSrcId());
+    }
   }
 }
 
