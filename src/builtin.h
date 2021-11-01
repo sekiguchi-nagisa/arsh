@@ -972,7 +972,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
   auto pattern = LOCAL(1).asStrRef();
   auto flag = LOCAL(2).asStrRef();
   std::string errorStr;
-  auto re = compileRegex(pattern, flag, errorStr);
+  auto re = PCRE::compile(pattern, flag, errorStr);
   if (!re) {
     raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
     RET_ERROR;

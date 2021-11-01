@@ -194,7 +194,7 @@ void StringExprNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 // #######################
 
 bool RegexNode::buildRegex(std::string &errorStr) {
-  this->re = compileRegex(StringRef(this->reStr), StringRef(this->reFlag), errorStr);
+  this->re = PCRE::compile(StringRef(this->reStr), StringRef(this->reFlag), errorStr);
   return static_cast<bool>(this->re);
 }
 

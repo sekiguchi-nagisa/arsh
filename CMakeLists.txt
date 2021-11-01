@@ -233,6 +233,7 @@ set(YDSH_SRC
         src/type_checker.cpp
         src/frontend.cpp
         src/signals.cpp
+        src/regex_wrapper.cpp
         src/job.cpp
         src/redir.cpp
         src/state.cpp

@@ -306,23 +306,18 @@ bool UnixFdObject::closeOnExec(bool close) const {
 // #########################
 
 int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
-  int matchCount =
-      pcre2_match(this->re.code, (PCRE2_SPTR)ref.data(), ref.size(), 0, 0, this->re.data, nullptr);
-  assert(matchCount != 0);
-  if (matchCount < 0 && matchCount != PCRE2_ERROR_NOMATCH) {
-    PCRE2_UCHAR buffer[256];
-    pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
-    std::string msg = reinterpret_cast<const char *>(buffer);
-    raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+  std::string errorStr;
+  int matchCount = this->re.match(ref, errorStr);
+  if (!errorStr.empty()) {
+    raiseError(state, TYPE::InvalidOperationError, std::move(errorStr));
   }
   if (out && matchCount > 0) {
     out->refValues().reserve(matchCount);
-    PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
     for (int i = 0; i < matchCount; i++) {
-      size_t begin = ovec[i * 2];
-      size_t end = ovec[i * 2 + 1];
-      bool hasGroup = begin != PCRE2_UNSET && end != PCRE2_UNSET;
-      auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
+      PCRECapture capture;
+      this->re.getCaptureAt(i, capture);
+      auto v = capture ? DSValue::createStr(ref.slice(capture.begin, capture.end))
+                       : DSValue::createInvalid();
       out->refValues().push_back(std::move(v));
     }
   }
@@ -333,14 +328,11 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
   auto ret = DSValue::createStr();
   unsigned int count = 0;
   for (auto target = value.asStrRef(); !target.empty(); count++) {
-    int matchCount = pcre2_match(this->re.code, (PCRE2_SPTR)target.data(), target.size(), 0, 0,
-                                 this->re.data, nullptr);
+    std::string errorStr;
+    int matchCount = this->re.match(target, errorStr);
     if (matchCount < 0) {
-      if (matchCount != PCRE2_ERROR_NOMATCH) {
-        PCRE2_UCHAR buffer[256];
-        pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
-        std::string msg = reinterpret_cast<const char *>(buffer);
-        raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+      if (!errorStr.empty()) {
+        raiseError(state, TYPE::InvalidOperationError, std::move(errorStr));
         return false;
       }
 
@@ -352,18 +344,17 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
       break;
     }
 
-    PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
-    assert(ovec[0] != PCRE2_UNSET && ovec[1] != PCRE2_UNSET);
-    auto begin = ovec[0];
-    auto end = ovec[1];
+    PCRECapture capture;
+    this->re.getCaptureAt(0, capture);
+    assert(capture);
 
-    if (!ret.appendAsStr(state, target.slice(0, begin))) {
+    if (!ret.appendAsStr(state, target.slice(0, capture.begin))) {
       return false;
     }
     if (!ret.appendAsStr(state, repl)) {
       return false;
     }
-    target = target.slice(end, target.size());
+    target = target.slice(capture.end, target.size());
   }
   value = std::move(ret);
   return true;
