@@ -264,7 +264,7 @@ public:
 
   Union &operator=(Union &&value) noexcept {
     if (this != std::addressof(value)) {
-      this->moveAssign(value);
+      this->moveAssign(std::move(value));
     }
     return *this;
   }
@@ -285,7 +285,7 @@ public:
   bool hasValue() const { return this->tag() > -1; }
 
 private:
-  void moveAssign(Union &value) noexcept {
+  void moveAssign(Union &&value) noexcept {
     __detail::destroy(this->value(), this->tag());
     __detail::move(value.value(), value.tag(), this->value());
     this->tag_ = value.tag();
