@@ -258,6 +258,8 @@ constexpr const char *BUILD_ARCH =
     "i386"
 #elif defined __aarch64__
     "aarch64"
+#elif defined __EMSCRIPTEN__
+    "emscripten"
 #else
 #error "unsupported architecture"
 #endif
