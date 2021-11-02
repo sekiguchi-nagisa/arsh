@@ -38,6 +38,7 @@ option(USE_SAFE_CAST "check object cast" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
+option(USE_PCRE "enable pcre2 support" ON)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -101,6 +102,7 @@ show_option(USE_SAFE_CAST)
 show_option(FUZZING_BUILD_MODE)
 show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
+show_option(USE_PCRE)
 
 
 #+++++++++++++++++++++++++++#
@@ -114,11 +116,13 @@ check_program(git)
 #     find libpcre     #
 #++++++++++++++++++++++#
 
-check_header(HAVE_PCRE2_H "pcre2.h")
-set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-check_library(HAVE_LIBPCRE2 "pcre2-8")
+if (USE_PCRE)
+    check_header(HAVE_PCRE2_H "pcre2.h")
+    set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+    check_library(HAVE_LIBPCRE2 "pcre2-8")
 
-check_pcre2_version("10.30" ${HAVE_PCRE2_H} ${HAVE_LIBPCRE2})
+    check_pcre2_version("10.30" ${HAVE_PCRE2_H} ${HAVE_LIBPCRE2})
+endif ()
 
 
 #+++++++++++++++++++++++#

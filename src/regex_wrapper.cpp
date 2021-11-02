@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
+#include <config.h>
+
+#ifdef USE_PCRE
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 
 #include <pcre2.h>
+
+#endif
 
 #include "misc/flag_util.hpp"
 #include "regex_wrapper.h"
@@ -24,8 +30,10 @@
 namespace ydsh {
 
 PCRE::~PCRE() {
+#ifdef USE_PCRE
   pcre2_code_free(static_cast<pcre2_code *>(this->code));
   pcre2_match_data_free(static_cast<pcre2_match_data *>(this->data));
+#endif
 }
 
 /**
@@ -36,12 +44,14 @@ PCRE::~PCRE() {
  */
 static uint32_t toRegexFlag(char ch) {
   switch (ch) {
+#ifdef USE_PCRE
   case 'i':
     return PCRE2_CASELESS;
   case 'm':
     return PCRE2_MULTILINE;
   case 's':
     return PCRE2_DOTALL;
+#endif
   default:
     return 0;
   }
@@ -65,6 +75,7 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
     setFlag(option, r);
   }
 
+#ifdef USE_PCRE
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
   int errcode;
   PCRE2_SIZE erroffset;
@@ -79,9 +90,14 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
     errorStr = reinterpret_cast<const char *>(buffer);
   }
   return PCRE(code, data);
+#else
+  errorStr = "regex is not supported";
+  return PCRE();
+#endif
 }
 
 int PCRE::match(StringRef ref, std::string &errorStr) {
+#ifdef USE_PCRE
   int matchCount =
       pcre2_match(static_cast<pcre2_code *>(this->code), (PCRE2_SPTR)ref.data(), ref.size(), 0, 0,
                   static_cast<pcre2_match_data *>(this->data), nullptr);
@@ -91,9 +107,15 @@ int PCRE::match(StringRef ref, std::string &errorStr) {
     errorStr = reinterpret_cast<const char *>(buffer);
   }
   return matchCount;
+#else
+  (void)ref;
+  errorStr = "regex is not supported";
+  return -999;
+#endif
 }
 
 void PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
+#ifdef USE_PCRE
   PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(static_cast<pcre2_match_data *>(this->data));
   size_t begin = ovec[index * 2];
   size_t end = ovec[index * 2 + 1];
@@ -103,6 +125,14 @@ void PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
       .end = end,
       .valid = hasGroup,
   };
+#else
+  (void)index;
+  capture = {
+      .begin = 0,
+      .end = 0,
+      .valid = false,
+  };
+#endif
 }
 
 } // namespace ydsh

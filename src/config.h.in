@@ -34,4 +34,6 @@
 
 #cmakedefine FUZZING_BUILD_MODE
 
+#cmakedefine USE_PCRE
+
 #endif //YDSH_CONFIG_H
