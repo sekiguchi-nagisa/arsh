@@ -84,18 +84,20 @@ static void initEnv() {
   // update shell level
   setenv(ENV_SHLVL, std::to_string(originalShellLevel() + 1).c_str(), 1);
 
-  // set HOME
-  struct passwd *pw = getpwuid(getuid());
-  if (pw == nullptr) {
-    fatal_perror("getpwuid failed\n");
+  if (struct passwd *pw = getpwuid(getuid())) {
+    // set HOME
+    setenv(ENV_HOME, pw->pw_dir, 1);
+
+    // set LOGNAME
+    setenv(ENV_LOGNAME, pw->pw_name, 1);
+
+    // set USER
+    setenv(ENV_USER, pw->pw_name, 1);
+  } else {
+#ifndef __EMSCRIPTEN__
+    fatal_perror("getpwuid failed");
+#endif
   }
-  setenv(ENV_HOME, pw->pw_dir, 1);
-
-  // set LOGNAME
-  setenv(ENV_LOGNAME, pw->pw_name, 1);
-
-  // set USER
-  setenv(ENV_USER, pw->pw_name, 1);
 
   // set PWD/OLDPWD
   setPWDs();

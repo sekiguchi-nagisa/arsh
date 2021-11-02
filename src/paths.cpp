@@ -196,8 +196,7 @@ void expandTilde(std::string &str, bool useHOME) {
   if (expanded.size() == 1) {
     const char *value = useHOME ? getenv(ENV_HOME) : nullptr;
     if (!value) { // use HOME, but HOME is not set, fallback to getpwuid(getuid())
-      struct passwd *pw = getpwuid(getuid());
-      if (pw != nullptr) {
+      if (struct passwd *pw = getpwuid(getuid())) {
         value = pw->pw_dir;
       }
     }
