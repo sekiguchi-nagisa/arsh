@@ -35,8 +35,6 @@
 #include "ansi.h"
 #include "process.h"
 
-#define error_at fatal_perror
-
 namespace process {
 
 static WaitStatus inspectStatus(int status) {
@@ -246,11 +244,11 @@ static void loginPTY(int fd) {
   }
 
   if (setsid() == -1) {
-    error_at("failed");
+    fatal_perror("failed");
   }
 
   if (ioctl(fd, TIOCSCTTY, 0) == -1) {
-    error_at("failed");
+    fatal_perror("failed");
   }
 }
 
@@ -349,14 +347,14 @@ static void setPTYSetting(int fd, const IOConfig &config) {
   }
 
   if (tcsetattr(fd, TCSAFLUSH, &config.term) == -1) {
-    error_at("failed");
+    fatal_perror("failed");
   }
 
   winsize ws{};
   ws.ws_row = config.row;
   ws.ws_col = config.col;
   if (ioctl(fd, TIOCSWINSZ, &ws) == -1) {
-    error_at("failed");
+    fatal_perror("failed");
   }
 }
 
@@ -364,15 +362,15 @@ static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
   if (config.in.is(IOConfig::PTY) || config.out.is(IOConfig::PTY) || config.err.is(IOConfig::PTY)) {
     int fd = posix_openpt(O_RDWR | O_NOCTTY);
     if (fd == -1) {
-      error_at("open pty master failed");
+      fatal_perror("open pty master failed");
     }
     if (grantpt(fd) != 0 || unlockpt(fd) != 0) {
-      error_at("failed");
+      fatal_perror("failed");
     }
     masterFD = fd;
     fd = open(ptsname(masterFD), O_RDWR | O_NOCTTY);
     if (fd == -1) {
-      error_at("open pty slave failed");
+      fatal_perror("open pty slave failed");
     }
     setPTYSetting(fd, config);
     slaveFD = fd;
@@ -461,13 +459,13 @@ private:
 
   void initPipe() {
     if (this->config.in.is(IOConfig::PIPE) && pipe(this->inpipe) < 0) {
-      error_at("pipe creation failed");
+      fatal_perror("pipe creation failed");
     }
     if (this->config.out.is(IOConfig::PIPE) && pipe(this->outpipe) < 0) {
-      error_at("pipe creation failed");
+      fatal_perror("pipe creation failed");
     }
     if (this->config.err.is(IOConfig::PIPE) && pipe(this->errpipe) < 0) {
-      error_at("pipe creation failed");
+      fatal_perror("pipe creation failed");
     }
   }
 
@@ -524,7 +522,7 @@ ProcHandle ProcBuilder::spawnImpl(const IOConfig &config) {
     builder.setChildStream();
     return ProcHandle();
   } else {
-    error_at("fork failed");
+    fatal_perror("fork failed");
   }
 }
 
@@ -532,14 +530,14 @@ void ProcBuilder::syncPWD() const {
   // change working dir
   if (!this->cwd.empty()) {
     if (chdir(this->cwd.c_str()) < 0) {
-      error_at("chdir failed");
+      fatal_perror("chdir failed");
     }
   }
 
   // update PWD
   char *dir = realpath(".", nullptr);
   if (dir == nullptr) {
-    error_at("current working directory is broken!!");
+    fatal_perror("current working directory is broken!!");
   }
   setenv(ydsh::ENV_PWD, dir, 1);
   free(dir);
