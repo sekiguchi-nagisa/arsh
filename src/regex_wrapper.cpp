@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <memory>
+
 #include <config.h>
 
 #ifdef USE_PCRE
@@ -57,6 +59,25 @@ static uint32_t toRegexFlag(char ch) {
   }
 }
 
+#ifdef USE_PCRE
+
+static auto createCompileCtx() {
+  struct Deleter {
+    void operator()(pcre2_compile_context *ctx) const { pcre2_compile_context_free(ctx); }
+  };
+
+  auto ctx = std::unique_ptr<pcre2_compile_context, Deleter>(pcre2_compile_context_create(nullptr));
+  assert(ctx);
+
+#ifdef PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK
+  pcre2_set_compile_extra_options(ctx.get(), PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK);
+#endif
+
+  return ctx;
+}
+
+#endif
+
 PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
   if (pattern.hasNullChar()) {
     errorStr = "regex pattern contains null characters";
@@ -76,11 +97,13 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
   }
 
 #ifdef USE_PCRE
+  static auto compileCtx = createCompileCtx();
+
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
   int errcode;
   PCRE2_SIZE erroffset;
   pcre2_code *code = pcre2_compile((PCRE2_SPTR)pattern.data(), PCRE2_ZERO_TERMINATED, option,
-                                   &errcode, &erroffset, nullptr);
+                                   &errcode, &erroffset, compileCtx.get());
   pcre2_match_data *data = nullptr;
   if (code) {
     data = pcre2_match_data_create_from_pattern(code, nullptr);
