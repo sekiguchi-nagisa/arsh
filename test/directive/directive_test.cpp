@@ -263,6 +263,8 @@ TEST_F(DirectiveTest, ignored3) {
   ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'x86')", true));
 #elif defined __aarch64__
   ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'arm64')", true));
+#elif defined __EMSCRIPTEN__
+  // FIXME
 #else
 #error "unsupported arch"
 #endif

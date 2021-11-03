@@ -8,11 +8,11 @@ cd build-em
 
 # first normal build
 cmake "$ROOT" -G Ninja
-ninja ydsh
+ninja
 
 # second build by emscripten
 rm -rf CMake*
 rm -rf .ninja_*
 
 emcmake cmake "$ROOT" -G Ninja -DUSE_PCRE=off
-ninja ydsh
+ninja

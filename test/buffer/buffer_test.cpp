@@ -34,6 +34,7 @@ TEST(BufferTest, case1) {
   ASSERT_EQ(0u, buffer[0]++);
   ASSERT_EQ(1u, buffer[0]);
 
+#ifndef __EMSCRIPTEN__
   // out of range
   std::string msg("size is: ");
   msg += std::to_string(buffer.size());
@@ -41,6 +42,7 @@ TEST(BufferTest, case1) {
   msg += std::to_string(buffer.size() + 2);
   ASSERT_EXIT({ buffer.at(buffer.size() + 2) = 999; }, ::testing::KilledBySignal(SIGABRT),
               msg.c_str());
+#endif
 }
 
 TEST(BufferTest, case2) {
@@ -116,7 +118,9 @@ TEST(BufferTest, case3) {
   ASSERT_STREQ("hello world!! hello world!!", buffer3.data());
 }
 
-typedef FlexBuffer<const char *, unsigned char> StrBuffer;
+using StrBuffer = FlexBuffer<const char *, unsigned char>;
+
+#ifndef __EMSCRIPTEN__
 TEST(BufferTest, case4) {
   StrBuffer buffer;
 
@@ -132,6 +136,7 @@ TEST(BufferTest, case4) {
       },
       ::testing::KilledBySignal(SIGABRT), "reach max size\n");
 }
+#endif
 
 TEST(BufferTest, case5) {
   const StrBuffer::size_type size = 254;
@@ -187,6 +192,7 @@ TEST(BufferTest, case6) {
   ASSERT_EQ(2u, buffer.size());
 }
 
+#ifndef __EMSCRIPTEN__
 TEST(BufferTest, case7) { // test append own
   IBuffer buffer;
   buffer += 23;
@@ -200,6 +206,7 @@ TEST(BufferTest, case7) { // test append own
   ASSERT_EQ(23u, buffer[0]);
   ASSERT_EQ(43u, buffer[1]);
 }
+#endif
 
 TEST(BufferTest, case8) {
   IBuffer buffer;
