@@ -92,6 +92,7 @@ static bool readLine(std::string &line) {
       }
       if (errno != 0) {
         fprintf(stderr, "ydsh: read line failed by `%s'\n", strerror(errno));
+        DSState_setExitStatus(state, 1);
       }
       if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
         return false;
