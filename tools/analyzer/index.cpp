@@ -66,6 +66,7 @@ std::string DeclSymbol::mangle(Kind k, StringRef name) {
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
+  case DeclSymbol::Kind::MOD_CONST:
     break;
   }
   return name.toString();
@@ -87,6 +88,7 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
+  case DeclSymbol::Kind::MOD_CONST:
     break;
   }
   return mangledName.toString();

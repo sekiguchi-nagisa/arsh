@@ -287,7 +287,7 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
             .contents =
                 MarkupContent{
                     .kind = MarkupKind::Markdown,
-                    .value = generateHoverContent(this->srcMan, value.decl),
+                    .value = generateHoverContent(this->srcMan, *src, value.decl),
                 },
             .range = toRange(src->getContent(), value.request.getToken()),
         };

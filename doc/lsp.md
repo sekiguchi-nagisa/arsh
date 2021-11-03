@@ -12,7 +12,7 @@
 | variable (inlined import) | ✔️ | ✔️ | ✔️ |
 | variable (named import) | ✔️ | ✔️ | ✔️ |
 | builtin variable | - | - | ✔️ |
-| builtin constant | - | - | ❌ (show value) |
+| builtin constant | - | - | ✔️ (show value) |
 | function  | ✔️ | ✔️ |✔️ |
 | function (global import) | ✔️ | ✔️ | ✔️ |
 | function (inlined import) | ✔️ | ✔️ | ✔️ |

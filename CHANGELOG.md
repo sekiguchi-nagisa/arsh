@@ -53,6 +53,7 @@
 
 - improve ``textDocument/hover``
     - support builtin variables
+    - show command descriptions
 
 ### Fixed
 

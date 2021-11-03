@@ -707,9 +707,8 @@ void SymbolIndexer::addBuiltinSymbols() {
   auto &modType = this->builder().getPool().getBuiltinModType();
   unsigned int offset = 0;
   for (auto &e : modType.getHandleMap()) {
-    auto kind = resolveDeclKind(e);
-    auto name = DeclSymbol::demangle(kind, e.first);
-    NameInfo nameInfo(Token{offset, 1}, std::move(name));
+    const auto kind = resolveDeclKind(e);
+    NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
     auto &type = this->builder().getPool().get(e.second.getTypeID());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
@@ -720,6 +719,8 @@ void SymbolIndexer::addBuiltinSymbols() {
       value += iter->second;
       value += "'";
       this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str());
+    } else if (nameInfo.getName() == CVAR_SCRIPT_NAME || nameInfo.getName() == CVAR_SCRIPT_DIR) {
+      this->builder().addDecl(nameInfo, DeclSymbol::Kind::MOD_CONST, "");
     } else {
       this->builder().addDecl(nameInfo, type, kind);
     }

@@ -15,6 +15,7 @@
  */
 
 #include <cmd_desc.h>
+#include <constant.h>
 
 #include "hover.h"
 #include "source.h"
@@ -48,7 +49,8 @@ static const BuiltinCmdDesc *findCmdDesc(const char *name) {
   return nullptr;
 }
 
-std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &decl) {
+std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
+                                 const DeclSymbol &decl) {
   std::string content = "```ydsh\n";
   std::string name = DeclSymbol::demangle(decl.getKind(), decl.getMangledName());
   switch (decl.getKind()) {
@@ -68,6 +70,25 @@ std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &
     content += name;
     content += " = ";
     content += decl.getInfo();
+    break;
+  }
+  case DeclSymbol::Kind::MOD_CONST: {
+    content += "const ";
+    content += name;
+    content += " = '";
+    if (name == CVAR_SCRIPT_NAME) {
+      content += src.getPath();
+    } else if (name == CVAR_SCRIPT_DIR) {
+      const char *path = src.getPath();
+      const char *ptr = strrchr(path, '/');
+      assert(ptr);
+      if (ptr == path) {
+        content += '/';
+      } else {
+        content.append(path, ptr - path);
+      }
+    }
+    content += "'";
     break;
   }
   case DeclSymbol::Kind::FUNC: {
@@ -104,10 +125,10 @@ std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &
   case DeclSymbol::Kind::MOD: {
     auto ret = decl.getInfoAsModId();
     assert(ret.second);
-    auto src = srcMan.findById(ret.first);
-    assert(src);
+    auto targetSrc = srcMan.findById(ret.first);
+    assert(targetSrc);
     content += "source ";
-    content += src->getPath();
+    content += targetSrc->getPath();
     content += " as ";
     content += name;
     break;

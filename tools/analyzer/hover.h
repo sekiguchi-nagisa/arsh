@@ -22,8 +22,10 @@
 namespace ydsh::lsp {
 
 class SourceManager;
+class Source;
 
-std::string generateHoverContent(const SourceManager &srcMan, const DeclSymbol &decl);
+std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
+                                 const DeclSymbol &decl);
 
 } // namespace ydsh::lsp
 

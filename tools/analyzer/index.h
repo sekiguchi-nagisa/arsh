@@ -114,6 +114,7 @@ public:
     IMPORT_ENV,
     EXPORT_ENV,
     CONST,
+    MOD_CONST,
     FUNC,
     BUILTIN_CMD,
     CMD,
