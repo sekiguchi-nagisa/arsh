@@ -84,11 +84,14 @@ static bool readLine(std::string &line) {
   while (true) {
     errno = 0;
     auto str = ydsh::CStrPtr(linenoise(prompt(continuation ? 2 : 1)));
-    if (str == nullptr) {
-      if (errno == EAGAIN) {
+    if (str == nullptr || errno != 0) {
+      if (errno == EAGAIN || errno == EINTR) {
         continuation = false;
         line.clear();
         continue;
+      }
+      if (errno != 0) {
+        fprintf(stderr, "ydsh: read line failed by `%s'\n", strerror(errno));
       }
       if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
         return false;
