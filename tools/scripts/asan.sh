@@ -18,4 +18,4 @@ cmake "$ROOT" -G Ninja \
 
 ninja && ninja install
 
-ctest
+ctest -j4

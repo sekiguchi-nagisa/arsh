@@ -15,4 +15,4 @@ sudo ninja install
 
 ../tools/scripts/copy_mod4extra.ds
 
-exec ctest --output-on-failure
+exec ctest -j4 --output-on-failure

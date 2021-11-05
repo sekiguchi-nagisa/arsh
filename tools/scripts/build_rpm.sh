@@ -26,6 +26,6 @@ cmake "$ROOT" -G Ninja \
 
 ninja || error build failed
 
-ctest --output-on-failure || error test failed
+ctest -j4 --output-on-failure || error test failed
 
 cpack -G RPM
