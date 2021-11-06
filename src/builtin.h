@@ -607,6 +607,28 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   RET(value);
 }
 
+//!bind: function width($this : String) : Int
+YDSH_METHOD string_width(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_width);
+  auto ref = LOCAL(0).asStrRef();
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  int64_t value = 0;
+  auto eaw = UnicodeUtil::isCJKLocale() ? UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH
+                                        : UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+  while (scanner.next(ret)) {
+    int width = 0;
+    for (unsigned int i = 0; i < ret.codePointCount; i++) {
+      int w = UnicodeUtil::width(ret.codePoints[i], eaw);
+      if (w > 0) {
+        width += w;
+      }
+    }
+    value += (width <= 2 ? width : 2);
+  }
+  RET(DSValue::createInt(value));
+}
+
 /**
  * return always false.
  */

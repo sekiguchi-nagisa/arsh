@@ -31,6 +31,7 @@
     - ``scriptDir``: get ``SCRIPT_DIR`` of module
     - ``func``: compile string as single expression function
     - ``fullname``: resolve fully qualified command name
+- add ``String#width`` method for width counting of grapheme cluster
 
 #### LSP
 
