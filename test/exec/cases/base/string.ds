@@ -202,8 +202,8 @@ assert "あ2い".width() == 5
 assert '👨‍👨‍👦'.width() == 2
 
 ## east-asian width
-assert "$(LC_CTYPE=ja_JP.UTF-8 eval $YDSH_BIN -c 'echo ${"○".width()}')" == "2"
-assert "$(LC_CTYPE=C eval $YDSH_BIN -c 'echo ${"○".width()}')" == "1"
+assert "$(LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 LC_CTYPE=ja_JP.UTF-8 eval $YDSH_BIN -c 'echo ${"○".width()}')" == "2"
+assert "$(LANG=C LC_ALL=C LC_CTYPE=C eval $YDSH_BIN -c 'echo ${"○".width()}')" == "1"
 
 assert("-2147483648".toInt()! == -1 - 2147483647)
 assert("-2147483649".toInt())
