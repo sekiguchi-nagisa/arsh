@@ -1,5 +1,6 @@
 FROM i386/ubuntu:bionic
-RUN apt update && apt install -y g++ sudo cmake git ninja-build automake libtool libpcre2-8-0 libpcre2-dev systemd-sysv
+RUN apt update && apt install -y g++ sudo cmake git language-pack-ja ninja-build \
+    automake libtool libpcre2-8-0 libpcre2-dev systemd-sysv
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
