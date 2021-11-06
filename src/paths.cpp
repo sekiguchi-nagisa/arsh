@@ -68,7 +68,8 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
       }
       resolvedPath += cmdName;
 
-      if ((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
+      if (mode_t mode = getStMode(resolvedPath.c_str());
+          S_ISREG(mode) & S_IS_PERM_(mode, S_IXUSR)) {
         if (hasFlag(op, DIRECT_SEARCH)) {
           this->prevPath = std::move(resolvedPath);
           return this->prevPath.c_str();

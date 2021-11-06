@@ -59,6 +59,7 @@
 
 - ``is-sourced`` sub-command of ``shctl``
 - accidentally skip termination handler in loaded module
+- not ignore non-regular files in file path search
 
 ## [0.23.0] - 2021-09-30
 
