@@ -70,15 +70,15 @@ void IndexBuilder::LazyMemberMap::addDecl(const DSType &recvType, const DeclSymb
   }
   unsigned int typeId = recvType.typeId();
   auto key = std::make_pair(typeId, decl.getMangledName().toString());
-  this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+  this->map.emplace(std::move(key), makeObserver(decl));
   if (decl.getKind() == DeclSymbol::Kind::MOD) {
     // udc
     key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName())};
-    this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+    this->map.emplace(std::move(key), makeObserver(decl));
 
     // type alias
     key = {typeId, DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName())};
-    this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+    this->map.emplace(std::move(key), makeObserver(decl));
   }
 }
 
