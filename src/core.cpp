@@ -150,7 +150,7 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return nullptr;
 }
 
-class DefaultCompConsumer : public CompletionConsumer {
+class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ArrayObject &reply;
 
@@ -184,7 +184,7 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
 }
 
 static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
-                         const std::string &word, CompletionConsumer &results) {
+                         const std::string &word, CompCandidateConsumer &results) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     return false;
@@ -205,7 +205,7 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
   }
 
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    results(e.asCStr(), CompEscapOp::COMMAND_ARG);
+    results(e.asCStr(), CompCandidateKind::COMMAND_ARG);
   }
   return true;
 }
@@ -219,7 +219,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   CodeCompleter codeCompleter(consumer, st.modLoader, st.typePool, st.rootModScope,
                               st.logicalWorkingDir);
   codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
-                                         const std::string &word, CompletionConsumer &consumer) {
+                                         const std::string &word, CompCandidateConsumer &consumer) {
     return kickCompHook(st, lex, cmdNode, word, consumer);
   });
   codeCompleter(underlyingModType, ref, option);

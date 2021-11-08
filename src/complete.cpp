@@ -33,7 +33,7 @@ namespace ydsh {
 
 // for input completion
 
-static bool needEscap(char ch, CompEscapOp op) {
+static bool needEscape(char ch, CompCandidateKind op) {
   switch (ch) {
   case ' ':
   case ';':
@@ -52,7 +52,7 @@ static bool needEscap(char ch, CompEscapOp op) {
     return true;
   case '{':
   case '}':
-    if (op == CompEscapOp::COMMAND_NAME || op == CompEscapOp::COMMAND_NAME_PART) {
+    if (op == CompCandidateKind::COMMAND_NAME || op == CompCandidateKind::COMMAND_NAME_PART) {
       return true;
     }
     break;
@@ -65,9 +65,9 @@ static bool needEscap(char ch, CompEscapOp op) {
   return false;
 }
 
-static std::string escape(StringRef ref, CompEscapOp op) {
+static std::string escape(StringRef ref, CompCandidateKind kind) {
   std::string buf;
-  if (op == CompEscapOp::NOP) {
+  if (!mayBeEscaped(kind)) {
     buf += ref;
     return buf;
   }
@@ -75,7 +75,7 @@ static std::string escape(StringRef ref, CompEscapOp op) {
   auto iter = ref.begin();
   const auto end = ref.end();
 
-  if (op == CompEscapOp::COMMAND_NAME) {
+  if (kind == CompCandidateKind::COMMAND_NAME) {
     char ch = *iter;
     if (isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
       buf += '\\';
@@ -86,10 +86,10 @@ static std::string escape(StringRef ref, CompEscapOp op) {
 
   while (iter != end) {
     char ch = *(iter++);
-    if (ch == '\\' && iter != end && needEscap(*iter, op)) {
+    if (ch == '\\' && iter != end && needEscape(*iter, kind)) {
       buf += '\\';
       ch = *(iter++);
-    } else if (needEscap(ch, op)) {
+    } else if (needEscape(ch, kind)) {
       if ((ch >= 0 && ch < 32) || ch == 127) {
         char d[32];
         snprintf(d, std::size(d), "$'\\x%02x'", ch);
@@ -104,7 +104,7 @@ static std::string escape(StringRef ref, CompEscapOp op) {
   return buf;
 }
 
-void CompletionConsumer::operator()(StringRef ref, CompEscapOp op) {
+void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind op) {
   std::string estr = escape(ref, op);
   this->consume(std::move(estr));
 }
@@ -124,7 +124,7 @@ static bool isExprKeyword(TokenKind kind) {
 }
 
 static void completeKeyword(const std::string &prefix, CodeCompOp option,
-                            CompletionConsumer &results) {
+                            CompCandidateConsumer &consumer) {
   TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
@@ -140,50 +140,50 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
       continue;
     }
     if (isKeyword(value) && value.startsWith(prefix)) {
-      results(value, CompEscapOp::NOP);
+      consumer(value, CompCandidateKind::KEYWORD);
     }
   }
 }
 
-static void completeEnvName(const std::string &namePrefix, CompletionConsumer &results) {
+static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer &consumer) {
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
     StringRef env(environ[i]);
     auto r = env.indexOf("=");
     assert(r != StringRef::npos);
     auto name = env.substr(0, r);
     if (name.startsWith(namePrefix)) {
-      results(name, CompEscapOp::COMMAND_ARG);
+      consumer(name, CompCandidateKind::ENV);
     }
   }
 }
 
-static void completeSigName(const std::string &prefix, CompletionConsumer &results) {
+static void completeSigName(const std::string &prefix, CompCandidateConsumer &consumer) {
   auto *list = getSignalList();
   for (unsigned int i = 0; list[i].name != nullptr; i++) {
     StringRef sigName = list[i].name;
     if (sigName.startsWith(prefix)) {
-      results(sigName, CompEscapOp::NOP);
+      consumer(sigName, CompCandidateKind::SIGNAL);
     }
   }
 }
 
-static void completeUserName(const std::string &prefix, CompletionConsumer &results) {
+static void completeUserName(const std::string &prefix, CompCandidateConsumer &consumer) {
   setpwent();
   for (struct passwd *pw; (pw = getpwent()) != nullptr;) {
     StringRef pname = pw->pw_name;
     if (pname.startsWith(prefix)) {
-      results(pname, CompEscapOp::NOP);
+      consumer(pname, CompCandidateKind::USER);
     }
   }
   endpwent();
 }
 
-static void completeGroupName(const std::string &prefix, CompletionConsumer &results) {
+static void completeGroupName(const std::string &prefix, CompCandidateConsumer &consumer) {
   setgrent();
   for (struct group *gp; (gp = getgrent()) != nullptr;) {
     StringRef gname = gp->gr_name;
     if (gname.startsWith(prefix)) {
-      results(gname, CompEscapOp::NOP);
+      consumer(gname, CompCandidateKind::GROUP);
     }
   }
   endgrent();
@@ -206,7 +206,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
 }
 
 static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
-                        CompletionConsumer &results, bool ignoreIdent) {
+                        CompCandidateConsumer &consumer, bool ignoreIdent) {
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &e : *curScope) {
       StringRef udc = e.first.c_str();
@@ -220,7 +220,7 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
                           std::end(DENIED_REDEFINED_CMD_LIST), [&](auto &e) { return udc == e; })) {
             continue;
           }
-          results(udc, CompEscapOp::COMMAND_NAME);
+          consumer(udc, CompCandidateKind::COMMAND_NAME);
         }
       }
     }
@@ -228,10 +228,10 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
 }
 
 static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
-                            const CodeCompOp option, CompletionConsumer &results) {
+                            const CodeCompOp option, CompCandidateConsumer &consumer) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
-    completeUDC(scope, cmdPrefix, results, hasFlag(option, CodeCompOp::NO_IDENT));
+    completeUDC(scope, cmdPrefix, consumer, hasFlag(option, CodeCompOp::NO_IDENT));
   }
 
   // complete builtin command
@@ -244,7 +244,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         continue;
       }
       if (builtin.startsWith(cmdPrefix)) {
-        results(builtin, CompEscapOp::COMMAND_NAME);
+        consumer(builtin, CompCandidateKind::COMMAND_NAME);
       }
     }
   }
@@ -273,7 +273,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           }
           fullpath += cmd.data();
           if (isExecutable(fullpath.c_str())) {
-            results(cmd, CompEscapOp::COMMAND_NAME);
+            consumer(cmd, CompCandidateKind::COMMAND_NAME);
           }
         }
       }
@@ -283,7 +283,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 }
 
 static void completeFileName(const char *baseDir, const std::string &prefix, const CodeCompOp op,
-                             CompletionConsumer &results) {
+                             CompCandidateConsumer &consumer) {
   const auto s = prefix.find_last_of('/');
 
   // complete tilde
@@ -295,7 +295,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         std::string name("~");
         name += entry->pw_name;
         name += '/';
-        results(name.c_str(), CompEscapOp::NOP);
+        consumer(name.c_str(), CompCandidateKind::COMMAND_TILDE);
       }
     }
     endpwent();
@@ -367,28 +367,28 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         len++;
       }
       fileName.removePrefix(fileName.size() - len);
-      results(fileName, hasFlag(op, CodeCompOp::EXEC) ? CompEscapOp::COMMAND_NAME_PART
-                                                      : CompEscapOp::COMMAND_ARG);
+      consumer(fileName, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
+                                                       : CompCandidateKind::COMMAND_ARG);
     }
   }
   closedir(dir);
 }
 
 static void completeModule(const char *scriptDir, const std::string &prefix, bool tilde,
-                           CompletionConsumer &results) {
+                           CompCandidateConsumer &consumer) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
   }
 
   // complete from SCRIPT_DIR
-  completeFileName(scriptDir, prefix, op, results);
+  completeFileName(scriptDir, prefix, op, consumer);
 
   // complete from local module dir
-  completeFileName(getFullLocalModDir(), prefix, op, results);
+  completeFileName(getFullLocalModDir(), prefix, op, consumer);
 
   // complete from system module dir
-  completeFileName(SYSTEM_MOD_DIR, prefix, op, results);
+  completeFileName(SYSTEM_MOD_DIR, prefix, op, consumer);
 }
 
 /**
@@ -396,39 +396,39 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
  * @param scope
  * @param prefix
  * not start with '$'
- * @param results
+ * @param consumer
  */
 static void completeVarName(const NameScope &scope, const std::string &prefix,
-                            CompletionConsumer &results) {
+                            CompCandidateConsumer &consumer) {
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &iter : *curScope) {
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
-        results(varName, CompEscapOp::NOP);
+        consumer(varName, CompCandidateKind::VAR);
       }
     }
   }
 }
 
 static void completeExpected(const std::vector<std::string> &expected, const std::string &prefix,
-                             CompletionConsumer &results) {
+                             CompCandidateConsumer &consumer) {
   for (auto &e : expected) {
     if (isKeyword(e)) {
       if (StringRef(e).startsWith(prefix)) {
-        results(e, CompEscapOp::NOP);
+        consumer(e, CompCandidateKind::KEYWORD);
       }
     }
   }
 }
 
 static void completeMember(const TypePool &pool, const DSType &recvType, const std::string &word,
-                           CompletionConsumer &results) {
+                           CompCandidateConsumer &consumer) {
   // complete field
   std::function<bool(StringRef, const FieldHandle &)> fieldWalker = [&](StringRef name,
                                                                         const FieldHandle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.getModID() == 0 || !name.startsWith("_")) {
-        results(name, CompEscapOp::NOP); // FIXME: module scope
+        consumer(name, CompCandidateKind::FIELD); // FIXME: module scope
       }
     }
     return true;
@@ -445,7 +445,7 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
     if (name.startsWith(word) && !isMagicMethodName(name)) {
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
-          results(name, CompEscapOp::NOP);
+          consumer(name, CompCandidateKind::METHOD);
           break; // FIXME: support type constraint
         }
       }
@@ -454,14 +454,14 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
 }
 
 static void completeType(const TypePool &pool, const DSType *recvType, const NameScope &scope,
-                         const std::string &word, CompletionConsumer &results) {
+                         const std::string &word, CompCandidateConsumer &consumer) {
   if (recvType) {
     std::function<bool(StringRef, const FieldHandle &)> fieldWalker =
         [&](StringRef name, const FieldHandle &handle) {
           if (name.startsWith(word) && isTypeAliasFullName(name)) {
             if (handle.getModID() == 0 || handle.getModID() == scope.modId || name[0] != '_') {
               name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-              results(name, CompEscapOp::NOP);
+              consumer(name, CompCandidateKind::TYPE);
             }
           }
           return true;
@@ -476,7 +476,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
       StringRef name = e.first;
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
         name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-        results(name, CompEscapOp::NOP);
+        consumer(name, CompCandidateKind::TYPE);
       }
     }
   }
@@ -489,7 +489,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
     }
     StringRef name = t->getNameRef();
     if (name.startsWith(word) && std::all_of(name.begin(), name.end(), isalnum)) {
-      results(name, CompEscapOp::NOP);
+      consumer(name, CompCandidateKind::TYPE);
     }
   }
 }
@@ -504,7 +504,7 @@ static bool hasCmdArg(const CmdNode &node) {
 }
 
 static bool completeSubcommand(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
-                               const std::string &word, CompletionConsumer &results) {
+                               const std::string &word, CompCandidateConsumer &consumer) {
   if (hasCmdArg(cmdNode)) {
     return false;
   }
@@ -524,7 +524,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-        results(name, CompEscapOp::COMMAND_ARG);
+        consumer(name, CompCandidateKind::COMMAND_ARG);
       }
     }
     return true;
@@ -533,57 +533,57 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   return true;
 }
 
-void CodeCompletionHandler::invoke(CompletionConsumer &results) {
+void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   if (!this->hasCompRequest()) {
     return; // do nothing
   }
 
   if (hasFlag(this->compOp, CodeCompOp::ENV)) {
-    completeEnvName(this->compWord, results);
+    completeEnvName(this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
-    completeSigName(this->compWord, results);
+    completeSigName(this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::EXTERNAL) || hasFlag(this->compOp, CodeCompOp::UDC) ||
       hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-    completeCmdName(*this->scope, this->compWord, this->compOp, results);
+    completeCmdName(*this->scope, this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::USER)) {
-    completeUserName(this->compWord, results);
+    completeUserName(this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::GROUP)) {
-    completeGroupName(this->compWord, results);
+    completeGroupName(this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
       hasFlag(this->compOp, CodeCompOp::DIR)) {
-    completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, results);
+    completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
     completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
-                   this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), results);
+                   this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
-    completeKeyword(this->compWord, this->compOp, results);
+    completeKeyword(this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::VAR)) {
-    completeVarName(*this->scope, this->compWord, results);
+    completeVarName(*this->scope, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::EXPECT)) {
-    completeExpected(this->extraWords, this->compWord, results);
+    completeExpected(this->extraWords, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::MEMBER)) {
-    completeMember(this->pool, *this->recvType, this->compWord, results);
+    completeMember(this->pool, *this->recvType, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
-    completeType(this->pool, this->recvType, *this->scope, this->compWord, results);
+    completeType(this->pool, this->recvType, *this->scope, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
     if (this->userDefinedComp &&
-        this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, results)) {
+        this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, consumer)) {
       return;
     }
-    if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, results)) {
-      completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, results);
+    if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, consumer)) {
+      completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, consumer);
     }
   }
 }

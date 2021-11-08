@@ -58,25 +58,48 @@ struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 
 inline bool isKeyword(StringRef value) { return !value.startsWith("<") || !value.endsWith(">"); }
 
-enum class CompEscapOp {
+enum class CompCandidateKind {
   NOP,
   COMMAND_NAME,
   COMMAND_NAME_PART,
   COMMAND_ARG,
+  COMMAND_TILDE,
+  ENV,
+  USER,
+  GROUP,
+  VAR,
+  SIGNAL,
+  FIELD,
+  METHOD,
+  KEYWORD,
+  TYPE,
 };
 
-class CompletionConsumer {
-public:
-  virtual ~CompletionConsumer() = default;
+inline bool mayBeEscaped(CompCandidateKind kind) {
+  switch (kind) {
+  case CompCandidateKind::COMMAND_NAME:
+  case CompCandidateKind::COMMAND_NAME_PART:
+  case CompCandidateKind::COMMAND_ARG:
+  case CompCandidateKind::ENV:
+    return true;
+  default:
+    return false;
+  }
+}
 
-  void operator()(StringRef ref, CompEscapOp op);
+class CompCandidateConsumer {
+public:
+  virtual ~CompCandidateConsumer() = default;
+
+  void operator()(StringRef ref, CompCandidateKind kind);
 
 private:
   virtual void consume(std::string &&) = 0;
 };
 
-using UserDefinedComp = std::function<bool(const Lexer &lex, const CmdNode &cmdNode,
-                                           const std::string &word, CompletionConsumer &consumer)>;
+using UserDefinedComp =
+    std::function<bool(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
+                       CompCandidateConsumer &consumer)>;
 
 class CodeCompletionHandler {
 private:
@@ -192,7 +215,7 @@ public:
 
   void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp.reset(&comp); }
 
-  void invoke(CompletionConsumer &results);
+  void invoke(CompCandidateConsumer &consumer);
 };
 
 template <>
@@ -200,7 +223,7 @@ struct allow_enum_bitop<CodeCompletionHandler::CMD_OR_KW_OP> : std::true_type {}
 
 class CodeCompleter {
 private:
-  CompletionConsumer &consumer;
+  CompCandidateConsumer &consumer;
   ModuleLoader &loader;
   TypePool &pool;
   NameScopePtr rootScope;
@@ -209,7 +232,7 @@ private:
   UserDefinedComp userDefinedComp;
 
 public:
-  CodeCompleter(CompletionConsumer &consumer, ModuleLoader &loader, TypePool &pool,
+  CodeCompleter(CompCandidateConsumer &consumer, ModuleLoader &loader, TypePool &pool,
                 NameScopePtr scope, const std::string &workDir)
       : consumer(consumer), loader(loader), pool(pool), rootScope(std::move(scope)),
         discardPoint({
