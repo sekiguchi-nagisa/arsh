@@ -23,9 +23,7 @@
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
-#include "parser.h"
-#include "scope.h"
-#include "type_pool.h"
+#include "frontend.h"
 
 namespace ydsh {
 
@@ -59,7 +57,6 @@ struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 inline bool isKeyword(StringRef value) { return !value.startsWith("<") || !value.endsWith(">"); }
 
 enum class CompCandidateKind {
-  NOP,
   COMMAND_NAME,
   COMMAND_NAME_PART,
   COMMAND_ARG,
@@ -94,7 +91,7 @@ public:
   void operator()(StringRef ref, CompCandidateKind kind);
 
 private:
-  virtual void consume(std::string &&) = 0;
+  virtual void consume(std::string &&, CompCandidateKind) = 0;
 };
 
 using UserDefinedComp =
@@ -156,6 +153,8 @@ public:
     this->compOp = op;
     this->compWord = std::move(word);
   }
+
+  void ignore(CodeCompOp ignored) { unsetFlag(this->compOp, ignored); }
 
   void addExpectedTokenRequest(std::string &&prefix, TokenKind kind) {
     TokenKind kinds[] = {kind};
@@ -224,29 +223,27 @@ struct allow_enum_bitop<CodeCompletionHandler::CMD_OR_KW_OP> : std::true_type {}
 class CodeCompleter {
 private:
   CompCandidateConsumer &consumer;
-  ModuleLoader &loader;
+  ObserverPtr<FrontEnd::ModuleProvider> provider;
   TypePool &pool;
-  NameScopePtr rootScope;
-  const DiscardPoint discardPoint;
+  NameScopePtr scope;
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
 
 public:
-  CodeCompleter(CompCandidateConsumer &consumer, ModuleLoader &loader, TypePool &pool,
-                NameScopePtr scope, const std::string &workDir)
-      : consumer(consumer), loader(loader), pool(pool), rootScope(std::move(scope)),
-        discardPoint({
-            .mod = this->loader.getDiscardPoint(),
-            .scope = this->rootScope->getDiscardPoint(),
-            .type = this->pool.getDiscardPoint(),
-        }),
+  CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
+                TypePool &pool, NameScopePtr scope, const std::string &workDir)
+      : consumer(consumer), provider(provider), pool(pool), scope(std::move(scope)),
         logicalWorkingDir(workDir) {}
-
-  ~CodeCompleter() { discardAll(this->loader, *this->rootScope, this->pool, this->discardPoint); }
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
 
-  void operator()(const ModType *underlyingModType, StringRef ref, CodeCompOp option = {});
+  /**
+   * if module provider is specified, parse 'ref' and complete candidates (except for 'option')
+   * otherwise complete candidates corresponding to 'option'
+   * @param ref
+   * @param option
+   */
+  void operator()(StringRef ref, CodeCompOp option);
 };
 
 } // namespace ydsh

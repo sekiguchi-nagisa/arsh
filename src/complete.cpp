@@ -33,7 +33,7 @@ namespace ydsh {
 
 // for input completion
 
-static bool needEscape(char ch, CompCandidateKind op) {
+static bool needEscape(char ch, CompCandidateKind kind) {
   switch (ch) {
   case ' ':
   case ';':
@@ -52,7 +52,7 @@ static bool needEscape(char ch, CompCandidateKind op) {
     return true;
   case '{':
   case '}':
-    if (op == CompCandidateKind::COMMAND_NAME || op == CompCandidateKind::COMMAND_NAME_PART) {
+    if (kind == CompCandidateKind::COMMAND_NAME || kind == CompCandidateKind::COMMAND_NAME_PART) {
       return true;
     }
     break;
@@ -104,9 +104,9 @@ static std::string escape(StringRef ref, CompCandidateKind kind) {
   return buf;
 }
 
-void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind op) {
-  std::string estr = escape(ref, op);
-  this->consume(std::move(estr));
+void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind) {
+  std::string estr = escape(ref, kind);
+  this->consume(std::move(estr), kind);
 }
 
 // ###################################
@@ -655,20 +655,17 @@ static void consumeAllInput(FrontEnd &frontEnd) {
   }
 }
 
-void CodeCompleter::operator()(const ModType *underlyingModType, StringRef ref, CodeCompOp option) {
-  auto scope = underlyingModType == nullptr
-                   ? this->rootScope
-                   : NameScope::reopen(this->pool, *this->rootScope, *underlyingModType);
-  CodeCompletionHandler handler(this->pool, this->logicalWorkingDir, scope);
+void CodeCompleter::operator()(StringRef ref, CodeCompOp option) {
+  CodeCompletionHandler handler(this->pool, this->logicalWorkingDir, this->scope);
   handler.setUserDefinedComp(this->userDefinedComp);
-  if (empty(option)) {
+  if (this->provider) {
     // prepare
-    DefaultModuleProvider provider(this->loader, this->pool, scope);
-    FrontEnd frontEnd(provider, lex(ref), FrontEndOption::ERROR_RECOVERY,
-                      ObserverPtr<CodeCompletionHandler>(&handler));
+    FrontEnd frontEnd(*this->provider, lex(ref), FrontEndOption::ERROR_RECOVERY,
+                      makeObserver(handler));
 
     // perform completion
     consumeAllInput(frontEnd);
+    handler.ignore(option);
     handler.invoke(this->consumer);
   } else {
     handler.addCompRequest(option, ref.toString());

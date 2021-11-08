@@ -147,6 +147,11 @@ public:
   void reset(T *p) { this->ptr = p; }
 };
 
+template <typename T>
+inline ObserverPtr<T> makeObserver(T &v) {
+  return ObserverPtr<T>(&v);
+}
+
 struct FileCloser {
   void operator()(FILE *fp) const {
     if (fp) {
@@ -163,7 +168,7 @@ using FilePtr = std::unique_ptr<FILE, FileCloser>;
  * use 'static' modifier due to suppress 'noexcept-type' warning in gcc7
  */
 template <typename Func, typename... Arg>
-static FilePtr createFilePtr(Func func, Arg &&...arg) {
+inline FilePtr createFilePtr(Func func, Arg &&...arg) {
   return FilePtr(func(std::forward<Arg>(arg)...));
 }
 

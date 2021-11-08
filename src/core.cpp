@@ -157,7 +157,9 @@ private:
 public:
   explicit DefaultCompConsumer(ArrayObject &obj) : reply(obj) {}
 
-  void consume(std::string &&value) override { this->reply.append(DSValue::createStr(value)); }
+  void consume(std::string &&value, CompCandidateKind) override {
+    this->reply.append(DSValue::createStr(value));
+  }
 };
 
 static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
@@ -184,7 +186,7 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
 }
 
 static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
-                         const std::string &word, CompCandidateConsumer &results) {
+                         const std::string &word, CompCandidateConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     return false;
@@ -205,7 +207,7 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
   }
 
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    results(e.asCStr(), CompCandidateKind::COMMAND_ARG);
+    consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG);
   }
   return true;
 }
@@ -215,14 +217,25 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
   auto &compreply = typeAs<ArrayObject>(result);
 
-  DefaultCompConsumer consumer(compreply);
-  CodeCompleter codeCompleter(consumer, st.modLoader, st.typePool, st.rootModScope,
-                              st.logicalWorkingDir);
-  codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
-                                         const std::string &word, CompCandidateConsumer &consumer) {
-    return kickCompHook(st, lex, cmdNode, word, consumer);
-  });
-  codeCompleter(underlyingModType, ref, option);
+  {
+    auto scope = underlyingModType == nullptr
+                     ? st.rootModScope
+                     : NameScope::reopen(st.typePool, *st.rootModScope, *underlyingModType);
+    DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
+    auto discardPoint = provider.getCurrentDiscardPoint();
+
+    DefaultCompConsumer consumer(compreply);
+    CodeCompleter codeCompleter(
+        consumer, empty(option) ? makeObserver<FrontEnd::ModuleProvider>(provider) : nullptr,
+        st.typePool, std::move(scope), st.logicalWorkingDir);
+    codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
+                                           const std::string &word,
+                                           CompCandidateConsumer &consumer) {
+      return kickCompHook(st, lex, cmdNode, word, consumer);
+    });
+    codeCompleter(ref, option);
+    provider.discard(discardPoint);
+  }
 
   auto &values = compreply.refValues();
   compreply.sortAsStrArray();
