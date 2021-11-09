@@ -298,10 +298,20 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
   return ret;
 }
 
-Reply<std::nullptr_t> LSPServer::complete(const CompletionParams &params) {
+Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &params) {
   LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  return nullptr;
+  std::vector<CompletionItem> ret;
+  if (auto src = this->resolveSource(params.textDocument.uri)) {
+    if (auto pos = toTokenPos(src->getContent(), params.position); pos.hasValue()) {
+      Source newSrc(src->getPath(), src->getSrcId(),
+                    std::string(src->getContent().c_str(), pos.unwrap()), src->getVersion());
+      auto copied = this->archives.copy();
+      copied.revert({newSrc.getSrcId()});
+      ret = doCompletion(this->srcMan, copied, newSrc);
+    }
+  }
+  return ret;
 }
 
 } // namespace ydsh::lsp

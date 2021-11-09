@@ -227,6 +227,8 @@ public:
    * if unused, return true
    */
   bool revertIfUnused(unsigned short id);
+
+  ModuleArchives copy() const;
 };
 
 } // namespace ydsh::lsp

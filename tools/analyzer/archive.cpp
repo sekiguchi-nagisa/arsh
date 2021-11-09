@@ -329,4 +329,10 @@ bool ModuleArchives::revertIfUnused(unsigned short id) {
   return false;
 }
 
+ModuleArchives ModuleArchives::copy() const {
+  ModuleArchives archives;
+  archives.map = this->map;
+  return archives;
+}
+
 } // namespace ydsh::lsp

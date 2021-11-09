@@ -15,6 +15,7 @@
  */
 
 #include <binder.h>
+#include <complete.h>
 #include <embed.h>
 #include <misc/files.h>
 
@@ -293,6 +294,34 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
   action.emitter &&action.emitter->exitModule();
   action.consumer &&action.consumer->exitModule(nullptr);
   return std::move(*provider.current()).buildArchive(archives);
+}
+
+class CompletionItemCollector : public CompCandidateConsumer {
+private:
+  std::vector<CompletionItem> items;
+
+public:
+  void consume(std::string &&value, CompCandidateKind kind) override {
+    (void)kind;
+    this->items.push_back(CompletionItem{
+        .label = std::move(value),
+        .kind = {},
+    });
+  }
+
+  std::vector<CompletionItem> take() && { return std::move(this->items); }
+};
+
+std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
+                                         const Source &src) {
+  CompletionItemCollector collector;
+
+  AnalyzerContextProvider provider(srcMan, archives);
+  auto &ptr = provider.addNew(src);
+  CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(provider),
+                              ptr->getPool(), ptr->getScope(), "");
+  codeCompleter(src.getContent(), CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC);
+  return std::move(collector).take();
 }
 
 } // namespace ydsh::lsp

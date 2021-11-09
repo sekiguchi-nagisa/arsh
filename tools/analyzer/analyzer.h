@@ -145,6 +145,9 @@ struct AnalyzerAction {
 ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
                          const Source &src);
 
+std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
+                                         const Source &src);
+
 } // namespace ydsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_ANALYZER_H

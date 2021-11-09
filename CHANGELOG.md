@@ -35,7 +35,9 @@
 
 #### LSP
 
-- support ``textDocument/publishDiagnostics``
+- support the following methods/notifications
+    - ``textDocument/publishDiagnostics``
+    - ``textDocument/completion``
 
 ### Changed
 
