@@ -100,7 +100,7 @@ using UserDefinedComp =
 
 class CodeCompletionHandler {
 private:
-  ObserverPtr<const UserDefinedComp> userDefinedComp;
+  UserDefinedComp userDefinedComp;
 
   const TypePool &pool;
 
@@ -212,7 +212,7 @@ public:
 
   CodeCompOp getCompOp() const { return this->compOp; }
 
-  void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp.reset(&comp); }
+  void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp = comp; }
 
   void invoke(CompCandidateConsumer &consumer);
 };

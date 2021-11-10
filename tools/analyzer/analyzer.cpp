@@ -355,7 +355,8 @@ std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &
   auto &ptr = provider.addNew(src);
   CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(provider),
                               ptr->getPool(), ptr->getScope(), "");
-  codeCompleter(src.getContent(), CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC);
+  auto ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC | CodeCompOp::HOOK;
+  codeCompleter(src.getContent(), ignoredOp);
   return std::move(collector).take();
 }
 
