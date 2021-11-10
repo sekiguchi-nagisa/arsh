@@ -649,10 +649,6 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
     if (this->consumedKind == TokenKind::BACKGROUND || this->consumedKind == TokenKind::DISOWN_BG) {
       break;
     }
-    if (this->inCompletionPoint()) {
-      this->lexer->setComplete(false);
-      this->consume();
-    }
     if (!this->hasLineTerminator()) {
       this->reportTokenMismatchedError(TokenKind::NEW_LINE);
     }

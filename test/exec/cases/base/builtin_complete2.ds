@@ -94,8 +94,9 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvar3, $(complete '
         PZ0=1234 PZ1=$false \
         PZ2=${PZ0}hger \
-        {
+        {   echo
             $P'))
+    $assertArray($gvar3, $(complete $'var PZ0 = 34; var PZ1 = 34; export-env PZ2 = "34"; echo\n$P'))
 }
 
 # env name
