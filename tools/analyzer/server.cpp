@@ -165,7 +165,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.hoverProvider = true;
   ret.capabilities.completionProvider = CompletionOptions{
       .resolveProvider = {},
-      .triggerCharacters = std::vector<std::string>{".", "$"},
+      .triggerCharacters = std::vector<std::string>{".", "$", "/"},
   };
   return std::move(ret);
 }
