@@ -298,6 +298,25 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
   return std::move(*provider.current()).buildArchive(archives);
 }
 
+static CompletionItemKind toItemKind(CompCandidateKind kind) {
+  switch (kind) {
+  case CompCandidateKind::VAR:
+    return CompletionItemKind::Variable;
+  case CompCandidateKind::FIELD:
+    return CompletionItemKind::Field;
+  case CompCandidateKind::METHOD:
+    return CompletionItemKind::Method;
+  case CompCandidateKind::KEYWORD:
+    return CompletionItemKind::Keyword;
+  case CompCandidateKind::TYPE:
+    return CompletionItemKind::Class;
+  case CompCandidateKind::SIGNAL:
+    return CompletionItemKind::Event;
+  default:
+    return CompletionItemKind::Text;
+  }
+}
+
 class CompletionItemCollector : public CompCandidateConsumer {
 private:
   std::vector<CompletionItem> items;
@@ -321,7 +340,7 @@ public:
 
     this->items.push_back(CompletionItem{
         .label = std::move(value),
-        .kind = {},
+        .kind = toItemKind(kind),
     });
   }
 
