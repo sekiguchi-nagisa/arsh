@@ -422,6 +422,83 @@ std::string resolveFullCommandName(const DSState &state, StringRef name, const M
   return "";
 }
 
+static bool compare(DSState &state, const DSValue &x, const DSValue &y, const DSValue &compFunc) {
+  auto ret = VM::callFunction(state, DSValue(compFunc), makeArgs(x, y));
+  if (state.hasError()) {
+    return false;
+  }
+  assert(ret.hasType(TYPE::Boolean));
+  return ret.asBool();
+}
+
+static bool merge(DSState &state, ArrayObject &arrayObj, DSValueBase *buf, const DSValue &compFunc,
+                  size_t left, size_t mid, size_t right) {
+  size_t i = left;
+  size_t j = mid;
+  size_t k = 0;
+
+  while (i < mid && j < right) {
+    auto &x = arrayObj.getValues()[i];
+    auto &y = arrayObj.getValues()[j];
+    bool ret = !compare(state, y, x, compFunc);
+    if (state.hasError()) {
+      return false;
+    }
+    if (ret) {
+      static_cast<DSValue &>(buf[k++]) = x;
+      i++;
+    } else {
+      static_cast<DSValue &>(buf[k++]) = y;
+      j++;
+    }
+  }
+  if (i == mid) {
+    while (j < right) {
+      static_cast<DSValue &>(buf[k++]) = arrayObj.getValues()[j++];
+    }
+  } else {
+    while (i < mid) {
+      static_cast<DSValue &>(buf[k++]) = arrayObj.getValues()[i++];
+    }
+  }
+  for (size_t l = 0; l < k; l++) {
+    arrayObj.refValues()[left + l] = std::move(static_cast<DSValue &>(buf[l]));
+  }
+  return true;
+}
+
+static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, DSValueBase *buf,
+                          const DSValue &compFunc, size_t left, size_t right) {
+  if (left + 1 >= right) {
+    return true;
+  }
+
+  size_t mid = (left + right) / 2;
+  return mergeSortImpl(state, arrayObj, buf, compFunc, left, mid) &&
+         mergeSortImpl(state, arrayObj, buf, compFunc, mid, right) &&
+         merge(state, arrayObj, buf, compFunc, left, mid, right);
+}
+
+bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc) {
+  const size_t bufSize = arrayObj.size();
+  auto *buf = static_cast<DSValueBase *>(malloc(sizeof(DSValueBase) * bufSize));
+  if (!buf) {
+    std::string v = "cannot allocate temporary buffer for merge sort";
+    raiseSystemError(state, ENOMEM, std::move(v));
+    return false;
+  }
+  for (size_t i = 0; i < bufSize; i++) {
+    new (&buf[i]) DSValue();
+  }
+
+  bool r = mergeSortImpl(state, arrayObj, buf, compFunc, 0, arrayObj.size());
+  for (size_t i = 0; i < bufSize; i++) {
+    static_cast<DSValue &>(buf[i]).~DSValue();
+  }
+  free(buf);
+  return r;
+}
+
 int xexecve(const char *filePath, char *const *argv, char *const *envp) {
   if (filePath == nullptr) {
     errno = ENOENT;

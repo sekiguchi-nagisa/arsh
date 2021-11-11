@@ -1423,21 +1423,12 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
 //!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Array<T0>
 YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
-  auto &values = typeAs<ArrayObject>(LOCAL(0)).refValues();
-  std::stable_sort(values.begin(), values.end(), [&](const DSValue &x, const DSValue &y) {
-    if (ctx.hasError()) {
-      return false;
-    }
-    auto ret = VM::callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
-    if (ctx.hasError()) {
-      return false;
-    }
-    return ret.asBool();
-  });
-  if (ctx.hasError()) {
-    RET_ERROR;
-  } else {
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &comp = LOCAL(1);
+  if (mergeSort(ctx, arrayObj, comp)) {
     RET(LOCAL(0));
+  } else {
+    RET_ERROR;
   }
 }
 

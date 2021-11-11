@@ -186,6 +186,17 @@ std::string resolveFullCommandName(const DSState &state, StringRef name, const M
 
 /**
  *
+ * @param state
+ * @param arrayObj
+ * @param compFunc
+ * must be FuncObject
+ * @return
+ * if has error, return false
+ */
+bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc);
+
+/**
+ *
  * @param filePath
  * if null, not execute and set ENOENT.
  * @param argv
