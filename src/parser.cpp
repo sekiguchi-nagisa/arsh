@@ -363,7 +363,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
   token = TRY(this->expect(TokenKind::RBC));
   node->updateToken(token);
 
-  return std::move(node);
+  return node;
 }
 
 std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
@@ -397,7 +397,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
       return typeNode;
     }
   }
-  return std::move(typeToken);
+  return typeToken;
 }
 
 static std::unique_ptr<TypeNode>
@@ -585,7 +585,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     auto node = std::make_unique<VarDeclNode>(startPos, std::move(nameInfo), std::move(exprNode),
                                               VarDeclNode::IMPORT_ENV);
     node->updateToken(token);
-    return std::move(node);
+    return node;
   }
   case TokenKind::SOURCE:
   case TokenKind::SOURCE_OPT: {
@@ -612,7 +612,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         TRY(this->expect(TokenKind::INLINED)); // FIXME:
       }
     }
-    return std::move(node);
+    return node;
   }
   case TokenKind::TYPEDEF: {
     unsigned int startPos = START_POS();
@@ -759,7 +759,7 @@ std::unique_ptr<Node> Parser::parse_caseExpression() {
   } while (CUR_KIND() != TokenKind::RBC);
   Token token = this->expect(TokenKind::RBC); // always success
   caseNode->updateToken(token);
-  return std::move(caseNode);
+  return caseNode;
 }
 
 std::unique_ptr<ArmNode> Parser::parse_armExpression() {
@@ -824,7 +824,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     if (comp) {
       this->incompleteNode = std::move(node);
     }
-    return std::move(node);
+    return node;
   } else { // for-in
     auto name = TRY(this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName));
     TRY(this->expect(TokenKind::IN));
@@ -844,7 +844,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     if (comp) {
       this->incompleteNode = std::move(node);
     }
-    return std::move(node);
+    return node;
   }
 }
 
@@ -975,7 +975,7 @@ std::unique_ptr<Node> Parser::parse_command() {
       break;
     }
   }
-  return std::move(node);
+  return node;
 }
 
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
@@ -1401,7 +1401,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     if (this->tryCompleteInfixKeywords({TokenKind::CATCH, TokenKind::FINALLY})) {
       return nullptr;
     }
-    return std::move(tryNode);
+    return tryNode;
   }
   case TokenKind::FUNCTION:
     return this->parse_function();
@@ -1467,7 +1467,7 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
     }
   }
-  return std::move(arrayNode);
+  return arrayNode;
 }
 
 std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &&keyNode) {
@@ -1495,7 +1495,7 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
     }
   }
-  return std::move(mapNode);
+  return mapNode;
 }
 
 std::unique_ptr<Node> Parser::parse_signalLiteral() {
@@ -1611,7 +1611,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 
   token = TRY(this->expect(TokenKind::CLOSE_DQUOTE));
   node->updateToken(token);
-  return std::move(node);
+  return node;
 }
 
 std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
@@ -1796,7 +1796,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   }
   token = TRY(this->expect(TokenKind::RP));
   node->updateToken(token);
-  return std::move(node);
+  return node;
 }
 
 } // namespace ydsh

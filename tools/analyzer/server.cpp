@@ -167,7 +167,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       .resolveProvider = {},
       .triggerCharacters = std::vector<std::string>{".", "$", "/"},
   };
-  return std::move(ret);
+  return ret;
 }
 
 void LSPServer::initialized(const ydsh::lsp::InitializedParams &) {
