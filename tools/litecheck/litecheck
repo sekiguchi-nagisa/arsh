@@ -1,0 +1,153 @@
+#!/usr/bin/env ydsh
+
+# light-weight file checker
+
+
+##############################
+##     helper functions     ##
+##############################
+
+function _usage($m : String) : Nothing {
+    !$m.empty() && echo 1>&2 $m
+    echo 1>&2 usage: litecheck [-b bin] file
+    exit 1
+}
+
+function _lines($path : String) : [String] {
+    var ret : [String]
+    cat $path | while(read -f $'\n') {
+        $ret.add($REPLY)
+    }
+    $? = 0
+    return $ret
+}
+
+#####################################
+##     expose to target script     ##
+#####################################
+
+var cmd = ''
+var self = ''
+
+##############################
+##     actual functions     ##
+##############################
+
+let RUN = "RUN"
+let CHECK = "CHECK"
+let REQUIRE = "REQUIRE"
+
+typedef Directive = (
+    String, # directive type (RUN, CHECK, REQUIRES)
+    String, # line
+    Int, # line number
+)
+
+function _read_directive($path : String) : [Directive] {
+    var ret : [Directive]
+
+    var lines = $_lines($path)
+    for(var i = 0; $i < $lines.size(); $i++) {
+        var line = $lines[$i]
+        var ln = $i + 1
+        var matched = $/^# *(RUN|CHECK|REQUIRE): (.*)/.match($line)
+        if !$matched.empty() {
+            var type = $matched[1]!
+            assert $type == $RUN || $type == $CHECK || $type == $REQUIRE
+            $line = $matched[2]!
+            $ret.add(($type, $line, $ln))
+        }
+    }
+
+    # validate directive order
+    !$ret.empty() || $_usage("require $RUN directive")
+    $ret[0]._0 == $RUN || $_usage("first line directive must be $RUN directive")
+
+
+
+
+    return $ret
+}
+
+function _run_and_check($directives : [Directive]) {
+    var d = $directives.shift()
+    var run = try { 
+        assert $d._0 == $RUN
+        $MODULE.func($d._1)
+    } catch $e : Error {
+        $e.backtrace(); 
+        $_usage("invalid $RUN directive: `${$d._1}'"); 
+    }
+
+    assert command -v mktemp > /dev/null
+    let outPath = "$(mktemp)" :- { echo mktemp failed 1>&2; exit 1; }
+    let errPath = "$(mktemp)" :- { echo mktemp failed 1>&2; exit 1; }
+
+    try {
+        var j = ($run() with 1> $outPath 2> $errPath) &
+        var s = $j.wait()
+        var outs = $_lines($outPath)
+        var errs = $_lines($errPath)
+
+        diff \
+            <(for $d in $directives {
+                $d._0 == $CHECK && echo ${d._1}
+            }) \
+            <(cat <<< ${$outs.join($'\n')})
+    } finally {
+        rm -f $outPath
+        rm -f $errPath
+    }
+}
+
+# entry point
+litecheck() {
+    # parse command line arguments
+    var bin : String!
+    var file : String!
+    for(var i = 0; $i < $#; $i++) {
+        var arg = $@[$i]
+        case $arg {
+        "-b" => 
+            if $i + 1 < $# {
+                $i++
+                $bin = $@[$i]
+            } else {
+                $_usage("`$arg' option requires argument")
+            }
+        $/^-.*/ => $_usage("invalid option: $arg")
+        else => { $file = $arg; break; }
+        }
+    }
+
+    ## check file existence
+    $file ?? $_usage("require file")
+    $self = $file!.realpath() ?? $_usage("file not found: ${$file!}")
+    test -f $self || $_usage("require regular file: ${$file!}")
+
+    ## check bin
+    if $bin {
+        $cmd = $bin!.realpath() ?? $_usage("file not found: ${$bin!}")
+        (test -f $cmd && test -x $cmd) || $_usage("must be executable: ${$bin!}")
+    }
+
+    # read directive
+    var directives = $_read_directive($self)
+
+    # check pre-condition
+    var index = 0
+    for(; $index < $directives.size(); $index++) {
+        var d = $directives[$index]
+        $d._0 == $REQUIRE || break
+        var cond = try { $MODULE.func($d._1)(); } 
+                   catch $e : Error { $e.backtrace(); $_usage("invalid $REQUIRE directive: `${$d._1}'"); }
+        $cond is Bool || $_usage("$REQUIRE directive must be boolean expresion: `${$d._1}'")
+        $cond! as Bool || { echo skip "`$self'"; exit 125; }
+    }
+
+    # run command
+    $_run_and_check($directives.from($index))
+}
+
+
+shctl is-sourced || litecheck $@

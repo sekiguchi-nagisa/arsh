@@ -1,0 +1,16 @@
+# RUN: eval $cmd --test $self
+
+23
+# CHECK: {
+# CHECK:   "code": -32600,
+# CHECK:   "data": "require `object', but is `long'",
+# CHECK:   "message": "Invalid Request"
+# CHECK: }
+<<<
+{ "34" : false}
+# CHECK: {
+# CHECK:   "code": -32600,
+# CHECK:   "data": "undefined field `jsonrpc'",
+# CHECK:   "message": "Invalid Request"
+# CHECK: }
+<<<
