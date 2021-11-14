@@ -384,6 +384,10 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
   // complete from SCRIPT_DIR
   completeFileName(scriptDir, prefix, op, consumer);
 
+  if(!prefix.empty() && prefix[0] == '/') {
+    return;
+  }
+
   // complete from local module dir
   completeFileName(getFullLocalModDir(), prefix, op, consumer);
 
