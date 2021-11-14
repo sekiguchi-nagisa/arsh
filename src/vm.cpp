@@ -1889,7 +1889,10 @@ bool VM::handleException(DSState &state) {
 }
 
 EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
-  installSignalHandler(state, SIGCHLD, nullptr);
+  assert(state.stack.recDepth() > 0);
+  if (state.stack.recDepth() == 1) {
+    installSignalHandler(state, SIGCHLD, nullptr);
+  }
 
   const unsigned int oldLevel = state.subshellLevel;
 
@@ -1923,6 +1926,8 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
 }
 
 bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError) {
+  assert(state.stack.recDepth() == 0);
+
   EvalOP op{};
 
   // set module to global
@@ -1941,6 +1946,7 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
 
   // prepare stack
   state.stack.reset();
+  RecursionGuard guard(state.stack);
   state.stack.wind(0, 0, func->getCode());
 
   DSValue ret;
