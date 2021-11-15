@@ -46,6 +46,8 @@
 - **Breaking Change**: change exit status of command error
     - if command not found, set exit status to 127
     - if permission error, set exit status to 126
+- set ``PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`` option if pcre2 10.38 or later
+- remove redundant signal handler installation when recursively call interpreter
 
 #### Builtin
 
@@ -64,6 +66,8 @@
 - accidentally skip termination handler in loaded module
 - not ignore non-regular files in file path search
 - not complete statement when previous token is newline
+- segmentation fault when invalid compare functions are supplied to ``Array#sortWith`` mwthod
+    - now replace internal ``std::stable_sort`` with merge sort
 
 ## [0.23.0] - 2021-09-30
 

@@ -3,7 +3,6 @@
 | **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **Description**    |
 |-----------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
 | HALT            |                                | [no change]                                  | stop evaluation of interpreter immediately         |
-| ASSERT          |                                | value1 value2 ->                             | assertion that value1 is true.                     |
 | ASSERT_ENABLED  | 2: offset1 offset2             | [no change]                                  | check if assertion enabled                         |
 | ASSERT_FAIL     |                                | value ->                                     | throw AssertionError                               |
 | PRINT           | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack |
