@@ -1,0 +1,4 @@
+
+# RUN: /bin/sh $self
+echo hello
+# CHECK: hell

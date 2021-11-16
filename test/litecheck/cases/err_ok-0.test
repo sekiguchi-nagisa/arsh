@@ -1,0 +1,4 @@
+
+# RUN:   /bin/sh $self
+echo hello success!! 1>&2
+# CHECKERR: hello success!!

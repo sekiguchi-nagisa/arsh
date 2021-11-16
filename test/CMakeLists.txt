@@ -47,6 +47,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cmdline)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/interactive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/logger)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glob)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/litecheck)
 
 include_directories(${CMAKE_SOURCE_DIR}/tools/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)

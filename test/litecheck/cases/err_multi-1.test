@@ -1,0 +1,7 @@
+#!/bin/sh
+echo 1>&2 hello
+echo 1>&2 world
+echo 1>&2 !!
+# CHECKERR: hello
+# CHECKERR: world
+# CHECKERR: !!!

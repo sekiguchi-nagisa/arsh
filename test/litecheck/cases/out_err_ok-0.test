@@ -1,0 +1,6 @@
+
+# RUN:   /bin/sh $self
+echo hello success!!
+echo wordl!!12423 1>&2
+# CHECK: hello success!!
+#CHECKERR: wordl!!12423

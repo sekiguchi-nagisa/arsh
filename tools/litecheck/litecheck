@@ -10,16 +10,16 @@
 function _usage($m : String) : Nothing {
     !$m.empty() && echo 1>&2 $m
     echo 1>&2 usage: litecheck [-b bin] file
+    exit 2
+}
+
+function _error($m : String) : Nothing {
+    echo 1>&2 $m
     exit 1
 }
 
 function _lines($path : String) : [String] {
-    var ret : [String]
-    cat $path | while(read -f $'\n') {
-        $ret.add($REPLY)
-    }
-    $? = 0
-    return $ret
+    return IFS=$'\n' $(cat $path)
 }
 
 #####################################
@@ -35,53 +35,81 @@ var self = ''
 
 let RUN = "RUN"
 let CHECK = "CHECK"
+let CHECKERR = "CHECKERR"
 let REQUIRE = "REQUIRE"
+let SHEBANG = "#!"
 
 typedef Directive = (
     String, # directive type (RUN, CHECK, REQUIRES)
     String, # line
-    Int, # line number
+    Int,    # line number
 )
 
 function _read_directive($path : String) : [Directive] {
     var ret : [Directive]
 
     var lines = $_lines($path)
+    if !$lines.empty() && $lines[0].startsWith($SHEBANG) {
+        $ret.add(($SHEBANG, $lines[0], 1))
+    }
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|REQUIRE): (.*)/.match($line)
+        var matched = $/^# *(RUN|CHECK|CHECKERR|REQUIRE): (.*)/.match($line)
         if !$matched.empty() {
             var type = $matched[1]!
-            assert $type == $RUN || $type == $CHECK || $type == $REQUIRE
+            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || $type == $REQUIRE
             $line = $matched[2]!
             $ret.add(($type, $line, $ln))
         }
     }
 
     # validate directive order
-    !$ret.empty() || $_usage("require $RUN directive")
-    $ret[0]._0 == $RUN || $_usage("first line directive must be $RUN directive")
+    var has_shebang = $false
+    var has_run = $false
 
+    let size = $ret.size()
+    var index = 0
 
+    ## check shebang or RUN directive
+    if $index < $size && $ret[$index]._0 == $SHEBANG {
+        $has_shebang = $true
+        $index++
+    }
+    if ($index < $size && $ret[$index]._0 == $RUN) || $has_shebang {
+        $index++
+        $has_run = $true
+    } elif $has_shebang {
+        $index++
+    } else {
+        $_error("require $RUN directive or shebang")
+    }
 
-
+    if !$has_run {
+        test -x $self || $_error("must be executable: `$self'")
+    }
+    if $has_shebang {
+        $ret.shift()
+    }
     return $ret
 }
 
-function _run_and_check($directives : [Directive]) {
-    var d = $directives.shift()
-    var run = try { 
-        assert $d._0 == $RUN
-        $MODULE.func($d._1)
-    } catch $e : Error {
-        $e.backtrace(); 
-        $_usage("invalid $RUN directive: `${$d._1}'"); 
+function _run_and_check($directives : [Directive]) : Int {
+    var run = if !$directives.empty() && $directives[0]._0 == $RUN {
+        var d = $directives.shift()
+        try {
+            $MODULE.func($d._1)
+        } catch $e : Error {
+            $e.backtrace(); 
+            $_error("invalid $RUN directive: `${$d._1}'"); 
+        }
+    } else {
+        $MODULE.func("eval $self")
     }
 
     assert command -v mktemp > /dev/null
-    let outPath = "$(mktemp)" :- { echo mktemp failed 1>&2; exit 1; }
-    let errPath = "$(mktemp)" :- { echo mktemp failed 1>&2; exit 1; }
+    let outPath = "$(mktemp)" :- $_error("mktemp failed")
+    let errPath = "$(mktemp)" :- $_error("mktemp failed")
 
     try {
         var j = ($run() with 1> $outPath 2> $errPath) &
@@ -89,11 +117,41 @@ function _run_and_check($directives : [Directive]) {
         var outs = $_lines($outPath)
         var errs = $_lines($errPath)
 
-        diff \
-            <(for $d in $directives {
-                $d._0 == $CHECK && echo ${d._1}
-            }) \
-            <(cat <<< ${$outs.join($'\n')})
+        var eouts : [String]
+        var eout_found = $false
+        var eerrs : [String]
+        var eerr_found = $false
+        for $d in $directives {
+            if $d._0 == $CHECK {
+                $eouts.add($d._1)
+                $eout_found = $true
+            } elif $d._0 == $CHECKERR {
+                $eerrs.add($d._1)
+                $eerr_found = $true
+            }
+        }
+
+        var ret = 0
+        if $eout_found {
+            var b = diff 1>&2 \
+                <(cat <<< ${$eouts.join($'\n')}) \
+                <(cat <<< ${$outs.join($'\n')})
+            if !$b {
+                echo 1>&2 stdout is mismatched
+                $ret = 1
+            }
+        }
+
+        if $eerr_found {
+            var b = diff 1>&2 \
+                <(cat <<< ${$eerrs.join($'\n')}) \
+                <(cat <<< ${$errs.join($'\n')})
+            if !$b {
+                echo 1>&2 stderr is mismatched
+                $ret = 1
+            }
+        }
+        return $ret
     } finally {
         rm -f $outPath
         rm -f $errPath
@@ -122,31 +180,29 @@ litecheck() {
 
     ## check file existence
     $file ?? $_usage("require file")
-    $self = $file!.realpath() ?? $_usage("file not found: ${$file!}")
+    $self = $file!.realpath() ?? $_usage("file not found: `${$file!}'")
     test -f $self || $_usage("require regular file: ${$file!}")
 
     ## check bin
     if $bin {
-        $cmd = $bin!.realpath() ?? $_usage("file not found: ${$bin!}")
-        (test -f $cmd && test -x $cmd) || $_usage("must be executable: ${$bin!}")
+        $cmd = $bin!.realpath() ?? $_usage("file not found: `${$bin!}'")
+        (test -f $cmd && test -x $cmd) || $_usage("must be executable: `${$bin!}'")
     }
 
     # read directive
     var directives = $_read_directive($self)
 
     # check pre-condition
-    var index = 0
-    for(; $index < $directives.size(); $index++) {
-        var d = $directives[$index]
-        $d._0 == $REQUIRE || break
-        var cond = try { $MODULE.func($d._1)(); } 
-                   catch $e : Error { $e.backtrace(); $_usage("invalid $REQUIRE directive: `${$d._1}'"); }
-        $cond is Bool || $_usage("$REQUIRE directive must be boolean expresion: `${$d._1}'")
+    for $d in $directives {
+        $d._0 != $REQUIRE && continue
+                var cond = try { $MODULE.func($d._1)(); } 
+                   catch $e : Error { $e.backtrace(); $_error("invalid $REQUIRE directive: `${$d._1}'"); }
+        $cond is Bool || $_error("$REQUIRE directive must be boolean expresion: `${$d._1}'")
         $cond! as Bool || { echo skip "`$self'"; exit 125; }
     }
 
     # run command
-    $_run_and_check($directives.from($index))
+    return $_run_and_check($directives)
 }
 
 

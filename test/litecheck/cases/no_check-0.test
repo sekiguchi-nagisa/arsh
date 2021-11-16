@@ -1,0 +1,3 @@
+#   RUN:   /bin/sh $self
+echo no_check
+# if not found CHECK directive, not perform stdout checking
