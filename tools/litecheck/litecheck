@@ -2,7 +2,6 @@
 
 # light-weight file checker
 
-
 ##############################
 ##     helper functions     ##
 ##############################
@@ -36,16 +35,26 @@ var self = ''
 let RUN = "RUN"
 let CHECK = "CHECK"
 let CHECKERR = "CHECKERR"
+let STATUS = "STATUS"
 let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
 
 typedef Directive = (
-    String, # directive type (RUN, CHECK, REQUIRES)
+    String, # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
     String, # line
     Int,    # line number
 )
 
-function _read_directive($path : String) : [Directive] {
+function _parse_num($v : String) : Int! {
+    var m = $/^ *(0|[1-9][0-9]*) *$/.match($v)
+    var r : Int!
+    if !$m.empty() {
+        $r = $m[1]!.toInt()
+    }
+    return $r
+}
+
+function _parse_directive($path : String) : [Directive] {
     var ret : [Directive]
 
     var lines = $_lines($path)
@@ -55,10 +64,10 @@ function _read_directive($path : String) : [Directive] {
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|CHECKERR|REQUIRE): (.*)/.match($line)
+        var matched = $/^# *(RUN|CHECK|CHECKERR|STATUS|REQUIRE): (.*)/.match($line)
         if !$matched.empty() {
             var type = $matched[1]!
-            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || $type == $REQUIRE
+            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || $type == $REQUIRE || $type == $STATUS
             $line = $matched[2]!
             $ret.add(($type, $line, $ln))
         }
@@ -76,11 +85,10 @@ function _read_directive($path : String) : [Directive] {
         $has_shebang = $true
         $index++
     }
-    if ($index < $size && $ret[$index]._0 == $RUN) || $has_shebang {
+    if $index < $size && $ret[$index]._0 == $RUN {
         $index++
         $has_run = $true
     } elif $has_shebang {
-        $index++
     } else {
         $_error("require $RUN directive or shebang")
     }
@@ -88,6 +96,17 @@ function _read_directive($path : String) : [Directive] {
     if !$has_run {
         test -x $self || $_error("must be executable: `$self'")
     }
+
+    ## check STATUS directive
+    var status : Int!
+    for(; $index < $size; $index++) {
+        var d = $ret[$index]
+        if $d._0 == $STATUS {
+            if $status { $_error("$STATUS directive has already defined"); }
+            $status = $_parse_num($d._1) ?? $_error("invalid $STATUS directive: `${$d._1}'")
+        }
+    }
+
     if $has_shebang {
         $ret.shift()
     }
@@ -112,11 +131,13 @@ function _run_and_check($directives : [Directive]) : Int {
     let errPath = "$(mktemp)" :- $_error("mktemp failed")
 
     try {
+        $? = 0
         var j = ($run() with 1> $outPath 2> $errPath) &
         var s = $j.wait()
         var outs = $_lines($outPath)
         var errs = $_lines($errPath)
 
+        var estatus : Int!
         var eouts : [String]
         var eout_found = $false
         var eerrs : [String]
@@ -128,6 +149,8 @@ function _run_and_check($directives : [Directive]) : Int {
             } elif $d._0 == $CHECKERR {
                 $eerrs.add($d._1)
                 $eerr_found = $true
+            } elif $d._0 == $STATUS {
+                $estatus = $_parse_num($d._1)!
             }
         }
 
@@ -150,6 +173,10 @@ function _run_and_check($directives : [Directive]) : Int {
                 echo 1>&2 stderr is mismatched
                 $ret = 1
             }
+        }
+
+        if $estatus {
+            $s == $estatus! || $_error("exit status is mismatched, expected: `${$estatus!}', actual: `$s'")
         }
         return $ret
     } finally {
@@ -190,7 +217,7 @@ litecheck() {
     }
 
     # read directive
-    var directives = $_read_directive($self)
+    var directives = $_parse_directive($self)
 
     # check pre-condition
     for $d in $directives {

@@ -1,0 +1,4 @@
+#!/bin/sh
+# RUN: /bin/sh $self
+exit 100
+# STATUS: 120

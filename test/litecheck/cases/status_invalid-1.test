@@ -1,0 +1,5 @@
+#!/bin/sh
+echo hello
+exit 0
+# CHECK: hello
+# STATUS: 0.0
