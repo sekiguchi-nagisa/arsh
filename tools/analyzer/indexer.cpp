@@ -382,17 +382,15 @@ void SymbolIndexer::visitMapNode(MapNode &node) {
 void SymbolIndexer::visitTupleNode(TupleNode &node) { this->visitEach(node.getNodes()); }
 
 void SymbolIndexer::visitVarNode(VarNode &node) {
-  assert(!node.isUntyped());
-  if (!node.getType().isVoidType() && !node.getType().isNothingType()) {
+  if (!node.isUntyped() && !node.getType().isVoidType() && !node.getType().isNothingType()) {
     NameInfo info(node.getToken(), node.getVarName());
     this->builder().addSymbol(info);
   }
 }
 
 void SymbolIndexer::visitAccessNode(AccessNode &node) {
-  assert(!node.isUntyped());
   this->visit(node.getRecvNode());
-  if (!node.getType().isNothingType()) {
+  if (!node.isUntyped() && !node.getType().isNothingType()) {
     NameInfo info(node.getNameNode().getToken(), node.getFieldName());
     this->builder().addMember(node.getRecvNode().getType(), info);
   }
