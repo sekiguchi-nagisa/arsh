@@ -13,6 +13,18 @@
 #error require EXEC_TEST_DIR
 #endif
 
+#ifndef LITECHECK_PATH
+#error require LITECHECK_PATH
+#endif
+
+#ifndef ANALYZER_TEST_DIR
+#error require ANALYZER_TEST_DIR
+#endif
+
+#ifndef ANALYZER_PATH
+#error require ANALYZ_PATH
+#endif
+
 using namespace ydsh::lsp;
 using namespace ydsh;
 
@@ -100,6 +112,34 @@ TEST_P(ASTDumpTest, base) {
 
 INSTANTIATE_TEST_SUITE_P(ASTDumpTest, ASTDumpTest,
                          ::testing::ValuesIn(getTargetCases(EXEC_TEST_DIR "/base")));
+
+static std::vector<std::string> getSortedFileList(const char *dir) {
+  auto ret = getFileList(dir, true);
+  assert(!ret.empty());
+  ret.erase(std::remove_if(ret.begin(), ret.end(),
+                           [](const std::string &v) { return !StringRef(v).endsWith(".test"); }),
+            ret.end());
+  std::sort(ret.begin(), ret.end());
+  ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
+  return ret;
+}
+
+static ProcBuilder litecheck(const std::string &scriptPath) {
+  return ProcBuilder{BIN_PATH, LITECHECK_PATH, "-b", ANALYZER_PATH}.addArg(scriptPath);
+}
+
+struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
+  void doTest() {
+    auto result = litecheck(this->GetParam()).exec();
+    ASSERT_EQ(WaitStatus::EXITED, result.kind);
+    ASSERT_EQ(0, result.value);
+  }
+};
+
+TEST_P(AnalyzerTest, base) { ASSERT_NO_FATAL_FAILURE(this->doTest()); }
+
+INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,
+                         ::testing::ValuesIn(getSortedFileList(ANALYZER_TEST_DIR)));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
