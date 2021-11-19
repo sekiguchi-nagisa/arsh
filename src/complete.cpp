@@ -384,7 +384,7 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
   // complete from SCRIPT_DIR
   completeFileName(scriptDir, prefix, op, consumer);
 
-  if(!prefix.empty() && prefix[0] == '/') {
+  if (!prefix.empty() && prefix[0] == '/') {
     return;
   }
 
@@ -404,13 +404,20 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
  */
 static void completeVarName(const NameScope &scope, const std::string &prefix,
                             CompCandidateConsumer &consumer) {
-  int offset = scope.getMaxGlobalVarIndex() * 10;
+  int offset = ({
+    const NameScope *cur = &scope;
+    while (!cur->isGlobal()) {
+      cur = cur->parent.get();
+      assert(cur);
+    }
+    cur->getMaxGlobalVarIndex() * 10;
+  });
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &iter : *curScope) {
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
         int priority = iter.second.getIndex();
-        if(!iter.second.has(FieldAttribute::GLOBAL)) {
+        if (!iter.second.has(FieldAttribute::GLOBAL)) {
           priority += offset;
         }
         priority *= -1;
