@@ -88,10 +88,10 @@ class CompCandidateConsumer {
 public:
   virtual ~CompCandidateConsumer() = default;
 
-  void operator()(StringRef ref, CompCandidateKind kind);
+  void operator()(StringRef ref, CompCandidateKind kind, int priority = 0);
 
 private:
-  virtual void consume(std::string &&, CompCandidateKind) = 0;
+  virtual void consume(std::string &&, CompCandidateKind, int priority) = 0;
 };
 
 using UserDefinedComp =

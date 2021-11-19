@@ -157,7 +157,7 @@ private:
 public:
   explicit DefaultCompConsumer(ArrayObject &obj) : reply(obj) {}
 
-  void consume(std::string &&value, CompCandidateKind) override {
+  void consume(std::string &&value, CompCandidateKind, int) override {
     this->reply.append(DSValue::createStr(value));
   }
 };

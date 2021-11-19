@@ -718,11 +718,14 @@ enum class CompletionItemKind : unsigned int {
 struct CompletionItem {
   std::string label;
   Optional<CompletionItemKind> kind;
+  Optional<std::string> sortText;
+  int priority; // dummy. not defined in lsp
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(label);
     JSONIFY(kind);
+    JSONIFY(sortText);
   }
 };
 

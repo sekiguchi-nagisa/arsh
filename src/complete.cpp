@@ -104,9 +104,9 @@ static std::string escape(StringRef ref, CompCandidateKind kind) {
   return buf;
 }
 
-void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind) {
+void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind, int priority) {
   std::string estr = escape(ref, kind);
-  this->consume(std::move(estr), kind);
+  this->consume(std::move(estr), kind, priority);
 }
 
 // ###################################
@@ -404,11 +404,17 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
  */
 static void completeVarName(const NameScope &scope, const std::string &prefix,
                             CompCandidateConsumer &consumer) {
+  int offset = scope.getMaxGlobalVarIndex() * 10;
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &iter : *curScope) {
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
-        consumer(varName, CompCandidateKind::VAR);
+        int priority = iter.second.getIndex();
+        if(!iter.second.has(FieldAttribute::GLOBAL)) {
+          priority += offset;
+        }
+        priority *= -1;
+        consumer(varName, CompCandidateKind::VAR, priority);
       }
     }
   }

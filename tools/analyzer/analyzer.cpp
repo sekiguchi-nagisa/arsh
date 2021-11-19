@@ -322,7 +322,7 @@ private:
   std::vector<CompletionItem> items;
 
 public:
-  void consume(std::string &&value, CompCandidateKind kind) override {
+  void consume(std::string &&value, CompCandidateKind kind, int priority) override {
     if (kind == CompCandidateKind::ENV) {
       unsigned int count = 0;
       for (auto ch : value) {
@@ -341,10 +341,48 @@ public:
     this->items.push_back(CompletionItem{
         .label = std::move(value),
         .kind = toItemKind(kind),
+        .sortText = {},
+        .priority = priority,
     });
   }
 
-  std::vector<CompletionItem> take() && { return std::move(this->items); }
+  std::vector<CompletionItem> finalize() && {
+    std::sort(this->items.begin(), this->items.end(),
+              [](const CompletionItem &x, const CompletionItem &y) {
+                return x.priority < y.priority || (x.priority == y.priority && x.label < y.label);
+              });
+    // fill sortText
+    unsigned int prioCount = 0;
+    if (!this->items.empty()) {
+      int prevPrio = this->items[0].priority;
+      for(auto &item : this->items) {
+        if (item.priority != prevPrio) {
+          prioCount++;
+          prevPrio = item.priority;
+        }
+        item.priority = prioCount;
+      }
+    }
+    if(prioCount > 0) {
+      unsigned int maxDigits = std::to_string(prioCount).size();
+      for(auto &item : this->items) {
+        item.sortText = formatPrio(item.priority, maxDigits);
+      }
+    }
+    return this->items;
+  }
+
+private:
+  static std::string formatPrio(int priority, unsigned int digits) {
+    std::string value = std::to_string(priority);
+    unsigned int diff = digits - value.size();
+    std::string ret;
+    for(unsigned int i = 0; i < diff; i++) {
+      ret += std::to_string(0);
+    }
+    ret += value;
+    return ret;
+  }
 };
 
 std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
@@ -357,7 +395,7 @@ std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &
                               ptr->getPool(), ptr->getScope(), "");
   auto ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC | CodeCompOp::HOOK;
   codeCompleter(src.getContent(), ignoredOp);
-  return std::move(collector).take();
+  return std::move(collector).finalize();
 }
 
 } // namespace ydsh::lsp
