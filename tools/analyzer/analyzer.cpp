@@ -351,11 +351,17 @@ public:
               [](const CompletionItem &x, const CompletionItem &y) {
                 return x.priority < y.priority || (x.priority == y.priority && x.label < y.label);
               });
+    auto iter = std::unique(this->items.begin(), this->items.end(),
+                            [](const CompletionItem &x, const CompletionItem &y) {
+                              return x.priority == y.priority && x.label == y.label;
+                            });
+    this->items.erase(iter, this->items.end());
+
     // fill sortText
     unsigned int prioCount = 0;
     if (!this->items.empty()) {
       int prevPrio = this->items[0].priority;
-      for(auto &item : this->items) {
+      for (auto &item : this->items) {
         if (item.priority != prevPrio) {
           prioCount++;
           prevPrio = item.priority;
@@ -363,9 +369,9 @@ public:
         item.priority = prioCount;
       }
     }
-    if(prioCount > 0) {
+    if (prioCount > 0) {
       unsigned int maxDigits = std::to_string(prioCount).size();
-      for(auto &item : this->items) {
+      for (auto &item : this->items) {
         item.sortText = formatPrio(item.priority, maxDigits);
       }
     }
@@ -377,7 +383,7 @@ private:
     std::string value = std::to_string(priority);
     unsigned int diff = digits - value.size();
     std::string ret;
-    for(unsigned int i = 0; i < diff; i++) {
+    for (unsigned int i = 0; i < diff; i++) {
       ret += std::to_string(0);
     }
     ret += value;
