@@ -1,0 +1,3 @@
+# RUN: /bin/sh $self
+# RUN: echo hello
+# CHECK: hello

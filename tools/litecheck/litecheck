@@ -54,12 +54,18 @@ function _parse_num($v : String) : Int! {
     return $r
 }
 
-function _parse_directive($path : String) : [Directive] {
-    var ret : [Directive]
+ function _parse_directives($path : String) : [String: [Directive]] {
+    var map = [
+        $RUN : new [Directive](),
+        $REQUIRE : new [Directive](),
+        $CHECK : new [Directive](),
+        $CHECKERR : new [Directive](),
+        $STATUS : new [Directive](),
+    ]
 
     var lines = $_lines($path)
     if !$lines.empty() && $lines[0].startsWith($SHEBANG) {
-        $ret.add(($SHEBANG, $lines[0], 1))
+        $map[$RUN].add(($SHEBANG, $lines[0], 1))
     }
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
@@ -69,60 +75,62 @@ function _parse_directive($path : String) : [Directive] {
             var type = $matched[1]!
             assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || $type == $REQUIRE || $type == $STATUS
             $line = $matched[2]!
-            $ret.add(($type, $line, $ln))
+            $map[$type].add(($type, $line, $ln))
         }
     }
 
-    # validate directive order
-    var has_shebang = $false
-    var has_run = $false
-
-    let size = $ret.size()
-    var index = 0
-
-    ## check shebang or RUN directive
-    if $index < $size && $ret[$index]._0 == $SHEBANG {
-        $has_shebang = $true
-        $index++
-    }
-    if $index < $size && $ret[$index]._0 == $RUN {
-        $index++
-        $has_run = $true
-    } elif $has_shebang {
-    } else {
-        $_error("require $RUN directive or shebang")
-    }
-
-    if !$has_run {
-        test -x $self || $_error("must be executable: `$self'")
+    ## check RUN directive or SHEBANG
+    case $map[$RUN].size() {
+        0 => $_error("require $RUN directive or shebang")
+        1 => if $map[$RUN][0]._0 == $SHEBANG {
+                test -x $self || $_error("must be executable: `$self'")
+                $map[$RUN].shift()
+             } else {
+                assert $map[$RUN][0]._0 == $RUN
+             }
+        else => {
+            if $map[$RUN][0]._0 == $SHEBANG {
+                $map[$RUN].shift()
+                assert $map[$RUN][0]._0 == $RUN
+            }
+            $map[$RUN].size() == 1 || $_error("$RUN directive has already defined")
+        }
     }
 
     ## check STATUS directive
-    var status : Int!
-    for(; $index < $size; $index++) {
-        var d = $ret[$index]
-        if $d._0 == $STATUS {
-            if $status { $_error("$STATUS directive has already defined"); }
-            $status = $_parse_num($d._1) ?? $_error("invalid $STATUS directive: `${$d._1}'")
+    case $map[$STATUS].size() {
+        0 => {}
+        1 => {
+            var d = $map[$STATUS][0]._1
+            $_parse_num($d) ?? $_error("invalid $STATUS directive: `$d'")
         }
+        else => $_error("$STATUS directive has already defined")
     }
+    return $map
+ }
 
-    if $has_shebang {
-        $ret.shift()
+function _check_output($checks : [Directive], $output : [String]) : Bool {
+    var eout = ""
+    for $c in $checks {
+        if !$eout.empty() {
+            $eout += $'\n'
+        }
+        $eout += $c._1
     }
-    return $ret
+    return diff 1>&2 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')})
 }
 
-function _run_and_check($directives : [Directive]) : Int {
-    var run = if !$directives.empty() && $directives[0]._0 == $RUN {
-        var d = $directives.shift()
-        try {
-            $MODULE.func($d._1)
-        } catch $e : Error {
-            $_error("invalid $RUN directive: `${$d._1}', caused by" + $'\n' + $e.message())
+function _run_and_check($map : [String : [Directive]]) : Int {
+    var run = case $map[$RUN].size() {
+        0 => $MODULE.func("eval $self")
+        else => {
+            var d = $map[$RUN][0]._1
+            try {
+                $MODULE.func($d)
+            } catch $e : Error {
+                $_error("invalid $RUN directive: `$d', caused by" + $'\n' + $e.message())
+            }
         }
-    } else {
-        $MODULE.func("eval $self")
     }
 
     assert command -v mktemp > /dev/null
@@ -136,46 +144,16 @@ function _run_and_check($directives : [Directive]) : Int {
         var outs = $_lines($outPath)
         var errs = $_lines($errPath)
 
-        var estatus : Int!
-        var eouts : [String]
-        var eout_found = $false
-        var eerrs : [String]
-        var eerr_found = $false
-        for $d in $directives {
-            if $d._0 == $CHECK {
-                $eouts.add($d._1)
-                $eout_found = $true
-            } elif $d._0 == $CHECKERR {
-                $eerrs.add($d._1)
-                $eerr_found = $true
-            } elif $d._0 == $STATUS {
-                $estatus = $_parse_num($d._1)!
-            }
-        }
-
         var ret = 0
-        if $eout_found {
-            var b = diff 1>&2 \
-                <(cat <<< ${$eouts.join($'\n')}) \
-                <(cat <<< ${$outs.join($'\n')})
-            if !$b {
-                echo 1>&2 stdout is mismatched
-                $ret = 1
-            }
+        if !$map[$CHECK].empty() {
+            if !$_check_output($map[$CHECK], $outs) { echo 1>&2 stdout is mismatched; $ret = 1; }
         }
-
-        if $eerr_found {
-            var b = diff 1>&2 \
-                <(cat <<< ${$eerrs.join($'\n')}) \
-                <(cat <<< ${$errs.join($'\n')})
-            if !$b {
-                echo 1>&2 stderr is mismatched
-                $ret = 1
-            }
+        if !$map[$CHECKERR].empty() {
+            if !$_check_output($map[$CHECKERR], $errs) { echo 1>&2 stderr is mismatched; $ret = 1; }
         }
-
-        if $estatus {
-            $s == $estatus! || $_error("exit status is mismatched, expected: `${$estatus!}', actual: `$s'")
+        if !$map[$STATUS].empty() {
+            var estatus = $_parse_num($map[$STATUS][0]._1)!
+            $s == $estatus || $_error("exit status is mismatched, expected: `$estatus', actual: `$s'")
         }
         return $ret
     } finally {
@@ -216,19 +194,18 @@ litecheck() {
     }
 
     # read directive
-    var directives = $_parse_directive($self)
+    var map = $_parse_directives($self)
 
     # check pre-condition
-    for $d in $directives {
-        $d._0 != $REQUIRE && continue
-                var cond = try { $MODULE.func($d._1)(); } 
+    for $d in $map[$REQUIRE] {
+        var cond = try { $MODULE.func($d._1)(); } 
                    catch $e : Error { $_error("invalid $REQUIRE directive: `${$d._1}', caused by" + $'\n' + $e.message()); }
         $cond is Bool || $_error("$REQUIRE directive must be boolean expression: `${$d._1}'")
         $cond! as Bool || { echo skip "`$self'"; exit 125; }
     }
 
     # run command
-    return $_run_and_check($directives)
+    return $_run_and_check($map)
 }
 
 
