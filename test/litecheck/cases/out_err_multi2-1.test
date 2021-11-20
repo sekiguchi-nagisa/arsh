@@ -1,0 +1,12 @@
+# RUN: /bin/sh $self
+echo 1234
+# CHECK: 1234
+echo 1>&2 ABCD
+# CHECKERR: ABCD
+echo 6789
+# CHECK: 6789
+# CHECK: 0123
+echo 1>&2 EFGH
+# CHECKERR: EFGH
+echo 1>&2 IJKL
+

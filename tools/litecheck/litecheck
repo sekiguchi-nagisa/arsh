@@ -119,8 +119,7 @@ function _run_and_check($directives : [Directive]) : Int {
         try {
             $MODULE.func($d._1)
         } catch $e : Error {
-            $e.backtrace(); 
-            $_error("invalid $RUN directive: `${$d._1}'"); 
+            $_error("invalid $RUN directive: `${$d._1}', caused by" + $'\n' + $e.message())
         }
     } else {
         $MODULE.func("eval $self")
@@ -223,8 +222,8 @@ litecheck() {
     for $d in $directives {
         $d._0 != $REQUIRE && continue
                 var cond = try { $MODULE.func($d._1)(); } 
-                   catch $e : Error { $e.backtrace(); $_error("invalid $REQUIRE directive: `${$d._1}'"); }
-        $cond is Bool || $_error("$REQUIRE directive must be boolean expresion: `${$d._1}'")
+                   catch $e : Error { $_error("invalid $REQUIRE directive: `${$d._1}', caused by" + $'\n' + $e.message()); }
+        $cond is Bool || $_error("$REQUIRE directive must be boolean expression: `${$d._1}'")
         $cond! as Bool || { echo skip "`$self'"; exit 125; }
     }
 

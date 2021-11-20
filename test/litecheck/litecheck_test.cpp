@@ -94,10 +94,49 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-TEST_P(LitecheckTest, baseTest) { ASSERT_NO_FATAL_FAILURE(this->doTest()); }
+TEST_P(LitecheckTest, base) { ASSERT_NO_FATAL_FAILURE(this->doTest()); }
 
 INSTANTIATE_TEST_SUITE_P(LitecheckTest, LitecheckTest,
                          ::testing::ValuesIn(getSortedFileList(LITECHECK_TEST_DIR)));
+
+struct LitecheckCLITest : public ExpectOutput {};
+
+TEST_F(LitecheckCLITest, option) {
+  const char *err = R"(require file
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck(), 2, "", err));
+
+  err = R"(file not found: `34'
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("34"), 2, "", err));
+
+  err = R"(require regular file: .
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("."), 2, "", err));
+
+  err = R"(invalid option: -q
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-q"), 2, "", err));
+
+  err = R"(`-b' option requires argument
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b"), 2, "", err));
+
+  err = R"(file not found: `123'
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", "123", LITECHECK_PATH), 2, "", err));
+
+  err = R"(must be executable: `.'
+usage: litecheck [-b bin] file
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", ".", LITECHECK_PATH), 2, "", err));
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

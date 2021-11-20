@@ -1,0 +1,5 @@
+invalid REQUIRE directive: `command ()', caused by
+(loaded):1:11: [syntax error] expected `{'
+command ()
+          ^
+

@@ -1,0 +1,6 @@
+
+ls -la
+
+# RUN: /bin/sh $self
+# CHECK: 123
+# REQUIRE: (34/0) == 0

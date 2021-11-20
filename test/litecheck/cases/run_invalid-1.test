@@ -1,0 +1,3 @@
+
+# RUN: echo ${34 / "hello"}
+# CHECK: 34

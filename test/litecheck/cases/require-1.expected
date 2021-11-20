@@ -1,0 +1,5 @@
+3c3
+< abde
+---
+> abcde
+stdout is mismatched

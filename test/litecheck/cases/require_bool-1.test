@@ -1,0 +1,3 @@
+# RUN: echo hello
+# CHECK: hello
+#REQUIRE:   34 + 34

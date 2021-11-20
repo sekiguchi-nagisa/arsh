@@ -1,0 +1,3 @@
+# RUN: exit 10
+# STATUS: 10
+# REQUIRE: $false

@@ -1,0 +1,10 @@
+#!/bin/sh
+echo 12345
+echo ABCDE
+echo abcde
+echo @@@@@
+# REQUIRE: command -v /bin/sh
+# CHECK: 12345
+# CHECK: ABCDE
+# CHECK: abcde
+# CHECK: @@@@@

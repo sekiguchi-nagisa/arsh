@@ -1,0 +1,2 @@
+invalid REQUIRE directive: `(34/0) == 0', caused by
+zero division
