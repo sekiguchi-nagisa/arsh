@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo 12345
+echo ABCD
+ls -la
+echo this is a pen
+ps
+echo do something
+echo do some thing2
+echo ooo
+exit 34
+# CHECK: 12345
+# CHECK: ABCD
+# CHECK_IF: this is a pen
+# CHECK_IF: do something
+# STATUS: 34
+# CHECK: do some thing2
+# CHECK: ooo

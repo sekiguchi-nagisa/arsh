@@ -39,6 +39,16 @@
     - ``textDocument/publishDiagnostics``
     - ``textDocument/completion``
 
+#### Misc
+
+- add LLVM lit/FileCheck or littlecheck like file checker, called ``litecheck``
+    - support the following directives
+        - ``RUN``
+        - ``REQUIRE``
+        - ``CHECK``, ``CHECK_IF``
+        - ``CHECKERR``, ``CHECKERR_IF``
+        - ``STATUS``
+
 ### Changed
 
 #### Core

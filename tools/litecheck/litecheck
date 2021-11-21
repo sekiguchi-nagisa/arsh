@@ -34,7 +34,9 @@ var self = ''
 
 let RUN = "RUN"
 let CHECK = "CHECK"
+let CHECK_IF = "CHECK_IF"
 let CHECKERR = "CHECKERR"
+let CHECKERR_IF = "CHECKERR_IF"
 let STATUS = "STATUS"
 let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
@@ -54,7 +56,7 @@ function _parse_num($v : String) : Int! {
     return $r
 }
 
- function _parse_directives($path : String) : [String: [Directive]] {
+function _parse_directives($path : String) : [String: [Directive]] {
     var map = [
         $RUN : new [Directive](),
         $REQUIRE : new [Directive](),
@@ -70,12 +72,19 @@ function _parse_num($v : String) : Int! {
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|CHECKERR|STATUS|REQUIRE): (.*)/.match($line)
+        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|STATUS|REQUIRE): (.*)/.match($line)
         if !$matched.empty() {
             var type = $matched[1]!
-            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || $type == $REQUIRE || $type == $STATUS
+            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || 
+                    $type == $REQUIRE || $type == $STATUS || $type == $CHECK_IF || $type == $CHECKERR_IF
             $line = $matched[2]!
-            $map[$type].add(($type, $line, $ln))
+            var key = $type
+            if $type == $CHECK_IF {
+                $key = $CHECK
+            } elif $type == $CHECKERR_IF {
+                $key = $CHECKERR
+            }
+            $map[$key].add(($type, $line, $ln))
         }
     }
 
@@ -85,9 +94,9 @@ function _parse_num($v : String) : Int! {
         1 => if $map[$RUN][0]._0 == $SHEBANG {
                 test -x $self || $_error("must be executable: `$self'")
                 $map[$RUN].shift()
-             } else {
+            } else {
                 assert $map[$RUN][0]._0 == $RUN
-             }
+            }
         else => {
             if $map[$RUN][0]._0 == $SHEBANG {
                 $map[$RUN].shift()
@@ -107,9 +116,25 @@ function _parse_num($v : String) : Int! {
         else => $_error("$STATUS directive has already defined")
     }
     return $map
- }
+}
 
-function _check_output($checks : [Directive], $output : [String]) : Bool {
+# split check directives into chunks
+function _to_chunk($checks : [Directive]) : [[Directive]] {
+    var ret : [[Directive]]
+    if !$checks[0]._0.endsWith("_IF") {
+        $ret.add(new [Directive]())
+    }
+
+    for $c in $checks {
+        if $c._0.endsWith("_IF") {
+            $ret.add(new [Directive]())
+        }
+        $ret.peek().add($c)
+    }
+    return $ret
+}
+
+function _match_chunk($checks : [Directive], $output : [String]) : Bool {
     var eout = ""
     for $c in $checks {
         if !$eout.empty() {
@@ -118,6 +143,32 @@ function _check_output($checks : [Directive], $output : [String]) : Bool {
         $eout += $c._1
     }
     return diff 1>&2 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')})
+}
+
+function _skip_until($c : String, $output : [String], $index : Int) : Int {
+    for(; $index < $output.size(); $index++) {
+        $output[$index] == $c && break
+    }
+    return $index
+}
+
+function _check_output($checks : [Directive], $output : [String]) : Bool {
+    var index = 0
+    var chunks = $_to_chunk($checks)
+    var matched = 0
+    for $chunk in $chunks {
+        if $chunk[0]._0.endsWith("_IF") {
+            $index = $_skip_until($chunk[0]._1, $output, $index)
+        }
+        var limit = $index + $chunk.size()
+        if $matched == $chunks.size() - 1 && $limit < $output.size() {
+            $limit = $output.size() # match remain output
+        }
+        $_match_chunk($chunk, $output.slice($index, $limit)) || return $false
+        $index = $limit
+        $matched++
+    }
+    return $true
 }
 
 function _run_and_check($map : [String : [Directive]]) : Int {

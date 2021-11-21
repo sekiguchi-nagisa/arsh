@@ -83,7 +83,13 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
       fileName += ".expected";
 
       std::ifstream input(fileName);
-      ASSERT_TRUE(input);
+      std::string err;
+      if (!input) {
+        err = "expected output is not found: `";
+        err += fileName;
+        err += "'";
+      }
+      ASSERT_EQ("", err);
       readAll(input);
     });
 

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo 12345
+echo AAAAA
+echo abcde
+# CHECK_IF: abcde
+ls
+echo @@@@@
+echo hello world!!
+# CHECK_IF: @@@@@
+# CHECK: hello world!!

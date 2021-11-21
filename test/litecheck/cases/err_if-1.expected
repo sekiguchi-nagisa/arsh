@@ -1,0 +1,6 @@
+1c1,2
+< @@@@@
+---
+> 12345
+> ACBD
+stderr is mismatched

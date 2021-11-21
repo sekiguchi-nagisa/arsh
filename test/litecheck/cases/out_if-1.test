@@ -1,0 +1,6 @@
+#!/bin/sh
+
+ls -la
+# CHECK_IF: @@@@@
+echo @@@@@
+echo AAAAA

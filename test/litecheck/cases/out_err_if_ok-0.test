@@ -1,0 +1,9 @@
+#RUN: /bin/sh $self
+
+ps ax
+ls 2>&1 -la
+echo @@@@@
+echo 1>&2 not found && ps ax 1>&2 && echo 1>&2 command
+# CHECK_IF: @@@@@
+# CHECKERR_IF: not found
+# CHECKERR_IF: command

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo 12345 1>&2 && echo ACBD 1>&2
+# CHECKERR: @@@@@
