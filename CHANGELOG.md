@@ -53,6 +53,8 @@
 
 - **Breaking Change**: remove ``fullname`` subcommand of ``shctl``
     - now use ``Module#fullname`` method instead
+- **Breaking Change**: slice methods of ``String``, ``Array`` type no longer raise any exceptions
+    - like python, if slice index is out of index, round index within range
 
 #### LSP
 

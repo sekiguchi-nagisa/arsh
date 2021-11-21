@@ -90,26 +90,21 @@ assert $bb.size() == 3 && $b.size() == 0
 }
 
 var ee = 34 as Any
-try { $bb.slice(0, 4); assert $false; } catch $e { $ee = $e; }
-assert $ee is OutOfRangeError
-$ee = 1
+assert $bb.slice(0, 4).size() == 3
+assert $bb[0]
+assert !$bb[1]
+assert !$bb[2]
 
 assert $bb.from(1) as String == [$false, $false] as String
-try { $bb.from(4); assert $false; } catch $e { $ee = $e; }
-assert $ee is OutOfRangeError
-$ee = 1
+assert $bb.from(4).size() == 0
+
 {
     var r = [1,2,3].from(3)
     assert $r.empty()
 }
 
 assert [0, 1, 2, 3].to(2) as String == [0, 1] as String
-try {
- 234567
- [0].to(-3); assert $false;
-} catch $e { $ee = $e; }
-assert $ee is OutOfRangeError
-$ee = 1
+assert [0].to(-3).size() == 0
 
 {
     var c = [1]

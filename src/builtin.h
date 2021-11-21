@@ -705,20 +705,19 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-static auto sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
+static DSValue sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
   auto b = obj.getValues().begin() + begin;
   auto e = obj.getValues().begin() + end;
   return DSValue::create<ArrayObject>(obj.getTypeID(), std::vector<DSValue>(b, e));
 }
 
-static auto sliceImpl(const StringRef &ref, size_t begin, size_t end) {
+static DSValue sliceImpl(const StringRef &ref, size_t begin, size_t end) {
   return DSValue::createStr(ref.slice(begin, end));
 }
 
 /**
  *
  * @tparam T
- * @param ctx
  * @param obj
  * @param startIndex
  * inclusive
@@ -727,47 +726,51 @@ static auto sliceImpl(const StringRef &ref, size_t begin, size_t end) {
  * @return
  */
 template <typename T>
-static auto slice(RuntimeContext &ctx, const T &obj, int64_t startIndex, int64_t stopIndex) {
-  const uint64_t size = obj.size();
+static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
+  const int64_t size = ({
+    uint64_t s = obj.size();
+    assert(s <= INT64_MAX);
+    static_cast<int64_t>(s);
+  });
 
   // resolve actual index
   startIndex = (startIndex < 0 ? size : 0) + startIndex;
-  stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
-
-  // check range
-  if (startIndex > stopIndex || startIndex < 0 || static_cast<uint64_t>(startIndex) > size ||
-      stopIndex < 0 || static_cast<uint64_t>(stopIndex) > size) {
-    std::string msg("size is ");
-    msg += std::to_string(size);
-    msg += ", but range is [";
-    msg += std::to_string(startIndex);
-    msg += ", ";
-    msg += std::to_string(stopIndex);
-    msg += ")";
-    raiseOutOfRangeError(ctx, std::move(msg));
-    RET_ERROR;
+  if (startIndex < 0) {
+    startIndex = 0;
+  } else if (startIndex > size) {
+    startIndex = size;
   }
-  RET(sliceImpl(obj, static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex)));
+
+  stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
+  if (stopIndex < 0) {
+    stopIndex = 0;
+  } else if (stopIndex > size) {
+    stopIndex = size;
+  }
+  if (stopIndex < startIndex) {
+    stopIndex = startIndex;
+  }
+  return sliceImpl(obj, static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex));
 }
 
 //!bind: function slice($this : String, $start : Int, $stop : Int) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
-  RET(slice(ctx, LOCAL(0).asStrRef(), LOCAL(1).asInt(), LOCAL(2).asInt()));
+  RET(slice(LOCAL(0).asStrRef(), LOCAL(1).asInt(), LOCAL(2).asInt()));
 }
 
 //!bind: function from($this : String, $start : Int) : String
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_sliceFrom);
   auto strObj = LOCAL(0).asStrRef();
-  RET(slice(ctx, strObj, LOCAL(1).asInt(), strObj.size()));
+  RET(slice(strObj, LOCAL(1).asInt(), strObj.size()));
 }
 
 //!bind: function to($this : String, $stop : Int) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_sliceTo);
   auto strObj = LOCAL(0).asStrRef();
-  RET(slice(ctx, strObj, 0, LOCAL(1).asInt()));
+  RET(slice(strObj, 0, LOCAL(1).asInt()));
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
@@ -1376,7 +1379,7 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto start = LOCAL(1).asInt();
   auto stop = LOCAL(2).asInt();
-  return slice(ctx, obj, start, stop);
+  RET(slice(obj, start, stop));
 }
 
 //!bind: function from($this : Array<T0>, $from : Int) : Array<T0>
@@ -1384,7 +1387,7 @@ YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sliceFrom);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto start = LOCAL(1).asInt();
-  return slice(ctx, obj, start, obj.getValues().size());
+  RET(slice(obj, start, obj.getValues().size()));
 }
 
 //!bind: function to($this : Array<T0>, $to : Int) : Array<T0>
@@ -1392,7 +1395,7 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sliceTo);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto stop = LOCAL(1).asInt();
-  return slice(ctx, obj, 0, stop);
+  RET(slice(obj, 0, stop));
 }
 
 //!bind: function copy($this : Array<T0>) : Array<T0>
