@@ -262,7 +262,7 @@ public:
   template <typename T, enable_when<is_optional_v<T>> = nullptr>
   void operator()(const char *fieldName, T &v) {
     JSON *json = this->validateField(fieldName, -1, true);
-    if (!json) {
+    if (!json || json->isInvalid()) {
       return;
     }
     using base_type = typename T::base_type;

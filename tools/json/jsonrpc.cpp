@@ -228,20 +228,24 @@ void Handler::onResponse(Response &&res) {
   entry.second(std::move(res));
 }
 
-ReplyImpl Handler::requestValidationError(const ValidationError &e) {
+ReplyImpl Handler::requestValidationError(const std::string &name, const ValidationError &e) {
   std::string str = e.formatError();
-  LOG(LogLevel::ERROR, "request message validation failed: \n%s", str.c_str());
+  LOG(LogLevel::ERROR, "request message validation failed at `%s': \n%s", name.c_str(),
+      str.c_str());
   return newError(InvalidParams, std::move(str));
 }
 
-void Handler::notificationValidationError(const ValidationError &e) {
+void Handler::notificationValidationError(const std::string &name, const ValidationError &e) {
   std::string str = e.formatError();
-  LOG(LogLevel::ERROR, "notification message validation failed: \n%s", str.c_str());
+  LOG(LogLevel::ERROR, "notification message validation failed at `%s': \n%s", name.c_str(),
+      str.c_str());
 }
 
-void Handler::responseValidationError(const ValidationError &e, Response &res) {
+void Handler::responseValidationError(const std::string &name, const ValidationError &e,
+                                      Response &res) {
   std::string str = e.formatError();
-  LOG(LogLevel::ERROR, "response message validation failed: \n%s", str.c_str());
+  LOG(LogLevel::ERROR, "response message validation failed at `%s': \n%s", name.c_str(),
+      str.c_str());
   res.error = Error(InvalidParams, std::move(str));
 }
 

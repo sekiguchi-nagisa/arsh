@@ -1,0 +1,12 @@
+# RUN: eval $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+# CHECK_IF:   "code": -32600,
+#    CHECK:   "message": "server has already initialized"
+#    CHECK: }
+<<<

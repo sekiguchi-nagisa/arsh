@@ -1,0 +1,44 @@
+# RUN: eval $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+# CHECK: {
+# CHECK:   "id": 0,
+# CHECK:   "jsonrpc": "2.0",
+# CHECK:   "result": {
+# CHECK:     "capabilities": {
+# CHECK:       "completionProvider": {
+# CHECK:         "triggerCharacters": [
+# CHECK:           ".",
+# CHECK:           "$",
+# CHECK:           "/"
+# CHECK:         ]
+# CHECK:       },
+# CHECK:       "definitionProvider": true,
+# CHECK:       "documentFormattingProvider": false,
+# CHECK:       "documentHighlightProvider": false,
+# CHECK:       "documentRangeFormattingProvider": false,
+# CHECK:       "documentSymbolProvider": false,
+# CHECK:       "hoverProvider": true,
+# CHECK:       "referencesProvider": true,
+# CHECK:       "textDocumentSync": {
+# CHECK:         "change": 1,
+# CHECK:         "openClose": true
+# CHECK:       },
+# CHECK:       "workspaceSymbolProvider": false
+# CHECK:     }
+# CHECK:   }
+# CHECK: }
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK: {
+# CHECK:   "id": 1,
+# CHECK:   "jsonrpc": "2.0",
+# CHECK:   "result": null
+# CHECK: }
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

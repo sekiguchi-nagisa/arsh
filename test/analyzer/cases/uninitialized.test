@@ -1,0 +1,24 @@
+# RUN: eval $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK: {
+# CHECK:   "code": -32002,
+# CHECK:   "message": "server not initialized!!"
+# CHECK: }
+<<<
+
+{"id": 1, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+# CHECK_IF: {
+# CHECK_IF:   "result": {
+#    CHECK:     "capabilities": {
+# CHECK_IF: }
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF: }
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

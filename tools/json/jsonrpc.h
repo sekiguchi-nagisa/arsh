@@ -291,12 +291,12 @@ public:
 
   template <typename State, typename Ret, typename Param>
   void bind(const std::string &name, State *obj, Reply<Ret> (State::*method)(const Param &)) {
-    Call func = [this, obj, method](JSON &&json) -> ReplyImpl {
+    Call func = [this, obj, method, name](JSON &&json) -> ReplyImpl {
       JSONDeserializer deserializer(std::move(json));
       Param p;
       deserializer(p);
       if (deserializer.hasError()) {
-        return this->requestValidationError(deserializer.getValidationError());
+        return this->requestValidationError(name, deserializer.getValidationError());
       }
       return (obj->*method)(p);
     };
@@ -305,12 +305,12 @@ public:
 
   template <typename State, typename Ret>
   void bind(const std::string &name, State *obj, Reply<Ret> (State::*method)()) {
-    Call func = [this, obj, method](JSON &&json) -> ReplyImpl {
+    Call func = [this, obj, method, name](JSON &&json) -> ReplyImpl {
       JSONDeserializer deserializer(std::move(json));
       Optional<std::nullptr_t> p;
       deserializer(p);
       if (deserializer.hasError()) {
-        return this->requestValidationError(deserializer.getValidationError());
+        return this->requestValidationError(name, deserializer.getValidationError());
       }
       return (obj->*method)();
     };
@@ -319,12 +319,12 @@ public:
 
   template <typename State, typename Param>
   void bind(const std::string &name, State *obj, void (State::*method)(const Param &)) {
-    Notification func = [this, obj, method](JSON &&json) {
+    Notification func = [this, obj, method, name](JSON &&json) {
       JSONDeserializer deserializer(std::move(json));
       Param p;
       deserializer(p);
       if (deserializer.hasError()) {
-        this->notificationValidationError(deserializer.getValidationError());
+        this->notificationValidationError(name, deserializer.getValidationError());
         return;
       }
       (obj->*method)(p);
@@ -334,12 +334,12 @@ public:
 
   template <typename State>
   void bind(const std::string &name, State *obj, void (State::*method)()) {
-    Notification func = [this, obj, method](JSON &&json) {
+    Notification func = [this, obj, method, name](JSON &&json) {
       JSONDeserializer deserializer(std::move(json));
       Optional<std::nullptr_t> p;
       deserializer(p);
       if (deserializer.hasError()) {
-        this->notificationValidationError(deserializer.getValidationError());
+        this->notificationValidationError(name, deserializer.getValidationError());
         return;
       }
       (obj->*method)();
@@ -350,13 +350,13 @@ public:
   template <typename Ret, typename Param, typename Func, typename Error>
   auto call(Transport &transport, const std::string &name, const Param &param, Func callback,
             Error ecallback) {
-    ResponseCallback func = [this, callback, ecallback](Response &&res) {
+    ResponseCallback func = [this, callback, ecallback, name](Response &&res) {
       if (res) {
         JSONDeserializer deserializer(std::move(res.result));
         Ret ret;
         deserializer(ret);
         if (deserializer.hasError()) {
-          this->responseValidationError(deserializer.getValidationError(), res);
+          this->responseValidationError(name, deserializer.getValidationError(), res);
         } else {
           callback(ret);
           return;
@@ -377,11 +377,11 @@ public:
   }
 
 protected:
-  ReplyImpl requestValidationError(const ValidationError &e);
+  ReplyImpl requestValidationError(const std::string &name, const ValidationError &e);
 
-  void notificationValidationError(const ValidationError &e);
+  void notificationValidationError(const std::string &name, const ValidationError &e);
 
-  void responseValidationError(const ValidationError &e, Response &res);
+  void responseValidationError(const std::string &name, const ValidationError &e, Response &res);
 
   void bindImpl(const std::string &methodName, Call &&func);
 

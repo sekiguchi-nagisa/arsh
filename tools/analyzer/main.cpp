@@ -158,9 +158,9 @@ public:
     });
     client.run(this->requests);
     proc.waitWithTimeout(100);
-    proc.kill(SIGTERM);
+    proc.kill(SIGKILL);
     auto ret = proc.wait();
-    exit(ret.value);
+    exit(ret.toShellStatus());
   }
 
 private:

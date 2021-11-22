@@ -617,6 +617,15 @@ TEST(DeserializeTest, option2) {
   ASSERT_FALSE(v1.json.hasValue());
 }
 
+TEST(DeserializeTest, option3) {
+  JSON json;
+  JSONDeserializer deserializer(std::move(json));
+  Optional<int> v1;
+  deserializer(v1);
+  ASSERT_FALSE(deserializer.hasError());
+  ASSERT_FALSE(v1.hasValue());
+}
+
 enum class Flag1 {
   BLUE = 34,
   RED = 35,
