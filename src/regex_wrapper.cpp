@@ -70,10 +70,14 @@ static auto createCompileCtx() {
   auto ctx = std::unique_ptr<pcre2_compile_context, Deleter>(pcre2_compile_context_create(nullptr));
   assert(ctx);
 
-#ifdef PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK
-  pcre2_set_compile_extra_options(ctx.get(), PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK);
+#ifndef PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK
+#define PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK 0x00000040u
 #endif
 
+  auto version = PCRE::version();
+  if (version.major >= 10 && version.minor >= 38) { // for backward-compatibility
+    pcre2_set_compile_extra_options(ctx.get(), PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK);
+  }
   return ctx;
 }
 
