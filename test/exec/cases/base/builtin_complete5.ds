@@ -16,7 +16,7 @@ assert diff <(complete -A env '') <(complete 'import-env ')
 assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
 
 ## user
-assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
+assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///' | LANG=C sort)
 
 ## group
 export-env LC_ALL = 'C'

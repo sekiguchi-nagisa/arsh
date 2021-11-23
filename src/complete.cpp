@@ -33,7 +33,7 @@ namespace ydsh {
 
 // for input completion
 
-static bool needEscape(char ch, CompCandidateKind kind) {
+static bool needEscape(int ch, CompCandidateKind kind) {
   switch (ch) {
   case ' ':
   case ';':
@@ -79,13 +79,13 @@ static std::string escape(StringRef ref, CompCandidateKind kind) {
     char ch = *iter;
     if (isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
       buf += '\\';
-      buf += static_cast<char>(ch);
+      buf += ch;
       iter++;
     }
   }
 
   while (iter != end) {
-    char ch = *(iter++);
+    int ch = *(iter++);
     if (ch == '\\' && iter != end && needEscape(*iter, kind)) {
       buf += '\\';
       ch = *(iter++);
@@ -99,7 +99,7 @@ static std::string escape(StringRef ref, CompCandidateKind kind) {
         buf += '\\';
       }
     }
-    buf += ch;
+    buf += static_cast<char>(ch);
   }
   return buf;
 }
