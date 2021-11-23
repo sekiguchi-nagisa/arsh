@@ -17,9 +17,9 @@ assert diff <(complete 'unsetenv H') <(complete -A env H)
 # shctl
 _extract_sub() {
     while(read -f $'\n') {
-        if $/^        \w/ =~ $REPLY {
-            var a = $/        /.replace($REPLY, "").split(' ')[0]
-            echo $a
+        var matched = $/^ +([-a-z]+) +.+/.match($REPLY)
+        if !$matched.empty() {
+            echo ${$matched[1]!}
         }
     }
 }

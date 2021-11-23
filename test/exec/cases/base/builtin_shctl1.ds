@@ -44,3 +44,11 @@ $? = 0
 shctl is-interactive
 assert $? == 1
 assert shctl backtrace
+
+# info
+assert $reply.empty()
+assert shctl info | grep regex
+$? = 0
+assert shctl info
+assert !$reply.empty()
+assert !$reply['regex'].empty()

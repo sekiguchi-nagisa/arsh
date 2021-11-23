@@ -148,7 +148,8 @@ static BuiltinCmdDesc table[] = {
      "        module              print full path of loaded modules or scripts.\n"
      "        show  [OPTION ...]  print runtime option setting.\n"
      "        set   OPTION ...    set/enable/on runtime option.\n"
-     "        unset OPTION ...    unset/disable/off runtime option."},
+     "        unset OPTION ...    unset/disable/off runtime option.\n"
+     "        info                show configuration (also get via 'reply' variable)."},
     {"test", "[expr]",
      "    Unary or Binary expressions.\n"
      "    If expression is true, return 0\n"

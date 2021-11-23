@@ -30,6 +30,15 @@ struct PCRECapture {
   explicit operator bool() const { return this->valid; }
 };
 
+struct PCREVersion {
+  unsigned int major;
+  unsigned int minor;
+
+  explicit operator bool() const {
+    return !(this->major == 0 && this->minor == 0);
+  }
+};
+
 struct PCRE {
   void *code; // pcre2_code
   void *data; // pcre2_match_data
@@ -48,6 +57,8 @@ struct PCRE {
   ~PCRE();
 
   static PCRE compile(StringRef pattern, StringRef flag, std::string &errorStr);
+
+  static PCREVersion version();
 
   PCRE &operator=(PCRE &&re) noexcept {
     if (this != std::addressof(re)) {

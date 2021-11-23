@@ -1890,6 +1890,52 @@ static int isSourced(const VMState &st) {
   return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
 }
 
+static void setAndPrintConf(MapObject &mapObj, unsigned int maxKeyLen, StringRef key,
+                            const std::string &value) {
+  std::string out = key.toString();
+  out.append(4 + maxKeyLen - out.size(), ' ');
+  out += value;
+  out += '\n';
+  fputs(out.c_str(), stdout);
+
+  mapObj.set(DSValue::createStr(key), DSValue::createStr(value));
+}
+
+static int showInfo(DSState &state) {
+  auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
+  mapObj.clear();
+
+  const char *keys[] = {
+      "regex",
+  };
+
+  unsigned int maxKeyLen = 0;
+  for(auto &k : keys) {
+    unsigned int len = strlen(k);
+    if(len > maxKeyLen) {
+      maxKeyLen = len;
+    }
+  }
+
+  for(auto &k : keys) {
+    StringRef key = k;
+    if(key == "regex") {
+      auto version = PCRE::version();
+      std::string value;
+      if(version) {
+        value += "pcre2-";
+        value += std::to_string(version.major);
+        value += ".";
+        value += std::to_string(version.minor);
+      } else {
+        value = "null";
+      }
+      setAndPrintConf(mapObj, maxKeyLen, key, value);
+    }
+  }
+  return 0;
+}
+
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
   if (argvObj.size() > 1) {
     auto ref = argvObj.getValues()[1].asStrRef();
@@ -1909,6 +1955,8 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
       return setOption(state, argvObj, false);
     } else if (ref == "module") {
       return showModule(state);
+    } else if (ref == "info") {
+      return showInfo(state);
     } else {
       ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
       return 2;

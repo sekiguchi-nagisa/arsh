@@ -27,6 +27,7 @@
 #endif
 
 #include "misc/flag_util.hpp"
+#include "misc/num_util.hpp"
 #include "regex_wrapper.h"
 
 namespace ydsh {
@@ -117,6 +118,40 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
   errorStr = "regex is not supported";
   return PCRE();
 #endif
+}
+
+static PCREVersion getVersion() {
+  StringRef ref = "0.0 2999-12-31";
+
+#ifdef USE_PCRE
+  char data[64];
+  pcre2_config(PCRE2_CONFIG_VERSION, data);
+  ref = data;
+#endif
+
+  auto pos = ref.indexOf(" ");
+  ref = ref.slice(0, pos);
+  pos = ref.indexOf(".");
+  StringRef vv1 = ref.slice(0, pos);
+  StringRef vv2 = ref.slice(pos + 1, ref.size());
+
+  auto pair = convertToNum<unsigned int>(vv1.begin(), vv1.end());
+  assert(pair.second);
+  unsigned int major = pair.first;
+
+  pair = convertToNum<unsigned int>(vv2.begin(), vv2.end());
+  assert(pair.second);
+  unsigned int minor = pair.first;
+
+  return PCREVersion{
+      .major = major,
+      .minor = minor,
+  };
+}
+
+PCREVersion PCRE::version() {
+  static PCREVersion v = getVersion();
+  return v;
 }
 
 int PCRE::match(StringRef ref, std::string &errorStr) {

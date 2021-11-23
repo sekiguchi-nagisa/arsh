@@ -32,6 +32,8 @@
     - ``func``: compile string as single expression function
     - ``fullname``: resolve fully qualified command name
 - add ``String#width`` method for width counting of grapheme cluster
+- add ``info`` sub-command to builtin ``shctl`` command
+    - now show runtime configuration (also get via ``reply` variable)
 
 #### LSP
 
