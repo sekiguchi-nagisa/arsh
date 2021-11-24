@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build-and-test:
+  build-on-gcc:
     machine:
       image: ubuntu-2004:202101-01
     resource_class: arm.medium
@@ -11,8 +11,18 @@ jobs:
       - run: sudo apt update
       - run: sudo apt install -y g++ cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
       - run: sh tools/scripts/run_all_test.sh g++
-    
+  build-on-clang:
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run: uname -a
+      - run: sudo apt update
+      - run: sudo apt install -y g++ clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
+      - run: sh tools/scripts/run_all_test.sh clang++
 workflows:
   build:
     jobs:
-      - build-and-test
+      - build-on-gcc
+      - build-on-clang
