@@ -42,7 +42,6 @@ static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_echo(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
-static int builtin__exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
@@ -64,7 +63,7 @@ static auto initBuiltinMap() {
       {":", builtin_true},
       {"__gets", builtin___gets},
       {"__puts", builtin___puts},
-      {"_exit", builtin__exit},
+      {"_exit", builtin_exit},
       {"bg", builtin_fg_bg},
       {"cd", builtin_cd},
       {"checkenv", builtin_check_env},
@@ -364,20 +363,18 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
 
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
   int ret = parseExitStatus(state, argvObj);
+  if (argvObj.getValues()[0].asStrRef() == "_exit") {
+    terminate(ret);
+  } else {
+    if (hasFlag(state.runtimeOption, RuntimeOption::HUP_EXIT)) {
+      state.jobTable.send(SIGHUP);
+    }
 
-  if (hasFlag(state.runtimeOption, RuntimeOption::HUP_EXIT)) {
-    state.jobTable.send(SIGHUP);
+    std::string str("terminated by exit ");
+    str += std::to_string(ret);
+    raiseError(state, TYPE::_ShellExit, std::move(str), ret);
   }
-
-  std::string str("terminated by exit ");
-  str += std::to_string(ret);
-  raiseError(state, TYPE::_ShellExit, std::move(str), ret);
   return ret;
-}
-
-static int builtin__exit(DSState &state, ArrayObject &argvObj) {
-  int ret = parseExitStatus(state, argvObj);
-  terminate(ret);
 }
 
 static int builtin_true(DSState &, ArrayObject &) { return 0; }
