@@ -1907,23 +1907,25 @@ static int showInfo(DSState &state) {
 
   const char *keys[] = {
       "regex",
+      "version",
+      "compiler",
   };
 
   unsigned int maxKeyLen = 0;
-  for(auto &k : keys) {
+  for (auto &k : keys) {
     unsigned int len = strlen(k);
-    if(len > maxKeyLen) {
+    if (len > maxKeyLen) {
       maxKeyLen = len;
     }
   }
 
-  for(auto &k : keys) {
+  for (auto &k : keys) {
     StringRef key = k;
-    if(key == "regex") {
+    if (key == "regex") {
       auto version = PCRE::version();
       std::string value;
-      if(version) {
-        value += "pcre2-";
+      if (version) {
+        value += "PCRE2 ";
         value += std::to_string(version.major);
         value += ".";
         value += std::to_string(version.minor);
@@ -1931,6 +1933,10 @@ static int showInfo(DSState &state) {
         value = "null";
       }
       setAndPrintConf(mapObj, maxKeyLen, key, value);
+    } else if (key == "version") {
+      setAndPrintConf(mapObj, maxKeyLen, key, X_INFO_VERSION_CORE);
+    } else if (key == "compiler") {
+      setAndPrintConf(mapObj, maxKeyLen, key, X_INFO_CPP " " X_INFO_CPP_V);
     }
   }
   return 0;

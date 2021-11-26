@@ -47,8 +47,13 @@ assert shctl backtrace
 
 # info
 assert $reply.empty()
-assert shctl info | grep regex
+assert shctl info | grep regex | grep PCRE2
+assert shctl info | grep version | grep $YDSH_VERSION
+assert shctl info | grep compiler
 $? = 0
 assert shctl info
 assert !$reply.empty()
 assert !$reply['regex'].empty()
+assert $reply['regex'] =~ $/PCRE2 \d+\.\d+/
+assert $reply['version'] == $YDSH_VERSION
+assert !$reply['compiler'].empty()
