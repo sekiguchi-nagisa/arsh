@@ -61,6 +61,7 @@ bool containPlatform(const std::string &text, PlatformType type);
   OP(UNKNOWN, "unknown")                                                                           \
   OP(X86_64, "x64|amd64|x86-64")                                                                   \
   OP(X86, "i386|i486|i586|i686")                                                                   \
+  OP(ARM, "aarch32|a32")                                                                           \
   OP(AARCH64, "arm64|a64")
 
 enum class ArchType : unsigned int {

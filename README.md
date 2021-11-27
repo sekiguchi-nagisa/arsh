@@ -34,6 +34,7 @@ Currently, under heavy development. Language specification is subject to change 
 
 * Linux
     * x86
+    * AArch32
     * AArch64
 * macOS
     * x86-64
