@@ -1,7 +1,7 @@
 # RUN: eval $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
- "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46, "trace" : "on"}}
 
 # CHECK: {
 # CHECK:   "id": 0,
@@ -32,6 +32,8 @@
 # CHECK: }
 
 <<<
+{ "jsonrpc": "2.0", "method" : "initialized"}
+---
 {"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK: {

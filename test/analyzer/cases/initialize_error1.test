@@ -1,0 +1,12 @@
+# RUN: eval $cmd --test $self
+
+# invalid param
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities---": {}, "rootUri": "file:///test", "processId": 46}}
+
+# CHECK: {
+# CHECK:   "code": -32602,
+# CHECK:   "message": "undefined field `capabilities'"
+# CHECK: }
+
+<<<
