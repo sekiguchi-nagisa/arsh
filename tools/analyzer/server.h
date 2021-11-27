@@ -97,11 +97,14 @@ private:
     Handler::notify(this->transport, name, param);
   }
 
-  SourcePtr resolveSource(const std::string &uriStr);
+  Result<SourcePtr, CStrPtr> resolveSource(const TextDocumentIdentifier &doc);
 
-  void gotoDefinitionImpl(const Source &src, Position position, std::vector<Location> &result);
+  Result<std::pair<SourcePtr, SymbolRequest>, CStrPtr>
+  resolvePosition(const TextDocumentPositionParams &params);
 
-  void findReferenceImpl(const Source &src, Position position, std::vector<Location> &result);
+  std::vector<Location> gotoDefinitionImpl(const SymbolRequest &request);
+
+  std::vector<Location> findReferenceImpl(const SymbolRequest &request);
 
   DiagnosticEmitter newDiagnosticEmitter();
 

@@ -59,22 +59,39 @@ void LSPServer::run() {
   }
 }
 
-SourcePtr LSPServer::resolveSource(const std::string &uriStr) {
-  auto uri = uri::URI::fromString(uriStr);
+static CStrPtr format(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+
+static CStrPtr format(const char *fmt, ...) {
+  va_list arg;
+
+  va_start(arg, fmt);
+  char *str = nullptr;
+  if (vasprintf(&str, fmt, arg) == -1) {
+    fatal_perror("");
+  }
+  va_end(arg);
+  return CStrPtr(str);
+}
+
+Result<SourcePtr, CStrPtr> LSPServer::resolveSource(const TextDocumentIdentifier &doc) {
+  auto uri = uri::URI::fromString(doc.uri);
   if (!uri) {
-    LOG(LogLevel::ERROR, "broken uri: %s", uriStr.c_str());
-    return nullptr;
+    auto str = format("broken uri: %s", doc.uri.c_str());
+    LOG(LogLevel::ERROR, "%s", str.get());
+    return Err(std::move(str));
   }
   if (uri.getScheme() != "file") {
-    LOG(LogLevel::ERROR, "only support 'file' scheme at textDocument: %s", uriStr.c_str());
-    return nullptr;
+    auto str = format("only support 'file' scheme at textDocument: %s", doc.uri.c_str());
+    LOG(LogLevel::ERROR, "%s", str.get());
+    return Err(std::move(str));
   }
   auto src = this->srcMan.find(uri.getPath());
   if (!src) {
-    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr.c_str());
-    return nullptr;
+    auto str = format("broken textDocument: %s", doc.uri.c_str());
+    LOG(LogLevel::ERROR, "%s", str.get());
+    return Err(std::move(str));
   }
-  return src;
+  return Ok(std::move(src));
 }
 
 static Optional<SymbolRequest> toRequest(const Source &src, Position position) {
@@ -85,13 +102,27 @@ static Optional<SymbolRequest> toRequest(const Source &src, Position position) {
   return SymbolRequest{.modId = src.getSrcId(), .pos = pos.unwrap()};
 }
 
-void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
-                                   std::vector<Location> &result) {
-  auto request = toRequest(src, position);
-  if (!request.hasValue()) {
-    return;
+Result<std::pair<SourcePtr, SymbolRequest>, CStrPtr>
+LSPServer::resolvePosition(const TextDocumentPositionParams &params) {
+  auto resolved = this->resolveSource(params.textDocument);
+  if (!resolved) {
+    return Err(std::move(resolved).takeError());
   }
-  findDeclaration(this->indexes, request.unwrap(), [&](const FindDeclResult &ret) {
+  auto src = std::move(resolved).take();
+  assert(src);
+  auto req = toRequest(*src, params.position);
+  if (!req.hasValue()) {
+    auto str = format("broken position at: %s:%s", params.textDocument.uri.c_str(),
+                      params.position.toString().c_str());
+    LOG(LogLevel::ERROR, "%s", str.get());
+    return Err(std::move(str));
+  }
+  return Ok(std::make_pair(std::move(src), req.unwrap()));
+}
+
+std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) {
+  std::vector<Location> result;
+  findDeclaration(this->indexes, request, [&](const FindDeclResult &ret) {
     if (ret.decl.getModId() == 0) { // ignore builtin module symbol
       return;
     }
@@ -103,15 +134,12 @@ void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
     assert(range.hasValue());
     result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
+  return result;
 }
 
-void LSPServer::findReferenceImpl(const Source &src, Position position,
-                                  std::vector<Location> &result) {
-  auto request = toRequest(src, position);
-  if (!request.hasValue()) {
-    return;
-  }
-  findAllReferences(this->indexes, request.unwrap(), [&](const FindRefsResult &ret) {
+std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request) {
+  std::vector<Location> result;
+  findAllReferences(this->indexes, request, [&](const FindRefsResult &ret) {
     auto s = this->srcMan.findById(ret.symbol.getModId());
     assert(s);
     std::string uri = "file://";
@@ -120,6 +148,7 @@ void LSPServer::findReferenceImpl(const Source &src, Position position,
     assert(range.hasValue());
     result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
+  return result;
 }
 
 DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
@@ -220,8 +249,8 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
-  auto src = this->resolveSource(params.textDocument.uri);
-  if (src) {
+  if (auto resolved = this->resolveSource(params.textDocument)) {
+    auto &src = resolved.asOk();
     if (this->archives.revertIfUnused(src->getSrcId())) {
       LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
       this->indexes.remove(src->getSrcId());
@@ -232,10 +261,11 @@ void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
   LOG(LogLevel::INFO, "change textDocument: %s, %d", params.textDocument.uri.c_str(),
       params.textDocument.version);
-  auto src = this->resolveSource(params.textDocument.uri);
-  if (!src) {
+  auto resolved = this->resolveSource(params.textDocument);
+  if (!resolved) {
     return;
   }
+  auto src = std::move(resolved).take();
   std::string content = src->getContent();
   for (auto &change : params.contentChanges) {
     if (!applyChange(content, change)) {
@@ -256,62 +286,64 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
   LOG(LogLevel::INFO, "definition at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  std::vector<Location> ret;
-  if (auto src = this->resolveSource(params.textDocument.uri); src) {
-    this->gotoDefinitionImpl(*src, params.position, ret);
+  if (auto resolved = this->resolvePosition(params)) {
+    return this->gotoDefinitionImpl(resolved.asOk().second);
+  } else {
+    return newError(InvalidParams, std::string(resolved.asErr().get()));
   }
-  return ret;
 }
 
 Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &params) {
   LOG(LogLevel::INFO, "reference at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  std::vector<Location> ret;
-  if (auto src = this->resolveSource(params.textDocument.uri); src) {
-    this->findReferenceImpl(*src, params.position, ret);
+  if (auto resolved = this->resolvePosition(params)) {
+    return this->findReferenceImpl(resolved.asOk().second);
+  } else {
+    return newError(InvalidParams, std::string(resolved.asErr().get()));
   }
-  return ret;
 }
 
 Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) {
   LOG(LogLevel::INFO, "hover at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  Union<Hover, std::nullptr_t> ret = nullptr;
-  if (auto src = this->resolveSource(params.textDocument.uri); src) {
-    if (auto request = toRequest(*src, params.position); request.hasValue()) {
-      auto callback = [&](const FindDeclResult &value) {
-        if (is<Hover>(ret)) {
-          return;
-        }
-        ret = Hover{
-            .contents =
-                MarkupContent{
-                    .kind = MarkupKind::Markdown,
-                    .value = generateHoverContent(this->srcMan, *src, value.decl),
-                },
-            .range = toRange(src->getContent(), value.request.getToken()),
-        };
+  if (auto resolved = this->resolvePosition(params)) {
+    auto &src = *resolved.asOk().first;
+    auto &request = resolved.asOk().second;
+    Union<Hover, std::nullptr_t> ret = nullptr;
+    auto callback = [&](const FindDeclResult &value) {
+      if (is<Hover>(ret)) {
+        return;
+      }
+      ret = Hover{
+          .contents =
+              MarkupContent{
+                  .kind = MarkupKind::Markdown,
+                  .value = generateHoverContent(this->srcMan, src, value.decl),
+              },
+          .range = toRange(src.getContent(), value.request.getToken()),
       };
-      findDeclaration(this->indexes, request.unwrap(), callback);
-    }
+    };
+    findDeclaration(this->indexes, request, callback);
+    return ret;
+  } else {
+    return newError(InvalidParams, std::string(resolved.asErr().get()));
   }
-  return ret;
 }
 
 Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &params) {
   LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  std::vector<CompletionItem> ret;
-  if (auto src = this->resolveSource(params.textDocument.uri)) {
-    if (auto pos = toTokenPos(src->getContent(), params.position); pos.hasValue()) {
-      Source newSrc(src->getPath(), src->getSrcId(),
-                    std::string(src->getContent().c_str(), pos.unwrap()), src->getVersion());
-      auto copied = this->archives.copy();
-      copied.revert({newSrc.getSrcId()});
-      ret = doCompletion(this->srcMan, copied, newSrc);
-    }
+  if (auto resolved = this->resolvePosition(params)) {
+    auto &src = *resolved.asOk().first;
+    auto pos = resolved.asOk().second.pos;
+    Source newSrc(src.getPath(), src.getSrcId(), std::string(src.getContent().c_str(), pos),
+                  src.getVersion());
+    auto copied = this->archives.copy();
+    copied.revert({newSrc.getSrcId()});
+    return doCompletion(this->srcMan, copied, newSrc);
+  } else {
+    return newError(InvalidParams, std::string(resolved.asErr().get()));
   }
-  return ret;
 }
 
 } // namespace ydsh::lsp
