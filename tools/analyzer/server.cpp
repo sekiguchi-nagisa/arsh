@@ -163,6 +163,7 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   LOG(LogLevel::INFO, "initialize server ....");
   if (this->init) {
+    LOG(LogLevel::ERROR, "server has already initialized");
     return newError(ErrorCode::InvalidRequest, "server has already initialized");
   }
   this->init = true;
@@ -199,7 +200,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   return ret;
 }
 
-void LSPServer::initialized(const ydsh::lsp::InitializedParams &) {
+void LSPServer::initialized(const InitializedParams &) {
   LOG(LogLevel::INFO, "server initialized!!");
 }
 
@@ -289,7 +290,7 @@ Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &p
   if (auto resolved = this->resolvePosition(params)) {
     return this->gotoDefinitionImpl(resolved.asOk().second);
   } else {
-    return newError(InvalidParams, std::string(resolved.asErr().get()));
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
 }
 
@@ -299,7 +300,7 @@ Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &par
   if (auto resolved = this->resolvePosition(params)) {
     return this->findReferenceImpl(resolved.asOk().second);
   } else {
-    return newError(InvalidParams, std::string(resolved.asErr().get()));
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
 }
 
@@ -326,7 +327,7 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
     findDeclaration(this->indexes, request, callback);
     return ret;
   } else {
-    return newError(InvalidParams, std::string(resolved.asErr().get()));
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
 }
 
@@ -342,7 +343,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     copied.revert({newSrc.getSrcId()});
     return doCompletion(this->srcMan, copied, newSrc);
   } else {
-    return newError(InvalidParams, std::string(resolved.asErr().get()));
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
 }
 

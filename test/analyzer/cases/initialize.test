@@ -32,7 +32,7 @@
 # CHECK: }
 
 <<<
-{ "jsonrpc": "2.0", "method" : "initialized"}
+{ "jsonrpc": "2.0", "method" : "initialized", "params": {}}
 ---
 {"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
 
