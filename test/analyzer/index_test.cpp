@@ -1,7 +1,10 @@
 
 #include "gtest/gtest.h"
 
+#include <constant.h>
+
 #include "analyzer.h"
+#include "hover.h"
 #include "indexer.h"
 
 #include "../test_common.h"
@@ -117,6 +120,32 @@ public:
       ASSERT_EQ(expected[i].modId, actual[i].modId);
       ASSERT_EQ(expected[i].range.toString(), actual[i].range.toString());
     }
+  }
+
+  void hover(const char *source, int line, const std::string &expected) {
+    unsigned short modId = 0;
+    ASSERT_NO_FATAL_FAILURE(this->doAnalyze(source, modId));
+    ASSERT_TRUE(modId != 0);
+
+    auto src = this->srcMan.findById(modId);
+    ASSERT_TRUE(src);
+    auto pos = toTokenPos(src->getContent(), Position{.line = line, .character = 0});
+    ASSERT_TRUE(pos.hasValue());
+
+    SymbolRequest sr = {
+        .modId = modId,
+        .pos = pos.unwrap(),
+    };
+
+    std::string actual;
+    ydsh::Optional<Range> range;
+    findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
+      actual = generateHoverContent(this->srcMan, *src, value.decl);
+      range = toRange(src->getContent(), value.request.getToken());
+    });
+
+    ASSERT_TRUE(range.hasValue());
+    ASSERT_EQ(expected, actual);
   }
 };
 
@@ -1531,6 +1560,42 @@ hoge eval 34
   std::vector<RefsResult> result2 = {};
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, hover) {
+  ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
+                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
+                                      "\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimport-env HOME : String\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexport-env ZZZ : String\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
+                                      "```ydsh\nfunction hoge($s : Int) : Void\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBool", 1, "```ydsh\ntypedef Bool = Boolean\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover(":", 0,
+                  "```md\n"
+                  ":: : \n"
+                  "    Null command.  Always success (exit status is 0).\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge()\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_10'\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
+
+  // source
+  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  auto fileName = tempFileFactory.createTempFile("mod123.ds",
+                                                 R"(
+var AAA = 'hello'
+)");
+  std::string src = "source ";
+  src += fileName;
+  src += " as mod\n$mod";
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover(src.c_str(), 1, format("```ydsh\nsource %s as mod\n```", fileName.c_str())));
 }
 
 int main(int argc, char **argv) {
