@@ -1,0 +1,48 @@
+# RUN: eval $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "34."}
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerCharacter": ".", "triggerKind": 2 },
+    "position": { "character": 3, "line": 0 },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 2,
+#    CHECK:       "label": "abs"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 2,
+#    CHECK:       "label": "toFloat"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
