@@ -123,13 +123,17 @@ public:
   }
 
   void hover(const char *source, int line, const std::string &expected) {
+    this->hover(source, Position{.line = line, .character = 0}, expected);
+  }
+
+  void hover(const char *source, Position position, const std::string &expected) {
     unsigned short modId = 0;
     ASSERT_NO_FATAL_FAILURE(this->doAnalyze(source, modId));
     ASSERT_TRUE(modId != 0);
 
     auto src = this->srcMan.findById(modId);
     ASSERT_TRUE(src);
-    auto pos = toTokenPos(src->getContent(), Position{.line = line, .character = 0});
+    auto pos = toTokenPos(src->getContent(), position);
     ASSERT_TRUE(pos.hasValue());
 
     SymbolRequest sr = {
@@ -1587,7 +1591,7 @@ TEST_F(IndexTest, hover) {
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
-  auto fileName = tempFileFactory.createTempFile("mod123.ds",
+  auto fileName = tempFileFactory.createTempFile(X_INFO_VERSION_CORE "_.ds",
                                                  R"(
 var AAA = 'hello'
 )");
@@ -1596,6 +1600,15 @@ var AAA = 'hello'
   src += " as mod\n$mod";
   ASSERT_NO_FATAL_FAILURE(
       this->hover(src.c_str(), 1, format("```ydsh\nsource %s as mod\n```", fileName.c_str())));
+
+  src = "source ";
+  src += tempFileFactory.getTempDirName();
+  src += "/";
+  int chars = src.size() + 5;
+  src += "${YDSH_VERSION}_.ds";
+  ASSERT_NO_FATAL_FAILURE(this->hover(src.c_str(), Position{.line = 0, .character = chars},
+                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE
+                                      "'\n```"));
 }
 
 int main(int argc, char **argv) {

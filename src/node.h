@@ -2049,7 +2049,7 @@ class ModType;
 
 class SourceNode : public WithRtti<Node, NodeKind::Source> {
 private:
-  Token pathToken;
+  std::shared_ptr<const CmdArgNode> pathNode;
 
   /**
    * may be null
@@ -2078,15 +2078,17 @@ private:
   unsigned int maxVarNum{0};
 
 public:
-  SourceNode(Token token, Token pathToken, std::shared_ptr<const NameInfo> name,
-             const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear,
-             bool inlined)
-      : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
+  SourceNode(Token token, std::shared_ptr<CmdArgNode> pathNode,
+             std::shared_ptr<const NameInfo> name, const ModType &modType,
+             std::shared_ptr<const std::string> pathName, bool firstAppear, bool inlined)
+      : WithRtti(token), pathNode(std::move(pathNode)), name(std::move(name)), modType(modType),
         pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined) {}
 
   ~SourceNode() override = default;
 
-  Token getPathToken() const { return this->pathToken; }
+  const CmdArgNode &getPathNode() const { return *this->pathNode; }
+
+  Token getPathToken() const { return this->getPathNode().getToken(); }
 
   const auto &getNameInfo() const { return this->name; }
 
@@ -2111,7 +2113,7 @@ public:
 
 class SourceListNode : public WithRtti<Node, NodeKind::SourceList> {
 private:
-  std::unique_ptr<CmdArgNode> pathNode;
+  std::shared_ptr<CmdArgNode> pathNode;
 
   /**
    * initial value is null
@@ -2176,8 +2178,8 @@ public:
   bool hasUnconsumedPath() const { return this->curIndex < this->pathList.size(); }
 
   std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
-    return std::make_unique<SourceNode>(this->token, this->getPathNode().getToken(), this->name,
-                                        modType, this->pathList[this->curIndex - 1], first,
+    return std::make_unique<SourceNode>(this->token, this->pathNode, this->name, modType,
+                                        this->pathList[this->curIndex - 1], first,
                                         this->isInlined());
   }
 
