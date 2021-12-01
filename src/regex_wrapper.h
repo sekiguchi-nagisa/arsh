@@ -25,18 +25,13 @@ namespace ydsh {
 struct PCRECapture {
   size_t begin;
   size_t end;
-  bool valid;
-
-  explicit operator bool() const { return this->valid; }
 };
 
 struct PCREVersion {
   unsigned int major;
   unsigned int minor;
 
-  explicit operator bool() const {
-    return !(this->major == 0 && this->minor == 0);
-  }
+  explicit operator bool() const { return !(this->major == 0 && this->minor == 0); }
 };
 
 struct PCRE {
@@ -72,7 +67,14 @@ struct PCRE {
 
   int match(StringRef ref, std::string &errorStr);
 
-  void getCaptureAt(unsigned int index, PCRECapture &capture);
+  /**
+   *
+   * @param index
+   * @param capture
+   * @return
+   * if not set, return false
+   */
+  bool getCaptureAt(unsigned int index, PCRECapture &capture);
 };
 
 } // namespace ydsh

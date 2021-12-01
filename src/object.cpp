@@ -314,10 +314,10 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
   if (out && matchCount > 0) {
     out->refValues().reserve(matchCount);
     for (int i = 0; i < matchCount; i++) {
-      PCRECapture capture;
-      this->re.getCaptureAt(i, capture);
-      auto v = capture ? DSValue::createStr(ref.slice(capture.begin, capture.end))
-                       : DSValue::createInvalid();
+      PCRECapture capture; // NOLINT
+      bool set = this->re.getCaptureAt(i, capture);
+      auto v = set ? DSValue::createStr(ref.slice(capture.begin, capture.end))
+                   : DSValue::createInvalid();
       out->refValues().push_back(std::move(v));
     }
   }
@@ -344,9 +344,10 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
       break;
     }
 
-    PCRECapture capture;
-    this->re.getCaptureAt(0, capture);
-    assert(capture);
+    PCRECapture capture; // NOLINT
+    bool set = this->re.getCaptureAt(0, capture);
+    (void)set;
+    assert(set);
 
     if (!ret.appendAsStr(state, target.slice(0, capture.begin))) {
       return false;

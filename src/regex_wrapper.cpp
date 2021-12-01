@@ -176,24 +176,23 @@ int PCRE::match(StringRef ref, std::string &errorStr) {
 #endif
 }
 
-void PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
+bool PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
 #ifdef USE_PCRE
   PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(static_cast<pcre2_match_data *>(this->data));
   size_t begin = ovec[index * 2];
   size_t end = ovec[index * 2 + 1];
-  bool hasGroup = begin != PCRE2_UNSET && end != PCRE2_UNSET;
+  if (begin == PCRE2_UNSET || end == PCRE2_UNSET) {
+    return false;
+  }
   capture = {
       .begin = begin,
       .end = end,
-      .valid = hasGroup,
   };
+  return true;
 #else
   (void)index;
-  capture = {
-      .begin = 0,
-      .end = 0,
-      .valid = false,
-  };
+  (void)capture;
+  return false;
 #endif
 }
 
