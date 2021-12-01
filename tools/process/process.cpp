@@ -194,7 +194,7 @@ WaitStatus ProcHandle::waitWithTimeout(unsigned int msec) {
     return s;
   }
   for (unsigned int i = 0; i < msec; i++) {
-    struct timespec timespec;
+    struct timespec timespec {};
     timespec.tv_sec = 0;
     timespec.tv_nsec = 1000000;
     nanosleep(&timespec, nullptr);
@@ -516,11 +516,11 @@ ProcHandle ProcBuilder::spawnImpl(const IOConfig &config) {
   pid_t pid = fork();
   if (pid > 0) {
     builder.setParentStream();
-    return ProcHandle(pid, builder.findPTY(), builder.inputWriter(), builder.outputReader(),
-                      builder.errorReader());
+    return {pid, builder.findPTY(), builder.inputWriter(), builder.outputReader(),
+            builder.errorReader()};
   } else if (pid == 0) {
     builder.setChildStream();
-    return ProcHandle();
+    return {};
   } else {
     fatal_perror("fork failed");
   }

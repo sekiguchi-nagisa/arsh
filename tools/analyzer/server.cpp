@@ -152,10 +152,9 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
 }
 
 DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
-  return DiagnosticEmitter(
-      this->srcMan,
-      [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
-      this->diagVersionSupport);
+  return {this->srcMan,
+          [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
+          this->diagVersionSupport};
 }
 
 // RPC method definitions

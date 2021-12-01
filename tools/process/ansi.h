@@ -100,12 +100,12 @@ public:
 
   /**
    * FIXME:
-   * @param row
-   * @param col
+   * @param r
+   * @param c
    */
-  void setCursor(unsigned int row, unsigned int col) { // FIXME: position ()
-    this->row = row < this->maxRow ? row : this->maxRow - 1;
-    this->col = col < this->maxCol ? col : this->maxCol - 1;
+  void setCursor(unsigned int r, unsigned int c) { // FIXME: position ()
+    this->row = r < this->maxRow ? r : this->maxRow - 1;
+    this->col = c < this->maxCol ? c : this->maxCol - 1;
   }
 
   /**

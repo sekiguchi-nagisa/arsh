@@ -23,7 +23,7 @@ namespace ydsh::uri {
 
 #define ERROR()                                                                                    \
   do {                                                                                             \
-    return URI();                                                                                  \
+    goto ERROR;                                                                                    \
   } while (false)
 
 static std::string create(const char *begin, const char *end) {
@@ -156,6 +156,9 @@ URI URI::fromString(const std::string &str) {
 
     *        { ERROR(); }
   */
+
+ERROR:
+  return URI();
 }
 
 } // namespace ydsh::uri
