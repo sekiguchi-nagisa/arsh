@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <poll.h>
+
 #include <fstream>
 
 #include "client.h"
@@ -62,7 +64,7 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
       if (ret.asOk().isInvalid()) {
         continue;
       }
-      requests.emplace_back(std::move(ret).take(), line[0] == '<');
+      requests.emplace_back(std::move(ret).take());
     } else {
       content += line;
       content += '\n';
@@ -73,7 +75,7 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
     if (!ret) {
       return Err(std::move(ret).takeError());
     }
-    requests.emplace_back(std::move(ret).take(), false);
+    requests.emplace_back(std::move(ret).take());
   }
   return Ok(std::move(requests));
 }
@@ -82,19 +84,39 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
 // ##     Client     ##
 // ####################
 
+static bool waitReply(FILE *fp) {
+  struct pollfd pollfd[1]{};
+  pollfd[0].fd = fileno(fp);
+  pollfd[0].events = POLLIN;
+  while (true) {
+    int ret = poll(pollfd, 1, 10);
+    if (ret <= 0) {
+      if (ret == -1 && (errno == EINTR || errno == EAGAIN)) {
+        continue;
+      }
+      break;
+    }
+    if (pollfd[0].revents & POLLIN) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
+}
+
 void Client::run(const std::vector<ClientRequest> &requests) {
   for (auto &e : requests) {
     bool r = this->send(e.request);
     if (!r) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
     }
-    if (e.waitReply) {
+    while (waitReply(this->transport.getInput().get())) {
       auto ret = this->recv();
-      if (!this->replyCallback) {
-        continue;
-      }
-      if (!this->replyCallback(std::move(ret))) {
-        return;
+      if (this->replyCallback) {
+        if (!this->replyCallback(std::move(ret))) {
+          return;
+        }
       }
     }
   }
@@ -107,18 +129,18 @@ bool Client::send(const JSON &json) {
 }
 
 rpc::Message Client::recv() {
-  int dataSize = this->transport.recvSize();
+  ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
     std::string error = "may be broken or empty message";
     return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
   }
 
   ByteBuffer buf;
-  for (int remainSize = dataSize; remainSize > 0;) {
+  for (ssize_t remainSize = dataSize; remainSize > 0;) {
     char data[256];
-    constexpr int bufSize = std::size(data);
-    int needSize = remainSize < bufSize ? remainSize : bufSize;
-    int recvSize = this->transport.recv(needSize, data);
+    constexpr ssize_t bufSize = std::size(data);
+    ssize_t needSize = remainSize < bufSize ? remainSize : bufSize;
+    ssize_t recvSize = this->transport.recv(needSize, data);
     if (recvSize < 0) {
       std::string error = "message receiving failed";
       return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));

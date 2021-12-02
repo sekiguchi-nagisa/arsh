@@ -25,9 +25,8 @@ namespace ydsh::lsp {
 
 struct ClientRequest {
   JSON request;
-  bool waitReply;
 
-  ClientRequest(JSON &&j, bool wait) : request(std::move(j)), waitReply(wait) {}
+  explicit ClientRequest(JSON &&j) : request(std::move(j)) {}
 };
 
 Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::string &fileName);

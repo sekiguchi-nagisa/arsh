@@ -408,11 +408,8 @@ false
   ASSERT_TRUE(ret);
   ASSERT_EQ(3, ret.asOk().size());
   ASSERT_EQ(1234, ret.asOk()[0].request.asLong());
-  ASSERT_FALSE(ret.asOk()[0].waitReply);
   ASSERT_EQ(true, ret.asOk()[1].request["aaa"].asBool());
-  ASSERT_TRUE(ret.asOk()[1].waitReply);
   ASSERT_EQ(false, ret.asOk()[2].request.asBool());
-  ASSERT_FALSE(ret.asOk()[2].waitReply);
 }
 
 TEST(ClientTest, parse2) {
