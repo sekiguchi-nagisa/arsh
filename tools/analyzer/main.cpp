@@ -38,7 +38,7 @@ enum class OptionKind {
 };
 
 struct Options {
-  LogLevel level{LogLevel::INFO};
+  LogLevel level{LogLevel::ERROR};
   bool lsp{true};
   const char *testInput{nullptr};
 };
@@ -78,7 +78,6 @@ static Options parseOptions(int argc, char **argv) {
       break;
     case OptionKind::TEST:
       options.testInput = result.arg();
-      options.level = LogLevel::ERROR;
       break;
     }
   }
@@ -138,7 +137,7 @@ public:
 
     ClientLogger logger;
     logger.setSeverity(this->level);
-    logger(LogLevel::INFO, "spawn server");
+    logger(LogLevel::INFO, "run lsp test client");
     Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
                   createFilePtr(fdopen, proc.in(), "w"));
     client.setReplyCallback([](rpc::Message &&msg) -> bool {

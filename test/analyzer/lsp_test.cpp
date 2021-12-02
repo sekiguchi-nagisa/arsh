@@ -210,19 +210,19 @@ TEST_F(TransportTest, case1) {
   this->setInput("hoge");
   int size = this->transport.recvSize();
   ASSERT_EQ(-1, size);
-  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
+  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: `hoge'.+"));
 }
 
 TEST_F(TransportTest, case2) {
   this->setInput("hoge\r");
   ASSERT_EQ(-1, this->transport.recvSize());
-  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
+  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: `hoge.+"));
 }
 
 TEST_F(TransportTest, case3) {
   this->setInput("hoge\n");
   ASSERT_EQ(-1, this->transport.recvSize());
-  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
+  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: `hoge.+"));
 }
 
 TEST_F(TransportTest, case4) {
