@@ -749,12 +749,12 @@ struct StringTransport : public rpc::Transport {
   explicit StringTransport(std::string &&text)
       : rpc::Transport(SingleNullLogger::instance()), inStr(std::move(text)) {}
 
-  int send(unsigned int size, const char *data) override {
+  ssize_t send(unsigned int size, const char *data) override {
     this->outStr.append(data, size);
     return size;
   }
 
-  int recv(unsigned int size, char *data) override {
+  ssize_t recv(unsigned int size, char *data) override {
     unsigned int count = 0;
     for (; this->cursor < this->inStr.size() && count < size; this->cursor++) {
       data[count] = this->inStr[this->cursor];
@@ -763,7 +763,7 @@ struct StringTransport : public rpc::Transport {
     return count;
   }
 
-  int recvSize() override { return this->inStr.size(); }
+  ssize_t recvSize() override { return this->inStr.size(); }
 };
 
 class RPCTest : public ::testing::Test {

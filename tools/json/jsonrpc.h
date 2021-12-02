@@ -210,7 +210,7 @@ public:
    * @return
    * sent data size
    */
-  virtual int send(unsigned int size, const char *data) = 0;
+  virtual ssize_t send(unsigned int size, const char *data) = 0;
 
   /**
    * read header and get total size of json text
@@ -218,7 +218,7 @@ public:
    * return -1, if cannot read message size
    * return 0, may be broken message
    */
-  virtual int recvSize() = 0;
+  virtual ssize_t recvSize() = 0;
 
   /**
    * receive chunk of json text
@@ -228,7 +228,7 @@ public:
    * @return
    * received size
    */
-  virtual int recv(unsigned int size, char *data) = 0;
+  virtual ssize_t recv(unsigned int size, char *data) = 0;
 };
 
 using ReplyImpl = Result<JSON, Error>;

@@ -38,11 +38,11 @@ public:
 
   const FilePtr &getOutput() const { return this->output; }
 
-  int send(unsigned int size, const char *data) override;
+  ssize_t send(unsigned int size, const char *data) override;
 
-  int recvSize() override;
+  ssize_t recvSize() override;
 
-  int recv(unsigned int size, char *data) override;
+  ssize_t recv(unsigned int size, char *data) override;
 };
 
 } // namespace ydsh::lsp

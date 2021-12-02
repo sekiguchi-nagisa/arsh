@@ -145,18 +145,18 @@ void Transport::reply(JSON &&id, Error &&error) {
 }
 
 bool Transport::dispatch(Handler &handler) {
-  int dataSize = this->recvSize();
+  ssize_t dataSize = this->recvSize();
   if (dataSize < 0) {
     LOG(LogLevel::WARNING, "may be broken or empty message");
     return false;
   }
 
   ByteBuffer buf;
-  for (int remainSize = dataSize; remainSize > 0;) {
+  for (ssize_t remainSize = dataSize; remainSize > 0;) {
     char data[256];
-    constexpr int bufSize = std::size(data);
-    int needSize = remainSize < bufSize ? remainSize : bufSize;
-    int recvSize = this->recv(needSize, data);
+    constexpr ssize_t bufSize = std::size(data);
+    ssize_t needSize = remainSize < bufSize ? remainSize : bufSize;
+    ssize_t recvSize = this->recv(needSize, data);
     if (recvSize < 0) {
       LOG(LogLevel::ERROR, "message receiving failed");
       return false;

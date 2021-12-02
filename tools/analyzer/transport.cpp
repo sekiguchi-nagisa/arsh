@@ -31,7 +31,10 @@ static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
 // ##     LSPTransport     ##
 // ##########################
 
-int LSPTransport::send(unsigned int size, const char *data) {
+ssize_t LSPTransport::send(unsigned int size, const char *data) {
+  if (size == 0) {
+    return 0;
+  }
   std::string header = HEADER_LENGTH;
   header += std::to_string(size);
   header += "\r\n";
@@ -55,7 +58,7 @@ static int parseContentLength(const std::string &line) {
   if (ret.second && ret.first >= 0) {
     return ret.first;
   }
-  return 0;
+  return -1;
 }
 
 static bool readLine(FILE *fp, std::string &header) {
@@ -82,7 +85,7 @@ static bool readLine(FILE *fp, std::string &header) {
   return true;
 }
 
-int LSPTransport::recvSize() {
+ssize_t LSPTransport::recvSize() {
   if (feof(this->input.get()) || ferror(this->input.get())) {
     LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");
     exit(1);
@@ -105,7 +108,7 @@ int LSPTransport::recvSize() {
         LOG(LogLevel::WARNING, "previous read message length: %d", size);
       }
       int ret = parseContentLength(header);
-      if (!ret) {
+      if (ret < 0) {
         LOG(LogLevel::ERROR, "may be broken content length");
       }
       size = ret;
@@ -116,7 +119,7 @@ int LSPTransport::recvSize() {
   return size;
 }
 
-int LSPTransport::recv(unsigned int size, char *data) {
+ssize_t LSPTransport::recv(unsigned int size, char *data) {
   return fread(data, sizeof(char), size, this->input.get());
 }
 
