@@ -281,6 +281,12 @@ TEST_F(TransportTest, case9) {
   ASSERT_EQ("Content-Length: 6\r\n\r\nhelllo", this->readOutput());
 }
 
+TEST_F(TransportTest, case10) {
+  this->setInput("Content-Length: 0\r\n\r\n");
+  ASSERT_EQ(0, this->transport.recvSize());
+  ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+Content-Length: 0.+"));
+}
+
 struct ServerTest : public InteractiveBase {
   FilePtr logFile;
   int count{0};
@@ -299,6 +305,7 @@ struct ServerTest : public InteractiveBase {
       logger.setAppender(std::move(this->logFile));
       LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
       server.run();
+      return 1;
     });
 
     auto clIn = createFilePtr(fdopen, this->handle.out(), "r");

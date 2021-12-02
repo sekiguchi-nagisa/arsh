@@ -764,6 +764,8 @@ struct StringTransport : public rpc::Transport {
   }
 
   ssize_t recvSize() override { return this->inStr.size(); }
+
+  bool available() const override { return true; }
 };
 
 class RPCTest : public ::testing::Test {
@@ -780,7 +782,7 @@ protected:
     ASSERT_EQ(0, this->transport.cursor);
   }
 
-  void dispatch() { this->transport.dispatch(this->handler); }
+  bool dispatch() { return this->transport.dispatch(this->handler); }
 
   const std::string &response() const { return this->transport.outStr; }
 
@@ -869,6 +871,11 @@ struct Context {
     return rpc::newError(rpc::InternalError, "busy");
   }
 };
+
+TEST_F(RPCTest, empty) {
+  this->init("");
+  ASSERT_TRUE(this->dispatch());
+}
 
 TEST_F(RPCTest, parse1) {
   this->init("hoger hiur!!");

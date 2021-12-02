@@ -59,7 +59,10 @@ public:
    */
   bool runOnlyOnce() { return this->transport.dispatch(*this); }
 
-  [[noreturn]] void run();
+  /**
+   * normally not return
+   */
+  void run();
 
 private:
   /**

@@ -32,7 +32,7 @@ static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
 // ##########################
 
 ssize_t LSPTransport::send(unsigned int size, const char *data) {
-  if (size == 0) {
+  if (size == 0 || data == nullptr) {
     return 0;
   }
   std::string header = HEADER_LENGTH;
@@ -41,7 +41,7 @@ ssize_t LSPTransport::send(unsigned int size, const char *data) {
   header += "\r\n";
 
   fwrite(header.c_str(), sizeof(char), header.size(), this->output.get());
-  int writeSize = fwrite(data, sizeof(char), size, this->output.get());
+  ssize_t writeSize = fwrite(data, sizeof(char), size, this->output.get());
   fflush(this->output.get());
   return writeSize; // FIXME: error checking.
 }
@@ -86,11 +86,6 @@ static bool readLine(FILE *fp, std::string &header) {
 }
 
 ssize_t LSPTransport::recvSize() {
-  if (feof(this->input.get()) || ferror(this->input.get())) {
-    LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");
-    exit(1);
-  }
-
   int size = 0;
   while (true) {
     std::string header;
@@ -121,6 +116,10 @@ ssize_t LSPTransport::recvSize() {
 
 ssize_t LSPTransport::recv(unsigned int size, char *data) {
   return fread(data, sizeof(char), size, this->input.get());
+}
+
+bool LSPTransport::available() const {
+  return !feof(this->input.get()) && !ferror(this->input.get());
 }
 
 } // namespace ydsh::lsp

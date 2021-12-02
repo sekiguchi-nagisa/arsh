@@ -149,6 +149,8 @@ bool Transport::dispatch(Handler &handler) {
   if (dataSize < 0) {
     LOG(LogLevel::WARNING, "may be broken or empty message");
     return false;
+  } else if (dataSize == 0) {
+    return true; // do nothing
   }
 
   ByteBuffer buf;

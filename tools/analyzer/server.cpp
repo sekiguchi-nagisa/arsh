@@ -54,9 +54,10 @@ void LSPServer::bindAll() {
 }
 
 void LSPServer::run() {
-  while (true) {
+  while (this->transport.available()) {
     this->runOnlyOnce();
   }
+  LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");
 }
 
 static CStrPtr format(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

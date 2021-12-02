@@ -196,5 +196,6 @@ int main(int argc, char **argv) {
     showInfo(argv, logger);
     LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
     server.run();
+    return 1;
   });
 }

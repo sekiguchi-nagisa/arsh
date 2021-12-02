@@ -198,6 +198,12 @@ public:
    */
   void reply(JSON &&id, Error &&error);
 
+  /**
+   *
+   * @param handler
+   * @return
+   * return false if received message is invalid
+   */
   bool dispatch(Handler &handler);
 
   // raw level message send/recv api. not directly use them.
@@ -229,6 +235,8 @@ public:
    * received size
    */
   virtual ssize_t recv(unsigned int size, char *data) = 0;
+
+  virtual bool available() const = 0;
 };
 
 using ReplyImpl = Result<JSON, Error>;

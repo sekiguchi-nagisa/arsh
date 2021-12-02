@@ -43,6 +43,8 @@ public:
   ssize_t recvSize() override;
 
   ssize_t recv(unsigned int size, char *data) override;
+
+  bool available() const override;
 };
 
 } // namespace ydsh::lsp
