@@ -84,13 +84,14 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
 // ##     Client     ##
 // ####################
 
-static bool waitReply(int fd) {
+static bool waitReply(FILE *fp, int timeout) {
+  int fd = fileno(fp);
   while (true) {
     struct pollfd pollfd[1]{};
     pollfd[0].fd = fd;
     pollfd[0].events = POLLIN;
 
-    int ret = poll(pollfd, 1, 100);
+    int ret = poll(pollfd, 1, timeout);
     if (ret <= 0) {
       if (ret == -1 && errno == EINTR) {
         continue;
@@ -106,13 +107,14 @@ static bool waitReply(int fd) {
 }
 
 void Client::run(const std::vector<ClientRequest> &requests) {
-  int fd = fileno(this->transport.getInput().get());
-  for (auto &e : requests) {
-    bool r = this->send(e.request);
+  const unsigned int size = requests.size();
+  for (unsigned int index = 0; index < size; index++) {
+    bool r = this->send(requests[index].request);
     if (!r) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
     }
-    while (waitReply(fd)) {
+    int timeout = index == size - 1 ? 500 : 10;
+    while (waitReply(this->transport.getInput().get(), timeout)) {
       auto ret = this->recv();
       if (this->replyCallback) {
         if (!this->replyCallback(std::move(ret))) {
