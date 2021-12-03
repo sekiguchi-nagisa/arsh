@@ -84,21 +84,6 @@ struct Location {
   }
 };
 
-struct LocationLink {
-  Optional<Range> originSelectionRange; // optional
-  std::string targetUri;
-  Range targetRange;
-  Optional<Range> targetSelectionRange; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(originSelectionRange);
-    JSONIFY(targetUri);
-    JSONIFY(targetRange);
-    JSONIFY(targetSelectionRange);
-  }
-};
-
 enum class DiagnosticSeverity : int {
   Error = 1,
   Warning = 2,
@@ -131,29 +116,6 @@ struct Diagnostic {
     JSONIFY(severity);
     JSONIFY(message);
     JSONIFY(relatedInformation);
-  }
-};
-
-struct Command {
-  std::string title;
-  std::string command;
-  //    std::vector<JSON> arguments // any[], optional  //FIXME: currently not supported.
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(title);
-    JSONIFY(command);
-  }
-};
-
-struct TextEdit {
-  Range range;
-  std::string newText;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(range);
-    JSONIFY(newText);
   }
 };
 
@@ -230,8 +192,6 @@ struct InitializeParams {
   Optional<JSON> initializationOptions; // optional
   ClientCapabilities capabilities;
   Optional<TraceValue> trace; // optional
-  //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently
-  //    not supported
 
   template <typename T>
   void jsonify(T &t) {
@@ -259,103 +219,6 @@ struct CompletionOptions {
   void jsonify(T &t) {
     JSONIFY(resolveProvider);
     JSONIFY(triggerCharacters);
-  }
-};
-
-struct SignatureHelpOptions {
-  Optional<std::vector<std::string>> triggerCharacters; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(triggerCharacters);
-  }
-};
-
-#define EACH_CODE_ACTION_KIND(OP)                                                                  \
-  OP(Empty, "")                                                                                    \
-  OP(QuickFix, "quickfix")                                                                         \
-  OP(Refactor, "refactor")                                                                         \
-  OP(RefactorExtract, "refactor.extract")                                                          \
-  OP(RefactorInline, "refactor.inline")                                                            \
-  OP(RefactorRewrite, "refactor.rewrite")                                                          \
-  OP(Source, "source")                                                                             \
-  OP(SourceOrganizeImports, "source.organizeImports")
-
-enum class CodeActionKind : unsigned int {
-#define GEN_ENUM(e, s) e,
-  EACH_CODE_ACTION_KIND(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-const char *toString(CodeActionKind kind);
-
-bool toEnum(const char *str, CodeActionKind &kind);
-
-template <typename T>
-void jsonify(T &t, CodeActionKind &kind) {
-  if constexpr (is_serialize_v<T>) {
-    std::string value = toString(kind);
-    t(value);
-  } else if constexpr (is_deserialize_v<T>) {
-    std::string value;
-    t(value);
-    t.hasError() || toEnum(value.c_str(), kind);
-  }
-}
-
-struct CodeActionOptions {
-  Optional<std::vector<CodeActionKind>> codeActionKinds; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(codeActionKinds);
-  }
-};
-
-struct CodeLensOptions {
-  Optional<bool> resolveProvider; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(resolveProvider);
-  }
-};
-
-struct DocumentOnTypeFormattingOptions {
-  std::string firstTriggerCharacter;
-  Optional<std::vector<std::string>> moreTriggerCharacter; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(firstTriggerCharacter);
-    JSONIFY(moreTriggerCharacter);
-  }
-};
-
-struct RenameOptions {
-  Optional<bool> prepareProvider; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(prepareProvider);
-  }
-};
-
-struct DocumentLinkOptions {
-  Optional<bool> resolveProvider; // optional
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(resolveProvider);
-  }
-};
-
-struct ExecuteCommandOptions {
-  std::vector<std::string> commands;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(commands);
   }
 };
 
@@ -392,41 +255,27 @@ struct TextDocumentSyncOptions {
 struct ServerCapabilities {
   Optional<TextDocumentSyncOptions> textDocumentSync; // optional
   bool hoverProvider{false};
-  Optional<CompletionOptions> completionProvider;       // optional
-  Optional<SignatureHelpOptions> signatureHelpProvider; // optiona;
+  Optional<CompletionOptions> completionProvider; // optional
   bool definitionProvider{false};
   bool referencesProvider{false};
   bool documentHighlightProvider{false};
   bool documentSymbolProvider{false};
   bool workspaceSymbolProvider{false};
-  Optional<Union<bool, CodeActionOptions>> codeActionProvider; // optional
-  Optional<CodeLensOptions> codeLensProvider;                  // optional
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};
-  Optional<DocumentOnTypeFormattingOptions> documentOnTypeFormattingProvider; // optional
-  Optional<Union<bool, RenameOptions>> renameProvider;                        // optional
-  Optional<DocumentLinkOptions> documentLinkProvider;                         // optional
-  Optional<ExecuteCommandOptions> executeCommandProvider;                     // optional
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(textDocumentSync);
     JSONIFY(hoverProvider);
     JSONIFY(completionProvider);
-    JSONIFY(signatureHelpProvider);
     JSONIFY(definitionProvider);
     JSONIFY(referencesProvider);
     JSONIFY(documentHighlightProvider);
     JSONIFY(documentSymbolProvider);
     JSONIFY(workspaceSymbolProvider);
-    JSONIFY(codeActionProvider);
-    JSONIFY(codeLensProvider);
     JSONIFY(documentFormattingProvider);
     JSONIFY(documentRangeFormattingProvider);
-    JSONIFY(documentOnTypeFormattingProvider);
-    JSONIFY(renameProvider);
-    JSONIFY(documentLinkProvider);
-    JSONIFY(executeCommandProvider);
   }
 };
 

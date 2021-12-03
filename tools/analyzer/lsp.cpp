@@ -47,35 +47,6 @@ bool toEnum(const char *str, TraceValue &setting) {
   return false;
 }
 
-const char *toString(CodeActionKind kind) {
-  switch (kind) {
-#define GEN_CASE(E, V)                                                                             \
-  case CodeActionKind::E:                                                                          \
-    return V;
-    EACH_CODE_ACTION_KIND(GEN_CASE)
-#undef GEN_CASE
-  default:
-    return "";
-  }
-}
-
-bool toEnum(const char *str, CodeActionKind &kind) {
-  StringRef ref = str;
-  CodeActionKind kinds[] = {
-#define GEN_ENUM(E, V) CodeActionKind::E,
-      EACH_CODE_ACTION_KIND(GEN_ENUM)
-#undef GEN_ENUM
-  };
-  for (auto &e : kinds) {
-    if (ref == toString(e)) {
-      kind = e;
-      return true;
-    }
-  }
-  kind = CodeActionKind::Empty;
-  return false;
-}
-
 std::string Position::toString() const {
   std::string ret;
   ret += std::to_string(this->line);
