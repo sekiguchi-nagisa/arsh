@@ -90,7 +90,7 @@ ssize_t LSPTransport::recvSize() {
   while (true) {
     std::string header;
     if (!readLine(this->input.get(), header)) {
-      LOG(LogLevel::ERROR, "invalid header: `%s', size: %lu", header.c_str(), header.size());
+      LOG(LogLevel::ERROR, "invalid header: `%s', size: %zu", header.c_str(), header.size());
       return -1;
     }
 

@@ -116,6 +116,9 @@ void Client::run(const std::vector<ClientRequest> &requests) {
     int timeout = index == size - 1 ? 500 : 10;
     while (waitReply(this->transport.getInput().get(), timeout)) {
       auto ret = this->recv();
+      if (!ret.hasValue()) {
+        return;
+      }
       if (this->replyCallback) {
         if (!this->replyCallback(std::move(ret))) {
           return;
@@ -134,6 +137,9 @@ bool Client::send(const JSON &json) {
 rpc::Message Client::recv() {
   ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
+    if (!this->transport.available()) {
+      return {};
+    }
     std::string error = "may be broken or empty message";
     return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
   }
