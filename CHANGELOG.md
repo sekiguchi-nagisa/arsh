@@ -18,7 +18,7 @@
     - currently, only allow top-level scope
 - add runtime compilation api
     - compile string (single expression) as anonymous function via ``Module#func`` method
-    - compiled function can access global variables visible in caller module
+    - compiled function can access global variables visible in receiver module
 - complete infix keywords
     - `as`, `is`, `and`, `or`, `xor`, `with`
     - `in`, `elif`, `else`, `catch`, `finally`, `inlined`
@@ -33,7 +33,7 @@
     - ``fullname``: resolve fully qualified command name
 - add ``String#width`` method for width counting of grapheme cluster
 - add ``info`` sub-command to builtin ``shctl`` command
-    - now show runtime configuration (also get via ``reply` variable)
+    - now show runtime configuration (also get via ``reply`` variable)
 
 #### LSP
 
@@ -43,13 +43,15 @@
 
 #### Misc
 
-- add LLVM lit/FileCheck or littlecheck like file checker, called ``litecheck``
+- add ``litecheck`` file checker like LLVM lit/FileCheck or littlecheck
     - support the following directives
         - ``RUN``
         - ``REQUIRE``
         - ``CHECK``, ``CHECK_IF``
         - ``CHECKERR``, ``CHECKERR_IF``
         - ``STATUS``
+- experimental support the following platform
+    - linux on arm32
 
 ### Changed
 
@@ -80,7 +82,7 @@
 - accidentally skip termination handler in loaded module
 - not ignore non-regular files in file path search
 - not complete statement when previous token is newline
-- segmentation fault when invalid compare functions are supplied to ``Array#sortWith`` mwthod
+- segmentation fault when invalid compare functions are supplied to ``Array#sortWith`` method
     - now replace internal ``std::stable_sort`` with merge sort
 
 ## [0.23.0] - 2021-09-30
