@@ -17,8 +17,10 @@
 #ifndef MISC_LIB_RESULT_HPP
 #define MISC_LIB_RESULT_HPP
 
+#include <algorithm>
 #include <cassert>
 #include <type_traits>
+#include <utility>
 
 #include "noncopyable.h"
 
