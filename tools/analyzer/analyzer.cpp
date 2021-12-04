@@ -240,7 +240,7 @@ bool DiagnosticEmitter::exitModule() {
         .diagnostics = std::move(this->contexts.back().diagnostics),
     };
     if (this->supportVersion) {
-      params.version = std::move(this->contexts.back().version);
+      params.version = this->contexts.back().version;
     }
     this->callback(std::move(params));
   }

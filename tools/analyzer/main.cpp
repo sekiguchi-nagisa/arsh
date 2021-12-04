@@ -43,7 +43,7 @@ struct Options {
   const char *testInput{nullptr};
 };
 
-static LogLevel parseLogLevel(const char *value, LogLevel v) {
+static LogLevel parseLogLevel(const char *value) {
   LogLevel levels[] = {LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR,
                        LogLevel::FATAL};
   for (auto &l : levels) {
@@ -52,7 +52,7 @@ static LogLevel parseLogLevel(const char *value, LogLevel v) {
       return l;
     }
   }
-  return v;
+  return LogLevel::INFO;
 }
 
 static Options parseOptions(int argc, char **argv) {
@@ -68,7 +68,7 @@ static Options parseOptions(int argc, char **argv) {
   while ((result = optParser(begin, end))) {
     switch (result.value()) {
     case OptionKind::LOG:
-      options.level = parseLogLevel(result.arg(), LogLevel::INFO);
+      options.level = parseLogLevel(result.arg());
       break;
     case OptionKind::HELP:
       optParser.printOption(stdout);

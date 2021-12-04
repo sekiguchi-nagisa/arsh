@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include <lexer.h>
-#include <type.h>
 
 using namespace ydsh;
 

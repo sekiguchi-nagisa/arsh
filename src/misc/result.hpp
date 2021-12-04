@@ -331,7 +331,8 @@ public:
 
   OptionalBase() noexcept : Union<T>() {}
 
-  OptionalBase(T &&value) noexcept : Union<T>(std::forward<T>(value)) {} // NOLINT
+  template <typename U>
+  OptionalBase(U &&value) noexcept : Union<T>(std::forward<U>(value)) {} // NOLINT
 
   T &unwrap() noexcept { return get<T>(*this); }
 

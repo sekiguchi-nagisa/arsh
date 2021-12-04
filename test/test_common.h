@@ -133,7 +133,7 @@ protected:
 
 public:
   InteractiveBase(const char *binPath, const char *dir) : binPath(binPath), workingDir(dir) {
-    this->envMap.emplace("TERM", "xterm");
+    this->addEnv("TERM", "xterm");
   }
 
   template <typename... T>

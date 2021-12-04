@@ -130,7 +130,7 @@ static ProcBuilder litecheck(const std::string &scriptPath) {
 
 struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
   void doTest() {
-    auto result = litecheck(this->GetParam()).exec();
+    auto result = litecheck(GetParam()).exec();
     ASSERT_EQ(WaitStatus::EXITED, result.kind);
     ASSERT_EQ(0, result.value);
   }

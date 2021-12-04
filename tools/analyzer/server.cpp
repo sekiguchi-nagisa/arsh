@@ -177,13 +177,13 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
           this->diagVersionSupport};
 }
 
-static MarkupKind resolveMarkupKind(const std::vector<MarkupKind> formats, MarkupKind defaultKind) {
+static MarkupKind resolveMarkupKind(const std::vector<MarkupKind> &formats) {
   for (auto &kind : formats) {
     if (kind == MarkupKind::Markdown) {
       return kind;
     }
   }
-  return defaultKind;
+  return MarkupKind::PlainText;
 }
 
 // RPC method definitions
@@ -210,7 +210,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     }
     if (textDocument.hover.hasValue()) {
       if (auto &hover = textDocument.hover.unwrap(); hover.contentFormat.hasValue()) {
-        this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap(), MarkupKind::PlainText);
+        this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap());
       }
     }
   }

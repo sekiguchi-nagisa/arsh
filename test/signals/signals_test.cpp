@@ -4,7 +4,6 @@
 #include <csignal>
 #include <cstring>
 
-#include <core.h>
 #include <signals.h>
 
 #include "../test_common.h"
