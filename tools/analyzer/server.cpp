@@ -185,7 +185,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   InitializeResult ret;
   ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
       .openClose = true,
-      .change = TextDocumentSyncKind::Full,
+      .change = TextDocumentSyncKind::Incremental,
       .willSave = {},
       .willSaveWaitUntil = {},
       .save = {},

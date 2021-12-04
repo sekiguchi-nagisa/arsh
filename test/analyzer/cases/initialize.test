@@ -23,7 +23,7 @@
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
 # CHECK:       "textDocumentSync": {
-# CHECK:         "change": 1,
+# CHECK:         "change": 2,
 # CHECK:         "openClose": true
 # CHECK:       },
 # CHECK:       "workspaceSymbolProvider": false

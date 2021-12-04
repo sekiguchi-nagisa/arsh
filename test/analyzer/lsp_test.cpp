@@ -566,6 +566,58 @@ TEST_F(LocationTest, range) {
                  Range{.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 5}}));
 }
 
+TEST_F(LocationTest, change) {
+  std::string content = "";
+
+  TextDocumentContentChangeEvent change = {
+      .range = Range{.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 0}},
+      .rangeLength = 0,
+      .text = "1234",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("1234", content);
+
+  change = {
+      .range = Range{.start = {.line = 0, .character = 4}, .end = {.line = 0, .character = 4}},
+      .rangeLength = 0,
+      .text = "\n",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("1234\n", content);
+
+  change = {
+      .range = Range{.start = {.line = 1, .character = 0}, .end = {.line = 1, .character = 0}},
+      .rangeLength = 0,
+      .text = "あ",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("1234\nあ", content);
+
+  change = {
+      .range = Range{.start = {.line = 1, .character = 1}, .end = {.line = 1, .character = 1}},
+      .rangeLength = 0,
+      .text = "1",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("1234\nあ1", content);
+
+  change = {
+      .range = Range{.start = {.line = 1, .character = 2}, .end = {.line = 1, .character = 2}},
+      .rangeLength = 0,
+      .text = "う",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("1234\nあ1う", content);
+
+  change = {
+      .range = Range{.start = {.line = 0, .character = 2}, .end = {.line = 1, .character = 3}},
+      .rangeLength = 6,
+      .text = "-",
+  };
+  ASSERT_TRUE(applyChange(content, change));
+  ASSERT_EQ("12-", content);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

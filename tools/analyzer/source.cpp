@@ -187,7 +187,22 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
   if (!change.range.hasValue()) {
     content = change.text;
     return true;
-  } // FIXME: support incremental update
+  }
+
+  auto ret = toToken(content, change.range.unwrap());
+  if (!ret.hasValue()) {
+    return false;
+  }
+  Token token = ret.unwrap();
+  if (change.rangeLength.hasValue()) {
+    StringRef ref = content;
+    ref = ref.substr(token.pos, token.size);
+    unsigned int len = utf16Len(ref);
+    if (len != change.rangeLength.unwrap()) {
+      return false;
+    }
+  }
+  content.replace(token.pos, token.size, change.text);
   return true;
 }
 

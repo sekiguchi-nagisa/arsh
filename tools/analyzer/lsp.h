@@ -185,7 +185,18 @@ struct SetTraceParams {
   }
 };
 
-struct InitializeParams {
+using ProgressToken = Union<int, std::string>;
+
+struct WorkDoneProgressParams {
+  Optional<ProgressToken> workDoneToken;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(workDoneToken);
+  }
+};
+
+struct InitializeParams : public WorkDoneProgressParams {
   Union<int, std::nullptr_t> processId{nullptr};
   Optional<Union<std::string, std::nullptr_t>> rootPath; // optional
   Union<DocumentURI, std::nullptr_t> rootUri{nullptr};
@@ -241,7 +252,7 @@ struct TextDocumentSyncOptions {
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(openClose);
-    JSONIFY(change); // FIXME:
+    JSONIFY(change);
     JSONIFY(willSave);
     JSONIFY(willSaveWaitUntil);
     JSONIFY(save);
@@ -337,17 +348,6 @@ struct TextDocumentPositionParams {
   void jsonify(T &t) {
     JSONIFY(textDocument);
     JSONIFY(position);
-  }
-};
-
-using ProgressToken = Union<int, std::string>;
-
-struct WorkDoneProgressParams {
-  Optional<ProgressToken> workDoneToken;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(workDoneToken);
   }
 };
 
