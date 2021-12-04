@@ -25,7 +25,7 @@ class SourceManager;
 class Source;
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
-                                 const DeclSymbol &decl);
+                                 const DeclSymbol &decl, bool markup = true);
 
 } // namespace ydsh::lsp
 

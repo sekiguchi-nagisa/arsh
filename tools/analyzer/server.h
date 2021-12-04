@@ -40,6 +40,7 @@ private:
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
+  MarkupKind markupKind{MarkupKind::PlainText};
   bool diagVersionSupport{false};
 
 public:
@@ -108,6 +109,8 @@ private:
   std::vector<Location> gotoDefinitionImpl(const SymbolRequest &request);
 
   std::vector<Location> findReferenceImpl(const SymbolRequest &request);
+
+  Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
 
   DiagnosticEmitter newDiagnosticEmitter();
 

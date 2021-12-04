@@ -129,12 +129,49 @@ struct PublishDiagnosticsClientCapabilities {
   }
 };
 
+#define EACH_MARKUP_KIND(OP)                                                                       \
+  OP(PlainText, "plaintext")                                                                       \
+  OP(Markdown, "markdown")
+
+enum class MarkupKind : unsigned int {
+#define GEN_ENUM(E, S) E,
+  EACH_MARKUP_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const MarkupKind &kind);
+
+bool toEnum(const char *str, MarkupKind &kind);
+
+template <typename T>
+void jsonify(T &t, MarkupKind &kind) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(kind);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), kind);
+  }
+}
+
+struct HoverClientCapabilities {
+  Optional<std::vector<MarkupKind>> contentFormat;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(contentFormat);
+  }
+};
+
 struct TextDocumentClientCapabilities {
   Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
+  Optional<HoverClientCapabilities> hover;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(publishDiagnostics);
+    JSONIFY(hover);
   }
 };
 
@@ -206,6 +243,7 @@ struct InitializeParams : public WorkDoneProgressParams {
 
   template <typename T>
   void jsonify(T &t) {
+    WorkDoneProgressParams::jsonify(t);
     JSONIFY(processId);
     JSONIFY(rootPath);
     JSONIFY(rootUri);
@@ -419,32 +457,6 @@ struct HoverParams : public TextDocumentPositionParams, public WorkDoneProgressP
     WorkDoneProgressParams::jsonify(t);
   }
 };
-
-#define EACH_MARKUP_KIND(OP)                                                                       \
-  OP(PlainText, "plaintext")                                                                       \
-  OP(Markdown, "markdown")
-
-enum class MarkupKind : unsigned int {
-#define GEN_ENUM(E, S) E,
-  EACH_MARKUP_KIND(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-const char *toString(const MarkupKind &kind);
-
-bool toEnum(const char *str, MarkupKind &kind);
-
-template <typename T>
-void jsonify(T &t, MarkupKind &kind) {
-  if constexpr (is_serialize_v<T>) {
-    std::string value = toString(kind);
-    t(value);
-  } else if constexpr (is_deserialize_v<T>) {
-    std::string value;
-    t(value);
-    t.hasError() || toEnum(value.c_str(), kind);
-  }
-}
 
 struct MarkupContent {
   MarkupKind kind;

@@ -1,7 +1,11 @@
 # RUN: eval $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
- "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+ "params": {
+   "capabilities": {"textDocument": {"hover": {"contentFormat": ["plaintext", "markdown"]}}},
+   "rootUri": "file:///test", "processId": 46
+ }
+}
 
 #    CHECK: {
 # CHECK_IF:     "capabilities": {

@@ -50,8 +50,8 @@ static const BuiltinCmdDesc *findCmdDesc(const char *name) {
 }
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
-                                 const DeclSymbol &decl) {
-  std::string content = "```ydsh\n";
+                                 const DeclSymbol &decl, bool markup) {
+  std::string content = markup ? "```ydsh\n" : "";
   std::string name = DeclSymbol::demangle(decl.getKind(), decl.getMangledName());
   switch (decl.getKind()) {
   case DeclSymbol::Kind::VAR:
@@ -100,7 +100,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::BUILTIN_CMD: {
     auto *cmd = findCmdDesc(name.c_str());
     assert(cmd);
-    content = "```md\n";
+    content = markup ? "```md\n" : "";
     content += name;
     content += ": ";
     content += name;
@@ -135,7 +135,9 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   }
   }
 
-  content += "\n```";
+  if (markup) {
+    content += "\n```";
+  }
   return content;
 }
 

@@ -152,10 +152,38 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
   return result;
 }
 
+Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src, const SymbolRequest &request) {
+  Union<Hover, std::nullptr_t> ret = nullptr;
+  findDeclaration(this->indexes, request, [&](const FindDeclResult &value) {
+    if (is<Hover>(ret)) {
+      return;
+    }
+    ret = Hover{
+        .contents =
+            MarkupContent{
+                .kind = this->markupKind,
+                .value = generateHoverContent(this->srcMan, src, value.decl,
+                                              this->markupKind == MarkupKind::Markdown),
+            },
+        .range = toRange(src.getContent(), value.request.getToken()),
+    };
+  });
+  return ret;
+}
+
 DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
   return {this->srcMan,
           [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
           this->diagVersionSupport};
+}
+
+static MarkupKind resolveMarkupKind(const std::vector<MarkupKind> formats, MarkupKind defaultKind) {
+  for (auto &kind : formats) {
+    if (kind == MarkupKind::Markdown) {
+      return kind;
+    }
+  }
+  return defaultKind;
 }
 
 // RPC method definitions
@@ -178,6 +206,11 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       auto &diag = textDocument.publishDiagnostics.unwrap();
       if (diag.versionSupport.hasValue()) {
         this->diagVersionSupport = diag.versionSupport.unwrap();
+      }
+    }
+    if (textDocument.hover.hasValue()) {
+      if (auto &hover = textDocument.hover.unwrap(); hover.contentFormat.hasValue()) {
+        this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap(), MarkupKind::PlainText);
       }
     }
   }
@@ -310,22 +343,7 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
   if (auto resolved = this->resolvePosition(params)) {
     auto &src = *resolved.asOk().first;
     auto &request = resolved.asOk().second;
-    Union<Hover, std::nullptr_t> ret = nullptr;
-    auto callback = [&](const FindDeclResult &value) {
-      if (is<Hover>(ret)) {
-        return;
-      }
-      ret = Hover{
-          .contents =
-              MarkupContent{
-                  .kind = MarkupKind::Markdown,
-                  .value = generateHoverContent(this->srcMan, src, value.decl),
-              },
-          .range = toRange(src.getContent(), value.request.getToken()),
-      };
-    };
-    findDeclaration(this->indexes, request, callback);
-    return ret;
+    return this->hoverImpl(src, request);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
