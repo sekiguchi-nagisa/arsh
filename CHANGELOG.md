@@ -74,8 +74,9 @@
     - now use ``Module#fullname`` method instead
 - **Breaking Change**: slice methods of ``String``, ``Array`` type no longer raise any exceptions
     - like python, if slice index is out of index, round index within range
-- **Breaking Change**: remove some ``Array`` methods
+- **Breaking Change**: remove some ``Array``, ``Map`` methods
     - ``Array#extend``: use ``Array#addAll`` instead
+    - ``Map#find``: use ``Map#get`` instead
 
 #### LSP
 

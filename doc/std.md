@@ -349,8 +349,6 @@ function empty($this : Map<T0,T1>) : Boolean
 
 function get($this : Map<T0,T1>, $key : T0) : Option<T1>
 
-function find($this : Map<T0,T1>, $key : T0) : Boolean
-
 function remove($this : Map<T0,T1>, $key : T0) : Boolean
 
 function swap($this : Map<T0,T1>, $key : T0, $value : T1) : T1
