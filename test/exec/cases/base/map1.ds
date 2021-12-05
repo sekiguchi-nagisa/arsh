@@ -63,6 +63,21 @@ assert $bb2.size() == 2
 assert $bb2["s"] == 1
 assert $bb2["a"] == 100
 
+# addAll
+var cc1 = ["a" : 12, "b": 34]
+var cc2 = ["c" : 56, "b": -199]
+var cc3 = $cc1.addAll($cc2)
+assert $cc1.size() == 3
+assert $cc3.size() == 3
+assert $cc2.size() == 2
+assert $cc3["a"] == 12
+assert $cc3['b'] == -199
+assert $cc3['c'] == 56
+
+var cc4 = $cc3.addAll($cc3)
+assert $cc4.size() == 3
+assert $cc3.size() == 3
+
 # inheritance
 assert([23 : $true] is Map<Int, Boolean>)
 assert(["fre" : 32] is Any)

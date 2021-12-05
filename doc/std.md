@@ -296,7 +296,7 @@ function insert($this : Array<T0>, $index : Int, $value : T0) : Void
 
 function add($this : Array<T0>, $value : T0) : Array<T0>
 
-function extend($this : Array<T0>, $value : Array<T0>) : Array<T0>
+function addAll($this : Array<T0>, $value : Array<T0>) : Array<T0>
 
 function swap($this : Array<T0>, $index : Int, $value : T0) : T0
 
@@ -354,6 +354,8 @@ function find($this : Map<T0,T1>, $key : T0) : Boolean
 function remove($this : Map<T0,T1>, $key : T0) : Boolean
 
 function swap($this : Map<T0,T1>, $key : T0, $value : T1) : T1
+
+function addAll($this : Map<T0,T1>, $value : Map<T0,T1>) : Map<T0,T1>
 
 function copy($this : Map<T0,T1>) : Map<T0,T1>
 

@@ -1344,9 +1344,9 @@ YDSH_METHOD array_add(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function extend($this : Array<T0>, $value : Array<T0>) : Array<T0>
-YDSH_METHOD array_extend(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_extend);
+//!bind: function addAll($this : Array<T0>, $value : Array<T0>) : Array<T0>
+YDSH_METHOD array_addAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_addAll);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = typeAs<ArrayObject>(LOCAL(1));
   if (&obj != &value) {
@@ -1697,6 +1697,20 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     RET_ERROR;
   }
   RET(value);
+}
+
+//!bind: function addAll($this : Map<T0, T1>, $value : Map<T0, T1>) : Map<T0, T1>
+YDSH_METHOD map_addAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(map_addAll);
+  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &value = typeAs<MapObject>(LOCAL(1));
+  if (&obj != &value) {
+    CHECK_ITER_INVALIDATION(obj);
+    for (auto &e : value.getValueMap()) {
+      obj.set(DSValue(e.first), DSValue(e.second));
+    }
+  }
+  RET(LOCAL(0));
 }
 
 //!bind: function copy($this : Map<T0, T1>) : Map<T0, T1>

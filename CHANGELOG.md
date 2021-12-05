@@ -36,6 +36,9 @@
     - now show runtime configuration (also get via ``reply`` variable)
 - add some methods to ``Array`` type
     - ``forEach``: apply function to each element
+    - ``addAll``: add all elements of other ``Array`` object
+- add some methods to ``Map`` type
+    - ``addAll``: add all elements of other ``Map`` object
 
 #### LSP
 
@@ -71,6 +74,8 @@
     - now use ``Module#fullname`` method instead
 - **Breaking Change**: slice methods of ``String``, ``Array`` type no longer raise any exceptions
     - like python, if slice index is out of index, round index within range
+- **Breaking Change**: remove some ``Array`` methods
+    - ``Array#extend``: use ``Array#addAll`` instead
 
 #### LSP
 
