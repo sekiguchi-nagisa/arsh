@@ -1466,6 +1466,50 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
   }
 }
 
+/*//!bind: function map($this : Array<T0>, $mapper : Func<T1,[T0]>) : Array<T1>
+YDSH_METHOD array_map(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_map);  //FIXME: need to fix method handle instantiation bug
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &mapper = LOCAL(1);
+
+  auto ret = ({
+    auto &funcType = ctx.typePool.get(mapper.getTypeID());
+    assert(funcType.isFuncType());
+    auto newType = ctx.typePool.createArrayType(cast<FunctionType>(funcType).getReturnType());
+    assert(newType);
+    DSValue::create<ArrayObject>(*newType.asOk());
+  });
+  auto &retArray = typeAs<ArrayObject>(ret);
+  size_t size = arrayObj.size();
+  retArray.refValues().resize(size);
+  for (size_t i = 0; i < size; i++) {
+    auto e = arrayObj.getValues()[i];
+    auto value = VM::callFunction(ctx, DSValue(mapper), makeArgs(std::move(e)));
+    if (ctx.hasError()) {
+      RET_ERROR;
+    }
+    retArray.refValues()[i] = std::move(value);
+  }
+  RET(ret);
+}*/
+
+//!bind: function forEach($this : Array<T0>, $consumer : Func<Void,[T0]>) : Void
+YDSH_METHOD array_each(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_each);
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &func = LOCAL(1);
+
+  size_t size = arrayObj.size();
+  for (size_t i = 0; i < size; i++) {
+    auto e = arrayObj.getValues()[i];
+    VM::callFunction(ctx, DSValue(func), makeArgs(std::move(e)));
+    if (ctx.hasError()) {
+      RET_ERROR;
+    }
+  }
+  RET_VOID;
+}
+
 //!bind: function size($this : Array<T0>) : Int
 YDSH_METHOD array_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_size);
@@ -1499,9 +1543,9 @@ YDSH_METHOD array_iter(RuntimeContext &ctx) {
    *      var index : Int
    * }
    *
+   * FIXME: object layout and type is mismatched
    */
-  auto &type = ctx.typePool.get(LOCAL(0).getTypeID()); // FIXME: object layout and type is
-                                                       // mismatched
+  auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto value = DSValue::create<BaseObject>(type, 2);
   auto &obj = typeAs<BaseObject>(value);
   obj[0] = LOCAL(0);

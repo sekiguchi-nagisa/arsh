@@ -34,6 +34,8 @@
 - add ``String#width`` method for width counting of grapheme cluster
 - add ``info`` sub-command to builtin ``shctl`` command
     - now show runtime configuration (also get via ``reply`` variable)
+- add some methods to ``Array`` type
+    - ``forEach``: apply function to each element
 
 #### LSP
 

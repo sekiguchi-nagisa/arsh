@@ -316,6 +316,8 @@ function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Array<T0>
 
 function join($this : Array<T0>, $delim : String) : String
 
+function forEach($this : Array<T0>, $consumer : Func<Void,[T0]>) : Void
+
 function size($this : Array<T0>) : Int
 
 function empty($this : Array<T0>) : Boolean

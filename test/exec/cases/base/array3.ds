@@ -1,0 +1,14 @@
+
+# each
+var count = 0;
+
+$(seq 1 123).forEach(function($s : String) => $count++)
+assert $count == 123
+
+## assert "$([1,2].forEach(function($i : Int) => echo $i))" ==  $'1\n2'   # FIXME: currently semantic error
+
+## map
+#var sum = 0
+#$(seq 1 10).map(function($a : String) => $a.toInt()!) \
+#            .forEach(function($a : Int) => sum += $a)
+#assert $sum == (1+2+3+4+5+6+7+8+9+10)
