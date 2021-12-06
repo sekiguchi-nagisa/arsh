@@ -796,7 +796,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
   auto right = LOCAL(1).asStrRef();
   auto index = left.indexOf(right);
   assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-  RET(DSValue::createInt(static_cast<ssize_t>(index)));
+  RET(DSValue::createInt(static_cast<int64_t>(index)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int
@@ -806,7 +806,15 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
   auto right = LOCAL(1).asStrRef();
   auto index = left.lastIndexOf(right);
   assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-  RET(DSValue::createInt(static_cast<ssize_t>(index)));
+  RET(DSValue::createInt(static_cast<int64_t>(index)));
+}
+
+//!bind: function contains($this : String, $target : String) : Boolean
+YDSH_METHOD string_contains(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_contains);
+  auto left = LOCAL(0).asStrRef();
+  auto right = LOCAL(1).asStrRef();
+  RET_BOOL(left.contains(right));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
@@ -1542,6 +1550,23 @@ YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
     }
   }
   RET(DSValue::createInt(index));
+}
+
+//!bind: function contains($this : Array<T0>, $target : T0) : Boolean where T0 : _Value
+YDSH_METHOD array_contains(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_contains);
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &value = LOCAL(1);
+  size_t size = arrayObj.size();
+  assert(size <= ArrayObject::MAX_SIZE);
+  bool found = false;
+  for (size_t i = 0; i < size; i++) {
+    if (arrayObj.getValues()[i].equals(value)) {
+      found = true;
+      break;
+    }
+  }
+  RET_BOOL(found);
 }
 
 //!bind: function size($this : Array<T0>) : Int

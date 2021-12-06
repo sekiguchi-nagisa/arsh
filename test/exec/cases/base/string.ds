@@ -118,6 +118,16 @@ assert("".lastIndexOf("") == 0)
 assert("".lastIndexOf("aaadd") == -1)
 assert "".lastIndexOf($'\x00') == -1
 
+assert "".contains("")
+assert ! "".contains("a")
+assert ! "".contains($'\0')
+assert "aaa".contains("a")
+assert ! "a12o0いs".contains("あ")
+assert "a12o0いs".contains("")
+assert "fer230👨‍👨‍👦ｆれｆ".contains("👨")
+assert "fer230👨‍👨‍👦ｆれｆ".contains("👨‍👨‍👦")
+assert 'aa🇯🇵ss'.contains('🇯')
+
 var sa = "hello world !!".split(" ")
 assert($sa.size() == 3)
 assert($sa[0] == "hello")

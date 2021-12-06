@@ -26,3 +26,10 @@ assert [2,34,-18].lastIndexOf(2) == 0
 assert [2,34,-18].lastIndexOf(343) == -1
 assert [3,2,34,2,-18].lastIndexOf(2) == 3
 assert new [String]().lastIndexOf('34') == -1
+
+# contains
+assert [45.0/0.0, 34.9, 3.000].contains(-90.0/-0.0)
+assert ![45.0/0.0, 34.9, 3.000].contains(90.0/-0.0)
+assert [-34.4,0.0/0.0, 34.9, 3.000].contains(0.0/-0.0)
+assert ! new [Bool]().contains($true)
+assert ! new [Bool]().contains($false)

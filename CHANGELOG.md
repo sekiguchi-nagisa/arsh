@@ -25,20 +25,23 @@
 
 #### Builtin
 
+- add ``info`` sub-command to builtin ``shctl`` command
+    - now show runtime configuration (also get via ``reply`` variable)
 - add builtin ``MODULE`` variable for indicating current ``Module`` object
 - add some methods to ``Module`` type
     - ``scriptName``: get ``SCRIPT_NAME`` of module
     - ``scriptDir``: get ``SCRIPT_DIR`` of module
     - ``func``: compile string as single expression function
     - ``fullname``: resolve fully qualified command name
-- add ``String#width`` method for width counting of grapheme cluster
-- add ``info`` sub-command to builtin ``shctl`` command
-    - now show runtime configuration (also get via ``reply`` variable)
+- add some methods to ``String`` type
+    - ``width``: method for width counting of grapheme cluster
+    - ``contains``: check if contains substring
 - add some methods to ``Array`` type
     - ``forEach``: apply function to each element
     - ``addAll``: add all elements of other ``Array`` object
     - ``indexOf``: get first index of element equivalent to specified object
     - ``lastIndexOf``: get last index of element equivalent to specified object
+    - ``contains``: check if contains specified object
 - add some methods to ``Map`` type
     - ``addAll``: add all elements of other ``Map`` object
 

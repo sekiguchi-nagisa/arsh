@@ -147,6 +147,8 @@ function indexOf($this : String, $target : String) : Int
 
 function lastIndexOf($this : String, $target : String) : Int
 
+function contains($this : String, $target : String) : Boolean
+
 function split($this : String, $delim : String) : Array<String>
 
 function replace($this : String, $target : String, $rep : String) : String
@@ -321,6 +323,8 @@ function forEach($this : Array<T0>, $consumer : Func<Void,[T0]>) : Void
 function indexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
 
 function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+
+function contains($this : Array<T0>, $target : T0) : Boolean where T0 : _Value
 
 function size($this : Array<T0>) : Int
 
