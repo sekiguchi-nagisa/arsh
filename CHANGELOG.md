@@ -57,8 +57,8 @@
     - support the following directives
         - ``RUN``
         - ``REQUIRE``
-        - ``CHECK``, ``CHECK_IF``
-        - ``CHECKERR``, ``CHECKERR_IF``
+        - ``CHECK``, ``CHECK_IF``, ``CHECK_RE``
+        - ``CHECKERR``, ``CHECKERR_IF``, ``CHECKERR_RE``
         - ``STATUS``
 - experimental support the following platform
     - linux on arm32

@@ -1,0 +1,10 @@
+
+# RUN:   /bin/sh $self
+echo 1>&2 hello success!!
+echo 1>&2 AAA ZZZ BBB
+echo 1>&2 / && echo 1>&2 / && echo 1>&2 not found !!
+# CHECKERR_RE: hello .+
+#    CHECKERR: AAA ZZZ BBB
+# CHECKERR_IF: /
+# CHECKERR_RE: /
+# CHECKERR_RE: not

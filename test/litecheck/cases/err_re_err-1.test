@@ -1,0 +1,8 @@
+
+# RUN:   /bin/sh $self
+echo hello success!!
+echo 1>&2 hoge
+echo AAA ZZZ BBB
+# CHECK_RE: hello success!!
+# CHECK_RE: .+ B+
+# CHECKERR_RE: ^.$

@@ -1,6 +1,6 @@
 #!/usr/bin/env ydsh
 
-# light-weight file checker
+# lite-weight file checker
 
 ##############################
 ##     helper functions     ##
@@ -35,8 +35,10 @@ var self = ''
 let RUN = "RUN"
 let CHECK = "CHECK"
 let CHECK_IF = "CHECK_IF"
+let CHECK_RE = "CHECK_RE"
 let CHECKERR = "CHECKERR"
 let CHECKERR_IF = "CHECKERR_IF"
+let CHECKERR_RE = "CHECKERR_RE"
 let STATUS = "STATUS"
 let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
@@ -72,16 +74,15 @@ function _parse_directives($path : String) : [String: [Directive]] {
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|STATUS|REQUIRE): (.*)/.match($line)
+        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|STATUS|REQUIRE): (.*)/.match($line)
         if !$matched.empty() {
             var type = $matched[1]!
-            assert $type == $RUN || $type == $CHECK || $type == $CHECKERR || 
-                    $type == $REQUIRE || $type == $STATUS || $type == $CHECK_IF || $type == $CHECKERR_IF
             $line = $matched[2]!
             var key = $type
-            if $type == $CHECK_IF {
+            if [$CHECK, $CHECK_IF, $CHECK_RE].contains($type) {
                 $key = $CHECK
-            } elif $type == $CHECKERR_IF {
+            }
+            if [$CHECKERR, $CHECKERR_IF, $CHECKERR_RE].contains($type) {
                 $key = $CHECKERR
             }
             $map[$key].add(($type, $line, $ln))
@@ -121,12 +122,14 @@ function _parse_directives($path : String) : [String: [Directive]] {
 # split check directives into chunks
 function _to_chunk($checks : [Directive]) : [[Directive]] {
     var ret : [[Directive]]
-    if !$checks[0]._0.endsWith("_IF") {
+    if !$checks[0]._0.endsWith("_IF") && !$checks[0]._0.endsWith("_RE") {
         $ret.add(new [Directive]())
     }
 
     for $c in $checks {
-        if $c._0.endsWith("_IF") {
+        if $c._0.endsWith("_IF") || $c._0.endsWith("_RE") {
+            $ret.add(new [Directive]())
+        } elif !$ret.empty() && !$ret.peek().empty() && $ret.peek().peek()._0.endsWith("_RE") {
             $ret.add(new [Directive]())
         }
         $ret.peek().add($c)
@@ -134,7 +137,25 @@ function _to_chunk($checks : [Directive]) : [[Directive]] {
     return $ret
 }
 
+function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
+    assert $checks.size() == 1
+    assert $output.size() == 1
+
+    var out = $output.join($'\n')
+    var re = try { new Regex($checks[0]._1, ""); }
+             catch $e : Error { echo 1>&2 ${$e.message()}; return $false; }
+    if $re !~ $out {
+        echo 1>&2 ${$checks[0]._0} on line ${$checks[0]._2},
+        echo 1>&2 "    Expect: $re"
+        echo 1>&2 "    Actual: $out"
+        return $false
+    }
+    return $true
+}
+
 function _match_chunk($checks : [Directive], $output : [String]) : Bool {
+    $checks[0]._0.endsWith("_RE") && return $_match_chunk_re($checks, $output)
+
     var eout = ""
     for $c in $checks {
         if !$eout.empty() {
@@ -258,6 +279,5 @@ litecheck() {
     # run command
     return $_run_and_check($map)
 }
-
 
 shctl is-sourced || litecheck $@
