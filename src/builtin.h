@@ -1220,7 +1220,7 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
 
 //!bind: function get($this : Array<T0>, $index : Int) : Option<T0>
 YDSH_METHOD array_get2(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_get);
+  SUPPRESS_WARNING(array_get2);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   size_t size = obj.getValues().size();
@@ -1508,6 +1508,40 @@ YDSH_METHOD array_each(RuntimeContext &ctx) {
     }
   }
   RET_VOID;
+}
+
+//!bind: function indexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_indexOf);
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &value = LOCAL(1);
+  size_t size = arrayObj.size();
+  assert(size <= ArrayObject::MAX_SIZE);
+  int64_t index = -1;
+  for (size_t i = 0; i < size; i++) {
+    if (arrayObj.getValues()[i].equals(value)) {
+      index = static_cast<int64_t>(i);
+      break;
+    }
+  }
+  RET(DSValue::createInt(index));
+}
+
+//!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_lastIndexOf);
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &value = LOCAL(1);
+  size_t size = arrayObj.size();
+  assert(size <= ArrayObject::MAX_SIZE);
+  int64_t index = -1;
+  for (int64_t i = static_cast<int64_t>(size) - 1; i > -1; i--) {
+    if (arrayObj.getValues()[i].equals(value)) {
+      index = i;
+      break;
+    }
+  }
+  RET(DSValue::createInt(index));
 }
 
 //!bind: function size($this : Array<T0>) : Int

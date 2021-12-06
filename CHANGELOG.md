@@ -37,6 +37,8 @@
 - add some methods to ``Array`` type
     - ``forEach``: apply function to each element
     - ``addAll``: add all elements of other ``Array`` object
+    - ``indexOf``: get first index of element equivalent to specified object
+    - ``lastIndexOf``: get last index of element equivalent to specified object
 - add some methods to ``Map`` type
     - ``addAll``: add all elements of other ``Map`` object
 

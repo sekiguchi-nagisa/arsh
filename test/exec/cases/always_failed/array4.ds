@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'UndefinedMethod', $status = 1)
+
+var s5 = [[34,5],[0,-1]]
+$s5.lastIndexOf([23])  # sort result is undefined

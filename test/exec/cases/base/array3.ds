@@ -12,3 +12,17 @@ assert $count == 123
 #$(seq 1 10).map(function($a : String) => $a.toInt()!) \
 #            .forEach(function($a : Int) => sum += $a)
 #assert $sum == (1+2+3+4+5+6+7+8+9+10)
+
+# indexOf
+assert [2,34,-18].indexOf(34) == 1
+assert [2,34,-18].indexOf(2) == 0
+assert [2,34,-18].indexOf(343) == -1
+assert [3,2,34,2,-18].indexOf(2) == 1
+assert new [String]().indexOf('34') == -1
+
+# lastIndexOf
+assert [2,34,-18].lastIndexOf(34) == 1
+assert [2,34,-18].lastIndexOf(2) == 0
+assert [2,34,-18].lastIndexOf(343) == -1
+assert [3,2,34,2,-18].lastIndexOf(2) == 3
+assert new [String]().lastIndexOf('34') == -1

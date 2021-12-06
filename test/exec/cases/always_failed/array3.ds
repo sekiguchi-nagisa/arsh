@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'UndefinedMethod', $status = 1)
+
+var s5 = [$SIG_DFL, $SIG_IGN]
+$s5.indexOf($SIG_IGN)  # sort result is undefined

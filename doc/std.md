@@ -318,6 +318,10 @@ function join($this : Array<T0>, $delim : String) : String
 
 function forEach($this : Array<T0>, $consumer : Func<Void,[T0]>) : Void
 
+function indexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+
+function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+
 function size($this : Array<T0>) : Int
 
 function empty($this : Array<T0>) : Boolean
