@@ -1,0 +1,12 @@
+
+# RUN: echo -e '\r' | eval $cmd --log info
+
+#    CHECKERR: start ydsh code analyzer with the following options
+# CHECKERR_RE:     .+/tools/analyzer/ydshd --log info
+# CHECKERR_RE: .+ <info> \[\d+\] working directory: .+
+# CHECKERR_RE: .+ <error> \[\d+\] invalid header: `', size: 0
+# CHECKERR_RE: .+ <warning> \[\d+\] may be broken or empty message
+# CHECKERR_RE: .+ <error> \[\d+\] io stream reach eof or fatal error\. terminate immediately
+
+# STATUS: 1
+

@@ -10,3 +10,4 @@
 #    CHECK:   "message": "server has already initialized"
 #    CHECK: }
 <<<
+# STATUS: 137

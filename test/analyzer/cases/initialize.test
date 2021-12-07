@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self
+# RUN: eval $cmd --test $self --language-server
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46, "trace" : "on"}}

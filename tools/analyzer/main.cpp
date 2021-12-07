@@ -106,13 +106,13 @@ static void showInfo(char **const argv, LSPLogger &logger) {
 struct Driver {
   virtual ~Driver() = default;
 
-  [[noreturn]] virtual void run(const std::function<void()> &func) = 0;
+  [[noreturn]] virtual void run(const std::function<int()> &func) = 0;
 };
 
 struct SimpleDriver : public Driver {
-  void run(const std::function<void()> &func) override {
-    func(); // run in same process
-    exit(0);
+  void run(const std::function<int()> &func) override {
+    int s = func(); // run in same process
+    exit(s);
   }
 };
 
@@ -125,15 +125,12 @@ public:
   TestClientServerDriver(LogLevel level, std::vector<ClientRequest> &&requests)
       : level(level), requests(std::move(requests)) {}
 
-  void run(const std::function<void()> &func) override {
+  void run(const std::function<int()> &func) override {
     using namespace process;
     IOConfig ioConfig;
     ioConfig.in = IOConfig::PIPE;
     ioConfig.out = IOConfig::PIPE;
-    auto proc = ProcBuilder::spawn(ioConfig, [&func] {
-      func();
-      return 0; // normally unreachable
-    });
+    auto proc = ProcBuilder::spawn(ioConfig, [&func] { return func(); });
 
     ClientLogger logger;
     logger.setSeverity(this->level);
