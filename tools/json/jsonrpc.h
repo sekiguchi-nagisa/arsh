@@ -213,6 +213,7 @@ public:
    * @param size
    * size of data
    * @param data
+   * must be null terminated
    * @return
    * sent data size
    */

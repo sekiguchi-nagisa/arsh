@@ -35,15 +35,9 @@ ssize_t LSPTransport::send(unsigned int size, const char *data) {
   if (size == 0 || data == nullptr) {
     return 0;
   }
-  std::string header = HEADER_LENGTH;
-  header += std::to_string(size);
-  header += "\r\n";
-  header += "\r\n";
-
-  fwrite(header.c_str(), sizeof(char), header.size(), this->output.get());
-  ssize_t writeSize = fwrite(data, sizeof(char), size, this->output.get());
+  fprintf(this->output.get(), "%s%d\r\n\r\n%s", HEADER_LENGTH, size, data);
   fflush(this->output.get());
-  return writeSize; // FIXME: error checking.
+  return size; // FIXME: error checking.
 }
 
 static bool isContentLength(const std::string &line) {
