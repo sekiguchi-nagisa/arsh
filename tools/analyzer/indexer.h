@@ -61,6 +61,8 @@ private:
     }
   };
 
+  IntrusivePtr<ScopeEntry> builtinCmd;
+
   IntrusivePtr<ScopeEntry> scope;
 
   struct Hash {
@@ -124,8 +126,8 @@ private:
 public:
   IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create(nullptr)),
-        memberMap(indexes, std::move(pool)) {}
+      : modId(modId), version(version), builtinCmd(IntrusivePtr<ScopeEntry>::create(nullptr)),
+        scope(IntrusivePtr<ScopeEntry>::create(nullptr)), memberMap(indexes, std::move(pool)) {}
 
   SymbolIndex build() && {
     FlexBuffer<unsigned short> inlinedModIdList;

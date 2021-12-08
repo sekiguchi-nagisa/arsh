@@ -1496,6 +1496,52 @@ new [DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
+TEST_F(IndexTest, udc_overwrite) {
+  unsigned short modId;
+  const char *content = R"E(
+echo() {}
+echo hello
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 0, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 0}, .end = {.line = 1, .character = 4}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 2, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 0}, .end = {.line = 1, .character = 4}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
 TEST_F(IndexTest, invalidFunc) {
   unsigned short modId;
   const char *content = R"(

@@ -142,6 +142,9 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
     return nullptr;
   }
   auto *ref = this->scope->find(name);
+  if (!ref && kind == DeclSymbol::Kind::CMD) {
+    ref = this->builtinCmd->find(name);
+  }
   if (!ref) {
     return nullptr;
   }
@@ -200,7 +203,11 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
   this->globallyImportedModIds.emplace(foreignModId);
   for (auto &decl : index->getDecls()) {
     if (hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
-      this->scope->addDecl(decl);
+      if (foreignModId == 0 && decl.getKind() == DeclSymbol::Kind::BUILTIN_CMD) {
+        this->builtinCmd->addDecl(decl);
+      } else {
+        this->scope->addDecl(decl);
+      }
     }
   }
   // resolve inlined imported symbols
