@@ -6,4 +6,4 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-exec llvm-cov gcov $@
+exec llvm-cov gcov "$@"

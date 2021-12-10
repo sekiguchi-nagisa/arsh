@@ -28,14 +28,14 @@ check_cmd lcov
 # check gcov tool
 TOOL=""
 if [ "$2" != "" ]; then
-    abspath=$(cd $(dirname "$2") && pwd)/$(basename "$2")
+    abspath=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
     TOOL="--gcov-tool $abspath"
 fi
 
 
 # change to build dir
 if [ "$1" != "" ]; then
-    cd "$1"
+    cd "$1" || exit 1
 fi
 
 

@@ -6,7 +6,7 @@ if [ -z "$CC" ]; then
 fi
 
 mkdir -p build-all
-cd build-all
+cd build-all || exit 1
 echo using compiler: $CC
 cmake .. -G Ninja -DCMAKE_CXX_COMPILER=$CC -DUSE_EXTRA_TEST=on
 

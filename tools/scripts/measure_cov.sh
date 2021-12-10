@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 ROOT=$SCRIPT_DIR/../..
 
 check_cmd() {
@@ -22,7 +22,7 @@ check_cmd lcov
 
 # create build directory
 mkdir -p build-coverage
-cd build-coverage
+cd build-coverage || exit 1
 clear_cmake_cache
 
 # build with coverage

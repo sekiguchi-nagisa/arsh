@@ -5,11 +5,11 @@ if [ -z "$CC" ]; then
   CC=/usr/bin/clang++
 fi
 
-SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 ROOT=$SCRIPT_DIR/../..
 
 mkdir -p build-asan/app
-cd build-asan
+cd build-asan || exit 1
 cmake "$ROOT" -G Ninja \
             -DCMAKE_CXX_COMPILER=$CC \
             -DCMAKE_BUILD_TYPE=debug \

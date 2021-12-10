@@ -13,11 +13,11 @@ error() {
 
 command -v rpmbuild || error require rpmbuild
 
-SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 ROOT="$SCRIPT_DIR/../.."
 
 mkdir -p build-rpm
-cd build-rpm
+cd build-rpm || exit 1
 
 cmake "$ROOT" -G Ninja \
       -DCMAKE_CXX_COMPILER=$CC \
