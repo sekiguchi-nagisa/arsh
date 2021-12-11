@@ -58,7 +58,7 @@ public:
    * @return
    * if cannot receive request, return false
    */
-  bool runOnlyOnce() { return this->transport.dispatch(*this); }
+  bool runOnlyOnce() { return this->transport.dispatch(*this) == Transport::Status::DISPATCHED; }
 
   /**
    * normally not return

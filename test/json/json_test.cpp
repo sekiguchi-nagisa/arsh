@@ -766,6 +766,8 @@ struct StringTransport : public rpc::Transport {
   ssize_t recvSize() override { return this->inStr.size(); }
 
   bool available() const override { return true; }
+
+  bool poll(int) override { return true; }
 };
 
 class RPCTest : public ::testing::Test {
@@ -782,7 +784,9 @@ protected:
     ASSERT_EQ(0, this->transport.cursor);
   }
 
-  bool dispatch() { return this->transport.dispatch(this->handler); }
+  bool dispatch() {
+    return this->transport.dispatch(this->handler) == rpc::Transport::Status::DISPATCHED;
+  }
 
   const std::string &response() const { return this->transport.outStr; }
 

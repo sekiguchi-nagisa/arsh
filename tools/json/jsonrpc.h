@@ -198,13 +198,19 @@ public:
    */
   void reply(JSON &&id, Error &&error);
 
+  enum class Status : unsigned char {
+    DISPATCHED,
+    ERROR,
+    TIMEOUT,
+  };
+
   /**
    *
    * @param handler
    * @return
    * return false if received message is invalid
    */
-  bool dispatch(Handler &handler);
+  Status dispatch(Handler &handler, int timeout = -1);
 
   // raw level message send/recv api. not directly use them.
 
@@ -238,6 +244,15 @@ public:
   virtual ssize_t recv(unsigned int size, char *data) = 0;
 
   virtual bool available() const = 0;
+
+  /**
+   *
+   * @param timeout
+   * if -1, no limit
+   * @return
+   * if timeout, return false
+   */
+  virtual bool poll(int timeout) = 0;
 };
 
 using ReplyImpl = Result<JSON, Error>;

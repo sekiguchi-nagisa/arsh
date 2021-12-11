@@ -45,6 +45,8 @@ public:
   ssize_t recv(unsigned int size, char *data) override;
 
   bool available() const override;
+
+  bool poll(int timeout) override;
 };
 
 } // namespace ydsh::lsp

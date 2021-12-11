@@ -144,13 +144,16 @@ void Transport::reply(JSON &&id, Error &&error) {
   this->send(str.size(), str.c_str());
 }
 
-bool Transport::dispatch(Handler &handler) {
+Transport::Status Transport::dispatch(Handler &handler, int timeout) {
+  if (!this->poll(timeout)) {
+    return Status::TIMEOUT;
+  }
   ssize_t dataSize = this->recvSize();
   if (dataSize < 0) {
     LOG(LogLevel::WARNING, "may be broken or empty message");
-    return false;
+    return Status::ERROR;
   } else if (dataSize == 0) {
-    return true; // do nothing
+    return Status::DISPATCHED; // do nothing
   }
 
   ByteBuffer buf;
@@ -161,7 +164,7 @@ bool Transport::dispatch(Handler &handler) {
     ssize_t recvSize = this->recv(needSize, data);
     if (recvSize < 0) {
       LOG(LogLevel::ERROR, "message receiving failed");
-      return false;
+      return Status::ERROR;
     }
     buf.append(data, static_cast<unsigned int>(recvSize));
     remainSize -= recvSize;
@@ -189,7 +192,7 @@ bool Transport::dispatch(Handler &handler) {
     assert(is<Response>(msg));
     handler.onResponse(std::move(get<Response>(msg)));
   }
-  return true;
+  return Status::DISPATCHED;
 }
 
 // #####################

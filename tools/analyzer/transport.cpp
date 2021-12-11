@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <poll.h>
+
 #include <misc/num_util.hpp>
 
 #include "transport.h"
@@ -114,6 +116,22 @@ ssize_t LSPTransport::recv(unsigned int size, char *data) {
 
 bool LSPTransport::available() const {
   return !feof(this->input.get()) && !ferror(this->input.get());
+}
+
+bool LSPTransport::poll(int timeout) {
+  struct pollfd pollfd[1]{};
+  pollfd[0].fd = fileno(this->input.get());
+  pollfd[0].events = POLLIN;
+  while (true) {
+    int ret = ::poll(pollfd, 1, timeout);
+    if (ret == 0) {
+      return false;
+    } else if (ret == -1 && errno == EINTR) {
+      continue;
+    }
+    break;
+  }
+  return true;
 }
 
 } // namespace ydsh::lsp
