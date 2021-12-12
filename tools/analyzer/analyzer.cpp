@@ -121,7 +121,7 @@ const ModType &AnalyzerContextProvider::newModTypeFromCurContext(
 }
 
 static Lexer createLexer(const Source &src) {
-  const char *fullpath = src.getPath();
+  const char *fullpath = src.getPath().c_str();
   const char *ptr = src.getContent().c_str();
   return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
 }
@@ -180,7 +180,7 @@ ModResult AnalyzerContextProvider::addNewModEntry(CStrPtr &&ptr) {
     if (!src) {
       fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
     }
-    return src->getPath();
+    return src->getPath().c_str();
   }
 }
 
@@ -358,7 +358,7 @@ public:
     this->items.erase(iter, this->items.end());
 
     // fill sortText
-    unsigned int prioCount = 0;
+    int prioCount = 0;
     if (!this->items.empty()) {
       int prevPrio = this->items[0].priority;
       for (auto &item : this->items) {

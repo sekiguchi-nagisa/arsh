@@ -17,7 +17,6 @@
 #ifndef YDSH_TOOLS_ANALYZER_SOURCE_H
 #define YDSH_TOOLS_ANALYZER_SOURCE_H
 
-#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -29,16 +28,19 @@ struct TextDocumentContentChangeEvent;
 
 class Source {
 private:
-  const char *path;
+  std::shared_ptr<const std::string> path;
   std::string content;
   unsigned short srcId{0};
   int version{0};
 
 public:
-  Source(const char *path, unsigned short srcId, std::string &&content, int version)
-      : path(path), content(std::move(content)), srcId(srcId), version(version) {}
+  Source() = default;
 
-  const char *getPath() const { return this->path; }
+  Source(const char *path, unsigned short srcId, std::string &&content, int version)
+      : path(std::make_shared<const std::string>(path)), content(std::move(content)), srcId(srcId),
+        version(version) {}
+
+  const std::string &getPath() const { return *this->path; }
 
   const std::string &getContent() const { return this->content; }
 
@@ -46,19 +48,15 @@ public:
 
   unsigned short getSrcId() const { return this->srcId; }
 
-  void update(std::string &&c, int v) {
-    this->content = std::move(c);
-    this->version = v;
-  }
+  std::shared_ptr<Source> copyAndUpdate(std::string &&c, int v) const;
 };
 
 using SourcePtr = std::shared_ptr<Source>;
 
 class SourceManager {
 private:
-  std::vector<std::pair<CStrPtr, SourcePtr>> entries;
+  std::vector<SourcePtr> entries;
   StrRefMap<unsigned int> indexMap; // fullpath to index mapping
-  mutable std::mutex mutex;
 
 public:
   /**
@@ -85,7 +83,9 @@ public:
    * @return
    * if module id reaches limit, return null
    */
-  SourcePtr update(StringRef path, int version, std::string &&content); // FIXME:
+  SourcePtr update(StringRef path, int version, std::string &&content);
+
+  SourceManager copy() const;
 };
 
 /**

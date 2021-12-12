@@ -79,7 +79,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     if (name == CVAR_SCRIPT_NAME) {
       content += src.getPath();
     } else if (name == CVAR_SCRIPT_DIR) {
-      const char *path = src.getPath();
+      const char *path = src.getPath().c_str();
       const char *ptr = strrchr(path, '/');
       assert(ptr);
       if (ptr == path) {

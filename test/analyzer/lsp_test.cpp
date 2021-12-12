@@ -3,6 +3,7 @@
 #include "client.h"
 #include "lsp.h"
 #include "server.h"
+#include "worker.h"
 
 using namespace ydsh;
 using namespace lsp;
@@ -616,6 +617,34 @@ TEST_F(LocationTest, change) {
   };
   ASSERT_TRUE(applyChange(content, change));
   ASSERT_EQ("12-", content);
+}
+
+TEST(WorkerTest, base) {
+  BackgroundWorker worker;
+  auto ret1 = worker.addTask([] {
+    std::string value;
+    for (unsigned int i = 0; i < 10; i++) {
+      if (!value.empty()) {
+        value += "_";
+      }
+      value += std::to_string(i);
+    }
+    return value;
+  });
+
+  auto ret2 = worker.addTask([] {
+    std::string value;
+    for (unsigned int i = 10; i < 20; i++) {
+      if (!value.empty()) {
+        value += ".";
+      }
+      value += std::to_string(i);
+    }
+    return value;
+  });
+
+  ASSERT_EQ("10.11.12.13.14.15.16.17.18.19", ret2.get());
+  ASSERT_EQ("0_1_2_3_4_5_6_7_8_9", ret1.get());
 }
 
 int main(int argc, char **argv) {

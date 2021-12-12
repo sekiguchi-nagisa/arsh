@@ -22,6 +22,7 @@
 #include "index.h"
 #include "lsp.h"
 #include "transport.h"
+#include "worker.h"
 
 namespace ydsh::lsp {
 
@@ -33,10 +34,16 @@ struct LSPLogger : public LoggerBase {
 
 class LSPServer : public Handler {
 private:
+  struct AnalyzerResult {
+    SourceManager srcMan;
+    ModuleArchives archives;
+    SymbolIndexes indexes;
+  };
+
   LSPTransport transport;
-  SourceManager srcMan;
-  ModuleArchives archives;
-  SymbolIndexes indexes;
+  AnalyzerResult result;
+  BackgroundWorker worker;
+  std::future<AnalyzerResult> futureResult;
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
@@ -49,16 +56,7 @@ public:
     this->bindAll();
   }
 
-  const LSPTransport &getTransport() const { return this->transport; }
-
   ReplyImpl onCall(const std::string &name, JSON &&param) override;
-
-  /**
-   *
-   * @return
-   * if cannot receive request, return false
-   */
-  bool runOnlyOnce() { return this->transport.dispatch(*this) == Transport::Status::DISPATCHED; }
 
   /**
    * normally not return
@@ -113,6 +111,8 @@ private:
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
 
   DiagnosticEmitter newDiagnosticEmitter();
+
+  void syncResult();
 
 public:
   // RPC method definitions

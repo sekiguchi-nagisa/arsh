@@ -21,28 +21,31 @@
 
 namespace ydsh::lsp {
 
-SourcePtr SourceManager::findById(unsigned int id) const {
-  std::lock_guard<std::mutex> lockGuard(this->mutex);
+std::shared_ptr<Source> Source::copyAndUpdate(std::string &&c, int v) const {
+  auto newSrc = std::make_shared<Source>();
+  newSrc->path = this->path;
+  newSrc->content = std::move(c);
+  newSrc->srcId = this->srcId;
+  newSrc->version = v;
+  return newSrc;
+}
 
+SourcePtr SourceManager::findById(unsigned int id) const {
   if (id > 0 && --id < this->entries.size()) {
-    return this->entries[id].second;
+    return this->entries[id];
   }
   return nullptr;
 }
 
 SourcePtr SourceManager::find(StringRef path) const {
-  std::lock_guard<std::mutex> lockGuard(this->mutex);
-
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
-    return this->entries[iter->second].second;
+    return this->entries[iter->second];
   }
   return nullptr;
 }
 
 SourcePtr SourceManager::update(StringRef path, int version, std::string &&content) {
-  std::lock_guard<std::mutex> lockGuard(this->mutex);
-
   std::string tmp = std::move(content);
   if (tmp.empty() || tmp.back() != '\n') {
     tmp += '\n';
@@ -51,21 +54,26 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    this->entries[i].second->update(std::move(tmp), version);
-    return this->entries[i].second;
+    auto newSrc = this->entries[i]->copyAndUpdate(std::move(tmp), version);
+    this->entries[i] = std::move(newSrc);
+    return this->entries[i];
   } else {
     unsigned int id = this->entries.size() + 1;
     if (id == SYS_LIMIT_MOD_ID) {
       return nullptr;
     }
     unsigned int i = this->entries.size();
-    auto ptr = CStrPtr(strdup(path.data()));
-    auto src = std::make_shared<Source>(ptr.get(), static_cast<unsigned short>(id), std::move(tmp),
-                                        version);
-    auto &pair = this->entries.emplace_back(std::move(ptr), std::move(src));
-    this->indexMap.emplace(pair.first.get(), i);
-    return this->entries[i].second;
+    auto src = std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
+                                        std::move(tmp), version);
+    auto &ret = this->entries.emplace_back(std::move(src));
+    this->indexMap.emplace(ret->getPath(), i);
+    return this->entries[i];
   }
+}
+
+SourceManager SourceManager::copy() const {
+  auto tmp(*this);
+  return tmp;
 }
 
 static size_t findLineStartPos(const std::string &content, unsigned int count) {

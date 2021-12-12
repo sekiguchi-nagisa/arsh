@@ -110,6 +110,8 @@ show_option(USE_PCRE)
 #     find some command     #
 #+++++++++++++++++++++++++++#
 
+find_package(Threads REQUIRED)
+
 check_program(git)
 
 

@@ -17,21 +17,21 @@ TEST(SourceTest, base) {
   src = srcMan.update("/dummy1", 10, "hello");
   ASSERT_TRUE(src);
   ASSERT_EQ(10, src->getVersion());
-  ASSERT_STREQ("/dummy1", src->getPath());
+  ASSERT_EQ("/dummy1", src->getPath());
   ASSERT_EQ("hello\n", src->getContent());
   ASSERT_EQ(1, src->getSrcId());
 
   src = srcMan.update("/dummy1", 12, "world");
   ASSERT_TRUE(src);
   ASSERT_EQ(12, src->getVersion());
-  ASSERT_STREQ("/dummy1", src->getPath());
+  ASSERT_EQ("/dummy1", src->getPath());
   ASSERT_EQ("world\n", src->getContent());
   ASSERT_EQ(1, src->getSrcId());
 
   src = srcMan.update("/dummy2", 1, "");
   ASSERT_TRUE(src);
   ASSERT_EQ(1, src->getVersion());
-  ASSERT_STREQ("/dummy2", src->getPath());
+  ASSERT_EQ("/dummy2", src->getPath());
   ASSERT_EQ("\n", src->getContent());
   ASSERT_EQ(2, src->getSrcId());
 }
