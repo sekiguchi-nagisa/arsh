@@ -58,6 +58,10 @@ public:
 
   ReplyImpl onCall(const std::string &name, JSON &&param) override;
 
+  bool runOnlyOnce() { // for testing
+    return this->transport.dispatch(*this) == Transport::Status::DISPATCHED;
+  }
+
   /**
    * normally not return
    */
