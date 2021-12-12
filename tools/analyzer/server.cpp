@@ -361,9 +361,10 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     auto &src = *resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto newSrc = src.copyAndUpdate(std::string(src.getContent().c_str(), pos), src.getVersion());
-    auto copied = this->result.archives.copy();
-    copied.revert({newSrc->getSrcId()});
-    return doCompletion(this->result.srcMan, copied, *newSrc);
+    auto copiedArchives = this->result.archives.copy();
+    copiedArchives.revert({newSrc->getSrcId()});
+    auto copiedSrcMan = this->result.srcMan.copy();
+    return doCompletion(copiedSrcMan, copiedArchives, *newSrc);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
