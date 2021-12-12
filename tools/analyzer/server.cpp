@@ -269,23 +269,19 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto src = this->result.srcMan.find(uri.getPath());
-  if (src) {
-    LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
-  } else {
-    src = this->result.srcMan.update(uri.getPath(), params.textDocument.version,
-                                     std::string(params.textDocument.text));
-    if (!src) {
-      LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
-      return;
-    }
-    AnalyzerAction action;
-    DiagnosticEmitter emitter = this->newDiagnosticEmitter();
-    SymbolIndexer indexer(this->result.indexes);
-    action.emitter.reset(&emitter);
-    action.consumer.reset(&indexer);
-    analyze(this->result.srcMan, this->result.archives, action, *src);
+  auto src = this->result.srcMan.update(uri.getPath(), params.textDocument.version,
+                                        std::string(params.textDocument.text));
+  if (!src) {
+    LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
+    return;
   }
+  this->result.archives.revert({src->getSrcId()});
+  AnalyzerAction action;
+  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
+  SymbolIndexer indexer(this->result.indexes);
+  action.emitter.reset(&emitter);
+  action.consumer.reset(&indexer);
+  analyze(this->result.srcMan, this->result.archives, action, *src);
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
