@@ -287,7 +287,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
   if (auto resolved = this->resolveSource(params.textDocument)) {
     auto &src = resolved.asOk();
-    if (this->result.archives.revertIfUnused(src->getSrcId())) {
+    if (this->result.archives.removeIfUnused(src->getSrcId())) {
       LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
       this->result.indexes.remove(src->getSrcId());
     }

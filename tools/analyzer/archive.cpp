@@ -172,9 +172,9 @@ static void tryInsertByAscendingOrder(std::vector<ModuleArchivePtr> &targets,
   assert(archive);
   auto iter = std::lower_bound(targets.begin(), targets.end(), archive,
                                [](const ModuleArchivePtr &x, const ModuleArchivePtr &y) {
-                                 return x->getModID() < y->getModID();
+                                 return x->getModId() < y->getModId();
                                });
-  if (iter == targets.end() || (*iter)->getModID() != archive->getModID()) {
+  if (iter == targets.end() || (*iter)->getModId() != archive->getModId()) {
     targets.insert(iter, archive);
   }
 }
@@ -189,10 +189,10 @@ static void resolveTargets(std::vector<ModuleArchivePtr> &targets,
 
 static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
                   const ModuleArchivePtr &archive) {
-  if (used[archive->getModID()]) {
+  if (used[archive->getModId()]) {
     return;
   }
-  used[archive->getModID()] = true;
+  used[archive->getModId()] = true;
   for (auto &e : archive->getImported()) {
     visit(ret, used, e.second);
   }
@@ -204,7 +204,7 @@ static std::vector<ModuleArchivePtr> topologcalSort(const std::vector<ModuleArch
   if (targets.empty()) {
     return ret;
   }
-  std::vector<bool> used(targets.back()->getModID() + 1, false);
+  std::vector<bool> used(targets.back()->getModId() + 1, false);
   for (auto &e : targets) {
     visit(ret, used, e);
   }
@@ -230,7 +230,7 @@ static const ModType *getModType(const TypePool &pool, unsigned short modId) {
 }
 
 static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModID()))) {
+  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
     return type;
   }
 
@@ -241,7 +241,7 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
   children.push_back(builtin.toModEntry(ImportedModKind::GLOBAL));
 
   for (auto &child : archive.getImported()) {
-    auto type = pool.getModTypeById(child.second->getModID());
+    auto type = pool.getModTypeById(child.second->getModId());
     assert(type);
     auto e = cast<ModType>(type.asOk())->toModEntry(child.first);
     children.push_back(e);
@@ -252,11 +252,11 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
     return nullptr;
   }
   auto handleMap = ret.unwrap();
-  return &pool.createModType(archive.getModID(), std::move(handleMap), std::move(children), 0);
+  return &pool.createModType(archive.getModId(), std::move(handleMap), std::move(children), 0);
 }
 
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModID()))) {
+  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
     return type;
   }
   for (auto &dep : archive.getDepsByTopologicalOrder()) {
@@ -271,16 +271,46 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
 
 const ModuleArchivePtr ModuleArchives::EMPTY_ARCHIVE = std::make_shared<ModuleArchive>(); // NOLINT
 
+struct ModuleArchiveEntryComp {
+  bool operator()(const std::pair<unsigned short, ModuleArchivePtr> &x, unsigned short y) const {
+    return x.first < y;
+  }
+
+  bool operator()(unsigned short x, const std::pair<unsigned short, ModuleArchivePtr> &y) const {
+    return x < y.first;
+  }
+};
+
+ModuleArchivePtr ModuleArchives::find(unsigned short modId) const {
+  auto iter =
+      std::lower_bound(this->values.begin(), this->values.end(), modId, ModuleArchiveEntryComp());
+  if (iter != this->values.end() && iter->first == modId) {
+    return iter->second;
+  }
+  return nullptr;
+}
+
+ModuleArchives::iterator_type ModuleArchives::reserveImpl(unsigned short modId) {
+  auto iter =
+      std::lower_bound(this->values.begin(), this->values.end(), modId, ModuleArchiveEntryComp());
+  if (iter != this->values.end() && iter->first == modId) {
+    iter->second = EMPTY_ARCHIVE;
+    return iter;
+  } else {
+    return this->values.emplace(iter, modId, EMPTY_ARCHIVE);
+  }
+}
+
 static bool isRevertedArchive(std::unordered_set<unsigned short> &revertingModIdSet,
-                              const ModuleArchivePtr &archive) {
-  assert(archive);
-  const auto modId = archive->getModID();
+                              const ModuleArchive &archive) {
+  const auto modId = archive.getModId();
   auto iter = revertingModIdSet.find(modId);
   if (iter != revertingModIdSet.end()) {
     return true;
   }
-  for (auto &e : archive->getImported()) {
-    if (isRevertedArchive(revertingModIdSet, e.second)) {
+  for (auto &e : archive.getImported()) {
+    assert(e.second);
+    if (isRevertedArchive(revertingModIdSet, *e.second)) {
       revertingModIdSet.emplace(modId);
       return true;
     }
@@ -289,38 +319,35 @@ static bool isRevertedArchive(std::unordered_set<unsigned short> &revertingModId
 }
 
 void ModuleArchives::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
-  for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (isRevertedArchive(revertingModIdSet, iter->second)) {
-      iter = this->map.erase(iter);
-    } else {
-      ++iter;
+  for (auto &e : this->values) {
+    if (e.second && isRevertedArchive(revertingModIdSet, *e.second)) {
+      e.second = nullptr;
     }
   }
 }
 
-static bool isImported(const ModuleArchivePtr &archive, unsigned short id) {
-  assert(archive);
-  for (auto &e : archive->getImported()) {
+static bool isImported(const ModuleArchive &archive, unsigned short id) {
+  for (auto &e : archive.getImported()) {
     assert(e.second);
-    if (e.second->getModID() == id) {
+    if (e.second->getModId() == id) {
       return true;
     }
-    if (isImported(e.second, id)) {
+    if (isImported(*e.second, id)) {
       return true;
     }
   }
   return false;
 }
 
-bool ModuleArchives::revertIfUnused(unsigned short id) {
-  for (auto &e : this->map) {
-    if (isImported(e.second, id)) {
+bool ModuleArchives::removeIfUnused(unsigned short id) {
+  for (auto &e : this->values) {
+    if (e.second && isImported(*e.second, id)) {
       return false;
     }
   }
-  for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (iter->second && iter->second->getModID() == id) {
-      this->map.erase(iter);
+  for (auto iter = this->values.begin(); iter != this->values.end();) {
+    if (iter->second && iter->second->getModId() == id) {
+      this->values.erase(iter);
       return true;
     } else {
       ++iter;
@@ -331,7 +358,7 @@ bool ModuleArchives::revertIfUnused(unsigned short id) {
 
 ModuleArchives ModuleArchives::copy() const {
   ModuleArchives archives;
-  archives.map = this->map;
+  archives.values = this->values;
   return archives;
 }
 

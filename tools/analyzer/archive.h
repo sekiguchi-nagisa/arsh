@@ -177,7 +177,7 @@ public:
       : modId(modID), version(version), handles(std::move(handles)), imported(std::move(imported)) {
   }
 
-  unsigned short getModID() const { return this->modId; }
+  unsigned short getModId() const { return this->modId; }
 
   int getVersion() const { return this->version; }
 
@@ -185,7 +185,7 @@ public:
 
   const auto &getImported() const { return this->imported; }
 
-  bool isEmpty() const { return this->getModID() == 0; }
+  bool isEmpty() const { return this->getModId() == 0; }
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 
@@ -196,39 +196,48 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);
 
 class ModuleArchives {
 private:
-  std::unordered_map<unsigned short, ModuleArchivePtr> map;
+  std::vector<std::pair<unsigned short, ModuleArchivePtr>> values;
+
+  using iterator_type = std::vector<std::pair<unsigned short, ModuleArchivePtr>>::iterator;
 
   static const ModuleArchivePtr EMPTY_ARCHIVE;
 
 public:
-  ModuleArchivePtr find(unsigned short modID) const {
-    if (modID == 0) {
-      return nullptr;
-    }
-    auto iter = this->map.find(modID);
-    return iter != this->map.end() ? iter->second : nullptr;
-  }
+  /**
+   *
+   * @param modId
+   * @return
+   * return null if not found
+   */
+  ModuleArchivePtr find(unsigned short modId) const;
 
-  void reserve(unsigned short modID) { this->map[modID] = EMPTY_ARCHIVE; }
+  void reserve(unsigned short modId) { this->reserveImpl(modId); }
 
+  /**
+   *
+   * @param archive
+   * must not be null
+   */
   void add(const ModuleArchivePtr &archive) {
     assert(archive);
-    this->map[archive->getModID()] = archive;
+    auto iter = this->reserveImpl(archive->getModId());
+    iter->second = archive;
   }
-
-  size_t size() const { return this->map.size(); }
 
   void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
 
   /**
-   * revert sepcified archive if unused (not imported from other archives)
+   * completely remove sepcified archive if unused (not imported from other archives)
    * @param id
    * @return
    * if unused, return true
    */
-  bool revertIfUnused(unsigned short id);
+  bool removeIfUnused(unsigned short id);
 
   ModuleArchives copy() const;
+
+private:
+  iterator_type reserveImpl(unsigned short modId);
 };
 
 } // namespace ydsh::lsp

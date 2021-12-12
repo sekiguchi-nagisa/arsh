@@ -49,7 +49,7 @@ public:
     action.consumer.reset(&indexer);
     auto ret = analyze(this->srcMan, this->archives, action, *src);
     ASSERT_TRUE(ret);
-    modId = ret->getModID();
+    modId = ret->getModId();
   }
 
   void doAnalyze(const char *content, unsigned short &modId, const IndexSize &size) {
