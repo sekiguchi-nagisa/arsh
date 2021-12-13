@@ -118,28 +118,28 @@ CallbackMap::Entry CallbackMap::take(long id) {
 
 void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
   auto json = Request(std::move(id), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "client to server call:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "call:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::notify(const std::string &methodName, JSON &&param) {
   auto json = Request(JSON(), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "client to server notify:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "notify:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, JSON &&result) {
   auto json = Response(std::move(id), std::move(result)).toJSON();
-  LOG(LogLevel::DEBUG, "client to server reply:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "reply:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, Error &&error) {
   auto json = Response(std::move(id), std::move(error)).toJSON();
-  LOG(LogLevel::DEBUG, "client to server error:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "reply error:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
