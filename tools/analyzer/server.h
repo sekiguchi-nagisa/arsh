@@ -42,6 +42,7 @@ private:
 
   LSPTransport transport;
   AnalyzerResult result;
+  std::unordered_set<unsigned short> modifiedSrcIds;
   BackgroundWorker worker;
   std::future<AnalyzerResult> futureResult;
   bool init{false};
@@ -115,6 +116,10 @@ private:
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
 
   DiagnosticEmitter newDiagnosticEmitter();
+
+  bool tryRebuild();
+
+  SourcePtr updateSource(StringRef path, int newVersion, std::string &&newContent);
 
   void syncResult();
 

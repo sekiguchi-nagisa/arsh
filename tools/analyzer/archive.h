@@ -234,6 +234,15 @@ public:
    */
   bool removeIfUnused(unsigned short id);
 
+  Optional<unsigned short> getFirstRevertedModId() const {
+    for (auto &e : this->values) {
+      if (!e.second) {
+        return e.first;
+      }
+    }
+    return {};
+  }
+
   ModuleArchives copy() const;
 
 private:

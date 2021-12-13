@@ -177,6 +177,57 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
           this->diagVersionSupport};
 }
 
+bool LSPServer::tryRebuild() {
+  if (this->modifiedSrcIds.empty()) {
+    return false;
+  }
+
+  // revert archive
+  {
+    auto tmp = this->modifiedSrcIds;
+    this->result.archives.revert(std::move(tmp));
+  }
+
+  AnalyzerAction action;
+  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
+  SymbolIndexer indexer(this->result.indexes);
+  action.emitter.reset(&emitter);
+  action.consumer.reset(&indexer);
+
+  // rebuild
+  for (auto &e : this->modifiedSrcIds) {
+    if (this->result.archives.find(e)) {
+      continue;
+    }
+    auto src = this->result.srcMan.findById(e);
+    assert(src);
+    analyze(this->result.srcMan, this->result.archives, action, *src);
+  }
+
+  while (true) {
+    auto targetId = this->result.archives.getFirstRevertedModId();
+    if (!targetId.hasValue()) {
+      break;
+    }
+    auto src = this->result.srcMan.findById(targetId.unwrap());
+    assert(src);
+    analyze(this->result.srcMan, this->result.archives, action, *src);
+  }
+
+  this->modifiedSrcIds.clear();
+  return true;
+}
+
+SourcePtr LSPServer::updateSource(StringRef path, int newVersion, std::string &&newContent) {
+  auto src = this->result.srcMan.update(path, newVersion, std::move(newContent));
+  if (!src) {
+    LOG(LogLevel::ERROR, "reach opened file limit");
+    return nullptr;
+  }
+  this->modifiedSrcIds.emplace(src->getSrcId());
+  return src;
+}
+
 void LSPServer::syncResult() {
   if (this->futureResult.valid()) {
     this->result = this->futureResult.get();
@@ -269,19 +320,9 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto src = this->result.srcMan.update(uri.getPath(), params.textDocument.version,
-                                        std::string(params.textDocument.text));
-  if (!src) {
-    LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
-    return;
-  }
-  this->result.archives.revert({src->getSrcId()});
-  AnalyzerAction action;
-  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
-  SymbolIndexer indexer(this->result.indexes);
-  action.emitter.reset(&emitter);
-  action.consumer.reset(&indexer);
-  analyze(this->result.srcMan, this->result.archives, action, *src);
+  this->updateSource(uri.getPath(), params.textDocument.version,
+                     std::string(params.textDocument.text));
+  this->tryRebuild();
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
@@ -309,14 +350,8 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
       return;
     }
   }
-  src = this->result.srcMan.update(src->getPath(), params.textDocument.version, std::move(content));
-  this->result.archives.revert({src->getSrcId()});
-  AnalyzerAction action;
-  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
-  SymbolIndexer indexer(this->result.indexes);
-  action.emitter.reset(&emitter);
-  action.consumer.reset(&indexer);
-  analyze(this->result.srcMan, this->result.archives, action, *src);
+  this->updateSource(src->getPath(), params.textDocument.version, std::move(content));
+  this->tryRebuild();
 }
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
