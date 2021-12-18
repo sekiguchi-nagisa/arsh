@@ -1,13 +1,13 @@
 
 # RUN: eval $cmd --hoge
 
-# CHECKERR: invalid option: --hoge
-# CHECKERR: Options:
-# CHECKERR:     --debounce-time arg    time deadline of re-build (ms). default is 1000
-# CHECKERR:     --help                 show this help message
-# CHECKERR:     --language-server      enable language server features (default)
-# CHECKERR:     --log arg              specify log level (debug, info, warning, error, fatal). default is `info'
-# CHECKERR:     --test arg             run in test mode
+#    CHECKERR: invalid option: --hoge
+#    CHECKERR: Options:
+# CHECKERR_RE:     --debounce-time arg    time deadline of re-build \(ms\)\. default is \d+
+#    CHECKERR:     --help                 show this help message
+#    CHECKERR:     --language-server      enable language server features (default)
+#    CHECKERR:     --log arg              specify log level (debug, info, warning, error, fatal). default is `info'
+#    CHECKERR:     --test arg             run in test mode
 
 # STATUS: 1
 

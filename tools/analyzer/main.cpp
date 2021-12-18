@@ -31,7 +31,7 @@ using namespace lsp;
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
   OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
-     "time deadline of re-build (ms). default is 1000")                                            \
+     "time deadline of re-build (ms). default is 800")                                             \
   OP(TEST, "--test", opt::HAS_ARG, "run in test mode")
 
 enum class OptionKind {
@@ -42,7 +42,7 @@ enum class OptionKind {
 
 struct Options {
   LogLevel level{LogLevel::ERROR};
-  int debounceTime{1000};
+  int debounceTime{800};
   bool lsp{true};
   const char *testInput{nullptr};
 };
