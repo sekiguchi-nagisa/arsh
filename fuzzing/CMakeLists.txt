@@ -14,12 +14,3 @@ target_link_libraries(ds_fuzzer ${YDSH_LIB})
 include_directories(${CMAKE_SOURCE_DIR}/tools/json)
 add_executable(rpc_fuzzer rpc_fuzzer.cpp)
 target_link_libraries(rpc_fuzzer jsonrpc)
-
-
-#====================#
-#     lsp_fuzzer     #
-#====================#
-
-include_directories(${CMAKE_SOURCE_DIR}/tools/analyzer)
-add_executable(lsp_fuzzer lsp_fuzzer.cpp)
-target_link_libraries(lsp_fuzzer ydshd_static ydsh_static)
