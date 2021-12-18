@@ -49,7 +49,7 @@ void IndexBuilder::LazyMemberMap::buildCache(const DSType &recvType) {
     return;
   }
 
-  auto *index = this->indexes.find(targetModId);
+  auto index = this->indexes.find(targetModId);
   if (!index) {
     return;
   }
@@ -193,7 +193,7 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
     return true; // already imported
   }
 
-  auto *index = this->memberMap.indexes.find(foreignModId);
+  auto index = this->memberMap.indexes.find(foreignModId);
   if (!index) {
     return false;
   }
@@ -680,7 +680,7 @@ bool SymbolIndexer::enterModule(unsigned short modId, int version,
 
 bool SymbolIndexer::exitModule(std::unique_ptr<Node> &&node) {
   assert(!this->builders.empty());
-  auto index = std::move(this->builder()).build();
+  auto index = std::make_shared<SymbolIndex>(std::move(this->builder()).build());
   this->builders.pop_back();
   this->indexes.add(std::move(index));
   this->visit(node);

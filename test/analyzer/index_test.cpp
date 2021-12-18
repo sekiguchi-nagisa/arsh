@@ -54,7 +54,7 @@ public:
 
   void doAnalyze(const char *content, unsigned short &modId, const IndexSize &size) {
     ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
-    auto *index = this->indexes.find(modId);
+    auto index = this->indexes.find(modId);
     ASSERT_TRUE(index);
     ASSERT_EQ(size.declSize, index->getDecls().size());
     ASSERT_EQ(size.symbolSize, index->getSymbols().size());

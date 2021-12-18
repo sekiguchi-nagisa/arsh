@@ -28,14 +28,11 @@ namespace ydsh::lsp {
 
 void DeclBase::addRef(SymbolRef ref) {
   auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref);
-  if (iter != this->refs.end()) {
-    if (iter->getModId() == ref.getModId() && iter->getPos() == ref.getPos()) {
-      *iter = ref; // update
-    } else {
-      this->refs.insert(iter, ref);
-    }
+  if (iter != this->refs.end() && (*iter).getModId() == ref.getModId() &&
+      (*iter).getPos() == ref.getPos()) {
+    *iter = ref; // update
   } else {
-    this->refs.push_back(ref);
+    this->refs.insert(iter, ref);
   }
 }
 
@@ -139,27 +136,22 @@ const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
 // ##     SymbolIndexes     ##
 // ###########################
 
-void SymbolIndexes::add(SymbolIndex &&index) {
-  auto iter = std::lower_bound(
-      this->indexes.begin(), this->indexes.end(), index,
-      [](const SymbolIndex &x, const SymbolIndex &y) { return x.getModId() < y.getModId(); });
-  if (iter != this->indexes.end()) {
-    if (iter->getModId() == index.getModId()) { // update
-      *iter = std::move(index);
-    } else {
-      this->indexes.insert(iter, std::move(index));
-    }
+void SymbolIndexes::add(SymbolIndexPtr index) {
+  auto iter =
+      std::lower_bound(this->indexes.begin(), this->indexes.end(), index, SymbolIndex::Compare());
+  if (iter != this->indexes.end() && (*iter)->getModId() == index->getModId()) {
+    *iter = std::move(index); // update
   } else {
-    this->indexes.push_back(std::move(index));
+    this->indexes.insert(iter, std::move(index));
   }
 }
 
-const SymbolIndex *SymbolIndexes::find(unsigned short modId) const {
+SymbolIndexPtr SymbolIndexes::find(unsigned short modId) const {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
-    if (auto &ret = *iter; ret.getModId() == modId) {
-      return &ret;
+    if (auto &ret = *iter; ret->getModId() == modId) {
+      return ret;
     }
   }
   return nullptr;
@@ -175,8 +167,8 @@ void SymbolIndexes::remove(unsigned short id) {
 
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(const FindDeclResult &)> &consumer) {
-  if (auto *index = indexes.find(request.modId); index) {
-    if (auto *symbol = index->findSymbol(request.pos); symbol) {
+  if (auto index = indexes.find(request.modId)) {
+    if (auto *symbol = index->findSymbol(request.pos)) {
       auto *decl = indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
       if (!decl) {
         return false;
@@ -197,7 +189,7 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const FindRefsResult &)> &cosumer) {
   unsigned int count = 0;
-  if (auto *decl = indexes.findDecl(request); decl) {
+  if (auto *decl = indexes.findDecl(request)) {
     // add its self
     count++;
     if (cosumer) {
@@ -222,10 +214,10 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
 
     // search foreign ref
     for (auto &index : indexes) {
-      if (index.getModId() == request.modId) {
+      if (index->getModId() == request.modId) {
         continue;
       }
-      if (auto *foreign = index.findForeignDecl(request); foreign) {
+      if (auto *foreign = index->findForeignDecl(request)) {
         for (auto &e : foreign->getRefs()) {
           count++;
           if (cosumer) {

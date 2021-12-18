@@ -233,6 +233,9 @@ public:
   };
 };
 
+class SymbolIndex;
+using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
+
 class SymbolIndex {
 private:
   unsigned short modId;
@@ -268,25 +271,29 @@ public:
   const FlexBuffer<unsigned short> &getInlinedModIds() const { return this->inlinedModIds; }
 
   struct Compare {
-    bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
+    bool operator()(const SymbolIndexPtr &x, unsigned short id) const { return x->getModId() < id; }
 
-    bool operator()(unsigned short id, const SymbolIndex &y) const { return id < y.getModId(); }
+    bool operator()(unsigned short id, const SymbolIndexPtr &y) const { return id < y->getModId(); }
+
+    bool operator()(const SymbolIndexPtr &x, const SymbolIndexPtr &y) const {
+      return x->getModId() < y->getModId();
+    }
   };
 };
 
 class SymbolIndexes {
 private:
-  std::vector<SymbolIndex> indexes;
+  std::vector<SymbolIndexPtr> indexes;
 
 public:
-  void add(SymbolIndex &&index);
+  void add(SymbolIndexPtr index);
 
-  const SymbolIndex *find(unsigned short modId) const;
+  SymbolIndexPtr find(unsigned short modId) const;
 
   void remove(unsigned short id);
 
   const DeclSymbol *findDecl(SymbolRequest req) const {
-    if (auto *index = this->find(req.modId); index) {
+    if (auto index = this->find(req.modId)) {
       return index->findDecl(req.pos);
     }
     return nullptr;
