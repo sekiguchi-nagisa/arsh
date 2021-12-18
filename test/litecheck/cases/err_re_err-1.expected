@@ -1,4 +1,4 @@
-CHECKERR_RE on line 7,
+CHECKERR_RE on line 8,
     Expect: ^.$
     Actual: hoge
 stderr is mismatched

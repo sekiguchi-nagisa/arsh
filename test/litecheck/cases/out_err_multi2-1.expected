@@ -1,6 +1,8 @@
+CHECK on line 3,
 3d2
 < 0123
 stdout is mismatched
+CHECKERR on line 5,
 2a3
 > IJKL
 stderr is mismatched

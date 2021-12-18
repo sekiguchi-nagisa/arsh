@@ -1,3 +1,4 @@
+CHECK_IF on line 4,
 1a2
 > AAAAA
 stdout is mismatched

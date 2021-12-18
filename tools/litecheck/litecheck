@@ -18,7 +18,8 @@ function _error($m : String) : Nothing {
 }
 
 function _lines($path : String) : [String] {
-    return IFS=$'\n' $(cat $path)
+    # return IFS=$'\n' $(cat $path)
+    return IFS="" "$(cat $path)".split($'\n')
 }
 
 #####################################
@@ -163,7 +164,14 @@ function _match_chunk($checks : [Directive], $output : [String]) : Bool {
         }
         $eout += $c._1
     }
-    return diff 1>&2 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')})
+    $? = 0
+    var o = IFS="" "$(diff 2>&1 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')}))"
+    var r = $? == 0
+    if !$r {
+        echo 1>&2 ${$checks[0]._0} on line ${$checks[0]._2},
+        echo 1>&2 $o
+    }
+    return $r
 }
 
 function _skip_until($c : String, $output : [String], $index : Int) : Int {
