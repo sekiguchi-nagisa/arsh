@@ -99,20 +99,20 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   return archive;
 }
 
-// #####################################
-// ##     AnalyzerContextProvider     ##
-// #####################################
+// ######################
+// ##     Analyzer     ##
+// ######################
 
 std::unique_ptr<FrontEnd::Context>
-AnalyzerContextProvider::newContext(Lexer &&lexer, FrontEndOption option,
-                                    ObserverPtr<CodeCompletionHandler> ccHandler) {
+Analyzer::newContext(Lexer &&lexer, FrontEndOption option,
+                     ObserverPtr<CodeCompletionHandler> ccHandler) {
   auto &ctx = this->current();
   return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lexer), ctx->getScope(),
                                              option, ccHandler);
 }
 
-const ModType &AnalyzerContextProvider::newModTypeFromCurContext(
-    const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
+const ModType &
+Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
   auto *modType = loadFromArchive(this->current()->getPool(), *archive);
@@ -126,8 +126,8 @@ static Lexer createLexer(const Source &src) {
   return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
 }
 
-FrontEnd::ModuleProvider::Ret
-AnalyzerContextProvider::load(const char *scriptDir, const char *modPath, FrontEndOption option) {
+FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *modPath,
+                                             FrontEndOption option) {
   FilePtr filePtr;
   auto ret =
       ModuleLoaderBase::load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
@@ -160,14 +160,14 @@ AnalyzerContextProvider::load(const char *scriptDir, const char *modPath, FrontE
   }
 }
 
-const AnalyzerContextPtr &AnalyzerContextProvider::addNew(const Source &src) {
+const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
   auto ptr = std::make_unique<AnalyzerContext>(src);
   this->ctxs.push_back(std::move(ptr));
   this->archives.reserve(src.getSrcId());
   return this->current();
 }
 
-ModResult AnalyzerContextProvider::addNewModEntry(CStrPtr &&ptr) {
+ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
   StringRef path = ptr.get();
   auto src = this->srcMan.find(path);
   if (src) { // already loaded
@@ -182,6 +182,56 @@ ModResult AnalyzerContextProvider::addNewModEntry(CStrPtr &&ptr) {
     }
     return src->getPath().c_str();
   }
+}
+
+ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
+  // prepare
+  this->addNew(src);
+  FrontEnd frontEnd(*this, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
+  if (action.emitter) {
+    frontEnd.setErrorListener(*action.emitter);
+    action.emitter->enterModule(this->current()->getModId(), this->current()->getVersion());
+  }
+  if (action.dumper) {
+    frontEnd.setASTDumper(*action.dumper);
+  }
+  action.consumer &&action.consumer->enterModule(
+      this->current()->getModId(), this->current()->getVersion(), this->current()->getPoolPtr());
+
+  // run front end
+  frontEnd.setupASTDump();
+  while (frontEnd) {
+    if (this->cancelPoint && this->cancelPoint->isCanceled()) {
+      return nullptr;
+    }
+    auto ret = frontEnd();
+    if (!ret) {
+      this->unwind(); // FIXME: future may be removed
+      break;
+    }
+    switch (ret.kind) {
+    case FrontEndResult::IN_MODULE:
+      action.consumer &&action.consumer->consume(std::move(ret.node));
+      break;
+    case FrontEndResult::ENTER_MODULE:
+      action.emitter &&action.emitter->enterModule(this->current()->getModId(),
+                                                   this->current()->getVersion());
+      action.consumer &&action.consumer->enterModule(this->current()->getModId(),
+                                                     this->current()->getVersion(),
+                                                     this->current()->getPoolPtr());
+      break;
+    case FrontEndResult::EXIT_MODULE:
+      action.emitter &&action.emitter->exitModule();
+      action.consumer &&action.consumer->exitModule(std::move(ret.node));
+      break;
+    case FrontEndResult::FAILED:
+      break;
+    }
+  }
+  frontEnd.teardownASTDump();
+  action.emitter &&action.emitter->exitModule();
+  action.consumer &&action.consumer->exitModule(nullptr);
+  return std::move(*this->current()).buildArchive(archives);
 }
 
 // ###############################
@@ -246,59 +296,6 @@ bool DiagnosticEmitter::exitModule() {
   }
   this->contexts.pop_back();
   return true;
-}
-
-ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
-                         const Source &src, std::shared_ptr<CancelPoint> cancelPoint) {
-  // prepare
-  AnalyzerContextProvider provider(srcMan, archives);
-  provider.addNew(src);
-  FrontEnd frontEnd(provider, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
-  if (action.emitter) {
-    frontEnd.setErrorListener(*action.emitter);
-    action.emitter->enterModule(provider.current()->getModId(), provider.current()->getVersion());
-  }
-  if (action.dumper) {
-    frontEnd.setASTDumper(*action.dumper);
-  }
-  action.consumer &&action.consumer->enterModule(provider.current()->getModId(),
-                                                 provider.current()->getVersion(),
-                                                 provider.current()->getPoolPtr());
-
-  // run front end
-  frontEnd.setupASTDump();
-  while (frontEnd) {
-    if (cancelPoint && cancelPoint->isCanceled()) {
-      return nullptr;
-    }
-    auto ret = frontEnd();
-    if (!ret) {
-      provider.unwind(); // FIXME: future may be removed
-      break;
-    }
-    switch (ret.kind) {
-    case FrontEndResult::IN_MODULE:
-      action.consumer &&action.consumer->consume(std::move(ret.node));
-      break;
-    case FrontEndResult::ENTER_MODULE:
-      action.emitter &&action.emitter->enterModule(provider.current()->getModId(),
-                                                   provider.current()->getVersion());
-      action.consumer &&action.consumer->enterModule(provider.current()->getModId(),
-                                                     provider.current()->getVersion(),
-                                                     provider.current()->getPoolPtr());
-      break;
-    case FrontEndResult::EXIT_MODULE:
-      action.emitter &&action.emitter->exitModule();
-      action.consumer &&action.consumer->exitModule(std::move(ret.node));
-      break;
-    case FrontEndResult::FAILED:
-      break;
-    }
-  }
-  frontEnd.teardownASTDump();
-  action.emitter &&action.emitter->exitModule();
-  action.consumer &&action.consumer->exitModule(nullptr);
-  return std::move(*provider.current()).buildArchive(archives);
 }
 
 static CompletionItemKind toItemKind(CompCandidateKind kind) {
@@ -394,13 +391,10 @@ private:
   }
 };
 
-std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
-                                         const Source &src) {
+std::vector<CompletionItem> Analyzer::complete(const Source &src) {
   CompletionItemCollector collector;
-
-  AnalyzerContextProvider provider(srcMan, archives);
-  auto &ptr = provider.addNew(src);
-  CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(provider),
+  auto &ptr = this->addNew(src);
+  CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(*this),
                               ptr->getPool(), ptr->getScope(), "");
   auto ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC | CodeCompOp::HOOK;
   codeCompleter(src.getContent(), ignoredOp);

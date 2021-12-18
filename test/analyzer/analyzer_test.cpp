@@ -73,7 +73,8 @@ protected:
     SymbolIndexer indexer(indexes);
     action.dumper.reset(&dumper);
     action.consumer.reset(&indexer);
-    analyze(man, archives, action, *src);
+    Analyzer analyzer(man, archives);
+    analyzer.analyze(*src, action);
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);

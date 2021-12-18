@@ -30,71 +30,6 @@
 
 namespace ydsh::lsp {
 
-class AnalyzerContext {
-private:
-  std::shared_ptr<TypePool> pool;
-  NameScopePtr scope;
-  int version;
-  unsigned int gvarCount{0};
-  TypeDiscardPoint typeDiscardPoint;
-
-public:
-  NON_COPYABLE(AnalyzerContext);
-
-  explicit AnalyzerContext(const Source &src);
-
-  const NameScopePtr &getScope() const { return this->scope; }
-
-  TypePool &getPool() { return *this->pool; }
-
-  const auto &getPoolPtr() const { return this->pool; }
-
-  unsigned int getModId() const { return this->scope->modId; }
-
-  int getVersion() const { return this->version; }
-
-  unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
-
-  ModuleArchivePtr buildArchive(ModuleArchives &archives) &&;
-};
-
-using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;
-
-class AnalyzerContextProvider : public FrontEnd::ModuleProvider, public ModuleLoaderBase {
-private:
-  SourceManager &srcMan;
-  ModuleArchives &archives;
-  std::vector<AnalyzerContextPtr> ctxs;
-
-public:
-  AnalyzerContextProvider(SourceManager &src, ModuleArchives &archives)
-      : srcMan(src), archives(archives) {}
-
-  ~AnalyzerContextProvider() override = default;
-
-  std::unique_ptr<FrontEnd::Context>
-  newContext(Lexer &&lexer, FrontEndOption option,
-             ObserverPtr<CodeCompletionHandler> ccHandler) override;
-
-  const ModType &
-  newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
-
-  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
-
-  const AnalyzerContextPtr &addNew(const Source &src);
-
-  const AnalyzerContextPtr &current() const { return this->ctxs.back(); }
-
-  void unwind() { // FIXME: future may be removed
-    while (this->ctxs.size() > 1) {
-      this->ctxs.pop_back();
-    }
-  }
-
-private:
-  ModResult addNewModEntry(CStrPtr &&ptr) override;
-};
-
 using DiagnosticCallback = std::function<void(PublishDiagnosticsParams &&)>;
 
 class DiagnosticEmitter : public FrontEnd::ErrorListener {
@@ -155,11 +90,78 @@ public:
   bool isCanceled() const { return this->value.load(); }
 };
 
-ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
-                         const Source &src, std::shared_ptr<CancelPoint> cancelPoint = nullptr);
+class AnalyzerContext {
+private:
+  std::shared_ptr<TypePool> pool;
+  NameScopePtr scope;
+  int version;
+  unsigned int gvarCount{0};
+  TypeDiscardPoint typeDiscardPoint;
 
-std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
-                                         const Source &src);
+public:
+  NON_COPYABLE(AnalyzerContext);
+
+  explicit AnalyzerContext(const Source &src);
+
+  const NameScopePtr &getScope() const { return this->scope; }
+
+  TypePool &getPool() { return *this->pool; }
+
+  const auto &getPoolPtr() const { return this->pool; }
+
+  unsigned int getModId() const { return this->scope->modId; }
+
+  int getVersion() const { return this->version; }
+
+  unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
+
+  ModuleArchivePtr buildArchive(ModuleArchives &archives) &&;
+};
+
+using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;
+
+class Analyzer : protected FrontEnd::ModuleProvider, protected ModuleLoaderBase {
+private:
+  SourceManager &srcMan;
+  ModuleArchives &archives;
+  std::shared_ptr<CancelPoint> cancelPoint;
+  std::vector<AnalyzerContextPtr> ctxs;
+
+public:
+  Analyzer(SourceManager &src, ModuleArchives &archives,
+           std::shared_ptr<CancelPoint> cancelPoint = nullptr)
+      : srcMan(src), archives(archives), cancelPoint(std::move(cancelPoint)) {}
+
+  ~Analyzer() override = default;
+
+protected:
+  std::unique_ptr<FrontEnd::Context>
+  newContext(Lexer &&lexer, FrontEndOption option,
+             ObserverPtr<CodeCompletionHandler> ccHandler) override;
+
+  const ModType &
+  newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
+
+  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
+
+  ModResult addNewModEntry(CStrPtr &&ptr) override;
+
+private:
+  const AnalyzerContextPtr &addNew(const Source &src);
+
+  const AnalyzerContextPtr &current() const { return this->ctxs.back(); }
+
+  void unwind() { // FIXME: future may be removed
+    while (this->ctxs.size() > 1) {
+      this->ctxs.pop_back();
+    }
+  }
+
+public:
+  ModuleArchivePtr analyze(const Source &src, AnalyzerAction &action);
+
+  std::vector<CompletionItem> complete(const Source &src);
+};
 
 } // namespace ydsh::lsp
 

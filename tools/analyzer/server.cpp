@@ -188,7 +188,7 @@ struct AnalyzerParam {
 };
 
 static LSPServer::AnalyzerResult doRebuild(AnalyzerParam &&param) {
-  // revert archive
+  // prepare
   param.ret.archives.revert(decltype(param.modifiedIds)(param.modifiedIds));
 
   AnalyzerAction action;
@@ -197,13 +197,14 @@ static LSPServer::AnalyzerResult doRebuild(AnalyzerParam &&param) {
   action.consumer.reset(&indexer);
 
   // rebuild
+  Analyzer analyzer(*param.ret.srcMan, param.ret.archives, param.cancelPoint);
   for (auto &e : param.modifiedIds) {
     if (param.ret.archives.find(e)) {
       continue;
     }
     auto src = param.ret.srcMan->findById(e);
     assert(src);
-    analyze(*param.ret.srcMan, param.ret.archives, action, *src, param.cancelPoint);
+    analyzer.analyze(*src, action);
   }
 
   while (true) {
@@ -213,7 +214,7 @@ static LSPServer::AnalyzerResult doRebuild(AnalyzerParam &&param) {
     }
     auto src = param.ret.srcMan->findById(targetId.unwrap());
     assert(src);
-    analyze(*param.ret.srcMan, param.ret.archives, action, *src, param.cancelPoint);
+    analyzer.analyze(*src, action);
   }
   return std::move(param.ret);
 }
@@ -427,7 +428,8 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     ModuleArchives copiedArchives = this->result.archives;
     copiedArchives.revert({newSrc->getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();
-    return doCompletion(*copiedSrcMan, copiedArchives, *newSrc);
+    Analyzer analyzer(*copiedSrcMan, copiedArchives);
+    return analyzer.complete(*newSrc);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

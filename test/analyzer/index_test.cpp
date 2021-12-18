@@ -47,7 +47,8 @@ public:
     AnalyzerAction action;
     SymbolIndexer indexer(this->indexes);
     action.consumer.reset(&indexer);
-    auto ret = analyze(this->srcMan, this->archives, action, *src);
+    Analyzer analyzer(this->srcMan, this->archives);
+    auto ret = analyzer.analyze(*src, action);
     ASSERT_TRUE(ret);
     modId = ret->getModId();
   }
