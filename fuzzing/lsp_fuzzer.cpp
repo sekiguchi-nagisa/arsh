@@ -31,7 +31,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   LSPLogger logger;
   logger.setSeverity(LogLevel::INFO);
   logger.setAppender(openDevNull());
-  LSPServer server(logger, std::move(req), openDevNull());
+  LSPServer server(logger, std::move(req), openDevNull(), 1000);
   server.runOnlyOnce();
   return 0;
 }
