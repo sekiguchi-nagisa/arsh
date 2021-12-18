@@ -228,7 +228,7 @@ struct ServerTest : public InteractiveBase {
       LSPLogger logger;
       logger.setSeverity(LogLevel::INFO);
       logger.setAppender(std::move(this->logFile));
-      LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
+      LSPServer server(logger, FilePtr(stdin), FilePtr(stdout), 100);
       server.run();
       return 1;
     });
@@ -632,16 +632,18 @@ TEST(WorkerTest, base) {
     return value;
   });
 
-  auto ret2 = worker.addTask([] {
-    std::string value;
-    for (unsigned int i = 10; i < 20; i++) {
-      if (!value.empty()) {
-        value += ".";
-      }
-      value += std::to_string(i);
-    }
-    return value;
-  });
+  auto ret2 = worker.addTask(
+      [](unsigned int offset) {
+        std::string value;
+        for (unsigned int i = offset; i < 20; i++) {
+          if (!value.empty()) {
+            value += ".";
+          }
+          value += std::to_string(i);
+        }
+        return value;
+      },
+      10);
 
   ASSERT_EQ("10.11.12.13.14.15.16.17.18.19", ret2.get());
   ASSERT_EQ("0_1_2_3_4_5_6_7_8_9", ret1.get());

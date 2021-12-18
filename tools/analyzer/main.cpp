@@ -15,6 +15,7 @@
  */
 
 #include <misc/files.h>
+#include <misc/num_util.hpp>
 #include <misc/opt.hpp>
 
 #include "../tools/process/process.h"
@@ -29,6 +30,8 @@ using namespace lsp;
      "specify log level (debug, info, warning, error, fatal). default is `info'")                  \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
+  OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
+     "time deadline of re-build (ms). default is 1000")                                            \
   OP(TEST, "--test", opt::HAS_ARG, "run in test mode")
 
 enum class OptionKind {
@@ -39,6 +42,7 @@ enum class OptionKind {
 
 struct Options {
   LogLevel level{LogLevel::ERROR};
+  int debounceTime{1000};
   bool lsp{true};
   const char *testInput{nullptr};
 };
@@ -63,6 +67,7 @@ static Options parseOptions(int argc, char **argv) {
   };
   auto begin = argv + (argc > 0 ? 1 : 0);
   auto end = argv + argc;
+  const char *debounceTime = nullptr;
   opt::Result<OptionKind> result;
   Options options;
   while ((result = optParser(begin, end))) {
@@ -79,12 +84,23 @@ static Options parseOptions(int argc, char **argv) {
     case OptionKind::TEST:
       options.testInput = result.arg();
       break;
+    case OptionKind::DEBOUNCE_TIME:
+      debounceTime = result.arg();
+      break;
     }
   }
   if (result.error() != opt::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     optParser.printOption(stderr);
     exit(1);
+  }
+  if (debounceTime) {
+    auto pair = convertToNum<int>(debounceTime);
+    if (!pair.second) {
+      fprintf(stderr, "require valid number (0~): %s\n", debounceTime);
+      exit(1);
+    }
+    options.debounceTime = pair.first;
   }
   return options;
 }
@@ -191,7 +207,7 @@ int main(int argc, char **argv) {
     logger.setSeverity(options.level);
     logger.setAppender(FilePtr(stderr));
     showInfo(argv, logger);
-    LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
+    LSPServer server(logger, FilePtr(stdin), FilePtr(stdout), options.debounceTime);
     server.run();
     return 1;
   });

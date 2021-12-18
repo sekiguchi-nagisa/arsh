@@ -15,7 +15,6 @@
  */
 
 #include "worker.h"
-#include "misc/fatal.h"
 
 namespace ydsh::lsp {
 
@@ -24,12 +23,12 @@ namespace ydsh::lsp {
 // ##############################
 
 BackgroundWorker::BackgroundWorker() {
-  this->workerThread = std::thread([this]() {
+  this->workerThread = std::thread([&] {
     while (true) {
       std::function<void()> task;
       {
         std::unique_lock<std::mutex> lock(this->mutex);
-        this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
+        this->condition.wait(lock, [&] { return this->stop || !this->tasks.empty(); });
         if (this->stop && this->tasks.empty()) {
           return;
         }

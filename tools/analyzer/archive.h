@@ -243,8 +243,6 @@ public:
     return {};
   }
 
-  ModuleArchives copy() const;
-
 private:
   iterator_type reserveImpl(unsigned short modId);
 };

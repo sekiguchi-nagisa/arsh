@@ -2,10 +2,11 @@
 # RUN: eval $cmd --help
 
 # CHECK: Options:
-# CHECK:     --help               show this help message
-# CHECK:     --language-server    enable language server features (default)
-# CHECK:     --log arg            specify log level (debug, info, warning, error, fatal). default is `info'
-# CHECK:     --test arg           run in test mode
+# CHECK:     --debounce-time arg    time deadline of re-build (ms). default is 1000
+# CHECK:     --help                 show this help message
+# CHECK:     --language-server      enable language server features (default)
+# CHECK:     --log arg              specify log level (debug, info, warning, error, fatal). default is `info'
+# CHECK:     --test arg             run in test mode
 
 # STATUS: 0
 

@@ -226,7 +226,7 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
 }
 
 bool DiagnosticEmitter::enterModule(unsigned short modId, int version) {
-  auto src = this->srcMan.findById(modId);
+  auto src = this->srcMan->findById(modId);
   assert(src);
   this->contexts.emplace_back(src, version);
   return true;
@@ -249,7 +249,7 @@ bool DiagnosticEmitter::exitModule() {
 }
 
 ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
-                         const Source &src) {
+                         const Source &src, std::shared_ptr<CancelPoint> cancelPoint) {
   // prepare
   AnalyzerContextProvider provider(srcMan, archives);
   provider.addNew(src);
@@ -268,6 +268,9 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
   // run front end
   frontEnd.setupASTDump();
   while (frontEnd) {
+    if (cancelPoint && cancelPoint->isCanceled()) {
+      return nullptr;
+    }
     auto ret = frontEnd();
     if (!ret) {
       provider.unwind(); // FIXME: future may be removed

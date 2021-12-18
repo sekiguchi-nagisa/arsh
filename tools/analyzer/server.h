@@ -33,18 +33,47 @@ struct LSPLogger : public LoggerBase {
 };
 
 class LSPServer : public Handler {
-private:
+public:
   struct AnalyzerResult {
-    SourceManager srcMan;
+    std::shared_ptr<SourceManager> srcMan;
     ModuleArchives archives;
     SymbolIndexes indexes;
+
+    NON_COPYABLE(AnalyzerResult);
+
+    AnalyzerResult() = default;
+
+    AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives &&archives,
+                   SymbolIndexes &&indexes)
+        : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)) {}
+
+    AnalyzerResult(AnalyzerResult &&o) noexcept
+        : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)),
+          indexes(std::move(o.indexes)) {}
+
+    AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
+      if (this != std::addressof(o)) {
+        this->~AnalyzerResult();
+        new (this) AnalyzerResult(std::move(o));
+      }
+      return *this;
+    }
+
+    AnalyzerResult deepCopy() const {
+      return {this->srcMan->copy(), decltype(this->archives)(this->archives),
+              decltype(this->indexes)(this->indexes)};
+    }
   };
 
+private:
   LSPTransport transport;
   AnalyzerResult result;
   std::unordered_set<unsigned short> modifiedSrcIds;
   BackgroundWorker worker;
   std::future<AnalyzerResult> futureResult;
+  std::shared_ptr<CancelPoint> cancelPoint;
+  const int defaultDebounceTime;
+  int timeout{defaultDebounceTime};
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
@@ -52,15 +81,19 @@ private:
   bool diagVersionSupport{false};
 
 public:
-  LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
-      : Handler(logger), transport(logger, std::move(in), std::move(out)) {
+  LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)
+      : Handler(logger), transport(logger, std::move(in), std::move(out)),
+        defaultDebounceTime(time) {
+    this->result.srcMan = std::make_shared<SourceManager>();
     this->bindAll();
   }
 
   ReplyImpl onCall(const std::string &name, JSON &&param) override;
 
   bool runOnlyOnce() { // for testing
-    return this->transport.dispatch(*this) == Transport::Status::DISPATCHED;
+    auto r = this->transport.dispatch(*this) == Transport::Status::DISPATCHED;
+    this->tryRebuild();
+    return r;
   }
 
   /**
@@ -115,11 +148,11 @@ private:
 
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
 
-  DiagnosticEmitter newDiagnosticEmitter();
+  DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
 
   bool tryRebuild();
 
-  SourcePtr updateSource(StringRef path, int newVersion, std::string &&newContent);
+  void updateSource(StringRef path, int newVersion, std::string &&newContent);
 
   void syncResult();
 

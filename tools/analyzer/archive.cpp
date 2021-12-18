@@ -356,10 +356,4 @@ bool ModuleArchives::removeIfUnused(unsigned short id) {
   return false;
 }
 
-ModuleArchives ModuleArchives::copy() const {
-  ModuleArchives archives;
-  archives.values = this->values;
-  return archives;
-}
-
 } // namespace ydsh::lsp

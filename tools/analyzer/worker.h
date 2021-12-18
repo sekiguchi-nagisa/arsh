@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <functional>
 #include <future>
 #include <queue>
 #include <thread>
@@ -36,10 +37,13 @@ public:
 
   ~BackgroundWorker();
 
-  template <typename Func>
-  std::future<std::invoke_result_t<Func>> addTask(Func &&func) {
-    using RetType = std::invoke_result_t<Func>;
-    auto task = std::make_shared<std::packaged_task<RetType()>>(std::move(func));
+  template <typename Func, typename... Arg>
+  std::future<std::invoke_result_t<Func, Arg...>> addTask(Func &&func, Arg &&...arg) {
+    using RetType = std::invoke_result_t<Func, Arg...>;
+    auto task = ({
+      auto binded = std::bind(std::forward<Func>(func), std::forward<Arg>(arg)...);
+      std::make_shared<std::packaged_task<RetType()>>(std::move(binded));
+    });
     std::future<RetType> future = task->get_future();
     if (!this->addTaskImpl([task] { (*task)(); })) {
       return {};

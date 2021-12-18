@@ -71,11 +71,6 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
   }
 }
 
-SourceManager SourceManager::copy() const {
-  auto tmp(*this);
-  return tmp;
-}
-
 static size_t findLineStartPos(const std::string &content, unsigned int count) {
   const char *str = content.c_str();
   for (unsigned int i = 0; i < count; i++) {

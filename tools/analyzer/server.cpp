@@ -55,7 +55,10 @@ void LSPServer::bindAll() {
 
 void LSPServer::run() {
   while (this->transport.available()) {
-    this->transport.dispatch(*this);
+    auto s = this->transport.dispatch(*this, this->timeout);
+    if (s == Transport::Status::TIMEOUT) {
+      this->tryRebuild();
+    }
   }
   LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");
 }
@@ -86,7 +89,7 @@ Result<SourcePtr, CStrPtr> LSPServer::resolveSource(const TextDocumentIdentifier
     LOG(LogLevel::ERROR, "%s", str.get());
     return Err(std::move(str));
   }
-  auto src = this->result.srcMan.find(uri.getPath());
+  auto src = this->result.srcMan->find(uri.getPath());
   if (!src) {
     auto str = format("broken textDocument: %s", doc.uri.c_str());
     LOG(LogLevel::ERROR, "%s", str.get());
@@ -127,7 +130,7 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
     if (ret.decl.getModId() == 0) { // ignore builtin module symbol
       return;
     }
-    auto s = this->result.srcMan.findById(ret.decl.getModId());
+    auto s = this->result.srcMan->findById(ret.decl.getModId());
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();
@@ -141,7 +144,7 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
 std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request) {
   std::vector<Location> values;
   findAllReferences(this->result.indexes, request, [&](const FindRefsResult &ret) {
-    auto s = this->result.srcMan.findById(ret.symbol.getModId());
+    auto s = this->result.srcMan->findById(ret.symbol.getModId());
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();
@@ -162,7 +165,7 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src, const Symbo
         .contents =
             MarkupContent{
                 .kind = this->markupKind,
-                .value = generateHoverContent(this->result.srcMan, src, value.decl,
+                .value = generateHoverContent(*this->result.srcMan, src, value.decl,
                                               this->markupKind == MarkupKind::Markdown),
             },
         .range = toRange(src.getContent(), value.request.getToken()),
@@ -171,66 +174,93 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src, const Symbo
   return ret;
 }
 
-DiagnosticEmitter LSPServer::newDiagnosticEmitter() {
-  return {this->result.srcMan,
+DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan) {
+  return {std::move(srcMan),
           [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
           this->diagVersionSupport};
 }
 
-bool LSPServer::tryRebuild() {
-  if (this->modifiedSrcIds.empty()) {
-    return false;
-  }
+struct AnalyzerParam {
+  std::shared_ptr<CancelPoint> cancelPoint;
+  LSPServer::AnalyzerResult ret;
+  DiagnosticEmitter emitter;
+  std::unordered_set<unsigned short> modifiedIds;
+};
 
+static LSPServer::AnalyzerResult doRebuild(AnalyzerParam &&param) {
   // revert archive
-  {
-    auto tmp = this->modifiedSrcIds;
-    this->result.archives.revert(std::move(tmp));
-  }
+  param.ret.archives.revert(decltype(param.modifiedIds)(param.modifiedIds));
 
   AnalyzerAction action;
-  DiagnosticEmitter emitter = this->newDiagnosticEmitter();
-  SymbolIndexer indexer(this->result.indexes);
-  action.emitter.reset(&emitter);
+  SymbolIndexer indexer(param.ret.indexes);
+  action.emitter.reset(&param.emitter);
   action.consumer.reset(&indexer);
 
   // rebuild
-  for (auto &e : this->modifiedSrcIds) {
-    if (this->result.archives.find(e)) {
+  for (auto &e : param.modifiedIds) {
+    if (param.ret.archives.find(e)) {
       continue;
     }
-    auto src = this->result.srcMan.findById(e);
+    auto src = param.ret.srcMan->findById(e);
     assert(src);
-    analyze(this->result.srcMan, this->result.archives, action, *src);
+    analyze(*param.ret.srcMan, param.ret.archives, action, *src, param.cancelPoint);
   }
 
   while (true) {
-    auto targetId = this->result.archives.getFirstRevertedModId();
+    auto targetId = param.ret.archives.getFirstRevertedModId();
     if (!targetId.hasValue()) {
       break;
     }
-    auto src = this->result.srcMan.findById(targetId.unwrap());
+    auto src = param.ret.srcMan->findById(targetId.unwrap());
     assert(src);
-    analyze(this->result.srcMan, this->result.archives, action, *src);
+    analyze(*param.ret.srcMan, param.ret.archives, action, *src, param.cancelPoint);
+  }
+  return std::move(param.ret);
+}
+
+bool LSPServer::tryRebuild() {
+  if (this->modifiedSrcIds.empty()) {
+    this->timeout = -1;
+    return false;
   }
 
-  this->modifiedSrcIds.clear();
+  LOG(LogLevel::INFO, "tryRebuild...");
+
+  if (this->cancelPoint) {
+    this->cancelPoint->cancel();
+  }
+
+  AnalyzerParam param = ({
+    DiagnosticEmitter emitter = this->newDiagnosticEmitter(this->result.srcMan);
+    decltype(this->modifiedSrcIds) tmpIds;
+    std::swap(this->modifiedSrcIds, tmpIds);
+    this->cancelPoint = std::make_shared<CancelPoint>();
+    AnalyzerParam{
+        .cancelPoint = this->cancelPoint,
+        .ret = this->result.deepCopy(),
+        .emitter = std::move(emitter),
+        .modifiedIds = std::move(tmpIds),
+    };
+  });
+  this->futureResult =
+      this->worker.addTask([p = std::move(param)]() mutable { return doRebuild(std::move(p)); });
   return true;
 }
 
-SourcePtr LSPServer::updateSource(StringRef path, int newVersion, std::string &&newContent) {
-  auto src = this->result.srcMan.update(path, newVersion, std::move(newContent));
+void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newContent) {
+  auto src = this->result.srcMan->update(path, newVersion, std::move(newContent));
   if (!src) {
     LOG(LogLevel::ERROR, "reach opened file limit");
-    return nullptr;
+    return;
   }
+  this->timeout = defaultDebounceTime;
   this->modifiedSrcIds.emplace(src->getSrcId());
-  return src;
 }
 
 void LSPServer::syncResult() {
+  this->tryRebuild();
   if (this->futureResult.valid()) {
-    this->result = this->futureResult.get();
+    this->result = this->futureResult.get(); // FIXME: sync source
   }
 }
 
@@ -322,7 +352,6 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   }
   this->updateSource(uri.getPath(), params.textDocument.version,
                      std::string(params.textDocument.text));
-  this->tryRebuild();
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
@@ -351,7 +380,6 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
     }
   }
   this->updateSource(src->getPath(), params.textDocument.version, std::move(content));
-  this->tryRebuild();
 }
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
@@ -396,10 +424,10 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     auto &src = *resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto newSrc = src.copyAndUpdate(std::string(src.getContent().c_str(), pos), src.getVersion());
-    auto copiedArchives = this->result.archives.copy();
+    ModuleArchives copiedArchives = this->result.archives;
     copiedArchives.revert({newSrc->getSrcId()});
-    auto copiedSrcMan = this->result.srcMan.copy();
-    return doCompletion(copiedSrcMan, copiedArchives, *newSrc);
+    auto copiedSrcMan = this->result.srcMan->copy();
+    return doCompletion(*copiedSrcMan, copiedArchives, *newSrc);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

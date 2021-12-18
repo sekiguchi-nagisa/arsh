@@ -85,7 +85,7 @@ public:
    */
   SourcePtr update(StringRef path, int version, std::string &&content);
 
-  SourceManager copy() const;
+  std::shared_ptr<SourceManager> copy() const { return std::make_shared<SourceManager>(*this); }
 };
 
 /**

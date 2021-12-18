@@ -17,6 +17,8 @@
 #ifndef YDSH_TOOLS_ANALYZER_ANALYZER_H
 #define YDSH_TOOLS_ANALYZER_ANALYZER_H
 
+#include <atomic>
+
 #include <frontend.h>
 #include <node.h>
 #include <scope.h>
@@ -97,7 +99,7 @@ using DiagnosticCallback = std::function<void(PublishDiagnosticsParams &&)>;
 
 class DiagnosticEmitter : public FrontEnd::ErrorListener {
 private:
-  SourceManager &srcMan;
+  std::shared_ptr<SourceManager> srcMan;
   DiagnosticCallback callback;
   bool supportVersion;
 
@@ -112,8 +114,9 @@ private:
   std::vector<Context> contexts;
 
 public:
-  DiagnosticEmitter(SourceManager &srcMan, DiagnosticCallback &&callback, bool supportVersion)
-      : srcMan(srcMan), callback(std::move(callback)), supportVersion(supportVersion) {}
+  DiagnosticEmitter(std::shared_ptr<SourceManager> &&srcMan, DiagnosticCallback &&callback,
+                    bool supportVersion)
+      : srcMan(std::move(srcMan)), callback(std::move(callback)), supportVersion(supportVersion) {}
 
   ~DiagnosticEmitter() override = default;
 
@@ -142,8 +145,18 @@ struct AnalyzerAction {
   ObserverPtr<NodeConsumer> consumer;
 };
 
+class CancelPoint {
+private:
+  std::atomic<bool> value{false};
+
+public:
+  void cancel() { this->value.store(true); }
+
+  bool isCanceled() const { return this->value.load(); }
+};
+
 ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
-                         const Source &src);
+                         const Source &src, std::shared_ptr<CancelPoint> cancelPoint = nullptr);
 
 std::vector<CompletionItem> doCompletion(SourceManager &srcMan, ModuleArchives &archives,
                                          const Source &src);

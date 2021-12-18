@@ -113,7 +113,7 @@ void Client::run(const std::vector<ClientRequest> &requests) {
     if (!r) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
     }
-    int timeout = index == size - 1 ? 500 : 10;
+    int timeout = index == size - 1 ? 1000 : 50;
     while (waitReply(this->transport.getInput().get(), timeout)) {
       auto ret = this->recv();
       if (!ret.hasValue()) {
