@@ -27,7 +27,7 @@ using namespace lsp;
 
 #define EACH_OPT(OP)                                                                               \
   OP(LOG, "--log", opt::HAS_ARG,                                                                   \
-     "specify log level (debug, info, warning, error, fatal). default is `info'")                  \
+     "specify log level (debug, info, warning, error, fatal). default is `warning'")               \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
   OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
@@ -41,7 +41,7 @@ enum class OptionKind {
 };
 
 struct Options {
-  LogLevel level{LogLevel::ERROR};
+  LogLevel level{LogLevel::WARNING};
   int debounceTime{800};
   bool lsp{true};
   const char *testInput{nullptr};
@@ -56,7 +56,7 @@ static LogLevel parseLogLevel(const char *value) {
       return l;
     }
   }
-  return LogLevel::INFO;
+  return LogLevel::WARNING;
 }
 
 static Options parseOptions(int argc, char **argv) {
