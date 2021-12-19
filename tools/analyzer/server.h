@@ -68,6 +68,7 @@ private:
   LSPTransport transport;
   AnalyzerResult result;
   std::unordered_set<unsigned short> modifiedSrcIds;
+  std::unordered_set<unsigned short> willCloseSrcIds;
   BackgroundWorker worker;
   std::future<AnalyzerResult> futureResult;
   std::shared_ptr<CancelPoint> cancelPoint;

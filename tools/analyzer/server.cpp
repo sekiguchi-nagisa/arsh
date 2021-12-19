@@ -181,10 +181,12 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager>
 }
 
 struct AnalyzerParam {
+  std::reference_wrapper<LoggerBase> logger;
   std::shared_ptr<CancelPoint> cancelPoint;
   AnalyzerResult ret;
   DiagnosticEmitter emitter;
   std::unordered_set<unsigned short> modifiedIds;
+  std::unordered_set<unsigned short> closedIds;
 };
 
 static AnalyzerResult doRebuild(AnalyzerParam &&param) {
@@ -216,6 +218,15 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
     assert(src);
     analyzer.analyze(*src, action);
   }
+
+  // close
+  for (auto &id : param.closedIds) {
+    if (param.ret.archives.removeIfUnused(id)) {
+      auto src = param.ret.srcMan->findById(id);
+      param.logger.get()(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
+      param.ret.indexes.remove(id);
+    }
+  }
   return std::move(param.ret);
 }
 
@@ -238,10 +249,12 @@ bool LSPServer::tryRebuild() {
     auto ret = this->result.deepCopy();
     DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
     AnalyzerParam{
+        .logger = this->logger,
         .cancelPoint = this->cancelPoint,
         .ret = std::move(ret),
         .emitter = std::move(emitter),
         .modifiedIds = std::move(tmpIds),
+        .closedIds = this->willCloseSrcIds,
     };
   });
   this->futureResult =
@@ -255,14 +268,20 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
     LOG(LogLevel::ERROR, "reach opened file limit");
     return;
   }
-  this->timeout = defaultDebounceTime;
+  this->timeout = this->defaultDebounceTime;
   this->modifiedSrcIds.emplace(src->getSrcId());
+
+  auto iter = this->willCloseSrcIds.find(src->getSrcId());
+  if (iter != this->willCloseSrcIds.end()) {
+    this->willCloseSrcIds.erase(iter);
+  }
 }
 
 void LSPServer::syncResult() {
   this->tryRebuild();
   if (this->futureResult.valid()) {
     this->result = this->futureResult.get(); // override current result
+    this->willCloseSrcIds.clear();
   }
 }
 
@@ -360,10 +379,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
   if (auto resolved = this->resolveSource(params.textDocument)) {
     auto &src = resolved.asOk();
-    if (this->result.archives.removeIfUnused(src->getSrcId())) {
-      LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
-      this->result.indexes.remove(src->getSrcId());
-    }
+    this->willCloseSrcIds.emplace(src->getSrcId());
   }
 }
 
