@@ -32,39 +32,38 @@ struct LSPLogger : public LoggerBase {
   LSPLogger() : LoggerBase("YDSHD") {}
 };
 
+struct AnalyzerResult {
+  std::shared_ptr<SourceManager> srcMan;
+  ModuleArchives archives;
+  SymbolIndexes indexes;
+
+  NON_COPYABLE(AnalyzerResult);
+
+  AnalyzerResult() = default;
+
+  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives &&archives,
+                 SymbolIndexes &&indexes)
+      : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)) {}
+
+  AnalyzerResult(AnalyzerResult &&o) noexcept
+      : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)),
+        indexes(std::move(o.indexes)) {}
+
+  AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
+    if (this != std::addressof(o)) {
+      this->~AnalyzerResult();
+      new (this) AnalyzerResult(std::move(o));
+    }
+    return *this;
+  }
+
+  AnalyzerResult deepCopy() const {
+    return {this->srcMan->copy(), decltype(this->archives)(this->archives),
+            decltype(this->indexes)(this->indexes)};
+  }
+};
+
 class LSPServer : public Handler {
-public:
-  struct AnalyzerResult {
-    std::shared_ptr<SourceManager> srcMan;
-    ModuleArchives archives;
-    SymbolIndexes indexes;
-
-    NON_COPYABLE(AnalyzerResult);
-
-    AnalyzerResult() = default;
-
-    AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives &&archives,
-                   SymbolIndexes &&indexes)
-        : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)) {}
-
-    AnalyzerResult(AnalyzerResult &&o) noexcept
-        : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)),
-          indexes(std::move(o.indexes)) {}
-
-    AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
-      if (this != std::addressof(o)) {
-        this->~AnalyzerResult();
-        new (this) AnalyzerResult(std::move(o));
-      }
-      return *this;
-    }
-
-    AnalyzerResult deepCopy() const {
-      return {this->srcMan->copy(), decltype(this->archives)(this->archives),
-              decltype(this->indexes)(this->indexes)};
-    }
-  };
-
 private:
   LSPTransport transport;
   AnalyzerResult result;
@@ -89,12 +88,6 @@ public:
   }
 
   ReplyImpl onCall(const std::string &name, JSON &&param) override;
-
-  bool runOnlyOnce() { // for testing
-    auto r = this->transport.dispatch(*this) == Transport::Status::DISPATCHED;
-    this->tryRebuild();
-    return r;
-  }
 
   /**
    * normally not return

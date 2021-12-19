@@ -182,12 +182,12 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager>
 
 struct AnalyzerParam {
   std::shared_ptr<CancelPoint> cancelPoint;
-  LSPServer::AnalyzerResult ret;
+  AnalyzerResult ret;
   DiagnosticEmitter emitter;
   std::unordered_set<unsigned short> modifiedIds;
 };
 
-static LSPServer::AnalyzerResult doRebuild(AnalyzerParam &&param) {
+static AnalyzerResult doRebuild(AnalyzerParam &&param) {
   // prepare
   param.ret.archives.revert(decltype(param.modifiedIds)(param.modifiedIds));
 
@@ -232,13 +232,14 @@ bool LSPServer::tryRebuild() {
   }
 
   AnalyzerParam param = ({
-    DiagnosticEmitter emitter = this->newDiagnosticEmitter(this->result.srcMan);
     decltype(this->modifiedSrcIds) tmpIds;
     std::swap(this->modifiedSrcIds, tmpIds);
     this->cancelPoint = std::make_shared<CancelPoint>();
+    auto ret = this->result.deepCopy();
+    DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
     AnalyzerParam{
         .cancelPoint = this->cancelPoint,
-        .ret = this->result.deepCopy(),
+        .ret = std::move(ret),
         .emitter = std::move(emitter),
         .modifiedIds = std::move(tmpIds),
     };
@@ -261,7 +262,7 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
 void LSPServer::syncResult() {
   this->tryRebuild();
   if (this->futureResult.valid()) {
-    this->result = this->futureResult.get(); // FIXME: sync source
+    this->result = this->futureResult.get(); // override current result
   }
 }
 
@@ -353,6 +354,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   }
   this->updateSource(uri.getPath(), params.textDocument.version,
                      std::string(params.textDocument.text));
+  this->syncResult();
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
@@ -424,7 +426,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   if (auto resolved = this->resolvePosition(params)) {
     auto &src = *resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
-    auto newSrc = src.copyAndUpdate(std::string(src.getContent().c_str(), pos), src.getVersion());
+    auto newSrc = src.copyAndUpdate(src.getVersion(), std::string(src.getContent().c_str(), pos));
     ModuleArchives copiedArchives = this->result.archives;
     copiedArchives.revert({newSrc->getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();

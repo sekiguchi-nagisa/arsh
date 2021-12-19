@@ -21,7 +21,7 @@
 
 namespace ydsh::lsp {
 
-std::shared_ptr<Source> Source::copyAndUpdate(std::string &&c, int v) const {
+std::shared_ptr<Source> Source::copyAndUpdate(int v, std::string &&c) const {
   auto newSrc = std::make_shared<Source>();
   newSrc->path = this->path;
   newSrc->content = std::move(c);
@@ -54,8 +54,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    auto newSrc = this->entries[i]->copyAndUpdate(std::move(tmp), version);
-    this->entries[i] = std::move(newSrc);
+    this->entries[i] = this->entries[i]->copyAndUpdate(version, std::move(tmp));
     return this->entries[i];
   } else {
     unsigned int id = this->entries.size() + 1;
@@ -69,6 +68,16 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     this->indexMap.emplace(ret->getPath(), i);
     return this->entries[i];
   }
+}
+
+SourcePtr SourceManager::add(SourcePtr other) {
+  if (!other) {
+    return nullptr;
+  }
+  if (auto src = this->find(other->getPath()); src == other) {
+    return other;
+  }
+  return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()));
 }
 
 static size_t findLineStartPos(const std::string &content, unsigned int count) {

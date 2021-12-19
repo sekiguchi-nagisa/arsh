@@ -48,7 +48,7 @@ public:
 
   unsigned short getSrcId() const { return this->srcId; }
 
-  std::shared_ptr<Source> copyAndUpdate(std::string &&c, int v) const;
+  std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const;
 };
 
 using SourcePtr = std::shared_ptr<Source>;
@@ -84,6 +84,15 @@ public:
    * if module id reaches limit, return null
    */
   SourcePtr update(StringRef path, int version, std::string &&content);
+
+  /**
+   * add source from other source manager.
+   * if path of other source is already assigned, replace with other source
+   * @param other
+   * @return
+   * newly added source
+   */
+  SourcePtr add(SourcePtr other);
 
   std::shared_ptr<SourceManager> copy() const { return std::make_shared<SourceManager>(*this); }
 };
