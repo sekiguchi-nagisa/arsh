@@ -144,7 +144,7 @@ void append(Object &object, JSONMember &&v, T &&...arg) {
 
 } // namespace __detail
 
-inline Array array() { return std::vector<JSON>(); }
+inline Array array() { return {}; }
 
 template <typename... Arg>
 inline Array array(JSON &&v, Arg &&...arg) {
@@ -153,7 +153,7 @@ inline Array array(JSON &&v, Arg &&...arg) {
   return value;
 }
 
-inline Object object() { return std::map<std::string, JSON>(); }
+inline Object object() { return {}; }
 
 template <typename... Arg>
 inline Object object(JSONMember &&m, Arg &&...arg) {

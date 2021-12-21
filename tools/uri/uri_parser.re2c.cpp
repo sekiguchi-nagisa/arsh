@@ -158,7 +158,7 @@ URI URI::fromString(const std::string &str) {
   */
 
 ERROR:
-  return URI();
+  return {};
 }
 
 } // namespace ydsh::uri

@@ -143,7 +143,7 @@ public:
 
   TypeKind typeKind() const { return static_cast<TypeKind>(this->tag >> 24); }
 
-  StringRef getNameRef() const { return StringRef(this->name.get()); }
+  StringRef getNameRef() const { return {this->name.get()}; }
 
   const char *getName() const { return this->name.get(); }
 
@@ -273,16 +273,16 @@ private:
 
 public:
   static FieldHandle alias(unsigned int commitID, const FieldHandle &handle, unsigned short modId) {
-    return FieldHandle(commitID, handle, handle.attr() | FieldAttribute::ALIAS, modId);
+    return {commitID, handle, handle.attr() | FieldAttribute::ALIAS, modId};
   }
 
   static FieldHandle create(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
                             FieldAttribute attribute, unsigned short modID = 0) {
-    return FieldHandle(commitID, fieldType, fieldIndex, attribute, modID);
+    return {commitID, fieldType, fieldIndex, attribute, modID};
   }
 
   static FieldHandle withNewAttr(const FieldHandle &handle, FieldAttribute newAttr) {
-    return FieldHandle(handle.getCommitID(), handle, newAttr, handle.getModID());
+    return {handle.getCommitID(), handle, newAttr, handle.getModID()};
   }
 
   ~FieldHandle() = default;
@@ -352,8 +352,8 @@ public:
   const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 
   CallableTypes toCallableTypes() const {
-    return CallableTypes(this->returnType, this->getParamSize(),
-                         this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]);
+    return {this->returnType, this->getParamSize(),
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]};
   }
 
   static void operator delete(void *ptr) noexcept { // NOLINT
@@ -573,7 +573,7 @@ public:
     return FieldHandle::create(0, *this, this->getIndex(), attr, this->getModID());
   }
 
-  Imported toModEntry(ImportedModKind k) const { return Imported(*this, k); }
+  Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
 
   std::string toName() const { return this->getNameRef().toString(); }
 
@@ -728,8 +728,8 @@ public:
   bool isNative() const { return this->native; }
 
   CallableTypes toCallableTypes() const {
-    return CallableTypes(this->returnType, this->getParamSize(),
-                         this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]);
+    return {this->returnType, this->getParamSize(),
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]};
   }
 };
 

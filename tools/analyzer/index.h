@@ -98,7 +98,7 @@ public:
 
   void addRef(SymbolRef ref);
 
-  SymbolRef toRef() const { return SymbolRef(this->pos, this->size, this->modId); }
+  SymbolRef toRef() const { return {this->pos, this->size, this->modId}; }
 
   bool operator<(const DeclBase &o) const {
     return this->getModId() < o.getModId() ||
