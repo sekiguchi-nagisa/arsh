@@ -68,7 +68,11 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
 
   DSValue actualHandler;
   auto op = SignalVector::UnsafeSigOp::SET;
-  if (sigNum == SIGBUS || sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
+  switch (sigNum) {
+  case SIGBUS:
+  case SIGSEGV:
+  case SIGILL:
+  case SIGFPE:
     /**
      * not handle or ignore these signals due to prevent undefined behavior.
      * see.
@@ -76,7 +80,15 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
      *      http://man7.org/linux/man-pages/man2/sigaction.2.html
      */
     return;
-  } else if (handler == DFL_handler) {
+  case SIGKILL:
+  case SIGSTOP:
+    /**
+     * sigaction dose not accept these signals
+     */
+    return;
+  }
+
+  if (handler == DFL_handler) {
     if (sigNum == SIGHUP) {
       actualHandler = handler;
     } else {

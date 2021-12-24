@@ -74,6 +74,8 @@
     - now the precedence is equivalent to ``return``
 - set ``PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`` option if pcre2 10.38 or later
 - remove redundant signal handler installation when recursively call interpreter
+- not change signal handler for ``SIGKILL``, ``SIGSTOP``
+    - internal sigaction does not accept these signals
 
 #### Builtin
 
