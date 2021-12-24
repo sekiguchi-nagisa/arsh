@@ -1201,11 +1201,6 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     TokenKind op = this->scan();
     return std::make_unique<UnaryOpNode>(op, token, TRY(this->parse_unaryExpression()));
   }
-  case TokenKind::THROW: {
-    auto token = this->expect(TokenKind::THROW); // always success
-    auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::THROW)));
-    return JumpNode::newThrow(token, std::move(exprNode));
-  }
   case TokenKind::COPROC: {
     auto token = this->expect(TokenKind::COPROC); // always success
     auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::COPROC)));
@@ -1424,6 +1419,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
       exprNode = TRY(this->parse_expression());
     }
     return JumpNode::newReturn(token, std::move(exprNode));
+  }
+  case TokenKind::THROW: {
+    auto token = this->expect(TokenKind::THROW); // always success
+    auto exprNode = TRY(this->parse_expression());
+    return JumpNode::newThrow(token, std::move(exprNode));
   }
   default:
     if (this->inCompletionPoint()) {

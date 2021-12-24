@@ -270,7 +270,7 @@ TEST_F(PrecedenceTest, envAssign) {
   ASSERT_NO_FATAL_FAILURE(
       this->equals("((AAA=12 BBB=34 34) = 56)", "AAA=12  BBB=34   \t  34 = 56"));
   ASSERT_NO_FATAL_FAILURE(
-      this->equals("((AAA=12 BBB=34 (throw (34 + 45))) &)", "AAA=12  BBB=34 throw 34 + 45 &"));
+      this->equals("(AAA=12 BBB=34 (throw ((34 + 45) &)))", "AAA=12  BBB=34 throw 34 + 45 &"));
   ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=BBB 12) && 34)", "AAA=BBB 12 && 34"));
   ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=BBB 12) | 34)", "AAA=BBB 12 | 34"));
   ASSERT_NO_FATAL_FAILURE(this->equals("(AAA=BBB (12 with 1> 34))", "AAA=BBB 12 with > 34"));

@@ -70,6 +70,8 @@
 - **Breaking Change**: change exit status of command error
     - if command not found, set exit status to 127
     - if permission error, set exit status to 126
+- **Breaking Change**: change operator precedence of ``throw`` expression. now the precedence is equivalent
+  to ``return``
 - set ``PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`` option if pcre2 10.38 or later
 - remove redundant signal handler installation when recursively call interpreter
 
