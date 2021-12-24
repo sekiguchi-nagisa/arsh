@@ -6,7 +6,7 @@
 
 #### Core
 
-- add the following runtime option
+- add the following runtime options
     - ``huponexit``: if on, when call ``exit`` command, send ``SIGHUP`` to managed jobs
     - ``assert``: if on, check assertion
         - now assertion is enabled/disabled at runtime
@@ -28,21 +28,21 @@
 - add ``info`` sub-command to builtin ``shctl`` command
     - now show runtime configuration (also get via ``reply`` variable)
 - add builtin ``MODULE`` variable for indicating current ``Module`` object
-- add some methods to ``Module`` type
+- add the following methods to ``Module`` type
     - ``scriptName``: get ``SCRIPT_NAME`` of module
     - ``scriptDir``: get ``SCRIPT_DIR`` of module
     - ``func``: compile string as single expression function
     - ``fullname``: resolve fully qualified command name
-- add some methods to ``String`` type
+- add the following methods to ``String`` type
     - ``width``: method for width counting of grapheme cluster
     - ``contains``: check if contains substring
-- add some methods to ``Array`` type
+- add the following methods to ``Array`` type
     - ``forEach``: apply function to each element
     - ``addAll``: add all elements of other ``Array`` object
     - ``indexOf``: get first index of element equivalent to specified object
     - ``lastIndexOf``: get last index of element equivalent to specified object
     - ``contains``: check if contains specified object
-- add some methods to ``Map`` type
+- add the following methods to ``Map`` type
     - ``addAll``: add all elements of other ``Map`` object
 
 #### LSP
@@ -70,8 +70,8 @@
 - **Breaking Change**: change exit status of command error
     - if command not found, set exit status to 127
     - if permission error, set exit status to 126
-- **Breaking Change**: change operator precedence of ``throw`` expression. now the precedence is equivalent
-  to ``return``
+- **Breaking Change**: change operator precedence of ``throw`` expression.
+    - now the precedence is equivalent to ``return``
 - set ``PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`` option if pcre2 10.38 or later
 - remove redundant signal handler installation when recursively call interpreter
 
