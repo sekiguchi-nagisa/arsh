@@ -7,7 +7,7 @@ function usage($m : String) : Nothing {
 }
 
 error() {
-    new Error("$@").backtrace()
+    new Error("$@").show()
     exit 1
 }
 

@@ -85,7 +85,7 @@ cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $REPLY.startsWith('#') || $REPLY.empty() {
         continue
     }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.backtrace(); echo 1>&2 $count $REPLY; }
+    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_GraphemeBreakProperty.txt 
 
@@ -99,7 +99,7 @@ cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
         continue
     }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.backtrace(); echo 1>&2 $count $REPLY; }
+    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_emoji-data.txt
 

@@ -20,7 +20,7 @@ assert($b3 == "12")
 # cast
 var a4 = new Error("")
 $a4 = new OutOfRangeError("")
-($a4 as OutOfRangeError).backtrace()
+($a4 as OutOfRangeError).show()
 
 try {
 	new Error("") as ArithmeticError

@@ -84,6 +84,7 @@
 - **Breaking Change**: remove some ``Array``, ``Map`` methods
     - ``Array#extend``: use ``Array#addAll`` instead
     - ``Map#find``: use ``Map#get`` instead
+- **Breaking Change**: rename ``Error#backtrace`` method with ``Error#show``
 
 #### LSP
 

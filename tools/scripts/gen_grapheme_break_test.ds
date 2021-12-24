@@ -38,7 +38,7 @@ cat ./GraphemeBreakTest.txt | for(var count = 0; read -f $'\n'; $count++) {
         var m = $/^([^#]+)\s+#.*$/.match($REPLY)
         $ret.add($m[1]!)
     } catch $e : Error {
-        $e.backtrace();
+        $e.show();
         echo 1>&2 $count $REPLY;
     }
     echo $REPLY

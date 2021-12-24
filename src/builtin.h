@@ -1833,9 +1833,9 @@ YDSH_METHOD error_message(RuntimeContext &ctx) {
   RET(typeAs<ErrorObject>(LOCAL(0)).getMessage());
 }
 
-//!bind: function backtrace($this : Error) : Void
-YDSH_METHOD error_backtrace(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(error_backtrace);
+//!bind: function show($this : Error) : Void
+YDSH_METHOD error_show(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(error_show);
   typeAs<ErrorObject>(LOCAL(0)).printStackTrace(ctx);
   RET_VOID;
 }

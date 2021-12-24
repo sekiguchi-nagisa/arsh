@@ -8,7 +8,7 @@ var e = new Error($m)
 assert($e.message() is String)
 assert($e.message() == $m)
 assert($e.name() == "Error")
-$e.backtrace()
+$e.show()
 
 # sub type
 

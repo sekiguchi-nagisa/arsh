@@ -189,7 +189,7 @@ function %OP_INIT($this : Error, $message : String) : Error
 
 function message($this : Error) : String
 
-function backtrace($this : Error) : Void
+function show($this : Error) : Void
 
 function name($this : Error) : String
 ```

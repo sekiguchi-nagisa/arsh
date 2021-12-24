@@ -7,7 +7,7 @@ function f() : Boolean {
         try {
             10 / $i
         } catch($e : ArithmeticError) {
-            $e.backtrace()
+            $e.show()
         } finally {
             continue
         }

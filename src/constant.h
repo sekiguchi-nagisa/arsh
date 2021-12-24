@@ -150,6 +150,8 @@ constexpr const char *OP_CMD_ARG = "%cmd_arg"; // for command argument
 constexpr const char *OP_TO_INT = "toInt";
 constexpr const char *OP_TO_FLOAT = "toFloat";
 
+constexpr const char *OP_SHOW = "show";
+
 // =====  environmental variable  =====
 
 constexpr const char *ENV_HOME = "HOME";
