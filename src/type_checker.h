@@ -49,18 +49,6 @@ private:
 public:
   FlowContext() : stacks({{0, 0, 0, 0}}) {}
 
-  FlowContext(FlowContext &&o) noexcept : stacks(std::move(o.stacks)) {}
-
-  ~FlowContext() = default;
-
-  FlowContext &operator=(FlowContext &&o) noexcept {
-    if (this != std::addressof(o)) {
-      this->~FlowContext();
-      new (this) FlowContext(std::move(o));
-    }
-    return *this;
-  }
-
   unsigned int tryCatchLevel() const { return this->stacks.back().tryLevel; }
 
   /**
@@ -124,18 +112,6 @@ private:
   FlexBuffer<JumpNode *> jumpNodes;
 
 public:
-  BreakGather() = default;
-
-  BreakGather(BreakGather &&o) noexcept : jumpNodes(std::move(o.jumpNodes)) {}
-
-  BreakGather &operator=(BreakGather &&o) noexcept {
-    if (this != std::addressof(o)) {
-      this->~BreakGather();
-      new (this) BreakGather(std::move(o));
-    }
-    return *this;
-  }
-
   void addJumpNode(JumpNode *node) { this->jumpNodes.push_back(node); }
 
   /**

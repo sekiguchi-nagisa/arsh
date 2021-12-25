@@ -1887,6 +1887,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
                                               NameScopePtr global) {
   // reset state
   this->visitingDepth = 0;
+  assert(this->funcCtxs.size() == 1);
   this->funcCtx().clear();
   this->errors.clear();
 
