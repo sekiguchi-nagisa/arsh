@@ -103,7 +103,7 @@ TokenKind Lexer::nextToken(Token &token) {
     HEX = "0" [xX] [0-9a-fA-F]+;
     INTEGER = NUM | OCTAL | HEX;
     DIGITS = [0-9]+;
-    FLOAT_SUFFIX =  [eE] [+-]? NUM;
+    FLOAT_SUFFIX =  [eE] [+-]? DIGITS;
     FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
     SQUOTE_CHAR = '\\' ['] | [^'\000];

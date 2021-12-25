@@ -496,13 +496,13 @@ TEST_F(LexerTest_Lv1, float_literal5) {
 }
 
 // invalid float literal
-TEST_F(LexerTest_Lv1, invalid_float_literal1) {
+TEST_F(LexerTest_Lv1, float_literal6) {
   const char *text = "0.010964e+01";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::FLOAT_LITERAL, "0.010964e+0", TokenKind::INVALID, "1"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::FLOAT_LITERAL, text, TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, invalid_float_literal2) {
+TEST_F(LexerTest_Lv1, invalid_float_literal1) {
   const char *text = "0012.04e-78";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(
