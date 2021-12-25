@@ -48,7 +48,18 @@ private:
 
 public:
   FlowContext() : stacks({{0, 0, 0, 0}}) {}
+
+  FlowContext(FlowContext &&o) noexcept : stacks(std::move(o.stacks)) {}
+
   ~FlowContext() = default;
+
+  FlowContext &operator=(FlowContext &&o) noexcept {
+    if (this != std::addressof(o)) {
+      this->~FlowContext();
+      new (this) FlowContext(std::move(o));
+    }
+    return *this;
+  }
 
   unsigned int tryCatchLevel() const { return this->stacks.back().tryLevel; }
 
@@ -110,84 +121,122 @@ public:
  */
 class BreakGather {
 private:
-  struct Entry {
-    FlexBuffer<JumpNode *> jumpNodes;
-    std::unique_ptr<Entry> next;
-
-    explicit Entry(std::unique_ptr<Entry> &&prev) : next(std::move(prev)) {}
-  };
-  std::unique_ptr<Entry> entry;
+  FlexBuffer<JumpNode *> jumpNodes;
 
 public:
-  BreakGather() : entry(nullptr) {}
+  BreakGather() = default;
 
-  void enter() { this->entry = std::make_unique<Entry>(std::move(this->entry)); }
+  BreakGather(BreakGather &&o) noexcept : jumpNodes(std::move(o.jumpNodes)) {}
 
-  void clear() { this->entry = nullptr; }
-
-  void leave() {
-    auto old = std::move(this->entry->next);
-    this->entry = std::move(old);
+  BreakGather &operator=(BreakGather &&o) noexcept {
+    if (this != std::addressof(o)) {
+      this->~BreakGather();
+      new (this) BreakGather(std::move(o));
+    }
+    return *this;
   }
 
-  void addJumpNode(JumpNode *node) {
-    assert(this->entry != nullptr);
-    this->entry->jumpNodes.push_back(node);
-  }
+  void addJumpNode(JumpNode *node) { this->jumpNodes.push_back(node); }
 
   /**
    * call after enter()
    * @return
    */
-  const FlexBuffer<JumpNode *> &getJumpNodes() const { return this->entry->jumpNodes; }
+  const FlexBuffer<JumpNode *> &getJumpNodes() const { return this->jumpNodes; }
 };
 
 class FuncContext {
 private:
-  struct Entry {
-    unsigned int voidReturnCount{0};
-    const DSType *returnType;
-    FlexBuffer<JumpNode *> returnNodes;
-    std::unique_ptr<Entry> next;
+  unsigned int voidReturnCount{0};
+  const DSType *returnType;
+  FlexBuffer<JumpNode *> returnNodes;
 
-    explicit Entry(std::unique_ptr<Entry> &&prev, const DSType *type)
-        : returnType(type), next(std::move(prev)) {}
-  };
-  std::unique_ptr<Entry> entry;
+  FlowContext flow;
+
+  std::vector<BreakGather> breakGathers;
 
 public:
-  FuncContext() : entry(nullptr) {}
+  FuncContext() : returnType(nullptr) {}
 
-  void enter(const DSType *type) {
-    this->entry = std::make_unique<Entry>(std::move(this->entry), type);
-  }
+  explicit FuncContext(const DSType *type) : returnType(type) {}
 
-  void clear() { this->entry = nullptr; }
-
-  void leave() {
-    auto old = std::move(this->entry->next);
-    this->entry = std::move(old);
+  void clear() {
+    this->returnType = nullptr;
+    this->voidReturnCount = 0;
+    this->returnNodes.clear();
+    this->flow.clear();
+    this->breakGathers.clear();
   }
 
   void addReturnNode(JumpNode *node) {
-    assert(this->entry != nullptr);
     if (node->getExprNode().getType().isVoidType()) {
-      this->entry->voidReturnCount++;
+      this->voidReturnCount++;
     }
-    this->entry->returnNodes.push_back(node);
+    this->returnNodes.push_back(node);
   }
-
-  bool inFunc() const { return this->entry != nullptr; }
 
   /**
    * call after enter()
    * @return
    */
-  const FlexBuffer<JumpNode *> &getReturnNodes() const { return this->entry->returnNodes; }
+  const FlexBuffer<JumpNode *> &getReturnNodes() const { return this->returnNodes; }
 
-  const DSType *getReturnType() const { return this->entry->returnType; }
+  const DSType *getReturnType() const { return this->returnType; }
 
-  unsigned int getVoidReturnCount() const { return this->entry->voidReturnCount; }
+  unsigned int getVoidReturnCount() const { return this->voidReturnCount; }
+
+  void addJumpNode(JumpNode *node) { this->breakGathers.back().addJumpNode(node); }
+
+  const FlexBuffer<JumpNode *> &getJumpNodes() const {
+    return this->breakGathers.back().getJumpNodes();
+  }
+
+  unsigned int tryCatchLevel() const { return this->flow.tryCatchLevel(); }
+
+  /**
+   *
+   * @return
+   * finally block depth. (if 0, outside finally block)
+   */
+  unsigned int finallyLevel() const { return this->flow.finallyLevel(); }
+
+  /**
+   *
+   * @return
+   * loop block depth. (if 0, outside loop block)
+   */
+  unsigned int loopLevel() const { return this->flow.loopLevel(); }
+
+  /**
+   *
+   * @return
+   * child process depth. (if 0, parent)
+   */
+  unsigned int childLevel() const { return this->flow.childLevel(); }
+
+  auto intoLoop() {
+    this->flow.enterLoop();
+    this->breakGathers.emplace_back();
+    return finally([&] {
+      this->flow.leave();
+      this->breakGathers.pop_back();
+    });
+  }
+
+  auto intoChild() {
+    this->flow.enterChild();
+    return finally([&] { this->flow.leave(); });
+  }
+
+  auto intoTry() {
+    this->flow.enterTry();
+    return finally([&] { this->flow.leave(); });
+  }
+
+  auto intoFinally() {
+    this->flow.enterFinally();
+    return finally([&] { this->flow.leave(); });
+  }
 };
 
 class CodeCompletionHandler;
@@ -204,11 +253,10 @@ protected:
 
   bool reachComp{false};
 
-  FlowContext fctx;
-
-  BreakGather breakGather;
-
-  FuncContext funcContext;
+  /**
+   * must not be empty
+   */
+  std::vector<FuncContext> funcCtxs;
 
   ObserverPtr<const Lexer> lexer;
 
@@ -218,7 +266,9 @@ protected:
 
 public:
   TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex)
-      : typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) {}
+      : typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) {
+    this->funcCtxs.emplace_back();
+  }
 
   ~TypeChecker() override = default;
 
@@ -369,44 +419,24 @@ private:
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 
+  FuncContext &funcCtx() { return this->funcCtxs.back(); }
+
+  bool withinFunc() const { return this->funcCtxs.size() > 1; }
+
   auto intoBlock() {
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
     return finally([&] { this->curScope = this->curScope->exitScope(); });
   }
 
-  auto intoLoop() {
-    this->fctx.enterLoop();
-    this->breakGather.enter();
-    return finally([&] {
-      this->fctx.leave();
-      this->breakGather.leave();
-    });
-  }
-
   auto intoFunc(const DSType *returnType) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-    this->funcContext.enter(returnType);
+    this->funcCtxs.emplace_back(returnType);
     return finally([&] {
       this->curScope = this->curScope->exitScope();
       this->curScope = this->curScope->exitScope();
-      this->funcContext.leave();
+      this->funcCtxs.pop_back();
     });
-  }
-
-  auto intoChild() {
-    this->fctx.enterChild();
-    return finally([&] { this->fctx.leave(); });
-  }
-
-  auto intoTry() {
-    this->fctx.enterTry();
-    return finally([&] { this->fctx.leave(); });
-  }
-
-  auto intoFinally() {
-    this->fctx.enterFinally();
-    return finally([&] { this->fctx.leave(); });
   }
 
   void reportErrorImpl(Token token, const char *kind, const char *fmt, ...)
