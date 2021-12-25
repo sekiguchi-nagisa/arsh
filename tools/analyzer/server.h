@@ -32,22 +32,30 @@ struct LSPLogger : public LoggerBase {
   LSPLogger() : LoggerBase("YDSHD") {}
 };
 
-struct AnalyzerResult {
+class AnalyzerResult {
+public:
   std::shared_ptr<SourceManager> srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
+  std::unordered_set<unsigned short> modifiedSrcIds;
+  std::unordered_set<unsigned short> closingSrcIds;
 
   NON_COPYABLE(AnalyzerResult);
 
-  AnalyzerResult() = default;
+private:
+  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, const ModuleArchives &archives,
+                 const SymbolIndexes &indexes,
+                 const std::unordered_set<unsigned short> &modifiedSrcIds,
+                 const std::unordered_set<unsigned short> &willCloseSrcIds)
+      : srcMan(std::move(srcMan)), archives(archives), indexes(indexes),
+        modifiedSrcIds(modifiedSrcIds), closingSrcIds(willCloseSrcIds) {}
 
-  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives &&archives,
-                 SymbolIndexes &&indexes)
-      : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)) {}
+public:
+  explicit AnalyzerResult(std::shared_ptr<SourceManager> srcMan) : srcMan(std::move(srcMan)) {}
 
   AnalyzerResult(AnalyzerResult &&o) noexcept
-      : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)),
-        indexes(std::move(o.indexes)) {}
+      : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)), indexes(std::move(o.indexes)),
+        modifiedSrcIds(std::move(o.modifiedSrcIds)), closingSrcIds(std::move(o.closingSrcIds)) {}
 
   AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
     if (this != std::addressof(o)) {
@@ -58,8 +66,8 @@ struct AnalyzerResult {
   }
 
   AnalyzerResult deepCopy() const {
-    return {this->srcMan->copy(), decltype(this->archives)(this->archives),
-            decltype(this->indexes)(this->indexes)};
+    return {this->srcMan->copy(), this->archives, this->indexes, this->modifiedSrcIds,
+            this->closingSrcIds};
   }
 };
 
@@ -67,8 +75,6 @@ class LSPServer : public Handler {
 private:
   LSPTransport transport;
   AnalyzerResult result;
-  std::unordered_set<unsigned short> modifiedSrcIds;
-  std::unordered_set<unsigned short> willCloseSrcIds;
   BackgroundWorker worker;
   std::future<AnalyzerResult> futureResult;
   std::shared_ptr<CancelPoint> cancelPoint;
@@ -83,8 +89,7 @@ private:
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)
       : Handler(logger), transport(logger, std::move(in), std::move(out)),
-        defaultDebounceTime(time) {
-    this->result.srcMan = std::make_shared<SourceManager>();
+        result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
     this->bindAll();
   }
 

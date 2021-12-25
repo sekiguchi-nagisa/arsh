@@ -92,6 +92,8 @@
 
 #### LSP
 
+- reduce every-time rebuild per ``textDocument/didChange``
+    - now build tasks run in background worker
 - improve ``textDocument/hover``
     - support builtin variables
     - show command descriptions

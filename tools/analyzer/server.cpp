@@ -185,13 +185,14 @@ struct AnalyzerParam {
   std::shared_ptr<CancelPoint> cancelPoint;
   AnalyzerResult ret;
   DiagnosticEmitter emitter;
-  std::unordered_set<unsigned short> modifiedIds;
-  std::unordered_set<unsigned short> closedIds;
 };
 
 static AnalyzerResult doRebuild(AnalyzerParam &&param) {
   // prepare
-  param.ret.archives.revert(decltype(param.modifiedIds)(param.modifiedIds));
+  {
+    auto tmp(param.ret.modifiedSrcIds);
+    param.ret.archives.revert(std::move(tmp));
+  }
 
   AnalyzerAction action;
   SymbolIndexer indexer(param.ret.indexes);
@@ -200,16 +201,18 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
 
   // rebuild
   Analyzer analyzer(*param.ret.srcMan, param.ret.archives, param.cancelPoint);
-  for (auto &e : param.modifiedIds) {
+  for (auto &e : param.ret.modifiedSrcIds) {
     if (param.ret.archives.find(e)) {
       continue;
     }
     auto src = param.ret.srcMan->findById(e);
     assert(src);
-    analyzer.analyze(*src, action);
+    if (!analyzer.analyze(*src, action)) {
+      break;
+    }
   }
 
-  while (true) {
+  while (!param.cancelPoint->isCanceled()) {
     auto targetId = param.ret.archives.getFirstRevertedModId();
     if (!targetId.hasValue()) {
       break;
@@ -219,19 +222,23 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
     analyzer.analyze(*src, action);
   }
 
-  // close
-  for (auto &id : param.closedIds) {
-    if (param.ret.archives.removeIfUnused(id)) {
-      auto src = param.ret.srcMan->findById(id);
-      param.logger.get()(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
-      param.ret.indexes.remove(id);
+  if (!param.cancelPoint->isCanceled()) {
+    // close
+    for (auto &id : param.ret.closingSrcIds) {
+      if (param.ret.archives.removeIfUnused(id)) {
+        auto src = param.ret.srcMan->findById(id);
+        param.logger.get()(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
+        param.ret.indexes.remove(id);
+      }
     }
+    param.ret.modifiedSrcIds.clear();
+    param.ret.closingSrcIds.clear();
   }
   return std::move(param.ret);
 }
 
 bool LSPServer::tryRebuild() {
-  if (this->modifiedSrcIds.empty()) {
+  if (this->result.modifiedSrcIds.empty()) {
     this->timeout = -1;
     return false;
   }
@@ -241,20 +248,42 @@ bool LSPServer::tryRebuild() {
   if (this->cancelPoint) {
     this->cancelPoint->cancel();
   }
+  if (this->futureResult.valid()) { // synchronize source from alreay running analyzer job
+    auto tmp = this->futureResult.get();
+
+    // merge changed src
+    tmp.modifiedSrcIds.merge(this->result.modifiedSrcIds);
+    this->result.modifiedSrcIds.clear();
+    for (auto &id : tmp.modifiedSrcIds) {
+      auto src = this->result.srcMan->findById(id);
+      src = tmp.srcMan->add(src);
+      assert(src);
+      this->result.modifiedSrcIds.emplace(src->getSrcId());
+    }
+
+    // merge closing src
+    tmp.closingSrcIds.merge(this->result.closingSrcIds);
+    this->result.closingSrcIds.clear();
+    for (auto &id : tmp.closingSrcIds) {
+      auto src = this->result.srcMan->findById(id);
+      src = tmp.srcMan->add(src);
+      assert(src);
+      this->result.closingSrcIds.emplace(src->getSrcId());
+    }
+    this->result.srcMan = std::move(tmp.srcMan);
+  }
 
   AnalyzerParam param = ({
-    decltype(this->modifiedSrcIds) tmpIds;
-    std::swap(this->modifiedSrcIds, tmpIds);
     this->cancelPoint = std::make_shared<CancelPoint>();
     auto ret = this->result.deepCopy();
+    this->result.modifiedSrcIds.clear();
+    this->result.closingSrcIds.clear();
     DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
     AnalyzerParam{
         .logger = this->logger,
         .cancelPoint = this->cancelPoint,
         .ret = std::move(ret),
         .emitter = std::move(emitter),
-        .modifiedIds = std::move(tmpIds),
-        .closedIds = this->willCloseSrcIds,
     };
   });
   this->futureResult =
@@ -269,19 +298,14 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
     return;
   }
   this->timeout = this->defaultDebounceTime;
-  this->modifiedSrcIds.emplace(src->getSrcId());
-
-  auto iter = this->willCloseSrcIds.find(src->getSrcId());
-  if (iter != this->willCloseSrcIds.end()) {
-    this->willCloseSrcIds.erase(iter);
-  }
+  this->result.modifiedSrcIds.emplace(src->getSrcId());
+  this->result.closingSrcIds.erase(src->getSrcId());
 }
 
 void LSPServer::syncResult() {
   this->tryRebuild();
   if (this->futureResult.valid()) {
     this->result = this->futureResult.get(); // override current result
-    this->willCloseSrcIds.clear();
   }
 }
 
@@ -379,7 +403,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
   if (auto resolved = this->resolveSource(params.textDocument)) {
     auto &src = resolved.asOk();
-    this->willCloseSrcIds.emplace(src->getSrcId());
+    this->result.closingSrcIds.emplace(src->getSrcId());
   }
 }
 
