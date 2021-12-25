@@ -65,3 +65,29 @@ assert ! (
 assert ! (
     (function () -> {}) is () -> Any!
 )
+
+# subtype with more params
+let b0 = function($a : String, $b : ArithmeticError) : Any => $a + "=" + $b.name() + ":" + $b.message()
+assert $b0 is (String, ArithmeticError) -> Any
+assert ! ($b0 is (Any, Error) -> String)
+assert ! ($b0 is (Any, ArithmeticError) -> Any)
+assert ! ($b0 is (ArithmeticError) -> Any)
+
+assert $b0("a", new ArithmeticError("12345")) as String == "a=ArithmeticError:12345"
+
+let b1 = function($a : Any, $b : Error) : String => $a + ">>" + $b.name() + "%" + $b.message()
+assert $b1 is (Any, Error) -> String
+assert $b1 is (String, ArithmeticError) -> Any
+assert $b1 is (Float, OutOfRangeError) -> String!
+
+assert $b1(12, new SystemError("AAA")) == "12>>SystemError%AAA"
+
+var b2 = $b0
+$b2 = $b1
+assert $b2("hello", new ArithmeticError("ABCD")) as String == "hello>>ArithmeticError%ABCD"
+assert ($b2 as (Any, Error) -> String)("hello", new OutOfRangeError("@@")) == "hello>>OutOfRangeError%@@"
+
+assert (function($s : Any) : Any => $s) is (String) => Any
+assert (function($s : Any) : Any => $s) is (String) => Any!
+assert ! ((function($s : Any) : Any => $s) is (Any!) => Any)
+assert ! ((function($s : String) : Any => $s) is (String) => String)

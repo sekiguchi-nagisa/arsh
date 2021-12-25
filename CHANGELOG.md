@@ -22,6 +22,8 @@
 - complete infix keywords
     - `as`, `is`, `and`, `or`, `xor`, `with`
     - `in`, `elif`, `else`, `catch`, `finally`, `inlined`
+- add subtype relation with func type
+    - if `T0 <: T1`, `T2 <: T3` then `(T1) -> T2 <: (T0) -> T3`
 
 #### Builtin
 

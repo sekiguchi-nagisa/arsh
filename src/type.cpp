@@ -122,7 +122,7 @@ static bool isBaseTypeOf(const FunctionType &funcType1, const FunctionType &func
   for (unsigned int i = 0; i < paramSize; i++) {
     auto &paramType1 = funcType1.getParamTypeAt(i);
     auto &paramType2 = funcType2.getParamTypeAt(i);
-    if (paramType1 != paramType2) {
+    if (!paramType2.isSameOrBaseTypeOf(paramType1)) {
       return false;
     }
   }
