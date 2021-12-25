@@ -1,0 +1,17 @@
+
+# test stack layout of finally
+var t = try {
+    var a0 = 12
+    var a1 = 23
+    var a2 = 34
+    "hello"
+} finally {
+    var b0 = 3.12
+    var b1 = 6.24
+    var b2 = 9.36
+    var b3 = -12.3
+    var b4 = -0.0
+    var b5 = -0.0/0.0
+}
+
+assert ($t as Any) as String == "hello" : "failed: ${t}"
