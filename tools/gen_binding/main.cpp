@@ -640,8 +640,7 @@ public:
     str += this->funcName;
 
     str += "(";
-    str += "$this : ";
-    this->ownerType->toString(str);
+    str += "$this";
     for (unsigned int i = 0; i < this->paramNames.size(); i++) {
       str += ", $";
       str += this->paramNames[i].first;
@@ -662,6 +661,8 @@ public:
         str += this->constraints[i].second->toString();
       }
     }
+    str += " for ";
+    this->ownerType->toString(str);
     return str;
   }
 };
