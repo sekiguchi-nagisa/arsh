@@ -283,7 +283,7 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
     auto &fieldRef = get<FieldRef>(entry);
     auto &fieldType = this->getPool().get(fieldRef.get().getTypeID());
     auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
-    auto *decl = this->addDeclImpl(kind, attr, nameInfo, fieldType.getName(), true);
+    auto *decl = this->addDeclImpl(kind, attr, nameInfo, fieldType.getName(), false);
     if (decl) {
       this->memberMap.add(recv, *decl);
     }
@@ -307,7 +307,7 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
     content += handle.getReturnType().getNameRef();
     content += " for ";
     content += handle.getRecvType().getNameRef();
-    auto *decl = this->addDeclImpl(kind, attr, nameInfo, content.c_str(), true);
+    auto *decl = this->addDeclImpl(kind, attr, nameInfo, content.c_str(), false);
     if (decl) {
       this->memberMap.add(recv, *decl);
     }
@@ -334,7 +334,7 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
 }
 
 DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
-                                      const NameInfo &nameInfo, const char *info, bool forceAdd) {
+                                      const NameInfo &nameInfo, const char *info, bool checkScope) {
   std::string name = mangleSymbolName(k, nameInfo);
   if (name.empty()) {
     return nullptr;
@@ -347,8 +347,7 @@ DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
     return nullptr;
   }
   auto &decl = ret.unwrap();
-
-  if (!forceAdd && !this->scope->addDecl(decl)) { // register name to scope
+  if (checkScope && !this->scope->addDecl(decl)) { // register name to scope
     return nullptr;
   }
 
@@ -486,7 +485,7 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
   if (node.isMethodCall() && node.getHandle()) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     NameInfo nameInfo(accessNode.getNameNode().getToken(), accessNode.getFieldName());
-    this->builder().addMethod(node.getExprNode().getType(), nameInfo, *node.getHandle());
+    this->builder().addMethod(*node.getHandle(), nameInfo);
   }
   this->visit(node.getArgsNode());
 }

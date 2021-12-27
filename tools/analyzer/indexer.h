@@ -182,9 +182,8 @@ public:
     return this->addMemberImpl(recv, nameInfo, kind, nullptr);
   }
 
-  const Symbol *addMethod(const DSType &recv, const NameInfo &nameInfo,
-                          const MethodHandle &handle) {
-    return this->addMemberImpl(recv, nameInfo, DeclSymbol::Kind::METHOD, &handle);
+  const Symbol *addMethod(const MethodHandle &handle, const NameInfo &nameInfo) {
+    return this->addMemberImpl(handle.getRecvType(), nameInfo, DeclSymbol::Kind::METHOD, &handle);
   }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
@@ -197,7 +196,7 @@ private:
                               MemberRef &entry);
 
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
-                          const char *info, bool forceAdd = false);
+                          const char *info, bool checkScope = true);
 
   const Symbol *addSymbolImpl(Token token, const DeclBase *decl);
 };
