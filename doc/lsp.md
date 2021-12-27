@@ -3,7 +3,7 @@
 ## ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
 
 | **Symbol**  | ``definition`` | ``references`` | ``hover`` |
-|----------------|---------|---------|----|
+|----------------|---------|---------|---|
 | variable (local/global) | ✔️ | ✔️ | ✔️ |
 | variable (for-in) | ✔️ | ✔️ | ✔️ |
 | variable (catch) | ✔️ | ✔️ | ✔️ |
@@ -27,7 +27,7 @@
 | type (inlined import) | ✔️ | ✔️️ | ✔️ |
 | type (named import) | ✔️ | ✔️ | ✔️ |
 | field (tuple)      | - | - | ✔️ |
-| method (builtin) | - | - | ❌ |
+| method (builtin) | - | - | ✔ |
 | source path | ❌ | ❌ | ❌ (show path) |
 | source path (glob) | ❌ | ❌ | ❌ (show path list) |
 | source (variable) | ✔️ | ✔️ | ✔️ |

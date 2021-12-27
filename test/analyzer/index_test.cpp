@@ -1638,6 +1638,8 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '')\n$a._2",
                                       Position{.line = 1, .character = 3},
                                       "```ydsh\nvar _2 : String\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("[0].size()", Position{.line = 0, .character = 5},
+                                      "```ydsh\nfunction size($this) : Int for [Int]\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

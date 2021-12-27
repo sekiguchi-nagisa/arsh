@@ -118,6 +118,7 @@ public:
     CONST,
     MOD_CONST,
     FUNC,
+    METHOD,
     BUILTIN_CMD,
     CMD,
     TYPE_ALIAS,

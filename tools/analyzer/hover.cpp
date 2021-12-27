@@ -91,7 +91,8 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += "'";
     break;
   }
-  case DeclSymbol::Kind::FUNC: {
+  case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::METHOD: {
     content += "function ";
     content += name;
     content += decl.getInfo();

@@ -65,28 +65,37 @@ private:
 
   IntrusivePtr<ScopeEntry> scope;
 
+  /**
+   * if indicate method, 2nd element is `true`
+   */
+  using Key = std::tuple<unsigned int, bool, std::string>;
+
   struct Hash {
-    std::size_t operator()(const std::pair<unsigned int, std::string> &key) const {
-      auto hash = FNVHash::compute(key.second.c_str(), key.second.c_str() + key.second.size());
+    std::size_t operator()(const Key &key) const {
+      auto &name = get<2>(key);
+      auto hash = FNVHash::compute(name.c_str(), name.c_str() + name.size());
       union {
         char b[4];
         unsigned int i;
       } wrap;
-      wrap.i = key.first;
+      wrap.i = get<0>(key);
       for (auto b : wrap.b) {
         FNVHash::update(hash, b);
       }
+      FNVHash::update(hash, get<1>(key) ? 1 : 0);
       return hash;
     }
   };
 
   using FieldRef = std::reference_wrapper<const FieldHandle>;
 
-  using MemberEntry = Union<SymbolRef, FieldRef>;
+  using MethodRef = std::reference_wrapper<const MethodHandle>;
+
+  using MemberRef = Union<SymbolRef, FieldRef, MethodRef>;
 
   class LazyMemberMap {
   public:
-    using MapType = std::unordered_map<std::pair<unsigned int, std::string>, SymbolRef, Hash>;
+    using MapType = std::unordered_map<Key, SymbolRef, Hash>;
 
     const SymbolIndexes &indexes;
 
@@ -109,9 +118,10 @@ private:
      * @param recvType
      * @param memberName
      * must be mangled name
+     * @param isMethod
      * @return
      */
-    MemberEntry find(const DSType &recvType, const std::string &memberName);
+    MemberRef find(const DSType &recvType, const std::string &memberName, bool isMethod);
 
     const TypePool &getPool() const { return *this->pool; }
 
@@ -120,7 +130,7 @@ private:
   private:
     void buildCache(const DSType &recvType);
 
-    MemberEntry findImpl(const DSType &recvType, const std::string &memberName) const;
+    MemberRef findImpl(const DSType &recvType, const std::string &memberName, bool isMethod) const;
   };
 
   LazyMemberMap memberMap;
@@ -168,13 +178,23 @@ public:
   bool importForeignDecls(unsigned short foreignModId, bool inlined);
 
   const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo,
-                          DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+                          DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
+    return this->addMemberImpl(recv, nameInfo, kind, nullptr);
+  }
+
+  const Symbol *addMethod(const DSType &recv, const NameInfo &nameInfo,
+                          const MethodHandle &handle) {
+    return this->addMemberImpl(recv, nameInfo, DeclSymbol::Kind::METHOD, &handle);
+  }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
 private:
+  const Symbol *addMemberImpl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                              const MethodHandle *handle);
+
   DeclBase *resolveMemberDecl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                              MemberEntry &entry);
+                              MemberRef &entry);
 
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
                           const char *info, bool forceAdd = false);
