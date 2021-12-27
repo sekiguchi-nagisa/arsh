@@ -80,10 +80,13 @@ private:
     }
   };
 
+  using FieldRef = std::reference_wrapper<const FieldHandle>;
+
+  using MemberEntry = Union<SymbolRef, FieldRef>;
+
   class LazyMemberMap {
   public:
-    using MapType = std::unordered_map<std::pair<unsigned int, std::string>,
-                                       ObserverPtr<const DeclSymbol>, Hash>;
+    using MapType = std::unordered_map<std::pair<unsigned int, std::string>, SymbolRef, Hash>;
 
     const SymbolIndexes &indexes;
 
@@ -108,17 +111,16 @@ private:
      * must be mangled name
      * @return
      */
-    ObserverPtr<const DeclSymbol> find(const DSType &recvType, const std::string &memberName);
+    MemberEntry find(const DSType &recvType, const std::string &memberName);
 
     const TypePool &getPool() const { return *this->pool; }
+
+    void add(const DSType &recvType, const DeclSymbol &decl);
 
   private:
     void buildCache(const DSType &recvType);
 
-    void addDecl(const DSType &recvType, const DeclSymbol &decl);
-
-    ObserverPtr<const DeclSymbol> findImpl(const DSType &recvType,
-                                           const std::string &memberName) const;
+    MemberEntry findImpl(const DSType &recvType, const std::string &memberName) const;
   };
 
   LazyMemberMap memberMap;
@@ -138,7 +140,7 @@ public:
             this->version,
             std::move(this->decls),
             std::move(this->symbols),
-            std::move(foreigns),
+            std::move(this->foreigns),
             std::move(inlinedModIdList)};
   }
 
@@ -171,9 +173,13 @@ public:
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
 private:
-  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);
+  DeclBase *resolveMemberDecl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                              MemberEntry &entry);
 
-  const Symbol *addSymbolImpl(Token token, const DeclBase &decl);
+  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
+                          const char *info, bool forceAdd = false);
+
+  const Symbol *addSymbolImpl(Token token, const DeclBase *decl);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {

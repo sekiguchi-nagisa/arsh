@@ -127,7 +127,10 @@ LSPServer::resolvePosition(const TextDocumentPositionParams &params) {
 std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) {
   std::vector<Location> values;
   findDeclaration(this->result.indexes, request, [&](const FindDeclResult &ret) {
-    if (ret.decl.getModId() == 0) { // ignore builtin module symbol
+    if (ret.decl.getModId() == 0 || hasFlag(ret.decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
+      /**
+       * ignore builtin module symbols and builtin type fields/methods
+       */
       return;
     }
     auto s = this->result.srcMan->findById(ret.decl.getModId());

@@ -57,6 +57,8 @@ public:
 
   unsigned short getModId() const { return this->modId; }
 
+  unsigned short getSize() const { return this->size; }
+
   bool operator<(SymbolRef o) const {
     return this->getModId() < o.getModId() ||
            (!(o.getModId() < this->getModId()) && this->getPos() < o.getPos());
@@ -125,6 +127,7 @@ public:
   enum class Attr : unsigned char {
     GLOBAL = 1u << 0u,
     PUBLIC = 1u << 1u,
+    BUILTIN = 1u << 2u, // for builtin type field/method
   };
 
 private:
@@ -219,8 +222,10 @@ public:
 
 class ForeignDecl : public DeclBase {
 public:
-  explicit ForeignDecl(const DeclSymbol &decl)
-      : DeclBase(decl.getPos(), decl.getSize(), decl.getModId()) {}
+  explicit ForeignDecl(SymbolRef declRef)
+      : DeclBase(declRef.getPos(), declRef.getSize(), declRef.getModId()) {}
+
+  explicit ForeignDecl(const DeclSymbol &decl) : ForeignDecl(decl.toRef()) {}
 
   struct Compare {
     bool operator()(const ForeignDecl &x, const SymbolRequest &y) const {

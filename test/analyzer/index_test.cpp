@@ -1635,6 +1635,9 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_10'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '')\n$a._2",
+                                      Position{.line = 1, .character = 3},
+                                      "```ydsh\nvar _2 : String\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

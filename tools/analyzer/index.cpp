@@ -189,7 +189,8 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const FindRefsResult &)> &cosumer) {
   unsigned int count = 0;
-  if (auto *decl = indexes.findDecl(request)) {
+  if (auto *decl = indexes.findDecl(request);
+      decl && !hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN)) {
     // add its self
     count++;
     if (cosumer) {
