@@ -1,0 +1,6 @@
+
+#$test', $staAus = 1)
+
+function gf() : In  
+{  t { return 34; } | 34;
+}

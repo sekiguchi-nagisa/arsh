@@ -131,10 +131,17 @@ private:
 
   std::vector<BreakGather> breakGathers;
 
+  std::unique_ptr<FuncContext> parent;
+
 public:
   FuncContext() : returnType(nullptr) {}
 
-  explicit FuncContext(const DSType *type) : returnType(type) {}
+  explicit FuncContext(const DSType *type, std::unique_ptr<FuncContext> &&parent)
+      : returnType(type), parent(std::move(parent)) {}
+
+  std::unique_ptr<FuncContext> takeParent() && { return std::move(this->parent); }
+
+  bool withinFunc() const { return static_cast<bool>(this->parent); }
 
   void clear() {
     this->returnType = nullptr;
@@ -142,6 +149,7 @@ public:
     this->returnNodes.clear();
     this->flow.clear();
     this->breakGathers.clear();
+    this->parent = nullptr;
   }
 
   void addReturnNode(JumpNode *node) {
@@ -229,10 +237,7 @@ protected:
 
   bool reachComp{false};
 
-  /**
-   * must not be empty
-   */
-  std::vector<FuncContext> funcCtxs;
+  std::unique_ptr<FuncContext> funcCtx;
 
   ObserverPtr<const Lexer> lexer;
 
@@ -242,9 +247,8 @@ protected:
 
 public:
   TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex)
-      : typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) {
-    this->funcCtxs.emplace_back();
-  }
+      : typePool(pool), toplevelPrinting(toplevelPrinting),
+        funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
 
   ~TypeChecker() override = default;
 
@@ -395,10 +399,6 @@ private:
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 
-  FuncContext &funcCtx() { return this->funcCtxs.back(); }
-
-  bool withinFunc() const { return this->funcCtxs.size() > 1; }
-
   auto intoBlock() {
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
     return finally([&] { this->curScope = this->curScope->exitScope(); });
@@ -407,11 +407,11 @@ private:
   auto intoFunc(const DSType *returnType) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-    this->funcCtxs.emplace_back(returnType);
+    this->funcCtx = std::make_unique<FuncContext>(returnType, std::move(this->funcCtx));
     return finally([&] {
       this->curScope = this->curScope->exitScope();
       this->curScope = this->curScope->exitScope();
-      this->funcCtxs.pop_back();
+      this->funcCtx = std::move(*this->funcCtx).takeParent();
     });
   }
 

@@ -772,7 +772,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
   }
 
   {
-    auto child = this->funcCtx().intoChild();
+    auto child = this->funcCtx->intoChild();
     for (unsigned int i = 0; i < size - 1; i++) {
       this->checkTypeExactly(*node.getNodes()[i]);
     }
@@ -805,7 +805,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
 }
 
 void TypeChecker::visitForkNode(ForkNode &node) {
-  auto child = this->funcCtx().intoChild();
+  auto child = this->funcCtx->intoChild();
   this->checkType(nullptr, node.getExprNode(),
                   node.isJob() ? &this->typePool.get(TYPE::Job) : nullptr);
 
@@ -866,9 +866,9 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refIterNode());
 
     {
-      auto loop = this->funcCtx().intoLoop();
+      auto loop = this->funcCtx->intoLoop();
       this->checkTypeWithCurrentScope(node.getBlockNode());
-      auto &type = this->resolveCoercionOfJumpValue(this->funcCtx().getJumpNodes());
+      auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getJumpNodes());
       node.setType(type);
     }
   }
@@ -1209,20 +1209,20 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
 }
 
 void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
-  if (this->funcCtx().loopLevel() == 0) {
+  if (this->funcCtx->loopLevel() == 0) {
     this->reportError<InsideLoop>(node);
     return;
   }
 
-  if (this->funcCtx().finallyLevel() > this->funcCtx().loopLevel()) {
+  if (this->funcCtx->finallyLevel() > this->funcCtx->loopLevel()) {
     this->reportError<InsideFinally>(node);
   }
 
-  if (this->funcCtx().childLevel() > this->funcCtx().loopLevel()) {
+  if (this->funcCtx->childLevel() > this->funcCtx->loopLevel()) {
     this->reportError<InsideChild>(node);
   }
 
-  if (this->funcCtx().tryCatchLevel() > this->funcCtx().loopLevel()) {
+  if (this->funcCtx->tryCatchLevel() > this->funcCtx->loopLevel()) {
     node.setLeavingBlock(true);
   }
 
@@ -1230,34 +1230,34 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     this->checkType(this->typePool.get(TYPE::Void), node.getExprNode());
   } else if (node.getOpKind() == JumpNode::BREAK) {
     this->checkTypeAsSomeExpr(node.getExprNode());
-    this->funcCtx().addJumpNode(&node);
+    this->funcCtx->addJumpNode(&node);
   }
   assert(!node.getExprNode().isUntyped());
 }
 
 void TypeChecker::checkTypeAsReturn(JumpNode &node) {
-  if (this->funcCtx().finallyLevel() > 0) {
+  if (this->funcCtx->finallyLevel() > 0) {
     this->reportError<InsideFinally>(node);
   }
 
-  if (this->funcCtx().childLevel() > 0) {
+  if (this->funcCtx->childLevel() > 0) {
     this->reportError<InsideChild>(node);
   }
 
-  if (!this->withinFunc()) {
+  if (!this->funcCtx->withinFunc()) {
     this->reportError<InsideFunc>(node);
     return;
   }
 
   // check return expr
-  auto *returnType = this->funcCtx().getReturnType();
+  auto *returnType = this->funcCtx->getReturnType();
   auto &exprType = returnType ? this->checkType(*returnType, node.getExprNode())
                               : this->checkTypeExactly(node.getExprNode());
   if (exprType.isVoidType() && !isa<EmptyNode>(node.getExprNode())) {
     this->reportError<NotNeedExpr>(node.getExprNode());
   }
   if (!returnType) {
-    this->funcCtx().addReturnNode(&node);
+    this->funcCtx->addReturnNode(&node);
   }
 }
 
@@ -1268,7 +1268,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     this->checkTypeAsBreakContinue(node);
     break;
   case JumpNode::THROW: {
-    if (this->funcCtx().finallyLevel() > 0) {
+    if (this->funcCtx->finallyLevel() > 0) {
       this->reportError<InsideFinally>(node);
     }
     this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());
@@ -1317,13 +1317,13 @@ void TypeChecker::visitTryNode(TryNode &node) {
   // check type try block
   const DSType *exprType = nullptr;
   {
-    auto try1 = this->funcCtx().intoTry();
+    auto try1 = this->funcCtx->intoTry();
     exprType = &this->checkTypeExactly(node.getExprNode());
   }
 
   // check type catch block
   for (auto &c : node.getCatchNodes()) {
-    auto try1 = this->funcCtx().intoTry();
+    auto try1 = this->funcCtx->intoTry();
     auto &catchType = this->checkTypeExactly(*c);
     if (!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
       exprType = &this->typePool.get(TYPE::Void);
@@ -1338,7 +1338,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
   // check type finally block, may be empty node
   if (node.getFinallyNode() != nullptr) {
-    auto finally1 = this->funcCtx().intoFinally();
+    auto finally1 = this->funcCtx->intoFinally();
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refFinallyNode());
 
     if (findInnerNode<BlockNode>(node.getFinallyNode())->getNodes().empty()) {
@@ -1547,7 +1547,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     } else if (node.isAnonymousFunc()) {
       std::unique_ptr<Node> lastNode;
       if (blockNode.getNodes().empty() || blockNode.getNodes().back()->getType().isVoidType() ||
-          this->funcCtx().getVoidReturnCount() > 0) {
+          this->funcCtx->getVoidReturnCount() > 0) {
         lastNode = std::make_unique<EmptyNode>();
         lastNode->setType(this->typePool.get(TYPE::Void));
       } else {
@@ -1566,7 +1566,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   // resolve common return type
   if (!returnType) {
     assert(!funcType);
-    auto &type = this->resolveCoercionOfJumpValue(this->funcCtx().getReturnNodes(), false);
+    auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
     if (auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes))) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
       node.setFuncType(*funcType);
@@ -1887,8 +1887,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
                                               NameScopePtr global) {
   // reset state
   this->visitingDepth = 0;
-  assert(this->funcCtxs.size() == 1);
-  this->funcCtx().clear();
+  this->funcCtx->clear();
   this->errors.clear();
 
   // set scope
