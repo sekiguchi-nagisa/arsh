@@ -60,3 +60,9 @@ echo copy scripts from $scripts
 for $d in @($scripts/*.ds) {
     cp $d $dir/scripts_$basename($d)
 }
+
+# copy tools/litecheck
+let litecheck = "$SCRIPT_DIR/../tools/litecheck/litecheck"
+echo copy script from $litecheck
+cp $litecheck $dir/litecheck_$basename($litecheck)
+
