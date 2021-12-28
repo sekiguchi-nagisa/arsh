@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.24.0] - 2021-12-28
 
 ### Added
 
@@ -36,7 +36,7 @@
     - ``func``: compile string as single expression function
     - ``fullname``: resolve fully qualified command name
 - add the following methods to ``String`` type
-    - ``width``: method for width counting of grapheme cluster
+    - ``width``: count width of grapheme clusters
     - ``contains``: check if contains substring
 - add the following methods to ``Array`` type
     - ``forEach``: apply function to each element
