@@ -1,0 +1,108 @@
+do~RA|do~So| do~o| do~conIG| don|do~Son|do~So| do~do#COn|do~conIG| don|do~So| dcon|IG| don|do~So| do~do#G| don|dA|do~So| do~o| do~conIG| don|do~Son|do~So| do~do#COSo| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IGo| do~do#COn|do~SSloc|do~S| do~do#COn|do~SSloo| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|dozSo| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IG| don|do~So| do,~dCOn|do~SSloo| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IGo| do~do#COn|do~SSloc|do~S| do~do#COn|do~SSloo| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doox do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| do~do#COnSo|S~dlocon|IG| don|do~So~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| do~do#COnSo|S~dlocon|IG| don|do~So| do~do#G| don|do~Sn|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| do~do#COnSo|S~dlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~SSloc|do~S| do~do#COn|do~SSloo| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| Do~o| doo| do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IGo| do~do#COn|do~SSloc|do~S| do~do#COn|do~SSloo| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So| do~NTSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~conIG| don|do~So| dcon|IG| don|do~So| do~do#G| don|do~So| do~do#COn|do~SSloc|do~So
+# exit status
+
+hoge() {
+    echo hello}
+
+
+hoge
+assert($? == 0)
+
+hoge2() {
+   false
+   return 34
+}
+
+hoge2
+assert($? == 34)
+
+hoge5() {
+    false
+}
+
+hoge5
+assert $? == 1
+
+hoge6() {
+    34  # if any commands are called, exit status is always 0.
+}
+hoge6
+assert $? == 0
+
+# argumeecho hello}
+
+
+hoge
+assert($? == 0)
+
+hoge2() {
+   false
+   return 34
+}
+
+hoge2
+asse| do~NTrt($? == 34)
+
+hoge5() {
+    false
+}
+
+hoge5
+assert0
+
+# argument
+echo2() {
+    echo $@
+}
+
+assert("$(echo2 a b c)" == "a b c")
+
+let oldshell = $0
+echo3() {
+    assert $0 != $oldshell
+    assert $0 == 'echo3'    # eeust sr-defined command name to $0
+    assertSo| do~o| doo| do~do#COn|do~SSlocon|IG| don|'de'; }; } while $false) is String!
+assert ! do { if $i > 100 { break 'de'; }; } while %false
+$i = 120
+assert (do { if $i > 100 { break 'de'; }; } while $false)! == 'de'
+
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45xtery simp($? == 0)
+
+echo "hello" | greo hello
+aile $false) is String!
+assert ! do { if $i > 100 { break 'de'; }; } while %false
+$i = 120
+assere | grep trudfalse bofolean cast
+asser $opt(1)
+
+assert ! Ú‹×Œßšmpxunctioy$pipe
+te
+
+a9ssert!robu
+ocou
+o $# == $@.size()
+}
+assert echo3 a b c
+
+echo4() {
+    echo $1 $2 $3 $4cul
+
+assertort-env#
+export-$/\ñ   \ñ   \ñ
+'BBF' |
+ ' dd' |'A'  => 0
+}
+case'@de' {
+ p&\t`=>*"n
+)! $5 $6 $7 #$8 $9
+}
+assertexS!!!!!! !
+exp
+expfor!s
+exp
+exyntaxError
+}
+
+try {
+    new Regex($'hh\xnterfcue org!!!!!!!!;tur;{retur!= $'a!!0
+whii

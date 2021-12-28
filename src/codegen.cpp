@@ -285,7 +285,7 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
                                         ForkKind forkKind) {
   const unsigned int size = labels.size();
   if (size > SYS_LIMIT_PIPE_LEN) {
-    fatal("reach limit\n");
+    fatal("reach limit: %u > %zu\n", size, SYS_LIMIT_PIPE_LEN);
   }
 
   unsigned int offset = this->currentCodeOffset();

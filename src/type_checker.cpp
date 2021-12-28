@@ -767,7 +767,7 @@ void TypeChecker::visitWildCardNode(WildCardNode &node) {
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
   unsigned int size = node.getNodes().size();
-  if (size > SYS_LIMIT_PIPE_LEN) {
+  if (size + (node.isLastPipe() ? 0 : 1) > SYS_LIMIT_PIPE_LEN) {
     this->reportError<PipeLimit>(node);
   }
 
