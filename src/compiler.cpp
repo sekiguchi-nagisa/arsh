@@ -123,8 +123,7 @@ void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token e
 
   auto lines = split(line);
   auto markers = split(marker);
-  size_t size = lines.size();
-  assert(size == markers.size());
+  size_t size = std::min(lines.size(), markers.size());
   bool omitLine = size > 30;
   std::pair<size_t, size_t> pairs[2] = {{0, omitLine ? 15 : size},
                                         {omitLine ? size - 10 : size, size}};

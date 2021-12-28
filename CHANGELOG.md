@@ -110,6 +110,7 @@
 - segmentation fault when invalid compare functions are supplied to ``Array#sortWith`` method
     - now replace internal ``std::stable_sort`` with merge sort
 - cannot parse ``Float`` literal like `34.2e00`
+- abort if error line has invisible characters
 
 ## [0.23.0] - 2021-09-30
 
