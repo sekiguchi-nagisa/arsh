@@ -33,7 +33,7 @@ static bool isSupportedTerminal(int fd) {
 }
 
 DefaultErrorConsumer::DefaultErrorConsumer(DSError *error, FILE *fp)
-    : dsError(error), fp(fp), tty(isSupportedTerminal(fileno(fp))) {}
+    : dsError(error), fp(fp), tty(fp ? isSupportedTerminal(fileno(fp)) : false) {}
 
 bool DefaultErrorConsumer::colorSupported() const { return this->tty; }
 
