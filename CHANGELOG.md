@@ -46,6 +46,7 @@
     - ``contains``: check if contains specified object
 - add the following methods to ``Map`` type
     - ``addAll``: add all elements of other ``Map`` object
+    - ``putIfAbsent``: put value if key does not found
 
 #### LSP
 
@@ -87,6 +88,7 @@
 - **Breaking Change**: remove some ``Array``, ``Map`` methods
     - ``Array#extend``: use ``Array#addAll`` instead
     - ``Map#find``: use ``Map#get`` instead
+    - ``Map#default``: use ``Map#putIfAbsent`` instead
 - **Breaking Change**: rename ``Error#backtrace`` method with ``Error#show``
 
 #### LSP

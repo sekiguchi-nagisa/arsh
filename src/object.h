@@ -784,7 +784,7 @@ public:
     return std::move(value);
   }
 
-  DSValue setDefault(DSValue &&key, DSValue &&value) {
+  DSValue setIfNotFound(DSValue &&key, DSValue &&value) {
     auto pair = this->valueMap.emplace(std::move(key), std::move(value));
     return pair.first->second;
   }

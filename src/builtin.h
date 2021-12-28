@@ -1695,12 +1695,12 @@ YDSH_METHOD map_put(RuntimeContext &ctx) {
   RET(v);
 }
 
-//!bind: function default($this : Map<T0, T1>, $key : T0, $value : T1) : T1
-YDSH_METHOD map_default(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(map_default);
+//!bind: function putIfAbsent($this : Map<T0, T1>, $key : T0, $value : T1) : T1
+YDSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(map_putIfAbsent);
   auto &obj = typeAs<MapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  auto v = obj.setDefault(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+  auto v = obj.setIfNotFound(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
   RET(v);
 }
 

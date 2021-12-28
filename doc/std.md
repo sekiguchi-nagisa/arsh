@@ -349,7 +349,7 @@ function %OP_SET($this, $key : T0, $value : T1) : Void for Map<T0,T1>
 
 function put($this, $key : T0, $value : T1) : Option<T1> for Map<T0,T1>
 
-function default($this, $key : T0, $value : T1) : T1 for Map<T0,T1>
+function putIfAbsent($this, $key : T0, $value : T1) : T1 for Map<T0,T1>
 
 function size($this) : Int for Map<T0,T1>
 

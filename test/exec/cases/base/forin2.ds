@@ -39,7 +39,7 @@ assert $m[3] == 4
 $ex = 34
 try {
     for $a in $m {
-        $m.default(900, -900)
+        $m.putIfAbsent(900, -900)
     }
 } catch $e {
     $ex = $e
