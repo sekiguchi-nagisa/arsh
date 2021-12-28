@@ -4,7 +4,7 @@ if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
 endif ()
 
-project(ydsh VERSION 0.24.0)
+project(ydsh VERSION 0.25.0)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
@@ -22,7 +22,7 @@ include(CheckPCRE2Version)
 #     project version      #
 #++++++++++++++++++++++++++#
 
-set(YDSH_STABLE_RELEASE on)
+set(YDSH_STABLE_RELEASE off)
 set(YDSH_VERSION ${PROJECT_VERSION})
 if (NOT ${YDSH_STABLE_RELEASE})
     set(YDSH_VERSION ${YDSH_VERSION}-unstable)
