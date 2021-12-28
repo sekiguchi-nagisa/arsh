@@ -28,8 +28,8 @@
 | type (named import)                   | ✔️             | ✔️             | ✔️                 |
 | field (tuple)                         | -              | -              | ✔️                 |
 | method (builtin)                      | -              | -              | ✔                  |
-| source path                           | ❌              | ❌              | ❌ (show path)      |
-| source path (glob)                    | ❌              | ❌              | ❌ (show path list) |
+| source path                           | -              | -              | ❌ (show path)      |
+| source path (glob)                    | -              | -              | ❌ (show path list) |
 | source (variable)                     | ✔️             | ✔️             | ✔️                 |
 | source (type alias)                   | ✔️             | ✔️             | ✔️                 |
 | source (command)                      | ✔️             | ✔️             | ✔️                 |

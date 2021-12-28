@@ -22,7 +22,7 @@
 - complete infix keywords
     - `as`, `is`, `and`, `or`, `xor`, `with`
     - `in`, `elif`, `else`, `catch`, `finally`, `inlined`
-- add subtype relation with func type
+- add subtype relation of func type
     - if `T0 <: T1`, `T2 <: T3` then `(T1) -> T2 <: (T0) -> T3`
 
 #### Builtin
@@ -62,8 +62,7 @@
         - ``CHECK``, ``CHECK_IF``, ``CHECK_RE``
         - ``CHECKERR``, ``CHECKERR_IF``, ``CHECKERR_RE``
         - ``STATUS``
-- experimental support the following platform
-    - linux on arm32
+- experimental support linux on arm32
 
 ### Changed
 
@@ -84,7 +83,7 @@
 - **Breaking Change**: remove ``fullname`` subcommand of ``shctl``
     - now use ``Module#fullname`` method instead
 - **Breaking Change**: slice methods of ``String``, ``Array`` type no longer raise any exceptions
-    - like python, if slice index is out of index, round index within range
+    - like python, if slice index is out of range, round index within range
 - **Breaking Change**: remove some ``Array``, ``Map`` methods
     - ``Array#extend``: use ``Array#addAll`` instead
     - ``Map#find``: use ``Map#get`` instead
@@ -96,6 +95,8 @@
     - now build tasks run in background worker
 - improve ``textDocument/hover``
     - support builtin variables
+    - support tuple fields
+    - support builtin methods
     - show command descriptions
 
 ### Fixed
