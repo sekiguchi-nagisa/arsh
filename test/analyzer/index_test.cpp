@@ -1643,6 +1643,7 @@ TEST_F(IndexTest, hover) {
                                       "```ydsh\nfunction size($this) : Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2, "```ydsh\ntypedef App : OutOfRangeError\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

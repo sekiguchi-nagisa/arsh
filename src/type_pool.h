@@ -175,6 +175,16 @@ public:
    */
   TypeOrError createFuncType(const DSType &returnType, std::vector<const DSType *> &&paramTypes);
 
+  /**
+   * create new error type.
+   * created error type has error context (ex.  stacktrace)
+   * @param typeName
+   * @param superType
+   * must be subtype of Error type
+   * @return
+   */
+  TypeOrError createErrorType(const std::string &typeName, const DSType &superType, unsigned short belongedModId);
+
   const ModType &createModType(unsigned short modID,
                                std::unordered_map<std::string, FieldHandle> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index);
@@ -224,13 +234,17 @@ private:
   }
 
   template <typename T, typename... A>
-  T &newType(A &&...arg) {
+  T *newType(A &&...arg) {
     unsigned int id = this->typeTable.size();
-    return *static_cast<T *>(this->addType(constructType<T>(id, std::forward<A>(arg)...)));
+    return static_cast<T *>(this->addType(constructType<T>(id, std::forward<A>(arg)...)));
   }
 
   /**
-   * return added type. type must not be null.
+   *
+   * @param type
+   * must not be null
+   * @return
+   * if type is already defined, return null
    */
   DSType *addType(DSType *type);
 

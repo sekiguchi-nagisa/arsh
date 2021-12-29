@@ -699,12 +699,12 @@ nodes:
 
     {DumpOp::untyped, R"(typedef i = (Int) -> Int)", 0, 0, R"(
 nodes:
-  - nodeKind: TypeAlias
+  - nodeKind: TypeDef
     token:
       pos: 0
       size: 24
     type:
-    alias:
+    nameInfo:
       token:
         pos: 8
         size: 1
@@ -732,6 +732,7 @@ nodes:
           type:
           typeKind: "Base"
           typeName: "Int"
+    kind: "ALIAS"
 )"},
 
     {DumpOp::typed, R"(while($false){})", 0, 0, R"(

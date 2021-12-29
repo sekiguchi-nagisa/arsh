@@ -124,6 +124,13 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += decl.getInfo();
     break;
   }
+  case DeclSymbol::Kind::ERROR_TYPE_DEF: {
+    content += "typedef ";
+    content += name;
+    content += " : ";
+    content += decl.getInfo();
+    break;
+  }
   case DeclSymbol::Kind::MOD: {
     auto ret = decl.getInfoAsModId();
     assert(ret.second);

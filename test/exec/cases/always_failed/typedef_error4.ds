@@ -1,0 +1,5 @@
+#$test($result = 'type', $status = 1, $chars = 9, $errorKind = 'DefinedTypeAlias', $lineNum = 5)
+
+typedef AppError = String
+
+typedef AppError : Error

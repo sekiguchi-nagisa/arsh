@@ -122,6 +122,7 @@ public:
     BUILTIN_CMD,
     CMD,
     TYPE_ALIAS,
+    ERROR_TYPE_DEF,
     MOD, // for named import
   };
 

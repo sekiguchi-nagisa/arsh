@@ -1,0 +1,5 @@
+#$test($result = 'type', $status = 1, $chars = 9, $errorKind = 'DefinedType', $lineNum = 5)
+
+typedef AppError : Error
+
+typedef AppError : ArithmeticError

@@ -67,7 +67,9 @@ protected:
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
-    auto src = man.update(GetParam(), 0, std::move(content));
+    auto src = man.update("<dummy>", 0, "");  // dummy
+    src = man.update(GetParam(), 0, std::move(content));
+    ASSERT_EQ(2, src->getSrcId());
     AnalyzerAction action;
     SymbolIndexes indexes;
     SymbolIndexer indexer(indexes);

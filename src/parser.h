@@ -234,6 +234,8 @@ protected:
    */
   std::unique_ptr<Node> parse_statementEnd();
 
+  std::unique_ptr<TypeDefNode> parse_typedef();
+
   std::unique_ptr<BlockNode> parse_block();
 
   std::unique_ptr<Node> parse_variableDeclaration();

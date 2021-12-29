@@ -111,14 +111,15 @@ TypePool::~TypePool() {
 
 DSType *TypePool::addType(DSType *type) {
   assert(type != nullptr);
-  this->typeTable.push_back(type);
   auto pair = this->nameMap.emplace(type->getNameRef(), type->typeId());
-  (void)pair;
-  assert(pair.second);
-  if (this->typeTable.size() == MAX_TYPE_NUM) {
-    fatal("type id reaches limit(%u)\n", MAX_TYPE_NUM);
+  if(pair.second) {
+    this->typeTable.push_back(type);
+    if (this->typeTable.size() == MAX_TYPE_NUM) {
+      fatal("type id reaches limit(%u)\n", MAX_TYPE_NUM);
+    }
+    return type;
   }
-  return type;
+  return nullptr;
 }
 
 TypeOrError TypePool::getType(StringRef typeName) const {
@@ -189,15 +190,17 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   auto *type = this->get(typeName);
   if (type == nullptr) {
     if (this->arrayTemplate.getName() == typeTemplate.getName()) {
-      auto &arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
+      auto *arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
                                                  this->get(TYPE::Any), *elementTypes[0]);
-      this->registerHandles(arrayType);
-      type = &arrayType;
+      assert(arrayType);
+      this->registerHandles(*arrayType);
+      type = arrayType;
     } else if (this->mapTemplate.getName() == typeTemplate.getName()) {
-      auto &mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
+      auto *mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
                                              *elementTypes[0], *elementTypes[1]);
-      this->registerHandles(mapType);
-      type = &mapType;
+      assert(mapType);
+      this->registerHandles(*mapType);
+      type = mapType;
     }
   }
   return Ok(type);
@@ -218,7 +221,8 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
   auto typeName = this->toReifiedTypeName(this->optionTemplate, elementTypes);
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    type = &this->newType<OptionType>(typeName, *elementType);
+    type = this->newType<OptionType>(typeName, *elementType);
+    assert(type);
   }
   return Ok(type);
 }
@@ -235,10 +239,11 @@ TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes
   auto *type = this->get(typeName);
   if (type == nullptr) {
     auto &superType = this->get(TYPE::Any);
-    auto &tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), superType,
+    auto *tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), superType,
                                            std::move(elementTypes));
-    this->registerHandles(tuple);
-    type = &tuple;
+    assert(tuple);
+    this->registerHandles(*tuple);
+    type = tuple;
   }
   return Ok(type);
 }
@@ -253,11 +258,27 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
   std::string typeName(toFunctionTypeName(returnType, paramTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    type = &this->newType<FunctionType>(typeName, this->get(TYPE::Func), returnType,
-                                        std::move(paramTypes));
+    type = this->newType<FunctionType>(typeName, this->get(TYPE::Func), returnType,
+                                       std::move(paramTypes));
+    assert(type);
   }
   assert(type->isFuncType());
   return Ok(type);
+}
+
+TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType &superType, unsigned short belongedModId) {
+  if (!this->get(TYPE::Error).isSameOrBaseTypeOf(superType)) {
+    RAISE_TL_ERROR(InvalidElement, superType.getName());
+  }
+  std::string name = toModTypeName(belongedModId);
+  name += ".";
+  name += typeName;
+  auto *type = this->newType<ErrorType>(name, superType);
+  if(type) {
+    return Ok(type);
+  } else {
+    RAISE_TL_ERROR(DefinedType, typeName.c_str());
+  }
 }
 
 const ModType &TypePool::createModType(unsigned short modID,
@@ -267,8 +288,9 @@ const ModType &TypePool::createModType(unsigned short modID,
   auto name = toModTypeName(modID);
   auto *type = this->get(name);
   if (type == nullptr) {
-    type = &this->newType<ModType>(this->get(TYPE::Module), modID, std::move(handles),
-                                   std::move(children), index);
+    type = this->newType<ModType>(this->get(TYPE::Module), modID, std::move(handles),
+                                  std::move(children), index);
+    assert(type);
   } else { // re-open (only allow root module)
     assert(type->isModType());
     auto &modType = const_cast<ModType &>(cast<ModType>(*type)); // FIXME: replace const_cast?
@@ -560,10 +582,11 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
 void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool, const ydsh::DSType *super,
                                ydsh::native_type_info_t info) {
   // create and register type
-  auto &type = this->newType<BuiltinType>(typeName, super, info);
-  this->registerHandles(type);
+  auto *type = this->newType<BuiltinType>(typeName, super, info);
+  assert(type);
+  this->registerHandles(*type);
   (void)t;
-  assert(type.is(t));
+  assert(type->is(t));
 }
 
 void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
@@ -574,10 +597,11 @@ void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
 }
 
 void TypePool::initErrorType(TYPE t, const char *typeName) {
-  auto &type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
+  auto *type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
+  assert(type);
   (void)type;
   (void)t;
-  assert(type.is(t));
+  assert(type->is(t));
 }
 
 void TypePool::registerHandle(const BuiltinType &recv, const char *name, unsigned int index) {

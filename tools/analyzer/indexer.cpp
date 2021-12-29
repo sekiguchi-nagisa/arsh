@@ -563,10 +563,21 @@ void SymbolIndexer::visitBlockNode(BlockNode &node) {
   this->visitBlockWithCurrentScope(node);
 }
 
-void SymbolIndexer::visitTypeAliasNode(TypeAliasNode &node) {
-  this->visit(node.getTargetTypeNode());
-  this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
-                          DeclSymbol::Kind::TYPE_ALIAS);
+void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
+  switch (node.getDefKind()) {
+  case TypeDefNode::ALIAS:
+    this->visit(node.getTargetTypeNode());
+    this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
+                            DeclSymbol::Kind::TYPE_ALIAS);
+    break;
+  case TypeDefNode::ERROR_DEF:
+    if (this->isTopLevel()) {
+      this->visit(node.getTargetTypeNode());
+      this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
+                              DeclSymbol::Kind::ERROR_TYPE_DEF);
+    }
+    break;
+  }
 }
 
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
@@ -693,7 +704,7 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   }
   if (node.getUdcIndex() > 0) {
     const char *hover = this->builder().getPool().get(TYPE::Boolean).getName();
-    if(node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
+    if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
       hover = node.getReturnTypeNode()->getType().getName();
     }
     this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover);

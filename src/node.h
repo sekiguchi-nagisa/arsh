@@ -62,7 +62,7 @@ namespace ydsh {
   OP(Fork)                                                                                         \
   OP(Assert)                                                                                       \
   OP(Block)                                                                                        \
-  OP(TypeAlias)                                                                                    \
+  OP(TypeDef)                                                                                      \
   OP(Loop)                                                                                         \
   OP(If)                                                                                           \
   OP(Case)                                                                                         \
@@ -1364,23 +1364,45 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
-class TypeAliasNode : public WithRtti<Node, NodeKind::TypeAlias> {
-private:
-  NameInfo alias;
-  std::unique_ptr<TypeNode> targetTypeNode;
-
+class TypeDefNode : public WithRtti<Node, NodeKind::TypeDef> {
 public:
-  TypeAliasNode(unsigned int startPos, NameInfo &&alias, std::unique_ptr<TypeNode> &&targetTypeNode)
-      : WithRtti({startPos, 0}), alias(std::move(alias)),
-        targetTypeNode(std::move(targetTypeNode)) {
+  enum Kind : unsigned char {
+    ALIAS,
+    ERROR_DEF,
+  };
+
+private:
+  NameInfo nameInfo;
+  std::unique_ptr<TypeNode> targetTypeNode;
+  const Kind kind;
+
+  TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
+              Kind kind)
+      : WithRtti({startPos, 0}), nameInfo(std::move(name)),
+        targetTypeNode(std::move(targetTypeNode)), kind(kind) {
     this->updateToken(this->targetTypeNode->getToken());
   }
 
-  ~TypeAliasNode() override = default;
+public:
+  static std::unique_ptr<TypeDefNode> alias(unsigned int startPos, NameInfo &&alias,
+                                            std::unique_ptr<TypeNode> &&targetTypeNode) {
+    return std::unique_ptr<TypeDefNode>(
+        new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ALIAS));
+  }
 
-  const NameInfo &getNameInfo() const { return this->alias; }
+  static std::unique_ptr<TypeDefNode> errorDef(unsigned int startPos, NameInfo &&alias,
+                                            std::unique_ptr<TypeNode> &&targetTypeNode) {
+    return std::unique_ptr<TypeDefNode>(
+        new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ERROR_DEF));
+  }
 
-  const std::string &getAlias() const { return this->alias.getName(); }
+  ~TypeDefNode() override = default;
+
+  const NameInfo &getNameInfo() const { return this->nameInfo; }
+
+  const std::string &getName() const { return this->nameInfo.getName(); }
+
+  Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
 
@@ -2306,7 +2328,7 @@ struct NodeVisitor {
   virtual void visitWithNode(WithNode &node) = 0;
   virtual void visitAssertNode(AssertNode &node) = 0;
   virtual void visitBlockNode(BlockNode &node) = 0;
-  virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
+  virtual void visitTypeDefNode(TypeDefNode &node) = 0;
   virtual void visitLoopNode(LoopNode &node) = 0;
   virtual void visitIfNode(IfNode &node) = 0;
   virtual void visitCaseNode(CaseNode &node) = 0;
@@ -2360,7 +2382,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitForkNode(ForkNode &node) override { this->visitDefault(node); }
   void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
   void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
-  void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
+  void visitTypeDefNode(TypeDefNode &node) override { this->visitDefault(node); }
   void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
   void visitIfNode(IfNode &node) override { this->visitDefault(node); }
   void visitCaseNode(CaseNode &node) override { this->visitDefault(node); }

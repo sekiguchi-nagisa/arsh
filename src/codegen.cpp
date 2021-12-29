@@ -845,7 +845,7 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
   });
 }
 
-void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) {} // do nothing
+void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
 
 static bool isEmptyCode(Node &node) {
   return isa<EmptyNode>(node) || (isa<BlockNode>(node) && cast<BlockNode>(node).getNodes().empty());

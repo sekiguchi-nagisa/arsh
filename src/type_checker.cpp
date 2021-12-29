@@ -438,7 +438,7 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
     node.setType(*std::move(ret).take());
   } else {
     if (ret.asErr()) {
-      this->errors.emplace_back(node.getToken(), *ret.asErr());
+      this->reportError(node.getToken(), std::move(*ret.asErr()));
     }
     node.setType(this->typePool.get(TYPE::Nothing));
   }
@@ -865,12 +865,36 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
   this->checkTypeWithCurrentScope(nullptr, node);
 }
 
-void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
-  TypeNode &typeToken = node.getTargetTypeNode();
-  auto &type = this->checkTypeExactly(typeToken);
-  auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getAlias()), type);
-  if (!ret) {
-    this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getAlias().c_str());
+void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
+  switch (node.getDefKind()) {
+  case TypeDefNode::ALIAS: {
+    TypeNode &typeToken = node.getTargetTypeNode();
+    auto &type = this->checkTypeExactly(typeToken);
+    auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()), type);
+    if (!ret) {
+      this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
+    }
+    break;
+  }
+  case TypeDefNode::ERROR_DEF: {
+    if (!this->isTopLevel()) { // only available toplevel scope
+      this->reportError<OutsideToplevel>(node);
+      break;
+    }
+    auto &errorType = this->checkType(this->typePool.get(TYPE::Error), node.getTargetTypeNode());
+    auto typeOrError =
+        this->typePool.createErrorType(node.getName(), errorType, this->curScope->modId);
+    if (typeOrError) {
+      auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()),
+                                                 *typeOrError.asOk());
+      if (!ret) {
+        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
+      }
+    } else {
+      this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
+    }
+    break;
+  }
   }
   node.setType(this->typePool.get(TYPE::Void));
 }

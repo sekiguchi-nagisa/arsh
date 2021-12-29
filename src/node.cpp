@@ -571,9 +571,16 @@ void BlockNode::dump(NodeDumper &dumper) const {
 // ##     TypeAliasNode     ##
 // ###########################
 
-void TypeAliasNode::dump(NodeDumper &dumper) const {
-  DUMP(alias);
+void TypeDefNode::dump(NodeDumper &dumper) const {
+  DUMP(nameInfo);
   DUMP_PTR(targetTypeNode);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(ALIAS)                                                                                        \
+  OP(ERROR_DEF)
+
+  DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // ######################

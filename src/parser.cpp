@@ -614,14 +614,8 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     }
     return node;
   }
-  case TokenKind::TYPEDEF: {
-    unsigned int startPos = START_POS();
-    this->consume(); // TYPEDEF
-    auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
-    TRY(this->expect(TokenKind::ASSIGN, false));
-    auto typeToken = TRY(this->parse_typeName());
-    return std::make_unique<TypeAliasNode>(startPos, std::move(nameInfo), std::move(typeToken));
-  }
+  case TokenKind::TYPEDEF:
+    return this->parse_typedef();
     // clang-format off
   EACH_LA_varDecl(GEN_LA_CASE) return this->parse_variableDeclaration();
   EACH_LA_expression(GEN_LA_CASE) return this->parse_expression();
@@ -655,6 +649,29 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
     break;
   }
   return nullptr;
+}
+
+std::unique_ptr<TypeDefNode> Parser::parse_typedef() {
+  GUARD_DEEP_NESTING(guard);
+
+  assert(CUR_KIND() == TokenKind::TYPEDEF);
+  unsigned int startPos = START_POS();
+  this->consume(); // TYPEDEF
+  auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
+  switch(CUR_KIND()) {
+  case TokenKind::ASSIGN: {
+    TRY(this->expect(TokenKind::ASSIGN, false));
+    auto typeToken = TRY(this->parse_typeName());
+    return TypeDefNode::alias(startPos, std::move(nameInfo), std::move(typeToken));
+  }
+  case TokenKind::COLON: {
+    TRY(this->expect(TokenKind::COLON, false));
+    auto typeToken = TRY(this->parse_typeName());
+    return TypeDefNode::errorDef(startPos, std::move(nameInfo), std::move(typeToken));
+  }
+  default:
+    E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON);
+  }
 }
 
 std::unique_ptr<BlockNode> Parser::parse_block() {

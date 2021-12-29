@@ -1,0 +1,22 @@
+
+typedef AppError : Error
+var app = new AppError("this is an error")
+assert $app is Error
+assert $app.message() == "this is an error"
+assert $app.name() =~ $/AppError/
+var aa = $app as Any
+assert $aa is Error
+assert $aa is AppError
+($aa as Error).name() =~ $/AppError/
+
+typedef LogicError : SystemError
+var logic = new LogicError("this is an error!!")
+assert $logic is SystemError
+assert $logic is Error
+$aa = $logic
+assert $aa is Error
+assert !($aa is AppError)
+assert $aa is LogicError
+($aa as LogicError).message() =~ $/this is an error!!/
+
+assert ($aa as Error).show() with 2>&1 | grep LogicError:
