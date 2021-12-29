@@ -933,10 +933,15 @@ std::unique_ptr<Node> Parser::parse_command() {
   if (CUR_KIND() == TokenKind::LP) { // command definition
     this->consume();                 // LP
     TRY(this->expect(TokenKind::RP));
+    std::unique_ptr<TypeNode> returnTypeNode;
+    if (CUR_KIND() == TokenKind::COLON) {
+      TRY(this->expect(TokenKind::COLON, false));
+      returnTypeNode = TRY(this->parse_typeName());
+    }
     auto blockNode = TRY(this->parse_block());
     NameInfo nameInfo(token, this->lexer->toCmdArg(token));
     return std::make_unique<UserDefinedCmdNode>(token.pos, std::move(nameInfo),
-                                                std::move(blockNode));
+                                                std::move(returnTypeNode), std::move(blockNode));
   }
 
   auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;

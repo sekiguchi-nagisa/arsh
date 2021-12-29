@@ -278,8 +278,20 @@ const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     return nullptr;
   }
 
-  std::string name = toCmdFullName(node.getCmdName());
-  auto ret = this->curScope->defineHandle(std::move(name), this->typePool.get(TYPE::Any),
+  const DSType *returnType = nullptr;
+  if (!node.getReturnTypeNode()) {
+    returnType = &this->typePool.get(TYPE::Int);
+  } else if (node.getReturnTypeNode()->getType().isNothingType()) {
+    returnType = &this->typePool.get(TYPE::Nothing);
+  }
+  auto *type = &this->typePool.get(TYPE::Void);
+  if (returnType) {
+    auto ret = this->typePool.createFuncType(*returnType, {&this->typePool.get(TYPE::StringArray)});
+    assert(ret);
+    type = ret.asOk();
+  }
+
+  auto ret = this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type,
                                           FieldAttribute::READ_ONLY);
   if (!ret) {
     assert(ret.asErr() == NameLookupError::DEFINED);
@@ -709,11 +721,19 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   if (node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
     node.setType(this->typePool.get(TYPE::Nothing));
   } else {
+    node.setType(this->typePool.get(TYPE::Boolean));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto *handle = this->curScope->lookup(cmdName); handle) {
       node.setUdcIndex(handle->getIndex());
+      auto &type = this->typePool.get(handle->getTypeID());
+      if (type.isFuncType()) { // resolved command may be module object
+        auto &returnType = cast<FunctionType>(type).getReturnType();
+        assert(returnType.is(TYPE::Int) || returnType.isNothingType());
+        if (returnType.isNothingType()) {
+          node.setType(returnType);
+        }
+      }
     }
-    node.setType(this->typePool.get(TYPE::Boolean));
   }
 }
 
@@ -1591,13 +1611,20 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     return;
   }
 
-  // register command name
-  if (auto handle = this->addUdcEntry(node); handle) {
-    node.setUdcIndex(handle->getIndex());
+  if (node.getReturnTypeNode()) {
+    this->checkType(this->typePool.get(TYPE::Nothing), *node.getReturnTypeNode());
   }
 
+  // register command name
+  auto *returnType = &this->typePool.get(TYPE::Int);
+  if (auto *handle = this->addUdcEntry(node)) {
+    node.setUdcIndex(handle->getIndex());
+    returnType = &cast<FunctionType>(this->typePool.get(handle->getTypeID())).getReturnType();
+  }
+
+  // check type udc body
   {
-    auto func = this->intoFunc(&this->typePool.get(TYPE::Int)); // pseudo return type
+    auto func = this->intoFunc(returnType); // pseudo return type
     // register dummy parameter (for propagating command attr)
     this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
@@ -1620,10 +1647,14 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   // insert return node if not found
   if (node.getBlockNode().getNodes().empty() ||
       !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
-    unsigned int lastPos = node.getBlockNode().getToken().endPos();
-    auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
-    this->checkTypeAsExpr(*varNode);
-    addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
+    if (returnType->isNothingType()) {
+      this->reportError<UnfoundReturn>(node.getBlockNode());
+    } else {
+      unsigned int lastPos = node.getBlockNode().getToken().endPos();
+      auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
+      this->checkTypeAsExpr(*varNode);
+      addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
+    }
   }
 }
 

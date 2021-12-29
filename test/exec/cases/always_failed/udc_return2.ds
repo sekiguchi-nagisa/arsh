@@ -1,0 +1,5 @@
+#$test($result = 'type', $errorKind = 'UnfoundReturn', $lineNum = 3, $chars = 18, $status = 1)
+
+hoge() : Nothing {
+   echo helllo
+}

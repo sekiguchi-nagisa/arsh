@@ -913,6 +913,7 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
   DUMP(cmdName);
   DUMP(udcIndex);
+  DUMP_PTR(returnTypeNode);
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);
 }

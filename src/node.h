@@ -2015,14 +2015,16 @@ private:
   NameInfo cmdName;
 
   unsigned int udcIndex{0};
-  std::unique_ptr<BlockNode> blockNode;
-
   unsigned int maxVarNum{0};
+  std::unique_ptr<TypeNode> returnTypeNode; // may be null
+  std::unique_ptr<BlockNode> blockNode;
 
 public:
   UserDefinedCmdNode(unsigned int startPos, NameInfo &&commandName,
+                     std::unique_ptr<TypeNode> &&returnTypeNode,
                      std::unique_ptr<BlockNode> &&blockNode)
-      : WithRtti({startPos, 0}), cmdName(std::move(commandName)), blockNode(std::move(blockNode)) {
+      : WithRtti({startPos, 0}), cmdName(std::move(commandName)),
+        returnTypeNode(std::move(returnTypeNode)), blockNode(std::move(blockNode)) {
     this->updateToken(this->blockNode->getToken());
   }
 
@@ -2037,6 +2039,8 @@ public:
   void setUdcIndex(unsigned int index) { this->udcIndex = index; }
 
   BlockNode &getBlockNode() const { return *this->blockNode; }
+
+  const std::unique_ptr<TypeNode> &getReturnTypeNode() const { return this->returnTypeNode; }
 
   void setMaxVarNum(unsigned int num) { this->maxVarNum = num; }
 

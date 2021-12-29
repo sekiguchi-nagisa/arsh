@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+
+- define non-return user-defined command
+    - type of non-return user-defined command is ``Nothing``
+  ```
+  usage() : Nothing {
+    echo 1>&2 [usage] $@
+    exit 2
+  }
+
+  $1 :- usage require argument
+  ```
+
 ## [0.24.0] - 2021-12-28
 
 ### Added

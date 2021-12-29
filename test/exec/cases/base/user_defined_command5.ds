@@ -1,0 +1,14 @@
+
+#$test($result = 'exit', $status = 2, $lineNum = 6, $err = $'[usage] require non-empty argument\n', $out = '')
+
+usage() : Nothing {
+    echo 1>&2 [usage] $@
+    exit 2
+}
+
+test() {
+    var p = $1 :- usage require non-empty argument
+    echo $p
+}
+
+test ""

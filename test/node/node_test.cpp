@@ -801,6 +801,7 @@ nodes:
         size: 1
       name: "f"
     udcIndex: 56
+    returnTypeNode: null
     blockNode:
       nodeKind: Block
       token:
