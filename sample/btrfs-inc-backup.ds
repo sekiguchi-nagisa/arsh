@@ -1,19 +1,19 @@
 #!/usr/bin/env ydsh
 
-function usage($m : String) : Nothing {
-    echo 1>&2 [error] $m
+usage() : Nothing {
+    echo 1>&2 [error] $1
     echo [usage] $0 [backup src subvol path] [backup dest subvol path] 1>&2
     exit 1
 }
 
-error() {
+error() : Nothing {
     new Error("$@").show()
     exit 1
 }
 
 # check arguments
-let SRC_PATH = $1.realpath() ?? $usage("must be valid src path: `$1'")
-let DEST_PATH = $2.realpath() ?? $usage("must be valid dest path: `$2'")
+let SRC_PATH = $1.realpath() ?? usage "must be valid src path: `$1'"
+let DEST_PATH = $2.realpath() ?? usage "must be valid dest path: `$2'"
 
 let SRC_BACKUP = "$SRC_PATH/BACKUP"
 let DEST_BACKUP = "$DEST_PATH/BACKUP"
@@ -21,13 +21,13 @@ let DEST_BACKUP = "$DEST_PATH/BACKUP"
 let SRC_BACKUP_NEW = "$SRC_PATH/BACKUP-new"
 let DEST_BACKUP_NEW = "$DEST_PATH/BACKUP-new"
 
-$SRC_PATH != $DEST_PATH || $usage("dest path must be different from src path")
+$SRC_PATH != $DEST_PATH || usage "dest path must be different from src path"
 
-test -d $SRC_BACKUP || $usage("require initial snapshot in `$SRC_BACKUP'")
+test -d $SRC_BACKUP || usage "require initial snapshot in `$SRC_BACKUP'"
 
-test -d $DEST_BACKUP || $usage("require initial backup in `$DEST_BACKUP'")
+test -d $DEST_BACKUP || usage "require initial backup in `$DEST_BACKUP'"
 
-$UID == 0 || $usage("require root privilege. use `sudo'")
+$UID == 0 || usage "require root privilege. use `sudo'"
 
 assert command -V date > /dev/null
 mount | grep $SRC_BACKUP && umount $SRC_BACKUP

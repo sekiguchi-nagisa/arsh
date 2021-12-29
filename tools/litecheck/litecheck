@@ -6,14 +6,14 @@
 ##     helper functions     ##
 ##############################
 
-function _usage($m : String) : Nothing {
-    !$m.empty() && echo 1>&2 $m
+_usage() : Nothing {
+    echo 1>&2 $@
     echo 1>&2 usage: litecheck [-b bin] file
     exit 2
 }
 
-function _error($m : String) : Nothing {
-    echo 1>&2 $m
+_error() : Nothing {
+    echo 1>&2 $@
     exit 1
 }
 
@@ -92,9 +92,9 @@ function _parse_directives($path : String) : [String: [Directive]] {
 
     ## check RUN directive or SHEBANG
     case $map[$RUN].size() {
-        0 => $_error("require $RUN directive or shebang")
+        0 => _error require $RUN directive or shebang
         1 => if $map[$RUN][0]._0 == $SHEBANG {
-                test -x $self || $_error("must be executable: `$self'")
+                test -x $self || _error "must be executable: `$self'"
                 $map[$RUN].shift()
             } else {
                 assert $map[$RUN][0]._0 == $RUN
@@ -104,7 +104,7 @@ function _parse_directives($path : String) : [String: [Directive]] {
                 $map[$RUN].shift()
                 assert $map[$RUN][0]._0 == $RUN
             }
-            $map[$RUN].size() == 1 || $_error("$RUN directive has already defined")
+            $map[$RUN].size() == 1 || _error $RUN directive has already defined
         }
     }
 
@@ -113,9 +113,9 @@ function _parse_directives($path : String) : [String: [Directive]] {
         0 => {}
         1 => {
             var d = $map[$STATUS][0]._1
-            $_parse_num($d) ?? $_error("invalid $STATUS directive: `$d'")
+            $_parse_num($d) ?? _error "invalid $STATUS directive: `$d'"
         }
-        else => $_error("$STATUS directive has already defined")
+        else => _error $STATUS directive has already defined
     }
     return $map
 }
@@ -208,14 +208,14 @@ function _run_and_check($map : [String : [Directive]]) : Int {
             try {
                 $MODULE.func($d)
             } catch $e : Error {
-                $_error("invalid $RUN directive: `$d', caused by" + $'\n' + $e.message())
+                _error ${"invalid $RUN directive: `$d', caused by" + $'\n' + $e.message()}
             }
         }
     }
 
     assert command -v mktemp > /dev/null
-    let outPath = "$(mktemp)" :- $_error("mktemp failed")
-    let errPath = "$(mktemp)" :- $_error("mktemp failed")
+    let outPath = "$(mktemp)" :- _error "mktemp failed"
+    let errPath = "$(mktemp)" :- _error "mktemp failed"
 
     try {
         $? = 0
@@ -233,7 +233,7 @@ function _run_and_check($map : [String : [Directive]]) : Int {
         }
         if !$map[$STATUS].empty() {
             var estatus = $_parse_num($map[$STATUS][0]._1)!
-            $s == $estatus || $_error("exit status is mismatched, expected: `$estatus', actual: `$s'")
+            $s == $estatus || _error "exit status is mismatched, expected: `$estatus', actual: `$s'"
         }
         return $ret
     } finally {
@@ -255,22 +255,22 @@ litecheck() {
                 $i++
                 $bin = $@[$i]
             } else {
-                $_usage("`$arg' option requires argument")
+                _usage "`$arg' option requires argument"
             }
-        $/^-.*/ => $_usage("invalid option: $arg")
+        $/^-.*/ => _usage "invalid option: $arg"
         else => { $file = $arg; break; }
         }
     }
 
     ## check file existence
-    $file ?? $_usage("require file")
-    $self = $file!.realpath() ?? $_usage("file not found: `${$file!}'")
-    test -f $self || $_usage("require regular file: ${$file!}")
+    $file ?? _usage "require file"
+    $self = $file!.realpath() ?? _usage "file not found: `${$file!}'"
+    test -f $self || _usage "require regular file: ${$file!}"
 
     ## check bin
     if $bin {
-        $cmd = $bin!.realpath() ?? $_usage("file not found: `${$bin!}'")
-        (test -f $cmd && test -x $cmd) || $_usage("must be executable: `${$bin!}'")
+        $cmd = $bin!.realpath() ?? _usage "file not found: `${$bin!}'"
+        (test -f $cmd && test -x $cmd) || _usage "must be executable: `${$bin!}'"
     }
 
     # read directive
@@ -279,8 +279,8 @@ litecheck() {
     # check pre-condition
     for $d in $map[$REQUIRE] {
         var cond = try { $MODULE.func($d._1)(); } 
-                   catch $e : Error { $_error("invalid $REQUIRE directive: `${$d._1}', caused by" + $'\n' + $e.message()); }
-        $cond is Bool || $_error("$REQUIRE directive must be boolean expression: `${$d._1}'")
+                   catch $e : Error { _error ${"invalid $REQUIRE directive: `${$d._1}', caused by" + $'\n' + $e.message()}; }
+        $cond is Bool || _error "$REQUIRE directive must be boolean expression: `${$d._1}'"
         $cond! as Bool || { echo skip "`$self'"; exit 125; }
     }
 
