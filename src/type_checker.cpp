@@ -256,7 +256,7 @@ const FieldHandle *TypeChecker::addEntry(Token token, const std::string &symbolN
       this->reportError<LocalLimit>(token);
       break;
     case NameLookupError::INVALID_TYPE:
-      break; // nomarlly unreachable
+      break; // normally unreachable
     }
     return nullptr;
   }
@@ -293,12 +293,12 @@ const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
 
   auto ret = this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type,
                                           FieldAttribute::READ_ONLY);
-  if (!ret) {
-    assert(ret.asErr() == NameLookupError::DEFINED);
+  if (ret) {
+    return ret.asOk();
+  } else if (ret.asErr() == NameLookupError::DEFINED) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
-    return nullptr;
   }
-  return ret.asOk();
+  return nullptr;
 }
 
 void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {
