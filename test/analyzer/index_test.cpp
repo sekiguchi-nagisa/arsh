@@ -1631,7 +1631,7 @@ TEST_F(IndexTest, hover) {
                   "```md\n"
                   ":: : \n"
                   "    Null command.  Always success (exit status is 0).\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge()\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Boolean\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_10'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
@@ -1641,6 +1641,8 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(this->hover("    ''.size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
                                       "```ydsh\nfunction size($this) : Int for [Int]\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

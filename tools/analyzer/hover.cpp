@@ -113,7 +113,8 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   }
   case DeclSymbol::Kind::CMD: {
     content += name;
-    content += "()";
+    content += "() : ";
+    content += decl.getInfo();
     break;
   }
   case DeclSymbol::Kind::TYPE_ALIAS: {

@@ -525,7 +525,7 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
   }
   if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
     if (auto *decl = this->builder().findDecl(*symbol);
-        decl && decl->getKind() == DeclSymbol::Kind::MOD) { // resolve subcmd
+        decl && decl->getKind() == DeclSymbol::Kind::MOD) { // resolve sub-command
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
         auto &type = *this->builder().getPool().getModTypeById(ret.first).asOk();
@@ -692,7 +692,11 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     return;
   }
   if (node.getUdcIndex() > 0) {
-    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, "");
+    const char *hover = this->builder().getPool().get(TYPE::Boolean).getName();
+    if(node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
+      hover = node.getReturnTypeNode()->getType().getName();
+    }
+    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover);
   }
   auto udc = this->builder().intoScope();
   this->visitBlockWithCurrentScope(node.getBlockNode());
