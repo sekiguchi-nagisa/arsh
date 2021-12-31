@@ -361,10 +361,9 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.definitionProvider = true;
   ret.capabilities.referencesProvider = true;
   ret.capabilities.hoverProvider = true;
-  ret.capabilities.completionProvider = CompletionOptions{
-      .resolveProvider = {},
-      .triggerCharacters = std::vector<std::string>{".", "$", "/"},
-  };
+  ret.capabilities.completionProvider = CompletionOptions{};
+  ret.capabilities.completionProvider.unwrap().triggerCharacters =
+      std::vector<std::string>{".", "$", "/"};
   return ret;
 }
 

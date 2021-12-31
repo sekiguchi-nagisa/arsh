@@ -260,12 +260,22 @@ enum class TextDocumentSyncKind : int {
   Incremental = 2,
 };
 
-struct CompletionOptions {
+struct WorkDoneProgressOptions {
+  Optional<bool> workDoneProgress;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(workDoneProgress);
+  }
+};
+
+struct CompletionOptions : public WorkDoneProgressOptions {
   Optional<bool> resolveProvider;                       // optional
   Optional<std::vector<std::string>> triggerCharacters; // optional
 
   template <typename T>
   void jsonify(T &t) {
+    WorkDoneProgressOptions::jsonify(t);
     JSONIFY(resolveProvider);
     JSONIFY(triggerCharacters);
   }
