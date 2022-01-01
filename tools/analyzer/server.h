@@ -182,6 +182,8 @@ public:
 
   Reply<std::vector<CompletionItem>> complete(const CompletionParams &params);
 
+  void didChangeConfiguration(const DidChangeConfigurationParams &params);
+
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
     this->notify("textDocument/publishDiagnostics", params);

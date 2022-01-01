@@ -51,6 +51,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/references", &LSPServer::findReference);
   this->bind("textDocument/hover", &LSPServer::hover);
   this->bind("textDocument/completion", &LSPServer::complete);
+  this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
 }
 
 void LSPServer::run() {
@@ -477,6 +478,29 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
+}
+
+template <typename T, typename Func>
+static void getOrShowError(LoggerBase &logger, const Union<T, JSON> &field, const char *fieldName,
+                           Func &&callback) {
+  if (!field.hasValue()) {
+    return;
+  }
+  if (is<T>(field)) {
+    callback(get<T>(field));
+  } else if (is<JSON>(field)) {
+    logger(LogLevel::WARNING, "field: `%s' is invalid type", fieldName);
+  }
+}
+
+void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &params) {
+  getOrShowError(
+      this->logger, params.settings, "settings", [&](const ConfigSettingWrapper &wrapper) {
+        getOrShowError(this->logger, wrapper.ydshd, "ydshd", [&](const ConfigSetting &setting) {
+          getOrShowError(this->logger, setting.logLevel, "logLevel",
+                         [&](LogLevel level) { this->logger.get().setSeverity(level); });
+        });
+      });
 }
 
 } // namespace ydsh::lsp

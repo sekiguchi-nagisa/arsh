@@ -17,6 +17,8 @@
 #ifndef YDSH_TOOLS_ANALYZER_LSP_H
 #define YDSH_TOOLS_ANALYZER_LSP_H
 
+#include <misc/logger_base.hpp>
+
 #include "../json/json.h"
 #include "../json/serialize.h"
 #include "../uri/uri.h"
@@ -600,8 +602,53 @@ struct CompletionItem {
   }
 };
 
+struct ConfigSetting {
+  Optional<Union<LogLevel, JSON>> logLevel;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(logLevel);
+  }
+};
+
+struct ConfigSettingWrapper {
+  Optional<Union<ConfigSetting, JSON>> ydshd;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(ydshd);
+  }
+};
+
+struct DidChangeConfigurationParams {
+  Optional<Union<ConfigSettingWrapper, JSON>> settings;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(settings);
+  }
+};
+
 #undef JSONIFY
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+bool toEnum(const char *str, LogLevel &level);
+
+template <typename T>
+void jsonify(T &t, LogLevel &level) {
+  if constexpr (json::is_serialize_v<T>) {
+    std::string value = toString(level);
+    t(value);
+  } else if constexpr (json::is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), level);
+  }
+}
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_ANALYZER_LSP_H

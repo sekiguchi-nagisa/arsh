@@ -17,6 +17,12 @@
   $1 :- usage require argument
   ```
 
+#### LSP
+
+- support the following methods/notifications
+    - ``workspace/didChangeConfiguration``
+        - now change server configuration at runtime
+
 ## [0.24.0] - 2021-12-28
 
 ### Added

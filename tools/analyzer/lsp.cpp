@@ -94,3 +94,21 @@ bool toEnum(const char *str, MarkupKind &kind) {
 }
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+bool toEnum(const char *str, LogLevel &level) {
+  LogLevel levels[] = {LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR,
+                       LogLevel::FATAL};
+  for (auto &l : levels) {
+    const char *ls = toString(l);
+    if (strcasecmp(ls, str) == 0) {
+      level = l;
+      return true;
+    }
+  }
+  level = LogLevel::WARNING;
+  return false;
+}
+
+} // namespace ydsh
