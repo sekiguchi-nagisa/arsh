@@ -534,6 +534,53 @@ TEST(DeserializeTest, variant2) {
   ASSERT_TRUE(is<std::nullptr_t>(v2));
 }
 
+#define JSONIFY(v) t(#v, v)
+
+struct Tuple2 {
+  int a;
+  bool b;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(a);
+    JSONIFY(b);
+  }
+};
+
+struct Tuple3 {
+  int a;
+  bool b;
+  std::string c;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(a);
+    JSONIFY(b);
+    JSONIFY(c);
+  }
+};
+
+TEST(DeserializeTest, variant3) {
+  Union<Tuple2, Tuple3> v1;
+  v1 = Tuple3{.a = 12, .b = true, .c = "hello"};
+  Union<Tuple2, Tuple3> v2;
+  auto ret = serialize(v1);
+  JSONDeserializer deserializer(std::move(ret));
+  deserializer(v2);
+  ASSERT_TRUE(is<Tuple2>(v2));
+  ASSERT_EQ(12, get<Tuple2>(v2).a);
+  ASSERT_EQ(true, get<Tuple2>(v2).b);
+
+  Union<Tuple3, Tuple2> v3;
+  ret = serialize(v1);
+  deserializer = JSONDeserializer(std::move(ret));
+  deserializer(v3);
+  ASSERT_TRUE(is<Tuple3>(v3));
+  ASSERT_EQ(12, get<Tuple3>(v3).a);
+  ASSERT_EQ(true, get<Tuple3>(v3).b);
+  ASSERT_EQ("hello", get<Tuple3>(v3).c);
+}
+
 struct CCC {
   int id{1};
   Optional<BBB> value;
