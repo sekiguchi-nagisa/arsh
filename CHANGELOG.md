@@ -16,6 +16,11 @@
 
   $1 :- usage require argument
   ```
+- define custom error type like the follow
+  ```
+  typedef LogicError : Error
+  assert (new LogicError("hello") is Error)
+  ```
 
 #### LSP
 
