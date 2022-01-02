@@ -211,7 +211,7 @@ public:
                                  const std::string &fieldName) const {
     auto *handle = recv.lookupField(pool, fieldName);
     if (handle) {
-      if (handle->getModID() == 0 || this->modId == handle->getModID() || fieldName[0] != '_') {
+      if (handle->getModId() == 0 || this->modId == handle->getModId() || fieldName[0] != '_') {
         return handle;
       }
     }

@@ -261,7 +261,7 @@ private:
       : typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
 
   FieldHandle(const FieldHandle &handle, FieldAttribute newAttr, unsigned short modID)
-      : typeID(handle.getTypeID()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
+      : typeID(handle.getTypeId()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
 
 public:
   static FieldHandle create(const DSType &fieldType, unsigned int fieldIndex,
@@ -270,12 +270,12 @@ public:
   }
 
   static FieldHandle withNewAttr(const FieldHandle &handle, FieldAttribute newAttr) {
-    return {handle, newAttr, handle.getModID()};
+    return {handle, newAttr, handle.getModId()};
   }
 
   ~FieldHandle() = default;
 
-  unsigned int getTypeID() const { return this->typeID; }
+  unsigned int getTypeId() const { return this->typeID; }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -288,7 +288,7 @@ public:
                                   FieldAttribute::INLINED_MOD));
   }
 
-  unsigned short getModID() const { return this->modID; }
+  unsigned short getModId() const { return this->modID; }
 };
 
 struct CallableTypes {
@@ -522,11 +522,11 @@ public:
 
   ~ModType();
 
-  unsigned short getModID() const { return this->meta.u16_2.v1; }
+  unsigned short getModId() const { return this->meta.u16_2.v1; }
 
-  bool isBuiltin() const { return this->getModID() == 0; }
+  bool isBuiltin() const { return this->getModId() == 0; }
 
-  bool isRoot() const { return this->getModID() == 1; }
+  bool isRoot() const { return this->getModId() == 1; }
 
   unsigned short getChildSize() const { return this->meta.u16_2.v2; }
 

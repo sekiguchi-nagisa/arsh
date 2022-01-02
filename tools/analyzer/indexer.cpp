@@ -44,7 +44,7 @@ void IndexBuilder::LazyMemberMap::buildCache(const DSType &recvType) {
     return; // currently, only support Mod type
   }
 
-  unsigned short targetModId = cast<ModType>(recvType).getModID();
+  unsigned short targetModId = cast<ModType>(recvType).getModId();
   if (auto iter = this->cachedModIds.find(targetModId); iter != this->cachedModIds.end()) {
     return;
   }
@@ -281,7 +281,7 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
      * for builtin type field (may be Tuple)
      */
     auto &fieldRef = get<FieldRef>(entry);
-    auto &fieldType = this->getPool().get(fieldRef.get().getTypeID());
+    auto &fieldType = this->getPool().get(fieldRef.get().getTypeId());
     auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
     auto *decl = this->addDeclImpl(kind, attr, nameInfo, fieldType.getName(), false);
     if (decl) {
@@ -720,9 +720,9 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   this->visitEach(node.getPathNode().getSegmentNodes());
   if (node.getNameInfo()) {
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
-                            std::to_string(node.getModType().getModID()).c_str());
+                            std::to_string(node.getModType().getModId()).c_str());
   } else {
-    this->builder().importForeignDecls(node.getModType().getModID(), node.isInlined());
+    this->builder().importForeignDecls(node.getModType().getModId(), node.isInlined());
   }
 }
 
@@ -794,7 +794,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   for (auto &e : modType.getHandleMap()) {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
-    auto &type = this->builder().getPool().get(e.second.getTypeID());
+    auto &type = this->builder().getPool().get(e.second.getTypeId());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
     } else if (auto iter = getBuiltinConstMap().find(nameInfo.getName());

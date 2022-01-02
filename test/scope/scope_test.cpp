@@ -36,10 +36,10 @@ protected:
   static void expect(const Handle &e, const FieldHandle *handle) {
     ASSERT_TRUE(handle);
     //    ASSERT_EQ(e.commitID, handle->getCommitID());
-    ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeID());
+    ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeId());
     ASSERT_EQ(e.index, handle->getIndex());
     ASSERT_EQ(toString(e.attr), toString(handle->attr()));
-    ASSERT_EQ(e.modID, handle->getModID());
+    ASSERT_EQ(e.modID, handle->getModId());
   }
 
   static void expect(const Handle &e, const NameLookupResult &ret) {
@@ -723,7 +723,7 @@ TEST_F(ScopeTest, import2) {
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
-  ASSERT_EQ(2, modType.getModID());
+  ASSERT_EQ(2, modType.getModId());
   ASSERT_EQ(2, modType.getIndex());
 
   // inlined import
@@ -738,7 +738,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(4, mod2->getMaxGlobalVarIndex());
   ASSERT_EQ(5, mod2->getHandles().size());
 
-  auto *handle = mod2->lookup(toModHolderName(modType.getModID(), true));
+  auto *handle = mod2->lookup(toModHolderName(modType.getModId(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 2,
@@ -751,7 +751,7 @@ TEST_F(ScopeTest, import2) {
 
   // ModType
   auto &modType2 = this->toModType(std::move(mod2));
-  ASSERT_EQ(3, modType2.getModID());
+  ASSERT_EQ(3, modType2.getModId());
   handle = modType2.lookup(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
@@ -807,7 +807,7 @@ TEST_F(ScopeTest, import2) {
   // nested import
   s = this->top->importForeignHandles(this->pool, modType2, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
-  handle = this->top->lookup(toModHolderName(modType2.getModID(), true));
+  handle = this->top->lookup(toModHolderName(modType2.getModId(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 0,
@@ -820,12 +820,12 @@ TEST_F(ScopeTest, import2) {
 
   handle = this->top->lookup("AAA");
   ASSERT_TRUE(handle->has(FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
-  ASSERT_EQ(2, handle->getModID());
+  ASSERT_EQ(2, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
-  ASSERT_EQ(2, handle->getModID());
+  ASSERT_EQ(2, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("_string"));
@@ -835,12 +835,12 @@ TEST_F(ScopeTest, import2) {
 
   handle = this->top->lookup("BBB");
   ASSERT_TRUE(handle->has(FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
-  ASSERT_EQ(3, handle->getModID());
+  ASSERT_EQ(3, handle->getModId());
   ASSERT_EQ(3, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
   ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
-  ASSERT_EQ(3, handle->getModID());
+  ASSERT_EQ(3, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 }
 

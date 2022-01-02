@@ -170,7 +170,7 @@ const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) co
   auto name = toTupleFieldName(i);
   auto *handle = this->lookupField(name);
   assert(handle);
-  return pool.get(handle->getTypeID());
+  return pool.get(handle->getTypeId());
 }
 
 const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {

@@ -85,10 +85,10 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(this->getPool().get(e.typeId()));
-    if (type.getModID() == 0) { // skip builtin module
+    if (type.getModId() == 0) { // skip builtin module
       continue;
     }
-    auto archive = archives.find(type.getModID());
+    auto archive = archives.find(type.getModId());
     assert(archive);
     imported.emplace_back(e.kind(), std::move(archive));
   }

@@ -31,12 +31,12 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
                                const ModType &modType) {
   assert(parent.isGlobal());
   assert(parent.inRootModule());
-  auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModID());
-  assert(scope->modId == modType.getModID());
+  auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModId());
+  assert(scope->modId == modType.getModId());
 
   // copy own handle
   for (auto &e : modType.getHandleMap()) {
-    assert(scope->modId == e.second.getModID());
+    assert(scope->modId == e.second.getModId());
     scope->addNewForeignHandle(std::string(e.first), e.second);
   }
 
@@ -121,7 +121,7 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
                                             ImportedModKind k) {
   const bool global = hasFlag(k, ImportedModKind::GLOBAL);
-  auto holderName = toModHolderName(type.getModID(), global);
+  auto holderName = toModHolderName(type.getModId(), global);
   if (auto *handle = this->findMut(holderName); handle) { // check if already imported
     assert(handle->isModHolder());
     if (!handle->has(FieldAttribute::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
@@ -140,7 +140,7 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   }
 
   for (auto &e : type.getHandleMap()) {
-    assert(this->modId != e.second.getModID());
+    assert(this->modId != e.second.getModId());
     StringRef name = e.first;
     if (name.startsWith("_")) {
       continue;
@@ -194,7 +194,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
   for (auto &e : this->getHandles()) {
     auto &handle = e.second.first;
     if (handle.isModHolder()) {
-      auto &modType = pool.get(handle.getTypeID());
+      auto &modType = pool.get(handle.getTypeId());
       assert(isa<ModType>(modType));
       ImportedModKind k{};
       if (handle.has(FieldAttribute::INLINED_MOD)) {
@@ -203,7 +203,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
         setFlag(k, ImportedModKind::GLOBAL);
       }
       tryInsertByAscendingOrder(newChildren, cast<ModType>(modType).toModEntry(k));
-    } else if (handle.getModID() == this->modId) {
+    } else if (handle.getModId() == this->modId) {
       newHandles.emplace(e.first, handle);
     }
   }
@@ -237,8 +237,8 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle, bool asAlias) {
   assert(this->kind != FUNC);
 
-  if (handle.getTypeID() == static_cast<unsigned int>(TYPE::Nothing) ||
-      handle.getTypeID() == static_cast<unsigned int>(TYPE::Void)) {
+  if (handle.getTypeId() == static_cast<unsigned int>(TYPE::Nothing) ||
+      handle.getTypeId() == static_cast<unsigned int>(TYPE::Void)) {
     return Err(NameLookupError::INVALID_TYPE);
   }
 

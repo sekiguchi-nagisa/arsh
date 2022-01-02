@@ -61,7 +61,7 @@ void Archiver::add(const DSType &type) {
   } else if (type.isModType()) {
     this->writeT(ArchiveType::MOD);
     auto &modType = cast<ModType>(type);
-    this->write16(modType.getModID());
+    this->write16(modType.getModId());
   }
 }
 
@@ -69,8 +69,8 @@ void Archiver::add(const FieldHandle &handle) {
   this->write32(handle.getIndex());
   static_assert(std::is_same_v<std::underlying_type_t<FieldAttribute>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
-  this->write16(handle.getModID());
-  auto &type = this->pool.get(handle.getTypeID());
+  this->write16(handle.getModId());
+  auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
 }
 
