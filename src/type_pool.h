@@ -71,16 +71,26 @@ public:
       int64_t index_;
     };
 
+    unsigned int commitId_{0}; // for discard
+
   public:
     NON_COPYABLE(Value);
 
     Value() : index_(0) {}
 
-    explicit Value(unsigned int index) : index_(index | TAG) {}
+    Value(unsigned int index) : index_(index | TAG) {}
 
-    explicit Value(MethodHandle *ptr) : index_(0) { this->handle_ = ptr; }
+    /**
+     *
+     * @param commitId
+     * @param ptr
+     * must not be null
+     */
+    explicit Value(unsigned int commitId, MethodHandle *ptr) : index_(0), commitId_(commitId) {
+      this->handle_ = ptr;
+    }
 
-    Value(Value &&v) noexcept : index_(v.index_) { v.index_ = 0; }
+    Value(Value &&v) noexcept : index_(v.index_), commitId_(v.commitId_) { v.index_ = 0; }
 
     ~Value() {
       if (this->index_ > 0) {
@@ -89,7 +99,10 @@ public:
     }
 
     Value &operator=(Value &&v) noexcept {
-      std::swap(this->index_, v.index_);
+      if (this != std::addressof(v)) {
+        this->~Value();
+        new (this) Value(std::move(v));
+      }
       return *this;
     }
 
@@ -98,6 +111,8 @@ public:
     unsigned int index() const { return ~TAG & this->index_; }
 
     const MethodHandle *handle() const { return this->handle_; }
+
+    unsigned int commitId() const { return this->commitId_; }
   };
 
 private:
@@ -183,7 +198,8 @@ public:
    * must be subtype of Error type
    * @return
    */
-  TypeOrError createErrorType(const std::string &typeName, const DSType &superType, unsigned short belongedModId);
+  TypeOrError createErrorType(const std::string &typeName, const DSType &superType,
+                              unsigned short belongedModId);
 
   const ModType &createModType(unsigned short modID,
                                std::unordered_map<std::string, FieldHandle> &&handles,
@@ -208,7 +224,7 @@ public:
   }
 
   const MethodHandle *lookupConstructor(const DSType &revType) {
-    return this->lookupMethod(revType, "");
+    return this->lookupMethod(revType, OP_INIT);
   }
 
   const MethodMap &getMethodMap() const { return this->methodMap; }

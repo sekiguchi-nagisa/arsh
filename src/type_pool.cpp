@@ -112,7 +112,7 @@ TypePool::~TypePool() {
 DSType *TypePool::addType(DSType *type) {
   assert(type != nullptr);
   auto pair = this->nameMap.emplace(type->getNameRef(), type->typeId());
-  if(pair.second) {
+  if (pair.second) {
     this->typeTable.push_back(type);
     if (this->typeTable.size() == MAX_TYPE_NUM) {
       fatal("type id reaches limit(%u)\n", MAX_TYPE_NUM);
@@ -153,12 +153,12 @@ void TypePool::discard(const TypeDiscardPoint point) {
       const_cast<Key &>(iter->first).dispose();
       iter = this->methodMap.erase(iter);
       continue;
-    } else if (iter->second) { // only discard instantiated method
+    } else if (iter->second && iter->second.commitId() >= point.methodIdOffset) {
+      // only discard instantiated method handle
       auto *ptr = iter->second.handle();
-      if (ptr != nullptr && ptr->getMethodId() >= point.methodIdOffset) {
-        iter->second = Value(ptr->getMethodIndex());
-        assert(!iter->second);
-      }
+      assert(ptr);
+      iter->second = Value(ptr->getMethodIndex());
+      assert(!iter->second);
     }
     ++iter;
   }
@@ -266,7 +266,8 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
   return Ok(type);
 }
 
-TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType &superType, unsigned short belongedModId) {
+TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType &superType,
+                                      unsigned short belongedModId) {
   if (!this->get(TYPE::Error).isSameOrBaseTypeOf(superType)) {
     RAISE_TL_ERROR(InvalidElement, superType.getName());
   }
@@ -274,7 +275,7 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType 
   name += ".";
   name += typeName;
   auto *type = this->newType<ErrorType>(name, superType);
-  if(type) {
+  if (type) {
     return Ok(type);
   } else {
     RAISE_TL_ERROR(DefinedType, typeName.c_str());
@@ -446,13 +447,12 @@ bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  auto handle = MethodHandle::create(this->methodIdCount++, *recvType, index, *returnType,
-                                     paramSize - 1); // FIXME:
-  for (unsigned int i = 1; i < paramSize; i++) {     // init param types
+  const auto commitId = this->methodIdCount++;
+  auto handle = MethodHandle::create(*recvType, index, *returnType, paramSize - 1);
+  for (unsigned int i = 1; i < paramSize; i++) { // init param types
     handle->paramTypes[i - 1] = TRY2(decoder.decode());
   }
-
-  iter->second = Value(handle.release());
+  iter->second = Value(commitId, handle.release());
   return true;
 }
 

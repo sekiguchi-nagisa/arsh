@@ -71,7 +71,10 @@ private:
 
   const std::reference_wrapper<unsigned int> maxVarCount;
 
-  std::unordered_map<std::string, FieldHandle> handles;
+  /**
+   * maintain (FieldHandle, commitId)
+   */
+  std::unordered_map<std::string, std::pair<FieldHandle, unsigned int>> handles;
 
   /**
    * for func/block scope construction
@@ -139,7 +142,7 @@ public:
     return this->kind == BLOCK ? this->maxVarCount.get() : this->curLocalIndex;
   }
 
-  const std::unordered_map<std::string, FieldHandle> &getHandles() const { return this->handles; }
+  const auto &getHandles() const { return this->handles; }
 
   auto begin() const { return this->handles.begin(); }
 
@@ -148,7 +151,7 @@ public:
   const FieldHandle *find(const std::string &name) const {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
-      return &iter->second;
+      return &iter->second.first;
     }
     return nullptr;
   }
@@ -225,14 +228,12 @@ public:
   void discard(ScopeDiscardPoint discardPoint); // FIXME: discard more var index
 
 private:
-  unsigned int commitId() const { return this->handles.size(); }
-
   NameScopePtr fromThis() { return NameScopePtr(this); }
 
   FieldHandle *findMut(const std::string &name) {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
-      return &iter->second;
+      return &iter->second.first;
     }
     return nullptr;
   }
@@ -260,8 +261,7 @@ private:
       unsetFlag(attr, FieldAttribute::GLOBAL);
     }
     unsigned int index = this->isGlobal() ? this->getMaxGlobalVarIndex() : this->getCurLocalIndex();
-    return this->add(std::move(name),
-                     FieldHandle::create(this->commitId(), type, index, attr, this->modId));
+    return this->add(std::move(name), FieldHandle::create(type, index, attr, this->modId));
   }
 
   /**
@@ -271,12 +271,11 @@ private:
    * @return
    */
   NameLookupResult addNewAlias(std::string &&name, const FieldHandle &handle) {
-    return this->add(std::move(name), FieldHandle::alias(this->commitId(), handle, this->modId));
+    return this->add(std::move(name), FieldHandle::alias(handle, this->modId));
   }
 
   NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandle &handle) {
-    return this->add(std::move(name),
-                     FieldHandle::alias(this->commitId(), handle, handle.getModID()));
+    return this->add(std::move(name), FieldHandle::alias(handle, handle.getModID()));
   }
 };
 

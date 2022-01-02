@@ -99,7 +99,7 @@ constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
 // =====  magic method  =====
 
 // constructor
-constexpr const char *OP_INIT = "";
+constexpr const char *OP_INIT = "%init";
 
 // unary op definition
 constexpr const char *OP_PLUS = "%plus";   // +

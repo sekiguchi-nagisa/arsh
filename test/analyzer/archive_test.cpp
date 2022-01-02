@@ -172,7 +172,6 @@ public:
     // compare 2 handles
     ASSERT_EQ(orgHandle.getModID(), newHandle.getModID());
     ASSERT_EQ(orgHandle.getIndex(), newHandle.getIndex());
-    ASSERT_EQ(orgHandle.getCommitID(), newHandle.getCommitID());
     ASSERT_EQ(toString(orgHandle.attr()), toString(newHandle.attr()));
     ASSERT_TRUE(newHandle.getTypeID() <= this->newPool().getDiscardPoint().typeIdOffset);
     auto &newType = this->newPool().get(newHandle.getTypeID());

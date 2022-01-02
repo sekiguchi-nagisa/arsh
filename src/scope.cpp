@@ -113,7 +113,7 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
     }
   }
   return this->defineAlias(toTypeAliasFullName(name),
-                           FieldHandle::create(0, type, 0, FieldAttribute{}));
+                           FieldHandle::create(type, 0, FieldAttribute{}));
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
@@ -190,18 +190,19 @@ const ModType &NameScope::toModType(TypePool &pool) const {
   FlexBuffer<ModType::Imported> newChildren;
 
   for (auto &e : this->getHandles()) {
-    if (e.second.isModHolder()) {
-      auto &modType = pool.get(e.second.getTypeID());
+    auto &handle = e.second.first;
+    if (handle.isModHolder()) {
+      auto &modType = pool.get(handle.getTypeID());
       assert(isa<ModType>(modType));
       ImportedModKind k{};
-      if (e.second.has(FieldAttribute::INLINED_MOD)) {
+      if (handle.has(FieldAttribute::INLINED_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL | ImportedModKind::INLINED);
-      } else if (e.second.has(FieldAttribute::GLOBAL_MOD)) {
+      } else if (handle.has(FieldAttribute::GLOBAL_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL);
       }
       tryInsertByAscendingOrder(newChildren, cast<ModType>(modType).toModEntry(k));
-    } else if (e.second.getModID() == this->modId) {
-      newHandles.emplace(e.first, e.second);
+    } else if (handle.getModID() == this->modId) {
+      newHandles.emplace(e.first, handle);
     }
   }
   return pool.createModType(this->modId, std::move(newHandles), std::move(newChildren),
@@ -220,7 +221,7 @@ const FieldHandle *NameScope::lookup(const std::string &name) const {
 
 void NameScope::discard(ScopeDiscardPoint discardPoint) {
   for (auto iter = this->handles.begin(); iter != this->handles.end();) {
-    if (iter->second.getCommitID() >= discardPoint.commitIdOffset) {
+    if (iter->second.second >= discardPoint.commitIdOffset) {
       iter = this->handles.erase(iter);
     } else {
       ++iter;
@@ -249,7 +250,8 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
     }
   }
 
-  auto pair = this->handles.emplace(std::move(name), handle);
+  const auto comitId = this->handles.size();
+  auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, comitId));
   if (!pair.second) {
     return Err(NameLookupError::DEFINED);
   }
@@ -269,7 +271,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
       }
     }
   }
-  return Ok(&pair.first->second);
+  return Ok(&pair.first->second.first);
 }
 
 // ##############################

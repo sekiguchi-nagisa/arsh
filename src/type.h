@@ -245,11 +245,6 @@ struct allow_enum_bitop<FieldAttribute> : std::true_type {};
  */
 class FieldHandle {
 private:
-  /**
-   * for safe module scope abort
-   */
-  unsigned int commitID;
-
   unsigned int typeID;
 
   unsigned int index;
@@ -261,33 +256,28 @@ private:
    */
   unsigned short modID;
 
-  FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
-              FieldAttribute attribute, unsigned short modID)
-      : commitID(commitID), typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute),
-        modID(modID) {}
-
-  FieldHandle(unsigned int commitID, const FieldHandle &handle, FieldAttribute newAttr,
+  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute,
               unsigned short modID)
-      : commitID(commitID), typeID(handle.getTypeID()), index(handle.getIndex()),
-        attribute(newAttr), modID(modID) {}
+      : typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
+
+  FieldHandle(const FieldHandle &handle, FieldAttribute newAttr, unsigned short modID)
+      : typeID(handle.getTypeID()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
 
 public:
-  static FieldHandle alias(unsigned int commitID, const FieldHandle &handle, unsigned short modId) {
-    return {commitID, handle, handle.attr() | FieldAttribute::ALIAS, modId};
+  static FieldHandle alias(const FieldHandle &handle, unsigned short modId) {
+    return {handle, handle.attr() | FieldAttribute::ALIAS, modId};
   }
 
-  static FieldHandle create(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
+  static FieldHandle create(const DSType &fieldType, unsigned int fieldIndex,
                             FieldAttribute attribute, unsigned short modID = 0) {
-    return {commitID, fieldType, fieldIndex, attribute, modID};
+    return {fieldType, fieldIndex, attribute, modID};
   }
 
   static FieldHandle withNewAttr(const FieldHandle &handle, FieldAttribute newAttr) {
-    return {handle.getCommitID(), handle, newAttr, handle.getModID()};
+    return {handle, newAttr, handle.getModID()};
   }
 
   ~FieldHandle() = default;
-
-  unsigned int getCommitID() const { return this->commitID; }
 
   unsigned int getTypeID() const { return this->typeID; }
 
@@ -557,7 +547,7 @@ public:
    * @return
    */
   FieldHandle toHandle() const {
-    return FieldHandle::create(0, *this, this->getIndex(),
+    return FieldHandle::create(*this, this->getIndex(),
                                FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
                                this->getModID());
   }
@@ -570,7 +560,7 @@ public:
       attr = FieldAttribute::GLOBAL_MOD;
     }
     setFlag(attr, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL);
-    return FieldHandle::create(0, *this, this->getIndex(), attr, this->getModID());
+    return FieldHandle::create(*this, this->getIndex(), attr, this->getModID());
   }
 
   Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
@@ -669,11 +659,6 @@ class MethodHandle {
 private:
   friend class TypePool;
 
-  /**
-   * for safe TypePool abort
-   */
-  const unsigned int methodId;
-
   const unsigned short methodIndex;
 
   const unsigned char paramSize;
@@ -689,17 +674,16 @@ private:
    */
   const DSType *paramTypes[];
 
-  MethodHandle(unsigned int id, const DSType &recv, unsigned short index, const DSType &ret,
+  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret,
                unsigned short paramSize)
-      : methodId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
+      : methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
-  static std::unique_ptr<MethodHandle> create(unsigned int count, const DSType &recv,
-                                              unsigned int index, const DSType &ret,
-                                              unsigned int paramSize) {
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const DSType &ret, unsigned int paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-    auto *handle = new (ptr) MethodHandle(count, recv, index, ret, paramSize);
+    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize);
     return std::unique_ptr<MethodHandle>(handle);
   }
 
@@ -709,8 +693,6 @@ public:
   static void operator delete(void *ptr) noexcept { // NOLINT
     free(ptr);
   }
-
-  unsigned int getMethodId() const { return this->methodId; }
 
   unsigned short getMethodIndex() const { return this->methodIndex; }
 

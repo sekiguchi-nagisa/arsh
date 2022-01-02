@@ -66,7 +66,6 @@ void Archiver::add(const DSType &type) {
 }
 
 void Archiver::add(const FieldHandle &handle) {
-  this->write32(handle.getCommitID());
   this->write32(handle.getIndex());
   static_assert(std::is_same_v<std::underlying_type_t<FieldAttribute>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
@@ -80,7 +79,6 @@ void Archiver::add(const FieldHandle &handle) {
 // ########################
 
 Optional<FieldHandle> Unarchiver::unpackHandle() {
-  uint32_t commitID = this->read32();
   uint32_t index = this->read32();
   uint16_t attr = this->read16();
   uint16_t modID = this->read16();
@@ -88,7 +86,7 @@ Optional<FieldHandle> Unarchiver::unpackHandle() {
   if (!type) {
     return {};
   }
-  return FieldHandle::create(commitID, *type, index, static_cast<FieldAttribute>(attr), modID);
+  return FieldHandle::create(*type, index, static_cast<FieldAttribute>(attr), modID);
 }
 
 #define TRY(E)                                                                                     \

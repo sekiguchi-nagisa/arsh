@@ -416,8 +416,8 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
     for (const auto &iter : *curScope) {
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
-        int priority = iter.second.getIndex();
-        if (!iter.second.has(FieldAttribute::GLOBAL)) {
+        int priority = iter.second.first.getIndex();
+        if (!iter.second.first.has(FieldAttribute::GLOBAL)) {
           priority += offset;
         }
         priority *= -1;

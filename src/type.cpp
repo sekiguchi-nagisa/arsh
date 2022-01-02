@@ -160,7 +160,7 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    auto handle = FieldHandle::create(0, *types[i], i, FieldAttribute());
+    auto handle = FieldHandle::create(*types[i], i, FieldAttribute());
     this->fieldHandleMap.emplace(toTupleFieldName(i), handle);
   }
 }
