@@ -69,7 +69,7 @@ struct ObjectRefCount;
 
 class DSObject {
 protected:
-  unsigned int refCount{0};
+  int refCount{0};
 
   /**
    * |  24bit  |  8bit       |
@@ -89,7 +89,7 @@ protected:
   ~DSObject() = default;
 
 public:
-  unsigned int getRefcount() const { return this->refCount; }
+  int getRefcount() const { return this->refCount; }
 
   unsigned int getTypeID() const { return this->tag >> 8; }
 
@@ -642,7 +642,7 @@ inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, boo
     left = right;
     return true;
   }
-  unsigned int copyCount = selfConcat ? 2 : 1;
+  int copyCount = selfConcat ? 2 : 1;
   if (left.isObject() && left.get()->getRefcount() > copyCount) {
     left = DSValue::createStr(left.asStrRef());
   }
