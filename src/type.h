@@ -190,7 +190,7 @@ public:
   void walkField(const TypePool &pool,
                  std::function<bool(StringRef, const FieldHandle &)> &walker) const;
 
-  std::vector<const DSType *> getTypeParams() const;
+  std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
 
   bool operator==(const DSType &type) const {
     return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
@@ -245,6 +245,8 @@ struct allow_enum_bitop<FieldAttribute> : std::true_type {};
  */
 class FieldHandle {
 private:
+  unsigned int typeID;
+
   unsigned int index;
 
   FieldAttribute attribute;
@@ -254,14 +256,12 @@ private:
    */
   unsigned short modID;
 
-  const DSType *type;
-
   FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute,
               unsigned short modID)
-      : index(fieldIndex), attribute(attribute), modID(modID), type(&fieldType) {}
+      : typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
 
   FieldHandle(const FieldHandle &handle, FieldAttribute newAttr, unsigned short modID)
-      : index(handle.getIndex()), attribute(newAttr), modID(modID), type(handle.type) {}
+      : typeID(handle.getTypeID()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
 
 public:
   static FieldHandle create(const DSType &fieldType, unsigned int fieldIndex,
@@ -275,7 +275,7 @@ public:
 
   ~FieldHandle() = default;
 
-  const DSType &getType() const { return *this->type; }
+  unsigned int getTypeID() const { return this->typeID; }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -425,7 +425,7 @@ public:
 
   const FieldHandle *lookupField(const std::string &fieldName) const;
 
-  const DSType &getFieldTypeAt(unsigned int i) const;
+  const DSType &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
 
   static bool classof(const DSType *type) { return type->isTupleType(); }
 };

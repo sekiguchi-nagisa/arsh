@@ -427,7 +427,7 @@ TypeOrError TypeDecoder::decode() {
 bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   assert(!iter->second);
   unsigned int index = iter->second.index();
-  auto types = recv.getTypeParams();
+  auto types = recv.getTypeParams(*this);
   auto info = nativeFuncInfoTable()[index];
   TypeDecoder decoder(*this, info.handleInfo, std::move(types));
 

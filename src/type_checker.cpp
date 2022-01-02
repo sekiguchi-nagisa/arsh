@@ -38,7 +38,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     // fist lookup type alias
     auto handle = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
     if (handle) {
-      return Ok(&handle->getType());
+      return Ok(&this->typePool.get(handle->getTypeID()));
     }
     return this->typePool.getType(typeNode.getTokenText());
   }
@@ -53,7 +53,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
       return Err(std::unique_ptr<TypeLookupError>());
     }
-    auto &resolved = handle->getType();
+    auto &resolved = this->typePool.get(handle->getTypeID());
     qualifiedNode.setType(resolved);
     return Ok(&qualifiedNode.getType());
   }
@@ -352,7 +352,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
     return false;
   }
   node.setAttribute(*handle);
-  node.setType(handle->getType());
+  node.setType(this->typePool.get(handle->getTypeID()));
   return true;
 }
 
@@ -534,7 +534,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 void TypeChecker::visitVarNode(VarNode &node) {
   if (auto *handle = this->curScope->lookup(node.getVarName()); handle) {
     node.setAttribute(*handle);
-    node.setType(handle->getType());
+    node.setType(this->typePool.get(handle->getTypeID()));
   } else {
     this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
     node.setType(this->typePool.get(TYPE::Nothing));
@@ -725,7 +725,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto *handle = this->curScope->lookup(cmdName); handle) {
       node.setUdcIndex(handle->getIndex());
-      auto &type = handle->getType();
+      auto &type = this->typePool.get(handle->getTypeID());
       if (type.isFuncType()) { // resolved command may be module object
         auto &returnType = cast<FunctionType>(type).getReturnType();
         assert(returnType.is(TYPE::Int) || returnType.isNothingType());
@@ -1643,7 +1643,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   auto *returnType = &this->typePool.get(TYPE::Int);
   if (auto *handle = this->addUdcEntry(node)) {
     node.setUdcIndex(handle->getIndex());
-    returnType = &cast<FunctionType>(handle->getType()).getReturnType();
+    returnType = &cast<FunctionType>(this->typePool.get(handle->getTypeID())).getReturnType();
   }
 
   // check type udc body

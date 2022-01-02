@@ -173,8 +173,8 @@ public:
     ASSERT_EQ(orgHandle.getModID(), newHandle.getModID());
     ASSERT_EQ(orgHandle.getIndex(), newHandle.getIndex());
     ASSERT_EQ(toString(orgHandle.attr()), toString(newHandle.attr()));
-    ASSERT_TRUE(newHandle.getType().typeId() <= this->newPool().getDiscardPoint().typeIdOffset);
-    auto &newType = newHandle.getType();
+    ASSERT_TRUE(newHandle.getTypeID() <= this->newPool().getDiscardPoint().typeIdOffset);
+    auto &newType = this->newPool().get(newHandle.getTypeID());
     ASSERT_EQ(orgType.getNameRef(), newType.getNameRef());
   }
 
@@ -191,7 +191,7 @@ public:
     auto ret = ctx.getScope()->defineHandle(fieldName, type, attr);
     ASSERT_TRUE(ret);
     auto *handle = ret.asOk();
-    ASSERT_EQ(type.typeId(), handle->getType().typeId());
+    ASSERT_EQ(type.typeId(), handle->getTypeID());
     auto orgAttr = attr;
     unsetFlag(orgAttr, FieldAttribute::GLOBAL);
     auto newAttr = handle->attr();
@@ -451,13 +451,13 @@ TEST_F(ArchiveTest, mod3) {
   auto *handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
-            handle->getType().typeId());
+            handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::ENV | FieldAttribute::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModID(), handle->getModID());
 
   handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getType().typeId());
+  ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModID(), handle->getModID());
 
@@ -476,8 +476,7 @@ TEST_F(ArchiveTest, mod3) {
 
   handle = modType1.lookup(this->newPool(), "aaa");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(),
-            handle->getType().typeId());
+  ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(), handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(1, handle->getModID());
 }
@@ -513,13 +512,14 @@ TEST_F(ArchiveTest, mod4) {
   auto *handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(3, handle->getModID());
-  auto &type1 = handle->getType();
+  auto &type1 = this->newPool().get(handle->getTypeID());
   ASSERT_TRUE(type1.isTupleType());
   auto &tuple = cast<TupleType>(type1);
   ASSERT_EQ(2, tuple.getFieldSize());
-  ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError), tuple.getFieldTypeAt(0));
-  ASSERT_TRUE(tuple.getFieldTypeAt(1).isModType());
-  ASSERT_EQ(4, cast<ModType>(tuple.getFieldTypeAt(1)).getModID());
+  ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError),
+            tuple.getFieldTypeAt(this->newPool(), 0));
+  ASSERT_TRUE(tuple.getFieldTypeAt(this->newPool(), 1).isModType());
+  ASSERT_EQ(4, cast<ModType>(tuple.getFieldTypeAt(this->newPool(), 1)).getModID());
 
   handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_FALSE(handle);
@@ -528,7 +528,7 @@ TEST_F(ArchiveTest, mod4) {
   ASSERT_EQ(4, handle->getModID());
   ret = this->newPool().getType("[Boolean]");
   ASSERT_TRUE(ret);
-  ASSERT_EQ(ret.asOk()->typeId(), handle->getType().typeId());
+  ASSERT_EQ(ret.asOk()->typeId(), handle->getTypeID());
 }
 
 struct Builder {

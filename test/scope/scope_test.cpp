@@ -36,7 +36,7 @@ protected:
   static void expect(const Handle &e, const FieldHandle *handle) {
     ASSERT_TRUE(handle);
     //    ASSERT_EQ(e.commitID, handle->getCommitID());
-    ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getType().typeId());
+    ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeID());
     ASSERT_EQ(e.index, handle->getIndex());
     ASSERT_EQ(toString(e.attr), toString(handle->attr()));
     ASSERT_EQ(e.modID, handle->getModID());

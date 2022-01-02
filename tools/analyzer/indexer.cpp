@@ -281,7 +281,7 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
      * for builtin type field (may be Tuple)
      */
     auto &fieldRef = get<FieldRef>(entry);
-    auto &fieldType = fieldRef.get().getType();
+    auto &fieldType = this->getPool().get(fieldRef.get().getTypeID());
     auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
     auto *decl = this->addDeclImpl(kind, attr, nameInfo, fieldType.getName(), false);
     if (decl) {
@@ -794,7 +794,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   for (auto &e : modType.getHandleMap()) {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
-    auto &type = e.second.getType();
+    auto &type = this->builder().getPool().get(e.second.getTypeID());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
     } else if (auto iter = getBuiltinConstMap().find(nameInfo.getName());
