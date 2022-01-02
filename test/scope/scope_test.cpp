@@ -85,7 +85,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 1,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL | FieldAttribute::ALIAS,
+          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -96,7 +96,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL | FieldAttribute::ALIAS,
+          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -112,7 +112,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 3,
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 0,
       },
       ret));
@@ -143,7 +143,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 1,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::ALIAS | FieldAttribute::ENV,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
           .modID = 0,
       },
       hd));
@@ -154,7 +154,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::ALIAS | FieldAttribute::ENV,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
           .modID = 0,
       },
       hd));
@@ -166,7 +166,7 @@ TEST_F(ScopeTest, builtin) {
           .commitID = 3,
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 0,
       },
       hd));
@@ -267,7 +267,7 @@ TEST_F(ScopeTest, global) {
           .commitID = 1,
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 1,
       },
       ret));
@@ -365,7 +365,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .commitID = 2,
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ALIAS | FieldAttribute::ENV,
+          .attr = FieldAttribute::ENV,
           .modID = 1,
       },
       ret));
@@ -390,7 +390,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .commitID = 2,
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ALIAS | FieldAttribute::ENV,
+          .attr = FieldAttribute::ENV,
           .modID = 1,
       },
       handle));
@@ -427,7 +427,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .commitID = 2,
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ALIAS | FieldAttribute::ENV,
+          .attr = FieldAttribute::ENV,
           .modID = 1,
       },
       handle));
@@ -576,7 +576,7 @@ TEST_F(ScopeTest, func) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -586,7 +586,7 @@ TEST_F(ScopeTest, func) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
           .modID = 1,
       },
       handle));
@@ -643,7 +643,7 @@ TEST_F(ScopeTest, import1) {
           .commitID = 2,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
           .modID = 2,
       },
       handle));
@@ -660,7 +660,7 @@ TEST_F(ScopeTest, import1) {
           .commitID = 3,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
@@ -705,7 +705,7 @@ TEST_F(ScopeTest, import1) {
           .commitID = 3,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
@@ -744,8 +744,7 @@ TEST_F(ScopeTest, import2) {
           .commitID = 2,
           .type = static_cast<TYPE>(modType.typeId()),
           .index = 2, // toModType api not increment
-          .attr = FieldAttribute::ALIAS | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
-                  FieldAttribute::INLINED_MOD,
+          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL | FieldAttribute::INLINED_MOD,
           .modID = 3,
       },
       handle));
@@ -771,7 +770,7 @@ TEST_F(ScopeTest, import2) {
           .commitID = 3,
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
@@ -800,7 +799,7 @@ TEST_F(ScopeTest, import2) {
           .commitID = 1,
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::ALIAS,
+          .attr = FieldAttribute::TYPE_ALIAS,
           .modID = 3,
       },
       handle));
@@ -814,20 +813,18 @@ TEST_F(ScopeTest, import2) {
           .commitID = 0,
           .type = static_cast<TYPE>(modType2.typeId()),
           .index = 4,
-          .attr = FieldAttribute::ALIAS | FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY |
-                  FieldAttribute::GLOBAL_MOD,
+          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL_MOD,
           .modID = 1,
       },
       handle));
 
   handle = this->top->lookup("AAA");
-  ASSERT_TRUE(
-      handle->has(FieldAttribute::ALIAS | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
+  ASSERT_TRUE(handle->has(FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
   ASSERT_EQ(2, handle->getModID());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
-  ASSERT_TRUE(handle->has(FieldAttribute::ALIAS));
+  ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
   ASSERT_EQ(2, handle->getModID());
   ASSERT_EQ(0, handle->getIndex());
 
@@ -842,7 +839,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(3, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
-  ASSERT_TRUE(handle->has(FieldAttribute::ALIAS));
+  ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
   ASSERT_EQ(3, handle->getModID());
   ASSERT_EQ(0, handle->getIndex());
 }

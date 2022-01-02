@@ -243,9 +243,11 @@ private:
    * only called from addNew* api
    * @param name
    * @param handle
+   * @param asAlias
+   * if true, not increment internal variable index
    * @return
    */
-  NameLookupResult add(std::string &&name, FieldHandle &&handle);
+  NameLookupResult add(std::string &&name, FieldHandle &&handle, bool asAlias = false);
 
   /**
    * define local/global variable name
@@ -264,18 +266,8 @@ private:
     return this->add(std::move(name), FieldHandle::create(type, index, attr, this->modId));
   }
 
-  /**
-   * for alias definition
-   * @param name
-   * @param handle
-   * @return
-   */
-  NameLookupResult addNewAlias(std::string &&name, const FieldHandle &handle) {
-    return this->add(std::move(name), FieldHandle::alias(handle, this->modId));
-  }
-
   NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandle &handle) {
-    return this->add(std::move(name), FieldHandle::alias(handle, handle.getModID()));
+    return this->add(std::move(name), FieldHandle(handle), true);
   }
 };
 

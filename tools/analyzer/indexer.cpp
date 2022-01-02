@@ -773,7 +773,7 @@ bool SymbolIndexer::consume(std::unique_ptr<Node> &&node) {
 
 static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandle> &entry) {
   if (isTypeAliasFullName(entry.first)) {
-    assert(entry.second.has(FieldAttribute::ALIAS));
+    assert(entry.second.has(FieldAttribute::TYPE_ALIAS));
     return DeclSymbol::Kind::TYPE_ALIAS;
   } else if (isCmdFullName(entry.first)) {
     return DeclSymbol::Kind::CMD;

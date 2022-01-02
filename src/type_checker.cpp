@@ -1707,7 +1707,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   }
   if (node.getNameInfo()) { // scoped import
     auto &nameInfo = *node.getNameInfo();
-    auto handle = node.getModType().toHandle();
+    auto handle = node.getModType().toAliasHandle(this->curScope->modId);
 
     // register actual module handle
     if (!this->curScope->defineAlias(std::string(nameInfo.getName()), handle)) {

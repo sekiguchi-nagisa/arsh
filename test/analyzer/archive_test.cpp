@@ -299,7 +299,7 @@ TEST_F(ArchiveTest, array) {
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createArrayType(type1);
@@ -317,7 +317,7 @@ TEST_F(ArchiveTest, map) {
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1, FieldAttribute::READ_ONLY));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::TYPE_ALIAS));
 
   //
   ret1 =
@@ -358,7 +358,8 @@ TEST_F(ArchiveTest, option) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrappingError!", FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(
+      this->defineAndArchive("w1", "UnwrappingError!", FieldAttribute::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createOptionType(type1);
@@ -396,7 +397,7 @@ TEST_F(ArchiveTest, func) {
   ret1 = this->pool().createFuncType(this->pool().get(TYPE::Nothing), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type2 = *ret1.asOk();
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, FieldAttribute::ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, FieldAttribute::TYPE_ALIAS));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, FieldAttribute{}));
 }
 
@@ -415,7 +416,7 @@ TEST_F(ArchiveTest, mod2) {
   ASSERT_TRUE(ret2);
   auto &type2 = *ret2.asOk();
   ASSERT_NO_FATAL_FAILURE(
-      this->define("a12345", type2, FieldAttribute::ALIAS | FieldAttribute::READ_ONLY));
+      this->define("a12345", type2, FieldAttribute::TYPE_ALIAS | FieldAttribute::READ_ONLY));
 
   ASSERT_NO_FATAL_FAILURE(this->archiveMod({"AAA", "a12345"}));
 }

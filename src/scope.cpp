@@ -32,10 +32,12 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
   assert(parent.isGlobal());
   assert(parent.inRootModule());
   auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModID());
+  assert(scope->modId == modType.getModID());
 
   // copy own handle
   for (auto &e : modType.getHandleMap()) {
-    scope->addNewAlias(std::string(e.first), e.second);
+    assert(scope->modId == e.second.getModID());
+    scope->addNewForeignHandle(std::string(e.first), e.second);
   }
 
   // import foreign module
@@ -101,7 +103,7 @@ NameLookupResult NameScope::defineAlias(std::string &&name, const FieldHandle &h
   if (definedInBuiltin(*this, name)) {
     return Err(NameLookupError::DEFINED);
   }
-  return this->addNewAlias(std::move(name), handle);
+  return this->addNewForeignHandle(std::move(name), handle);
 }
 
 NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&name,
@@ -113,7 +115,7 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
     }
   }
   return this->defineAlias(toTypeAliasFullName(name),
-                           FieldHandle::create(type, 0, FieldAttribute{}));
+                           FieldHandle::create(type, 0, FieldAttribute::TYPE_ALIAS, this->modId));
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
@@ -132,7 +134,7 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   }
 
   // define module holder
-  this->addNewAlias(std::move(holderName), type.toModHolder(k));
+  this->addNewForeignHandle(std::move(holderName), type.toModHolder(k, this->modId));
   if (!global) {
     return "";
   }
@@ -232,7 +234,7 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
   }
 }
 
-NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
+NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle, bool asAlias) {
   assert(this->kind != FUNC);
 
   if (handle.getType().typeId() == static_cast<unsigned int>(TYPE::Nothing) ||
@@ -241,7 +243,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   }
 
   // check var index limit
-  if (!handle.has(FieldAttribute::ALIAS)) {
+  if (!asAlias) {
     if (!handle.has(FieldAttribute::GLOBAL)) {
       assert(!this->isGlobal());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
@@ -257,7 +259,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   }
 
   // increment var index count
-  if (!handle.has(FieldAttribute::ALIAS)) {
+  if (!asAlias) {
     assert(this->isGlobal() == handle.has(FieldAttribute::GLOBAL));
     if (handle.has(FieldAttribute::GLOBAL)) {
       this->maxVarCount.get()++;

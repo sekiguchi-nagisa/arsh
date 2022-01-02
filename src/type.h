@@ -224,7 +224,7 @@ public:
   OP(GLOBAL, (1u << 1u))                                                                           \
   OP(ENV, (1u << 2u))                                                                              \
   OP(MOD_CONST, (1u << 3u))                                                                        \
-  OP(ALIAS, (1u << 4u))                                                                            \
+  OP(TYPE_ALIAS, (1u << 4u))                                                                       \
   OP(NAMED_MOD, (1u << 5u))                                                                        \
   OP(GLOBAL_MOD, (1u << 6u))                                                                       \
   OP(INLINED_MOD, (1u << 7u))
@@ -264,10 +264,6 @@ private:
       : index(handle.getIndex()), attribute(newAttr), modID(modID), type(handle.type) {}
 
 public:
-  static FieldHandle alias(const FieldHandle &handle, unsigned short modId) {
-    return {handle, handle.attr() | FieldAttribute::ALIAS, modId};
-  }
-
   static FieldHandle create(const DSType &fieldType, unsigned int fieldIndex,
                             FieldAttribute attribute, unsigned short modID = 0) {
     return {fieldType, fieldIndex, attribute, modID};
@@ -508,6 +504,9 @@ private:
     } children;
   } data;
 
+  /**
+   * FieldHandle modId is equivalent to this.modId
+   */
   std::unordered_map<std::string, FieldHandle> handleMap;
 
 public:
@@ -546,13 +545,12 @@ public:
    * for indicating module object index
    * @return
    */
-  FieldHandle toHandle() const {
+  FieldHandle toAliasHandle(unsigned short importedModId) const {
     return FieldHandle::create(*this, this->getIndex(),
-                               FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
-                               this->getModID());
+                               FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, importedModId);
   }
 
-  FieldHandle toModHolder(ImportedModKind k) const {
+  FieldHandle toModHolder(ImportedModKind k, unsigned short importedModId) const {
     FieldAttribute attr = FieldAttribute::NAMED_MOD;
     if (hasFlag(k, ImportedModKind::INLINED)) {
       attr = FieldAttribute::INLINED_MOD;
@@ -560,7 +558,7 @@ public:
       attr = FieldAttribute::GLOBAL_MOD;
     }
     setFlag(attr, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL);
-    return FieldHandle::create(*this, this->getIndex(), attr, this->getModID());
+    return FieldHandle::create(*this, this->getIndex(), attr, importedModId);
   }
 
   Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
