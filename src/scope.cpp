@@ -192,7 +192,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
   for (auto &e : this->getHandles()) {
     auto &handle = e.second.first;
     if (handle.isModHolder()) {
-      auto &modType = pool.get(handle.getTypeID());
+      auto &modType = handle.getType();
       assert(isa<ModType>(modType));
       ImportedModKind k{};
       if (handle.has(FieldAttribute::INLINED_MOD)) {
@@ -235,8 +235,8 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   assert(this->kind != FUNC);
 
-  if (handle.getTypeID() == static_cast<unsigned int>(TYPE::Nothing) ||
-      handle.getTypeID() == static_cast<unsigned int>(TYPE::Void)) {
+  if (handle.getType().typeId() == static_cast<unsigned int>(TYPE::Nothing) ||
+      handle.getType().typeId() == static_cast<unsigned int>(TYPE::Void)) {
     return Err(NameLookupError::INVALID_TYPE);
   }
 

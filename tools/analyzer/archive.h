@@ -51,6 +51,8 @@ public:
 
   const std::string &get() const { return this->data; }
 
+  const TypePool &getPool() const { return this->pool; }
+
 private:
   template <unsigned int N>
   void writeN(uint64_t b) {

@@ -532,7 +532,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     return false;
   }
 
-  auto &type = pool.get(handle->getTypeID());
+  auto &type = handle->getType();
   if (!type.isModType()) {
     return false;
   }

@@ -44,7 +44,7 @@ void Archiver::add(const DSType &type) {
     assert(size <= SYS_LIMIT_TUPLE_NUM);
     this->write8(static_cast<uint8_t>(size));
     for (unsigned int i = 0; i < size; i++) {
-      this->add(tuple.getFieldTypeAt(this->pool, i));
+      this->add(tuple.getFieldTypeAt(i));
     }
   } else if (type.isOptionType()) {
     this->writeT(ArchiveType::OPTION);
@@ -70,8 +70,7 @@ void Archiver::add(const FieldHandle &handle) {
   static_assert(std::is_same_v<std::underlying_type_t<FieldAttribute>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
   this->write16(handle.getModID());
-  auto &type = this->pool.get(handle.getTypeID());
-  this->add(type);
+  this->add(handle.getType());
 }
 
 // ########################

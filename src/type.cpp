@@ -84,7 +84,7 @@ void DSType::walkField(const TypePool &pool,
   }
 }
 
-std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
+std::vector<const DSType *> DSType::getTypeParams() const {
   std::vector<const DSType *> ret;
   switch (this->typeKind()) {
   case TypeKind::Array: {
@@ -101,7 +101,7 @@ std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
   case TypeKind::Tuple: {
     auto &type = cast<TupleType>(*this);
     for (unsigned int i = 0; i < type.getFieldSize(); i++) {
-      ret.push_back(&type.getFieldTypeAt(pool, i));
+      ret.push_back(&type.getFieldTypeAt(i));
     }
     break;
   }
@@ -165,12 +165,12 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
   }
 }
 
-const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
+const DSType &TupleType::getFieldTypeAt(unsigned int i) const {
   assert(i < this->getFieldSize());
   auto name = toTupleFieldName(i);
   auto *handle = this->lookupField(name);
   assert(handle);
-  return pool.get(handle->getTypeID());
+  return handle->getType();
 }
 
 const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
