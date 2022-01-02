@@ -78,15 +78,15 @@ void Archiver::add(const FieldHandle &handle) {
 // ##     Unarchiver     ##
 // ########################
 
-Optional<FieldHandle> Unarchiver::unpackHandle() {
+FieldHandlePtr Unarchiver::unpackHandle() {
   uint32_t index = this->read32();
   uint16_t attr = this->read16();
   uint16_t modID = this->read16();
   auto type = this->unpackType();
   if (!type) {
-    return {};
+    return nullptr;
   }
-  return FieldHandle::create(*type, index, static_cast<FieldAttribute>(attr), modID);
+  return FieldHandlePtr::create(*type, index, static_cast<FieldAttribute>(attr), modID);
 }
 
 #define TRY(E)                                                                                     \
@@ -151,14 +151,15 @@ const DSType *Unarchiver::unpackType() {
   return nullptr;
 }
 
-Optional<std::unordered_map<std::string, FieldHandle>> ModuleArchive::unpack(TypePool &pool) const {
-  std::unordered_map<std::string, FieldHandle> handleMap;
+Optional<std::unordered_map<std::string, FieldHandlePtr>>
+ModuleArchive::unpack(TypePool &pool) const {
+  std::unordered_map<std::string, FieldHandlePtr> handleMap;
   for (auto &e : this->getHandles()) {
     auto h = e.unpack(pool);
-    if (!h.hasValue()) {
+    if (!h) {
       return {};
     }
-    if (!handleMap.emplace(e.getName(), h.unwrap()).second) {
+    if (!handleMap.emplace(e.getName(), h).second) {
       return {};
     }
   }

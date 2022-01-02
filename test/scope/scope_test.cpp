@@ -4,8 +4,7 @@
 
 using namespace ydsh;
 
-struct Handle {
-  unsigned int commitID;
+struct Entry {
   TYPE type;
   unsigned int index;
   FieldAttribute attr;
@@ -33,16 +32,15 @@ protected:
     return type;
   }
 
-  static void expect(const Handle &e, const FieldHandle *handle) {
+  static void expect(const Entry &e, const FieldHandle *handle) {
     ASSERT_TRUE(handle);
-    //    ASSERT_EQ(e.commitID, handle->getCommitID());
     ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeId());
     ASSERT_EQ(e.index, handle->getIndex());
     ASSERT_EQ(toString(e.attr), toString(handle->attr()));
     ASSERT_EQ(e.modID, handle->getModId());
   }
 
-  static void expect(const Handle &e, const NameLookupResult &ret) {
+  static void expect(const Entry &e, const NameLookupResult &ret) {
     ASSERT_TRUE(ret);
     expect(e, ret.asOk());
   }
@@ -64,8 +62,7 @@ TEST_F(ScopeTest, builtin) {
   // define handle
   auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), FieldAttribute::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
@@ -79,10 +76,9 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define alias
-  ret = this->builtin->defineAlias("hey", *handle);
+  ret = this->builtin->defineAlias("hey", FieldHandlePtr(const_cast<FieldHandle *>(handle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
@@ -90,10 +86,9 @@ TEST_F(ScopeTest, builtin) {
       },
       ret));
 
-  ret = this->builtin->defineAlias("hey1", *ret.asOk());
+  ret = this->builtin->defineAlias("hey1", FieldHandlePtr(const_cast<FieldHandle *>(ret.asOk())));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
@@ -102,14 +97,13 @@ TEST_F(ScopeTest, builtin) {
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
 
-  ret = this->builtin->defineAlias("hello", *handle);
+  ret = this->builtin->defineAlias("hello", FieldHandlePtr(const_cast<FieldHandle *>(handle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define type alias
   ret = this->builtin->defineTypeAlias(this->pool, "hey1", this->pool.get(TYPE::Float));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 3,
+      Entry{
           .type = TYPE::Float,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -127,8 +121,7 @@ TEST_F(ScopeTest, builtin) {
   // lookup handle
   auto *hd = this->builtin->lookup("hello");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
@@ -139,8 +132,7 @@ TEST_F(ScopeTest, builtin) {
   // lookup alias
   hd = this->builtin->lookup("hey");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
@@ -150,8 +142,7 @@ TEST_F(ScopeTest, builtin) {
 
   hd = this->builtin->lookup("hey1");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
@@ -162,8 +153,7 @@ TEST_F(ScopeTest, builtin) {
   // lookup type alias
   hd = this->builtin->lookup(toTypeAliasFullName("hey1"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 3,
+      Entry{
           .type = TYPE::Float,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -175,8 +165,7 @@ TEST_F(ScopeTest, builtin) {
   auto point = this->builtin->getDiscardPoint();
   ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), FieldAttribute{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 4,
+      Entry{
           .type = TYPE::Job,
           .index = 1,
           .attr = FieldAttribute::GLOBAL,
@@ -208,11 +197,10 @@ TEST_F(ScopeTest, global) {
   auto ret =
       this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(Handle{.commitID = 0,
-                          .type = TYPE::Job,
-                          .index = 0,
-                          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
-                          .modID = 0},
+      this->expect(Entry{.type = TYPE::Job,
+                         .index = 0,
+                         .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+                         .modID = 0},
                    ret));
   ASSERT_EQ(1, this->builtin->getHandles().size());
   ASSERT_EQ(1, this->top->getMaxGlobalVarIndex());
@@ -223,8 +211,7 @@ TEST_F(ScopeTest, global) {
 
   auto *handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Job,
           .index = 0,
           .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
@@ -235,8 +222,7 @@ TEST_F(ScopeTest, global) {
   // define handle
   ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), FieldAttribute::MOD_CONST);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Signal,
           .index = 1,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::MOD_CONST,
@@ -245,8 +231,7 @@ TEST_F(ScopeTest, global) {
       ret));
   handle = this->top->lookup("BBB");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Signal,
           .index = 1,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::MOD_CONST,
@@ -263,8 +248,7 @@ TEST_F(ScopeTest, global) {
   // define type alias
   ret = this->top->defineTypeAlias(this->pool, "DOUBLE", this->pool.get(TYPE::Float));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::Float,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -277,8 +261,7 @@ TEST_F(ScopeTest, global) {
   // define handle in builtin
   ret = this->builtin->defineHandle("CCC", this->pool.get(TYPE::StringArray), FieldAttribute{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::StringArray,
           .index = 2,
           .attr = FieldAttribute::GLOBAL,
@@ -293,8 +276,7 @@ TEST_F(ScopeTest, block) { // for top level block
   // define global
   auto ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Any), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Any,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -313,8 +295,7 @@ TEST_F(ScopeTest, block) { // for top level block
   // define local
   auto *handle = block0->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Any,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -323,8 +304,7 @@ TEST_F(ScopeTest, block) { // for top level block
       handle));
   ret = block0->defineHandle("AAA", this->pool.get(TYPE::Error), FieldAttribute{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Error,
           .index = 0,
           .attr = FieldAttribute{},
@@ -333,8 +313,7 @@ TEST_F(ScopeTest, block) { // for top level block
       ret)); // overwrite
   handle = block0->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Error,
           .index = 0,
           .attr = FieldAttribute{},
@@ -347,8 +326,7 @@ TEST_F(ScopeTest, block) { // for top level block
 
   ret = block0->defineHandle("BBB", this->pool.get(TYPE::String), FieldAttribute::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::String,
           .index = 1,
           .attr = FieldAttribute::ENV,
@@ -359,10 +337,9 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(2, this->top->getCurLocalIndex());
 
   // define alias
-  ret = block0->defineAlias("CCC", *ret.asOk());
+  ret = block0->defineAlias("CCC", FieldHandlePtr(const_cast<FieldHandle *>(ret.asOk())));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::String,
           .index = 1,
           .attr = FieldAttribute::ENV,
@@ -386,8 +363,7 @@ TEST_F(ScopeTest, block) { // for top level block
   // lookup
   handle = block1->lookup("CCC");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::String,
           .index = 1,
           .attr = FieldAttribute::ENV,
@@ -399,8 +375,7 @@ TEST_F(ScopeTest, block) { // for top level block
   ret = block1->defineHandle("CCC", this->pool.get(TYPE::KeyNotFoundError),
                              FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::KeyNotFoundError,
           .index = 2,
           .attr = FieldAttribute::READ_ONLY,
@@ -423,8 +398,7 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(block0, block1);
   handle = block1->lookup("CCC");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::String,
           .index = 1,
           .attr = FieldAttribute::ENV,
@@ -442,8 +416,7 @@ TEST_F(ScopeTest, block) { // for top level block
 
   ret = block1->defineHandle("DDD", this->pool.get(TYPE::UnixFD), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::UnixFD,
           .index = 2,
           .attr = FieldAttribute::READ_ONLY,
@@ -471,8 +444,7 @@ TEST_F(ScopeTest, block) { // for top level block
 
   ret = block0->defineHandle("AAA", this->pool.get(TYPE::Func), FieldAttribute{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Func,
           .index = 0,
           .attr = FieldAttribute{},
@@ -503,8 +475,7 @@ TEST_F(ScopeTest, func) {
   // define global
   auto ret = this->top->defineHandle("GGG", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -517,8 +488,7 @@ TEST_F(ScopeTest, func) {
 
   auto *handle = block0->lookup("GGG");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -529,8 +499,7 @@ TEST_F(ScopeTest, func) {
   // define local
   ret = block0->defineHandle("GGG", this->pool.get(TYPE::Boolean), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Boolean,
           .index = 0,
           .attr = FieldAttribute::READ_ONLY,
@@ -539,8 +508,7 @@ TEST_F(ScopeTest, func) {
       ret)); // overwrite
   handle = block0->lookup("GGG");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Boolean,
           .index = 0,
           .attr = FieldAttribute::READ_ONLY,
@@ -555,8 +523,7 @@ TEST_F(ScopeTest, func) {
 
   ret = block0->defineHandle("QQQ", this->pool.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::StringArray,
           .index = 1,
           .attr = FieldAttribute::READ_ONLY,
@@ -570,10 +537,9 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(2, block0->getLocalSize());
 
   // define alias
-  ret = block0->defineAlias("A", *oldHandle);
+  ret = block0->defineAlias("A", FieldHandlePtr(const_cast<FieldHandle *>(oldHandle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -582,8 +548,7 @@ TEST_F(ScopeTest, func) {
       ret));
   handle = block0->lookup("A");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -639,8 +604,7 @@ TEST_F(ScopeTest, import1) {
 
   handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -656,8 +620,7 @@ TEST_F(ScopeTest, import1) {
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 3,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -683,8 +646,7 @@ TEST_F(ScopeTest, import1) {
 
   handle = modType3.lookupVisibleSymbolAtModule(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
@@ -701,8 +663,7 @@ TEST_F(ScopeTest, import1) {
 
   handle = modType3.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 3,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -740,8 +701,7 @@ TEST_F(ScopeTest, import2) {
 
   auto *handle = mod2->lookup(toModHolderName(modType.getModId(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 2,
+      Entry{
           .type = static_cast<TYPE>(modType.typeId()),
           .index = 2, // toModType api not increment
           .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL | FieldAttribute::INLINED_MOD,
@@ -754,8 +714,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(3, modType2.getModId());
   handle = modType2.lookup(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
@@ -766,8 +725,7 @@ TEST_F(ScopeTest, import2) {
 
   handle = modType2.lookup(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 3,
+      Entry{
           .type = TYPE::Int,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -784,8 +742,7 @@ TEST_F(ScopeTest, import2) {
 
   handle = modType2.lookup(this->pool, "BBB");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Float,
           .index = 3,
           .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
@@ -795,8 +752,7 @@ TEST_F(ScopeTest, import2) {
 
   handle = modType2.lookup(this->pool, toTypeAliasFullName("float"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 1,
+      Entry{
           .type = TYPE::Float,
           .index = 0,
           .attr = FieldAttribute::TYPE_ALIAS,
@@ -809,8 +765,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ("", s);
   handle = this->top->lookup(toModHolderName(modType2.getModId(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = static_cast<TYPE>(modType2.typeId()),
           .index = 4,
           .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL_MOD,
@@ -862,8 +817,7 @@ TEST_F(ScopeTest, conflict) {
 
   auto *handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      Handle{
-          .commitID = 0,
+      Entry{
           .type = TYPE::Regex,
           .index = 3,
           .attr = FieldAttribute::GLOBAL,

@@ -61,7 +61,7 @@ void DSType::walkField(const TypePool &pool,
   case TypeKind::Mod: {
     auto &modType = cast<ModType>(*this);
     for (auto &e : modType.getHandleMap()) {
-      if (!walker(e.first, e.second)) {
+      if (!walker(e.first, *e.second)) {
         return;
       }
     }
@@ -71,7 +71,7 @@ void DSType::walkField(const TypePool &pool,
       if (child.isInlined()) {
         auto &childType = cast<ModType>(pool.get(child.typeId()));
         for (auto &e : childType.getHandleMap()) {
-          if (!walker(e.first, e.second)) {
+          if (!walker(e.first, *e.second)) {
             return;
           }
         }
@@ -160,7 +160,7 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    auto handle = FieldHandle::create(*types[i], i, FieldAttribute());
+    FieldHandle handle(*types[i], i, FieldAttribute());
     this->fieldHandleMap.emplace(toTupleFieldName(i), handle);
   }
 }
@@ -280,6 +280,17 @@ std::string toString(FieldAttribute attr) {
     }
   }
   return value;
+}
+
+void Handle::destroy() {
+  switch (this->getKind()) {
+  case FIELD:
+    delete static_cast<FieldHandle*>(this);
+    break;
+  case METHOD:
+    delete static_cast<MethodHandle*>(this);
+    break;
+  }
 }
 
 } // namespace ydsh

@@ -306,7 +306,7 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
     content += ") : ";
     content += handle.getReturnType().getNameRef();
     content += " for ";
-    content += handle.getRecvType().getNameRef();
+    content += this->getPool().get(handle.getRecvTypeId()).getNameRef();
     auto *decl = this->addDeclImpl(kind, attr, nameInfo, content.c_str(), false);
     if (decl) {
       this->memberMap.add(recv, *decl);
@@ -771,17 +771,17 @@ bool SymbolIndexer::consume(std::unique_ptr<Node> &&node) {
   return true;
 }
 
-static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandle> &entry) {
+static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandlePtr> &entry) {
   if (isTypeAliasFullName(entry.first)) {
-    assert(entry.second.has(FieldAttribute::TYPE_ALIAS));
+    assert(entry.second->has(FieldAttribute::TYPE_ALIAS));
     return DeclSymbol::Kind::TYPE_ALIAS;
   } else if (isCmdFullName(entry.first)) {
     return DeclSymbol::Kind::CMD;
   } else {
-    if (entry.second.has(FieldAttribute::ENV)) {
+    if (entry.second->has(FieldAttribute::ENV)) {
       return DeclSymbol::Kind::IMPORT_ENV;
     }
-    if (entry.second.has(FieldAttribute::READ_ONLY)) {
+    if (entry.second->has(FieldAttribute::READ_ONLY)) {
       return DeclSymbol::Kind::LET;
     }
     return DeclSymbol::Kind::VAR;
@@ -794,7 +794,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   for (auto &e : modType.getHandleMap()) {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
-    auto &type = this->builder().getPool().get(e.second.getTypeId());
+    auto &type = this->builder().getPool().get(e.second->getTypeId());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
     } else if (auto iter = getBuiltinConstMap().find(nameInfo.getName());

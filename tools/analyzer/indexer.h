@@ -183,7 +183,8 @@ public:
   }
 
   const Symbol *addMethod(const MethodHandle &handle, const NameInfo &nameInfo) {
-    return this->addMemberImpl(handle.getRecvType(), nameInfo, DeclSymbol::Kind::METHOD, &handle);
+    return this->addMemberImpl(this->getPool().get(handle.getRecvTypeId()), nameInfo,
+                               DeclSymbol::Kind::METHOD, &handle);
   }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;

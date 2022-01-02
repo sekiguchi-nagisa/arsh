@@ -283,7 +283,7 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType 
 }
 
 const ModType &TypePool::createModType(unsigned short modID,
-                                       std::unordered_map<std::string, FieldHandle> &&handles,
+                                       std::unordered_map<std::string, FieldHandlePtr> &&handles,
                                        FlexBuffer<ModType::Imported> &&children,
                                        unsigned int index) {
   auto name = toModTypeName(modID);

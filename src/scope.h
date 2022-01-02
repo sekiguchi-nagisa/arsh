@@ -74,7 +74,7 @@ private:
   /**
    * maintain (FieldHandle, commitId)
    */
-  std::unordered_map<std::string, std::pair<FieldHandle, unsigned int>> handles;
+  std::unordered_map<std::string, std::pair<FieldHandlePtr, unsigned int>> handles;
 
   /**
    * for func/block scope construction
@@ -151,7 +151,7 @@ public:
   const FieldHandle *find(const std::string &name) const {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
-      return &iter->second.first;
+      return iter->second.first.get();
     }
     return nullptr;
   }
@@ -184,7 +184,7 @@ public:
   // for name registration
   NameLookupResult defineHandle(std::string &&name, const DSType &type, FieldAttribute attr);
 
-  NameLookupResult defineAlias(std::string &&name, const FieldHandle &handle);
+  NameLookupResult defineAlias(std::string &&name, const FieldHandlePtr &handle);
 
   NameLookupResult defineTypeAlias(const TypePool &pool, std::string &&name, const DSType &type);
 
@@ -233,7 +233,7 @@ private:
   FieldHandle *findMut(const std::string &name) {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
-      return &iter->second.first;
+      return iter->second.first.get();
     }
     return nullptr;
   }
@@ -247,7 +247,7 @@ private:
    * if true, not increment internal variable index
    * @return
    */
-  NameLookupResult add(std::string &&name, FieldHandle &&handle, bool asAlias = false);
+  NameLookupResult add(std::string &&name, FieldHandlePtr &&handle, bool asAlias = false);
 
   /**
    * define local/global variable name
@@ -263,11 +263,11 @@ private:
       unsetFlag(attr, FieldAttribute::GLOBAL);
     }
     unsigned int index = this->isGlobal() ? this->getMaxGlobalVarIndex() : this->getCurLocalIndex();
-    return this->add(std::move(name), FieldHandle::create(type, index, attr, this->modId));
+    return this->add(std::move(name), FieldHandlePtr::create(type, index, attr, this->modId));
   }
 
-  NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandle &handle) {
-    return this->add(std::move(name), FieldHandle(handle), true);
+  NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandlePtr &handle) {
+    return this->add(std::move(name), FieldHandlePtr(handle), true);
   }
 };
 

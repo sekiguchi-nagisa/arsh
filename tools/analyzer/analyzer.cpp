@@ -76,7 +76,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   std::vector<Archive> handles;
   for (auto &e : modType.getHandleMap()) {
     handles.push_back(
-        Archive::pack(this->getPool(), this->typeDiscardPoint.typeIdOffset, e.first, e.second));
+        Archive::pack(this->getPool(), this->typeDiscardPoint.typeIdOffset, e.first, *e.second));
   }
 
   // resolve imported modules

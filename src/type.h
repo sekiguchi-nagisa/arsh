@@ -240,46 +240,104 @@ std::string toString(FieldAttribute attr);
 template <>
 struct allow_enum_bitop<FieldAttribute> : std::true_type {};
 
-/**
- * represent for class field or variable. field type may be function type.
- */
-class FieldHandle {
-private:
-  unsigned int typeID;
+struct HandleRefCount;
+
+class Handle {
+public:
+  enum Kind : unsigned char {
+    FIELD,
+    METHOD,
+  };
+
+protected:
+  friend struct HandleRefCount;
+
+  int refCount{0};
+
+  /**
+   * |  24bit  |  8bit       |
+   *   TypeID    Kind
+   */
+  unsigned int tag{0};
 
   unsigned int index;
 
-  FieldAttribute attribute;
+  union {
+    unsigned short u16;
+    struct {
+      unsigned char u8_1;
+      unsigned char u8_2;
+    };
+  };
 
   /**
    * if global module, id is 0.
    */
-  unsigned short modID;
+  unsigned short modId;
 
-  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute,
-              unsigned short modID)
-      : typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
+  Handle(Kind k, const DSType &type, unsigned int index, unsigned short modId)
+      : tag(type.typeId() << 8 | static_cast<unsigned char>(k)), index(index), modId(modId) {}
 
-  FieldHandle(const FieldHandle &handle, FieldAttribute newAttr, unsigned short modID)
-      : typeID(handle.getTypeId()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
+  ~Handle() = default;
 
 public:
-  static FieldHandle create(const DSType &fieldType, unsigned int fieldIndex,
-                            FieldAttribute attribute, unsigned short modID = 0) {
-    return {fieldType, fieldIndex, attribute, modID};
+  unsigned int getTypeId() const { return this->tag >> 8; }
+
+  Kind getKind() const { return static_cast<Kind>(this->tag & 0xFF); }
+
+  bool isField() const { return this->getKind() == FIELD; }
+
+  bool isMethod() const { return this->getKind() == METHOD; }
+
+  unsigned int getIndex() const { return this->index; }
+
+  unsigned short getModId() const { return this->modId; }
+
+private:
+  void destroy();
+};
+
+struct HandleRefCount {
+  static long useCount(const Handle *ptr) noexcept { return ptr->refCount; }
+
+  static void increase(Handle *ptr) noexcept {
+    if (ptr != nullptr) {
+      ptr->refCount++;
+    }
   }
 
-  static FieldHandle withNewAttr(const FieldHandle &handle, FieldAttribute newAttr) {
-    return {handle, newAttr, handle.getModId()};
+  static void decrease(Handle *ptr) noexcept {
+    if (ptr != nullptr && --ptr->refCount == 0) {
+      ptr->destroy();
+    }
+  }
+};
+
+/**
+ * represent for class field or variable. field type may be function type.
+ */
+class FieldHandle : public Handle {
+public:
+  static_assert(sizeof(Handle) == 16);
+
+  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute)
+      : FieldHandle(fieldType, fieldIndex, attribute, 0) {}
+
+  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute,
+              unsigned short modId)
+      : Handle(FIELD, fieldType, fieldIndex, modId) {
+    this->setAttr(attribute);
   }
 
   ~FieldHandle() = default;
 
-  unsigned int getTypeId() const { return this->typeID; }
+  /**
+   * normally unused
+   * @param newAttr
+   */
+  void setAttr(FieldAttribute newAttr) { this->u16 = static_cast<unsigned short>(newAttr); }
 
-  unsigned int getIndex() const { return this->index; }
-
-  FieldAttribute attr() const { return this->attribute; }
+  FieldAttribute attr() const { return static_cast<FieldAttribute>(this->u16); }
 
   bool has(FieldAttribute a) const { return hasFlag(this->attr(), a); }
 
@@ -287,9 +345,9 @@ public:
     return !empty(this->attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD |
                                   FieldAttribute::INLINED_MOD));
   }
-
-  unsigned short getModId() const { return this->modID; }
 };
+
+using FieldHandlePtr = IntrusivePtr<FieldHandle, HandleRefCount>;
 
 struct CallableTypes {
   const DSType *returnType{nullptr};
@@ -507,12 +565,12 @@ private:
   /**
    * FieldHandle modId is equivalent to this.modId
    */
-  std::unordered_map<std::string, FieldHandle> handleMap;
+  std::unordered_map<std::string, FieldHandlePtr> handleMap;
 
 public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
-          std::unordered_map<std::string, FieldHandle> &&handles, FlexBuffer<Imported> &&children,
-          unsigned int index)
+          std::unordered_map<std::string, FieldHandlePtr> &&handles,
+          FlexBuffer<Imported> &&children, unsigned int index)
       : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
     this->meta.u16_2.v1 = modID;
     this->meta.u16_2.v2 = 0;
@@ -545,12 +603,12 @@ public:
    * for indicating module object index
    * @return
    */
-  FieldHandle toAliasHandle(unsigned short importedModId) const {
-    return FieldHandle::create(*this, this->getIndex(),
-                               FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, importedModId);
+  FieldHandlePtr toAliasHandle(unsigned short importedModId) const {
+    return FieldHandlePtr::create(
+        *this, this->getIndex(), FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, importedModId);
   }
 
-  FieldHandle toModHolder(ImportedModKind k, unsigned short importedModId) const {
+  FieldHandlePtr toModHolder(ImportedModKind k, unsigned short importedModId) const {
     FieldAttribute attr = FieldAttribute::NAMED_MOD;
     if (hasFlag(k, ImportedModKind::INLINED)) {
       attr = FieldAttribute::INLINED_MOD;
@@ -558,16 +616,14 @@ public:
       attr = FieldAttribute::GLOBAL_MOD;
     }
     setFlag(attr, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL);
-    return FieldHandle::create(*this, this->getIndex(), attr, importedModId);
+    return FieldHandlePtr::create(*this, this->getIndex(), attr, importedModId);
   }
 
   Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
 
   std::string toName() const { return this->getNameRef().toString(); }
 
-  const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
-    return this->handleMap;
-  }
+  const auto &getHandleMap() const { return this->handleMap; }
 
   const FieldHandle *lookup(const TypePool &pool, const std::string &fieldName) const;
 
@@ -587,12 +643,12 @@ private:
   const FieldHandle *find(const std::string &name) const {
     auto iter = this->handleMap.find(name);
     if (iter != this->handleMap.end()) {
-      return &iter->second;
+      return iter->second.get();
     }
     return nullptr;
   }
 
-  void reopen(std::unordered_map<std::string, FieldHandle> &&handles,
+  void reopen(std::unordered_map<std::string, FieldHandlePtr> &&handles,
               FlexBuffer<Imported> &&children) {
     this->disposeChildren();
     this->handleMap = std::move(handles);
@@ -653,33 +709,26 @@ public:
   const std::vector<const DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
 };
 
-class MethodHandle {
+class MethodHandle : public Handle {
 private:
   friend class TypePool;
 
-  const unsigned short methodIndex;
-
-  const unsigned char paramSize;
-
-  const bool native{true}; // currently, only support native method
-
   const DSType &returnType;
-
-  const DSType &recvType;
 
   /**
    * not contains receiver type
    */
   const DSType *paramTypes[];
 
-  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret,
-               unsigned short paramSize)
-      : methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
+  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize)
+      : Handle(METHOD, recv, index, 0), returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
+    this->u8_1 = paramSize;
+    this->u8_2 = 1; // FIXME:
   }
 
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
-                                              const DSType &ret, unsigned int paramSize) {
+                                              const DSType &ret, unsigned char paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize);
     return std::unique_ptr<MethodHandle>(handle);
@@ -692,20 +741,20 @@ public:
     free(ptr);
   }
 
-  unsigned short getMethodIndex() const { return this->methodIndex; }
+  unsigned short getMethodIndex() const { return this->getIndex(); }
 
   const DSType &getReturnType() const { return this->returnType; }
 
-  const DSType &getRecvType() const { return this->recvType; }
+  unsigned int getRecvTypeId() const { return this->getTypeId(); }
 
-  unsigned short getParamSize() const { return this->paramSize; }
+  unsigned short getParamSize() const { return this->u8_1; }
 
   const DSType &getParamTypeAt(unsigned int index) const {
     assert(index < this->getParamSize());
     return *this->paramTypes[index];
   }
 
-  bool isNative() const { return this->native; }
+  bool isNative() const { return this->u8_2 > 0; }
 
   CallableTypes toCallableTypes() const {
     return {this->returnType, this->getParamSize(),

@@ -121,8 +121,8 @@ protected:
 
   AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->archives); }
 
-  static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
-    using Entry = std::pair<std::string, FieldHandle>;
+  static auto toSorted(const std::unordered_map<std::string, FieldHandlePtr> &handleMap) {
+    using Entry = std::pair<std::string, FieldHandlePtr>;
     std::vector<Entry> ret;
     for (auto &e : handleMap) {
       ret.emplace_back(e.first, e.second);
@@ -166,8 +166,8 @@ public:
 
     // deserialize
     auto ret2 = archive.unpack(this->newCtx->getPool()); // deserialize in another context
-    ASSERT_TRUE(ret2.hasValue());
-    auto &newHandle = ret2.unwrap();
+    ASSERT_TRUE(ret2);
+    auto &newHandle = *ret2;
 
     // compare 2 handles
     ASSERT_EQ(orgHandle.getModId(), newHandle.getModId());
@@ -259,8 +259,8 @@ public:
       auto &orgEntry = orgHandles[i];
       auto &newEntry = newHandles[i];
       ASSERT_EQ(orgEntry.first, newEntry.first);
-      ASSERT_EQ(orgEntry.second.getModId(), newEntry.second.getModId());
-      ASSERT_EQ(toString(orgEntry.second.attr()), toString(newEntry.second.attr()));
+      ASSERT_EQ(orgEntry.second->getModId(), newEntry.second->getModId());
+      ASSERT_EQ(toString(orgEntry.second->attr()), toString(newEntry.second->attr()));
     }
 
     // check specified names
