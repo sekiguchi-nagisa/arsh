@@ -87,7 +87,7 @@ private:
     }
   };
 
-  using FieldRef = std::reference_wrapper<const FieldHandle>;
+  using FieldRef = std::reference_wrapper<const Handle>;
 
   using MethodRef = std::reference_wrapper<const MethodHandle>;
 

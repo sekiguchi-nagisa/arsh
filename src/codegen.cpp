@@ -131,11 +131,10 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
 
 void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle) {
   if (handle.isNative()) {
-    this->emitNativeCallIns(paramSize + 1, handle.getMethodIndex(),
-                            !handle.getReturnType().isVoidType());
+    this->emitNativeCallIns(paramSize + 1, handle.getIndex(), !handle.getReturnType().isVoidType());
   } else {
     this->emitValIns(OpCode::CALL_METHOD, paramSize, handle.getReturnType().isVoidType() ? 1 : 0);
-    this->curBuilder().append16(handle.getMethodIndex());
+    this->curBuilder().append16(handle.getIndex());
   }
 }
 
@@ -449,18 +448,18 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
   this->emitSourcePos(node.getPos());
-  if (hasFlag(node.attr(), FieldAttribute::ENV)) {
-    if (hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
+  if (hasFlag(node.attr(), HandleAttr::ENV)) {
+    if (hasFlag(node.attr(), HandleAttr::GLOBAL)) {
       this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
     } else {
       this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
     }
 
     this->emit0byteIns(OpCode::LOAD_ENV);
-  } else if (hasFlag(node.attr(), FieldAttribute::MOD_CONST)) {
+  } else if (hasFlag(node.attr(), HandleAttr::MOD_CONST)) {
     this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
   } else {
-    if (hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
+    if (hasFlag(node.attr(), HandleAttr::GLOBAL)) {
       if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {
         this->emit0byteIns(OpCode::LOAD_CUR_MOD);
       } else if (node.getIndex() == toIndex(BuiltinVarOffset::RANDOM)) {
@@ -1247,8 +1246,8 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     }
     auto &varNode = cast<VarNode>(node.getLeftNode());
 
-    if (hasFlag(varNode.attr(), FieldAttribute::ENV)) {
-      if (hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
+    if (hasFlag(varNode.attr(), HandleAttr::ENV)) {
+      if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       } else {
         this->emit1byteIns(OpCode::LOAD_LOCAL, index);
@@ -1257,7 +1256,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
       this->emit0byteIns(OpCode::SWAP);
       this->emit0byteIns(OpCode::STORE_ENV);
     } else {
-      if (hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
+      if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
         if (index == toIndex(BuiltinVarOffset::SECONDS)) {
           this->emit0byteIns(OpCode::SET_SECOND);
         } else {

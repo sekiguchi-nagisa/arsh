@@ -244,8 +244,8 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
   }
 }
 
-const FieldHandle *TypeChecker::addEntry(Token token, const std::string &symbolName,
-                                         const DSType &type, FieldAttribute attribute) {
+const Handle *TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
+                                    HandleAttr attribute) {
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
   if (!ret) {
     switch (ret.asErr()) {
@@ -271,7 +271,7 @@ static auto initDeniedNameList() {
   return set;
 }
 
-const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
+const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   static auto deniedList = initDeniedNameList();
   if (deniedList.find(node.getCmdName()) != deniedList.end()) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str()); // FIXME: better error message
@@ -291,8 +291,8 @@ const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     type = ret.asOk();
   }
 
-  auto ret = this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type,
-                                          FieldAttribute::READ_ONLY);
+  auto ret =
+      this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
   if (ret) {
     return ret.asOk();
   } else if (ret.asErr() == NameLookupError::DEFINED) {
@@ -801,7 +801,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
   {
     auto scope = this->intoBlock();
     if (node.isLastPipe()) { // register pipeline state
-      this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+      this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
       node.setBaseIndex(this->curScope->getBaseIndex());
     }
     auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
@@ -813,7 +813,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
   auto scope = this->intoBlock();
 
   // register redir config
-  this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+  this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
   auto &type = this->checkTypeExactly(node.getExprNode());
   for (auto &e : node.getRedirNodes()) {
@@ -1207,7 +1207,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     auto &varNode = cast<VarNode>(node);
     Token token = varNode.getToken();
     std::string value;
-    if (hasFlag(varNode.attr(), FieldAttribute::MOD_CONST)) {
+    if (hasFlag(varNode.attr(), HandleAttr::MOD_CONST)) {
       if (varNode.getVarName() == CVAR_SCRIPT_NAME) {
         value = this->lexer->getSourceName();
       } else if (varNode.getVarName() == CVAR_SCRIPT_DIR) {
@@ -1215,7 +1215,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       } else {
         break;
       }
-    } else if (hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
+    } else if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
       auto iter = getBuiltinConstMap().find(varNode.getVarName());
       if (iter == getBuiltinConstMap().end()) {
         break;
@@ -1340,7 +1340,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     /**
      * check type catch block
      */
-    auto handle = this->addEntry(node.getNameInfo(), exceptionType, FieldAttribute::READ_ONLY);
+    auto handle = this->addEntry(node.getNameInfo(), exceptionType, HandleAttr::READ_ONLY);
     if (handle) {
       node.setAttribute(*handle);
     }
@@ -1412,18 +1412,18 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
   const DSType *exprType = nullptr;
-  FieldAttribute attr{};
+  HandleAttr attr{};
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR:
     if (node.getKind() == VarDeclNode::LET) {
-      setFlag(attr, FieldAttribute::READ_ONLY);
+      setFlag(attr, HandleAttr::READ_ONLY);
     }
     exprType = &this->checkTypeAsSomeExpr(*node.getExprNode());
     break;
   case VarDeclNode::IMPORT_ENV:
   case VarDeclNode::EXPORT_ENV:
-    setFlag(attr, FieldAttribute::ENV);
+    setFlag(attr, HandleAttr::ENV);
     exprType = &this->typePool.get(TYPE::String);
     if (node.getExprNode() != nullptr) {
       this->checkType(*exprType, *node.getExprNode());
@@ -1442,7 +1442,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);
   if (isa<AssignableNode>(leftNode)) {
-    if (hasFlag(cast<AssignableNode>(leftNode).attr(), FieldAttribute::READ_ONLY)) {
+    if (hasFlag(cast<AssignableNode>(leftNode).attr(), HandleAttr::READ_ONLY)) {
       this->reportError<ReadOnly>(leftNode);
     }
   } else {
@@ -1497,15 +1497,14 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
     auto scope = this->intoBlock();
 
     // register envctx
-    this->addEntry(node, node.toEnvCtxName(), this->typePool.get(TYPE::Any),
-                   FieldAttribute::READ_ONLY);
+    this->addEntry(node, node.toEnvCtxName(), this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
     for (auto &e : node.getAssignNodes()) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       if (auto *handle =
-              this->addEntry(leftNode, leftNode.getVarName(), rightType, FieldAttribute::ENV);
+              this->addEntry(leftNode, leftNode.getVarName(), rightType, HandleAttr::ENV);
           handle) {
         leftNode.setAttribute(*handle);
         leftNode.setType(rightType);
@@ -1559,9 +1558,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if (auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes))) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
       node.setFuncType(*funcType);
-      if (const FieldHandle * handle;
+      if (const Handle * handle;
           !node.isAnonymousFunc() &&
-          (handle = this->addEntry(node.getNameInfo(), *funcType, FieldAttribute::READ_ONLY))) {
+          (handle = this->addEntry(node.getNameInfo(), *funcType, HandleAttr::READ_ONLY))) {
         node.setVarIndex(handle->getIndex());
       }
     } else {
@@ -1574,7 +1573,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   // register parameter
   for (unsigned int i = 0; i < paramSize; i++) {
     auto &paramType = funcType ? funcType->getParamTypeAt(i) : *paramTypes[i];
-    this->addEntry(node.getParams()[i], paramType, FieldAttribute());
+    this->addEntry(node.getParams()[i], paramType, HandleAttr());
   }
   // check type func body
   this->checkTypeWithCurrentScope(
@@ -1650,17 +1649,17 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   {
     auto func = this->intoFunc(returnType); // pseudo return type
     // register dummy parameter (for propagating command attr)
-    this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
     // register dummy parameter (for closing file descriptor)
-    this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
     // register special characters (@, #, 0, 1, ... 9)
-    this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
-    this->addEntry(node, "#", this->typePool.get(TYPE::Int), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
+    this->addEntry(node, "#", this->typePool.get(TYPE::Int), HandleAttr::READ_ONLY);
     for (unsigned int i = 0; i < 10; i++) {
       this->addEntry(node, std::to_string(i), this->typePool.get(TYPE::String),
-                     FieldAttribute::READ_ONLY);
+                     HandleAttr::READ_ONLY);
     }
 
     // check type command body

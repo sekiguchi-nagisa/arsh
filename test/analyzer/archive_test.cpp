@@ -121,8 +121,8 @@ protected:
 
   AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->archives); }
 
-  static auto toSorted(const std::unordered_map<std::string, FieldHandlePtr> &handleMap) {
-    using Entry = std::pair<std::string, FieldHandlePtr>;
+  static auto toSorted(const std::unordered_map<std::string, HandlePtr> &handleMap) {
+    using Entry = std::pair<std::string, HandlePtr>;
     std::vector<Entry> ret;
     for (auto &e : handleMap) {
       ret.emplace_back(e.first, e.second);
@@ -141,14 +141,14 @@ public:
 
   const TypePool &newPool() const { return this->newCtx->getPool(); }
 
-  void defineAndArchive(const char *fieldName, const char *typeName, FieldAttribute attr = {}) {
+  void defineAndArchive(const char *fieldName, const char *typeName, HandleAttr attr = {}) {
     ASSERT_TRUE(typeName);
     auto ret = this->orgCtx->getPool().getType(typeName);
     ASSERT_TRUE(ret);
     this->defineAndArchive(fieldName, *ret.asOk(), attr);
   }
 
-  void defineAndArchive(const char *fieldName, const DSType &orgType, FieldAttribute attr = {}) {
+  void defineAndArchive(const char *fieldName, const DSType &orgType, HandleAttr attr = {}) {
     ASSERT_TRUE(fieldName);
     ASSERT_TRUE(orgType.typeId() < this->pool().getDiscardPoint().typeIdOffset);
     ASSERT_EQ(orgType, this->orgCtx->getPool().get(orgType.typeId()));
@@ -178,12 +178,12 @@ public:
     ASSERT_EQ(orgType.getNameRef(), newType.getNameRef());
   }
 
-  void define(const char *fieldName, const DSType &orgType, FieldAttribute attr = {}) {
+  void define(const char *fieldName, const DSType &orgType, HandleAttr attr = {}) {
     define(*this->orgCtx, fieldName, orgType, attr);
   }
 
   static void define(AnalyzerContext &ctx, const char *fieldName, const DSType &type,
-                     FieldAttribute attr = {}) {
+                     HandleAttr attr = {}) {
     ASSERT_TRUE(fieldName);
     ASSERT_TRUE(type.typeId() < ctx.getPool().getDiscardPoint().typeIdOffset);
     ASSERT_EQ(type, ctx.getPool().get(type.typeId()));
@@ -193,9 +193,9 @@ public:
     auto *handle = ret.asOk();
     ASSERT_EQ(type.typeId(), handle->getTypeId());
     auto orgAttr = attr;
-    unsetFlag(orgAttr, FieldAttribute::GLOBAL);
+    unsetFlag(orgAttr, HandleAttr::GLOBAL);
     auto newAttr = handle->attr();
-    unsetFlag(newAttr, FieldAttribute::GLOBAL);
+    unsetFlag(newAttr, HandleAttr::GLOBAL);
     ASSERT_EQ(toString(orgAttr), toString(newAttr));
   }
 
@@ -275,21 +275,21 @@ TEST_F(ArchiveTest, base) {
   auto ctx = this->newctx();
   auto *handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
-  ASSERT_TRUE(handle->has(FieldAttribute::GLOBAL));
+  ASSERT_TRUE(handle->has(HandleAttr::GLOBAL));
   ASSERT_EQ(0, handle->getModId());
   handle = ctx->getScope()->find("TRUE");
   ASSERT_TRUE(handle);
-  ASSERT_TRUE(handle->has(FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
+  ASSERT_TRUE(handle->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
   ASSERT_EQ(0, handle->getModId());
   ASSERT_TRUE(ctx->getTypeIdOffset() <= UINT8_MAX);
 }
 
 TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", FieldAttribute::ENV));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", HandleAttr::ENV));
   ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("c", "((String, [String]) -> Void)!", FieldAttribute{}));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", FieldAttribute{}));
+      this->defineAndArchive("c", "((String, [String]) -> Void)!", HandleAttr{}));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", HandleAttr{}));
 }
 
 TEST_F(ArchiveTest, array) {
@@ -299,7 +299,7 @@ TEST_F(ArchiveTest, array) {
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, HandleAttr::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createArrayType(type1);
@@ -316,8 +316,8 @@ TEST_F(ArchiveTest, map) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1, FieldAttribute::READ_ONLY));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, FieldAttribute::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1, HandleAttr::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, HandleAttr::TYPE_ALIAS));
 
   //
   ret1 =
@@ -340,7 +340,7 @@ TEST_F(ArchiveTest, tuple) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa12", type1, FieldAttribute::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa12", type1, HandleAttr::READ_ONLY));
 
   //
   ret1 = this->pool().createMapType(this->pool().get(TYPE::Int), this->pool().get(TYPE::Int));
@@ -358,8 +358,7 @@ TEST_F(ArchiveTest, option) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("w1", "UnwrappingError!", FieldAttribute::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrappingError!", HandleAttr::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createOptionType(type1);
@@ -385,7 +384,7 @@ TEST_F(ArchiveTest, func) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("e1", type1, FieldAttribute::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("e1", type1, HandleAttr::READ_ONLY));
 
   //
   types = std::vector<const DSType *>();
@@ -397,8 +396,8 @@ TEST_F(ArchiveTest, func) {
   ret1 = this->pool().createFuncType(this->pool().get(TYPE::Nothing), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type2 = *ret1.asOk();
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, FieldAttribute::TYPE_ALIAS));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, FieldAttribute{}));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, HandleAttr::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, HandleAttr{}));
 }
 
 TEST_F(ArchiveTest, mod1) { ASSERT_NO_FATAL_FAILURE(this->archiveMod()); }
@@ -409,14 +408,14 @@ TEST_F(ArchiveTest, mod2) {
   auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
-  ASSERT_NO_FATAL_FAILURE(this->define("AAA", type1, FieldAttribute::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->define("AAA", type1, HandleAttr::READ_ONLY));
 
   //
   auto ret2 = this->pool().createOptionType(this->pool().get(TYPE::UnwrappingError));
   ASSERT_TRUE(ret2);
   auto &type2 = *ret2.asOk();
   ASSERT_NO_FATAL_FAILURE(
-      this->define("a12345", type2, FieldAttribute::TYPE_ALIAS | FieldAttribute::READ_ONLY));
+      this->define("a12345", type2, HandleAttr::TYPE_ALIAS | HandleAttr::READ_ONLY));
 
   ASSERT_NO_FATAL_FAILURE(this->archiveMod({"AAA", "a12345"}));
 }
@@ -428,9 +427,9 @@ TEST_F(ArchiveTest, mod3) {
                                               ctx.getPool().get(TYPE::GlobbingError));
       ASSERT_TRUE(ret1);
       auto &type1 = *ret1.asOk();
-      ASSERT_NO_FATAL_FAILURE(define(ctx, "AAA", type1, FieldAttribute::ENV));
+      ASSERT_NO_FATAL_FAILURE(define(ctx, "AAA", type1, HandleAttr::ENV));
       ASSERT_NO_FATAL_FAILURE(
-          define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), FieldAttribute{}));
+          define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), HandleAttr{}));
     });
     ASSERT_EQ(3, modType3.getModId());
     ASSERT_EQ(1, modType3.getChildSize());
@@ -452,13 +451,13 @@ TEST_F(ArchiveTest, mod3) {
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
             handle->getTypeId());
-  ASSERT_EQ(toString(FieldAttribute::ENV | FieldAttribute::GLOBAL), toString(handle->attr()));
+  ASSERT_EQ(toString(HandleAttr::ENV | HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModId(), handle->getModId());
 
   handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeId());
-  ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
+  ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModId(), handle->getModId());
 
   //
@@ -477,7 +476,7 @@ TEST_F(ArchiveTest, mod3) {
   handle = modType1.lookup(this->newPool(), "aaa");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(), handle->getTypeId());
-  ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
+  ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(1, handle->getModId());
 }
 
@@ -488,16 +487,16 @@ TEST_F(ArchiveTest, mod4) {
         auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Boolean));
         ASSERT_TRUE(ret);
         ctx2.getScope()->defineTypeAlias(ctx2.getPool(), "BoolArray", *ret.asOk());
-        ASSERT_NO_FATAL_FAILURE(define(ctx2, "AAA", *ret.asOk(), FieldAttribute::READ_ONLY));
+        ASSERT_NO_FATAL_FAILURE(define(ctx2, "AAA", *ret.asOk(), HandleAttr::READ_ONLY));
       });
       ASSERT_EQ(4, modType4.getModId());
 
       auto ret = ctx1.getPool().createTupleType(
           {&ctx1.getPool().get(TYPE::IllegalAccessError), &modType4});
       ASSERT_TRUE(ret);
-      ASSERT_NO_FATAL_FAILURE(define(ctx1, "BBB", *ret.asOk(), FieldAttribute::READ_ONLY));
+      ASSERT_NO_FATAL_FAILURE(define(ctx1, "BBB", *ret.asOk(), HandleAttr::READ_ONLY));
     });
-    ASSERT_NO_FATAL_FAILURE(define("CCC", modType3, FieldAttribute::READ_ONLY));
+    ASSERT_NO_FATAL_FAILURE(define("CCC", modType3, HandleAttr::READ_ONLY));
 
     ASSERT_EQ(3, modType3.getModId());
     ASSERT_EQ(2, modType3.getChildSize());

@@ -65,9 +65,9 @@ void Archiver::add(const DSType &type) {
   }
 }
 
-void Archiver::add(const FieldHandle &handle) {
+void Archiver::add(const Handle &handle) {
   this->write32(handle.getIndex());
-  static_assert(std::is_same_v<std::underlying_type_t<FieldAttribute>, unsigned short>);
+  static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
   this->write16(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
@@ -78,7 +78,7 @@ void Archiver::add(const FieldHandle &handle) {
 // ##     Unarchiver     ##
 // ########################
 
-FieldHandlePtr Unarchiver::unpackHandle() {
+HandlePtr Unarchiver::unpackHandle() {
   uint32_t index = this->read32();
   uint16_t attr = this->read16();
   uint16_t modID = this->read16();
@@ -86,7 +86,7 @@ FieldHandlePtr Unarchiver::unpackHandle() {
   if (!type) {
     return nullptr;
   }
-  return FieldHandlePtr::create(*type, index, static_cast<FieldAttribute>(attr), modID);
+  return HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modID);
 }
 
 #define TRY(E)                                                                                     \
@@ -151,9 +151,8 @@ const DSType *Unarchiver::unpackType() {
   return nullptr;
 }
 
-Optional<std::unordered_map<std::string, FieldHandlePtr>>
-ModuleArchive::unpack(TypePool &pool) const {
-  std::unordered_map<std::string, FieldHandlePtr> handleMap;
+Optional<std::unordered_map<std::string, HandlePtr>> ModuleArchive::unpack(TypePool &pool) const {
+  std::unordered_map<std::string, HandlePtr> handleMap;
   for (auto &e : this->getHandles()) {
     auto h = e.unpack(pool);
     if (!h) {

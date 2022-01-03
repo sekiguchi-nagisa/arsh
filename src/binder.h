@@ -39,7 +39,7 @@ public:
       : consumer(consumer), pool(pool), scope(scope) {}
 
   template <typename T>
-  void bind(const char *varName, T v, FieldAttribute attr = FieldAttribute::READ_ONLY) {
+  void bind(const char *varName, T v, HandleAttr attr = HandleAttr::READ_ONLY) {
     auto &type = this->toType(std::forward<T>(v));
     auto handle = this->scope.defineHandle(varName, type, attr);
     assert(static_cast<bool>(handle));
@@ -47,7 +47,7 @@ public:
   }
 
   void bind(const char *varName, const DSType &type) {
-    auto handle = this->scope.defineHandle(varName, type, FieldAttribute::READ_ONLY);
+    auto handle = this->scope.defineHandle(varName, type, HandleAttr::READ_ONLY);
     assert(static_cast<bool>(handle));
     this->consumer(*handle.asOk(), type);
   }
@@ -68,19 +68,19 @@ void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
    * dummy object.
    * must be String_Object
    */
-  binder.bind(CVAR_SCRIPT_NAME, "", FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+  binder.bind(CVAR_SCRIPT_NAME, "", HandleAttr::MOD_CONST | HandleAttr::READ_ONLY);
 
   /**
    * dummy object
    * must be String_Object
    */
-  binder.bind(CVAR_SCRIPT_DIR, "", FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+  binder.bind(CVAR_SCRIPT_DIR, "", HandleAttr::MOD_CONST | HandleAttr::READ_ONLY);
 
   /**
    * default variable for read command.
    * must be String_Object
    */
-  binder.bind("REPLY", "", FieldAttribute());
+  binder.bind("REPLY", "", HandleAttr());
 
   /**
    * holding read variable.
@@ -114,13 +114,13 @@ void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
   /**
    * must be Long_Object.
    */
-  binder.bind("SECONDS", 0, FieldAttribute());
+  binder.bind("SECONDS", 0, HandleAttr());
 
   /**
    * for internal field splitting.
    * must be String_Object.
    */
-  binder.bind("IFS", " \t\n", FieldAttribute());
+  binder.bind("IFS", " \t\n", HandleAttr());
 
   /**
    * maintain completion result.
@@ -138,7 +138,7 @@ void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
    * contains exit status of most recent executed process. ($?)
    * must be Int_Object
    */
-  binder.bind("?", 0, FieldAttribute());
+  binder.bind("?", 0, HandleAttr());
 
   /**
    * process id of root shell. ($$)

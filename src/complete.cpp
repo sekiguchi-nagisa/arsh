@@ -417,7 +417,7 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
       StringRef varName = iter.first;
       if (varName.startsWith(prefix) && isVarName(varName)) {
         int priority = iter.second.first->getIndex();
-        if (!iter.second.first->has(FieldAttribute::GLOBAL)) {
+        if (!iter.second.first->has(HandleAttr::GLOBAL)) {
           priority += offset;
         }
         priority *= -1;
@@ -441,8 +441,8 @@ static void completeExpected(const std::vector<std::string> &expected, const std
 static void completeMember(const TypePool &pool, const DSType &recvType, const std::string &word,
                            CompCandidateConsumer &consumer) {
   // complete field
-  std::function<bool(StringRef, const FieldHandle &)> fieldWalker = [&](StringRef name,
-                                                                        const FieldHandle &handle) {
+  std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
+                                                                   const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.getModId() == 0 || !name.startsWith("_")) {
         consumer(name, CompCandidateKind::FIELD); // FIXME: module scope
@@ -473,16 +473,16 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
 static void completeType(const TypePool &pool, const DSType *recvType, const NameScope &scope,
                          const std::string &word, CompCandidateConsumer &consumer) {
   if (recvType) {
-    std::function<bool(StringRef, const FieldHandle &)> fieldWalker =
-        [&](StringRef name, const FieldHandle &handle) {
-          if (name.startsWith(word) && isTypeAliasFullName(name)) {
-            if (handle.getModId() == 0 || handle.getModId() == scope.modId || name[0] != '_') {
-              name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-              consumer(name, CompCandidateKind::TYPE);
-            }
-          }
-          return true;
-        };
+    std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
+                                                                     const Handle &handle) {
+      if (name.startsWith(word) && isTypeAliasFullName(name)) {
+        if (handle.getModId() == 0 || handle.getModId() == scope.modId || name[0] != '_') {
+          name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+          consumer(name, CompCandidateKind::TYPE);
+        }
+      }
+      return true;
+    };
     recvType->walkField(pool, fieldWalker);
     return;
   }
@@ -536,8 +536,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   if (!type.isModType()) {
     return false;
   }
-  std::function<bool(StringRef, const FieldHandle &)> fieldWalker = [&](StringRef name,
-                                                                        const FieldHandle &) {
+  std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));

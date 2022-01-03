@@ -771,17 +771,17 @@ bool SymbolIndexer::consume(std::unique_ptr<Node> &&node) {
   return true;
 }
 
-static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, FieldHandlePtr> &entry) {
+static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> &entry) {
   if (isTypeAliasFullName(entry.first)) {
-    assert(entry.second->has(FieldAttribute::TYPE_ALIAS));
+    assert(entry.second->has(HandleAttr::TYPE_ALIAS));
     return DeclSymbol::Kind::TYPE_ALIAS;
   } else if (isCmdFullName(entry.first)) {
     return DeclSymbol::Kind::CMD;
   } else {
-    if (entry.second->has(FieldAttribute::ENV)) {
+    if (entry.second->has(HandleAttr::ENV)) {
       return DeclSymbol::Kind::IMPORT_ENV;
     }
-    if (entry.second->has(FieldAttribute::READ_ONLY)) {
+    if (entry.second->has(HandleAttr::READ_ONLY)) {
       return DeclSymbol::Kind::LET;
     }
     return DeclSymbol::Kind::VAR;

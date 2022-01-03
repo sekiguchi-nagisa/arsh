@@ -202,7 +202,7 @@ public:
                               unsigned short belongedModId);
 
   const ModType &createModType(unsigned short modID,
-                               std::unordered_map<std::string, FieldHandlePtr> &&handles,
+                               std::unordered_map<std::string, HandlePtr> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index);
 
   const ModType &getBuiltinModType() const {

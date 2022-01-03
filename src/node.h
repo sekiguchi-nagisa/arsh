@@ -569,7 +569,7 @@ class AssignableNode : public Node {
 protected:
   unsigned int index{0};
 
-  FieldAttribute attribute{};
+  HandleAttr attribute{};
 
   AssignableNode(NodeKind kind, Token token) : Node(kind, token) {}
 
@@ -580,12 +580,12 @@ public:
 
   ~AssignableNode() override = default;
 
-  void setAttribute(const FieldHandle &handle) {
+  void setAttribute(const Handle &handle) {
     this->index = handle.getIndex();
     this->attribute = handle.attr();
   }
 
-  FieldAttribute attr() const { return this->attribute; }
+  HandleAttr attr() const { return this->attribute; }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -1391,7 +1391,7 @@ public:
   }
 
   static std::unique_ptr<TypeDefNode> errorDef(unsigned int startPos, NameInfo &&alias,
-                                            std::unique_ptr<TypeNode> &&targetTypeNode) {
+                                               std::unique_ptr<TypeNode> &&targetTypeNode) {
     return std::unique_ptr<TypeDefNode>(
         new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ERROR_DEF));
   }
@@ -1656,7 +1656,7 @@ public:
 
   TypeNode &getTypeNode() const { return *this->typeNode; }
 
-  void setAttribute(const FieldHandle &handle) { this->varIndex = handle.getIndex(); }
+  void setAttribute(const Handle &handle) { this->varIndex = handle.getIndex(); }
 
   unsigned int getVarIndex() const { return this->varIndex; }
 
@@ -1748,7 +1748,7 @@ public:
 
   bool isReadOnly() const { return this->getKind() == LET; }
 
-  void setAttribute(const FieldHandle &handle);
+  void setAttribute(const Handle &handle);
 
   bool isGlobal() const { return this->global; }
 

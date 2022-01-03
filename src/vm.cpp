@@ -2023,11 +2023,11 @@ DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&rec
   DSValue ret;
   NativeCode code;
   if (handle.isNative()) {
-    code = NativeCode(handle.getMethodIndex());
+    code = NativeCode(handle.getIndex());
   }
 
   if (handle.isNative() ? windStackFrame(state, size + 1, size + 1, code)
-                        : prepareMethodCall(state, handle.getMethodIndex(), size)) {
+                        : prepareMethodCall(state, handle.getIndex(), size)) {
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
     startEval(state, op, nullptr, ret);
   }

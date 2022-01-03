@@ -368,12 +368,12 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const FieldHandle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
-                              FieldAttribute attribute) {
+  const Handle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
+                         HandleAttr attribute) {
     return this->addEntry(node.getToken(), symbolName, type, attribute);
   }
 
-  const FieldHandle *addEntry(const NameInfo &info, const DSType &type, FieldAttribute attribute) {
+  const Handle *addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {
     return this->addEntry(info.getToken(), info.getName(), type, attribute);
   }
 
@@ -386,8 +386,8 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const FieldHandle *addEntry(Token token, const std::string &symbolName, const DSType &type,
-                              FieldAttribute attribute);
+  const Handle *addEntry(Token token, const std::string &symbolName, const DSType &type,
+                         HandleAttr attribute);
 
   /**
    *
@@ -395,7 +395,7 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node);
+  const Handle *addUdcEntry(const UserDefinedCmdNode &node);
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 

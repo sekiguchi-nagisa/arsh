@@ -371,7 +371,7 @@ bool DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
 }
 
 void DirectiveInitializer::setVarName(const char *name, const DSType &type) {
-  this->curScope->defineHandle(name, type, FieldAttribute());
+  this->curScope->defineHandle(name, type, HandleAttr());
 }
 
 // #######################

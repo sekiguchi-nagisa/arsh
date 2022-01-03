@@ -37,7 +37,7 @@
 
 namespace ydsh {
 
-class FieldHandle;
+class Handle;
 class TypePool;
 
 enum class TYPE : unsigned int {
@@ -185,10 +185,10 @@ public:
    */
   const DSType *getSuperType() const { return this->superType; }
 
-  const FieldHandle *lookupField(const TypePool &pool, const std::string &fieldName) const;
+  const Handle *lookupField(const TypePool &pool, const std::string &fieldName) const;
 
   void walkField(const TypePool &pool,
-                 std::function<bool(StringRef, const FieldHandle &)> &walker) const;
+                 std::function<bool(StringRef, const Handle &)> &walker) const;
 
   std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
 
@@ -219,7 +219,7 @@ public:
   }
 };
 
-#define EACH_FIELD_ATTR(OP)                                                                        \
+#define EACH_HANDLE_ATTR(OP)                                                                       \
   OP(READ_ONLY, (1u << 0u))                                                                        \
   OP(GLOBAL, (1u << 1u))                                                                           \
   OP(ENV, (1u << 2u))                                                                              \
@@ -229,75 +229,89 @@ public:
   OP(GLOBAL_MOD, (1u << 6u))                                                                       \
   OP(INLINED_MOD, (1u << 7u))
 
-enum class FieldAttribute : unsigned short {
+enum class HandleAttr : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
-  EACH_FIELD_ATTR(GEN_ENUM)
+  EACH_HANDLE_ATTR(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-std::string toString(FieldAttribute attr);
+std::string toString(HandleAttr attr);
 
 template <>
-struct allow_enum_bitop<FieldAttribute> : std::true_type {};
+struct allow_enum_bitop<HandleAttr> : std::true_type {};
 
-struct HandleRefCount;
+struct HandleRefCountOp;
 
+/**
+ * represent for class field or variable. field type may be function type.
+ */
 class Handle {
-public:
-  enum Kind : unsigned char {
-    FIELD,
-    METHOD,
-  };
-
 protected:
-  friend struct HandleRefCount;
+  friend struct HandleRefCountOp;
 
   int refCount{0};
 
   /**
-   * |  24bit  |  8bit       |
-   *   TypeID    Kind
+   * |   24bit  |         8bit       |
+   * |  TypeID  |  param size + recv |
    */
   unsigned int tag{0};
 
   unsigned int index;
 
-  union {
-    unsigned short u16;
-    struct {
-      unsigned char u8_1;
-      unsigned char u8_2;
-    };
-  };
+  HandleAttr attribute;
 
   /**
    * if global module, id is 0.
    */
   unsigned short modId;
 
-  Handle(Kind k, const DSType &type, unsigned int index, unsigned short modId)
-      : tag(type.typeId() << 8 | static_cast<unsigned char>(k)), index(index), modId(modId) {}
+protected:
+  Handle(unsigned char fmaSize, const DSType &type, unsigned int index, HandleAttr attr,
+         unsigned short modId)
+      : tag(type.typeId() << 8 | fmaSize), index(index), attribute(attr), modId(modId) {}
+
+public:
+  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleAttr attribute)
+      : Handle(fieldType, fieldIndex, attribute, 0) {}
+
+  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleAttr attribute,
+         unsigned short modId)
+      : Handle(0, fieldType, fieldIndex, attribute, modId) {}
 
   ~Handle() = default;
 
-public:
   unsigned int getTypeId() const { return this->tag >> 8; }
 
-  Kind getKind() const { return static_cast<Kind>(this->tag & 0xFF); }
-
-  bool isField() const { return this->getKind() == FIELD; }
-
-  bool isMethod() const { return this->getKind() == METHOD; }
+  bool isMethod() const { return this->famSize() > 0; }
 
   unsigned int getIndex() const { return this->index; }
 
   unsigned short getModId() const { return this->modId; }
 
+  /**
+   * normally unused
+   * @param newAttr
+   */
+  void setAttr(HandleAttr newAttr) { this->attribute = newAttr; }
+
+  HandleAttr attr() const { return this->attribute; }
+
+  bool has(HandleAttr a) const { return hasFlag(this->attr(), a); }
+
+  bool isModHolder() const {
+    return !empty(this->attr() &
+                  (HandleAttr::GLOBAL_MOD | HandleAttr::NAMED_MOD | HandleAttr::INLINED_MOD));
+  }
+
+protected:
+  unsigned char famSize() const { return static_cast<unsigned char>(this->tag & 0xFF); }
+
 private:
   void destroy();
 };
 
-struct HandleRefCount {
+struct HandleRefCountOp {
   static long useCount(const Handle *ptr) noexcept { return ptr->refCount; }
 
   static void increase(Handle *ptr) noexcept {
@@ -313,41 +327,7 @@ struct HandleRefCount {
   }
 };
 
-/**
- * represent for class field or variable. field type may be function type.
- */
-class FieldHandle : public Handle {
-public:
-  static_assert(sizeof(Handle) == 16);
-
-  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute)
-      : FieldHandle(fieldType, fieldIndex, attribute, 0) {}
-
-  FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute,
-              unsigned short modId)
-      : Handle(FIELD, fieldType, fieldIndex, modId) {
-    this->setAttr(attribute);
-  }
-
-  ~FieldHandle() = default;
-
-  /**
-   * normally unused
-   * @param newAttr
-   */
-  void setAttr(FieldAttribute newAttr) { this->u16 = static_cast<unsigned short>(newAttr); }
-
-  FieldAttribute attr() const { return static_cast<FieldAttribute>(this->u16); }
-
-  bool has(FieldAttribute a) const { return hasFlag(this->attr(), a); }
-
-  bool isModHolder() const {
-    return !empty(this->attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD |
-                                  FieldAttribute::INLINED_MOD));
-  }
-};
-
-using FieldHandlePtr = IntrusivePtr<FieldHandle, HandleRefCount>;
+using HandlePtr = IntrusivePtr<Handle, HandleRefCountOp>;
 
 struct CallableTypes {
   const DSType *returnType{nullptr};
@@ -465,7 +445,7 @@ public:
 
 class TupleType : public BuiltinType {
 private:
-  std::unordered_map<std::string, FieldHandle> fieldHandleMap;
+  std::unordered_map<std::string, Handle> fieldHandleMap;
 
 public:
   /**
@@ -481,7 +461,7 @@ public:
    */
   unsigned int getFieldSize() const { return this->fieldHandleMap.size(); }
 
-  const FieldHandle *lookupField(const std::string &fieldName) const;
+  const Handle *lookupField(const std::string &fieldName) const;
 
   const DSType &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
 
@@ -565,12 +545,12 @@ private:
   /**
    * FieldHandle modId is equivalent to this.modId
    */
-  std::unordered_map<std::string, FieldHandlePtr> handleMap;
+  std::unordered_map<std::string, HandlePtr> handleMap;
 
 public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
-          std::unordered_map<std::string, FieldHandlePtr> &&handles,
-          FlexBuffer<Imported> &&children, unsigned int index)
+          std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
+          unsigned int index)
       : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
     this->meta.u16_2.v1 = modID;
     this->meta.u16_2.v2 = 0;
@@ -603,20 +583,20 @@ public:
    * for indicating module object index
    * @return
    */
-  FieldHandlePtr toAliasHandle(unsigned short importedModId) const {
-    return FieldHandlePtr::create(
-        *this, this->getIndex(), FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, importedModId);
+  HandlePtr toAliasHandle(unsigned short importedModId) const {
+    return HandlePtr::create(*this, this->getIndex(), HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
+                             importedModId);
   }
 
-  FieldHandlePtr toModHolder(ImportedModKind k, unsigned short importedModId) const {
-    FieldAttribute attr = FieldAttribute::NAMED_MOD;
+  HandlePtr toModHolder(ImportedModKind k, unsigned short importedModId) const {
+    HandleAttr attr = HandleAttr::NAMED_MOD;
     if (hasFlag(k, ImportedModKind::INLINED)) {
-      attr = FieldAttribute::INLINED_MOD;
+      attr = HandleAttr::INLINED_MOD;
     } else if (hasFlag(k, ImportedModKind::GLOBAL)) {
-      attr = FieldAttribute::GLOBAL_MOD;
+      attr = HandleAttr::GLOBAL_MOD;
     }
-    setFlag(attr, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL);
-    return FieldHandlePtr::create(*this, this->getIndex(), attr, importedModId);
+    setFlag(attr, HandleAttr::READ_ONLY | HandleAttr::GLOBAL);
+    return HandlePtr::create(*this, this->getIndex(), attr, importedModId);
   }
 
   Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
@@ -625,7 +605,7 @@ public:
 
   const auto &getHandleMap() const { return this->handleMap; }
 
-  const FieldHandle *lookup(const TypePool &pool, const std::string &fieldName) const;
+  const Handle *lookup(const TypePool &pool, const std::string &fieldName) const;
 
   /**
    * for runtime symbol lookup
@@ -634,13 +614,12 @@ public:
    * @param name
    * @return
    */
-  const FieldHandle *lookupVisibleSymbolAtModule(const TypePool &pool,
-                                                 const std::string &name) const;
+  const Handle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const;
 
   static bool classof(const DSType *type) { return type->isModType(); }
 
 private:
-  const FieldHandle *find(const std::string &name) const {
+  const Handle *find(const std::string &name) const {
     auto iter = this->handleMap.find(name);
     if (iter != this->handleMap.end()) {
       return iter->second.get();
@@ -648,7 +627,7 @@ private:
     return nullptr;
   }
 
-  void reopen(std::unordered_map<std::string, FieldHandlePtr> &&handles,
+  void reopen(std::unordered_map<std::string, HandlePtr> &&handles,
               FlexBuffer<Imported> &&children) {
     this->disposeChildren();
     this->handleMap = std::move(handles);
@@ -711,6 +690,8 @@ public:
 
 class MethodHandle : public Handle {
 private:
+  static_assert(sizeof(Handle) == 16);
+
   friend class TypePool;
 
   const DSType &returnType;
@@ -721,10 +702,8 @@ private:
   const DSType *paramTypes[];
 
   MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize)
-      : Handle(METHOD, recv, index, 0), returnType(ret) {
+      : Handle(paramSize + 1, recv, index, {}, 0), returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
-    this->u8_1 = paramSize;
-    this->u8_2 = 1; // FIXME:
   }
 
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
@@ -741,20 +720,18 @@ public:
     free(ptr);
   }
 
-  unsigned short getMethodIndex() const { return this->getIndex(); }
-
   const DSType &getReturnType() const { return this->returnType; }
 
   unsigned int getRecvTypeId() const { return this->getTypeId(); }
 
-  unsigned short getParamSize() const { return this->u8_1; }
+  unsigned short getParamSize() const { return this->famSize() - 1; }
 
   const DSType &getParamTypeAt(unsigned int index) const {
     assert(index < this->getParamSize());
     return *this->paramTypes[index];
   }
 
-  bool isNative() const { return this->u8_2 > 0; }
+  bool isNative() const { return true; } // FIXME:
 
   CallableTypes toCallableTypes() const {
     return {this->returnType, this->getParamSize(),

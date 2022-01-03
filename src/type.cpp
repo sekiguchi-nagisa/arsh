@@ -37,7 +37,7 @@ void DSType::destroy() {
   }
 }
 
-const FieldHandle *DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
+const Handle *DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
@@ -49,7 +49,7 @@ const FieldHandle *DSType::lookupField(const TypePool &pool, const std::string &
 }
 
 void DSType::walkField(const TypePool &pool,
-                       std::function<bool(StringRef, const FieldHandle &)> &walker) const {
+                       std::function<bool(StringRef, const Handle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
@@ -160,7 +160,7 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    FieldHandle handle(*types[i], i, FieldAttribute());
+    Handle handle(*types[i], i, HandleAttr());
     this->fieldHandleMap.emplace(toTupleFieldName(i), handle);
   }
 }
@@ -173,7 +173,7 @@ const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) co
   return pool.get(handle->getTypeId());
 }
 
-const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
+const Handle *TupleType::lookupField(const std::string &fieldName) const {
   auto iter = this->fieldHandleMap.find(fieldName);
   if (iter == this->fieldHandleMap.end()) {
     return nullptr;
@@ -187,7 +187,7 @@ const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
 
 ModType::~ModType() { this->disposeChildren(); }
 
-const FieldHandle *ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
+const Handle *ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
   if (auto *handle = this->find(fieldName); handle) {
     return handle;
   }
@@ -210,8 +210,8 @@ const FieldHandle *ModType::lookup(const TypePool &pool, const std::string &fiel
   return nullptr;
 }
 
-const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
-                                                        const std::string &name) const {
+const Handle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
+                                                   const std::string &name) const {
   // search own symbols
   auto *handle = this->find(name);
   if (handle) {
@@ -263,16 +263,16 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
   return TypeCheckError(node.getToken(), kind, CStrPtr(str));
 }
 
-std::string toString(FieldAttribute attr) {
+std::string toString(HandleAttr attr) {
   const char *table[] = {
 #define GEN_STR(E, V) #E,
-      EACH_FIELD_ATTR(GEN_STR)
+      EACH_HANDLE_ATTR(GEN_STR)
 #undef GEN_STR
   };
 
   std::string value;
   for (unsigned int i = 0; i < std::size(table); i++) {
-    if (hasFlag(attr, static_cast<FieldAttribute>(1u << i))) {
+    if (hasFlag(attr, static_cast<HandleAttr>(1u << i))) {
       if (!value.empty()) {
         value += " | ";
       }
@@ -283,13 +283,10 @@ std::string toString(FieldAttribute attr) {
 }
 
 void Handle::destroy() {
-  switch (this->getKind()) {
-  case FIELD:
-    delete static_cast<FieldHandle*>(this);
-    break;
-  case METHOD:
-    delete static_cast<MethodHandle*>(this);
-    break;
+  if (this->famSize()) {
+    delete static_cast<MethodHandle *>(this);
+  } else {
+    delete this;
   }
 }
 

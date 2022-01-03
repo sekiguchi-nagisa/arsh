@@ -91,15 +91,14 @@ static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
   return false;
 }
 
-NameLookupResult NameScope::defineHandle(std::string &&name, const DSType &type,
-                                         FieldAttribute attr) {
+NameLookupResult NameScope::defineHandle(std::string &&name, const DSType &type, HandleAttr attr) {
   if (definedInBuiltin(*this, name)) {
     return Err(NameLookupError::DEFINED);
   }
   return this->addNewHandle(std::move(name), type, attr);
 }
 
-NameLookupResult NameScope::defineAlias(std::string &&name, const FieldHandlePtr &handle) {
+NameLookupResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle) {
   if (definedInBuiltin(*this, name)) {
     return Err(NameLookupError::DEFINED);
   }
@@ -114,9 +113,8 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
       return Err(NameLookupError::DEFINED);
     }
   }
-  return this->defineAlias(
-      toTypeAliasFullName(name),
-      FieldHandlePtr::create(type, 0, FieldAttribute::TYPE_ALIAS, this->modId));
+  return this->defineAlias(toTypeAliasFullName(name),
+                           HandlePtr::create(type, 0, HandleAttr::TYPE_ALIAS, this->modId));
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
@@ -125,10 +123,10 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   auto holderName = toModHolderName(type.getModId(), global);
   if (auto *handle = this->findMut(holderName); handle) { // check if already imported
     assert(handle->isModHolder());
-    if (!handle->has(FieldAttribute::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
+    if (!handle->has(HandleAttr::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
       auto attr = handle->attr();
-      unsetFlag(attr, FieldAttribute::GLOBAL_MOD);
-      setFlag(attr, FieldAttribute::INLINED_MOD);
+      unsetFlag(attr, HandleAttr::GLOBAL_MOD);
+      setFlag(attr, HandleAttr::INLINED_MOD);
       handle->setAttr(attr);
     }
     return "";
@@ -189,7 +187,7 @@ static void tryInsertByAscendingOrder(FlexBuffer<ModType::Imported> &children,
 }
 
 const ModType &NameScope::toModType(TypePool &pool) const {
-  std::unordered_map<std::string, FieldHandlePtr> newHandles;
+  std::unordered_map<std::string, HandlePtr> newHandles;
   FlexBuffer<ModType::Imported> newChildren;
 
   for (auto &e : this->getHandles()) {
@@ -198,9 +196,9 @@ const ModType &NameScope::toModType(TypePool &pool) const {
       auto &modType = pool.get(handle->getTypeId());
       assert(isa<ModType>(modType));
       ImportedModKind k{};
-      if (handle->has(FieldAttribute::INLINED_MOD)) {
+      if (handle->has(HandleAttr::INLINED_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL | ImportedModKind::INLINED);
-      } else if (handle->has(FieldAttribute::GLOBAL_MOD)) {
+      } else if (handle->has(HandleAttr::GLOBAL_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL);
       }
       tryInsertByAscendingOrder(newChildren, cast<ModType>(modType).toModEntry(k));
@@ -212,7 +210,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
                             this->getMaxGlobalVarIndex());
 }
 
-const FieldHandle *NameScope::lookup(const std::string &name) const {
+const Handle *NameScope::lookup(const std::string &name) const {
   for (auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
     auto *handle = scope->find(name);
     if (handle) {
@@ -235,7 +233,7 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
   }
 }
 
-NameLookupResult NameScope::add(std::string &&name, FieldHandlePtr &&handle, bool asAlias) {
+NameLookupResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asAlias) {
   assert(this->kind != FUNC);
 
   if (handle->getTypeId() == static_cast<unsigned int>(TYPE::Nothing) ||
@@ -245,7 +243,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandlePtr &&handle, boo
 
   // check var index limit
   if (!asAlias) {
-    if (!handle->has(FieldAttribute::GLOBAL)) {
+    if (!handle->has(HandleAttr::GLOBAL)) {
       assert(!this->isGlobal());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
         return Err(NameLookupError::LIMIT);
@@ -261,8 +259,8 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandlePtr &&handle, boo
 
   // increment var index count
   if (!asAlias) {
-    assert(this->isGlobal() == handle->has(FieldAttribute::GLOBAL));
-    if (handle->has(FieldAttribute::GLOBAL)) {
+    assert(this->isGlobal() == handle->has(HandleAttr::GLOBAL));
+    if (handle->has(HandleAttr::GLOBAL)) {
       this->maxVarCount.get()++;
     } else { // local
       assert(this->kind == BLOCK);

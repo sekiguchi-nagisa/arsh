@@ -86,21 +86,21 @@ struct BindingConsumer {
 
   explicit BindingConsumer(DSState &st) : state(st) {}
 
-  void operator()(const FieldHandle &handle, int64_t v) {
+  void operator()(const Handle &handle, int64_t v) {
     this->state.setGlobal(handle.getIndex(), DSValue::createInt(v));
   }
 
-  void operator()(const FieldHandle &handle, const std::string &v) {
+  void operator()(const Handle &handle, const std::string &v) {
     this->state.setGlobal(handle.getIndex(), DSValue::createStr(v));
   }
 
-  void operator()(const FieldHandle &handle, FILE *fp) {
+  void operator()(const Handle &handle, FILE *fp) {
     int fd = fileno(fp);
     assert(fd > -1);
     this->state.setGlobal(handle.getIndex(), DSValue::create<UnixFdObject>(fd));
   }
 
-  void operator()(const FieldHandle &handle, const DSType &type) {
+  void operator()(const Handle &handle, const DSType &type) {
     auto value = DSValue::createDummy(type);
     if (type.isArrayType()) {
       value = DSValue::create<ArrayObject>(type);

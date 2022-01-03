@@ -157,7 +157,7 @@ void TypePool::discard(const TypeDiscardPoint point) {
       // only discard instantiated method handle
       auto *ptr = iter->second.handle();
       assert(ptr);
-      iter->second = Value(ptr->getMethodIndex());
+      iter->second = Value(ptr->getIndex());
       assert(!iter->second);
     }
     ++iter;
@@ -283,7 +283,7 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType 
 }
 
 const ModType &TypePool::createModType(unsigned short modID,
-                                       std::unordered_map<std::string, FieldHandlePtr> &&handles,
+                                       std::unordered_map<std::string, HandlePtr> &&handles,
                                        FlexBuffer<ModType::Imported> &&children,
                                        unsigned int index) {
   auto name = toModTypeName(modID);

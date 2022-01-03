@@ -7,7 +7,7 @@ using namespace ydsh;
 struct Entry {
   TYPE type;
   unsigned int index;
-  FieldAttribute attr;
+  HandleAttr attr;
   unsigned short modID;
 };
 
@@ -32,7 +32,7 @@ protected:
     return type;
   }
 
-  static void expect(const Entry &e, const FieldHandle *handle) {
+  static void expect(const Entry &e, const Handle *handle) {
     ASSERT_TRUE(handle);
     ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeId());
     ASSERT_EQ(e.index, handle->getIndex());
@@ -60,44 +60,44 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(0, this->builtin->modId);
 
   // define handle
-  auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), FieldAttribute::ENV);
+  auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
   auto *handle = ret.asOk();
 
-  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), FieldAttribute::ENV);
+  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define alias
-  ret = this->builtin->defineAlias("hey", FieldHandlePtr(const_cast<FieldHandle *>(handle)));
+  ret = this->builtin->defineAlias("hey", HandlePtr(const_cast<Handle *>(handle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
 
-  ret = this->builtin->defineAlias("hey1", FieldHandlePtr(const_cast<FieldHandle *>(ret.asOk())));
+  ret = this->builtin->defineAlias("hey1", HandlePtr(const_cast<Handle *>(ret.asOk())));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
 
-  ret = this->builtin->defineAlias("hello", FieldHandlePtr(const_cast<FieldHandle *>(handle)));
+  ret = this->builtin->defineAlias("hello", HandlePtr(const_cast<Handle *>(handle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define type alias
@@ -106,7 +106,7 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 0,
       },
       ret));
@@ -124,7 +124,7 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::ENV | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
           .modID = 0,
       },
       hd));
@@ -135,7 +135,7 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
+          .attr = HandleAttr::GLOBAL | HandleAttr::ENV,
           .modID = 0,
       },
       hd));
@@ -145,7 +145,7 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::ENV,
+          .attr = HandleAttr::GLOBAL | HandleAttr::ENV,
           .modID = 0,
       },
       hd));
@@ -156,19 +156,19 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 0,
       },
       hd));
 
   // discard
   auto point = this->builtin->getDiscardPoint();
-  ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), FieldAttribute{});
+  ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Job,
           .index = 1,
-          .attr = FieldAttribute::GLOBAL,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -194,19 +194,17 @@ TEST_F(ScopeTest, global) {
   ASSERT_EQ(0, this->top->getMaxGlobalVarIndex());
 
   // define in builtin
-  auto ret =
-      this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), FieldAttribute::READ_ONLY);
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(Entry{.type = TYPE::Job,
-                         .index = 0,
-                         .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
-                         .modID = 0},
-                   ret));
+  auto ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), HandleAttr::READ_ONLY);
+  ASSERT_NO_FATAL_FAILURE(this->expect(Entry{.type = TYPE::Job,
+                                             .index = 0,
+                                             .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
+                                             .modID = 0},
+                                       ret));
   ASSERT_EQ(1, this->builtin->getHandles().size());
   ASSERT_EQ(1, this->top->getMaxGlobalVarIndex());
 
   // define handle when defined in builtin
-  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::ENV);
+  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   auto *handle = this->top->lookup("AAA");
@@ -214,18 +212,18 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Job,
           .index = 0,
-          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 0,
       },
       handle));
 
   // define handle
-  ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), FieldAttribute::MOD_CONST);
+  ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), HandleAttr::MOD_CONST);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Signal,
           .index = 1,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::MOD_CONST,
+          .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
           .modID = 1,
       },
       ret));
@@ -234,7 +232,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Signal,
           .index = 1,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::MOD_CONST,
+          .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
           .modID = 1,
       },
       handle));
@@ -251,7 +249,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 1,
       },
       ret));
@@ -259,12 +257,12 @@ TEST_F(ScopeTest, global) {
   ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
 
   // define handle in builtin
-  ret = this->builtin->defineHandle("CCC", this->pool.get(TYPE::StringArray), FieldAttribute{});
+  ret = this->builtin->defineHandle("CCC", this->pool.get(TYPE::StringArray), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::StringArray,
           .index = 2,
-          .attr = FieldAttribute::GLOBAL,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -274,12 +272,12 @@ TEST_F(ScopeTest, global) {
 
 TEST_F(ScopeTest, block) { // for top level block
   // define global
-  auto ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+  auto ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Any), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Any,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -298,16 +296,16 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Any,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       handle));
-  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Error), FieldAttribute{});
+  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Error), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Error,
           .index = 0,
-          .attr = FieldAttribute{},
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret)); // overwrite
@@ -316,7 +314,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Error,
           .index = 0,
-          .attr = FieldAttribute{},
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret));
@@ -324,12 +322,12 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(1, block0->getCurLocalIndex());
   ASSERT_EQ(1, this->top->getCurLocalIndex());
 
-  ret = block0->defineHandle("BBB", this->pool.get(TYPE::String), FieldAttribute::ENV);
+  ret = block0->defineHandle("BBB", this->pool.get(TYPE::String), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ENV,
+          .attr = HandleAttr::ENV,
           .modID = 1,
       },
       ret));
@@ -337,12 +335,12 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(2, this->top->getCurLocalIndex());
 
   // define alias
-  ret = block0->defineAlias("CCC", FieldHandlePtr(const_cast<FieldHandle *>(ret.asOk())));
+  ret = block0->defineAlias("CCC", HandlePtr(const_cast<Handle *>(ret.asOk())));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ENV,
+          .attr = HandleAttr::ENV,
           .modID = 1,
       },
       ret));
@@ -366,19 +364,18 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ENV,
+          .attr = HandleAttr::ENV,
           .modID = 1,
       },
       handle));
 
   // define local
-  ret = block1->defineHandle("CCC", this->pool.get(TYPE::KeyNotFoundError),
-                             FieldAttribute::READ_ONLY);
+  ret = block1->defineHandle("CCC", this->pool.get(TYPE::KeyNotFoundError), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::KeyNotFoundError,
           .index = 2,
-          .attr = FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -401,7 +398,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = FieldAttribute::ENV,
+          .attr = HandleAttr::ENV,
           .modID = 1,
       },
       handle));
@@ -414,12 +411,12 @@ TEST_F(ScopeTest, block) { // for top level block
   block1 = block1->enterScope(NameScope::BLOCK);
   ASSERT_EQ(2, block1->getBaseIndex());
 
-  ret = block1->defineHandle("DDD", this->pool.get(TYPE::UnixFD), FieldAttribute::READ_ONLY);
+  ret = block1->defineHandle("DDD", this->pool.get(TYPE::UnixFD), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::UnixFD,
           .index = 2,
-          .attr = FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -442,12 +439,12 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(0, block0->getCurLocalIndex());
   ASSERT_EQ(3, block0->getMaxLocalVarIndex());
 
-  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Func), FieldAttribute{});
+  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Func), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Func,
           .index = 0,
-          .attr = FieldAttribute{},
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret));
@@ -473,12 +470,12 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(0, block0->getCurLocalIndex());
 
   // define global
-  auto ret = this->top->defineHandle("GGG", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
+  auto ret = this->top->defineHandle("GGG", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -491,18 +488,18 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       handle));
 
   // define local
-  ret = block0->defineHandle("GGG", this->pool.get(TYPE::Boolean), FieldAttribute::READ_ONLY);
+  ret = block0->defineHandle("GGG", this->pool.get(TYPE::Boolean), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Boolean,
           .index = 0,
-          .attr = FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret)); // overwrite
@@ -511,7 +508,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Boolean,
           .index = 0,
-          .attr = FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
       handle));
@@ -521,12 +518,12 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(1, block0->getCurLocalIndex());
   ASSERT_EQ(1, block0->getLocalSize());
 
-  ret = block0->defineHandle("QQQ", this->pool.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
+  ret = block0->defineHandle("QQQ", this->pool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::StringArray,
           .index = 1,
-          .attr = FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -537,12 +534,12 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(2, block0->getLocalSize());
 
   // define alias
-  ret = block0->defineAlias("A", FieldHandlePtr(const_cast<FieldHandle *>(oldHandle)));
+  ret = block0->defineAlias("A", HandlePtr(const_cast<Handle *>(oldHandle)));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       ret));
@@ -551,7 +548,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       handle));
@@ -565,8 +562,8 @@ TEST_F(ScopeTest, func) {
 TEST_F(ScopeTest, import1) {
   // define mod type
   auto mod = this->createGlobalScope();
-  mod->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), FieldAttribute::ENV);
+  mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -607,7 +604,7 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
       handle));
@@ -623,14 +620,14 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
 
   // ModType
   auto mod2 = this->createGlobalScope();
-  mod2->defineHandle("GGG", this->pool.get(TYPE::Job), FieldAttribute{});
+  mod2->defineHandle("GGG", this->pool.get(TYPE::Job), HandleAttr{});
   auto &modType2 = this->toModType(std::move(mod2));
 
   this->top->importForeignHandles(this->pool, modType2, ImportedModKind{});
@@ -649,7 +646,7 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
       handle));
@@ -666,7 +663,7 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
@@ -679,8 +676,8 @@ TEST_F(ScopeTest, import1) {
 TEST_F(ScopeTest, import2) {
   // define mod type
   auto mod = this->createGlobalScope();
-  mod->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), FieldAttribute::ENV);
+  mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -690,7 +687,7 @@ TEST_F(ScopeTest, import2) {
   // inlined import
   auto mod2 = this->createGlobalScope();
   ASSERT_EQ(3, mod2->modId);
-  mod2->defineHandle("BBB", this->pool.get(TYPE::Float), FieldAttribute::READ_ONLY);
+  mod2->defineHandle("BBB", this->pool.get(TYPE::Float), HandleAttr::READ_ONLY);
   mod2->defineTypeAlias(this->pool, "float", this->pool.get(TYPE::Float));
   auto s = mod2->importForeignHandles(this->pool, modType,
                                       ImportedModKind::GLOBAL | ImportedModKind::INLINED);
@@ -704,7 +701,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = static_cast<TYPE>(modType.typeId()),
           .index = 2, // toModType api not increment
-          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL | FieldAttribute::INLINED_MOD,
+          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL | HandleAttr::INLINED_MOD,
           .modID = 3,
       },
       handle));
@@ -717,7 +714,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 2,
       },
       handle));
@@ -728,7 +725,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 2,
       },
       handle));
@@ -745,7 +742,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Float,
           .index = 3,
-          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
       },
       handle));
@@ -755,7 +752,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = FieldAttribute::TYPE_ALIAS,
+          .attr = HandleAttr::TYPE_ALIAS,
           .modID = 3,
       },
       handle));
@@ -768,18 +765,18 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = static_cast<TYPE>(modType2.typeId()),
           .index = 4,
-          .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL_MOD,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY | HandleAttr::GLOBAL_MOD,
           .modID = 1,
       },
       handle));
 
   handle = this->top->lookup("AAA");
-  ASSERT_TRUE(handle->has(FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
+  ASSERT_TRUE(handle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
   ASSERT_EQ(2, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
-  ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
+  ASSERT_TRUE(handle->has(HandleAttr::TYPE_ALIAS));
   ASSERT_EQ(2, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 
@@ -789,12 +786,12 @@ TEST_F(ScopeTest, import2) {
   ASSERT_FALSE(handle);
 
   handle = this->top->lookup("BBB");
-  ASSERT_TRUE(handle->has(FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL));
+  ASSERT_TRUE(handle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
   ASSERT_EQ(3, handle->getModId());
   ASSERT_EQ(3, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
-  ASSERT_TRUE(handle->has(FieldAttribute::TYPE_ALIAS));
+  ASSERT_TRUE(handle->has(HandleAttr::TYPE_ALIAS));
   ASSERT_EQ(3, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 }
@@ -802,8 +799,8 @@ TEST_F(ScopeTest, import2) {
 TEST_F(ScopeTest, conflict) {
   // define mod type
   auto mod = this->createGlobalScope();
-  mod->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), FieldAttribute::ENV);
+  mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -811,7 +808,7 @@ TEST_F(ScopeTest, conflict) {
   //
   auto point = this->top->getDiscardPoint();
 
-  this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), FieldAttribute{});
+  this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), HandleAttr{});
   auto ret = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("AAA", ret);
 
@@ -820,7 +817,7 @@ TEST_F(ScopeTest, conflict) {
       Entry{
           .type = TYPE::Regex,
           .index = 3,
-          .attr = FieldAttribute::GLOBAL,
+          .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },
       handle));

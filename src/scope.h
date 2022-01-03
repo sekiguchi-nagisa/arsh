@@ -33,7 +33,7 @@ enum class NameLookupError {
   INVALID_TYPE,
 };
 
-using NameLookupResult = Result<const FieldHandle *, NameLookupError>;
+using NameLookupResult = Result<const Handle *, NameLookupError>;
 
 struct ScopeDiscardPoint {
   unsigned int commitIdOffset;
@@ -74,7 +74,7 @@ private:
   /**
    * maintain (FieldHandle, commitId)
    */
-  std::unordered_map<std::string, std::pair<FieldHandlePtr, unsigned int>> handles;
+  std::unordered_map<std::string, std::pair<HandlePtr, unsigned int>> handles;
 
   /**
    * for func/block scope construction
@@ -148,7 +148,7 @@ public:
 
   auto end() const { return this->handles.end(); }
 
-  const FieldHandle *find(const std::string &name) const {
+  const Handle *find(const std::string &name) const {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
       return iter->second.first.get();
@@ -182,9 +182,9 @@ public:
   }
 
   // for name registration
-  NameLookupResult defineHandle(std::string &&name, const DSType &type, FieldAttribute attr);
+  NameLookupResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr);
 
-  NameLookupResult defineAlias(std::string &&name, const FieldHandlePtr &handle);
+  NameLookupResult defineAlias(std::string &&name, const HandlePtr &handle);
 
   NameLookupResult defineTypeAlias(const TypePool &pool, std::string &&name, const DSType &type);
 
@@ -205,10 +205,10 @@ public:
    * @param name
    * @return
    */
-  const FieldHandle *lookup(const std::string &name) const;
+  const Handle *lookup(const std::string &name) const;
 
-  const FieldHandle *lookupField(const TypePool &pool, const DSType &recv,
-                                 const std::string &fieldName) const {
+  const Handle *lookupField(const TypePool &pool, const DSType &recv,
+                            const std::string &fieldName) const {
     auto *handle = recv.lookupField(pool, fieldName);
     if (handle) {
       if (handle->getModId() == 0 || this->modId == handle->getModId() || fieldName[0] != '_') {
@@ -230,7 +230,7 @@ public:
 private:
   NameScopePtr fromThis() { return NameScopePtr(this); }
 
-  FieldHandle *findMut(const std::string &name) {
+  Handle *findMut(const std::string &name) {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
       return iter->second.first.get();
@@ -247,7 +247,7 @@ private:
    * if true, not increment internal variable index
    * @return
    */
-  NameLookupResult add(std::string &&name, FieldHandlePtr &&handle, bool asAlias = false);
+  NameLookupResult add(std::string &&name, HandlePtr &&handle, bool asAlias = false);
 
   /**
    * define local/global variable name
@@ -256,18 +256,18 @@ private:
    * @param attr
    * @return
    */
-  NameLookupResult addNewHandle(std::string &&name, const DSType &type, FieldAttribute attr) {
+  NameLookupResult addNewHandle(std::string &&name, const DSType &type, HandleAttr attr) {
     if (this->isGlobal()) {
-      setFlag(attr, FieldAttribute::GLOBAL);
+      setFlag(attr, HandleAttr::GLOBAL);
     } else {
-      unsetFlag(attr, FieldAttribute::GLOBAL);
+      unsetFlag(attr, HandleAttr::GLOBAL);
     }
     unsigned int index = this->isGlobal() ? this->getMaxGlobalVarIndex() : this->getCurLocalIndex();
-    return this->add(std::move(name), FieldHandlePtr::create(type, index, attr, this->modId));
+    return this->add(std::move(name), HandlePtr::create(type, index, attr, this->modId));
   }
 
-  NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandlePtr &handle) {
-    return this->add(std::move(name), FieldHandlePtr(handle), true);
+  NameLookupResult addNewForeignHandle(std::string &&name, const HandlePtr &handle) {
+    return this->add(std::move(name), HandlePtr(handle), true);
   }
 };
 

@@ -45,7 +45,7 @@ public:
 
   void add(const DSType &type);
 
-  void add(const FieldHandle &handle);
+  void add(const Handle &handle);
 
   std::string take() && { return std::move(this->data); }
 
@@ -84,7 +84,7 @@ private:
 public:
   Unarchiver(TypePool &pool, const std::string &data) : pool(pool), data(data) {}
 
-  FieldHandlePtr take() {
+  HandlePtr take() {
     this->pos = 0;
     return this->unpackHandle();
   }
@@ -92,7 +92,7 @@ public:
 private:
   const DSType *unpackType();
 
-  FieldHandlePtr unpackHandle();
+  HandlePtr unpackHandle();
 
   template <unsigned int N>
   uint64_t readN() {
@@ -136,7 +136,7 @@ private:
 
 public:
   static Archive pack(const TypePool &pool, unsigned int builtinTypeIdCount,
-                      const std::string &fieldName, const FieldHandle &handle) {
+                      const std::string &fieldName, const Handle &handle) {
     Archiver archiver(pool, builtinTypeIdCount);
     archiver.add(handle);
     return {std::string(fieldName), std::move(archiver).take()};
@@ -152,7 +152,7 @@ public:
    * @return
    * if invalid type pool, return null
    */
-  FieldHandlePtr unpack(TypePool &pool) const {
+  HandlePtr unpack(TypePool &pool) const {
     Unarchiver unarchiver(pool, this->getData());
     return unarchiver.take();
   }
@@ -189,7 +189,7 @@ public:
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 
-  Optional<std::unordered_map<std::string, FieldHandlePtr>> unpack(TypePool &pool) const;
+  Optional<std::unordered_map<std::string, HandlePtr>> unpack(TypePool &pool) const;
 };
 
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);

@@ -758,8 +758,8 @@ VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
   }
 }
 
-void VarDeclNode::setAttribute(const FieldHandle &handle) {
-  this->global = handle.has(FieldAttribute::GLOBAL);
+void VarDeclNode::setAttribute(const Handle &handle) {
+  this->global = handle.has(HandleAttr::GLOBAL);
   this->varIndex = handle.getIndex();
 }
 
@@ -1159,7 +1159,7 @@ void NodeDumper::dump(const char *fieldName, TokenKind kind) {
 }
 
 void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {
-  this->dump(fieldName, std::to_string(handle.getMethodIndex()));
+  this->dump(fieldName, std::to_string(handle.getIndex()));
 }
 
 void NodeDumper::dump(const char *fieldName, const NameInfo &info) {

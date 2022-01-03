@@ -38,13 +38,13 @@ static void consumeAllInput(FrontEnd &frontEnd) {
 }
 
 struct EmptyConsumer {
-  void operator()(const FieldHandle &, int64_t) {}
+  void operator()(const Handle &, int64_t) {}
 
-  void operator()(const FieldHandle &, const std::string &) {}
+  void operator()(const Handle &, const std::string &) {}
 
-  void operator()(const FieldHandle &, FILE *) {}
+  void operator()(const Handle &, FILE *) {}
 
-  void operator()(const FieldHandle &, const DSType &) {}
+  void operator()(const Handle &, const DSType &) {}
 };
 
 static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
