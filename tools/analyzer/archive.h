@@ -30,8 +30,10 @@ enum class ArchiveType : uint8_t {
   MAP,
   TUPLE,
   OPTION,
+  ERROR,
   FUNC,
   MOD,
+  CACHED,
 };
 
 class Archiver {
@@ -39,6 +41,11 @@ private:
   const TypePool &pool;
   const unsigned int builtinTypeIdCount;
   std::string data;
+
+  /**
+   * already archived user-defined type
+   */
+  std::unordered_set<unsigned int> udTypeSet;
 
 public:
   Archiver(const TypePool &pool, unsigned int idCount) : pool(pool), builtinTypeIdCount(idCount) {}
@@ -70,8 +77,13 @@ private:
   void write32(uint32_t b) { this->writeN<4>(b); }
 
   void writeT(ArchiveType t) {
-    static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(unsigned char));
-    this->write8(static_cast<unsigned char>(t));
+    static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(uint8_t));
+    this->write8(static_cast<uint8_t>(t));
+  }
+
+  void writeStr(StringRef ref) {
+    this->write32(ref.size());
+    this->data += ref;
   }
 };
 
@@ -115,6 +127,13 @@ private:
   ArchiveType readT() {
     auto v = this->read8();
     return static_cast<ArchiveType>(v);
+  }
+
+  std::string readStr() {
+    auto size = this->read32();
+    auto old = this->pos;
+    this->pos += size;
+    return this->data.substr(old, size);
   }
 };
 

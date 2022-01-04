@@ -30,38 +30,69 @@ void Archiver::add(const DSType &type) {
   if (type.typeId() < this->builtinTypeIdCount && this->builtinTypeIdCount <= UINT8_MAX) {
     this->writeT(ArchiveType::PREDEFINED);
     this->write8(static_cast<uint8_t>(type.typeId()));
-  } else if (type.isArrayType()) {
-    this->writeT(ArchiveType::ARRAY);
-    this->add(cast<ArrayType>(type).getElementType());
-  } else if (type.isMapType()) {
-    this->writeT(ArchiveType::MAP);
-    this->add(cast<MapType>(type).getKeyType());
-    this->add(cast<MapType>(type).getValueType());
-  } else if (type.isTupleType()) {
-    this->writeT(ArchiveType::TUPLE);
-    auto &tuple = cast<TupleType>(type);
-    unsigned int size = tuple.getFieldSize();
-    assert(size <= SYS_LIMIT_TUPLE_NUM);
-    this->write8(static_cast<uint8_t>(size));
-    for (unsigned int i = 0; i < size; i++) {
-      this->add(tuple.getFieldTypeAt(this->pool, i));
+  } else {
+    switch (type.typeKind()) {
+    case TypeKind::Function: {
+      this->writeT(ArchiveType::FUNC);
+      auto &func = cast<FunctionType>(type);
+      this->add(func.getReturnType());
+      assert(func.getParamSize() <= SYS_LIMIT_FUNC_PARAM_NUM);
+      this->write8(static_cast<uint8_t>(func.getParamSize()));
+      for (unsigned int i = 0; i < func.getParamSize(); i++) {
+        this->add(func.getParamTypeAt(i));
+      }
+      break;
     }
-  } else if (type.isOptionType()) {
-    this->writeT(ArchiveType::OPTION);
-    this->add(cast<OptionType>(type).getElementType());
-  } else if (type.isFuncType()) {
-    this->writeT(ArchiveType::FUNC);
-    auto &func = cast<FunctionType>(type);
-    this->add(func.getReturnType());
-    assert(func.getParamSize() <= SYS_LIMIT_FUNC_PARAM_NUM);
-    this->write8(static_cast<uint8_t>(func.getParamSize()));
-    for (unsigned int i = 0; i < func.getParamSize(); i++) {
-      this->add(func.getParamTypeAt(i));
+    case TypeKind::Builtin:
+      break; // unreachable
+    case TypeKind::Array:
+      this->writeT(ArchiveType::ARRAY);
+      this->add(cast<ArrayType>(type).getElementType());
+      break;
+    case TypeKind::Map:
+      this->writeT(ArchiveType::MAP);
+      this->add(cast<MapType>(type).getKeyType());
+      this->add(cast<MapType>(type).getValueType());
+      break;
+    case TypeKind::Tuple: {
+      this->writeT(ArchiveType::TUPLE);
+      auto &tuple = cast<TupleType>(type);
+      unsigned int size = tuple.getFieldSize();
+      assert(size <= SYS_LIMIT_TUPLE_NUM);
+      this->write8(static_cast<uint8_t>(size));
+      for (unsigned int i = 0; i < size; i++) {
+        this->add(tuple.getFieldTypeAt(this->pool, i));
+      }
+      break;
     }
-  } else if (type.isModType()) {
-    this->writeT(ArchiveType::MOD);
-    auto &modType = cast<ModType>(type);
-    this->write16(modType.getModId());
+    case TypeKind::Option:
+      this->writeT(ArchiveType::OPTION);
+      this->add(cast<OptionType>(type).getElementType());
+      break;
+    case TypeKind::Error: // for user-defined error type
+      if (auto iter = this->udTypeSet.find(type.typeId());
+          iter != this->udTypeSet.end()) { // already found, write type name
+        this->writeT(ArchiveType::CACHED);
+        this->writeStr(type.getNameRef());
+      } else { // not found
+        this->writeT(ArchiveType::ERROR);
+        auto typeName = type.getNameRef();
+        const auto pos = typeName.find('.');
+        assert(pos != StringRef::npos);
+        this->writeStr(typeName.substr(pos + 1));
+        this->add(*type.getSuperType());
+        auto ret = this->pool.getType(typeName.slice(0, pos));
+        assert(ret);
+        this->add(*ret.asOk());
+        this->udTypeSet.emplace(type.typeId());
+      }
+      break;
+    case TypeKind::Mod:
+      this->writeT(ArchiveType::MOD);
+      auto &modType = cast<ModType>(type);
+      this->write16(modType.getModId());
+      break;
+    }
   }
 }
 
@@ -131,6 +162,15 @@ const DSType *Unarchiver::unpackType() {
     auto ret = TRY(this->pool.createOptionType(const_cast<DSType &>(*type)));
     return std::move(ret).take();
   }
+  case ArchiveType::ERROR: {
+    std::string name = this->readStr();
+    auto *superType = TRY(this->unpackType());
+    auto *modType = TRY(this->unpackType());
+    assert(isa<ModType>(modType));
+    auto ret =
+        TRY(this->pool.createErrorType(name, *superType, cast<ModType>(modType)->getModId()));
+    return std::move(ret).take();
+  }
   case ArchiveType::FUNC: {
     auto *retType = TRY(this->unpackType());
     std::vector<const DSType *> types;
@@ -145,6 +185,11 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::MOD: {
     uint16_t modID = this->read16();
     auto ret = TRY(this->pool.getModTypeById(modID));
+    return std::move(ret).take();
+  }
+  case ArchiveType::CACHED: {
+    std::string typeName = this->readStr();
+    auto ret = TRY(this->pool.getType(typeName));
     return std::move(ret).take();
   }
   }
