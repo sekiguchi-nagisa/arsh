@@ -1905,6 +1905,12 @@ public:
 };
 
 class FunctionNode : public WithRtti<Node, NodeKind::Function> {
+public:
+  const enum Kind : unsigned char {
+    FUNC,
+    SINGLE_EXPR,
+  } kind;
+
 private:
   NameInfo funcName;
 
@@ -1935,13 +1941,11 @@ private:
    */
   unsigned int varIndex{0};
 
-  const FunctionType *funcType{nullptr};
-
-  const bool singleExpr;
+  const DSType *resolvedType{nullptr};
 
 public:
-  FunctionNode(unsigned int startPos, NameInfo &&funcName, bool singleExpr = false)
-      : WithRtti({startPos, 0}), funcName(std::move(funcName)), singleExpr(singleExpr) {}
+  FunctionNode(unsigned int startPos, NameInfo &&funcName, Kind k = FUNC)
+      : WithRtti({startPos, 0}), kind(k), funcName(std::move(funcName)) {}
 
   ~FunctionNode() override = default;
 
@@ -1984,18 +1988,18 @@ public:
 
   unsigned int getVarIndex() const { return this->varIndex; }
 
-  void setFuncType(const FunctionType &type) { this->funcType = &type; }
+  void setResolvedType(const DSType &type) { this->resolvedType = &type; }
 
   /**
    *
    * @return
-   * may be null
+   * may be null.
    */
-  const FunctionType *getFuncType() const { return this->funcType; }
+  const DSType *getResolvedType() const { return this->resolvedType; }
 
   bool isAnonymousFunc() const { return this->funcName.getName().empty(); }
 
-  bool isSingleExpr() const { return this->singleExpr; }
+  bool isSingleExpr() const { return this->kind == SINGLE_EXPR; }
 
   void dump(NodeDumper &dumper) const override;
 };

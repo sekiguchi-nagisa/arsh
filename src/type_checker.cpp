@@ -1557,7 +1557,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   if (returnType) {
     if (auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes))) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
-      node.setFuncType(*funcType);
+      node.setResolvedType(*funcType);
       if (const Handle * handle;
           !node.isAnonymousFunc() &&
           (handle = this->addEntry(node.getNameInfo(), *funcType, HandleAttr::READ_ONLY))) {
@@ -1612,7 +1612,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
     if (auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes))) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
-      node.setFuncType(*funcType);
+      node.setResolvedType(*funcType);
     }
   }
   if (node.isSingleExpr()) {

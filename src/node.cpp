@@ -874,8 +874,14 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);
   DUMP(varIndex);
-  DUMP_PTR(funcType);
-  DUMP(singleExpr);
+  DUMP_PTR(resolvedType);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(FUNC)                                                                                         \
+  OP(SINGLE_EXPR)
+
+  DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // ###########################

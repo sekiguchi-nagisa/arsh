@@ -1312,7 +1312,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   if (!code) {
     this->reportError<TooLargeFunc>(node, node.getFuncName().c_str());
   }
-  auto func = DSValue::create<FuncObject>(*node.getFuncType(), std::move(code));
+  auto func = DSValue::create<FuncObject>(*node.getResolvedType(), std::move(code));
 
   this->emitLdcIns(func);
   if (!node.isAnonymousFunc()) {

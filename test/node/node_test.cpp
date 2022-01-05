@@ -438,8 +438,8 @@ nodes:
       maxVarSize: 0
     maxVarNum: 0
     varIndex: 0
-    funcType: null
-    singleExpr: false
+    resolvedType: null
+    kind: "FUNC"
 )"},
 
     {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
@@ -985,8 +985,8 @@ nodes:
       maxVarSize: 2
     maxVarNum: 2
     varIndex: 56
-    funcType: "(Int, Int) -> Void"
-    singleExpr: false
+    resolvedType: "(Int, Int) -> Void"
+    kind: "FUNC"
 )"},
 };
 

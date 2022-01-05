@@ -85,7 +85,8 @@ std::unique_ptr<Node> Parser::operator()() {
     auto exprNode = TRY(this->parse_expression());
     TRY(this->expect(TokenKind::EOS));
     NameInfo nameInfo({exprNode->getPos(), 0}, "");
-    auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo), true);
+    auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo),
+                                                   FunctionNode::SINGLE_EXPR);
     funcNode->setFuncBody(std::move(exprNode));
     return funcNode;
   } else {
@@ -658,7 +659,7 @@ std::unique_ptr<TypeDefNode> Parser::parse_typedef() {
   unsigned int startPos = START_POS();
   this->consume(); // TYPEDEF
   auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
-  switch(CUR_KIND()) {
+  switch (CUR_KIND()) {
   case TokenKind::ASSIGN: {
     TRY(this->expect(TokenKind::ASSIGN, false));
     auto typeToken = TRY(this->parse_typeName());
