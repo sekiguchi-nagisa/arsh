@@ -44,8 +44,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
   }
   case TypeNode::Qualified: {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
-    auto &recvType =
-        this->checkType(this->typePool.get(TYPE::Module), qualifiedNode.getRecvTypeNode());
+    auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
     auto *handle = this->curScope->lookupField(this->typePool, recvType, typeName);
     if (!handle) {
