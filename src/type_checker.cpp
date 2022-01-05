@@ -526,6 +526,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
   if (typeOrError) {
     node.setType(*std::move(typeOrError).take());
   } else {
+    this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
     node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
@@ -1554,7 +1555,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   // register function handle if named function
   const FunctionType *funcType = nullptr;
   if (returnType) {
-    if (auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes))) {
+    auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes));
+    if (typeOrError) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
       node.setResolvedType(*funcType);
       if (const Handle * handle;
@@ -1563,6 +1565,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
         node.setVarIndex(handle->getIndex());
       }
     } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
       paramSize = 0; // function type creation failed.
     }
   }

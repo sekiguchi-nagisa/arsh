@@ -28,6 +28,10 @@
     - ``workspace/didChangeConfiguration``
         - now change server configuration at runtime
 
+### Fixed
+
+- type error reporting of tuple/func type creation if size of these elements reaches limit
+
 ## [0.24.0] - 2021-12-28
 
 ### Added

@@ -1,0 +1,40 @@
+
+function f(
+$p1 : Int,   $p2 : Int,   $p3 : Int,   $p4 : Int,   $p5 : Int,   $p6 : Int,   $p7 : Int,   $p8 : Int,   $p9 : Int,   $p10 : Int,   $p11 : Int,   $p12 : Int,   $p13 : Int,   $p14 : Int,   $p15 : Int,   $p16 : Int,
+$p21 : Int,  $p22 : Int,  $p23 : Int,  $p24 : Int,  $p25 : Int,  $p26 : Int,  $p27 : Int,  $p28 : Int,  $p29 : Int,  $p210 : Int,  $p211 : Int,  $p212 : Int,  $p213 : Int,  $p214 : Int,  $p215 : Int,  $p216 : Int,
+$p31 : Int,  $p32 : Int,  $p33 : Int,  $p34 : Int,  $p35 : Int,  $p36 : Int,  $p37 : Int,  $p38 : Int,  $p39 : Int,  $p310 : Int,  $p311 : Int,  $p312 : Int,  $p313 : Int,  $p314 : Int,  $p315 : Int,  $p316 : Int,
+$p41 : Int,  $p42 : Int,  $p43 : Int,  $p44 : Int,  $p45 : Int,  $p46 : Int,  $p47 : Int,  $p48 : Int,  $p49 : Int,  $p410 : Int,  $p411 : Int,  $p412 : Int,  $p413 : Int,  $p414 : Int,  $p415 : Int,  $p416 : Int,
+$p51 : Int,  $p52 : Int,  $p53 : Int,  $p54 : Int,  $p55 : Int,  $p56 : Int,  $p57 : Int,  $p58 : Int,  $p59 : Int,  $p510 : Int,  $p511 : Int,  $p512 : Int,  $p513 : Int,  $p514 : Int,  $p515 : Int,  $p516 : Int,
+$p61 : Int,  $p62 : Int,  $p63 : Int,  $p64 : Int,  $p65 : Int,  $p66 : Int,  $p67 : Int,  $p68 : Int,  $p69 : Int,  $p610 : Int,  $p611 : Int,  $p612 : Int,  $p613 : Int,  $p614 : Int,  $p615 : Int,  $p616 : Int,
+$p71 : Int,  $p72 : Int,  $p73 : Int,  $p74 : Int,  $p75 : Int,  $p76 : Int,  $p77 : Int,  $p78 : Int,  $p79 : Int,  $p710 : Int,  $p711 : Int,  $p712 : Int,  $p713 : Int,  $p714 : Int,  $p715 : Int,  $p716 : Int,
+$p81 : Int,  $p82 : Int,  $p83 : Int,  $p84 : Int,  $p85 : Int,  $p86 : Int,  $p87 : Int,  $p88 : Int,  $p89 : Int,  $p810 : Int,  $p811 : Int,  $p812 : Int,  $p813 : Int,  $p814 : Int,  $p815 : Int,  $p816 : Int,
+$p91 : Int,  $p92 : Int,  $p93 : Int,  $p94 : Int,  $p95 : Int,  $p96 : Int,  $p97 : Int,  $p98 : Int,  $p99 : Int,  $p910 : Int,  $p911 : Int,  $p912 : Int,  $p913 : Int,  $p914 : Int,  $p915 : Int,  $p916 : Int,
+$p101 : Int, $p102 : Int, $p103 : Int, $p104 : Int, $p105 : Int, $p106 : Int, $p107 : Int, $p108 : Int, $p109 : Int, $p1010 : Int, $p1011 : Int, $p1012 : Int, $p1013 : Int, $p1014 : Int, $p1015 : Int, $p1016 : Int,
+$p111 : Int, $p112 : Int, $p113 : Int, $p114 : Int, $p115 : Int, $p116 : Int, $p117 : Int, $p118 : Int, $p119 : Int, $p1110 : Int, $p1111 : Int, $p1112 : Int, $p1113 : Int, $p1114 : Int, $p1115 : Int, $p1116 : Int,
+$p121 : Int, $p122 : Int, $p123 : Int, $p124 : Int, $p125 : Int, $p126 : Int, $p127 : Int, $p128 : Int, $p129 : Int, $p1210 : Int, $p1211 : Int, $p1212 : Int, $p1213 : Int, $p1214 : Int, $p1215 : Int, $p1216 : Int,
+$p131 : Int, $p132 : Int, $p133 : Int, $p134 : Int, $p135 : Int, $p136 : Int, $p137 : Int, $p138 : Int, $p139 : Int, $p1310 : Int, $p1311 : Int, $p1312 : Int, $p1313 : Int, $p1314 : Int, $p1315 : Int, $p1316 : Int,
+$p141 : Int, $p142 : Int, $p143 : Int, $p144 : Int, $p145 : Int, $p146 : Int, $p147 : Int, $p148 : Int, $p149 : Int, $p1410 : Int, $p1411 : Int, $p1412 : Int, $p1413 : Int, $p1414 : Int, $p1415 : Int, $p1416 : Int,
+$p151 : Int, $p152 : Int, $p153 : Int, $p154 : Int, $p155 : Int, $p156 : Int, $p157 : Int, $p158 : Int, $p159 : Int, $p1510 : Int, $p1511 : Int, $p1512 : Int, $p1513 : Int, $p1514 : Int, $p1515 : Int, $p1516 : Int,
+$p161 : Int, $p162 : Int, $p163 : Int, $p164 : Int, $p165 : Int, $p166 : Int, $p167 : Int, $p168 : Int, $p169 : Int, $p1610 : Int, $p1611 : Int, $p1612 : Int, $p1613 : Int, $p1614 : Int, $p1615 : Int
+) : Int {
+    return $p1
+}
+
+assert $f(
+ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 4, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 6, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 7, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+ 9, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+11, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+12, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+13, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+15, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+16, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+) == 1
