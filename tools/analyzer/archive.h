@@ -31,6 +31,7 @@ enum class ArchiveType : uint8_t {
   TUPLE,
   OPTION,
   ERROR,
+  RECORD,
   FUNC,
   MOD,
   CACHED,

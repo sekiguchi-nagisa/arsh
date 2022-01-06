@@ -122,9 +122,16 @@ public:
 };
 
 class FuncContext {
+public:
+  const enum Kind : unsigned int {
+    TOPLEVEL,
+    FUNC,
+    CONSTRUCTOR,
+  } kind{TOPLEVEL};
+
 private:
   unsigned int voidReturnCount{0};
-  const DSType *returnType;
+  const DSType *returnType{nullptr};
   FlexBuffer<JumpNode *> returnNodes;
 
   FlowContext flow;
@@ -134,14 +141,14 @@ private:
   std::unique_ptr<FuncContext> parent;
 
 public:
-  FuncContext() : returnType(nullptr) {}
+  FuncContext() = default;
 
-  explicit FuncContext(const DSType *type, std::unique_ptr<FuncContext> &&parent)
-      : returnType(type), parent(std::move(parent)) {}
+  explicit FuncContext(Kind k, const DSType *type, std::unique_ptr<FuncContext> &&parent)
+      : kind(k), returnType(type), parent(std::move(parent)) {}
 
   std::unique_ptr<FuncContext> takeParent() && { return std::move(this->parent); }
 
-  bool withinFunc() const { return static_cast<bool>(this->parent); }
+  bool withinFunc() const { return this->kind == FUNC; }
 
   void clear() {
     this->returnType = nullptr;
@@ -404,10 +411,10 @@ private:
     return finally([&] { this->curScope = this->curScope->exitScope(); });
   }
 
-  auto intoFunc(const DSType *returnType) {
+  auto intoFunc(const DSType *returnType, FuncContext::Kind k = FuncContext::FUNC) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-    this->funcCtx = std::make_unique<FuncContext>(returnType, std::move(this->funcCtx));
+    this->funcCtx = std::make_unique<FuncContext>(k, returnType, std::move(this->funcCtx));
     return finally([&] {
       this->curScope = this->curScope->exitScope();
       this->curScope = this->curScope->exitScope();
@@ -462,6 +469,12 @@ private:
 
   void checkTypeAsBreakContinue(JumpNode &node);
   void checkTypeAsReturn(JumpNode &node);
+
+  void postprocessFuncion(FunctionNode &node, const FunctionType *funcType,
+                          const DSType *returnType, std::vector<const DSType *> &&paramTypes);
+
+  void postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
+                               unsigned int paramSize);
 
   // for case-expression
   struct PatternMap {

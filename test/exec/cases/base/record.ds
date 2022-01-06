@@ -1,0 +1,68 @@
+
+# constructor without params
+typedef Empty {}
+var ee = new Empty()
+assert $ee is Any
+assert ($ee as Any) is Empty
+
+typedef AAA {
+    typedef T = Int
+    var a = 34
+    var b = 'c'
+}
+
+var aaa = new AAA()
+assert $aaa.a == 34
+$aaa.a = -999
+assert $aaa.a == -999
+
+assert $aaa.b == 'c'
+$aaa.b = '1234567890-=\`qwertyuiop[]asdfghjkl;"zxcvbnm,./'
+assert $aaa.b == '1234567890-=\`qwertyuiop[]asdfghjkl;"zxcvbnm,./'
+
+assert $aaa.a is AAA.T
+
+# constructor with params
+typedef BBB() {
+    let value = "hello world!!"
+    let size = $value.size()
+}
+
+var bbb = new BBB()
+assert $bbb.value == 'hello world!!'
+assert $bbb.size == 13
+
+## recursive type
+typedef CCC($v : String, $d : String) {
+    let _values = $v.split($d)
+    var _next : CCC!
+}
+
+var ccc1 = new CCC("hello world !!", " ")
+assert $ccc1._values.size() == 3
+assert $ccc1._values[0] == 'hello'
+assert $ccc1._values[1] == 'world'
+assert $ccc1._values[2] == '!!'
+
+var ccc2 = new CCC("a@b", '@')
+$ccc1._next = $ccc2
+assert $ccc1._next
+assert $ccc1._next!._values[0] == 'a'
+assert $ccc1._next!._values[1] == 'b'
+
+## recursive constructor call
+typedef DDD($v : String, $c : Int, $n : Int) {
+    var data = ""
+    for(var i = $c; $i < $n; $i++) {
+        $data += $v
+    }
+    let next = $c < $n ? new DDD($v, $c + 1, $n) : new DDD!()
+}
+
+var ddd = new DDD('@', 0, 4)
+assert $ddd.data == '@@@@'
+assert $ddd.next!.data == '@@@'
+assert $ddd.next!.next!.data == '@@'
+assert $ddd.next!.next!.next!.data == '@'
+assert $ddd.next!.next!.next!.next!.data == ''
+assert ! $ddd.next!.next!.next!.next!.next

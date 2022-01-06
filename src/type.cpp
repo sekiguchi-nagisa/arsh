@@ -41,6 +41,8 @@ const Handle *DSType::lookupField(const TypePool &pool, const std::string &field
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
+  case TypeKind::Record:
+    return cast<RecordType>(this)->lookupField(fieldName);
   case TypeKind::Mod:
     return cast<ModType>(this)->lookup(pool, fieldName);
   default:
@@ -54,6 +56,13 @@ void DSType::walkField(const TypePool &pool,
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
       if (!walker(e.first, e.second)) {
+        return;
+      }
+    }
+    break;
+  case TypeKind::Record:
+    for (auto &e : cast<RecordType>(this)->getHandleMap()) {
+      if (!walker(e.first, *e.second)) {
         return;
       }
     }
@@ -181,6 +190,18 @@ const Handle *TupleType::lookupField(const std::string &fieldName) const {
   return &iter->second;
 }
 
+// ########################
+// ##     RecordType     ##
+// ########################
+
+const Handle *RecordType::lookupField(const std::string &fieldName) const {
+  auto iter = this->handleMap.find(fieldName);
+  if (iter == this->handleMap.end()) {
+    return nullptr;
+  }
+  return iter->second.get();
+}
+
 // #####################
 // ##     ModType     ##
 // #####################
@@ -288,6 +309,20 @@ void Handle::destroy() {
   } else {
     delete this;
   }
+}
+
+std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
+                                                   const DSType &ret,
+                                                   const std::vector<const DSType *> &params,
+                                                   unsigned short modId) {
+  const size_t paramSize = params.size();
+  assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
+  void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
+  auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, modId);
+  for (size_t i = 0; i < paramSize; i++) {
+    handle->paramTypes[i] = params[i];
+  }
+  return std::unique_ptr<MethodHandle>(handle);
 }
 
 } // namespace ydsh

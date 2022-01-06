@@ -322,7 +322,9 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     if (!this->checkAccessNode(accessNode)) { // method call
       accessNode.setType(this->typePool.get(TYPE::Any));
       auto &recvType = accessNode.getRecvNode().getType();
-      if (auto *handle = this->typePool.lookupMethod(recvType, accessNode.getFieldName()); handle) {
+      if (auto *handle =
+              this->curScope->lookupMethod(this->typePool, recvType, accessNode.getFieldName());
+          handle) {
         node.setKind(ApplyNode::METHOD_CALL);
         node.setHandle(handle);
         callableTypes = handle->toCallableTypes();
@@ -657,7 +659,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
   CallableTypes callableTypes;
   if (!type.isOptionType() && !type.isArrayType() && !type.isMapType()) {
-    if (auto *handle = this->typePool.lookupConstructor(type); handle) {
+    if (auto *handle = this->curScope->lookupConstructor(this->typePool, type)) {
       callableTypes = handle->toCallableTypes();
       node.setHandle(handle);
     } else {
@@ -870,7 +872,7 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
   case TypeDefNode::ALIAS: {
     TypeNode &typeToken = node.getTargetTypeNode();
     auto &type = this->checkTypeExactly(typeToken);
-    auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()), type);
+    auto ret = this->curScope->defineTypeAlias(this->typePool, node.getName(), type);
     if (!ret) {
       this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
     }
@@ -885,8 +887,8 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
     auto typeOrError =
         this->typePool.createErrorType(node.getName(), errorType, this->curScope->modId);
     if (typeOrError) {
-      auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()),
-                                                 *typeOrError.asOk());
+      auto ret =
+          this->curScope->defineTypeAlias(this->typePool, node.getName(), *typeOrError.asOk());
       if (!ret) {
         this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
       }
@@ -1534,53 +1536,10 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::visitFunctionNode(FunctionNode &node) {
-  node.setType(this->typePool.get(TYPE::Void));
-
-  if (!this->curScope->isGlobal()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node);
-    return;
-  }
-
-  // resolve param type, return type
-  unsigned int paramSize = node.getParamTypeNodes().size();
-  std::vector<const DSType *> paramTypes(paramSize);
-  for (unsigned int i = 0; i < paramSize; i++) {
-    auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
-    paramTypes[i] = &type;
-  }
-  auto *returnType =
-      node.getReturnTypeToken() ? &this->checkTypeExactly(*node.getReturnTypeToken()) : nullptr;
-
-  // register function handle if named function
-  const FunctionType *funcType = nullptr;
-  if (returnType) {
-    auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes));
-    if (typeOrError) {
-      funcType = cast<FunctionType>(std::move(typeOrError).take());
-      node.setResolvedType(*funcType);
-      if (const Handle * handle;
-          !node.isAnonymousFunc() &&
-          (handle = this->addEntry(node.getNameInfo(), *funcType, HandleAttr::READ_ONLY))) {
-        node.setVarIndex(handle->getIndex());
-      }
-    } else {
-      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
-      paramSize = 0; // function type creation failed.
-    }
-  }
-
-  // func body
-  auto func = this->intoFunc(returnType);
-  // register parameter
-  for (unsigned int i = 0; i < paramSize; i++) {
-    auto &paramType = funcType ? funcType->getParamTypeAt(i) : *paramTypes[i];
-    this->addEntry(node.getParams()[i], paramType, HandleAttr());
-  }
-  // check type func body
-  this->checkTypeWithCurrentScope(
-      node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
-  node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+void TypeChecker::postprocessFuncion(FunctionNode &node, const FunctionType *funcType,
+                                     const DSType *returnType,
+                                     std::vector<const DSType *> &&paramTypes) {
+  assert(!node.isConstructor());
 
   // insert terminal node if not found
   BlockNode &blockNode = node.getBlockNode();
@@ -1625,6 +1584,126 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     node.setType(*typeOrError.asOk()); // always `() -> Any!' type
   } else if (node.isAnonymousFunc() && funcType) {
     node.setType(*funcType);
+  }
+}
+
+void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
+                                          unsigned int paramSize) {
+  assert(node.isConstructor() && !node.getFuncName().empty());
+  assert(constructorscope && constructorscope->parent &&
+         constructorscope->kind == NameScope::BLOCK &&
+         constructorscope->parent->kind == NameScope::FUNC);
+
+  if (!node.getResolvedType()) {
+    return;
+  }
+
+  // fialize record type
+  const unsigned int offset = paramSize;
+  std::unordered_map<std::string, HandlePtr> handles;
+  for (auto &e : constructorscope->getHandles()) {
+    auto handle = e.second.first;
+    if (!handle->has(HandleAttr::TYPE_ALIAS) && !handle->isMethod()) {
+      if (handle->getIndex() < offset) {
+        continue;
+      }
+
+      // field
+      auto &fieldType = this->typePool.get(handle->getTypeId());
+      HandleAttr attr{};
+      if (handle->has(HandleAttr::READ_ONLY)) {
+        setFlag(attr, HandleAttr::READ_ONLY);
+      }
+      auto newHandle = std::make_unique<Handle>(fieldType, handle->getIndex() - offset, attr,
+                                                handle->getModId());
+      handle = HandlePtr(newHandle.release());
+    }
+    handles.emplace(e.first, std::move(handle));
+  }
+  assert(node.getResolvedType()->isRecordType());
+  auto typeOrError = this->typePool.finalizeRecordType(cast<RecordType>(*node.getResolvedType()),
+                                                       std::move(handles));
+  if (!typeOrError) {
+    this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
+  }
+}
+
+void TypeChecker::visitFunctionNode(FunctionNode &node) {
+  node.setType(this->typePool.get(TYPE::Void));
+
+  if (!this->curScope->isGlobal()) { // only available toplevel scope
+    this->reportError<OutsideToplevel>(node);
+    return;
+  }
+
+  // resolve param type, return type
+  unsigned int paramSize = node.getParamTypeNodes().size();
+  std::vector<const DSType *> paramTypes(paramSize);
+  for (unsigned int i = 0; i < paramSize; i++) {
+    auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
+    paramTypes[i] = &type;
+  }
+  auto *returnType =
+      node.getReturnTypeToken() ? &this->checkTypeExactly(*node.getReturnTypeToken()) : nullptr;
+
+  // register function/constructor handle
+  const FunctionType *funcType = nullptr;
+  if (returnType) { // for named function
+    assert(!node.isConstructor());
+    auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes));
+    if (typeOrError) {
+      funcType = cast<FunctionType>(std::move(typeOrError).take());
+      node.setResolvedType(*funcType);
+      if (const Handle * handle;
+          !node.isAnonymousFunc() &&
+          (handle = this->addEntry(node.getNameInfo(), *funcType, HandleAttr::READ_ONLY))) {
+        node.setVarIndex(handle->getIndex());
+      }
+    } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
+      paramSize = 0; // function type creation failed.
+    }
+  } else if (node.isConstructor()) {
+    auto typeOrError = this->typePool.createRecordType(node.getFuncName(), this->curScope->modId);
+    if (typeOrError) {
+      auto &recordType = cast<RecordType>(*typeOrError.asOk());
+      if (!this->curScope->defineTypeAlias(this->typePool, node.getFuncName(), recordType)) {
+        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
+                                            node.getFuncName().c_str());
+      }
+      auto ret = this->curScope->defineConstructor(recordType, paramTypes);
+      assert(ret && ret.asOk()->isMethod());
+      node.setVarIndex(ret.asOk()->getIndex());
+      node.setResolvedType(recordType);
+    } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
+    }
+  }
+
+  // func body
+  NameScopePtr scope;
+  {
+    assert(!node.isConstructor() || (node.isConstructor() && !returnType));
+    auto func = this->intoFunc(returnType,
+                               node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
+    // register parameter
+    for (unsigned int i = 0; i < paramSize; i++) {
+      auto &paramType = funcType ? funcType->getParamTypeAt(i) : *paramTypes[i];
+      this->addEntry(node.getParams()[i], paramType, HandleAttr());
+    }
+    // check type func body
+    this->checkTypeWithCurrentScope(
+        node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
+    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+    if (node.isConstructor()) {
+      scope = this->curScope; // save currrent scope
+    } else {
+      this->postprocessFuncion(node, funcType, returnType, std::move(paramTypes));
+    }
+  }
+
+  if (node.isConstructor()) {
+    this->postproocessConstructor(node, std::move(scope), paramSize);
   }
 }
 
@@ -1718,8 +1797,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     if (!this->curScope->defineAlias(std::move(cmdName), handle)) { // for module subcommand
       this->reportError<DefinedCmd>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
-    if (!this->curScope->defineTypeAlias(this->typePool, std::string(nameInfo.getName()),
-                                         node.getModType())) {
+    if (!this->curScope->defineTypeAlias(this->typePool, nameInfo.getName(), node.getModType())) {
       this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
   }

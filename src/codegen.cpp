@@ -151,7 +151,7 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
 
 void ByteCodeGenerator::emitToString() {
   if (this->handle_STR == nullptr) {
-    this->handle_STR = this->typePool.lookupMethod(TYPE::Any, OP_STR);
+    this->handle_STR = this->typePool.lookupMethod(this->typePool.get(TYPE::Any), OP_STR);
   }
   this->emitMethodCallIns(0, *this->handle_STR);
 }
@@ -673,25 +673,39 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
 }
 
 void ByteCodeGenerator::visitNewNode(NewNode &node) {
-  if (node.getType().isOptionType()) {
+  switch (node.getType().typeKind()) {
+  case TypeKind::Option:
     this->emit0byteIns(OpCode::PUSH_INVALID);
-    return;
+    break;
+  case TypeKind::Array:
+  case TypeKind::Map:
+    this->emitTypeIns(OpCode::NEW, node.getType());
+    break;
+  default:
+    assert(node.getHandle());
+    if (node.getHandle()->isNative()) {
+      // push arguments
+      this->emitTypeIns(OpCode::NEW, node.getType());
+      this->visit(node.getArgsNode());
+
+      // call constructor
+      this->emitSourcePos(node.getPos());
+      unsigned int paramSize = node.getArgsNode().getNodes().size();
+      this->emitMethodCallIns(paramSize, *node.getHandle());
+    } else {
+      // push constructor func
+      this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getHandle()->getIndex());
+
+      // push arguments
+      this->visit(node.getArgsNode());
+
+      // call constructor
+      this->emitSourcePos(node.getPos());
+      unsigned int paramSize = node.getArgsNode().getNodes().size();
+      this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
+    }
+    break;
   }
-
-  unsigned int paramSize = node.getArgsNode().getNodes().size();
-
-  this->emitTypeIns(OpCode::NEW, node.getType());
-  if (node.getType().isArrayType() || node.getType().isMapType()) {
-    return; // Array, Map type has no constructor
-  }
-
-  // push arguments
-  this->visit(node.getArgsNode());
-
-  // call constructor
-  this->emitSourcePos(node.getPos());
-  assert(node.getHandle() && node.getHandle()->isNative()); // FIXME: normal constructor call
-  this->emitMethodCallIns(paramSize, *node.getHandle());
 }
 
 void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
@@ -1307,6 +1321,13 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
   this->visit(node.getBlockNode());
+  if (node.isConstructor()) {
+    this->emitTypeIns(OpCode::NEW, *node.getResolvedType());
+    unsigned int offset = node.getParams().size();
+    unsigned int fieldSize = cast<RecordType>(node.getResolvedType())->getFieldSize();
+    this->emit2byteIns(OpCode::INIT_FIELDS, offset, fieldSize);
+    this->emit0byteIns(OpCode::RETURN);
+  }
 
   auto code = this->finalizeCodeBuilder(node.getFuncName());
   if (!code) {
@@ -1497,7 +1518,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         const int byteSize = getByteSize(code);
         if (code == OpCode::CALL_METHOD || code == OpCode::FORK) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-        } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING) {
+        } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING ||
+                   code == OpCode::INIT_FIELDS) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
         } else if (code == OpCode::CALL_BUILTIN2) {
           unsigned int paramSize = read8(c.getCode(), i + 1);

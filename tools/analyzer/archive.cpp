@@ -75,6 +75,7 @@ void Archiver::add(const DSType &type) {
         this->writeT(ArchiveType::CACHED);
         this->writeStr(type.getNameRef());
       } else { // not found
+        this->udTypeSet.emplace(type.typeId());
         this->writeT(ArchiveType::ERROR);
         auto typeName = type.getNameRef();
         const auto pos = typeName.find('.');
@@ -84,7 +85,29 @@ void Archiver::add(const DSType &type) {
         auto ret = this->pool.getType(typeName.slice(0, pos));
         assert(ret);
         this->add(*ret.asOk());
+      }
+      break;
+    case TypeKind::Record:
+      if (auto iter = this->udTypeSet.find(type.typeId()); iter != this->udTypeSet.end()) {
+        this->writeT(ArchiveType::CACHED);
+        this->writeStr(type.getNameRef());
+      } else { // not found
         this->udTypeSet.emplace(type.typeId());
+        this->writeT(ArchiveType::RECORD);
+        auto typeName = type.getNameRef();
+        const auto pos = typeName.find('.');
+        assert(pos != StringRef::npos);
+        this->writeStr(typeName.substr(pos + 1));
+        auto ret = this->pool.getType(typeName.slice(0, pos));
+        assert(ret);
+        this->add(*ret.asOk());
+
+        auto &recordType = cast<RecordType>(type);
+        this->write32(recordType.getHandleMap().size());
+        for (auto &e : recordType.getHandleMap()) {
+          this->writeStr(e.first);
+          this->add(*e.second);
+        }
       }
       break;
     case TypeKind::Mod:
@@ -103,22 +126,22 @@ void Archiver::add(const Handle &handle) {
   this->write16(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
+  if (handle.isMethod()) {
+    auto &methodHandle = static_cast<const MethodHandle &>(handle);
+    const auto paramSize = methodHandle.getParamSize();
+    this->write8(paramSize + 1);
+    this->add(methodHandle.getReturnType());
+    for (unsigned int i = 0; i < paramSize; i++) {
+      this->add(methodHandle.getParamTypeAt(i));
+    }
+  } else {
+    this->write8(0);
+  }
 }
 
 // ########################
 // ##     Unarchiver     ##
 // ########################
-
-HandlePtr Unarchiver::unpackHandle() {
-  uint32_t index = this->read32();
-  uint16_t attr = this->read16();
-  uint16_t modID = this->read16();
-  auto type = this->unpackType();
-  if (!type) {
-    return nullptr;
-  }
-  return HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modID);
-}
 
 #define TRY(E)                                                                                     \
   ({                                                                                               \
@@ -128,6 +151,25 @@ HandlePtr Unarchiver::unpackHandle() {
     }                                                                                              \
     std::forward<decltype(__v)>(__v);                                                              \
   })
+
+HandlePtr Unarchiver::unpackHandle() {
+  uint32_t index = this->read32();
+  uint16_t attr = this->read16();
+  uint16_t modId = this->read16();
+  auto type = TRY(this->unpackType());
+  unsigned int famSize = this->read8();
+  if (famSize) { // method handle
+    auto *returnType = TRY(this->unpackType());
+    std::vector<const DSType *> paramTypes;
+    for (unsigned int i = 0; i < famSize - 1; i++) {
+      paramTypes.push_back(TRY(this->unpackType()));
+    }
+    auto handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
+    return HandlePtr(handle.release());
+  } else {
+    return HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modId);
+  }
+}
 
 const DSType *Unarchiver::unpackType() {
   auto k = this->readT();
@@ -169,6 +211,21 @@ const DSType *Unarchiver::unpackType() {
     assert(isa<ModType>(modType));
     auto ret =
         TRY(this->pool.createErrorType(name, *superType, cast<ModType>(modType)->getModId()));
+    return std::move(ret).take();
+  }
+  case ArchiveType::RECORD: {
+    std::string name = this->readStr();
+    auto *modType = TRY(this->unpackType());
+    assert(isa<ModType>(modType));
+    auto ret = TRY(this->pool.createRecordType(name, cast<ModType>(modType)->getModId()));
+    uint32_t size = this->read32();
+    std::unordered_map<std::string, HandlePtr> handles;
+    for (unsigned int i = 0; i < size; i++) {
+      auto n = this->readStr();
+      auto handle = TRY(this->unpackHandle());
+      handles.emplace(std::move(n), std::move(handle));
+    }
+    ret = TRY(this->pool.finalizeRecordType(cast<RecordType>(*ret.asOk()), std::move(handles)));
     return std::move(ret).take();
   }
   case ArchiveType::FUNC: {

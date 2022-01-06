@@ -674,7 +674,7 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   }
   this->visitEach(node.getParamTypeNodes());
   this->visit(node.getReturnTypeToken());
-  if (node.getVarIndex() > 0) {
+  if (node.getVarIndex() > 0 && !node.isConstructor()) {
     std::string value = "(";
     for (unsigned int i = 0; i < node.getParams().size(); i++) {
       if (i > 0) {

@@ -105,7 +105,7 @@ NameLookupResult NameScope::defineAlias(std::string &&name, const HandlePtr &han
   return this->addNewForeignHandle(std::move(name), handle);
 }
 
-NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&name,
+NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
                                             const DSType &type) {
   if (this->isGlobal()) {
     auto ret = pool.getType(name);
@@ -115,6 +115,18 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
   }
   return this->defineAlias(toTypeAliasFullName(name),
                            HandlePtr::create(type, 0, HandleAttr::TYPE_ALIAS, this->modId));
+}
+
+NameLookupResult NameScope::defineMethod(const DSType &recvType, const std::string &name,
+                                         const DSType &returnType,
+                                         const std::vector<const DSType *> &paramTypes) {
+  if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType()) {
+    return Err(NameLookupError::INVALID_TYPE);
+  }
+  std::string fullname = toMethodFullName(recvType.typeId(), name);
+  const unsigned int index = this->getMaxGlobalVarIndex();
+  auto hande = MethodHandle::create(recvType, index, returnType, paramTypes, this->modId);
+  return this->add(std::move(fullname), HandlePtr(hande.release()));
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
@@ -218,6 +230,25 @@ const Handle *NameScope::lookup(const std::string &name) const {
     }
   }
   return nullptr;
+}
+
+const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvType,
+                                            const std::string &methodName) const {
+  auto scope = this;
+  while (!scope->isGlobal()) {
+    scope = scope->parent.get();
+  }
+  for (const DSType *type = &recvType; type != nullptr; type = type->getSuperType()) {
+    std::string name = toMethodFullName(type->typeId(), methodName);
+    if (auto *handle = scope->find(name)) {
+      assert(handle->isMethod());
+      if (handle->getModId() == 0 || this->modId == handle->getModId() || methodName[0] != '_') {
+        return static_cast<const MethodHandle *>(handle);
+      }
+      return nullptr;
+    }
+  }
+  return pool.lookupMethod(recvType, methodName);
 }
 
 void NameScope::discard(ScopeDiscardPoint discardPoint) {

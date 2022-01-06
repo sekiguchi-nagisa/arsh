@@ -191,14 +191,22 @@ bool VM::storeEnv(DSState &state) {
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
   DSValue value;
-  if (type.isArrayType()) {
+  switch (type.typeKind()) {
+  case TypeKind::Array:
     value = DSValue::create<ArrayObject>(type);
-  } else if (type.isMapType()) {
+    break;
+  case TypeKind::Map:
     value = DSValue::create<MapObject>(type);
-  } else if (type.isTupleType()) {
+    break;
+  case TypeKind::Tuple:
     value = DSValue::create<BaseObject>(cast<TupleType>(type));
-  } else {
+    break;
+  case TypeKind::Record:
+    value = DSValue::create<BaseObject>(cast<RecordType>(type));
+    break;
+  default:
     value = DSValue::createDummy(type);
+    break;
   }
   state.stack.push(std::move(value));
 }
@@ -1506,6 +1514,19 @@ bool VM::mainLoop(DSState &state) {
         state.stack.pc() += 3;
         auto &type = state.typePool.get(v);
         pushNewObject(state, type);
+        vmnext;
+      }
+      vmcase(INIT_FIELDS) {
+        unsigned int offset = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        unsigned int size = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+
+        auto &obj = typeAs<BaseObject>(state.stack.peek());
+        assert(obj.getFieldSize() == size);
+        for (unsigned int i = 0; i < size; i++) {
+          obj[i] = state.stack.getLocal(offset + i);
+        }
         vmnext;
       }
       vmcase(CALL_METHOD) {

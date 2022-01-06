@@ -197,6 +197,7 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_SUFFIX = "%c";
 constexpr const char *TYPE_ALIAS_SYMBOL_SUFFIX = "%t";
+constexpr const char *METHOD_SYMBOL_SUFFIX = "%f";
 constexpr const char *MOD_HOLDER_SYMBOL_SUFFIX = "%m";
 
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
@@ -217,6 +218,14 @@ inline std::string toTypeAliasFullName(StringRef alias) {
   return name;
 }
 
+inline std::string toMethodFullName(unsigned int recvTypeId, StringRef methodName) {
+  std::string name = methodName.toString();
+  name += "%";
+  name += std::to_string(recvTypeId);
+  name += METHOD_SYMBOL_SUFFIX;
+  return name;
+}
+
 inline std::string toModHolderName(unsigned short modId, bool global) {
   std::string name = global ? "_g" : "_n";
   name += std::to_string(modId);
@@ -230,9 +239,18 @@ inline std::string toModTypeName(unsigned short modId) {
   return str;
 }
 
+inline std::string toQualifiedTypeName(StringRef name, unsigned short belongedModId) {
+  std::string value = toModTypeName(belongedModId);
+  value += ".";
+  value += name;
+  return value;
+}
+
 inline bool isCmdFullName(StringRef ref) { return ref.endsWith(CMD_SYMBOL_SUFFIX); }
 
 inline bool isTypeAliasFullName(StringRef ref) { return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX); }
+
+inline bool isMethodFullName(StringRef ref) { return ref.endsWith(METHOD_SYMBOL_SUFFIX); }
 
 inline bool isModHolderName(StringRef ref) { return ref.endsWith(MOD_HOLDER_SYMBOL_SUFFIX); }
 
@@ -248,7 +266,7 @@ inline bool isMagicMethodName(StringRef ref) { return ref.startsWith("%"); }
 
 inline bool isVarName(StringRef ref) {
   return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref) &&
-         !isMagicMethodName(ref);
+         !isMagicMethodName(ref) && !isMethodFullName(ref);
 }
 
 // =====  other constants  =====

@@ -44,6 +44,7 @@ Description**                                        |
 | APPEND_ARRAY    |                                | value1 value2 -> value1                      | append value2 into value1                              |
 | APPEND_MAP      |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1                   |
 | NEW             | 3: byte1 ~ byte3               | -> value                                     | create an empty object of a specified type             |
+| INIT_FIELDS     | 2: offset size                 | value -> value                               | init object fields                                     |
 | CALL_METHOD     | 3: param index1 index2         | recv param1 ~ paramN -> result               | call virtual method                                    |
 | CALL_FUNC       | 1: param                       | func param1 ~ paramN -> result               | apply function object                                  |
 | CALL_BUILTIN    | 1: index                       | -> value                                     | call builtin function                                  |

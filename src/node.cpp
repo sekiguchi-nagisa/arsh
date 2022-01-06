@@ -567,9 +567,9 @@ void BlockNode::dump(NodeDumper &dumper) const {
   DUMP(maxVarSize);
 }
 
-// ###########################
-// ##     TypeAliasNode     ##
-// ###########################
+// #########################
+// ##     TypeDefNode     ##
+// #########################
 
 void TypeDefNode::dump(NodeDumper &dumper) const {
   DUMP(nameInfo);
@@ -878,7 +878,8 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 
 #define EACH_ENUM(OP)                                                                              \
   OP(FUNC)                                                                                         \
-  OP(SINGLE_EXPR)
+  OP(SINGLE_EXPR)                                                                                  \
+  OP(CONSTRUCTOR)
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM

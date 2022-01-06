@@ -1366,20 +1366,19 @@ public:
 
 class TypeDefNode : public WithRtti<Node, NodeKind::TypeDef> {
 public:
-  enum Kind : unsigned char {
+  const enum Kind : unsigned char {
     ALIAS,
     ERROR_DEF,
-  };
+  } kind;
 
 private:
   NameInfo nameInfo;
-  std::unique_ptr<TypeNode> targetTypeNode;
-  const Kind kind;
+  std::unique_ptr<TypeNode> targetTypeNode; // for ALIAS, ERROR_DEF
 
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
               Kind kind)
-      : WithRtti({startPos, 0}), nameInfo(std::move(name)),
-        targetTypeNode(std::move(targetTypeNode)), kind(kind) {
+      : WithRtti({startPos, 1}), kind(kind), nameInfo(std::move(name)),
+        targetTypeNode(std::move(targetTypeNode)) {
     this->updateToken(this->targetTypeNode->getToken());
   }
 
@@ -1390,10 +1389,10 @@ public:
         new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ALIAS));
   }
 
-  static std::unique_ptr<TypeDefNode> errorDef(unsigned int startPos, NameInfo &&alias,
+  static std::unique_ptr<TypeDefNode> errorDef(unsigned int startPos, NameInfo &&name,
                                                std::unique_ptr<TypeNode> &&targetTypeNode) {
     return std::unique_ptr<TypeDefNode>(
-        new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ERROR_DEF));
+        new TypeDefNode(startPos, std::move(name), std::move(targetTypeNode), ERROR_DEF));
   }
 
   ~TypeDefNode() override = default;
@@ -1909,6 +1908,7 @@ public:
   const enum Kind : unsigned char {
     FUNC,
     SINGLE_EXPR,
+    CONSTRUCTOR,
   } kind;
 
 private:
@@ -1997,9 +1997,13 @@ public:
    */
   const DSType *getResolvedType() const { return this->resolvedType; }
 
-  bool isAnonymousFunc() const { return this->funcName.getName().empty(); }
+  bool isAnonymousFunc() const {
+    return this->funcName.getName().empty() && !this->isConstructor();
+  }
 
   bool isSingleExpr() const { return this->kind == SINGLE_EXPR; }
+
+  bool isConstructor() const { return this->kind == CONSTRUCTOR; }
 
   void dump(NodeDumper &dumper) const override;
 };

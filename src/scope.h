@@ -186,7 +186,17 @@ public:
 
   NameLookupResult defineAlias(std::string &&name, const HandlePtr &handle);
 
-  NameLookupResult defineTypeAlias(const TypePool &pool, std::string &&name, const DSType &type);
+  NameLookupResult defineTypeAlias(const TypePool &pool, const std::string &name,
+                                   const DSType &type);
+
+  NameLookupResult defineMethod(const DSType &recvType, const std::string &name,
+                                const DSType &returnType,
+                                const std::vector<const DSType *> &paramTypes);
+
+  NameLookupResult defineConstructor(const DSType &recvType,
+                                     const std::vector<const DSType *> &paramTypes) {
+    return this->defineMethod(recvType, OP_INIT, recvType, paramTypes);
+  }
 
   /**
    * import handle from foreign module (ModType)
@@ -216,6 +226,13 @@ public:
       }
     }
     return nullptr;
+  }
+
+  const MethodHandle *lookupMethod(TypePool &pool, const DSType &recvType,
+                                   const std::string &methodName) const;
+
+  const MethodHandle *lookupConstructor(TypePool &pool, const DSType &recvType) const {
+    return this->lookupMethod(pool, recvType, OP_INIT);
   }
 
   // for symbol discard

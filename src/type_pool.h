@@ -201,6 +201,11 @@ public:
   TypeOrError createErrorType(const std::string &typeName, const DSType &superType,
                               unsigned short belongedModId);
 
+  TypeOrError createRecordType(const std::string &typeName, unsigned short belongedModId);
+
+  TypeOrError finalizeRecordType(const RecordType &recordType,
+                                 std::unordered_map<std::string, HandlePtr> &&handles);
+
   const ModType &createModType(unsigned short modID,
                                std::unordered_map<std::string, HandlePtr> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index);
@@ -214,18 +219,6 @@ public:
   TypeOrError getModTypeById(unsigned short modId) const;
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
-
-  const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
-    return this->lookupMethod(this->get(typeId), methodName);
-  }
-
-  const MethodHandle *lookupMethod(TYPE type, const std::string &methodName) {
-    return this->lookupMethod(static_cast<unsigned int>(type), methodName);
-  }
-
-  const MethodHandle *lookupConstructor(const DSType &revType) {
-    return this->lookupMethod(revType, OP_INIT);
-  }
 
   const MethodMap &getMethodMap() const { return this->methodMap; }
 
@@ -248,6 +241,8 @@ private:
     }
     return &this->get(iter->second);
   }
+
+  DSType *getMut(unsigned int typeId) const { return this->typeTable[typeId]; }
 
   template <typename T, typename... A>
   T *newType(A &&...arg) {

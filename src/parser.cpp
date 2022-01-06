@@ -652,7 +652,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
   return nullptr;
 }
 
-std::unique_ptr<TypeDefNode> Parser::parse_typedef() {
+std::unique_ptr<Node> Parser::parse_typedef() {
   GUARD_DEEP_NESTING(guard);
 
   assert(CUR_KIND() == TokenKind::TYPEDEF);
@@ -670,8 +670,37 @@ std::unique_ptr<TypeDefNode> Parser::parse_typedef() {
     auto typeToken = TRY(this->parse_typeName());
     return TypeDefNode::errorDef(startPos, std::move(nameInfo), std::move(typeToken));
   }
+  case TokenKind::LP:    // (
+  case TokenKind::LBC: { // {
+    auto node =
+        std::make_unique<FunctionNode>(startPos, std::move(nameInfo), FunctionNode::CONSTRUCTOR);
+    if (CUR_KIND() == TokenKind::LP) {
+      this->consume(); // LP
+      for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
+        if (count > 0) {
+          if (CUR_KIND() != TokenKind::COMMA) {
+            E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
+          }
+          this->consume(); // COMMA
+        }
+
+        if (CUR_KIND() == TokenKind::APPLIED_NAME) {
+          auto param = this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName); // always success
+          TRY(this->expect(TokenKind::COLON, false));
+          auto type = TRY(this->parse_typeName());
+          node->addParamNode(std::move(param), std::move(type));
+        } else {
+          E_ALTER(TokenKind::APPLIED_NAME, TokenKind::RP);
+        }
+      }
+      this->expect(TokenKind::RP); // always success
+    }
+    auto blockNode = TRY(this->parse_block());
+    node->setFuncBody(std::move(blockNode));
+    return node;
+  }
   default:
-    E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON);
+    E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON, TokenKind::LP, TokenKind::LBC);
   }
 }
 

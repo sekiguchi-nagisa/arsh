@@ -21,6 +21,13 @@
   typedef LogicError : Error
   assert (new LogicError("hello") is Error)
   ```
+- support user-defined type
+  ```
+  typedef IntList($v : Int) {
+    var value = $v
+    var next = new IntList!()
+  }
+  ```
 
 #### LSP
 

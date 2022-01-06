@@ -271,15 +271,43 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType 
   if (!this->get(TYPE::Error).isSameOrBaseTypeOf(superType)) {
     RAISE_TL_ERROR(InvalidElement, superType.getName());
   }
-  std::string name = toModTypeName(belongedModId);
-  name += ".";
-  name += typeName;
+  std::string name = toQualifiedTypeName(typeName, belongedModId);
   auto *type = this->newType<ErrorType>(name, superType);
   if (type) {
     return Ok(type);
   } else {
     RAISE_TL_ERROR(DefinedType, typeName.c_str());
   }
+}
+
+TypeOrError TypePool::createRecordType(const std::string &typeName, unsigned short belongedModId) {
+  std::string name = toQualifiedTypeName(typeName, belongedModId);
+  auto *type = this->newType<RecordType>(name, this->get(TYPE::Any));
+  if (type) {
+    return Ok(type);
+  } else {
+    RAISE_TL_ERROR(DefinedType, typeName.c_str());
+  }
+}
+
+TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
+                                         std::unordered_map<std::string, HandlePtr> &&handles) {
+  unsigned int fieldCount = 0;
+  for (auto &e : handles) {
+    if (!e.second->isMethod() && !e.second->has(HandleAttr::TYPE_ALIAS)) {
+      fieldCount++;
+      auto &type = this->get(e.second->getTypeId());
+      if (type.isVoidType() || type.isNothingType()) {
+        RAISE_TL_ERROR(InvalidElement, type.getName());
+      }
+    }
+  }
+  if (fieldCount > SYS_LIMIT_TUPLE_NUM) {
+    RAISE_TL_ERROR(ElementLimit);
+  }
+  auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
+  newRecordType->finalize(this->get(TYPE::Any), fieldCount, std::move(handles));
+  return Ok(newRecordType);
 }
 
 const ModType &TypePool::createModType(unsigned short modID,

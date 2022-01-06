@@ -95,6 +95,7 @@ enum class TYPE : unsigned int {
   OP(Tuple)                                                                                        \
   OP(Option)                                                                                       \
   OP(Error)                                                                                        \
+  OP(Record)                                                                                       \
   OP(Mod)
 
 enum class TypeKind : unsigned char {
@@ -179,6 +180,8 @@ public:
 
   bool isModType() const { return this->typeKind() == TypeKind::Mod; }
 
+  bool isRecordType() const { return this->typeKind() == TypeKind::Record; }
+
   /**
    * get super type of this type.
    * return null, if has no super type(ex. AnyType, VoidType).
@@ -227,7 +230,8 @@ public:
   OP(TYPE_ALIAS, (1u << 4u))                                                                       \
   OP(NAMED_MOD, (1u << 5u))                                                                        \
   OP(GLOBAL_MOD, (1u << 6u))                                                                       \
-  OP(INLINED_MOD, (1u << 7u))
+  OP(INLINED_MOD, (1u << 7u))                                                                      \
+  OP(NATIVE, (1u << 8u))
 
 enum class HandleAttr : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -489,6 +493,38 @@ public:
   static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Error; }
 };
 
+class RecordType : public DSType {
+private:
+  friend class TypePool;
+
+  /**
+   * maintains field / type alias
+   */
+  std::unordered_map<std::string, HandlePtr> handleMap;
+
+public:
+  RecordType(unsigned int id, StringRef ref, const DSType &superType)
+      : DSType(TypeKind::Record, id, ref, &superType) {
+    this->meta.u32 = 0;
+  }
+
+  const auto &getHandleMap() const { return this->handleMap; }
+
+  unsigned int getFieldSize() const { return this->meta.u32; }
+
+  const Handle *lookupField(const std::string &fieldName) const;
+
+  static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Record; }
+
+private:
+  void finalize(const DSType &superType, unsigned char fieldSize,
+                std::unordered_map<std::string, HandlePtr> &&handles) {
+    this->handleMap = std::move(handles);
+    this->meta.u32 = fieldSize;
+    this->superType = &superType;
+  }
+};
+
 enum class ImportedModKind : unsigned char {
   GLOBAL = 1u << 0u,
   INLINED = 1u << 1u,
@@ -701,15 +737,18 @@ private:
    */
   const DSType *paramTypes[];
 
-  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize)
-      : Handle(paramSize + 1, recv, index, {}, 0), returnType(ret) {
+  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
+               unsigned short modId)
+      : Handle(paramSize + 1, recv, index, HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
+        returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
                                               const DSType &ret, unsigned char paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize);
+    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0);
+    setFlag(handle->attribute, HandleAttr::NATIVE);
     return std::unique_ptr<MethodHandle>(handle);
   }
 
@@ -720,18 +759,23 @@ public:
     free(ptr);
   }
 
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const DSType &ret,
+                                              const std::vector<const DSType *> &params,
+                                              unsigned short modId);
+
   const DSType &getReturnType() const { return this->returnType; }
 
   unsigned int getRecvTypeId() const { return this->getTypeId(); }
 
-  unsigned short getParamSize() const { return this->famSize() - 1; }
+  unsigned char getParamSize() const { return this->famSize() - 1; }
 
   const DSType &getParamTypeAt(unsigned int index) const {
     assert(index < this->getParamSize());
     return *this->paramTypes[index];
   }
 
-  bool isNative() const { return true; } // FIXME:
+  bool isNative() const { return this->has(HandleAttr::NATIVE); }
 
   CallableTypes toCallableTypes() const {
     return {this->returnType, this->getParamSize(),

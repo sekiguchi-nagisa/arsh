@@ -855,6 +855,8 @@ public:
    */
   static BaseObject *create(const TupleType &type) { return create(type, type.getFieldSize()); }
 
+  static BaseObject *create(const RecordType &type) { return create(type, type.getFieldSize()); }
+
   ~BaseObject();
 
   DSValue &operator[](unsigned int index) { return static_cast<DSValue &>(this->fields[index]); }
