@@ -1610,9 +1610,12 @@ void TypeChecker::postprocessFuncion(FunctionNode &node, const DSType *returnTyp
   if (!returnType) {
     assert(!funcType);
     auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
-    if (auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes))) {
+    auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes));
+    if (typeOrError) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
       node.setResolvedType(*funcType);
+    } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
     }
   }
   if (node.isSingleExpr()) {
