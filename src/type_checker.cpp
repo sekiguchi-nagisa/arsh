@@ -1525,6 +1525,41 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
   }
 }
 
+void TypeChecker::registerFuncHandle(FunctionNode &node,
+                                     const std::vector<const DSType *> &paramTypes) {
+  if (node.getReturnTypeToken()) { // for named function
+    assert(!node.isConstructor());
+    auto typeOrError = this->typePool.createFuncType(node.getReturnTypeToken()->getType(),
+                                                     std::vector<const DSType *>(paramTypes));
+    if (typeOrError) {
+      auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
+      node.setResolvedType(funcType);
+      if (const Handle * handle;
+          !node.isAnonymousFunc() &&
+          (handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY))) {
+        node.setVarIndex(handle->getIndex());
+      }
+    } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
+    }
+  } else if (node.isConstructor()) {
+    auto typeOrError = this->typePool.createRecordType(node.getFuncName(), this->curScope->modId);
+    if (typeOrError) {
+      auto &recordType = cast<RecordType>(*typeOrError.asOk());
+      if (!this->curScope->defineTypeAlias(this->typePool, node.getFuncName(), recordType)) {
+        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
+                                            node.getFuncName().c_str());
+      }
+      auto ret = this->curScope->defineConstructor(recordType, paramTypes);
+      assert(ret && ret.asOk()->isMethod());
+      node.setVarIndex(ret.asOk()->getIndex());
+      node.setResolvedType(recordType);
+    } else {
+      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
+    }
+  }
+}
+
 static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
                                 std::unique_ptr<Node> exprNode) {
   assert(!blockNode.isUntyped() && !blockNode.getType().isNothingType());
@@ -1536,8 +1571,7 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::postprocessFuncion(FunctionNode &node, const FunctionType *funcType,
-                                     const DSType *returnType,
+void TypeChecker::postprocessFuncion(FunctionNode &node, const DSType *returnType,
                                      std::vector<const DSType *> &&paramTypes) {
   assert(!node.isConstructor());
 
@@ -1568,6 +1602,11 @@ void TypeChecker::postprocessFuncion(FunctionNode &node, const FunctionType *fun
   }
 
   // resolve common return type
+  const FunctionType *funcType = nullptr;
+  if (node.getResolvedType() && isa<FunctionType>(node.getResolvedType())) {
+    funcType = cast<FunctionType>(node.getResolvedType());
+  }
+
   if (!returnType) {
     assert(!funcType);
     auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
@@ -1637,7 +1676,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   }
 
   // resolve param type, return type
-  unsigned int paramSize = node.getParamTypeNodes().size();
+  const unsigned int paramSize = node.getParamTypeNodes().size();
   std::vector<const DSType *> paramTypes(paramSize);
   for (unsigned int i = 0; i < paramSize; i++) {
     auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
@@ -1647,38 +1686,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
       node.getReturnTypeToken() ? &this->checkTypeExactly(*node.getReturnTypeToken()) : nullptr;
 
   // register function/constructor handle
-  const FunctionType *funcType = nullptr;
-  if (returnType) { // for named function
-    assert(!node.isConstructor());
-    auto typeOrError = this->typePool.createFuncType(*returnType, std::move(paramTypes));
-    if (typeOrError) {
-      funcType = cast<FunctionType>(std::move(typeOrError).take());
-      node.setResolvedType(*funcType);
-      if (const Handle * handle;
-          !node.isAnonymousFunc() &&
-          (handle = this->addEntry(node.getNameInfo(), *funcType, HandleAttr::READ_ONLY))) {
-        node.setVarIndex(handle->getIndex());
-      }
-    } else {
-      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
-      paramSize = 0; // function type creation failed.
-    }
-  } else if (node.isConstructor()) {
-    auto typeOrError = this->typePool.createRecordType(node.getFuncName(), this->curScope->modId);
-    if (typeOrError) {
-      auto &recordType = cast<RecordType>(*typeOrError.asOk());
-      if (!this->curScope->defineTypeAlias(this->typePool, node.getFuncName(), recordType)) {
-        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
-                                            node.getFuncName().c_str());
-      }
-      auto ret = this->curScope->defineConstructor(recordType, paramTypes);
-      assert(ret && ret.asOk()->isMethod());
-      node.setVarIndex(ret.asOk()->getIndex());
-      node.setResolvedType(recordType);
-    } else {
-      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
-    }
-  }
+  this->registerFuncHandle(node, paramTypes);
 
   // func body
   NameScopePtr scope;
@@ -1688,8 +1696,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
                                node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
     // register parameter
     for (unsigned int i = 0; i < paramSize; i++) {
-      auto &paramType = funcType ? funcType->getParamTypeAt(i) : *paramTypes[i];
-      this->addEntry(node.getParams()[i], paramType, HandleAttr());
+      this->addEntry(node.getParams()[i], *paramTypes[i], HandleAttr());
     }
     // check type func body
     this->checkTypeWithCurrentScope(
@@ -1698,7 +1705,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if (node.isConstructor()) {
       scope = this->curScope; // save currrent scope
     } else {
-      this->postprocessFuncion(node, funcType, returnType, std::move(paramTypes));
+      this->postprocessFuncion(node, returnType, std::move(paramTypes));
     }
   }
 

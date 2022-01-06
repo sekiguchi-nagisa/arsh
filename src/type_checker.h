@@ -470,7 +470,9 @@ private:
   void checkTypeAsBreakContinue(JumpNode &node);
   void checkTypeAsReturn(JumpNode &node);
 
-  void postprocessFuncion(FunctionNode &node, const FunctionType *funcType,
+  void registerFuncHandle(FunctionNode &node, const std::vector<const DSType *> &paramTypes);
+
+  void postprocessFuncion(FunctionNode &node,
                           const DSType *returnType, std::vector<const DSType *> &&paramTypes);
 
   void postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
