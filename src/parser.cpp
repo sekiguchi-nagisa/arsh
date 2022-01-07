@@ -1434,6 +1434,14 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     this->consume(); // TRY
     auto tryNode = std::make_unique<TryNode>(startPos, TRY(this->parse_block()));
 
+    switch (CUR_KIND()) {
+    case TokenKind::CATCH:
+    case TokenKind::FINALLY:
+      break;
+    default:
+      E_ALTER_OR_COMP(TokenKind::CATCH, TokenKind::FINALLY, TokenKind::COMPLETION);
+    }
+
     // parse catch
     while (CUR_KIND() == TokenKind::CATCH) {
       tryNode->addCatchNode(TRY(this->parse_catchBlock()));

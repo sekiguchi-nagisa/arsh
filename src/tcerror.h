@@ -77,7 +77,6 @@ DEFINE_TCError(OutsideToplevel, "only available top level scope");
 DEFINE_TCError(NotCallable, "Func type object is not directly callable");
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");
-DEFINE_TCError(MeaninglessTry, "meaningless try block");
 DEFINE_TCError(LocalLimit, "number of local variables reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
 DEFINE_TCError(GlobLimit, "number of glob path fragments reaches limit");

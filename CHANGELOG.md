@@ -35,6 +35,12 @@
     - ``workspace/didChangeConfiguration``
         - now change server configuration at runtime
 
+### Changed
+
+#### Core
+
+- **Breaking Change**: an error of finally-less try expression is now syntax error
+
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit

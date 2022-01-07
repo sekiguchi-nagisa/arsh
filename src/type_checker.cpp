@@ -1352,9 +1352,6 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
 }
 
 void TypeChecker::visitTryNode(TryNode &node) {
-  if (node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
-    this->reportError<MeaninglessTry>(node);
-  }
   assert(node.getExprNode().is(NodeKind::Block));
   if (cast<BlockNode>(node.getExprNode()).getNodes().empty()) {
     this->reportError<EmptyTry>(node.getExprNode());
