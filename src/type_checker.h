@@ -472,8 +472,8 @@ private:
 
   void registerFuncHandle(FunctionNode &node, const std::vector<const DSType *> &paramTypes);
 
-  void postprocessFuncion(FunctionNode &node,
-                          const DSType *returnType, std::vector<const DSType *> &&paramTypes);
+  void postprocessFuncion(FunctionNode &node, const DSType *returnType,
+                          std::vector<const DSType *> &&paramTypes);
 
   void postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
                                unsigned int paramSize);
@@ -504,8 +504,8 @@ private:
   class PatternCollector {
   private:
     CaseNode::Kind kind{CaseNode::MAP};
-    std::unique_ptr<PatternMap> map;
     bool elsePattern{false};
+    std::unique_ptr<PatternMap> map;
     const DSType *type{nullptr};
 
   public:
