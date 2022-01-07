@@ -18,3 +18,13 @@ say0() {
 }
 
 typedef StrArray = [String]
+
+typedef APIError : Error
+
+typedef Interval($b : Int, $e : Int) {
+    let begin = $b
+    let end = $e
+    let _size = $end - $begin
+
+    typedef Dist = Int
+}

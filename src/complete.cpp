@@ -438,14 +438,14 @@ static void completeExpected(const std::vector<std::string> &expected, const std
   }
 }
 
-static void completeMember(const TypePool &pool, const DSType &recvType, const std::string &word,
-                           CompCandidateConsumer &consumer) {
+static void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
+                           const std::string &word, CompCandidateConsumer &consumer) {
   // complete field
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
                                                                    const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
-      if (handle.getModId() == 0 || !name.startsWith("_")) {
-        consumer(name, CompCandidateKind::FIELD); // FIXME: module scope
+      if (handle.getModId() == 0 || scope.modId == handle.getModId() || !name.startsWith("_")) {
+        consumer(name, CompCandidateKind::FIELD);
       }
     }
     return true;
@@ -588,7 +588,7 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeExpected(this->extraWords, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::MEMBER)) {
-    completeMember(this->pool, *this->recvType, this->compWord, consumer);
+    completeMember(this->pool, *this->scope, *this->recvType, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
     completeType(this->pool, this->recvType, *this->scope, this->compWord, consumer);
