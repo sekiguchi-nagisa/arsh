@@ -44,6 +44,7 @@
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
+- hover/define/references does not work in large files
 
 ## [0.24.0] - 2021-12-28
 

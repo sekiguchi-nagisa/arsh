@@ -213,7 +213,7 @@ public:
 
   unsigned short getDeclModId() const { return this->declModId; }
 
-  unsigned short getDeclPos() const { return this->declPos; }
+  unsigned int getDeclPos() const { return this->declPos; }
 
   struct Compare {
     bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
