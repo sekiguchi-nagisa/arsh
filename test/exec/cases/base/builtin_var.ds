@@ -22,7 +22,7 @@ assert $EUID is Int
 
 # uname
 assert($OSTYPE == "$(uname -s)" || $/cygwin/i =~ $OSTYPE)
-assert $MACHTYPE == "$(uname -m)" || $MACHTYPE =='i386' || $MACHTYPE =~ $/arm/
+assert $MACHTYPE == "$(uname -m)" || $MACHTYPE =='i386' || $MACHTYPE =~ $/arm/ || $MACHTYPE =~ $/aarch/
 
 # random number, at least 32767 (RAND_MAX)
 {
