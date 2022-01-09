@@ -248,13 +248,13 @@ const Handle *TypeChecker::addEntry(Token token, const std::string &symbolName, 
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
   if (!ret) {
     switch (ret.asErr()) {
-    case NameLookupError::DEFINED:
+    case NameRegisterError::DEFINED:
       this->reportError<DefinedSymbol>(token, symbolName.c_str());
       break;
-    case NameLookupError::LIMIT:
+    case NameRegisterError::LIMIT:
       this->reportError<LocalLimit>(token);
       break;
-    case NameLookupError::INVALID_TYPE:
+    case NameRegisterError::INVALID_TYPE:
       break; // normally unreachable
     }
     return nullptr;
@@ -294,7 +294,7 @@ const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
       this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
   if (ret) {
     return ret.asOk();
-  } else if (ret.asErr() == NameLookupError::DEFINED) {
+  } else if (ret.asErr() == NameRegisterError::DEFINED) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
   }
   return nullptr;

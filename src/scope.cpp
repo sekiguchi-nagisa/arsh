@@ -91,37 +91,38 @@ static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
   return false;
 }
 
-NameLookupResult NameScope::defineHandle(std::string &&name, const DSType &type, HandleAttr attr) {
+NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &type,
+                                           HandleAttr attr) {
   if (definedInBuiltin(*this, name)) {
-    return Err(NameLookupError::DEFINED);
+    return Err(NameRegisterError::DEFINED);
   }
   return this->addNewHandle(std::move(name), type, attr);
 }
 
-NameLookupResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle) {
+NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle) {
   if (definedInBuiltin(*this, name)) {
-    return Err(NameLookupError::DEFINED);
+    return Err(NameRegisterError::DEFINED);
   }
   return this->addNewForeignHandle(std::move(name), handle);
 }
 
-NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
-                                            const DSType &type) {
+NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
+                                              const DSType &type) {
   if (this->isGlobal()) {
     auto ret = pool.getType(name);
     if (ret) {
-      return Err(NameLookupError::DEFINED);
+      return Err(NameRegisterError::DEFINED);
     }
   }
   return this->defineAlias(toTypeAliasFullName(name),
                            HandlePtr::create(type, 0, HandleAttr::TYPE_ALIAS, this->modId));
 }
 
-NameLookupResult NameScope::defineMethod(const DSType &recvType, const std::string &name,
-                                         const DSType &returnType,
-                                         const std::vector<const DSType *> &paramTypes) {
+NameRegisterResult NameScope::defineMethod(const DSType &recvType, const std::string &name,
+                                           const DSType &returnType,
+                                           const std::vector<const DSType *> &paramTypes) {
   if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType()) {
-    return Err(NameLookupError::INVALID_TYPE);
+    return Err(NameRegisterError::INVALID_TYPE);
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);
   const unsigned int index = this->getMaxGlobalVarIndex();
@@ -264,12 +265,12 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
   }
 }
 
-NameLookupResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asAlias) {
+NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asAlias) {
   assert(this->kind != FUNC);
 
   if (handle->getTypeId() == static_cast<unsigned int>(TYPE::Nothing) ||
       handle->getTypeId() == static_cast<unsigned int>(TYPE::Void)) {
-    return Err(NameLookupError::INVALID_TYPE);
+    return Err(NameRegisterError::INVALID_TYPE);
   }
 
   // check var index limit
@@ -277,7 +278,7 @@ NameLookupResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asA
     if (!handle->has(HandleAttr::GLOBAL)) {
       assert(!this->isGlobal());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
-        return Err(NameLookupError::LIMIT);
+        return Err(NameRegisterError::LIMIT);
       }
     }
   }
@@ -285,7 +286,7 @@ NameLookupResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asA
   const auto comitId = this->handles.size();
   auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, comitId));
   if (!pair.second) {
-    return Err(NameLookupError::DEFINED);
+    return Err(NameRegisterError::DEFINED);
   }
 
   // increment var index count

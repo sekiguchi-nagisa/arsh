@@ -27,13 +27,13 @@ namespace ydsh {
 
 // for name lookup
 
-enum class NameLookupError {
+enum class NameRegisterError {
   DEFINED,
   LIMIT,
   INVALID_TYPE,
 };
 
-using NameLookupResult = Result<const Handle *, NameLookupError>;
+using NameRegisterResult = Result<const Handle *, NameRegisterError>;
 
 struct ScopeDiscardPoint {
   unsigned int commitIdOffset;
@@ -182,19 +182,19 @@ public:
   }
 
   // for name registration
-  NameLookupResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr);
+  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr);
 
-  NameLookupResult defineAlias(std::string &&name, const HandlePtr &handle);
+  NameRegisterResult defineAlias(std::string &&name, const HandlePtr &handle);
 
-  NameLookupResult defineTypeAlias(const TypePool &pool, const std::string &name,
-                                   const DSType &type);
+  NameRegisterResult defineTypeAlias(const TypePool &pool, const std::string &name,
+                                     const DSType &type);
 
-  NameLookupResult defineMethod(const DSType &recvType, const std::string &name,
-                                const DSType &returnType,
-                                const std::vector<const DSType *> &paramTypes);
+  NameRegisterResult defineMethod(const DSType &recvType, const std::string &name,
+                                  const DSType &returnType,
+                                  const std::vector<const DSType *> &paramTypes);
 
-  NameLookupResult defineConstructor(const DSType &recvType,
-                                     const std::vector<const DSType *> &paramTypes) {
+  NameRegisterResult defineConstructor(const DSType &recvType,
+                                       const std::vector<const DSType *> &paramTypes) {
     return this->defineMethod(recvType, OP_INIT, recvType, paramTypes);
   }
 
@@ -264,7 +264,7 @@ private:
    * if true, not increment internal variable index
    * @return
    */
-  NameLookupResult add(std::string &&name, HandlePtr &&handle, bool asAlias = false);
+  NameRegisterResult add(std::string &&name, HandlePtr &&handle, bool asAlias = false);
 
   /**
    * define local/global variable name
@@ -273,7 +273,7 @@ private:
    * @param attr
    * @return
    */
-  NameLookupResult addNewHandle(std::string &&name, const DSType &type, HandleAttr attr) {
+  NameRegisterResult addNewHandle(std::string &&name, const DSType &type, HandleAttr attr) {
     if (this->isGlobal()) {
       setFlag(attr, HandleAttr::GLOBAL);
     } else {
@@ -283,7 +283,7 @@ private:
     return this->add(std::move(name), HandlePtr::create(type, index, attr, this->modId));
   }
 
-  NameLookupResult addNewForeignHandle(std::string &&name, const HandlePtr &handle) {
+  NameRegisterResult addNewForeignHandle(std::string &&name, const HandlePtr &handle) {
     return this->add(std::move(name), HandlePtr(handle), true);
   }
 };

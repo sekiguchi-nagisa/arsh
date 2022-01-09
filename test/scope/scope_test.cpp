@@ -40,12 +40,12 @@ protected:
     ASSERT_EQ(e.modID, handle->getModId());
   }
 
-  static void expect(const Entry &e, const NameLookupResult &ret) {
+  static void expect(const Entry &e, const NameRegisterResult &ret) {
     ASSERT_TRUE(ret);
     expect(e, ret.asOk());
   }
 
-  static void expect(NameLookupError e, const NameLookupResult &ret) {
+  static void expect(NameRegisterError e, const NameRegisterResult &ret) {
     ASSERT_FALSE(ret);
     ASSERT_EQ(e, ret.asErr());
   }
@@ -73,7 +73,7 @@ TEST_F(ScopeTest, builtin) {
   auto *handle = ret.asOk();
 
   ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), HandleAttr::ENV);
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define alias
   ret = this->builtin->defineAlias("hey", HandlePtr(const_cast<Handle *>(handle)));
@@ -98,7 +98,7 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
 
   ret = this->builtin->defineAlias("hello", HandlePtr(const_cast<Handle *>(handle)));
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define type alias
   ret = this->builtin->defineTypeAlias(this->pool, "hey1", this->pool.get(TYPE::Float));
@@ -113,10 +113,10 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
 
   ret = this->builtin->defineTypeAlias(this->pool, "hey1", this->pool.get(TYPE::ArithmeticError));
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   ret = this->builtin->defineTypeAlias(this->pool, "Int", this->pool.get(TYPE::ArithmeticError));
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // lookup handle
   auto *hd = this->builtin->lookup("hello");
@@ -205,7 +205,7 @@ TEST_F(ScopeTest, global) {
 
   // define handle when defined in builtin
   ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::ENV);
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   auto *handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -254,7 +254,7 @@ TEST_F(ScopeTest, global) {
       },
       ret));
   ret = this->top->defineTypeAlias(this->pool, "Int", this->pool.get(TYPE::String));
-  ASSERT_NO_FATAL_FAILURE(this->expect(NameLookupError::DEFINED, ret));
+  ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define handle in builtin
   ret = this->builtin->defineHandle("CCC", this->pool.get(TYPE::StringArray), HandleAttr{});
