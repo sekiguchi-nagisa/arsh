@@ -41,6 +41,6 @@ macro(getRE2C)
     endif()
 
     if(NOT EXISTS "${RE2C_BIN}")
-        message(FATAL_ERROR "rec2 is not found")
+        message(FATAL_ERROR "re2c is not found")
     endif()
 endmacro()
