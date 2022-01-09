@@ -474,7 +474,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     copiedArchives.revert({newSrc->getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();
     Analyzer analyzer(*copiedSrcMan, copiedArchives);
-    return analyzer.complete(*newSrc);
+    return analyzer.complete(*newSrc, this->cmdCompKind, this->cmdArgCompEnabled);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
@@ -499,6 +499,11 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
         getOrShowError(this->logger, wrapper.ydshd, "ydshd", [&](const ConfigSetting &setting) {
           getOrShowError(this->logger, setting.logLevel, "logLevel",
                          [&](LogLevel level) { this->logger.get().setSeverity(level); });
+          getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
+                         [&](CmdCompKind kind) { this->cmdCompKind = kind; });
+          getOrShowError(this->logger, setting.commandArgumentCompletionEnabled,
+                         "commandArgumentCompletionEnabled",
+                         [&](bool enabled) { this->cmdArgCompEnabled = enabled; });
         });
       });
 }

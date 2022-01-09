@@ -93,6 +93,35 @@ bool toEnum(const char *str, MarkupKind &kind) {
   return false;
 }
 
+const char *toString(const CmdCompKind &kind) {
+  switch (kind) {
+#define GEN_CASE(E, V)                                                                             \
+  case CmdCompKind::E:                                                                             \
+    return V;
+    EACH_COMMAND_COMPLETION_KIND(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, CmdCompKind &kind) {
+  StringRef ref = str;
+  CmdCompKind kinds[] = {
+#define GEN_ENUM(E, V) CmdCompKind::E,
+      EACH_COMMAND_COMPLETION_KIND(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : kinds) {
+    if (ref == toString(e)) {
+      kind = e;
+      return true;
+    }
+  }
+  kind = CmdCompKind::disabled_;
+  return false;
+}
+
 } // namespace ydsh::lsp
 
 namespace ydsh {

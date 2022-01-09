@@ -85,6 +85,8 @@ private:
   TraceValue traceSetting{TraceValue::off};
   MarkupKind markupKind{MarkupKind::PlainText};
   bool diagVersionSupport{false};
+  CmdCompKind cmdCompKind{CmdCompKind::default_};
+  bool cmdArgCompEnabled{false};
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)

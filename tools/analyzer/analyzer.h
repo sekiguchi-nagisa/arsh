@@ -160,7 +160,7 @@ private:
 public:
   ModuleArchivePtr analyze(const Source &src, AnalyzerAction &action);
 
-  std::vector<CompletionItem> complete(const Source &src);
+  std::vector<CompletionItem> complete(const Source &src, CmdCompKind ckind, bool cmdArgComp);
 };
 
 } // namespace ydsh::lsp

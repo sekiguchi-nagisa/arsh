@@ -391,12 +391,26 @@ private:
   }
 };
 
-std::vector<CompletionItem> Analyzer::complete(const Source &src) {
+std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ckind,
+                                               bool cmdArgComp) {
   CompletionItemCollector collector;
   auto &ptr = this->addNew(src);
   CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(*this),
                               ptr->getPool(), ptr->getScope(), "");
-  auto ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC | CodeCompOp::HOOK;
+  CodeCompOp ignoredOp{};
+  switch (ckind) {
+  case CmdCompKind::disabled_:
+    ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC;
+    break;
+  case CmdCompKind::default_:
+    ignoredOp = CodeCompOp::EXTERNAL | CodeCompOp::FILE | CodeCompOp::EXEC;
+    break;
+  case CmdCompKind::all_:
+    break; // allow all
+  }
+  if (!cmdArgComp) {
+    setFlag(ignoredOp, CodeCompOp::HOOK);
+  }
   codeCompleter(src.getContent(), ignoredOp);
   return std::move(collector).finalize();
 }

@@ -135,7 +135,7 @@ struct PublishDiagnosticsClientCapabilities {
   OP(PlainText, "plaintext")                                                                       \
   OP(Markdown, "markdown")
 
-enum class MarkupKind : unsigned int {
+enum class MarkupKind : unsigned char {
 #define GEN_ENUM(E, S) E,
   EACH_MARKUP_KIND(GEN_ENUM)
 #undef GEN_ENUM
@@ -602,12 +602,43 @@ struct CompletionItem {
   }
 };
 
+#define EACH_COMMAND_COMPLETION_KIND(OP)                                                           \
+  OP(disabled_, "disabled")                                                                        \
+  OP(default_, "default")                                                                          \
+  OP(all_, "all")
+
+enum class CmdCompKind : unsigned char {
+#define GEN_ENUM(E, V) E,
+  EACH_COMMAND_COMPLETION_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const CmdCompKind &kind);
+
+bool toEnum(const char *str, CmdCompKind &kind);
+
+template <typename T>
+void jsonify(T &t, CmdCompKind &kind) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(kind);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), kind);
+  }
+}
+
 struct ConfigSetting {
   Optional<Union<LogLevel, JSON>> logLevel;
+  Optional<Union<CmdCompKind, JSON>> commandCompletion;
+  Optional<Union<bool, JSON>> commandArgumentCompletionEnabled{false};
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(logLevel);
+    JSONIFY(commandCompletion);
+    JSONIFY(commandArgumentCompletionEnabled);
   }
 };
 
