@@ -1,6 +1,0 @@
-
-#$test($result = 'type', $lineNum = 6, $chars = 18, $errorKind = 'UndefinedField', $status = 1)
-
-source ../../_module4test/module1.ds as mod
-
-assert 34 is mod.AAA

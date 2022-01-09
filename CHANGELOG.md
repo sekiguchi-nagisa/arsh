@@ -41,6 +41,7 @@
 #### Core
 
 - **Breaking Change**: an error of finally-less try expression is now syntax error
+- improve error reporting of module private member access
 
 ### Fixed
 

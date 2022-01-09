@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 13, $errorKind = 'PrivateField', $status = 1, $fileName = './always_failed/mod_private2.ds')
+
+source ../../_module4test/private.ds as mod
+
+assert $mod._AAA    # _AAA is defined in module 'private.ds' but hidden from current module scope

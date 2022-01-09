@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 18, $errorKind = 'PrivateField', $status = 1, $fileName = './always_failed/mod_private3.ds')
+
+source ../../_module4test/private.ds as mod
+
+assert 23 is mod._Comp    # _Comp is defined in module 'private.ds' but hidden from current module scope

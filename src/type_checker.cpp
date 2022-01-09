@@ -46,15 +46,23 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
     auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-    auto *handle = this->curScope->lookupField(this->typePool, recvType, typeName);
-    if (!handle) {
+    auto ret = this->curScope->lookupField(this->typePool, recvType, typeName);
+    if (ret) {
+      auto &resolved = this->typePool.get(ret.asOk()->getTypeId());
+      qualifiedNode.setType(resolved);
+      return Ok(&qualifiedNode.getType());
+    } else {
       auto &nameNode = qualifiedNode.getNameTypeNode();
-      this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
+      switch (ret.asErr()) {
+      case NameLookupError::NOT_FOUND:
+        this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
+        break;
+      case NameLookupError::MOD_PRIVATE:
+        this->reportError<PrivateField>(nameNode, nameNode.getTokenText().c_str());
+        break;
+      }
       return Err(std::unique_ptr<TypeLookupError>());
     }
-    auto &resolved = this->typePool.get(handle->getTypeId());
-    qualifiedNode.setType(resolved);
-    return Ok(&qualifiedNode.getType());
   }
   case TypeNode::Reified: {
     auto &typeNode = cast<ReifiedTypeNode>(node);
@@ -348,13 +356,22 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
   auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
-  auto *handle = this->curScope->lookupField(this->typePool, recvType, node.getFieldName());
-  if (handle == nullptr) {
+  auto ret = this->curScope->lookupField(this->typePool, recvType, node.getFieldName());
+  if (ret) {
+    auto *handle = ret.asOk();
+    node.setAttribute(*handle);
+    node.setType(this->typePool.get(handle->getTypeId()));
+    return true;
+  } else {
+    switch (ret.asErr()) {
+    case NameLookupError::NOT_FOUND:
+      break;
+    case NameLookupError::MOD_PRIVATE:
+      this->reportError<PrivateField>(node.getNameNode(), node.getFieldName().c_str());
+      break;
+    }
     return false;
   }
-  node.setAttribute(*handle);
-  node.setType(this->typePool.get(handle->getTypeId()));
-  return true;
 }
 
 void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {

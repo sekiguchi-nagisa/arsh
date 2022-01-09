@@ -1,5 +1,7 @@
-#$test($result = 'type', $lineNum = 5, $chars = 13, $errorKind = 'UndefinedField', $status = 1, $fileName = './always_failed/mod_undef2.ds')
 
-source ../../_module4test/private.ds as mod
+#$test($result = 'type', $lineNum = 7, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod_undef2.ds')
 
-assert $mod._AAA    # _AAA is defined in module 'private.ds' but hidden from current module scope
+
+source ../../_module4test/inlined3.ds
+
+assert $hello == 'hello module!!'

@@ -35,6 +35,11 @@ enum class NameRegisterError {
 
 using NameRegisterResult = Result<const Handle *, NameRegisterError>;
 
+enum class NameLookupError {
+  NOT_FOUND,
+  MOD_PRIVATE,
+};
+
 struct ScopeDiscardPoint {
   unsigned int commitIdOffset;
 };
@@ -214,19 +219,12 @@ public:
    * lookup handle
    * @param name
    * @return
+   * if not found, return nullptr
    */
   const Handle *lookup(const std::string &name) const;
 
-  const Handle *lookupField(const TypePool &pool, const DSType &recv,
-                            const std::string &fieldName) const {
-    auto *handle = recv.lookupField(pool, fieldName);
-    if (handle) {
-      if (handle->getModId() == 0 || this->modId == handle->getModId() || fieldName[0] != '_') {
-        return handle;
-      }
-    }
-    return nullptr;
-  }
+  Result<const Handle *, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
+                                                      const std::string &fieldName) const;
 
   const MethodHandle *lookupMethod(TypePool &pool, const DSType &recvType,
                                    const std::string &methodName) const;

@@ -233,6 +233,20 @@ const Handle *NameScope::lookup(const std::string &name) const {
   return nullptr;
 }
 
+Result<const Handle *, NameLookupError> NameScope::lookupField(const TypePool &pool,
+                                                               const DSType &recv,
+                                                               const std::string &fieldName) const {
+  auto *handle = recv.lookupField(pool, fieldName);
+  if (handle) {
+    if (handle->getModId() == 0 || this->modId == handle->getModId() || fieldName[0] != '_') {
+      return Ok(handle);
+    } else {
+      return Err(NameLookupError::MOD_PRIVATE);
+    }
+  }
+  return Err(NameLookupError::NOT_FOUND);
+}
+
 const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvType,
                                             const std::string &methodName) const {
   auto scope = this;
