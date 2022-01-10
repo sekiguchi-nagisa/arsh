@@ -51,13 +51,13 @@ private:
 public:
   Archiver(const TypePool &pool, unsigned int idCount) : pool(pool), builtinTypeIdCount(idCount) {}
 
-  void add(const DSType &type);
-
-  void add(const Handle &handle);
-
-  std::string take() && { return std::move(this->data); }
-
-  const std::string &get() const { return this->data; }
+  std::string pack(const Handle &handle) {
+    this->data = "";
+    this->add(handle);
+    std::string ret;
+    std::swap(ret, this->data);
+    return ret;
+  }
 
 private:
   template <unsigned int N>
@@ -86,6 +86,10 @@ private:
     this->write32(ref.size());
     this->data += ref;
   }
+
+  void add(const DSType &type);
+
+  void add(const Handle &handle);
 };
 
 class Unarchiver {
@@ -155,11 +159,9 @@ private:
   Archive(std::string &&name, std::string &&data) : name(std::move(name)), data(std::move(data)) {}
 
 public:
-  static Archive pack(const TypePool &pool, unsigned int builtinTypeIdCount,
-                      const std::string &fieldName, const Handle &handle) {
-    Archiver archiver(pool, builtinTypeIdCount);
-    archiver.add(handle);
-    return {std::string(fieldName), std::move(archiver).take()};
+  static Archive pack(Archiver &archiver, const std::string &fieldName, const Handle &handle) {
+    auto data = archiver.pack(handle);
+    return {std::string(fieldName), std::move(data)};
   }
 
   const std::string &getName() const { return this->name; }

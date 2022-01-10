@@ -83,8 +83,8 @@ void Archiver::add(const DSType &type) {
         this->writeStr(typeName.substr(pos + 1));
         this->add(*type.getSuperType());
         auto ret = this->pool.getType(typeName.slice(0, pos));
-        assert(ret);
-        this->add(*ret.asOk());
+        assert(ret && isa<ModType>(ret.asOk()));
+        this->write16(cast<ModType>(ret.asOk())->getModId());
       }
       break;
     case TypeKind::Record:
@@ -99,8 +99,8 @@ void Archiver::add(const DSType &type) {
         assert(pos != StringRef::npos);
         this->writeStr(typeName.substr(pos + 1));
         auto ret = this->pool.getType(typeName.slice(0, pos));
-        assert(ret);
-        this->add(*ret.asOk());
+        assert(ret && isa<ModType>(ret.asOk()));
+        this->write16(cast<ModType>(ret.asOk())->getModId());
 
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
@@ -207,17 +207,14 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::ERROR: {
     std::string name = this->readStr();
     auto *superType = TRY(this->unpackType());
-    auto *modType = TRY(this->unpackType());
-    assert(isa<ModType>(modType));
-    auto ret =
-        TRY(this->pool.createErrorType(name, *superType, cast<ModType>(modType)->getModId()));
+    uint16_t modId = this->read16();
+    auto ret = TRY(this->pool.createErrorType(name, *superType, modId));
     return std::move(ret).take();
   }
   case ArchiveType::RECORD: {
     std::string name = this->readStr();
-    auto *modType = TRY(this->unpackType());
-    assert(isa<ModType>(modType));
-    auto ret = TRY(this->pool.createRecordType(name, cast<ModType>(modType)->getModId()));
+    uint16_t modId = this->read16();
+    auto ret = TRY(this->pool.createRecordType(name, modId));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {
@@ -330,7 +327,7 @@ static const ModType *getModType(const TypePool &pool, unsigned short modId) {
 }
 
 static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
+  if (const ModType *type = getModType(pool, archive.getModId())) {
     return type;
   }
 
@@ -356,7 +353,7 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
 }
 
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
+  if (const ModType *type = getModType(pool, archive.getModId())) {
     return type;
   }
   for (auto &dep : archive.getDepsByTopologicalOrder()) {

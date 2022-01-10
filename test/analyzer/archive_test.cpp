@@ -159,8 +159,8 @@ public:
     auto &orgHandle = *ret1.asOk();
 
     // serialize
-    auto archive =
-        Archive::pack(this->orgCtx->getPool(), this->builtinIdOffset, fieldName, orgHandle);
+    Archiver archiver(this->orgCtx->getPool(), this->builtinIdOffset);
+    auto archive = Archive::pack(archiver, fieldName, orgHandle);
     ASSERT_EQ(fieldName, archive.getName());
     ASSERT_FALSE(archive.getData().empty());
 

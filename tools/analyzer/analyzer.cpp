@@ -73,10 +73,10 @@ AnalyzerContext::AnalyzerContext(const Source &src)
 ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   // pack handles
   auto &modType = this->getScope()->toModType(this->getPool());
+  Archiver archiver(this->getPool(), this->typeDiscardPoint.typeIdOffset);
   std::vector<Archive> handles;
   for (auto &e : modType.getHandleMap()) {
-    handles.push_back(
-        Archive::pack(this->getPool(), this->typeDiscardPoint.typeIdOffset, e.first, *e.second));
+    handles.push_back(Archive::pack(archiver, e.first, *e.second));
   }
 
   // resolve imported modules
@@ -150,7 +150,9 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     auto src = this->srcMan.findById(get<unsigned int>(ret));
     assert(src);
     if (auto archive = this->archives.find(src->getSrcId()); archive) {
-      return loadFromArchive(this->current()->getPool(), *archive);
+      auto *modType = loadFromArchive(this->current()->getPool(), *archive);
+      assert(modType);
+      return modType;
     } else { // re-parse
       auto &ctx = this->addNew(*src);
       auto lex = createLexer(*src);
