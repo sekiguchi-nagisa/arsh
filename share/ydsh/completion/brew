@@ -2,5 +2,13 @@
 
 source $SCRIPT_DIR/../module/completion
 
-compdef --cmd brew --comp-path /usr/local/etc/bash_completion.d/brew --comp-target _brew
+{
+    var path = for $path in ["/usr/local/etc/bash_completion.d/brew",
+                             "/opt/homebrew/etc/bash_completion.d/brew"] {
+        test -f $path && break $path
+    }
 
+    if $path {
+        compdef --cmd brew --comp-path ${$path!} --comp-target _brew
+    }
+}

@@ -43,6 +43,10 @@
 - **Breaking Change**: an error of finally-less try expression is now syntax error
 - improve error reporting of module private member access
 
+#### Completion
+
+- brew: fix bash completion script path
+
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
