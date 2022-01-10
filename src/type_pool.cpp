@@ -322,7 +322,7 @@ const ModType &TypePool::createModType(unsigned short modID,
     assert(type);
   } else { // re-open (only allow root module)
     assert(type->isModType());
-    auto &modType = const_cast<ModType &>(cast<ModType>(*type)); // FIXME: replace const_cast?
+    auto &modType = cast<ModType>(*this->getMut(type->typeId()));
     assert(modType.isRoot());
     modType.reopen(std::move(handles), std::move(children));
   }

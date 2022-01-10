@@ -180,13 +180,13 @@ const DSType *Unarchiver::unpackType() {
   }
   case ArchiveType::ARRAY: {
     auto *type = TRY(this->unpackType());
-    auto ret = TRY(this->pool.createArrayType(const_cast<DSType &>(*type)));
+    auto ret = TRY(this->pool.createArrayType(*type));
     return std::move(ret).take();
   }
   case ArchiveType::MAP: {
-    auto &key = *const_cast<DSType *>(TRY(this->unpackType()));
-    auto &value = *const_cast<DSType *>(TRY(this->unpackType()));
-    auto ret = TRY(this->pool.createMapType(key, value));
+    auto *key = TRY(this->unpackType());
+    auto *value = TRY(this->unpackType());
+    auto ret = TRY(this->pool.createMapType(*key, *value));
     return std::move(ret).take();
   }
   case ArchiveType::TUPLE: {
@@ -194,14 +194,14 @@ const DSType *Unarchiver::unpackType() {
     std::vector<const DSType *> types;
     for (unsigned int i = 0; i < n; i++) {
       auto *type = TRY(this->unpackType());
-      types.push_back(const_cast<DSType *>(type));
+      types.push_back(type);
     }
     auto ret = TRY(this->pool.createTupleType(std::move(types)));
     return std::move(ret).take();
   }
   case ArchiveType::OPTION: {
     auto *type = TRY(this->unpackType());
-    auto ret = TRY(this->pool.createOptionType(const_cast<DSType &>(*type)));
+    auto ret = TRY(this->pool.createOptionType(*type));
     return std::move(ret).take();
   }
   case ArchiveType::ERROR: {
@@ -231,7 +231,7 @@ const DSType *Unarchiver::unpackType() {
     uint8_t n = this->read8();
     for (unsigned int i = 0; i < n; i++) {
       auto *type = TRY(this->unpackType());
-      types.push_back(const_cast<DSType *>(type));
+      types.push_back(type);
     }
     auto ret = TRY(this->pool.createFuncType(*retType, std::move(types)));
     return std::move(ret).take();

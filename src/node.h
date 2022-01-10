@@ -133,7 +133,7 @@ public:
   /**
    * must not call it before type checking
    */
-  DSType &getType() const { return const_cast<DSType &>(*this->type); }
+  const DSType &getType() const { return *this->type; }
 
   bool isUntyped() const { return this->type == nullptr; }
 

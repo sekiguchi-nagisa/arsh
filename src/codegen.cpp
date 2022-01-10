@@ -962,7 +962,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   }
 
   // generate case arm
-  DSType *prevType = nullptr;
+  const DSType *prevType = nullptr;
   for (auto &armNode : node.getArmNodes()) {
     if (prevType != nullptr && !prevType->isNothingType()) {
       this->emitJumpIns(mergeLabel);
