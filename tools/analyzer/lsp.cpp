@@ -93,6 +93,110 @@ bool toEnum(const char *str, MarkupKind &kind) {
   return false;
 }
 
+const char *toString(const SemanticTokenTypes &type) {
+  switch (type) {
+#define GEN_CASE(E, V)                                                                             \
+  case SemanticTokenTypes::E:                                                                      \
+    return V;
+    EACH_SEMANTIC_TOKEN_TYPES(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, SemanticTokenTypes &type) {
+  StringRef ref = str;
+  SemanticTokenTypes types[] = {
+#define GEN_ENUM(E, V) SemanticTokenTypes::E,
+      EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : types) {
+    if (ref == toString(e)) {
+      type = e;
+      return true;
+    }
+  }
+  type = SemanticTokenTypes::keyword_;
+  return false;
+}
+
+const char *toString(const SemanticTokenModifiers &modifier) {
+  switch (modifier) {
+#define GEN_CASE(E, V)                                                                             \
+  case SemanticTokenModifiers::E:                                                                  \
+    return V;
+    EACH_SEMANTIC_TOKEN_MODIFIERS(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, SemanticTokenModifiers &modifier) {
+  StringRef ref = str;
+  SemanticTokenModifiers modifiers[] = {
+#define GEN_ENUM(E, V) SemanticTokenModifiers::E,
+      EACH_SEMANTIC_TOKEN_MODIFIERS(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : modifiers) {
+    if (ref == toString(e)) {
+      modifier = e;
+      return true;
+    }
+  }
+  modifier = SemanticTokenModifiers::definition_;
+  return false;
+}
+
+const char *toString(const TokenFormat &format) {
+  switch (format) {
+#define GEN_CASE(E, V)                                                                             \
+  case TokenFormat::E:                                                                             \
+    return V;
+    EACH_TOKEN_FORMAT(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, TokenFormat &format) {
+  StringRef ref = str;
+  TokenFormat formats[] = {
+#define GEN_ENUM(E, V) TokenFormat::E,
+      EACH_TOKEN_FORMAT(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : formats) {
+    if (ref == toString(e)) {
+      format = e;
+      return true;
+    }
+  }
+  format = TokenFormat::Relative;
+  return false;
+}
+
+SemanticTokensLegend SemanticTokensLegend::create() {
+  return SemanticTokensLegend{
+      .tokenTypes =
+          {
+#define GEN_ENUM(E, V) SemanticTokenTypes::E,
+              EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
+#undef GEN_ENUM
+          },
+      .tokenModifiers =
+          {
+#define GEN_ENUM(E, V) SemanticTokenModifiers::E,
+              EACH_SEMANTIC_TOKEN_MODIFIERS(GEN_ENUM)
+#undef GEN_ENUM
+          },
+  };
+}
+
 const char *toString(const CmdCompKind &kind) {
   switch (kind) {
 #define GEN_CASE(E, V)                                                                             \
@@ -104,7 +208,6 @@ const char *toString(const CmdCompKind &kind) {
     return "";
   }
 }
-
 bool toEnum(const char *str, CmdCompKind &kind) {
   StringRef ref = str;
   CmdCompKind kinds[] = {

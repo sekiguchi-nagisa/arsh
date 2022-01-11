@@ -51,6 +51,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/references", &LSPServer::findReference);
   this->bind("textDocument/hover", &LSPServer::hover);
   this->bind("textDocument/completion", &LSPServer::complete);
+  this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
 }
 
@@ -348,7 +349,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       if (auto &hover = textDocument.hover.unwrap(); hover.contentFormat.hasValue()) {
         this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap());
       }
-    }
+    } // FIXME: check client supported semantic token options
   }
 
   InitializeResult ret;
@@ -365,6 +366,9 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.completionProvider = CompletionOptions{};
   ret.capabilities.completionProvider.unwrap().triggerCharacters =
       std::vector<std::string>{".", "$", "/"};
+  ret.capabilities.semanticTokensProvider = SemanticTokensOptions{};
+  ret.capabilities.semanticTokensProvider.unwrap().legend = SemanticTokensLegend::create();
+  ret.capabilities.semanticTokensProvider.unwrap().full = true;
   return ret;
 }
 
@@ -506,6 +510,11 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
                          [&](bool enabled) { this->cmdArgCompEnabled = enabled; });
         });
       });
+}
+
+Reply<std::vector<SemanticTokens>> LSPServer::semanticToken(const SemanticTokensParams &params) {
+  LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
+  return std::vector<SemanticTokens>(); // FIXME:
 }
 
 } // namespace ydsh::lsp

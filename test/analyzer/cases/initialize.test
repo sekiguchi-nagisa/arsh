@@ -22,6 +22,32 @@
 # CHECK:       "documentSymbolProvider": false,
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
+# CHECK:       "semanticTokensProvider": {
+# CHECK:         "full": true,
+# CHECK:         "legend": {
+# CHECK:           "tokenModifiers": [
+# CHECK:             "definition",
+# CHECK:             "readonly",
+# CHECK:             "defaultLibrary"
+# CHECK:           ],
+# CHECK:           "tokenTypes": [
+# CHECK:             "type",
+# CHECK:             "struct",
+# CHECK:             "variable",
+# CHECK:             "property",
+# CHECK:             "event",
+# CHECK:             "function",
+# CHECK:             "method",
+# CHECK:             "keyword",
+# CHECK:             "modifier",
+# CHECK:             "comment",
+# CHECK:             "string",
+# CHECK:             "number",
+# CHECK:             "regexp",
+# CHECK:             "operator"
+# CHECK:           ]
+# CHECK:         }
+# CHECK:       },
 # CHECK:       "textDocumentSync": {
 # CHECK:         "change": 2,
 # CHECK:         "openClose": true

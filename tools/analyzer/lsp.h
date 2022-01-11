@@ -166,14 +166,146 @@ struct HoverClientCapabilities {
   }
 };
 
+#define EACH_SEMANTIC_TOKEN_TYPES(OP)                                                              \
+  /*OP(namespace_, "namespace")  */                                                                \
+  OP(type_, "type")                                                                                \
+  /*OP(class_, "class")*/                                                                          \
+  /*OP(enum_, "enum") */                                                                           \
+  /*OP(interface_, "interface")*/                                                                  \
+  OP(struct_, "struct")                                                                            \
+  /*OP(typeParameter_, "typeParameter")*/                                                          \
+  /*OP(parameter_, "parameter") */                                                                 \
+  OP(variable_, "variable")                                                                        \
+  OP(property_, "property")                                                                        \
+  /*OP(enumMember_, "enumMember")*/                                                                \
+  OP(event_, "event")                                                                              \
+  OP(function_, "function")                                                                        \
+  OP(method_, "method")                                                                            \
+  /*OP(macro_, "macro") */                                                                         \
+  OP(keyword_, "keyword")                                                                          \
+  OP(modifier_, "modifier")                                                                        \
+  OP(comment_, "comment")                                                                          \
+  OP(string_, "string")                                                                            \
+  OP(number_, "number")                                                                            \
+  OP(regexp_, "regexp")                                                                            \
+  OP(operator_, "operator")
+
+enum class SemanticTokenTypes : unsigned int {
+#define GEN_ENUM(E, V) E,
+  EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const SemanticTokenTypes &type);
+
+bool toEnum(const char *str, SemanticTokenTypes &type);
+
+template <typename T>
+void jsonify(T &t, SemanticTokenTypes &type) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(type);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), type);
+  }
+}
+
+#define EACH_SEMANTIC_TOKEN_MODIFIERS(OP)                                                          \
+  /*OP(declaration_, "declaration")*/                                                              \
+  OP(definition_, "definition")                                                                    \
+  OP(readonly_, "readonly")                                                                        \
+  /*OP(static_, "static") */                                                                       \
+  /*OP(deprecated_, "deprecated")*/                                                                \
+  /*OP(abstract_, "abstract") */                                                                   \
+  /*OP(async_, "async") */                                                                         \
+  /*OP(modification_, "modification") */                                                           \
+  /*OP(documentation_, "documentation")*/                                                          \
+  OP(defaultLibrary_, "defaultLibrary")
+
+enum class SemanticTokenModifiers : unsigned int {
+#define GEN_ENUM(E, V) E,
+  EACH_SEMANTIC_TOKEN_MODIFIERS(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const SemanticTokenModifiers &modifier);
+
+bool toEnum(const char *str, SemanticTokenModifiers &modifier);
+
+template <typename T>
+void jsonify(T &t, SemanticTokenModifiers &modifier) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(modifier);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), modifier);
+  }
+}
+
+#define EACH_TOKEN_FORMAT(OP) OP(Relative, "relative")
+
+enum class TokenFormat : unsigned int {
+#define GEN_ENUM(E, S) E,
+  EACH_TOKEN_FORMAT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const TokenFormat &format);
+
+bool toEnum(const char *str, TokenFormat &format);
+
+template <typename T>
+void jsonify(T &t, TokenFormat &format) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(format);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), format);
+  }
+}
+
+struct SemanticTokensLegend {
+  std::vector<SemanticTokenTypes> tokenTypes;
+  std::vector<SemanticTokenModifiers> tokenModifiers;
+
+  static SemanticTokensLegend create();
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(tokenTypes);
+    JSONIFY(tokenModifiers);
+  }
+};
+
+struct SemanticTokensClientCapabilities {
+  std::vector<SemanticTokenTypes> tokenTypes;
+  std::vector<SemanticTokenModifiers> tokenModifiers;
+  std::vector<TokenFormat> formats;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(tokenTypes);
+    JSONIFY(tokenModifiers);
+    JSONIFY(formats);
+  }
+};
+
 struct TextDocumentClientCapabilities {
   Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
   Optional<HoverClientCapabilities> hover;
+  Optional<SemanticTokensClientCapabilities> semanticTokens;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(publishDiagnostics);
     JSONIFY(hover);
+    JSONIFY(semanticTokens);
   }
 };
 
@@ -309,6 +441,18 @@ struct TextDocumentSyncOptions {
   }
 };
 
+struct SemanticTokensOptions : public WorkDoneProgressOptions {
+  SemanticTokensLegend legend;
+  Optional<bool> full;
+
+  template <typename T>
+  void jsonify(T &t) {
+    WorkDoneProgressOptions::jsonify(t);
+    JSONIFY(legend);
+    JSONIFY(full);
+  }
+};
+
 /**
  * for representing server capability.
  * only define supported capability
@@ -324,6 +468,7 @@ struct ServerCapabilities {
   bool workspaceSymbolProvider{false};
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};
+  Optional<SemanticTokensOptions> semanticTokensProvider;
 
   template <typename T>
   void jsonify(T &t) {
@@ -337,6 +482,7 @@ struct ServerCapabilities {
     JSONIFY(workspaceSymbolProvider);
     JSONIFY(documentFormattingProvider);
     JSONIFY(documentRangeFormattingProvider);
+    JSONIFY(semanticTokensProvider);
   }
 };
 
@@ -657,6 +803,28 @@ struct DidChangeConfigurationParams {
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(settings);
+  }
+};
+
+struct SemanticTokensParams : public WorkDoneProgressParams, public PartialResultParams {
+  TextDocumentIdentifier textDocument;
+
+  template <typename T>
+  void jsonify(T &t) {
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
+    JSONIFY(textDocument);
+  }
+};
+
+struct SemanticTokens {
+  Optional<std::string> resultId;
+  std::vector<unsigned int> data;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(resultId);
+    JSONIFY(data);
   }
 };
 

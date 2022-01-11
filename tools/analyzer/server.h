@@ -186,6 +186,8 @@ public:
 
   void didChangeConfiguration(const DidChangeConfigurationParams &params);
 
+  Reply<std::vector<SemanticTokens>> semanticToken(const SemanticTokensParams &params);
+
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
     this->notify("textDocument/publishDiagnostics", params);
