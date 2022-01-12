@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 7, $chars = 5, $errorKind = 'InsideInit', $status = 1)
+
+typedef AAA($s : String) {
+    var _value = $s
+
+    import-env HOME : $_value
+}

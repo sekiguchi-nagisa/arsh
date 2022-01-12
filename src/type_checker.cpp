@@ -1439,6 +1439,13 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     break;
   case VarDeclNode::IMPORT_ENV:
   case VarDeclNode::EXPORT_ENV:
+    if (this->funcCtx->kind == FuncContext::CONSTRUCTOR &&
+        this->curScope->parent->kind == NameScope::FUNC) { // within constructor toplevel scope
+      exprType = &this->typePool.get(TYPE::Nothing);
+      this->reportError<InsideInit>(node);
+      break;
+    }
+
     setFlag(attr, HandleAttr::ENV);
     exprType = &this->typePool.get(TYPE::String);
     if (node.getExprNode() != nullptr) {

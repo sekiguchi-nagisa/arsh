@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 7, $chars = 7, $errorKind = 'InsideInit', $status = 1)
+
+typedef AAA($s : String) {
+    var _value = $s
+
+      export-env ZZZ = $_value
+}
