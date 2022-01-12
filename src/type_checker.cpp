@@ -1666,12 +1666,8 @@ void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&con
 
       // field
       auto &fieldType = this->typePool.get(handle->getTypeId());
-      HandleAttr attr{};
-      if (handle->has(HandleAttr::READ_ONLY)) {
-        setFlag(attr, HandleAttr::READ_ONLY);
-      }
-      auto newHandle = std::make_unique<Handle>(fieldType, handle->getIndex() - offset, attr,
-                                                handle->getModId());
+      auto newHandle = std::make_unique<Handle>(fieldType, handle->getIndex() - offset,
+                                                handle->attr(), handle->getModId());
       handle = HandlePtr(newHandle.release());
     }
     handles.emplace(e.first, std::move(handle));

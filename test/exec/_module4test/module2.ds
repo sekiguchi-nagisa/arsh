@@ -3,3 +3,5 @@
 var hey = {
     "h" + 'e' + 'y'
 }
+
+import-env HOME

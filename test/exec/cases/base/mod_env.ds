@@ -1,0 +1,9 @@
+
+source ../../_module4test/module2.ds as mod
+
+assert $mod.HOME == { import-env HOME; $HOME; }
+$mod.HOME = 'hello world !!'
+assert $mod.HOME == 'hello world !!'
+assert { import-env HOME; $HOME; } == 'hello world !!'
+$mod.HOME += '@'
+assert { import-env HOME; $HOME; } == 'hello world !!@'

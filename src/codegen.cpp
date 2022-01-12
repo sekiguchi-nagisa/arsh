@@ -481,19 +481,19 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
   if (node.getRecvNode().getType().isModType()) {
     this->emit0byteIns(OpCode::POP);
     this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
-    return;
+  } else {
+    switch (node.getAdditionalOp()) {
+    case AccessNode::NOP:
+      this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
+      break;
+    case AccessNode::DUP_RECV:
+      this->emit0byteIns(OpCode::DUP);
+      this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
+      break;
+    }
   }
-
-  switch (node.getAdditionalOp()) {
-  case AccessNode::NOP: {
-    this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
-    break;
-  }
-  case AccessNode::DUP_RECV: {
-    this->emit0byteIns(OpCode::DUP);
-    this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
-    break;
-  }
+  if (hasFlag(node.attr(), HandleAttr::ENV)) {
+    this->emit0byteIns(OpCode::LOAD_ENV);
   }
 }
 
@@ -1244,10 +1244,21 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     }
     this->visit(node.getRightNode());
 
-    if (accessNode.getRecvNode().getType().isModType()) {
-      this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+    if (hasFlag(accessNode.attr(), HandleAttr::ENV)) {
+      if (accessNode.getRecvNode().getType().isModType()) {
+        this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
+      } else {
+        this->emit0byteIns(OpCode::SWAP);
+        this->emit2byteIns(OpCode::LOAD_FIELD, index);
+      }
+      this->emit0byteIns(OpCode::SWAP);
+      this->emit0byteIns(OpCode::STORE_ENV);
     } else {
-      this->emit2byteIns(OpCode::STORE_FIELD, index);
+      if (accessNode.getRecvNode().getType().isModType()) {
+        this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+      } else {
+        this->emit2byteIns(OpCode::STORE_FIELD, index);
+      }
     }
   } else {
     if (node.isSelfAssignment()) {
@@ -1266,7 +1277,6 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
       } else {
         this->emit1byteIns(OpCode::LOAD_LOCAL, index);
       }
-
       this->emit0byteIns(OpCode::SWAP);
       this->emit0byteIns(OpCode::STORE_ENV);
     } else {
