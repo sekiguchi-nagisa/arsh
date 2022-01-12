@@ -1443,10 +1443,11 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         this->curScope->parent->kind == NameScope::FUNC) { // within constructor toplevel scope
       exprType = &this->typePool.get(TYPE::Nothing);
       this->reportError<InsideInit>(node);
-    } else {
-      setFlag(attr, HandleAttr::ENV);
-      exprType = &this->typePool.get(TYPE::String);
+      break;
     }
+
+    setFlag(attr, HandleAttr::ENV);
+    exprType = &this->typePool.get(TYPE::String);
     if (node.getExprNode() != nullptr) {
       this->checkType(*exprType, *node.getExprNode());
     }
