@@ -74,7 +74,6 @@ DEFINE_TCError(ReadOnly, "read only symbol");
 DEFINE_TCError(InsideFinally, "unavailable inside finally block");
 DEFINE_TCError(InsideChild, "unavailable inside child process");
 DEFINE_TCError(OutsideToplevel, "only available top level scope");
-DEFINE_TCError(InsideInit, "unavailable inside constructor");
 DEFINE_TCError(NotCallable, "Func type object is not directly callable");
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");

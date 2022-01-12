@@ -26,16 +26,11 @@ assert $aaa.a is AAA.T
 typedef BBB() {
     let value = "hello world!!"
     let size = $value.size()
-    var env = {
-        import-env HOME
-        $HOME
-    }
 }
 
 var bbb = new BBB()
 assert $bbb.value == 'hello world!!'
 assert $bbb.size == 13
-assert $bbb.env == { import-env HOME; $HOME }
 
 ## recursive type
 typedef CCC($v : String, $d : String) {
