@@ -188,12 +188,6 @@ TEST_F(LexerTest_Lv1, catch_tok) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-TEST_F(LexerTest_Lv1, class_tok) {
-  const char *text = "class";
-  this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CLASS, text, TokenKind::EOS, ""));
-}
-
 TEST_F(LexerTest_Lv1, continue_tok) {
   const char *text = "continue";
   this->initLexer(text);

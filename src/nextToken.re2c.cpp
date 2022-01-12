@@ -151,7 +151,6 @@ INIT:
     <STMT> "break"           { RET_OR_COMP(BREAK); }
     <STMT> "case"            { RET_OR_COMP(CASE); }
     <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
-    <STMT> "class"           { MODE(NAME); RET(CLASS); }
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "do"              { RET_OR_COMP(DO); }

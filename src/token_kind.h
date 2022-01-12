@@ -30,7 +30,6 @@
   TOKEN(BREAK, "break")                                                                            \
   TOKEN(CASE, "case")                                                                              \
   TOKEN(CATCH, "catch")                                                                            \
-  TOKEN(CLASS, "class")                                                                            \
   TOKEN(CONTINUE, "continue")                                                                      \
   TOKEN(COPROC, "coproc")                                                                          \
   TOKEN(DO, "do")                                                                                  \
