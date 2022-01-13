@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 1, $errorKind = 'ReadOnlySymbol', $status = 1)
+
+let a = 23
+$a = 1234

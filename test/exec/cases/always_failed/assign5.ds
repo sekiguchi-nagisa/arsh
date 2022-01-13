@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 5, $chars = 6, $errorKind = 'Required', $status = 1)
-
-var a = 23
-var b = 1
-$a = $b = 2

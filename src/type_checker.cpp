@@ -1459,7 +1459,13 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftType = this->checkTypeAsExpr(leftNode);
   if (isa<AssignableNode>(leftNode)) {
     if (hasFlag(cast<AssignableNode>(leftNode).attr(), HandleAttr::READ_ONLY)) {
-      this->reportError<ReadOnly>(leftNode);
+      if (isa<VarNode>(leftNode)) {
+        this->reportError<ReadOnlySymbol>(leftNode, cast<VarNode>(leftNode).getVarName().c_str());
+      } else {
+        assert(isa<AccessNode>(leftNode));
+        auto &nameNode = cast<AccessNode>(leftNode).getNameNode();
+        this->reportError<ReadOnlyField>(nameNode, nameNode.getVarName().c_str());
+      }
     }
   } else {
     this->reportError<Assignable>(leftNode);

@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 9, $chars = 4, $errorKind = 'ReadOnlyField', $status = 1)
+
+typedef AAA($a : String) {
+    let _value = $a
+    let _size = $a.size()
+}
+
+var a = new AAA("AAA")
+$a._value = "BBBBB"

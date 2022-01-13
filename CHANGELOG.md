@@ -42,6 +42,7 @@
 
 - **Breaking Change**: an error of finally-less try expression is now syntax error
 - improve error reporting of module private member access
+- improve error message of read-only symbol/field checking
 
 #### Completion
 

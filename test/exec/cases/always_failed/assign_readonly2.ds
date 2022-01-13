@@ -1,0 +1,11 @@
+#$test($result = 'type', $lineNum = 11, $chars = 3, $errorKind = 'ReadOnlySymbol', $status = 1)
+
+function f() : String {
+    return "hello"
+}
+
+function g() : String {
+    return "hoge"
+}
+
+  $f = $g
