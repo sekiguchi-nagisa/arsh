@@ -13,5 +13,10 @@ $hello = 'ABC'
 assert $mod.hello == "ABC"
 assert $hey == $mod.hey
 
+assert new mod.APIError("hey") is Error
+assert new mod.Interval(23,199).end == 199
+assert 34 is mod.Interval.Dist
+
+
 # import already loaded module (do nothing)
 source ../.././_module4test/module1.ds

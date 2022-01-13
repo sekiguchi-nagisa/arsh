@@ -8,3 +8,13 @@ source ../../_module4test/module1.ds
 assert "$(_say0)" == 'hello'
 assert "$(say0 echo echo)" == '_say!! echo echo'
 assert new StrArray() is [String]
+
+
+# user-define type
+assert new APIError("hello").message() == "hello"
+
+var ii = new Interval(0, 12)
+assert $ii.begin == 0
+assert $ii.end == 12
+
+assert $ii.end is Interval.Dist

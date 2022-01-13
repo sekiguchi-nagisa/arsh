@@ -40,6 +40,14 @@ enum class NameLookupError {
   MOD_PRIVATE,
 };
 
+enum class NameRegisterOp : unsigned int {
+  AS_ALIAS = 1u << 0u,
+  IGNORE_CONFLICT = 1u << 1u,
+};
+
+template <>
+struct allow_enum_bitop<NameRegisterOp> : std::true_type {};
+
 struct ScopeDiscardPoint {
   unsigned int commitIdOffset;
 };
@@ -262,7 +270,7 @@ private:
    * if true, not increment internal variable index
    * @return
    */
-  NameRegisterResult add(std::string &&name, HandlePtr &&handle, bool asAlias = false);
+  NameRegisterResult add(std::string &&name, HandlePtr &&handle, NameRegisterOp op = {});
 
   /**
    * define local/global variable name
@@ -281,8 +289,13 @@ private:
     return this->add(std::move(name), HandlePtr::create(type, index, attr, this->modId));
   }
 
+  NameRegisterResult addNewAliasHandle(std::string &&name, const HandlePtr &handle) {
+    return this->add(std::move(name), HandlePtr(handle), NameRegisterOp::AS_ALIAS);
+  }
+
   NameRegisterResult addNewForeignHandle(std::string &&name, const HandlePtr &handle) {
-    return this->add(std::move(name), HandlePtr(handle), true);
+    return this->add(std::move(name), HandlePtr(handle),
+                     NameRegisterOp::AS_ALIAS | NameRegisterOp::IGNORE_CONFLICT);
   }
 };
 

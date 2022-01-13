@@ -37,7 +37,7 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
   // copy own handle
   for (auto &e : modType.getHandleMap()) {
     assert(scope->modId == e.second->getModId());
-    scope->addNewForeignHandle(std::string(e.first), e.second);
+    scope->addNewAliasHandle(std::string(e.first), e.second);
   }
 
   // import foreign module
@@ -103,7 +103,7 @@ NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &h
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
   }
-  return this->addNewForeignHandle(std::move(name), handle);
+  return this->addNewAliasHandle(std::move(name), handle);
 }
 
 NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
@@ -146,13 +146,14 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   }
 
   // define module holder
-  this->addNewForeignHandle(std::move(holderName), type.toModHolder(k, this->modId));
-  if (!global) {
-    return "";
-  }
+  this->addNewAliasHandle(std::move(holderName), type.toModHolder(k, this->modId));
 
+  // import actual handles
   for (auto &e : type.getHandleMap()) {
     assert(this->modId != e.second->getModId());
+    if (!global && !e.second->isMethod()) {
+      continue; // in named import, not import Handle (except for MethodHandle)
+    }
     StringRef name = e.first;
     if (name.startsWith("_")) {
       continue;
@@ -279,7 +280,7 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
   }
 }
 
-NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, bool asAlias) {
+NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRegisterOp op) {
   assert(this->kind != FUNC);
 
   if (handle->getTypeId() == static_cast<unsigned int>(TYPE::Nothing) ||
@@ -288,7 +289,7 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, bool a
   }
 
   // check var index limit
-  if (!asAlias) {
+  if (!hasFlag(op, NameRegisterOp::AS_ALIAS)) {
     if (!handle->has(HandleAttr::GLOBAL)) {
       assert(!this->isGlobal());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
@@ -300,11 +301,15 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, bool a
   const auto comitId = this->handles.size();
   auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, comitId));
   if (!pair.second) {
+    if (hasFlag(op, NameRegisterOp::IGNORE_CONFLICT) && pair.first->second.first == handle &&
+        handle->isMethod()) {
+      return Ok(handle.get());
+    }
     return Err(NameRegisterError::DEFINED);
   }
 
   // increment var index count
-  if (!asAlias) {
+  if (!hasFlag(op, NameRegisterOp::AS_ALIAS)) {
     assert(this->isGlobal() == handle->has(HandleAttr::GLOBAL));
     if (handle->has(HandleAttr::GLOBAL)) {
       this->maxVarCount.get()++;
