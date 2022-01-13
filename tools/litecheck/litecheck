@@ -44,11 +44,11 @@ let STATUS = "STATUS"
 let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
 
-typedef Directive = (
-    String, # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
-    String, # line
-    Int,    # line number
-)
+typedef Directive($t : String, $l : String, $n : Int) {
+    let type = $t   # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
+    let line = $l   # line
+    let ln = $n     # line number
+}
 
 function _parse_num($v : String) : Int! {
     var m = $/^ *(0|[1-9][0-9]*) *$/.match($v)
@@ -70,7 +70,7 @@ function _parse_directives($path : String) : [String: [Directive]] {
 
     var lines = $_lines($path)
     if !$lines.empty() && $lines[0].startsWith($SHEBANG) {
-        $map[$RUN].add(($SHEBANG, $lines[0], 1))
+        $map[$RUN].add(new Directive($SHEBANG, $lines[0], 1))
     }
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
@@ -86,23 +86,23 @@ function _parse_directives($path : String) : [String: [Directive]] {
             if [$CHECKERR, $CHECKERR_IF, $CHECKERR_RE].contains($type) {
                 $key = $CHECKERR
             }
-            $map[$key].add(($type, $line, $ln))
+            $map[$key].add(new Directive($type, $line, $ln))
         }
     }
 
     ## check RUN directive or SHEBANG
     case $map[$RUN].size() {
         0 => _error require $RUN directive or shebang
-        1 => if $map[$RUN][0]._0 == $SHEBANG {
+        1 => if $map[$RUN][0].type == $SHEBANG {
                 test -x $self || _error "must be executable: `$self'"
                 $map[$RUN].shift()
             } else {
-                assert $map[$RUN][0]._0 == $RUN
+                assert $map[$RUN][0].type == $RUN
             }
         else => {
-            if $map[$RUN][0]._0 == $SHEBANG {
+            if $map[$RUN][0].type == $SHEBANG {
                 $map[$RUN].shift()
-                assert $map[$RUN][0]._0 == $RUN
+                assert $map[$RUN][0].type == $RUN
             }
             $map[$RUN].size() == 1 || _error $RUN directive has already defined
         }
@@ -112,7 +112,7 @@ function _parse_directives($path : String) : [String: [Directive]] {
     case $map[$STATUS].size() {
         0 => {}
         1 => {
-            var d = $map[$STATUS][0]._1
+            var d = $map[$STATUS][0].line
             $_parse_num($d) ?? _error "invalid $STATUS directive: `$d'"
         }
         else => _error $STATUS directive has already defined
@@ -123,14 +123,14 @@ function _parse_directives($path : String) : [String: [Directive]] {
 # split check directives into chunks
 function _to_chunk($checks : [Directive]) : [[Directive]] {
     var ret : [[Directive]]
-    if !$checks[0]._0.endsWith("_IF") && !$checks[0]._0.endsWith("_RE") {
+    if !$checks[0].type.endsWith("_IF") && !$checks[0].type.endsWith("_RE") {
         $ret.add(new [Directive]())
     }
 
     for $c in $checks {
-        if $c._0.endsWith("_IF") || $c._0.endsWith("_RE") {
+        if $c.type.endsWith("_IF") || $c.type.endsWith("_RE") {
             $ret.add(new [Directive]())
-        } elif !$ret.empty() && !$ret.peek().empty() && $ret.peek().peek()._0.endsWith("_RE") {
+        } elif !$ret.empty() && !$ret.peek().empty() && $ret.peek().peek().type.endsWith("_RE") {
             $ret.add(new [Directive]())
         }
         $ret.peek().add($c)
@@ -143,10 +143,10 @@ function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
     assert $output.size() == 1
 
     var out = $output.join($'\n')
-    var re = try { new Regex($checks[0]._1, ""); }
+    var re = try { new Regex($checks[0].line, ""); }
              catch $e : Error { echo 1>&2 ${$e.message()}; return $false; }
     if $re !~ $out {
-        echo 1>&2 ${$checks[0]._0} on line ${$checks[0]._2},
+        echo 1>&2 ${$checks[0].type} on line ${$checks[0].ln},
         echo 1>&2 "    Expect: $re"
         echo 1>&2 "    Actual: $out"
         return $false
@@ -155,20 +155,20 @@ function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
 }
 
 function _match_chunk($checks : [Directive], $output : [String]) : Bool {
-    $checks[0]._0.endsWith("_RE") && return $_match_chunk_re($checks, $output)
+    $checks[0].type.endsWith("_RE") && return $_match_chunk_re($checks, $output)
 
     var eout = ""
     for $c in $checks {
         if !$eout.empty() {
             $eout += $'\n'
         }
-        $eout += $c._1
+        $eout += $c.line
     }
     $? = 0
     var o = IFS="" "$(diff 2>&1 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')}))"
     var r = $? == 0
     if !$r {
-        echo 1>&2 ${$checks[0]._0} on line ${$checks[0]._2},
+        echo 1>&2 ${$checks[0].type} on line ${$checks[0].ln},
         echo 1>&2 $o
     }
     return $r
@@ -186,8 +186,8 @@ function _check_output($checks : [Directive], $output : [String]) : Bool {
     var chunks = $_to_chunk($checks)
     var matched = 0
     for $chunk in $chunks {
-        if $chunk[0]._0.endsWith("_IF") {
-            $index = $_skip_until($chunk[0]._1, $output, $index)
+        if $chunk[0].type.endsWith("_IF") {
+            $index = $_skip_until($chunk[0].line, $output, $index)
         }
         var limit = $index + $chunk.size()
         if $matched == $chunks.size() - 1 && $limit < $output.size() {
@@ -204,7 +204,7 @@ function _run_and_check($map : [String : [Directive]]) : Int {
     var run = case $map[$RUN].size() {
         0 => $MODULE.func("eval $self")
         else => {
-            var d = $map[$RUN][0]._1
+            var d = $map[$RUN][0].line
             try {
                 $MODULE.func($d)
             } catch $e : Error {
@@ -232,7 +232,7 @@ function _run_and_check($map : [String : [Directive]]) : Int {
             if !$_check_output($map[$CHECKERR], $errs) { echo 1>&2 stderr is mismatched; $ret = 1; }
         }
         if !$map[$STATUS].empty() {
-            var estatus = $_parse_num($map[$STATUS][0]._1)!
+            var estatus = $_parse_num($map[$STATUS][0].line)!
             $s == $estatus || _error "exit status is mismatched, expected: `$estatus', actual: `$s'"
         }
         return $ret
@@ -278,9 +278,9 @@ litecheck() {
 
     # check pre-condition
     for $d in $map[$REQUIRE] {
-        var cond = try { $MODULE.func($d._1)(); } 
-                   catch $e : Error { _error ${"invalid $REQUIRE directive: `${$d._1}', caused by" + $'\n' + $e.message()}; }
-        $cond is Bool || _error "$REQUIRE directive must be boolean expression: `${$d._1}'"
+        var cond = try { $MODULE.func($d.line)(); } 
+                   catch $e : Error { _error ${"invalid $REQUIRE directive: `${$d.line}', caused by" + $'\n' + $e.message()}; }
+        $cond is Bool || _error "$REQUIRE directive must be boolean expression: `${$d.line}'"
         $cond! as Bool || { echo skip "`$self'"; exit 125; }
     }
 
