@@ -511,11 +511,14 @@ public:
   size_t hash() const;
 
   /**
-   * for Array#sort
+   * three-way comapre for Array#sort
    * @param o
    * @return
+   * if this < o, return negative number
+   * if this == o, return 0
+   * if this > o, return positive number
    */
-  bool compare(const DSValue &o) const;
+  int compare(const DSValue &o) const;
 
   /**
    * force mutate string.

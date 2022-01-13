@@ -234,12 +234,12 @@ size_t DSValue::hash() const {
   }
 }
 
-bool DSValue::compare(const DSValue &o) const {
+int DSValue::compare(const DSValue &o) const {
   // for String
   if (this->hasStrRef() && o.hasStrRef()) {
     auto left = this->asStrRef();
     auto right = o.asStrRef();
-    return left < right;
+    return left.compare(right);
   }
 
   assert(this->kind() == o.kind());
@@ -247,16 +247,22 @@ bool DSValue::compare(const DSValue &o) const {
   case DSValueKind::BOOL: {
     int left = this->asBool() ? 1 : 0;
     int right = o.asBool() ? 1 : 0;
-    return left < right;
+    return left - right;
   }
   case DSValueKind::SIG:
-    return this->asSig() < o.asSig();
-  case DSValueKind::INT:
-    return this->asInt() < o.asInt();
+    return this->asSig() - o.asSig();
+  case DSValueKind::INT: {
+    int64_t left = this->asInt();
+    int64_t right = o.asInt();
+    if (left == right) {
+      return 0;
+    }
+    return left < right ? -1 : 1;
+  }
   case DSValueKind::FLOAT:
-    return compareByTotalOrder(this->asFloat(), o.asFloat()) < 0;
+    return compareByTotalOrder(this->asFloat(), o.asFloat());
   default:
-    return false;
+    return 1; // normally unreachable
   }
 }
 

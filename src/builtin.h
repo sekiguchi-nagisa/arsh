@@ -1429,7 +1429,7 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   std::sort(obj.refValues().begin(), obj.refValues().end(),
-            [](const DSValue &x, const DSValue &y) { return x.compare(y); });
+            [](const DSValue &x, const DSValue &y) { return x.compare(y) < 0; });
   RET(LOCAL(0));
 }
 
