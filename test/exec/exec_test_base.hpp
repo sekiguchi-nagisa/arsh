@@ -1,3 +1,7 @@
+
+#ifndef YDSH_EXEC_TEST_BASE_HPP
+#define YDSH_EXEC_TEST_BASE_HPP
+
 #include "gtest/gtest.h"
 
 #include <fstream>
@@ -30,11 +34,17 @@ int parse(const char *src, T &&...args) {
   return Extractor(src)(std::forward<T>(args)...);
 }
 
-static std::vector<std::string> getSortedFileList(const char *dir) {
+static inline std::vector<std::string> getSortedFileList(const char *dir,
+                                                         const char *ignored = nullptr) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [](const std::string &v) { return !StringRef(v).endsWith(".ds"); }),
+                           [ignored](const std::string &v) {
+                             if (ignored && StringRef(v).startsWith(ignored)) {
+                               return true;
+                             }
+                             return !StringRef(v).endsWith(".ds");
+                           }),
             ret.end());
   std::sort(ret.begin(), ret.end());
   ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
@@ -150,63 +160,4 @@ public:
   }
 };
 
-TEST_P(ExecTest, baseTest) {
-  printf("@@ test script %s\n", this->targetName.c_str());
-  ASSERT_NO_FATAL_FAILURE(this->doTest());
-}
-
-INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR)));
-
-TEST(Base, case1) {
-  std::string line(R"(type=3 lineNum=1 chars=0 kind="SystemError" fileName="../hoge.ds")");
-  unsigned int type;
-  unsigned int lineNum;
-  unsigned int chars;
-  std::string kind;
-  std::string fileName;
-
-  int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "chars", "=", chars, "kind",
-                  "=", kind, "fileName", "=", fileName);
-  ASSERT_EQ(0, ret);
-  ASSERT_EQ(3u, type);
-  ASSERT_EQ(1u, lineNum);
-  ASSERT_EQ("SystemError", kind);
-  ASSERT_EQ("../hoge.ds", fileName);
-}
-
-TEST(Base, case2) {
-  std::string line("type=0 lineNum=0 kind=\"\"");
-  unsigned int type;
-  unsigned int lineNum;
-  std::string kind;
-
-  int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
-  ASSERT_EQ(0, ret);
-  ASSERT_EQ(0u, type);
-  ASSERT_EQ(0u, lineNum);
-  ASSERT_EQ("", kind);
-}
-
-TEST(Base, case3) {
-  std::string line(R"(type=0 lineNum=0 kind="" fileName="" )");
-  unsigned int type;
-  unsigned int lineNum;
-  std::string kind;
-  std::string fileName;
-
-  int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName",
-                  "=", fileName);
-  ASSERT_EQ(0, ret);
-  ASSERT_EQ(0u, type);
-  ASSERT_EQ(0u, lineNum);
-  ASSERT_EQ("", kind);
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-
-  if (chdir(EXEC_TEST_DIR) != 0) {
-    fatal("broken test directory: %s\n", EXEC_TEST_DIR);
-  }
-  return RUN_ALL_TESTS();
-}
+#endif // YDSH_EXEC_TEST_BASE_HPP
