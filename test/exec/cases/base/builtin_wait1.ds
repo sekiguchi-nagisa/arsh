@@ -1,13 +1,13 @@
 
-var j1 = { sleep 2; exit 12; } &
-var j2 = { sleep 2; exit 34; } &
-var j3 = { sleep 2; exit 56; } &
+var j1 = { sleep 1; exit 12; } &
+var j2 = { sleep 1; exit 34; } &
+var j3 = { sleep 1; exit 56; } &
 
 wait $j1 $j2 ${$j3.pid(0)!}
 assert $? == 56 : "$?"
 
 # error
-$j1 = { sleep 3; exit 78; } &
+$j1 = { sleep 1; exit 78; } &
 wait %100 $j1
 assert $? == 127
 
