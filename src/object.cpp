@@ -171,8 +171,8 @@ bool DSValue::opInterp(DSState &state) const {
     case ObjectKind::Array:
       return typeAs<ArrayObject>(*this).opInterp(state);
     case ObjectKind::Base:
-      assert(state.typePool.get(this->getTypeID()).isTupleType());
-      assert(state.typePool.get(this->getTypeID()).isRecordType());
+      assert(state.typePool.get(this->getTypeID()).isTupleType() ||
+             state.typePool.get(this->getTypeID()).isRecordType());
       return typeAs<BaseObject>(*this).opInterpAsTupleRecord(state);
     default:
       break;
