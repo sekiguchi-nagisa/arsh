@@ -141,12 +141,24 @@ std::string DSValue::toString() const {
   }
 }
 
+#define GUARD_RECURSION(state)                                                                     \
+  RecursionGuard _guard(state);                                                                    \
+  do {                                                                                             \
+    if (!_guard.checkLimit()) {                                                                    \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
 bool DSValue::opStr(StrBuilder &builder) const {
-  if (!builder.incCallCount()) {
-    raiseError(builder.getState(), TYPE::StackOverflowError, "recursiopn depth reaches limit");
-    return false;
-  }
-  auto cleanup = finally([&builder] { builder.decCallCount(); });
+  GUARD_RECURSION(builder.getState());
+
   if (this->isInvalid()) {
     raiseError(builder.getState(), TYPE::UnwrappingError, "invalid value");
     return false;
@@ -174,19 +186,34 @@ bool DSValue::opStr(StrBuilder &builder) const {
 }
 
 bool DSValue::opInterp(StrBuilder &builder) const {
-  if (!builder.incCallCount()) {
-    raiseError(builder.getState(), TYPE::StackOverflowError, "recursiopn depth reaches limit");
-    return false;
-  }
-  auto cleanup = finally([&builder] { builder.decCallCount(); });
+  GUARD_RECURSION(builder.getState());
+
   if (this->isObject()) {
     switch (this->get()->getKind()) {
-    case ObjectKind::Array:
-      return typeAs<ArrayObject>(*this).opInterp(builder);
-    case ObjectKind::Base:
+    case ObjectKind::Array: {
+      auto &arrayObj = typeAs<ArrayObject>(*this);
+      unsigned int size = arrayObj.size();
+      for (unsigned int i = 0; i < size; i++) {
+        if (i > 0) {
+          TRY(builder.add(" "));
+        }
+        TRY(arrayObj.getValues()[i].opInterp(builder));
+      }
+      return true;
+    }
+    case ObjectKind::Base: {
+      auto &obj = typeAs<BaseObject>(*this);
       assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
              builder.getState().typePool.get(this->getTypeID()).isRecordType());
-      return typeAs<BaseObject>(*this).opInterpAsTupleRecord(builder);
+      unsigned int size = obj.getFieldSize();
+      for (unsigned int i = 0; i < size; i++) {
+        if (i > 0) {
+          TRY(builder.add(" "));
+        }
+        TRY(obj[i].opInterp(builder));
+      }
+      return true;
+    }
     default:
       break;
     }
@@ -282,7 +309,7 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
   const bool small = isSmallStr(this->kind());
   const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
   if (size > StringObject::MAX_SIZE - value.size()) {
-    raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+    raiseError(state, TYPE::OutOfRangeError, "reach String size limit");
     return false;
   }
 
@@ -382,23 +409,6 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
 // ##     Array_Object     ##
 // ##########################
 
-static bool checkInvalid(DSState &st, DSValue &v) {
-  if (v.isInvalid()) {
-    raiseError(st, TYPE::UnwrappingError, "invalid value");
-    return false;
-  }
-  return true;
-}
-
-#define TRY(E)                                                                                     \
-  ({                                                                                               \
-    auto v = E;                                                                                    \
-    if (state.hasError()) {                                                                        \
-      return false;                                                                                \
-    }                                                                                              \
-    std::forward<decltype(v)>(v);                                                                  \
-  })
-
 std::string ArrayObject::toString() const {
   std::string str = "[";
   unsigned int size = this->values.size();
@@ -412,81 +422,21 @@ std::string ArrayObject::toString() const {
   return str;
 }
 
-#define TRY2(E)                                                                                    \
-  do {                                                                                             \
-    if (!(E)) {                                                                                    \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
-
 bool ArrayObject::opStr(StrBuilder &builder) const {
-  TRY2(builder.add("["));
+  TRY(builder.add("["));
   unsigned int size = this->values.size();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      TRY2(builder.add(", "));
+      TRY(builder.add(", "));
     }
-    TRY2(this->values[i].opStr(builder));
+    TRY(this->values[i].opStr(builder));
   }
   return builder.add("]");
 }
 
-bool ArrayObject::opInterp(StrBuilder &builder) const {
-  unsigned int size = this->values.size();
-  for (unsigned int i = 0; i < size; i++) {
-    if (i > 0) {
-      TRY2(builder.add(" "));
-    }
-    TRY2(this->values[i].opInterp(builder));
-  }
-  return true;
-}
-
-static const MethodHandle *lookupCmdArg(const DSType &recvType, TypePool &pool) {
-  auto *handle = pool.lookupMethod(recvType, OP_CMD_ARG);
-  if (handle == nullptr) {
-    handle = pool.lookupMethod(recvType, OP_STR);
-  }
-  return handle;
-}
-
-static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const DSValue &value) {
-  DSValue ret = value;
-  if (!checkInvalid(state, ret)) {
-    return false;
-  }
-  if (!ret.hasType(TYPE::String) && !ret.hasType(TYPE::StringArray)) {
-    auto &recv = state.typePool.get(ret.getTypeID());
-    auto *handle = lookupCmdArg(recv, state.typePool);
-    assert(handle != nullptr);
-    ret = TRY(VM::callMethod(state, *handle, std::move(ret), makeArgs()));
-  }
-
-  if (ret.hasType(TYPE::String)) {
-    result.push_back(std::move(ret));
-  } else {
-    assert(ret.hasType(TYPE::StringArray));
-    auto &tempArray = typeAs<ArrayObject>(ret);
-    for (auto &tempValue : tempArray.getValues()) {
-      result.push_back(tempValue);
-    }
-  }
-  return true;
-}
-
-DSValue ArrayObject::opCmdArg(DSState &state) const {
-  auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
-  for (auto &e : this->values) {
-    if (!appendAsCmdArg(typeAs<ArrayObject>(result).values, state, e)) {
-      return DSValue();
-    }
-  }
-  return result;
-}
-
 bool ArrayObject::append(DSState &state, DSValue &&obj) {
   if (this->size() == MAX_SIZE) {
-    raiseError(state, TYPE::OutOfRangeError, std::string("reach Array size limit"));
+    raiseError(state, TYPE::OutOfRangeError, "reach Array size limit");
     return false;
   }
   this->values.push_back(std::move(obj));
@@ -513,15 +463,15 @@ std::string MapObject::toString() const {
 }
 
 bool MapObject::opStr(StrBuilder &builder) const {
-  TRY2(builder.add("["));
+  TRY(builder.add("["));
   unsigned int count = 0;
   for (auto &e : this->valueMap) {
     if (count++ > 0) {
-      TRY2(builder.add(", "));
+      TRY(builder.add(", "));
     }
-    TRY2(e.first.opStr(builder)); // key
-    TRY2(builder.add(" : "));
-    TRY2(e.second.opStr(builder)); // value
+    TRY(e.first.opStr(builder)); // key
+    TRY(builder.add(" : "));
+    TRY(e.second.opStr(builder)); // value
   }
   return builder.add("]");
 }
@@ -557,45 +507,66 @@ BaseObject::~BaseObject() {
 bool BaseObject::opStrAsTuple(StrBuilder &builder) const {
   assert(builder.getState().typePool.get(this->getTypeID()).isTupleType());
 
-  TRY2(builder.add("("));
+  TRY(builder.add("("));
   unsigned int size = this->getFieldSize();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      TRY2(builder.add(", "));
+      TRY(builder.add(", "));
     }
-    TRY2((*this)[i].opStr(builder));
+    TRY((*this)[i].opStr(builder));
   }
   if (size == 1) {
-    TRY2(builder.add(","));
+    TRY(builder.add(","));
   }
   return builder.add(")");
 }
 
-bool BaseObject::opInterpAsTupleRecord(StrBuilder &builder) const {
-  assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
-         builder.getState().typePool.get(this->getTypeID()).isRecordType());
+bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
+  GUARD_RECURSION(this->state);
 
-  unsigned int size = this->getFieldSize();
-  for (unsigned int i = 0; i < size; i++) {
-    if (i > 0) {
-      TRY2(builder.add(" "));
+  if (arg.hasStrRef()) {
+    if (skipEmptyStr && arg.asStrRef().empty()) {
+      return true; // do nothing
     }
-    TRY2((*this)[i].opInterp(builder));
+    return this->argv->append(this->state, std::move(arg));
   }
-  return true;
-}
 
-DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
-  assert(state.typePool.get(this->getTypeID()).isTupleType());
-
-  auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
-  unsigned int size = this->getFieldSize();
-  for (unsigned int i = 0; i < size; i++) {
-    if (!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, (*this)[i])) {
-      return DSValue();
+  if (arg.isObject()) {
+    switch (arg.get()->getKind()) {
+    case ObjectKind::UnixFd: {
+      if (!this->redir) {
+        this->redir = DSValue::create<RedirObject>();
+      }
+      auto strObj = DSValue::createStr(arg.toString());
+      bool r = this->argv->append(this->state, std::move(strObj));
+      if (r) {
+        typeAs<UnixFdObject>(arg).closeOnExec(false);
+        typeAs<RedirObject>(this->redir).addRedirOp(RedirOP::NOP, std::move(arg));
+      }
+      return r;
+    }
+    case ObjectKind::Array: {
+      auto &arrayObj = typeAs<ArrayObject>(arg);
+      for (auto &e : arrayObj.getValues()) {
+        TRY(this->add(DSValue(e)));
+      }
+      return true;
+    }
+    case ObjectKind::Base: {
+      auto &obj = typeAs<BaseObject>(arg);
+      unsigned int size = obj.getFieldSize();
+      for (unsigned int i = 0; i < size; i++) {
+        TRY(this->add(DSValue(obj[i])));
+      }
+      return true;
+    }
+    default:
+      break;
     }
   }
-  return result;
+  StrBuilder builder(this->state);
+  TRY(arg.opStr(builder));
+  return this->add(std::move(builder).take());
 }
 
 // ##########################

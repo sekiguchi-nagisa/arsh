@@ -1026,49 +1026,6 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
   return true;
 }
 
-void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
-  /**
-   * stack layout
-   *
-   * ===========> stack grow
-   * +------+-------+-------+
-   * | argv | redir | value |
-   * +------+-------+-------+
-   */
-  DSValue value = state.stack.pop();
-  auto &valueType = state.typePool.get(value.getTypeID());
-
-  auto &argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
-  if (valueType.is(TYPE::String)) { // String
-    if (skipEmptyStr && value.asStrRef().empty()) {
-      return;
-    }
-    argv.append(std::move(value));
-    return;
-  }
-
-  if (valueType.is(TYPE::UnixFD)) { // UnixFD
-    if (!state.stack.peek()) {
-      state.stack.pop();
-      state.stack.push(DSValue::create<RedirObject>());
-    }
-    auto strObj = DSValue::createStr(value.toString());
-    typeAs<UnixFdObject>(value).closeOnExec(false);
-    typeAs<RedirObject>(state.stack.peek()).addRedirOp(RedirOP::NOP, std::move(value));
-    argv.append(std::move(strObj));
-    return;
-  }
-
-  assert(valueType.is(TYPE::StringArray)); // Array<String>
-  auto &arrayObj = typeAs<ArrayObject>(value);
-  for (auto &element : arrayObj.getValues()) {
-    if (element.asStrRef().empty()) {
-      continue;
-    }
-    argv.append(element);
-  }
-}
-
 class GlobIter {
 private:
   const DSValue *cur;
@@ -1695,7 +1652,21 @@ bool VM::mainLoop(DSState &state) {
       vmcase(ADD_CMD_ARG) {
         unsigned char v = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        addCmdArg(state, v > 0);
+        const bool skipEmptyStr = v > 0;
+
+        /**
+         * stack layout
+         *
+         * ===========> stack grow
+         * +------+-------+-------+
+         * | argv | redir | value |
+         * +------+-------+-------+
+         */
+        auto arg = state.stack.pop();
+        auto redir = state.stack.pop();
+        CmdArgsBuilder builder(state, toObjPtr<ArrayObject>(state.stack.peek()), std::move(redir));
+        TRY(builder.add(std::move(arg), skipEmptyStr));
+        state.stack.push(std::move(builder).takeRedir());
         vmnext;
       }
       vmcase(ADD_GLOBBING) {
@@ -1828,7 +1799,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(UNWRAP) {
         if (state.stack.peek().kind() == DSValueKind::INVALID) {
-          raiseError(state, TYPE::UnwrappingError, std::string("invalid value"));
+          raiseError(state, TYPE::UnwrappingError, "invalid value");
           vmerror;
         }
         vmnext;
@@ -1968,7 +1939,7 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
 
   // prepare stack
   state.stack.reset();
-  RecursionGuard guard(state.stack);
+  RecursionGuard guard(state);
   state.stack.wind(0, 0, func->getCode());
 
   DSValue ret;
@@ -1991,17 +1962,19 @@ unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
   return size;
 }
 
-#define RAISE_STACK_OVERFLOW(state)                                                                \
-  do {                                                                                             \
-    raiseError(state, TYPE::StackOverflowError, "interpreter recursion depth reaches limit");      \
-    return nullptr;                                                                                \
-  } while (false)
+bool RecursionGuard::checkLimit() {
+  if (this->state.getCallStack().recDepth() == SYS_LIMIT_NATIVE_RECURSION) {
+    raiseError(this->state, TYPE::StackOverflowError, "interpreter recursion depth reaches limit");
+    return false;
+  }
+  return true;
+}
 
 #define GUARD_RECURSION(state)                                                                     \
-  RecursionGuard _guard(state.stack);                                                              \
+  RecursionGuard _guard(state);                                                                    \
   do {                                                                                             \
     if (!_guard.checkLimit()) {                                                                    \
-      RAISE_STACK_OVERFLOW(state);                                                                 \
+      return nullptr;                                                                              \
     }                                                                                              \
   } while (false)
 

@@ -713,26 +713,18 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   } else {
     if (exprType.is(TYPE::Any)) {
       this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
+      node.setType(this->typePool.get(TYPE::Nothing));
     } else if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
                !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
                !this->typePool.get(TYPE::UnixFD)
                     .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
-      // first try lookup __CMD_ARG__ method
-      std::string methodName(OP_CMD_ARG);
-      auto *handle = this->typePool.lookupMethod(exprType, methodName);
-
-      if (handle == nullptr) { // if not found, lookup __STR__
-        methodName = OP_STR;
-        handle =
-            exprType.isOptionType() ? nullptr : this->typePool.lookupMethod(exprType, methodName);
-      }
-      if (handle) {
-        assert(handle->getReturnType().is(TYPE::String) ||
-               handle->getReturnType().is(TYPE::StringArray));
+      if (exprType.isArrayType() || exprType.isTupleType() || exprType.isRecordType()) {
+        node.setType(this->typePool.get(TYPE::StringArray));
+      } else if (auto *handle = this->typePool.lookupMethod(exprType, OP_STR)) {
         node.setHandle(handle);
         node.setType(handle->getReturnType());
       } else {
-        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str());
+        this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR);
         node.setType(this->typePool.get(TYPE::Nothing));
       }
     }

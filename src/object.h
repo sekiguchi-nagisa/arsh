@@ -662,7 +662,6 @@ class StrBuilder {
 private:
   DSState &state;
   DSValue buf; // must be String
-  ssize_t callCount{0};
 
 public:
   explicit StrBuilder(DSState &st) : state(st), buf(DSValue::createStr("")) {}
@@ -672,10 +671,6 @@ public:
   DSState &getState() const { return this->state; }
 
   DSValue take() && { return std::move(this->buf); }
-
-  bool incCallCount() { return this->callCount++ != SYS_LIMIT_NATIVE_RECURSION; }
-
-  void decCallCount() { this->callCount--; }
 };
 
 inline DSValue exitStatusToBool(int64_t s) { return DSValue::createBool(s == 0); }
@@ -745,8 +740,6 @@ public:
 
   std::string toString() const;
   bool opStr(StrBuilder &builder) const;
-  bool opInterp(StrBuilder &builder) const;
-  DSValue opCmdArg(DSState &state) const;
 
   void append(DSValue &&obj) { this->values.push_back(std::move(obj)); }
 
@@ -913,8 +906,6 @@ public:
 
   // for tuple type
   bool opStrAsTuple(StrBuilder &builder) const;
-  bool opInterpAsTupleRecord(StrBuilder &builder) const;
-  DSValue opCmdArgAsTuple(DSState &state) const;
 };
 
 template <typename... Arg>

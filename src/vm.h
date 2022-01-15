@@ -262,6 +262,8 @@ public:
   }
 
   const VMState &getCallStack() const { return this->stack; }
+
+  VMState &getCallStack() { return this->stack; }
 };
 
 namespace ydsh {
@@ -407,6 +409,42 @@ enum class CmdCallAttr : unsigned int {
 template <>
 struct allow_enum_bitop<CmdCallAttr> : std::true_type {};
 
+// for command argument construction
+class CmdArgsBuilder {
+private:
+  DSState &state;
+  ObjPtr<ArrayObject> argv;
+  DSValue redir; // may be null
+
+public:
+  explicit CmdArgsBuilder(DSState &state, ObjPtr<ArrayObject> argv, DSValue &&redir)
+      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
+
+  /**
+   *
+   * @param state
+   * @param arg
+   * @param skipEmptyStr
+   * @return
+   * if has error, return false
+   */
+  bool add(DSValue &&arg, bool skipEmptyStr = true);
+
+  DSValue takeRedir() && { return std::move(this->redir); }
+};
+
+class RecursionGuard {
+private:
+  DSState &state;
+
+public:
+  explicit RecursionGuard(DSState &st) : state(st) { this->state.getCallStack().incRecDepth(); }
+
+  ~RecursionGuard() { this->state.getCallStack().decRecDepth(); }
+
+  bool checkLimit();
+};
+
 using native_func_t = DSValue (*)(DSState &);
 
 class VM {
@@ -512,8 +550,6 @@ private:
    * if has error, return false.
    */
   static bool callPipeline(DSState &state, bool lastPipe, ForkKind forkKind);
-
-  static void addCmdArg(DSState &state, bool skipEmptyStr);
 
   /**
    *

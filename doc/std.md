@@ -337,8 +337,6 @@ function %OP_ITER($this) : Array<T0> for Array<T0>
 function %OP_NEXT($this) : T0 for Array<T0>
 
 function %OP_HAS_NEXT($this) : Boolean for Array<T0>
-
-function %OP_CMD_ARG($this) : Array<String> for Array<T0>
 ```
 
 ## Map type
@@ -372,10 +370,5 @@ function %OP_ITER($this) : Map<T0,T1> for Map<T0,T1>
 function %OP_NEXT($this) : Tuple<T0,T1> for Map<T0,T1>
 
 function %OP_HAS_NEXT($this) : Boolean for Map<T0,T1>
-```
-
-## Tuple type
-```
-function %OP_CMD_ARG($this) : Array<String> for Tuple<>
 ```
 

@@ -21,8 +21,6 @@
 
 namespace ydsh {
 
-class RecursionGuard;
-
 struct ControlFrame {
   /**
    * currently executed code
@@ -55,6 +53,8 @@ struct ControlFrame {
    */
   unsigned int recDepth;
 };
+
+class RecursionGuard;
 
 class VMState {
 private:
@@ -290,18 +290,6 @@ private:
   void decRecDepth() { this->frame.recDepth--; }
 
   void resize(unsigned int afterSize);
-};
-
-class RecursionGuard {
-private:
-  VMState &st;
-
-public:
-  explicit RecursionGuard(VMState &st) : st(st) { this->st.incRecDepth(); }
-
-  ~RecursionGuard() { this->st.decRecDepth(); }
-
-  bool checkLimit() { return this->st.recDepth() != SYS_LIMIT_NATIVE_RECURSION; }
 };
 
 } // namespace ydsh

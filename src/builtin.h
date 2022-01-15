@@ -1610,12 +1610,6 @@ YDSH_METHOD array_hasNext(RuntimeContext &ctx) {
   RET_BOOL(index < obj.size());
 }
 
-//!bind: function $OP_CMD_ARG($this : Array<T0>) : Array<String>
-YDSH_METHOD array_cmdArg(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_cmdArg);
-  RET(typeAs<ArrayObject>(LOCAL(0)).opCmdArg(ctx));
-}
-
 // #################
 // ##     Map     ##
 // #################
@@ -1774,16 +1768,6 @@ YDSH_METHOD map_next(RuntimeContext &ctx) {
 YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_hasNext);
   RET_BOOL(typeAs<MapIterObject>(LOCAL(0)).hasNext());
-}
-
-// ###################
-// ##     Tuple     ##
-// ###################
-
-//!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
-YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(tuple_cmdArg);
-  RET(typeAs<BaseObject>(LOCAL(0)).opCmdArgAsTuple(ctx));
 }
 
 // ###################

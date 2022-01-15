@@ -20,3 +20,101 @@ assert $a.size() == $b.size()
 assert diff <(for $e in $a { echo $e; }) <(for $e in $b { echo $e; })
 
 assert @().empty()
+
+# to command argument
+## Int
+var args = @(${234})
+assert $args.size() == 1
+assert $args[0] == '234'
+
+$args = @(\${345})
+assert $args.size() == 1
+assert $args[0] == '${345}'
+
+## Boolean
+$args = @($true $false)
+assert $args.size() == 2
+assert $args[0] == 'true'
+assert $args[1] == 'false'
+
+## Float
+$args = @(${0.0/-0.0})
+assert $args.size() == 1
+assert $args[0] == (0.0/-0.0) as String
+
+$args = @(${3.156})
+assert $args.size() == 1
+assert $args[0] == (3.156) as String
+
+$args = @(${23.0/-0.0})
+assert $args.size() == 1
+assert $args[0] == (-23.0/0.0) as String
+
+$args = @(${89.0e34/0.0})
+assert $args.size() == 1
+assert $args[0] == (89.0e34/0.0) as String
+
+## String
+$args = @(${$'helll\x00o'} ${'34'.replace("34", "")})
+assert $args.size() == 1
+assert $args[0] == $'helll\x00o'
+
+$args = @(${  'hhh aaa' })
+assert $args.size() == 1
+assert $args[0] == 'hhh aaa'
+
+## Signal
+$args = @(${%'INT'})
+assert $args.size() == 1
+assert $args[0] == '2'
+
+## Error
+$args = @( ${ new ArithmeticError('123') } )
+assert $args.size() == 1
+assert $args[0] == new ArithmeticError("123") as String
+
+## UnixFD
+$args = @( $STDIN)
+assert $args.size() == 1
+assert $args[0] == '/dev/fd/0'
+
+## Array
+$args = @( ${new [Int]()} )
+assert $args.empty()
+
+$args = @( ${[34,34,90]} )
+assert $args.size() == 3
+assert $args[0] == '34'
+assert $args[1] == '34'
+assert $args[2] == '90'
+
+$args = @(${ ['', 'a', '', 'a b'] })
+assert $args.size() == 2
+assert $args[0] == 'a'
+assert $args[1] == 'a b'
+
+## Map
+var m = [34 : 'a', 45: 'b']
+$args = @($m)
+assert $args.size() == 1
+assert $args[0] == $m as String
+
+## Tuple
+$args = @(${(34,['','b','','c c'],($false,))})
+assert $args.size() == 4
+assert $args[0] == '34'
+assert $args[1] == 'b'
+assert $args[2] == 'c c'
+assert $args[3] == 'false'
+
+## Record
+typedef Interval($a : Int, $b : Int) {
+    let _begin = $a
+    let end = $b
+    typedef Dist = typeof($end)
+}
+
+$args = @( ${ new Interval(4, 98) } )
+assert $args.size() == 2
+assert $args[0] == '4'
+assert $args[1] == '98'

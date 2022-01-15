@@ -6,3 +6,5 @@ assert "$(cat $f)" == "aaa
 hello"
 
 assert "$(cat <(echo world!))" == "world!"
+
+assert diff ${[ <(ls), <(ls) ]}
