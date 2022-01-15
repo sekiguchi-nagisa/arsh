@@ -692,6 +692,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   node.setType(exprType);
   if (exprType.isOptionType()) {
     this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
+    node.setType(this->typePool.get(TYPE::Nothing));
     return;
   }
 
