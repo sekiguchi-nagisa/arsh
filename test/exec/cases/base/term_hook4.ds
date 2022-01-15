@@ -2,7 +2,7 @@
 #$test($result = 'throw', $errorKind = 'Error', $status = 1, $lineNum = 11, $out = $'receive error: 2: Error: de\n')
 
 function f($s : Int, $a : Any) {
-    echo receive error: $s: $a
+    echo receive error: $s: "$a"
     assert false    # disallow nested exit
 }
 

@@ -41,6 +41,9 @@
 #### Core
 
 - **Breaking Change**: an error of finally-less try expression is now syntax error
+- **Breaking Change**: change parameter expansion typechecking
+    - change error message when pass ``Option<T>`` to command arguments
+    - not accept ``Any`` type
 - improve error reporting of module private member access
 - improve error message of read-only symbol/field checking
 

@@ -107,8 +107,8 @@ assert($? == 0)
 echo ${(1, "a", $true)} | grep '1 a true' # Tuple
 assert($? == 0)
 
-echo d${(1, 2) as Any} | grep 'd(1, 2)'  # Tuple
-assert($? == 0)
+# echo d${(1, 2) as Any} | grep 'd(1, 2)'  # Tuple    now not accept Any type
+# assert($? == 0)
 
 echo \$true/hoge | grep '$true/hoge'   # escape
 assert($? == 0)

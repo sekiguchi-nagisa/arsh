@@ -3,7 +3,7 @@
 
 function f($s : Int, $a : Any) {
     %'term'.kill($$)
-    echo receive error: $s: $a
+    echo receive error: $s: "$a"
 }
 
 $TERM_HOOK = $f

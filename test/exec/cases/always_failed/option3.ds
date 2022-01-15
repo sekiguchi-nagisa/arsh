@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $chars = 2, $errorKind = 'UndefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 2, $errorKind = 'Unacceptable', $status = 1)
 
 var a = 34 as Option<Int>
 "$a"

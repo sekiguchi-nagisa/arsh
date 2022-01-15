@@ -690,6 +690,10 @@ void TypeChecker::visitNewNode(NewNode &node) {
 void TypeChecker::visitEmbedNode(EmbedNode &node) {
   auto &exprType = this->checkTypeAsExpr(node.getExprNode());
   node.setType(exprType);
+  if (exprType.isOptionType()) {
+    this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
+    return;
+  }
 
   if (node.getKind() == EmbedNode::STR_EXPR) {
     auto &type = this->typePool.get(TYPE::String);
@@ -706,10 +710,12 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
       }
     }
   } else {
-    if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
-        !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
-        !this->typePool.get(TYPE::UnixFD)
-             .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
+    if (exprType.is(TYPE::Any)) {
+      this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
+    } else if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
+               !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
+               !this->typePool.get(TYPE::UnixFD)
+                    .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
       // first try lookup __CMD_ARG__ method
       std::string methodName(OP_CMD_ARG);
       auto *handle = this->typePool.lookupMethod(exprType, methodName);
