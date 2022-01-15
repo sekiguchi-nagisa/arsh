@@ -1,0 +1,65 @@
+
+# string interpolation
+## Int
+var a = "西暦${1900 + 114}年"
+var b = "西暦\${1900 + 114}年"
+
+assert($a == "西暦2014年")
+assert($b == '西暦${1900 + 114}年')
+
+var pair = (1,2)
+assert "20${pair._0}${pair._1}" == '2012'
+
+var pair2 = (34, $pair)
+assert "${pair2._1._0}${pair2._1._1}${pair2._0}" == '1234'
+
+## Boolean
+var d = $true
+assert("this is true" == "this is $d")
+assert("this is true" == "this is $true")
+assert("this is false" == "this is $false")
+
+assert("this is true" == "this is ${d}")
+assert("this is true" == "this is ${true}")
+assert("this is false" == "this is ${false}")
+
+## Float
+assert "${3.14}" == 3.14 as String
+assert "${3.14/0.0}" == (3.14/0.0) as String
+assert "${-3.1/0.0}" == (-3.1/0.0) as String
+assert "${0.0/0.0}" == (0.0/0.0) as String
+
+## String
+assert "${$'AA\0BB'}".size() == 5
+assert "${$'AA\x00BB'}" == $'AA\x00BB'
+assert "${"ab cd " } " == 'ab cd  '
+
+## Signal
+assert "${%'INT'}" == %'INT' as String
+
+## Error
+assert "${new Error("hello")}" == (new Error("hello")) as String
+
+## Regex
+assert "${$/34/}" == $/34/ as String
+
+## UnixFD
+assert "$STDIN" == $STDIN as String
+
+## Array
+assert "${[12,34]}" == "12 34"
+assert "${[['a','b'],['c','d','e']]}" == "a b c d e"
+
+## Map
+assert "${[23:34]}" == "[23 : 34]"
+
+## Tuple
+assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'
+
+## Record
+typedef AAA($a : Int, $b : String) {
+    var aaa = $a
+    var bbb = $b
+}
+assert "${new AAA(-90, 'hey')}" == '-90 hey'
+assert "${new AAA(-90, '')}" == '-90 '

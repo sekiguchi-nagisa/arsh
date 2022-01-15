@@ -285,28 +285,6 @@ assert $icount == 1
 assert "AbcDEf".lower() == "abcdef"
 assert "AbcDEf".upper() == "ABCDEF"
 
-# string interpolation
-$a = "西暦${1900 + 114}年"
-$b = "西暦\${1900 + 114}年"
-
-assert($a == "西暦2014年")
-assert($b == '西暦${1900 + 114}年')
-
-var pair = (1,2)
-assert "20${pair._0}${pair._1}" == '2012'
-
-var pair2 = (34, $pair)
-assert "${pair2._1._0}${pair2._1._1}${pair2._0}" == '1234'
-
-var d = $true
-assert("this is true" == "this is $d")
-assert("this is true" == "this is $true")
-assert("this is false" == "this is $false")
-
-assert("this is true" == "this is ${d}")
-assert("this is true" == "this is ${true}")
-assert("this is false" == "this is ${false}")
-
 # string cast
 assert(("fre" + 3.14) is String)
 assert("hey" + $true == 'heytrue')

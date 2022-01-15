@@ -170,13 +170,10 @@ bool DSValue::opInterp(DSState &state) const {
     switch (this->get()->getKind()) {
     case ObjectKind::Array:
       return typeAs<ArrayObject>(*this).opInterp(state);
-    case ObjectKind::Base: {
-      auto &type = state.typePool.get(this->getTypeID());
-      if (type.isTupleType()) {
-        return typeAs<BaseObject>(*this).opInterpAsTuple(state);
-      }
-      break;
-    }
+    case ObjectKind::Base:
+      assert(state.typePool.get(this->getTypeID()).isTupleType());
+      assert(state.typePool.get(this->getTypeID()).isRecordType());
+      return typeAs<BaseObject>(*this).opInterpAsTupleRecord(state);
     default:
       break;
     }
@@ -589,7 +586,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
   return true;
 }
 
-bool BaseObject::opInterpAsTuple(DSState &state) const {
+bool BaseObject::opInterpAsTupleRecord(DSState &state) const {
   assert(state.typePool.get(this->getTypeID()).isTupleType());
 
   unsigned int size = this->getFieldSize();

@@ -876,7 +876,7 @@ public:
 
   // for tuple type
   bool opStrAsTuple(DSState &state) const;
-  bool opInterpAsTuple(DSState &state) const;
+  bool opInterpAsTupleRecord(DSState &state) const;
   DSValue opCmdArgAsTuple(DSState &state) const;
 };
 
