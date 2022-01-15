@@ -62,37 +62,21 @@ using RuntimeContext = DSState;
 //!bind: function $OP_STR($this : Any) : String
 YDSH_METHOD to_str(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_str);
-  bool hasRet = ctx.toStrBuf.empty();
-  if (!LOCAL(0).opStr(ctx)) {
-    ctx.toStrBuf.clear();
+  StrBuilder builder(ctx);
+  if (!LOCAL(0).opStr(builder)) {
     RET_ERROR;
   }
-
-  if (hasRet) {
-    std::string value;
-    std::swap(value, ctx.toStrBuf);
-    RET(DSValue::createStr(std::move(value)));
-  } else {
-    RET(DSValue::createInvalid()); // dummy
-  }
+  RET(std::move(builder).take());
 }
 
 //!bind: function $OP_INTERP($this : Any) : String
 YDSH_METHOD to_interp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_interp);
-  bool hasRet = ctx.toStrBuf.empty();
-  if (!LOCAL(0).opInterp(ctx)) {
-    ctx.toStrBuf.clear();
+  StrBuilder builder(ctx);
+  if (!LOCAL(0).opInterp(builder)) {
     RET_ERROR;
   }
-
-  if (hasRet) {
-    std::string value;
-    std::swap(value, ctx.toStrBuf);
-    RET(DSValue::createStr(std::move(value)));
-  } else {
-    RET(DSValue::createInvalid()); // dummy
-  }
+  RET(std::move(builder).take());
 }
 
 // ###################
@@ -1451,29 +1435,15 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto delim = LOCAL(1).asStrRef();
 
-  bool hasRet = ctx.toStrBuf.empty();
+  StrBuilder builder(ctx);
   size_t count = 0;
   for (auto &e : obj.getValues()) {
     if (count++ > 0) {
-      ctx.toStrBuf += delim;
+      TRY(builder.add(delim));
     }
-    if (e.isInvalid()) {
-      raiseError(ctx, TYPE::UnwrappingError, "invalid value");
-      RET_ERROR;
-    }
-    if (!e.opStr(ctx)) {
-      ctx.toStrBuf.clear();
-      RET_ERROR;
-    }
+    TRY(e.opStr(builder));
   }
-
-  if (hasRet) {
-    std::string value;
-    std::swap(value, ctx.toStrBuf);
-    RET(DSValue::createStr(std::move(value)));
-  } else {
-    RET(DSValue::createInvalid()); // dummy
-  }
+  RET(std::move(builder).take());
 }
 
 /*//!bind: function map($this : Array<T0>, $mapper : Func<T1,[T0]>) : Array<T1>

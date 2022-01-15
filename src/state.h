@@ -294,7 +294,6 @@ private:
 
 class RecursionGuard {
 private:
-  static constexpr unsigned int LIMIT = 256;
   VMState &st;
 
 public:
@@ -302,7 +301,7 @@ public:
 
   ~RecursionGuard() { this->st.decRecDepth(); }
 
-  bool checkLimit() { return this->st.recDepth() != LIMIT; }
+  bool checkLimit() { return this->st.recDepth() != SYS_LIMIT_NATIVE_RECURSION; }
 };
 
 } // namespace ydsh

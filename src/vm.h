@@ -134,11 +134,6 @@ public:
 
   JobTable jobTable;
 
-  /**
-   * for OP_STR.
-   */
-  std::string toStrBuf;
-
 private:
   friend class ydsh::VM;
 

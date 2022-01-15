@@ -304,6 +304,8 @@ struct ObjectConstructor {
   static DSObject *construct(Arg &&...arg) { return new T(std::forward<Arg>(arg)...); }
 };
 
+class StrBuilder;
+
 class DSValue : public DSValueBase {
 private:
   static_assert(sizeof(DSValueBase) == 16);
@@ -481,15 +483,19 @@ public:
 
   const char *asCStr() const { return this->asStrRef().data(); }
 
+  /**
+   * get light-weight string representation
+   * @return
+   */
   std::string toString() const;
 
   /**
-   * OP_STR method implementation. write result to `toStrBuf'
-   * @param state
+   * OP_STR method implementation
+   * @param builder
    * @return
    * if has error, return false
    */
-  bool opStr(DSState &state) const;
+  bool opStr(StrBuilder &builder) const;
 
   /**
    * OP_INTERP method implementation. write result to 'toStrBuf'
@@ -497,7 +503,7 @@ public:
    * @return
    * if has error, return false
    */
-  bool opInterp(DSState &state) const;
+  bool opInterp(StrBuilder &builder) const;
 
   /**
    * for HashMap
@@ -652,6 +658,26 @@ inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, boo
   return left.appendAsStr(state, right.asStrRef());
 }
 
+class StrBuilder {
+private:
+  DSState &state;
+  DSValue buf; // must be String
+  ssize_t callCount{0};
+
+public:
+  explicit StrBuilder(DSState &st) : state(st), buf(DSValue::createStr("")) {}
+
+  bool add(StringRef value) { return this->buf.appendAsStr(this->state, value); }
+
+  DSState &getState() const { return this->state; }
+
+  DSValue take() && { return std::move(this->buf); }
+
+  bool incCallCount() { return this->callCount++ != SYS_LIMIT_NATIVE_RECURSION; }
+
+  void decCallCount() { this->callCount--; }
+};
+
 inline DSValue exitStatusToBool(int64_t s) { return DSValue::createBool(s == 0); }
 
 class ArrayObject;
@@ -718,8 +744,8 @@ public:
   size_t size() const { return this->values.size(); }
 
   std::string toString() const;
-  bool opStr(DSState &state) const;
-  bool opInterp(DSState &state) const;
+  bool opStr(StrBuilder &builder) const;
+  bool opInterp(StrBuilder &builder) const;
   DSValue opCmdArg(DSState &state) const;
 
   void append(DSValue &&obj) { this->values.push_back(std::move(obj)); }
@@ -822,7 +848,7 @@ public:
   }
 
   std::string toString() const;
-  bool opStr(DSState &state) const;
+  bool opStr(StrBuilder &builder) const;
 
   DSValue iter() { return DSValue::create<MapIterObject>(*this); }
 };
@@ -886,8 +912,8 @@ public:
   unsigned int getFieldSize() const { return this->fieldSize; }
 
   // for tuple type
-  bool opStrAsTuple(DSState &state) const;
-  bool opInterpAsTupleRecord(DSState &state) const;
+  bool opStrAsTuple(StrBuilder &builder) const;
+  bool opInterpAsTupleRecord(StrBuilder &builder) const;
   DSValue opCmdArgAsTuple(DSState &state) const;
 };
 
@@ -947,7 +973,7 @@ public:
       : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)),
         stackTrace(std::move(stackTrace)) {}
 
-  bool opStr(DSState &state) const;
+  bool opStr(StrBuilder &builder) const;
 
   const DSValue &getMessage() const { return this->message; }
 
@@ -968,9 +994,6 @@ public:
   }
 
   static DSValue newError(const DSState &state, const DSType &type, DSValue &&message);
-
-private:
-  std::string createHeader(const DSState &state) const;
 };
 
 enum class CodeKind : unsigned char {

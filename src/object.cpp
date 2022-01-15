@@ -141,44 +141,57 @@ std::string DSValue::toString() const {
   }
 }
 
-bool DSValue::opStr(DSState &state) const {
+bool DSValue::opStr(StrBuilder &builder) const {
+  if (!builder.incCallCount()) {
+    raiseError(builder.getState(), TYPE::StackOverflowError, "recursiopn depth reaches limit");
+    return false;
+  }
+  auto cleanup = finally([&builder] { builder.decCallCount(); });
+  if (this->isInvalid()) {
+    raiseError(builder.getState(), TYPE::UnwrappingError, "invalid value");
+    return false;
+  }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
     case ObjectKind::Array:
-      return typeAs<ArrayObject>(*this).opStr(state);
+      return typeAs<ArrayObject>(*this).opStr(builder);
     case ObjectKind::Map:
-      return typeAs<MapObject>(*this).opStr(state);
+      return typeAs<MapObject>(*this).opStr(builder);
     case ObjectKind::Base: {
-      auto &type = state.typePool.get(this->getTypeID());
+      auto &type = builder.getState().typePool.get(this->getTypeID());
       if (type.isTupleType()) {
-        return typeAs<BaseObject>(*this).opStrAsTuple(state);
+        return typeAs<BaseObject>(*this).opStrAsTuple(builder);
       }
       break;
     }
     case ObjectKind::Error:
-      return typeAs<ErrorObject>(*this).opStr(state);
+      return typeAs<ErrorObject>(*this).opStr(builder);
     default:
       break;
     }
   }
-  state.toStrBuf += this->toString();
-  return true;
+  return builder.add(this->toString());
 }
 
-bool DSValue::opInterp(DSState &state) const {
+bool DSValue::opInterp(StrBuilder &builder) const {
+  if (!builder.incCallCount()) {
+    raiseError(builder.getState(), TYPE::StackOverflowError, "recursiopn depth reaches limit");
+    return false;
+  }
+  auto cleanup = finally([&builder] { builder.decCallCount(); });
   if (this->isObject()) {
     switch (this->get()->getKind()) {
     case ObjectKind::Array:
-      return typeAs<ArrayObject>(*this).opInterp(state);
+      return typeAs<ArrayObject>(*this).opInterp(builder);
     case ObjectKind::Base:
-      assert(state.typePool.get(this->getTypeID()).isTupleType() ||
-             state.typePool.get(this->getTypeID()).isRecordType());
-      return typeAs<BaseObject>(*this).opInterpAsTupleRecord(state);
+      assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
+             builder.getState().typePool.get(this->getTypeID()).isRecordType());
+      return typeAs<BaseObject>(*this).opInterpAsTupleRecord(builder);
     default:
       break;
     }
   }
-  return this->opStr(state);
+  return this->opStr(builder);
 }
 
 bool DSValue::equals(const DSValue &o) const {
@@ -399,50 +412,32 @@ std::string ArrayObject::toString() const {
   return str;
 }
 
-static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
-  DSValue ret = value;
-  if (!checkInvalid(state, ret)) {
-    return DSValue();
-  }
-  auto &type = state.typePool.get(ret.getTypeID());
-  if (!type.is(TYPE::String)) {
-    auto *handle = state.typePool.lookupMethod(type, op);
-    assert(handle != nullptr);
-    ret = VM::callMethod(state, *handle, std::move(ret), makeArgs());
-  }
-  return ret;
-}
+#define TRY2(E)                                                                                    \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
 
-bool ArrayObject::opStr(DSState &state) const {
-  state.toStrBuf += "[";
+bool ArrayObject::opStr(StrBuilder &builder) const {
+  TRY2(builder.add("["));
   unsigned int size = this->values.size();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      state.toStrBuf += ", ";
+      TRY2(builder.add(", "));
     }
-
-    auto ret = TRY(callOP(state, this->values[i], OP_STR));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
+    TRY2(this->values[i].opStr(builder));
   }
-  state.toStrBuf += "]";
-  return true;
+  return builder.add("]");
 }
 
-bool ArrayObject::opInterp(DSState &state) const {
+bool ArrayObject::opInterp(StrBuilder &builder) const {
   unsigned int size = this->values.size();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      state.toStrBuf += " ";
+      TRY2(builder.add(" "));
     }
-
-    auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
+    TRY2(this->values[i].opInterp(builder));
   }
   return true;
 }
@@ -517,32 +512,18 @@ std::string MapObject::toString() const {
   return str;
 }
 
-bool MapObject::opStr(DSState &state) const {
-  state.toStrBuf += "[";
+bool MapObject::opStr(StrBuilder &builder) const {
+  TRY2(builder.add("["));
   unsigned int count = 0;
   for (auto &e : this->valueMap) {
     if (count++ > 0) {
-      state.toStrBuf += ", ";
+      TRY2(builder.add(", "));
     }
-
-    // key
-    auto ret = TRY(callOP(state, e.first, OP_STR));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
-
-    state.toStrBuf += " : ";
-
-    // value
-    ret = TRY(callOP(state, e.second, OP_STR));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
+    TRY2(e.first.opStr(builder)); // key
+    TRY2(builder.add(" : "));
+    TRY2(e.second.opStr(builder)); // value
   }
-  state.toStrBuf += "]";
-  return true;
+  return builder.add("]");
 }
 
 // ###########################
@@ -573,44 +554,33 @@ BaseObject::~BaseObject() {
   }
 }
 
-bool BaseObject::opStrAsTuple(DSState &state) const {
-  assert(state.typePool.get(this->getTypeID()).isTupleType());
+bool BaseObject::opStrAsTuple(StrBuilder &builder) const {
+  assert(builder.getState().typePool.get(this->getTypeID()).isTupleType());
 
-  state.toStrBuf += "(";
+  TRY2(builder.add("("));
   unsigned int size = this->getFieldSize();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      state.toStrBuf += ", ";
+      TRY2(builder.add(", "));
     }
-
-    auto ret = TRY(callOP(state, (*this)[i], OP_STR));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
+    TRY2((*this)[i].opStr(builder));
   }
   if (size == 1) {
-    state.toStrBuf += ",";
+    TRY2(builder.add(","));
   }
-  state.toStrBuf += ")";
-  return true;
+  return builder.add(")");
 }
 
-bool BaseObject::opInterpAsTupleRecord(DSState &state) const {
-  assert(state.typePool.get(this->getTypeID()).isTupleType() ||
-         state.typePool.get(this->getTypeID()).isRecordType());
+bool BaseObject::opInterpAsTupleRecord(StrBuilder &builder) const {
+  assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
+         builder.getState().typePool.get(this->getTypeID()).isRecordType());
 
   unsigned int size = this->getFieldSize();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      state.toStrBuf += " ";
+      TRY2(builder.add(" "));
     }
-
-    auto ret = TRY(callOP(state, (*this)[i], OP_INTERP));
-    if (!ret.isInvalid()) {
-      auto ref = ret.asStrRef();
-      state.toStrBuf += ref;
-    }
+    TRY2((*this)[i].opInterp(builder));
   }
   return true;
 }
@@ -632,14 +602,20 @@ DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
 // ##     Error_Object     ##
 // ##########################
 
-bool ErrorObject::opStr(DSState &state) const {
-  state.toStrBuf += this->createHeader(state);
-  return true;
+bool ErrorObject::opStr(StrBuilder &builder) const {
+  auto ref = this->message.asStrRef();
+  return builder.add(builder.getState().typePool.get(this->getTypeID()).getNameRef()) &&
+         builder.add(": ") && builder.add(ref);
 }
 
-void ErrorObject::printStackTrace(DSState &ctx) {
+void ErrorObject::printStackTrace(DSState &state) {
+  StrBuilder builder(state);
+  if (!this->opStr(builder)) {
+    return;
+  }
+
   // print header
-  fprintf(stderr, "%s\n", this->createHeader(ctx).c_str());
+  fprintf(stderr, "%s\n", std::move(builder).take().asCStr());
 
   // print stack trace
   for (auto &s : this->stackTrace) {
@@ -652,14 +628,6 @@ DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue 
   auto traces = state.getCallStack().createStackTrace();
   auto name = DSValue::createStr(type.getName());
   return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
-}
-
-std::string ErrorObject::createHeader(const DSState &state) const {
-  auto ref = this->message.asStrRef();
-  std::string str = state.typePool.get(this->getTypeID()).getNameRef().toString();
-  str += ": ";
-  str += ref;
-  return str;
 }
 
 // ##########################
