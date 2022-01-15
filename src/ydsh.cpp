@@ -243,7 +243,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
   if (args) {
     for (unsigned int i = 0; args[i] != nullptr; i++) {
       auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-      array.append(DSValue::createStr(args[i]));
+      array.append(DSValue::createStr(args[i])); // FIXME: check limit
     }
   }
   finalizeScriptArg(st);

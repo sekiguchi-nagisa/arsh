@@ -321,8 +321,9 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
       bool set = this->re.getCaptureAt(i, capture);
       auto v = set ? DSValue::createStr(ref.slice(capture.begin, capture.end))
                    : DSValue::createInvalid();
-      out->refValues().push_back(std::move(v));
+      out->append(std::move(v));
     }
+    ASSERT_ARRAY_SIZE(*out);
   }
   return matchCount;
 }
@@ -486,6 +487,15 @@ DSValue ArrayObject::opCmdArg(DSState &state) const {
     }
   }
   return result;
+}
+
+bool ArrayObject::append(DSState &state, DSValue &&obj) {
+  if (this->size() == MAX_SIZE) {
+    raiseError(state, TYPE::OutOfRangeError, std::string("reach Array size limit"));
+    return false;
+  }
+  this->values.push_back(std::move(obj));
+  return true;
 }
 
 // ########################

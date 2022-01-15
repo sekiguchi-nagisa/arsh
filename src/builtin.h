@@ -601,9 +601,11 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto &array = typeAs<ArrayObject>(value);
   while (scanner.next(ret)) {
-    typeAs<ArrayObject>(value).append(DSValue::createStr(ret.ref));
+    array.append(DSValue::createStr(ret.ref));
   }
+  ASSERT_ARRAY_SIZE(array);
   RET(value);
 }
 
@@ -837,6 +839,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
       pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
     }
   }
+  ASSERT_ARRAY_SIZE(ptr);
   RET(results);
 }
 
@@ -1157,6 +1160,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
   for (auto &e : getUniqueSignalList()) {
     array.append(DSValue::createSig(e));
   }
+  ASSERT_ARRAY_SIZE(array);
   RET(v);
 }
 
@@ -1362,11 +1366,7 @@ YDSH_METHOD array_addAll(RuntimeContext &ctx) {
   if (&obj != &value) {
     size_t valueSize = value.getValues().size();
     for (size_t i = 0; i < valueSize; i++) {
-      if (obj.getValues().size() == ArrayObject::MAX_SIZE) {
-        raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
-        RET_ERROR;
-      }
-      obj.append(value.getValues()[i]);
+      TRY(obj.append(ctx, DSValue(value.getValues()[i])));
     }
   }
   RET(LOCAL(0));

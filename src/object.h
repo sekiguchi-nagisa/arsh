@@ -726,6 +726,15 @@ public:
 
   void append(const DSValue &obj) { this->values.push_back(obj); }
 
+  /**
+   * append and check array size limit
+   * @param state
+   * @param obj
+   * @return
+   * if has error (reach array size limit), return false
+   */
+  [[nodiscard]] bool append(DSState &state, DSValue &&obj);
+
   DSValue takeFirst() {
     auto v = this->values.front();
     this->values.erase(values.begin());
@@ -737,6 +746,8 @@ public:
               [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
   }
 };
+
+#define ASSERT_ARRAY_SIZE(obj) assert((obj).size() <= ArrayObject::MAX_SIZE)
 
 struct KeyCompare {
   bool operator()(const DSValue &x, const DSValue &y) const { return x.equals(y); }

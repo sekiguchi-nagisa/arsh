@@ -170,7 +170,7 @@ public:
   explicit DefaultCompConsumer(ArrayObject &obj) : reply(obj) {}
 
   void consume(std::string &&value, CompCandidateKind, int) override {
-    this->reply.append(DSValue::createStr(value));
+    this->reply.append(DSValue::createStr(value)); // FIXME: check array size limit
   }
 };
 
@@ -255,6 +255,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
     return x.asStrRef() == y.asStrRef();
   });
   values.erase(iter, values.end());
+  ASSERT_ARRAY_SIZE(compreply); // FIXME: check array size limit
 
   // override COMPREPLY
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result));

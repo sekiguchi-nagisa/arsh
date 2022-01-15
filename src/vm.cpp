@@ -121,11 +121,12 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
   obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
 
   for (unsigned int i = 0; i < size; i++) {
-    obj.refValues().push_back(DSValue::createInt(procs[i].exitStatus()));
+    obj.append(DSValue::createInt(procs[i].exitStatus()));
   }
   if (mergeExitStatus) {
-    obj.refValues().push_back(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
+    obj.append(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
   }
+  ASSERT_ARRAY_SIZE(obj);
 }
 
 namespace ydsh {
@@ -308,7 +309,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
       }
       skipCount = 0;
       if (fieldSep) {
-        array.append(DSValue::createStr(std::move(str)));
+        array.append(DSValue::createStr(std::move(str))); // FIXME: check array size limit
         str = "";
         skipCount = isSpace(ch) ? 2 : 1;
         continue;
@@ -323,7 +324,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
   // append remain
   if (!str.empty() || !hasSpace(ifsRef)) {
-    array.append(DSValue::createStr(std::move(str)));
+    array.append(DSValue::createStr(std::move(str))); // FIXME: checl array size limit
   }
 
   return obj;
@@ -1500,7 +1501,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(APPEND_ARRAY) {
         DSValue v = state.stack.pop();
-        typeAs<ArrayObject>(state.stack.peek()).append(std::move(v));
+        TRY(typeAs<ArrayObject>(state.stack.peek()).append(state, std::move(v)));
         vmnext;
       }
       vmcase(APPEND_MAP) {
