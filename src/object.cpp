@@ -597,7 +597,8 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
 }
 
 bool BaseObject::opInterpAsTupleRecord(DSState &state) const {
-  assert(state.typePool.get(this->getTypeID()).isTupleType());
+  assert(state.typePool.get(this->getTypeID()).isTupleType() ||
+         state.typePool.get(this->getTypeID()).isRecordType());
 
   unsigned int size = this->getFieldSize();
   for (unsigned int i = 0; i < size; i++) {
