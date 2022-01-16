@@ -78,3 +78,7 @@ assert $ddd.next!.next!.data == '@@'
 assert $ddd.next!.next!.next!.data == '@'
 assert $ddd.next!.next!.next!.next!.data == ''
 assert ! $ddd.next!.next!.next!.next!.next
+
+## string representation
+assert (new Empty() as String) == "{}"
+assert (new AAA() as String) == "{a : 34, b : c}"

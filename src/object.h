@@ -905,7 +905,7 @@ public:
   unsigned int getFieldSize() const { return this->fieldSize; }
 
   // for tuple type
-  bool opStrAsTuple(StrBuilder &builder) const;
+  bool opStrAsTupleRecord(StrBuilder &builder) const;
 };
 
 template <typename... Arg>

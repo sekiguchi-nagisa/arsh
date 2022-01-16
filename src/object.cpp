@@ -169,13 +169,8 @@ bool DSValue::opStr(StrBuilder &builder) const {
       return typeAs<ArrayObject>(*this).opStr(builder);
     case ObjectKind::Map:
       return typeAs<MapObject>(*this).opStr(builder);
-    case ObjectKind::Base: {
-      auto &type = builder.getState().typePool.get(this->getTypeID());
-      if (type.isTupleType()) {
-        return typeAs<BaseObject>(*this).opStrAsTuple(builder);
-      }
-      break;
-    }
+    case ObjectKind::Base:
+      return typeAs<BaseObject>(*this).opStrAsTupleRecord(builder);
     case ObjectKind::Error:
       return typeAs<ErrorObject>(*this).opStr(builder);
     default:
@@ -504,21 +499,44 @@ BaseObject::~BaseObject() {
   }
 }
 
-bool BaseObject::opStrAsTuple(StrBuilder &builder) const {
-  assert(builder.getState().typePool.get(this->getTypeID()).isTupleType());
-
-  TRY(builder.add("("));
-  unsigned int size = this->getFieldSize();
-  for (unsigned int i = 0; i < size; i++) {
-    if (i > 0) {
-      TRY(builder.add(", "));
+bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
+  auto &type = builder.getState().typePool.get(this->getTypeID());
+  if (type.isTupleType()) {
+    TRY(builder.add("("));
+    unsigned int size = this->getFieldSize();
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        TRY(builder.add(", "));
+      }
+      TRY((*this)[i].opStr(builder));
     }
-    TRY((*this)[i].opStr(builder));
+    if (size == 1) {
+      TRY(builder.add(","));
+    }
+    return builder.add(")");
+  } else {
+    assert(type.isRecordType());
+    auto &recordType = cast<RecordType>(type);
+    TRY(builder.add("{"));
+    unsigned int size = this->getFieldSize();
+    std::vector<StringRef> buf;
+    buf.resize(size);
+    for (auto &e : recordType.getHandleMap()) {
+      if (e.second->has(HandleAttr::TYPE_ALIAS)) {
+        continue;
+      }
+      buf[e.second->getIndex()] = e.first;
+    }
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        TRY(builder.add(", "));
+      }
+      TRY(builder.add(buf[i]));
+      TRY(builder.add(" : "));
+      TRY((*this)[i].opStr(builder));
+    }
+    return builder.add("}");
   }
-  if (size == 1) {
-    TRY(builder.add(","));
-  }
-  return builder.add(")");
 }
 
 bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
