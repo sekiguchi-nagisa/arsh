@@ -10,3 +10,9 @@ function test() : String {
 }
 
 typedef _Comp = typeof($COMP_HOOK!)
+
+typedef _Sum($a : Int, $b : Int) {
+    var value = $a + $b
+}
+
+typedef Sum = _Sum

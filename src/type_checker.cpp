@@ -1574,7 +1574,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node,
       node.setVarIndex(ret.asOk()->getIndex());
       node.setResolvedType(recordType);
     } else {
-      this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
+      this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
     }
   }
 }

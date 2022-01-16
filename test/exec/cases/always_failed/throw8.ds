@@ -1,0 +1,10 @@
+#$test($result = 'throw', $lineNum = 6, $errorKind = 'ArithmeticError', $status = 1)
+
+typedef Div($a : Int, $b : Int) {
+    let x = $a
+    let y = $b
+    let r = $a / $b
+}
+
+var d = new Div(99,11)
+$d = new Div(80,0)

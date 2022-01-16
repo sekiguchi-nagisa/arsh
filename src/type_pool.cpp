@@ -119,6 +119,7 @@ DSType *TypePool::addType(DSType *type) {
     }
     return type;
   }
+  type->destroy();
   return nullptr;
 }
 

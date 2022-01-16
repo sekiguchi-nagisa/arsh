@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 6, $chars = 19, $errorKind = 'InsideFunc', $status = 1)
+
+typedef AAA($a : String) {
+    let path = $a
+    test -f $a || return
+    let full = $path.realpath() ?? return
+}

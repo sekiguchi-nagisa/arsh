@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 8, $chars = 18, $errorKind = 'PrivateField', $status = 1, $fileName = './always_failed/mod_private5.ds')
+
+source ../../_module4test/private.ds as mod
+
+var a = new mod.Sum(23,27)
+assert $a.value == 50
+
+assert $a is mod._Sum

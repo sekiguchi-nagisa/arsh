@@ -1,3 +1,9 @@
-#$test($result = 'type', $status = 1, $chars = 9, $errorKind = 'DefinedTypeAlias', $lineNum = 3)
+#$test($result = 'type', $status = 1, $chars = 5, $errorKind = 'OutsideToplevel', $lineNum = 6)
 
-typedef Int : Error
+typedef AAA {
+    typedef BBB = Int
+
+    typedef CCC {
+        var value = 34
+    }
+}
