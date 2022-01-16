@@ -1,4 +1,4 @@
-# not allow String Array type in redirection target
+# not allow void expression in command arguments
 
 #$test($result = 'type', $lineNum = 7, $chars = 6, $errorKind = 'Unacceptable', $status = 1)
 

@@ -1,0 +1,19 @@
+#$test($status = 1)
+
+function comp($a : [Int], $b : [Int]) : Bool {
+    echo ${[$a, $b].sortWith($comp)}
+    return $true
+}
+
+var a = [[234]]
+for (var i = 0; $i < 100; $i++) {
+    var b = [1]
+    for(var j = 0; $j < 20; $j++) {
+        $b.add($RANDOM)
+    }
+    $a.add($b)
+}
+
+var ex : Any!
+try { $a.sortWith($comp); assert $false; } catch $e { $ex = $e; }
+assert $ex! is StackOverflowError

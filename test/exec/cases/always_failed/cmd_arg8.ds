@@ -1,0 +1,6 @@
+# not allow command argument of Any type
+
+#$test($result = 'type', $lineNum = 6, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
+
+
+echo ${ 23 as Any}   # not allow

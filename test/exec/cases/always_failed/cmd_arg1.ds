@@ -1,4 +1,4 @@
-# not allow command argument concatenation of String Array type
+# not allow command argument concatenation of Array type
 
 #$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'Unacceptable', $status = 1)
 
