@@ -564,11 +564,12 @@ void terminate(int exitStatus) {
 #ifdef CODE_COVERAGE
   /*
    * after call _exit(), not write coverage information due to skip atexit handler.
-   * in order to write coverage information, manually call __gcove_flush()
+   * in order to write coverage information, call exit()
    */
-  __gcov_flush();
-#endif
+  exit(exitStatus);
+#else
   _exit(exitStatus);
+#endif
 }
 
 } // namespace ydsh
