@@ -183,6 +183,9 @@ bool DSValue::opStr(StrBuilder &builder) const {
 bool DSValue::opInterp(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
+  if (this->isInvalid()) {
+    return true;
+  }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
     case ObjectKind::Array: {
@@ -541,6 +544,10 @@ bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
 
 bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
   GUARD_RECURSION(this->state);
+
+  if (arg.isInvalid()) {
+    return true; // do nothing
+  }
 
   if (arg.hasStrRef()) {
     if (skipEmptyStr && arg.asStrRef().empty()) {

@@ -1,4 +1,4 @@
-#$test($status = 1)
+#$test($status = 0)
 
 function opt($v : Int) : Option<String> {
     return $v > -1 ? "hello" : new Option<String>()
@@ -69,8 +69,8 @@ assert $ex is UnwrappingError
 
 assert "${[3 as Int!]}" == '3'
 $ex = 0
-try { "${(2, $false, new Error!())}" }  catch $e { $ex = $e}
-assert $ex is UnwrappingError
+try { assert "${(2, $false, new Error!())}" == '2 false '; }  catch $e { $ex = $e}
+# assert $ex is UnwrappingError
 
 assert "$(echo ${[$false as Boolean!]})" == 'false'
 $ex = 34
@@ -78,7 +78,8 @@ try { echo ${['s' : new Float!()]}; }  catch $e { $ex = $e }
 assert $ex is UnwrappingError
 $ex = 43
 try { echo ${(new Float!(),)}; } catch $e { $ex = $e }
-assert $ex is UnwrappingError
+assert !($ex is UnwrappingError)
+assert $ex as Int == 43
 
 # type
 assert !(new Int!() is Int)

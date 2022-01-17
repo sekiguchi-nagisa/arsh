@@ -44,6 +44,8 @@
 - **Breaking Change**: change parameter expansion typechecking
     - change error message when pass ``Option<T>`` to command arguments
     - not accept ``Any`` type
+- **Breaking Change**: change invalid valud handling of string interpolation/parameter expansion
+    - if contains invalid values, just ignore theme
 - improve error reporting of module private member access
 - improve error message of read-only symbol/field checking
 
