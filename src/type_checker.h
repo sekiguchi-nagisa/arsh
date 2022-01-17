@@ -470,6 +470,8 @@ private:
   void checkTypeAsBreakContinue(JumpNode &node);
   void checkTypeAsReturn(JumpNode &node);
 
+  void registerRecordType(FunctionNode &node);
+
   void registerFuncHandle(FunctionNode &node, const std::vector<const DSType *> &paramTypes);
 
   void postprocessFuncion(FunctionNode &node, const DSType *returnType,

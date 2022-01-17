@@ -206,7 +206,7 @@ public:
                                   const DSType &returnType,
                                   const std::vector<const DSType *> &paramTypes);
 
-  NameRegisterResult defineConstructor(const DSType &recvType,
+  NameRegisterResult defineConstructor(const RecordType &recvType,
                                        const std::vector<const DSType *> &paramTypes) {
     return this->defineMethod(recvType, OP_INIT, recvType, paramTypes);
   }

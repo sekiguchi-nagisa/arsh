@@ -1,4 +1,6 @@
 
+#$test($status = 1)
+
 # constructor without params
 typedef Empty {}
 var ee = new Empty()
@@ -82,3 +84,6 @@ assert ! $ddd.next!.next!.next!.next!.next
 ## string representation
 assert (new Empty() as String) == "{}"
 assert (new AAA() as String) == "{a : 34, b : c}"
+var ex : Any!
+try { assert !($ddd as String).empty(); } catch $e { $ex = $e; }
+assert $ex is UnwrappingError

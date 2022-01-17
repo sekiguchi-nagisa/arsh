@@ -1544,6 +1544,22 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
   }
 }
 
+void TypeChecker::registerRecordType(FunctionNode &node) {
+  assert(node.isConstructor());
+  auto typeOrError = this->typePool.createRecordType(node.getFuncName(), this->curScope->modId);
+  if (typeOrError) {
+    auto &recordType = cast<RecordType>(*typeOrError.asOk());
+    if (this->curScope->defineTypeAlias(this->typePool, node.getFuncName(), recordType)) {
+      node.setResolvedType(recordType);
+    } else {
+      this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
+                                          node.getFuncName().c_str());
+    }
+  } else {
+    this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
+  }
+}
+
 void TypeChecker::registerFuncHandle(FunctionNode &node,
                                      const std::vector<const DSType *> &paramTypes) {
   if (node.getReturnTypeToken()) { // for named function
@@ -1562,19 +1578,10 @@ void TypeChecker::registerFuncHandle(FunctionNode &node,
       this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
     }
   } else if (node.isConstructor()) {
-    auto typeOrError = this->typePool.createRecordType(node.getFuncName(), this->curScope->modId);
-    if (typeOrError) {
-      auto &recordType = cast<RecordType>(*typeOrError.asOk());
-      if (!this->curScope->defineTypeAlias(this->typePool, node.getFuncName(), recordType)) {
-        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
-                                            node.getFuncName().c_str());
-      }
-      auto ret = this->curScope->defineConstructor(recordType, paramTypes);
+    if (auto *type = node.getResolvedType(); type && type->isRecordType()) {
+      auto ret = this->curScope->defineConstructor(cast<RecordType>(*type), paramTypes);
       assert(ret && ret.asOk()->isMethod());
       node.setVarIndex(ret.asOk()->getIndex());
-      node.setResolvedType(recordType);
-    } else {
-      this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
     }
   }
 }
@@ -1691,6 +1698,10 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   if (!this->curScope->isGlobal()) { // only available toplevel scope
     this->reportError<OutsideToplevel>(node);
     return;
+  }
+
+  if (node.isConstructor()) {
+    this->registerRecordType(node);
   }
 
   // resolve param type, return type

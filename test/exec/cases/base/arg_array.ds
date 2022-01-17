@@ -118,3 +118,13 @@ $args = @( ${ new Interval(4, 98) } )
 assert $args.size() == 2
 assert $args[0] == '4'
 assert $args[1] == '98'
+
+typedef List($a : String, $n : List!) {
+    let value = $a
+    let next = $n
+}
+var list = new List("a b", new List("cc", new List!()))
+$args = @( $list )
+assert $args.size() == 2
+assert $args[0] == 'a b'
+assert $args[1] == 'cc'
