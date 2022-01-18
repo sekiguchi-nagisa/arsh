@@ -69,4 +69,4 @@ typedef List($a : String, $n : List!) {
     let next = $n
 }
 var list = new List("a b", new List("cc", new List!()))
-assert "$list" == 'a b cc '
+assert "$list" == 'a b cc'

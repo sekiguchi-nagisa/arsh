@@ -69,7 +69,7 @@ assert $ex is UnwrappingError
 
 assert "${[3 as Int!]}" == '3'
 $ex = 0
-try { assert "${(2, $false, new Error!())}" == '2 false '; }  catch $e { $ex = $e}
+try { assert "${(2, $false, new Error!())}" == '2 false'; }  catch $e { $ex = $e}
 # assert $ex is UnwrappingError
 
 assert "$(echo ${[$false as Boolean!]})" == 'false'

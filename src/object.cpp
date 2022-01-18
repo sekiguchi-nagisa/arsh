@@ -183,19 +183,18 @@ bool DSValue::opStr(StrBuilder &builder) const {
 bool DSValue::opInterp(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
-  if (this->isInvalid()) {
-    return true;
-  }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
     case ObjectKind::Array: {
-      auto &arrayObj = typeAs<ArrayObject>(*this);
-      unsigned int size = arrayObj.size();
-      for (unsigned int i = 0; i < size; i++) {
-        if (i > 0) {
+      unsigned int count = 0;
+      for (auto &e : typeAs<ArrayObject>(*this).getValues()) {
+        if (e.isInvalid()) {
+          continue;
+        }
+        if (count++ > 0) {
           TRY(builder.add(" "));
         }
-        TRY(arrayObj.getValues()[i].opInterp(builder));
+        TRY(e.opInterp(builder));
       }
       return true;
     }
@@ -204,11 +203,16 @@ bool DSValue::opInterp(StrBuilder &builder) const {
       assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
              builder.getState().typePool.get(this->getTypeID()).isRecordType());
       unsigned int size = obj.getFieldSize();
+      unsigned int count = 0;
       for (unsigned int i = 0; i < size; i++) {
-        if (i > 0) {
+        auto &e = obj[i];
+        if (e.isInvalid()) {
+          continue;
+        }
+        if (count++ > 0) {
           TRY(builder.add(" "));
         }
-        TRY(obj[i].opInterp(builder));
+        TRY(e.opInterp(builder));
       }
       return true;
     }
