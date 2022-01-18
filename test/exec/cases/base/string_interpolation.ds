@@ -51,7 +51,7 @@ assert "${[12,34]}" == "12 34"
 assert "${[['a','b'],['c','d','e']]}" == "a b c d e"
 
 ## Map
-assert "${[23:34]}" == "[23 : 34]"
+assert "${[23:34 as Int!, 900: new Int!()]}" == "23 34"
 
 ## Tuple
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'

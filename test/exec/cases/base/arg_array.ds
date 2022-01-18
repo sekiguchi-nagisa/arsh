@@ -94,10 +94,14 @@ assert $args[0] == 'a'
 assert $args[1] == 'a b'
 
 ## Map
-var m = [34 : 'a', 45: 'b']
+var m = [34 : 'a' as String!, 9999: new String!(), 45: 'b' as String!]
 $args = @($m)
-assert $args.size() == 1
-assert $args[0] == $m as String
+assert $args.size() == 4
+$args.sort()
+assert $args[0] == '34'
+assert $args[1] == '45'
+assert $args[2] == 'a'
+assert $args[3] == 'b'
 
 ## Tuple
 $args = @(${(34,['','b','','c c'],($false,))})

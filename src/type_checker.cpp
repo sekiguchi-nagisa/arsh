@@ -718,7 +718,8 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
                !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
                !this->typePool.get(TYPE::UnixFD)
                     .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
-      if (exprType.isArrayType() || exprType.isTupleType() || exprType.isRecordType()) {
+      if (exprType.isArrayType() || exprType.isMapType() || exprType.isTupleType() ||
+          exprType.isRecordType()) {
         node.setType(this->typePool.get(TYPE::StringArray));
       } else if (auto *handle = this->typePool.lookupMethod(exprType, OP_STR)) {
         node.setHandle(handle);

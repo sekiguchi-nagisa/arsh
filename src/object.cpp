@@ -198,6 +198,19 @@ bool DSValue::opInterp(StrBuilder &builder) const {
       }
       return true;
     }
+    case ObjectKind::Map: {
+      unsigned int count = 0;
+      for (auto &e : typeAs<MapObject>(*this).getValueMap()) {
+        if (e.second.isInvalid()) {
+          continue;
+        }
+        if (count++ > 0) {
+          TRY(builder.add(" "));
+        }
+        TRY(e.first.opInterp(builder) && builder.add(" ") && e.second.opInterp(builder));
+      }
+      return true;
+    }
     case ObjectKind::Base: {
       auto &obj = typeAs<BaseObject>(*this);
       assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
@@ -574,13 +587,19 @@ bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
       }
       return r;
     }
-    case ObjectKind::Array: {
-      auto &arrayObj = typeAs<ArrayObject>(arg);
-      for (auto &e : arrayObj.getValues()) {
+    case ObjectKind::Array:
+      for (auto &e : typeAs<ArrayObject>(arg).getValues()) {
         TRY(this->add(DSValue(e)));
       }
       return true;
-    }
+    case ObjectKind::Map:
+      for (auto &e : typeAs<MapObject>(arg).getValueMap()) {
+        if (e.second.isInvalid()) {
+          continue;
+        }
+        TRY(this->add(DSValue(e.first)) && this->add(DSValue(e.second)));
+      }
+      return true;
     case ObjectKind::Base: {
       auto &obj = typeAs<BaseObject>(arg);
       unsigned int size = obj.getFieldSize();

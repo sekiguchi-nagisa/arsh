@@ -75,7 +75,7 @@ try { assert "${(2, $false, new Error!())}" == '2 false'; }  catch $e { $ex = $e
 assert "$(echo ${[$false as Boolean!]})" == 'false'
 $ex = 34
 try { echo ${['s' : new Float!()]}; }  catch $e { $ex = $e }
-assert $ex is UnwrappingError
+assert !($ex is UnwrappingError)
 $ex = 43
 try { echo ${(new Float!(),)}; } catch $e { $ex = $e }
 assert !($ex is UnwrappingError)
