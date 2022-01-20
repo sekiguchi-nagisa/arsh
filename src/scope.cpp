@@ -96,6 +96,9 @@ NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &typ
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
   }
+  if (type.isNothingType() || type.isVoidType()) {
+    return Err(NameRegisterError::INVALID_TYPE);
+  }
   return this->addNewHandle(std::move(name), type, attr);
 }
 
@@ -282,11 +285,6 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 
 NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRegisterOp op) {
   assert(this->kind != FUNC);
-
-  if (handle->getTypeId() == static_cast<unsigned int>(TYPE::Nothing) ||
-      handle->getTypeId() == static_cast<unsigned int>(TYPE::Void)) {
-    return Err(NameRegisterError::INVALID_TYPE);
-  }
 
   // check var index limit
   if (!hasFlag(op, NameRegisterOp::AS_ALIAS)) {

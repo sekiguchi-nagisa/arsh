@@ -25,3 +25,14 @@ assert !$hoge([23])
 assert !$hoge(3.14)
 assert !$hoge('fer')
 assert $hoge($@)
+
+typedef VVV = Void
+typedef NNN = Nothing
+
+function vvv() : VVV {}
+function nnn() : NNN { throw 23; }
+
+assert $vvv is () => Void
+assert $vvv is () -> VVV
+assert $nnn is () -> Nothing
+assert $nnn is () => NNN
