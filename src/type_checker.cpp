@@ -30,7 +30,7 @@ namespace ydsh {
 // ##     TypeChecker     ##
 // #########################
 
-TypeOrError TypeChecker::toType(TypeNode &node) {
+TypeOrError TypeChecker::toType(const TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
@@ -49,8 +49,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     auto ret = this->curScope->lookupField(this->typePool, recvType, typeName);
     if (ret) {
       auto &resolved = this->typePool.get(ret.asOk()->getTypeId());
-      qualifiedNode.setType(resolved);
-      return Ok(&qualifiedNode.getType());
+      return Ok(&resolved);
     } else {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       switch (ret.asErr()) {
@@ -117,6 +116,7 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
    */
   if (targetNode.isUntyped()) {
     this->visitingDepth++;
+    targetNode.setType(this->typePool.getUnresolvedType());
     targetNode.accept(*this);
     this->visitingDepth--;
   }
@@ -134,6 +134,8 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
     if (!type.isNothingType() && unacceptableType != nullptr &&
         unacceptableType->isSameOrBaseTypeOf(type)) {
       this->reportError<Unacceptable>(targetNode, type.getName());
+      targetNode.setType(this->typePool.getUnresolvedType());
+      return targetNode.getType();
     }
     return type;
   }
@@ -154,13 +156,16 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
   }
 
   this->reportError<Required>(targetNode, requiredType->getName(), type.getName());
-  return type;
+  targetNode.setType(this->typePool.getUnresolvedType());
+  return targetNode.getType();
 }
 
 const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   auto &type = this->checkTypeAsExpr(targetNode);
   if (type.isNothingType()) {
     this->reportError<Unacceptable>(targetNode, type.getName());
+    targetNode.setType(this->typePool.getUnresolvedType());
+    return targetNode.getType();
   }
   return type;
 }
@@ -244,7 +249,7 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
     if (auto ret = this->typePool.createOptionType(retType); ret) {
       return *std::move(ret).take();
     } else {
-      return this->typePool.get(TYPE::Nothing);
+      return this->typePool.getUnresolvedType();
     }
   } else {
     return retType;
@@ -291,7 +296,7 @@ const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   } else if (node.getReturnTypeNode()->getType().isNothingType()) {
     returnType = &this->typePool.get(TYPE::Nothing);
   }
-  auto *type = &this->typePool.get(TYPE::Void);
+  auto *type = &this->typePool.getUnresolvedType();
   if (returnType) {
     auto ret = this->typePool.createFuncType(*returnType, {&this->typePool.get(TYPE::StringArray)});
     assert(ret);
@@ -323,7 +328,7 @@ void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt
 
 // for ApplyNode type checking
 CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
-  CallableTypes callableTypes;
+  CallableTypes callableTypes(this->typePool.getUnresolvedType());
   auto &exprNode = node.getExprNode();
   if (exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
     auto &accessNode = cast<AccessNode>(exprNode);
@@ -458,7 +463,6 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
     if (ret.asErr()) {
       this->reportError(node.getToken(), std::move(*ret.asErr()));
     }
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
@@ -505,11 +509,8 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
   }
 
-  auto typeOrError = this->typePool.createArrayType(elementType);
-  if (typeOrError) {
+  if (auto typeOrError = this->typePool.createArrayType(elementType)) {
     node.setType(*std::move(typeOrError).take());
-  } else {
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
@@ -527,11 +528,8 @@ void TypeChecker::visitMapNode(MapNode &node) {
     this->checkTypeWithCoercion(valueType, node.refValueNodes()[i]);
   }
 
-  auto typeOrError = this->typePool.createMapType(keyType, valueType);
-  if (typeOrError) {
+  if (auto typeOrError = this->typePool.createMapType(keyType, valueType)) {
     node.setType(*std::move(typeOrError).take());
-  } else {
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
@@ -546,7 +544,6 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     node.setType(*std::move(typeOrError).take());
   } else {
     this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
@@ -556,14 +553,12 @@ void TypeChecker::visitVarNode(VarNode &node) {
     node.setType(this->typePool.get(handle->getTypeId()));
   } else {
     this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
     this->reportError<UndefinedField>(node.getNameNode(), node.getFieldName().c_str());
-    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
@@ -593,7 +588,6 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
       node.setType(cast<OptionType>(exprType).getElementType());
     } else {
       this->reportError<Required>(*node.getExprNode(), "Option type", exprType.getName());
-      node.setType(this->typePool.get(TYPE::Nothing));
     }
   } else {
     if (exprType.isOptionType()) {
@@ -632,7 +626,6 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       node.setType(elementType);
     } else {
       this->reportError<Required>(*node.getLeftNode(), "Option type", leftType.getName());
-      node.setType(this->typePool.get(TYPE::Nothing));
     }
     return;
   }
@@ -668,13 +661,12 @@ void TypeChecker::visitArgsNode(ArgsNode &node) { node.setType(this->typePool.ge
 void TypeChecker::visitApplyNode(ApplyNode &node) {
   CallableTypes callableTypes = this->resolveCallee(node);
   this->checkArgsNode(callableTypes, node.getArgsNode());
-  node.setType(callableTypes.returnType == nullptr ? this->typePool.get(TYPE::Nothing)
-                                                   : *callableTypes.returnType);
+  node.setType(*callableTypes.returnType);
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
-  CallableTypes callableTypes;
+  CallableTypes callableTypes(this->typePool.getUnresolvedType());
   if (!type.isOptionType() && !type.isArrayType() && !type.isMapType()) {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool, type)) {
       callableTypes = handle->toCallableTypes();
@@ -689,13 +681,13 @@ void TypeChecker::visitNewNode(NewNode &node) {
 
 void TypeChecker::visitEmbedNode(EmbedNode &node) {
   auto &exprType = this->checkTypeAsExpr(node.getExprNode());
-  node.setType(exprType);
   if (exprType.isOptionType()) {
     this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
-    node.setType(this->typePool.get(TYPE::Nothing));
+    node.setType(this->typePool.getUnresolvedType());
     return;
   }
 
+  node.setType(exprType);
   if (node.getKind() == EmbedNode::STR_EXPR) {
     auto &type = this->typePool.get(TYPE::String);
     if (!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
@@ -707,13 +699,13 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         node.setHandle(handle);
       } else { // if exprType is optional
         this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str());
-        node.setType(this->typePool.get(TYPE::Nothing));
+        node.setType(this->typePool.getUnresolvedType());
       }
     }
   } else {
     if (exprType.is(TYPE::Any)) {
       this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
-      node.setType(this->typePool.get(TYPE::Nothing));
+      node.setType(this->typePool.getUnresolvedType());
     } else if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
                !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
                !this->typePool.get(TYPE::UnixFD)
@@ -726,7 +718,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         node.setType(handle->getReturnType());
       } else {
         this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR);
-        node.setType(this->typePool.get(TYPE::Nothing));
+        node.setType(this->typePool.getUnresolvedType());
       }
     }
   }
@@ -760,7 +752,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   for (auto &exprNode : node.getSegmentNodes()) {
     this->checkTypeAsExpr(*exprNode);
     assert(exprNode->getType().is(TYPE::String) || exprNode->getType().is(TYPE::StringArray) ||
-           exprNode->getType().is(TYPE::UnixFD) || exprNode->getType().isNothingType());
+           exprNode->getType().is(TYPE::UnixFD) || exprNode->getType().isNothingType() ||
+           exprNode->getType().isUnresolved());
   }
 
   if (node.getGlobPathSize() > SYS_LIMIT_GLOB_FRAG_NUM) {
@@ -1138,7 +1131,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
       value += t->getNameRef();
     }
     this->reportError<NoCommonSuper>(node, value.c_str());
-    return this->typePool.get(TYPE::Nothing);
+    return this->typePool.getUnresolvedType();
   }
 }
 
@@ -1695,7 +1688,6 @@ void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&con
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
-
   if (!this->curScope->isGlobal()) { // only available toplevel scope
     this->reportError<OutsideToplevel>(node);
     return;

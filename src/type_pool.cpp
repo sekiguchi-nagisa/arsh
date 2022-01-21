@@ -25,10 +25,21 @@ namespace ydsh {
 
 TypePool::TypePool() {
   // initialize type
-  this->initBuiltinType(TYPE::_ProcGuard, "process guard%%", false,
-                        info_Dummy()); // pseudo base type
-  this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, TYPE::_ProcGuard,
-                        info_Dummy()); // pseudo base type
+
+  /**
+   * for type error
+   */
+  this->initBuiltinType(TYPE::_Unresolved, "<unresolved>", false, info_Dummy());
+
+  /**
+   * pseudo base type
+   */
+  this->initBuiltinType(TYPE::_ProcGuard, "process guard%%", false, info_Dummy());
+
+  /**
+   * pseudo base type
+   */
+  this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, TYPE::_ProcGuard, info_Dummy());
 
   this->initBuiltinType(TYPE::Any, "Any", true, TYPE::_Root, info_AnyType());
   this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
@@ -298,7 +309,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
     if (!e.second->isMethod() && !e.second->has(HandleAttr::TYPE_ALIAS)) {
       fieldCount++;
       auto &type = this->get(e.second->getTypeId());
-      if (type.isVoidType() || type.isNothingType()) {
+      if (type.isVoidType() || type.isNothingType() || type.isUnresolved()) {
         RAISE_TL_ERROR(InvalidElement, type.getName());
       }
     }
@@ -578,7 +589,7 @@ TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &eleme
     RAISE_TL_ERROR(ElementLimit);
   }
   for (auto &type : elementTypes) {
-    if (type->isVoidType() || type->isNothingType()) {
+    if (type->isVoidType() || type->isNothingType() || type->isUnresolved()) {
       RAISE_TL_ERROR(InvalidElement, type->getName());
     }
   }

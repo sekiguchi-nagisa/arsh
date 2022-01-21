@@ -96,7 +96,7 @@ NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &typ
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
   }
-  if (type.isNothingType() || type.isVoidType()) {
+  if (type.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
   }
   return this->addNewHandle(std::move(name), type, attr);
@@ -124,7 +124,8 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
 NameRegisterResult NameScope::defineMethod(const DSType &recvType, const std::string &name,
                                            const DSType &returnType,
                                            const std::vector<const DSType *> &paramTypes) {
-  if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType()) {
+  if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType() ||
+      recvType.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);

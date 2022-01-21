@@ -165,10 +165,8 @@ public:
 
   bool addDecl(const NameInfo &info, const DSType &type,
                DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
-    if (kind != DeclSymbol::Kind::TYPE_ALIAS) {
-      if (type.isVoidType() || type.isNothingType()) {
-        return false;
-      }
+    if (type.isUnresolved()) {
+      return false;
     }
     return this->addDecl(info, kind, type.getName());
   }

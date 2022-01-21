@@ -41,8 +41,9 @@ class Handle;
 class TypePool;
 
 enum class TYPE : unsigned int {
-  _ProcGuard, // for guard parent code execution from child process
-  _Root,      // pseudo top type of all throwable type(except for option types)
+  _Unresolved, // for type error
+  _ProcGuard,  // for guard parent code execution from child process
+  _Root,       // pseudo top type of all throwable type(except for option types)
 
   Any,
   Void,
@@ -151,6 +152,8 @@ public:
   unsigned int typeId() const { return this->tag & 0xFFFFFF; }
 
   bool is(TYPE type) const { return this->typeId() == static_cast<unsigned int>(type); }
+
+  bool isUnresolved() const { return this->is(TYPE::_Unresolved); }
 
   /**
    * if this type is VoidType, return true.
@@ -338,7 +341,7 @@ struct CallableTypes {
   unsigned int paramSize{0};
   const DSType *const *paramTypes{nullptr};
 
-  CallableTypes() = default;
+  explicit CallableTypes(const DSType &retType) : returnType(&retType) {}
 
   CallableTypes(const DSType &ret, unsigned int size, const DSType *const *params)
       : returnType(&ret), paramSize(size), paramTypes(params) {}
