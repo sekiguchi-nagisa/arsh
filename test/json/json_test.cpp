@@ -1,3 +1,4 @@
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "jsonrpc.h"
@@ -12,25 +13,31 @@ TEST(JSON, type) {
   json = nullptr;
   ASSERT_TRUE(json.isNull());
   ASSERT_TRUE(ydsh::get<std::nullptr_t>(json) == nullptr);
+  ASSERT_EQ(0, json.size());
 
   json = true;
   ASSERT_TRUE(json.isBool());
   ASSERT_EQ(true, json.asBool());
+  ASSERT_EQ(0, json.size());
 
   json = JSON(12);
   ASSERT_TRUE(json.isLong());
   ASSERT_EQ(12, json.asLong());
+  ASSERT_EQ(0, json.size());
 
   json = JSON(3.14);
   ASSERT_TRUE(json.isDouble());
   ASSERT_EQ(3.14, json.asDouble());
+  ASSERT_EQ(0, json.size());
 
   json = "hello";
   ASSERT_TRUE(json.isString());
   ASSERT_EQ("hello", json.asString());
+  ASSERT_EQ(0, json.size());
 
   json = JSON(array());
   ASSERT_TRUE(json.isArray());
+  ASSERT_EQ(0, json.size());
   json.asArray().emplace_back(23);
   json.asArray().emplace_back(true);
   ASSERT_EQ(2, json.size());
@@ -71,10 +78,10 @@ TEST(JSON, type) {
 }
 
 TEST(JSON, serialize) {
-  JSON json = {{"hello", false}, {"hoge", array(2, nullptr, true)}};
+  JSON json = {{"hello", false}, {"hoge", array(2, nullptr, true, R"("he\y")")}};
   auto actual = json.serialize();
 
-  const char *expect = R"({"hello":false,"hoge":[2,null,true]})";
+  const char *expect = R"({"hello":false,"hoge":[2,null,true,"\"he\\y\""]})";
   ASSERT_EQ(expect, actual);
 
   json = 34;
@@ -256,6 +263,121 @@ TEST_F(ParserTest, object) {
   ASSERT_EQ(true, this->ret["bbb"].asObject().empty());
   ASSERT_EQ(true, this->ret["ccc"].asArray().empty());
   ASSERT_TRUE(this->ret["hohgeo"].isInvalid());
+}
+
+TEST_F(ParserTest, error1) {
+  // invalid token
+  {
+    JSONParser parser("fhuaerhf");
+    auto value = parser();
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+invalid token.+"));
+  }
+
+  // empty
+  {
+    JSONParser parser("");
+    auto value = parser();
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+expected.+"));
+  }
+
+  // skip empty
+  {
+    JSONParser parser("");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_FALSE(parser.hasError());
+  }
+
+  // out of range number
+  {
+    JSONParser parser("999999999999999999999999999999999999999999999999999999999");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+out of range.+"));
+  }
+
+  // array
+  {
+    JSONParser parser("[34,]");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+
+  {
+    JSONParser parser("[34 34]");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+
+  {
+    JSONParser parser("[:]");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+
+  // object
+  {
+    JSONParser parser(R"({"s"})");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+
+  {
+    JSONParser parser(R"({"s": 34 :})");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+
+  {
+    JSONParser parser(R"({34})");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+mismatched token.+"));
+  }
+}
+
+TEST_F(ParserTest, error2) {
+  // escape sequence
+  {
+    JSONParser parser(R"("34\uDC00")");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+illegal string format.+"));
+    parser.showError();
+  }
+
+  {
+    JSONParser parser(R"("34\uD800\uD800")");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+illegal string format.+"));
+  }
+
+  {
+    JSONParser parser(R"("34\uD800\t")");
+    auto value = parser(true);
+    ASSERT_FALSE(value.hasValue());
+    ASSERT_TRUE(parser.hasError());
+    ASSERT_THAT(parser.formatError(), ::testing::MatchesRegex(".+illegal string format.+"));
+  }
 }
 
 TEST_F(ParserTest, serialize1) {

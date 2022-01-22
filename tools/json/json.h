@@ -104,12 +104,6 @@ public:
 
   JSON &operator[](const std::string &key);
 
-  bool operator==(const JSON &json) const;
-
-  bool operator!=(const JSON &json) const { return !(*this == json); }
-
-  size_t hash() const;
-
   size_t size() const;
 
   std::string serialize(unsigned int tab = 0) const;
