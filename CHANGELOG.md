@@ -41,15 +41,15 @@
 #### Core
 
 - **Breaking Change**: an error of finally-less try expression is now syntax error
-- **Breaking Change**: change parameter expansion typechecking
+- **Breaking Change**: change typechecking of parameter expansion
     - change error message when pass ``Option<T>`` to command arguments
     - not accept ``Any`` type
-- **Breaking Change**: change invalid valud handling of string interpolation/parameter expansion
+- **Breaking Change**: change invalid value handling of string interpolation/parameter expansion
     - if contains invalid values, just ignore theme
-- **Breaking Change**: change string interpolatio/parameter expansion of ``Map`` type
+- **Breaking Change**: change string interpolation/parameter expansion of ``Map`` type
     - expand like ``Array``, ``Tuple`` type
 - improve error reporting of module private member access
-- improve error message of read-only symbol/field checking
+- improve error report of read-only symbol/field checking
 
 #### Completion
 
@@ -59,8 +59,8 @@
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
 - hover/define/references does not work in large files
-- broken code generation of named imported env variable
-- paramter expansion of ``[UnixFD]`` type. previously the following code is failed
+- broken code generation of named imported env variables
+- broken paramter expansion of ``[UnixFD]`` type. previously the following code is failed
   ```
   assert diff ${[<(ls), <(ls)]}
   ```
