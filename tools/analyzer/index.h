@@ -118,6 +118,7 @@ public:
     CONST,
     MOD_CONST,
     FUNC,
+    CONSTRUCTOR,
     METHOD,
     BUILTIN_CMD,
     CMD,
@@ -179,7 +180,30 @@ public:
   static std::string demangle(Kind k, StringRef mangledName);
 
   static bool isVarName(Kind k) {
-    return k != Kind::CMD && k != Kind::BUILTIN_CMD && k != Kind::TYPE_ALIAS;
+    switch (k) {
+    case Kind::CMD:
+    case Kind::BUILTIN_CMD:
+    case Kind::TYPE_ALIAS:
+    case Kind::CONSTRUCTOR:
+      return false;
+    default:
+      return true;
+    }
+  }
+
+  static const char *getVarDeclPrefix(Kind k) {
+    switch (k) {
+    case DeclSymbol::Kind::VAR:
+      return "var";
+    case DeclSymbol::Kind::LET:
+      return "let";
+    case DeclSymbol::Kind::EXPORT_ENV:
+      return "export-env";
+    case DeclSymbol::Kind::IMPORT_ENV:
+      return "import-env";
+    default:
+      return "";
+    }
   }
 };
 

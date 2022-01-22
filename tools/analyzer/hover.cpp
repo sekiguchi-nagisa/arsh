@@ -22,21 +22,6 @@
 
 namespace ydsh::lsp {
 
-static const char *getVarDeclPrefix(DeclSymbol::Kind k) {
-  switch (k) {
-  case DeclSymbol::Kind::VAR:
-    return "var";
-  case DeclSymbol::Kind::LET:
-    return "let";
-  case DeclSymbol::Kind::EXPORT_ENV:
-    return "export-env";
-  case DeclSymbol::Kind::IMPORT_ENV:
-    return "import-env";
-  default:
-    return "";
-  }
-}
-
 static const BuiltinCmdDesc *findCmdDesc(const char *name) {
   unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();
@@ -58,7 +43,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV: {
-    content += getVarDeclPrefix(decl.getKind());
+    content += DeclSymbol::getVarDeclPrefix(decl.getKind());
     content += " ";
     content += name;
     content += " : ";
@@ -94,6 +79,12 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::METHOD: {
     content += "function ";
+    content += name;
+    content += decl.getInfo();
+    break;
+  }
+  case DeclSymbol::Kind::CONSTRUCTOR: {
+    content += "typedef ";
     content += name;
     content += decl.getInfo();
     break;

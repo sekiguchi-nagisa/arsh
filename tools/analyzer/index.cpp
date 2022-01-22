@@ -56,6 +56,7 @@ std::string DeclSymbol::mangle(Kind k, StringRef name) {
     return toCmdFullName(name);
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
+  case DeclSymbol::Kind::CONSTRUCTOR:
     return toTypeAliasFullName(name);
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
@@ -79,6 +80,7 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
     break;
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
+  case DeclSymbol::Kind::CONSTRUCTOR:
     mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
     break;
   case DeclSymbol::Kind::VAR:

@@ -39,12 +39,23 @@ private:
      */
     std::unordered_map<std::string, SymbolRef> map;
 
+    const DSType *resolvedType{nullptr}; // for constructor
+
   public:
     const IntrusivePtr<ScopeEntry> parent;
 
-    explicit ScopeEntry(const IntrusivePtr<ScopeEntry> &parent) : parent(parent) {}
+    ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, const DSType *type)
+        : resolvedType(type), parent(parent) {}
+
+    ScopeEntry() : ScopeEntry(nullptr, nullptr) {}
 
     bool isGlobal() const { return !this->parent; }
+
+    bool isConstructor() const {
+      return this->getResolvedType() != nullptr && this->getResolvedType()->isRecordType();
+    }
+
+    const DSType *getResolvedType() const { return this->resolvedType; }
 
     bool addDecl(const DeclSymbol &decl);
 
@@ -128,7 +139,7 @@ private:
     void add(const DSType &recvType, const DeclSymbol &decl);
 
   private:
-    void buildCache(const DSType &recvType);
+    void buildModCache(const DSType &recvType);
 
     MemberRef findImpl(const DSType &recvType, const std::string &memberName, bool isMethod) const;
   };
@@ -138,8 +149,8 @@ private:
 public:
   IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), builtinCmd(IntrusivePtr<ScopeEntry>::create(nullptr)),
-        scope(IntrusivePtr<ScopeEntry>::create(nullptr)), memberMap(indexes, std::move(pool)) {}
+      : modId(modId), version(version), builtinCmd(IntrusivePtr<ScopeEntry>::create()),
+        scope(IntrusivePtr<ScopeEntry>::create()), memberMap(indexes, std::move(pool)) {}
 
   SymbolIndex build() && {
     FlexBuffer<unsigned short> inlinedModIdList;
@@ -156,22 +167,24 @@ public:
 
   const TypePool &getPool() const { return this->memberMap.getPool(); }
 
-  auto intoScope() {
-    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope);
+  const ScopeEntry &curScope() const { return *this->scope; }
+
+  auto intoScope(const DSType *type = nullptr) {
+    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, type);
     return finally([&] { this->scope = this->scope->parent; });
   }
 
   bool isGlobal() const { return this->scope->isGlobal(); }
 
-  bool addDecl(const NameInfo &info, const DSType &type,
-               DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
+  const DeclSymbol *addDecl(const NameInfo &info, const DSType &type,
+                            DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
     if (type.isUnresolved()) {
-      return false;
+      return nullptr;
     }
     return this->addDecl(info, kind, type.getName());
   }
 
-  bool addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
+  const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
@@ -186,6 +199,9 @@ public:
     return this->addMemberImpl(this->getPool().get(handle.getRecvTypeId()), nameInfo,
                                DeclSymbol::Kind::METHOD, &handle);
   }
+
+  const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo, const DSType &type,
+                                  DeclSymbol::Kind kind);
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 

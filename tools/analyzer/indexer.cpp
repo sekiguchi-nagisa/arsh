@@ -39,7 +39,7 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
-void IndexBuilder::LazyMemberMap::buildCache(const DSType &recvType) {
+void IndexBuilder::LazyMemberMap::buildModCache(const DSType &recvType) {
   if (!recvType.isModType()) {
     return; // currently, only support Mod type
   }
@@ -60,12 +60,12 @@ void IndexBuilder::LazyMemberMap::buildCache(const DSType &recvType) {
   for (auto &e : index->getInlinedModIds()) {
     auto ret = this->getPool().getModTypeById(e);
     assert(ret);
-    this->buildCache(*ret.asOk());
+    this->buildModCache(*ret.asOk());
   }
 }
 
 void IndexBuilder::LazyMemberMap::add(const DSType &recvType, const DeclSymbol &decl) {
-  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
+  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
     return;
   }
   unsigned int typeId = recvType.typeId();
@@ -86,7 +86,7 @@ void IndexBuilder::LazyMemberMap::add(const DSType &recvType, const DeclSymbol &
 IndexBuilder::MemberRef IndexBuilder::LazyMemberMap::find(const DSType &recvType,
                                                           const std::string &memberName,
                                                           bool isMethod) {
-  this->buildCache(recvType);
+  this->buildModCache(recvType);
   if (auto decl = this->findImpl(recvType, memberName, isMethod); decl.hasValue()) {
     return decl;
   }
@@ -133,9 +133,10 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo
   return DeclSymbol::mangle(k, nameInfo.getName());
 }
 
-bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
+const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind,
+                                        const char *hover) {
   DeclSymbol::Attr attr = {};
-  if (this->scope->isGlobal()) {
+  if (this->scope->isGlobal() || this->scope->isConstructor()) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
   }
   if (info.getName()[0] != '_') {
@@ -144,11 +145,11 @@ bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const ch
 
   if (auto *decl = this->addDeclImpl(kind, attr, info, hover)) {
     if (!this->addSymbolImpl(info.getToken(), decl)) {
-      return false;
+      return nullptr;
     }
-    return true;
+    return decl;
   }
-  return false;
+  return nullptr;
 }
 
 const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
@@ -230,6 +231,15 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
     this->importForeignDecls(e, inlined);
   }
   return true;
+}
+
+const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
+                                              const DSType &type, DeclSymbol::Kind kind) {
+  auto *decl = this->addDecl(nameInfo, type, kind);
+  if (decl) {
+    this->memberMap.add(recv, *decl);
+  }
+  return decl;
 }
 
 const Symbol *IndexBuilder::addMemberImpl(const DSType &recv, const NameInfo &info,
@@ -567,8 +577,14 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
   switch (node.getDefKind()) {
   case TypeDefNode::ALIAS:
     this->visit(node.getTargetTypeNode());
-    this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
-                            DeclSymbol::Kind::TYPE_ALIAS);
+    if (this->builder().curScope().isConstructor()) {
+      this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(),
+                                    node.getNameInfo(), node.getTargetTypeNode().getType(),
+                                    DeclSymbol::Kind::TYPE_ALIAS);
+    } else {
+      this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
+                              DeclSymbol::Kind::TYPE_ALIAS);
+    }
     break;
   case TypeDefNode::ERROR_DEF:
     if (this->isTopLevel()) {
@@ -638,7 +654,12 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
   this->visit(node.getExprNode());
   auto &type = node.getExprNode() ? node.getExprNode()->getType()
                                   : this->builder().getPool().get(TYPE::String);
-  this->builder().addDecl(node.getNameInfo(), type, fromVarDeclKind(node.getKind()));
+  if (this->builder().curScope().isConstructor()) {
+    this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(), node.getNameInfo(),
+                                  type, fromVarDeclKind(node.getKind()));
+  } else {
+    this->builder().addDecl(node.getNameInfo(), type, fromVarDeclKind(node.getKind()));
+  }
 }
 
 void SymbolIndexer::visitAssignNode(AssignNode &node) {
@@ -668,15 +689,31 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
   }
 }
 
-void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  if (!this->builder().isGlobal()) {
-    return;
+static std::string generateFuncInfo(const FunctionNode &node) {
+  assert(!node.isConstructor() && !node.isAnonymousFunc());
+
+  std::string value = "(";
+  for (unsigned int i = 0; i < node.getParams().size(); i++) {
+    if (i > 0) {
+      value += ", ";
+    }
+    value += "$";
+    value += node.getParams()[i].getName();
+    value += " : ";
+    value += node.getParamTypeNodes()[i]->getType().getName();
   }
-  this->visitEach(node.getParamTypeNodes());
-  this->visit(node.getReturnTypeToken());
-  if (node.getVarIndex() > 0 && !node.isConstructor()) {
-    std::string value = "(";
-    for (unsigned int i = 0; i < node.getParams().size(); i++) {
+  value += ") : ";
+  value += node.getReturnTypeToken()->getType().getName();
+  return value;
+}
+
+static std::string generateConstructorInfo(const TypePool &pool, const FunctionNode &node) {
+  assert(node.isConstructor());
+
+  std::string value;
+  if (unsigned int size = node.getParams().size(); size > 0) {
+    value += "(";
+    for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
         value += ", ";
       }
@@ -685,11 +722,56 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
       value += " : ";
       value += node.getParamTypeNodes()[i]->getType().getName();
     }
-    value += ") : ";
-    value += node.getReturnTypeToken()->getType().getName();
-    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
+    value += ")";
   }
-  auto func = this->builder().intoScope();
+  value += " {\n";
+  for (auto &e : node.getBlockNode().getNodes()) {
+    if (isa<VarDeclNode>(*e)) {
+      auto &declNode = cast<VarDeclNode>(*e);
+      auto declKind = fromVarDeclKind(declNode.getKind());
+      value += "    ";
+      value += DeclSymbol::getVarDeclPrefix(declKind);
+      value += " ";
+      value += declNode.getVarName();
+      value += " : ";
+      if (declNode.getExprNode()) {
+        value += declNode.getExprNode()->getType().getName();
+      } else {
+        value += pool.get(TYPE::String).getNameRef();
+      }
+      value += "\n";
+    } else if (isa<TypeDefNode>(*e)) {
+      auto &defNode = cast<TypeDefNode>(*e);
+      if (defNode.getDefKind() == TypeDefNode::ALIAS) {
+        value += "    typedef ";
+        value += defNode.getName();
+        value += " = ";
+        value += defNode.getTargetTypeNode().getType().getNameRef();
+        value += "\n";
+      }
+    }
+  }
+  value += "}";
+  return value;
+}
+
+void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
+  if (!this->builder().isGlobal()) {
+    return;
+  }
+
+  if (node.getVarIndex() > 0) {
+    if (node.isConstructor()) {
+      auto value = generateConstructorInfo(this->builder().getPool(), node);
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str());
+    } else {
+      auto value = generateFuncInfo(node);
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
+    }
+  }
+  this->visitEach(node.getParamTypeNodes());
+  this->visit(node.getReturnTypeToken());
+  auto func = this->builder().intoScope(node.getResolvedType());
   for (unsigned int i = 0; i < node.getParams().size(); i++) {
     this->builder().addDecl(node.getParams()[i], node.getParamTypeNodes()[i]->getType());
   }
