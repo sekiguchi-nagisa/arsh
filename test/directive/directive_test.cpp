@@ -89,6 +89,20 @@ TEST_F(DirectiveTest, fail11) {
   ASSERT_NO_FATAL_FAILURE(this->parse("#$test($status = 21474836470)", false));
 }
 
+TEST_F(DirectiveTest, fail12) {
+  ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'hgaroei')", false));
+}
+
+TEST_F(DirectiveTest, fail13) {
+  ASSERT_NO_FATAL_FAILURE(this->parse("#$test($hoghoea = 23)", false));
+}
+
+TEST_F(DirectiveTest, fail14) {
+  Directive directive;
+  bool r = Directive::init("(source)", directive);
+  ASSERT_FALSE(r); // file not found
+}
+
 TEST_F(DirectiveTest, result1) {
   ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'SUCCESS')", true));
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getKind());

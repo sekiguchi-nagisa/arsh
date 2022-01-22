@@ -297,7 +297,7 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
   const struct {
     const char *name;
     int kind;
-  } statusTable[] = {
+  } resultTable[] = {
 #define _E(K) DS_ERROR_KIND_##K
       {"success", _E(SUCCESS)},
       {"parse_error", _E(PARSE_ERROR)},
@@ -315,19 +315,22 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
   };
 
   const auto &value = node.getValue();
-  for (auto &e : statusTable) {
+  for (auto &e : resultTable) {
     if (strcasecmp(value.c_str(), e.name) == 0) {
       return e.kind;
     }
   }
 
+  /**
+   * if emtpy, ignore error
+   */
   if (!value.empty()) {
     std::vector<std::string> alters;
-    for (auto &e : statusTable) {
+    for (auto &e : resultTable) {
       alters.emplace_back(e.name);
     }
 
-    std::string message = "illegal status: ";
+    std::string message = "illegal result: ";
     message += value;
     message += ", expect for ";
     unsigned int count = 0;
@@ -335,7 +338,9 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
       if (count++ > 0) {
         message += ", ";
       }
+      message += "'";
       message += e;
+      message += "'";
     }
     createError(node, message);
   }
@@ -426,7 +431,8 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
 bool Directive::init(const char *fileName, Directive &d) {
   std::ifstream input(fileName);
   if (!input) {
-    fatal("cannot open file: %s\n", fileName);
+    std::cerr << "cannot open file: " << fileName << std::endl;
+    return false;
   }
   return initDirective(fileName, input, d);
 }
