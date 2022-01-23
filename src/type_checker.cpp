@@ -1672,9 +1672,8 @@ void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&con
 
       // field
       auto &fieldType = this->typePool.get(handle->getTypeId());
-      auto newHandle = std::make_unique<Handle>(fieldType, handle->getIndex() - offset,
-                                                handle->attr(), handle->getModId());
-      handle = HandlePtr(newHandle.release());
+      handle = HandlePtr::create(fieldType, handle->getIndex() - offset, handle->attr(),
+                                 handle->getModId());
     }
     handles.emplace(e.first, std::move(handle));
   }

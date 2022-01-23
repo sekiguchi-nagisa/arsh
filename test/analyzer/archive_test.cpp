@@ -139,6 +139,8 @@ public:
 
   TypePool &pool() { return this->orgCtx->getPool(); }
 
+  const NameScope &scope() const { return *this->orgCtx->getScope(); }
+
   const TypePool &newPool() const { return this->newCtx->getPool(); }
 
   void defineAndArchive(const char *fieldName, const char *typeName, HandleAttr attr = {}) {
@@ -161,13 +163,12 @@ public:
     // serialize
     Archiver archiver(this->orgCtx->getPool(), this->builtinIdOffset);
     auto archive = Archive::pack(archiver, fieldName, orgHandle);
-    ASSERT_EQ(fieldName, archive.getName());
     ASSERT_FALSE(archive.getData().empty());
 
     // deserialize
     auto ret2 = archive.unpack(this->newCtx->getPool()); // deserialize in another context
-    ASSERT_TRUE(ret2);
-    auto &newHandle = *ret2;
+    ASSERT_TRUE(ret2.second);
+    auto &newHandle = *ret2.second;
 
     // compare 2 handles
     ASSERT_EQ(orgHandle.getModId(), newHandle.getModId());
@@ -528,6 +529,66 @@ TEST_F(ArchiveTest, mod4) {
   ret = this->newPool().getType("[Boolean]");
   ASSERT_TRUE(ret);
   ASSERT_EQ(ret.asOk()->typeId(), handle->getTypeId());
+}
+
+TEST_F(ArchiveTest, userdefined) {
+  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) { // named import
+    const unsigned short modId = ctx.getModId();
+    const char *typeName = "APIError";
+    auto ret = ctx.getPool().createErrorType(typeName, ctx.getPool().get(TYPE::Error), modId);
+    ASSERT_TRUE(ret);
+    auto ret2 = ctx.getScope()->defineTypeAlias(ctx.getPool(), typeName, *ret.asOk());
+    ASSERT_TRUE(ret2);
+
+    typeName = "Interval";
+    ret = ctx.getPool().createRecordType(typeName, modId);
+    ASSERT_TRUE(ret);
+    ret2 = ctx.getScope()->defineTypeAlias(ctx.getPool(), typeName, *ret.asOk());
+    ASSERT_TRUE(ret2);
+    {
+      auto &recordType = cast<RecordType>(*ret.asOk());
+      auto ret3 = ctx.getScope()->defineConstructor(recordType, {&ctx.getPool().get(TYPE::Int)});
+      ASSERT_TRUE(ret3);
+
+      std::unordered_map<std::string, HandlePtr> handles;
+      handles.emplace("begin", HandlePtr::create(recordType, 0, HandleAttr::READ_ONLY, modId));
+      auto *type = ctx.getPool().getType(toQualifiedTypeName("APIError", modId)).asOk();
+      handles.emplace("end", HandlePtr::create(*type, 1, HandleAttr::READ_ONLY, modId));
+      ctx.getPool().finalizeRecordType(recordType, std::move(handles));
+    }
+
+    typeName = "_Pair";
+    ret = ctx.getPool().createRecordType(typeName, modId);
+    ASSERT_TRUE(ret);
+    ret2 = ctx.getScope()->defineTypeAlias(ctx.getPool(), typeName, *ret.asOk());
+    ASSERT_TRUE(ret2);
+  });
+
+  //
+  const char *typeName = "APIError";
+  auto *handle = modType.lookupField(this->pool(), toTypeAliasFullName(typeName));
+  ASSERT_TRUE(handle);
+  auto typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
+  ASSERT_TRUE(typeOrError);
+  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+
+  //
+  typeName = "Interval";
+  handle = modType.lookupField(this->pool(), toTypeAliasFullName(typeName));
+  ASSERT_TRUE(handle);
+  typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
+  ASSERT_TRUE(typeOrError);
+  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  handle = this->scope().lookupConstructor(this->pool(), *typeOrError.asOk());
+  ASSERT_TRUE(handle);
+
+  //
+  typeName = "_Pair";
+  handle = modType.lookupField(this->pool(), toTypeAliasFullName(typeName));
+  ASSERT_TRUE(handle);
+  typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
+  ASSERT_TRUE(typeOrError);
+  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
 }
 
 struct Builder {

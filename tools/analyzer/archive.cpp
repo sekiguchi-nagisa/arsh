@@ -105,8 +105,7 @@ void Archiver::add(const DSType &type) {
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
         for (auto &e : recordType.getHandleMap()) {
-          this->writeStr(e.first);
-          this->add(*e.second);
+          this->add(e.first, *e.second);
         }
       }
       break;
@@ -119,7 +118,16 @@ void Archiver::add(const DSType &type) {
   }
 }
 
-void Archiver::add(const Handle &handle) {
+void Archiver::add(const std::string &name, const Handle &handle) {
+  StringRef ref = name;
+  if (handle.isMethod()) {
+    assert(isMethodFullName(ref));
+    ref.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
+    auto pos = ref.lastIndexOf("%");
+    assert(pos != StringRef::npos);
+    ref = ref.slice(0, pos);
+  }
+  this->writeStr(ref);
   this->write32(handle.getIndex());
   static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
@@ -147,12 +155,13 @@ void Archiver::add(const Handle &handle) {
   ({                                                                                               \
     auto __v = E;                                                                                  \
     if (!__v) {                                                                                    \
-      return nullptr;                                                                              \
+      return {"", nullptr};                                                                        \
     }                                                                                              \
     std::forward<decltype(__v)>(__v);                                                              \
   })
 
-HandlePtr Unarchiver::unpackHandle() {
+std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
+  std::string name = this->readStr();
   uint32_t index = this->read32();
   uint16_t attr = this->read16();
   uint16_t modId = this->read16();
@@ -165,11 +174,21 @@ HandlePtr Unarchiver::unpackHandle() {
       paramTypes.push_back(TRY(this->unpackType()));
     }
     auto handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
-    return HandlePtr(handle.release());
+    return {toMethodFullName(type->typeId(), name), HandlePtr(handle.release())};
   } else {
-    return HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modId);
+    return {std::move(name), HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modId)};
   }
 }
+
+#undef TRY
+#define TRY(E)                                                                                     \
+  ({                                                                                               \
+    auto __v = E;                                                                                  \
+    if (!__v) {                                                                                    \
+      return nullptr;                                                                              \
+    }                                                                                              \
+    std::forward<decltype(__v)>(__v);                                                              \
+  })
 
 const DSType *Unarchiver::unpackType() {
   auto k = this->readT();
@@ -218,9 +237,11 @@ const DSType *Unarchiver::unpackType() {
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {
-      auto n = this->readStr();
-      auto handle = TRY(this->unpackHandle());
-      handles.emplace(std::move(n), std::move(handle));
+      auto pair = this->unpackHandle();
+      if (!pair.second) {
+        return nullptr;
+      }
+      handles.insert(std::move(pair));
     }
     ret = TRY(this->pool.finalizeRecordType(cast<RecordType>(*ret.asOk()), std::move(handles)));
     return std::move(ret).take();
@@ -254,10 +275,10 @@ Optional<std::unordered_map<std::string, HandlePtr>> ModuleArchive::unpack(TypeP
   std::unordered_map<std::string, HandlePtr> handleMap;
   for (auto &e : this->getHandles()) {
     auto h = e.unpack(pool);
-    if (!h) {
+    if (!h.second) {
       return {};
     }
-    if (!handleMap.emplace(e.getName(), h).second) {
+    if (!handleMap.insert(std::move(h)).second) {
       return {};
     }
   }

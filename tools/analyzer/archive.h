@@ -51,9 +51,9 @@ private:
 public:
   Archiver(const TypePool &pool, unsigned int idCount) : pool(pool), builtinTypeIdCount(idCount) {}
 
-  std::string pack(const Handle &handle) {
+  std::string pack(const std::string &name, const Handle &handle) {
     this->data = "";
-    this->add(handle);
+    this->add(name, handle);
     std::string ret;
     std::swap(ret, this->data);
     return ret;
@@ -89,7 +89,7 @@ private:
 
   void add(const DSType &type);
 
-  void add(const Handle &handle);
+  void add(const std::string &name, const Handle &handle);
 };
 
 class Unarchiver {
@@ -101,7 +101,7 @@ private:
 public:
   Unarchiver(TypePool &pool, const std::string &data) : pool(pool), data(data) {}
 
-  HandlePtr take() {
+  std::pair<std::string, HandlePtr> take() {
     this->pos = 0;
     return this->unpackHandle();
   }
@@ -109,7 +109,7 @@ public:
 private:
   const DSType *unpackType();
 
-  HandlePtr unpackHandle();
+  std::pair<std::string, HandlePtr> unpackHandle();
 
   template <unsigned int N>
   uint64_t readN() {
@@ -144,27 +144,26 @@ private:
 
 class Archive {
 private:
-  std::string name;
-
   /**
+   * string name
    * uint32 commitID
    * uint32 index
    * uint16 attribute
    * uint16 modID
    *
    * DSType
+   *
+   * (returnType, paramTypes...)
    */
   std::string data;
 
-  Archive(std::string &&name, std::string &&data) : name(std::move(name)), data(std::move(data)) {}
+  explicit Archive(std::string &&data) : data(std::move(data)) {}
 
 public:
   static Archive pack(Archiver &archiver, const std::string &fieldName, const Handle &handle) {
-    auto data = archiver.pack(handle);
-    return {std::string(fieldName), std::move(data)};
+    auto data = archiver.pack(fieldName, handle);
+    return Archive(std::move(data));
   }
-
-  const std::string &getName() const { return this->name; }
 
   const std::string &getData() const { return this->data; }
 
@@ -174,7 +173,7 @@ public:
    * @return
    * if invalid type pool, return null
    */
-  HandlePtr unpack(TypePool &pool) const {
+  std::pair<std::string, HandlePtr> unpack(TypePool &pool) const {
     Unarchiver unarchiver(pool, this->getData());
     return unarchiver.take();
   }
