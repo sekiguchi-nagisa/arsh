@@ -25,11 +25,12 @@
 #endif
 
 #include <cctype>
+#include <chrono>
 #include <cstdlib>
+#include <thread>
 
 #include <constant.h>
 #include <misc/fatal.h>
-#include <misc/logger_base.hpp>
 #include <misc/unicode.hpp>
 
 #include "ansi.h"
@@ -194,10 +195,7 @@ WaitStatus ProcHandle::waitWithTimeout(unsigned int msec) {
     return s;
   }
   for (unsigned int i = 0; i < msec; i++) {
-    struct timespec timespec {};
-    timespec.tv_sec = 0;
-    timespec.tv_nsec = 1000000;
-    nanosleep(&timespec, nullptr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     s = this->wait(WaitOp::NONBLOCKING);
     if (s.kind != WaitStatus::RUNNING) {
       break;

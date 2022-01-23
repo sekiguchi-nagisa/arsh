@@ -332,7 +332,7 @@ TEST(ClientTest, parse1) {
 ---
 { "aaa": true}
 # this is a comment4
-<<<
+<<< 12345
 <<<
 false
 )");
@@ -340,8 +340,11 @@ false
   ASSERT_TRUE(ret);
   ASSERT_EQ(3, ret.asOk().size());
   ASSERT_EQ(1234, ret.asOk()[0].request.asLong());
+  ASSERT_EQ(0, ret.asOk()[0].msec);
   ASSERT_EQ(true, ret.asOk()[1].request["aaa"].asBool());
+  ASSERT_EQ(12345, ret.asOk()[1].msec);
   ASSERT_EQ(false, ret.asOk()[2].request.asBool());
+  ASSERT_EQ(0, ret.asOk()[2].msec);
 }
 
 TEST(ClientTest, parse2) {
@@ -384,6 +387,25 @@ false ,
   std::string error = format("%s:6: [error] mismatched token `,', expected `<EOS>'\n"
                              "false ,\n"
                              "      ^\n",
+                             fileName.c_str());
+  ASSERT_EQ(error, ret.asErr());
+}
+
+TEST(ClientTest, parse4) {
+  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  auto fileName = tempFileFactory.createTempFile("script.test", R"(
+1234
+# this is a comment2
+# this is a comment3
+<<< hoge
+false ,
+)");
+  auto ret = loadInputScript(fileName);
+  ASSERT_FALSE(ret);
+
+  std::string error = format("%s:5: [error] invalid token, expected `<EOS>'\n"
+                             "<<< hoge\n"
+                             "^\n",
                              fileName.c_str());
   ASSERT_EQ(error, ret.asErr());
 }

@@ -16,7 +16,12 @@
 
 #include <poll.h>
 
+#include <chrono>
 #include <fstream>
+#include <regex>
+#include <thread>
+
+#include <misc/num_util.hpp>
 
 #include "client.h"
 
@@ -33,6 +38,25 @@ static Result<JSON, std::string> parseJSON(const std::string &fileName, const st
   } else {
     return Ok(std::move(json));
   }
+}
+
+static bool matchSectionEnd(const std::string &line, std::smatch &match) {
+  static std::regex re("^(<<<|---)[ \\t]*(\\d*)[ \\t]*$", std::regex_constants::ECMAScript);
+  return std::regex_match(line, match, re);
+}
+
+static bool isSectionEnd(const std::string &line) {
+  std::smatch match;
+  return matchSectionEnd(line, match);
+}
+
+static std::pair<unsigned int, bool> parseNum(const std::string &line) {
+  std::smatch match;
+  if (matchSectionEnd(line, match) && match.length(2) > 0) {
+    auto value = match.str(2);
+    return convertToNum<unsigned int>(value.c_str());
+  }
+  return {0, false};
 }
 
 Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::string &fileName) {
@@ -54,17 +78,19 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
     if (line[0] == '#') {
       line = "";
     }
-    if (line == "---" || line == "<<<") {
+    if (isSectionEnd(line)) {
       auto ret = parseJSON(fileName, content, lineNumOffset);
       if (!ret) {
         return Err(std::move(ret).takeError());
       }
       content = "";
       lineNumOffset = 0;
-      if (ret.asOk().isInvalid()) {
+      if (ret.asOk().isInvalid()) { // skip empty
         continue;
       }
-      requests.emplace_back(std::move(ret).take());
+      auto pair = parseNum(line);
+      int n = pair.second ? pair.first : 0;
+      requests.emplace_back(std::move(ret).take(), n);
     } else {
       content += line;
       content += '\n';
@@ -75,7 +101,7 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
     if (!ret) {
       return Err(std::move(ret).takeError());
     }
-    requests.emplace_back(std::move(ret).take());
+    requests.emplace_back(std::move(ret).take(), 0);
   }
   return Ok(std::move(requests));
 }
@@ -109,9 +135,13 @@ static bool waitReply(FILE *fp, int timeout) {
 void Client::run(const std::vector<ClientRequest> &requests) {
   const unsigned int size = requests.size();
   for (unsigned int index = 0; index < size; index++) {
-    bool r = this->send(requests[index].request);
+    auto &req = requests[index];
+    bool r = this->send(req.request);
     if (!r) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
+    }
+    if (req.msec > 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
     }
     int timeout = index == size - 1 ? 1000 : 50;
     while (waitReply(this->transport.getInput().get(), timeout)) {
