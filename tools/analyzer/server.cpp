@@ -253,7 +253,7 @@ bool LSPServer::tryRebuild() {
   if (this->cancelPoint) {
     this->cancelPoint->cancel();
   }
-  if (this->futureResult.valid()) { // synchronize source from alreay running analyzer job
+  if (this->futureResult.valid()) { // synchronize source from already running analyzer job
     auto tmp = this->futureResult.get();
 
     // merge changed src

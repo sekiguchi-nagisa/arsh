@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self --debounce-time 10
+# RUN: eval $cmd --test $self --debounce-time 5
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -11,9 +11,30 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": ""}
+                     "text": "var a"}
  }
 }
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [
+#    CHECK:       {
+#    CHECK:         "message": "expected `=', `:'",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         "severity": 1
+#    CHECK:       }
+#    CHECK:     ],
+#    CHECK:     "uri": "/test/test.ds"
+#    CHECK:   }
 
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didChange",
