@@ -147,6 +147,11 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   }
 }
 
+std::pair<std::string, HandlePtr> Archive::unpack(TypePool &pool) const {
+  Unarchiver unarchiver(pool, *this);
+  return unarchiver.take();
+}
+
 // ########################
 // ##     Unarchiver     ##
 // ########################

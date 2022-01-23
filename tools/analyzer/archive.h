@@ -37,6 +37,39 @@ enum class ArchiveType : uint8_t {
   CACHED,
 };
 
+class Archiver;
+
+class Archive {
+private:
+  friend class Archiver;
+
+  /**
+   * string name
+   * uint32 commitID
+   * uint32 index
+   * uint16 attribute
+   * uint16 modID
+   *
+   * DSType
+   *
+   * (returnType, paramTypes...)
+   */
+  std::string data;
+
+  explicit Archive(std::string &&data) : data(std::move(data)) {}
+
+public:
+  const std::string &getData() const { return this->data; }
+
+  /**
+   *
+   * @param pool
+   * @return
+   * if invalid type pool, return null
+   */
+  std::pair<std::string, HandlePtr> unpack(TypePool &pool) const;
+};
+
 class Archiver {
 private:
   const TypePool &pool;
@@ -51,12 +84,12 @@ private:
 public:
   Archiver(const TypePool &pool, unsigned int idCount) : pool(pool), builtinTypeIdCount(idCount) {}
 
-  std::string pack(const std::string &name, const Handle &handle) {
+  Archive pack(const std::string &name, const Handle &handle) {
     this->data = "";
     this->add(name, handle);
     std::string ret;
     std::swap(ret, this->data);
-    return ret;
+    return Archive(std::move(ret));
   }
 
 private:
@@ -99,7 +132,7 @@ private:
   unsigned int pos{0};
 
 public:
-  Unarchiver(TypePool &pool, const std::string &data) : pool(pool), data(data) {}
+  Unarchiver(TypePool &pool, const Archive &archive) : pool(pool), data(archive.getData()) {}
 
   std::pair<std::string, HandlePtr> take() {
     this->pos = 0;
@@ -139,43 +172,6 @@ private:
     auto old = this->pos;
     this->pos += size;
     return this->data.substr(old, size);
-  }
-};
-
-class Archive {
-private:
-  /**
-   * string name
-   * uint32 commitID
-   * uint32 index
-   * uint16 attribute
-   * uint16 modID
-   *
-   * DSType
-   *
-   * (returnType, paramTypes...)
-   */
-  std::string data;
-
-  explicit Archive(std::string &&data) : data(std::move(data)) {}
-
-public:
-  static Archive pack(Archiver &archiver, const std::string &fieldName, const Handle &handle) {
-    auto data = archiver.pack(fieldName, handle);
-    return Archive(std::move(data));
-  }
-
-  const std::string &getData() const { return this->data; }
-
-  /**
-   *
-   * @param pool
-   * @return
-   * if invalid type pool, return null
-   */
-  std::pair<std::string, HandlePtr> unpack(TypePool &pool) const {
-    Unarchiver unarchiver(pool, this->getData());
-    return unarchiver.take();
   }
 };
 

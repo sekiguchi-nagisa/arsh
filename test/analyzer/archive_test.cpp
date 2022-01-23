@@ -162,7 +162,7 @@ public:
 
     // serialize
     Archiver archiver(this->orgCtx->getPool(), this->builtinIdOffset);
-    auto archive = Archive::pack(archiver, fieldName, orgHandle);
+    auto archive = archiver.pack(fieldName, orgHandle);
     ASSERT_FALSE(archive.getData().empty());
 
     // deserialize
@@ -673,6 +673,8 @@ TEST(ArchivesTest, revert2) {
   archives.removeIfUnused(t4->getModId());
   ASSERT_TRUE(archives.find(t4->getModId()));
 
+  archives.removeIfUnused(t5->getModId());
+  ASSERT_FALSE(archives.find(t5->getModId()));
   archives.removeIfUnused(t5->getModId());
   ASSERT_FALSE(archives.find(t5->getModId()));
   ASSERT_EQ(nullptr, archives.find(srcMan.find("/eee")->getSrcId()));
