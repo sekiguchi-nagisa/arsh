@@ -1637,13 +1637,32 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '')\n$a._2",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar _2 : String\n```"));
+                                      "```ydsh\nvar _2 : String for (Int, Boolean, String)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("    ''.size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
                                       "```ydsh\nfunction size($this) : Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2, "```ydsh\ntypedef App : OutOfRangeError\n```"));
+
+  // user-defined type
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2,
+                                      "```ydsh\ntypedef App : OutOfRangeError\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
+                  "```ydsh\ntypedef API : AppError\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("typedef Interval { var begin = 34; }; var a = new Interval();\n$a",
+                  Position{.line = 1, .character = 0}, "```ydsh\nvar a : Interval\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("typedef Interval { let value = new Interval!(); }\nvar a = new Interval();",
+                  Position{.line = 1, .character = 15}, R"(```ydsh
+typedef Interval {
+    let value : Interval!
+}
+```)"));
+  ASSERT_NO_FATAL_FAILURE(this->hover(
+      "typedef Interval { var value = new Interval!(); }; var a = new Interval();\n$a.value",
+      Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval! for Interval\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

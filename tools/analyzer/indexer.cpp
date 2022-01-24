@@ -123,6 +123,14 @@ IndexBuilder::MemberRef IndexBuilder::LazyMemberMap::findImpl(const DSType &recv
   return {};
 }
 
+static StringRef trimTypeName(const DSType &type) {
+  auto ref = type.getNameRef();
+  if (auto pos = ref.find("."); pos != StringRef::npos) {
+    ref = ref.substr(pos + 1);
+  }
+  return ref;
+}
+
 static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo) {
   if (!static_cast<bool>(nameInfo) || nameInfo.getToken().size == 0) {
     return "";
@@ -131,6 +139,15 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo
     return "";
   }
   return DeclSymbol::mangle(k, nameInfo.getName());
+}
+
+const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type,
+                                        DeclSymbol::Kind kind) {
+  if (type.isUnresolved()) {
+    return nullptr;
+  }
+  StringRef ref = trimTypeName(type);
+  return this->addDecl(info, kind, ref.data());
 }
 
 const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind,
@@ -235,7 +252,10 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
 
 const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
                                               const DSType &type, DeclSymbol::Kind kind) {
-  auto *decl = this->addDecl(nameInfo, type, kind);
+  std::string content = trimTypeName(type).toString();
+  content += " for ";
+  content += trimTypeName(recv);
+  auto *decl = this->addDecl(nameInfo, kind, content.c_str());
   if (decl) {
     this->memberMap.add(recv, *decl);
   }
@@ -293,7 +313,10 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
     auto &fieldRef = get<FieldRef>(entry);
     auto &fieldType = this->getPool().get(fieldRef.get().getTypeId());
     auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
-    auto *decl = this->addDeclImpl(kind, attr, nameInfo, fieldType.getName(), false);
+    std::string content = trimTypeName(fieldType).toString();
+    content += " for ";
+    content += trimTypeName(recv);
+    auto *decl = this->addDeclImpl(kind, attr, nameInfo, content.c_str(), false);
     if (decl) {
       this->memberMap.add(recv, *decl);
     }
@@ -311,12 +334,12 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
       content += "$p";
       content += std::to_string(i);
       content += " : ";
-      content += handle.getParamTypeAt(i).getNameRef();
+      content += trimTypeName(handle.getParamTypeAt(i));
     }
     content += ") : ";
-    content += handle.getReturnType().getNameRef();
+    content += trimTypeName(handle.getReturnType());
     content += " for ";
-    content += this->getPool().get(handle.getRecvTypeId()).getNameRef();
+    content += trimTypeName(this->getPool().get(handle.getRecvTypeId()));
     auto *decl = this->addDeclImpl(kind, attr, nameInfo, content.c_str(), false);
     if (decl) {
       this->memberMap.add(recv, *decl);
@@ -700,10 +723,10 @@ static std::string generateFuncInfo(const FunctionNode &node) {
     value += "$";
     value += node.getParams()[i].getName();
     value += " : ";
-    value += node.getParamTypeNodes()[i]->getType().getName();
+    value += trimTypeName(node.getParamTypeNodes()[i]->getType());
   }
   value += ") : ";
-  value += node.getReturnTypeToken()->getType().getName();
+  value += trimTypeName(node.getReturnTypeToken()->getType());
   return value;
 }
 
@@ -720,7 +743,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += "$";
       value += node.getParams()[i].getName();
       value += " : ";
-      value += node.getParamTypeNodes()[i]->getType().getName();
+      value += trimTypeName(node.getParamTypeNodes()[i]->getType());
     }
     value += ")";
   }
@@ -735,9 +758,9 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += declNode.getVarName();
       value += " : ";
       if (declNode.getExprNode()) {
-        value += declNode.getExprNode()->getType().getName();
+        value += trimTypeName(declNode.getExprNode()->getType());
       } else {
-        value += pool.get(TYPE::String).getNameRef();
+        value += trimTypeName(pool.get(TYPE::String));
       }
       value += "\n";
     } else if (isa<TypeDefNode>(*e)) {
@@ -746,7 +769,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
         value += "    typedef ";
         value += defNode.getName();
         value += " = ";
-        value += defNode.getTargetTypeNode().getType().getNameRef();
+        value += trimTypeName(defNode.getTargetTypeNode().getType());
         value += "\n";
       }
     }

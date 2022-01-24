@@ -177,12 +177,7 @@ public:
   bool isGlobal() const { return this->scope->isGlobal(); }
 
   const DeclSymbol *addDecl(const NameInfo &info, const DSType &type,
-                            DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
-    if (type.isUnresolved()) {
-      return nullptr;
-    }
-    return this->addDecl(info, kind, type.getName());
-  }
+                            DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
   const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
