@@ -447,7 +447,7 @@ nodes:
   - nodeKind: Assert
     token:
       pos: 0
-      size: 1
+      size: 46
     type:
     condNode:
       nodeKind: Apply
@@ -591,8 +591,8 @@ nodes:
     messageNode:
       nodeKind: String
       token:
-        pos: 0
-        size: 0
+        pos: 7
+        size: 39
       type:
       kind: "STRING"
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
