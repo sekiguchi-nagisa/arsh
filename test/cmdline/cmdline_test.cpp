@@ -140,6 +140,12 @@ echo ${true.t}
             ^
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF(echo ${true.t})EOF"), 1, "", msg));
+
+  msg = R"((string):1:11: [semantic error] unreachable code
+throw 23; assert $false
+          ^~~~~~~~~~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "throw 23; assert $false"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker4) {

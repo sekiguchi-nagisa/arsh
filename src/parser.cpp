@@ -557,7 +557,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
       std::string msg = "`";
       msg += this->lexer->toTokenText(condNode->getToken());
       msg += "'";
-      messageNode = std::make_unique<StringNode>(std::move(msg));
+      messageNode = std::make_unique<StringNode>(condNode->getToken(), std::move(msg));
     }
     return std::make_unique<AssertNode>(pos, std::move(condNode), std::move(messageNode));
   }

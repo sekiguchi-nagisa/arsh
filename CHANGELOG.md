@@ -65,6 +65,7 @@
   assert diff ${[<(ls), <(ls)]}
   ```
 - cannot define type alias for ``Void``, ``Nothing``
+- error line marker of assert statement
 
 ## [0.24.0] - 2021-12-28
 
