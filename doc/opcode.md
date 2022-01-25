@@ -1,7 +1,6 @@
 ## Specification of op code
 
-| **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **
-Description**                                        |
+| **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                        |
 |-----------------|--------------------------------|----------------------------------------------|--------------------------------------------------------|
 | HALT            |                                | [no change]                                  | stop evaluation of interpreter immediately             |
 | ASSERT_ENABLED  | 2: offset1 offset2             | [no change]                                  | check if assertion enabled                             |
