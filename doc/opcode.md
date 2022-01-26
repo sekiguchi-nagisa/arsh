@@ -54,6 +54,9 @@
 | BRANCH          | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset     |
 | BRANCH_NOT      | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset | 
 | GOTO            | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index                 |
+| GOTO_UNWIND     | 4: byte1 ~ byte4               | [unwind to guard]                            | unwind stack top to guard before go to instruction     |
+| GOTO_UNWIND_V   | 4: byte1 ~ byte4               | [no change]                                  | save and restore stack top during unwinding            |
+| STACK_GUARD     |                                | -> value                                     | push guard value onto the stack                        |
 | THROW           |                                | value -> [empty]                             | throw exception                                        |
 | ENTER_FINALLY   | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction                  |
 | EXIT_FINALLY    |                                | value ->                                     | pop stack top and go to instruction                    |

@@ -82,6 +82,9 @@ namespace ydsh {
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
   OP(GOTO, 4, 0)                                                                                   \
+  OP(GOTO_UNWIND, 4, 0)                                                                            \
+  OP(GOTO_UNWIND_V, 4, 0)                                                                          \
+  OP(STACK_GUARD, 0, 1)                                                                            \
   OP(THROW, 0, 0)                                                                                  \
   OP(ENTER_FINALLY, 2, 1)                                                                          \
   OP(EXIT_FINALLY, 0, -1)                                                                          \

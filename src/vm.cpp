@@ -1572,6 +1572,25 @@ bool VM::mainLoop(DSState &state) {
         state.stack.pc() = index;
         vmnext;
       }
+      vmcase(GOTO_UNWIND) {
+        unsigned int index = read32(GET_CODE(state), state.stack.pc());
+        state.stack.pc() = index;
+        state.stack.clearOperandsUntilGuard();
+        vmnext;
+      }
+      vmcase(GOTO_UNWIND_V) {
+        unsigned int index = read32(GET_CODE(state), state.stack.pc());
+        state.stack.pc() = index;
+        auto v = state.stack.pop();
+        state.stack.clearOperandsUntilGuard();
+        state.stack.push(std::move(v));
+        vmnext;
+      }
+      vmcase(STACK_GUARD) {
+        unsigned int index = state.stack.getFrame().stackTopIndex;
+        state.stack.push(DSValue::createNum(index));
+        vmnext;
+      }
       vmcase(THROW) {
         auto obj = state.stack.pop();
         state.throwObject(std::move(obj), 1);

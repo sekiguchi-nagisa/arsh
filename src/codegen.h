@@ -314,7 +314,7 @@ private:
 
   void emitForkIns(ForkKind kind, const Label &label);
 
-  void emitJumpIns(const Label &label);
+  void emitJumpIns(const Label &label, OpCode op = OpCode::GOTO);
   void markLabel(Label &label);
 
   void pushLoopLabels(Label breakLabel, Label continueLabel, Label breakWithValueLabel);

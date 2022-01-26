@@ -186,6 +186,18 @@ TEST_F(VMTest, deinit10) {
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
+TEST_F(VMTest, stacktop) {
+  const char *text = R"(
+{
+  var a = 34; var b = do { $@.slice(0,(break 90) as Int); } while($false);
+  $RANDOM
+}
+)";
+
+  ASSERT_NO_FATAL_FAILURE(this->eval(text, DS_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
+}
+
 TEST_F(VMTest, sig1) {
   ASSERT_NO_FATAL_FAILURE(this->eval("function f($s : Signal) {}"));
   auto func = this->getValue("f");

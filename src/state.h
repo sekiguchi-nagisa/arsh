@@ -139,6 +139,14 @@ public:
     }
   }
 
+  void clearOperandsUntilGuard() {
+    while (this->frame.stackTopIndex > this->frame.stackBottomIndex &&
+           this->operands[this->frame.stackTopIndex].kind() != DSValueKind::NUMBER) {
+      this->popNoReturn();
+    }
+    this->popNoReturn(); // pop guard value
+  }
+
   void reclaimLocals(unsigned char offset, unsigned char size) {
     auto *limit = this->operands + this->frame.localVarOffset + offset;
     auto *cur = limit + size - 1;

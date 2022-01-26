@@ -60,12 +60,13 @@
 - type error reporting of tuple/func type creation if size of these elements reaches limit
 - hover/define/references does not work in large files
 - broken code generation of named imported env variables
-- broken paramter expansion of ``[UnixFD]`` type. previously the following code is failed
+- broken parameter expansion of ``[UnixFD]`` type. previously the following code is failed
   ```
   assert diff ${[<(ls), <(ls)]}
   ```
 - cannot define type alias for ``Void``, ``Nothing``
-- error line marker of assert statement
+- error line marker of ``assert`` statement
+- broken operand stack when use ``break`` or ``continue`` expression within call arguments
 
 ## [0.24.0] - 2021-12-28
 

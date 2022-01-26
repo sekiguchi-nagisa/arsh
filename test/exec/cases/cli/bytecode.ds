@@ -78,7 +78,7 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 45
+  code size: 46
   max stack depth: 2
   number of local variable: 2
   number of global variable: 57
@@ -93,14 +93,15 @@ Code:
   18: LOAD_LOCAL  0
   20: PUSH_INT  2
   22: CALL_BUILTIN2  2  %lt
-  25: BRANCH  15
-  28: PUSH_INT  34
-  30: STORE_LOCAL  1
-  32: RECLAIM_LOCAL  1  1
-  35: GOTO  9
-  40: RECLAIM_LOCAL  0  1
-  43: PUSH_INVALID
-  44: RETURN
+  25: BRANCH  16
+  28: STACK_GUARD
+  29: PUSH_INT  34
+  31: STORE_LOCAL  1
+  33: RECLAIM_LOCAL  1  1
+  36: GOTO_UNWIND  9
+  41: RECLAIM_LOCAL  0  1
+  44: PUSH_INVALID
+  45: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
