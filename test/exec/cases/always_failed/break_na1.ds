@@ -1,0 +1,6 @@
+# top level
+
+#$test($result = 'type', $lineNum = 6, $chars = 1, $errorKind = 'InsideLoop', $status = 1)
+
+
+break

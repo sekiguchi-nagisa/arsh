@@ -1,6 +1,8 @@
 
-##$test($result = 'type', $lineNum = 5, $chars = 7, $errorKind = 'Required', $status = 1)
+#$test($result = 'type', $lineNum = 5, $chars = 11, $errorKind = 'Unacceptable', $status = 1)
 
-assert !(for(;;) {
-    break "34".realpath()
-})
+while(true) {
+    break {
+        break
+    }
+}

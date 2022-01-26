@@ -1,8 +1,0 @@
-
-#$test($result = 'type', $lineNum = 5, $chars = 11, $errorKind = 'Unacceptable', $status = 1)
-
-while(true) {
-    break {
-        break
-    }
-}

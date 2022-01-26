@@ -1,0 +1,20 @@
+# finally
+
+#$test($result = 'type', $lineNum = 16, $chars = 13, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Boolean {
+    var i = 0
+    while($true) {
+        try {
+            $i++
+            if($i == 20) {
+                break
+            }
+        } catch($e : ArithmeticError) {
+            break;
+        } finally {
+            break;
+        }
+    }
+    return $true
+}

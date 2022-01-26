@@ -1,0 +1,7 @@
+# function
+
+#$test($result = 'type', $lineNum = 6, $chars = 5, $errorKind = 'InsideLoop', $status = 1)
+
+function f() {
+    break
+}

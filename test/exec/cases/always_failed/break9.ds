@@ -1,4 +1,0 @@
-
-#$test($result = 'type', $lineNum = 4, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
-
-var a = for(;;) { break; }

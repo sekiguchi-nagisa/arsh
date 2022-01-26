@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 13, $errorKind = 'InsideLoop', $status = 1)
+
+for(var a = (continue) as Int; $true;) {}
