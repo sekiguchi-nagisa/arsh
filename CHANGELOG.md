@@ -40,16 +40,16 @@
 
 #### Core
 
-- **Breaking Change**: an error of finally-less try expression is now syntax error
+- **Breaking Change**: finally-less try expression is now syntax error (previously semantic error)
 - **Breaking Change**: change typechecking of parameter expansion
     - change error message when pass ``Option<T>`` to command arguments
     - not accept ``Any`` type
 - **Breaking Change**: change invalid value handling of string interpolation/parameter expansion
-    - if contains invalid values, just ignore theme
+    - if contain invalid values, just ignore theme
 - **Breaking Change**: change string interpolation/parameter expansion of ``Map`` type
     - expand like ``Array``, ``Tuple`` type
 - improve error reporting of module private member access
-- improve error report of read-only symbol/field checking
+- improve error reporting of read-only symbol/field access
 
 #### Completion
 
@@ -58,7 +58,7 @@
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
-- hover/define/references does not work in large files
+- textDocument hover/definition/references do not work in large files
 - broken code generation of named imported env variables
 - broken parameter expansion of ``[UnixFD]`` type. previously the following code is failed
   ```
@@ -66,7 +66,7 @@
   ```
 - cannot define type alias for ``Void``, ``Nothing``
 - error line marker of ``assert`` statement
-- broken operand stack when use ``break`` or ``continue`` expression within call arguments
+- potential operand stack corruption when use ``break`` or ``continue`` expression within call arguments
 
 ## [0.24.0] - 2021-12-28
 

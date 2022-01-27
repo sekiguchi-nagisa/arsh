@@ -26,8 +26,10 @@
 | type (global import)                  | ✔️             | ✔️             | ✔️                 |
 | type (inlined import)                 | ✔️             | ✔️️            | ✔️                 |
 | type (named import)                   | ✔️             | ✔️             | ✔️                 |
+| type (user-defined type)              | ✔️             | ✔️             | ✔️                 |
 | field (tuple)                         | -              | -              | ✔️                 |
-| method (builtin)                      | -              | -              | ✔                  |
+| field (user-defined type)             | ✔️              | ✔️              | ✔️                 |
+| method (builtin)                      | -              | -              | ✔️                  |
 | source path                           | -              | -              | ❌ (show path)      |
 | source path (glob)                    | -              | -              | ❌ (show path list) |
 | source (variable)                     | ✔️             | ✔️             | ✔️                 |
