@@ -22,6 +22,8 @@ assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's
 export-env LC_ALL = 'C'
 if $OSTYPE.lower() == "linux" {
     assert diff <(complete -A group) <(cat /etc/group | grep -v '^#' | cut -d : -f 1 | sort)
+} elif $OSTYPE.lower() == "darwin" {
+    assert diff <(complete -A group) <(dscacheutil -q group | grep name | cut -d " " -f 2 | sort | uniq)
 }
 
 ## file
