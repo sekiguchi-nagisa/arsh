@@ -767,6 +767,23 @@ TEST_F(APITest, module6) {
   ASSERT_NO_FATAL_FAILURE(this->expect(ret, 56, WaitStatus::EXITED, "moduel!!"));
 }
 
+TEST_F(APITest, module7) {
+  auto fileName = this->createTempFile("mod1", "var AAA = 34");
+  DSError e;
+  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, &e);
+  ASSERT_EQ(0, r);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSError_release(&e);
+
+  fileName = this->createTempFile("mod2", "var AAA = $false");
+  r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, &e);
+  ASSERT_EQ(1, r);
+  ASSERT_EQ(1, e.lineNum);
+  ASSERT_EQ(1, e.chars);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+  DSError_release(&e);
+}
+
 struct Executor {
   std::string str;
   bool jobctrl;

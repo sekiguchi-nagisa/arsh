@@ -295,7 +295,8 @@ END:
       auto error = createTCError<ConflictSymbol>(
           *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
       this->errorReporter.handleTypeError(this->frontEnd.getContext(), error, true);
-      return 1;
+      func = nullptr;
+      return 1; // FIXME: better error message
     }
   }
 
