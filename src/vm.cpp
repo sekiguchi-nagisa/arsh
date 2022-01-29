@@ -39,22 +39,20 @@ SigSet DSState::pendingSigSet;
 /**
  * if environmental variable SHLVL dose not exist, set 0.
  */
-static unsigned int getShellLevel() {
+static int64_t getShellLevel() {
   char *shlvl = getenv(ENV_SHLVL);
-  unsigned int level = 0;
+  int64_t level = 0;
   if (shlvl != nullptr) {
     auto pair = convertToNum<int64_t>(shlvl);
-    if (!pair.second) {
-      level = 0;
-    } else {
+    if (pair.second && pair.first > -1) {
       level = pair.first;
     }
   }
   return level;
 }
 
-static unsigned int originalShellLevel() {
-  static unsigned int level = getShellLevel();
+static int64_t originalShellLevel() {
+  static auto level = getShellLevel();
   return level;
 }
 
@@ -82,7 +80,11 @@ static void initEnv() {
   // set environmental variables
 
   // update shell level
-  setenv(ENV_SHLVL, std::to_string(originalShellLevel() + 1).c_str(), 1);
+  if (auto shlvl = originalShellLevel(); shlvl < INT64_MAX) {
+    setenv(ENV_SHLVL, std::to_string(shlvl + 1).c_str(), 1);
+  } else {
+    setenv(ENV_SHLVL, "1", 1);
+  }
 
   if (struct passwd *pw = getpwuid(getuid())) {
     // set HOME

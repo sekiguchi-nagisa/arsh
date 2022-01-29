@@ -68,6 +68,7 @@
 - error line marker of ``assert`` statement
 - potential operand stack corruption when use ``break`` or ``continue`` expression within call arguments
 - return status of ``DSState_loadModule`` api when detect symbol conflicts
+- negative number or out-of-range number handling of ``SHLVL`` in startup time
 
 ## [0.24.0] - 2021-12-28
 
