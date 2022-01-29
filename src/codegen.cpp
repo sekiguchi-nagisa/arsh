@@ -36,7 +36,6 @@ bool isTypeOp(OpCode code) {
   case OpCode::PRINT:
   case OpCode::INSTANCE_OF:
   case OpCode::CHECK_CAST:
-  case OpCode::PUSH_TYPE:
   case OpCode::NEW:
     ASSERT_BYTE_SIZE(code, 3);
     return true;

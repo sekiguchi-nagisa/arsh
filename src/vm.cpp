@@ -1335,13 +1335,6 @@ bool VM::mainLoop(DSState &state) {
         state.stack.push(DSValue::createGlobMeta(static_cast<GlobMeta>(value)));
         vmnext;
       }
-      vmcase(PUSH_TYPE) {
-        unsigned int v = read24(GET_CODE(state), state.stack.pc());
-        state.stack.pc() += 3;
-        auto &type = state.typePool.get(v);
-        state.stack.push(DSValue::createType(type));
-        vmnext;
-      }
       vmcase(PUSH_INVALID) {
         state.stack.push(DSValue::createInvalid());
         vmnext;
@@ -1534,9 +1527,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.pop();
         state.stack.unwind();
         pushExitStatus(state, v.asInt());
-        if (state.stack.checkVMReturn()) {
-          return true;
-        }
+        assert(!state.stack.checkVMReturn());
         vmnext;
       }
       vmcase(RETURN_SIG) {
@@ -1544,9 +1535,7 @@ bool VM::mainLoop(DSState &state) {
         unsetFlag(DSState::eventDesc, VMEvent::MASK);
         state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         state.stack.unwind();
-        if (state.stack.checkVMReturn()) {
-          return true;
-        }
+        assert(!state.stack.checkVMReturn());
         vmnext;
       }
       vmcase(BRANCH) {

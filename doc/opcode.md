@@ -18,7 +18,6 @@
 | PUSH_STR2       | 2: byte1 byte2                 | -> value                                     | push the string value onto the stack                   |
 | PUSH_STR3       | 3: byte1 byte2 byte3           | -> value                                     | push the string value onto the stack                   |
 | PUSH_META       | 1: byte1                       | -> value                                     | push glob meta character onto the stack                |
-| PUSH_TYPE       | 3: byte1 byte2 byte3           | -> type                                      | push the type onto the stack                           |
 | PUSH_INVALID    |                                | -> value                                     | push the invalid onto the stack                        |
 | LOAD_CONST      | 1: byte1                       | -> value                                     | load a constant from the constant pool                 |
 | LOAD_CONST_W    | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool                 |
