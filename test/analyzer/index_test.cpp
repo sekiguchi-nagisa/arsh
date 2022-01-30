@@ -1369,49 +1369,6 @@ new [mod.DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
-TEST_F(IndexTest, invalidVar) {
-  unsigned short modId;
-  const char *content = R"(
-let aaa = (throw 34)   # not allow 'Nothing'
-34 + $aaa
-var bbb = (34 as Void)  # not allow 'Void'
-var ccc = 34
-var ccc = $ccc
-)";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
-
-  // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 7, }
-  };
-  std::vector<DeclResult> result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 6, }
-  };
-  result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 6, }
-  };
-  std::vector<RefsResult> result2 = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-}
-
 TEST_F(IndexTest, inlinedImportDef) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
@@ -1539,6 +1496,327 @@ echo hello
       .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
     },
   };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, udtypeDef) {
+  unsigned short modId;
+  const char *content = R"E(
+    typedef APIError : Error
+    typedef AAA($e : APIError) {
+      let error = $e
+      import-env HOME
+    }
+    var a = new AAA(new APIError("hello"))
+    $a.error
+    $a.HOME
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 14}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 6, .character = 27, } // APIError
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 20}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 6, .character = 19, } // AAA
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 12}, .end = {.line = 2, .character = 15}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 20, } // $e
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 18}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 8, .character = 10, } // AAA.HOME
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 4, .character = 17}, .end = {.line = 4, .character = 21}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+}
+
+TEST_F(IndexTest, udtypeRef) {
+  unsigned short modId;
+  const char *content = R"E(
+    typedef APIError : Error
+    typedef AAA($e : APIError) {
+      let error = $e
+      import-env HOME
+    }
+    var a = new AAA(new APIError("hello"))
+    $a.error
+    $a.HOME
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 14}));
+
+  // references
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // APIError
+    .position = { .line = 1, .character = 17, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 20}}
+    },
+    RefsResult{
+      .modId = modId, // $e : APIError
+      .range = {.start = {.line = 2, .character = 21}, .end = {.line = 2, .character = 29}}
+    },
+    RefsResult{
+      .modId = modId, // new APIError
+      .range = {.start = {.line = 6, .character = 24}, .end = {.line = 6, .character = 32}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId, // $e
+    .position = { .line = 2, .character = 18, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 18}}
+    },
+    RefsResult{
+      .modId = modId, // let error = $e
+      .range = {.start = {.line = 3, .character = 18}, .end = {.line = 3, .character = 20}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId, // typedef AAA($e : APIError)
+    .position = { .line = 2, .character = 15, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 2, .character = 12}, .end = {.line = 2, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId, // var a = new AAA(new APIError("hello"))
+      .range = {.start = {.line = 6, .character = 16}, .end = {.line = 6, .character = 19}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId, // let error = $e
+    .position = { .line = 3, .character = 11, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 3, .character = 10}, .end = {.line = 3, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId, // $a.error
+      .range = {.start = {.line = 7, .character = 7}, .end = {.line = 7, .character = 12}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, udtypeRecDef) {
+  unsigned short modId;
+  const char *content = R"E(
+    typedef AAA($n : AAA!) {
+      let next = $n
+      typedef Next = Option<typeof(new AAA(new AAA!()))>
+    }
+    new AAA(new AAA.Next()).next
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 12}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // new AAA!()
+    .position = { .line = 3, .character = 50, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId, // typedef AAA($n : AAA!)
+      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 15}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // AAA.Next
+    .position = { .line = 5, .character = 23, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // typedef Next
+      .range = {.start = {.line = 3, .character = 14}, .end = {.line = 3, .character = 18}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+}
+
+TEST_F(IndexTest, udtypeRecRef) {
+  unsigned short modId;
+  const char *content = R"E(
+    typedef AAA($n : AAA!) {
+      let next = $n
+      typedef Next = Option<typeof(new AAA(new AAA!()))>
+    }
+    new AAA(new AAA.Next()).next
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 12}));
+
+  // references
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // typedef AAA($n : AAA!)
+    .position = { .line = 1, .character = 14, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId, // $n : AAA!
+      .range = {.start = {.line = 1, .character = 21}, .end = {.line = 1, .character = 24}}
+    },
+    RefsResult{
+      .modId = modId, // new AAA(new AAA!())
+      .range = {.start = {.line = 3, .character = 39}, .end = {.line = 3, .character = 42}}
+    },
+    RefsResult{
+      .modId = modId, // new AAA!()
+      .range = {.start = {.line = 3, .character = 47}, .end = {.line = 3, .character = 50}}
+    },
+    RefsResult{
+      .modId = modId, //     new AAA(new AAA.Next()).next
+      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
+    },
+    RefsResult{
+      .modId = modId, //     new AAA.Next()
+      .range = {.start = {.line = 5, .character = 16}, .end = {.line = 5, .character = 19}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId, // typedef Next = Option<typeof(new AAA(new AAA!()))>
+    .position = { .line = 3, .character = 17, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 3, .character = 14}, .end = {.line = 3, .character = 18}}
+    },
+    RefsResult{
+      .modId = modId, //     new AAA(new AAA.Next()).next
+      .range = {.start = {.line = 5, .character = 20}, .end = {.line = 5, .character = 24}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, invalidVar) {
+  unsigned short modId;
+  const char *content = R"(
+let aaa = (throw 34)   # not allow 'Nothing'
+34 + $aaa
+var bbb = (34 as Void)  # not allow 'Void'
+var ccc = 34
+var ccc = $ccc
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 7, }
+  };
+  std::vector<DeclResult> result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 6, }
+  };
+  result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 6, }
+  };
+  std::vector<RefsResult> result2 = {};
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
