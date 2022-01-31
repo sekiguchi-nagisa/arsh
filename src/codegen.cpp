@@ -132,8 +132,7 @@ void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const MethodHa
   if (handle.isNative()) {
     this->emitNativeCallIns(paramSize + 1, handle.getIndex(), !handle.getReturnType().isVoidType());
   } else {
-    this->emitValIns(OpCode::CALL_METHOD, paramSize, handle.getReturnType().isVoidType() ? 1 : 0);
-    this->curBuilder().append16(handle.getIndex());
+    fatal("unsupported\n");
   }
 }
 
@@ -1527,7 +1526,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         fprintf(this->fp, "  %s", this->typePool.get(v).getName());
       } else {
         const int byteSize = getByteSize(code);
-        if (code == OpCode::CALL_METHOD || code == OpCode::FORK) {
+        if (code == OpCode::FORK) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
         } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING ||
                    code == OpCode::INIT_FIELDS) {
