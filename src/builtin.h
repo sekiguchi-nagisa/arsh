@@ -1591,10 +1591,7 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(iterObj[0]);
   assert(iterObj[1].asInt() > -1);
   size_t index = iterObj[1].asInt();
-  if (index >= obj.size()) {
-    raiseOutOfRangeError(ctx, std::string("array iterator has already reached end"));
-    RET_ERROR;
-  }
+  assert(index < obj.size());
   auto value = obj.getValues()[index++];
   iterObj[1] = DSValue::createInt(index);
   RET(value);
@@ -1757,10 +1754,7 @@ YDSH_METHOD map_iter(RuntimeContext &ctx) {
 YDSH_METHOD map_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_next);
   auto &obj = typeAs<MapIterObject>(LOCAL(0));
-  if (!obj.hasNext()) {
-    raiseOutOfRangeError(ctx, std::string("map iterator has already reached end"));
-    RET_ERROR;
-  }
+  assert(obj.hasNext());
   RET(obj.next(ctx.typePool));
 }
 
