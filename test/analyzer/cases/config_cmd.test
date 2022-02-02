@@ -11,7 +11,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "sh2o() {}\nsh"}
+                     "text": "sh...() {}\nsh"}
  }
 }
 
@@ -34,7 +34,7 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh2o"
+#    CHECK:       "label": "sh..."
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
@@ -105,7 +105,7 @@
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh2o"
+#    CHECK:       "label": "sh..."
 #    CHECK:     },
 # CHECK_IF:       "label": "shctl"
 # CHECK_IF:   ]
