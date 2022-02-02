@@ -1,1 +1,1 @@
-RUN directive has already defined
+run_defined-1.test:2: [error] RUN directive has already defined

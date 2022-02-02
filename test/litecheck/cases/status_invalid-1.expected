@@ -1,1 +1,1 @@
-invalid STATUS directive: `0.0'
+status_invalid-1.test:5: [error] STATUS directive must be positive number: `0.0'

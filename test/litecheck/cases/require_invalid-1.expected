@@ -1,4 +1,4 @@
-invalid REQUIRE directive: `command ()', caused by
+require_invalid-1.test:6: [error] invalid REQUIRE directive: `command ()', caused by
 (loaded):1:11: [syntax error] expected `{'
 command ()
           ^

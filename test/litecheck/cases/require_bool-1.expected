@@ -1,1 +1,1 @@
-REQUIRE directive must be boolean expression: `  34 + 34'
+require_bool-1.test:3: [error] REQUIRE directive must be boolean expression: `  34 + 34'

@@ -1,1 +1,1 @@
-require RUN directive or shebang
+empty-1.test:1: [error] require RUN directive or shebang

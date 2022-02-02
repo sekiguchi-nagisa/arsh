@@ -1,4 +1,1 @@
-quantifier does not follow a repeatable item
-stdout is mismatched
-missing terminating ] for character class
-stderr is mismatched
+out_err_re_invalid-1.test:7: [error] quantifier does not follow a repeatable item
