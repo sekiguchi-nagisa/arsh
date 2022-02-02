@@ -67,7 +67,7 @@ protected:
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
-    auto src = man.update("<dummy>", 0, "");  // dummy
+    auto src = man.update("<dummy>", 0, ""); // dummy
     src = man.update(GetParam(), 0, std::move(content));
     ASSERT_EQ(2, src->getSrcId());
     AnalyzerAction action;
@@ -139,7 +139,10 @@ struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-TEST_P(AnalyzerTest, base) { ASSERT_NO_FATAL_FAILURE(this->doTest()); }
+TEST_P(AnalyzerTest, base) {
+  printf("@@ test script %s\n", GetParam().c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doTest());
+}
 
 INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,
                          ::testing::ValuesIn(getSortedFileList(ANALYZER_TEST_DIR)));

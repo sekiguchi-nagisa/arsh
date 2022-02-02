@@ -393,12 +393,20 @@ private:
   }
 };
 
+static std::string toDirName(const std::string &fullpath) {
+  StringRef ref = fullpath;
+  auto pos = ref.lastIndexOf("/");
+  ref = ref.slice(0, pos);
+  return ref.empty() ? "/" : ref.toString();
+}
+
 std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ckind,
                                                bool cmdArgComp) {
   CompletionItemCollector collector;
+  std::string workDir = toDirName(src.getPath());
   auto &ptr = this->addNew(src);
   CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(*this),
-                              ptr->getPool(), ptr->getScope(), "");
+                              ptr->getPool(), ptr->getScope(), workDir);
   CodeCompOp ignoredOp{};
   switch (ckind) {
   case CmdCompKind::disabled_:

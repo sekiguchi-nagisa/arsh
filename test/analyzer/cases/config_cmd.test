@@ -1,0 +1,121 @@
+# RUN: eval $cmd --test $self --debounce-time 5
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "sh2o() {}\nsh"}
+ }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerCharacter": ".", "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+# by default, only complete user-defined/builtin command
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "sh2o"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "shctl"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "ydshd": {
+        "commandArgumentCompletionEnabled": false,
+        "commandCompletion": "disabled",
+        "logLevel": "error"
+      }
+    }
+  }
+}
+# disable command completion
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerCharacter": ".", "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": []
+
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "ydshd": {
+        "commandArgumentCompletionEnabled": false,
+        "commandCompletion": "all",
+        "logLevel": "error"
+      }
+    }
+  }
+}
+# allow arvitrary command completion
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerCharacter": ".", "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "sh"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "sh2o"
+#    CHECK:     },
+# CHECK_IF:       "label": "shctl"
+# CHECK_IF:   ]
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
