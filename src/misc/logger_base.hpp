@@ -125,10 +125,8 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   }
 
   // print body
-  this->sync([&] {
-    fprintf(this->filePtr.get(), "%s%s\n", header, str);
-    fflush(this->filePtr.get());
-  });
+  fprintf(this->filePtr.get(), "%s%s\n", header, str);
+  fflush(this->filePtr.get());
   free(str);
 
   if (level == LogLevel::FATAL) {
