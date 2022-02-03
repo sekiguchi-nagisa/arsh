@@ -1,0 +1,6 @@
+# RUN: cd $(dirname $self) && /bin/sh $self
+ls | LANG=C sort
+# CHECK_RE_IF: .*out_re_if_ok-0\.expected
+#    CHECK_RE: .*out_re_if_ok-0\.test
+# CHECK_RE_IF: .*status_invalid-1\.expected
+#    CHECK_RE: .*status_invalid-1\.test

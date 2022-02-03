@@ -152,8 +152,8 @@ function _to_chunk($checks : [Directive]) : [[Directive]] {
 }
 
 function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
-    assert $checks.size() == 1
-    assert $output.size() == 1
+    assert $checks.size() == 1 : "${$checks.size()}"
+    assert $output.size() == 1 : "${$output.size()}"
 
     var out = $output.join($'\n')
     var re = $checks[0].line as Regex
@@ -167,7 +167,7 @@ function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
 }
 
 function _match_chunk($checks : [Directive], $output : [String]) : Bool {
-    $checks[0].type.endsWith("_RE") && return $_match_chunk_re($checks, $output)
+    $checks[0].line is Regex && return $_match_chunk_re($checks, $output)
 
     var eout = ""
     for $c in $checks {
@@ -187,8 +187,16 @@ function _match_chunk($checks : [Directive], $output : [String]) : Bool {
 }
 
 function _skip_until($c : Any, $output : [String], $index : Int) : Int {
-    for(; $index < $output.size(); $index++) {
-        $output[$index] == $c as String && break
+    if $c is String {
+        for(; $index < $output.size(); $index++) {
+            $output[$index] == $c && break
+        }
+    } elif $c is Regex {
+        for(; $index < $output.size(); $index++) {
+            $output[$index] =~ $c && break
+        }
+    } else {
+        assert $false : "unreachable"
     }
     return $index
 }
