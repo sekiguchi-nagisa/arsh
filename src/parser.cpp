@@ -695,7 +695,14 @@ std::unique_ptr<Node> Parser::parse_typedef() {
       }
       this->expect(TokenKind::RP); // always success
     }
-    auto blockNode = TRY(this->parse_block());
+    auto blockNode = this->parse_block();
+    if (this->incompleteNode) {
+      node->setFuncBody(std::move(this->incompleteNode));
+      this->incompleteNode = std::move(node);
+      return nullptr;
+    } else if (this->hasError()) {
+      return nullptr;
+    }
     node->setFuncBody(std::move(blockNode));
     return node;
   }
