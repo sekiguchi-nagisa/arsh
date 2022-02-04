@@ -36,6 +36,10 @@
         - now change server configuration at runtime
         - change command name/command argument completion setting
 
+#### Misc
+
+- add ``CHECK_RE_IF``, ``CHECKERR_RE_IF`` directive to ``litecheck``
+
 ### Changed
 
 #### Core
