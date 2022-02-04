@@ -501,13 +501,13 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
   getOrShowError(
       this->logger, params.settings, "settings", [&](const ConfigSettingWrapper &wrapper) {
         getOrShowError(this->logger, wrapper.ydshd, "ydshd", [&](const ConfigSetting &setting) {
-          getOrShowError(this->logger, setting.logLevel, "logLevel",
-                         [&](LogLevel level) { this->logger.get().setSeverity(level); });
           getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
                          [&](CmdCompKind kind) { this->cmdCompKind = kind; });
           getOrShowError(this->logger, setting.commandArgumentCompletionEnabled,
                          "commandArgumentCompletionEnabled",
                          [&](bool enabled) { this->cmdArgCompEnabled = enabled; });
+          getOrShowError(this->logger, setting.logLevel, "logLevel",
+                         [&](LogLevel level) { this->logger.get().setSeverity(level); });
         });
       });
 }

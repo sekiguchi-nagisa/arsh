@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self --debounce-time 5
+# RUN: eval $cmd --test $self --log warning
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -42,11 +42,13 @@
       "ydshd": {
         "commandArgumentCompletionEnabled": null,
         "commandCompletion": "default",
-        "logLevel": "error"
+        "logLevel": "warning"
       }
     }
   }
 }
+
+# CHECKERR_RE_IF: .+ <warning> \[\d+\] field: `commandArgumentCompletionEnabled' is invalid type
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",
@@ -64,7 +66,7 @@
 
 
 <<<
-{"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }
