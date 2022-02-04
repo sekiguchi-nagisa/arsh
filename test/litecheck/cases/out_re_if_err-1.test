@@ -1,0 +1,5 @@
+# RUN: /bin/sh $self
+
+echo hello
+
+# CHECK_RE_IF: fkore

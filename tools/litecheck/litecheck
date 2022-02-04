@@ -64,6 +64,7 @@ function _parse_num($v : String) : Int! {
 
 typedef Directive($t : String, $l : String, $n : Int) {
     let type = $t   # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
+    assert !$l.empty()
     let line = case $type {
         "STATUS" => $_parse_num($l) ?? throw new Error("$STATUS directive must be positive number: `$l'")
         $/CHECK.*_RE.*/ => new Regex($l, "")
@@ -88,10 +89,20 @@ function _parse_directives($path : String) : [String: [Directive]] {
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE): (.*)/.match($line)
+        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE):(.*)/.match($line)
         if !$matched.empty() {
             var type = $matched[1]!
             $line = $matched[2]!
+            if !$line.startsWith(" ") {
+                var prefix = $matched[0]!
+                if !$line.empty() {
+                    $prefix = $prefix.to($prefix.lastIndexOf($line))
+                }
+                $_error($ln, "invalid directive format, must be start with `$prefix '")
+            }
+            $line = $line.from(1) # skip first ' '
+            $line :- $_error($ln, "invalid directive format, need non-emtpy string")
+
             var key = $type
             if $type == $CHECK || $type.startsWith("CHECK_") {
                 $key = $CHECK
@@ -152,8 +163,7 @@ function _to_chunk($checks : [Directive]) : [[Directive]] {
 }
 
 function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
-    assert $checks.size() == 1 : "${$checks.size()}"
-    assert $output.size() == 1 : "${$output.size()}"
+    assert $checks.size() == 1
 
     var out = $output.join($'\n')
     var re = $checks[0].line as Regex
