@@ -1,6 +1,0 @@
-
-#$test($result = 'type', $lineNum = 5, $chars = 1, $errorKind = 'DefinedSymbol', $status = 1)
-
-assert (AAA=123 \
-AAA='ferjf' \
-$AAA) =='ferjf'

@@ -2,7 +2,7 @@
 
 var ZZZ123 = ''
 
-# if has newline after prefix assignment, treat as assingment 
+# if has newline after prefix assignment, treat as assignment
 ZZZ123=\
 $(ls)
 

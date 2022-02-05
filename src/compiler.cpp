@@ -265,7 +265,7 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
       }
       break;
     default:
-      break;
+      break; // unreachable
     }
   }
   this->frontEnd.teardownASTDump();

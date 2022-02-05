@@ -403,15 +403,6 @@ TypeOrError TypeDecoder::decode() {
   }
   case HandleInfo::Tuple: {
     unsigned int size = this->decodeNum();
-    if (size == 0) { // variable length type
-      size = this->types.size();
-      std::vector<const DSType *> elementTypes(size);
-      for (unsigned int i = 0; i < size; i++) {
-        elementTypes[i] = this->types[i];
-      }
-      return this->pool.createTupleType(std::move(elementTypes));
-    }
-
     std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = TRY(this->decode());
@@ -527,7 +518,8 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
     str += elementTypes[1]->getNameRef();
     str += "]";
     return str;
-  } else if (typeTemplate == this->getOptionTemplate()) {
+  } else {
+    assert(typeTemplate == this->getOptionTemplate());
     auto *type = elementTypes[0];
     std::string str;
     if (type->isFuncType()) {
@@ -538,18 +530,6 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
       str += ")";
     }
     str += "!";
-    return str;
-  } else {
-    unsigned int elementSize = elementTypes.size();
-    std::string str = typeTemplate.getName();
-    str += "<";
-    for (unsigned int i = 0; i < elementSize; i++) {
-      if (i > 0) {
-        str += ",";
-      }
-      str += elementTypes[i]->getNameRef();
-    }
-    str += ">";
     return str;
   }
 }

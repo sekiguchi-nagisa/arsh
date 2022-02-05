@@ -33,6 +33,10 @@ assert "$(ulimit -S -f -f 5000)" == '5000'
 assert "$(ulimit -S -f -f unLimiTed)" == "unlimited"
 assert "$(ulimit -S -f HarD -f)" == "$(ulimit -f -H)"
 assert "$(ulimit -S -f sOft -f)" == "$(ulimit -f -S)"
+assert "$(ulimit -S -f $'HarD\x00' -f 2>&1)" == "ydsh: ulimit: HarD: invalid number"
+assert {ulimit -S -f $'HarD\x00' -f; $?} == 1
+assert "$(ulimit $'HarD\x00' 2>&1)" == "ydsh: ulimit: HarD: invalid number"
+assert {ulimit $'HarD\x00'; $?} == 1
 
 assert ulimit -S -f 5000
 assert ulimit -H 6000

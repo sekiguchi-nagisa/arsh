@@ -23,6 +23,15 @@ try {
 }
 
 try {
+    ~/
+    assert $false
+} catch $e : Error {
+    assert $e is SystemError
+    import-env HOME
+    assert echo ${$e.message()} | grep "execution error: $HOME/: Permission denied"
+}
+
+try {
     hfjhei94fg | grep ds
 #    assert($false)
 } catch($e : Error) {

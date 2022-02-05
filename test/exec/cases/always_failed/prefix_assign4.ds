@@ -1,4 +1,0 @@
-
-#$test($result = 'type', $lineNum = 4, $chars = 6, $errorKind = 'Required', $status = 1)
-
-ZZZZ=$(echo hello world) 1234

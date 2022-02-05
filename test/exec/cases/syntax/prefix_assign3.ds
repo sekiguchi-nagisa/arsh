@@ -1,0 +1,4 @@
+#$test($result = 'parse', $lineNum = 4,$chars = 1,  $errorKind = 'CMD_ARG', $status = 1)
+
+hoge=\
+(AAA)  env | grep hoge@jf

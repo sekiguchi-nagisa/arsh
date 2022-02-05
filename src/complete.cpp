@@ -216,10 +216,6 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
           if (ignoreIdent && isIDStart(udc[0])) {
             continue;
           }
-          if (std::any_of(std::begin(DENIED_REDEFINED_CMD_LIST),
-                          std::end(DENIED_REDEFINED_CMD_LIST), [&](auto &e) { return udc == e; })) {
-            continue;
-          }
           consumer(udc, CompCandidateKind::COMMAND_NAME);
         }
       }
@@ -455,10 +451,8 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
   // complete method
   for (auto &e : pool.getMethodMap()) {
     StringRef name = e.first.ref;
+    assert(!name.empty());
     auto &type = pool.get(e.first.id);
-    if (name.empty()) {
-      continue;
-    }
     if (name.startsWith(word) && !isMagicMethodName(name)) {
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
@@ -533,9 +527,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   }
 
   auto &type = pool.get(handle->getTypeId());
-  if (!type.isModType()) {
-    return false;
-  }
+  assert(type.isModType());
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {

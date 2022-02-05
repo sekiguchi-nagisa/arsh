@@ -13,6 +13,10 @@ assert {kill -1234; $? } == 1
 assert "$(kill -s 1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
 assert {kill -s 1234; $? } == 1
 
+assert "$(kill -s 99999999999999999999999999999 2>&1)" == 
+       "ydsh: kill: 99999999999999999999999999999: invalid signal specification"
+assert {kill -s 99999999999999999999999999999; $? } == 1
+
 assert "$(kill -: 2>&1)" == "ydsh: kill: :: invalid signal specification"
 assert {kill -: ; $? } == 1
 
@@ -49,6 +53,15 @@ assert { kill -l hup hoge; $?; } == 1
 
 assert "$(kill -l 1 hup)" == $'HUP\n1'
 assert { kill -l 1 hup; $?; } == 0
+
+assert "$(kill -l 9999999999999999999999999999999 2>&1)" == 
+       "ydsh: kill: 9999999999999999999999999999999: invalid signal specification"
+assert {kill -l 9999999999999999999999999999999; $?} == 1
+
+assert "$(kill -l 9 hoge 1 2>&1)" == "KILL
+ydsh: kill: hoge: invalid signal specification
+HUP"
+assert {kill -l 9 hoge 1; $?} == 1
 
 
 # kill specified proc

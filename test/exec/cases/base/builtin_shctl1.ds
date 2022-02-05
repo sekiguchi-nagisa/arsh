@@ -1,3 +1,6 @@
+# empty
+assert shctl
+assert "$(shctl 2>&1)" == ""
 
 # undefined subcommand
 shctl hogera

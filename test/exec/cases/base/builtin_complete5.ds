@@ -31,6 +31,7 @@ assert diff <(complete -A file) <(complete 'ls ')
 assert diff <(complete -A file '') <(complete 'ls ')
 assert diff <(complete -A file '.') <(complete 'ls .')
 assert diff <(complete -A file -A tilde '~') <(complete 'ls ~')
+assert $(complete -A file /fjafifafoifare/).empty()
 
 ## exec
 assert diff <(complete -A exec /usr/bin/) <(complete '/usr/bin/')
@@ -65,17 +66,35 @@ assert diff <(complete -A stmt_kw ) <(for $e in $stmt { echo $e; } | sort)
 assert diff <(complete -A stmt_kw i) <(for $e in $stmt { echo $e; } | grep '^i' | sort)
 
 ## command
+assert $(unsetenv PATH && complete -A external).empty()
+assert $(setenv PATH= && complete -A external).empty()
+
 assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
 assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
 
 hogehoge(){}
+\{\}() {}
+a\	b(){}
 
-var udc = ["hogehoge"]
+var udc = ["\\{\\}","a\$'\x09'b", "hogehoge"]
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
 assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
+assert "$(complete -A udc 'e')".empty()
 
 assert diff <(complete -A command -A stmt_kw) <(complete ';')
 assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
 assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
 assert diff <(complete -A type) <(complete '34 as ')
 assert diff <(complete -A type S) <(complete '34 as S')
+
+## invalid
+assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"
+assert !complete -A
+assert $? == 1
+
+assert "$(complete -A hgorahe 2>&1)" == "ydsh: complete: hgorahe: invalid action
+complete: complete [-A action] line"
+assert !complete -A fjairfaj
+assert $? == 2
+
+true

@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 5, $chars = 5, $errorKind = 'InsideFunc', $status = 1)
+
+typedef AAA($a : AAA) {
+    var v = $a
+    return
+}

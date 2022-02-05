@@ -49,9 +49,11 @@ assert "$STDIN" == $STDIN as String
 ## Array
 assert "${[12,34]}" == "12 34"
 assert "${[['a','b'],['c','d','e']]}" == "a b c d e"
+assert "${[34 as Int!, new Int!(), 89]}" == "34 89"
 
 ## Map
 assert "${[23:34 as Int!, 900: new Int!()]}" == "23 34"
+assert "${[12: 34,56:78]}".split(" ").sort().join(" ") == "12 34 56 78"
 
 ## Tuple
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'

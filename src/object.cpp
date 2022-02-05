@@ -629,9 +629,9 @@ bool ErrorObject::opStr(StrBuilder &builder) const {
 
 void ErrorObject::printStackTrace(DSState &state) {
   StrBuilder builder(state);
-  if (!this->opStr(builder)) {
-    return;
-  }
+  bool r = this->opStr(builder);
+  (void)r;
+  assert(r);
 
   // print header
   fprintf(stderr, "%s\n", std::move(builder).take().asCStr());
