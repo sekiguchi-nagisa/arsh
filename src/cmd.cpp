@@ -328,14 +328,25 @@ END:
     const char *end = arg.end();
     for (const char *iter = arg.begin(); iter != end;) {
       if (*iter == '\\') {
-        int code = parseEscapeSeq(iter, end, true);
-        if (code != -1) {
+        auto ret = parseEscapeSeq(iter, end, true);
+        switch (ret.kind) {
+        case EscapeSeqResult::OK: {
           char buf[5];
-          unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
+          unsigned int size = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
           fwrite(buf, sizeof(char), size, stdout);
+          iter += ret.consumedSize;
           continue;
-        } else if (iter + 1 != end && *(iter + 1) == 'c') {
-          return 0; // stop printing
+        }
+        case EscapeSeqResult::RANGE:
+          iter += ret.consumedSize; // skip
+          continue;
+        case EscapeSeqResult::UNKNOWN:
+          if (*(iter + 1) == 'c') {
+            return 0; // stop printing
+          }
+          break;
+        default:
+          break;
         }
       }
       char ch = *(iter++);

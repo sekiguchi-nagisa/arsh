@@ -197,19 +197,30 @@ public:
   bool toEnvName(Token token, std::string &out) const;
 };
 
+struct EscapeSeqResult {
+  enum Kind : unsigned char {
+    OK,         // success
+    END,        // reach end
+    NEED_CHARS, // need one or more characters
+    UNKNOWN,    // unknown escape sequence
+    RANGE,      // out-of-range unicode (U+000000~U+10FFFF)
+  } kind;
+  unsigned short consumedSize;
+  int codePoint;
+
+  explicit operator bool() const { return this->kind == OK; }
+};
+
 /**
  * common escape sequence handling
  * @param begin
  * must be start with '\'
- * if success, begin + consumed size
  * @param end
  * @param needOctalPrefix
  * if true, octal escapse sequence start with '0'
  * @return
- * if success, return recognized code point
- * if failed, return -1
  */
-int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix);
+EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
 
 } // namespace ydsh
 

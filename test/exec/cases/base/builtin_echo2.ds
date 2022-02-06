@@ -23,6 +23,9 @@ assert "$(echo -e '\u7058')" == '灘'
 assert "$(echo -e '\U7058')" == '灘'
 assert "$(echo -e '\U07058')" == '灘'
 assert "$(echo -e '\U20118')" == '𠄘'
+assert "$(echo -e '@(\UFFFFFF)@')" == '@()@'
+assert "$(echo -e '@(\UFFFFFFF)@')" == '@()@'
+assert "$(echo -e '@(\UFFFFFFFF)@')" == '@()@'
 
 assert("$(echo -e -- hello)" == '-- hello')
 assert "$(echo ---)" == '---'

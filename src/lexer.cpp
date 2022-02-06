@@ -145,28 +145,25 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     if (*iter == '\\') {
-      int code = parseEscapeSeq(iter, end, false);
-      if (code != -1) {
+      auto ret = parseEscapeSeq(iter, end, false);
+      switch (ret.kind) {
+      case EscapeSeqResult::OK: {
         char buf[4];
-        unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
-        if (!size) {
-          return false; // unicode out of range
-        }
+        unsigned int size = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
+        assert(size);
         out.append(buf, size);
+        iter += ret.consumedSize;
         continue;
-      } else if (iter + 1 != end) {
-        switch (*(iter + 1)) {
-        case '\'':
+      }
+      case EscapeSeqResult::UNKNOWN:
+        if (*(iter + 1) == '\'') {
           iter += 2;
           out += '\'';
           continue;
-        case 'x':
-        case 'u':
-        case 'U':
-          return false; // need hex char after \x \u \U
-        default:
-          break;
         }
+        break;
+      default:
+        return false;
       }
     }
     out += *(iter++);
@@ -286,38 +283,56 @@ bool Lexer::toEnvName(Token token, std::string &out) const {
   return true;
 }
 
-int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
+static EscapeSeqResult ok(int code, unsigned short size) {
+  return {
+      .kind = EscapeSeqResult::OK,
+      .consumedSize = size,
+      .codePoint = code,
+  };
+}
+
+static EscapeSeqResult ok(char ch) { return ok(ch, 2); }
+
+static EscapeSeqResult err(EscapeSeqResult::Kind k, unsigned short size) {
+  return {
+      .kind = k,
+      .consumedSize = size,
+      .codePoint = -1,
+  };
+}
+
+EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix) {
   if (begin == end || *begin != '\\' || (begin + 1) == end) {
-    return -1;
+    return err(EscapeSeqResult::END, 0);
   }
+  const char *old = begin;
   begin++; // consume '\'
   char next = *(begin++);
   switch (next) {
   case '\\':
-    return '\\';
+    return ok('\\');
   case 'a':
-    return '\a';
+    return ok('\a');
   case 'b':
-    return '\b';
+    return ok('\b');
   case 'e':
   case 'E':
-    return '\033';
+    return ok('\033');
   case 'f':
-    return '\f';
+    return ok('\f');
   case 'n':
-    return '\n';
+    return ok('\n');
   case 'r':
-    return '\r';
+    return ok('\r');
   case 't':
-    return '\t';
+    return ok('\t');
   case 'v':
-    return '\v';
+    return ok('\v');
   case 'x':
   case 'u':
   case 'U': {
     if (begin == end || !isHex(*begin)) {
-      begin -= 2;
-      break;
+      return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
     }
     unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
     unsigned int code = hexToNum(*(begin++));
@@ -329,12 +344,15 @@ int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
         break;
       }
     }
-    return code;
+    if (code <= 0x10FFFF) {
+      return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
+    } else {
+      return err(EscapeSeqResult::RANGE, static_cast<unsigned short>(begin - old));
+    }
   }
   default:
     if (!isOctal(next) || (needOctalPrefix && next != '0')) {
-      begin -= 2;
-      break;
+      return err(EscapeSeqResult::UNKNOWN, static_cast<unsigned short>(begin - old));
     }
     unsigned int code = next - '0';
     for (unsigned int i = needOctalPrefix ? 0 : 1; i < 3; i++) {
@@ -345,9 +363,8 @@ int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
         break;
       }
     }
-    return code;
+    return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
   }
-  return -1;
 }
 
 } // namespace ydsh

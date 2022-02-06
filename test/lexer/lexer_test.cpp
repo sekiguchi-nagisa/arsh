@@ -562,6 +562,12 @@ TEST_F(LexerTest_Lv1, estring_literal4) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
+TEST_F(LexerTest_Lv1, estring_literal5) {
+  const char *text = "$'\\'";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::STRING_LITERAL, "$'\\'", TokenKind::EOS, ""));
+}
+
 // invalid string literal
 TEST_F(LexerTest_Lv1, invalid_string_literal) {
   const char *text = "'\\''";
@@ -2080,11 +2086,13 @@ struct EscapeSeqTest : public ::testing::Test {
     const char *begin = ref.begin();
     const char *end = ref.end();
     while (begin != end) {
-      int c = parseEscapeSeq(begin, end, needPrefix);
-      if (c == -1) {
-        c = *(begin++);
+      auto ret = parseEscapeSeq(begin, end, needPrefix);
+      if (ret) {
+        out.push_back(ret.codePoint);
+        begin += ret.consumedSize;
+      } else {
+        out.push_back(*(begin++));
       }
-      out.push_back(c);
     }
     ASSERT_EQ(codes, out);
   }
@@ -2124,6 +2132,98 @@ TEST_F(EscapeSeqTest, base) {
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\uA9", 0xa9));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\u2328", 0x2328));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\U2328", 0x2328));
+}
+
+TEST_F(EscapeSeqTest, error) {
+  StringRef ref = "\\z";
+  auto ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::UNKNOWN, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "34";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::END, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(0, ret.consumedSize);
+
+  ref = "";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::END, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(0, ret.consumedSize);
+
+  ref = "\\";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::END, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(0, ret.consumedSize);
+
+  ref = "\\x1w";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::OK, ret.kind);
+  ASSERT_EQ('\x01', ret.codePoint);
+  ASSERT_EQ(3, ret.consumedSize);
+
+  ref = "\\x";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\xQ";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\uQ";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\u";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\UQ";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\U";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\123";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), true);
+  ASSERT_EQ(EscapeSeqResult::UNKNOWN, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\UFFFFFF";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(8, ret.consumedSize);
+
+  ref = "\\UFFFFFFF";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(9, ret.consumedSize);
+
+  ref = "\\UFFFFFFFF";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(10, ret.consumedSize);
 }
 
 int main(int argc, char **argv) {
