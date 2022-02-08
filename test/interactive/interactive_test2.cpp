@@ -361,7 +361,7 @@ TEST_F(InteractiveTest, pipestatus) {
 }
 
 TEST_F(InteractiveTest, moduleError1) {
-  this->invoke("--quiet", "--norc");
+  this->invokeImpl({"--quiet", "--norc"}, true);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
@@ -371,15 +371,15 @@ TEST_F(InteractiveTest, moduleError1) {
                      "     ^\n"
                      "(stdin):1:8: [note] at module import\n"
                      "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
-                     "       %s\n",
+                     "       %s",
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
+      this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", eout.c_str()));
   ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
-    this->sendLineAndExpect("f", "",
+    this->sendLineAndExpect("f",
                             "[runtime error]\n"
                             "SystemError: execution error: f: command not found\n"
-                            "    from (stdin):2 '<toplevel>()'\n");
+                            "    from (stdin):2 '<toplevel>()'");
   }));
 
   this->send(CTRL_D);

@@ -142,7 +142,7 @@ public:
     this->invokeImpl(values);
   }
 
-  void invokeImpl(const std::vector<std::string> &args);
+  void invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut = false);
 
   void addEnv(const char *name, const char *value) { this->envMap.emplace(name, value); }
 
@@ -194,7 +194,7 @@ protected:
 public:
   InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
 
-  void interpret(std::string &line);
+  std::string interpret(const std::string &line);
 
   void setPrompt(const std::string &p) { this->prompt = p; }
 

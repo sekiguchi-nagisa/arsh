@@ -116,7 +116,7 @@ int Extractor::extract(const char *value) {
 // ##     InteractiveBase     ##
 // #############################
 
-void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
+void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut) {
   termios term;
   xcfmakesane(term);
   auto builder = ProcBuilder{this->binPath.c_str()}
@@ -124,20 +124,24 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
                      .setWorkingDir(this->workingDir.c_str())
                      .setIn(IOConfig::PTY)
                      .setOut(IOConfig::PTY)
-                     .setErr(IOConfig::PIPE)
+                     .setErr(mergeErrToOut ? IOConfig::PTY : IOConfig::PIPE)
                      .setWinSize(24, 200)
                      .setTerm(term);
   for (auto &e : this->envMap) {
     builder.addEnv(e.first.c_str(), e.second.c_str());
   }
   this->handle = builder();
+  if (mergeErrToOut) {
+    this->handle.closeErr();
+  }
 }
 
-void InteractiveShellBase::interpret(std::string &line) {
+std::string InteractiveShellBase::interpret(const std::string &line) {
   Screen screen(this->handle.getWinSize());
+  screen.setEAW(2);
   screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
   screen.interpret(line.c_str(), line.size());
-  line = screen.toString();
+  return screen.toString();
 }
 
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {

@@ -101,10 +101,9 @@ WaitStatus ProcHandle::wait(WaitOp op) {
     }
 
     if (this->status_.isTerminated()) {
-      close(this->in());
-      close(this->out());
-      close(this->err());
-
+      this->closeIn();
+      this->closeOut();
+      this->closeErr();
       this->detach();
     }
   }

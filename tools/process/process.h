@@ -163,14 +163,19 @@ public:
    */
   WaitStatus wait(WaitOp op = WaitOp::BLOCKING);
 
-  pid_t detach() {
-    pid_t pid = this->pid_;
-    this->pid_ = -1;
-    this->pty_ = -1;
+  void closeIn() {
+    close(this->in());
     this->in_ = -1;
+  }
+
+  void closeOut() {
+    close(this->out());
     this->out_ = -1;
+  }
+
+  void closeErr() {
+    close(this->err());
     this->err_ = -1;
-    return pid;
   }
 
   void kill(int sig) const {
@@ -188,6 +193,17 @@ public:
   Output waitAndGetResult(bool removeLastSpace = true);
 
   WaitStatus waitWithTimeout(unsigned int msec);
+
+private:
+  pid_t detach() {
+    pid_t pid = this->pid_;
+    this->pid_ = -1;
+    this->pty_ = -1;
+    this->in_ = -1;
+    this->out_ = -1;
+    this->err_ = -1;
+    return pid;
+  }
 };
 
 struct IOConfig {
