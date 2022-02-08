@@ -208,13 +208,6 @@ bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc);
  */
 int xexecve(const char *filePath, char *const *argv, char *const *envp);
 
-/**
- * wrap '_exit'
- * when coverage build, call '__gcov_flush()' before _exit
- * @param exitStatus
- */
-[[noreturn]] void terminate(int exitStatus);
-
 } // namespace ydsh
 
 #endif // YDSH_CORE_H

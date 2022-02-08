@@ -1914,7 +1914,7 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   }
 
   if (subshell) {
-    terminate(state.getMaskedExitStatus());
+    exit(state.getMaskedExitStatus());
   }
   errno = 0; // force clear ECHILD
   return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
