@@ -217,8 +217,8 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 std::unique_ptr<FrontEnd::Context>
 DefaultModuleProvider::newContext(Lexer &&lexer, FrontEndOption option,
                                   ObserverPtr<CodeCompletionHandler> ccHandler) {
-  return std::make_unique<FrontEnd::Context>(this->pool, std::move(lexer), this->scope, option,
-                                             ccHandler);
+  return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
+                                             std::move(lexer), this->scope, option, ccHandler);
 }
 
 const ModType &DefaultModuleProvider::newModTypeFromCurContext(
@@ -248,8 +248,9 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     auto lex = Lexer::fromFullPath(fullpath, std::move(buf));
     auto newScope = this->loader.createGlobalScopeFromFullpath(this->pool, fullpath,
                                                                this->pool.getBuiltinModType());
-    return std::make_unique<FrontEnd::Context>(this->pool, std::move(lex), std::move(newScope),
-                                               option, nullptr);
+    return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
+                                               std::move(lex), std::move(newScope), option,
+                                               nullptr);
   } else {
     assert(is<unsigned int>(ret));
     auto &type = this->pool.get(get<unsigned int>(ret));
@@ -257,5 +258,7 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     return cast<ModType>(&type);
   }
 }
+
+const SysConfig &DefaultModuleProvider::getSysConfig() const { return this->loader.getSysConfig(); }
 
 } // namespace ydsh

@@ -247,6 +247,7 @@ set(YDSH_SRC
         src/complete.cpp
         src/paths.cpp
         src/compiler.cpp
+        src/sysconfig.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

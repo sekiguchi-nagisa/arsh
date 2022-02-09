@@ -215,12 +215,14 @@ private:
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
 private:
+  const SysConfig &sysConfig;
   SymbolIndexes &indexes;
   std::vector<IndexBuilder> builders;
   int visitingDepth{0};
 
 public:
-  explicit SymbolIndexer(SymbolIndexes &indexes) : indexes(indexes) {}
+  SymbolIndexer(const SysConfig &config, SymbolIndexes &indexes)
+      : sysConfig(config), indexes(indexes) {}
 
   ~SymbolIndexer() override = default;
 

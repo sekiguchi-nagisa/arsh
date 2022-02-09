@@ -426,17 +426,17 @@ ModResult ModuleLoaderBase::load(const char *scriptDir, const char *path, FilePt
       scriptDir[0] != '/') { // if full path, not search next path
     return ret;
   }
-  if (strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {
+  if (this->sysConfig.getModuleDir() == scriptDir) {
     return ret;
   }
 
   if (isFileNotFound(ret)) {
-    const char *localModDir = getFullLocalModDir();
-    if (strcmp(scriptDir, localModDir) != 0) {
-      ret = this->loadImpl(localModDir, path, filePtr, option);
+    const auto &localModDir = this->sysConfig.getModuleHome();
+    if (localModDir != scriptDir) {
+      ret = this->loadImpl(localModDir.c_str(), path, filePtr, option);
     }
     if (isFileNotFound(ret)) {
-      ret = this->loadImpl(SYSTEM_MOD_DIR, path, filePtr, option);
+      ret = this->loadImpl(this->sysConfig.getModuleDir().c_str(), path, filePtr, option);
     }
   }
   return ret;

@@ -96,13 +96,14 @@ struct TypeFactory<Func_t<R, P...>> {
 
 class TypeTest : public ::testing::Test {
 public:
+  SysConfig sysConfig;
   ModuleLoader loader;
   NameScopePtr scope;
   TypePool pool;
   TypeChecker checker;
 
 public:
-  TypeTest() : checker(this->pool, false, nullptr) {
+  TypeTest() : loader(this->sysConfig), checker(this->sysConfig, this->pool, false, nullptr) {
     this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 

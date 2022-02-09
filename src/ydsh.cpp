@@ -170,7 +170,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
   auto *ctx = new DSState();
   auto buildtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
   BindingConsumer bindingConsumer(*ctx);
-  bindBuiltins(bindingConsumer, ctx->typePool, *buildtin);
+  bindBuiltins(bindingConsumer, ctx->sysConfig, ctx->typePool, *buildtin);
 
   loadEmbeddedScript(ctx, buildtin);
 

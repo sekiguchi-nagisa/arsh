@@ -102,6 +102,8 @@ class CodeCompletionHandler {
 private:
   UserDefinedComp userDefinedComp;
 
+  const SysConfig &config;
+
   const TypePool &pool;
 
   const std::string &logicalWorkdir;
@@ -146,8 +148,9 @@ private:
   CodeCompOp fallbackOp{};
 
 public:
-  CodeCompletionHandler(const TypePool &pool, const std::string &logicalWorkdir, NameScopePtr scope)
-      : pool(pool), logicalWorkdir(logicalWorkdir), scope(std::move(scope)) {}
+  CodeCompletionHandler(const SysConfig &config, const TypePool &pool,
+                        const std::string &logicalWorkdir, NameScopePtr scope)
+      : config(config), pool(pool), logicalWorkdir(logicalWorkdir), scope(std::move(scope)) {}
 
   void addCompRequest(CodeCompOp op, std::string &&word) {
     this->compOp = op;
@@ -224,6 +227,7 @@ class CodeCompleter {
 private:
   CompCandidateConsumer &consumer;
   ObserverPtr<FrontEnd::ModuleProvider> provider;
+  const SysConfig &config;
   TypePool &pool;
   NameScopePtr scope;
   const std::string &logicalWorkingDir;
@@ -231,8 +235,9 @@ private:
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
-                TypePool &pool, NameScopePtr scope, const std::string &workDir)
-      : consumer(consumer), provider(provider), pool(pool), scope(std::move(scope)),
+                const SysConfig &config, TypePool &pool, NameScopePtr scope,
+                const std::string &workDir)
+      : consumer(consumer), provider(provider), config(config), pool(pool), scope(std::move(scope)),
         logicalWorkingDir(workDir) {}
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }

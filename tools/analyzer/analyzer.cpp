@@ -47,12 +47,13 @@ struct EmptyConsumer {
   void operator()(const Handle &, const DSType &) {}
 };
 
-static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
+static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
+                                    unsigned int &gvarCount) {
   auto builtin = NameScopePtr::create(gvarCount);
   EmptyConsumer emptyConsumer;
-  bindBuiltins(emptyConsumer, pool, *builtin);
+  bindBuiltins(emptyConsumer, config, pool, *builtin);
 
-  ModuleLoader loader; // dummy
+  ModuleLoader loader(config); // dummy
   const char *embed = embed_script;
   Lexer lexer("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
   DefaultModuleProvider provider(loader, pool, builtin);
@@ -62,9 +63,9 @@ static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
   return builtin->toModType(pool);
 }
 
-AnalyzerContext::AnalyzerContext(const Source &src)
+AnalyzerContext::AnalyzerContext(const SysConfig &config, const Source &src)
     : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
-  auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
+  auto &builtin = createBuiltin(config, this->getPool(), this->gvarCount);
   this->scope = NameScopePtr::create(std::ref(this->gvarCount), src.getSrcId());
   this->scope->importForeignHandles(this->getPool(), builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
@@ -107,8 +108,8 @@ std::unique_ptr<FrontEnd::Context>
 Analyzer::newContext(Lexer &&lexer, FrontEndOption option,
                      ObserverPtr<CodeCompletionHandler> ccHandler) {
   auto &ctx = this->current();
-  return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lexer), ctx->getScope(),
-                                             option, ccHandler);
+  return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lexer),
+                                             ctx->getScope(), option, ccHandler);
 }
 
 const ModType &
@@ -143,8 +144,8 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     src = this->srcMan.update(fullpath, src->getVersion(), std::move(content));
     auto &ctx = this->addNew(*src);
     auto lex = createLexer(*src);
-    return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope(),
-                                               option, nullptr);
+    return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lex),
+                                               ctx->getScope(), option, nullptr);
   } else {
     assert(is<unsigned int>(ret));
     auto src = this->srcMan.findById(get<unsigned int>(ret));
@@ -156,14 +157,16 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     } else { // re-parse
       auto &ctx = this->addNew(*src);
       auto lex = createLexer(*src);
-      return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope(),
-                                                 option, nullptr);
+      return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lex),
+                                                 ctx->getScope(), option, nullptr);
     }
   }
 }
 
+const SysConfig &Analyzer::getSysConfig() const { return this->sysConfig; }
+
 const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
-  auto ptr = std::make_unique<AnalyzerContext>(src);
+  auto ptr = std::make_unique<AnalyzerContext>(this->sysConfig, src);
   this->ctxs.push_back(std::move(ptr));
   this->archives.reserve(src.getSrcId());
   return this->current();
@@ -406,7 +409,7 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ck
   std::string workDir = toDirName(src.getPath());
   auto &ptr = this->addNew(src);
   CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(*this),
-                              ptr->getPool(), ptr->getScope(), workDir);
+                              this->sysConfig, ptr->getPool(), ptr->getScope(), workDir);
   CodeCompOp ignoredOp{};
   switch (ckind) {
   case CmdCompKind::disabled_:

@@ -30,6 +30,7 @@
 #include "scope.h"
 #include "signals.h"
 #include "state.h"
+#include "sysconfig.h"
 
 namespace ydsh {
 
@@ -85,6 +86,8 @@ using namespace ydsh;
 
 struct DSState {
 public:
+  const SysConfig sysConfig;
+
   ModuleLoader modLoader;
 
   TypePool typePool;

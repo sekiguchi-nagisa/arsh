@@ -76,11 +76,11 @@ public:
     NameScopePtr scope;
     std::unique_ptr<SourceListNode> srcListNode;
 
-    Context(TypePool &pool, Lexer &&lexer, NameScopePtr scope, FrontEndOption option,
-            ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
+    Context(const SysConfig &config, TypePool &pool, Lexer &&lexer, NameScopePtr scope,
+            FrontEndOption option, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
         : lexer(std::move(lexer)),
           parser(this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
-          checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
+          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
           scope(std::move(scope)) {
       this->checker.setCodeCompletionHandler(ccHandler);
     }
@@ -108,6 +108,8 @@ public:
     using Ret = Union<const ModType *, std::unique_ptr<Context>, ModLoadingError>;
 
     virtual Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) = 0;
+
+    virtual const SysConfig &getSysConfig() const = 0;
   };
 
 private:
@@ -221,6 +223,8 @@ public:
 
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option,
            ModLoadOption loadOption);
+
+  const SysConfig &getSysConfig() const override;
 
   TypePool &getPool() { return this->pool; }
 

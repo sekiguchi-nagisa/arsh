@@ -241,7 +241,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
     DefaultCompConsumer consumer(compreply);
     CodeCompleter codeCompleter(
         consumer, empty(option) ? makeObserver<FrontEnd::ModuleProvider>(provider) : nullptr,
-        st.typePool, std::move(scope), st.logicalWorkingDir);
+        st.sysConfig, st.typePool, std::move(scope), st.logicalWorkingDir);
     codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
                                            const std::string &word,
                                            CompCandidateConsumer &consumer) {

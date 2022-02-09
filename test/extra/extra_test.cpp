@@ -41,14 +41,14 @@ TEST_F(ModLoadTest, prepare) {
   auto src = format("assert test -f $SCRIPT_DIR/mod4extra1.ds\n"
                     "assert !test -f $SCRIPT_DIR/mod4extra2.ds\n"
                     "assert !test -f $SCRIPT_DIR/mod4extra3.ds\n"
-                    "assert test -f ~/.ydsh/module/mod4extra1.ds\n"
-                    "assert test -f ~/.ydsh/module/mod4extra2.ds\n"
-                    "assert !test -f ~/.ydsh/module/mod4extra3.ds\n"
+                    "assert test -f $MODULE_HOME/mod4extra1.ds\n"
+                    "assert test -f $MODULE_HOME/mod4extra2.ds\n"
+                    "assert !test -f $MODULE_HOME/mod4extra3.ds\n"
                     "assert test -f %s/mod4extra1.ds\n"
                     "assert test -f %s/mod4extra2.ds\n"
                     "assert test -f %s/mod4extra3.ds\n"
                     "true",
-                    SYSTEM_MOD_DIR, SYSTEM_MOD_DIR, SYSTEM_MOD_DIR);
+                    X_MODULE_DIR, X_MODULE_DIR, X_MODULE_DIR);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(ds(src.c_str()), 0));
 }
@@ -117,7 +117,7 @@ TEST_F(ModLoadTest, system) {
                   "(string):2:16: [note] at module import\n"
                   "        source include5.ds\n"
                   "               ^~~~~~~~~~~\n",
-                  SYSTEM_MOD_DIR);
+                  X_MODULE_DIR);
   ASSERT_NO_FATAL_FAILURE(this->expect(ds(src), 1, "", e.c_str()));
 }
 

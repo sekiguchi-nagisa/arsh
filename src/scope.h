@@ -21,6 +21,7 @@
 #include <functional>
 
 #include "misc/resource.hpp"
+#include "sysconfig.h"
 #include "type_pool.h"
 
 namespace ydsh {
@@ -325,10 +326,17 @@ template <>
 struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModuleLoaderBase {
+protected:
+  const SysConfig &sysConfig;
+
+  explicit ModuleLoaderBase(const SysConfig &conf) : sysConfig(conf) {}
+
 public:
   static constexpr unsigned int MAX_MOD_NUM = SYS_LIMIT_MOD_ID;
 
   virtual ~ModuleLoaderBase() = default;
+
+  const SysConfig &getSysConfig() const { return this->sysConfig; }
 
   /**
    * resolve module path or module type
@@ -405,7 +413,7 @@ private:
 public:
   NON_COPYABLE(ModuleLoader);
 
-  ModuleLoader() = default;
+  explicit ModuleLoader(const SysConfig &config) : ModuleLoaderBase(config) {}
 
   ~ModuleLoader() override {
     for (auto &e : this->indexMap) {

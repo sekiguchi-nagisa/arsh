@@ -234,6 +234,8 @@ class CodeCompletionHandler;
 
 class TypeChecker : protected NodeVisitor {
 protected:
+  const SysConfig &config;
+
   TypePool &typePool;
 
   NameScopePtr curScope;
@@ -253,8 +255,8 @@ protected:
   std::vector<TypeCheckError> errors;
 
 public:
-  TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex)
-      : typePool(pool), toplevelPrinting(toplevelPrinting),
+  TypeChecker(const SysConfig &config, TypePool &pool, bool toplevelPrinting, const Lexer *lex)
+      : config(config), typePool(pool), toplevelPrinting(toplevelPrinting),
         funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
 
   ~TypeChecker() override = default;

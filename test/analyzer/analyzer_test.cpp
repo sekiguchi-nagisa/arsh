@@ -70,12 +70,13 @@ protected:
     auto src = man.update("<dummy>", 0, ""); // dummy
     src = man.update(GetParam(), 0, std::move(content));
     ASSERT_EQ(2, src->getSrcId());
+    SysConfig sysConfig;
     AnalyzerAction action;
     SymbolIndexes indexes;
-    SymbolIndexer indexer(indexes);
+    SymbolIndexer indexer(sysConfig, indexes);
     action.dumper.reset(&dumper);
     action.consumer.reset(&indexer);
-    Analyzer analyzer(man, archives);
+    Analyzer analyzer(sysConfig, man, archives);
     analyzer.analyze(*src, action);
     tmpFile.reset();
     content = std::string();

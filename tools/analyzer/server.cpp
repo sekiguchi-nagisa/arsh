@@ -186,6 +186,7 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager>
 }
 
 struct AnalyzerParam {
+  std::reference_wrapper<const SysConfig> sysConfig;
   std::reference_wrapper<LoggerBase> logger;
   std::shared_ptr<CancelPoint> cancelPoint;
   AnalyzerResult ret;
@@ -200,12 +201,12 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
   }
 
   AnalyzerAction action;
-  SymbolIndexer indexer(param.ret.indexes);
+  SymbolIndexer indexer(param.sysConfig, param.ret.indexes);
   action.emitter.reset(&param.emitter);
   action.consumer.reset(&indexer);
 
   // rebuild
-  Analyzer analyzer(*param.ret.srcMan, param.ret.archives, param.cancelPoint);
+  Analyzer analyzer(param.sysConfig, *param.ret.srcMan, param.ret.archives, param.cancelPoint);
   for (auto &e : param.ret.modifiedSrcIds) {
     if (param.ret.archives.find(e)) {
       continue;
@@ -285,6 +286,7 @@ bool LSPServer::tryRebuild() {
     this->result.closingSrcIds.clear();
     DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
     AnalyzerParam{
+        .sysConfig = std::ref(this->sysConfig),
         .logger = this->logger,
         .cancelPoint = this->cancelPoint,
         .ret = std::move(ret),
@@ -477,7 +479,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     ModuleArchives copiedArchives = this->result.archives;
     copiedArchives.revert({newSrc->getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();
-    Analyzer analyzer(*copiedSrcMan, copiedArchives);
+    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
     return analyzer.complete(*newSrc, this->cmdCompKind, this->cmdArgCompEnabled);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));

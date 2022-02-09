@@ -6,8 +6,8 @@ function error($s : String) : Nothing {
     throw new Error($s)
 }
 
-test -d ~/.ydsh/module || {
-    mkdir -p ~/.ydsh/module || $error("failed!!")
+test -d $MODULE_HOME || {
+    mkdir -p $MODULE_HOME || $error("failed!!")
 }
 
 test -d $INSTALL_PREFIX/share/ydsh/module || {
@@ -18,8 +18,8 @@ test -d $INSTALL_PREFIX/share/ydsh/module || {
 # copy local
 let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()!
 for $a in $(ls $local) {
-    echo copy $local/$a to ~/.ydsh/module/
-    cp $local/$a ~/.ydsh/module/
+    echo copy $local/$a to $MODULE_HOME/
+    cp $local/$a $MODULE_HOME/
 }
 
 let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()!

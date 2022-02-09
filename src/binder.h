@@ -21,7 +21,6 @@
 
 #include <unistd.h>
 
-#include "node.h"
 #include "scope.h"
 #include "type_pool.h"
 
@@ -61,7 +60,7 @@ private:
 };
 
 template <typename Consumer>
-void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
+void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, NameScope &scope) {
   Binder<Consumer> binder(consumer, pool, scope);
 
   /**
@@ -172,14 +171,11 @@ void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
   }
 
   // set builtin variables
-  auto &constMap = getBuiltinConstMap();
-
   /**
    * for version detection
    * must be String_Object
    */
-  assert(constMap.find(CVAR_VERSION) != constMap.end());
-  binder.bind(CVAR_VERSION, constMap.find(CVAR_VERSION)->second);
+  binder.bind(SysConfig::VERSION, *config.lookup(SysConfig::VERSION));
 
   /**
    * uid of shell
@@ -196,26 +192,37 @@ void bindBuiltins(Consumer &consumer, TypePool &pool, NameScope &scope) {
   /**
    * must be String_Object
    */
-  assert(constMap.find(CVAR_OSTYPE) != constMap.end());
-  binder.bind(CVAR_OSTYPE, constMap.find(CVAR_OSTYPE)->second);
+  binder.bind(SysConfig::OSTYPE, *config.lookup(SysConfig::OSTYPE));
 
   /**
    * must be String_Object
    */
-  assert(constMap.find(CVAR_MACHTYPE) != constMap.end());
-  binder.bind(CVAR_MACHTYPE, constMap.find(CVAR_MACHTYPE)->second);
+  binder.bind(SysConfig::MACHTYPE, *config.lookup(SysConfig::MACHTYPE));
 
   /**
    * must be String_Object
    */
-  assert(constMap.find(CVAR_DATA_DIR) != constMap.end());
-  binder.bind(CVAR_DATA_DIR, constMap.find(CVAR_DATA_DIR)->second);
+  binder.bind(SysConfig::CONFIG_HOME, *config.lookup(SysConfig::CONFIG_HOME));
 
   /**
    * must be String_Object
    */
-  assert(constMap.find(CVAR_MODULE_DIR) != constMap.end());
-  binder.bind(CVAR_MODULE_DIR, constMap.find(CVAR_MODULE_DIR)->second);
+  binder.bind(SysConfig::DATA_HOME, *config.lookup(SysConfig::DATA_HOME));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(SysConfig::DATA_DIR, *config.lookup(SysConfig::DATA_DIR));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(SysConfig::MODULE_HOME, *config.lookup(SysConfig::MODULE_HOME));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(SysConfig::MODULE_DIR, *config.lookup(SysConfig::MODULE_DIR));
 
   /**
    * dummy object for signal handler setting

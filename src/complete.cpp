@@ -370,8 +370,8 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
   closedir(dir);
 }
 
-static void completeModule(const char *scriptDir, const std::string &prefix, bool tilde,
-                           CompCandidateConsumer &consumer) {
+static void completeModule(const SysConfig &config, const char *scriptDir,
+                           const std::string &prefix, bool tilde, CompCandidateConsumer &consumer) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
@@ -385,10 +385,10 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
   }
 
   // complete from local module dir
-  completeFileName(getFullLocalModDir(), prefix, op, consumer);
+  completeFileName(config.getModuleHome().c_str(), prefix, op, consumer);
 
   // complete from system module dir
-  completeFileName(SYSTEM_MOD_DIR, prefix, op, consumer);
+  completeFileName(config.getModuleDir().c_str(), prefix, op, consumer);
 }
 
 /**
@@ -567,7 +567,7 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
-    completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
+    completeModule(this->config, this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
                    this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
@@ -664,7 +664,7 @@ static void consumeAllInput(FrontEnd &frontEnd) {
 }
 
 void CodeCompleter::operator()(StringRef ref, CodeCompOp option) {
-  CodeCompletionHandler handler(this->pool, this->logicalWorkingDir, this->scope);
+  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, this->scope);
   handler.setUserDefinedComp(this->userDefinedComp);
   if (this->provider) {
     // prepare

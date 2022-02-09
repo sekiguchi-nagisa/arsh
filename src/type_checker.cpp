@@ -1228,11 +1228,11 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         break;
       }
     } else if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
-      auto iter = getBuiltinConstMap().find(varNode.getVarName());
-      if (iter == getBuiltinConstMap().end()) {
+      auto *ptr = this->config.lookup(varNode.getVarName());
+      if (!ptr) {
         break;
       }
-      value = iter->second;
+      value = *ptr;
     } else {
       break;
     }

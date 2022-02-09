@@ -33,6 +33,7 @@ struct RefsResult {
 
 class IndexTest : public ::testing::Test {
 protected:
+  ydsh::SysConfig sysConfig;
   SourceManager srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
@@ -45,9 +46,9 @@ public:
     auto src = this->srcMan.update(path, 0, content);
     ASSERT_TRUE(src);
     AnalyzerAction action;
-    SymbolIndexer indexer(this->indexes);
+    SymbolIndexer indexer(this->sysConfig, this->indexes);
     action.consumer.reset(&indexer);
-    Analyzer analyzer(this->srcMan, this->archives);
+    Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
     auto ret = analyzer.analyze(*src, action);
     ASSERT_TRUE(ret);
     modId = ret->getModId();

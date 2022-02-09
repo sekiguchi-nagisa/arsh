@@ -29,6 +29,13 @@
   }
   ```
 
+#### Builtin
+
+- add the following builtin constants
+    - ``DATA_HOME``: indicates ``XDG_DATA_HOME/ydsh``
+    - ``CONFIG_HOME``: indicates ``XDG_CONFIG_HOME/ydsh``
+    - ``MODULE_HOME``: indicates ``XDG_DATA_HOME/ydsh/module``
+
 #### LSP
 
 - support the following methods/notifications
@@ -52,6 +59,8 @@
     - if contain invalid values, just ignore theme
 - **Breaking Change**: change string interpolation/parameter expansion of ``Map`` type
     - expand like ``Array``, ``Tuple`` type
+- **Breaking Change**: now follow XDG Base Directory Specification
+    - now local module directory (aka ``MODULE_HOME``) indicates ``XDG_DATA_HOME/ydsh/module``
 - improve error reporting of module private member access
 - improve error reporting of read-only symbol/field access
 

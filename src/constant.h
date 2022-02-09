@@ -86,12 +86,6 @@ constexpr const char *VAR_IFS = "IFS";
 // used in constant expression
 constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";
-constexpr const char *CVAR_VERSION = "YDSH_VERSION";
-constexpr const char *CVAR_CONFIG_DIR = "CONFIG_DIR";
-constexpr const char *CVAR_DATA_DIR = "DATA_DIR";
-constexpr const char *CVAR_MODULE_DIR = "MODULE_DIR";
-constexpr const char *CVAR_OSTYPE = "OSTYPE";
-constexpr const char *CVAR_MACHTYPE = "MACHTYPE";
 
 constexpr const unsigned int CVAR_OFFSET_SCRIPT_NAME = 0;
 constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
@@ -309,13 +303,6 @@ inline const char *toString(GlobMeta meta) {
   }
   return ""; // normally unreachable
 }
-
-// ===== for configuration =====
-constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";
-constexpr const char *LOCAL_MOD_DIR = "~/.ydsh/module";
-
-constexpr const char *SYSTEM_DATA_DIR = X_DATADIR "/ydsh";
-constexpr const char *SYSTEM_MOD_DIR = X_DATADIR "/ydsh/module";
 
 // ===== limit ======
 

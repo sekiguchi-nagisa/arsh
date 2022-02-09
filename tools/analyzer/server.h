@@ -72,6 +72,7 @@ public:
 
 class LSPServer : public Handler {
 private:
+  const SysConfig sysConfig;
   LSPTransport transport;
   AnalyzerResult result;
   BackgroundWorker worker;

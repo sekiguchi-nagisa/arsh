@@ -102,6 +102,7 @@ TEST(DependentTest, deps3) {
 
 class ArchiveTest : public ::testing::Test {
 private:
+  SysConfig sysConfig;
   SourceManager srcMan;
   ModuleArchives archives;
   AnalyzerContextPtr orgCtx;
@@ -110,16 +111,17 @@ private:
 protected:
   const unsigned int builtinIdOffset;
 
-  static AnalyzerContextPtr newctx(SourceManager &srcMan, ModuleArchives &archives) {
+  static AnalyzerContextPtr newctx(const SysConfig &config, SourceManager &srcMan,
+                                   ModuleArchives &archives) {
     static unsigned int count = 0;
     std::string path = "/dummy_";
     path += std::to_string(count++);
     auto src = srcMan.update(path, 0, "");
     archives.reserve(src->getSrcId());
-    return std::make_unique<AnalyzerContext>(*src);
+    return std::make_unique<AnalyzerContext>(config, *src);
   }
 
-  AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->archives); }
+  AnalyzerContextPtr newctx() { return newctx(this->sysConfig, this->srcMan, this->archives); }
 
   static auto toSorted(const std::unordered_map<std::string, HandlePtr> &handleMap) {
     using Entry = std::pair<std::string, HandlePtr>;
@@ -134,7 +136,8 @@ protected:
 
 public:
   ArchiveTest()
-      : orgCtx(newctx(this->srcMan, this->archives)), newCtx(newctx(this->srcMan, this->archives)),
+      : orgCtx(newctx(this->sysConfig, this->srcMan, this->archives)),
+        newCtx(newctx(this->sysConfig, this->srcMan, this->archives)),
         builtinIdOffset(this->orgCtx->getPool().getDiscardPoint().typeIdOffset) {}
 
   TypePool &pool() { return this->orgCtx->getPool(); }
@@ -207,7 +210,7 @@ public:
 
   template <typename Func>
   const ModType &loadModAt(AnalyzerContext &parent, bool global, Func func) {
-    auto ctx = newctx(this->srcMan, this->archives);
+    auto ctx = newctx(this->sysConfig, this->srcMan, this->archives);
     func(*ctx);
     auto archive = std::move(*ctx).buildArchive(this->archives);
     auto *type = loadFromArchive(parent.getPool(), *archive);

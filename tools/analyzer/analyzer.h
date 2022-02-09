@@ -101,7 +101,7 @@ private:
 public:
   NON_COPYABLE(AnalyzerContext);
 
-  explicit AnalyzerContext(const Source &src);
+  AnalyzerContext(const SysConfig &config, const Source &src);
 
   const NameScopePtr &getScope() const { return this->scope; }
 
@@ -128,9 +128,10 @@ private:
   std::vector<AnalyzerContextPtr> ctxs;
 
 public:
-  Analyzer(SourceManager &src, ModuleArchives &archives,
+  Analyzer(const SysConfig &config, SourceManager &src, ModuleArchives &archives,
            std::shared_ptr<CancelPoint> cancelPoint = nullptr)
-      : srcMan(src), archives(archives), cancelPoint(std::move(cancelPoint)) {}
+      : ModuleLoaderBase(config), srcMan(src), archives(archives),
+        cancelPoint(std::move(cancelPoint)) {}
 
   ~Analyzer() override = default;
 
@@ -145,6 +146,8 @@ protected:
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
 
   ModResult addNewModEntry(CStrPtr &&ptr) override;
+
+  const SysConfig &getSysConfig() const override;
 
 private:
   const AnalyzerContextPtr &addNew(const Source &src);

@@ -78,7 +78,7 @@ private:
   std::unordered_map<std::string, Handler> handlerMap;
 
 public:
-  DirectiveInitializer(const char *sourceName, TypePool &pool);
+  DirectiveInitializer(const char *sourceName, const SysConfig &sysConfig, TypePool &pool);
   ~DirectiveInitializer() override = default;
 
   void operator()(ApplyNode &node, Directive &d);
@@ -147,8 +147,9 @@ static bool checkDirectiveName(ApplyNode &node) {
   return exprNode.getVarName() == "test";
 }
 
-DirectiveInitializer::DirectiveInitializer(const char *sourceName, TypePool &typePool)
-    : TypeChecker(typePool, false, nullptr), sourceName(sourceName) {
+DirectiveInitializer::DirectiveInitializer(const char *sourceName, const SysConfig &sysConfig,
+                                           TypePool &typePool)
+    : TypeChecker(sysConfig, typePool, false, nullptr), sourceName(sourceName) {
   this->curScope = NameScopePtr::create(std::ref(this->varCount));
   this->setVarName("0", this->typePool.get(TYPE::String));
 }
@@ -416,9 +417,9 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
     return false;
   }
 
-  ModuleLoader loader;
+  SysConfig sysConfig;
   TypePool pool;
-  DirectiveInitializer initializer(fileName, pool);
+  DirectiveInitializer initializer(fileName, sysConfig, pool);
   initializer(*node, directive);
   if (initializer.hasError()) {
     auto &e = initializer.getError();

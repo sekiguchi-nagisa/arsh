@@ -902,11 +902,10 @@ void SymbolIndexer::addBuiltinSymbols() {
     auto &type = this->builder().getPool().get(e.second->getTypeId());
     if (kind == DeclSymbol::Kind::CMD) {
       this->builder().addDecl(nameInfo, kind, "");
-    } else if (auto iter = getBuiltinConstMap().find(nameInfo.getName());
-               iter != getBuiltinConstMap().end()) {
+    } else if (auto *ptr = this->sysConfig.lookup(nameInfo.getName())) {
       assert(type.is(TYPE::String));
       std::string value = "'";
-      value += iter->second;
+      value += *ptr;
       value += "'";
       this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str());
     } else if (nameInfo.getName() == CVAR_SCRIPT_NAME || nameInfo.getName() == CVAR_SCRIPT_DIR) {

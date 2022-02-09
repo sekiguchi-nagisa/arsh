@@ -1913,39 +1913,27 @@ static int showInfo(DSState &state) {
   auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   mapObj.clear();
 
-  const char *keys[] = {
-      "regex",
-      "version",
-      "compiler",
+  const struct {
+    const char *key;
+    const char *actualKey;
+  } table[] = {
+      {"regex", SysConfig::REGEX},
+      {"version", SysConfig::VERSION},
+      {"compiler", SysConfig::COMPILER},
   };
 
   unsigned int maxKeyLen = 0;
-  for (auto &k : keys) {
-    unsigned int len = strlen(k);
+  for (auto &k : table) {
+    unsigned int len = strlen(k.key);
     if (len > maxKeyLen) {
       maxKeyLen = len;
     }
   }
 
-  for (auto &k : keys) {
-    StringRef key = k;
-    if (key == "regex") {
-      auto version = PCRE::version();
-      std::string value;
-      if (version) {
-        value += "PCRE2 ";
-        value += std::to_string(version.major);
-        value += ".";
-        value += std::to_string(version.minor);
-      } else {
-        value = "null";
-      }
-      setAndPrintConf(mapObj, maxKeyLen, key, value);
-    } else if (key == "version") {
-      setAndPrintConf(mapObj, maxKeyLen, key, X_INFO_VERSION_CORE);
-    } else if (key == "compiler") {
-      setAndPrintConf(mapObj, maxKeyLen, key, X_INFO_CPP " " X_INFO_CPP_V);
-    }
+  for (auto &e : table) {
+    auto *ptr = state.sysConfig.lookup(e.actualKey);
+    assert(ptr);
+    setAndPrintConf(mapObj, maxKeyLen, e.key, *ptr);
   }
   return 0;
 }

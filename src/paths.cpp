@@ -242,17 +242,6 @@ void expandTilde(std::string &str, bool useHOME) {
   str = std::move(expanded);
 }
 
-static std::string toFullLocalModDirPath() {
-  std::string dir = LOCAL_MOD_DIR;
-  expandTilde(dir);
-  return dir;
-}
-
-const char *getFullLocalModDir() {
-  static auto path = toFullLocalModDirPath();
-  return path.c_str();
-}
-
 CStrPtr getWorkingDir(const std::string &logicalWorkingDir, bool useLogical) {
   if (useLogical) {
     if (!S_ISDIR(getStMode(logicalWorkingDir.c_str()))) {

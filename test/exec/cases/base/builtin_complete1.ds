@@ -224,11 +224,11 @@ $assertArray(new [String](), $(complete 'AAA=345\:'))
 
 var CWD = "$(pwd -P)"
 
-$assertArray($(files $MODULE_DIR ~/.ydsh/module $CWD), $(complete 'source '))
-$assertArray($(files $MODULE_DIR ~/.ydsh/module $CWD), $(complete 'source! '))
+$assertArray($(files $MODULE_DIR $MODULE_HOME $CWD), $(complete 'source '))
+$assertArray($(files $MODULE_DIR $MODULE_HOME $CWD), $(complete 'source! '))
 cd ../
-$assertArray($(files $MODULE_DIR ~/.ydsh/module $CWD/..), $(complete 'source '))
-$assertArray($(files $MODULE_DIR ~/.ydsh/module $CWD/..), $(complete 'source! '))
+$assertArray($(files $MODULE_DIR $MODULE_HOME $CWD/..), $(complete 'source '))
+$assertArray($(files $MODULE_DIR $MODULE_HOME $CWD/..), $(complete 'source! '))
 
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source /bin/l'))
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source! /bin/l'))
