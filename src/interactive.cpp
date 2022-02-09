@@ -21,11 +21,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <string>
 
 #include <linenoise.h>
 
-#include "misc/flag_util.hpp"
 #include "misc/grapheme.hpp"
 #include "misc/resource.hpp"
 #include <ydsh/ydsh.h>

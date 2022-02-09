@@ -1008,7 +1008,7 @@ bool isDisallowType(HandleInfo info) {
   return std::any_of(std::begin(list), std::end(list), [&](auto &e) { return e == info; });
 }
 
-static void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   FILE *fp = fopen(fileName, "w");
   if (fp == nullptr) {
     fatal("cannot open output file: %s\n", fileName);
@@ -1069,7 +1069,7 @@ static void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &b
   fclose(fp);
 }
 
-static void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   FILE *fp = fopen(fileName, "w");
   if (fp == nullptr) {
     fatal("cannot open output file: %s\n", fileName);

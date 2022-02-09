@@ -155,7 +155,7 @@ FrontEndResult FrontEnd::enterModule() {
       return FrontEndResult::inModule(std::make_unique<EmptyNode>());
     }
     auto error = wrapModLoadingError(node.getPathNode(), modPath, e);
-    this->listener &&this->listener->handleTypeError(this->contexts, error);
+    this->listener &&this->listener->handleTypeError(this->contexts, error, true);
     if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
       return FrontEndResult::inModule(std::make_unique<ErrorNode>(error.getToken()));
     }
@@ -176,7 +176,7 @@ FrontEndResult FrontEnd::enterModule() {
     auto &modType = *get<const ModType *>(ret);
     if (this->curScope()->modId == modType.getModId()) { // when load module from completion context
       auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
-      this->listener &&this->listener->handleTypeError(this->contexts, error);
+      this->listener &&this->listener->handleTypeError(this->contexts, error, true);
       if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
         return FrontEndResult::inModule(std::make_unique<ErrorNode>(error.getToken()));
       }

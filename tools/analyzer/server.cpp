@@ -126,7 +126,7 @@ LSPServer::resolvePosition(const TextDocumentPositionParams &params) {
   return Ok(std::make_pair(std::move(src), req.unwrap()));
 }
 
-std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) {
+std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) const {
   std::vector<Location> values;
   findDeclaration(this->result.indexes, request, [&](const FindDeclResult &ret) {
     if (ret.decl.getModId() == 0 || hasFlag(ret.decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
@@ -146,7 +146,7 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
   return values;
 }
 
-std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request) {
+std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request) const {
   std::vector<Location> values;
   findAllReferences(this->result.indexes, request, [&](const FindRefsResult &ret) {
     auto s = this->result.srcMan->findById(ret.symbol.getModId());

@@ -86,6 +86,8 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
      * sigaction dose not accept these signals
      */
     return;
+  default:
+    break;
   }
 
   if (handler == DFL_handler) {

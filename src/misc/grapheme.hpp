@@ -305,4 +305,4 @@ using GraphemeScanner = __detail::GraphemeScanner<true>;
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif // MISC_LIB_RAPHEME_HPP
+#endif // MISC_LIB_GRAPHEME_HPP

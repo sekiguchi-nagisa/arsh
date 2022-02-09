@@ -43,12 +43,11 @@ public:
   NON_COPYABLE(AnalyzerResult);
 
 private:
-  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, const ModuleArchives &archives,
-                 const SymbolIndexes &indexes,
-                 const std::unordered_set<unsigned short> &modifiedSrcIds,
-                 const std::unordered_set<unsigned short> &willCloseSrcIds)
-      : srcMan(std::move(srcMan)), archives(archives), indexes(indexes),
-        modifiedSrcIds(modifiedSrcIds), closingSrcIds(willCloseSrcIds) {}
+  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives archives,
+                 SymbolIndexes indexes, std::unordered_set<unsigned short> modifiedSrcIds,
+                 std::unordered_set<unsigned short> willCloseSrcIds)
+      : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)),
+        modifiedSrcIds(std::move(modifiedSrcIds)), closingSrcIds(std::move(willCloseSrcIds)) {}
 
 public:
   explicit AnalyzerResult(std::shared_ptr<SourceManager> srcMan) : srcMan(std::move(srcMan)) {}
@@ -143,9 +142,9 @@ private:
   Result<std::pair<SourcePtr, SymbolRequest>, CStrPtr>
   resolvePosition(const TextDocumentPositionParams &params);
 
-  std::vector<Location> gotoDefinitionImpl(const SymbolRequest &request);
+  std::vector<Location> gotoDefinitionImpl(const SymbolRequest &request) const;
 
-  std::vector<Location> findReferenceImpl(const SymbolRequest &request);
+  std::vector<Location> findReferenceImpl(const SymbolRequest &request) const;
 
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
 
