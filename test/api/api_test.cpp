@@ -7,6 +7,7 @@
 #include <ydsh/ydsh.h>
 
 #include <pwd.h>
+#include <sys/utsname.h>
 
 #include "../../tools/platform/platform.h"
 #include "../test_common.h"
@@ -136,6 +137,56 @@ TEST_F(APITest, version) {
   v = DSState_version(nullptr);
   ASSERT_TRUE(v);
   ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
+}
+
+TEST_F(APITest, config) {
+  ydsh::StringRef value = DSState_config(this->state, DS_CONFIG_COMPILER);
+  ASSERT_EQ(X_INFO_CPP " " X_INFO_CPP_V, value);
+
+  value = DSState_config(this->state, DS_CONFIG_REGEX);
+  ASSERT_TRUE(value.startsWith("PCRE"));
+
+  value = DSState_config(this->state, DS_CONFIG_VERSION);
+  {
+    DSVersion version;
+    DSState_version(&version);
+    ASSERT_EQ(format("%d.%d.%d", version.major, version.minor, version.patch), value);
+  }
+
+  value = DSState_config(this->state, DS_CONFIG_OSTYPE);
+  {
+    struct utsname name {};
+    uname(&name);
+    ASSERT_EQ(name.sysname, value);
+  }
+
+  value = DSState_config(this->state, DS_CONFIG_MACHTYPE);
+  ASSERT_EQ(ydsh::BUILD_ARCH, value);
+
+  value = DSState_config(this->state, DS_CONFIG_CONFIG_HOME);
+  ASSERT_TRUE(value.endsWith("/ydsh"));
+
+  value = DSState_config(this->state, DS_CONFIG_DATA_HOME);
+  ASSERT_TRUE(value.endsWith("/ydsh"));
+
+  value = DSState_config(this->state, DS_CONFIG_MODULE_HOME);
+  {
+      const char *base = DSState_config(this->state, DS_CONFIG_DATA_HOME);
+      ASSERT_EQ(format("%s/module", base), value);
+  }
+
+  value = DSState_config(this->state, DS_CONFIG_DATA_DIR);
+  ASSERT_EQ(X_DATA_DIR, value);
+
+  value = DSState_config(this->state, DS_CONFIG_MODULE_DIR);
+  ASSERT_EQ(X_MODULE_DIR, value);
+
+  // invlaid
+  const char *v = DSState_config(this->state, (DSConfig)9999);
+  ASSERT_EQ(nullptr, v);
+
+  v = DSState_config(nullptr, DS_CONFIG_MACHTYPE);
+  ASSERT_EQ(nullptr, v);
 }
 
 TEST_F(APITest, lineNum1) {

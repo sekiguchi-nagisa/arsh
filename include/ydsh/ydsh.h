@@ -323,6 +323,29 @@ static inline int DSState_loadAndEval(DSState *st, const char *sourceName, DSErr
  */
 DS_PUBLIC_API(int) DSState_exec(DSState *st, char *const *argv);
 
+typedef enum {
+  DS_CONFIG_COMPILER,
+  DS_CONFIG_REGEX,
+  DS_CONFIG_VERSION,
+  DS_CONFIG_OSTYPE,
+  DS_CONFIG_MACHTYPE,
+  DS_CONFIG_CONFIG_HOME,
+  DS_CONFIG_DATA_HOME,
+  DS_CONFIG_MODULE_HOME,
+  DS_CONFIG_DATA_DIR,
+  DS_CONFIG_MODULE_DIR,
+} DSConfig;
+
+/**
+ * get runtime system configurations
+ * @param st
+ * not null
+ * @param config
+ * @return
+ * if not found, return null
+ */
+DS_PUBLIC_API(const char *) DSState_config(const DSState *st, DSConfig config);
+
 typedef struct {
   unsigned int major;
   unsigned int minor;

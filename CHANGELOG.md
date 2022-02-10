@@ -36,6 +36,10 @@
     - ``CONFIG_HOME``: indicates ``XDG_CONFIG_HOME/ydsh``
     - ``MODULE_HOME``: indicates ``XDG_DATA_HOME/ydsh/module``
 
+#### API
+
+- add ``DSState_config`` api for runtime system configuration query
+
 #### LSP
 
 - support the following methods/notifications
