@@ -527,7 +527,9 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   }
 
   auto &type = pool.get(handle->getTypeId());
-  assert(type.isModType());
+  if (!type.isModType()) {
+    return false;
+  }
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {

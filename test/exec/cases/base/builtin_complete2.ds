@@ -175,6 +175,7 @@ $assertArray(["startwith"], $(complete "source $SCRIPT_DIR/../../../../share/yds
 assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/path as P; P ").empty()
 $assertArray(["say0", "say1", "say2"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
+assert $(complete "aaa(){}; aaa .l").empty()
 
 # no completion candidate
 assert($(complete '34').empty())
