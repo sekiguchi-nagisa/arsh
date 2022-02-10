@@ -2,7 +2,7 @@
 source ../../../../share/ydsh/module/edit
 
 # default value
-assert $HISTFILE == "$(echo ~/.ydsh_history)"
+assert $HISTFILE == "$DATA_HOME/ydsh_history"
 
 # invalid option
 history -x

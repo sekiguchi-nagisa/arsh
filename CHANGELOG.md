@@ -68,6 +68,10 @@
 - improve error reporting of module private member access
 - improve error reporting of read-only symbol/field access
 
+#### Builtin
+
+- change default ``HISTFILE`` to ``$DATA_HOME/ydsh_history``
+
 #### Completion
 
 - brew: fix bash completion script path
