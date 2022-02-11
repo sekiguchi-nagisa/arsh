@@ -219,10 +219,37 @@ public:
     return finally([&] { this->flow.leave(); });
   }
 
-  auto intoTry() {
-    this->flow.enterTry();
-    return finally([&] { this->flow.leave(); });
-  }
+  class IntoTry {
+  private:
+    ObserverPtr<FlowContext> flow;
+
+  public:
+    NON_COPYABLE(IntoTry);
+
+    IntoTry() = default;
+
+    explicit IntoTry(FlowContext &flow) noexcept : flow(makeObserver(flow)) {
+      this->flow->enterTry();
+    }
+
+    IntoTry(IntoTry &&o) noexcept : flow(o.flow) { o.flow.reset(nullptr); }
+
+    IntoTry &operator=(IntoTry &&o) noexcept {
+      if (this != std::addressof(o)) {
+        this->~IntoTry();
+        new (this) IntoTry(std::move(o));
+      }
+      return *this;
+    }
+
+    ~IntoTry() {
+      if (this->flow) {
+        this->flow->leave();
+      }
+    }
+  };
+
+  IntoTry intoTry() { return IntoTry(this->flow); }
 
   auto intoFinally() {
     this->flow.enterFinally();
