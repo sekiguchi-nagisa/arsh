@@ -1392,9 +1392,9 @@ void TypeChecker::visitTryNode(TryNode &node) {
   // check type finally block, may be empty node
   if (node.getFinallyNode() != nullptr) {
     auto finally1 = this->funcCtx->intoFinally();
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refFinallyNode());
-
-    if (findInnerNode<BlockNode>(node.getFinallyNode())->getNodes().empty()) {
+    auto block = this->intoBlock();
+    this->checkTypeWithCurrentScope(*node.getFinallyNode());
+    if (node.getFinallyNode()->getNodes().empty()) {
       this->reportError<UselessBlock>(*node.getFinallyNode());
     }
     if (node.getFinallyNode()->getType().isNothingType()) {

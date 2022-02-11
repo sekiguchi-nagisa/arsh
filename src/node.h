@@ -1679,7 +1679,7 @@ private:
   /**
    * may be null
    */
-  std::unique_ptr<Node> finallyNode;
+  std::unique_ptr<BlockNode> finallyNode;
 
 public:
   TryNode(unsigned int startPos, std::unique_ptr<BlockNode> &&blockNode)
@@ -1708,9 +1708,7 @@ public:
   /**
    * if has no finally block, return null
    */
-  Node *getFinallyNode() const { return this->finallyNode.get(); }
-
-  std::unique_ptr<Node> &refFinallyNode() { return this->finallyNode; }
+  BlockNode *getFinallyNode() const { return this->finallyNode.get(); }
 
   void dump(NodeDumper &dumper) const override;
 };
