@@ -185,6 +185,17 @@ TEST_F(InteractiveTest, rc6) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, rc7) {
+  this->addEnv("XDG_CONFIG_HOME", INTERACTIVE_TEST_WORK_DIR);
+  this->invoke("--quiet");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert $RC_VAR == 'rcfile loaded: " INTERACTIVE_TEST_WORK_DIR "/ydsh/ydshrc'"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, termHook1) {
   this->invoke("--quiet", "--norc");
 
@@ -376,10 +387,9 @@ TEST_F(InteractiveTest, moduleError1) {
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", eout.c_str()));
   ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
-    this->sendLineAndExpect("f",
-                            "[runtime error]\n"
-                            "SystemError: execution error: f: command not found\n"
-                            "    from (stdin):2 '<toplevel>()'");
+    this->sendLineAndExpect("f", "[runtime error]\n"
+                                 "SystemError: execution error: f: command not found\n"
+                                 "    from (stdin):2 '<toplevel>()'");
   }));
 
   this->send(CTRL_D);

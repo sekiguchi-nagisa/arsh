@@ -121,61 +121,6 @@ TEST_F(ModLoadTest, system) {
   ASSERT_NO_FATAL_FAILURE(this->expect(ds(src), 1, "", e.c_str()));
 }
 
-class FileFactory {
-private:
-  std::string name;
-
-public:
-  /**
-   *
-   * @param name
-   * must be full path
-   * @param content
-   */
-  FileFactory(const char *name, const std::string &content) : name(name) {
-    FILE *fp = fopen(this->name.c_str(), "w");
-    fwrite(content.c_str(), sizeof(char), content.size(), fp);
-    fflush(fp);
-    fclose(fp);
-  }
-
-  ~FileFactory() { remove(this->name.c_str()); }
-
-  const std::string &getFileName() const { return this->name; }
-};
-
-#define XSTR(v) #v
-#define STR(v) XSTR(v)
-
-struct RCTest : public InteractiveShellBase {
-  RCTest() : InteractiveShellBase(BIN_PATH, ".") {
-    std::string v = "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
-    v += (getuid() == 0 ? "# " : "$ ");
-    this->setPrompt(v);
-  }
-};
-
-static std::string getHOME() {
-  std::string str;
-  struct passwd *pw = getpwuid(getuid());
-  if (pw == nullptr) {
-    fatal_perror("getpwuid failed");
-  }
-  str = pw->pw_dir;
-  return str;
-}
-
-TEST_F(RCTest, rcfile1) {
-  std::string rcpath = getHOME();
-  rcpath += "/.ydshrc";
-  FileFactory fileFactory(rcpath.c_str(), "var RC_VAR = 'rcfile: ~/.ydshrc'");
-
-  this->invoke("--quiet");
-  ASSERT_NO_FATAL_FAILURE(this->expect(this->prompt));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23",
-                                                23, WaitStatus::EXITED));
-}
-
 struct APITest : public ExpectOutput {
   DSState *state{nullptr};
 

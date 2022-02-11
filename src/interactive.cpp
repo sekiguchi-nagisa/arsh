@@ -278,7 +278,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 }
 
 static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {
-  if (rcfile.empty()) {
+  if (rcfile.empty()) { // for --norc option
     return {DS_ERROR_KIND_SUCCESS, 0};
   }
 

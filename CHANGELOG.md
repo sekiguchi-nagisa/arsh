@@ -72,6 +72,10 @@
 
 - change default ``HISTFILE`` to ``$DATA_HOME/ydsh_history``
 
+#### Interactive
+
+- **Breaking Change**: change default rcfile path to ``$DATA_HOME/ydshrc``
+
 #### Completion
 
 - brew: fix bash completion script path

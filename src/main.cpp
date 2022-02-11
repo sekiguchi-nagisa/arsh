@@ -129,11 +129,17 @@ enum class InvocationKind {
 
 static const char *version() { return DSState_version(nullptr); }
 
-static std::string getDefaultRCFilePath() {
-  struct passwd *pw = getpwuid(getuid());
-  std::string path = pw->pw_dir;
-  path += "/.ydshrc";
-  return path;
+static std::string getRCFilePath(const DSState *state, const char *path) {
+  std::string value;
+  if (path) {
+    value = path;
+  } else { // use default
+    auto *ptr = DSState_config(state, DS_CONFIG_CONFIG_HOME);
+    assert(ptr);
+    value += ptr;
+    value += "/ydshrc";
+  }
+  return value;
 }
 
 int main(int argc, char **argv) {
@@ -148,7 +154,7 @@ int main(int argc, char **argv) {
 
   InvocationKind invocationKind = InvocationKind::FROM_FILE;
   const char *evalText = nullptr;
-  std::string rcfile = getDefaultRCFilePath();
+  const char *rcfile = nullptr;
   bool quiet = false;
   bool forceInteractive = false;
   DSExecMode mode = DS_EXEC_MODE_NORMAL;
@@ -274,7 +280,8 @@ INIT:
       if (!quiet) {
         fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
       }
-      return exec_interactive(state.get(), rcfile);
+      std::string path = getRCFilePath(state.get(), rcfile);
+      return exec_interactive(state.get(), path);
     }
   }
   case InvocationKind::FROM_STRING: {
