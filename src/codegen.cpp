@@ -1066,13 +1066,8 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
   // reclaim local before jump
   unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
   const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
-  unsigned int stopOffset = startOffset + this->curBuilder().localVars[blockIndex].second;
-
-  const unsigned int size = this->curBuilder().localVars.size();
-  for (; blockIndex < size; blockIndex++) {
-    auto &pair = this->curBuilder().localVars[blockIndex];
-    stopOffset = pair.first + pair.second;
-  }
+  const unsigned int stopOffset =
+      this->curBuilder().localVars.back().first + this->curBuilder().localVars.back().second;
 
   if (stopOffset - startOffset > 0) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
