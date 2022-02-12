@@ -1553,14 +1553,14 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             fprintf(this->fp, "  %d", read32(c.getCode(), i + 1));
             break;
           case -1: {
-            unsigned int offset = code == OpCode::PIPELINE_ASYNC ? 1 : 0;
-            if (offset) {
+            if (code == OpCode::PIPELINE_ASYNC) {
               fprintf(this->fp, " %d", read8(c.getCode(), i + 1));
+              i++;
             }
-            auto s = static_cast<unsigned int>(read8(c.getCode(), i + offset + 1));
+            auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
             fprintf(this->fp, " %d", s);
             for (unsigned int index = 0; index < s; index++) {
-              fprintf(this->fp, "  %d", read16(c.getCode(), i + offset + 2 + index * 2));
+              fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
             }
             break;
           }
