@@ -1,0 +1,49 @@
+
+# nested try-loop
+
+function tryloop() {
+    try {
+       echo enter-try1
+       try {
+         echo enter-try2
+         while($true) {
+            try {
+               echo try3
+               break
+            } finally {
+               echo enter-finally3
+               do {
+                  echo do-while4
+                  continue
+               } while(false)
+               while(true) {
+                  echo while4
+                  break
+               }
+               echo leave-finally3
+            }
+         }
+         echo leave-try2
+       } finally {
+         echo finally2
+       }
+       echo leave-try1
+    } finally {
+       echo finally1
+    }
+}
+
+assert diff -u <($tryloop()) \
+            <({
+               echo enter-try1
+               echo enter-try2
+               echo try3
+               echo enter-finally3
+               echo do-while4
+               echo while4
+               echo leave-finally3
+               echo leave-try2
+               echo finally2
+               echo leave-try1
+               echo finally1
+            })

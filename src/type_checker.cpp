@@ -1279,7 +1279,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
   }
 
   if (this->funcCtx->tryCatchLevel() > this->funcCtx->loopLevel()) {
-    node.setLeavingBlock(true);
+    node.setTryDepth(this->funcCtx->tryCatchLevel() - this->funcCtx->loopLevel());
   }
 
   if (node.getExprNode().is(NodeKind::Empty)) {

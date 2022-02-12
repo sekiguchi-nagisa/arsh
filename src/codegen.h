@@ -66,6 +66,12 @@ public:
   }
 };
 
+struct TryFinallyState {
+  Label beginLabel;   // try-begin
+  Label endLabel;     // try-end
+  Label finallyLabel; // may be null
+};
+
 struct LoopState {
   Label breakLabel;
 
@@ -125,7 +131,7 @@ struct CodeBuilder : public CodeEmitter<true> {
    */
   std::vector<LoopState> loopLabels;
 
-  std::vector<Label> finallyLabels;
+  std::vector<TryFinallyState> tryFinallyLabels;
 
   explicit CodeBuilder(unsigned short modId, const Lexer &lexer, CodeKind kind,
                        unsigned char localVarNum)
@@ -372,7 +378,7 @@ private:
   void catchException(const Label &begin, const Label &end, const DSType &type,
                       unsigned short localOffset = 0, unsigned short localSize = 0);
   void enterFinally(const Label &label);
-  void enterMultiFinally();
+  void enterMultiFinally(unsigned int depth);
   unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
 
   void generateCmdArg(CmdArgNode &node) {

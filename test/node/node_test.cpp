@@ -382,6 +382,7 @@ nodes:
             size: 29
           type:
           opKind: "RETURN"
+          tryDepth: 0
           exprNode:
             nodeKind: New
             token:
@@ -432,7 +433,6 @@ nodes:
                   type:
                   nodes:
             handle: null
-          leavingBlock: false
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
@@ -776,13 +776,13 @@ nodes:
             size: 0
           type: Nothing
           opKind: "CONTINUE"
+          tryDepth: 0
           exprNode:
             nodeKind: Empty
             token:
               pos: 0
               size: 0
             type: Void
-          leavingBlock: false
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
@@ -816,6 +816,7 @@ nodes:
             size: 0
           type: Nothing
           opKind: "RETURN"
+          tryDepth: 0
           exprNode:
             nodeKind: Var
             token:
@@ -825,7 +826,6 @@ nodes:
             varName: "?"
             index: 12
             attribute: "GLOBAL"
-          leavingBlock: false
       baseIndex: 0
       varSize: 14
       maxVarSize: 14
@@ -973,13 +973,13 @@ nodes:
             size: 0
           type: Nothing
           opKind: "RETURN"
+          tryDepth: 0
           exprNode:
             nodeKind: Empty
             token:
               pos: 0
               size: 0
             type: Void
-          leavingBlock: false
       baseIndex: 0
       varSize: 2
       maxVarSize: 2

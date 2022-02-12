@@ -1584,8 +1584,8 @@ public:
 
 private:
   OpKind opKind;
+  unsigned int tryDepth{0};
   std::unique_ptr<Node> exprNode;
-  bool leavingBlock{false};
 
   JumpNode(Token token, OpKind kind, std::unique_ptr<Node> &&exprNode);
 
@@ -1626,9 +1626,9 @@ public:
 
   std::unique_ptr<Node> &refExprNode() { return this->exprNode; }
 
-  void setLeavingBlock(bool leave) { this->leavingBlock = leave; }
+  void setTryDepth(unsigned int depth) { this->tryDepth = depth; }
 
-  bool isLeavingBlock() const { return this->leavingBlock; }
+  unsigned int getTryDepth() const { return this->tryDepth; }
 
   void dump(NodeDumper &dumper) const override;
 };

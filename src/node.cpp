@@ -699,8 +699,8 @@ void JumpNode::dump(NodeDumper &dumper) const {
   DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 
+  DUMP(tryDepth);
   DUMP_PTR(exprNode);
-  DUMP(leavingBlock);
 }
 
 // #######################
