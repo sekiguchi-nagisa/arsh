@@ -84,7 +84,7 @@ namespace ydsh {
   OP(GOTO_UNWIND_V, 4, 0)                                                                          \
   OP(STACK_GUARD, 0, 1)                                                                            \
   OP(THROW, 0, 0)                                                                                  \
-  OP(ENTER_FINALLY, 2, 1)                                                                          \
+  OP(ENTER_FINALLY, 4, 1)                                                                          \
   OP(EXIT_FINALLY, 0, -1)                                                                          \
   OP(LOOKUP_HASH, 0, -2)                                                                           \
   OP(REF_EQ, 0, -1)                                                                                \

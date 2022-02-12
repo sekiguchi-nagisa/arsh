@@ -29,7 +29,7 @@ $expect("$(ds --dump-code -c 'var a = 34; 34 as String')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 27
+  code size: 29
   max stack depth: 3
   number of local variable: 0
   number of global variable: 61
@@ -39,14 +39,14 @@ Code:
    5: LOAD_GLOBAL  59
    8: PUSH_INT  1
   10: CALL_FUNC  1
-  12: ENTER_FINALLY  8
-  15: GOTO  24
-  20: PUSH_INT  3
-  22: POP
-  23: EXIT_FINALLY
+  12: ENTER_FINALLY  22
+  17: GOTO  26
+  22: PUSH_INT  3
   24: POP
-  25: PUSH_INVALID
-  26: RETURN
+  25: EXIT_FINALLY
+  26: POP
+  27: PUSH_INVALID
+  28: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -54,7 +54,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  5
 Exception Table:
-  begin: 5, end: 20, type: pseudo top%%, dest: 20, offset: 0, size: 0
+  begin: 5, end: 22, type: pseudo top%%, dest: 22, offset: 0, size: 0
 
 DSCode: function f
   code size: 7

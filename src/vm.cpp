@@ -1581,10 +1581,10 @@ bool VM::mainLoop(DSState &state) {
         vmerror;
       }
       vmcase(ENTER_FINALLY) {
-        const unsigned int offset = read16(GET_CODE(state), state.stack.pc());
-        const unsigned int savedIndex = state.stack.pc() + 2;
+        unsigned int index = read32(GET_CODE(state), state.stack.pc());
+        const unsigned int savedIndex = state.stack.pc() + 4;
+        state.stack.pc() = index;
         state.stack.push(DSValue::createNum(savedIndex));
-        state.stack.pc() += offset - 1;
         vmnext;
       }
       vmcase(EXIT_FINALLY) {

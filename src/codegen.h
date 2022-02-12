@@ -377,7 +377,7 @@ private:
    */
   void catchException(const Label &begin, const Label &end, const DSType &type,
                       unsigned short localOffset = 0, unsigned short localSize = 0);
-  void enterFinally(const Label &label);
+  void enterFinally(const Label &label) { this->emitJumpIns(label, OpCode::ENTER_FINALLY); }
   void enterMultiFinally(unsigned int depth);
   unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
 

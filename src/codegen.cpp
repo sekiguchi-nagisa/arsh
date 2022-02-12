@@ -169,7 +169,8 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
 }
 
 void ByteCodeGenerator::emitJumpIns(const Label &label, OpCode op) {
-  assert(op == OpCode::GOTO || op == OpCode::GOTO_UNWIND || op == OpCode::GOTO_UNWIND_V);
+  assert(op == OpCode::GOTO || op == OpCode::GOTO_UNWIND || op == OpCode::GOTO_UNWIND_V ||
+         op == OpCode::ENTER_FINALLY);
   const unsigned int index = this->currentCodeOffset();
   this->emit4byteIns(op, 0);
   this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
@@ -204,12 +205,6 @@ void ByteCodeGenerator::catchException(const Label &begin, const Label &end, con
                                        unsigned short localOffset, unsigned short localSize) {
   const unsigned int index = this->currentCodeOffset();
   this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
-}
-
-void ByteCodeGenerator::enterFinally(const Label &label) {
-  const unsigned int index = this->currentCodeOffset();
-  this->emit2byteIns(OpCode::ENTER_FINALLY, 0);
-  this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
 
 void ByteCodeGenerator::enterMultiFinally(unsigned int depth) {
