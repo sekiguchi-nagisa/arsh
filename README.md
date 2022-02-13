@@ -55,10 +55,11 @@ $ cmake --build .
 $ sudo cmake --build . -- install
 ```
 
-2. create rcfile (`.ydshrc`)
+2. create rcfile (`ydshrc`)
 
 ```sh
-$ echo 'source edit' > ~/.ydshrc
+$ mkdir -p ~/.config/ydsh
+$ echo 'source edit' > ~/.config/ydsh/ydshrc
 ```
 
 3. run in interactive mode
