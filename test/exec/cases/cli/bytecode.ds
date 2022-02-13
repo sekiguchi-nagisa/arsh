@@ -111,3 +111,44 @@ Exception Table:"
 
 $cmd = 'for(var i = 0; $i < 2; $i++) { var b = 34; }'
 $expect("$(ds --dump-code -c $cmd)", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 32
+  max stack depth: 5
+  number of local variable: 0
+  number of global variable: 60
+Code:
+   0: PIPELINE_ASYNC 6 3  8  18  28
+   9: LOAD_CONST  2
+  11: NEW_CMD
+  12: PUSH_NULL
+  13: LOAD_CONST  3
+  15: ADD_CMD_ARG  0
+  17: CALL_CMD_NOFORK
+  18: HALT
+  19: LOAD_CONST  4
+  21: NEW_CMD
+  22: PUSH_NULL
+  23: LOAD_CONST  5
+  25: ADD_CMD_ARG  0
+  27: CALL_CMD_NOFORK
+  28: HALT
+  29: POP
+  30: PUSH_INVALID
+  31: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: String echo
+  3: String hello
+  4: String echo
+  5: String hello
+Line Number Table:
+  lineNum: 1, address:  0
+Exception Table:
+  begin: 9, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
+
+$expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
