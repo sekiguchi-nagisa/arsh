@@ -195,6 +195,7 @@ nodes:
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
+      firstDeferOffset: -1
     catchNodes:
       - nodeKind: Catch
         token:
@@ -224,24 +225,33 @@ nodes:
           baseIndex: 0
           varSize: 0
           maxVarSize: 0
+          firstDeferOffset: -1
         varIndex: 0
     finallyNode:
-      nodeKind: Block
+      nodeKind: Defer
       token:
-        pos: 45
-        size: 5
+        pos: 37
+        size: 13
       type:
-      nodes:
-        - nodeKind: Number
-          token:
-            pos: 46
-            size: 1
-          type:
-          kind: "Int"
-          intValue: 1
-      baseIndex: 0
-      varSize: 0
-      maxVarSize: 0
+      blockNode:
+        nodeKind: Block
+        token:
+          pos: 45
+          size: 5
+        type:
+        nodes:
+          - nodeKind: Number
+            token:
+              pos: 46
+              size: 1
+            type:
+            kind: "Int"
+            intValue: 1
+        baseIndex: 0
+        varSize: 0
+        maxVarSize: 0
+        firstDeferOffset: -1
+      dropLocalSize: 0
 )"},
 
     {DumpOp::typed, R"({;})", 0, 0, R"(
@@ -260,6 +270,7 @@ nodes:
     baseIndex: 0
     varSize: 0
     maxVarSize: 0
+    firstDeferOffset: -1
 )"},
 
     {DumpOp::untyped, R"('hey'.size())", 0, 0, R"(
@@ -436,6 +447,7 @@ nodes:
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
+      firstDeferOffset: -1
     maxVarNum: 0
     varIndex: 0
     resolvedType: null
@@ -786,6 +798,7 @@ nodes:
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
+      firstDeferOffset: -1
     asDoWhile: false
 )"},
 
@@ -829,6 +842,7 @@ nodes:
       baseIndex: 0
       varSize: 14
       maxVarSize: 14
+      firstDeferOffset: -1
     maxVarNum: 14
 )"},
 
@@ -983,6 +997,7 @@ nodes:
       baseIndex: 0
       varSize: 2
       maxVarSize: 2
+      firstDeferOffset: -1
     maxVarNum: 2
     varIndex: 59
     resolvedType: "(Int, Int) -> Void"

@@ -32,6 +32,7 @@
   TOKEN(CATCH, "catch")                                                                            \
   TOKEN(CONTINUE, "continue")                                                                      \
   TOKEN(COPROC, "coproc")                                                                          \
+  TOKEN(DEFER, "defer")                                                                            \
   TOKEN(DO, "do")                                                                                  \
   TOKEN(ELIF, "elif")                                                                              \
   TOKEN(ELSE, "else")                                                                              \
@@ -286,6 +287,7 @@
 #define EACH_LA_statement(OP)                                                                      \
   OP(INTERFACE)                                                                                    \
   OP(ASSERT)                                                                                       \
+  OP(DEFER)                                                                                        \
   OP(EXPORT_ENV)                                                                                   \
   OP(IMPORT_ENV)                                                                                   \
   OP(SOURCE)                                                                                       \

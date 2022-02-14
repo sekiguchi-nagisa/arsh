@@ -1,0 +1,53 @@
+
+defer1() {
+    var a = 'aaa'
+    defer {
+        echo defer11: $a
+    }
+
+    var b = 'bbb'
+    $a++
+    defer {
+        echo defer12: $b
+    }
+
+    defer {
+        echo defer13: $a $b
+    }
+
+    echo in
+    try {
+        echo try11
+        defer { echo defer21; }
+        echo try12
+        defer { echo defer22; }
+        echo try13
+        defer { echo defer23; }  # meaningless defer
+    } finally {
+        echo finally11
+    }
+    echo $@[0]
+}
+
+assert diff -u \
+    <(defer1 hello) \
+    <({
+        echo in && echo try11 && echo try12 && echo try13
+        echo defer23 && echo defer22 && echo defer21 && echo finally11
+        echo hello
+        echo defer13: aaa1 bbb && echo defer12: bbb && echo defer11: aaa1
+    })
+
+assert diff -u \
+    <(defer1) \
+    <({
+        echo in && echo try11 && echo try12 && echo try13
+        echo defer23 && echo defer22 && echo defer21 && echo finally11
+        echo defer13: aaa1 bbb && echo defer12: bbb && echo defer11: aaa1
+    })
+
+var aaa = $false
+{
+  defer { echo hello; $aaa = $true; }
+}
+assert $aaa

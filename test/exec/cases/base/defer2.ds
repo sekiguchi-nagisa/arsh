@@ -1,0 +1,31 @@
+
+#$test($status = 0,$out = $'hello11\nhello21\nhello22\ndefer22\ndefer21\nhello12\ndefer12: true\ndefer11: @@@\n')
+
+var a = '@@@'
+
+defer {
+  echo defer11: $a
+  $? = 11
+}
+
+echo hello11
+
+defer {
+  echo defer12: $true
+  $? = 12
+}
+
+{
+  echo hello21
+  defer {
+    echo defer21
+    $? = 21
+  }
+  echo hello22
+  defer {
+    echo defer22
+    $? = 22
+  }
+}
+
+echo hello12

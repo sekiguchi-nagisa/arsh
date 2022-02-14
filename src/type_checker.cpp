@@ -170,13 +170,47 @@ const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   return type;
 }
 
+static void adjustDeferDropSize(BlockNode &blockNode) {
+  const unsigned int size = blockNode.getNodes().size();
+  unsigned int index = 0;
+
+  // find first defer
+  DeferNode *lastDefer = nullptr;
+  for (; index < size; index++) {
+    auto *node = blockNode.getNodes()[index].get();
+    if (isa<DeferNode>(node)) {
+      lastDefer = cast<DeferNode>(node);
+      index++;
+      break;
+    }
+  }
+  assert(lastDefer);
+  blockNode.setFirstDeferOffset(lastDefer->getDropLocalOffset());
+
+  for (; index < size; index++) {
+    auto *node = blockNode.getNodes()[index].get();
+    if (isa<DeferNode>(node)) {
+      auto *curDefer = cast<DeferNode>(node);
+      unsigned int dropSize = curDefer->getDropLocalOffset() - lastDefer->getDropLocalOffset();
+      lastDefer->setDropLocalSize(dropSize);
+      lastDefer = curDefer;
+    }
+  }
+  unsigned int localLimit = blockNode.getBaseIndex() + blockNode.getVarSize();
+  unsigned int dropSize = localLimit - lastDefer->getDropLocalOffset();
+  lastDefer->setDropLocalSize(dropSize);
+}
+
 void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode) {
   auto *blockType = &this->typePool.get(TYPE::Void);
+  FuncContext::IntoTry intoTry;
   for (auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
     auto &targetNode = *iter;
     if (blockType->isNothingType()) {
       this->reportError<Unreachable>(*targetNode);
     }
+
+    // type check
     if (iter == blockNode.refNodes().end() - 1) {
       if (requiredType != nullptr) {
         this->checkTypeWithCoercion(*requiredType, targetNode);
@@ -192,6 +226,11 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
     if (isa<BlockNode>(*targetNode) && cast<BlockNode>(*targetNode).getNodes().empty()) {
       this->reportError<UselessBlock>(*targetNode);
     }
+
+    // check defer
+    if (isa<DeferNode>(*targetNode) && !intoTry) {
+      intoTry = this->funcCtx->intoTry();
+    }
   }
 
   // set base index of current scope
@@ -201,6 +240,11 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
 
   assert(blockType != nullptr);
   blockNode.setType(*blockType);
+
+  // adjust defer drop size
+  if (intoTry) {
+    adjustDeferDropSize(blockNode);
+  }
 }
 
 void TypeChecker::checkTypeWithCoercion(const DSType &requiredType,
@@ -911,6 +955,19 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
 }
 
+void TypeChecker::visitDeferNode(DeferNode &node) {
+  auto cleanup = this->funcCtx->intoFinally();
+  auto block = this->intoBlock();
+  this->checkTypeWithCurrentScope(node.getBlockNode());
+  if (node.getBlockNode().getNodes().empty()) {
+    this->reportError<UselessBlock>(node.getBlockNode());
+  }
+  if (node.getBlockNode().getType().isNothingType()) {
+    this->reportError<InsideFinally>(node.getBlockNode());
+  }
+  node.setType(this->typePool.get(TYPE::Void));
+}
+
 void TypeChecker::visitLoopNode(LoopNode &node) {
   {
     auto scope = this->intoBlock();
@@ -1389,17 +1446,9 @@ void TypeChecker::visitTryNode(TryNode &node) {
     this->checkTypeWithCoercion(*exprType, c);
   }
 
-  // check type finally block, may be empty node
+  // check type finally block
   if (node.getFinallyNode() != nullptr) {
-    auto finally1 = this->funcCtx->intoFinally();
-    auto block = this->intoBlock();
-    this->checkTypeWithCurrentScope(*node.getFinallyNode());
-    if (node.getFinallyNode()->getNodes().empty()) {
-      this->reportError<UselessBlock>(*node.getFinallyNode());
-    }
-    if (node.getFinallyNode()->getType().isNothingType()) {
-      this->reportError<InsideFinally>(*node.getFinallyNode());
-    }
+    this->checkTypeExactly(*node.getFinallyNode());
   }
 
   /**

@@ -63,6 +63,7 @@ namespace ydsh {
   OP(Assert)                                                                                       \
   OP(Block)                                                                                        \
   OP(TypeDef)                                                                                      \
+  OP(Defer)                                                                                        \
   OP(Loop)                                                                                         \
   OP(If)                                                                                           \
   OP(Case)                                                                                         \
@@ -1331,9 +1332,10 @@ public:
 class BlockNode : public WithRtti<Node, NodeKind::Block> {
 private:
   std::vector<std::unique_ptr<Node>> nodes;
-  unsigned int baseIndex{0};
-  unsigned int varSize{0};
-  unsigned int maxVarSize{0};
+  unsigned short baseIndex{0};
+  unsigned short varSize{0};
+  unsigned short maxVarSize{0};
+  short firstDeferOffset{-1};
 
 public:
   explicit BlockNode(unsigned int startPos) : WithRtti({startPos, 1}) {}
@@ -1360,6 +1362,10 @@ public:
   unsigned int getMaxVarSize() const { return this->maxVarSize; }
 
   void setMaxVarSize(unsigned int size) { this->maxVarSize = size; }
+
+  void setFirstDeferOffset(unsigned short offset) { this->firstDeferOffset = offset; }
+
+  short getFirstDeferOffset() const { return this->firstDeferOffset; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1404,6 +1410,32 @@ public:
   Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
+
+  void dump(NodeDumper &dumper) const override;
+};
+
+class DeferNode : public WithRtti<Node, NodeKind::Defer> {
+private:
+  std::unique_ptr<BlockNode> blockNode;
+
+  /**
+   * in top-level, always 0
+   */
+  unsigned int dropLocalSize{0};
+
+public:
+  DeferNode(unsigned int pos, std::unique_ptr<BlockNode> &&blockNode)
+      : WithRtti({pos, 1}), blockNode(std::move(blockNode)) {
+    this->updateToken(this->blockNode->getToken());
+  }
+
+  BlockNode &getBlockNode() const { return *this->blockNode; }
+
+  unsigned int getDropLocalOffset() const { return this->blockNode->getBaseIndex(); }
+
+  unsigned int getDropLocalSize() const { return this->dropLocalSize; }
+
+  void setDropLocalSize(unsigned int size) { this->dropLocalSize = size; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1679,7 +1711,7 @@ private:
   /**
    * may be null
    */
-  std::unique_ptr<BlockNode> finallyNode;
+  std::unique_ptr<DeferNode> finallyNode;
 
 public:
   TryNode(unsigned int startPos, std::unique_ptr<BlockNode> &&blockNode)
@@ -1700,7 +1732,7 @@ public:
 
   std::vector<std::unique_ptr<Node>> &refCatchNodes() { return this->catchNodes; }
 
-  void addFinallyNode(std::unique_ptr<BlockNode> &&node) {
+  void addFinallyNode(std::unique_ptr<DeferNode> &&node) {
     this->finallyNode = std::move(node);
     this->updateToken(this->finallyNode->getToken());
   }
@@ -1708,7 +1740,7 @@ public:
   /**
    * if has no finally block, return null
    */
-  BlockNode *getFinallyNode() const { return this->finallyNode.get(); }
+  DeferNode *getFinallyNode() const { return this->finallyNode.get(); }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2335,6 +2367,7 @@ struct NodeVisitor {
   virtual void visitAssertNode(AssertNode &node) = 0;
   virtual void visitBlockNode(BlockNode &node) = 0;
   virtual void visitTypeDefNode(TypeDefNode &node) = 0;
+  virtual void visitDeferNode(DeferNode &node) = 0;
   virtual void visitLoopNode(LoopNode &node) = 0;
   virtual void visitIfNode(IfNode &node) = 0;
   virtual void visitCaseNode(CaseNode &node) = 0;
@@ -2389,6 +2422,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
   void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
   void visitTypeDefNode(TypeDefNode &node) override { this->visitDefault(node); }
+  void visitDeferNode(DeferNode &node) override { this->visitDefault(node); }
   void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
   void visitIfNode(IfNode &node) override { this->visitDefault(node); }
   void visitCaseNode(CaseNode &node) override { this->visitDefault(node); }

@@ -200,6 +200,12 @@ TEST_F(LexerTest_Lv1, do_tok) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::DO, text, TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, defer_tok) {
+  const char *text = "defer";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::DEFER, text, TokenKind::EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, elif_tok1) {
   const char *text = "elif";
   this->initLexer(text, yycEXPR);

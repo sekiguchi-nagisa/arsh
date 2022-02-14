@@ -153,6 +153,7 @@ INIT:
     <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
+    <STMT> "defer"           { RET_OR_COMP(DEFER); }
     <STMT> "do"              { RET_OR_COMP(DO); }
     <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
     <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }

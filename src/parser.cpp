@@ -561,6 +561,12 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     }
     return std::make_unique<AssertNode>(pos, std::move(condNode), std::move(messageNode));
   }
+  case TokenKind::DEFER: {
+    unsigned int pos = START_POS();
+    this->consume(); // DEFER
+    auto blockNode = TRY(this->parse_block());
+    return std::make_unique<DeferNode>(pos, std::move(blockNode));
+  }
   case TokenKind::EXPORT_ENV: {
     unsigned int startPos = START_POS();
     this->consume(); // EXPORT_ENV
@@ -1456,8 +1462,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
     // parse finally
     if (CUR_KIND() == TokenKind::FINALLY) {
-      this->consume(); // FINALLY
-      tryNode->addFinallyNode(TRY(this->parse_block()));
+      Token token = this->expect(TokenKind::FINALLY); // always success
+      auto deferNode = std::make_unique<DeferNode>(token.pos, TRY(this->parse_block()));
+      tryNode->addFinallyNode(std::move(deferNode));
     }
 
     if (this->tryCompleteInfixKeywords({TokenKind::CATCH, TokenKind::FINALLY})) {

@@ -260,6 +260,7 @@ protected:
   void visitAssertNode(AssertNode &node) override;
   void visitBlockNode(BlockNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
+  void visitDeferNode(DeferNode &node) override;
   void visitLoopNode(LoopNode &node) override;
   void visitIfNode(IfNode &node) override;
   void visitCaseNode(CaseNode &node) override;

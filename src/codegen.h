@@ -52,6 +52,7 @@ public:
   ExceptionEntry toEntry() const {
     assert(this->begin);
     assert(this->end);
+    assert(this->begin->getIndex() < this->end->getIndex());
     assert(this->address > 0);
     assert(this->type != nullptr);
 
@@ -70,6 +71,10 @@ struct TryFinallyState {
   Label beginLabel;   // try-begin
   Label endLabel;     // try-end
   Label finallyLabel; // may be null
+
+  unsigned short localOffset; // for reclaim local variables
+  unsigned short localSize;   // for reclaim local variables
+  bool defer;
 };
 
 struct LoopState {
@@ -180,6 +185,8 @@ private:
 
   std::vector<ModuleCommon> commons;
 
+  std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes; // for top-level defer
+
   CodeGenError error;
 
 public:
@@ -197,6 +204,8 @@ private:
     assert(!this->builders.empty());
     return this->builders.back();
   }
+
+  auto &tryFinallyLabels() { return this->curBuilder().tryFinallyLabels; }
 
   bool inUDC() const { return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD; }
 
@@ -335,7 +344,7 @@ private:
    * @return
    */
   bool needReclaim(const BlockNode &node) const {
-    if (node.getNodes().empty()) {
+    if (node.getNodes().empty() || node.getVarSize() == 0) {
       return false;
     }
 
@@ -343,8 +352,10 @@ private:
       return false;
     }
 
-    if (node.getVarSize() == 0) {
-      return false;
+    if (node.getFirstDeferOffset() > -1) {
+      if (static_cast<unsigned int>(node.getFirstDeferOffset()) - node.getBaseIndex() == 0) {
+        return false;
+      }
     }
 
     // when toplevel block of function or udc
@@ -378,7 +389,18 @@ private:
   void catchException(const Label &begin, const Label &end, const DSType &type,
                       unsigned short localOffset = 0, unsigned short localSize = 0);
   void enterFinally(const Label &label) { this->emitJumpIns(label, OpCode::ENTER_FINALLY); }
-  void enterMultiFinally(unsigned int depth);
+
+  /**
+   *
+   * @param depth
+   * @param localOffset
+   * for reclaim local variables
+   * @param localSize
+   * for reclaim local variables
+   */
+  void enterMultiFinally(unsigned int depth, unsigned int localOffset = 0,
+                         unsigned int localSize = 0);
+
   unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
 
   void generateCmdArg(CmdArgNode &node) {
@@ -466,6 +488,7 @@ private:
   void visitAssertNode(AssertNode &node) override;
   void visitBlockNode(BlockNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
+  void visitDeferNode(DeferNode &node) override;
   void visitLoopNode(LoopNode &node) override;
   void visitIfNode(IfNode &node) override;
   void visitCaseNode(CaseNode &node) override;
@@ -495,10 +518,7 @@ public:
     this->initToplevelCodeBuilder(modId, lexer, 0);
   }
 
-  bool generate(Node &node) {
-    this->visit(node);
-    return !this->hasError();
-  }
+  bool generate(std::unique_ptr<Node> &&node);
 
   ObjPtr<FuncObject> finalize(unsigned int maxVarIndex, const ModType &modType);
 

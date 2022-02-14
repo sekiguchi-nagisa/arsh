@@ -28,6 +28,9 @@
     var next = new IntList!()
   }
   ```
+- add ``defer`` statement
+    - like swift, ``defer`` statement evaluated in end of scope (block, function, user-defined command)
+    - preserve exit status during the evaluation of defer statement
 
 #### Builtin
 
@@ -67,6 +70,7 @@
     - now local module directory (aka ``MODULE_HOME``) indicates ``XDG_DATA_HOME/ydsh/module``
 - improve error reporting of module private member access
 - improve error reporting of read-only symbol/field access
+- preverse exit status during the evaluation of finally-block
 
 #### Builtin
 
@@ -95,7 +99,7 @@
 - return status of ``DSState_loadModule`` api when detect symbol conflicts
 - negative number or out-of-range number handling of ``SHLVL`` in startup time
 - out-of-range unicode handling in dollar string and echo command
-- broken code generation of finally block within nested try-loop
+- broken code generation of finally-block within nested try-loop
 
 ## [0.24.0] - 2021-12-28
 

@@ -207,11 +207,31 @@ void ByteCodeGenerator::catchException(const Label &begin, const Label &end, con
   this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
 }
 
-void ByteCodeGenerator::enterMultiFinally(unsigned int depth) {
-  const unsigned int size = this->curBuilder().tryFinallyLabels.size();
+void ByteCodeGenerator::enterMultiFinally(unsigned int depth, unsigned int localOffset,
+                                          unsigned int localSize) {
+  const unsigned int size = this->tryFinallyLabels().size();
   depth = std::min(depth, size);
-  for (unsigned int i = 0; i < depth; i++) {
-    auto &e = this->curBuilder().tryFinallyLabels[size - 1 - i];
+
+  /**
+   * if enter defer block, not reclaim locals since defer block reclaim theme itself
+   */
+  unsigned int index = 0;
+  for (; index < depth; index++) {
+    auto &e = this->tryFinallyLabels()[size - 1 - index];
+    if (e.defer) {
+      assert(e.finallyLabel);
+      this->enterFinally(e.finallyLabel);
+    } else {
+      break;
+    }
+  }
+
+  if (localSize) {
+    this->emit2byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
+  }
+
+  for (; index < depth; index++) {
+    auto &e = this->tryFinallyLabels()[size - 1 - index];
     if (e.finallyLabel) {
       this->enterFinally(e.finallyLabel);
     }
@@ -849,14 +869,61 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     return;
   }
 
-  this->generateBlock(node.getBaseIndex(), node.getVarSize(), needReclaim(node), [&] {
+  unsigned int reclaimSize = node.getVarSize();
+  if (node.getFirstDeferOffset() > -1) {
+    reclaimSize = static_cast<unsigned int>(node.getFirstDeferOffset()) - node.getBaseIndex();
+  }
+  this->generateBlock(node.getBaseIndex(), reclaimSize, needReclaim(node), [&] {
+    unsigned int deferCount = 0;
+    std::vector<DeferNode *> deferNodes;
     for (auto &e : node.getNodes()) {
-      this->visit(*e);
+      if (isa<DeferNode>(*e)) {
+        deferCount++;
+        this->tryFinallyLabels().push_back({
+            .beginLabel = makeLabel(),
+            .endLabel = makeLabel(),
+            .finallyLabel = makeLabel(),
+            .localOffset = 0,
+            .localSize = 0,
+            .defer = true,
+        });
+        deferNodes.push_back(cast<DeferNode>(e.get()));
+        this->markLabel(this->tryFinallyLabels().back().beginLabel);
+      } else {
+        this->visit(*e);
+      }
     }
+
+    auto mergeLabel = makeLabel();
+    if (deferCount && !node.getNodes().back()->getType().isNothingType()) {
+      this->enterMultiFinally(deferCount);
+      this->emitJumpIns(mergeLabel);
+    }
+
+    for (unsigned int i = 0; i < deferCount; i++) {
+      this->markLabel(this->tryFinallyLabels().back().endLabel);
+      this->visit(*deferNodes.back());
+      this->tryFinallyLabels().pop_back();
+      deferNodes.pop_back();
+    }
+
+    this->markLabel(mergeLabel);
   });
 }
 
 void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
+
+void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
+  auto &e = this->tryFinallyLabels().back();
+  this->markLabel(e.finallyLabel);
+  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::_Root), e.localOffset,
+                       e.localSize);
+  if (node.getDropLocalSize()) {
+    this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());
+  }
+  this->visit(node.getBlockNode());
+  this->emit0byteIns(OpCode::EXIT_FINALLY);
+}
 
 static bool isEmptyCode(Node &node) {
   return isa<EmptyNode>(node) || (isa<BlockNode>(node) && cast<BlockNode>(node).getNodes().empty());
@@ -1063,20 +1130,14 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
   // for break with value
   this->visit(node.getExprNode());
 
-  // reclaim local before jump
+  // reclaim local and enter finally before jump
   unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
   const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
   const unsigned int stopOffset =
       this->curBuilder().localVars.back().first + this->curBuilder().localVars.back().second;
 
-  if (stopOffset - startOffset > 0) {
-    this->emit2byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
-  }
-
-  // add finally before jump
-  if (node.getTryDepth()) {
-    this->enterMultiFinally(node.getTryDepth());
-  }
+  assert(startOffset <= stopOffset);
+  this->enterMultiFinally(node.getTryDepth(), startOffset, stopOffset - startOffset);
 
   if (node.getOpKind() == JumpNode::BREAK) {
     if (node.getExprNode().getType().isVoidType()) {
@@ -1105,7 +1166,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     this->visit(node.getExprNode());
 
     // add finally before return
-    this->enterMultiFinally(this->curBuilder().tryFinallyLabels.size());
+    this->enterMultiFinally(this->tryFinallyLabels().size());
 
     if (this->inUDC()) {
       assert(node.getExprNode().getType().is(TYPE::Int));
@@ -1137,10 +1198,13 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
   auto finallyLabel = makeLabel();
   auto mergeLabel = makeLabel();
 
-  this->curBuilder().tryFinallyLabels.push_back({
+  this->tryFinallyLabels().push_back({
       .beginLabel = beginLabel,
       .endLabel = finallyLabel,
       .finallyLabel = hasFinally ? finallyLabel : nullptr,
+      .localOffset = 0,
+      .localSize = 0,
+      .defer = false,
   });
 
   // generate try block
@@ -1178,15 +1242,13 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
   // generate finally
   if (hasFinally) {
-    auto &e = this->curBuilder().tryFinallyLabels.back();
-    this->markLabel(e.finallyLabel);
-    this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::_Root),
-                         blockNode.getBaseIndex(), maxLocalSize);
+    auto &e = this->tryFinallyLabels().back();
+    e.localOffset = blockNode.getBaseIndex();
+    e.localSize = maxLocalSize;
     this->visit(*node.getFinallyNode());
-    this->emit0byteIns(OpCode::EXIT_FINALLY);
   }
   this->markLabel(mergeLabel);
-  this->curBuilder().tryFinallyLabels.pop_back();
+  this->tryFinallyLabels().pop_back();
 }
 
 void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
@@ -1384,11 +1446,41 @@ void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const cha
   this->error = CodeGenError(token, kind, CStrPtr(str));
 }
 
+bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
+  if (isa<DeferNode>(*node)) {
+    this->tryFinallyLabels().push_back({
+        .beginLabel = makeLabel(),
+        .endLabel = makeLabel(),
+        .finallyLabel = makeLabel(),
+        .localOffset = 0,
+        .localSize = 0,
+        .defer = true,
+    });
+    this->toplevelDeferNodes.emplace_back(cast<DeferNode>(node.release()));
+    this->markLabel(this->tryFinallyLabels().back().beginLabel);
+  } else {
+    this->visit(*node);
+  }
+  return !this->hasError();
+}
+
 ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const ModType &modType) {
+  if (!this->toplevelDeferNodes.empty()) {
+    this->enterMultiFinally(this->toplevelDeferNodes.size());
+  }
+
   unsigned char maxLocalSize = maxVarIndex;
   this->curBuilder().localVarNum = maxLocalSize;
   this->emit0byteIns(OpCode::PUSH_INVALID);
   this->emit0byteIns(OpCode::RETURN);
+
+  while (!this->toplevelDeferNodes.empty()) {
+    this->markLabel(this->tryFinallyLabels().back().endLabel);
+    this->visit(*this->toplevelDeferNodes.back());
+    this->tryFinallyLabels().pop_back();
+    this->toplevelDeferNodes.pop_back();
+  }
+
   auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {

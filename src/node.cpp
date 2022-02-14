@@ -544,6 +544,7 @@ void BlockNode::dump(NodeDumper &dumper) const {
   DUMP(baseIndex);
   DUMP(varSize);
   DUMP(maxVarSize);
+  DUMP(firstDeferOffset);
 }
 
 // #########################
@@ -560,6 +561,15 @@ void TypeDefNode::dump(NodeDumper &dumper) const {
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
+}
+
+// #######################
+// ##     DeferNode     ##
+// #######################
+
+void DeferNode::dump(NodeDumper &dumper) const {
+  DUMP_PTR(blockNode);
+  DUMP(dropLocalSize);
 }
 
 // ######################

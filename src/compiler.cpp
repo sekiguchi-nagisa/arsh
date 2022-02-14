@@ -260,7 +260,7 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
       }
       break;
     case FrontEndResult::IN_MODULE:
-      if (!this->codegen.generate(*ret.node)) {
+      if (!this->codegen.generate(std::move(ret.node))) {
         goto END;
       }
       break;

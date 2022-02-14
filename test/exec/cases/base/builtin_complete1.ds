@@ -86,7 +86,7 @@ __cmd() {
                            'break', 'continue', 'return',
                            '!', '+', '-', 'throw', 'coproc',
 
-                           'interface', 'assert',
+                           'interface', 'assert', 'defer',
                            'export-env', 'import-env',
                            'let', 'source', 'source!', 'typedef',
                            'var', ';'])

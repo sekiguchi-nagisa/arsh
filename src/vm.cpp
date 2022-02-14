@@ -1584,16 +1584,23 @@ bool VM::mainLoop(DSState &state) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         const unsigned int savedIndex = state.stack.pc() + 4;
         state.stack.pc() = index;
+        state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
         state.stack.push(DSValue::createNum(savedIndex));
         vmnext;
       }
       vmcase(EXIT_FINALLY) {
         if (state.stack.restoreThrownObject()) {
+          auto v = state.stack.pop();
+          assert(v.kind() == DSValueKind::INT);
+          state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
           vmerror;
         } else {
           assert(state.stack.peek().kind() == DSValueKind::NUMBER);
           unsigned int index = state.stack.pop().asNum();
           state.stack.pc() = index;
+          auto v = state.stack.pop();
+          assert(v.kind() == DSValueKind::INT);
+          state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
           vmnext;
         }
       }
@@ -1871,6 +1878,7 @@ bool VM::handleException(DSState &state) {
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entry.type->is(TYPE::_Root)) { // finally block
             state.stack.saveThrownObject();
+            state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
           } else { // catch block
             state.stack.loadThrownObject();
           }

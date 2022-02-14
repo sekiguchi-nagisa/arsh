@@ -72,7 +72,7 @@ DEFINE_TCError(NotNeedExpr, "not need expression");
 DEFINE_TCError(Assignable, "require assignable expression");
 DEFINE_TCError(ReadOnlySymbol, "read only symbol: `%s'");
 DEFINE_TCError(ReadOnlyField, "read only field: `%s'");
-DEFINE_TCError(InsideFinally, "unavailable inside finally block");
+DEFINE_TCError(InsideFinally, "unavailable inside finally block and defer statement");
 DEFINE_TCError(InsideChild, "unavailable inside child process");
 DEFINE_TCError(OutsideToplevel, "only available top level scope");
 DEFINE_TCError(NotCallable, "Func type object is not directly callable");

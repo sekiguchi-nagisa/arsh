@@ -619,6 +619,8 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
   }
 }
 
+void SymbolIndexer::visitDeferNode(DeferNode &node) { this->visit(node.getBlockNode()); }
+
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
   auto block = this->builder().intoScope();
   this->visit(node.getInitNode());
