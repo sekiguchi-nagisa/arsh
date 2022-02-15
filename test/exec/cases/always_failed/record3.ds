@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 6, $chars = 17, $errorKind = 'UndefinedField', $status = 1)
+
+typedef AAA($i : Int) {
+    var v = $i
+    var a = $v + 34
+    new AAA(34).v
+}
