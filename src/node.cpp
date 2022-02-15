@@ -704,11 +704,14 @@ void JumpNode::dump(NodeDumper &dumper) const {
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
   OP(THROW)                                                                                        \
-  OP(RETURN)
+  OP(RETURN)                                                                                       \
+  OP(RETURN_INIT)
 
   DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 
+  DUMP(fieldOffset);
+  DUMP(fieldSize);
   DUMP(tryDepth);
   DUMP_PTR(exprNode);
 }

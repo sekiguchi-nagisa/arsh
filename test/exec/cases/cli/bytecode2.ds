@@ -144,3 +144,47 @@ Exception Table:
   begin: 4, end: 21, type: pseudo top%%, dest: 21, offset: 0, size: 0"
 
 $expect("$(ds --dump-code -c 'f() { var a = 23; defer { assert $a == 99; }; var b = 99;$a = $b; }; f')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 7
+  max stack depth: 1
+  number of local variable: 0
+  number of global variable: 61
+Code:
+  0: LOAD_CONST  2
+  2: STORE_GLOBAL  59
+  5: PUSH_INVALID
+  6: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: %mod1.AAA function(AAA)
+Line Number Table:
+Exception Table:
+
+DSCode: function AAA
+  code size: 22
+  max stack depth: 4
+  number of local variable: 2
+Code:
+   0: LOAD_LOCAL  0
+   2: STORE_LOCAL  1
+   4: NEW  %mod1.AAA
+   8: INIT_FIELDS  1  1
+  11: ENTER_FINALLY  17
+  16: RETURN
+  17: PUSH_INT  34
+  19: STORE_LOCAL  0
+  21: EXIT_FINALLY
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+  lineNum: 1, address:  0
+Exception Table:
+  begin: 4, end: 17, type: pseudo top%%, dest: 17, offset: 0, size: 0"
+
+$expect("$(ds --dump-code -c 'typedef AAA($a : Int) { var v = $a; defer { $a = 34; } }')", 0, $out)

@@ -1607,15 +1607,18 @@ public:
 
 class JumpNode : public WithRtti<Node, NodeKind::Jump> {
 public:
-  enum OpKind : unsigned int {
+  enum OpKind : unsigned char {
     BREAK,
     CONTINUE,
     THROW,
     RETURN,
+    RETURN_INIT, // for constructor
   };
 
 private:
   OpKind opKind;
+  unsigned char fieldOffset{0}; // for constructor
+  unsigned char fieldSize{0};   // for constructor
   unsigned int tryDepth{0};
   std::unique_ptr<Node> exprNode;
 
@@ -1652,6 +1655,15 @@ public:
     return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN, std::move(exprNode)));
   }
 
+  static std::unique_ptr<JumpNode> newReturnInit(const DSType &resolvedType, unsigned char offset,
+                                                 unsigned char size) {
+    std::unique_ptr<JumpNode> node(new JumpNode(Token{0, 0}, RETURN_INIT, nullptr));
+    node->getExprNode().setType(resolvedType);
+    node->fieldOffset = offset;
+    node->fieldSize = size;
+    return node;
+  }
+
   OpKind getOpKind() const { return this->opKind; }
 
   Node &getExprNode() const { return *this->exprNode; }
@@ -1661,6 +1673,10 @@ public:
   void setTryDepth(unsigned int depth) { this->tryDepth = depth; }
 
   unsigned int getTryDepth() const { return this->tryDepth; }
+
+  unsigned char getFieldOffset() const { return this->fieldOffset; }
+
+  unsigned char getFieldSize() const { return this->fieldSize; }
 
   void dump(NodeDumper &dumper) const override;
 };

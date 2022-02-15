@@ -393,6 +393,8 @@ nodes:
             size: 29
           type:
           opKind: "RETURN"
+          fieldOffset: 0
+          fieldSize: 0
           tryDepth: 0
           exprNode:
             nodeKind: New
@@ -788,6 +790,8 @@ nodes:
             size: 0
           type: Nothing
           opKind: "CONTINUE"
+          fieldOffset: 0
+          fieldSize: 0
           tryDepth: 0
           exprNode:
             nodeKind: Empty
@@ -829,6 +833,8 @@ nodes:
             size: 0
           type: Nothing
           opKind: "RETURN"
+          fieldOffset: 0
+          fieldSize: 0
           tryDepth: 0
           exprNode:
             nodeKind: Var
@@ -987,6 +993,8 @@ nodes:
             size: 0
           type: Nothing
           opKind: "RETURN"
+          fieldOffset: 0
+          fieldSize: 0
           tryDepth: 0
           exprNode:
             nodeKind: Empty

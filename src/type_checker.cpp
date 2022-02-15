@@ -1380,17 +1380,16 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
   case JumpNode::CONTINUE:
     this->checkTypeAsBreakContinue(node);
     break;
-  case JumpNode::THROW: {
+  case JumpNode::THROW:
     if (this->funcCtx->finallyLevel() > 0) {
       this->reportError<InsideFinally>(node);
     }
     this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());
     break;
-  }
-  case JumpNode::RETURN: {
+  case JumpNode::RETURN:
+  case JumpNode::RETURN_INIT: // normally unreachable
     this->checkTypeAsReturn(node);
     break;
-  }
   }
   node.setType(this->typePool.get(TYPE::Nothing));
 }
@@ -1732,6 +1731,11 @@ void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&con
   if (!typeOrError) {
     this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
   }
+
+  unsigned int fieldSize = cast<RecordType>(node.getResolvedType())->getFieldSize();
+  auto returnNode = JumpNode::newReturnInit(*node.getResolvedType(), offset, fieldSize);
+  returnNode->setType(this->typePool.get(TYPE::Nothing));
+  node.getBlockNode().addNode(std::move(returnNode));
 }
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {

@@ -1162,8 +1162,14 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     this->emit0byteIns(OpCode::THROW);
     break;
   }
-  case JumpNode::RETURN: {
-    this->visit(node.getExprNode());
+  case JumpNode::RETURN:
+  case JumpNode::RETURN_INIT: {
+    if (node.getOpKind() == JumpNode::RETURN_INIT) {
+      this->emitTypeIns(OpCode::NEW, node.getExprNode().getType());
+      this->emit2byteIns(OpCode::INIT_FIELDS, node.getFieldOffset(), node.getFieldSize());
+    } else {
+      this->visit(node.getExprNode());
+    }
 
     // add finally before return
     this->enterMultiFinally(this->tryFinallyLabels().size());
@@ -1387,13 +1393,6 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
   this->visit(node.getBlockNode());
-  if (node.isConstructor()) {
-    this->emitTypeIns(OpCode::NEW, *node.getResolvedType());
-    unsigned int offset = node.getParams().size();
-    unsigned int fieldSize = cast<RecordType>(node.getResolvedType())->getFieldSize();
-    this->emit2byteIns(OpCode::INIT_FIELDS, offset, fieldSize);
-    this->emit0byteIns(OpCode::RETURN);
-  }
 
   auto code = this->finalizeCodeBuilder(node.getFuncName());
   if (!code) {
