@@ -113,7 +113,7 @@ Exception Table:
 
 DSCode: command f
   code size: 41
-  max stack depth: 5
+  max stack depth: 4
   number of local variable: 16
 Code:
    0: PUSH_INT  23
@@ -167,7 +167,7 @@ Exception Table:
 
 DSCode: function AAA
   code size: 22
-  max stack depth: 4
+  max stack depth: 3
   number of local variable: 2
 Code:
    0: LOAD_LOCAL  0

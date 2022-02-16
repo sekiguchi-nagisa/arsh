@@ -74,8 +74,8 @@ namespace ydsh {
   OP(CALL_FUNC, 1, 0)                                                                              \
   OP(CALL_BUILTIN, 1, 1)                                                                           \
   OP(CALL_BUILTIN2, 2, 0)                                                                          \
-  OP(RETURN, 0, 0)                                                                                 \
-  OP(RETURN_UDC, 0, 0)                                                                             \
+  OP(RETURN, 0, -1)                                                                                \
+  OP(RETURN_UDC, 0, -1)                                                                            \
   OP(RETURN_SIG, 0, 0)                                                                             \
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
@@ -83,7 +83,7 @@ namespace ydsh {
   OP(GOTO_UNWIND, 4, 0)                                                                            \
   OP(GOTO_UNWIND_V, 4, 0)                                                                          \
   OP(STACK_GUARD, 0, 1)                                                                            \
-  OP(THROW, 0, 0)                                                                                  \
+  OP(THROW, 0, -1)                                                                                 \
   OP(ENTER_FINALLY, 4, 2)                                                                          \
   OP(EXIT_FINALLY, 0, -2)                                                                          \
   OP(LOOKUP_HASH, 0, -2)                                                                           \
