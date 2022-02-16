@@ -2066,6 +2066,9 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   case CodeCompNode::MEMBER: {
     assert(node.getExprNode());
     auto &recvType = this->checkTypeAsExpr(*node.getExprNode());
+    if (recvType.isRecordType() && !cast<RecordType>(recvType).isFinalized()) {
+      break; // ignore non-finalized record type
+    }
     this->ccHandler->addMemberRequest(recvType, this->lexer->toTokenText(node.getTypingToken()));
     break;
   }

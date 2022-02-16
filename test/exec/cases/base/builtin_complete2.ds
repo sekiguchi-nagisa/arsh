@@ -117,6 +117,8 @@ $assertArray($(env | grep ^P | while(read -r) {
 $assertArray(["_0", "_1"], $(complete "(1,2)."))
 $assertArray([ "B", 'BB', 'C', '_A'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).'))
 $assertArray([ "B", 'BB'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).B'))
+assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
+
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["compAdd", 'compDelegate', 'fullname', 'func', 'scriptDir', 'scriptName'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
 $assertArray([ 'fullname', "func", "hello", "hey", "hey2", "hey3", 'scriptDir', 'scriptName'],

@@ -318,6 +318,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
     RAISE_TL_ERROR(ElementLimit);
   }
   auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
+  assert(!newRecordType->isFinalized());
   newRecordType->finalize(this->get(TYPE::Any), fieldCount, std::move(handles));
   return Ok(newRecordType);
 }
