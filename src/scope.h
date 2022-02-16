@@ -433,7 +433,7 @@ public:
   NameScopePtr createGlobalScope(const TypePool &pool, const char *name,
                                  const ModType *modType = nullptr);
 
-  NameScopePtr createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
+  NameScopePtr createGlobalScopeFromFullPath(const TypePool &pool, StringRef fullPath,
                                              const ModType &modType);
 
   const ModType &createModType(TypePool &pool, const NameScope &scope);

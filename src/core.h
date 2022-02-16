@@ -92,7 +92,7 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
 }
 
 /**
- * perform completion in specified unserlying module
+ * perform completion in specified underlying module
  * @param st
  * @param underlyingModType
  * may be null

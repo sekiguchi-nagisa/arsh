@@ -677,7 +677,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
   auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
 
-  // check referencial equality of func object
+  // check referential equality of func object
   if (leftType.isFuncType() && leftType == rightType &&
       (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
     node.setType(this->typePool.get(TYPE::Boolean));
@@ -1639,8 +1639,8 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::postprocessFuncion(FunctionNode &node, const DSType *returnType,
-                                     std::vector<const DSType *> &&paramTypes) {
+void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnType,
+                                      std::vector<const DSType *> &&paramTypes) {
   assert(!node.isConstructor());
 
   // insert terminal node if not found
@@ -1697,21 +1697,21 @@ void TypeChecker::postprocessFuncion(FunctionNode &node, const DSType *returnTyp
   }
 }
 
-void TypeChecker::postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
-                                          unsigned int paramSize) {
+void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope,
+                                         unsigned int paramSize) {
   assert(node.isConstructor() && !node.getFuncName().empty());
-  assert(constructorscope && constructorscope->parent &&
-         constructorscope->kind == NameScope::BLOCK &&
-         constructorscope->parent->kind == NameScope::FUNC);
+  assert(constructorScope && constructorScope->parent &&
+         constructorScope->kind == NameScope::BLOCK &&
+         constructorScope->parent->kind == NameScope::FUNC);
 
   if (!node.getResolvedType()) {
     return;
   }
 
-  // fialize record type
+  // finalize record type
   const unsigned int offset = paramSize;
   std::unordered_map<std::string, HandlePtr> handles;
-  for (auto &e : constructorscope->getHandles()) {
+  for (auto &e : constructorScope->getHandles()) {
     auto handle = e.second.first;
     if (!handle->has(HandleAttr::TYPE_ALIAS) && !handle->isMethod()) {
       if (handle->getIndex() < offset) {
@@ -1777,14 +1777,14 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
         node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
     node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
     if (node.isConstructor()) {
-      scope = this->curScope; // save currrent scope
+      scope = this->curScope; // save current scope
     } else {
-      this->postprocessFuncion(node, returnType, std::move(paramTypes));
+      this->postprocessFunction(node, returnType, std::move(paramTypes));
     }
   }
 
   if (node.isConstructor()) {
-    this->postproocessConstructor(node, std::move(scope), paramSize);
+    this->postprocessConstructor(node, std::move(scope), paramSize);
   }
 }
 

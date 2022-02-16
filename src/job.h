@@ -341,7 +341,7 @@ public:
 
   /**
    * call markDelete() in specified entry by pid.
-   * actual delete operation is not performed untill call batchedRemove()
+   * actual delete operation is not performed until call batchedRemove()
    * @param pid
    * @return
    * if found corresponding entry, return true

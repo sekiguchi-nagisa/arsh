@@ -244,9 +244,9 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     if (!readAll(filePtr, buf)) {
       return ModLoadingError(errno);
     }
-    const char *fullpath = get<const char *>(ret);
-    auto lex = Lexer::fromFullPath(fullpath, std::move(buf));
-    auto newScope = this->loader.createGlobalScopeFromFullpath(this->pool, fullpath,
+    const char *fullPath = get<const char *>(ret);
+    auto lex = Lexer::fromFullPath(fullPath, std::move(buf));
+    auto newScope = this->loader.createGlobalScopeFromFullPath(this->pool, fullPath,
                                                                this->pool.getBuiltinModType());
     return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
                                                std::move(lex), std::move(newScope), option,

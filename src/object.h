@@ -517,7 +517,7 @@ public:
   size_t hash() const;
 
   /**
-   * three-way comapre for Array#sort
+   * three-way compare for Array#sort
    * @param o
    * @return
    * if this < o, return negative number

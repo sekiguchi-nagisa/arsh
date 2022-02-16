@@ -297,8 +297,8 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
     }
   }
 
-  const auto comitId = this->handles.size();
-  auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, comitId));
+  const auto commitId = this->handles.size();
+  auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, commitId));
   if (!pair.second) {
     if (hasFlag(op, NameRegisterOp::IGNORE_CONFLICT) && pair.first->second.first == handle &&
         handle->isMethod()) {
@@ -403,7 +403,7 @@ ModResult ModuleLoaderBase::loadImpl(const char *scriptDir, const char *modPath,
   }
   setFDFlag(fd, O_NONBLOCK, false);
 
-  // resolve fullpath
+  // resolve full-path
   auto path = tryToRealpath(str);
   auto ret = this->addNewModEntry(std::move(path));
   if (is<ModLoadingError>(ret)) {
@@ -471,15 +471,15 @@ NameScopePtr ModuleLoader::createGlobalScope(const TypePool &pool, const char *n
   assert(is<const char *>(ret));
 
   if (modType) {
-    return this->createGlobalScopeFromFullpath(pool, get<const char *>(ret), *modType);
+    return this->createGlobalScopeFromFullPath(pool, get<const char *>(ret), *modType);
   } else {
     return NameScopePtr::create(std::ref(this->gvarCount));
   }
 }
 
-NameScopePtr ModuleLoader::createGlobalScopeFromFullpath(const TypePool &pool, StringRef fullpath,
+NameScopePtr ModuleLoader::createGlobalScopeFromFullPath(const TypePool &pool, StringRef fullPath,
                                                          const ModType &modType) {
-  auto iter = this->indexMap.find(fullpath);
+  auto iter = this->indexMap.find(fullPath);
   if (iter != this->indexMap.end()) {
     auto scope = NameScopePtr::create(std::ref(this->gvarCount), iter->second);
     scope->importForeignHandles(pool, modType, ImportedModKind::GLOBAL);

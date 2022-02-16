@@ -505,11 +505,11 @@ private:
 
   void registerFuncHandle(FunctionNode &node, const std::vector<const DSType *> &paramTypes);
 
-  void postprocessFuncion(FunctionNode &node, const DSType *returnType,
-                          std::vector<const DSType *> &&paramTypes);
+  void postprocessFunction(FunctionNode &node, const DSType *returnType,
+                           std::vector<const DSType *> &&paramTypes);
 
-  void postproocessConstructor(FunctionNode &node, NameScopePtr &&constructorscope,
-                               unsigned int paramSize);
+  void postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope,
+                              unsigned int paramSize);
 
   // for case-expression
   struct PatternMap {

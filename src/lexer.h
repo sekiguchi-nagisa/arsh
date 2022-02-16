@@ -217,7 +217,7 @@ struct EscapeSeqResult {
  * must be start with '\'
  * @param end
  * @param needOctalPrefix
- * if true, octal escapse sequence start with '0'
+ * if true, octal escape sequence start with '0'
  * @return
  */
 EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
