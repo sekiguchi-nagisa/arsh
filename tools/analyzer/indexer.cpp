@@ -252,6 +252,9 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
 
 const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
                                               const DSType &type, DeclSymbol::Kind kind) {
+  if (recv.isUnresolved() || type.isUnresolved()) {
+    return nullptr;
+  }
   std::string content = trimTypeName(type).toString();
   content += " for ";
   content += trimTypeName(recv);
@@ -489,7 +492,8 @@ void SymbolIndexer::visitVarNode(VarNode &node) {
 
 void SymbolIndexer::visitAccessNode(AccessNode &node) {
   this->visit(node.getRecvNode());
-  if (!node.isUntyped() && !node.getType().isNothingType()) {
+  assert(!node.isUntyped());
+  if (!node.getType().isUnresolved()) {
     NameInfo info(node.getNameNode().getToken(), node.getFieldName());
     this->builder().addMember(node.getRecvNode().getType(), info);
   }

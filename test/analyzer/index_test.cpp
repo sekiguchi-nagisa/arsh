@@ -1892,6 +1892,17 @@ hoge eval 34
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
+TEST_F(IndexTest, invalidField) {
+  unsigned short modId;
+  const char *content = R"(
+typedef AAA($a : Int) {
+  var value = $a
+  var next = new AAA(12).value
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 5}));
+}
+
 TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
