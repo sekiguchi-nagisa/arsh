@@ -50,7 +50,7 @@ for $d in $(ls $sample) {
 
 # copy current rcfile
 echo copy ydshrc
-cp ~/.ydshrc $dir/rcfile_ydshrc
+cp $CONFIG_HOME/ydshrc $dir/rcfile_ydshrc
 
 # copy tools/scrips
 source path
