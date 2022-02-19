@@ -68,9 +68,11 @@
     - expand like ``Array``, ``Tuple`` type
 - **Breaking Change**: now follow XDG Base Directory Specification
     - now local module directory (aka ``MODULE_HOME``) indicates ``XDG_DATA_HOME/ydsh/module``
-- improve error reporting of module private member access
-- improve error reporting of read-only symbol/field access
-- preverse exit status during the evaluation of finally-block
+- improve error reporting
+    - module private member access
+    - read-only symbol/field access
+    - no-return expression checking in finally-block
+- preserve exit status during the evaluation of finally-block
 
 #### Builtin
 

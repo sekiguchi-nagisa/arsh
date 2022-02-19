@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 9, $chars = 11, $errorKind = 'InsideFinally', $status = 1)
+#$test($result = 'type', $lineNum = 10, $chars = 5, $errorKind = 'InsideFinally', $status = 1)
 
 function f() : Nothing {
     throw 34

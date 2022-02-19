@@ -706,6 +706,10 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
   CallableTypes callableTypes = this->resolveCallee(node);
   this->checkArgsNode(callableTypes, node.getArgsNode());
   node.setType(*callableTypes.returnType);
+  if (node.getType().isNothingType() &&
+      this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
+    this->reportError<InsideFinally>(node);
+  }
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
@@ -790,6 +794,10 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
       }
     }
   }
+  if (node.getType().isNothingType() &&
+      this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
+    this->reportError<InsideFinally>(node);
+  }
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
@@ -854,14 +862,16 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
     }
   }
 
-  {
+  if (node.isLastPipe()) {
     auto scope = this->intoBlock();
-    if (node.isLastPipe()) { // register pipeline state
-      this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
-      node.setBaseIndex(this->curScope->getBaseIndex());
-    }
+    this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
+    node.setBaseIndex(this->curScope->getBaseIndex());
     auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
-    node.setType(node.isLastPipe() ? type : this->typePool.get(TYPE::Boolean));
+    node.setType(type);
+  } else {
+    auto child = this->funcCtx->intoChild();
+    this->checkTypeExactly(*node.getNodes()[size - 1]);
+    node.setType(this->typePool.get(TYPE::Boolean));
   }
 }
 
@@ -1381,7 +1391,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     this->checkTypeAsBreakContinue(node);
     break;
   case JumpNode::THROW:
-    if (this->funcCtx->finallyLevel() > 0) {
+    if (this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
       this->reportError<InsideFinally>(node);
     }
     this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());

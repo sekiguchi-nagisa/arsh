@@ -1,0 +1,13 @@
+
+#$test($result = 'type', $lineNum = 10, $chars = 19, $errorKind = 'InsideFinally', $status = 1)
+
+raise() : Nothing {
+    throw new Error("$@")
+}
+
+defer {
+    var v = 34 | (throw 23) | raise 2 | 130
+    echo hello && raise $v
+}
+
+true

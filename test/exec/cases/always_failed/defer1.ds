@@ -1,0 +1,13 @@
+
+#$test($result = 'type', $lineNum = 10, $chars = 5, $errorKind = 'InsideFinally', $status = 1)
+
+function raise($a : Int) : Nothing {
+    exit $a
+}
+
+defer {
+    var v = (throw 23) | $raise(34) | 130
+    $raise($v)
+}
+
+true
