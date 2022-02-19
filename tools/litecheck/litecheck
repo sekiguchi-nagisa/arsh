@@ -248,29 +248,29 @@ function _run_and_check($map : [String : [Directive]]) : Int {
     let outPath = "$(mktemp)" :- _error "mktemp failed"
     let errPath = "$(mktemp)" :- _error "mktemp failed"
 
-    try {
-        $? = 0
-        var j = ($run() with 1> $outPath 2> $errPath) &
-        var s = $j.wait()
-        var outs = $_lines($outPath)
-        var errs = $_lines($errPath)
-
-        var ret = 0
-        if !$map[$CHECK].empty() {
-            if !$_check_output($map[$CHECK], $outs) { echo 1>&2 stdout is mismatched; $ret = 1; }
-        }
-        if !$map[$CHECKERR].empty() {
-            if !$_check_output($map[$CHECKERR], $errs) { echo 1>&2 stderr is mismatched; $ret = 1; }
-        }
-        if !$map[$STATUS].empty() {
-            var estatus = $map[$STATUS][0].line as Int
-            $s == $estatus || _error "exit status is mismatched, expected: `$estatus', actual: `$s'"
-        }
-        return $ret
-    } finally {
+    defer {
         rm -f $outPath
         rm -f $errPath
     }
+
+    $? = 0
+    var j = ($run() with 1> $outPath 2> $errPath) &
+    var s = $j.wait()
+    var outs = $_lines($outPath)
+    var errs = $_lines($errPath)
+
+    var ret = 0
+    if !$map[$CHECK].empty() {
+        if !$_check_output($map[$CHECK], $outs) { echo 1>&2 stdout is mismatched; $ret = 1; }
+    }
+    if !$map[$CHECKERR].empty() {
+        if !$_check_output($map[$CHECKERR], $errs) { echo 1>&2 stderr is mismatched; $ret = 1; }
+    }
+    if !$map[$STATUS].empty() {
+        var estatus = $map[$STATUS][0].line as Int
+        $s == $estatus || _error "exit status is mismatched, expected: `$estatus', actual: `$s'"
+    }
+    return $ret
 }
 
 # entry point
