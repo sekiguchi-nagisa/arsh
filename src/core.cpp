@@ -379,7 +379,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   CompileOption option = CompileOption::SINGLE_EXPR;
   DefaultModuleProvider moduleProvider(state.modLoader, state.typePool, scope);
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
-  Lexer lexer("(loaded)", ByteBuffer(expr.begin(), expr.end()), getCWD());
+  auto lexer = LexerPtr::create("(loaded)", ByteBuffer(expr.begin(), expr.end()), getCWD());
   auto ctx = moduleProvider.newContext(std::move(lexer), toOption(option), nullptr);
 
   // compile

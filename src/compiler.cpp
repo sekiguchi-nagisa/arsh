@@ -172,23 +172,23 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
                                 DSErrorKind type, const char *errorKind, Token errorToken,
                                 const char *message) {
   auto &lexer = ctx.back()->lexer;
-  errorToken = lexer.shiftEOS(errorToken);
+  errorToken = lexer->shiftEOS(errorToken);
 
   /**
    * show error message
    */
-  this->printError(lexer, toString(type), errorToken, TermColor::Magenta, message);
+  this->printError(*lexer, toString(type), errorToken, TermColor::Magenta, message);
 
   auto end = ctx.crend();
   for (auto iter = ctx.crbegin() + 1; iter != end; ++iter) {
     auto &node = (*iter)->srcListNode;
     Token token = node->getPathNode().getToken();
     auto &lex = (*iter)->lexer;
-    this->printError(lex, "note", token, TermColor::Blue, "at module import");
+    this->printError(*lex, "note", token, TermColor::Blue, "at module import");
   }
 
-  auto srcPos = lexer.getSrcPos(errorToken);
-  const char *sourceName = lexer.getSourceName().c_str();
+  auto srcPos = lexer->getSrcPos(errorToken);
+  const char *sourceName = lexer->getSourceName().c_str();
   this->consumer.consume(DSError{.kind = type,
                                  .fileName = strdup(sourceName),
                                  .lineNum = srcPos.lineNum,
@@ -293,7 +293,7 @@ END:
     if (!msg.empty()) {
       auto node = std::make_unique<EmptyNode>(Token{0, 0});
       auto error = createTCError<ConflictSymbol>(
-          *node, msg.c_str(), this->frontEnd.getCurrentLexer().getSourceName().c_str());
+          *node, msg.c_str(), this->frontEnd.getCurrentLexer()->getSourceName().c_str());
       this->errorReporter.handleTypeError(this->frontEnd.getContext(), error, true);
       func = nullptr;
       return 1; // FIXME: better error message

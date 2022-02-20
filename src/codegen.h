@@ -111,7 +111,7 @@ public:
 };
 
 struct CodeBuilder : public CodeEmitter<true> {
-  const Lexer &lexer;
+  LexerPtr lexer;
 
   const CodeKind kind;
 
@@ -140,9 +140,9 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes;
 
-  explicit CodeBuilder(unsigned short modId, const Lexer &lexer, CodeKind kind,
+  explicit CodeBuilder(unsigned short modId, LexerPtr lexer, CodeKind kind,
                        unsigned char localVarNum)
-      : lexer(lexer), kind(kind), localVarNum(localVarNum), modId(modId) {}
+      : lexer(std::move(lexer)), kind(kind), localVarNum(localVarNum), modId(modId) {}
 
   CodeKind getCodeKind() const { return this->kind; }
 
@@ -424,18 +424,18 @@ private:
   void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
                          const MethodHandle &matchHandle, const Label &mergeLabel);
 
-  void initToplevelCodeBuilder(unsigned short modId, const Lexer &lex, unsigned short localVarNum) {
-    assert(lex.getScriptDir());
-    this->commons.emplace_back(modId, lex.getSourceName(), lex.getScriptDir());
-    this->initCodeBuilder(CodeKind::TOPLEVEL, lex, localVarNum);
+  void initToplevelCodeBuilder(unsigned short modId, LexerPtr lex, unsigned short localVarNum) {
+    assert(lex->getScriptDir());
+    this->commons.emplace_back(modId, lex->getSourceName(), lex->getScriptDir());
+    this->initCodeBuilder(CodeKind::TOPLEVEL, std::move(lex), localVarNum);
   }
 
   void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
-    auto &lex = this->builders.back().lexer;
+    auto lex = this->builders.back().lexer;
     this->initCodeBuilder(kind, lex, localVarNum);
   }
 
-  void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
+  void initCodeBuilder(CodeKind kind, LexerPtr lex, unsigned short localVarNum) {
     this->builders.emplace_back(this->commons.back().getModId(), lex, kind, localVarNum);
     this->curBuilder().constBuffer.append(this->commons.back().getScriptName());
     this->curBuilder().constBuffer.append(this->commons.back().getScriptDir());
@@ -528,8 +528,8 @@ public:
 
   const CodeGenError &getError() const { return this->error; }
 
-  void initialize(unsigned short modId, const Lexer &lexer) {
-    this->initToplevelCodeBuilder(modId, lexer, 0);
+  void initialize(unsigned short modId, LexerPtr lexer) {
+    this->initToplevelCodeBuilder(modId, std::move(lexer), 0);
   }
 
   bool generate(std::unique_ptr<Node> &&node);
@@ -538,8 +538,8 @@ public:
     return this->finalizeToplevelCodeBuilder({0, 0}, maxVarIndex, modType);
   }
 
-  void enterModule(unsigned short modId, const Lexer &lexer) {
-    this->initToplevelCodeBuilder(modId, lexer, 0);
+  void enterModule(unsigned short modId, LexerPtr lexer) {
+    this->initToplevelCodeBuilder(modId, std::move(lexer), 0);
   }
 
   bool exitModule(const SourceNode &node);

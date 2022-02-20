@@ -70,17 +70,17 @@ struct FrontEndResult {
 class FrontEnd {
 public:
   struct Context {
-    Lexer lexer;
+    LexerPtr lexer;
     Parser parser;
     TypeChecker checker;
     NameScopePtr scope;
     std::unique_ptr<SourceListNode> srcListNode;
 
-    Context(const SysConfig &config, TypePool &pool, Lexer &&lexer, NameScopePtr scope,
+    Context(const SysConfig &config, TypePool &pool, LexerPtr lexer, NameScopePtr scope,
             FrontEndOption option, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
         : lexer(std::move(lexer)),
-          parser(this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
-          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
+          parser(*this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
+          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), this->lexer.get()),
           scope(std::move(scope)) {
       this->checker.setCodeCompletionHandler(ccHandler);
     }
@@ -99,7 +99,7 @@ public:
   struct ModuleProvider {
     virtual ~ModuleProvider() = default;
 
-    virtual std::unique_ptr<Context> newContext(Lexer &&lexer, FrontEndOption option,
+    virtual std::unique_ptr<Context> newContext(LexerPtr lexer, FrontEndOption option,
                                                 ObserverPtr<CodeCompletionHandler> ccHandler) = 0;
 
     virtual const ModType &
@@ -122,7 +122,7 @@ private:
   ObserverPtr<NodeDumper> astDumper;
 
 public:
-  FrontEnd(ModuleProvider &provider, Lexer &&lexer, FrontEndOption option = {},
+  FrontEnd(ModuleProvider &provider, LexerPtr lexer, FrontEndOption option = {},
            ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
       : FrontEnd(provider, provider.newContext(std::move(lexer), option, ccHandler), option) {}
 
@@ -144,11 +144,11 @@ public:
 
   TypePool &getTypePool() { return this->checker().getTypePool(); }
 
-  const Lexer &getCurrentLexer() const { return this->contexts.back()->lexer; }
+  const LexerPtr &getCurrentLexer() const { return this->contexts.back()->lexer; }
 
   const std::vector<std::unique_ptr<Context>> &getContext() const { return this->contexts; }
 
-  unsigned int getRootLineNum() const { return this->contexts[0]->lexer.getMaxLineNum(); }
+  unsigned int getRootLineNum() const { return this->contexts[0]->lexer->getMaxLineNum(); }
 
   const std::unique_ptr<SourceListNode> &getCurSrcListNode() const {
     return this->contexts.back()->srcListNode;
@@ -183,7 +183,7 @@ private:
    *
    * @return
    */
-  const char *getCurScriptDir() const { return this->contexts.back()->lexer.getScriptDir(); }
+  const char *getCurScriptDir() const { return this->contexts.back()->lexer->getScriptDir(); }
 
   std::unique_ptr<SourceListNode> &getCurSrcListNode() {
     return this->contexts.back()->srcListNode;
@@ -213,7 +213,7 @@ public:
   ~DefaultModuleProvider() override = default;
 
   std::unique_ptr<FrontEnd::Context>
-  newContext(Lexer &&lexer, FrontEndOption option,
+  newContext(LexerPtr lexer, FrontEndOption option,
              ObserverPtr<CodeCompletionHandler> ccHandler) override;
 
   const ModType &

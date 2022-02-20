@@ -382,9 +382,9 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
   const auto compileOption = getCompileOption(*st);
   DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
-  Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, ByteBuffer(data, data + size),
-              getCWD());
-  lexer.setLineNumOffset(st->lineNum);
+  auto lexer = LexerPtr::create(sourceName == nullptr ? "(stdin)" : sourceName,
+                                ByteBuffer(data, data + size), getCWD());
+  lexer->setLineNumOffset(st->lineNum);
   auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }

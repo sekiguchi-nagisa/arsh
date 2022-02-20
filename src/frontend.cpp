@@ -118,11 +118,11 @@ FrontEndResult FrontEnd::operator()() {
 
 void FrontEnd::setupASTDump() {
   if (this->uastDumper) {
-    this->uastDumper->initialize(this->getCurrentLexer().getSourceName(),
+    this->uastDumper->initialize(this->getCurrentLexer()->getSourceName(),
                                  "### dump untyped AST ###");
   }
   if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
-    this->astDumper->initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
+    this->astDumper->initialize(this->getCurrentLexer()->getSourceName(), "### dump typed AST ###");
   }
 }
 
@@ -162,7 +162,7 @@ FrontEndResult FrontEnd::enterModule() {
     return FrontEndResult::failed();
   } else if (is<std::unique_ptr<Context>>(ret)) {
     auto &v = get<std::unique_ptr<Context>>(ret);
-    const char *fullPath = v->lexer.getSourceName().c_str();
+    const char *fullPath = v->lexer->getSourceName().c_str();
     this->contexts.push_back(std::move(v));
     if (this->uastDumper) {
       this->uastDumper->enterModule(fullPath);
@@ -215,7 +215,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 // ###################################
 
 std::unique_ptr<FrontEnd::Context>
-DefaultModuleProvider::newContext(Lexer &&lexer, FrontEndOption option,
+DefaultModuleProvider::newContext(LexerPtr lexer, FrontEndOption option,
                                   ObserverPtr<CodeCompletionHandler> ccHandler) {
   return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
                                              std::move(lexer), this->scope, option, ccHandler);

@@ -194,7 +194,7 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel,
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
   const unsigned int index = this->currentCodeOffset();
-  unsigned int lineNum = this->curBuilder().lexer.getLineNumByPos(pos);
+  unsigned int lineNum = this->curBuilder().lexer->getLineNumByPos(pos);
   if (this->curBuilder().lineNumEntries.empty() ||
       this->curBuilder().lineNumEntries.back().lineNum != lineNum) {
     this->curBuilder().lineNumEntries.push_back({index, lineNum});

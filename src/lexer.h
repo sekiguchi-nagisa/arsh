@@ -51,7 +51,7 @@ struct SrcPos {
   unsigned int chars;
 };
 
-class Lexer : public ydsh::LexerBase {
+class Lexer : public ydsh::LexerBase, public RefCount<Lexer> {
 private:
   static_assert(sizeof(LexerMode) == sizeof(uint16_t));
   static_assert(std::is_trivially_copyable<LexerMode>::value);
@@ -94,7 +94,7 @@ public:
 
   ~Lexer() = default;
 
-  static Lexer fromFullPath(const char *fullpath, ByteBuffer &&buf);
+  static IntrusivePtr<Lexer> fromFullPath(const char *fullpath, ByteBuffer &&buf);
 
   SrcPos getSrcPos(Token token) const;
 
@@ -196,6 +196,8 @@ public:
 
   bool toEnvName(Token token, std::string &out) const;
 };
+
+using LexerPtr = IntrusivePtr<Lexer>;
 
 struct EscapeSeqResult {
   enum Kind : unsigned char {

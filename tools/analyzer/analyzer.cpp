@@ -55,7 +55,7 @@ static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
 
   ModuleLoader loader(config); // dummy
   const char *embed = embed_script;
-  Lexer lexer("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
+  auto lexer = LexerPtr::create("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
   DefaultModuleProvider provider(loader, pool, builtin);
   FrontEnd frontEnd(provider, std::move(lexer));
   consumeAllInput(frontEnd);
@@ -105,7 +105,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
 // ######################
 
 std::unique_ptr<FrontEnd::Context>
-Analyzer::newContext(Lexer &&lexer, FrontEndOption option,
+Analyzer::newContext(LexerPtr lexer, FrontEndOption option,
                      ObserverPtr<CodeCompletionHandler> ccHandler) {
   auto &ctx = this->current();
   return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lexer),
@@ -121,7 +121,7 @@ Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::C
   return *modType;
 }
 
-static Lexer createLexer(const Source &src) {
+static LexerPtr createLexer(const Source &src) {
   const char *fullpath = src.getPath().c_str();
   const char *ptr = src.getContent().c_str();
   return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));

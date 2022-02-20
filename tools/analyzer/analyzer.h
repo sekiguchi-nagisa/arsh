@@ -137,7 +137,7 @@ public:
 
 protected:
   std::unique_ptr<FrontEnd::Context>
-  newContext(Lexer &&lexer, FrontEndOption option,
+  newContext(LexerPtr lexer, FrontEndOption option,
              ObserverPtr<CodeCompletionHandler> ccHandler) override;
 
   const ModType &

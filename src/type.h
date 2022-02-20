@@ -515,9 +515,7 @@ public:
 
   unsigned int getFieldSize() const { return this->meta.u16_2.v1; }
 
-  bool isFinalized() const {
-    return this->meta.u16_2.v2 != 0;
-  }
+  bool isFinalized() const { return this->meta.u16_2.v2 != 0; }
 
   const Handle *lookupField(const std::string &fieldName) const;
 
@@ -528,7 +526,7 @@ private:
                 std::unordered_map<std::string, HandlePtr> &&handles) {
     this->handleMap = std::move(handles);
     this->meta.u16_2.v1 = fieldSize;
-    this->meta.u16_2.v2 = 1;  // finalize
+    this->meta.u16_2.v2 = 1; // finalize
     this->superType = &superType;
   }
 };

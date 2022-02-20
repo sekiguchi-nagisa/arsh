@@ -653,8 +653,8 @@ void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgPar
   this->addCompRequest(op, std::move(value));
 }
 
-static Lexer lex(StringRef ref) {
-  return Lexer("<line>", ByteBuffer(ref.begin(), ref.end()), getCWD());
+static LexerPtr lex(StringRef ref) {
+  return LexerPtr::create("<line>", ByteBuffer(ref.begin(), ref.end()), getCWD());
 }
 
 static void consumeAllInput(FrontEnd &frontEnd) {
