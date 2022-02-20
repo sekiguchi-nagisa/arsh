@@ -1,0 +1,8 @@
+
+#$test($status = 0,$out = $'start\nmodule: defer.ds\ndefer2: defer.ds\ndefer1: defer.ds\nend\n')
+
+echo start
+
+source ../..//_module4test/defer.ds
+
+echo end

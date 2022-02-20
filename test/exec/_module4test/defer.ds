@@ -1,0 +1,10 @@
+
+defer {
+    echo defer1: ${$SCRIPT_NAME.split("/")[-1]}
+}
+
+defer {
+    echo defer2: ${$SCRIPT_NAME.split("/")[-1]}
+}
+
+echo module: ${$SCRIPT_NAME.split("/")[-1]}

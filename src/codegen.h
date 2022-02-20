@@ -138,6 +138,8 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   std::vector<TryFinallyState> tryFinallyLabels;
 
+  std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes;
+
   explicit CodeBuilder(unsigned short modId, const Lexer &lexer, CodeKind kind,
                        unsigned char localVarNum)
       : lexer(lexer), kind(kind), localVarNum(localVarNum), modId(modId) {}
@@ -185,8 +187,6 @@ private:
 
   std::vector<ModuleCommon> commons;
 
-  std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes; // for top-level defer
-
   CodeGenError error;
 
 public:
@@ -206,6 +206,8 @@ private:
   }
 
   auto &tryFinallyLabels() { return this->curBuilder().tryFinallyLabels; }
+
+  auto &toplevelDeferNodes() { return this->curBuilder().toplevelDeferNodes; }
 
   bool inUDC() const { return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD; }
 
@@ -445,6 +447,18 @@ private:
     return code;
   }
 
+  /**
+   *
+   * @param token
+   * for error reporting
+   * @param maxVarIndex
+   * @param modType
+   * @return
+   * if code generation failed, report error and return null
+   */
+  ObjPtr<FuncObject> finalizeToplevelCodeBuilder(Token token, unsigned int maxVarIndex,
+                                                 const ModType &modType);
+
   void reportErrorImpl(Token token, const char *kind, const char *fmt, ...)
       __attribute__((format(printf, 4, 5)));
 
@@ -520,7 +534,9 @@ public:
 
   bool generate(std::unique_ptr<Node> &&node);
 
-  ObjPtr<FuncObject> finalize(unsigned int maxVarIndex, const ModType &modType);
+  ObjPtr<FuncObject> finalize(unsigned int maxVarIndex, const ModType &modType) {
+    return this->finalizeToplevelCodeBuilder({0, 0}, maxVarIndex, modType);
+  }
 
   void enterModule(unsigned short modId, const Lexer &lexer) {
     this->initToplevelCodeBuilder(modId, lexer, 0);

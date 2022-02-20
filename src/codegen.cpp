@@ -1455,7 +1455,7 @@ bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
         .localSize = 0,
         .defer = true,
     });
-    this->toplevelDeferNodes.emplace_back(cast<DeferNode>(node.release()));
+    this->toplevelDeferNodes().emplace_back(cast<DeferNode>(node.release()));
     this->markLabel(this->tryFinallyLabels().back().beginLabel);
   } else {
     this->visit(*node);
@@ -1463,21 +1463,22 @@ bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
   return !this->hasError();
 }
 
-ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const ModType &modType) {
-  if (!this->toplevelDeferNodes.empty()) {
-    this->enterMultiFinally(this->toplevelDeferNodes.size());
+ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
+                                                                  unsigned int maxVarIndex,
+                                                                  const ModType &modType) {
+  if (!this->toplevelDeferNodes().empty()) {
+    this->enterMultiFinally(this->toplevelDeferNodes().size());
   }
 
-  unsigned char maxLocalSize = maxVarIndex;
-  this->curBuilder().localVarNum = maxLocalSize;
+  this->curBuilder().localVarNum = maxVarIndex;
   this->emit0byteIns(OpCode::PUSH_INVALID);
   this->emit0byteIns(OpCode::RETURN);
 
-  while (!this->toplevelDeferNodes.empty()) {
+  while (!this->toplevelDeferNodes().empty()) {
     this->markLabel(this->tryFinallyLabels().back().endLabel);
-    this->visit(*this->toplevelDeferNodes.back());
+    this->visit(*this->toplevelDeferNodes().back());
     this->tryFinallyLabels().pop_back();
-    this->toplevelDeferNodes.pop_back();
+    this->toplevelDeferNodes().pop_back();
   }
 
   auto code = this->finalizeCodeBuilder(modType.toName());
@@ -1486,23 +1487,18 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalize(unsigned int maxVarIndex, const M
     auto v = DSValue::create<FuncObject>(modType, std::move(code));
     func = ObjPtr<FuncObject>(&typeAs<FuncObject>(v));
   } else {
-    this->reportError<TooLargeToplevel>({0, 0}, this->commons.back().getScriptName().asCStr());
+    this->reportError<TooLargeToplevel>(token, this->commons.back().getScriptName().asCStr());
   }
   this->commons.pop_back();
   return func;
 }
 
 bool ByteCodeGenerator::exitModule(const SourceNode &node) {
-  this->curBuilder().localVarNum = node.getMaxVarNum();
-  this->emit0byteIns(OpCode::PUSH_INVALID);
-  this->emit0byteIns(OpCode::RETURN);
-
-  auto code = this->finalizeCodeBuilder(node.getModType().toName());
-  if (!code) {
-    this->reportError<TooLargeModule>(node, node.getPathName().c_str());
+  auto func =
+      this->finalizeToplevelCodeBuilder(node.getToken(), node.getMaxVarNum(), node.getModType());
+  if (!func) {
+    return false;
   }
-  auto func = DSValue::create<FuncObject>(node.getModType(), std::move(code));
-  this->commons.pop_back();
 
   this->emitLdcIns(func);
   this->emitSourcePos(node.getPathToken().pos);

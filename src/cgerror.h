@@ -78,8 +78,7 @@ using base_of_t = std::enable_if_t<std::is_base_of<B, T>::value, T>;
 
 DEFINE_CGError(TooLargeFunc, "too large function: `%s'");
 DEFINE_CGError(TooLargeUdc, "too large user-defined command: `%s'");
-DEFINE_CGError(TooLargeToplevel, "too large toplevel: `%s'");
-DEFINE_CGError(TooLargeModule, "too large module: `%s'");
+DEFINE_CGError(TooLargeToplevel, "too large top-level script: `%s'");
 
 #undef DEFINE_CGError
 

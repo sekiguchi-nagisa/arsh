@@ -1,5 +1,5 @@
 
-#$test($result = 'codegen', $lineNum = 6, $chars = 1, $errorKind = 'TooLargeModule', $status = 1, $fileName = './always_failed/codegen_fail4.ds')
+#$test($result = 'codegen', $lineNum = 6, $chars = 1, $errorKind = 'TooLargeToplevel', $status = 1, $fileName = './always_failed/codegen_fail4.ds')
 
 echo hello
 
