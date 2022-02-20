@@ -80,20 +80,17 @@ TEST(LexerTest_Lv0, line) {
 
 class LexerTest_Lv1 : public ::testing::Test {
 public:
-  Lexer *lexer{nullptr};
+  LexerPtr lexer;
   std::vector<std::pair<TokenKind, Token>> tokens;
 
 public:
   LexerTest_Lv1() = default;
 
-  ~LexerTest_Lv1() override {
-    delete this->lexer;
-    this->lexer = nullptr;
-  }
+  ~LexerTest_Lv1() override = default;
 
   // for test
   virtual void initLexer(const char *text) {
-    this->lexer = new Lexer("(string)", ByteBuffer(text, text + strlen(text)), nullptr);
+    this->lexer = LexerPtr::create("(string)", ByteBuffer(text, text + strlen(text)), nullptr);
   }
 
   virtual void initLexer(const char *text, LexerMode mode) {
@@ -1916,33 +1913,56 @@ TEST_F(LexerTest_Lv1, LINE_END3) {
 TEST_F(LexerTest_Lv1, COMMENT1) {
   const char *text = "#fhreuvrei o";
   this->initLexer(text);
+  this->lexer->setStoreComment(true);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT2) {
   const char *text = "#ああ  あ";
   this->initLexer(text, yycEXPR);
+  this->lexer->setStoreComment(true);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
+  ASSERT_EQ(1, this->lexer->getStoredComments().size());
+  ASSERT_EQ(text, this->lexer->toTokenText(this->lexer->getStoredComments().back()));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT3) {
   const char *text = "#hello  \t  ";
   this->initLexer(text, yycNAME);
+  this->lexer->setStoreComment(true);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
+  ASSERT_EQ(1, this->lexer->getStoredComments().size());
+  ASSERT_EQ(text, this->lexer->toTokenText(this->lexer->getStoredComments().back()));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT4) {
   const char *text = "#hferu";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycTYPE);
+  this->lexer->setStoreComment(true);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
+  ASSERT_EQ(1, this->lexer->getStoredComments().size());
+  ASSERT_EQ(text, this->lexer->toTokenText(this->lexer->getStoredComments().back()));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT5) {
   const char *text = "#2345y;;::";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
+  this->lexer->setStoreComment(true);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
+  ASSERT_EQ(1, this->lexer->getStoredComments().size());
+  ASSERT_EQ(text, this->lexer->toTokenText(this->lexer->getStoredComments().back()));
+}
+
+TEST_F(LexerTest_Lv1, COMMENT6) {
+  const char *text = "echo #1234\n#abcd";
+  this->initLexer(text);
+  this->lexer->setStoreComment(true);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::EOS, ""));
+  ASSERT_EQ(2, this->lexer->getStoredComments().size());
+  ASSERT_EQ("#1234", this->lexer->toTokenText(this->lexer->getStoredComments()[0]));
+  ASSERT_EQ("#abcd", this->lexer->toTokenText(this->lexer->getStoredComments()[1]));
 }
 
 TEST_F(LexerTest_Lv1, EMPTY) {

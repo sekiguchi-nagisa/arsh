@@ -64,6 +64,13 @@ private:
 
   LexerMode prevMode{yycSTMT};
 
+  TokenKind compTokenKind{TokenKind::INVALID};
+
+  /**
+   * if true, enable code completion (may emit complete token)
+   */
+  bool complete{false};
+
   bool prevNewLine{false};
 
   /**
@@ -71,12 +78,9 @@ private:
    */
   bool prevSpace{false};
 
-  /**
-   * if true, enable code completion (may emit complete token)
-   */
-  bool complete{false};
+  bool storeComment{false};
 
-  TokenKind compTokenKind{TokenKind::INVALID};
+  std::vector<Token> storedComments;
 
 public:
   NON_COPYABLE(Lexer);
@@ -146,6 +150,20 @@ public:
   void setCompTokenKind(TokenKind kind) { this->compTokenKind = kind; }
 
   TokenKind getCompTokenKind() const { return this->compTokenKind; }
+
+  void setStoreComment(bool set) { this->storeComment = set; }
+
+  void addComment(unsigned int startPos) {
+    if (this->storeComment) {
+      Token token{
+          .pos = startPos,
+          .size = this->getPos() - startPos,
+      };
+      this->storedComments.push_back(token);
+    }
+  }
+
+  const std::vector<Token> getStoredComments() const { return this->storedComments; }
 
   /**
    * lexer entry point.

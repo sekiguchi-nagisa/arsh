@@ -80,6 +80,8 @@
 
 #define YYGETCONDITION() this->getLexerMode().cond()
 
+#define STORE_COMMENT() this->addComment(startPos)
+
 namespace ydsh {
 
 TokenKind Lexer::nextToken(Token &token) {
@@ -142,7 +144,7 @@ TokenKind Lexer::nextToken(Token &token) {
   bool foundSpace = false;
 
 INIT:
-  unsigned int startPos = this->getPos();
+  const unsigned int startPos = this->getPos();
   LexerMode mode = this->getLexerMode();
   TokenKind kind = TokenKind::INVALID;
   /*!re2c
@@ -316,7 +318,8 @@ INIT:
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
     <STMT,EXPR,NAME,CMD,TYPE> COMMENT
-                             { if(this->inCompletionPoint()) { setComplete(false); } SKIP(); }
+                             { if(this->inCompletionPoint()) { setComplete(false); }
+                               STORE_COMMENT(); SKIP(); }
     <STMT,EXPR,NAME,CMD,TYPE> [ \t]+
                              { FIND_SPACE(); }
     <STMT,EXPR,NAME,CMD,TYPE> "\\" [\r\n]
