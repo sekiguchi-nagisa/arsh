@@ -1,0 +1,307 @@
+
+source $SCRIPT_DIR/expect.ds
+
+var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()!
+let len = $mod.size()
+
+## dump untyped test 
+
+var out = "### dump untyped AST ###
+sourceName: \"(string)\"
+nodes:
+  - nodeKind: SourceList
+    token:
+      pos: 0
+      size: ${$len+'source '.size()}
+    type:
+    pathNode:
+      nodeKind: CmdArg
+      token:
+        pos: 7
+        size: ${len}
+      type:
+      globPathSize: 0
+      segmentNodes:
+        - nodeKind: String
+          token:
+            pos: 7
+            size: ${len}
+          type:
+          kind: \"STRING\"
+          value: \"$mod\"
+    constPathNode: null
+    name: null
+    optional: false
+    inlined: false
+    curIndex: 0
+    pathList:
+maxVarNum: 0
+maxGVarNum: 61
+
+sourceName: \"$mod\"
+nodes:
+  - nodeKind: Function
+    token:
+      pos: 1
+      size: 39
+    type:
+    funcName:
+      token:
+        pos: 10
+        size: 4
+      name: \"hoge\"
+    params:
+      - token:
+          pos: 15
+          size: 2
+        name: \"s\"
+    paramTypeNodes:
+      - nodeKind: Type
+        token:
+          pos: 20
+          size: 3
+        type:
+        typeKind: \"Base\"
+        typeName: \"Int\"
+    returnTypeNode:
+      nodeKind: Type
+      token:
+        pos: 0
+        size: 0
+      type:
+      typeKind: \"Base\"
+      typeName: \"Void\"
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 25
+        size: 15
+      type:
+      nodes:
+        - nodeKind: BinaryOp
+          token:
+            pos: 31
+            size: 7
+          type:
+          leftNode:
+            nodeKind: Number
+            token:
+              pos: 31
+              size: 2
+            type:
+            kind: \"Int\"
+            intValue: 10
+          rightNode:
+            nodeKind: Var
+            token:
+              pos: 36
+              size: 2
+            type:
+            varName: \"s\"
+            index: 0
+            attribute: \"\"
+          op: \"/\"
+          optNode: null
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
+      firstDeferOffset: -1
+    maxVarNum: 0
+    varIndex: 0
+    resolvedType: null
+    kind: \"FUNC\""
+
+$expect("$(ds -n --dump-untyped-ast -c "source $mod")", 0, $out)
+
+
+## typed ast
+
+$out = "### dump typed AST ###
+sourceName: \"(string)\"
+nodes:
+  - nodeKind: SourceList
+    token:
+      pos: 0
+      size: ${$len + 'source '.size()}
+    type: Void
+    pathNode:
+      nodeKind: CmdArg
+      token:
+        pos: 7
+        size: ${len}
+      type: String
+      globPathSize: 0
+      segmentNodes:
+        - nodeKind: String
+          token:
+            pos: 7
+            size: ${len}
+          type: String
+          kind: \"STRING\"
+          value: \"$mod\"
+    constPathNode:
+      nodeKind: CmdArg
+      token:
+        pos: 7
+        size: ${len}
+      type:
+      globPathSize: 0
+      segmentNodes:
+        - nodeKind: String
+          token:
+            pos: 7
+            size: ${len}
+          type: String
+          kind: \"STRING\"
+          value: \"$mod\"
+    name: null
+    optional: false
+    inlined: false
+    curIndex: 0
+    pathList:
+      - \"$mod\"
+  - nodeKind: Source
+    token:
+      pos: 0
+      size: ${$len + 'source '.size()}
+    type: Void
+    name: null
+    modType: \"%mod2\"
+    pathName: \"$mod\"
+    firstAppear: true
+    inlined: false
+    nothing: false
+    maxVarNum: 0
+maxVarNum: 0
+maxGVarNum: 61
+
+sourceName: \"$mod\"
+nodes:
+  - nodeKind: Function
+    token:
+      pos: 1
+      size: 39
+    type: Void
+    funcName:
+      token:
+        pos: 10
+        size: 4
+      name: \"hoge\"
+    params:
+      - token:
+          pos: 15
+          size: 2
+        name: \"s\"
+    paramTypeNodes:
+      - nodeKind: Type
+        token:
+          pos: 20
+          size: 3
+        type: Int
+        typeKind: \"Base\"
+        typeName: \"Int\"
+    returnTypeNode:
+      nodeKind: Type
+      token:
+        pos: 0
+        size: 0
+      type: Void
+      typeKind: \"Base\"
+      typeName: \"Void\"
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 25
+        size: 15
+      type: Nothing
+      nodes:
+        - nodeKind: TypeOp
+          token:
+            pos: 31
+            size: 7
+          type: Void
+          exprNode:
+            nodeKind: BinaryOp
+            token:
+              pos: 31
+              size: 7
+            type: Int
+            leftNode: null
+            rightNode: null
+            op: \"/\"
+            optNode:
+              nodeKind: Apply
+              token:
+                pos: 31
+                size: 4
+              type: Int
+              exprNode:
+                nodeKind: Access
+                token:
+                  pos: 31
+                  size: 4
+                type: Any
+                recvNode:
+                  nodeKind: Number
+                  token:
+                    pos: 31
+                    size: 2
+                  type: Int
+                  kind: \"Int\"
+                  intValue: 10
+                nameNode:
+                  nodeKind: Var
+                  token:
+                    pos: 34
+                    size: 1
+                  type:
+                  varName: \"%div\"
+                  index: 0
+                  attribute: \"\"
+                index: 0
+                attribute: \"\"
+                additionalOp: \"NOP\"
+              argsNode:
+                nodeKind: Args
+                token:
+                  pos: 0
+                  size: 38
+                type: Void
+                nodes:
+                  - nodeKind: Var
+                    token:
+                      pos: 36
+                      size: 2
+                    type: Int
+                    varName: \"s\"
+                    index: 0
+                    attribute: \"\"
+              handle: \"9\"
+              kind: \"METHOD_CALL\"
+          targetTypeToken: null
+          opKind: \"TO_VOID\"
+        - nodeKind: Jump
+          token:
+            pos: 0
+            size: 0
+          type: Nothing
+          opKind: \"RETURN\"
+          fieldOffset: 0
+          fieldSize: 0
+          tryDepth: 0
+          exprNode:
+            nodeKind: Empty
+            token:
+              pos: 0
+              size: 0
+            type: Void
+      baseIndex: 0
+      varSize: 1
+      maxVarSize: 1
+      firstDeferOffset: -1
+    maxVarNum: 1
+    varIndex: 59
+    resolvedType: \"(Int) -> Void\"
+    kind: \"FUNC\""
+
+$expect("$(ds -n --dump-ast -c "source $mod")", 0, $out)

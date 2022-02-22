@@ -1,0 +1,46 @@
+
+source $SCRIPT_DIR/expect.ds
+
+var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()!
+let len = $mod.size()
+
+## dump untyped test 
+
+var out = "### dump untyped AST ###
+sourceName: \"(string)\"
+nodes:
+  - nodeKind: SourceList
+    token:
+      pos: 0
+      size: ${$len + 'source '.size()}
+    type:
+    pathNode:
+      nodeKind: CmdArg
+      token:
+        pos: 7
+        size: ${len}
+      type:
+      globPathSize: 0
+      segmentNodes:
+        - nodeKind: String
+          token:
+            pos: 7
+            size: ${len}
+          type:
+          kind: \"STRING\"
+          value: \"$mod\"
+    constPathNode: null
+    name: null
+    optional: false
+    inlined: false
+    curIndex: 0
+    pathList:
+maxVarNum: 0
+maxGVarNum: 59"
+
+$expect("$(ds --parse-only --dump-untyped-ast -c "source $mod")", 0, $out)
+
+
+## typed ast
+
+$expect("$(ds --parse-only --dump-ast -c "source $mod")", 0, "")
