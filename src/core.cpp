@@ -239,9 +239,8 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
     auto discardPoint = provider.getCurrentDiscardPoint();
 
     DefaultCompConsumer consumer(compreply);
-    CodeCompleter codeCompleter(
-        consumer, empty(option) ? makeObserver<FrontEnd::ModuleProvider>(provider) : nullptr,
-        st.sysConfig, st.typePool, std::move(scope), st.logicalWorkingDir);
+    CodeCompleter codeCompleter(consumer, empty(option) ? makeObserver(provider) : nullptr,
+                                st.sysConfig, st.typePool, std::move(scope), st.logicalWorkingDir);
     codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
                                            const std::string &word,
                                            CompCandidateConsumer &consumer) {

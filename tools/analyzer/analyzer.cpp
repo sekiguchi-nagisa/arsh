@@ -408,7 +408,8 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ck
   CompletionItemCollector collector;
   std::string workDir = toDirName(src.getPath());
   auto &ptr = this->addNew(src);
-  CodeCompleter codeCompleter(collector, makeObserver<FrontEnd::ModuleProvider>(*this),
+  CodeCompleter codeCompleter(collector,
+                              makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
                               this->sysConfig, ptr->getPool(), ptr->getScope(), workDir);
   CodeCompOp ignoredOp{};
   switch (ckind) {

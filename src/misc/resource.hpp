@@ -131,6 +131,9 @@ public:
 
   ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {} // NOLINT
 
+  template <typename U>
+  ObserverPtr(const ObserverPtr<U> &o) : ptr(o.get()) {} // NOLINT
+
   ObserverPtr() noexcept : ptr(nullptr) {}
 
   explicit operator bool() const { return this->ptr != nullptr; }
@@ -138,6 +141,8 @@ public:
   T *operator->() const { return this->ptr; }
 
   T &operator*() const { return *this->ptr; }
+
+  T *get() const { return this->ptr; }
 
   template <typename... Arg>
   auto operator()(Arg &&...arg) const {
