@@ -141,7 +141,7 @@ enum class MarkupKind : unsigned char {
 #undef GEN_ENUM
 };
 
-const char *toString(const MarkupKind &kind);
+const char *toString(MarkupKind kind);
 
 bool toEnum(const char *str, MarkupKind &kind);
 
@@ -196,7 +196,7 @@ enum class SemanticTokenTypes : unsigned int {
 #undef GEN_ENUM
 };
 
-const char *toString(const SemanticTokenTypes &type);
+const char *toString(SemanticTokenTypes type);
 
 bool toEnum(const char *str, SemanticTokenTypes &type);
 
@@ -230,7 +230,7 @@ enum class SemanticTokenModifiers : unsigned int {
 #undef GEN_ENUM
 };
 
-const char *toString(const SemanticTokenModifiers &modifier);
+const char *toString(SemanticTokenModifiers modifier);
 
 bool toEnum(const char *str, SemanticTokenModifiers &modifier);
 
@@ -254,7 +254,7 @@ enum class TokenFormat : unsigned int {
 #undef GEN_ENUM
 };
 
-const char *toString(const TokenFormat &format);
+const char *toString(TokenFormat format);
 
 bool toEnum(const char *str, TokenFormat &format);
 
@@ -759,7 +759,7 @@ enum class CmdCompKind : unsigned char {
 #undef GEN_ENUM
 };
 
-const char *toString(const CmdCompKind &kind);
+const char *toString(CmdCompKind kind);
 
 bool toEnum(const char *str, CmdCompKind &kind);
 

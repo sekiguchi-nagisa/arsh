@@ -64,7 +64,7 @@ std::string Range::toString() const {
   return ret;
 }
 
-const char *toString(const MarkupKind &kind) {
+const char *toString(MarkupKind kind) {
   switch (kind) {
 #define GEN_CASE(E, V)                                                                             \
   case MarkupKind::E:                                                                              \
@@ -93,7 +93,7 @@ bool toEnum(const char *str, MarkupKind &kind) {
   return false;
 }
 
-const char *toString(const SemanticTokenTypes &type) {
+const char *toString(SemanticTokenTypes type) {
   switch (type) {
 #define GEN_CASE(E, V)                                                                             \
   case SemanticTokenTypes::E:                                                                      \
@@ -122,7 +122,7 @@ bool toEnum(const char *str, SemanticTokenTypes &type) {
   return false;
 }
 
-const char *toString(const SemanticTokenModifiers &modifier) {
+const char *toString(SemanticTokenModifiers modifier) {
   switch (modifier) {
 #define GEN_CASE(E, V)                                                                             \
   case SemanticTokenModifiers::E:                                                                  \
@@ -151,7 +151,7 @@ bool toEnum(const char *str, SemanticTokenModifiers &modifier) {
   return false;
 }
 
-const char *toString(const TokenFormat &format) {
+const char *toString(TokenFormat format) {
   switch (format) {
 #define GEN_CASE(E, V)                                                                             \
   case TokenFormat::E:                                                                             \
@@ -197,7 +197,7 @@ SemanticTokensLegend SemanticTokensLegend::create() {
   };
 }
 
-const char *toString(const CmdCompKind &kind) {
+const char *toString(CmdCompKind kind) {
   switch (kind) {
 #define GEN_CASE(E, V)                                                                             \
   case CmdCompKind::E:                                                                             \
