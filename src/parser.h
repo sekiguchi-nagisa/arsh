@@ -39,19 +39,10 @@ struct allow_enum_bitop<CmdArgParseOpt> : std::true_type {};
 
 using ParseError = ParseErrorBase<TokenKind>;
 
-class TokenTracker {
-private:
-  std::vector<std::pair<TokenKind, Token>> tokenPairs;
+struct TokenTracker {
+  virtual ~TokenTracker() = default;
 
-public:
-  TokenTracker() = default;
-  ~TokenTracker() = default;
-
-  void operator()(TokenKind kind, Token token) { this->tokenPairs.emplace_back(kind, token); }
-
-  const std::vector<std::pair<TokenKind, Token>> &getTokenPairs() const {
-    return this->tokenPairs;
-  };
+  virtual void operator()(TokenKind kind, Token token) = 0;
 };
 
 class CodeCompletionHandler;

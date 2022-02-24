@@ -51,6 +51,12 @@ struct SrcPos {
   unsigned int chars;
 };
 
+struct CommentStore {
+  virtual ~CommentStore() = default;
+
+  virtual void operator()(Token token) = 0;
+};
+
 class Lexer : public ydsh::LexerBase, public RefCount<Lexer> {
 private:
   static_assert(sizeof(LexerMode) == sizeof(uint16_t));
@@ -78,9 +84,7 @@ private:
    */
   bool prevSpace{false};
 
-  bool storeComment{false};
-
-  std::vector<Token> storedComments;
+  ObserverPtr<CommentStore> commentStore;
 
 public:
   NON_COPYABLE(Lexer);
@@ -151,19 +155,17 @@ public:
 
   TokenKind getCompTokenKind() const { return this->compTokenKind; }
 
-  void setStoreComment(bool set) { this->storeComment = set; }
+  void setCommentStore(ObserverPtr<CommentStore> store) { this->commentStore = store; }
 
   void addComment(unsigned int startPos) {
-    if (this->storeComment) {
+    if (this->commentStore) {
       Token token{
           .pos = startPos,
           .size = this->getPos() - startPos,
       };
-      this->storedComments.push_back(token);
+      this->commentStore(token);
     }
   }
-
-  const std::vector<Token> getStoredComments() const { return this->storedComments; }
 
   /**
    * lexer entry point.
