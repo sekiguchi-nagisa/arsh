@@ -1,0 +1,101 @@
+source $SCRIPT_DIR/expect.ds
+
+var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()!
+
+var out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 11
+  max stack depth: 2
+  number of local variable: 0
+  number of global variable: 62
+Code:
+   0: LOAD_CONST  2
+   2: DUP
+   3: STORE_GLOBAL  60
+   6: CALL_FUNC  0
+   8: POP
+   9: PUSH_INVALID
+  10: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: %mod2 module(%mod2)
+Line Number Table:
+  lineNum: 1, address:  2
+Exception Table:
+
+Source File: $mod
+DSCode: top level
+  code size: 7
+  max stack depth: 1
+  number of local variable: 0
+  number of global variable: 62
+Code:
+  0: LOAD_CONST  2
+  2: STORE_GLOBAL  59
+  5: PUSH_INVALID
+  6: RETURN
+Constant Pool:
+  0: String $mod
+  1: String $(dirname $mod)
+  2: (Int) -> Void function(hoge)
+Line Number Table:
+Exception Table:
+
+DSCode: function hoge
+  code size: 10
+  max stack depth: 2
+  number of local variable: 1
+Code:
+   0: PUSH_INT  10
+   2: LOAD_LOCAL  0
+   4: CALL_BUILTIN2  2  %div
+   7: POP
+   8: PUSH_INVALID
+   9: RETURN
+Constant Pool:
+  0: String $mod
+  1: String $(dirname $mod)
+Line Number Table:
+  lineNum: 3, address:  2
+Exception Table:"
+
+$expect("$(ds -n --dump-code -c "source $mod")", 0, $out)
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 36
+  max stack depth: 4
+  number of local variable: 0
+  number of global variable: 60
+Code:
+   0: LOAD_CONST  2
+   2: LOAD_GLOBAL  4
+   5: CALL_BUILTIN2  1  %interp
+   8: LOOKUP_HASH
+   9: GOTO  34
+  14: FORK  6  14
+  18: LOAD_CONST  3
+  20: NEW_CMD
+  21: PUSH_NULL
+  22: PUSH_STR1  `8'
+  24: ADD_CMD_ARG  0
+  26: CALL_CMD_NOFORK
+  27: HALT
+  28: POP
+  29: GOTO  34
+  34: PUSH_INVALID
+  35: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: Void [999 : 14]
+  3: String sleep
+Line Number Table:
+  lineNum: 1, address:  2
+Exception Table:
+  begin: 14, end: 27, type: process guard%%, dest: 27, offset: 0, size: 0"
+
+$expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
