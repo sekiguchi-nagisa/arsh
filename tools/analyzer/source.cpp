@@ -81,15 +81,15 @@ SourcePtr SourceManager::add(SourcePtr other) {
 }
 
 static size_t findLineStartPos(StringRef content, unsigned int count) {
-  const char *str = content.data();
+  StringRef::size_type pos = 0;
   for (unsigned int i = 0; i < count; i++) {
-    const char *ptr = strchr(str, '\n');
-    if (!ptr) {
+    auto ret = content.find('\n', pos);
+    if (ret == StringRef::npos) {
       break;
     }
-    str = ++ptr;
+    pos = ++ret;
   }
-  return str - content.data();
+  return pos;
 }
 
 static size_t count(StringRef content, unsigned int offset, unsigned int count) {
