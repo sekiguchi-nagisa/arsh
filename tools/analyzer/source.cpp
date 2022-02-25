@@ -80,8 +80,8 @@ SourcePtr SourceManager::add(SourcePtr other) {
   return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()));
 }
 
-static size_t findLineStartPos(const std::string &content, unsigned int count) {
-  const char *str = content.c_str();
+static size_t findLineStartPos(StringRef content, unsigned int count) {
+  const char *str = content.data();
   for (unsigned int i = 0; i < count; i++) {
     const char *ptr = strchr(str, '\n');
     if (!ptr) {
@@ -89,14 +89,14 @@ static size_t findLineStartPos(const std::string &content, unsigned int count) {
     }
     str = ++ptr;
   }
-  return str - content.c_str();
+  return str - content.data();
 }
 
-static size_t count(const std::string &content, unsigned int offset, unsigned int count) {
+static size_t count(StringRef content, unsigned int offset, unsigned int count) {
   size_t limit = offset;
   for (; limit < content.size() && content[limit] != '\n'; limit++)
     ;
-  auto line = StringRef(content).slice(offset, limit + 1);
+  auto line = content.slice(offset, limit + 1);
 
   const char *iter = line.begin();
   const char *end = line.end();
@@ -112,7 +112,7 @@ static size_t count(const std::string &content, unsigned int offset, unsigned in
   return offset + (iter - line.begin());
 }
 
-Optional<unsigned int> toTokenPos(const std::string &content, const Position &position) {
+Optional<unsigned int> toTokenPos(StringRef content, const Position &position) {
   if (position.line < 0 || position.character < 0 || content.size() > UINT32_MAX) {
     return {};
   }
@@ -139,7 +139,7 @@ static unsigned int utf16Len(StringRef ref) {
   return count;
 }
 
-Optional<Position> toPosition(const std::string &content, unsigned int pos) {
+Optional<Position> toPosition(StringRef content, unsigned int pos) {
   if (content.size() > UINT32_MAX) {
     return {};
   }
@@ -155,7 +155,7 @@ Optional<Position> toPosition(const std::string &content, unsigned int pos) {
     }
     prev = content[i];
   }
-  auto line = StringRef(content).slice(offset, pos);
+  auto line = content.slice(offset, pos);
   offset = utf16Len(line);
   if (c > INT32_MAX || offset > INT32_MAX) {
     return {};
@@ -166,7 +166,7 @@ Optional<Position> toPosition(const std::string &content, unsigned int pos) {
   };
 }
 
-Optional<Token> toToken(const std::string &content, const Range &range) {
+Optional<Token> toToken(StringRef content, const Range &range) {
   auto r = toTokenPos(content, range.start);
   if (!r.hasValue()) {
     return {};
@@ -183,7 +183,7 @@ Optional<Token> toToken(const std::string &content, const Range &range) {
   };
 }
 
-Optional<Range> toRange(const std::string &content, Token token) {
+Optional<Range> toRange(StringRef content, Token token) {
   auto start = toPosition(content, token.pos);
   auto end = toPosition(content, token.endPos());
   if (start.hasValue() && end.hasValue()) {

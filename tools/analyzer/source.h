@@ -104,7 +104,7 @@ public:
  * @param position
  * @return
  */
-Optional<unsigned int> toTokenPos(const std::string &content, const Position &position);
+Optional<unsigned int> toTokenPos(StringRef content, const Position &position);
 
 /**
  *
@@ -113,7 +113,7 @@ Optional<unsigned int> toTokenPos(const std::string &content, const Position &po
  * @param pos
  * @return
  */
-Optional<Position> toPosition(const std::string &content, unsigned int pos);
+Optional<Position> toPosition(StringRef content, unsigned int pos);
 
 /**
  *
@@ -122,7 +122,7 @@ Optional<Position> toPosition(const std::string &content, unsigned int pos);
  * @param range
  * @return
  */
-Optional<ydsh::Token> toToken(const std::string &content, const Range &range);
+Optional<ydsh::Token> toToken(StringRef content, const Range &range);
 
 /**
  *
@@ -131,7 +131,7 @@ Optional<ydsh::Token> toToken(const std::string &content, const Range &range);
  * @param token
  * @return
  */
-Optional<Range> toRange(const std::string &content, Token token);
+Optional<Range> toRange(StringRef content, Token token);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 
