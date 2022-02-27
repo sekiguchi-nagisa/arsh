@@ -166,6 +166,7 @@
   TOKEN(BACKGROUND, "&")                                                                           \
   TOKEN(DISOWN_BG, "&!")                                                                           \
   /* type  */                                                                                      \
+  TOKEN(TYPE_NAME, "<TypeName>")                                                                   \
   TOKEN(TYPE_OPEN, "<")   /* < */                                                                  \
   TOKEN(TYPE_CLOSE, ">")  /* > */                                                                  \
   TOKEN(TYPE_SEP, ",")    /* , */                                                                  \
@@ -333,7 +334,7 @@
 #define EACH_LA_cmdArgs(E) EACH_LA_cmdArg(E) EACH_LA_redir(E)
 
 #define EACH_LA_typeName(OP)                                                                       \
-  OP(IDENTIFIER)                                                                                   \
+  OP(TYPE_NAME)                                                                                    \
   OP(PTYPE_OPEN)                                                                                   \
   OP(ATYPE_OPEN)                                                                                   \
   OP(FUNC)                                                                                         \

@@ -180,7 +180,7 @@ bool Parser::inTypeNameCompletionPoint() const {
     return false;
   }
   switch (this->lexer->getCompTokenKind()) {
-  case TokenKind::IDENTIFIER:
+  case TokenKind::TYPE_NAME:
   case TokenKind::FUNC:
   case TokenKind::TYPEOF:
   case TokenKind::EOS:
@@ -316,7 +316,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
   // enter TYPE mode
   this->pushLexerMode(yycTYPE);
 
-  Token token = TRY(this->expect(TokenKind::IDENTIFIER));
+  Token token = TRY(this->expect(TokenKind::TYPE_NAME));
 
   // exit TYPE mode
   this->restoreLexerState(token);
@@ -390,7 +390,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
         if (this->inTypeNameCompletionPoint()) {
           this->makeCodeComp(CodeCompNode::TYPE, std::move(typeNode), this->curToken);
         }
-        Token nameToken = TRY(this->expect(TokenKind::IDENTIFIER));
+        Token nameToken = TRY(this->expect(TokenKind::TYPE_NAME));
         typeNode = std::make_unique<QualifiedTypeNode>(
             std::move(typeNode),
             std::make_unique<BaseTypeNode>(nameToken, this->lexer->toName(nameToken)));
@@ -416,8 +416,8 @@ createTupleOrBasicType(Token open, std::vector<std::unique_ptr<TypeNode>> &&type
 
 std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
   switch (CUR_KIND()) {
-  case TokenKind::IDENTIFIER: {
-    Token token = this->expect(TokenKind::IDENTIFIER); // always success
+  case TokenKind::TYPE_NAME: {
+    Token token = this->expect(TokenKind::TYPE_NAME); // always success
     return this->parse_basicOrReifiedType(token);
   }
   case TokenKind::PTYPE_OPEN: {
@@ -1752,7 +1752,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     this->consume(); // always success
     auto varNode = this->newVarNode(token);
     auto indexNode = TRY(this->parse_expression());
-    Token opToken = token.sliceFrom(token.size - 1); // last ']'
+    Token opToken = token.sliceFrom(token.size - 1); // last '['
 
     token = TRY(this->expect(TokenKind::RB));
     auto node = ApplyNode::newIndexCall(std::move(varNode), opToken, std::move(indexNode));

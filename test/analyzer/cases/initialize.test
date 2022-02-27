@@ -33,6 +33,7 @@
 # CHECK:           "tokenTypes": [
 # CHECK:             "type",
 # CHECK:             "struct",
+# CHECK:             "parameter",
 # CHECK:             "variable",
 # CHECK:             "property",
 # CHECK:             "event",

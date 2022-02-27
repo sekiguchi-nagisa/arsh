@@ -1869,7 +1869,7 @@ TEST_F(LexerTest_Lv1, NAME1) {
 TEST_F(LexerTest_Lv1, NAME2) {
   const char *text = "assert";
   this->initLexer(text, yycTYPE);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::IDENTIFIER, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::TYPE_NAME, text, TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, ACCESS1) {

@@ -49,6 +49,7 @@
     - ``workspace/didChangeConfiguration``
         - now change server configuration at runtime
         - change command name/command argument completion setting
+    - ``textDocument/semanticTokens/full``
 
 #### Misc
 

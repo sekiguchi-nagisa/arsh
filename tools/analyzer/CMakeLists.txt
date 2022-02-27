@@ -16,11 +16,12 @@ add_library(ydshd_static STATIC
         client.cpp
         hover.cpp
         worker.cpp
+        semantic_token.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 
 add_executable(${LSP_SRV} main.cpp)
-target_link_libraries(${LSP_SRV} ydshd_static ydsh_static jsonrpc uri process Threads::Threads)
+target_link_libraries(${LSP_SRV} ydshd_static ydsh_static jsonrpc uri process highlighter Threads::Threads)
 
 install(TARGETS ${LSP_SRV}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

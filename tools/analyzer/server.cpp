@@ -514,9 +514,29 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
       });
 }
 
-Reply<std::vector<SemanticTokens>> LSPServer::semanticToken(const SemanticTokensParams &params) {
+static SemanticTokens doHightlight(const SemanticTokenEncoder &encoder, const Source &src) {
+  auto &content = src.getContent();
+  SemanticTokenEmitter emitter(encoder, src.getContent());
+  Lexer lexer(src.getPath().c_str(), ByteBuffer(content.c_str(), content.c_str() + content.size()),
+              nullptr);
+  Parser parser(lexer);
+  lexer.setCommentStore(makeObserver(emitter));
+  parser.setTracker(&emitter);
+  while (parser && !parser.hasError()) {
+    parser();
+  }
+  return std::move(emitter).take();
+}
+
+Reply<Union<SemanticTokens, std::nullptr_t>>
+LSPServer::semanticToken(const SemanticTokensParams &params) {
   LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
-  return std::vector<SemanticTokens>(); // FIXME:
+  if (auto resolved = this->resolveSource(params.textDocument)) {
+    Union<SemanticTokens, std::nullptr_t> ret = doHightlight(this->encoder, *resolved.asOk());
+    return ret;
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
 }
 
 } // namespace ydsh::lsp

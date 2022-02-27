@@ -21,6 +21,7 @@
 #include "analyzer.h"
 #include "index.h"
 #include "lsp.h"
+#include "semantic_token.h"
 #include "transport.h"
 #include "worker.h"
 
@@ -73,6 +74,7 @@ public:
 class LSPServer : public Handler {
 private:
   const SysConfig sysConfig;
+  SemanticTokenEncoder encoder;
   LSPTransport transport;
   AnalyzerResult result;
   BackgroundWorker worker;
@@ -90,8 +92,9 @@ private:
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)
-      : Handler(logger), transport(logger, std::move(in), std::move(out)),
-        result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
+      : Handler(logger), encoder(SemanticTokensLegend::create()),
+        transport(logger, std::move(in), std::move(out)), result(std::make_shared<SourceManager>()),
+        defaultDebounceTime(time) {
     this->bindAll();
   }
 
@@ -186,7 +189,7 @@ public:
 
   void didChangeConfiguration(const DidChangeConfigurationParams &params);
 
-  Reply<std::vector<SemanticTokens>> semanticToken(const SemanticTokensParams &params);
+  Reply<Union<SemanticTokens, std::nullptr_t>> semanticToken(const SemanticTokensParams &params);
 
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {

@@ -124,7 +124,7 @@ Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::C
 static LexerPtr createLexer(const Source &src) {
   const char *fullPath = src.getPath().c_str();
   const char *ptr = src.getContent().c_str();
-  return Lexer::fromFullPath(fullPath, ByteBuffer(ptr, ptr + strlen(ptr)));
+  return Lexer::fromFullPath(fullPath, ByteBuffer(ptr, ptr + src.getContent().size()));
 }
 
 FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *modPath,

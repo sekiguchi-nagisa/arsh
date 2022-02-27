@@ -300,7 +300,7 @@ INIT:
 
     <TYPE> "Func"            { RET_OR_COMP(FUNC); }
     <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
-    <TYPE> VAR_NAME          { RET_OR_COMP(IDENTIFIER); }
+    <TYPE> VAR_NAME          { RET_OR_COMP(TYPE_NAME); }
     <TYPE> "<"               { RET(TYPE_OPEN); }
     <TYPE> ">"               { RET(TYPE_CLOSE); }
     <TYPE> ","               { RET(TYPE_SEP); }

@@ -174,7 +174,7 @@ struct HoverClientCapabilities {
   /*OP(interface_, "interface")*/                                                                  \
   OP(struct_, "struct")                                                                            \
   /*OP(typeParameter_, "typeParameter")*/                                                          \
-  /*OP(parameter_, "parameter") */                                                                 \
+  OP(parameter_, "parameter")                                                                      \
   OP(variable_, "variable")                                                                        \
   OP(property_, "property")                                                                        \
   /*OP(enumMember_, "enumMember")*/                                                                \
