@@ -227,7 +227,7 @@ public:
   }
 
   /**
-   * for debuging. not perform tilde expansion
+   * for debugging. not perform tilde expansion
    * @tparam Appender
    * @param appender
    * @return

@@ -109,7 +109,7 @@ public:
   }
 
   /**
-   * set curosr to home position
+   * set cursor to home position
    */
   void setCursor() {
     this->setCursor(0, 0); // FIXME: home position is equivalent to (1,1) ?

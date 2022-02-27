@@ -322,7 +322,7 @@ static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
   ret.push_back(archive);
 }
 
-static std::vector<ModuleArchivePtr> topologcalSort(const std::vector<ModuleArchivePtr> &targets) {
+static std::vector<ModuleArchivePtr> topologicalSort(const std::vector<ModuleArchivePtr> &targets) {
   std::vector<ModuleArchivePtr> ret;
   if (targets.empty()) {
     return ret;
@@ -339,7 +339,7 @@ std::vector<ModuleArchivePtr> ModuleArchive::getDepsByTopologicalOrder() const {
   for (auto &e : this->imported) {
     resolveTargets(targets, e.second);
   }
-  return topologcalSort(targets);
+  return topologicalSort(targets);
 }
 
 static const ModType *getModType(const TypePool &pool, unsigned short modId) {

@@ -31,7 +31,7 @@ class GraphemeBoundary {
 public:
   static_assert(Bool, "not allowed instantiation");
 
-  // for grapheme cluster boundry. only support extended grapheme cluster
+  // for grapheme cluster boundary. only support extended grapheme cluster
   enum class BreakProperty {
     SOT, // for GB1
 

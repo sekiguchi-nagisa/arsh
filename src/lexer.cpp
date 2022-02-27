@@ -96,11 +96,11 @@ std::string LexerMode::toString() const {
 // ##     Lexer     ##
 // ###################
 
-IntrusivePtr<Lexer> Lexer::fromFullPath(const char *fullpath, ByteBuffer &&buf) {
-  char *path = strdup(fullpath);
+IntrusivePtr<Lexer> Lexer::fromFullPath(const char *fullPath, ByteBuffer &&buf) {
+  char *path = strdup(fullPath);
   const char *ptr = strrchr(path, '/');
   path[ptr == path ? 1 : ptr - path] = '\0';
-  return LexerPtr::create(fullpath, std::move(buf), CStrPtr(path));
+  return LexerPtr::create(fullPath, std::move(buf), CStrPtr(path));
 }
 
 SrcPos Lexer::getSrcPos(Token token) const {

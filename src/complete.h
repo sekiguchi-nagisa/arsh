@@ -43,8 +43,8 @@ enum class CodeCompOp : unsigned int {
   MODULE = 1u << 12u,   /* complete module path */
   STMT_KW = 1u << 13u,  /* complete statement keyword */
   EXPR_KW = 1u << 14u,  /* complete expr keyword */
-  NO_IDENT = 1u << 15u, /* ignore completion candicates starting wiht identifier */
-  EXPECT = 1u << 16u,   /* complete expetced token */
+  NO_IDENT = 1u << 15u, /* ignore completion candidates starting with identifier */
+  EXPECT = 1u << 16u,   /* complete expected token */
   MEMBER = 1u << 17u,   /* complete member (field/method) */
   TYPE = 1u << 18u,     /* complete type name */
   HOOK = 1u << 19u,     /* for user-defined completion hook */
@@ -131,7 +131,7 @@ private:
   std::unique_ptr<CmdNode> cmdNode;
 
   /**
-   * for var name compeltion
+   * for var name completion
    */
   NameScopePtr scope;
 
@@ -143,7 +143,7 @@ private:
   CodeCompOp compOp{};
 
   /**
-   * whem result of COMP_HOOK is empty, fallback to file name completion
+   * when result of COMP_HOOK is empty, fallback to file name completion
    */
   CodeCompOp fallbackOp{};
 

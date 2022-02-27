@@ -486,7 +486,7 @@ JSON JSONParser::parseString() {
   Token token = TRY(this->expect(JSONTokenKind::STRING));
   auto ref = this->lexer->toStrRef(token);
   ref.removePrefix(1); // prefix ["]
-  ref.removeSuffix(1); // syffix ["]
+  ref.removeSuffix(1); // suffix ["]
 
   std::string value;
   const char *end = ref.end();

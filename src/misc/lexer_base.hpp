@@ -236,8 +236,8 @@ public:
    * @param eaw
    * width of east asian Ambiguous character.
    * if 0, auto set width (CJK aware).
-   * if 1, halfwidth.
-   * if 2, fullwidth
+   * if 1, half-width.
+   * if 2, full-width
    * @return
    */
   std::string formatLineMarker(Token lineToken, Token token, int eaw = 0) const;

@@ -897,7 +897,7 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
    *      var scanner : {
    *         prevPos : int32_t
    *         curPos : int32_t
-   *         bondary : int32_t
+   *         boundary : int32_t
    *      }
    * }
    *

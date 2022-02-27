@@ -244,7 +244,7 @@ public:
   void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
 
   /**
-   * completely remove sepcified archive if unused (not imported from other archives)
+   * completely remove specified archive if unused (not imported from other archives)
    * @param id
    * @return
    * if unused, return true

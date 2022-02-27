@@ -377,7 +377,7 @@ inline unsigned int hexToNum(char ch) {
   return 0;
 }
 
-inline int64_t dobuleTobits(double d) {
+inline int64_t doubleToBits(double d) {
   union {
     int64_t i64;
     double f64;
@@ -404,8 +404,8 @@ inline int compareByTotalOrder(double x, double y) {
     return 1;
   }
 
-  int64_t xx = dobuleTobits(x);
-  int64_t yy = dobuleTobits(y);
+  int64_t xx = doubleToBits(x);
+  int64_t yy = doubleToBits(y);
   if (xx == yy) {
     return 0;
   }

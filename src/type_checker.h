@@ -572,7 +572,7 @@ private:
    * @param fallbackType
    * may be null
    * @return
-   * if not resolve common suprt type,
+   * if not resolve common support type,
    *   if fallbackType is not null, return fallbackType.
    *   if fallbackType is null, return Nothing and report error
    */

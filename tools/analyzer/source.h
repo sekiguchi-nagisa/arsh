@@ -56,7 +56,7 @@ using SourcePtr = std::shared_ptr<Source>;
 class SourceManager {
 private:
   std::vector<SourcePtr> entries;
-  StrRefMap<unsigned int> indexMap; // fullpath to index mapping
+  StrRefMap<unsigned int> indexMap; // full-path to index mapping
 
 public:
   /**
@@ -69,7 +69,7 @@ public:
 
   /**
    * @param path
-   * must be fullpath
+   * must be full-path
    * @return
    */
   SourcePtr find(StringRef path) const;
@@ -77,7 +77,7 @@ public:
   /**
    *
    * @param path
-   * must be fullpath
+   * must be full-path
    * @param version
    * @param content
    * @return

@@ -203,7 +203,7 @@ public:
  */
 class RedirObject : public ObjectWithRtti<ObjectKind::Redir> {
 private:
-  unsigned int backupFDset{0}; // if corresponding bit is set, backup old fd
+  unsigned int backupFDSet{0}; // if corresponding bit is set, backup old fd
 
   std::vector<std::pair<RedirOP, DSValue>> ops;
 
@@ -218,17 +218,17 @@ public:
 
   void addRedirOp(RedirOP op, DSValue &&arg) {
     this->ops.emplace_back(op, std::move(arg));
-    this->backupFDset |= getChangedFD(op);
+    this->backupFDSet |= getChangedFD(op);
   }
 
-  void ignoreBackup() { this->backupFDset = 0; }
+  void ignoreBackup() { this->backupFDSet = 0; }
 
   bool redirect(DSState &st);
 
 private:
   void backupFDs() {
     for (unsigned int i = 0; i < 3; i++) {
-      if (this->backupFDset & (1u << i)) {
+      if (this->backupFDSet & (1u << i)) {
         this->oldFds[i] = fcntl(i, F_DUPFD_CLOEXEC, 0);
       }
     }
@@ -236,7 +236,7 @@ private:
 
   void restoreFDs() {
     for (unsigned int i = 0; i < 3; i++) {
-      if (this->backupFDset & (1u << i)) {
+      if (this->backupFDSet & (1u << i)) {
         dup2(this->oldFds[i], i);
       }
     }

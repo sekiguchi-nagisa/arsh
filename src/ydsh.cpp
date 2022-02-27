@@ -168,11 +168,11 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 #undef EACH_DS_EXEC_MODE
 
   auto *ctx = new DSState();
-  auto buildtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
+  auto builtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
   BindingConsumer bindingConsumer(*ctx);
-  bindBuiltins(bindingConsumer, ctx->sysConfig, ctx->typePool, *buildtin);
+  bindBuiltins(bindingConsumer, ctx->sysConfig, ctx->typePool, *builtin);
 
-  loadEmbeddedScript(ctx, buildtin);
+  loadEmbeddedScript(ctx, builtin);
 
   ctx->execMode = mode;
   return ctx;

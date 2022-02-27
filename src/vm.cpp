@@ -1366,7 +1366,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.getGlobal(index);
         if (!v) { // normally unreachable
           raiseError(state, TYPE::IllegalAccessError,
-                     "attemp to access uninitialized global variable");
+                     "attempt to access uninitialized global variable");
           vmerror;
         }
         state.stack.push(std::move(v));

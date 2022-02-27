@@ -51,7 +51,7 @@ protected:
   std::mutex outMutex;
 
   /**
-   * if prefix is mepty string, treat as null logger
+   * if prefix is empty string, treat as null logger
    * @param prefix
    */
   explicit LoggerBase(const char *prefix) : prefix(prefix) {

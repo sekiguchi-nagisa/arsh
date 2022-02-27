@@ -214,7 +214,7 @@ bool RedirObject::redirect(DSState &st) {
   this->backupFDs();
   for (auto &pair : this->ops) {
     int r = redirectImpl(pair);
-    if (this->backupFDset > 0 && r != 0) {
+    if (this->backupFDSet > 0 && r != 0) {
       std::string msg = REDIR_ERROR;
       if (pair.second) {
         if (pair.second.hasType(TYPE::String)) {

@@ -276,7 +276,7 @@ size_t DSValue::hash() const {
   case DSValueKind::INT:
     return std::hash<int64_t>()(this->asInt());
   case DSValueKind::FLOAT:
-    return std::hash<int64_t>()(dobuleTobits(this->asFloat()));
+    return std::hash<int64_t>()(doubleToBits(this->asFloat()));
   default:
     if (this->hasStrRef()) {
       return StrRefHash()(this->asStrRef());

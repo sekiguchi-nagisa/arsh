@@ -102,7 +102,7 @@ public:
 
   ~Lexer() = default;
 
-  static IntrusivePtr<Lexer> fromFullPath(const char *fullpath, ByteBuffer &&buf);
+  static IntrusivePtr<Lexer> fromFullPath(const char *fullPath, ByteBuffer &&buf);
 
   SrcPos getSrcPos(Token token) const;
 

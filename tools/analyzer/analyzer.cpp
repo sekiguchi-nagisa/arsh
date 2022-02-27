@@ -122,9 +122,9 @@ Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::C
 }
 
 static LexerPtr createLexer(const Source &src) {
-  const char *fullpath = src.getPath().c_str();
+  const char *fullPath = src.getPath().c_str();
   const char *ptr = src.getContent().c_str();
-  return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
+  return Lexer::fromFullPath(fullPath, ByteBuffer(ptr, ptr + strlen(ptr)));
 }
 
 FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *modPath,
@@ -139,9 +139,9 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     if (!readAll(filePtr, content)) {
       return ModLoadingError(errno);
     }
-    const char *fullpath = get<const char *>(ret);
-    auto src = this->srcMan.find(fullpath);
-    src = this->srcMan.update(fullpath, src->getVersion(), std::move(content));
+    const char *fullPath = get<const char *>(ret);
+    auto src = this->srcMan.find(fullPath);
+    src = this->srcMan.update(fullPath, src->getVersion(), std::move(content));
     auto &ctx = this->addNew(*src);
     auto lex = createLexer(*src);
     return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lex),
@@ -396,8 +396,8 @@ private:
   }
 };
 
-static std::string toDirName(const std::string &fullpath) {
-  StringRef ref = fullpath;
+static std::string toDirName(const std::string &fullPath) {
+  StringRef ref = fullPath;
   auto pos = ref.lastIndexOf("/");
   ref = ref.slice(0, pos);
   return ref.empty() ? "/" : ref.toString();
