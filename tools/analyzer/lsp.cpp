@@ -105,6 +105,23 @@ const char *toString(SemanticTokenTypes type) {
   }
 }
 
+bool toEnum(const char *str, SemanticTokenTypes &type) {
+  StringRef ref = str;
+  SemanticTokenTypes types[] = {
+#define GEN_ENUM(E, V) SemanticTokenTypes::E,
+      EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : types) {
+    if (ref == toString(e)) {
+      type = e;
+      return true;
+    }
+  }
+  type = SemanticTokenTypes::keyword_;
+  return false;
+}
+
 const char *toString(SemanticTokenModifiers modifier) {
   switch (modifier) {
 #define GEN_CASE(E, V)                                                                             \
@@ -115,6 +132,23 @@ const char *toString(SemanticTokenModifiers modifier) {
   default:
     return "";
   }
+}
+
+bool toEnum(const char *str, SemanticTokenModifiers &modifier) {
+  StringRef ref = str;
+  SemanticTokenModifiers modifiers[] = {
+#define GEN_ENUM(E, V) SemanticTokenModifiers::E,
+      EACH_SEMANTIC_TOKEN_MODIFIERS(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : modifiers) {
+    if (ref == toString(e)) {
+      modifier = e;
+      return true;
+    }
+  }
+  modifier = SemanticTokenModifiers::definition_;
+  return false;
 }
 
 const char *toString(TokenFormat format) {
