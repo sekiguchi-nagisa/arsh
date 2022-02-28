@@ -198,20 +198,6 @@ enum class SemanticTokenTypes : unsigned int {
 
 const char *toString(SemanticTokenTypes type);
 
-bool toEnum(const char *str, SemanticTokenTypes &type);
-
-template <typename T>
-void jsonify(T &t, SemanticTokenTypes &type) {
-  if constexpr (is_serialize_v<T>) {
-    std::string value = toString(type);
-    t(value);
-  } else if constexpr (is_deserialize_v<T>) {
-    std::string value;
-    t(value);
-    t.hasError() || toEnum(value.c_str(), type);
-  }
-}
-
 #define EACH_SEMANTIC_TOKEN_MODIFIERS(OP)                                                          \
   /*OP(declaration_, "declaration")*/                                                              \
   OP(definition_, "definition")                                                                    \
@@ -231,20 +217,6 @@ enum class SemanticTokenModifiers : unsigned int {
 };
 
 const char *toString(SemanticTokenModifiers modifier);
-
-bool toEnum(const char *str, SemanticTokenModifiers &modifier);
-
-template <typename T>
-void jsonify(T &t, SemanticTokenModifiers &modifier) {
-  if constexpr (is_serialize_v<T>) {
-    std::string value = toString(modifier);
-    t(value);
-  } else if constexpr (is_deserialize_v<T>) {
-    std::string value;
-    t(value);
-    t.hasError() || toEnum(value.c_str(), modifier);
-  }
-}
 
 #define EACH_TOKEN_FORMAT(OP) OP(Relative, "relative")
 
