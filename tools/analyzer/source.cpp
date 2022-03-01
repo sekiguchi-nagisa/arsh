@@ -25,6 +25,9 @@ std::shared_ptr<Source> Source::copyAndUpdate(int v, std::string &&c) const {
   auto newSrc = std::make_shared<Source>();
   newSrc->path = this->path;
   newSrc->content = std::move(c);
+  if (newSrc->content.empty() || newSrc->content.back() != '\n') {
+    newSrc->content += '\n';
+  }
   newSrc->srcId = this->srcId;
   newSrc->version = v;
   return newSrc;
@@ -46,15 +49,10 @@ SourcePtr SourceManager::find(StringRef path) const {
 }
 
 SourcePtr SourceManager::update(StringRef path, int version, std::string &&content) {
-  std::string tmp = std::move(content);
-  if (tmp.empty() || tmp.back() != '\n') {
-    tmp += '\n';
-  }
-
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    this->entries[i] = this->entries[i]->copyAndUpdate(version, std::move(tmp));
+    this->entries[i] = this->entries[i]->copyAndUpdate(version, std::move(content));
     return this->entries[i];
   } else {
     unsigned int id = this->entries.size() + 1;
@@ -63,7 +61,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     }
     unsigned int i = this->entries.size();
     auto src = std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
-                                        std::move(tmp), version);
+                                        std::move(content), version);
     auto &ret = this->entries.emplace_back(std::move(src));
     this->indexMap.emplace(ret->getPath(), i);
     return this->entries[i];

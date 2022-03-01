@@ -38,7 +38,11 @@ public:
 
   Source(const char *path, unsigned short srcId, std::string &&content, int version)
       : path(std::make_shared<const std::string>(path)), content(std::move(content)), srcId(srcId),
-        version(version) {}
+        version(version) {
+    if (this->content.empty() || this->content.back() != '\n') {
+      this->content += '\n';
+    }
+  }
 
   const std::string &getPath() const { return *this->path; }
 
