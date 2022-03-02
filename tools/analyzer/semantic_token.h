@@ -19,7 +19,7 @@
 
 #include "../highlighter/emitter.h"
 
-#include "lsp.h"
+#include "source.h"
 
 namespace ydsh::lsp {
 
@@ -70,12 +70,13 @@ unsigned int splitTokenByNewline(StringRef source, Token token,
 class SemanticTokenEmitter : public TokenEmitter {
 private:
   const SemanticTokenEncoder &encoder;
+  const Source &src;
   Range prev;
   SemanticTokens tokens;
 
 public:
-  SemanticTokenEmitter(const SemanticTokenEncoder &encoder, const std::string &source)
-      : TokenEmitter(source), encoder(encoder) {
+  SemanticTokenEmitter(const SemanticTokenEncoder &encoder, const Source &src)
+      : TokenEmitter(src.getContent()), encoder(encoder), src(src) {
     this->tokens.data.reserve(500);
     this->prev = {
         .start = {.line = 0, .character = 0},

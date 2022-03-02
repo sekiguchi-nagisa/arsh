@@ -139,7 +139,7 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();
-    auto range = toRange(s->getContent(), ret.decl.getToken());
+    auto range = toRange(*s, ret.decl.getToken());
     assert(range.hasValue());
     values.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
@@ -153,7 +153,7 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();
-    auto range = toRange(s->getContent(), ret.symbol.getToken());
+    auto range = toRange(*s, ret.symbol.getToken());
     assert(range.hasValue());
     values.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
@@ -173,7 +173,7 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src, const Symbo
                 .value = generateHoverContent(*this->result.srcMan, src, value.decl,
                                               this->markupKind == MarkupKind::Markdown),
             },
-        .range = toRange(src.getContent(), value.request.getToken()),
+        .range = toRange(src, value.request.getToken()),
     };
   });
   return ret;
@@ -516,7 +516,7 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
 
 static SemanticTokens doHightlight(const SemanticTokenEncoder &encoder, const Source &src) {
   auto &content = src.getContent();
-  SemanticTokenEmitter emitter(encoder, src.getContent());
+  SemanticTokenEmitter emitter(encoder, src);
   Lexer lexer(src.getPath().c_str(), ByteBuffer(content.c_str(), content.c_str() + content.size()),
               nullptr);
   Parser parser(lexer);

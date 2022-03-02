@@ -21,16 +21,18 @@
 
 namespace ydsh::lsp {
 
-std::shared_ptr<Source> Source::copyAndUpdate(int v, std::string &&c) const {
-  auto newSrc = std::make_shared<Source>();
-  newSrc->path = this->path;
-  newSrc->content = std::move(c);
-  if (newSrc->content.empty() || newSrc->content.back() != '\n') {
-    newSrc->content += '\n';
+Source::Source(std::shared_ptr<const std::string> path, unsigned short srcId, std::string &&content,
+               int version)
+    : path(std::move(path)), content(std::move(content)), srcId(srcId), version(version) {
+  if (this->content.empty() || this->content.back() != '\n') {
+    this->content += '\n';
   }
-  newSrc->srcId = this->srcId;
-  newSrc->version = v;
-  return newSrc;
+
+  this->lineNumTable.setOffset(0);
+  StringRef ref = this->content;
+  for (StringRef::size_type pos = 0; (pos = ref.find('\n', pos)) != StringRef::npos; pos++) {
+    this->lineNumTable.addNewlinePos(pos);
+  }
 }
 
 SourcePtr SourceManager::findById(unsigned int id) const {
@@ -137,23 +139,19 @@ static unsigned int utf16Len(StringRef ref) {
   return count;
 }
 
-Optional<Position> toPosition(StringRef content, unsigned int pos) {
-  if (content.size() > UINT32_MAX) {
+Optional<Position> toPosition(const Source &src, unsigned int pos) {
+  if (src.getContent().size() > UINT32_MAX) {
     return {};
   }
-  pos = static_cast<unsigned int>(std::min(content.size(), static_cast<size_t>(pos)));
+  pos = static_cast<unsigned int>(std::min(src.getContent().size() - 1, static_cast<size_t>(pos)));
 
-  unsigned int c = 0;
+  unsigned int c = src.getLineNumTable().lookup(pos);
   unsigned int offset = 0;
-  char prev = '\0';
-  for (unsigned int i = 0; i <= pos && i < content.size(); i++) {
-    if (prev == '\n') {
-      c++;
-      offset = i;
-    }
-    prev = content[i];
+  if (c > 0) {
+    offset = src.getLineNumTable().getNewlinePos(c - 1) + 1;
   }
-  auto line = content.slice(offset, pos);
+
+  auto line = StringRef(src.getContent()).slice(offset, pos);
   offset = utf16Len(line);
   if (c > INT32_MAX || offset > INT32_MAX) {
     return {};
@@ -181,9 +179,9 @@ Optional<Token> toToken(StringRef content, const Range &range) {
   };
 }
 
-Optional<Range> toRange(StringRef content, Token token) {
-  auto start = toPosition(content, token.pos);
-  auto end = toPosition(content, token.endPos());
+Optional<Range> toRange(const Source &src, Token token) {
+  auto start = toPosition(src, token.pos);
+  auto end = toPosition(src, token.endPos());
   if (start.hasValue() && end.hasValue()) {
     return Range{
         .start = start.unwrap(),

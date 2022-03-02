@@ -62,6 +62,11 @@ public:
     return iter - this->table.begin() + this->offset;
   }
 
+  unsigned int getNewlinePos(unsigned int lineNum) const {
+    unsigned int index = lineNum - this->offset;
+    return this->table[index];
+  }
+
   unsigned int getMaxLineNum() const { return this->table.size() + this->offset; }
 };
 

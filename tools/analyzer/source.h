@@ -30,29 +30,37 @@ class Source {
 private:
   std::shared_ptr<const std::string> path;
   std::string content;
+  LineNumTable lineNumTable;
   unsigned short srcId{0};
   int version{0};
 
 public:
   Source() = default;
 
+  Source(std::shared_ptr<const std::string> path, unsigned short srcId, std::string &&content,
+         int version);
+
   Source(const char *path, unsigned short srcId, std::string &&content, int version)
-      : path(std::make_shared<const std::string>(path)), content(std::move(content)), srcId(srcId),
-        version(version) {
-    if (this->content.empty() || this->content.back() != '\n') {
-      this->content += '\n';
-    }
-  }
+      : Source(std::make_shared<const std::string>(path), srcId, std::move(content), version) {}
 
   const std::string &getPath() const { return *this->path; }
 
+  /**
+   *
+   * @return
+   * always ends with newline
+   */
   const std::string &getContent() const { return this->content; }
+
+  const LineNumTable &getLineNumTable() const { return this->lineNumTable; }
 
   int getVersion() const { return this->version; }
 
   unsigned short getSrcId() const { return this->srcId; }
 
-  std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const;
+  std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const {
+    return std::make_shared<Source>(this->path, this->srcId, std::move(c), v);
+  }
 };
 
 using SourcePtr = std::shared_ptr<Source>;
@@ -102,7 +110,7 @@ public:
 };
 
 /**
- *
+ * FIXME: use Source?
  * @param content
  * may not be terminated with newline
  * @param position
@@ -112,15 +120,14 @@ Optional<unsigned int> toTokenPos(StringRef content, const Position &position);
 
 /**
  *
- * @param content
- * may not be terminated with newline
+ * @param src
  * @param pos
  * @return
  */
-Optional<Position> toPosition(StringRef content, unsigned int pos);
+Optional<Position> toPosition(const Source &src, unsigned int pos);
 
 /**
- *
+ * FIXME: use Source?
  * @param content
  * may not be terminated with newline
  * @param range
@@ -130,12 +137,11 @@ Optional<ydsh::Token> toToken(StringRef content, const Range &range);
 
 /**
  *
- * @param content
- * may not be terminated with newline
+ * @param src
  * @param token
  * @return
  */
-Optional<Range> toRange(StringRef content, Token token);
+Optional<Range> toRange(const Source &src, Token token);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 

@@ -133,7 +133,7 @@ struct TransportTest : public ::testing::Test {
 
 TEST_F(TransportTest, case1) {
   this->setInput("hoge");
-  int size = this->transport.recvSize();
+  ssize_t size = this->transport.recvSize();
   ASSERT_EQ(-1, size);
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: `hoge'.+"));
 }
@@ -170,7 +170,7 @@ TEST_F(TransportTest, case6) {
 
 TEST_F(TransportTest, case7) {
   this->setInput("Content-Length: 12\r\nContent-Length: 5\r\n\r\n12345");
-  int size = this->transport.recvSize();
+  ssize_t size = this->transport.recvSize();
   ASSERT_EQ(5, size);
   auto logStr = this->readLog();
   ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
@@ -183,13 +183,13 @@ TEST_F(TransportTest, case7) {
 
 TEST_F(TransportTest, case8) {
   this->setInput("Content-Length: 5\r\n\r\n12345");
-  int size = this->transport.recvSize();
+  ssize_t size = this->transport.recvSize();
   ASSERT_EQ(5, size);
   auto logStr = this->readLog();
   ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
 
   char data[3];
-  int recvSize = this->transport.recv(std::size(data), data);
+  ssize_t recvSize = this->transport.recv(std::size(data), data);
   ASSERT_EQ(3, recvSize);
   std::string str(data, recvSize);
   ASSERT_EQ("123", str);
@@ -459,47 +459,53 @@ TEST(ClientTest, run) {
   ASSERT_EQ("Content-Length: 4\r\n\r\n1234", res.result.unwrap().asString());
 }
 
+static Source source(StringRef content) { return {"dummy", 0, content.toString(), 0}; }
+
 struct LocationTest : public ::testing::Test {
   static void checkPosition(const std::string &content, unsigned int pos,
                             const Position &position) {
+    auto src = source(content);
+
     {
-      auto pos2 = toTokenPos(content, position);
+      auto pos2 = toTokenPos(src.getContent(), position);
       ASSERT_TRUE(pos2.hasValue());
       ASSERT_EQ(pos, pos2.unwrap());
 
-      auto position2 = toPosition(content, pos2.unwrap());
+      auto position2 = toPosition(src, pos2.unwrap());
       ASSERT_TRUE(position2.hasValue());
       ASSERT_EQ(position.toString(), position2.unwrap().toString());
     }
 
     {
-      auto position2 = toPosition(content, pos);
+      auto position2 = toPosition(src, pos);
       ASSERT_TRUE(position2.hasValue());
       ASSERT_EQ(position.toString(), position2.unwrap().toString());
 
-      auto pos2 = toTokenPos(content, position2.unwrap());
+      auto pos2 = toTokenPos(src.getContent(), position2.unwrap());
       ASSERT_TRUE(pos2.hasValue());
       ASSERT_EQ(pos, pos2.unwrap());
     }
   }
 
   static void checkRange(const std::string &content, Token token, const Range &range) {
+    auto src = source(content);
+
     {
-      auto token2 = toToken(content, range);
+      auto token2 = toToken(src.getContent(), range);
       ASSERT_TRUE(token2.hasValue());
       ASSERT_EQ(token.str(), token2.unwrap().str());
 
-      auto range2 = toRange(content, token2.unwrap());
+      auto range2 = toRange(src, token2.unwrap());
       ASSERT_TRUE(range2.hasValue());
       ASSERT_EQ(range.toString(), range2.unwrap().toString());
     }
 
     {
-      auto range2 = toRange(content, token);
+      auto range2 = toRange(src, token);
       ASSERT_TRUE(range2.hasValue());
       ASSERT_EQ(range.toString(), range2.unwrap().toString());
 
-      auto token2 = toToken(content, range2.unwrap());
+      auto token2 = toToken(src.getContent(), range2.unwrap());
       ASSERT_TRUE(token2.hasValue());
       ASSERT_EQ(token.str(), token2.unwrap().str());
     }
@@ -511,13 +517,12 @@ TEST_F(LocationTest, position1) {
                         "   $a as String\n"  // 0-15
                         "\n"                 // 0
                         "assert $a == 34\n"; // 0-15
+
   // check position
   ASSERT_NO_FATAL_FAILURE(checkPosition("", 0, {.line = 0, .character = 0}));
   ASSERT_NO_FATAL_FAILURE(checkPosition("a", 0, {.line = 0, .character = 0}));
-  ASSERT_NO_FATAL_FAILURE(checkPosition("a", 1, {.line = 0, .character = 1}));
   ASSERT_NO_FATAL_FAILURE(checkPosition("\n", 0, {.line = 0, .character = 0}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(" \n", 0, {.line = 0, .character = 0}));
-  ASSERT_NO_FATAL_FAILURE(checkPosition(" \n", 1, {.line = 0, .character = 1}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 0, {.line = 0, .character = 0}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 10, {.line = 0, .character = 10}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 11, {.line = 0, .character = 11}));
@@ -539,22 +544,30 @@ TEST_F(LocationTest, position1) {
   ASSERT_TRUE(toTokenPos(content, {.line = 3, .character = 16}).hasValue());
   ASSERT_EQ(45, toTokenPos(content, {.line = 3, .character = 16}).unwrap());
 
-  ASSERT_TRUE(toPosition("", 0).hasValue());
-  ASSERT_TRUE(toPosition("", 1).hasValue());
+  ASSERT_TRUE(toPosition(source(""), 0).hasValue());
+  ASSERT_TRUE(toPosition(source(""), 1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 0}).toString(),
-            toPosition("", 1).unwrap().toString());
+            toPosition(source(""), 1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition("\n", 1).hasValue());
+  ASSERT_TRUE(toPosition(source("a"), 1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 1}).toString(),
-            toPosition("\n", 1).unwrap().toString());
+            toPosition(source("a"), 1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(content, 45).hasValue());
-  ASSERT_EQ((Position{.line = 3, .character = 16}).toString(),
-            toPosition(content, 45).unwrap().toString());
+  ASSERT_TRUE(toPosition(source("\n"), 1).hasValue());
+  ASSERT_EQ((Position{.line = 0, .character = 0}).toString(),
+            toPosition(source("\n"), 1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(content, 46).hasValue());
-  ASSERT_EQ((Position{.line = 3, .character = 16}).toString(),
-            toPosition(content, 46).unwrap().toString());
+  ASSERT_TRUE(toPosition(source(" \n"), 1).hasValue());
+  ASSERT_EQ((Position{.line = 0, .character = 1}).toString(),
+            toPosition(source(" \n"), 1).unwrap().toString());
+
+  ASSERT_TRUE(toPosition(source(content), 45).hasValue());
+  ASSERT_EQ((Position{.line = 3, .character = 15}).toString(),
+            toPosition(source(content), 45).unwrap().toString());
+
+  ASSERT_TRUE(toPosition(source(content), 46).hasValue());
+  ASSERT_EQ((Position{.line = 3, .character = 15}).toString(),
+            toPosition(source(content), 46).unwrap().toString());
 }
 
 TEST_F(LocationTest, position2) {
@@ -572,7 +585,10 @@ TEST_F(LocationTest, position2) {
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 15, {.line = 1, .character = 3}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 16, {.line = 1, .character = 4}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 17, {.line = 1, .character = 5}));
-  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 18, {.line = 1, .character = 6}));
+
+  ASSERT_TRUE(toPosition(source(content), 18).hasValue());
+  ASSERT_EQ((Position{.line = 1, .character = 5}).toString(),
+            toPosition(source(content), 18).unwrap().toString());
 }
 
 TEST_F(LocationTest, range) {
@@ -590,7 +606,7 @@ TEST_F(LocationTest, range) {
 }
 
 TEST_F(LocationTest, change) {
-  std::string content = "";
+  std::string content;
 
   TextDocumentContentChangeEvent change = {
       .range = Range{.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 0}},

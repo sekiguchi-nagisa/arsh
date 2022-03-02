@@ -247,7 +247,7 @@ bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<Front
                                          const ParseError &parseError) {
   assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
   (void)ctx;
-  auto range = toRange(this->contexts.back().src->getContent(), parseError.getErrorToken());
+  auto range = toRange(*this->contexts.back().src, parseError.getErrorToken());
   if (!range.hasValue()) {
     return false;
   }
@@ -267,7 +267,7 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   }
   assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
   (void)ctx;
-  auto range = toRange(this->contexts.back().src->getContent(), checkError.getToken());
+  auto range = toRange(*this->contexts.back().src, checkError.getToken());
   if (!range.hasValue()) {
     return false;
   }

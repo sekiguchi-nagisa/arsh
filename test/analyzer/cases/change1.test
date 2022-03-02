@@ -22,11 +22,11 @@
 #    CHECK:         "message": "expected `=', `:'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
-#    CHECK:             "character": 6,
+#    CHECK:             "character": 5,
 #    CHECK:             "line": 0
 #    CHECK:           },
 #    CHECK:           "start": {
-#    CHECK:             "character": 6,
+#    CHECK:             "character": 5,
 #    CHECK:             "line": 0
 #    CHECK:           }
 #    CHECK:         },

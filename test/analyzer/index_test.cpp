@@ -77,7 +77,7 @@ public:
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &result) {
       auto retSrc = this->srcMan.findById(result.decl.getModId());
       ASSERT_TRUE(retSrc);
-      auto range = toRange(retSrc->getContent(), result.decl.getToken());
+      auto range = toRange(*retSrc, result.decl.getToken());
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(DeclResult{
@@ -108,7 +108,7 @@ public:
     findAllReferences(this->indexes, sr, [&](const FindRefsResult &result) {
       auto retSrc = this->srcMan.findById(result.symbol.getModId());
       ASSERT_TRUE(retSrc);
-      auto range = toRange(retSrc->getContent(), result.symbol.getToken());
+      auto range = toRange(*retSrc, result.symbol.getToken());
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(RefsResult{
@@ -147,7 +147,7 @@ public:
     ydsh::Optional<Range> range;
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
       actual = generateHoverContent(this->srcMan, *src, value.decl);
-      range = toRange(src->getContent(), value.request.getToken());
+      range = toRange(*src, value.request.getToken());
     });
 
     ASSERT_TRUE(range.hasValue());
