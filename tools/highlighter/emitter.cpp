@@ -99,6 +99,7 @@ HightlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::SIGNAL_LITERAL:
     return HightlightTokenClass::SIGNAL;
   case TokenKind::TYPE_NAME:
+  case TokenKind::FUNC:
     return HightlightTokenClass::TYPE;
   default:
     break;
