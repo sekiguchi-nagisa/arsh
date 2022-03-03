@@ -164,6 +164,8 @@ public:
 
   TypeTempOrError getTypeTemplate(const std::string &typeName) const;
 
+  const auto &getTemplateMap() const { return this->templateMap; }
+
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,
                                 std::vector<const DSType *> &&elementTypes);
 

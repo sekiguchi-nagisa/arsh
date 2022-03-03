@@ -140,10 +140,11 @@ $assertArray(['abs', 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.
 
 # type
 var types = [
-    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
-    'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 'Module', 'Nothing',
+    'Any', 'ArithmeticError', "Array", 'Bool', 'Boolean', 'Error', 'Float',
+    'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 
+    "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
-    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
+    'StackOverflowError', 'String', 'SystemError', 'Tuple', 'TypeCastError',
     'UnixFD', 'UnwrappingError', 'Void'
 ]
 

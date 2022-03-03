@@ -503,6 +503,14 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
       consumer(name, CompCandidateKind::TYPE);
     }
   }
+
+  // search TypeTemplate
+  for (auto &e : pool.getTemplateMap()) {
+    StringRef name = e.first;
+    if (name.startsWith(word)) {
+      consumer(name, CompCandidateKind::TYPE);
+    }
+  }
 }
 
 static bool hasCmdArg(const CmdNode &node) {

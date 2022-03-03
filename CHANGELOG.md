@@ -74,6 +74,7 @@
     - read-only symbol/field access
     - no-return expression checking in finally-block
 - preserve exit status during the evaluation of finally-block
+- complete type template, such as ``Array``, ``Map``, ``Tuple``, ``Option``
 
 #### Builtin
 
