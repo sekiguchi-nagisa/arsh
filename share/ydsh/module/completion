@@ -117,7 +117,7 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
             }
             1 => $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
             2 => {
-                var args = new [String]()
+                var args : [String]
                 for $a in $arg.split("|") {
                     $args.add("-A")
                     $args.add($a)

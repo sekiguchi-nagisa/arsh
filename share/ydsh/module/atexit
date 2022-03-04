@@ -15,8 +15,6 @@ function atexit($s : Int, $h : typeof($TERM_HOOK!)) {
         $_TERM_HOOKS.clear()
     }
     $TERM_HOOK = $_defaultHook
-    if $h == $_defaultHook {
-        return
-    }
+    $h == $_defaultHook && return
     $_TERM_HOOKS.add(($s, $h))
 }

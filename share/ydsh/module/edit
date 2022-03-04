@@ -28,7 +28,7 @@ function _error($s : String) {
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
     echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
-    if $short { return 2; }
+    $short && return 2;
 
     echo > $fd "Display or manipulate history list.
     Options:
@@ -71,11 +71,11 @@ function _show($argv : [String]) : Int {
 }
 
 function _add($s : String, $p : Boolean) {
-    if $HISTSIZE == 0 { return; }
+    $HISTSIZE == 0 && return;
     if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
 
     if $p {
-        if $s.empty() { return; }
+        $s.empty() && return;
         if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
         if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
     }
@@ -100,9 +100,9 @@ function _search($q : String) : String {
 }
 
 function _load($p : String!) {
-    if $HISTSIZE == 0 { return; }
+    $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
-    let path = $p!.realpath() ?? { return; }
+    let path = $p!.realpath() ?? return;
     cat $path | while(read -r -f '') {
         $_add($REPLY, $true)
     }
@@ -140,7 +140,7 @@ history() {
     }
 
     var op = ""
-    var fileName = new String!()
+    var fileName : String!
     var deleteTarget = ""
 
     for(var i = 0; $i < $#; $i++) {
