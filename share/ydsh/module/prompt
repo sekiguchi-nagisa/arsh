@@ -77,7 +77,7 @@ function _usage($fd : UnixFD, $short : Boolean) : Int  {
     \v    version
     \V    version with patch level
     \w    current directory
-    \W    base name of current directory(\$\$HOME is replaced by tilde)
+    \W    base name of current directory(\$HOME is replaced by tilde)
     \\\$    # if uid is 0, otherwise \$
     \\\\    backslash
     \[    begin of unprintable sequence
