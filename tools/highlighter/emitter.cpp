@@ -116,14 +116,23 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
   assert(token.endPos() < this->source.size());
 
   auto ref = this->source.substr(token.pos, token.size);
+  TokenKind suffix = TokenKind::EOS;
   if (ref.size() > 2 && ref[0] == '$') {
     char ch = ref[ref.size() - 1];
-    if (ch == '[' || ch == '(') {
+    if (ch == '[') {
+      suffix = TokenKind::LB;
+      token.size--;
+    } else if (ch == '(') {
+      suffix = TokenKind::LP;
       token.size--;
     }
   }
   if (token.size > 0) {
     this->emit(toTokenClass(kind), token);
+  }
+  if (suffix != TokenKind::EOS) {
+    unsigned int pos = token.endPos();
+    this->emit(toTokenClass(suffix), Token{.pos = pos, .size = 1});
   }
 }
 
