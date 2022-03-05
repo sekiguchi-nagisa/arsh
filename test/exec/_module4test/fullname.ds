@@ -2,11 +2,11 @@
 source $SCRIPT_DIR/module1.ds as m
 
 function hey_() : String {
-    return $m.fullname('say0')!
+    return $m._fullname('say0')!
 }
 
 function hey__() : String {
-    return $m.fullname('_say0')!
+    return $m._fullname('_say0')!
 }
 
 
@@ -19,9 +19,9 @@ _say!!() {
 }
 
 function say_() : String {
-    return $MODULE.fullname('say!!')!
+    return $MODULE._fullname('say!!')!
 }
 
 function say__() : String {
-    return $MODULE.fullname('_say!!')!
+    return $MODULE._fullname('_say!!')!
 }

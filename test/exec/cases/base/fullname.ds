@@ -7,7 +7,7 @@ say!!() {
 }
 
 ## resolve from current module
-var ret = $MODULE.fullname('say!!')!
+var ret = $MODULE._fullname('say!!')!
 assert $ret == $'%mod2\x00say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
 assert "$(eval "$ret" 123)" == 'not say!! 123'
@@ -21,12 +21,12 @@ assert "$(command -V ${$f.say__()})" =~ $/user-defined/
 assert "$(eval "${$f.say__()}" 000)" == '_say!! 000'
 
 ## resolve from foreign module
-$ret = $f.fullname('say!!')!
+$ret = $f._fullname('say!!')!
 assert $ret == $'%mod3\x00say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
 assert "$(eval "$ret" 456)" == 'say!! 456'
 
-$ret = $f.fullname('_say!!')!
+$ret = $f._fullname('_say!!')!
 assert $ret == $'%mod3\x00_say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
 assert "$(eval "$ret" 456)" == '_say!! 456'
@@ -39,39 +39,39 @@ assert $f.hey__() == $'%mod4\x00_say0' : $f.hey__()
 assert "$(command -V "${$f.hey__()}")" =~ $/user-defined/
 assert "$(eval "${$f.hey_()}" 909)" == '_say!! 909'
 
-$ret = $f.fullname('m')!
+$ret = $f._fullname('m')!
 assert $ret == $'%mod3\x00m'
 assert "$(command -V "$ret")" =~ $/user-defined/
 assert "$(eval "$ret" say0 456)" == '_say!! 456'
 
-$ret = $f.fullname('m')!
+$ret = $f._fullname('m')!
 assert $ret == $'%mod3\x00m'
 assert "$(command -V "$ret")" =~ $/user-defined/
 assert "$(eval "$ret" _say0 456 2>&1)" == 'ydsh: %mod3: cannot resolve private subcommand: _say0'
 assert $? == 1
 
 # resolve builtin, external
-$ret = $MODULE.fullname('exit')!
+$ret = $MODULE._fullname('exit')!
 assert $ret == 'exit'
 assert "$(command -V "$ret")" =~ $/builtin/
 
-$ret = $f.fullname('exit')!
+$ret = $f._fullname('exit')!
 assert $ret == 'exit'
 assert "$(command -V "$ret")" =~ $/builtin/
 
-$ret = $MODULE.fullname('cd')!
+$ret = $MODULE._fullname('cd')!
 assert $ret == 'cd'
 assert "$(command -V "$ret")" =~ $/builtin/
 
-$ret = $f.fullname('cd')!
+$ret = $f._fullname('cd')!
 assert $ret == 'cd'
 assert "$(command -V "$ret")" =~ $/builtin/
 
-$ret = $MODULE.fullname('env')!
+$ret = $MODULE._fullname('env')!
 assert $ret == "/usr/bin/env"
 assert "$(command -V "$ret")" =~ $/is \/usr\/bin\/env/
 
 
 # not resolved
-assert ! $MODULE.fullname('hogeho')
-assert ! $MODULE.fullname('/')
+assert ! $MODULE._fullname('hogeho')
+assert ! $MODULE._fullname('/')

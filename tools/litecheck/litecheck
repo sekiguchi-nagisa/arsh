@@ -232,12 +232,12 @@ function _check_output($checks : [Directive], $output : [String]) : Bool {
 
 function _run_and_check($map : [String : [Directive]]) : Int {
     var run = case $map[$RUN].size() {
-        0 => $MODULE.func("eval $self")
+        0 => $MODULE._func("eval $self")
         else => {
             var dd = $map[$RUN][0]
             var d = $dd.line as String
             try {
-                $MODULE.func($d)
+                $MODULE._func($d)
             } catch $e : Error {
                 $_error($dd.ln, "invalid $RUN directive: `$d', caused by" + $'\n' + $e.message())
             }
@@ -309,7 +309,7 @@ litecheck() {
 
     # check pre-condition
     for $d in $map[$REQUIRE] {
-        var cond = try { $MODULE.func($d.line as String)(); } 
+        var cond = try { $MODULE._func($d.line as String)(); } 
                    catch $e : Error { 
                        $_error($d.ln, "invalid $REQUIRE directive: `${$d.line}', caused by" + $'\n' + $e.message());
                    }

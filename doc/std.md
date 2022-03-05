@@ -265,13 +265,13 @@ function list() : Array<Signal> for Signals
 
 ## Module type
 ```
-function scriptName() : String for Module
+function _scriptName() : String for Module
 
-function scriptDir() : String for Module
+function _scriptDir() : String for Module
 
-function func($expr : String) : Func<Option<Any>> for Module
+function _func($expr : String) : Func<Option<Any>> for Module
 
-function fullname($name : String) : Option<String> for Module
+function _fullname($name : String) : Option<String> for Module
 ```
 
 ## Array type

@@ -17,11 +17,11 @@ assert $mod.test($true, $scriptName)! == 'hello!!'
 # script dir / name
 assert $SCRIPT_DIR != $mod.path
 assert $SCRIPT_DIR != $mod.dir()
-assert $SCRIPT_DIR == $MODULE.scriptDir()
+assert $SCRIPT_DIR == $MODULE._scriptDir()
 assert $SCRIPT_NAME.endsWith('/exec/cases/base/mod_named2.ds')
 assert $SCRIPT_NAME != $mod.script()
 assert $SCRIPT_NAME != $mod.name
-assert $SCRIPT_NAME == $MODULE.scriptName()
+assert $SCRIPT_NAME == $MODULE._scriptName()
 assert $mod.path == $mod.dir()
 assert $mod.name == $mod.script()
 assert $mod.path.endsWith('/exec/_module4test')
@@ -33,11 +33,11 @@ assert $SCRIPT_DIR != $mod1.path
 assert $SCRIPT_DIR != $mod1.dir()
 assert $mod1.path == $mod1.dir()
 assert $mod1.path == $mod1.mod3.path
-assert $mod1.path == $mod1.scriptDir()
+assert $mod1.path == $mod1._scriptDir()
 assert $mod.path == $mod1.mod3.path
 assert $mod.name == $mod1.mod3.name
-assert $mod.scriptName() != ($mod as Module).scriptName()
-assert  ($mod as Module).scriptName()== $mod.name : "${($mod as Module).scriptName()}, ${mod.name}"
+assert $mod.scriptName() != $mod._scriptName()
+assert  $mod._scriptName()== $mod.name : "${$mod._scriptName()}, ${mod.name}"
 
 assert '45' is mod1.mod3.Path
 

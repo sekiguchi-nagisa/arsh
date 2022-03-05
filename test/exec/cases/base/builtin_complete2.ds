@@ -120,8 +120,8 @@ $assertArray([ "B", 'BB'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B
 assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
-$assertArray(["compAdd", 'compDelegate', 'fullname', 'func', 'scriptDir', 'scriptName'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
-$assertArray([ 'fullname', "func", "hello", "hey", "hey2", "hey3", 'scriptDir', 'scriptName'],
+$assertArray(['_fullname', '_func', '_scriptDir', '_scriptName', "compAdd", 'compDelegate'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
+$assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds as mod; new mod.Interval(0,23)."))

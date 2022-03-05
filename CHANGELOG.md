@@ -78,11 +78,19 @@
 
 #### Builtin
 
-- change default ``HISTFILE`` to ``$DATA_HOME/ydsh_history``
+- **Breaking Change**: change all method name of ``Module`` type due to prevent potential name conflict
+    - ``fullname`` to ``_fullname``
+    - ``func`` to ``_func``
+    - ``scriptDir`` to ``_scriptDir``
+    - ``scriptName`` to ``_scriptName``
 
 #### Interactive
 
 - **Breaking Change**: change default rcfile path to ``$DATA_HOME/ydshrc``
+
+#### Module
+
+- **Breaking Change**: in ``edit`` module, change default ``HISTFILE`` to ``$DATA_HOME/ydsh_history``
 
 #### Completion
 

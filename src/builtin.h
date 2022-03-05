@@ -1152,7 +1152,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 // ##     Module     ##
 // ####################
 
-//!bind: function scriptName($this : Module) : String
+//!bind: function _scriptName($this : Module) : String
 YDSH_METHOD module_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_name);
 
@@ -1160,7 +1160,7 @@ YDSH_METHOD module_name(RuntimeContext &ctx) {
   RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_NAME]);
 }
 
-//!bind: function scriptDir($this : Module) : String
+//!bind: function _scriptDir($this : Module) : String
 YDSH_METHOD module_dir(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_dir);
 
@@ -1168,7 +1168,7 @@ YDSH_METHOD module_dir(RuntimeContext &ctx) {
   RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_DIR]);
 }
 
-//!bind: function func($this : Module, $expr : String) : Func<Option<Any>>
+//!bind: function _func($this : Module, $expr : String) : Func<Option<Any>>
 YDSH_METHOD module_func(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_func);
 
@@ -1185,7 +1185,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function fullname($this : Module, $name : String) : Option<String>
+//!bind: function _fullname($this : Module, $name : String) : Option<String>
 YDSH_METHOD module_fullname(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_fullname);
 

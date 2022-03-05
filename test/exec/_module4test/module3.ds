@@ -27,6 +27,6 @@ function script() : String {
 }
 
 assert $SCRIPT_NAME == $script()
-assert $MODULE.scriptName() == $SCRIPT_NAME
+assert $MODULE._scriptName() == $SCRIPT_NAME
 
 typedef Path = String
