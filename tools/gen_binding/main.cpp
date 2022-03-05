@@ -640,9 +640,11 @@ public:
     str += this->funcName;
 
     str += "(";
-    str += "$this";
     for (unsigned int i = 0; i < this->paramNames.size(); i++) {
-      str += ", $";
+      if (i > 0) {
+        str += ", ";
+      }
+      str += "$";
       str += this->paramNames[i].first;
       str += " : ";
       str += this->paramTypes[i]->toString();
