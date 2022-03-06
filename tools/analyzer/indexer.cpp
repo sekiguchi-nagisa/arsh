@@ -331,9 +331,11 @@ DeclBase *IndexBuilder::resolveMemberDecl(const DSType &recv, const NameInfo &na
     auto &handle = get<MethodRef>(entry).get();
     auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
     assert(handle.isNative());
-    std::string content = "($this";
+    std::string content = "(";
     for (unsigned int i = 0; i < handle.getParamSize(); i++) {
-      content += ", ";
+      if (i > 0) {
+        content += ", ";
+      }
       content += "$p";
       content += std::to_string(i);
       content += " : ";

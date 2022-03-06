@@ -1930,7 +1930,10 @@ TEST_F(IndexTest, hover) {
                                       "```ydsh\nvar _2 : String for (Int, Boolean, String)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("    ''.size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
-                                      "```ydsh\nfunction size($this) : Int for [Int]\n```"));
+                                      "```ydsh\nfunction size() : Int for [Int]\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("''.slice(0)", Position{.line = 0, .character = 5},
+                  "```ydsh\nfunction slice($p0 : Int, $p1 : Int) : String for String\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
 
