@@ -207,20 +207,17 @@ static std::vector<std::string> computePathList(const char *pathVal) {
 
 static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
                         CompCandidateConsumer &consumer, bool ignoreIdent) {
-  for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
-    for (const auto &e : *curScope) {
-      StringRef udc = e.first.c_str();
-      if (isCmdFullName(udc)) {
-        udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-        if (udc.startsWith(cmdPrefix)) {
-          if (ignoreIdent && isIDStart(udc[0])) {
-            continue;
-          }
-          consumer(udc, CompCandidateKind::COMMAND_NAME);
+  scope.walk([&](StringRef udc, const Handle &) {
+    if (isCmdFullName(udc)) {
+      udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+      if (udc.startsWith(cmdPrefix)) {
+        if (ignoreIdent && isIDStart(udc[0])) {
+          return;
         }
+        consumer(udc, CompCandidateKind::COMMAND_NAME);
       }
     }
-  }
+  });
 }
 
 static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
@@ -408,19 +405,16 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
     }
     cur->getMaxGlobalVarIndex() * 10;
   });
-  for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
-    for (const auto &iter : *curScope) {
-      StringRef varName = iter.first;
-      if (varName.startsWith(prefix) && isVarName(varName)) {
-        int priority = iter.second.first->getIndex();
-        if (!iter.second.first->has(HandleAttr::GLOBAL)) {
-          priority += offset;
-        }
-        priority *= -1;
-        consumer(varName, CompCandidateKind::VAR, priority);
+  scope.walk([&](StringRef varName, const Handle &handle) {
+    if (varName.startsWith(prefix) && isVarName(varName)) {
+      int priority = handle.getIndex();
+      if (!handle.has(HandleAttr::GLOBAL)) {
+        priority += offset;
       }
+      priority *= -1;
+      consumer(varName, CompCandidateKind::VAR, priority);
     }
-  }
+  });
 }
 
 static void completeExpected(const std::vector<std::string> &expected, const std::string &prefix,
@@ -482,15 +476,12 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
   }
 
   // search scope
-  for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
-    for (auto &e : *curScope) {
-      StringRef name = e.first;
-      if (name.startsWith(word) && isTypeAliasFullName(name)) {
-        name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-        consumer(name, CompCandidateKind::TYPE);
-      }
+  scope.walk([&](StringRef name, const Handle &) {
+    if (name.startsWith(word) && isTypeAliasFullName(name)) {
+      name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+      consumer(name, CompCandidateKind::TYPE);
     }
-  }
+  });
 
   // search TypePool
   for (auto &t : pool.getTypeTable()) {

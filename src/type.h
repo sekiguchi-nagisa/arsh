@@ -194,7 +194,7 @@ public:
   const Handle *lookupField(const TypePool &pool, const std::string &fieldName) const;
 
   void walkField(const TypePool &pool,
-                 std::function<bool(StringRef, const Handle &)> &walker) const;
+                 const std::function<bool(StringRef, const Handle &)> &walker) const;
 
   std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
 

@@ -158,10 +158,6 @@ public:
 
   const auto &getHandles() const { return this->handles; }
 
-  auto begin() const { return this->handles.begin(); }
-
-  auto end() const { return this->handles.end(); }
-
   const Handle *find(const std::string &name) const {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
@@ -240,6 +236,21 @@ public:
 
   const MethodHandle *lookupConstructor(TypePool &pool, const DSType &recvType) const {
     return this->lookupMethod(pool, recvType, OP_INIT);
+  }
+
+  /**
+   *
+   * @tparam Walker
+   * void(StringRef, const Handle&)
+   * @param walker
+   */
+  template <typename Walker>
+  void walk(Walker walker) const {
+    for (const auto *cur = this; cur != nullptr; cur = cur->parent.get()) {
+      for (auto &e : cur->getHandles()) {
+        walker(e.first, *e.second.first);
+      }
+    }
   }
 
   // for symbol discard

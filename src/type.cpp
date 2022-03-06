@@ -51,7 +51,7 @@ const Handle *DSType::lookupField(const TypePool &pool, const std::string &field
 }
 
 void DSType::walkField(const TypePool &pool,
-                       std::function<bool(StringRef, const Handle &)> &walker) const {
+                       const std::function<bool(StringRef, const Handle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
