@@ -75,6 +75,7 @@
     - no-return expression checking in finally-block
 - preserve exit status during the evaluation of finally-block
 - complete type template, such as ``Array``, ``Map``, ``Tuple``, ``Option``
+- do not complete methods that do not satisfy type constraints
 
 #### Builtin
 

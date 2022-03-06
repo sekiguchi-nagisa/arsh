@@ -359,12 +359,20 @@ public:
 
   ~TypeDecoder() = default;
 
+  void reset(const HandleInfo *ptr) { this->cursor = ptr; }
+
   TypeOrError decode();
 
   unsigned int decodeNum() {
     return static_cast<unsigned int>(static_cast<int>(*(this->cursor++)) -
                                      static_cast<int>(HandleInfo::P_N0));
   }
+
+  /**
+   * decode and check type parameter constraint
+   * @return
+   */
+  bool decodeConstraint();
 };
 
 #undef TRY
@@ -455,6 +463,18 @@ TypeOrError TypeDecoder::decode() {
     std::move(value).take();                                                                       \
   })
 
+bool TypeDecoder::decodeConstraint() {
+  const unsigned int constraintSize = this->decodeNum();
+  for (unsigned int i = 0; i < constraintSize; i++) {
+    auto *typeParam = TRY2(this->decode());
+    auto *reqType = TRY2(this->decode());
+    if (!reqType->isSameOrBaseTypeOf(*typeParam)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // FIXME: error reporting
 bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   assert(!iter->second);
@@ -464,14 +484,9 @@ bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   TypeDecoder decoder(*this, info.handleInfo, std::move(types));
 
   // check type parameter constraint
-  const unsigned int constraintSize = decoder.decodeNum();
-  for (unsigned int i = 0; i < constraintSize; i++) {
-    auto *typeParam = TRY2(decoder.decode());
-    auto *reqType = TRY2(decoder.decode());
-    if (!reqType->isSameOrBaseTypeOf(*typeParam)) {
-      return false;
-    }
-  }
+  bool r = decoder.decodeConstraint();
+  (void)r;
+  assert(r);
 
   auto *returnType = TRY2(decoder.decode()); // init return type
   const unsigned int paramSize = decoder.decodeNum();
@@ -633,9 +648,15 @@ void TypePool::registerHandle(const BuiltinType &recv, const char *name, unsigne
 
 void TypePool::registerHandles(const BuiltinType &type) {
   // init method handle
+  auto types = type.getTypeParams(*this);
+  TypeDecoder decoder(*this, nullptr, std::move(types));
   auto info = type.getNativeTypeInfo();
   for (unsigned int i = 0; i < info.methodSize; i++) {
     const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
+    decoder.reset(funcInfo->handleInfo);
+    if (!decoder.decodeConstraint()) {
+      continue;
+    }
     unsigned int methodIndex = info.getActualMethodIndex(i);
     this->registerHandle(type, funcInfo->funcName, methodIndex);
   }
