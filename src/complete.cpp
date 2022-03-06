@@ -212,11 +212,12 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix)) {
         if (ignoreIdent && isIDStart(udc[0])) {
-          return;
+          return true;
         }
         consumer(udc, CompCandidateKind::COMMAND_NAME);
       }
     }
+    return true;
   });
 }
 
@@ -414,6 +415,7 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
       priority *= -1;
       consumer(varName, CompCandidateKind::VAR, priority);
     }
+    return true;
   });
 }
 
@@ -481,6 +483,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
       name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
       consumer(name, CompCandidateKind::TYPE);
     }
+    return true;
   });
 
   // search TypePool

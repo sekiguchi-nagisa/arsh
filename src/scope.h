@@ -238,17 +238,23 @@ public:
     return this->lookupMethod(pool, recvType, OP_INIT);
   }
 
+  template <typename Walker>
+  static constexpr bool walker_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<Walker, StringRef, const Handle &>>;
+
   /**
    *
    * @tparam Walker
-   * void(StringRef, const Handle&)
+   * bool(StringRef, const Handle&)
    * @param walker
    */
-  template <typename Walker>
+  template <typename Walker, enable_when<walker_requirement_v<Walker>> = nullptr>
   void walk(Walker walker) const {
     for (const auto *cur = this; cur != nullptr; cur = cur->parent.get()) {
       for (auto &e : cur->getHandles()) {
-        walker(e.first, *e.second.first);
+        if (!walker(e.first, *e.second.first)) {
+          return;
+        }
       }
     }
   }

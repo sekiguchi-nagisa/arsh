@@ -233,6 +233,10 @@ public:
   const FlexBuffer<ControlFrame> &getFrames() const { return this->frames; }
 
   template <typename Walker>
+  static constexpr bool walker_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<Walker, const ControlFrame &>>;
+
+  template <typename Walker, enable_when<walker_requirement_v<Walker>> = nullptr>
   void walkFrames(Walker walker) const {
     auto *cur = &this->frame;
     for (unsigned int callDepth = this->frames.size(); callDepth > 0;
