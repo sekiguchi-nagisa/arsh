@@ -296,6 +296,10 @@ public:
 
   unsigned short getModId() const { return this->modId; }
 
+  bool isVisibleInMod(unsigned short scopeModId, StringRef name) const {
+    return this->modId == 0 || scopeModId == this->modId || name[0] != '_';
+  }
+
   /**
    * normally unused
    * @param newAttr

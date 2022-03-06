@@ -440,7 +440,7 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
                                                                    const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
-      if (handle.getModId() == 0 || scope.modId == handle.getModId() || !name.startsWith("_")) {
+      if (handle.isVisibleInMod(scope.modId, name)) {
         consumer(name, CompCandidateKind::FIELD);
       }
     }
@@ -470,7 +470,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
     std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
                                                                      const Handle &handle) {
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
-        if (handle.getModId() == 0 || handle.getModId() == scope.modId || name[0] != '_') {
+        if (handle.isVisibleInMod(scope.modId, name)) {
           name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
           consumer(name, CompCandidateKind::TYPE);
         }

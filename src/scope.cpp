@@ -243,7 +243,7 @@ Result<const Handle *, NameLookupError> NameScope::lookupField(const TypePool &p
                                                                const std::string &fieldName) const {
   auto *handle = recv.lookupField(pool, fieldName);
   if (handle) {
-    if (handle->getModId() == 0 || this->modId == handle->getModId() || fieldName[0] != '_') {
+    if (handle->isVisibleInMod(this->modId, fieldName)) {
       return Ok(handle);
     } else {
       return Err(NameLookupError::MOD_PRIVATE);
@@ -262,7 +262,7 @@ const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvTy
     std::string name = toMethodFullName(type->typeId(), methodName);
     if (auto *handle = scope->find(name)) {
       assert(handle->isMethod());
-      if (handle->getModId() == 0 || this->modId == handle->getModId() || methodName[0] != '_') {
+      if (handle->isVisibleInMod(this->modId, methodName)) {
         return static_cast<const MethodHandle *>(handle);
       }
       return nullptr;
