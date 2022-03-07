@@ -657,6 +657,76 @@ TEST_F(LocationTest, change) {
   ASSERT_EQ("12-", content);
 }
 
+struct SemanticTokenTest : public ::testing::Test {
+  SemanticTokensLegend legend;
+  SemanticTokenEncoder encoder;
+
+  SemanticTokenTest() : legend(SemanticTokensLegend::create()), encoder(this->legend) {}
+
+  void testEncode(HightlightTokenClass tokenClass, SemanticTokenTypes type,
+                  unsigned int modifiers) {
+    auto ret = this->encoder.encode(tokenClass);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(static_cast<unsigned int>(type), ret.unwrap().first);
+    ASSERT_EQ(modifiers, ret.unwrap().second);
+  }
+};
+
+TEST_F(SemanticTokenTest, split) {
+  // multi line
+  const char *src = R"("aaa
+bbb
+ccc"
+)";
+  StringRef ref = src;
+  Token token = {
+      .pos = 0,
+      .size = static_cast<unsigned int>(ref.size() - 1),
+  };
+  std::vector<std::string> values;
+  splitTokenByNewline(ref, token, [&](Token sub) {
+    auto value = ref.substr(sub.pos, sub.size).toString();
+    values.push_back(std::move(value));
+  });
+  ASSERT_EQ(3, values.size());
+  ASSERT_EQ("\"aaa", values[0]);
+  ASSERT_EQ("bbb", values[1]);
+  ASSERT_EQ("ccc\"", values[2]);
+
+  // single line
+  ref = "abc  \n";
+  token = {
+      .pos = 0,
+      .size = 3,
+  };
+  values.clear();
+  splitTokenByNewline(ref, token, [&](Token sub) {
+    auto value = ref.substr(sub.pos, sub.size).toString();
+    values.push_back(std::move(value));
+  });
+  ASSERT_EQ(1, values.size());
+  ASSERT_EQ("abc", values[0]);
+}
+
+TEST_F(SemanticTokenTest, encode) {
+  auto ret = this->encoder.encode(HightlightTokenClass::NONE);
+  ASSERT_FALSE(ret.hasValue());
+
+  this->testEncode(HightlightTokenClass::COMMENT, SemanticTokenTypes::comment_, 0);
+  this->testEncode(HightlightTokenClass::KEYWORD, SemanticTokenTypes::keyword_, 0);
+  this->testEncode(HightlightTokenClass::OPERATOR, SemanticTokenTypes::operator_, 0);
+  this->testEncode(HightlightTokenClass::NUMBER, SemanticTokenTypes::number_, 0);
+  this->testEncode(HightlightTokenClass::REGEX, SemanticTokenTypes::regexp_, 0);
+  this->testEncode(HightlightTokenClass::STRING, SemanticTokenTypes::string_, 0);
+  this->testEncode(HightlightTokenClass::SIGNAL, SemanticTokenTypes::event_, 0);
+  this->testEncode(HightlightTokenClass::COMMAND, SemanticTokenTypes::function_, 0);
+  this->testEncode(HightlightTokenClass::COMMAND_ARG, SemanticTokenTypes::parameter_, 0);
+  this->testEncode(HightlightTokenClass::REDIRECT, SemanticTokenTypes::operator_, 0);
+  this->testEncode(HightlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
+  this->testEncode(HightlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);
+  this->testEncode(HightlightTokenClass::MEMBER, SemanticTokenTypes::property_, 0);
+}
+
 TEST(WorkerTest, base) {
   BackgroundWorker worker;
   auto ret1 = worker.addTask([] {
