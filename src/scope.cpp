@@ -263,7 +263,7 @@ const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvTy
     if (auto *handle = scope->find(name)) {
       assert(handle->isMethod());
       if (handle->isVisibleInMod(this->modId, methodName)) {
-        return static_cast<const MethodHandle *>(handle);
+        return cast<MethodHandle>(handle);
       }
       return nullptr;
     }

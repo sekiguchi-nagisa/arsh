@@ -135,7 +135,7 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
   if (handle.isMethod()) {
-    auto &methodHandle = static_cast<const MethodHandle &>(handle);
+    auto &methodHandle = cast<MethodHandle>(handle);
     const auto paramSize = methodHandle.getParamSize();
     this->write8(paramSize + 1);
     this->add(methodHandle.getReturnType());

@@ -305,7 +305,7 @@ std::string toString(HandleAttr attr) {
 
 void Handle::destroy() {
   if (this->famSize()) {
-    delete static_cast<MethodHandle *>(this);
+    delete cast<MethodHandle>(this);
   } else {
     delete this;
   }

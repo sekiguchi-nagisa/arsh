@@ -791,6 +791,8 @@ public:
     return {this->returnType, this->getParamSize(),
             this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]};
   }
+
+  static bool classof(const Handle *handle) { return handle->isMethod(); }
 };
 
 } // namespace ydsh
