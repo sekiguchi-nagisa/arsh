@@ -37,9 +37,6 @@
 
 namespace ydsh {
 
-class Handle;
-class TypePool;
-
 enum class TYPE : unsigned int {
   _Unresolved, // for type error
   _ProcGuard,  // for guard parent code execution from child process
@@ -104,6 +101,12 @@ enum class TypeKind : unsigned char {
   EACH_TYPE_KIND(GEN_ENUM)
 #undef GEN_ENUM
 };
+
+class Handle;
+class TypePool;
+struct HandleRefCountOp;
+
+using HandlePtr = IntrusivePtr<Handle, HandleRefCountOp>;
 
 class DSType {
 protected:
@@ -191,7 +194,7 @@ public:
    */
   const DSType *getSuperType() const { return this->superType; }
 
-  const Handle *lookupField(const TypePool &pool, const std::string &fieldName) const;
+  HandlePtr lookupField(const TypePool &pool, const std::string &fieldName) const;
 
   void walkField(const TypePool &pool,
                  const std::function<bool(StringRef, const Handle &)> &walker) const;
@@ -247,13 +250,14 @@ std::string toString(HandleAttr attr);
 template <>
 struct allow_enum_bitop<HandleAttr> : std::true_type {};
 
-struct HandleRefCountOp;
+class NameScope;
 
 /**
  * represent for class field or variable. field type may be function type.
  */
 class Handle {
 protected:
+  friend class NameScope;
   friend struct HandleRefCountOp;
 
   int refCount{0};
@@ -300,12 +304,6 @@ public:
     return this->modId == 0 || scopeModId == this->modId || name[0] != '_';
   }
 
-  /**
-   * normally unused
-   * @param newAttr
-   */
-  void setAttr(HandleAttr newAttr) { this->attribute = newAttr; }
-
   HandleAttr attr() const { return this->attribute; }
 
   bool has(HandleAttr a) const { return hasFlag(this->attr(), a); }
@@ -319,6 +317,15 @@ protected:
   unsigned char famSize() const { return static_cast<unsigned char>(this->tag & 0xFF); }
 
 private:
+  /**
+   * only used from importForeignHandles
+   * @param newAttr
+   */
+  void setAttr(HandleAttr newAttr) { this->attribute = newAttr; }
+
+  /**
+   * not directly use it
+   */
   void destroy();
 };
 
@@ -337,8 +344,6 @@ struct HandleRefCountOp {
     }
   }
 };
-
-using HandlePtr = IntrusivePtr<Handle, HandleRefCountOp>;
 
 struct CallableTypes {
   const DSType *returnType{nullptr};
@@ -456,7 +461,7 @@ public:
 
 class TupleType : public BuiltinType {
 private:
-  std::unordered_map<std::string, Handle> fieldHandleMap;
+  std::unordered_map<std::string, HandlePtr> fieldHandleMap;
 
 public:
   /**
@@ -472,7 +477,7 @@ public:
    */
   unsigned int getFieldSize() const { return this->fieldHandleMap.size(); }
 
-  const Handle *lookupField(const std::string &fieldName) const;
+  HandlePtr lookupField(const std::string &fieldName) const;
 
   const DSType &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
 
@@ -521,7 +526,7 @@ public:
 
   bool isFinalized() const { return this->meta.u16_2.v2 != 0; }
 
-  const Handle *lookupField(const std::string &fieldName) const;
+  HandlePtr lookupField(const std::string &fieldName) const;
 
   static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Record; }
 
@@ -651,7 +656,7 @@ public:
 
   const auto &getHandleMap() const { return this->handleMap; }
 
-  const Handle *lookup(const TypePool &pool, const std::string &fieldName) const;
+  HandlePtr lookup(const TypePool &pool, const std::string &fieldName) const;
 
   /**
    * for runtime symbol lookup
@@ -665,10 +670,10 @@ public:
   static bool classof(const DSType *type) { return type->isModType(); }
 
 private:
-  const Handle *find(const std::string &name) const {
+  HandlePtr find(const std::string &name) const {
     auto iter = this->handleMap.find(name);
     if (iter != this->handleMap.end()) {
-      return iter->second.get();
+      return iter->second;
     }
     return nullptr;
   }

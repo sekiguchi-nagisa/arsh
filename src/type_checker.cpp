@@ -300,8 +300,8 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
   }
 }
 
-const Handle *TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
-                                    HandleAttr attribute) {
+HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
+                                HandleAttr attribute) {
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
   if (!ret) {
     switch (ret.asErr()) {
@@ -316,7 +316,7 @@ const Handle *TypeChecker::addEntry(Token token, const std::string &symbolName, 
     }
     return nullptr;
   }
-  return ret.asOk();
+  return std::move(ret).take();
 }
 
 static auto initDeniedNameList() {
@@ -350,7 +350,7 @@ const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   auto ret =
       this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
   if (ret) {
-    return ret.asOk();
+    return ret.asOk().get();
   } else if (ret.asErr() == NameRegisterError::DEFINED) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
   }
@@ -379,9 +379,8 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     if (!this->checkAccessNode(accessNode)) { // method call
       accessNode.setType(this->typePool.get(TYPE::Any));
       auto &recvType = accessNode.getRecvNode().getType();
-      if (auto *handle =
-              this->curScope->lookupMethod(this->typePool, recvType, accessNode.getFieldName());
-          handle) {
+      if (auto handle =
+              this->curScope->lookupMethod(this->typePool, recvType, accessNode.getFieldName())) {
         node.setKind(ApplyNode::METHOD_CALL);
         node.setHandle(handle);
         callableTypes = handle->toCallableTypes();
@@ -407,8 +406,8 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
   auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
   auto ret = this->curScope->lookupField(this->typePool, recvType, node.getFieldName());
   if (ret) {
-    auto *handle = ret.asOk();
-    node.setAttribute(*handle);
+    auto handle = ret.asOk();
+    node.setHandle(handle);
     node.setType(this->typePool.get(handle->getTypeId()));
     return true;
   } else {
@@ -592,8 +591,8 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-  if (auto *handle = this->curScope->lookup(node.getVarName()); handle) {
-    node.setAttribute(*handle);
+  if (auto handle = this->curScope->lookup(node.getVarName()); handle) {
+    node.setHandle(handle);
     node.setType(this->typePool.get(handle->getTypeId()));
   } else {
     this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
@@ -782,7 +781,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   } else {
     node.setType(this->typePool.get(TYPE::Boolean));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
-    if (auto *handle = this->curScope->lookup(cmdName); handle) {
+    if (auto handle = this->curScope->lookup(cmdName)) {
       node.setUdcIndex(handle->getIndex());
       auto &type = this->typePool.get(handle->getTypeId());
       if (type.isFuncType()) { // resolved command may be module object
@@ -1286,6 +1285,9 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     auto &varNode = cast<VarNode>(node);
     Token token = varNode.getToken();
     std::string value;
+    if (!varNode.getHandle()) {
+      break;
+    }
     if (hasFlag(varNode.attr(), HandleAttr::MOD_CONST)) {
       if (varNode.getVarName() == CVAR_SCRIPT_NAME) {
         value = this->lexer->getSourceName();
@@ -1509,7 +1511,8 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);
   if (isa<AssignableNode>(leftNode)) {
-    if (hasFlag(cast<AssignableNode>(leftNode).attr(), HandleAttr::READ_ONLY)) {
+    auto &assignable = cast<AssignableNode>(leftNode);
+    if (assignable.getHandle() && hasFlag(assignable.attr(), HandleAttr::READ_ONLY)) {
       if (isa<VarNode>(leftNode)) {
         this->reportError<ReadOnlySymbol>(leftNode, cast<VarNode>(leftNode).getVarName().c_str());
       } else {
@@ -1576,10 +1579,9 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
-      if (auto *handle =
-              this->addEntry(leftNode, leftNode.getVarName(), rightType, HandleAttr::ENV);
-          handle) {
-        leftNode.setAttribute(*handle);
+      if (auto handle =
+              this->addEntry(leftNode, leftNode.getVarName(), rightType, HandleAttr::ENV)) {
+        leftNode.setHandle(handle);
         leftNode.setType(rightType);
       }
     }
@@ -1621,7 +1623,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node,
     if (typeOrError) {
       auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
       node.setResolvedType(funcType);
-      if (const Handle * handle;
+      if (HandlePtr handle;
           !node.isAnonymousFunc() &&
           (handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY))) {
         node.setVarIndex(handle->getIndex());

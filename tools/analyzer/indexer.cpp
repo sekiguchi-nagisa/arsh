@@ -116,8 +116,8 @@ IndexBuilder::MemberRef IndexBuilder::LazyMemberMap::findImpl(const DSType &recv
     return iter->second;
   }
   if (recvType.isTupleType()) {
-    if (auto *handle = recvType.lookupField(this->getPool(), memberName)) {
-      return std::ref(*handle);
+    if (auto handle = recvType.lookupField(this->getPool(), memberName)) {
+      return std::cref(*handle);
     }
   }
   return {};

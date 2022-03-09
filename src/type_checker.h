@@ -406,12 +406,12 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const Handle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
-                         HandleAttr attribute) {
+  HandlePtr addEntry(const Node &node, const std::string &symbolName, const DSType &type,
+                     HandleAttr attribute) {
     return this->addEntry(node.getToken(), symbolName, type, attribute);
   }
 
-  const Handle *addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {
+  HandlePtr addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {
     return this->addEntry(info.getToken(), info.getName(), type, attribute);
   }
 
@@ -424,8 +424,8 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const Handle *addEntry(Token token, const std::string &symbolName, const DSType &type,
-                         HandleAttr attribute);
+  HandlePtr addEntry(Token token, const std::string &symbolName, const DSType &type,
+                     HandleAttr attribute);
 
   /**
    *

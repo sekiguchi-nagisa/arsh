@@ -523,7 +523,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   }
 
   std::string cmdName = toCmdFullName(cmdNode.getNameNode().getValue());
-  auto *handle = scope.lookup(cmdName);
+  auto handle = scope.lookup(cmdName);
   if (!handle) {
     return false;
   }

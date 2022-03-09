@@ -301,10 +301,8 @@ nodes:
           size: 4
         type:
         varName: "size"
-        index: 0
-        attribute: ""
-      index: 0
-      attribute: ""
+        handle: null
+      handle: null
       additionalOp: "NOP"
     argsNode:
       nodeKind: Args
@@ -436,8 +434,7 @@ nodes:
                           size: 5
                         type:
                         varName: "true"
-                        index: 0
-                        attribute: ""
+                        handle: null
                       handle: null
                 - nodeKind: StringExpr
                   token:
@@ -588,10 +585,8 @@ nodes:
             size: 4
           type:
           varName: "poll"
-          index: 0
-          attribute: ""
-        index: 0
-        attribute: ""
+          handle: null
+        handle: null
         additionalOp: "NOP"
       argsNode:
         nodeKind: Args
@@ -769,8 +764,9 @@ nodes:
         size: 8
       type: Boolean
       varName: "false"
-      index: 49
-      attribute: "READ_ONLY | GLOBAL"
+      handle:
+        index: 49
+        attribute: "READ_ONLY | GLOBAL"
     iterNode:
       nodeKind: Empty
       token:
@@ -843,8 +839,9 @@ nodes:
               size: 0
             type: Int
             varName: "?"
-            index: 12
-            attribute: "GLOBAL"
+            handle:
+              index: 12
+              attribute: "GLOBAL"
       baseIndex: 0
       varSize: 14
       maxVarSize: 14
@@ -872,8 +869,7 @@ nodes:
             size: 3
           type:
           varName: "IFS"
-          index: 0
-          attribute: ""
+          handle: null
         rightNode:
           nodeKind: CmdArg
           token:

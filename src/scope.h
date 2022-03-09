@@ -34,7 +34,7 @@ enum class NameRegisterError {
   INVALID_TYPE,
 };
 
-using NameRegisterResult = Result<const Handle *, NameRegisterError>;
+using NameRegisterResult = Result<HandlePtr, NameRegisterError>;
 
 enum class NameLookupError {
   NOT_FOUND,
@@ -158,10 +158,10 @@ public:
 
   const auto &getHandles() const { return this->handles; }
 
-  const Handle *find(const std::string &name) const {
+  HandlePtr find(const std::string &name) const {
     auto iter = this->handles.find(name);
     if (iter != this->handles.end()) {
-      return iter->second.first.get();
+      return iter->second.first;
     }
     return nullptr;
   }
@@ -226,10 +226,10 @@ public:
    * @return
    * if not found, return nullptr
    */
-  const Handle *lookup(const std::string &name) const;
+  HandlePtr lookup(const std::string &name) const;
 
-  Result<const Handle *, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
-                                                      const std::string &fieldName) const;
+  Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
+                                                 const std::string &fieldName) const;
 
   const MethodHandle *lookupMethod(TypePool &pool, const DSType &recvType,
                                    const std::string &methodName) const;

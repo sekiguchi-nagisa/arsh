@@ -37,7 +37,7 @@ void DSType::destroy() {
   }
 }
 
-const Handle *DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
+HandlePtr DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
@@ -55,7 +55,7 @@ void DSType::walkField(const TypePool &pool,
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
-      if (!walker(e.first, e.second)) {
+      if (!walker(e.first, *e.second)) {
         return;
       }
     }
@@ -169,37 +169,37 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    Handle handle(*types[i], i, HandleAttr());
-    this->fieldHandleMap.emplace(toTupleFieldName(i), handle);
+    auto handle = HandlePtr::create(*types[i], i, HandleAttr());
+    this->fieldHandleMap.emplace(toTupleFieldName(i), std::move(handle));
   }
 }
 
 const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
   assert(i < this->getFieldSize());
   auto name = toTupleFieldName(i);
-  auto *handle = this->lookupField(name);
+  auto handle = this->lookupField(name);
   assert(handle);
   return pool.get(handle->getTypeId());
 }
 
-const Handle *TupleType::lookupField(const std::string &fieldName) const {
+HandlePtr TupleType::lookupField(const std::string &fieldName) const {
   auto iter = this->fieldHandleMap.find(fieldName);
   if (iter == this->fieldHandleMap.end()) {
     return nullptr;
   }
-  return &iter->second;
+  return iter->second;
 }
 
 // ########################
 // ##     RecordType     ##
 // ########################
 
-const Handle *RecordType::lookupField(const std::string &fieldName) const {
+HandlePtr RecordType::lookupField(const std::string &fieldName) const {
   auto iter = this->handleMap.find(fieldName);
   if (iter == this->handleMap.end()) {
     return nullptr;
   }
-  return iter->second.get();
+  return iter->second;
 }
 
 // #####################
@@ -208,8 +208,8 @@ const Handle *RecordType::lookupField(const std::string &fieldName) const {
 
 ModType::~ModType() { this->disposeChildren(); }
 
-const Handle *ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
-  if (auto *handle = this->find(fieldName); handle) {
+HandlePtr ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
+  if (auto handle = this->find(fieldName); handle) {
     return handle;
   }
 
@@ -223,7 +223,7 @@ const Handle *ModType::lookup(const TypePool &pool, const std::string &fieldName
     if (child.isInlined()) {
       auto &type = pool.get(child.typeId());
       assert(type.isModType());
-      if (auto *handle = cast<ModType>(type).find(fieldName)) {
+      if (auto handle = cast<ModType>(type).find(fieldName)) {
         return handle;
       }
     }
@@ -234,9 +234,9 @@ const Handle *ModType::lookup(const TypePool &pool, const std::string &fieldName
 const Handle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
                                                    const std::string &name) const {
   // search own symbols
-  auto *handle = this->find(name);
+  auto handle = this->find(name);
   if (handle) {
-    return handle;
+    return handle.get();
   }
 
   // search public symbol from globally loaded module
@@ -251,7 +251,7 @@ const Handle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
       assert(type.isModType());
       handle = cast<ModType>(type).find(name);
       if (handle) {
-        return handle;
+        return handle.get();
       }
     }
   }

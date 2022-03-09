@@ -568,9 +568,7 @@ public:
  */
 class AssignableNode : public Node {
 protected:
-  unsigned int index{0};
-
-  HandleAttr attribute{};
+  HandlePtr handle;
 
   AssignableNode(NodeKind kind, Token token) : Node(kind, token) {}
 
@@ -581,19 +579,14 @@ public:
 
   ~AssignableNode() override = default;
 
-  void setAttribute(const Handle &handle) {
-    this->index = handle.getIndex();
-    this->attribute = handle.attr();
-  }
+  void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
 
-  HandleAttr attr() const { return this->attribute; }
+  const HandlePtr &getHandle() const { return this->handle; }
 
-  unsigned int getIndex() const { return this->index; }
+  HandleAttr attr() const { return this->getHandle()->attr(); }
 
-  void dump(NodeDumper &dumper) const override;
+  unsigned int getIndex() const { return this->getHandle()->getIndex(); }
 };
-
-const StrRefMap<std::string> &getBuiltinConstMap();
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 private:
@@ -2548,6 +2541,8 @@ public:
   void dump(const char *fieldName, const DSType &type);
 
   void dump(const char *fieldName, TokenKind kind);
+
+  void dump(const char *fieldName, const Handle &handle);
 
   void dump(const char *fieldName, const MethodHandle &handle);
 

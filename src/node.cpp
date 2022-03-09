@@ -227,22 +227,13 @@ void MapNode::dump(NodeDumper &dumper) const {
 
 void TupleNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 
-// ############################
-// ##     AssignableNode     ##
-// ############################
-
-void AssignableNode::dump(NodeDumper &dumper) const {
-  DUMP(index);
-  dumper.dump("attribute", toString(this->attribute));
-}
-
 // #####################
 // ##     VarNode     ##
 // #####################
 
 void VarNode::dump(NodeDumper &dumper) const {
   DUMP(varName);
-  AssignableNode::dump(dumper);
+  DUMP_PTR(handle);
 }
 
 // ########################
@@ -252,7 +243,7 @@ void VarNode::dump(NodeDumper &dumper) const {
 void AccessNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(recvNode);
   DUMP_PTR(nameNode);
-  AssignableNode::dump(dumper);
+  DUMP_PTR(handle);
 
 #define EACH_ENUM(OP)                                                                              \
   OP(NOP)                                                                                          \
@@ -1155,6 +1146,18 @@ void NodeDumper::dump(const char *fieldName, const DSType &type) {
 
 void NodeDumper::dump(const char *fieldName, TokenKind kind) {
   this->dump(fieldName, toString(kind));
+}
+
+void NodeDumper::dump(const char *fieldName, const Handle &handle) {
+  // write field name
+  this->writeName(fieldName);
+
+  // write body
+  this->newline();
+  this->enterIndent();
+  this->dump("index", handle.getIndex());
+  this->dump("attribute", toString(handle.attr()));
+  this->leaveIndent();
 }
 
 void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {

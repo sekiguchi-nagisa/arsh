@@ -98,8 +98,7 @@ nodes:
               size: 2
             type:
             varName: \"s\"
-            index: 0
-            attribute: \"\"
+            handle: null
           op: \"/\"
           optNode: null
       baseIndex: 0
@@ -256,10 +255,8 @@ nodes:
                     size: 1
                   type:
                   varName: \"%div\"
-                  index: 0
-                  attribute: \"\"
-                index: 0
-                attribute: \"\"
+                  handle: null
+                handle: null
                 additionalOp: \"NOP\"
               argsNode:
                 nodeKind: Args
@@ -274,8 +271,9 @@ nodes:
                       size: 2
                     type: Int
                     varName: \"s\"
-                    index: 0
-                    attribute: \"\"
+                    handle:
+                      index: 0
+                      attribute: \"\"
               handle: \"9\"
               kind: \"METHOD_CALL\"
           targetTypeToken: null

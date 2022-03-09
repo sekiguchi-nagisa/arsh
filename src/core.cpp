@@ -33,7 +33,7 @@ namespace ydsh {
 // core api definition
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
   auto &modType = st.typePool.getBuiltinModType();
-  auto *handle = modType.lookup(st.typePool, varName);
+  auto handle = modType.lookup(st.typePool, varName);
   assert(handle != nullptr);
   return st.getGlobal(handle->getIndex());
 }

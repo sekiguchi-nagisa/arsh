@@ -138,7 +138,7 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
                                             ImportedModKind k) {
   const bool global = hasFlag(k, ImportedModKind::GLOBAL);
   auto holderName = toModHolderName(type.getModId(), global);
-  if (auto *handle = this->findMut(holderName); handle) { // check if already imported
+  if (auto *handle = this->findMut(holderName)) { // check if already imported
     assert(handle->isModHolder());
     if (!handle->has(HandleAttr::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
       auto attr = handle->attr();
@@ -228,9 +228,9 @@ const ModType &NameScope::toModType(TypePool &pool) const {
                             this->getMaxGlobalVarIndex());
 }
 
-const Handle *NameScope::lookup(const std::string &name) const {
+HandlePtr NameScope::lookup(const std::string &name) const {
   for (auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
-    auto *handle = scope->find(name);
+    auto handle = scope->find(name);
     if (handle) {
       return handle;
     }
@@ -238,13 +238,12 @@ const Handle *NameScope::lookup(const std::string &name) const {
   return nullptr;
 }
 
-Result<const Handle *, NameLookupError> NameScope::lookupField(const TypePool &pool,
-                                                               const DSType &recv,
-                                                               const std::string &fieldName) const {
-  auto *handle = recv.lookupField(pool, fieldName);
+Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, const DSType &recv,
+                                                          const std::string &fieldName) const {
+  auto handle = recv.lookupField(pool, fieldName);
   if (handle) {
     if (handle->isVisibleInMod(this->modId, fieldName)) {
-      return Ok(handle);
+      return Ok(std::move(handle));
     } else {
       return Err(NameLookupError::MOD_PRIVATE);
     }
@@ -260,10 +259,10 @@ const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvTy
   }
   for (const DSType *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
-    if (auto *handle = scope->find(name)) {
+    if (auto handle = scope->find(name)) {
       assert(handle->isMethod());
       if (handle->isVisibleInMod(this->modId, methodName)) {
-        return cast<MethodHandle>(handle);
+        return cast<MethodHandle>(handle.get());
       }
       return nullptr;
     }
@@ -302,7 +301,7 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
   if (!pair.second) {
     if (hasFlag(op, NameRegisterOp::IGNORE_CONFLICT) && pair.first->second.first == handle &&
         handle->isMethod()) {
-      return Ok(handle.get());
+      return Ok(std::move(handle));
     }
     return Err(NameRegisterError::DEFINED);
   }
@@ -322,7 +321,7 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
       }
     }
   }
-  return Ok(pair.first->second.first.get());
+  return Ok(pair.first->second.first);
 }
 
 // ##############################

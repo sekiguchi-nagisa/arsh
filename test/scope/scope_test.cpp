@@ -32,6 +32,8 @@ protected:
     return type;
   }
 
+  static void expect(const Entry &e, HandlePtr handle) { expect(e, handle.get()); }
+
   static void expect(const Entry &e, const Handle *handle) {
     ASSERT_TRUE(handle);
     ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeId());
@@ -70,13 +72,13 @@ TEST_F(ScopeTest, builtin) {
       },
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
-  auto *handle = ret.asOk();
+  auto handle = ret.asOk();
 
   ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define alias
-  ret = this->builtin->defineAlias("hey", HandlePtr(const_cast<Handle *>(handle)));
+  ret = this->builtin->defineAlias("hey", HandlePtr(handle));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -86,7 +88,7 @@ TEST_F(ScopeTest, builtin) {
       },
       ret));
 
-  ret = this->builtin->defineAlias("hey1", HandlePtr(const_cast<Handle *>(ret.asOk())));
+  ret = this->builtin->defineAlias("hey1", HandlePtr(ret.asOk()));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -97,7 +99,7 @@ TEST_F(ScopeTest, builtin) {
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
 
-  ret = this->builtin->defineAlias("hello", HandlePtr(const_cast<Handle *>(handle)));
+  ret = this->builtin->defineAlias("hello", HandlePtr(handle));
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define type alias
@@ -119,7 +121,7 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // lookup handle
-  auto *hd = this->builtin->lookup("hello");
+  auto hd = this->builtin->lookup("hello");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -179,7 +181,7 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(2, this->builtin->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->builtin->getHandles().size());
   handle = this->builtin->lookup("AAA");
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
 
   ASSERT_EQ(0, this->builtin->getCurLocalIndex());
 }
@@ -207,7 +209,7 @@ TEST_F(ScopeTest, global) {
   ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::ENV);
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
-  auto *handle = this->top->lookup("AAA");
+  auto handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Job,
@@ -237,7 +239,7 @@ TEST_F(ScopeTest, global) {
       },
       handle));
   handle = this->builtin->lookup("BBB");
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
   ASSERT_EQ(0, this->top->getCurLocalIndex());
   ASSERT_EQ(0, this->top->getMaxLocalVarIndex());
   ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
@@ -291,7 +293,7 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(NameScope::BLOCK, block0->kind);
 
   // define local
-  auto *handle = block0->lookup("AAA");
+  auto handle = block0->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Any,
@@ -335,7 +337,7 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(2, this->top->getCurLocalIndex());
 
   // define alias
-  ret = block0->defineAlias("CCC", HandlePtr(const_cast<Handle *>(ret.asOk())));
+  ret = block0->defineAlias("CCC", HandlePtr(ret.asOk()));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::String,
@@ -479,11 +481,11 @@ TEST_F(ScopeTest, func) {
           .modID = 1,
       },
       ret));
-  auto *oldHandle = ret.asOk();
+  auto oldHandle = ret.asOk();
   ASSERT_EQ(0, func->getMaxLocalVarIndex());
   ASSERT_EQ(0, block0->getMaxLocalVarIndex());
 
-  auto *handle = block0->lookup("GGG");
+  auto handle = block0->lookup("GGG");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -534,7 +536,7 @@ TEST_F(ScopeTest, func) {
   ASSERT_EQ(2, block0->getLocalSize());
 
   // define alias
-  ret = block0->defineAlias("A", HandlePtr(const_cast<Handle *>(oldHandle)));
+  ret = block0->defineAlias("A", HandlePtr(oldHandle));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -579,14 +581,14 @@ TEST_F(ScopeTest, import1) {
   ASSERT_EQ(3, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(1, this->top->getHandles().size());
 
-  auto *handle = this->top->lookup("AAA");
-  ASSERT_EQ(nullptr, handle);
+  auto handle = this->top->lookup("AAA");
+  ASSERT_FALSE(handle);
   handle = this->top->lookup("_AAA");
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
   handle = this->top->lookup(toTypeAliasFullName("_string"));
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
   handle = this->top->lookup(toTypeAliasFullName("integer"));
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
 
   // global import
   s = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
@@ -610,10 +612,10 @@ TEST_F(ScopeTest, import1) {
       handle));
 
   handle = this->top->lookup("_AAA"); // not import private symbol
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
 
   handle = this->top->lookup(toTypeAliasFullName("_string")); // not import private symbol
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle);
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -638,10 +640,10 @@ TEST_F(ScopeTest, import1) {
   ASSERT_FALSE(modType3.getChildAt(1).isGlobal());
 
   // lookup from ModType
-  handle = modType3.lookupVisibleSymbolAtModule(this->pool, "GGG");
-  ASSERT_EQ(nullptr, handle);
+  auto *handle2 = modType3.lookupVisibleSymbolAtModule(this->pool, "GGG");
+  ASSERT_FALSE(handle2);
 
-  handle = modType3.lookupVisibleSymbolAtModule(this->pool, "AAA");
+  handle2 = modType3.lookupVisibleSymbolAtModule(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -649,16 +651,16 @@ TEST_F(ScopeTest, import1) {
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
-      handle));
+      handle2));
 
-  handle = modType3.lookupVisibleSymbolAtModule(this->pool, "_AAA"); // not import private symbol
-  ASSERT_EQ(nullptr, handle);
+  handle2 = modType3.lookupVisibleSymbolAtModule(this->pool, "_AAA"); // not import private symbol
+  ASSERT_FALSE(handle2);
 
-  handle = modType3.lookupVisibleSymbolAtModule(
+  handle2 = modType3.lookupVisibleSymbolAtModule(
       this->pool, toTypeAliasFullName("_string")); // not import private symbol
-  ASSERT_EQ(nullptr, handle);
+  ASSERT_FALSE(handle2);
 
-  handle = modType3.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
+  handle2 = modType3.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -666,7 +668,7 @@ TEST_F(ScopeTest, import1) {
           .attr = HandleAttr::TYPE_ALIAS,
           .modID = 2,
       },
-      handle));
+      handle2));
 
   ASSERT_EQ(0, modType3.getHandleMap().size());
   ASSERT_EQ(modType, this->pool.get(modType3.getChildAt(0).typeId()));
@@ -696,7 +698,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(4, mod2->getMaxGlobalVarIndex());
   ASSERT_EQ(5, mod2->getHandles().size());
 
-  auto *handle = mod2->lookup(toModHolderName(modType.getModId(), true));
+  auto handle = mod2->lookup(toModHolderName(modType.getModId(), true));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = static_cast<TYPE>(modType.typeId()),
@@ -718,7 +720,7 @@ TEST_F(ScopeTest, import2) {
           .modID = 2,
       },
       handle));
-  ASSERT_EQ(handle, modType2.lookupVisibleSymbolAtModule(this->pool, "AAA"));
+  ASSERT_EQ(handle.get(), modType2.lookupVisibleSymbolAtModule(this->pool, "AAA"));
 
   handle = modType2.lookup(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -729,7 +731,7 @@ TEST_F(ScopeTest, import2) {
           .modID = 2,
       },
       handle));
-  ASSERT_EQ(handle,
+  ASSERT_EQ(handle.get(),
             modType2.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer")));
 
   handle = modType2.lookup(this->pool, toTypeAliasFullName("_string"));
@@ -812,7 +814,7 @@ TEST_F(ScopeTest, conflict) {
   auto ret = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("AAA", ret);
 
-  auto *handle = this->top->lookup("AAA");
+  auto handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Regex,

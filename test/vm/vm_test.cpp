@@ -88,7 +88,7 @@ protected:
   void RefCount(const char *gvarName, unsigned int refCount) {
     ASSERT_TRUE(gvarName != nullptr);
 
-    auto *handle = this->state->rootModScope->lookup(gvarName);
+    auto handle = this->state->rootModScope->lookup(gvarName);
     ASSERT_TRUE(handle != nullptr);
 
     auto &v = this->state->getGlobal(handle->getIndex());

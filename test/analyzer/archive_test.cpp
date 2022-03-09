@@ -194,7 +194,7 @@ public:
 
     auto ret = ctx.getScope()->defineHandle(fieldName, type, attr);
     ASSERT_TRUE(ret);
-    auto *handle = ret.asOk();
+    auto handle = ret.asOk();
     ASSERT_EQ(type.typeId(), handle->getTypeId());
     auto orgAttr = attr;
     unsetFlag(orgAttr, HandleAttr::GLOBAL);
@@ -269,7 +269,7 @@ public:
 
     // check specified names
     for (auto &e : expected) {
-      auto *handle = newModType->lookup(this->newPool(), e);
+      auto handle = newModType->lookup(this->newPool(), e);
       ASSERT_TRUE(handle);
     }
   }
@@ -277,7 +277,7 @@ public:
 
 TEST_F(ArchiveTest, base) {
   auto ctx = this->newctx();
-  auto *handle = ctx->getScope()->find("COMP_HOOK");
+  auto handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
   ASSERT_TRUE(handle->has(HandleAttr::GLOBAL));
   ASSERT_EQ(0, handle->getModId());
@@ -451,7 +451,7 @@ TEST_F(ArchiveTest, mod3) {
   auto ret1 = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret1);
   auto &modType3 = cast<ModType>(*ret1.asOk());
-  auto *handle = modType3.lookup(this->newPool(), "AAA");
+  auto handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
             handle->getTypeId());
@@ -512,7 +512,7 @@ TEST_F(ArchiveTest, mod4) {
   auto &modType3 = cast<ModType>(*ret.asOk());
   ASSERT_EQ(3, modType3.getModId());
   ASSERT_EQ(2, modType3.getChildSize());
-  auto *handle = modType3.lookup(this->newPool(), "BBB");
+  auto handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(3, handle->getModId());
   auto &type1 = this->newPool().get(handle->getTypeId());
@@ -526,12 +526,12 @@ TEST_F(ArchiveTest, mod4) {
 
   handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_FALSE(handle);
-  handle = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
-  ASSERT_TRUE(handle);
-  ASSERT_EQ(4, handle->getModId());
+  auto *handle2 = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
+  ASSERT_TRUE(handle2);
+  ASSERT_EQ(4, handle2->getModId());
   ret = this->newPool().getType("[Boolean]");
   ASSERT_TRUE(ret);
-  ASSERT_EQ(ret.asOk()->typeId(), handle->getTypeId());
+  ASSERT_EQ(ret.asOk()->typeId(), handle2->getTypeId());
 }
 
 TEST_F(ArchiveTest, userdefined) {
@@ -569,7 +569,7 @@ TEST_F(ArchiveTest, userdefined) {
 
   //
   const char *typeName = "APIError";
-  auto *handle = modType.lookupField(this->pool(), toTypeAliasFullName(typeName));
+  auto handle = modType.lookupField(this->pool(), toTypeAliasFullName(typeName));
   ASSERT_TRUE(handle);
   auto typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
@@ -582,8 +582,8 @@ TEST_F(ArchiveTest, userdefined) {
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
-  handle = this->scope().lookupConstructor(this->pool(), *typeOrError.asOk());
-  ASSERT_TRUE(handle);
+  auto *methodHandle = this->scope().lookupConstructor(this->pool(), *typeOrError.asOk());
+  ASSERT_TRUE(methodHandle);
 
   //
   typeName = "_Pair";
