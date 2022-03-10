@@ -98,12 +98,6 @@ private:
     }
   };
 
-  using FieldRef = std::reference_wrapper<const Handle>;
-
-  using MethodRef = std::reference_wrapper<const MethodHandle>;
-
-  using MemberRef = Union<SymbolRef, FieldRef, MethodRef>;
-
   class LazyMemberMap {
   public:
     using MapType = std::unordered_map<Key, SymbolRef, Hash>;
@@ -132,7 +126,7 @@ private:
      * @param isMethod
      * @return
      */
-    MemberRef find(const DSType &recvType, const std::string &memberName, bool isMethod);
+    const SymbolRef *find(const DSType &recvType, const std::string &memberName, bool isMethod);
 
     const TypePool &getPool() const { return *this->pool; }
 
@@ -141,7 +135,14 @@ private:
   private:
     void buildModCache(const DSType &recvType);
 
-    MemberRef findImpl(const DSType &recvType, const std::string &memberName, bool isMethod) const;
+    const SymbolRef *findImpl(const DSType &recvType, const std::string &memberName,
+                              bool isMethod) const {
+      auto iter = this->map.find({recvType.typeId(), isMethod, memberName});
+      if (iter != this->map.end()) {
+        return &iter->second;
+      }
+      return nullptr;
+    }
   };
 
   LazyMemberMap memberMap;
@@ -185,12 +186,15 @@ public:
 
   bool importForeignDecls(unsigned short foreignModId, bool inlined);
 
-  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo,
-                          DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
+  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind) {
     return this->addMemberImpl(recv, nameInfo, kind, nullptr);
   }
 
-  const Symbol *addMethod(const MethodHandle &handle, const NameInfo &nameInfo) {
+  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo, const Handle &handle) {
+    return this->addMemberImpl(recv, nameInfo, DeclSymbol::Kind::VAR, &handle);
+  }
+
+  const Symbol *addMember(const MethodHandle &handle, const NameInfo &nameInfo) {
     return this->addMemberImpl(this->getPool().get(handle.getRecvTypeId()), nameInfo,
                                DeclSymbol::Kind::METHOD, &handle);
   }
@@ -202,15 +206,32 @@ public:
 
 private:
   const Symbol *addMemberImpl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                              const MethodHandle *handle);
+                              const Handle *handle);
 
-  DeclBase *resolveMemberDecl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                              MemberRef &entry);
+  DeclBase *addBuiltinFieldOrMethod(const DSType &recv, const NameInfo &nameInfo,
+                                    const Handle &handle);
 
-  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
-                          const char *info, bool checkScope = true);
+  DeclBase *resolveMemberDecl(const SymbolRef &entry);
 
-  const Symbol *addSymbolImpl(Token token, const DeclBase *decl);
+  /**
+   * create new DeclSymbol and insert to decl list
+   * @param k
+   * @param attr
+   * @param nameInfo
+   * @param info
+   * @param checkScope
+   * @return
+   */
+  DeclSymbol *insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
+                            const char *info, bool checkScope = true);
+
+  /**
+   * create new Symbol from DeclVBase and insert to symbol list
+   * @param token
+   * @param decl
+   * @return
+   */
+  const Symbol *insertNewSymbol(Token token, const DeclBase *decl);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
