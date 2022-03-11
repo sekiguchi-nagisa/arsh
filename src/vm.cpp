@@ -1489,6 +1489,14 @@ bool VM::mainLoop(DSState &state) {
         TRY(prepareFuncCall(state, paramSize));
         vmnext;
       }
+      vmcase(CALL_METHOD) {
+        unsigned int paramSize = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        unsigned short index = read16(GET_CODE(state), state.stack.pc());
+        state.stack.pc() += 2;
+        TRY(prepareMethodCall(state, index, paramSize));
+        vmnext;
+      }
       vmcase(CALL_BUILTIN) {
         unsigned int index = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;

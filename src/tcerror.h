@@ -93,6 +93,7 @@ DEFINE_TCError(NeedPattern, "require at least one pattern");
 DEFINE_TCError(NeedDefault, "the case expression needs default pattern");
 DEFINE_TCError(DefinedSymbol, "already defined symbol: `%s'");
 DEFINE_TCError(DefinedTypeAlias, "already defined type: `%s'");
+DEFINE_TCError(DefinedMethod, "already defined method: `%s' for `%s' type");
 DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'");
 DEFINE_TCError(UndefinedField, "undefined field: `%s'");
 DEFINE_TCError(UndefinedMethod, "undefined method: `%s'");

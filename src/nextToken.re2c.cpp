@@ -161,7 +161,7 @@ INIT:
     <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
     <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
     <EXPR> "finally"         { RET(FINALLY); }
-    <STMT> "for"             { RET_OR_COMP(FOR); }
+    <STMT,EXPR> "for"        { RET_OR_COMP(FOR); }
     <STMT> "function"        { MODE(NAME); RET_OR_COMP(FUNCTION); }
     <STMT> "if"              { RET_OR_COMP(IF); }
     <STMT> "import-env"      { MODE(NAME); RET_OR_COMP(IMPORT_ENV); }

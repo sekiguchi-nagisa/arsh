@@ -1968,6 +1968,11 @@ private:
    */
   std::unique_ptr<TypeNode> returnTypeNode;
 
+  /**
+   * for method defintion. may be null
+   */
+  std::unique_ptr<TypeNode> recvTypeNode;
+
   std::unique_ptr<BlockNode> blockNode;
 
   /**
@@ -2003,14 +2008,21 @@ public:
     return this->paramTypeNodes;
   }
 
-  void setReturnTypeToken(std::unique_ptr<TypeNode> &&typeToken) {
+  void setReturnTypeNode(std::unique_ptr<TypeNode> &&typeToken) {
     this->returnTypeNode = std::move(typeToken);
     if (this->returnTypeNode) {
       this->updateToken(this->returnTypeNode->getToken());
     }
   }
 
-  const std::unique_ptr<TypeNode> &getReturnTypeToken() const { return this->returnTypeNode; }
+  const std::unique_ptr<TypeNode> &getReturnTypeNode() const { return this->returnTypeNode; }
+
+  void setRecvTypeNode(std::unique_ptr<TypeNode> &&typeToken) {
+    this->recvTypeNode = std::move(typeToken);
+    this->updateToken(this->recvTypeNode->getToken());
+  }
+
+  const std::unique_ptr<TypeNode> &getRecvTypeNode() const { return this->recvTypeNode; }
 
   void setFuncBody(std::unique_ptr<Node> &&node);
 
@@ -2043,6 +2055,8 @@ public:
   bool isSingleExpr() const { return this->kind == SINGLE_EXPR; }
 
   bool isConstructor() const { return this->kind == CONSTRUCTOR; }
+
+  bool isMethod() const { return this->kind == FUNC && static_cast<bool>(this->getRecvTypeNode()); }
 
   void dump(NodeDumper &dumper) const override;
 };

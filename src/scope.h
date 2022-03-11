@@ -199,13 +199,13 @@ public:
   NameRegisterResult defineTypeAlias(const TypePool &pool, const std::string &name,
                                      const DSType &type);
 
-  NameRegisterResult defineMethod(const DSType &recvType, const std::string &name,
-                                  const DSType &returnType,
+  NameRegisterResult defineMethod(const TypePool &pool, const DSType &recvType,
+                                  const std::string &name, const DSType &returnType,
                                   const std::vector<const DSType *> &paramTypes);
 
-  NameRegisterResult defineConstructor(const RecordType &recvType,
+  NameRegisterResult defineConstructor(const TypePool &pool, const RecordType &recvType,
                                        const std::vector<const DSType *> &paramTypes) {
-    return this->defineMethod(recvType, OP_INIT, recvType, paramTypes);
+    return this->defineMethod(pool, recvType, OP_INIT, recvType, paramTypes);
   }
 
   /**

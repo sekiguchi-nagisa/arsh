@@ -270,7 +270,8 @@ private:
    * rest operands size
    */
   void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
-    assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_BUILTIN2 || op == OpCode::ADD_GLOBBING);
+    assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_BUILTIN2 ||
+           op == OpCode::ADD_GLOBBING);
     this->curBuilder().append8(static_cast<unsigned char>(op));
     this->curBuilder().append8(paramSize);
 

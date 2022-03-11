@@ -121,12 +121,15 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
                            HandlePtr::create(type, 0, HandleAttr::TYPE_ALIAS, this->modId));
 }
 
-NameRegisterResult NameScope::defineMethod(const DSType &recvType, const std::string &name,
-                                           const DSType &returnType,
+NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &recvType,
+                                           const std::string &name, const DSType &returnType,
                                            const std::vector<const DSType *> &paramTypes) {
   if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType() ||
       recvType.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
+  }
+  if (pool.hasMethod(recvType, name)) {
+    return Err(NameRegisterError::DEFINED);
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);
   const unsigned int index = this->getMaxGlobalVarIndex();

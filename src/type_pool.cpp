@@ -520,6 +520,17 @@ const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::st
   return nullptr;
 }
 
+bool TypePool::hasMethod(const DSType &recvType, const std::string &methodName) const {
+  for (auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
+    Key key(*type, methodName);
+    auto iter = this->methodMap.find(key);
+    if (iter != this->methodMap.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
                                         const std::vector<const DSType *> &elementTypes) const {
   if (typeTemplate == this->getArrayTemplate()) {

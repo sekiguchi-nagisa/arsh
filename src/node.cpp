@@ -854,6 +854,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(paramTypeNodes);
 
   DUMP_PTR(returnTypeNode);
+  DUMP_PTR(recvTypeNode);
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);
   DUMP(varIndex);

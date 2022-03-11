@@ -180,7 +180,9 @@ public:
   const DeclSymbol *addDecl(const NameInfo &info, const DSType &type,
                             DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
-  const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
+  const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
+    return this->addDeclImpl(info, kind, hover);
+  }
 
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
@@ -202,9 +204,15 @@ public:
   const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo, const DSType &type,
                                   DeclSymbol::Kind kind);
 
+  const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
+                                  DeclSymbol::Kind kind, const char *info);
+
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
 private:
+  const DeclSymbol *addDeclImpl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover,
+                                bool checkScope = true);
+
   const Symbol *addMemberImpl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                               const Handle *handle);
 

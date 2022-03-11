@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 3, $chars = 18, $errorKind = 'DefinedSymbol', $status = 1)
+
+function compare($this : String, $t : String) : Bool for String {
+    return $this < $t
+}

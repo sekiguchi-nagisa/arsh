@@ -134,8 +134,8 @@ const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type
   return this->addDecl(info, kind, ref.data());
 }
 
-const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind,
-                                        const char *hover) {
+const DeclSymbol *IndexBuilder::addDeclImpl(const NameInfo &info, DeclSymbol::Kind kind,
+                                            const char *hover, bool checkScope) {
   DeclSymbol::Attr attr = {};
   if (this->scope->isGlobal() || this->scope->isConstructor()) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
@@ -144,7 +144,7 @@ const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind k
     setFlag(attr, DeclSymbol::Attr::PUBLIC);
   }
 
-  if (auto *decl = this->insertNewDecl(kind, attr, info, hover)) {
+  if (auto *decl = this->insertNewDecl(kind, attr, info, hover, checkScope)) {
     if (!this->insertNewSymbol(info.getToken(), decl)) {
       return nullptr;
     }
@@ -236,13 +236,21 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined)
 
 const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
                                               const DSType &type, DeclSymbol::Kind kind) {
-  if (recv.isUnresolved() || type.isUnresolved()) {
+  if (type.isUnresolved()) {
     return nullptr;
   }
   std::string content = trimTypeName(type).toString();
   content += " for ";
   content += trimTypeName(recv);
-  auto *decl = this->addDecl(nameInfo, kind, content.c_str());
+  return this->addMemberDecl(recv, nameInfo, kind, content.c_str());
+}
+
+const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
+                                              DeclSymbol::Kind kind, const char *info) {
+  if (recv.isUnresolved()) {
+    return nullptr;
+  }
+  auto *decl = this->addDeclImpl(nameInfo, kind, info, false);
   if (decl) {
     this->memberMap.add(recv, *decl);
   }
@@ -507,18 +515,20 @@ void SymbolIndexer::visitBinaryOpNode(BinaryOpNode &node) {
 void SymbolIndexer::visitArgsNode(ArgsNode &node) { this->visitEach(node.getNodes()); }
 
 void SymbolIndexer::visitApplyNode(ApplyNode &node) {
-  this->visit(node.getExprNode());
   if (node.isMethodCall() && node.getHandle()) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
+    this->visit(accessNode.getRecvNode());
     NameInfo nameInfo(accessNode.getNameNode().getToken(), accessNode.getFieldName());
     this->builder().addMember(*node.getHandle(), nameInfo);
+  } else if (node.isFuncCall()) {
+    this->visit(node.getExprNode());
   }
   this->visit(node.getArgsNode());
 }
 
 void SymbolIndexer::visitEmbedNode(EmbedNode &node) { this->visit(node.getExprNode()); }
 
-void SymbolIndexer::visitNewNode(NewNode &node) { // FIXME: constructor name ?
+void SymbolIndexer::visitNewNode(NewNode &node) {
   this->visit(node.getTargetTypeNode());
   this->visit(node.getArgsNode());
 }
@@ -721,7 +731,11 @@ static std::string generateFuncInfo(const FunctionNode &node) {
     value += trimTypeName(node.getParamTypeNodes()[i]->getType());
   }
   value += ") : ";
-  value += trimTypeName(node.getReturnTypeToken()->getType());
+  value += trimTypeName(node.getReturnTypeNode()->getType());
+  if (node.isMethod()) {
+    value += " for ";
+    value += trimTypeName(node.getRecvTypeNode()->getType());
+  }
   return value;
 }
 
@@ -782,14 +796,23 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
     if (node.isConstructor()) {
       auto value = generateConstructorInfo(this->builder().getPool(), node);
       this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str());
+    } else if (node.isMethod()) {
+      auto value = generateFuncInfo(node);
+      this->builder().addMemberDecl(node.getRecvTypeNode()->getType(), node.getNameInfo(),
+                                    DeclSymbol::Kind::METHOD, value.c_str());
     } else {
       auto value = generateFuncInfo(node);
       this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
     }
   }
   this->visitEach(node.getParamTypeNodes());
-  this->visit(node.getReturnTypeToken());
+  this->visit(node.getReturnTypeNode());
+  this->visit(node.getRecvTypeNode());
   auto func = this->builder().intoScope(node.getResolvedType());
+  //  if (node.isMethod()) {
+  //    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this"); //FIXME: hover this
+  //    this->builder().addDecl(nameInfo, node.getRecvTypeNode()->getType());
+  //  }
   for (unsigned int i = 0; i < node.getParams().size(); i++) {
     this->builder().addDecl(node.getParams()[i], node.getParamTypeNodes()[i]->getType());
   }

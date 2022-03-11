@@ -28,6 +28,17 @@
     var next = new IntList!()
   }
   ```
+- support user-defined method
+    - define method for arbitrary types (except for ``Void``, ``Nothing``) in current module scope
+        - access receiver via ``this`` variable
+    - also, lookup methods defined for super type (such as ``Any``, ``Error``)
+    - in method call syntax, if field and method have the same name, give priority to method
+  ```
+  function factorial() : Int for Int {
+    return $this == 0 ? 1 : $this * ($this - 1).factorial()
+  }
+  10.factorial()
+  ```
 - add ``defer`` statement
     - like swift, ``defer`` statement evaluated in end of scope (block, function, user-defined command)
     - preserve exit status during the evaluation of defer statement

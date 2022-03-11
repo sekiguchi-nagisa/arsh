@@ -242,9 +242,15 @@ TEST_F(LexerTest_Lv1, finally_tok) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::FINALLY, text, TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, for_tok) {
+TEST_F(LexerTest_Lv1, for_tok1) {
   const char *text = "for";
   this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::FOR, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, for_tok2) {
+  const char *text = "for";
+  this->initLexer(text, yycEXPR);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::FOR, text, TokenKind::EOS, ""));
 }
 

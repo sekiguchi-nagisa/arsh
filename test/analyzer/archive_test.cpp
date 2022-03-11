@@ -550,7 +550,8 @@ TEST_F(ArchiveTest, userdefined) {
     ASSERT_TRUE(ret2);
     {
       auto &recordType = cast<RecordType>(*ret.asOk());
-      auto ret3 = ctx.getScope()->defineConstructor(recordType, {&ctx.getPool().get(TYPE::Int)});
+      auto ret3 = ctx.getScope()->defineConstructor(ctx.getPool(), recordType,
+                                                    {&ctx.getPool().get(TYPE::Int)});
       ASSERT_TRUE(ret3);
 
       std::unordered_map<std::string, HandlePtr> handles;

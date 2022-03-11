@@ -444,7 +444,29 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
   };
   recvType.walkField(pool, fieldWalker);
 
-  // complete method
+  // complete user-defined method
+  auto *globalScope = &scope;
+  while (!globalScope->isGlobal()) {
+    globalScope = globalScope->parent.get();
+  }
+  globalScope->walk([&](StringRef name, const Handle &handle) {
+    if (!handle.isMethod()) {
+      return true;
+    }
+    auto &type = pool.get(cast<MethodHandle>(handle).getRecvTypeId());
+    if (name.startsWith(word) && !isMagicMethodName(name)) {
+      for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
+        if (type == *t) {
+          name = trimMethodFullNameSuffix(name);
+          consumer(name, CompCandidateKind::METHOD);
+          break;
+        }
+      }
+    }
+    return true;
+  });
+
+  // complete builtin method
   for (auto &e : pool.getMethodMap()) {
     StringRef name = e.first.ref;
     assert(!name.empty());
@@ -453,7 +475,7 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
           consumer(name, CompCandidateKind::METHOD);
-          break; // FIXME: support type constraint
+          break;
         }
       }
     }

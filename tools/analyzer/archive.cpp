@@ -122,10 +122,7 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   StringRef ref = name;
   if (handle.isMethod()) {
     assert(isMethodFullName(ref));
-    ref.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
-    auto pos = ref.lastIndexOf("%");
-    assert(pos != StringRef::npos);
-    ref = ref.slice(0, pos);
+    ref = trimMethodFullNameSuffix(ref);
   }
   this->writeStr(ref);
   this->write32(handle.getIndex());

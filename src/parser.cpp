@@ -283,26 +283,41 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   if (!retTypeNode && !node->isAnonymousFunc()) {
     retTypeNode = newVoidTypeNode();
   }
-  node->setReturnTypeToken(std::move(retTypeNode));
+  node->setReturnTypeNode(std::move(retTypeNode));
 
-  if (needBody) {
-    std::unique_ptr<Node> exprNode;
-    if (node->isAnonymousFunc()) {
-      TRY(this->expect(TokenKind::CASE_ARM));
-      exprNode = this->parse_expression();
-    } else {
-      exprNode = this->parse_block();
-    }
-    if (this->incompleteNode) {
-      node->setFuncBody(std::move(this->incompleteNode));
-      this->incompleteNode = std::move(node);
-      return nullptr;
-    } else if (this->hasError()) {
-      return nullptr;
-    }
-    node->setFuncBody(std::move(exprNode));
+  if (!needBody) { // for function declaration
+    return node;
   }
-  return node;
+
+  std::unique_ptr<Node> exprNode;
+  if (node->isAnonymousFunc()) {
+    TRY(this->expect(TokenKind::CASE_ARM));
+    exprNode = this->parse_expression();
+  } else {
+    switch (CUR_KIND()) {
+    case TokenKind::FOR: {
+      this->expect(TokenKind::FOR, false); // always success
+      auto type = TRY(this->parse_typeName());
+      node->setRecvTypeNode(std::move(type));
+      break;
+    }
+    case TokenKind::LBC:
+      break;
+    default:
+      E_ALTER_OR_COMP(TokenKind::FOR, TokenKind::LBC);
+    }
+    exprNode = this->parse_block();
+  }
+  if (this->incompleteNode) {
+    node->setFuncBody(std::move(this->incompleteNode));
+    this->incompleteNode = std::move(node);
+    return nullptr;
+  } else if (this->hasError()) {
+    return nullptr;
+  } else {
+    node->setFuncBody(std::move(exprNode));
+    return node;
+  }
 }
 
 std::unique_ptr<Node> Parser::parse_interface() {
@@ -1292,7 +1307,8 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
       node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
       if (CUR_KIND() == TokenKind::LP && !this->hasLineTerminator()) { // treat as method call
         auto argsNode = TRY(this->parse_arguments());
-        node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode));
+        node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode),
+                                           ApplyNode::METHOD_CALL);
       }
       break;
     }

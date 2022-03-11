@@ -473,6 +473,8 @@ private:
   // for apply node type checking
   /**
    * check type ApplyNode and resolve callee(handle or function type).
+   * @param node
+   * @return
    */
   CallableTypes resolveCallee(ApplyNode &node);
 

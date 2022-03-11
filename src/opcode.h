@@ -72,6 +72,7 @@ namespace ydsh {
   OP(NEW, 3, 1)                                                                                    \
   OP(INIT_FIELDS, 2, 0)                                                                            \
   OP(CALL_FUNC, 1, 0)                                                                              \
+  OP(CALL_METHOD, 3, 0)                                                                            \
   OP(CALL_BUILTIN, 1, 1)                                                                           \
   OP(CALL_BUILTIN2, 2, 0)                                                                          \
   OP(RETURN, 0, -1)                                                                                \

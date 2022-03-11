@@ -237,6 +237,12 @@ inline std::string toQualifiedTypeName(StringRef name, unsigned short belongedMo
   return value;
 }
 
+inline StringRef trimMethodFullNameSuffix(StringRef methodFullName) {
+  methodFullName.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
+  auto pos = methodFullName.lastIndexOf("%");
+  return methodFullName.slice(0, pos);
+}
+
 inline bool isCmdFullName(StringRef ref) { return ref.endsWith(CMD_SYMBOL_SUFFIX); }
 
 inline bool isTypeAliasFullName(StringRef ref) { return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX); }

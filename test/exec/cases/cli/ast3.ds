@@ -71,6 +71,7 @@ nodes:
       type:
       typeKind: \"Base\"
       typeName: \"Void\"
+    recvTypeNode: null
     blockNode:
       nodeKind: Block
       token:
@@ -207,6 +208,7 @@ nodes:
       type: Void
       typeKind: \"Base\"
       typeName: \"Void\"
+    recvTypeNode: null
     blockNode:
       nodeKind: Block
       token:

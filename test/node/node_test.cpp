@@ -312,7 +312,7 @@ nodes:
       type:
       nodes:
     handle: null
-    kind: "UNRESOLVED"
+    kind: "METHOD_CALL"
 )"},
 
     {DumpOp::untyped, R"(34+1)", 0, 0, R"(
@@ -378,6 +378,7 @@ nodes:
             type:
             reStr: "d"
             reFlag: ""
+    recvTypeNode: null
     blockNode:
       nodeKind: Block
       token:
@@ -596,7 +597,7 @@ nodes:
         type:
         nodes:
       handle: null
-      kind: "UNRESOLVED"
+      kind: "METHOD_CALL"
     messageNode:
       nodeKind: String
       token:
@@ -976,6 +977,7 @@ nodes:
       type: Void
       typeKind: "Base"
       typeName: "Void"
+    recvTypeNode: null
     blockNode:
       nodeKind: Block
       token:

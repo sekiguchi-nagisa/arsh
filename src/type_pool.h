@@ -224,6 +224,8 @@ public:
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
+  bool hasMethod(const DSType &recvType, const std::string &methodName) const;
+
   const MethodMap &getMethodMap() const { return this->methodMap; }
 
   const FlexBuffer<DSType *> &getTypeTable() const { return this->typeTable; }

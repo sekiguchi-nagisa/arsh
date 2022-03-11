@@ -1,0 +1,28 @@
+
+# for user-defined type
+typedef Interval($b : Int, $e : Int) {
+    let begin = $b
+    let end = $e
+}
+
+function dist() : Int for Interval {
+    return $this.end - $this.begin
+}
+
+# same name field/method
+function _0() : String for (Int,Float) {
+    return $this._0 as String
+}
+
+assert (78,3.12)._0() == '78'    # if has same name field and method, first lookup method
+assert (78,3.12)._0 == 78
+
+# same name field/method with func object
+function _0() : String for (()-> Bool, Int) {
+    return $this._1 as String
+}
+
+var aaa = function() => $true
+
+assert ($aaa, 9999)._0() == '9999'   # call user-defined method
+assert (($aaa, 9999)._0)() == $true  # call function (field)

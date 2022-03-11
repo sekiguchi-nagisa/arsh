@@ -1,0 +1,13 @@
+#$test($result = 'type', $lineNum = 11, $chars = 10, $errorKind = 'DefinedMethod', $status = 1)
+
+function compare($t : String) : Bool for String {
+    return $this < $t
+}
+
+function compare($t : Int) : Bool for Error {
+    return ($this as String).size() < $t
+}
+
+function compare($t : Int) : Bool for String {
+    return $this.size() < $t
+}

@@ -371,27 +371,45 @@ void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt
 }
 
 // for ApplyNode type checking
+/**
+ * lookup resolve function/method like the following step
+ * 1. if node.isMethodCall()
+ * 1-1. check type receiver, and lookup method. if found, return MethodHandle
+ * 1-2. if method is not found, lookup field.
+ * 1-2-1. if field is found and is callable, return function type
+ * 1-2-2. if field is not callable, report NotCallable error
+ * 1-3. otherwise report UndefinedMethod error
+ *
+ * 2. if ! node.isMethodCall()
+ * 2-1. check type expression and check if expr is callable, return function type
+ * 2-2. otherwise, report NotCallable error
+ */
 CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
-  CallableTypes callableTypes(this->typePool.getUnresolvedType());
   auto &exprNode = node.getExprNode();
-  if (exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
+  if (node.isMethodCall()) {
+    assert(isa<AccessNode>(exprNode));
     auto &accessNode = cast<AccessNode>(exprNode);
-    if (!this->checkAccessNode(accessNode)) { // method call
+
+    // first lookup method
+    auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
+    if (auto *handle =
+            this->curScope->lookupMethod(this->typePool, recvType, accessNode.getFieldName())) {
       accessNode.setType(this->typePool.get(TYPE::Any));
-      auto &recvType = accessNode.getRecvNode().getType();
-      if (auto handle =
-              this->curScope->lookupMethod(this->typePool, recvType, accessNode.getFieldName())) {
-        node.setKind(ApplyNode::METHOD_CALL);
-        node.setHandle(handle);
-        callableTypes = handle->toCallableTypes();
-      } else {
-        const char *name = accessNode.getFieldName().c_str();
-        this->reportError<UndefinedMethod>(accessNode.getNameNode(), name);
-      }
-      return callableTypes;
+      node.setKind(ApplyNode::METHOD_CALL);
+      node.setHandle(handle);
+      return handle->toCallableTypes();
+    }
+
+    // if method is not found, resolve field
+    if (!this->checkAccessNode(accessNode)) {
+      node.setType(this->typePool.getUnresolvedType());
+      this->reportError<UndefinedMethod>(accessNode.getNameNode(),
+                                         accessNode.getFieldName().c_str());
     }
   }
 
+  // otherwose, resolve function type
+  CallableTypes callableTypes(this->typePool.getUnresolvedType());
   auto &type = this->checkType(this->typePool.get(TYPE::Func), exprNode);
   if (type.isFuncType()) {
     node.setKind(ApplyNode::FUNC_CALL);
@@ -1616,9 +1634,20 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
 
 void TypeChecker::registerFuncHandle(FunctionNode &node,
                                      const std::vector<const DSType *> &paramTypes) {
-  if (node.getReturnTypeToken()) { // for named function
+  if (node.isMethod()) {
+    auto &recvType = node.getRecvTypeNode()->getType();
+    auto ret = this->curScope->defineMethod(this->typePool, recvType, node.getFuncName(),
+                                            node.getReturnTypeNode()->getType(), paramTypes);
+    if (ret) {
+      assert(ret.asOk()->isMethod());
+      node.setVarIndex(ret.asOk()->getIndex());
+    } else {
+      this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
+                                       recvType.getName());
+    }
+  } else if (node.getReturnTypeNode()) { // for named function
     assert(!node.isConstructor());
-    auto typeOrError = this->typePool.createFuncType(node.getReturnTypeToken()->getType(),
+    auto typeOrError = this->typePool.createFuncType(node.getReturnTypeNode()->getType(),
                                                      std::vector<const DSType *>(paramTypes));
     if (typeOrError) {
       auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
@@ -1633,7 +1662,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node,
     }
   } else if (node.isConstructor()) {
     if (auto *type = node.getResolvedType(); type && type->isRecordType()) {
-      auto ret = this->curScope->defineConstructor(cast<RecordType>(*type), paramTypes);
+      auto ret =
+          this->curScope->defineConstructor(this->typePool, cast<RecordType>(*type), paramTypes);
       assert(ret && ret.asOk()->isMethod());
       node.setVarIndex(ret.asOk()->getIndex());
     }
@@ -1706,6 +1736,8 @@ void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnTy
     node.setType(*typeOrError.asOk()); // always `() -> Any!' type
   } else if (node.isAnonymousFunc() && funcType) {
     node.setType(*funcType);
+  } else if (node.isMethod()) {
+    node.setResolvedType(this->typePool.get(TYPE::Any));
   }
 }
 
@@ -1769,7 +1801,11 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     paramTypes[i] = &type;
   }
   auto *returnType =
-      node.getReturnTypeToken() ? &this->checkTypeExactly(*node.getReturnTypeToken()) : nullptr;
+      node.getReturnTypeNode() ? &this->checkTypeExactly(*node.getReturnTypeNode()) : nullptr;
+
+  if (node.isMethod()) {
+    this->checkTypeAsSomeExpr(*node.getRecvTypeNode());
+  }
 
   // register function/constructor handle
   this->registerFuncHandle(node, paramTypes);
@@ -1781,6 +1817,10 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     auto func = this->intoFunc(returnType,
                                node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
     // register parameter
+    if (node.isMethod()) {
+      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this");
+      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr());
+    }
     for (unsigned int i = 0; i < paramSize; i++) {
       this->addEntry(node.getParams()[i], *paramTypes[i], HandleAttr());
     }

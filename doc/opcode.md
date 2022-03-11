@@ -44,6 +44,7 @@
 | NEW             | 3: byte1 ~ byte3               | -> value                                     | create an empty object of a specified type             |
 | INIT_FIELDS     | 2: offset size                 | value -> value                               | init object fields                                     |
 | CALL_FUNC       | 1: param                       | func param1 ~ paramN -> result               | apply function object                                  |
+| CALL_METHOD     | 3: param byte1 byte2           | recv param1 ~ paramN -> result               | call method                                            |
 | CALL_BUILTIN    | 1: index                       | -> value                                     | call builtin function                                  |
 | CALL_BUILTIN2   | 2: param index                 | param1 ~ paramN -> result                    | call builtin function                                  |
 | RETURN          |                                | value -> [empty]                             | return value from callable                             |
@@ -61,14 +62,14 @@
 | LOOKUP_HASH     |                                | hashmap key ->                               | jump to the offset from stack top hashmap              |
 | REF_EQ          |                                | value1 value2 -> value                       | check referencial equality                             |
 | REF_NE          |                                | value1 value2 -> value                       | check referencial un-equality                          |
-| FORK            | 1: byte1 2: offset1 offset2    | -> value                                     | evaluate code in child shell                           |
+| FORK            | 3: byte1 offset1 offset2       | -> value                                     | evaluate code in child shell                           |
 | PIPELINE        | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                          |
 | PIPELINE_LP     | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline (lastPipe is true)                       |
 | PIPELINE_ASYNC  | 1: k 1: len 2: offset1 offset2 | -> value                                     | call pipeline asynchronously                           | 
 | EXPAND_TILDE    |                                | value -> value                               | perform tilde expansion                                |
 | NEW_CMD         |                                | value -> value                               | pop stack top and store it to new argv                 |
 | ADD_CMD_ARG     | 1: byte1                       | argv redir value -> argv redir               | add stack top value as command argument                |
-| ADD_GLOBBING    | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0         |
+| ADD_GLOBBING    | 2: len option                  | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0         |
 | CALL_CMD        |                                | argv redir -> value                          | call builtin or external command.                      |
 | CALL_CMD_NOFORK |                                | argv redir -> value                          | call builtin or external command without fork          |
 | CALL_UDC        | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command                              |

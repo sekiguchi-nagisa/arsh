@@ -138,6 +138,12 @@ $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { retur
 $assertArray(['abs', 'toFloat'], $(complete 'function f($a: Int) { $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.'))
+$assertArray(['abs', 'toFloat', 'zsum', 'zz'], $(complete '
+    function zz() : String for Any { return "$this"; }  # also complete super type method
+    function zsum($a : Int) : Int for Int { 
+        return $this.abs() + $a.abs()
+    }
+    34.'))
 
 # type
 var types = [

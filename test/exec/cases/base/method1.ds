@@ -1,0 +1,48 @@
+
+function print() for Int {
+    echo Int: $this
+}
+
+assert "$(12345.print())" == 'Int: 12345'
+
+# defined in base type
+function print() : Void for Any {
+    echo Any: "$this"
+}
+
+assert "$(12345.print())" == 'Int: 12345'
+assert "$($True.print())" == 'Any: true'
+assert "$('hello'.print())" == 'Any: hello'
+
+typedef APIError : Error
+
+function print() for Error {
+    echo Error: ${$this.message()}
+}
+
+assert "$(new APIError("this is an APIError").print())" == 'Error: this is an APIError'
+
+
+# recursive call
+function _factorial() : Int for Int {
+    return $this == 0 ? 1 : $this * ($this - 1)._factorial()
+}
+
+function factorial() : Int for Int {
+    return $this._factorial()
+}
+
+assert 0.factorial() == 1
+assert 1.factorial() == 1
+assert 2.factorial() == 2
+assert 3.factorial() == 6
+assert 4.factorial() == 24
+
+# defined for reified type
+function sum() : Int for [Int] {
+    var s = 0;
+    for $e in $this { $s += $e; }
+    return $s
+}
+
+assert [1,2,3,4,5,6,7,8,9,10].sum() == 55
