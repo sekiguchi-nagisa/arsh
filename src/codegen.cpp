@@ -128,11 +128,16 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
   return index;
 }
 
-void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle) {
+void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
+  /**
+   * in constructor call, dose not pass receiver
+   */
+  unsigned int actualParamSize = handle.getParamSize() + (handle.isConstructor() ? 0 : 1);
   if (handle.isNative()) {
-    this->emitNativeCallIns(paramSize + 1, handle.getIndex(), !handle.getReturnType().isVoidType());
+    this->emitNativeCallIns(actualParamSize, handle.getIndex(),
+                            !handle.getReturnType().isVoidType());
   } else {
-    this->emitValIns(OpCode::CALL_METHOD, paramSize, 0);
+    this->emitValIns(OpCode::CALL_METHOD, actualParamSize, 0);
     this->curBuilder().append16(handle.getIndex());
     if (handle.getReturnType().isVoidType()) {
       this->emit0byteIns(OpCode::POP);
@@ -155,7 +160,7 @@ void ByteCodeGenerator::emitToString() {
   if (this->handle_STR == nullptr) {
     this->handle_STR = this->typePool.lookupMethod(this->typePool.get(TYPE::Any), OP_STR);
   }
-  this->emitMethodCallIns(0, *this->handle_STR);
+  this->emitMethodCallIns(*this->handle_STR);
 }
 
 void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
@@ -533,7 +538,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     assert(type.is(TYPE::Int) || type.is(TYPE::Float));
     auto *handle = this->typePool.lookupMethod(type, type.is(TYPE::Int) ? OP_TO_FLOAT : OP_TO_INT);
     assert(handle != nullptr);
-    this->emitMethodCallIns(0, *handle);
+    this->emitMethodCallIns(*handle);
     break;
   }
   case TypeOpNode::TO_STRING:
@@ -544,7 +549,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     this->emitSourcePos(node.getPos());
     auto *handle = this->typePool.lookupMethod(node.getExprNode().getType(), OP_BOOL);
     assert(handle != nullptr);
-    this->emitMethodCallIns(0, *handle);
+    this->emitMethodCallIns(*handle);
     break;
   }
   case TypeOpNode::CHECK_CAST:
@@ -633,7 +638,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     this->emit0byteIns(OpCode::DUP);
     auto *handle = this->typePool.lookupMethod(this->typePool.get(TYPE::String), "empty");
     assert(handle != nullptr);
-    this->emitMethodCallIns(0, *handle);
+    this->emitMethodCallIns(*handle);
 
     // check left is empty
     this->emitBranchIns(mergeLabel);
@@ -680,16 +685,16 @@ void ByteCodeGenerator::visitArgsNode(ArgsNode &node) {
 }
 
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
-  const unsigned int paramSize = node.getArgsNode().getNodes().size();
   if (node.isMethodCall()) {
     this->visit(node.getRecvNode());
     this->visit(node.getArgsNode());
     this->emitSourcePos(node.getPos());
-    this->emitMethodCallIns(paramSize, *node.getHandle());
+    this->emitMethodCallIns(*node.getHandle());
   } else {
     this->visit(node.getExprNode());
     this->visit(node.getArgsNode());
     this->emitSourcePos(node.getPos());
+    const unsigned int paramSize = node.getArgsNode().getNodes().size();
     this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
   }
 }
@@ -705,27 +710,18 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     break;
   default:
     assert(node.getHandle());
-    if (node.getHandle()->isNative()) {
-      // push arguments
+    auto &handle = *node.getHandle();
+    assert(handle.isNative() || handle.isConstructor());
+    if (handle.isNative()) {
       this->emitTypeIns(OpCode::NEW, node.getType());
-      this->visit(node.getArgsNode());
-
-      // call constructor
-      this->emitSourcePos(node.getPos());
-      unsigned int paramSize = node.getArgsNode().getNodes().size();
-      this->emitMethodCallIns(paramSize, *node.getHandle());
-    } else {
-      // push constructor func
-      this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getHandle()->getIndex());
-
-      // push arguments
-      this->visit(node.getArgsNode());
-
-      // call constructor
-      this->emitSourcePos(node.getPos());
-      unsigned int paramSize = node.getArgsNode().getNodes().size();
-      this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
     }
+
+    // push arguments
+    this->visit(node.getArgsNode());
+
+    // call constructor
+    this->emitSourcePos(node.getPos());
+    this->emitMethodCallIns(handle);
     break;
   }
 }
@@ -734,7 +730,7 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
   this->visit(node.getExprNode());
   if (node.getHandle() != nullptr) {
     this->emitSourcePos(node.getPos());
-    this->emitMethodCallIns(0, *node.getHandle());
+    this->emitMethodCallIns(*node.getHandle());
   }
 }
 
@@ -1103,7 +1099,7 @@ void ByteCodeGenerator::generateIfElseArm(ArmNode &node, const MethodHandle &eqH
     auto &patternNode = node.getConstPatternNodes()[index];
     this->visit(*patternNode);
     assert(patternNode->getType().is(TYPE::String) || patternNode->getType().is(TYPE::Regex));
-    this->emitMethodCallIns(1, patternNode->getType().is(TYPE::String) ? eqHandle : matchHandle);
+    this->emitMethodCallIns(patternNode->getType().is(TYPE::String) ? eqHandle : matchHandle);
   }
 
   // generate arm action

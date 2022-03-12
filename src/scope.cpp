@@ -133,8 +133,13 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);
   const unsigned int index = this->getMaxGlobalVarIndex();
-  auto hande = MethodHandle::create(recvType, index, returnType, paramTypes, this->modId);
-  return this->add(std::move(fullname), HandlePtr(hande.release()));
+  std::unique_ptr<MethodHandle> handle;
+  if (name == OP_INIT) {
+    handle = MethodHandle::create(recvType, index, paramTypes, this->modId);
+  } else {
+    handle = MethodHandle::create(recvType, index, returnType, paramTypes, this->modId);
+  }
+  return this->add(std::move(fullname), HandlePtr(handle.release()));
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,

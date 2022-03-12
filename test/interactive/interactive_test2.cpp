@@ -470,7 +470,7 @@ TEST_F(InteractiveTest, illegalcmd) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23/0; f() { echo $0 $@; }", "", eout));
 
   eout = "[runtime error]\n"
-         "IllegalAccessError: attemp to access uninitialized user-defined command: `f'\n"
+         "IllegalAccessError: attempt to access uninitialized user-defined command: `f'\n"
          "    from (stdin):3 '<toplevel>()'\n";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("f 1 2 3", "", eout));
 
@@ -481,6 +481,32 @@ TEST_F(InteractiveTest, illegalcmd) {
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, illegalMethod) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // illegal method call
+  const char *eout = "[runtime error]\n"
+                     "ArithmeticError: zero division\n"
+                     "    from (stdin):1 '<toplevel>()'\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23/0; function f() for Int {}", "", eout));
+  eout = "[runtime error]\n"
+         "IllegalAccessError: attempt to call uninitialized method or constructor\n"
+         "    from (stdin):2 '<toplevel>()'\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34.f()", "", eout));
+
+  // illegal constructor call
+  eout = "[runtime error]\n"
+         "ArithmeticError: zero modulo\n"
+         "    from (stdin):3 '<toplevel>()'\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23%0; typedef AAA { var a = 0; }", "", eout));
+  eout = "[runtime error]\n"
+         "IllegalAccessError: attempt to call uninitialized method or constructor\n"
+         "    from (stdin):4 '<toplevel>()'\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("new AAA()", "", eout));
 }
 
 int main(int argc, char **argv) {

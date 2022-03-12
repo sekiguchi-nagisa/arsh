@@ -6,7 +6,7 @@
 
 #### Core
 
-- define non-return user-defined command
+- define no-return user-defined command
     - type of non-return user-defined command is ``Nothing``
   ```
   usage() : Nothing {
@@ -39,6 +39,7 @@
   }
   10.factorial()
   ```
+- when call uninitialized method/constructor, throw ``IllegalAccessError``
 - add ``defer`` statement
     - like swift, ``defer`` statement evaluated in end of scope (block, function, user-defined command)
     - preserve exit status during the evaluation of defer statement

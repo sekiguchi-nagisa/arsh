@@ -502,10 +502,23 @@ private:
    * | stack top | param1(receiver) | ~ | paramN |
    * +-----------+------------------+   +--------+
    *             | offset           |   |        |
+   *
+   *
+   * @param state
+   * @param index
+   * @param actualParamSize
+   * actual param size (also include receiver)
+   * @return
    */
-  static bool prepareMethodCall(DSState &state, unsigned short index, unsigned short paramSize) {
-    auto &func = typeAs<FuncObject>(state.getGlobal(index));
-    const unsigned int actualParamSize = paramSize + 1; // include receiver
+  static bool prepareMethodCall(DSState &state, unsigned short index,
+                                unsigned short actualParamSize) {
+    auto value = state.getGlobal(index);
+    if (!value) {
+      raiseError(state, TYPE::IllegalAccessError,
+                 "attempt to call uninitialized method or constructor");
+      return false;
+    }
+    auto &func = typeAs<FuncObject>(value);
     return windStackFrame(state, actualParamSize, actualParamSize, func.getCode());
   }
 

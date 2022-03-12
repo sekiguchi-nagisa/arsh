@@ -237,7 +237,8 @@ public:
   OP(NAMED_MOD, (1u << 5u))                                                                        \
   OP(GLOBAL_MOD, (1u << 6u))                                                                       \
   OP(INLINED_MOD, (1u << 7u))                                                                      \
-  OP(NATIVE, (1u << 8u))
+  OP(NATIVE, (1u << 8u))                                                                           \
+  OP(CONSTRUCTOR, (1u << 9u))
 
 enum class HandleAttr : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -295,6 +296,10 @@ public:
   unsigned int getTypeId() const { return this->tag >> 8; }
 
   bool isMethod() const { return this->famSize() > 0; }
+
+  bool isConstructor() const {
+    return this->isMethod() && this->has(HandleAttr::CONSTRUCTOR);
+  }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -778,6 +783,22 @@ public:
                                               const DSType &ret,
                                               const std::vector<const DSType *> &params,
                                               unsigned short modId);
+
+  /**
+   * for constructor
+   * @param recv
+   * @param index
+   * @param params
+   * @param modId
+   * @return
+   */
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const std::vector<const DSType *> &params,
+                                              unsigned short modId) {
+    auto handle = create(recv, index, recv, params, modId);
+    setFlag(handle->attribute, HandleAttr::CONSTRUCTOR);
+    return handle;
+  }
 
   const DSType &getReturnType() const { return this->returnType; }
 

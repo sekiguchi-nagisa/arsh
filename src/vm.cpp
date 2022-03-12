@@ -753,7 +753,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
     return false;
   case ResolvedCmd::ILLEGAL_UDC: {
-    std::string value = "attemp to access uninitialized user-defined command: `";
+    std::string value = "attempt to access uninitialized user-defined command: `";
     value += array.getValues()[0].asStrRef();
     value += "'";
     raiseError(state, TYPE::IllegalAccessError, std::move(value));
@@ -2032,7 +2032,8 @@ DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&rec
 
   GUARD_RECURSION(state);
 
-  unsigned int size = prepareArguments(state.stack, std::move(recv), std::move(args));
+  unsigned int actualParamSize =
+      prepareArguments(state.stack, std::move(recv), std::move(args)) + 1;
 
   DSValue ret;
   NativeCode code;
@@ -2040,8 +2041,8 @@ DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&rec
     code = NativeCode(handle.getIndex());
   }
 
-  if (handle.isNative() ? windStackFrame(state, size + 1, size + 1, code)
-                        : prepareMethodCall(state, handle.getIndex(), size)) {
+  if (handle.isNative() ? windStackFrame(state, actualParamSize, actualParamSize, code)
+                        : prepareMethodCall(state, handle.getIndex(), actualParamSize)) {
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
     startEval(state, op, nullptr, ret);
   }

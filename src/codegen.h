@@ -296,13 +296,10 @@ private:
   }
 
   /**
-   *
-   * @param paramSize
-   * not include receiver
    * @param handle
    * target method
    */
-  void emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle);
+  void emitMethodCallIns(const MethodHandle &handle);
 
   void emitGlobIns(unsigned char paramSize, bool tilde) {
     this->emitValIns(OpCode::ADD_GLOBBING, paramSize, 1);
