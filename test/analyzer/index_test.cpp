@@ -1779,6 +1779,196 @@ TEST_F(IndexTest, udtypeRecRef) {
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
+TEST_F(IndexTest, methodDef) { // FIXME: test this
+  unsigned short modId;
+  const char *content = R"E(
+    function factorial() : Int for Int {
+        return $this == 0 ? 1 : $this * ($this - 1).factorial()
+    }
+    23.factorial()
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // ($this - 1).factorial()
+    .position = { .line = 2, .character = 56, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId, // function factorial() : Int for Int
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // 23.factorial()
+    .position = { .line = 4, .character = 11, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // function factorial() : Int for Int
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+}
+
+TEST_F(IndexTest, methodRef) { // FIXME: this
+  unsigned short modId;
+  const char *content = R"E(
+    function factorial() : Int for Int {
+        return $this == 0 ? 1 : $this * ($this - 1).factorial()
+    }
+    23.factorial()
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
+
+  // references
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // function factorial() : Int for Int
+    .position = { .line = 1, .character = 17, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
+    },
+    RefsResult{
+      .modId = modId, // ($this - 1).factorial()
+      .range = {.start = {.line = 2, .character = 52}, .end = {.line = 2, .character = 61}}
+    },
+    RefsResult{
+      .modId = modId, // 23.factorial()
+      .range = {.start = {.line = 4, .character = 7}, .end = {.line = 4, .character = 16}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, methodOverrideDef) {
+  unsigned short modId;
+  const char *content = R"E(
+    function print() for Any {}
+    function print() for Int {}
+    34.print()
+    (34 as Any).print()
+    '34'.print()
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // 34.print()
+    .position = { .line = 3, .character = 10, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId, // function print() for Int {}
+      .range = {.start = {.line = 2, .character = 13}, .end = {.line = 2, .character = 18}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // (34 as Any).print()
+    .position = { .line = 4, .character = 20, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // function print() for Any {}
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // '34'.print()
+    .position = { .line = 5, .character = 14, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // function print() for Int {}
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+}
+
+TEST_F(IndexTest, methodOverrideRef) {
+  unsigned short modId;
+  const char *content = R"E(
+    function print() for Any {}
+    function print() for Int {}
+    34.print()
+    (34 as Any).print()
+    '34'.print()
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
+
+  // references
+
+  // clang-format off
+  Request req = {
+    .modId = modId, // function factorial() : Int for Any
+    .position = { .line = 1, .character = 18, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
+    },
+    RefsResult{
+      .modId = modId, // (34 as Any).print()
+      .range = {.start = {.line = 4, .character = 16}, .end = {.line = 4, .character = 21}}
+    },
+    RefsResult{
+      .modId = modId, // '34'.print()
+      .range = {.start = {.line = 5, .character = 9}, .end = {.line = 5, .character = 14}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId, // function factorial() : Int for Int
+    .position = { .line = 2, .character = 18, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 2, .character = 13}, .end = {.line = 2, .character = 18}}
+    },
+    RefsResult{
+      .modId = modId, // 34.print()
+      .range = {.start = {.line = 3, .character = 7}, .end = {.line = 3, .character = 12}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
 TEST_F(IndexTest, invalidVar) {
   unsigned short modId;
   const char *content = R"(
@@ -1956,6 +2146,10 @@ typedef Interval {
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval { var value = new Interval!(); }; var a = new Interval();\n$a.value",
       Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval! for Interval\n```"));
+
+  ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for Int { return $this; }\n12.value()",
+                                      Position{.line = 1, .character = 3},
+                                      "```ydsh\nfunction value() : Int for Int\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
