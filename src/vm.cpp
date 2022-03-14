@@ -1258,7 +1258,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(ASSERT_FAIL) {
         auto msg = state.stack.pop();
         auto ref = msg.asStrRef();
-        raiseError(state, TYPE::_AssertFail, ref.toString());
+        raiseError(state, TYPE::AssertFail_, ref.toString());
         vmerror;
       }
       vmcase(PRINT) {
@@ -1873,7 +1873,7 @@ bool VM::handleException(DSState &state) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
         if (occurredPC >= entry.begin && occurredPC < entry.end &&
             entry.type->isSameOrBaseTypeOf(occurredType)) {
-          if (entry.type->is(TYPE::_ProcGuard)) {
+          if (entry.type->is(TYPE::ProcGuard_)) {
             /**
              * when exception entry indicate exception guard of sub-shell,
              * immediately break interpreter
@@ -1884,7 +1884,7 @@ bool VM::handleException(DSState &state) {
           state.stack.pc() = entry.dest;
           state.stack.clearOperands();
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
-          if (entry.type->is(TYPE::_Root)) { // finally block
+          if (entry.type->is(TYPE::Root_)) { // finally block
             state.stack.saveThrownObject();
             state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
           } else { // catch block
@@ -2087,10 +2087,10 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 
   auto &errorType = state.typePool.get(except.getTypeID());
   DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-  if (errorType.is(TYPE::_ShellExit)) {
+  if (errorType.is(TYPE::ShellExit_)) {
     kind = DS_ERROR_KIND_EXIT;
     state.setExitStatus(parseExitStatus(typeAs<ErrorObject>(except)));
-  } else if (errorType.is(TYPE::_AssertFail)) {
+  } else if (errorType.is(TYPE::AssertFail_)) {
     kind = DS_ERROR_KIND_ASSERTION_ERROR;
     state.setExitStatus(1);
   }

@@ -294,7 +294,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
     this->visit(*node.getNodes()[i]);
   }
   this->markLabel(end);
-  this->catchException(begin, end, this->typePool.get(TYPE::_ProcGuard));
+  this->catchException(begin, end, this->typePool.get(TYPE::ProcGuard_));
   this->emit0byteIns(OpCode::HALT);
 
   this->markLabel(labels.back());
@@ -844,7 +844,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->visit(node.getExprNode());
     this->markLabel(endLabel);
 
-    this->catchException(beginLabel, endLabel, this->typePool.get(TYPE::_ProcGuard));
+    this->catchException(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
     this->emit0byteIns(OpCode::HALT);
     this->markLabel(mergeLabel);
   }
@@ -916,7 +916,7 @@ void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
 void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
   auto &e = this->tryFinallyLabels().back();
   this->markLabel(e.finallyLabel);
-  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::_Root), e.localOffset,
+  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Root_), e.localOffset,
                        e.localSize);
   if (node.getDropLocalSize()) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());

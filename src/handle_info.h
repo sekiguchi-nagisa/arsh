@@ -23,7 +23,7 @@ namespace ydsh {
 #define EACH_HANDLE_INFO_TYPE(OP)                                                                  \
   OP(Void)                                                                                         \
   OP(Any)                                                                                          \
-  OP(_Value)                                                                                       \
+  OP(Value_)                                                                                       \
   OP(Int)                                                                                          \
   OP(Float)                                                                                        \
   OP(Boolean)                                                                                      \
@@ -90,17 +90,12 @@ enum class HandleInfo : char {
  * for method handle creation.
  */
 struct NativeFuncInfo {
-  /**
-   * if empty string, treat as constructor.
-   */
   const char *funcName;
 
   /**
    * serialized function handle
    */
-  const HandleInfo handleInfo[30];
-
-  const bool hasRet;
+  const HandleInfo handleInfo[24];
 };
 
 const NativeFuncInfo *nativeFuncInfoTable();

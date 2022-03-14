@@ -38,15 +38,15 @@
 namespace ydsh {
 
 enum class TYPE : unsigned int {
-  _Unresolved, // for type error
-  _ProcGuard,  // for guard parent code execution from child process
-  _Root,       // pseudo top type of all throwable type(except for option types)
+  Unresolved_, // for type error
+  ProcGuard_,  // for guard parent code execution from child process
+  Root_,       // pseudo top type of all throwable type(except for option types)
 
   Any,
   Void,
   Nothing,
 
-  _Value, // super type of value type(int, float, bool, string). not directly used it.
+  Value_, // super type of value type(int, float, bool, string). not directly used it.
 
   Int,
   Float,
@@ -80,9 +80,9 @@ enum class TYPE : unsigned int {
    * for internal status reporting.
    * they are pseudo type, so must not use it from shell
    */
-  _InternalStatus, // base type
-  _ShellExit,
-  _AssertFail,
+  InternalStatus_, // base type
+  ShellExit_,
+  AssertFail_,
 };
 
 #define EACH_TYPE_KIND(OP)                                                                         \
@@ -156,7 +156,7 @@ public:
 
   bool is(TYPE type) const { return this->typeId() == static_cast<unsigned int>(type); }
 
-  bool isUnresolved() const { return this->is(TYPE::_Unresolved); }
+  bool isUnresolved() const { return this->is(TYPE::Unresolved_); }
 
   /**
    * if this type is VoidType, return true.
@@ -297,9 +297,7 @@ public:
 
   bool isMethod() const { return this->famSize() > 0; }
 
-  bool isConstructor() const {
-    return this->isMethod() && this->has(HandleAttr::CONSTRUCTOR);
-  }
+  bool isConstructor() const { return this->isMethod() && this->has(HandleAttr::CONSTRUCTOR); }
 
   unsigned int getIndex() const { return this->index; }
 

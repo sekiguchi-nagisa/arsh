@@ -29,34 +29,34 @@ TypePool::TypePool() {
   /**
    * for type error
    */
-  this->initBuiltinType(TYPE::_Unresolved, "<unresolved>", false, info_Dummy());
+  this->initBuiltinType(TYPE::Unresolved_, "<unresolved>", false, info_Dummy());
 
   /**
    * pseudo base type
    */
-  this->initBuiltinType(TYPE::_ProcGuard, "process guard%%", false, info_Dummy());
+  this->initBuiltinType(TYPE::ProcGuard_, "process guard%%", false, info_Dummy());
 
   /**
    * pseudo base type
    */
-  this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, TYPE::_ProcGuard, info_Dummy());
+  this->initBuiltinType(TYPE::Root_, "pseudo top%%", false, TYPE::ProcGuard_, info_Dummy());
 
-  this->initBuiltinType(TYPE::Any, "Any", true, TYPE::_Root, info_AnyType());
+  this->initBuiltinType(TYPE::Any, "Any", true, TYPE::Root_, info_AnyType());
   this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
   this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
 
   /**
    * hidden from script.
    */
-  this->initBuiltinType(TYPE::_Value, "Value%%", true, TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::Value_, "Value%%", true, TYPE::Any, info_Dummy());
 
-  this->initBuiltinType(TYPE::Int, "Int", false, TYPE::_Value, info_IntType());
-  this->initBuiltinType(TYPE::Float, "Float", false, TYPE::_Value, info_FloatType());
-  this->initBuiltinType(TYPE::Boolean, "Boolean", false, TYPE::_Value, info_BooleanType());
-  this->initBuiltinType(TYPE::String, "String", false, TYPE::_Value, info_StringType());
+  this->initBuiltinType(TYPE::Int, "Int", false, TYPE::Value_, info_IntType());
+  this->initBuiltinType(TYPE::Float, "Float", false, TYPE::Value_, info_FloatType());
+  this->initBuiltinType(TYPE::Boolean, "Boolean", false, TYPE::Value_, info_BooleanType());
+  this->initBuiltinType(TYPE::String, "String", false, TYPE::Value_, info_StringType());
 
   this->initBuiltinType(TYPE::Regex, "Regex", false, TYPE::Any, info_RegexType());
-  this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::_Value, info_SignalType());
+  this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::Value_, info_SignalType());
   this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
   this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());
   this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
@@ -69,7 +69,7 @@ TypePool::TypePool() {
   std::vector<const DSType *> elements = {&this->get(TYPE::Any)};
   this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());
 
-  elements = {&this->get(TYPE::_Value), &this->get(TYPE::Any)};
+  elements = {&this->get(TYPE::Value_), &this->get(TYPE::Any)};
   this->initTypeTemplate(this->mapTemplate, TYPE_MAP, std::move(elements), info_MapType());
 
   elements = std::vector<const DSType *>();
@@ -103,10 +103,10 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
 
   // init internal status type
-  this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, TYPE::_Root,
+  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Root_,
                         info_Dummy());
-  this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, TYPE::_InternalStatus, info_Dummy());
-  this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, TYPE::_InternalStatus,
+  this->initBuiltinType(TYPE::ShellExit_, "Shell Exit", false, TYPE::InternalStatus_, info_Dummy());
+  this->initBuiltinType(TYPE::AssertFail_, "Assertion Error", false, TYPE::InternalStatus_,
                         info_Dummy());
 }
 

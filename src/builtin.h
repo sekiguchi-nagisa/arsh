@@ -1408,7 +1408,7 @@ YDSH_METHOD array_reverse(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function sort($this : Array<T0>) : Array<T0> where T0 : _Value
+//!bind: function sort($this : Array<T0>) : Array<T0> where T0 : Value_
 YDSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1490,7 +1490,7 @@ YDSH_METHOD array_each(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function indexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+//!bind: function indexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
 YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_indexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1507,7 +1507,7 @@ YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
   RET(DSValue::createInt(index));
 }
 
-//!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : _Value
+//!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
 YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_lastIndexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1524,7 +1524,7 @@ YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   RET(DSValue::createInt(index));
 }
 
-//!bind: function contains($this : Array<T0>, $target : T0) : Boolean where T0 : _Value
+//!bind: function contains($this : Array<T0>, $target : T0) : Boolean where T0 : Value_
 YDSH_METHOD array_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_contains);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));

@@ -185,24 +185,24 @@ TEST_F(TypeTest, superType) {
   ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr);
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::_Root)));
+      this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::Root_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::_Value), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->pool.get(TYPE::Value_), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Int), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->pool.get(TYPE::Int), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Signal), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->pool.get(TYPE::Signal), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Signals), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Boolean), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->pool.get(TYPE::Boolean), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::Value_)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::UnixFD), this->pool.get(TYPE::Any)));
 
@@ -235,9 +235,9 @@ TEST_F(TypeTest, templateName) {
 
 TEST_F(TypeTest, typeToken) {
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
+      this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::Value_)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Any)));

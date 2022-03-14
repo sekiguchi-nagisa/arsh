@@ -580,7 +580,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
   assert(size != 0);
   auto &firstKeyNode = node.getKeyNodes()[0];
   this->checkTypeAsSomeExpr(*firstKeyNode);
-  auto &keyType = this->checkType(this->typePool.get(TYPE::_Value), *firstKeyNode);
+  auto &keyType = this->checkType(this->typePool.get(TYPE::Value_), *firstKeyNode);
   auto &firstValueNode = node.getValueNodes()[0];
   auto &valueType = this->checkTypeAsSomeExpr(*firstValueNode);
 

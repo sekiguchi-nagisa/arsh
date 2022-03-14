@@ -625,8 +625,6 @@ public:
     //    str += this->getActualFuncName();
     //        str += ", ";
     //        str += std::to_string((int) this->toDefaultFlag());
-    str += ", ";
-    str += this->hasReturnValue() ? "true" : "false";
     str += "}";
     return str;
   }
@@ -1006,7 +1004,7 @@ std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elem
 }
 
 bool isDisallowType(HandleInfo info) {
-  const HandleInfo list[] = {HandleInfo::Void, HandleInfo::_Value};
+  const HandleInfo list[] = {HandleInfo::Void, HandleInfo::Value_};
   return std::any_of(std::begin(list), std::end(list), [&](auto &e) { return e == info; });
 }
 
@@ -1028,7 +1026,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
 
   // generate NativeFuncInfo table
   OUT("static NativeFuncInfo infoTable[] = {\n");
-  OUT("    {nullptr, {}, false},\n");
+  OUT("    {nullptr, {}},\n");
   for (TypeBind *bind : binds) {
     for (Element *e : bind->funcElements) {
       OUT("    %s,\n", e->emit().c_str());

@@ -312,7 +312,7 @@ function copy() : Array<T0> for Array<T0>
 
 function reverse() : Array<T0> for Array<T0>
 
-function sort() : Array<T0> where T0 : _Value for Array<T0>
+function sort() : Array<T0> where T0 : Value_ for Array<T0>
 
 function sortWith($comp : Func<Boolean,[T0,T0]>) : Array<T0> for Array<T0>
 
@@ -320,11 +320,11 @@ function join($delim : String) : String for Array<T0>
 
 function forEach($consumer : Func<Void,[T0]>) : Void for Array<T0>
 
-function indexOf($target : T0) : Int where T0 : _Value for Array<T0>
+function indexOf($target : T0) : Int where T0 : Value_ for Array<T0>
 
-function lastIndexOf($target : T0) : Int where T0 : _Value for Array<T0>
+function lastIndexOf($target : T0) : Int where T0 : Value_ for Array<T0>
 
-function contains($target : T0) : Boolean where T0 : _Value for Array<T0>
+function contains($target : T0) : Boolean where T0 : Value_ for Array<T0>
 
 function size() : Int for Array<T0>
 

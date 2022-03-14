@@ -147,7 +147,7 @@ public:
 
   const DSType &get(unsigned int index) const { return *this->typeTable[index]; }
 
-  const DSType &getUnresolvedType() const { return this->get(TYPE::_Unresolved); }
+  const DSType &getUnresolvedType() const { return this->get(TYPE::Unresolved_); }
 
   /**
    * return null, if has no type.
