@@ -1,0 +1,25 @@
+
+# for rcfile template generation
+
+## create $DATA_HOME
+if (test -e $DATA_HOME) {
+    echo '`'$DATA_HOME'`' already exists
+} else {
+    echo create '`'$DATA_HOME'`'
+    mkdir -p $DATA_HOME
+}
+
+## create $CONFIG_HOME
+if (test -e $CONFIG_HOME) {
+    echo '`'$CONFIG_HOME'`' already exists
+} else {
+    echo create '`'$CONFIG_HOME'`'
+    mkdir -p $CONFIG_HOME
+}
+
+if (test -e $CONFIG_HOME/ydshrc) {
+    echo '`'$CONFIG_HOME/ydshrc'`' already exists
+} else {
+    echo create '`'$CONFIG_HOME/ydshrc'`'
+    echo 'source edit' > $CONFIG_HOME/ydshrc
+}

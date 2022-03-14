@@ -49,17 +49,16 @@ Currently, under heavy development. Language specification is subject to change 
 
 ```sh
 $ git clone https://github.com/sekiguchi-nagisa/ydsh.git
-$ cd ydsh
-$ cmake .    # default install dir is /usr/local/bin
-$ cmake --build .
-$ sudo cmake --build . -- install
+$ cd ydsh && mkdir build
+$ cmake ..    # default install dir is /usr/local/bin
+$ cmake --build ..
+$ sudo cmake --build .. -- install
 ```
 
 2. create rcfile (`ydshrc`)
 
 ```sh
-$ mkdir -p ~/.config/ydsh
-$ echo 'source edit' > ~/.config/ydsh/ydshrc
+$ ./ydsh ../tools/script/genrc.ds
 ```
 
 3. run in interactive mode
