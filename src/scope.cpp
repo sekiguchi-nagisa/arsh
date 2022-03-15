@@ -91,7 +91,7 @@ static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
   return false;
 }
 
-NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &type,
+NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &type, HandleKind k,
                                            HandleAttr attr) {
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
@@ -99,7 +99,7 @@ NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &typ
   if (type.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
   }
-  return this->addNewHandle(std::move(name), type, attr);
+  return this->addNewHandle(std::move(name), type, k, attr);
 }
 
 NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle) {
@@ -117,8 +117,9 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
       return Err(NameRegisterError::DEFINED);
     }
   }
-  return this->defineAlias(toTypeAliasFullName(name),
-                           HandlePtr::create(type, 0, HandleAttr::TYPE_ALIAS, this->modId));
+  return this->defineAlias(
+      toTypeAliasFullName(name),
+      HandlePtr::create(type, 0, HandleKind::TYPE_ALIAS, HandleAttr{}, this->modId));
 }
 
 NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &recvType,
@@ -148,11 +149,8 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   auto holderName = toModHolderName(type.getModId(), global);
   if (auto *handle = this->findMut(holderName)) { // check if already imported
     assert(handle->isModHolder());
-    if (!handle->has(HandleAttr::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
-      auto attr = handle->attr();
-      unsetFlag(attr, HandleAttr::GLOBAL_MOD);
-      setFlag(attr, HandleAttr::INLINED_MOD);
-      handle->setAttr(attr);
+    if (!handle->is(HandleKind::INLINED_MOD) && hasFlag(k, ImportedModKind::INLINED)) {
+      handle->setKind(HandleKind::INLINED_MOD);
     }
     return "";
   }
@@ -222,9 +220,9 @@ const ModType &NameScope::toModType(TypePool &pool) const {
       auto &modType = pool.get(handle->getTypeId());
       assert(isa<ModType>(modType));
       ImportedModKind k{};
-      if (handle->has(HandleAttr::INLINED_MOD)) {
+      if (handle->is(HandleKind::INLINED_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL | ImportedModKind::INLINED);
-      } else if (handle->has(HandleAttr::GLOBAL_MOD)) {
+      } else if (handle->is(HandleKind::GLOBAL_MOD)) {
         setFlag(k, ImportedModKind::GLOBAL);
       }
       tryInsertByAscendingOrder(newChildren, cast<ModType>(modType).toModEntry(k));

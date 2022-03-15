@@ -169,7 +169,7 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    auto handle = HandlePtr::create(*types[i], i, HandleAttr());
+    auto handle = HandlePtr::create(*types[i], i, HandleKind::VAR, HandleAttr());
     this->fieldHandleMap.emplace(toTupleFieldName(i), std::move(handle));
   }
 }
@@ -282,6 +282,15 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
   va_end(arg);
 
   return TypeCheckError(node.getToken(), kind, CStrPtr(str));
+}
+
+const char *toString(HandleKind kind) {
+  const char *table[] = {
+#define GEN_STR(E) #E,
+      EACH_HANDLE_KIND(GEN_STR)
+#undef GEN_STR
+  };
+  return table[static_cast<unsigned int>(kind)];
 }
 
 std::string toString(HandleAttr attr) {

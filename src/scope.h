@@ -86,7 +86,7 @@ private:
   const std::reference_wrapper<unsigned int> maxVarCount;
 
   /**
-   * maintain (FieldHandle, commitId)
+   * maintain (Handle, commitId)
    */
   std::unordered_map<std::string, std::pair<HandlePtr, unsigned int>> handles;
 
@@ -192,7 +192,12 @@ public:
   }
 
   // for name registration
-  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr);
+  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr) {
+    return this->defineHandle(std::move(name), type, HandleKind::VAR, attr);
+  }
+
+  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleKind kind,
+                                  HandleAttr attr);
 
   NameRegisterResult defineAlias(std::string &&name, const HandlePtr &handle);
 
@@ -297,14 +302,15 @@ private:
    * @param attr
    * @return
    */
-  NameRegisterResult addNewHandle(std::string &&name, const DSType &type, HandleAttr attr) {
+  NameRegisterResult addNewHandle(std::string &&name, const DSType &type, HandleKind k,
+                                  HandleAttr attr) {
     if (this->isGlobal()) {
       setFlag(attr, HandleAttr::GLOBAL);
     } else {
       unsetFlag(attr, HandleAttr::GLOBAL);
     }
     unsigned int index = this->isGlobal() ? this->getMaxGlobalVarIndex() : this->getCurLocalIndex();
-    return this->add(std::move(name), HandlePtr::create(type, index, attr, this->modId));
+    return this->add(std::move(name), HandlePtr::create(type, index, k, attr, this->modId));
   }
 
   NameRegisterResult addNewAliasHandle(std::string &&name, const HandlePtr &handle) {

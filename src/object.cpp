@@ -542,7 +542,7 @@ bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
     std::vector<StringRef> buf;
     buf.resize(size);
     for (auto &e : recordType.getHandleMap()) {
-      if (e.second->has(HandleAttr::TYPE_ALIAS)) {
+      if (e.second->is(HandleKind::TYPE_ALIAS)) {
         continue;
       }
       buf[e.second->getIndex()] = e.first;

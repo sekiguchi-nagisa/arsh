@@ -1157,6 +1157,7 @@ void NodeDumper::dump(const char *fieldName, const Handle &handle) {
   this->newline();
   this->enterIndent();
   this->dump("index", handle.getIndex());
+  this->dump("kind", toString(handle.getKind()));
   this->dump("attribute", toString(handle.attr()));
   this->leaveIndent();
 }

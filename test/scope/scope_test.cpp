@@ -7,6 +7,7 @@ using namespace ydsh;
 struct Entry {
   TYPE type;
   unsigned int index;
+  HandleKind kind;
   HandleAttr attr;
   unsigned short modID;
 };
@@ -38,6 +39,7 @@ protected:
     ASSERT_TRUE(handle);
     ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeId());
     ASSERT_EQ(e.index, handle->getIndex());
+    ASSERT_EQ(toString(e.kind), toString(handle->getKind()));
     ASSERT_EQ(toString(e.attr), toString(handle->attr()));
     ASSERT_EQ(e.modID, handle->getModId());
   }
@@ -62,19 +64,22 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_EQ(0, this->builtin->modId);
 
   // define handle
-  auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), HandleAttr::ENV);
+  auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), HandleKind::ENV,
+                                         HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
   ASSERT_EQ(1, this->builtin->getMaxGlobalVarIndex());
   auto handle = ret.asOk();
 
-  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), HandleAttr::ENV);
+  ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::String), HandleKind::ENV,
+                                    HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   // define alias
@@ -83,7 +88,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -93,7 +99,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       ret));
@@ -108,7 +115,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 0,
       },
       ret));
@@ -126,7 +134,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::ENV | HandleAttr::GLOBAL,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       hd));
@@ -137,7 +146,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::GLOBAL | HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       hd));
@@ -147,7 +157,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::GLOBAL | HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
       hd));
@@ -158,7 +169,8 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 0,
       },
       hd));
@@ -170,6 +182,7 @@ TEST_F(ScopeTest, builtin) {
       Entry{
           .type = TYPE::Job,
           .index = 1,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
@@ -199,6 +212,7 @@ TEST_F(ScopeTest, global) {
   auto ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(Entry{.type = TYPE::Job,
                                              .index = 0,
+                                             .kind = HandleKind::VAR,
                                              .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
                                              .modID = 0},
                                        ret));
@@ -206,7 +220,7 @@ TEST_F(ScopeTest, global) {
   ASSERT_EQ(1, this->top->getMaxGlobalVarIndex());
 
   // define handle when defined in builtin
-  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::ENV);
+  ret = this->top->defineHandle("AAA", this->pool.get(TYPE::Int), HandleKind::ENV, HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(NameRegisterError::DEFINED, ret));
 
   auto handle = this->top->lookup("AAA");
@@ -214,6 +228,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Job,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 0,
       },
@@ -225,6 +240,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Signal,
           .index = 1,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
           .modID = 1,
       },
@@ -234,6 +250,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Signal,
           .index = 1,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
           .modID = 1,
       },
@@ -251,7 +268,8 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret));
@@ -264,6 +282,7 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::StringArray,
           .index = 2,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
@@ -279,6 +298,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Any,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -298,6 +318,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Any,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -307,6 +328,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Error,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr{},
           .modID = 1,
       },
@@ -316,6 +338,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Error,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr{},
           .modID = 1,
       },
@@ -324,12 +347,13 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(1, block0->getCurLocalIndex());
   ASSERT_EQ(1, this->top->getCurLocalIndex());
 
-  ret = block0->defineHandle("BBB", this->pool.get(TYPE::String), HandleAttr::ENV);
+  ret = block0->defineHandle("BBB", this->pool.get(TYPE::String), HandleKind::ENV, HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret));
@@ -342,7 +366,8 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr{},
           .modID = 1,
       },
       ret));
@@ -366,7 +391,8 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr{},
           .modID = 1,
       },
       handle));
@@ -377,6 +403,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::KeyNotFoundError,
           .index = 2,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -400,7 +427,8 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::String,
           .index = 1,
-          .attr = HandleAttr::ENV,
+          .kind = HandleKind::ENV,
+          .attr = HandleAttr{},
           .modID = 1,
       },
       handle));
@@ -418,6 +446,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::UnixFD,
           .index = 2,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -446,6 +475,7 @@ TEST_F(ScopeTest, block) { // for top level block
       Entry{
           .type = TYPE::Func,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr{},
           .modID = 1,
       },
@@ -477,6 +507,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -490,6 +521,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -501,6 +533,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Boolean,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -510,6 +543,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Boolean,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -525,6 +559,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::StringArray,
           .index = 1,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -541,6 +576,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -550,6 +586,7 @@ TEST_F(ScopeTest, func) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
@@ -565,7 +602,7 @@ TEST_F(ScopeTest, import1) {
   // define mod type
   auto mod = this->createGlobalScope();
   mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleKind::ENV, HandleAttr{});
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -606,6 +643,7 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
@@ -622,7 +660,8 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 2,
       },
       handle));
@@ -648,6 +687,7 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
@@ -665,7 +705,8 @@ TEST_F(ScopeTest, import1) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 2,
       },
       handle2));
@@ -679,7 +720,7 @@ TEST_F(ScopeTest, import2) {
   // define mod type
   auto mod = this->createGlobalScope();
   mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleKind::ENV, HandleAttr{});
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -703,7 +744,8 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = static_cast<TYPE>(modType.typeId()),
           .index = 2, // toModType api not increment
-          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL | HandleAttr::INLINED_MOD,
+          .kind = HandleKind::INLINED_MOD,
+          .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
       },
       handle));
@@ -716,6 +758,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 2,
       },
@@ -727,7 +770,8 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Int,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 2,
       },
       handle));
@@ -744,6 +788,7 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Float,
           .index = 3,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
       },
@@ -754,7 +799,8 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = TYPE::Float,
           .index = 0,
-          .attr = HandleAttr::TYPE_ALIAS,
+          .kind = HandleKind::TYPE_ALIAS,
+          .attr = HandleAttr{},
           .modID = 3,
       },
       handle));
@@ -767,7 +813,8 @@ TEST_F(ScopeTest, import2) {
       Entry{
           .type = static_cast<TYPE>(modType2.typeId()),
           .index = 4,
-          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY | HandleAttr::GLOBAL_MOD,
+          .kind = HandleKind::GLOBAL_MOD,
+          .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
       handle));
@@ -778,7 +825,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(0, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
-  ASSERT_TRUE(handle->has(HandleAttr::TYPE_ALIAS));
+  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle->getKind()));
   ASSERT_EQ(2, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 
@@ -793,7 +840,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_EQ(3, handle->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
-  ASSERT_TRUE(handle->has(HandleAttr::TYPE_ALIAS));
+  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle->getKind()));
   ASSERT_EQ(3, handle->getModId());
   ASSERT_EQ(0, handle->getIndex());
 }
@@ -802,7 +849,7 @@ TEST_F(ScopeTest, conflict) {
   // define mod type
   auto mod = this->createGlobalScope();
   mod->defineHandle("AAA", this->pool.get(TYPE::Int), HandleAttr::READ_ONLY);
-  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleAttr::ENV);
+  mod->defineHandle("_AAA", this->pool.get(TYPE::String), HandleKind::ENV, HandleAttr{});
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
@@ -819,6 +866,7 @@ TEST_F(ScopeTest, conflict) {
       Entry{
           .type = TYPE::Regex,
           .index = 3,
+          .kind = HandleKind::VAR,
           .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },

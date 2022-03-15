@@ -306,7 +306,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
                                          std::unordered_map<std::string, HandlePtr> &&handles) {
   unsigned int fieldCount = 0;
   for (auto &e : handles) {
-    if (!e.second->isMethod() && !e.second->has(HandleAttr::TYPE_ALIAS)) {
+    if (!e.second->isMethod() && !e.second->is(HandleKind::TYPE_ALIAS)) {
       fieldCount++;
       auto &type = this->get(e.second->getTypeId());
       if (type.isVoidType() || type.isNothingType() || type.isUnresolved()) {

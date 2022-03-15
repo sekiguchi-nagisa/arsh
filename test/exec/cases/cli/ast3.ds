@@ -275,6 +275,7 @@ nodes:
                     varName: \"s\"
                     handle:
                       index: 0
+                      kind: \"VAR\"
                       attribute: \"\"
               handle: \"9\"
               kind: \"METHOD_CALL\"

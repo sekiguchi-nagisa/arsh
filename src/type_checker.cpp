@@ -301,8 +301,8 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
 }
 
 HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
-                                HandleAttr attribute) {
-  auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
+                                HandleKind kind, HandleAttr attribute) {
+  auto ret = this->curScope->defineHandle(std::string(symbolName), type, kind, attribute);
   if (!ret) {
     switch (ret.asErr()) {
     case NameRegisterError::DEFINED:
@@ -1498,29 +1498,29 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-  const DSType *exprType = nullptr;
   HandleAttr attr{};
   switch (node.getKind()) {
   case VarDeclNode::LET:
-  case VarDeclNode::VAR:
+  case VarDeclNode::VAR: {
     if (node.getKind() == VarDeclNode::LET) {
       setFlag(attr, HandleAttr::READ_ONLY);
     }
-    exprType = &this->checkTypeAsSomeExpr(*node.getExprNode());
-    break;
-  case VarDeclNode::IMPORT_ENV:
-  case VarDeclNode::EXPORT_ENV:
-    setFlag(attr, HandleAttr::ENV);
-    exprType = &this->typePool.get(TYPE::String);
-    if (node.getExprNode() != nullptr) {
-      this->checkType(*exprType, *node.getExprNode());
+    auto &exprType = this->checkTypeAsSomeExpr(*node.getExprNode());
+    if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
+      node.setAttribute(*handle);
     }
     break;
   }
-
-  auto handle = this->addEntry(node.getNameInfo(), *exprType, attr);
-  if (handle) {
-    node.setAttribute(*handle);
+  case VarDeclNode::IMPORT_ENV:
+  case VarDeclNode::EXPORT_ENV: {
+    if (node.getExprNode() != nullptr) {
+      this->checkType(this->typePool.get(TYPE::String), *node.getExprNode());
+    }
+    if (auto handle = this->addEnvEntry(node.getNameInfo().getToken(), node.getVarName())) {
+      node.setAttribute(*handle);
+    }
+    break;
+  }
   }
   node.setType(this->typePool.get(TYPE::Void));
 }
@@ -1597,8 +1597,7 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
-      if (auto handle =
-              this->addEntry(leftNode, leftNode.getVarName(), rightType, HandleAttr::ENV)) {
+      if (auto handle = this->addEnvEntry(leftNode.getToken(), leftNode.getVarName())) {
         leftNode.setHandle(handle);
         leftNode.setType(rightType);
       }
@@ -1757,15 +1756,15 @@ void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&cons
   std::unordered_map<std::string, HandlePtr> handles;
   for (auto &e : constructorScope->getHandles()) {
     auto handle = e.second.first;
-    if (!handle->has(HandleAttr::TYPE_ALIAS) && !handle->isMethod()) {
+    if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethod()) {
       if (handle->getIndex() < offset) {
         continue;
       }
 
       // field
       auto &fieldType = this->typePool.get(handle->getTypeId());
-      handle = HandlePtr::create(fieldType, handle->getIndex() - offset, handle->attr(),
-                                 handle->getModId());
+      handle = HandlePtr::create(fieldType, handle->getIndex() - offset, handle->getKind(),
+                                 handle->attr(), handle->getModId());
     }
     handles.emplace(e.first, std::move(handle));
   }

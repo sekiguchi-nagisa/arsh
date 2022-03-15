@@ -228,19 +228,31 @@ public:
   }
 };
 
+#define EACH_HANDLE_KIND(OP)                                                                       \
+  OP(VAR)                                                                                          \
+  OP(ENV)                                                                                          \
+  OP(TYPE_ALIAS)                                                                                   \
+  OP(METHOD)                                                                                       \
+  OP(CONSTRUCTOR)                                                                                  \
+  OP(NAMED_MOD)                                                                                    \
+  OP(GLOBAL_MOD)                                                                                   \
+  OP(INLINED_MOD)
+
+enum class HandleKind : unsigned char {
+#define GEN_ENUM(E) E,
+  EACH_HANDLE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(HandleKind kind);
+
 #define EACH_HANDLE_ATTR(OP)                                                                       \
   OP(READ_ONLY, (1u << 0u))                                                                        \
   OP(GLOBAL, (1u << 1u))                                                                           \
-  OP(ENV, (1u << 2u))                                                                              \
-  OP(MOD_CONST, (1u << 3u))                                                                        \
-  OP(TYPE_ALIAS, (1u << 4u))                                                                       \
-  OP(NAMED_MOD, (1u << 5u))                                                                        \
-  OP(GLOBAL_MOD, (1u << 6u))                                                                       \
-  OP(INLINED_MOD, (1u << 7u))                                                                      \
-  OP(NATIVE, (1u << 8u))                                                                           \
-  OP(CONSTRUCTOR, (1u << 9u))
+  OP(MOD_CONST, (1u << 2u))                                                                        \
+  OP(NATIVE, (1u << 3u))
 
-enum class HandleAttr : unsigned short {
+enum class HandleAttr : unsigned char {
 #define GEN_ENUM(E, V) E = (V),
   EACH_HANDLE_ATTR(GEN_ENUM)
 #undef GEN_ENUM
@@ -271,6 +283,8 @@ protected:
 
   unsigned int index;
 
+  HandleKind kind;
+
   HandleAttr attribute;
 
   /**
@@ -279,17 +293,15 @@ protected:
   unsigned short modId;
 
 protected:
-  Handle(unsigned char fmaSize, const DSType &type, unsigned int index, HandleAttr attr,
-         unsigned short modId)
-      : tag(type.typeId() << 8 | fmaSize), index(index), attribute(attr), modId(modId) {}
+  Handle(unsigned char fmaSize, const DSType &type, unsigned int index, HandleKind kind,
+         HandleAttr attr, unsigned short modId)
+      : tag(type.typeId() << 8 | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {
+  }
 
 public:
-  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleAttr attribute)
-      : Handle(fieldType, fieldIndex, attribute, 0) {}
-
-  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleAttr attribute,
-         unsigned short modId)
-      : Handle(0, fieldType, fieldIndex, attribute, modId) {}
+  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
+         unsigned short modId = 0)
+      : Handle(0, fieldType, fieldIndex, kind, attribute, modId) {}
 
   ~Handle() = default;
 
@@ -297,7 +309,7 @@ public:
 
   bool isMethod() const { return this->famSize() > 0; }
 
-  bool isConstructor() const { return this->isMethod() && this->has(HandleAttr::CONSTRUCTOR); }
+  bool isConstructor() const { return this->isMethod() && this->kind == HandleKind::CONSTRUCTOR; }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -307,13 +319,17 @@ public:
     return this->modId == 0 || scopeModId == this->modId || name[0] != '_';
   }
 
+  HandleKind getKind() const { return this->kind; }
+
+  bool is(HandleKind k) const { return this->getKind() == k; }
+
   HandleAttr attr() const { return this->attribute; }
 
   bool has(HandleAttr a) const { return hasFlag(this->attr(), a); }
 
   bool isModHolder() const {
-    return !empty(this->attr() &
-                  (HandleAttr::GLOBAL_MOD | HandleAttr::NAMED_MOD | HandleAttr::INLINED_MOD));
+    return this->is(HandleKind::GLOBAL_MOD) || this->is(HandleKind::NAMED_MOD) ||
+           this->is(HandleKind::INLINED_MOD);
   }
 
 protected:
@@ -322,9 +338,9 @@ protected:
 private:
   /**
    * only used from importForeignHandles
-   * @param newAttr
+   * @param newKind
    */
-  void setAttr(HandleAttr newAttr) { this->attribute = newAttr; }
+  void setKind(HandleKind newKind) { this->kind = newKind; }
 
   /**
    * not directly use it
@@ -638,19 +654,19 @@ public:
    * @return
    */
   HandlePtr toAliasHandle(unsigned short importedModId) const {
-    return HandlePtr::create(*this, this->getIndex(), HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
-                             importedModId);
+    return HandlePtr::create(*this, this->getIndex(), HandleKind::VAR,
+                             HandleAttr::READ_ONLY | HandleAttr::GLOBAL, importedModId);
   }
 
   HandlePtr toModHolder(ImportedModKind k, unsigned short importedModId) const {
-    HandleAttr attr = HandleAttr::NAMED_MOD;
+    HandleAttr attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL;
+    HandleKind kind = HandleKind::NAMED_MOD;
     if (hasFlag(k, ImportedModKind::INLINED)) {
-      attr = HandleAttr::INLINED_MOD;
+      kind = HandleKind::INLINED_MOD;
     } else if (hasFlag(k, ImportedModKind::GLOBAL)) {
-      attr = HandleAttr::GLOBAL_MOD;
+      kind = HandleKind::GLOBAL_MOD;
     }
-    setFlag(attr, HandleAttr::READ_ONLY | HandleAttr::GLOBAL);
-    return HandlePtr::create(*this, this->getIndex(), attr, importedModId);
+    return HandlePtr::create(*this, this->getIndex(), kind, attr, importedModId);
   }
 
   Imported toModEntry(ImportedModKind k) const { return {*this, k}; }
@@ -757,7 +773,8 @@ private:
 
   MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
                unsigned short modId)
-      : Handle(paramSize + 1, recv, index, HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
+      : Handle(paramSize + 1, recv, index, HandleKind::METHOD,
+               HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
         returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
@@ -794,7 +811,7 @@ public:
                                               const std::vector<const DSType *> &params,
                                               unsigned short modId) {
     auto handle = create(recv, index, recv, params, modId);
-    setFlag(handle->attribute, HandleAttr::CONSTRUCTOR);
+    handle->kind = HandleKind::CONSTRUCTOR;
     return handle;
   }
 

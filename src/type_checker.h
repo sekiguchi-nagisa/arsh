@@ -408,11 +408,16 @@ private:
    */
   HandlePtr addEntry(const Node &node, const std::string &symbolName, const DSType &type,
                      HandleAttr attribute) {
-    return this->addEntry(node.getToken(), symbolName, type, attribute);
+    return this->addEntry(node.getToken(), symbolName, type, HandleKind::VAR, attribute);
+  }
+
+  HandlePtr addEnvEntry(Token token, const std::string &symbolName) {
+    return this->addEntry(token, symbolName, this->typePool.get(TYPE::String), HandleKind::ENV,
+                          HandleAttr{});
   }
 
   HandlePtr addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {
-    return this->addEntry(info.getToken(), info.getName(), type, attribute);
+    return this->addEntry(info.getToken(), info.getName(), type, HandleKind::VAR, attribute);
   }
 
   /**
@@ -420,12 +425,13 @@ private:
    * @param token
    * @param symbolName
    * @param type
+   * @param kind
    * @param attribute
    * @return
    * if can not add entry, return null
    */
   HandlePtr addEntry(Token token, const std::string &symbolName, const DSType &type,
-                     HandleAttr attribute);
+                     HandleKind kind, HandleAttr attribute);
 
   /**
    *

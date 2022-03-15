@@ -767,6 +767,7 @@ nodes:
       varName: "false"
       handle:
         index: 49
+        kind: "VAR"
         attribute: "READ_ONLY | GLOBAL"
     iterNode:
       nodeKind: Empty
@@ -842,6 +843,7 @@ nodes:
             varName: "?"
             handle:
               index: 12
+              kind: "VAR"
               attribute: "GLOBAL"
       baseIndex: 0
       varSize: 14

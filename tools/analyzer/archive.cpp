@@ -126,8 +126,10 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   }
   this->writeStr(ref);
   this->write32(handle.getIndex());
-  static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, unsigned short>);
-  this->write16(static_cast<unsigned short>(handle.attr()));
+  static_assert(std::is_same_v<std::underlying_type_t<HandleKind>, uint8_t>);
+  this->write8(static_cast<uint8_t>(handle.getKind()));
+  static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, uint8_t>);
+  this->write8(static_cast<uint8_t>(handle.attr()));
   this->write16(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
@@ -165,7 +167,8 @@ std::pair<std::string, HandlePtr> Archive::unpack(TypePool &pool) const {
 std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
   std::string name = this->readStr();
   uint32_t index = this->read32();
-  uint16_t attr = this->read16();
+  const auto kind = static_cast<HandleKind>(this->read8());
+  const auto attr = static_cast<HandleAttr>(this->read8());
   uint16_t modId = this->read16();
   auto type = TRY(this->unpackType());
   unsigned int famSize = this->read8();
@@ -175,10 +178,16 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
     for (unsigned int i = 0; i < famSize - 1; i++) {
       paramTypes.push_back(TRY(this->unpackType()));
     }
-    auto handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
+    std::unique_ptr<MethodHandle> handle;
+    if (kind == HandleKind::METHOD) {
+      handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
+    } else {
+      assert(kind == HandleKind::CONSTRUCTOR);
+      handle = MethodHandle::create(*type, index, paramTypes, modId);
+    }
     return {toMethodFullName(type->typeId(), name), HandlePtr(handle.release())};
   } else {
-    return {std::move(name), HandlePtr::create(*type, index, static_cast<HandleAttr>(attr), modId)};
+    return {std::move(name), HandlePtr::create(*type, index, kind, attr, modId)};
   }
 }
 
