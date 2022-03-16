@@ -129,13 +129,13 @@ int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
 std::string toPrintable(StringRef ref) {
   auto old = errno;
   std::string ret;
-  for (auto ch : ref) {
+  for (int ch : ref) { // for arm32/arm64
     if ((ch >= 0 && ch < 32) || ch == 127) {
       char d[16];
       snprintf(d, std::size(d), "\\x%02x", ch);
       ret += d;
     } else {
-      ret += ch;
+      ret += static_cast<char>(ch);
     }
   }
   errno = old;
