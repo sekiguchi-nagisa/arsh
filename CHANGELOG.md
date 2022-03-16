@@ -99,11 +99,11 @@
 
 #### Interactive
 
-- **Breaking Change**: change default rcfile path to ``$DATA_HOME/ydshrc``
+- **Breaking Change**: change default rcfile path to ``DATA_HOME/ydshrc``
 
 #### Module
 
-- **Breaking Change**: in ``edit`` module, change default ``HISTFILE`` to ``$DATA_HOME/ydsh_history``
+- **Breaking Change**: in ``edit`` module, change default ``HISTFILE`` to ``DATA_HOME/ydsh_history``
 
 #### Completion
 
@@ -112,7 +112,7 @@
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
-- textDocument hover/definition/references do not work in large files
+- ``textDocument/Hover``, ``textDocument/definition`` and ``textDocument/references`` do not work in large files
 - broken code generation of named imported env variables
 - broken parameter expansion of ``[UnixFD]`` type. previously the following code is failed
   ```
