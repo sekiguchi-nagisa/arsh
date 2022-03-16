@@ -42,7 +42,7 @@ static std::string createPath(Range &&r1, Range &&r2) {
   return create(r2.first, r2.second);
 }
 
-URI URI::fromString(const std::string &str) {
+URI URI::parse(const std::string &str) {
   // for scheme
   const char *s0 = nullptr;
   const char *s1 = nullptr;

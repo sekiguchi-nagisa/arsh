@@ -290,7 +290,7 @@ bool DiagnosticEmitter::enterModule(unsigned short modId, int version) {
 bool DiagnosticEmitter::exitModule() {
   if (this->callback) {
     PublishDiagnosticsParams params = {
-        .uri = this->contexts.back().src->getPath(),
+        .uri = uri::URI::fromFilePath(this->contexts.back().src->getPath()).toString(),
         .version = {},
         .diagnostics = std::move(this->contexts.back().diagnostics),
     };

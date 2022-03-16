@@ -20,7 +20,7 @@
 # CHECK:   "method": "textDocument/publishDiagnostics",
 # CHECK:   "params": {
 # CHECK:     "diagnostics": [],
-# CHECK:     "uri": "/test/test.ds"
+# CHECK:     "uri": "file:///test/test.ds"
 # CHECK:   }
 # CHECK: }
 

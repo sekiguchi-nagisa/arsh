@@ -33,7 +33,7 @@
 #    CHECK:         "severity": 1
 #    CHECK:       }
 #    CHECK:     ],
-#    CHECK:     "uri": "/test/test.ds"
+#    CHECK:     "uri": "file:///test/test.ds"
 #    CHECK:   }
 
 <<<

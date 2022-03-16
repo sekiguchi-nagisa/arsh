@@ -76,7 +76,7 @@ std::string URI::encode(const char *begin, const char *end) {
     if (isEscaped(ch)) {
       value += '%';
       char buf[16];
-      snprintf(buf, 16, "%02X", ch);
+      snprintf(buf, 16, "%02X", static_cast<unsigned char>(ch));
       value += buf;
     } else {
       value += ch;

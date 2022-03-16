@@ -90,7 +90,11 @@ public:
    * may be invalid URI string
    * @return
    */
-  static URI fromString(const std::string &str);
+  static URI parse(const std::string &str);
+
+  static URI fromFilePath(const std::string &filePath) {
+    return URI("file", Authority(), std::string(filePath), "", "");
+  }
 
   /**
    * apply percent-encoding to string

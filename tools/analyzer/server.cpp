@@ -80,7 +80,7 @@ static CStrPtr format(const char *fmt, ...) {
 }
 
 Result<SourcePtr, CStrPtr> LSPServer::resolveSource(const TextDocumentIdentifier &doc) {
-  auto uri = uri::URI::fromString(doc.uri);
+  auto uri = uri::URI::parse(doc.uri);
   if (!uri) {
     auto str = format("broken uri: %s", doc.uri.c_str());
     LOG(LogLevel::ERROR, "%s", str.get());
@@ -399,7 +399,7 @@ void LSPServer::setTrace(const SetTraceParams &param) {
 void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   const char *uriStr = params.textDocument.uri.c_str();
   LOG(LogLevel::INFO, "open textDocument: %s", uriStr);
-  auto uri = uri::URI::fromString(params.textDocument.uri);
+  auto uri = uri::URI::parse(params.textDocument.uri);
   if (!uri) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
