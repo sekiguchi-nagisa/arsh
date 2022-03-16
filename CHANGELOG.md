@@ -125,6 +125,7 @@
 - negative number or out-of-range number handling of ``SHLVL`` in startup time
 - out-of-range unicode handling in dollar string and echo command
 - broken code generation of finally-block within nested try-loop
+- broken invisible character escaping of command arguments
 
 ## [0.24.0] - 2021-12-28
 

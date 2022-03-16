@@ -25,6 +25,8 @@ var DIR = 'jfreire'
 cd $DIR 2>&1 | grep "ydsh: cd: $DIR:"
 assert($? == 0)
 
+assert "$(cd %25~あああ𩒐.ds 2>&1)" == "ydsh: cd: %25~あああ𩒐.ds: No such file or directory"
+
 # empty HOME
 $HOME = ''
 

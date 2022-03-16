@@ -130,7 +130,7 @@ std::string toPrintable(StringRef ref) {
   auto old = errno;
   std::string ret;
   for (auto ch : ref) {
-    if (ch < 32 || ch == 127) {
+    if ((ch >= 0 && ch < 32) || ch == 127) {
       char d[16];
       snprintf(d, std::size(d), "\\x%02x", ch);
       ret += d;
