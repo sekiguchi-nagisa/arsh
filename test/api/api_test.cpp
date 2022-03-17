@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <array>
+
 #include <config.h>
 #include <constant.h>
 #include <misc/fatal.h>
@@ -171,8 +173,8 @@ TEST_F(APITest, config) {
 
   value = DSState_config(this->state, DS_CONFIG_MODULE_HOME);
   {
-      const char *base = DSState_config(this->state, DS_CONFIG_DATA_HOME);
-      ASSERT_EQ(format("%s/module", base), value);
+    const char *base = DSState_config(this->state, DS_CONFIG_DATA_HOME);
+    ASSERT_EQ(format("%s/module", base), value);
   }
 
   value = DSState_config(this->state, DS_CONFIG_DATA_DIR);
