@@ -788,7 +788,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
 }
 
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  if (!this->builder().isGlobal()) {
+  if (!this->builder().isGlobal() || node.getType().isUnresolved()) {
     return;
   }
 
