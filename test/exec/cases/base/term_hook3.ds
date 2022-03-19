@@ -2,7 +2,7 @@
 #$test($result = 'ASSERT', $status = 1, $lineNum = 11, $out = $'receive error: 4: 1\n')
 
 function f($s : Int, $a : Any) {
-    echo receive error: $s: "$a"
+    echo receive error: $s: $a
     assert false    # disallow nested exit
 }
 

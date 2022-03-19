@@ -2,7 +2,7 @@
 #$test($out = $'receive: 1: 0\n')
 
 function f($s : Int, $a : Any) {
-    echo receive: $s: "$a"
+    echo receive: $s: $a
 }
 
 $TERM_HOOK = $f

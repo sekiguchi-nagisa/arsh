@@ -768,15 +768,12 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
       }
     }
   } else {
-    if (exprType.is(TYPE::Any)) {
-      this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
-      node.setType(this->typePool.getUnresolvedType());
-    } else if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
-               !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
-               !this->typePool.get(TYPE::UnixFD)
-                    .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
+    if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
+        !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
+        !this->typePool.get(TYPE::UnixFD)
+             .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
       if (exprType.isArrayType() || exprType.isMapType() || exprType.isTupleType() ||
-          exprType.isRecordType()) {
+          exprType.isRecordType() || exprType.is(TYPE::Any)) {
         node.setType(this->typePool.get(TYPE::StringArray));
       } else if (auto *handle = this->typePool.lookupMethod(exprType, OP_STR)) {
         node.setHandle(handle);

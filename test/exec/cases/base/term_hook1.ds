@@ -2,7 +2,7 @@
 #$test($result = 'EXIT', $status = 5, $lineNum = 11, $out = $'receive error: 1: 5\n')
 
 function f($s : Int, $a : Any) {
-    echo receive error: $s: "$a"
+    echo receive error: $s: $a
     exit 100    # disallow nested exit
 }
 

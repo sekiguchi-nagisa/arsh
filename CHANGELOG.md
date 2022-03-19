@@ -74,7 +74,7 @@
 - **Breaking Change**: finally-less try expression is now syntax error (previously semantic error)
 - **Breaking Change**: change typechecking of parameter expansion
     - change error message when pass ``Option<T>`` to command arguments
-    - not accept ``Any`` type
+    - do not allow concatenation of ``Any`` type expression
 - **Breaking Change**: change invalid value handling of string interpolation/parameter expansion
     - if contain invalid values, just ignore theme
 - **Breaking Change**: change string interpolation/parameter expansion of ``Map`` type

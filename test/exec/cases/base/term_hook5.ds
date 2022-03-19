@@ -3,7 +3,7 @@
 
 function f($s : Int, $a : Any) {
     %'term'.kill($$)    # disallow signal handler in termination hook
-    echo receive error: $s: "$a"
+    echo receive error: $s: $a
 }
 
 function g($s : Signal) {

@@ -239,7 +239,7 @@ TEST_F(CmdlineTest, pid) {
 TEST_F(CmdlineTest, termHook) {
   const char *src = R"(
         function f($k : Int, $a : Any) {
-            echo receive error: $k: "$a"
+            echo receive error: $k: $a
         }
         $TERM_HOOK = $f
 
@@ -249,7 +249,7 @@ TEST_F(CmdlineTest, termHook) {
 
   src = R"(
         function f($k : Int, $a : Any) {
-            echo receive error: $k: "$a"
+            echo receive error: $k: $a
         }
         $TERM_HOOK = $f
 
@@ -264,7 +264,7 @@ ArithmeticError: zero division
 
   src = R"(
         function f($k : Int, $a : Any) {
-            echo receive error: $k: "$a"
+            echo receive error: $k: $a
         }
         $TERM_HOOK = $f
 
