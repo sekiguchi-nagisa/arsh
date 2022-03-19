@@ -734,22 +734,15 @@ void TryNode::dump(NodeDumper &dumper) const {
 
 VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
                          std::unique_ptr<Node> &&exprNode, Kind kind)
-    : WithRtti({startPos, 0}), varName(std::move(varName)), kind(kind),
+    : WithRtti({startPos, 0}), kind(kind), varName(std::move(varName)),
       exprNode(std::move(exprNode)) {
   if (this->exprNode != nullptr) {
     this->updateToken(this->exprNode->getToken());
   }
 }
 
-void VarDeclNode::setAttribute(const Handle &handle) {
-  this->global = handle.has(HandleAttr::GLOBAL);
-  this->varIndex = handle.getIndex();
-}
-
 void VarDeclNode::dump(NodeDumper &dumper) const {
   DUMP(varName);
-  DUMP(global);
-  DUMP(varIndex);
   DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP)                                                                              \
@@ -760,6 +753,8 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
+
+  DUMP_PTR(handle);
 }
 
 // ########################

@@ -181,8 +181,6 @@ nodes:
               pos: 10
               size: 1
             name: "a"
-          global: false
-          varIndex: 0
           exprNode:
             nodeKind: String
             token:
@@ -192,6 +190,7 @@ nodes:
             kind: "STRING"
             value: "false"
           kind: "VAR"
+          handle: null
       baseIndex: 0
       varSize: 0
       maxVarSize: 0

@@ -1764,15 +1764,15 @@ public:
   };
 
 private:
+  const Kind kind;
   NameInfo varName;
-  bool global{false};
-  Kind kind;
-  unsigned int varIndex{0};
 
   /**
    * may be null
    */
   std::unique_ptr<Node> exprNode;
+
+  HandlePtr handle;
 
 public:
   VarDeclNode(unsigned int startPos, NameInfo &&varName, std::unique_ptr<Node> &&exprNode,
@@ -1784,18 +1784,22 @@ public:
 
   Kind getKind() const { return this->kind; }
 
-  bool isReadOnly() const { return this->getKind() == LET; }
+  bool isReadOnly() const { return this->handle->has(HandleAttr::READ_ONLY); }
 
   void setAttribute(const Handle &handle);
 
-  bool isGlobal() const { return this->global; }
+  void setHandle(HandlePtr ptr) { this->handle = std::move(ptr); }
+
+  const HandlePtr &getHandle() const { return this->handle; }
+
+  bool isGlobal() const { return this->handle->has(HandleAttr::GLOBAL); }
 
   /**
    * may be null
    */
   Node *getExprNode() const { return this->exprNode.get(); }
 
-  unsigned int getVarIndex() const { return this->varIndex; }
+  unsigned int getVarIndex() const { return this->handle->getIndex(); }
 
   void dump(NodeDumper &dumper) const override;
 };

@@ -1507,7 +1507,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     }
     auto &exprType = this->checkTypeAsSomeExpr(*node.getExprNode());
     if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
-      node.setAttribute(*handle);
+      node.setHandle(handle);
     }
     break;
   }
@@ -1517,7 +1517,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
       this->checkType(this->typePool.get(TYPE::String), *node.getExprNode());
     }
     if (auto handle = this->addEnvEntry(node.getNameInfo().getToken(), node.getVarName())) {
-      node.setAttribute(*handle);
+      node.setHandle(handle);
     }
     break;
   }
