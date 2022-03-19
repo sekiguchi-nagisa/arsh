@@ -1,6 +1,6 @@
 # not allow command argument concatenation of String Array type
 
-#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'ConcatParam', $status = 1)
 
 
 echo hello${(34, 54)}   # illegal concatenation.

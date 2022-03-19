@@ -1,6 +1,6 @@
 # not allow command argument concatenation of Any type
 
-#$test($result = 'type', $lineNum = 6, $chars = 8, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 8, $errorKind = 'ConcatParam', $status = 1)
 
 
 echo 34${ 23 as Any}   # not allow

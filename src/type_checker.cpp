@@ -829,8 +829,13 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   // not allow String Array and UnixFD type
   if (node.getSegmentNodes().size() > 1) {
     for (auto &exprNode : node.getSegmentNodes()) {
-      this->checkType(nullptr, *exprNode, &this->typePool.get(TYPE::StringArray));
-      this->checkType(nullptr, *exprNode, &this->typePool.get(TYPE::UnixFD));
+      auto *exprType = &exprNode->getType();
+      if (exprType->is(TYPE::StringArray) || exprType->is(TYPE::UnixFD)) {
+        if (isa<EmbedNode>(*exprNode)) {
+          exprType = &cast<EmbedNode>(*exprNode).getExprNode().getType();
+        }
+        this->reportError<ConcatParam>(*exprNode, exprType->getName());
+      }
     }
   }
   assert(!node.getSegmentNodes().empty());
