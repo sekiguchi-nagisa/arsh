@@ -229,14 +229,15 @@ public:
 };
 
 #define EACH_HANDLE_KIND(OP)                                                                       \
-  OP(VAR)                                                                                          \
-  OP(ENV)                                                                                          \
-  OP(TYPE_ALIAS)                                                                                   \
-  OP(METHOD)                                                                                       \
-  OP(CONSTRUCTOR)                                                                                  \
-  OP(NAMED_MOD)                                                                                    \
-  OP(GLOBAL_MOD)                                                                                   \
-  OP(INLINED_MOD)
+  OP(VAR)         /* other variable except for bellow */                                           \
+  OP(ENV)         /* environmental variable */                                                     \
+  OP(TYPE_ALIAS)  /* type alias */                                                                 \
+  OP(NATIVE)      /* native method */                                                              \
+  OP(METHOD)      /* user-defined method */                                                        \
+  OP(CONSTRUCTOR) /* user-defined constructor */                                                   \
+  OP(NAMED_MOD)   /* module holder (named imported) */                                             \
+  OP(GLOBAL_MOD)  /* module holder (global imported) */                                            \
+  OP(INLINED_MOD) /* module holder (inlined imported) */
 
 enum class HandleKind : unsigned char {
 #define GEN_ENUM(E) E,
@@ -249,8 +250,7 @@ const char *toString(HandleKind kind);
 #define EACH_HANDLE_ATTR(OP)                                                                       \
   OP(READ_ONLY, (1u << 0u))                                                                        \
   OP(GLOBAL, (1u << 1u))                                                                           \
-  OP(MOD_CONST, (1u << 2u))                                                                        \
-  OP(NATIVE, (1u << 3u))
+  OP(MOD_CONST, (1u << 2u))
 
 enum class HandleAttr : unsigned char {
 #define GEN_ENUM(E, V) E = (V),
@@ -772,9 +772,8 @@ private:
   const DSType *paramTypes[];
 
   MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
-               unsigned short modId)
-      : Handle(paramSize + 1, recv, index, HandleKind::METHOD,
-               HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
+               unsigned short modId, HandleKind hk)
+      : Handle(paramSize + 1, recv, index, hk, HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
         returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
@@ -782,8 +781,7 @@ private:
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
                                               const DSType &ret, unsigned char paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0);
-    setFlag(handle->attribute, HandleAttr::NATIVE);
+    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
     return std::unique_ptr<MethodHandle>(handle);
   }
 
@@ -826,7 +824,7 @@ public:
     return *this->paramTypes[index];
   }
 
-  bool isNative() const { return this->has(HandleAttr::NATIVE); }
+  bool isNative() const { return this->is(HandleKind::NATIVE); }
 
   CallableTypes toCallableTypes() const {
     return {this->returnType, this->getParamSize(),

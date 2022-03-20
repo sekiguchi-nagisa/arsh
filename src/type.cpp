@@ -327,7 +327,7 @@ std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned 
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-  auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, modId);
+  auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, modId, HandleKind::METHOD);
   for (size_t i = 0; i < paramSize; i++) {
     handle->paramTypes[i] = params[i];
   }
