@@ -1958,14 +1958,9 @@ private:
   NameInfo funcName;
 
   /**
-   * for parameter definition.
+   * for parameter definition
    */
-  std::vector<NameInfo> params;
-
-  /**
-   * type token of each parameter
-   */
-  std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
+  std::vector<std::unique_ptr<VarDeclNode>> paramNodes;
 
   /**
    * may be null
@@ -1973,7 +1968,7 @@ private:
   std::unique_ptr<TypeNode> returnTypeNode;
 
   /**
-   * for method defintion. may be null
+   * for method definition. may be null
    */
   std::unique_ptr<TypeNode> recvTypeNode;
 
@@ -2002,14 +1997,13 @@ public:
   const std::string &getFuncName() const { return this->funcName.getName(); }
 
   void addParamNode(NameInfo &&name, std::unique_ptr<TypeNode> &&paramType) {
-    this->params.push_back(std::move(name));
-    this->paramTypeNodes.push_back(std::move(paramType));
+    unsigned int pos = name.getToken().pos;
+    this->paramNodes.push_back(std::make_unique<VarDeclNode>(
+        pos, std::move(name), std::move(paramType), VarDeclNode::VAR));
   }
 
-  const std::vector<NameInfo> &getParams() const { return this->params; }
-
-  const std::vector<std::unique_ptr<TypeNode>> &getParamTypeNodes() const {
-    return this->paramTypeNodes;
+  const std::vector<std::unique_ptr<VarDeclNode>> &getParamNodes() const {
+    return this->paramNodes;
   }
 
   void setReturnTypeNode(std::unique_ptr<TypeNode> &&typeToken) {

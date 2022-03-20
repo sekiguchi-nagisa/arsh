@@ -353,8 +353,7 @@ nodes:
         pos: 9
         size: 1
       name: "f"
-    params:
-    paramTypeNodes:
+    paramNodes:
     returnTypeNode:
       nodeKind: Type
       token:
@@ -946,30 +945,53 @@ nodes:
         pos: 9
         size: 1
       name: "f"
-    params:
-      - token:
+    paramNodes:
+      - nodeKind: VarDecl
+        token:
           pos: 11
-          size: 2
-        name: "a"
-      - token:
+          size: 8
+        type: Void
+        varName:
+          token:
+            pos: 11
+            size: 2
+          name: "a"
+        exprNode:
+          nodeKind: Type
+          token:
+            pos: 16
+            size: 3
+          type: Int
+          typeKind: "Base"
+          typeName: "Int"
+        kind: "VAR"
+        handle:
+          index: 0
+          kind: "VAR"
+          attribute: ""
+      - nodeKind: VarDecl
+        token:
           pos: 21
-          size: 2
-        name: "b"
-    paramTypeNodes:
-      - nodeKind: Type
-        token:
-          pos: 16
-          size: 3
-        type: Int
-        typeKind: "Base"
-        typeName: "Int"
-      - nodeKind: Type
-        token:
-          pos: 26
-          size: 3
-        type: Int
-        typeKind: "Base"
-        typeName: "Int"
+          size: 8
+        type: Void
+        varName:
+          token:
+            pos: 21
+            size: 2
+          name: "b"
+        exprNode:
+          nodeKind: Type
+          token:
+            pos: 26
+            size: 3
+          type: Int
+          typeKind: "Base"
+          typeName: "Int"
+        kind: "VAR"
+        handle:
+          index: 1
+          kind: "VAR"
+          attribute: ""
     returnTypeNode:
       nodeKind: Type
       token:

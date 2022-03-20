@@ -50,19 +50,27 @@ nodes:
         pos: 10
         size: 4
       name: \"hoge\"
-    params:
-      - token:
-          pos: 15
-          size: 2
-        name: \"s\"
-    paramTypeNodes:
-      - nodeKind: Type
+    paramNodes:
+      - nodeKind: VarDecl
         token:
-          pos: 20
-          size: 3
+          pos: 15
+          size: 8
         type:
-        typeKind: \"Base\"
-        typeName: \"Int\"
+        varName:
+          token:
+            pos: 15
+            size: 2
+          name: \"s\"
+        exprNode:
+          nodeKind: Type
+          token:
+            pos: 20
+            size: 3
+          type:
+          typeKind: \"Base\"
+          typeName: \"Int\"
+        kind: \"VAR\"
+        handle: null
     returnTypeNode:
       nodeKind: Type
       token:
@@ -187,19 +195,30 @@ nodes:
         pos: 10
         size: 4
       name: \"hoge\"
-    params:
-      - token:
-          pos: 15
-          size: 2
-        name: \"s\"
-    paramTypeNodes:
-      - nodeKind: Type
+    paramNodes:
+      - nodeKind: VarDecl
         token:
-          pos: 20
-          size: 3
-        type: Int
-        typeKind: \"Base\"
-        typeName: \"Int\"
+          pos: 15
+          size: 8
+        type: Void
+        varName:
+          token:
+            pos: 15
+            size: 2
+          name: \"s\"
+        exprNode:
+          nodeKind: Type
+          token:
+            pos: 20
+            size: 3
+          type: Int
+          typeKind: \"Base\"
+          typeName: \"Int\"
+        kind: \"VAR\"
+        handle:
+          index: 0
+          kind: \"VAR\"
+          attribute: \"\"
     returnTypeNode:
       nodeKind: Type
       token:

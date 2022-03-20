@@ -1795,11 +1795,10 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   }
 
   // resolve param type, return type
-  const unsigned int paramSize = node.getParamTypeNodes().size();
+  const unsigned int paramSize = node.getParamNodes().size();
   std::vector<const DSType *> paramTypes(paramSize);
   for (unsigned int i = 0; i < paramSize; i++) {
-    auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
-    paramTypes[i] = &type;
+    paramTypes[i] = &this->checkTypeAsSomeExpr(*node.getParamNodes()[i]->getExprNode());
   }
   auto *returnType =
       node.getReturnTypeNode() ? &this->checkTypeExactly(*node.getReturnTypeNode()) : nullptr;
@@ -1822,8 +1821,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
       NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this");
       this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr());
     }
-    for (unsigned int i = 0; i < paramSize; i++) {
-      this->addEntry(node.getParams()[i], *paramTypes[i], HandleAttr());
+    for (auto &paramNode : node.getParamNodes()) {
+      this->checkTypeExactly(*paramNode);
     }
     // check type func body
     this->checkTypeWithCurrentScope(

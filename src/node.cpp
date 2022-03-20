@@ -845,9 +845,7 @@ void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
 
 void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(funcName);
-  DUMP(params);
-  DUMP(paramTypeNodes);
-
+  DUMP(paramNodes);
   DUMP_PTR(returnTypeNode);
   DUMP_PTR(recvTypeNode);
   DUMP_PTR(blockNode);

@@ -721,14 +721,15 @@ static std::string generateFuncInfo(const FunctionNode &node) {
   assert(!node.isConstructor() && !node.isAnonymousFunc());
 
   std::string value = "(";
-  for (unsigned int i = 0; i < node.getParams().size(); i++) {
+  for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
+    auto &paramNode = node.getParamNodes()[i];
     if (i > 0) {
       value += ", ";
     }
     value += "$";
-    value += node.getParams()[i].getName();
+    value += paramNode->getVarName();
     value += " : ";
-    value += trimTypeName(node.getParamTypeNodes()[i]->getType());
+    value += trimTypeName(paramNode->getExprNode()->getType());
   }
   value += ") : ";
   value += trimTypeName(node.getReturnTypeNode()->getType());
@@ -743,16 +744,17 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
   assert(node.isConstructor());
 
   std::string value;
-  if (unsigned int size = node.getParams().size(); size > 0) {
+  if (unsigned int size = node.getParamNodes().size(); size > 0) {
     value += "(";
     for (unsigned int i = 0; i < size; i++) {
+      auto &paramNode = node.getParamNodes()[i];
       if (i > 0) {
         value += ", ";
       }
       value += "$";
-      value += node.getParams()[i].getName();
+      value += paramNode->getVarName();
       value += " : ";
-      value += trimTypeName(node.getParamTypeNodes()[i]->getType());
+      value += trimTypeName(paramNode->getExprNode()->getType());
     }
     value += ")";
   }
@@ -805,7 +807,9 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
       this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
     }
   }
-  this->visitEach(node.getParamTypeNodes());
+  for (auto &paramNode : node.getParamNodes()) {
+    this->visit(paramNode->getExprNode());
+  }
   this->visit(node.getReturnTypeNode());
   this->visit(node.getRecvTypeNode());
   auto func = this->builder().intoScope(node.getResolvedType());
@@ -813,8 +817,8 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   //    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this"); //FIXME: hover this
   //    this->builder().addDecl(nameInfo, node.getRecvTypeNode()->getType());
   //  }
-  for (unsigned int i = 0; i < node.getParams().size(); i++) {
-    this->builder().addDecl(node.getParams()[i], node.getParamTypeNodes()[i]->getType());
+  for (auto &paramNode : node.getParamNodes()) {
+    this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType());
   }
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
