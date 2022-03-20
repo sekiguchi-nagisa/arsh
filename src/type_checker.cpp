@@ -1633,8 +1633,12 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   }
 }
 
-void TypeChecker::registerFuncHandle(FunctionNode &node,
-                                     const std::vector<const DSType *> &paramTypes) {
+void TypeChecker::registerFuncHandle(FunctionNode &node) {
+  std::vector<const DSType *> paramTypes(node.getParamNodes().size());
+  for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
+    paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
+  }
+
   if (node.isMethod()) {
     auto &recvType = node.getRecvTypeNode()->getType();
     auto ret = this->curScope->defineMethod(this->typePool, recvType, node.getFuncName(),
@@ -1648,8 +1652,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node,
     }
   } else if (node.getReturnTypeNode()) { // for named function
     assert(!node.isConstructor());
-    auto typeOrError = this->typePool.createFuncType(node.getReturnTypeNode()->getType(),
-                                                     std::vector<const DSType *>(paramTypes));
+    auto typeOrError =
+        this->typePool.createFuncType(node.getReturnTypeNode()->getType(), std::move(paramTypes));
     if (typeOrError) {
       auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
       node.setResolvedType(funcType);
@@ -1682,8 +1686,7 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnType,
-                                      std::vector<const DSType *> &&paramTypes) {
+void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnType) {
   assert(!node.isConstructor());
 
   // insert terminal node if not found
@@ -1721,6 +1724,10 @@ void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnTy
   if (!returnType) {
     assert(!funcType);
     auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
+    std::vector<const DSType *> paramTypes(node.getParamNodes().size());
+    for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
+      paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
+    }
     auto typeOrError = this->typePool.createFuncType(type, std::move(paramTypes));
     if (typeOrError) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
@@ -1742,8 +1749,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnTy
   }
 }
 
-void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope,
-                                         unsigned int paramSize) {
+void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope) {
   assert(node.isConstructor() && !node.getFuncName().empty());
   assert(constructorScope && constructorScope->parent &&
          constructorScope->kind == NameScope::BLOCK &&
@@ -1754,7 +1760,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&cons
   }
 
   // finalize record type
-  const unsigned int offset = paramSize;
+  const unsigned int offset = node.getParamNodes().size();
   std::unordered_map<std::string, HandlePtr> handles;
   for (auto &e : constructorScope->getHandles()) {
     auto handle = e.second.first;
@@ -1795,10 +1801,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   }
 
   // resolve param type, return type
-  const unsigned int paramSize = node.getParamNodes().size();
-  std::vector<const DSType *> paramTypes(paramSize);
-  for (unsigned int i = 0; i < paramSize; i++) {
-    paramTypes[i] = &this->checkTypeAsSomeExpr(*node.getParamNodes()[i]->getExprNode());
+  for (auto &paramNode : node.getParamNodes()) {
+    this->checkTypeAsSomeExpr(*paramNode->getExprNode());
   }
   auto *returnType =
       node.getReturnTypeNode() ? &this->checkTypeExactly(*node.getReturnTypeNode()) : nullptr;
@@ -1808,7 +1812,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   }
 
   // register function/constructor handle
-  this->registerFuncHandle(node, paramTypes);
+  this->registerFuncHandle(node);
 
   // func body
   NameScopePtr scope;
@@ -1831,12 +1835,12 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if (node.isConstructor()) {
       scope = this->curScope; // save current scope
     } else {
-      this->postprocessFunction(node, returnType, std::move(paramTypes));
+      this->postprocessFunction(node, returnType);
     }
   }
 
   if (node.isConstructor()) {
-    this->postprocessConstructor(node, std::move(scope), paramSize);
+    this->postprocessConstructor(node, std::move(scope));
   }
 }
 
