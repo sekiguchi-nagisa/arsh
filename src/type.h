@@ -237,7 +237,8 @@ public:
   OP(CONSTRUCTOR) /* user-defined constructor */                                                   \
   OP(NAMED_MOD)   /* module holder (named imported) */                                             \
   OP(GLOBAL_MOD)  /* module holder (global imported) */                                            \
-  OP(INLINED_MOD) /* module holder (inlined imported) */
+  OP(INLINED_MOD) /* module holder (inlined imported) */                                           \
+  OP(MOD_CONST)   /* module specific constant */
 
 enum class HandleKind : unsigned char {
 #define GEN_ENUM(E) E,
@@ -249,8 +250,7 @@ const char *toString(HandleKind kind);
 
 #define EACH_HANDLE_ATTR(OP)                                                                       \
   OP(READ_ONLY, (1u << 0u))                                                                        \
-  OP(GLOBAL, (1u << 1u))                                                                           \
-  OP(MOD_CONST, (1u << 2u))
+  OP(GLOBAL, (1u << 1u))
 
 enum class HandleAttr : unsigned char {
 #define GEN_ENUM(E, V) E = (V),

@@ -235,13 +235,14 @@ TEST_F(ScopeTest, global) {
       handle));
 
   // define handle
-  ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), HandleAttr::MOD_CONST);
+  ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), HandleKind::MOD_CONST,
+                                HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Signal,
           .index = 1,
-          .kind = HandleKind::VAR,
-          .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
+          .kind = HandleKind::MOD_CONST,
+          .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },
       ret));
@@ -250,8 +251,8 @@ TEST_F(ScopeTest, global) {
       Entry{
           .type = TYPE::Signal,
           .index = 1,
-          .kind = HandleKind::VAR,
-          .attr = HandleAttr::GLOBAL | HandleAttr::MOD_CONST,
+          .kind = HandleKind::MOD_CONST,
+          .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },
       handle));

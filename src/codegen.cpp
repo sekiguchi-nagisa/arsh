@@ -483,7 +483,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     }
 
     this->emit0byteIns(OpCode::LOAD_ENV);
-  } else if (hasFlag(node.attr(), HandleAttr::MOD_CONST)) {
+  } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
     this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
   } else {
     if (hasFlag(node.attr(), HandleAttr::GLOBAL)) {

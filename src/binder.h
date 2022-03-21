@@ -38,11 +38,16 @@ public:
       : consumer(consumer), pool(pool), scope(scope) {}
 
   template <typename T>
-  void bind(const char *varName, T v, HandleAttr attr = HandleAttr::READ_ONLY) {
+  void bind(const char *varName, T v, HandleKind kind, HandleAttr attr) {
     auto &type = this->toType(std::forward<T>(v));
-    auto handle = this->scope.defineHandle(varName, type, attr);
+    auto handle = this->scope.defineHandle(varName, type, kind, attr);
     assert(static_cast<bool>(handle));
     this->consumer(*handle.asOk(), std::forward<T>(v));
+  }
+
+  template <typename T>
+  void bind(const char *varName, T v, HandleAttr attr = HandleAttr::READ_ONLY) {
+    this->bind(varName, std::move(v), HandleKind::VAR, attr);
   }
 
   void bind(const char *varName, const DSType &type) {
@@ -67,13 +72,13 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * dummy object.
    * must be String_Object
    */
-  binder.bind(CVAR_SCRIPT_NAME, "", HandleAttr::MOD_CONST | HandleAttr::READ_ONLY);
+  binder.bind(CVAR_SCRIPT_NAME, "", HandleKind::MOD_CONST, HandleAttr::READ_ONLY);
 
   /**
    * dummy object
    * must be String_Object
    */
-  binder.bind(CVAR_SCRIPT_DIR, "", HandleAttr::MOD_CONST | HandleAttr::READ_ONLY);
+  binder.bind(CVAR_SCRIPT_DIR, "", HandleKind::MOD_CONST, HandleAttr::READ_ONLY);
 
   /**
    * default variable for read command.

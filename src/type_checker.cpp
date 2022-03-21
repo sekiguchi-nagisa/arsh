@@ -1308,7 +1308,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     if (!varNode.getHandle()) {
       break;
     }
-    if (hasFlag(varNode.attr(), HandleAttr::MOD_CONST)) {
+    if (varNode.getHandle()->is(HandleKind::MOD_CONST)) {
       if (varNode.getVarName() == CVAR_SCRIPT_NAME) {
         value = this->lexer->getSourceName();
       } else if (varNode.getVarName() == CVAR_SCRIPT_DIR) {
