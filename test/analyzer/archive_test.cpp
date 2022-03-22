@@ -585,6 +585,11 @@ TEST_F(ArchiveTest, userdefined) {
   auto typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  handle = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle); // in named import, not found
+  auto lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
+  ASSERT_TRUE(lookup);
+  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
 
   //
   typeName = "Interval";
@@ -593,8 +598,32 @@ TEST_F(ArchiveTest, userdefined) {
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  handle = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle); // in named import, not found
+  lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
+  ASSERT_TRUE(lookup);
+  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
+  {
+    auto &recordType = cast<RecordType>(*typeOrError.asOk());
+    ASSERT_TRUE(recordType.isFinalized());
+    ASSERT_EQ(2, recordType.getFieldSize());
+    ASSERT_EQ(2, recordType.getHandleMap().size());
+    auto hd = recordType.lookupField("begin");
+    ASSERT_TRUE(hd);
+    ASSERT_EQ(recordType, this->pool().get(hd->getTypeId()));
+    hd = recordType.lookupField("end");
+    ASSERT_TRUE(hd);
+    ASSERT_EQ(*this->pool().getType(toQualifiedTypeName("APIError", modType.getModId())).asOk(),
+              this->pool().get(hd->getTypeId()));
+  }
   auto *methodHandle = this->scope().lookupConstructor(this->pool(), *typeOrError.asOk());
   ASSERT_TRUE(methodHandle);
+  ASSERT_TRUE(methodHandle->isConstructor());
+  ASSERT_EQ(1, methodHandle->getParamSize());
+  ASSERT_EQ(this->pool().get(TYPE::Int), methodHandle->getParamTypeAt(0));
+  ASSERT_EQ(*typeOrError.asOk(), methodHandle->getReturnType());
+  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(methodHandle->getRecvTypeId()));
+  ASSERT_TRUE(methodHandle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
 
   //
   typeName = "_Pair";
@@ -603,6 +632,75 @@ TEST_F(ArchiveTest, userdefined) {
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  /**
+   * after deserialized, always true
+   */
+  ASSERT_TRUE(cast<RecordType>(typeOrError.asOk())->isFinalized());
+  handle = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle); // in named import, not found
+  lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
+  ASSERT_FALSE(lookup); // module private member is not found
+}
+
+TEST_F(ArchiveTest, method1) {
+  /**
+   * for named import
+   */
+  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) {
+    auto ret =
+        ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum",
+                                     ctx.getPool().get(TYPE::Int), {&ctx.getPool().get(TYPE::Int)});
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isMethod());
+
+    ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
+                                       ctx.getPool().get(TYPE::Int), {});
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isMethod());
+  });
+  (void)modType;
+
+  auto method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
+  ASSERT_TRUE(method);
+  ASSERT_TRUE(method->isMethod());
+  ASSERT_EQ(1, method->getParamSize());
+  ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
+  ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(method->getRecvTypeId()));
+  ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
+  ASSERT_TRUE(method->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
+
+  method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
+  ASSERT_FALSE(method);
+}
+
+TEST_F(ArchiveTest, method2) {
+  /**
+   * for global import
+   */
+  auto &modType = this->loadMod(true, [&](AnalyzerContext &ctx) {
+    auto ret =
+        ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum",
+                                     ctx.getPool().get(TYPE::Int), {&ctx.getPool().get(TYPE::Int)});
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isMethod());
+
+    ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
+                                       ctx.getPool().get(TYPE::Int), {});
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isMethod());
+  });
+  (void)modType;
+
+  auto method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
+  ASSERT_TRUE(method);
+  ASSERT_TRUE(method->isMethod());
+  ASSERT_EQ(1, method->getParamSize());
+  ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
+  ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(method->getRecvTypeId()));
+  ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
+
+  method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
+  ASSERT_FALSE(method);
 }
 
 struct Builder {
