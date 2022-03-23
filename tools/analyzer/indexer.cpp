@@ -201,7 +201,7 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
 void IndexBuilder::addThis(const NameInfo &info) {
   auto *methodScope = this->curScope().findMethodScope();
   assert(methodScope);
-  if (auto *ref = methodScope->find(mangleSymbolName(DeclSymbol::Kind::LET, info))) {
+  if (methodScope->find(mangleSymbolName(DeclSymbol::Kind::LET, info))) {
     this->addSymbol(info, DeclSymbol::Kind::LET);
   } else {
     this->addDecl(info, *methodScope->getResolvedType(), DeclSymbol::Kind::LET);
