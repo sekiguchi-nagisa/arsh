@@ -1316,7 +1316,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       } else {
         break;
       }
-    } else if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
+    } else if (varNode.hasAttr(HandleAttr::GLOBAL)) {
       auto *ptr = this->config.lookup(varNode.getVarName());
       if (!ptr) {
         break;
@@ -1532,7 +1532,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftType = this->checkTypeAsExpr(leftNode);
   if (isa<AssignableNode>(leftNode)) {
     auto &assignable = cast<AssignableNode>(leftNode);
-    if (assignable.getHandle() && hasFlag(assignable.attr(), HandleAttr::READ_ONLY)) {
+    if (assignable.getHandle() && assignable.hasAttr(HandleAttr::READ_ONLY)) {
       if (isa<VarNode>(leftNode)) {
         this->reportError<ReadOnlySymbol>(leftNode, cast<VarNode>(leftNode).getVarName().c_str());
       } else {

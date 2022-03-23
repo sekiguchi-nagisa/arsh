@@ -583,7 +583,7 @@ public:
 
   const HandlePtr &getHandle() const { return this->handle; }
 
-  HandleAttr attr() const { return this->getHandle()->attr(); }
+  bool hasAttr(HandleAttr attr) const { return hasFlag(this->getHandle()->attr(), attr); }
 
   unsigned int getIndex() const { return this->getHandle()->getIndex(); }
 };

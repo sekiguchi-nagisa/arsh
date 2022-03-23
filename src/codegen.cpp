@@ -476,7 +476,7 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
   this->emitSourcePos(node.getPos());
   if (node.getHandle()->is(HandleKind::ENV)) {
-    if (hasFlag(node.attr(), HandleAttr::GLOBAL)) {
+    if (node.hasAttr(HandleAttr::GLOBAL)) {
       this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
     } else {
       this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
@@ -486,7 +486,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
     this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
   } else {
-    if (hasFlag(node.attr(), HandleAttr::GLOBAL)) {
+    if (node.hasAttr(HandleAttr::GLOBAL)) {
       if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {
         this->emit0byteIns(OpCode::LOAD_CUR_MOD);
       } else if (node.getIndex() == toIndex(BuiltinVarOffset::RANDOM)) {
@@ -1334,7 +1334,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     auto &varNode = cast<VarNode>(node.getLeftNode());
 
     if (varNode.getHandle()->is(HandleKind::ENV)) {
-      if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
+      if (varNode.hasAttr(HandleAttr::GLOBAL)) {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       } else {
         this->emit1byteIns(OpCode::LOAD_LOCAL, index);
@@ -1342,7 +1342,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
       this->emit0byteIns(OpCode::SWAP);
       this->emit0byteIns(OpCode::STORE_ENV);
     } else {
-      if (hasFlag(varNode.attr(), HandleAttr::GLOBAL)) {
+      if (varNode.hasAttr(HandleAttr::GLOBAL)) {
         if (index == toIndex(BuiltinVarOffset::SECONDS)) {
           this->emit0byteIns(OpCode::SET_SECOND);
         } else {
