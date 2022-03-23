@@ -1823,7 +1823,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register parameter
     if (node.isMethod()) {
       NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this");
-      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr());
+      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
     }
     for (auto &paramNode : node.getParamNodes()) {
       this->checkTypeExactly(*paramNode);

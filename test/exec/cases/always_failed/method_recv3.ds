@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'ReadOnly', $status = 1)
+
+function print() : Void for Int {
+    $this += 100
+}
+
+34.print()
