@@ -198,6 +198,16 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
   return nullptr;
 }
 
+void IndexBuilder::addThis(const NameInfo &info) {
+  auto *methodScope = this->curScope().findMethodScope();
+  assert(methodScope);
+  if (auto *ref = methodScope->find(mangleSymbolName(DeclSymbol::Kind::LET, info))) {
+    this->addSymbol(info, DeclSymbol::Kind::LET);
+  } else {
+    this->addDecl(info, *methodScope->getResolvedType(), DeclSymbol::Kind::LET);
+  }
+}
+
 bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined) {
   if (!this->scope->isGlobal()) {
     return false;
@@ -483,7 +493,11 @@ void SymbolIndexer::visitTupleNode(TupleNode &node) { this->visitEach(node.getNo
 void SymbolIndexer::visitVarNode(VarNode &node) {
   if (!node.isUntyped() && !node.getType().isVoidType() && !node.getType().isNothingType()) {
     NameInfo info(node.getToken(), node.getVarName());
-    this->builder().addSymbol(info);
+    if (this->builder().isReceiver(node.getVarName(), *node.getHandle())) {
+      this->builder().addThis(info);
+    } else {
+      this->builder().addSymbol(info);
+    }
   }
 }
 
@@ -595,7 +609,7 @@ void SymbolIndexer::visitAssertNode(AssertNode &node) {
 }
 
 void SymbolIndexer::visitBlockNode(BlockNode &node) {
-  auto block = this->builder().intoScope();
+  auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visitBlockWithCurrentScope(node);
 }
 
@@ -625,7 +639,7 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
 void SymbolIndexer::visitDeferNode(DeferNode &node) { this->visit(node.getBlockNode()); }
 
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
-  auto block = this->builder().intoScope();
+  auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visit(node.getInitNode());
   this->visit(node.getCondNode());
   this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -651,7 +665,7 @@ void SymbolIndexer::visitArmNode(ArmNode &node) {
 void SymbolIndexer::visitJumpNode(JumpNode &node) { this->visit(node.getExprNode()); }
 
 void SymbolIndexer::visitCatchNode(CatchNode &node) {
-  auto block = this->builder().intoScope();
+  auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visit(node.getTypeNode());
   this->builder().addDecl(node.getNameInfo(), node.getTypeNode().getType());
   this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -703,7 +717,7 @@ void SymbolIndexer::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
 
 void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
   if (node.getExprNode()) {
-    auto block = this->builder().intoScope();
+    auto block = this->builder().intoScope(ScopeKind::BLOCK);
     for (auto &e : node.getAssignNodes()) {
       this->visit(e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
@@ -789,6 +803,16 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
   return value;
 }
 
+static ScopeKind getScopeKind(const FunctionNode &node) {
+  if (node.isConstructor()) {
+    return ScopeKind::CONSTRUCTOR;
+  } else if (node.isMethod()) {
+    return ScopeKind::METHOD;
+  } else {
+    return ScopeKind::FUNC;
+  }
+}
+
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   if (!this->builder().isGlobal() || node.getType().isUnresolved()) {
     return;
@@ -812,11 +836,9 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   }
   this->visit(node.getReturnTypeNode());
   this->visit(node.getRecvTypeNode());
-  auto func = this->builder().intoScope(node.getResolvedType());
-  //  if (node.isMethod()) {
-  //    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this"); //FIXME: hover this
-  //    this->builder().addDecl(nameInfo, node.getRecvTypeNode()->getType());
-  //  }
+  auto func = this->builder().intoScope(getScopeKind(node), node.isMethod()
+                                                                ? &node.getRecvTypeNode()->getType()
+                                                                : node.getResolvedType());
   for (auto &paramNode : node.getParamNodes()) {
     this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType());
   }
@@ -836,7 +858,7 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
     this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover);
   }
-  auto udc = this->builder().intoScope();
+  auto udc = this->builder().intoScope(ScopeKind::FUNC);
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 

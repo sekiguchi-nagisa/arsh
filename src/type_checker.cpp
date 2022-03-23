@@ -1822,7 +1822,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
                                node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
     // register parameter
     if (node.isMethod()) {
-      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), "this");
+      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
       this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
     }
     for (auto &paramNode : node.getParamNodes()) {

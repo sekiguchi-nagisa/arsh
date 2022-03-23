@@ -150,7 +150,7 @@ private:
 
   std::vector<Location> findReferenceImpl(const SymbolRequest &request) const;
 
-  Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request);
+  Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request) const;
 
   DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
 

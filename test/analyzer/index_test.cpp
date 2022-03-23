@@ -1779,7 +1779,7 @@ TEST_F(IndexTest, udtypeRecRef) {
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
-TEST_F(IndexTest, methodDef) { // FIXME: test this
+TEST_F(IndexTest, methodDef) {
   unsigned short modId;
   const char *content = R"E(
     function factorial() : Int for Int {
@@ -1788,7 +1788,7 @@ TEST_F(IndexTest, methodDef) { // FIXME: test this
     23.factorial()
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
 
   // definition
 
@@ -1819,9 +1819,54 @@ TEST_F(IndexTest, methodDef) { // FIXME: test this
   };
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  /**
+   * this
+   */
+  // clang-format off
+  req = {
+    .modId = modId, // $this
+    .position = { .line = 2, .character = 17, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // $this
+      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // $this
+    .position = { .line = 2, .character = 37, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // $this
+      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId, // $this
+    .position = { .line = 2, .character = 45, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId, // $this
+      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
-TEST_F(IndexTest, methodRef) { // FIXME: this
+TEST_F(IndexTest, methodRef) {
   unsigned short modId;
   const char *content = R"E(
     function factorial() : Int for Int {
@@ -1830,7 +1875,7 @@ TEST_F(IndexTest, methodRef) { // FIXME: this
     23.factorial()
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
 
   // references
 
@@ -1851,6 +1896,31 @@ TEST_F(IndexTest, methodRef) { // FIXME: this
     RefsResult{
       .modId = modId, // 23.factorial()
       .range = {.start = {.line = 4, .character = 7}, .end = {.line = 4, .character = 16}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  /**
+   * this
+   */
+  // clang-format off
+  req = {
+    .modId = modId, // $this
+    .position = { .line = 2, .character = 19, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId, // itself
+      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
+    },
+    RefsResult{
+      .modId = modId, // $this * ($this - 1)
+      .range = {.start = {.line = 2, .character = 32}, .end = {.line = 2, .character = 37}}
+    },
+    RefsResult{
+      .modId = modId, // $this - 1
+      .range = {.start = {.line = 2, .character = 41}, .end = {.line = 2, .character = 46}}
     },
   };
   // clang-format on
@@ -2150,6 +2220,10 @@ typedef Interval {
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for Int { return $this; }\n12.value()",
                                       Position{.line = 1, .character = 3},
                                       "```ydsh\nfunction value() : Int for Int\n```"));
+
+  ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
+                                      Position{.line = 1, .character = 8},
+                                      "```ydsh\nlet this : String\n```"));
 
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");

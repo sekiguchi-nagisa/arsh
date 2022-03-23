@@ -160,7 +160,8 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
   return values;
 }
 
-Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src, const SymbolRequest &request) {
+Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
+                                                  const SymbolRequest &request) const {
   Union<Hover, std::nullptr_t> ret = nullptr;
   findDeclaration(this->result.indexes, request, [&](const FindDeclResult &value) {
     if (is<Hover>(ret)) {

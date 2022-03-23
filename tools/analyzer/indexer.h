@@ -22,6 +22,14 @@
 
 namespace ydsh::lsp {
 
+enum class ScopeKind {
+  GLOBAL,
+  FUNC,
+  CONSTRUCTOR,
+  METHOD,
+  BLOCK,
+};
+
 class IndexBuilder {
 private:
   const unsigned short modId;
@@ -44,15 +52,24 @@ private:
   public:
     const IntrusivePtr<ScopeEntry> parent;
 
-    ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, const DSType *type)
-        : resolvedType(type), parent(parent) {}
+    const ScopeKind kind;
 
-    ScopeEntry() : ScopeEntry(nullptr, nullptr) {}
+    ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, ScopeKind kind, const DSType *type)
+        : resolvedType(type), parent(parent), kind(kind) {}
+
+    ScopeEntry() : ScopeEntry(nullptr, ScopeKind::GLOBAL, nullptr) {}
 
     bool isGlobal() const { return !this->parent; }
 
-    bool isConstructor() const {
-      return this->getResolvedType() != nullptr && this->getResolvedType()->isRecordType();
+    bool isConstructor() const { return this->kind == ScopeKind::CONSTRUCTOR; }
+
+    const ScopeEntry *findMethodScope() const {
+      for (auto *cur = this; cur != nullptr; cur = cur->parent.get()) {
+        if (cur->kind == ScopeKind::METHOD) {
+          return cur;
+        }
+      }
+      return nullptr;
     }
 
     const DSType *getResolvedType() const { return this->resolvedType; }
@@ -60,14 +77,12 @@ private:
     bool addDecl(const DeclSymbol &decl);
 
     const SymbolRef *find(const std::string &name) const {
-      auto cur = this;
-      do {
+      for (auto *cur = this; cur != nullptr; cur = cur->parent.get()) {
         auto iter = cur->map.find(name);
         if (iter != cur->map.end()) {
           return &iter->second;
         }
-        cur = cur->parent.get();
-      } while (cur);
+      }
       return nullptr;
     }
   };
@@ -170,12 +185,16 @@ public:
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
-  auto intoScope(const DSType *type = nullptr) {
-    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, type);
+  auto intoScope(ScopeKind kind, const DSType *type = nullptr) {
+    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, kind, type);
     return finally([&] { this->scope = this->scope->parent; });
   }
 
   bool isGlobal() const { return this->scope->isGlobal(); }
+
+  bool isReceiver(const std::string &varName, const Handle &handle) const {
+    return this->curScope().findMethodScope() && varName == VAR_THIS && handle.getIndex() == 0;
+  }
 
   const DeclSymbol *addDecl(const NameInfo &info, const DSType &type,
                             DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
@@ -185,6 +204,8 @@ public:
   }
 
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+
+  void addThis(const NameInfo &info);
 
   bool importForeignDecls(unsigned short foreignModId, bool inlined);
 

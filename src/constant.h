@@ -82,6 +82,7 @@ constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 
 constexpr const char *VAR_YDSH_BIN = "YDSH_BIN";
 constexpr const char *VAR_IFS = "IFS";
+constexpr const char *VAR_THIS = "this"; // for method receiver
 
 // used in constant expression
 constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";

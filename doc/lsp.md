@@ -8,7 +8,7 @@
 | variable (for-in)                     | ✔️             | ✔️             | ✔️                 |
 | variable (catch)                      | ✔️             | ✔️             | ✔️                 |
 | variable (function parameter)         | ✔️             | ✔️             | ✔️                 |
-| variable (this)                       | -              | -              | ❌                 |
+| variable (this)                       | ✔️             | ✔️             | ✔️                 |
 | variable (global import)              | ✔️             | ✔️             | ✔️                 |
 | variable (inlined import)             | ✔️             | ✔️             | ✔️                 |
 | variable (named import)               | ✔️             | ✔️             | ✔️                 |
@@ -30,7 +30,7 @@
 | type (user-defined type)              | ✔️             | ✔️             | ✔️                 |
 | field (tuple)                         | -              | -              | ✔️                 |
 | field (user-defined type)             | ✔️             | ✔️             | ✔️                 |
-| method (builtin)                      | -              | -              | ✔️                  |
+| method (builtin)                      | -              | -              | ✔️                 |
 | source path                           | -              | -              | ❌ (show path)      |
 | source path (glob)                    | -              | -              | ❌ (show path list) |
 | source (variable)                     | ✔️             | ✔️             | ✔️                 |
