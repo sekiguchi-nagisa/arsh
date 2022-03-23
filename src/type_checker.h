@@ -513,9 +513,9 @@ private:
 
   void registerFuncHandle(FunctionNode &node);
 
-  void postprocessFunction(FunctionNode &node, const DSType *returnType);
+  void postprocessFunction(FunctionNode &node);
 
-  void postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope);
+  void postprocessConstructor(FunctionNode &node);
 
   // for case-expression
   struct PatternMap {

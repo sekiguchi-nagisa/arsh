@@ -1500,10 +1500,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-  HandleAttr attr{};
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR: {
+    HandleAttr attr{};
     if (node.getKind() == VarDeclNode::LET) {
       setFlag(attr, HandleAttr::READ_ONLY);
     }
@@ -1686,8 +1686,13 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnType) {
+void TypeChecker::postprocessFunction(FunctionNode &node) {
   assert(!node.isConstructor());
+
+  const DSType *returnType = nullptr;
+  if (node.getReturnTypeNode()) {
+    returnType = &node.getReturnTypeNode()->getType();
+  }
 
   // insert terminal node if not found
   BlockNode &blockNode = node.getBlockNode();
@@ -1749,11 +1754,9 @@ void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnTy
   }
 }
 
-void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&constructorScope) {
+void TypeChecker::postprocessConstructor(FunctionNode &node) {
   assert(node.isConstructor() && !node.getFuncName().empty());
-  assert(constructorScope && constructorScope->parent &&
-         constructorScope->kind == NameScope::BLOCK &&
-         constructorScope->parent->kind == NameScope::FUNC);
+  assert(this->curScope->parent->kind == NameScope::FUNC);
 
   if (!node.getResolvedType()) {
     return;
@@ -1762,7 +1765,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&cons
   // finalize record type
   const unsigned int offset = node.getParamNodes().size();
   std::unordered_map<std::string, HandlePtr> handles;
-  for (auto &e : constructorScope->getHandles()) {
+  for (auto &e : this->curScope->getHandles()) {
     auto handle = e.second.first;
     if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethod()) {
       if (handle->getIndex() < offset) {
@@ -1815,32 +1818,27 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   this->registerFuncHandle(node);
 
   // func body
-  NameScopePtr scope;
-  {
-    assert(!node.isConstructor() || (node.isConstructor() && !returnType));
-    auto func = this->intoFunc(returnType,
-                               node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
-    // register parameter
-    if (node.isMethod()) {
-      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
-      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
-    }
-    for (auto &paramNode : node.getParamNodes()) {
-      this->checkTypeExactly(*paramNode);
-    }
-    // check type func body
-    this->checkTypeWithCurrentScope(
-        node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
-    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
-    if (node.isConstructor()) {
-      scope = this->curScope; // save current scope
-    } else {
-      this->postprocessFunction(node, returnType);
-    }
+  assert(!node.isConstructor() || (node.isConstructor() && !returnType));
+  auto func = this->intoFunc(returnType,
+                             node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
+  // register parameter
+  if (node.isMethod()) {
+    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
+    this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
   }
+  for (auto &paramNode : node.getParamNodes()) {
+    this->checkTypeExactly(*paramNode);
+  }
+  // check type func body
+  this->checkTypeWithCurrentScope(
+      node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
+  node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
 
+  // post process
   if (node.isConstructor()) {
-    this->postprocessConstructor(node, std::move(scope));
+    this->postprocessConstructor(node);
+  } else {
+    this->postprocessFunction(node);
   }
 }
 
