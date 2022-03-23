@@ -1500,10 +1500,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
+  HandleAttr attr{};
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR: {
-    HandleAttr attr{};
     if (node.getKind() == VarDeclNode::LET) {
       setFlag(attr, HandleAttr::READ_ONLY);
     }
@@ -1686,13 +1686,8 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
   blockNode.addNode(std::move(returnNode));
 }
 
-void TypeChecker::postprocessFunction(FunctionNode &node) {
+void TypeChecker::postprocessFunction(FunctionNode &node, const DSType *returnType) {
   assert(!node.isConstructor());
-
-  const DSType *returnType = nullptr;
-  if (node.getReturnTypeNode()) {
-    returnType = &node.getReturnTypeNode()->getType();
-  }
 
   // insert terminal node if not found
   BlockNode &blockNode = node.getBlockNode();
@@ -1794,34 +1789,6 @@ void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&cons
   node.getBlockNode().addNode(std::move(returnNode));
 }
 
-NameScopePtr TypeChecker::checkTypeFuncBody(FunctionNode &node) {
-  assert(!node.isConstructor() || (node.isConstructor() && !node.getReturnTypeNode()));
-
-  const DSType *returnType = nullptr;
-  if (node.getReturnTypeNode()) {
-    returnType = &node.getReturnTypeNode()->getType();
-  }
-
-  auto func = this->intoFunc(returnType,
-                             node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
-  auto savedScope = this->curScope; // save current function scope
-
-  // register parameter
-  if (node.isMethod()) {
-    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
-    this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
-  }
-  for (auto &paramNode : node.getParamNodes()) {
-    this->checkTypeExactly(*paramNode);
-  }
-
-  // check type func body
-  this->checkTypeWithCurrentScope(
-      node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
-  node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
-  return savedScope;
-}
-
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
   if (!this->curScope->isGlobal()) { // only available toplevel scope
@@ -1837,9 +1804,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   for (auto &paramNode : node.getParamNodes()) {
     this->checkTypeAsSomeExpr(*paramNode->getExprNode());
   }
-  if (node.getReturnTypeNode()) {
-    this->checkTypeExactly(*node.getReturnTypeNode());
-  }
+  auto *returnType =
+      node.getReturnTypeNode() ? &this->checkTypeExactly(*node.getReturnTypeNode()) : nullptr;
+
   if (node.isMethod()) {
     this->checkTypeAsSomeExpr(*node.getRecvTypeNode());
   }
@@ -1848,13 +1815,32 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   this->registerFuncHandle(node);
 
   // func body
-  auto savedScope = this->checkTypeFuncBody(node);
+  NameScopePtr scope;
+  {
+    assert(!node.isConstructor() || (node.isConstructor() && !returnType));
+    auto func = this->intoFunc(returnType,
+                               node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
+    // register parameter
+    if (node.isMethod()) {
+      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
+      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
+    }
+    for (auto &paramNode : node.getParamNodes()) {
+      this->checkTypeExactly(*paramNode);
+    }
+    // check type func body
+    this->checkTypeWithCurrentScope(
+        node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
+    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+    if (node.isConstructor()) {
+      scope = this->curScope; // save current scope
+    } else {
+      this->postprocessFunction(node, returnType);
+    }
+  }
 
-  // post process
   if (node.isConstructor()) {
-    this->postprocessConstructor(node, std::move(savedScope));
-  } else {
-    this->postprocessFunction(node);
+    this->postprocessConstructor(node, std::move(scope));
   }
 }
 
