@@ -76,7 +76,7 @@ DEFINE_TCError(InsideFinally, "no-return expressions (break, continue, return, t
                               "are not allowed inside finally block and defer statement");
 DEFINE_TCError(InsideChild, "some no-return expression (break, continue, return) "
                             "are not allowed inside child process");
-DEFINE_TCError(OutsideToplevel, "only available top level scope");
+DEFINE_TCError(OutsideToplevel, "%s is only available in global scope");
 DEFINE_TCError(NotCallable, "Func type object is not directly callable");
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");

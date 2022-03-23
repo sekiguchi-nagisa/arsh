@@ -963,7 +963,7 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
   }
   case TypeDefNode::ERROR_DEF: {
     if (!this->isTopLevel()) { // only available toplevel scope
-      this->reportError<OutsideToplevel>(node);
+      this->reportError<OutsideToplevel>(node, "error type definition");
       break;
     }
     auto &errorType = this->checkType(this->typePool.get(TYPE::Error), node.getTargetTypeNode());
@@ -1792,7 +1792,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node, NameScopePtr &&cons
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
   if (!this->curScope->isGlobal()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node);
+    this->reportError<OutsideToplevel>(node, "function definition");
     return;
   }
 
@@ -1848,7 +1848,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
 
   if (!this->isTopLevel()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node);
+    this->reportError<OutsideToplevel>(node, "user-defined command definition");
     return;
   }
 
@@ -1904,7 +1904,7 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
   //        RAISE_TC_ERROR(OutsideToplevel, node);
   //    }
   node.setType(this->typePool.get(TYPE::Void));
-  this->reportError<OutsideToplevel>(node);
+  this->reportError<OutsideToplevel>(node, "interface definition");
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {
@@ -2080,7 +2080,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
 void TypeChecker::visitSourceListNode(SourceListNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
   if (!this->isTopLevel()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node);
+    this->reportError<OutsideToplevel>(node, "source statement");
     return;
   }
   bool isGlob = node.getPathNode().getGlobPathSize() > 0 && !node.getNameInfoPtr();
