@@ -115,7 +115,7 @@ nodes:
       maxVarSize: 0
       firstDeferOffset: -1
     maxVarNum: 0
-    varIndex: 0
+    handle: null
     resolvedType: null
     kind: \"FUNC\""
 
@@ -320,7 +320,10 @@ nodes:
       maxVarSize: 1
       firstDeferOffset: -1
     maxVarNum: 1
-    varIndex: 59
+    handle:
+      index: 59
+      kind: \"VAR\"
+      attribute: \"READ_ONLY | GLOBAL\"
     resolvedType: \"(Int) -> Void\"
     kind: \"FUNC\""
 

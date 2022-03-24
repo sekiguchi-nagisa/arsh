@@ -447,7 +447,7 @@ nodes:
       maxVarSize: 0
       firstDeferOffset: -1
     maxVarNum: 0
-    varIndex: 0
+    handle: null
     resolvedType: null
     kind: "FUNC"
 )"},
@@ -1028,7 +1028,10 @@ nodes:
       maxVarSize: 2
       firstDeferOffset: -1
     maxVarNum: 2
-    varIndex: 59
+    handle:
+      index: 59
+      kind: "VAR"
+      attribute: "READ_ONLY | GLOBAL"
     resolvedType: "(Int, Int) -> Void"
     kind: "FUNC"
 )"},

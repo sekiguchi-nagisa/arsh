@@ -1402,7 +1402,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 
   this->emitLdcIns(func);
   if (!node.isAnonymousFunc()) {
-    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getHandle()->getIndex());
   }
 }
 

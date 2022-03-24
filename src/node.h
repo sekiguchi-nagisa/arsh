@@ -1980,9 +1980,9 @@ private:
   unsigned int maxVarNum{0};
 
   /**
-   * global variable table index of this function
+   * handle of this function
    */
-  unsigned int varIndex{0};
+  HandlePtr handle;
 
   const DSType *resolvedType{nullptr};
 
@@ -2033,9 +2033,9 @@ public:
 
   unsigned int getMaxVarNum() const { return this->maxVarNum; }
 
-  void setVarIndex(unsigned int index) { this->varIndex = index; }
+  void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
 
-  unsigned int getVarIndex() const { return this->varIndex; }
+  const HandlePtr &getHandle() const { return this->handle; }
 
   void setResolvedType(const DSType &type) { this->resolvedType = &type; }
 

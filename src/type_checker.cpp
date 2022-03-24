@@ -1645,7 +1645,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
                                             node.getReturnTypeNode()->getType(), paramTypes);
     if (ret) {
       assert(ret.asOk()->isMethod());
-      node.setVarIndex(ret.asOk()->getIndex());
+      node.setHandle(std::move(ret).take());
     } else {
       this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
                                        recvType.getName());
@@ -1660,7 +1660,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       if (HandlePtr handle;
           !node.isAnonymousFunc() &&
           (handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY))) {
-        node.setVarIndex(handle->getIndex());
+        node.setHandle(std::move(handle));
       }
     } else {
       this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
@@ -1670,7 +1670,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       auto ret =
           this->curScope->defineConstructor(this->typePool, cast<RecordType>(*type), paramTypes);
       assert(ret && ret.asOk()->isMethod());
-      node.setVarIndex(ret.asOk()->getIndex());
+      node.setHandle(std::move(ret).take());
     }
   }
 }

@@ -850,7 +850,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(recvTypeNode);
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);
-  DUMP(varIndex);
+  DUMP_PTR(handle);
   DUMP_PTR(resolvedType);
 
 #define EACH_ENUM(OP)                                                                              \

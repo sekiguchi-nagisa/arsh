@@ -818,7 +818,7 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
     return;
   }
 
-  if (node.getVarIndex() > 0) {
+  if (node.getHandle()) {
     if (node.isConstructor()) {
       auto value = generateConstructorInfo(this->builder().getPool(), node);
       this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str());
