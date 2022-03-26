@@ -50,35 +50,20 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
   return scope;
 }
 
-static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
-  const struct {
-    NameScope::Kind parent;
-    NameScope::Kind child;
-  } table[] = {
-      {NameScope::GLOBAL, NameScope::FUNC},
-      {NameScope::GLOBAL, NameScope::BLOCK},
-      {NameScope::FUNC, NameScope::BLOCK},
-      {NameScope::BLOCK, NameScope::BLOCK},
-  };
-  return std::any_of(std::begin(table), std::end(table),
-                     [&](auto &e) { return e.parent == parent && e.child == child; });
-}
-
 NameScopePtr NameScope::enterScope(Kind newKind) {
-  if (isAllowedScopePair(this->kind, newKind)) {
-    if (this->kind == NameScope::GLOBAL && newKind == NameScope::FUNC) {
-      return NameScope::block(newKind, this->fromThis(), this->maxVarCount);
-    } else if (this->kind == NameScope::GLOBAL && newKind == NameScope::BLOCK) {
-      return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
-    } else if (this->kind == NameScope::FUNC && newKind == NameScope::BLOCK) {
-      return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
-    } else if (this->kind == NameScope::BLOCK && newKind == NameScope::BLOCK) {
-      auto scope = NameScope::block(newKind, this->fromThis(), this->maxVarCount);
-      scope->curLocalIndex = this->curLocalIndex;
-      return scope;
-    }
+  if (this->kind == NameScope::GLOBAL && newKind == NameScope::FUNC) {
+    return NameScope::block(newKind, this->fromThis(), this->maxVarCount);
+  } else if (this->kind == NameScope::GLOBAL && newKind == NameScope::BLOCK) {
+    return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
+  } else if (this->kind == NameScope::FUNC && newKind == NameScope::BLOCK) {
+    return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
+  } else if (this->kind == NameScope::BLOCK && newKind == NameScope::BLOCK) {
+    auto scope = NameScope::block(newKind, this->fromThis(), this->maxVarCount);
+    scope->curLocalIndex = this->curLocalIndex;
+    return scope;
+  } else {
+    return nullptr;
   }
-  return nullptr;
 }
 
 static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
