@@ -55,6 +55,14 @@ inline mode_t getStMode(int fd) {
   return st.st_mode;
 }
 
+inline mode_t getStModeAt(int dirfd, const char *relative) {
+  struct stat st; // NOLINT
+  if (fstatat(dirfd, relative, &st, 0) != 0) {
+    return 0;
+  }
+  return st.st_mode;
+}
+
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
 /**
@@ -66,12 +74,12 @@ inline bool isExecutable(const char *fileName) {
   return S_ISREG(getStMode(fileName)) && access(fileName, X_OK) == 0;
 }
 
-inline bool isDirectory(const std::string &fullpath, const struct dirent *entry) {
+inline bool isDirectory(DIR *dir, const struct dirent *entry) {
   if (entry->d_type == DT_DIR) {
     return true;
   }
   if (entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
-    return S_ISDIR(getStMode(fullpath.c_str()));
+    return S_ISDIR(getStModeAt(dirfd(dir), entry->d_name));
   }
   return false;
 }
@@ -141,7 +149,7 @@ inline int getFileList(const char *dirPath, bool recursive, std::vector<std::str
         name += "/";
       }
       name += entry->d_name;
-      if (isDirectory(name, entry) && recursive) {
+      if (isDirectory(dir, entry) && recursive) {
         dirList.push_back(std::move(name));
       } else {
         results.push_back(std::move(name));
@@ -181,7 +189,7 @@ inline void removeDirWithRecursively(const char *currentDir) {
     }
     fullpath += entry->d_name;
     const char *name = fullpath.c_str();
-    if (isDirectory(name, entry)) {
+    if (isDirectory(dir, entry)) {
       removeDirWithRecursively(name);
     } else if (remove(name) < 0) {
       fatal_perror("cannot remove: %s", name);

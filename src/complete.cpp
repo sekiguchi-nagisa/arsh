@@ -343,7 +343,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
       }
       fullpath += entry->d_name;
 
-      if (isDirectory(fullpath, entry)) {
+      if (isDirectory(dir, entry)) {
         fullpath += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {

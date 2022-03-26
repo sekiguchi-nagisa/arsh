@@ -349,7 +349,7 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
     }
     name += entry->d_name;
 
-    if (isDirectory(name, entry)) {
+    if (isDirectory(dir, entry)) {
       while (true) {
         if (matcher.consumeSeps() > 0) {
           name += '/';
