@@ -214,6 +214,7 @@ nodes:
           type:
           typeKind: "Base"
           typeName: "Any"
+          handle: null
         blockNode:
           nodeKind: Block
           token:
@@ -407,6 +408,7 @@ nodes:
               type:
               typeKind: "Base"
               typeName: "Regex"
+              handle: null
             argsNode:
               nodeKind: Args
               token:
@@ -528,7 +530,7 @@ nodes:
                             value: "34"
                   redirCount: 1
                   needFork: true
-                  udcIndex: 0
+                  handle: null
                 methodCallNode: null
               - nodeKind: With
                 token:
@@ -732,6 +734,7 @@ nodes:
         type:
         typeKind: "Base"
         typeName: "Int"
+        handle: null
       paramTypeNodes:
         - nodeKind: Type
           token:
@@ -740,6 +743,7 @@ nodes:
           type:
           typeKind: "Base"
           typeName: "Int"
+          handle: null
     kind: "ALIAS"
 )"},
 
@@ -928,7 +932,7 @@ nodes:
               meta: "*"
       redirCount: 0
       needFork: true
-      udcIndex: 0
+      handle: null
     targetTypeToken: null
     opKind: "TO_VOID"
 )"},
@@ -964,6 +968,7 @@ nodes:
           type: Int
           typeKind: "Base"
           typeName: "Int"
+          handle: null
         kind: "VAR"
         handle:
           index: 0
@@ -987,6 +992,7 @@ nodes:
           type: Int
           typeKind: "Base"
           typeName: "Int"
+          handle: null
         kind: "VAR"
         handle:
           index: 1
@@ -1000,6 +1006,7 @@ nodes:
       type: Void
       typeKind: "Base"
       typeName: "Void"
+      handle: null
     recvTypeNode: null
     blockNode:
       nodeKind: Block

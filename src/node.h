@@ -186,6 +186,7 @@ public:
 class BaseTypeNode : public TypeNode {
 private:
   std::string typeName;
+  HandlePtr handle; // may be null if not type-alias or user-defined type
 
 public:
   BaseTypeNode(Token token, std::string &&typeName)
@@ -194,6 +195,10 @@ public:
   ~BaseTypeNode() override = default;
 
   const std::string &getTokenText() const { return this->typeName; }
+
+  void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
+
+  const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1144,7 +1149,7 @@ private:
 
   bool needFork{true};
 
-  unsigned short udcIndex{0};
+  HandlePtr handle;
 
 public:
   explicit CmdNode(std::unique_ptr<StringNode> &&nameNode)
@@ -1166,9 +1171,9 @@ public:
 
   void addRedirNode(std::unique_ptr<RedirNode> &&node);
 
-  void setUdcIndex(unsigned short i) { this->udcIndex = i; }
+  void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
 
-  unsigned short getUdcIndex() const { return this->udcIndex; }
+  const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
 };

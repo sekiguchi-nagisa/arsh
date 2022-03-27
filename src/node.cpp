@@ -95,6 +95,7 @@ void TypeNode::dump(NodeDumper &dumper) const { DUMP_ENUM(typeKind, EACH_TYPE_NO
 void BaseTypeNode::dump(NodeDumper &dumper) const {
   TypeNode::dump(dumper);
   DUMP(typeName);
+  DUMP_PTR(handle);
 }
 
 // ###############################
@@ -450,7 +451,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
   DUMP(argNodes);
   DUMP(redirCount);
   DUMP(needFork);
-  DUMP(udcIndex);
+  DUMP_PTR(handle);
 }
 
 // ##########################

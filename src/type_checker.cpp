@@ -30,7 +30,7 @@ namespace ydsh {
 // ##     TypeChecker     ##
 // #########################
 
-TypeOrError TypeChecker::toType(const TypeNode &node) {
+TypeOrError TypeChecker::toType(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
@@ -38,6 +38,7 @@ TypeOrError TypeChecker::toType(const TypeNode &node) {
     // fist lookup type alias
     auto handle = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
     if (handle) {
+      typeNode.setHandle(handle);
       return Ok(&this->typePool.get(handle->getTypeId()));
     }
     return this->typePool.getType(typeNode.getTokenText());
@@ -48,6 +49,7 @@ TypeOrError TypeChecker::toType(const TypeNode &node) {
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
     auto ret = this->curScope->lookupField(this->typePool, recvType, typeName);
     if (ret) {
+      qualifiedNode.getNameTypeNode().setHandle(ret.asOk());
       auto &resolved = this->typePool.get(ret.asOk()->getTypeId());
       return Ok(&resolved);
     } else {
@@ -797,7 +799,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
     node.setType(this->typePool.get(TYPE::Boolean));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto handle = this->curScope->lookup(cmdName)) {
-      node.setUdcIndex(handle->getIndex());
+      node.setHandle(handle);
       auto &type = this->typePool.get(handle->getTypeId());
       if (type.isFuncType()) { // resolved command may be module object
         auto &returnType = cast<FunctionType>(type).getReturnType();

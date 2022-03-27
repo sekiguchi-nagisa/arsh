@@ -366,7 +366,7 @@ protected:
                           const DSType *unacceptableType, CoercionKind &kind);
 
 private:
-  TypeOrError toType(const TypeNode &node);
+  TypeOrError toType(TypeNode &node);
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
     this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
