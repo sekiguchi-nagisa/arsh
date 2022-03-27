@@ -69,6 +69,7 @@ nodes:
           type:
           typeKind: \"Base\"
           typeName: \"Int\"
+          handle: null
         kind: \"VAR\"
         handle: null
     returnTypeNode:
@@ -79,6 +80,7 @@ nodes:
       type:
       typeKind: \"Base\"
       typeName: \"Void\"
+      handle: null
     recvTypeNode: null
     blockNode:
       nodeKind: Block
@@ -214,6 +216,7 @@ nodes:
           type: Int
           typeKind: \"Base\"
           typeName: \"Int\"
+          handle: null
         kind: \"VAR\"
         handle:
           index: 0
@@ -227,6 +230,7 @@ nodes:
       type: Void
       typeKind: \"Base\"
       typeName: \"Void\"
+      handle: null
     recvTypeNode: null
     blockNode:
       nodeKind: Block
