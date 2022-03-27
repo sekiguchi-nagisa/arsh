@@ -1,0 +1,10 @@
+
+# for inoined import
+
+source ../../_module4test/inline4.ds
+
+assert 4.factorial() == 24
+
+assert "$('34'.print())" == 'String: 34'
+assert "$(34.print())" == 'Int: 34'
+assert "$((12,$false).print())" == 'Tuple<Int, Boolean>: 12 false'

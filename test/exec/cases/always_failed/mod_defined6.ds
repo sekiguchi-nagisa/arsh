@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars =10 , $errorKind = 'DefinedMethod', $status = 1, $fileName = $0)
+
+source ../../_module4test/method.ds as mod
+
+function print() for Any { }

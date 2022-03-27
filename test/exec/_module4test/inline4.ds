@@ -1,0 +1,6 @@
+
+source method.ds inlined
+
+function print() for (Int, Bool) {
+    echo 'Tuple<Int, Boolean>': $this
+}

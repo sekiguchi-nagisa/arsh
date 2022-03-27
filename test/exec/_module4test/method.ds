@@ -1,0 +1,20 @@
+
+function _factorial() : Int for Int {
+    return $this == 0 ? 1 : $this * ($this - 1)._factorial()
+}
+
+function factorial() : Int for Int {
+    return $this._factorial()
+}
+
+function print() for String {
+    echo String: $this
+}
+
+function print() for Any {
+    echo Any: $this
+}
+
+function print() for Int {
+    echo Int: $this
+}

@@ -1,0 +1,14 @@
+
+# for named import
+# also access user-defined method even though named import
+
+source ../../_module4test/method.ds
+
+function _factorial() : Int for Int { return $this * 100; }  # override private method
+
+assert 4.factorial() == 24
+assert 4._factorial() == 400
+
+assert "$('34'.print())" == 'String: 34'
+assert "$(34.print())" == 'Int: 34'
+assert "$((12,$false).print())" == 'Any: 12 false'

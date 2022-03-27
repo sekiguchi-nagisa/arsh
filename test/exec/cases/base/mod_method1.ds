@@ -1,0 +1,16 @@
+
+# for global import
+
+function _factorial() : Int for Int { return $this; }  # previously defined here, but not imprt private method
+
+assert 34._factorial() == 34
+
+source ../../_module4test/method.ds
+
+assert 4.factorial() == 24
+
+assert "$('34'.print())" == 'String: 34'
+assert "$(34.print())" == 'Int: 34'
+assert "$((12,$false).print())" == 'Any: 12 false'
+
+assert 34._factorial() == 34

@@ -160,6 +160,8 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       } else if (isTypeAliasFullName(name)) {
         name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+      } else if (isMethodFullName(name)) {
+        name = trimMethodFullNameSuffix(name);
       }
       return name.toString();
     }

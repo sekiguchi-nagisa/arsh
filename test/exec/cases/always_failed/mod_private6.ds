@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 4, $errorKind = 'UndefinedMethod', $status = 1, $fileName = './always_failed/mod_private6.ds')
+
+source ../../_module4test/method.ds
+
+34._factorial()   # currently report UndefinedMethod
