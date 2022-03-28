@@ -257,7 +257,6 @@ const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvTy
       if (handle->isVisibleInMod(this->modId, methodName)) {
         return cast<MethodHandle>(handle.get());
       }
-      return nullptr;
     }
   }
   return pool.lookupMethod(recvType, methodName);
