@@ -94,6 +94,13 @@ TEST_F(EmitterTest, case1) {
   this->compare(HightlightTokenClass::COMMAND_ARG, "*", ret[2]);
 }
 
+TEST_F(EmitterTest, case2) {
+  TokenCollector collector("hello");
+  collector(TokenKind::COMMAND, Token{.pos = 100, .size = 12});
+  auto values = std::move(collector).take();
+  ASSERT_TRUE(values.empty());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

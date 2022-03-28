@@ -113,7 +113,9 @@ void TokenEmitter::operator()(Token token) {
 }
 
 void TokenEmitter::operator()(TokenKind kind, Token token) {
-  assert(token.endPos() < this->source.size());
+  if (token.pos > this->source.size()) {
+    return;
+  }
 
   auto ref = this->source.substr(token.pos, token.size);
   TokenKind suffix = TokenKind::EOS;
