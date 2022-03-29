@@ -197,7 +197,7 @@ JSON *JSONDeserializerImpl::validateField(const char *fieldName, int tag, bool o
       prefix += fieldName;
       prefix += "'";
     }
-    this->validationError.appendError("%s require `%s', but is `%s'", prefix.c_str(),
+    this->validationError.appendError("%srequire `%s', but is `%s'", prefix.c_str(),
                                       getJSONTypeStr(tag), getJSONTypeStr(*json));
     return nullptr;
   }
