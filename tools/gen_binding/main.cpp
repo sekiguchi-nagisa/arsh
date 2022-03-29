@@ -89,7 +89,7 @@ public:
 
   [[noreturn]] void operator()(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
     const unsigned int size = 512;
-    char buf[size]; // error message must be under size.
+    char buf[size]; // error message must be under-size.
 
     // format message
     va_list args;

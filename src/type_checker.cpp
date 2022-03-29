@@ -410,7 +410,7 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     }
   }
 
-  // otherwose, resolve function type
+  // otherwise, resolve function type
   CallableTypes callableTypes(this->typePool.getUnresolvedType());
   auto &type = this->checkType(this->typePool.get(TYPE::Func), exprNode);
   if (type.isFuncType()) {

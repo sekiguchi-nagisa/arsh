@@ -663,8 +663,7 @@ struct SemanticTokenTest : public ::testing::Test {
 
   SemanticTokenTest() : legend(SemanticTokensLegend::create()), encoder(this->legend) {}
 
-  void testEncode(HightlightTokenClass tokenClass, SemanticTokenTypes type,
-                  unsigned int modifiers) {
+  void testEncode(HighlightTokenClass tokenClass, SemanticTokenTypes type, unsigned int modifiers) {
     auto ret = this->encoder.encode(tokenClass);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(static_cast<unsigned int>(type), ret.unwrap().first);
@@ -709,22 +708,22 @@ ccc"
 }
 
 TEST_F(SemanticTokenTest, encode) {
-  auto ret = this->encoder.encode(HightlightTokenClass::NONE);
+  auto ret = this->encoder.encode(HighlightTokenClass::NONE);
   ASSERT_FALSE(ret.hasValue());
 
-  this->testEncode(HightlightTokenClass::COMMENT, SemanticTokenTypes::comment_, 0);
-  this->testEncode(HightlightTokenClass::KEYWORD, SemanticTokenTypes::keyword_, 0);
-  this->testEncode(HightlightTokenClass::OPERATOR, SemanticTokenTypes::operator_, 0);
-  this->testEncode(HightlightTokenClass::NUMBER, SemanticTokenTypes::number_, 0);
-  this->testEncode(HightlightTokenClass::REGEX, SemanticTokenTypes::regexp_, 0);
-  this->testEncode(HightlightTokenClass::STRING, SemanticTokenTypes::string_, 0);
-  this->testEncode(HightlightTokenClass::SIGNAL, SemanticTokenTypes::event_, 0);
-  this->testEncode(HightlightTokenClass::COMMAND, SemanticTokenTypes::function_, 0);
-  this->testEncode(HightlightTokenClass::COMMAND_ARG, SemanticTokenTypes::parameter_, 0);
-  this->testEncode(HightlightTokenClass::REDIRECT, SemanticTokenTypes::operator_, 0);
-  this->testEncode(HightlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
-  this->testEncode(HightlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);
-  this->testEncode(HightlightTokenClass::MEMBER, SemanticTokenTypes::property_, 0);
+  this->testEncode(HighlightTokenClass::COMMENT, SemanticTokenTypes::comment_, 0);
+  this->testEncode(HighlightTokenClass::KEYWORD, SemanticTokenTypes::keyword_, 0);
+  this->testEncode(HighlightTokenClass::OPERATOR, SemanticTokenTypes::operator_, 0);
+  this->testEncode(HighlightTokenClass::NUMBER, SemanticTokenTypes::number_, 0);
+  this->testEncode(HighlightTokenClass::REGEX, SemanticTokenTypes::regexp_, 0);
+  this->testEncode(HighlightTokenClass::STRING, SemanticTokenTypes::string_, 0);
+  this->testEncode(HighlightTokenClass::SIGNAL, SemanticTokenTypes::event_, 0);
+  this->testEncode(HighlightTokenClass::COMMAND, SemanticTokenTypes::function_, 0);
+  this->testEncode(HighlightTokenClass::COMMAND_ARG, SemanticTokenTypes::parameter_, 0);
+  this->testEncode(HighlightTokenClass::REDIRECT, SemanticTokenTypes::operator_, 0);
+  this->testEncode(HighlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
+  this->testEncode(HighlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);
+  this->testEncode(HighlightTokenClass::MEMBER, SemanticTokenTypes::property_, 0);
 }
 
 TEST(WorkerTest, base) {

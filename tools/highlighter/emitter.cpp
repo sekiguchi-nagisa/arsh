@@ -18,7 +18,7 @@
 
 namespace ydsh {
 
-HightlightTokenClass toTokenClass(TokenKind kind) {
+HighlightTokenClass toTokenClass(TokenKind kind) {
   switch (kind) {
   case TokenKind::ALIAS:
   case TokenKind::ASSERT:
@@ -48,7 +48,7 @@ HightlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::WHILE:
   case TokenKind::TYPEOF:
   case TokenKind::INLINED:
-    return HightlightTokenClass::KEYWORD;
+    return HighlightTokenClass::KEYWORD;
   case TokenKind::PLUS:
   case TokenKind::MINUS:
   case TokenKind::NOT:
@@ -56,60 +56,60 @@ HightlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::DEC:
   case TokenKind::UNWRAP:
   case TokenKind::CASE_ARM:
-    return HightlightTokenClass::OPERATOR;
+    return HighlightTokenClass::OPERATOR;
 #define GEN_CASE(E, P, A) case TokenKind::E:
     // clang-format off
   EACH_OPERATOR(GEN_CASE)
     // clang-format on
 #undef GEN_CASE
     if (kind == TokenKind::COPROC) {
-      return HightlightTokenClass::KEYWORD;
+      return HighlightTokenClass::KEYWORD;
     }
-    return HightlightTokenClass::OPERATOR;
+    return HighlightTokenClass::OPERATOR;
   case TokenKind::COMMAND:
-    return HightlightTokenClass::COMMAND;
+    return HighlightTokenClass::COMMAND;
   case TokenKind::CMD_ARG_PART:
   case TokenKind::PATH_SEP:
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
-    return HightlightTokenClass::COMMAND_ARG;
+    return HighlightTokenClass::COMMAND_ARG;
 #define GEN_CASE(E) case TokenKind::E:
     // clang-format off
   EACH_LA_redir(GEN_CASE)
-    return HightlightTokenClass::REDIRECT;
+    return HighlightTokenClass::REDIRECT;
     // clang-format on
 #undef GEN_CASE
   case TokenKind::INT_LITERAL:
   case TokenKind::FLOAT_LITERAL:
-    return HightlightTokenClass::NUMBER;
+    return HighlightTokenClass::NUMBER;
   case TokenKind::REGEX_LITERAL:
-    return HightlightTokenClass::REGEX;
+    return HighlightTokenClass::REGEX;
   case TokenKind::APPLIED_NAME:
   case TokenKind::APPLIED_NAME_WITH_BRACKET:
   case TokenKind::APPLIED_NAME_WITH_FIELD:
   case TokenKind::APPLIED_NAME_WITH_PAREN:
   case TokenKind::SPECIAL_NAME:
   case TokenKind::SPECIAL_NAME_WITH_BRACKET:
-    return HightlightTokenClass::VARIABLE;
+    return HighlightTokenClass::VARIABLE;
   case TokenKind::STRING_LITERAL:
   case TokenKind::OPEN_DQUOTE:
   case TokenKind::CLOSE_DQUOTE:
   case TokenKind::STR_ELEMENT:
-    return HightlightTokenClass::STRING;
+    return HighlightTokenClass::STRING;
   case TokenKind::SIGNAL_LITERAL:
-    return HightlightTokenClass::SIGNAL;
+    return HighlightTokenClass::SIGNAL;
   case TokenKind::TYPE_NAME:
   case TokenKind::FUNC:
-    return HightlightTokenClass::TYPE;
+    return HighlightTokenClass::TYPE;
   default:
     break;
   }
-  return HightlightTokenClass::NONE;
+  return HighlightTokenClass::NONE;
 }
 
 void TokenEmitter::operator()(Token token) {
   assert(this->source[token.pos] == '#');
-  this->emit(HightlightTokenClass::COMMENT, token);
+  this->emit(HighlightTokenClass::COMMENT, token);
 }
 
 void TokenEmitter::operator()(TokenKind kind, Token token) {

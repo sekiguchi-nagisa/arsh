@@ -21,7 +21,7 @@
 
 namespace ydsh {
 
-enum class HightlightTokenClass : unsigned int {
+enum class HighlightTokenClass : unsigned int {
   NONE,
   COMMENT,
   KEYWORD,
@@ -38,7 +38,7 @@ enum class HightlightTokenClass : unsigned int {
   MEMBER,
 };
 
-HightlightTokenClass toTokenClass(TokenKind kind);
+HighlightTokenClass toTokenClass(TokenKind kind);
 
 class TokenEmitter : public CommentStore, public TokenTracker {
 protected:
@@ -67,7 +67,7 @@ private:
    * @param tokenClass
    * @param token
    */
-  virtual void emit(HightlightTokenClass tokenClass, Token token) = 0;
+  virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
 };
 
 } // namespace ydsh

@@ -32,42 +32,42 @@ SemanticTokenEncoder::SemanticTokenEncoder(const SemanticTokensLegend &legend) {
   }
 }
 
-static Optional<SemanticTokenTypes> toTokenType(HightlightTokenClass tokenClass) {
+static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) {
   switch (tokenClass) {
-  case HightlightTokenClass::KEYWORD:
+  case HighlightTokenClass::KEYWORD:
     return SemanticTokenTypes::keyword_;
-  case HightlightTokenClass::NONE:
+  case HighlightTokenClass::NONE:
     break;
-  case HightlightTokenClass::COMMENT:
+  case HighlightTokenClass::COMMENT:
     return SemanticTokenTypes::comment_;
-  case HightlightTokenClass::OPERATOR:
+  case HighlightTokenClass::OPERATOR:
     return SemanticTokenTypes::operator_;
-  case HightlightTokenClass::NUMBER:
+  case HighlightTokenClass::NUMBER:
     return SemanticTokenTypes::number_;
-  case HightlightTokenClass::REGEX:
+  case HighlightTokenClass::REGEX:
     return SemanticTokenTypes::regexp_;
-  case HightlightTokenClass::STRING:
+  case HighlightTokenClass::STRING:
     return SemanticTokenTypes::string_;
-  case HightlightTokenClass::SIGNAL:
+  case HighlightTokenClass::SIGNAL:
     return SemanticTokenTypes::event_;
-  case HightlightTokenClass::COMMAND:
+  case HighlightTokenClass::COMMAND:
     return SemanticTokenTypes::function_;
-  case HightlightTokenClass::COMMAND_ARG:
+  case HighlightTokenClass::COMMAND_ARG:
     return SemanticTokenTypes::parameter_;
-  case HightlightTokenClass::REDIRECT:
+  case HighlightTokenClass::REDIRECT:
     return SemanticTokenTypes::operator_;
-  case HightlightTokenClass::VARIABLE:
+  case HighlightTokenClass::VARIABLE:
     return SemanticTokenTypes::variable_;
-  case HightlightTokenClass::TYPE:
+  case HighlightTokenClass::TYPE:
     return SemanticTokenTypes::type_;
-  case HightlightTokenClass::MEMBER:
+  case HighlightTokenClass::MEMBER:
     return SemanticTokenTypes::property_;
   }
   return {};
 }
 
 Optional<std::pair<unsigned int, unsigned int>>
-SemanticTokenEncoder::encode(HightlightTokenClass tokenClass) const {
+SemanticTokenEncoder::encode(HighlightTokenClass tokenClass) const {
   auto ret = toTokenType(tokenClass);
   if (ret.hasValue()) {
     return std::make_pair(this->tokenTypeToIds.find(ret.unwrap())->second, 0);
@@ -109,7 +109,7 @@ TokenDelta getTokenDelta(const Range &prev, const Range &cur) {
   return tokenDelta;
 }
 
-void SemanticTokenEmitter::emit(HightlightTokenClass tokenClass, Token token) {
+void SemanticTokenEmitter::emit(HighlightTokenClass tokenClass, Token token) {
   auto typePair = this->encoder.encode(tokenClass);
   if (!typePair.hasValue()) {
     return;

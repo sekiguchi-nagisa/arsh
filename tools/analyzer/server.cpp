@@ -515,7 +515,7 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
       });
 }
 
-static SemanticTokens doHightlight(const SemanticTokenEncoder &encoder, const Source &src) {
+static SemanticTokens doHighlight(const SemanticTokenEncoder &encoder, const Source &src) {
   auto &content = src.getContent();
   SemanticTokenEmitter emitter(encoder, src);
   Lexer lexer(src.getPath().c_str(), ByteBuffer(content.c_str(), content.c_str() + content.size()),
@@ -533,7 +533,7 @@ Reply<Union<SemanticTokens, std::nullptr_t>>
 LSPServer::semanticToken(const SemanticTokensParams &params) {
   LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
   if (auto resolved = this->resolveSource(params.textDocument)) {
-    Union<SemanticTokens, std::nullptr_t> ret = doHightlight(this->encoder, *resolved.asOk());
+    Union<SemanticTokens, std::nullptr_t> ret = doHighlight(this->encoder, *resolved.asOk());
     return ret;
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));

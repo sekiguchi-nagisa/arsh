@@ -31,7 +31,7 @@ private:
 public:
   explicit SemanticTokenEncoder(const SemanticTokensLegend &legend);
 
-  Optional<std::pair<unsigned int, unsigned int>> encode(HightlightTokenClass tokenClass) const;
+  Optional<std::pair<unsigned int, unsigned int>> encode(HighlightTokenClass tokenClass) const;
 };
 
 struct TokenDelta {
@@ -87,7 +87,7 @@ public:
   SemanticTokens take() && { return std::move(this->tokens); }
 
 private:
-  void emit(HightlightTokenClass tokenClass, Token token) override;
+  void emit(HighlightTokenClass tokenClass, Token token) override;
 };
 
 } // namespace ydsh::lsp

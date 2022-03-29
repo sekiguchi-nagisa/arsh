@@ -41,8 +41,8 @@ public:
   std::future<std::invoke_result_t<Func, Arg...>> addTask(Func &&func, Arg &&...arg) {
     using RetType = std::invoke_result_t<Func, Arg...>;
     auto task = ({
-      auto binded = std::bind(std::forward<Func>(func), std::forward<Arg>(arg)...);
-      std::make_shared<std::packaged_task<RetType()>>(std::move(binded));
+      auto bound = std::bind(std::forward<Func>(func), std::forward<Arg>(arg)...);
+      std::make_shared<std::packaged_task<RetType()>>(std::move(bound));
     });
     std::future<RetType> future = task->get_future();
     if (!this->addTaskImpl([task] { (*task)(); })) {

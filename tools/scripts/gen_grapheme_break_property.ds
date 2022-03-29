@@ -24,7 +24,7 @@ test -f emoji-data.txt ||
 typedef Range = (
     Int,    # begin codepoint
     Int,    # end codepoint
-    String, # begin codepoint strting
+    String, # begin codepoint string
     String, # end codepoint string
     String  # property string
 )
