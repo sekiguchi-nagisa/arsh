@@ -49,49 +49,30 @@ std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
   return {0, false};
 }
 
-std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
-  std::string value;
+std::string DeclSymbol::mangle(Kind k, StringRef name) {
   switch (k) {
   case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
-    value = toCmdFullName(name);
-    break;
+    return toCmdFullName(name);
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:
-    value = toTypeAliasFullName(name);
-    break;
-  case DeclSymbol::Kind::METHOD: {
-    value = name.toString();
-    value += METHOD_SYMBOL_SUFFIX;
-    break;
-  }
+    return toTypeAliasFullName(name);
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
-    value = name.toString();
     break;
   }
-
-  if (!recvTypeName.empty()) {
-    value += "@";
-    value += recvTypeName;
-  }
-  return value;
+  return name.toString();
 }
 
-std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
-  if (hasFlag(a, Attr::MEMBER)) {
-    auto pos = mangledName.lastIndexOf("@");
-    assert(pos != StringRef::npos);
-    mangledName = mangledName.substr(0, pos);
-  }
-
+std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   switch (k) {
   case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
@@ -102,15 +83,13 @@ std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
   case DeclSymbol::Kind::CONSTRUCTOR:
     mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
     break;
-  case DeclSymbol::Kind::METHOD:
-    mangledName.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
-    break;
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
     break;
@@ -155,14 +134,6 @@ const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
     if (request.pos >= decl.getToken().pos && request.pos <= decl.getToken().endPos()) {
       return &decl;
     }
-  }
-  return nullptr;
-}
-
-const SymbolRef *SymbolIndex::findGlobal(const std::string &mangledName) const {
-  auto iter = this->globals.find(mangledName);
-  if (iter != this->globals.end()) {
-    return &iter->second;
   }
   return nullptr;
 }
