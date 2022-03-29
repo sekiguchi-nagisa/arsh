@@ -131,6 +131,7 @@ public:
     GLOBAL = 1u << 0u,
     PUBLIC = 1u << 1u,
     BUILTIN = 1u << 2u, // for builtin type field/method
+    MEMBER = 1u << 3u,
   };
 
 private:
@@ -175,16 +176,24 @@ public:
     bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
   };
 
-  static std::string mangle(Kind k, StringRef name);
+  static std::string mangle(Kind k, StringRef name) { return mangle("", k, name); }
 
-  static std::string demangle(Kind k, StringRef mangledName);
+  static std::string mangle(StringRef recvTypeName, Kind k, StringRef name);
+
+  static std::string demangle(Kind k, StringRef mangledName) {
+    return demangle(k, Attr(), mangledName);
+  }
+
+  static std::string demangle(Kind k, Attr a, StringRef mangledName);
 
   static bool isVarName(Kind k) {
     switch (k) {
-    case Kind::CMD:
     case Kind::BUILTIN_CMD:
+    case Kind::CMD:
     case Kind::TYPE_ALIAS:
+    case Kind::ERROR_TYPE_DEF:
     case Kind::CONSTRUCTOR:
+      //    case Kind::METHOD:  //FIXME:
       return false;
     default:
       return true;
@@ -274,14 +283,17 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
+  std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
   FlexBuffer<unsigned short> inlinedModIds;
 
 public:
   SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
-              FlexBuffer<unsigned short> inlinedModIds)
+              std::unordered_map<std::string, SymbolRef> &&globals,
+              FlexBuffer<unsigned short> &&inlinedModIds)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
-        foreignDecls(std::move(foreignDecls)), inlinedModIds(std::move(inlinedModIds)) {}
+        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)),
+        inlinedModIds(std::move(inlinedModIds)) {}
 
   unsigned short getModId() const { return this->modId; }
 
@@ -292,6 +304,8 @@ public:
   const Symbol *findSymbol(unsigned int pos) const;
 
   const ForeignDecl *findForeignDecl(SymbolRequest request) const;
+
+  const SymbolRef *findGlobal(const std::string &mangledName) const;
 
   const std::vector<DeclSymbol> &getDecls() const { return this->decls; }
 

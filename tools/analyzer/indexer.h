@@ -37,7 +37,6 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreigns;
-  std::unordered_set<unsigned short> globallyImportedModIds;
   std::unordered_set<unsigned short> inlinedModIds;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
@@ -45,7 +44,7 @@ private:
     /**
      * mangled name => DeclSymbol reference
      */
-    std::unordered_map<std::string, SymbolRef> map;
+    std::unordered_map<std::string, SymbolRef> map; // FIXME: replace string with StringRef
 
     const DSType *resolvedType{nullptr}; // for constructor
 
@@ -85,103 +84,38 @@ private:
       }
       return nullptr;
     }
-  };
 
-  IntrusivePtr<ScopeEntry> builtinCmd;
+    auto take() && { return std::move(this->map); }
+  };
 
   IntrusivePtr<ScopeEntry> scope;
 
-  /**
-   * if indicate method, 2nd element is `true`
-   */
-  using Key = std::tuple<unsigned int, bool, std::string>;
+  std::shared_ptr<TypePool> pool;
 
-  struct Hash {
-    std::size_t operator()(const Key &key) const {
-      auto &name = get<2>(key);
-      auto hash = FNVHash::compute(name.c_str(), name.c_str() + name.size());
-      union {
-        char b[4];
-        unsigned int i;
-      } wrap;
-      wrap.i = get<0>(key);
-      for (auto b : wrap.b) {
-        FNVHash::update(hash, b);
-      }
-      FNVHash::update(hash, get<1>(key) ? 1 : 0);
-      return hash;
-    }
-  };
-
-  class LazyMemberMap {
-  public:
-    using MapType = std::unordered_map<Key, SymbolRef, Hash>;
-
-    const SymbolIndexes &indexes;
-
-  private:
-    /**
-     * (type id, mangled name) => DeclSymbol reference
-     */
-    MapType map;
-
-    std::unordered_set<unsigned short> cachedModIds;
-
-    std::shared_ptr<TypePool> pool;
-
-  public:
-    LazyMemberMap(const SymbolIndexes &indexes, std::shared_ptr<TypePool> pool)
-        : indexes(indexes), pool(std::move(pool)) {}
-
-    /**
-     *
-     * @param recvType
-     * @param memberName
-     * must be mangled name
-     * @param isMethod
-     * @return
-     */
-    const SymbolRef *find(const DSType &recvType, const std::string &memberName, bool isMethod);
-
-    const TypePool &getPool() const { return *this->pool; }
-
-    void add(const DSType &recvType, const DeclSymbol &decl);
-
-  private:
-    void buildModCache(const DSType &recvType);
-
-    const SymbolRef *findImpl(const DSType &recvType, const std::string &memberName,
-                              bool isMethod) const {
-      auto iter = this->map.find({recvType.typeId(), isMethod, memberName});
-      if (iter != this->map.end()) {
-        return &iter->second;
-      }
-      return nullptr;
-    }
-  };
-
-  LazyMemberMap memberMap;
+  const SymbolIndexes &indexes;
 
 public:
   IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), builtinCmd(IntrusivePtr<ScopeEntry>::create()),
-        scope(IntrusivePtr<ScopeEntry>::create()), memberMap(indexes, std::move(pool)) {}
+      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create()),
+        pool(std::move(pool)), indexes(indexes) {}
 
   SymbolIndex build() && {
     FlexBuffer<unsigned short> inlinedModIdList;
     for (auto &e : this->inlinedModIds) {
       inlinedModIdList.push_back(e);
     }
+
     return {this->modId,
             this->version,
             std::move(this->decls),
             std::move(this->symbols),
             std::move(this->foreigns),
+            std::move(*this->scope).take(),
             std::move(inlinedModIdList)};
   }
 
-  const TypePool &getPool() const { return this->memberMap.getPool(); }
+  const TypePool &getPool() const { return *this->pool; }
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
@@ -200,59 +134,57 @@ public:
                             DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
   const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
-    return this->addDeclImpl(info, kind, hover);
+    return this->addDeclImpl(nullptr, info, kind, hover);
   }
 
-  const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
-
-  void addThis(const NameInfo &info);
-
-  bool importForeignDecls(unsigned short foreignModId, bool inlined);
-
-  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind) {
-    return this->addMemberImpl(recv, nameInfo, kind, nullptr);
+  const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind, HandlePtr hd) {
+    return this->addSymbolImpl(nullptr, info, kind, hd.get());
   }
 
-  const Symbol *addMember(const DSType &recv, const NameInfo &nameInfo, const Handle &handle) {
-    return this->addMemberImpl(recv, nameInfo, DeclSymbol::Kind::VAR, &handle);
-  }
+  bool addThis(const NameInfo &info, HandlePtr hd);
 
-  const Symbol *addMember(const MethodHandle &handle, const NameInfo &nameInfo) {
-    return this->addMemberImpl(this->getPool().get(handle.getRecvTypeId()), nameInfo,
-                               DeclSymbol::Kind::METHOD, &handle);
+  bool addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                 const Handle &handle);
+
+  bool addMember(const MethodHandle &handle, const NameInfo &nameInfo) {
+    return this->addMember(this->getPool().get(handle.getRecvTypeId()), nameInfo,
+                           DeclSymbol::Kind::METHOD, handle);
   }
 
   const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo, const DSType &type,
                                   DeclSymbol::Kind kind);
 
   const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
-                                  DeclSymbol::Kind kind, const char *info);
+                                  DeclSymbol::Kind kind, const char *info) {
+    if (recv.isUnresolved()) {
+      return nullptr;
+    }
+    return this->addDeclImpl(&recv, nameInfo, kind, info);
+  }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
 private:
-  const DeclSymbol *addDeclImpl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover,
-                                bool checkScope = true);
+  const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,
+                          const Handle *handle) const;
 
-  const Symbol *addMemberImpl(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+  const DeclSymbol *addDeclImpl(const DSType *recv, const NameInfo &info, DeclSymbol::Kind kind,
+                                const char *hover, bool builtin = false);
+
+  const Symbol *addSymbolImpl(const DSType *recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                               const Handle *handle);
-
-  DeclBase *addBuiltinFieldOrMethod(const DSType &recv, const NameInfo &nameInfo,
-                                    const Handle &handle);
-
-  DeclBase *resolveMemberDecl(const SymbolRef &entry);
 
   /**
    * create new DeclSymbol and insert to decl list
    * @param k
    * @param attr
-   * @param nameInfo
+   * @param token
+   * @param mangledName
    * @param info
-   * @param checkScope
    * @return
    */
-  DeclSymbol *insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, const NameInfo &nameInfo,
-                            const char *info, bool checkScope = true);
+  DeclSymbol *insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, Token token,
+                            const std::string &mangledName, const char *info);
 
   /**
    * create new Symbol from DeclVBase and insert to symbol list

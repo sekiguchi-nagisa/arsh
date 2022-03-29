@@ -39,72 +39,30 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
-void IndexBuilder::LazyMemberMap::buildModCache(const DSType &recvType) {
-  if (!recvType.isModType()) {
-    return; // currently, only support Mod type
+const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol::Kind kind,
+                                      const Handle *handle) const {
+  if (mangledName.empty()) {
+    return nullptr;
   }
 
-  unsigned short targetModId = cast<ModType>(recvType).getModId();
-  if (auto iter = this->cachedModIds.find(targetModId); iter != this->cachedModIds.end()) {
-    return;
+  unsigned short declModId;
+  if (mangledName.size() == 1 && StringRef("#@0123456789").contains(mangledName[0])) {
+    declModId = 0;
+  } else if (handle) {
+    declModId = handle->getModId();
+  } else if (kind == DeclSymbol::Kind::CMD) { // for builtin
+    declModId = 0;
+  } else {
+    return nullptr;
   }
 
-  auto index = this->indexes.find(targetModId);
-  if (!index) {
-    return;
+  if (this->modId == declModId) {
+    return this->scope->find(mangledName);
+  } else {
+    auto foreignIndex = this->indexes.find(declModId);
+    assert(foreignIndex);
+    return foreignIndex->findGlobal(mangledName);
   }
-  this->cachedModIds.emplace(targetModId);
-  for (auto &decl : index->getDecls()) {
-    this->add(recvType, decl);
-  }
-  for (auto &e : index->getInlinedModIds()) {
-    auto ret = this->getPool().getModTypeById(e);
-    assert(ret);
-    this->buildModCache(*ret.asOk());
-  }
-}
-
-void IndexBuilder::LazyMemberMap::add(const DSType &recvType, const DeclSymbol &decl) {
-  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
-    return;
-  }
-  unsigned int typeId = recvType.typeId();
-  auto key = std::make_tuple(typeId, decl.getKind() == DeclSymbol::Kind::METHOD,
-                             decl.getMangledName().toString());
-  this->map.emplace(std::move(key), decl.toRef());
-  if (decl.getKind() == DeclSymbol::Kind::MOD) {
-    // udc
-    key = {typeId, false, DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName())};
-    this->map.emplace(std::move(key), decl.toRef());
-
-    // type alias
-    key = {typeId, false, DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName())};
-    this->map.emplace(std::move(key), decl.toRef());
-  }
-}
-
-const SymbolRef *IndexBuilder::LazyMemberMap::find(const DSType &recvType,
-                                                   const std::string &memberName, bool isMethod) {
-  this->buildModCache(recvType);
-  if (auto *decl = this->findImpl(recvType, memberName, isMethod)) {
-    return decl;
-  }
-
-  // if recvType is ModType, search inlined module
-  if (isa<ModType>(recvType)) {
-    auto &modType = cast<ModType>(recvType);
-    unsigned int size = modType.getChildSize();
-    for (unsigned int i = 0; i < size; i++) {
-      auto child = modType.getChildAt(i);
-      if (child.isInlined()) {
-        auto &childType = this->getPool().get(child.typeId());
-        if (auto *decl = this->findImpl(childType, memberName, false)) {
-          return decl;
-        }
-      }
-    }
-  }
-  return nullptr;
 }
 
 static StringRef trimTypeName(const DSType &type) {
@@ -115,14 +73,15 @@ static StringRef trimTypeName(const DSType &type) {
   return ref;
 }
 
-static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo) {
+static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
+                                    const NameInfo &nameInfo) {
   if (!static_cast<bool>(nameInfo) || nameInfo.getToken().size == 0) {
     return "";
   }
   if (DeclSymbol::isVarName(k) && nameInfo.getName()[0] == '%') {
     return "";
   }
-  return DeclSymbol::mangle(k, nameInfo.getName());
+  return DeclSymbol::mangle(recv ? recv->getNameRef() : "", k, nameInfo.getName());
 }
 
 const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type,
@@ -134,8 +93,9 @@ const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type
   return this->addDecl(info, kind, ref.data());
 }
 
-const DeclSymbol *IndexBuilder::addDeclImpl(const NameInfo &info, DeclSymbol::Kind kind,
-                                            const char *hover, bool checkScope) {
+const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &info,
+                                            DeclSymbol::Kind kind, const char *hover,
+                                            bool builtin) {
   DeclSymbol::Attr attr = {};
   if (this->scope->isGlobal() || this->scope->isConstructor()) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
@@ -143,8 +103,15 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const NameInfo &info, DeclSymbol::Ki
   if (info.getName()[0] != '_') {
     setFlag(attr, DeclSymbol::Attr::PUBLIC);
   }
+  if (recv) {
+    setFlag(attr, DeclSymbol::Attr::MEMBER);
+  }
+  if (builtin) {
+    setFlag(attr, DeclSymbol::Attr::BUILTIN);
+  }
 
-  if (auto *decl = this->insertNewDecl(kind, attr, info, hover, checkScope)) {
+  std::string mangledName = mangleSymbolName(recv, kind, info);
+  if (auto *decl = this->insertNewDecl(kind, attr, info.getToken(), mangledName, hover)) {
     if (!this->insertNewSymbol(info.getToken(), decl)) {
       return nullptr;
     }
@@ -153,15 +120,10 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const NameInfo &info, DeclSymbol::Ki
   return nullptr;
 }
 
-const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
-  std::string name = mangleSymbolName(kind, info);
-  if (name.empty()) {
-    return nullptr;
-  }
-  auto *ref = this->scope->find(name);
-  if (!ref && kind == DeclSymbol::Kind::CMD) {
-    ref = this->builtinCmd->find(name);
-  }
+const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &nameInfo,
+                                          DeclSymbol::Kind kind, const Handle *handle) {
+  std::string name = mangleSymbolName(recv, kind, nameInfo);
+  auto *ref = this->lookup(name, kind, handle);
   if (!ref) {
     return nullptr;
   }
@@ -181,7 +143,7 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
                                  ForeignDecl::Compare());
     if (iter == this->foreigns.end() || (*iter).getModId() != request.modId ||
         (*iter).getPos() != request.pos) { // not found, register foreign decl
-      auto *ret = this->memberMap.indexes.findDecl(request);
+      auto *ret = this->indexes.findDecl(request);
       if (!ret || !hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
         return nullptr;
       }
@@ -189,8 +151,8 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
     }
     decl = &*iter;
   }
-  if (auto *symbol = this->insertNewSymbol(info.getToken(), decl)) {
-    auto symbolRef = SymbolRef::create(info.getToken(), this->modId);
+  if (auto *symbol = this->insertNewSymbol(nameInfo.getToken(), decl)) {
+    auto symbolRef = SymbolRef::create(nameInfo.getToken(), this->modId);
     assert(symbolRef.hasValue());
     decl->addRef(symbolRef.unwrap());
     return symbol;
@@ -198,50 +160,14 @@ const Symbol *IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kin
   return nullptr;
 }
 
-void IndexBuilder::addThis(const NameInfo &info) {
+bool IndexBuilder::addThis(const NameInfo &info, HandlePtr handle) {
   auto *methodScope = this->curScope().findMethodScope();
   assert(methodScope);
-  if (methodScope->find(mangleSymbolName(DeclSymbol::Kind::LET, info))) {
-    this->addSymbol(info, DeclSymbol::Kind::LET);
+  if (methodScope->find(mangleSymbolName(nullptr, DeclSymbol::Kind::LET, info))) {
+    return this->addSymbol(info, DeclSymbol::Kind::LET, std::move(handle));
   } else {
-    this->addDecl(info, *methodScope->getResolvedType(), DeclSymbol::Kind::LET);
+    return this->addDecl(info, *methodScope->getResolvedType(), DeclSymbol::Kind::LET);
   }
-}
-
-bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined) {
-  if (!this->scope->isGlobal()) {
-    return false;
-  }
-  if (auto iter = this->inlinedModIds.find(foreignModId); iter != this->inlinedModIds.end()) {
-    return true;
-  }
-  if (auto iter = this->globallyImportedModIds.find(foreignModId);
-      iter != this->globallyImportedModIds.end()) {
-    return true; // already imported
-  }
-
-  auto index = this->memberMap.indexes.find(foreignModId);
-  if (!index) {
-    return false;
-  }
-  if (inlined) {
-    this->inlinedModIds.emplace(foreignModId);
-  }
-  this->globallyImportedModIds.emplace(foreignModId);
-  for (auto &decl : index->getDecls()) {
-    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
-      if (foreignModId == 0 && decl.getKind() == DeclSymbol::Kind::BUILTIN_CMD) {
-        this->builtinCmd->addDecl(decl);
-      } else {
-        this->scope->addDecl(decl);
-      }
-    }
-  }
-  // resolve inlined imported symbols
-  for (auto &e : index->getInlinedModIds()) {
-    this->importForeignDecls(e, inlined);
-  }
-  return true;
 }
 
 const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
@@ -255,50 +181,13 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str());
 }
 
-const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
-                                              DeclSymbol::Kind kind, const char *info) {
-  if (recv.isUnresolved()) {
-    return nullptr;
-  }
-  auto *decl = this->addDeclImpl(nameInfo, kind, info, false);
-  if (decl) {
-    this->memberMap.add(recv, *decl);
-  }
-  return decl;
-}
-
-const Symbol *IndexBuilder::addMemberImpl(const DSType &recv, const NameInfo &info,
-                                          DeclSymbol::Kind kind, const Handle *handle) {
-  std::string name = mangleSymbolName(kind, info);
-  if (name.empty()) {
-    return nullptr;
-  }
-  auto *entry = this->memberMap.find(recv, name, kind == DeclSymbol::Kind::METHOD);
-  DeclBase *decl;
-  if (entry) {
-    decl = this->resolveMemberDecl(*entry);
-  } else if (handle) {
-    decl = this->addBuiltinFieldOrMethod(recv, info, *handle);
-  } else {
-    return nullptr;
-  }
-  if (auto *symbol = this->insertNewSymbol(info.getToken(), decl)) {
-    auto symbolRef = SymbolRef::create(info.getToken(), this->modId);
-    assert(symbolRef.hasValue());
-    decl->addRef(symbolRef.unwrap());
-    return symbol;
-  }
-  return nullptr;
-}
-
-DeclBase *IndexBuilder::addBuiltinFieldOrMethod(const DSType &recv, const NameInfo &nameInfo,
-                                                const Handle &handle) {
+static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
+                                                    const Handle &handle) {
   if (handle.isMethod()) {
     /**
      * for builtin method
      */
     auto &methodHandle = cast<MethodHandle>(handle);
-    auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
     assert(methodHandle.isNative());
     std::string content = "(";
     for (unsigned int i = 0; i < methodHandle.getParamSize(); i++) {
@@ -313,49 +202,38 @@ DeclBase *IndexBuilder::addBuiltinFieldOrMethod(const DSType &recv, const NameIn
     content += ") : ";
     content += trimTypeName(methodHandle.getReturnType());
     content += " for ";
-    content += trimTypeName(this->getPool().get(methodHandle.getRecvTypeId()));
-    auto *decl =
-        this->insertNewDecl(DeclSymbol::Kind::METHOD, attr, nameInfo, content.c_str(), false);
-    if (decl) {
-      this->memberMap.add(recv, *decl);
-    }
-    return decl;
+    content += trimTypeName(recv);
+    return content;
   } else {
     /**
      * for builtin type field (must be Tuple)
      */
     assert(recv.isTupleType());
-    auto &fieldType = this->getPool().get(handle.getTypeId());
-    auto attr = DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::BUILTIN;
+    auto &fieldType = pool.get(handle.getTypeId());
     std::string content = trimTypeName(fieldType).toString();
     content += " for ";
     content += trimTypeName(recv);
-    auto *decl = this->insertNewDecl(DeclSymbol::Kind::VAR, attr, nameInfo, content.c_str(), false);
-    if (decl) {
-      this->memberMap.add(recv, *decl);
-    }
-    return decl;
+    return content;
   }
 }
 
-DeclBase *IndexBuilder::resolveMemberDecl(const SymbolRef &entry) {
-  if (this->modId == entry.getModId()) {
-    auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), entry.getPos(),
-                                 DeclSymbol::Compare());
-    if (iter != this->decls.end() && iter->getPos() == entry.getPos()) {
-      return &*iter;
-    }
-  } else {
-    SymbolRequest request = {.modId = entry.getModId(), .pos = entry.getPos()};
-    auto iter = std::lower_bound(this->foreigns.begin(), this->foreigns.end(), request,
-                                 ForeignDecl::Compare());
-    if (iter == this->foreigns.end() || (*iter).getModId() != request.modId ||
-        (*iter).getPos() != request.pos) { // not found, add decl
-      iter = this->foreigns.insert(iter, ForeignDecl(entry));
-    }
-    return &*iter;
+bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                             const Handle &handle) {
+  const DSType *acutalRecv = &recv;
+  if (recv.isModType() && !handle.isMethod()) {
+    acutalRecv = nullptr;
   }
-  return nullptr;
+
+  if (this->addSymbolImpl(acutalRecv, nameInfo, kind, &handle)) {
+    return true;
+  }
+  if (handle.getModId() == 0) { // tuple field or builtin method
+    std::string hover = generateBuiltinFieldOrMethodInfo(this->getPool(), recv, handle);
+    if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), true)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
@@ -367,7 +245,7 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
     }
     return &(*iter);
   } else {
-    auto *index = this->memberMap.indexes.findDecl({
+    auto *index = this->indexes.findDecl({
         .modId = symbol.getDeclModId(),
         .pos = symbol.getDeclPos(),
     });
@@ -375,22 +253,19 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
   }
 }
 
-DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
-                                        const NameInfo &nameInfo, const char *info,
-                                        bool checkScope) {
-  std::string name = mangleSymbolName(k, nameInfo);
-  if (name.empty()) {
+DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, Token token,
+                                        const std::string &mangledName, const char *info) {
+  if (mangledName.empty()) {
     return nullptr;
   }
 
   // create DeclSymbol
-  const Token token = nameInfo.getToken();
-  auto ret = DeclSymbol::create(k, attr, nameInfo.getToken(), this->modId, name, info);
+  auto ret = DeclSymbol::create(k, attr, token, this->modId, mangledName, info);
   if (!ret.hasValue()) {
     return nullptr;
   }
   auto &decl = ret.unwrap();
-  if (checkScope && !this->scope->addDecl(decl)) { // register name to scope
+  if (!this->scope->addDecl(decl)) { // register name to scope
     return nullptr;
   }
 
@@ -434,7 +309,7 @@ void SymbolIndexer::visitTypeNode(TypeNode &node) {
   case TypeNode::Base: {
     auto &base = cast<BaseTypeNode>(node);
     this->builder().addSymbol(NameInfo(base.getToken(), std::string(base.getTokenText())),
-                              DeclSymbol::Kind::TYPE_ALIAS);
+                              DeclSymbol::Kind::TYPE_ALIAS, base.getHandle());
     break;
   }
   case TypeNode::Qualified: {
@@ -443,7 +318,7 @@ void SymbolIndexer::visitTypeNode(TypeNode &node) {
     if (!type.isUntyped()) {
       NameInfo info(type.getNameTypeNode().getToken(), type.getNameTypeNode().getTokenText());
       this->builder().addMember(type.getRecvTypeNode().getType(), info,
-                                DeclSymbol::Kind::TYPE_ALIAS);
+                                DeclSymbol::Kind::TYPE_ALIAS, *type.getNameTypeNode().getHandle());
     }
     break;
   }
@@ -494,9 +369,9 @@ void SymbolIndexer::visitVarNode(VarNode &node) {
   if (!node.isUntyped() && !node.getType().isVoidType() && !node.getType().isNothingType()) {
     NameInfo info(node.getToken(), node.getVarName());
     if (this->builder().isReceiver(node.getVarName(), *node.getHandle())) {
-      this->builder().addThis(info);
+      this->builder().addThis(info, node.getHandle());
     } else {
-      this->builder().addSymbol(info);
+      this->builder().addSymbol(info, DeclSymbol::Kind::VAR, node.getHandle());
     }
   }
 }
@@ -506,7 +381,8 @@ void SymbolIndexer::visitAccessNode(AccessNode &node) {
   assert(!node.isUntyped());
   if (node.getHandle()) {
     NameInfo info(node.getNameNode().getToken(), node.getFieldName());
-    this->builder().addMember(node.getRecvNode().getType(), info, *node.getHandle());
+    this->builder().addMember(node.getRecvNode().getType(), info, DeclSymbol::Kind::VAR,
+                              *node.getHandle());
   }
 }
 
@@ -571,7 +447,7 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
   const Symbol *symbol = nullptr;
   if (auto &cmdName = node.getNameNode().getValue(); !cmdName.empty()) {
     NameInfo info(node.getNameNode().getToken(), cmdName);
-    symbol = this->builder().addSymbol(info, DeclSymbol::Kind::CMD);
+    symbol = this->builder().addSymbol(info, DeclSymbol::Kind::CMD, node.getHandle());
   }
   if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
     if (auto *decl = this->builder().findDecl(*symbol);
@@ -579,7 +455,9 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
         auto &type = *this->builder().getPool().getModTypeById(ret.first).asOk();
-        this->builder().addMember(type, nameInfo.unwrap(), DeclSymbol::Kind::CMD);
+        auto handle = cast<ModType>(type).lookup(this->builder().getPool(),
+                                                 toCmdFullName(nameInfo.unwrap().getName()));
+        this->builder().addSymbol(nameInfo.unwrap(), DeclSymbol::Kind::CMD, handle);
       }
     }
   }
@@ -870,8 +748,6 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (node.getNameInfo()) {
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
                             std::to_string(node.getModType().getModId()).c_str());
-  } else {
-    this->builder().importForeignDecls(node.getModType().getModId(), node.isInlined());
   }
 }
 
@@ -902,7 +778,6 @@ bool SymbolIndexer::enterModule(unsigned short modId, int version,
     this->addBuiltinSymbols();
     this->exitModule(nullptr);
   }
-  this->builder().importForeignDecls(0, false);
   return true;
 }
 
