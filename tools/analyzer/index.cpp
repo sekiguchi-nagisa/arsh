@@ -49,30 +49,49 @@ std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
   return {0, false};
 }
 
-std::string DeclSymbol::mangle(Kind k, StringRef name) {
+std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
+  std::string value;
   switch (k) {
   case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
-    return toCmdFullName(name);
+    value = toCmdFullName(name);
+    break;
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:
-    return toTypeAliasFullName(name);
+    value = toTypeAliasFullName(name);
+    break;
+  case DeclSymbol::Kind::METHOD: {
+    value = name.toString();
+    value += METHOD_SYMBOL_SUFFIX;
+    break;
+  }
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
-  case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
+    value = name.toString();
     break;
   }
-  return name.toString();
+
+  if (!recvTypeName.empty()) {
+    value += "@";
+    value += recvTypeName;
+  }
+  return value;
 }
 
-std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
+std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
+  if (hasFlag(a, Attr::MEMBER)) {
+    auto pos = mangledName.lastIndexOf("@");
+    assert(pos != StringRef::npos);
+    mangledName = mangledName.substr(0, pos);
+  }
+
   switch (k) {
   case DeclSymbol::Kind::BUILTIN_CMD:
   case DeclSymbol::Kind::CMD:
@@ -83,13 +102,15 @@ std::string DeclSymbol::demangle(Kind k, StringRef mangledName) {
   case DeclSymbol::Kind::CONSTRUCTOR:
     mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
     break;
+  case DeclSymbol::Kind::METHOD:
+    mangledName.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
+    break;
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::CONST:
   case DeclSymbol::Kind::FUNC:
-  case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
     break;
@@ -134,6 +155,14 @@ const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
     if (request.pos >= decl.getToken().pos && request.pos <= decl.getToken().endPos()) {
       return &decl;
     }
+  }
+  return nullptr;
+}
+
+const SymbolRef *SymbolIndex::findGlobal(const std::string &mangledName) const {
+  auto iter = this->globals.find(mangledName);
+  if (iter != this->globals.end()) {
+    return &iter->second;
   }
   return nullptr;
 }
@@ -193,29 +222,29 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
 }
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &cosumer) {
+                       const std::function<void(const FindRefsResult &)> &consumer) {
   unsigned int count = 0;
   if (auto *decl = indexes.findDecl(request);
       decl && !hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN)) {
     // add its self
     count++;
-    if (cosumer) {
+    if (consumer) {
       FindRefsResult ret = {
           .symbol = decl->toRef(),
           .request = *decl,
       };
-      cosumer(ret);
+      consumer(ret);
     }
 
     // search local ref
     for (auto &e : decl->getRefs()) {
       count++;
-      if (cosumer) {
+      if (consumer) {
         FindRefsResult ret = {
             .symbol = e,
             .request = *decl,
         };
-        cosumer(ret);
+        consumer(ret);
       }
     }
 
@@ -227,12 +256,12 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
       if (auto *foreign = index->findForeignDecl(request)) {
         for (auto &e : foreign->getRefs()) {
           count++;
-          if (cosumer) {
+          if (consumer) {
             FindRefsResult ret = {
                 .symbol = e,
                 .request = *decl,
             };
-            cosumer(ret);
+            consumer(ret);
           }
         }
       }

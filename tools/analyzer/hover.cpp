@@ -37,7 +37,7 @@ static const BuiltinCmdDesc *findCmdDesc(const char *name) {
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
                                  const DeclSymbol &decl, bool markup) {
   std::string content = markup ? "```ydsh\n" : "";
-  std::string name = DeclSymbol::demangle(decl.getKind(), decl.getMangledName());
+  std::string name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
   switch (decl.getKind()) {
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
