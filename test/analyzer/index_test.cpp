@@ -31,6 +31,15 @@ struct RefsResult {
   Range range;
 };
 
+struct Loc {
+  unsigned short modId;
+  std::string rangeStr;
+
+  Loc(unsigned short modId, std::string &&rangeStr) : modId(modId), rangeStr(std::move(rangeStr)) {}
+
+  Loc(unsigned short modId, const char *str) : modId(modId), rangeStr(str) {}
+};
+
 class IndexTest : public ::testing::Test {
 protected:
   ydsh::SysConfig sysConfig;
@@ -62,7 +71,7 @@ public:
     ASSERT_EQ(size.symbolSize, index->getSymbols().size());
   }
 
-  void findDecl(const Request &req, const std::vector<DeclResult> &expected) {
+  void findDecl(const Request &req, const std::vector<Loc> &expected) {
     auto src = this->srcMan.findById(req.modId);
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), req.position);
@@ -89,11 +98,27 @@ public:
     ASSERT_EQ(expected.size(), actual.size());
     for (unsigned int i = 0; i < actual.size(); i++) {
       ASSERT_EQ(expected[i].modId, actual[i].modId);
-      ASSERT_EQ(expected[i].range.toString(), actual[i].range.toString());
+      ASSERT_EQ(expected[i].rangeStr, actual[i].range.toString());
     }
   }
 
+  void findDecl(const Request &req, const std::vector<DeclResult> &expected) {
+    std::vector<Loc> locs;
+    for (auto &e : expected) {
+      locs.emplace_back(e.modId, e.range.toString());
+    }
+    this->findDecl(req, locs);
+  }
+
   void findRefs(const Request &req, const std::vector<RefsResult> &expected) {
+    std::vector<Loc> locs;
+    for (auto &e : expected) {
+      locs.emplace_back(e.modId, e.range.toString());
+    }
+    this->findRefs(req, locs);
+  }
+
+  void findRefs(const Request &req, const std::vector<Loc> &expected) {
     auto src = this->srcMan.findById(req.modId);
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), req.position);
@@ -120,7 +145,7 @@ public:
     ASSERT_EQ(expected.size(), actual.size());
     for (unsigned int i = 0; i < actual.size(); i++) {
       ASSERT_EQ(expected[i].modId, actual[i].modId);
-      ASSERT_EQ(expected[i].range.toString(), actual[i].range.toString());
+      ASSERT_EQ(expected[i].rangeStr, actual[i].range.toString());
     }
   }
 
@@ -165,86 +190,22 @@ try { $false; } catch($e) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 2, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 3, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 4, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = {.line = 2, .character = 5, }
-  };
-  result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 2}}, {{modId, "(1:22~1:24)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 3}}, {{modId, "(1:22~1:24)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 4}}, {{modId, "(1:22~1:24)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 5}}, std::vector<Loc>()));
 
   // reference
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 3, }
-  };
-  std::vector<RefsResult> result2 = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 22, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = { .start = { .line = 2, .character = 2, }, .end = { .line = 2, .character = 4, }}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 2, .character = 3}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 22}},
+                     {{modId, "(1:22~1:24)"},  // itself
+                      {modId, "(2:2~2:4)"}})); // $e
 }
 
 TEST_F(IndexTest, scope2) {
@@ -262,72 +223,20 @@ function assertArray(
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 11}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 14, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 9}, .end = {.line = 1, .character = 20}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 6, .character = 16, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 2}, .end = {.line = 2, .character = 4}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:9~1:20)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 16}}, {{modId, "(2:2~2:4)"}}));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 6, .character = 11, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 6, .character = 10}, .end = {.line = 6, .character = 12}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 6, .character = 26}, .end = {.line = 6, .character = 28}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 7, .character = 12, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 7, .character = 10}, .end = {.line = 7, .character = 12}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 7, .character = 26}, .end = {.line = 7, .character = 28}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 6, .character = 11}},
+                     {{modId, "(6:10~6:12)"},    // itself
+                      {modId, "(6:26~6:28)"}})); // echo $a
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 12}},
+                     {{modId, "(7:10~7:12)"},    // itself
+                      {modId, "(7:26~7:28)"}})); // echo $a
 }
 
 TEST_F(IndexTest, scope3) {
@@ -336,24 +245,10 @@ TEST_F(IndexTest, scope3) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 0, .character = 0, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 1}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 0, .character = 5}, .end = {.line = 0, .character = 7}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 0, .character = 0}},
+                     {{modId, "(0:0~0:1)"},    // itself
+                      {modId, "(0:5~0:7)"}})); // $A
 }
 
 TEST_F(IndexTest, func1) {
@@ -367,72 +262,20 @@ $a(234)
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 0, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 2}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 0, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 4}, .end = {.line = 1, .character = 5}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 0}}, {{modId, "(2:0~2:2)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 0}}, {{modId, "(1:4~1:5)"}}));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 4, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 4}, .end = {.line = 1, .character = 5}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 2}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 1, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 2}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 2}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 4}},
+                     {{modId, "(1:4~1:5)"},    // itself
+                      {modId, "(4:0~4:2)"}})); // $a(234)
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 1}},
+                     {{modId, "(2:0~2:2)"},    // itself
+                      {modId, "(3:0~3:2)"}})); // $a + 34
 }
 
 TEST_F(IndexTest, cmd1) {
@@ -446,70 +289,21 @@ hoge a b $(hoge) "$(hoge)" # hoge
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 7}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 2, }
-  };
-  std::vector<DeclResult> result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 14, }
-  };
-  result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 28, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 2}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 28}}, {{modId, "(2:0~2:4)"}}));
 
   // reference
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 2, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 25}, .end = {.line = 2, .character = 29}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 4}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 11}, .end = {.line = 3, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 20}, .end = {.line = 3, .character = 24}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 2}},
+                     {{modId, "(2:0~2:4)"},      // itself
+                      {modId, "(2:25~2:29)"},    // hoge;
+                      {modId, "(3:0~3:4)"},      // hoge a b
+                      {modId, "(3:11~3:15)"},    // $(hoge)
+                      {modId, "(3:20~3:24)"}})); // "$(hoge)"
 }
 
 TEST_F(IndexTest, type1) {
@@ -523,43 +317,17 @@ new [typeof(new StrArray())]()
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 22, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 8}, .end = {.line = 1, .character = 16}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 22}}, {{modId, "(1:8~1:16)"}}));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 12, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 8}, .end = {.line = 1, .character = 16}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 24}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 12}},
+                     {{modId, "(1:8~1:16)"},     // itself
+                      {modId, "(2:16~2:24)"}})); // new StrArray()
 }
 
-TEST_F(IndexTest, globalImportDef) {
+TEST_F(IndexTest, globalImport) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -583,175 +351,38 @@ new [DDD]()
   ASSERT_EQ(1, modId);
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 1, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 9, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 1, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 7, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, globalImportRef) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
-  auto fileName = tempFileFactory.createTempFile("mod.ds",
-                                                 R"(
-var _AAA = 34
-var AAA = $_AAA
-function BBB() : Int { return $AAA; }
-CCC() { $BBB(); }
-typedef DDD = typeof(CCC)
-)");
-
-  unsigned short modId;
-  auto content = format(R"(
-source %s
-$AAA + $BBB()
-CCC
-new [DDD]()
-)",
-                        fileName.c_str());
-  ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
-  ASSERT_EQ(1, modId);
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 1}}, {{2, "(2:4~2:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 9}}, {{2, "(3:9~3:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 1}}, {{2, "(4:0~4:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{2, "(5:8~5:11)"}}));
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = 2,
-    .position = { .line = 2, .character = 5, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 30}, .end = {.line = 3, .character = 34}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 3, .character = 10, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 8}, .end = {.line = 4, .character = 12}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 7}, .end = {.line = 2, .character = 11}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 4, .character = 3, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 5, .character = 9, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 2, .character = 5}},
+                     {{2, "(2:4~2:7)"},    // itself
+                      {2, "(3:30~3:34)"},  // return $AAA;
+                      {1, "(2:0~2:4)"}})); // $AAA + $BBB()
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 3, .character = 10}},
+                     {{2, "(3:9~3:12)"},    // itself
+                      {2, "(4:8~4:12)"},    // $BBB()
+                      {1, "(2:7~2:11)"}})); // $AAA + $BBB()
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 4, .character = 3}},
+                     {{2, "(4:0~4:3)"},    // itself
+                      {2, "(5:21~5:24)"},  // typeof(CCC)
+                      {1, "(3:0~3:3)"}})); // CCC
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 5, .character = 9}},
+                     {{2, "(5:8~5:11)"},   // itself
+                      {1, "(4:5~4:8)"}})); // new [DDD]()
 }
 
-TEST_F(IndexTest, namedImportDef) {
+TEST_F(IndexTest, namedImport) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -775,346 +406,45 @@ new [mod.DDD]()
   ASSERT_EQ(1, modId);
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 13, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 7, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 8, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 19, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 23, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 10, }
-  };
-  result = {
-    DeclResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, namedImportRef) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
-  auto fileName = tempFileFactory.createTempFile("mod.ds",
-                                                 R"(
-var _AAA = 34
-var AAA = $_AAA
-function BBB() : Int { return $AAA; }
-CCC() { $BBB(); }
-typedef DDD = typeof(CCC)
-)");
-
-  unsigned short modId;
-  auto content = format(R"(source %s \
-as mod
-$mod.AAA + $mod.BBB()
-mod 2>&1 > /dev/null CCC 34
-new [mod.DDD]()
-)",
-                        fileName.c_str());
-  ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
-  ASSERT_EQ(1, modId);
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 13}}, {{modId, "(1:3~1:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{modId, "(1:3~1:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{2, "(2:4~2:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 19}}, {{2, "(3:9~3:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 23}}, {{2, "(4:0~4:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{2, "(5:8~5:11)"}}));
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 6, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 11}, .end = {.line = 2, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 2, .character = 5, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 30}, .end = {.line = 3, .character = 34}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 5}, .end = {.line = 2, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 3, .character = 10, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 8}, .end = {.line = 4, .character = 12}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 19}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 4, .character = 3, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    },
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 3, .character = 21}, .end = {.line = 3, .character = 24}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 2,
-    .position = { .line = 5, .character = 9, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 2,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 4, .character = 9}, .end = {.line = 4, .character = 12}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-}
-
-TEST_F(IndexTest, inlinedImportRef) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
-  auto fileName = tempFileFactory.createTempFile("mod.ds",
-                                                 R"(
-var _AAA = 34
-var AAA = $_AAA
-function BBB() : Int { return $AAA; }
-CCC() { $BBB(); }
-typedef DDD = typeof(CCC)
-)");
-
-  fileName =
-      tempFileFactory.createTempFile("inlined.ds", format("source %s inlined", fileName.c_str()));
-
-  unsigned short modId;
-  auto content = format(R"(
-source %s
-$AAA + $BBB()
-CCC
-new [DDD]()
-)",
-                        fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
-  ASSERT_EQ(1, modId);
-
-  // references
-
-  // clang-format off
-  Request req = {
-    .modId = 3,
-    .position = { .line = 2, .character = 5, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 30}, .end = {.line = 3, .character = 34}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 3, .character = 10, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 8}, .end = {.line = 4, .character = 12}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 7}, .end = {.line = 2, .character = 11}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 4, .character = 3, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 5, .character = 9, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 6}},
+                     {{modId, "(1:3~1:6)"}, // itself
+                      {modId, "(2:0~2:4)"},
+                      {modId, "(2:11~2:15)"},
+                      {modId, "(3:0~3:3)"},
+                      {modId, "(4:5~4:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 2, .character = 5}}, {{2, "(2:4~2:7)"}, // itself
+                                                                     {2, "(3:30~3:34)"},
+                                                                     {1, "(2:5~2:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 3, .character = 10}}, {{2, "(3:9~3:12)"}, // itself
+                                                                      {2, "(4:8~4:12)"},
+                                                                      {1, "(2:16~2:19)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 4, .character = 3}}, {{2, "(4:0~4:3)"}, // itself
+                                                                     {2, "(5:21~5:24)"},
+                                                                     {1, "(3:21~3:24)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 5, .character = 9}}, {{2, "(5:8~5:11)"}, // itself
+                                                                     {1, "(4:9~4:12)"}}));
 }
 
-TEST_F(IndexTest, namedImportInlinedDef) {
+TEST_F(IndexTest, namedImportInlined) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -1141,236 +471,45 @@ new [mod.DDD]()
   ASSERT_EQ(1, modId);
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 13, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 7, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 8, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 19, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 5, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 10, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, namedImportInlinedRef) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
-  auto fileName = tempFileFactory.createTempFile("mod.ds",
-                                                 R"(
-var _AAA = 34
-var AAA = $_AAA
-function BBB() : Int { return $AAA; }
-CCC() { $BBB(); }
-typedef DDD = typeof(CCC)
-)");
-
-  fileName =
-      tempFileFactory.createTempFile("inlined.ds", format("source %s inlined", fileName.c_str()));
-
-  unsigned short modId;
-  auto content = format(R"(source %s \
-as mod
-$mod.AAA + $mod.BBB()
-mod CCC
-new [mod.DDD]()
-)",
-                        fileName.c_str());
-  ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
-  ASSERT_EQ(1, modId);
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 13}}, {{modId, "(1:3~1:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{modId, "(1:3~1:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{3, "(2:4~2:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 19}}, {{3, "(3:9~3:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 5}}, {{3, "(4:0~4:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{3, "(5:8~5:11)"}}));
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 6, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 11}, .end = {.line = 2, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 2, .character = 5, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 30}, .end = {.line = 3, .character = 34}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 5}, .end = {.line = 2, .character = 8}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 3, .character = 10, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 8}, .end = {.line = 4, .character = 12}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 19}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 4, .character = 3, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    },
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 3, .character = 4}, .end = {.line = 3, .character = 7}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = 3,
-    .position = { .line = 5, .character = 9, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    },
-    RefsResult{
-      .modId = 1,
-      .range = {.start = {.line = 4, .character = 9}, .end = {.line = 4, .character = 12}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 6}},
+                     {{modId, "(1:3~1:6)"}, // itself
+                      {modId, "(2:0~2:4)"},
+                      {modId, "(2:11~2:15)"},
+                      {modId, "(3:0~3:3)"},
+                      {modId, "(4:5~4:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 2, .character = 5}}, {{3, "(2:4~2:7)"}, // itself
+                                                                     {3, "(3:30~3:34)"},
+                                                                     {1, "(2:5~2:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 3, .character = 10}}, {{3, "(3:9~3:12)"}, // itself
+                                                                      {3, "(4:8~4:12)"},
+                                                                      {1, "(2:16~2:19)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 4, .character = 3}}, {{3, "(4:0~4:3)"}, // itself
+                                                                     {3, "(5:21~5:24)"},
+                                                                     {1, "(3:4~3:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 5, .character = 9}}, {{3, "(5:8~5:11)"}, // itself
+                                                                     {1, "(4:9~4:12)"}}));
 }
 
-TEST_F(IndexTest, inlinedImportDef) {
+TEST_F(IndexTest, inlinedImport) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -1397,62 +536,31 @@ new [DDD]()
   ASSERT_EQ(1, modId);
 
   // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 1}}, {{3, "(2:4~2:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 9}}, {{3, "(3:9~3:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 1}}, {{3, "(4:0~4:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{3, "(5:8~5:11)"}}));
 
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 1, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 9, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 1, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 4, .character = 7, }
-  };
-  result = {
-    DeclResult{
-      .modId = 3,
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  // references
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 2, .character = 5}}, {{3, "(2:4~2:7)"},   // itself
+                                                                     {3, "(3:30~3:34)"}, //
+                                                                     {1, "(2:0~2:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 3, .character = 10}}, {{3, "(3:9~3:12)"}, // itself
+                                                                      {3, "(4:8~4:12)"},
+                                                                      {1, "(2:7~2:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 4, .character = 3}}, {{3, "(4:0~4:3)"}, // itself
+                                                                     {3, "(5:21~5:24)"},
+                                                                     {1, "(3:0~3:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 5, .character = 9}}, {{3, "(5:8~5:11)"},   // itself
+                                                                     {1, "(4:5~4:8)"}})); //
 }
 
 TEST_F(IndexTest, udc_overwrite) {
@@ -1465,43 +573,16 @@ echo hello
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 0, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 0}, .end = {.line = 1, .character = 4}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 0}}, {{modId, "(1:0~1:4)"}}));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 2, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 0}, .end = {.line = 1, .character = 4}}
-    },
-    RefsResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 2}},
+                     {{modId, "(1:0~1:4)"}, {modId, "(2:0~2:4)"}}));
 }
 
-TEST_F(IndexTest, udtypeDef) {
+TEST_F(IndexTest, udtype) {
   unsigned short modId;
   const char *content = R"E(
     typedef APIError : Error
@@ -1517,159 +598,41 @@ TEST_F(IndexTest, udtypeDef) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 14}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 6, .character = 27, } // APIError
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 20}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 6, .character = 19, } // AAA
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 12}, .end = {.line = 2, .character = 15}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 20, } // $e
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 18}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 8, .character = 10, } // AAA.HOME
-  };
-  result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 4, .character = 17}, .end = {.line = 4, .character = 21}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, udtypeRef) {
-  unsigned short modId;
-  const char *content = R"E(
-    typedef APIError : Error
-    typedef AAA($e : APIError) {
-      let error = $e
-      import-env HOME
-    }
-    var a = new AAA(new APIError("hello"))
-    $a.error
-    $a.HOME
-)E";
-
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 14}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 27}}, // APIError
+                     {{modId, "(1:12~1:20)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 19}}, // AAA
+                     {{modId, "(2:12~2:15)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 3, .character = 20}}, // $e
+                     {{modId, "(2:16~2:18)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 8, .character = 10}}, // AAA.HOME
+                     {{modId, "(4:17~4:21)"}}));
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // APIError
-    .position = { .line = 1, .character = 17, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 20}}
-    },
-    RefsResult{
-      .modId = modId, // $e : APIError
-      .range = {.start = {.line = 2, .character = 21}, .end = {.line = 2, .character = 29}}
-    },
-    RefsResult{
-      .modId = modId, // new APIError
-      .range = {.start = {.line = 6, .character = 24}, .end = {.line = 6, .character = 32}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId, // $e
-    .position = { .line = 2, .character = 18, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 2, .character = 16}, .end = {.line = 2, .character = 18}}
-    },
-    RefsResult{
-      .modId = modId, // let error = $e
-      .range = {.start = {.line = 3, .character = 18}, .end = {.line = 3, .character = 20}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId, // typedef AAA($e : APIError)
-    .position = { .line = 2, .character = 15, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 2, .character = 12}, .end = {.line = 2, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId, // var a = new AAA(new APIError("hello"))
-      .range = {.start = {.line = 6, .character = 16}, .end = {.line = 6, .character = 19}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId, // let error = $e
-    .position = { .line = 3, .character = 11, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 3, .character = 10}, .end = {.line = 3, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId, // $a.error
-      .range = {.start = {.line = 7, .character = 7}, .end = {.line = 7, .character = 12}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 17}}, // APIError
+                     {{modId, "(1:12~1:20)"},                                           // itself
+                      {modId, "(2:21~2:29)"},    // $e : APIError
+                      {modId, "(6:24~6:32)"}})); // new APIError
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 18}}, // $e
+                     {{modId, "(2:16~2:18)"},                                           // itself
+                      {modId, "(3:18~3:20)"}})); // let error = $e
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId,
+              .position = {.line = 2, .character = 15}}, // typedef AAA($e : APIError)
+      {{modId, "(2:12~2:15)"},                           // itself
+       {modId, "(6:16~6:19)"}}));                        // var a = new AAA(new APIError("hello"))
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 3, .character = 11}}, // let error = $e
+      {{modId, "(3:10~3:15)"},                                           // itself
+       {modId, "(7:7~7:12)"}}));                                         // $a.error
 }
 
-TEST_F(IndexTest, udtypeRecDef) {
+TEST_F(IndexTest, udtypeRec) {
   unsigned short modId;
   const char *content = R"E(
     typedef AAA($n : AAA!) {
@@ -1682,104 +645,31 @@ TEST_F(IndexTest, udtypeRecDef) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 12}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // new AAA!()
-    .position = { .line = 3, .character = 50, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId, // typedef AAA($n : AAA!)
-      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 15}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // AAA.Next
-    .position = { .line = 5, .character = 23, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // typedef Next
-      .range = {.start = {.line = 3, .character = 14}, .end = {.line = 3, .character = 18}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, udtypeRecRef) {
-  unsigned short modId;
-  const char *content = R"E(
-    typedef AAA($n : AAA!) {
-      let next = $n
-      typedef Next = Option<typeof(new AAA(new AAA!()))>
-    }
-    new AAA(new AAA.Next()).next
-)E";
-
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 12}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 50}}, // new AAA!()
+      {{modId, "(1:12~1:15)"}}));                                        // typedef AAA($n : AAA!)
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 5, .character = 23}}, // AAA.Next
+                     {{modId, "(3:14~3:18)"}})); // typedef Next
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // typedef AAA($n : AAA!)
-    .position = { .line = 1, .character = 14, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 1, .character = 12}, .end = {.line = 1, .character = 15}}
-    },
-    RefsResult{
-      .modId = modId, // $n : AAA!
-      .range = {.start = {.line = 1, .character = 21}, .end = {.line = 1, .character = 24}}
-    },
-    RefsResult{
-      .modId = modId, // new AAA(new AAA!())
-      .range = {.start = {.line = 3, .character = 39}, .end = {.line = 3, .character = 42}}
-    },
-    RefsResult{
-      .modId = modId, // new AAA!()
-      .range = {.start = {.line = 3, .character = 47}, .end = {.line = 3, .character = 50}}
-    },
-    RefsResult{
-      .modId = modId, //     new AAA(new AAA.Next()).next
-      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
-    },
-    RefsResult{
-      .modId = modId, //     new AAA.Next()
-      .range = {.start = {.line = 5, .character = 16}, .end = {.line = 5, .character = 19}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId, // typedef Next = Option<typeof(new AAA(new AAA!()))>
-    .position = { .line = 3, .character = 17, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 3, .character = 14}, .end = {.line = 3, .character = 18}}
-    },
-    RefsResult{
-      .modId = modId, //     new AAA(new AAA.Next()).next
-      .range = {.start = {.line = 5, .character = 20}, .end = {.line = 5, .character = 24}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // typedef AAA($n : AAA!)
+      {{modId, "(1:12~1:15)"},                                           // itself
+       {modId, "(1:21~1:24)"},                                           // $n : AAA!
+       {modId, "(3:39~3:42)"},                                           // new AAA(new AAA!())
+       {modId, "(3:47~3:50)"},                                           // new AAA!()
+       {modId, "(5:8~5:11)"},     //     new AAA(new AAA.Next()).next
+       {modId, "(5:16~5:19)"}})); //     new AAA.Next()
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId,
+              .position = {.line = 3,
+                           .character = 17}}, // typedef Next = Option<typeof(new AAA(new AAA!()))>
+      {{modId, "(3:14~3:18)"},                // itself
+       {modId, "(5:20~5:24)"}}));             //     new AAA(new AAA.Next()).next
 }
 
-TEST_F(IndexTest, methodDef) {
+TEST_F(IndexTest, method) {
   unsigned short modId;
   const char *content = R"E(
     function factorial() : Int for Int {
@@ -1791,143 +681,43 @@ TEST_F(IndexTest, methodDef) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // ($this - 1).factorial()
-    .position = { .line = 2, .character = 56, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId, // function factorial() : Int for Int
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // 23.factorial()
-    .position = { .line = 4, .character = 11, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // function factorial() : Int for Int
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 56}}, // ($this - 1).factorial()
+      {{modId, "(1:13~1:22)"}})); // function factorial() : Int for Int
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 11}}, // 23.factorial()
+      {{modId, "(1:13~1:22)"}})); // function factorial() : Int for Int
   /**
    * this
    */
-  // clang-format off
-  req = {
-    .modId = modId, // $this
-    .position = { .line = 2, .character = 17, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // $this
-      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // $this
-    .position = { .line = 2, .character = 37, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // $this
-      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // $this
-    .position = { .line = 2, .character = 45, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // $this
-      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, methodRef) {
-  unsigned short modId;
-  const char *content = R"E(
-    function factorial() : Int for Int {
-        return $this == 0 ? 1 : $this * ($this - 1).factorial()
-    }
-    23.factorial()
-)E";
-
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 2, .character = 17}}, // $this
+                     {{modId, "(2:15~2:20)"}}));                                        // $this
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 2, .character = 37}}, // $this
+                     {{modId, "(2:15~2:20)"}}));                                        // $this
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 2, .character = 45}}, // $this
+                     {{modId, "(2:15~2:20)"}}));                                        // $this
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // function factorial() : Int for Int
-    .position = { .line = 1, .character = 17, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 22}}
-    },
-    RefsResult{
-      .modId = modId, // ($this - 1).factorial()
-      .range = {.start = {.line = 2, .character = 52}, .end = {.line = 2, .character = 61}}
-    },
-    RefsResult{
-      .modId = modId, // 23.factorial()
-      .range = {.start = {.line = 4, .character = 7}, .end = {.line = 4, .character = 16}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId,
+              .position = {.line = 1, .character = 17}}, // function factorial() : Int for Int
+      {{modId, "(1:13~1:22)"},                           // itself
+       {modId, "(2:52~2:61)"},                           //($this - 1).factorial()
+       {modId, "(4:7~4:16)"}}));                         // 23.factorial()
   /**
    * this
    */
-  // clang-format off
-  req = {
-    .modId = modId, // $this
-    .position = { .line = 2, .character = 19, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 2, .character = 15}, .end = {.line = 2, .character = 20}}
-    },
-    RefsResult{
-      .modId = modId, // $this * ($this - 1)
-      .range = {.start = {.line = 2, .character = 32}, .end = {.line = 2, .character = 37}}
-    },
-    RefsResult{
-      .modId = modId, // $this - 1
-      .range = {.start = {.line = 2, .character = 41}, .end = {.line = 2, .character = 46}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 19}}, // $this
+                     {{modId, "(2:15~2:20)"},                                           // itself
+                      {modId, "(2:32~2:37)"},    // $this * ($this - 1)
+                      {modId, "(2:41~2:46)"}})); // $this - 1
 }
 
-TEST_F(IndexTest, methodOverrideDef) {
+TEST_F(IndexTest, methodOverride) {
   unsigned short modId;
   const char *content = R"E(
     function print() for Any {}
@@ -1940,103 +730,28 @@ TEST_F(IndexTest, methodOverrideDef) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // 34.print()
-    .position = { .line = 3, .character = 10, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId, // function print() for Int {}
-      .range = {.start = {.line = 2, .character = 13}, .end = {.line = 2, .character = 18}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // (34 as Any).print()
-    .position = { .line = 4, .character = 20, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // function print() for Any {}
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId, // '34'.print()
-    .position = { .line = 5, .character = 14, }
-  };
-  result = {
-    DeclResult{
-      .modId = modId, // function print() for Int {}
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
-    }
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-}
-
-TEST_F(IndexTest, methodOverrideRef) {
-  unsigned short modId;
-  const char *content = R"E(
-    function print() for Any {}
-    function print() for Int {}
-    34.print()
-    (34 as Any).print()
-    '34'.print()
-)E";
-
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 10}}, // 34.print()
+      {{modId, "(2:13~2:18)"}})); // function print() for Int {}
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 20}}, // (34 as Any).print()
+      {{modId, "(1:13~1:18)"}})); // function print() for Any {}
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 14}}, // '34'.print()
+      {{modId, "(1:13~1:18)"}})); // function print() for Int {}
 
   // references
-
-  // clang-format off
-  Request req = {
-    .modId = modId, // function factorial() : Int for Any
-    .position = { .line = 1, .character = 18, }
-  };
-  std::vector<RefsResult> result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 1, .character = 13}, .end = {.line = 1, .character = 18}}
-    },
-    RefsResult{
-      .modId = modId, // (34 as Any).print()
-      .range = {.start = {.line = 4, .character = 16}, .end = {.line = 4, .character = 21}}
-    },
-    RefsResult{
-      .modId = modId, // '34'.print()
-      .range = {.start = {.line = 5, .character = 9}, .end = {.line = 5, .character = 14}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
-
-  // clang-format off
-  req = {
-    .modId = modId, // function factorial() : Int for Int
-    .position = { .line = 2, .character = 18, }
-  };
-  result2 = {
-    RefsResult{
-      .modId = modId, // itself
-      .range = {.start = {.line = 2, .character = 13}, .end = {.line = 2, .character = 18}}
-    },
-    RefsResult{
-      .modId = modId, // 34.print()
-      .range = {.start = {.line = 3, .character = 7}, .end = {.line = 3, .character = 12}}
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId,
+              .position = {.line = 1, .character = 18}}, // function factorial() : Int for Any
+      {{modId, "(1:13~1:18)"},                           // itself
+       {modId, "(4:16~4:21)"},                           // (34 as Any).print()
+       {modId, "(5:9~5:14)"}}));                         // '34'.print()
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId,
+              .position = {.line = 2, .character = 18}}, // function factorial() : Int for Int
+      {{modId, "(2:13~2:18)"},                           // itself
+       {modId, "(3:7~3:12)"}}));                         // 34.print()
 }
 
 TEST_F(IndexTest, invalidVar) {
@@ -2051,35 +766,14 @@ var ccc = $ccc
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 7, }
-  };
-  std::vector<DeclResult> result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 6, }
-  };
-  result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 7}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 6}}, std::vector<Loc>()));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 6, }
-  };
-  std::vector<RefsResult> result2 = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 6}}, std::vector<Loc>()));
 }
 
 TEST_F(IndexTest, invalidFunc) {
@@ -2093,26 +787,12 @@ $b + $func(34)
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 3, .character = 8, }
-  };
-  std::vector<DeclResult> result = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 8}}, std::vector<Loc>()));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 12, }
-  };
-  std::vector<RefsResult> result2 = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 2, .character = 12}}, std::vector<Loc>()));
 }
 
 TEST_F(IndexTest, invalidUdc) {
@@ -2125,31 +805,12 @@ hoge eval 34
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
 
   // definition
-
-  // clang-format off
-  Request req = {
-    .modId = modId,
-    .position = { .line = 2, .character = 1, }
-  };
-  std::vector<DeclResult> result = {
-    DeclResult{
-      .modId = modId,
-      .range = {.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 4}},
-    },
-  };
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 1}}, {{modId, "(0:0~0:4)"}}));
 
   // references
-
-  // clang-format off
-  req = {
-    .modId = modId,
-    .position = { .line = 1, .character = 2, }
-  };
-  std::vector<RefsResult> result2 = {};
-  // clang-format on
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 2}}, std::vector<Loc>()));
 }
 
 TEST_F(IndexTest, invalidField) {
@@ -2163,7 +824,7 @@ typedef AAA($a : Int) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 5}));
 }
 
-TEST_F(IndexTest, hover) {
+TEST_F(IndexTest, hover1) {
   ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
@@ -2224,7 +885,9 @@ typedef Interval {
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
                                       Position{.line = 1, .character = 8},
                                       "```ydsh\nlet this : String\n```"));
+}
 
+TEST_F(IndexTest, hover2) {
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile(X_INFO_VERSION_CORE "_.ds",

@@ -38,6 +38,7 @@ TEST(LSPTest, Position) {
   fromJSON(std::move(json), pos);
   ASSERT_EQ(23, pos.line);
   ASSERT_EQ(34, pos.character);
+  ASSERT_EQ("23:34", pos.toString());
   ASSERT_EQ(line, toJSON(pos).serialize());
 }
 
@@ -62,6 +63,7 @@ TEST(LSPTest, Range) {
   ASSERT_EQ(100, range.start.character);
   ASSERT_EQ(100, range.end.line);
   ASSERT_EQ(24, range.end.character);
+  ASSERT_EQ("(90:100~100:24)", range.toString());
   ASSERT_EQ(line, toJSON(range).serialize());
 }
 
