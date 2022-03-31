@@ -6,7 +6,9 @@ assert diff <(complete 'help ') <(help | cut -d ' ' -f 1)
 assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 
 # command/eval/exec
-#assert diff <(complete 'command ') <(complete -A cmd "")
+assert diff <(complete 'command ') <(complete -A external -A builtin "")
+# assert diff <(complete 'eval ') <(complete -A cmd)   # FIXME:
+assert diff <(complete 'exec ') <(complete -A external "")
 
 # unsetenv
 setenv 'ZZZ(3.14)=12345'
