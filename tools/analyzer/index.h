@@ -186,6 +186,8 @@ public:
 
   static std::string demangle(Kind k, Attr a, StringRef mangledName);
 
+  static bool mayBeMemberName(StringRef ref) { return ref.contains('@'); }
+
   static bool isVarName(Kind k) {
     switch (k) {
     case Kind::BUILTIN_CMD:

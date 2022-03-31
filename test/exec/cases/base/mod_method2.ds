@@ -2,7 +2,7 @@
 # for named import
 # also access user-defined method even though named import
 
-source ../../_module4test/method.ds
+source ../../_module4test/method.ds as mod
 
 function _factorial() : Int for Int { return $this * 100; }  # override private method
 

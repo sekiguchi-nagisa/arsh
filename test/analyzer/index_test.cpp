@@ -336,6 +336,8 @@ var AAA = $_AAA
 function BBB() : Int { return $AAA; }
 CCC() { $BBB(); }
 typedef DDD = typeof(CCC)
+function EEE() for Int {}
+typedef FFF() { typedef GGG = Error; }
 )");
 
   unsigned short modId;
@@ -344,10 +346,12 @@ source %s
 $AAA + $BBB()
 CCC
 new [DDD]()
+23.EEE()
+new FFF.GGG('34')
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 7}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -359,6 +363,12 @@ new [DDD]()
       Request{.modId = modId, .position = {.line = 3, .character = 1}}, {{2, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{2, "(5:8~5:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{2, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 7}}, {{2, "(7:8~7:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 8}}, {{2, "(7:24~7:27)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
@@ -380,6 +390,18 @@ new [DDD]()
       this->findRefs(Request{.modId = 2, .position = {.line = 5, .character = 9}},
                      {{2, "(5:8~5:11)"},   // itself
                       {1, "(4:5~4:8)"}})); // new [DDD]()
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 6, .character = 10}},
+                     {{2, "(6:9~6:12)"},   // itself
+                      {1, "(5:3~5:6)"}})); // 23.EEE()
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 7, .character = 11}},
+                     {{2, "(7:8~7:11)"},   // itself
+                      {1, "(6:4~6:7)"}})); // new FFF.GGG('34')
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = 2, .position = {.line = 7, .character = 24}},
+                     {{2, "(7:24~7:27)"},   // itself
+                      {1, "(6:8~6:11)"}})); // new FFF.GGG('34')
 }
 
 TEST_F(IndexTest, namedImport) {
@@ -391,6 +413,8 @@ var AAA = $_AAA
 function BBB() : Int { return $AAA; }
 CCC() { $BBB(); }
 typedef DDD = typeof(CCC)
+function EEE() : Int for Int { return 34; }
+typedef FFF() { var value = 34; }
 )");
 
   unsigned short modId;
@@ -399,10 +423,12 @@ as mod
 $mod.AAA + $mod.BBB()
 mod 2>&1 > /dev/null CCC 34
 new [mod.DDD]()
+23.EEE()
+new mod.FFF().value
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 13}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -418,6 +444,12 @@ new [mod.DDD]()
       Request{.modId = modId, .position = {.line = 3, .character = 23}}, {{2, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{2, "(5:8~5:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{2, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 10}}, {{2, "(7:8~7:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 18}}, {{2, "(7:20~7:25)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
@@ -426,7 +458,8 @@ new [mod.DDD]()
                       {modId, "(2:0~2:4)"},
                       {modId, "(2:11~2:15)"},
                       {modId, "(3:0~3:3)"},
-                      {modId, "(4:5~4:8)"}}));
+                      {modId, "(4:5~4:8)"},
+                      {modId, "(6:4~6:7)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 2, .position = {.line = 2, .character = 5}}, {{2, "(2:4~2:7)"}, // itself
                                                                      {2, "(3:30~3:34)"},
@@ -442,6 +475,15 @@ new [mod.DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 2, .position = {.line = 5, .character = 9}}, {{2, "(5:8~5:11)"}, // itself
                                                                      {1, "(4:9~4:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 6, .character = 10}}, {{2, "(6:9~6:12)"}, // itself
+                                                                      {1, "(5:3~5:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 7, .character = 10}}, {{2, "(7:8~7:11)"}, // itself
+                                                                      {1, "(6:8~6:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 7, .character = 24}}, {{2, "(7:20~7:25)"}, // itself
+                                                                      {1, "(6:14~6:19)"}}));
 }
 
 TEST_F(IndexTest, namedImportInlined) {
@@ -453,6 +495,8 @@ var AAA = $_AAA
 function BBB() : Int { return $AAA; }
 CCC() { $BBB(); }
 typedef DDD = typeof(CCC)
+function EEE() : Int for Int { return $this; }
+typedef FFF() { var value = 34; }
 )");
 
   fileName =
@@ -464,10 +508,12 @@ as mod
 $mod.AAA + $mod.BBB()
 mod CCC
 new [mod.DDD]()
+34.EEE()
+new mod.FFF().value
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 9}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 13}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -483,6 +529,12 @@ new [mod.DDD]()
       Request{.modId = modId, .position = {.line = 3, .character = 5}}, {{3, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{3, "(5:8~5:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{3, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 10}}, {{3, "(7:8~7:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 18}}, {{3, "(7:20~7:25)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
@@ -491,7 +543,8 @@ new [mod.DDD]()
                       {modId, "(2:0~2:4)"},
                       {modId, "(2:11~2:15)"},
                       {modId, "(3:0~3:3)"},
-                      {modId, "(4:5~4:8)"}}));
+                      {modId, "(4:5~4:8)"},
+                      {modId, "(6:4~6:7)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 3, .position = {.line = 2, .character = 5}}, {{3, "(2:4~2:7)"}, // itself
                                                                      {3, "(3:30~3:34)"},
@@ -507,6 +560,15 @@ new [mod.DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 3, .position = {.line = 5, .character = 9}}, {{3, "(5:8~5:11)"}, // itself
                                                                      {1, "(4:9~4:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 6, .character = 10}}, {{3, "(6:9~6:12)"}, // itself
+                                                                      {1, "(5:3~5:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 7, .character = 10}}, {{3, "(7:8~7:11)"}, // itself
+                                                                      {1, "(6:8~6:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 7, .character = 24}}, {{3, "(7:20~7:25)"}, // itself
+                                                                      {1, "(6:14~6:19)"}}));
 }
 
 TEST_F(IndexTest, inlinedImport) {
@@ -518,6 +580,8 @@ var AAA = $_AAA
 function BBB() : Int { return $AAA; }
 CCC() { $BBB(); }
 typedef DDD = typeof(CCC)
+function EEE() : Int for Int { return $this; }
+typedef FFF() { var value = 34; }
 )");
 
   fileName =
@@ -529,10 +593,12 @@ source %s
 $AAA + $BBB()
 CCC
 new [DDD]()
+90.EEE()
+new FFF().value
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 7}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -544,6 +610,12 @@ new [DDD]()
       Request{.modId = modId, .position = {.line = 3, .character = 1}}, {{3, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{3, "(5:8~5:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{3, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 6}}, {{3, "(7:8~7:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 12}}, {{3, "(7:20~7:25)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -561,6 +633,15 @@ new [DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 3, .position = {.line = 5, .character = 9}}, {{3, "(5:8~5:11)"},   // itself
                                                                      {1, "(4:5~4:8)"}})); //
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 6, .character = 10}}, {{3, "(6:9~6:12)"}, // itself
+                                                                      {1, "(5:3~5:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 7, .character = 10}}, {{3, "(7:8~7:11)"}, // itself
+                                                                      {1, "(6:4~6:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 7, .character = 23}}, {{3, "(7:20~7:25)"}, // itself
+                                                                      {1, "(6:10~6:15)"}}));
 }
 
 TEST_F(IndexTest, udc_overwrite) {
@@ -824,37 +905,18 @@ typedef AAA($a : Int) {
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 5}));
 }
 
-TEST_F(IndexTest, hover1) {
+TEST_F(IndexTest, hover) {
+  // variable or function
   ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
-                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
-                                      "\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimport-env HOME : String\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexport-env ZZZ : String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
                                       "```ydsh\nfunction hoge($s : Int) : Void\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBool", 1, "```ydsh\ntypedef Bool = Boolean\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover(":", 0,
-                  "```md\n"
-                  ":: : \n"
-                  "    Null command.  Always success (exit status is 0).\n```"));
+
+  // user-defined command
   ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Boolean\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_10'\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '')\n$a._2",
-                                      Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar _2 : String for (Int, Boolean, String)\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("    ''.size()\n[0].size()",
-                                      Position{.line = 1, .character = 5},
-                                      "```ydsh\nfunction size() : Int for [Int]\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice($p0 : Int, $p1 : Int) : String for String\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
 
@@ -878,6 +940,7 @@ typedef Interval {
       "typedef Interval { var value = new Interval!(); }; var a = new Interval();\n$a.value",
       Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval! for Interval\n```"));
 
+  // user-defined method
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for Int { return $this; }\n12.value()",
                                       Position{.line = 1, .character = 3},
                                       "```ydsh\nfunction value() : Int for Int\n```"));
@@ -887,7 +950,38 @@ typedef Interval {
                                       "```ydsh\nlet this : String\n```"));
 }
 
-TEST_F(IndexTest, hover2) {
+TEST_F(IndexTest, hoverBuiltin) {
+  // builtin variable or type alias
+  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @ : [String]\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
+                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
+                                      "\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBool", 1, "```ydsh\ntypedef Bool = Boolean\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_5'\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
+
+  // builtin command
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover(":", 0,
+                  "```md\n"
+                  ":: : \n"
+                  "    Null command.  Always success (exit status is 0).\n```"));
+
+  // builtin tuple or method
+  ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '');$a._2\n$a._2",
+                                      Position{.line = 1, .character = 3},
+                                      "```ydsh\nvar _2 : String for (Int, Boolean, String)\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("''.size();[1].size()\n[0].size()",
+                                      Position{.line = 1, .character = 5},
+                                      "```ydsh\nfunction size() : Int for [Int]\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("''.slice(0)", Position{.line = 0, .character = 5},
+                  "```ydsh\nfunction slice($p0 : Int, $p1 : Int) : String for String\n```"));
+}
+
+TEST_F(IndexTest, hoverMod) {
   // source
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile(X_INFO_VERSION_CORE "_.ds",

@@ -39,6 +39,19 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
+static bool isTupleOrBuiltinMethod(const std::string &mangledName, DeclSymbol::Kind kind,
+                                   const Handle &handle) {
+  if (handle.getModId() != 0) {
+    return false;
+  }
+  if (handle.isMethod()) {
+    return cast<MethodHandle>(handle).isNative();
+  } else if (kind == DeclSymbol::Kind::VAR && mangledName.size() > 1) {
+    return DeclSymbol::mayBeMemberName(mangledName); // tuple field
+  }
+  return false;
+}
+
 const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol::Kind kind,
                                       const Handle *handle) const {
   if (mangledName.empty()) {
@@ -50,6 +63,9 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     declModId = 0;
   } else if (handle) {
     declModId = handle->getModId();
+    if (isTupleOrBuiltinMethod(mangledName, kind, *handle)) {
+      declModId = this->modId;
+    }
   } else if (kind == DeclSymbol::Kind::CMD) { // for builtin
     declModId = 0;
   } else {
