@@ -143,7 +143,7 @@ $assertArray(['abs', 'toFloat', 'zsum', 'zz'], $(complete '
     function zsum($a : Int) : Int for Int { 
         return $this.abs() + $a.abs()
     }
-    34.'))
+    hoge() { 34.'))
 
 # type
 var types = [

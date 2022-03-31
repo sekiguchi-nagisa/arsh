@@ -445,11 +445,7 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
   recvType.walkField(pool, fieldWalker);
 
   // complete user-defined method
-  auto *globalScope = &scope;
-  while (!globalScope->isGlobal()) {
-    globalScope = globalScope->parent.get();
-  }
-  globalScope->walk([&](StringRef name, const Handle &handle) {
+  scope.walk([&](StringRef name, const Handle &handle) {
     if (!handle.isMethod()) {
       return true;
     }
