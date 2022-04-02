@@ -49,3 +49,7 @@ function echo($s : String) { echo $s; }
 diff \
     <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; }) \
     <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | $STDIN.forEach($echo))
+
+diff \
+    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; }) \
+    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | $each($echo))

@@ -43,3 +43,8 @@ var CMD_FALLBACK : ((String, [String]) -> Void)!
 _cmd_fallback_handler() {
     ($CMD_FALLBACK ?? { return 0; })($0, $@)
 }
+
+# helper function
+function each($reader : (String) -> Void) {
+    $STDIN.forEach($reader)
+}

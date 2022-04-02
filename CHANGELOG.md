@@ -7,6 +7,12 @@
 #### Builtin
 
 - add ``forEach`` method to ``UnixFD`` type for more efficient alternative of while-read loop
+    - also add ``each`` function for simple wrapper of ``$STDIN.forEach``
+      ````
+      function each($reader : (String) -> Void) {
+        $STDIN.forEach($reader)
+      }
+      ````
 
 ## [0.25.0] - 2022-03-31
 
