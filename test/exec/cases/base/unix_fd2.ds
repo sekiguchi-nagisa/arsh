@@ -1,0 +1,51 @@
+
+var ret : [String]
+
+function add($s : String ) {
+    $ret.add($s)
+}
+
+## end with newline
+{ echo aaa && echo bbb && echo && echo ccc; } | $STDIN.forEach($add)
+
+assert $ret.size() == 4
+assert $ret[0] == 'aaa'
+assert $ret[1] == 'bbb'
+assert $ret[2] == ''
+assert $ret[3] == 'ccc'
+$ret.clear()
+
+## not end with newline
+{ echo aaa && echo 'bbb' && echo -en '\nccc'; } | $STDIN.forEach($add)
+
+assert $ret.size() == 4
+assert $ret[0] == 'aaa'
+assert $ret[1] == 'bbb'
+assert $ret[2] == ''
+assert $ret[3] == 'ccc'
+$ret.clear()
+
+## error from read callback
+function raise($s : String) {
+    $s :- throw new InvalidOperationError("must not be empty")
+    $ret.add($s)
+}
+
+var ex = 34 as Any
+try {
+    { echo aaa && echo 'bbb' && echo -en '\nccc'; } | $STDIN.forEach($raise)
+} catch $e {
+    $ex = $e
+}
+assert ($ex as InvalidOperationError).message() == 'must not be empty'
+assert $ret.size() == 2
+assert $ret[0] == 'aaa'
+assert $ret[1] == 'bbb'
+$ret.clear()
+$ex = 34
+
+## large input
+function echo($s : String) { echo $s; }
+diff \
+    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; }) \
+    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | $STDIN.forEach($echo))

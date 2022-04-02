@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+#### Builtin
+
+- add ``forEach`` method to ``UnixFD`` type for more efficient alternative of while-read loop
+
 ## [0.25.0] - 2022-03-31
 
 ### Added

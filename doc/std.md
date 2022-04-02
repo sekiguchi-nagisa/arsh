@@ -178,6 +178,8 @@ function close() : Void for UnixFD
 
 function dup() : UnixFD for UnixFD
 
+function forEach($consumer : Func<Void,[String]>) : Void for UnixFD
+
 function %OP_BOOL() : Boolean for UnixFD
 
 function %OP_NOT() : Boolean for UnixFD

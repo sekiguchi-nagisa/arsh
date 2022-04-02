@@ -5,6 +5,7 @@ assert $STDIN as String == "/dev/fd/0"
 assert $STDOUT as String == "/dev/fd/1"
 assert $STDERR as String == '/dev/fd/2'
 
+## method
 var fd = $STDIN.dup()
 assert $fd as String  != "/dev/fd/0"
 assert $fd
@@ -31,6 +32,7 @@ try {
 }
 assert $ex is SystemError
 
+## redirection
 $ex = 34
 try {
     cat < $fd
@@ -55,6 +57,7 @@ try {
 }
 assert $ex is SystemError
 
+## constructor
 $ex = 23
 try {
     new UnixFD("/hogehoge/hugaejfrie")

@@ -1843,6 +1843,46 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   RET(DSValue::create<UnixFdObject>(newfd));
 }
 
+//!bind: function forEach($this : UnixFD, $consumer : Func<Void, [String]>) : Void
+YDSH_METHOD fd_forEach(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_forEach);
+  const int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  auto &func = LOCAL(1);
+
+  std::string line;
+  while (true) {
+    char buf[256];
+    const ssize_t readSize = read(fd, buf, std::size(buf));
+    if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+      continue;
+    }
+    if (readSize <= 0) {
+      break;
+    }
+
+    StringRef ref(buf, readSize);
+    for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+      auto ret = ref.find('\n', pos);
+      line += ref.slice(pos, ret);
+      pos = ret;
+      if (ret != StringRef::npos) {
+        auto v = DSValue::createStr(std::move(line));
+        VM::callFunction(ctx, DSValue(func), makeArgs(std::move(v)));
+        if (ctx.hasError()) {
+          RET_ERROR;
+        }
+        line = "";
+        pos++;
+      }
+    }
+  }
+  if (!line.empty()) {
+    auto v = DSValue::createStr(std::move(line));
+    VM::callFunction(ctx, DSValue(func), makeArgs(std::move(v)));
+  }
+  RET_VOID;
+}
+
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean
 YDSH_METHOD fd_bool(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_bool);
