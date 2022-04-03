@@ -1428,6 +1428,65 @@ bool VM::mainLoop(DSState &state) {
         typeAs<EnvCtxObject>(state.stack.peek()).setAndSaveEnv(std::move(name), std::move(value));
         vmnext;
       }
+      vmcase(BOX_LOCAL) {
+        unsigned char index = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto v = state.stack.getLocal(index);
+        auto boxed = DSValue::create<BoxObject>(std::move(v));
+        state.stack.setLocal(index, std::move(boxed));
+        vmnext;
+      }
+      vmcase(LOAD_BOXED) {
+        unsigned char index = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto &boxed = state.stack.getLocal(index);
+        state.stack.push(typeAs<BoxObject>(boxed).getValue());
+        vmnext;
+      }
+      vmcase(STORE_BOXED) {
+        unsigned char index = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto &boxed = state.stack.getLocal(index);
+        auto v = state.stack.pop();
+        typeAs<BoxObject>(boxed).setValue(std::move(v));
+        vmnext;
+      }
+      vmcase(NEW_CLOSURE) {
+        const unsigned int paramSize = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto funcObj = toObjPtr<FuncObject>(state.stack.peekByOffset(paramSize));
+        const DSValue *values = &state.stack.peekByOffset(paramSize) + 1;
+        auto value = DSValue::create<ClosureObject>(std::move(funcObj), paramSize, values);
+        for (unsigned int i = 0; i <= paramSize; i++) {
+          state.stack.popNoReturn();
+        }
+        state.stack.push(std::move(value));
+        vmnext;
+      }
+      vmcase(LOAD_UPVAR) vmcase(LOAD_RAW_UPVAR) {
+        unsigned char index = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto &closure = state.stack.getCurrentClosure();
+        auto slot = closure[index];
+        if (op == OpCode::LOAD_UPVAR && slot.isObject() && isa<BoxObject>(slot.get())) {
+          slot = typeAs<BoxObject>(slot).getValue(); // unbox
+        }
+        state.stack.push(std::move(slot));
+        vmnext;
+      }
+      vmcase(STORE_UPVAR) {
+        unsigned char index = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        auto &closure = state.stack.getCurrentClosure();
+        auto v = state.stack.pop();
+        auto &slot = closure[index];
+        if (slot.isObject() && isa<BoxObject>(slot.get())) {
+          typeAs<BoxObject>(slot).setValue(std::move(v)); // box
+        } else {
+          closure[index] = std::move(v);
+        }
+        vmnext;
+      }
       vmcase(POP) {
         state.stack.popNoReturn();
         vmnext;

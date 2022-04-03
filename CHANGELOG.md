@@ -4,6 +4,11 @@
 
 ### Added
 
+#### Core
+
+- allow anonymous function in local scope
+    - can access upper scope variables (except for fields, temporary env)
+
 #### Builtin
 
 - add ``forEach`` method to ``UnixFD`` type for more efficient alternative of while-read loop

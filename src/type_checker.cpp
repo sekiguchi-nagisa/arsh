@@ -36,8 +36,9 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     auto &typeNode = cast<BaseTypeNode>(node);
 
     // fist lookup type alias
-    auto handle = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
-    if (handle) {
+    auto ret = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
+    if (ret) {
+      auto handle = std::move(ret).take();
       typeNode.setHandle(handle);
       return Ok(&this->typePool.get(handle->getTypeId()));
     }
@@ -61,6 +62,10 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       case NameLookupError::MOD_PRIVATE:
         this->reportError<PrivateField>(nameNode, nameNode.getTokenText().c_str());
         break;
+      case NameLookupError::UPVAR_LIMIT:
+      case NameLookupError::UNCAPTURE_ENV:
+      case NameLookupError::UNCAPTURE_FIELD:
+        break; // unreachable
       }
       return Err(std::unique_ptr<TypeLookupError>());
     }
@@ -433,6 +438,9 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
   } else {
     switch (ret.asErr()) {
     case NameLookupError::NOT_FOUND:
+    case NameLookupError::UPVAR_LIMIT:
+    case NameLookupError::UNCAPTURE_ENV:
+    case NameLookupError::UNCAPTURE_FIELD:
       break;
     case NameLookupError::MOD_PRIVATE:
       this->reportError<PrivateField>(node.getNameNode(), node.getFieldName().c_str());
@@ -611,11 +619,28 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-  if (auto handle = this->curScope->lookup(node.getVarName()); handle) {
+  auto ret = this->curScope->lookup(node.getVarName());
+  if (ret) {
+    auto handle = std::move(ret).take();
     node.setHandle(handle);
     node.setType(this->typePool.get(handle->getTypeId()));
   } else {
-    this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
+    switch (ret.asErr()) {
+    case NameLookupError::NOT_FOUND:
+      this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
+      break;
+    case NameLookupError::MOD_PRIVATE:
+      break; // unreachable
+    case NameLookupError::UPVAR_LIMIT:
+      this->reportError<UpvarLimit>(node);
+      break;
+    case NameLookupError::UNCAPTURE_ENV:
+      this->reportError<UncaptureEnv>(node, node.getVarName().c_str());
+      break;
+    case NameLookupError::UNCAPTURE_FIELD:
+      this->reportError<UncaptureField>(node, node.getVarName().c_str());
+      break;
+    }
   }
 }
 
@@ -798,7 +823,8 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   } else {
     node.setType(this->typePool.get(TYPE::Boolean));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
-    if (auto handle = this->curScope->lookup(cmdName)) {
+    if (auto ret = this->curScope->lookup(cmdName)) {
+      auto handle = std::move(ret).take();
       node.setHandle(handle);
       auto &type = this->typePool.get(handle->getTypeId());
       if (type.isFuncType()) { // resolved command may be module object
@@ -1502,12 +1528,16 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
+  const bool willBeField = this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR: {
     HandleAttr attr{};
     if (node.getKind() == VarDeclNode::LET) {
       setFlag(attr, HandleAttr::READ_ONLY);
+    }
+    if (willBeField) {
+      setFlag(attr, HandleAttr::UNCAPTURED);
     }
     auto &exprType = this->checkTypeAsSomeExpr(*node.getExprNode());
     if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
@@ -1520,7 +1550,9 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     if (node.getExprNode() != nullptr) {
       this->checkType(this->typePool.get(TYPE::String), *node.getExprNode());
     }
-    if (auto handle = this->addEnvEntry(node.getNameInfo().getToken(), node.getVarName())) {
+    bool allowCapture = !willBeField;
+    if (auto handle =
+            this->addEnvEntry(node.getNameInfo().getToken(), node.getVarName(), allowCapture)) {
       node.setHandle(handle);
     }
     break;
@@ -1601,7 +1633,7 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
-      if (auto handle = this->addEnvEntry(leftNode.getToken(), leftNode.getVarName())) {
+      if (auto handle = this->addEnvEntry(leftNode.getToken(), leftNode.getVarName(), false)) {
         leftNode.setHandle(handle);
         leftNode.setType(rightType);
       }
@@ -1690,6 +1722,7 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
 
 void TypeChecker::postprocessFunction(FunctionNode &node) {
   assert(!node.isConstructor());
+  assert(this->curScope->parent->kind == NameScope::FUNC);
 
   const DSType *returnType = nullptr;
   if (node.getReturnTypeNode()) {
@@ -1754,6 +1787,11 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
   } else if (node.isMethod()) {
     node.setResolvedType(this->typePool.get(TYPE::Any));
   }
+
+  // collect captured variables
+  for (auto &e : this->curScope->parent->getCaptures()) {
+    node.addCapture(e);
+  }
 }
 
 void TypeChecker::postprocessConstructor(FunctionNode &node) {
@@ -1796,8 +1834,20 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
-  if (!this->curScope->isGlobal()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node, "function definition");
+  if (!this->curScope->isGlobal() && !node.isAnonymousFunc()) { // only available toplevel scope
+    const char *message;
+    if (node.isConstructor()) {
+      message = "type definition";
+    } else if (node.isMethod()) {
+      message = "method definition";
+    } else {
+      message = "named function definition";
+    }
+    this->reportError<OutsideToplevel>(node, message);
+    return;
+  }
+  if (this->funcCtx->depth == SYS_LIMIT_FUNC_DEPTH) {
+    this->reportError<FuncDepthLimit>(node);
     return;
   }
 

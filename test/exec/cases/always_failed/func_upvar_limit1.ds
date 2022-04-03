@@ -1,0 +1,47 @@
+
+#$test($result = 'type', $status = 1, $errorKind = 'UpvarLimit', $chars = 112, $lineNum = 42)
+
+var func = {
+  var v00 = 1; var v01 = 1; var v02 = 1; var v03 = 1; var v04 = 1; var v05 = 1; var v06 = 1; var v07 = 1; var v08 = 1; var v09 = 1; var v0A = 1; var v0B = 1; var v0C = 1; var v0D = 1; var v0E = 1; var v0F = 1;
+  var v10 = 1; var v11 = 1; var v12 = 1; var v13 = 1; var v14 = 1; var v15 = 1; var v16 = 1; var v17 = 1; var v18 = 1; var v19 = 1; var v1A = 1; var v1B = 1; var v1C = 1; var v1D = 1; var v1E = 1; var v1F = 1;
+  var v20 = 1; var v21 = 1; var v22 = 1; var v23 = 1; var v24 = 1; var v25 = 1; var v26 = 1; var v27 = 1; var v28 = 1; var v29 = 1; var v2A = 1; var v2B = 1; var v2C = 1; var v2D = 1; var v2E = 1; var v2F = 1;
+  var v30 = 1; var v31 = 1; var v32 = 1; var v33 = 1; var v34 = 1; var v35 = 1; var v36 = 1; var v37 = 1; var v38 = 1; var v39 = 1; var v3A = 1; var v3B = 1; var v3C = 1; var v3D = 1; var v3E = 1; var v3F = 1;
+  var v40 = 1; var v41 = 1; var v42 = 1; var v43 = 1; var v44 = 1; var v45 = 1; var v46 = 1; var v47 = 1; var v48 = 1; var v49 = 1; var v4A = 1; var v4B = 1; var v4C = 1; var v4D = 1; var v4E = 1; var v4F = 1;
+  var v50 = 1; var v51 = 1; var v52 = 1; var v53 = 1; var v54 = 1; var v55 = 1; var v56 = 1; var v57 = 1; var v58 = 1; var v59 = 1; var v5A = 1; var v5B = 1; var v5C = 1; var v5D = 1; var v5E = 1; var v5F = 1;
+  var v60 = 1; var v61 = 1; var v62 = 1; var v63 = 1; var v64 = 1; var v65 = 1; var v66 = 1; var v67 = 1; var v68 = 1; var v69 = 1; var v6A = 1; var v6B = 1; var v6C = 1; var v6D = 1; var v6E = 1; var v6F = 1;
+  var v70 = 1; var v71 = 1; var v72 = 1; var v73 = 1; var v74 = 1; var v75 = 1; var v76 = 1; var v77 = 1; var v78 = 1; var v79 = 1; var v7A = 1; var v7B = 1; var v7C = 1; var v7D = 1; var v7E = 1; var v7F = 1;
+  var v80 = 1; var v81 = 1; var v82 = 1; var v83 = 1; var v84 = 1; var v85 = 1; var v86 = 1; var v87 = 1; var v88 = 1; var v89 = 1; var v8A = 1; var v8B = 1; var v8C = 1; var v8D = 1; var v8E = 1; var v8F = 1;
+  var v90 = 1; var v91 = 1; var v92 = 1; var v93 = 1; var v94 = 1; var v95 = 1; var v96 = 1; var v97 = 1; var v98 = 1; var v99 = 1; var v9A = 1; var v9B = 1; var v9C = 1; var v9D = 1; var v9E = 1; var v9F = 1;
+  var vA0 = 1; var vA1 = 1; var vA2 = 1; var vA3 = 1; var vA4 = 1; var vA5 = 1; var vA6 = 1; var vA7 = 1; var vA8 = 1; var vA9 = 1; var vAA = 1; var vAB = 1; var vAC = 1; var vAD = 1; var vAE = 1; var vAF = 1;
+  var vB0 = 1; var vB1 = 1; var vB2 = 1; var vB3 = 1; var vB4 = 1; var vB5 = 1; var vB6 = 1; var vB7 = 1; var vB8 = 1; var vB9 = 1; var vBA = 1; var vBB = 1; var vBC = 1; var vBD = 1; var vBE = 1; var vBF = 1;
+  var vC0 = 1; var vC1 = 1; var vC2 = 1; var vC3 = 1; var vC4 = 1; var vC5 = 1; var vC6 = 1; var vC7 = 1; var vC8 = 1; var vC9 = 1; var vCA = 1; var vCB = 1; var vCC = 1; var vCD = 1; var vCE = 1; var vCF = 1;
+  var vD0 = 1; var vD1 = 1; var vD2 = 1; var vD3 = 1; var vD4 = 1; var vD5 = 1; var vD6 = 1; var vD7 = 1; var vD8 = 1; var vD9 = 1; var vDA = 1; var vDB = 1; var vDC = 1; var vDD = 1; var vDE = 1; var vDF = 1;
+  var vE0 = 1; var vE1 = 1; var vE2 = 1; var vE3 = 1; var vE4 = 1; var vE5 = 1; var vE6 = 1; var vE7 = 1; var vE8 = 1; var vE9 = 1; var vEA = 1; var vEB = 1; var vEC = 1; var vED = 1; var vEE = 1; var vEF = 1;
+
+  function() => {
+    var vF0 = 1; var vF1 = 1; var vF2 = 1; var vF3 = 1; var vF4 = 1; var vF5 = 1; var vF6 = 1; var vF7 = 1; var vF8 = 1; var vF9 = 1; var vFA = 1; var vFB = 1; var vFC = 1; var vFD = 1; var vFE = 1; var vFF = 1;
+
+    function() => {
+      var aaa = 34; var bbb = 34;
+
+      $v00 + $v01 + $v02 + $v03 + $v04 + $v05 + $v06 + $v07 + $v08 + $v09 + $v0A + $v0B + $v0C + $v0D + $v0E + $v0F +
+      $v10 + $v11 + $v12 + $v13 + $v14 + $v15 + $v16 + $v17 + $v18 + $v19 + $v1A + $v1B + $v1C + $v1D + $v1E + $v1F +
+      $v20 + $v21 + $v22 + $v23 + $v24 + $v25 + $v26 + $v27 + $v28 + $v29 + $v2A + $v2B + $v2C + $v2D + $v2E + $v2F +
+      $v30 + $v31 + $v32 + $v33 + $v34 + $v35 + $v36 + $v37 + $v38 + $v39 + $v3A + $v3B + $v3C + $v3D + $v3E + $v3F +
+      $v40 + $v41 + $v42 + $v43 + $v44 + $v45 + $v46 + $v47 + $v48 + $v49 + $v4A + $v4B + $v4C + $v4D + $v4E + $v4F +
+      $v50 + $v51 + $v52 + $v53 + $v54 + $v55 + $v56 + $v57 + $v58 + $v59 + $v5A + $v5B + $v5C + $v5D + $v5E + $v5F +
+      $v60 + $v61 + $v62 + $v63 + $v64 + $v65 + $v66 + $v67 + $v68 + $v69 + $v6A + $v6B + $v6C + $v6D + $v6E + $v6F +
+      $v70 + $v71 + $v72 + $v73 + $v74 + $v75 + $v76 + $v77 + $v78 + $v79 + $v7A + $v7B + $v7C + $v7D + $v7E + $v7F +
+      $v80 + $v81 + $v82 + $v83 + $v84 + $v85 + $v86 + $v87 + $v88 + $v89 + $v8A + $v8B + $v8C + $v8D + $v8E + $v8F +
+      $v90 + $v91 + $v92 + $v93 + $v94 + $v95 + $v96 + $v97 + $v98 + $v99 + $v9A + $v9B + $v9C + $v9D + $v9E + $v9F +
+      $vA0 + $vA1 + $vA2 + $vA3 + $vA4 + $vA5 + $vA6 + $vA7 + $vA8 + $vA9 + $vAA + $vAB + $vAC + $vAD + $vAE + $vAF +
+      $vB0 + $vB1 + $vB2 + $vB3 + $vB4 + $vB5 + $vB6 + $vB7 + $vB8 + $vB9 + $vBA + $vBB + $vBC + $vBD + $vBE + $vBF +
+      $vC0 + $vC1 + $vC2 + $vC3 + $vC4 + $vC5 + $vC6 + $vC7 + $vC8 + $vC9 + $vCA + $vCB + $vCC + $vCD + $vCE + $vCF +
+      $vD0 + $vD1 + $vD2 + $vD3 + $vD4 + $vD5 + $vD6 + $vD7 + $vD8 + $vD9 + $vDA + $vDB + $vDC + $vDD + $vDE + $vDF +
+      $vE0 + $vE1 + $vE2 + $vE3 + $vE4 + $vE5 + $vE6 + $vE7 + $vE8 + $vE9 + $vEA + $vEB + $vEC + $vED + $vEE + $vEF +
+      $vF0 + $vF1 + $vF2 + $vF3 + $vF4 + $vF5 + $vF6 + $vF7 + $vF8 + $vF9 + $vFA + $vFB + $vFC + $vFD + $vFE + $vFF
+    }
+  }
+}
+
+assert $func()() == 255

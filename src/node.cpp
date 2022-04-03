@@ -845,6 +845,14 @@ void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
 }
 
 void FunctionNode::dump(NodeDumper &dumper) const {
+#define EACH_ENUM(OP)                                                                              \
+  OP(FUNC)                                                                                         \
+  OP(SINGLE_EXPR)                                                                                  \
+  OP(CONSTRUCTOR)
+
+  DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
+
   DUMP(funcName);
   DUMP(paramNodes);
   DUMP_PTR(returnTypeNode);
@@ -853,14 +861,6 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(maxVarNum);
   DUMP_PTR(handle);
   DUMP_PTR(resolvedType);
-
-#define EACH_ENUM(OP)                                                                              \
-  OP(FUNC)                                                                                         \
-  OP(SINGLE_EXPR)                                                                                  \
-  OP(CONSTRUCTOR)
-
-  DUMP_ENUM(kind, EACH_ENUM);
-#undef EACH_ENUM
 }
 
 // ###########################

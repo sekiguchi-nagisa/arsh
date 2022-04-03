@@ -138,7 +138,7 @@ TEST_F(ScopeTest, builtin) {
           .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
-      hd));
+      hd.asOk()));
 
   // lookup alias
   hd = this->builtin->lookup("hey");
@@ -150,7 +150,7 @@ TEST_F(ScopeTest, builtin) {
           .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
-      hd));
+      hd.asOk()));
 
   hd = this->builtin->lookup("hey1");
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -161,7 +161,7 @@ TEST_F(ScopeTest, builtin) {
           .attr = HandleAttr::GLOBAL,
           .modID = 0,
       },
-      hd));
+      hd.asOk()));
 
   // lookup type alias
   hd = this->builtin->lookup(toTypeAliasFullName("hey1"));
@@ -173,7 +173,7 @@ TEST_F(ScopeTest, builtin) {
           .attr = HandleAttr{},
           .modID = 0,
       },
-      hd));
+      hd.asOk()));
 
   // discard
   auto point = this->builtin->getDiscardPoint();
@@ -193,8 +193,8 @@ TEST_F(ScopeTest, builtin) {
   this->builtin->discard(point);
   ASSERT_EQ(2, this->builtin->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->builtin->getHandles().size());
-  handle = this->builtin->lookup("AAA");
-  ASSERT_FALSE(handle);
+  hd = this->builtin->lookup("AAA");
+  ASSERT_FALSE(hd);
 
   ASSERT_EQ(0, this->builtin->getCurLocalIndex());
 }
@@ -232,7 +232,7 @@ TEST_F(ScopeTest, global) {
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 0,
       },
-      handle));
+      handle.asOk()));
 
   // define handle
   ret = this->top->defineHandle("BBB", this->pool.get(TYPE::Signal), HandleKind::MOD_CONST,
@@ -255,7 +255,7 @@ TEST_F(ScopeTest, global) {
           .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   handle = this->builtin->lookup("BBB");
   ASSERT_FALSE(handle);
   ASSERT_EQ(0, this->top->getCurLocalIndex());
@@ -323,7 +323,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   ret = block0->defineHandle("AAA", this->pool.get(TYPE::Error), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
@@ -396,7 +396,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .attr = HandleAttr{},
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
 
   // define local
   ret = block1->defineHandle("CCC", this->pool.get(TYPE::KeyNotFoundError), HandleAttr::READ_ONLY);
@@ -432,7 +432,7 @@ TEST_F(ScopeTest, block) { // for top level block
           .attr = HandleAttr{},
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   ASSERT_EQ(3, this->top->getCurLocalIndex());
   ASSERT_EQ(3, this->top->getMaxLocalVarIndex());
   ASSERT_EQ(2, block1->getCurLocalIndex());
@@ -526,7 +526,7 @@ TEST_F(ScopeTest, func) {
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
 
   // define local
   ret = block0->defineHandle("GGG", this->pool.get(TYPE::Boolean), HandleAttr::READ_ONLY);
@@ -548,7 +548,7 @@ TEST_F(ScopeTest, func) {
           .attr = HandleAttr::READ_ONLY,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   ASSERT_EQ(0, this->top->getMaxLocalVarIndex());
   ASSERT_EQ(1, block0->getMaxLocalVarIndex());
   ASSERT_EQ(1, func->getMaxLocalVarIndex());
@@ -591,7 +591,7 @@ TEST_F(ScopeTest, func) {
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   ASSERT_EQ(0, this->top->getMaxLocalVarIndex());
   ASSERT_EQ(2, block0->getMaxLocalVarIndex());
   ASSERT_EQ(2, func->getMaxLocalVarIndex());
@@ -648,7 +648,7 @@ TEST_F(ScopeTest, import1) {
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 2,
       },
-      handle));
+      handle.asOk()));
 
   handle = this->top->lookup("_AAA"); // not import private symbol
   ASSERT_FALSE(handle);
@@ -665,7 +665,7 @@ TEST_F(ScopeTest, import1) {
           .attr = HandleAttr{},
           .modID = 2,
       },
-      handle));
+      handle.asOk()));
 
   // ModType
   auto mod2 = this->createGlobalScope();
@@ -749,12 +749,12 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
       },
-      handle));
+      handle.asOk()));
 
   // ModType
   auto &modType2 = this->toModType(std::move(mod2));
   ASSERT_EQ(3, modType2.getModId());
-  handle = modType2.lookup(this->pool, "AAA");
+  auto hd = modType2.lookup(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -763,10 +763,10 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 2,
       },
-      handle));
-  ASSERT_EQ(handle.get(), modType2.lookupVisibleSymbolAtModule(this->pool, "AAA"));
+      hd));
+  ASSERT_EQ(hd.get(), modType2.lookupVisibleSymbolAtModule(this->pool, "AAA"));
 
-  handle = modType2.lookup(this->pool, toTypeAliasFullName("integer"));
+  hd = modType2.lookup(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Int,
@@ -775,16 +775,16 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr{},
           .modID = 2,
       },
-      handle));
-  ASSERT_EQ(handle.get(),
+      hd));
+  ASSERT_EQ(hd.get(),
             modType2.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer")));
 
-  handle = modType2.lookup(this->pool, toTypeAliasFullName("_string"));
-  ASSERT_FALSE(handle);
-  handle = modType2.lookup(this->pool, "_AAA");
-  ASSERT_FALSE(handle);
+  hd = modType2.lookup(this->pool, toTypeAliasFullName("_string"));
+  ASSERT_FALSE(hd);
+  hd = modType2.lookup(this->pool, "_AAA");
+  ASSERT_FALSE(hd);
 
-  handle = modType2.lookup(this->pool, "BBB");
+  hd = modType2.lookup(this->pool, "BBB");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Float,
@@ -793,9 +793,9 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
       },
-      handle));
+      hd));
 
-  handle = modType2.lookup(this->pool, toTypeAliasFullName("float"));
+  hd = modType2.lookup(this->pool, toTypeAliasFullName("float"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = TYPE::Float,
@@ -804,7 +804,7 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr{},
           .modID = 3,
       },
-      handle));
+      hd));
 
   // nested import
   s = this->top->importForeignHandles(this->pool, modType2, ImportedModKind::GLOBAL);
@@ -818,17 +818,17 @@ TEST_F(ScopeTest, import2) {
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
 
   handle = this->top->lookup("AAA");
-  ASSERT_TRUE(handle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
-  ASSERT_EQ(2, handle->getModId());
-  ASSERT_EQ(0, handle->getIndex());
+  ASSERT_TRUE(handle.asOk()->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
+  ASSERT_EQ(2, handle.asOk()->getModId());
+  ASSERT_EQ(0, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
-  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle->getKind()));
-  ASSERT_EQ(2, handle->getModId());
-  ASSERT_EQ(0, handle->getIndex());
+  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle.asOk()->getKind()));
+  ASSERT_EQ(2, handle.asOk()->getModId());
+  ASSERT_EQ(0, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("_string"));
   ASSERT_FALSE(handle);
@@ -836,14 +836,14 @@ TEST_F(ScopeTest, import2) {
   ASSERT_FALSE(handle);
 
   handle = this->top->lookup("BBB");
-  ASSERT_TRUE(handle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
-  ASSERT_EQ(3, handle->getModId());
-  ASSERT_EQ(3, handle->getIndex());
+  ASSERT_TRUE(handle.asOk()->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
+  ASSERT_EQ(3, handle.asOk()->getModId());
+  ASSERT_EQ(3, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
-  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle->getKind()));
-  ASSERT_EQ(3, handle->getModId());
-  ASSERT_EQ(0, handle->getIndex());
+  ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle.asOk()->getKind()));
+  ASSERT_EQ(3, handle.asOk()->getModId());
+  ASSERT_EQ(0, handle.asOk()->getIndex());
 }
 
 TEST_F(ScopeTest, conflict) {
@@ -871,7 +871,7 @@ TEST_F(ScopeTest, conflict) {
           .attr = HandleAttr::GLOBAL,
           .modID = 1,
       },
-      handle));
+      handle.asOk()));
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_FALSE(handle);
 

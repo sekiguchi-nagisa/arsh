@@ -324,6 +324,8 @@ constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
 constexpr size_t SYS_LIMIT_GLOB_FRAG_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 256;
+constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
+constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 
 } // namespace ydsh
 

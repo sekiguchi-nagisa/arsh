@@ -210,6 +210,10 @@ public:
     this->push(std::move(v));
   }
 
+  ClosureObject &getCurrentClosure() const {
+    return typeAs<ClosureObject>(this->operands[this->frame.localVarOffset - 1]);
+  }
+
   // for field access
   void storeField(unsigned int index) {
     auto value = this->pop();

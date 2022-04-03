@@ -1,0 +1,100 @@
+
+# funciton in local scope
+
+## local func without captures
+{
+    var f = function($a : Int) => $a + 1000
+    assert $f is (Int) -> Int
+    assert $f(999) == 1999
+
+    {
+       assert $f(111) == 1111
+    }
+    assert (function($s : Int) => $s as String)(23) == '23'
+}
+
+
+## func in func
+function get() : (Int, Int) -> Int {
+    var f = function($a : Int, $b : Int) => { return $a * $b; }
+    return $f
+}
+
+assert $get() is (Int, Int) -> Int
+assert $get()(23, 100) == 2300
+
+let get2 = function() => function($a : Int, $b : Int) => $a * $b
+assert $get2() is (Int, Int) -> Int
+assert $get2()(23, 100) == 2300
+
+
+## local func with capture
+let get3 = {
+    var count = 0;
+    var f = function($a : Int) => {
+        $count++;
+        return $a + $count
+    }
+    function() => $f
+}
+assert $get3 is () -> (Int) -> Int
+assert $get3()(1) == 2
+assert $get3()(1) == 3
+assert $get3()(1) == 4
+
+
+## local func with read-only capture
+function get4() : (Int) -> Int {
+    let offset = 1000
+    var count = 0
+    return function ($a : Int) => {
+        $count++
+        $a + $offset + $count
+    }
+}
+assert $get4 is () -> (Int) -> Int
+assert $get4()(1) == 1002
+assert $get4()(1) == 1002
+var _get4 = $get4()
+assert $_get4(1) == 1002
+assert $_get4(1) == 1003
+assert $_get4(1) == 1004
+
+
+## local func with nested capture
+let nest = function($a : Int) =>
+    function($p : String) => {
+        (function() => {
+            $a++    # capture outer scope
+            var v = $p + $a
+            var a = $p.size()
+            $v + "_" + $a
+        })()
+    }
+assert $nest is (Int) -> (String) -> String
+var r = $nest(1)("pp")
+assert $r == 'pp2_2': "$r"
+
+## local func in user-defined command
+udc() {
+    var aa = 'udc'
+    var ff = function() => {
+        echo $@
+        echo $#
+        echo $0
+        $aa++
+        echo $aa
+    }
+    $ff()
+}
+assert "$(udc 1 2 3)" ==
+'1 2 3
+3
+udc
+udc1'
+
+assert "$(udc 1 2 3)" ==
+'1 2 3
+3
+udc
+udc1'

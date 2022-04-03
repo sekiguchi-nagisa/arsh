@@ -1789,8 +1789,6 @@ public:
 
   Kind getKind() const { return this->kind; }
 
-  bool isReadOnly() const { return this->handle->has(HandleAttr::READ_ONLY); }
-
   void setAttribute(const Handle &handle);
 
   void setHandle(HandlePtr ptr) { this->handle = std::move(ptr); }
@@ -1991,6 +1989,11 @@ private:
 
   const DSType *resolvedType{nullptr};
 
+  /**
+   * captured variables for local function
+   */
+  std::vector<HandlePtr> captures;
+
 public:
   FunctionNode(unsigned int startPos, NameInfo &&funcName, Kind k = FUNC)
       : WithRtti({startPos, 0}), kind(k), funcName(std::move(funcName)) {}
@@ -2050,6 +2053,10 @@ public:
    * may be null.
    */
   const DSType *getResolvedType() const { return this->resolvedType; }
+
+  void addCapture(HandlePtr hd) { this->captures.push_back(std::move(hd)); }
+
+  const auto &getCaptures() const { return this->captures; }
 
   bool isAnonymousFunc() const {
     return this->funcName.getName().empty() && !this->isConstructor();

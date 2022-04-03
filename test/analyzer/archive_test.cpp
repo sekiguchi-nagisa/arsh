@@ -142,7 +142,7 @@ public:
 
   TypePool &pool() { return this->orgCtx->getPool(); }
 
-  const NameScope &scope() const { return *this->orgCtx->getScope(); }
+  NameScope &scope() const { return *this->orgCtx->getScope(); }
 
   const TypePool &newPool() const { return this->newCtx->getPool(); }
 
@@ -585,8 +585,9 @@ TEST_F(ArchiveTest, userdefined) {
   auto typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
-  handle = this->scope().lookup(toTypeAliasFullName(typeName));
-  ASSERT_FALSE(handle); // in named import, not found
+  auto handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle2); // in named import, not found
+  ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());
   auto lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
   ASSERT_TRUE(lookup);
   ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
@@ -598,8 +599,9 @@ TEST_F(ArchiveTest, userdefined) {
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
   ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
-  handle = this->scope().lookup(toTypeAliasFullName(typeName));
-  ASSERT_FALSE(handle); // in named import, not found
+  handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle2); // in named import, not found
+  ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());
   lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
   ASSERT_TRUE(lookup);
   ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
@@ -636,8 +638,9 @@ TEST_F(ArchiveTest, userdefined) {
    * after deserialized, always true
    */
   ASSERT_TRUE(cast<RecordType>(typeOrError.asOk())->isFinalized());
-  handle = this->scope().lookup(toTypeAliasFullName(typeName));
-  ASSERT_FALSE(handle); // in named import, not found
+  handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
+  ASSERT_FALSE(handle2); // in named import, not found
+  ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());
   lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
   ASSERT_FALSE(lookup); // module private member is not found
 }

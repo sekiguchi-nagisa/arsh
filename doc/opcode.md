@@ -33,6 +33,13 @@
 | STORE_ENV       |                                | value1 value2 ->                             | set environmental variable                             |
 | NEW_ENV_CTX     |                                | -> value                                     | push new EnvCtxObject onto the stack                   |
 | ADD2ENV_CTX     |                                | ctx name value -> ctx                        | set and save env                                       |
+| BOX_LOCAL       | 1: byte1                       | [no change]                                  | box local variable                                     |
+| LOAD_BOXED      | 1: byte1                       | -> value                                     | load a value from a local variable and unbox           |
+| STORE_BOXED     | 1: byte1                       | value ->                                     | box a value and store it to a local variable           |
+| NEW_CLOSURE     | 1: param                       | func value1 ~ valueN -> result               | create new closure                                     |
+| LOAD_UPVAR      | 1: byte1                       | -> value                                     | load a value from an upvalue                           |
+| LOAD_RAW_UPVAR  | 1: byte1                       | -> value                                     | load a value from an upvalue (not perform unboxing)    |
+| STORE_UPVAR     | 1: byte1                       | value ->                                     | store a value to an upvalue                            |
 | POP             |                                | value ->                                     | pop stack top value                                    |
 | DUP             |                                | value -> value value                         | duplicate top value                                    |
 | DUP2            |                                | value1 value2 -> value1 value2 value1 value2 | duplicate top two value                                |

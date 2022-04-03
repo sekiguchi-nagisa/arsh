@@ -39,6 +39,9 @@ using NameRegisterResult = Result<HandlePtr, NameRegisterError>;
 enum class NameLookupError {
   NOT_FOUND,
   MOD_PRIVATE,
+  UPVAR_LIMIT,
+  UNCAPTURE_ENV,
+  UNCAPTURE_FIELD,
 };
 
 enum class NameRegisterOp : unsigned int {
@@ -91,6 +94,11 @@ private:
   std::unordered_map<std::string, std::pair<HandlePtr, unsigned int>> handles;
 
   /**
+   * captured variable handles
+   */
+  std::vector<HandlePtr> captures;
+
+  /**
    * for func/block scope construction
    * only called from enterScope()
    * @param kind
@@ -137,6 +145,8 @@ public:
 
   bool isGlobal() const { return this->kind == GLOBAL; }
 
+  bool isFunc() const { return this->kind == FUNC; }
+
   bool inBuiltinModule() const { return this->modId == 0; }
 
   bool inRootModule() const { return this->modId == 1; }
@@ -157,6 +167,8 @@ public:
   }
 
   const auto &getHandles() const { return this->handles; }
+
+  const auto &getCaptures() const { return this->captures; }
 
   HandlePtr find(const std::string &name) const {
     auto iter = this->handles.find(name);
@@ -229,9 +241,8 @@ public:
    * lookup handle
    * @param name
    * @return
-   * if not found, return nullptr
    */
-  HandlePtr lookup(const std::string &name) const;
+  Result<HandlePtr, NameLookupError> lookup(const std::string &name);
 
   Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
                                                  const std::string &fieldName) const;

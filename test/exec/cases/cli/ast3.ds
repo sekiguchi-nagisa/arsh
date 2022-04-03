@@ -45,6 +45,7 @@ nodes:
       pos: 1
       size: 39
     type:
+    kind: \"FUNC\"
     funcName:
       token:
         pos: 10
@@ -118,8 +119,7 @@ nodes:
       firstDeferOffset: -1
     maxVarNum: 0
     handle: null
-    resolvedType: null
-    kind: \"FUNC\""
+    resolvedType: null"
 
 $expect("$(ds -n --dump-untyped-ast -c "source $mod")", 0, $out)
 
@@ -192,6 +192,7 @@ nodes:
       pos: 1
       size: 39
     type: Void
+    kind: \"FUNC\"
     funcName:
       token:
         pos: 10
@@ -328,7 +329,6 @@ nodes:
       index: 60
       kind: \"VAR\"
       attribute: \"READ_ONLY | GLOBAL\"
-    resolvedType: \"(Int) -> Void\"
-    kind: \"FUNC\""
+    resolvedType: \"(Int) -> Void\""
 
 $expect("$(ds -n --dump-ast -c "source $mod")", 0, $out)

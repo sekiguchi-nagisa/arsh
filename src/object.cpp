@@ -128,6 +128,12 @@ std::string DSValue::toString() const {
     return typeAs<MapObject>(*this).toString();
   case ObjectKind::Func:
     return typeAs<FuncObject>(*this).toString();
+  case ObjectKind::Closure: {
+    std::string str = "closure(";
+    str += std::to_string(reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(*this).getFuncObj()));
+    str += ")";
+    return str;
+  }
   case ObjectKind::Job: {
     std::string str = "%";
     str += std::to_string(typeAs<JobObject>(*this).getJobID());
@@ -685,6 +691,16 @@ std::string FuncObject::toString() const {
   str += this->code.getName();
   str += ")";
   return str;
+}
+
+// ###########################
+// ##     ClosureObject     ##
+// ###########################
+
+ClosureObject::~ClosureObject() {
+  for (unsigned int i = 0; i < this->upvarSize; i++) {
+    (*this)[i].~DSValue();
+  }
 }
 
 // ##########################

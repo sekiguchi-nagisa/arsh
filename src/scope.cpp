@@ -57,6 +57,8 @@ NameScopePtr NameScope::enterScope(Kind newKind) {
     return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
   } else if (this->kind == NameScope::FUNC && newKind == NameScope::BLOCK) {
     return NameScope::block(newKind, this->fromThis(), std::ref(this->curLocalIndex));
+  } else if (this->kind == NameScope::BLOCK && newKind == NameScope::FUNC) { // for closure
+    return NameScope::block(newKind, this->fromThis(), this->maxVarCount);
   } else if (this->kind == NameScope::BLOCK && newKind == NameScope::BLOCK) {
     auto scope = NameScope::block(newKind, this->fromThis(), this->maxVarCount);
     scope->curLocalIndex = this->curLocalIndex;
@@ -221,14 +223,56 @@ const ModType &NameScope::toModType(TypePool &pool) const {
                             this->getMaxGlobalVarIndex());
 }
 
-HandlePtr NameScope::lookup(const std::string &name) const {
+Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) {
+  constexpr unsigned int funcScopeSize = SYS_LIMIT_FUNC_DEPTH + 1;
+  NameScope *funcScopes[funcScopeSize];
+  unsigned int funcScopeDepth = 0;
+
   for (auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
     auto handle = scope->find(name);
-    if (handle) {
-      return handle;
+    if (!handle) {
+      if (scope->isFunc()) {
+        assert(funcScopeDepth < funcScopeSize);
+        funcScopes[funcScopeDepth++] = scope;
+      }
+      continue;
     }
+
+    if (!handle->has(HandleAttr::GLOBAL) && !handle->is(HandleKind::TYPE_ALIAS)) {
+      for (; funcScopeDepth; funcScopeDepth--) {
+        if (handle->has(HandleAttr::UNCAPTURED)) {
+          if (scope->parent->isFunc()) { // may be constructor
+            return Err(NameLookupError::UNCAPTURE_FIELD);
+          } else {
+            assert(handle->is(HandleKind::ENV));
+            return Err(NameLookupError::UNCAPTURE_ENV);
+          }
+        }
+
+        auto *curFuncScope = funcScopes[funcScopeDepth - 1];
+        unsigned int captureIndex = curFuncScope->captures.size();
+        if (captureIndex == SYS_LIMIT_UPVAR_NUM) {
+          return Err(NameLookupError::UPVAR_LIMIT);
+        }
+
+        auto attr = handle->attr();
+        setFlag(attr, HandleAttr::UPVAR);
+        if (!handle->has(HandleAttr::READ_ONLY)) {
+          auto newAttr = handle->attr();
+          setFlag(newAttr, HandleAttr::BOXED);
+          handle->setAttr(newAttr);
+        }
+        curFuncScope->captures.push_back(handle);
+        auto upvar = HandlePtr::create(handle->getTypeId(), captureIndex, handle->getKind(), attr,
+                                       handle->getModId());
+        auto ret = curFuncScope->add(std::string(name), std::move(upvar), NameRegisterOp::AS_ALIAS);
+        assert(ret);
+        handle = std::move(ret).take();
+      }
+    }
+    return Ok(std::move(handle));
   }
-  return nullptr;
+  return Err(NameLookupError::NOT_FOUND);
 }
 
 Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, const DSType &recv,
@@ -276,12 +320,11 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 }
 
 NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRegisterOp op) {
-  assert(this->kind != FUNC);
-
   // check var index limit
   if (!hasFlag(op, NameRegisterOp::AS_ALIAS)) {
     if (!handle->has(HandleAttr::GLOBAL)) {
       assert(!this->isGlobal());
+      assert(!this->isFunc());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
         return Err(NameRegisterError::LIMIT);
       }

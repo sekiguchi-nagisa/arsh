@@ -1,0 +1,9 @@
+
+#$test($result = 'type', $status = 1, $errorKind = 'UncaptureEnv', $chars = 24, $lineNum = 6)
+
+HOME=hferfuahie {
+ {
+    function() => echo $HOME
+    var HOME = 'hel;l;'
+ }
+}

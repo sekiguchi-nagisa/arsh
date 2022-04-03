@@ -122,7 +122,7 @@ static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
   auto &modType = state->typePool.getBuiltinModType();
   auto handle = builtin->lookup(VAR_TERM_HOOK);
   assert(handle);
-  state->termHookIndex = handle->getIndex();
+  state->termHookIndex = handle.asOk()->getIndex();
   state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->lineNum = 1;
   state->setExitStatus(0);
@@ -554,13 +554,13 @@ const char *DSState_initExecutablePath(DSState *st) {
 
   auto handle = st->rootModScope->lookup(VAR_YDSH_BIN);
   assert(handle);
-  const char *ret = st->getGlobal(handle->getIndex()).asCStr();
+  const char *ret = st->getGlobal(handle.asOk()->getIndex()).asCStr();
   if (*ret) {
     return ret;
   }
   char *path = getExecutablePath();
   if (path) {
-    st->setGlobal(handle->getIndex(), DSValue::createStr(path));
+    st->setGlobal(handle.asOk()->getIndex(), DSValue::createStr(path));
     free(path);
   }
   return nullptr;

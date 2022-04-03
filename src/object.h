@@ -38,8 +38,6 @@ struct DSState;
 
 namespace ydsh {
 
-class DSValue;
-
 #define EACH_OBJECT_KIND(OP)                                                                       \
   OP(String)                                                                                       \
   OP(UnixFd)                                                                                       \
@@ -50,6 +48,8 @@ class DSValue;
   OP(Base)                                                                                         \
   OP(Error)                                                                                        \
   OP(Func)                                                                                         \
+  OP(Closure)                                                                                      \
+  OP(Box)                                                                                          \
   OP(EnvCtx)                                                                                       \
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
@@ -64,6 +64,8 @@ enum class ObjectKind : unsigned char {
   EACH_OBJECT_KIND(GEN_ENUM)
 #undef GEN_ENUM
 };
+
+class DSValue;
 
 struct ObjectRefCount;
 
@@ -1179,6 +1181,64 @@ public:
   const CompiledCode &getCode() const { return this->code; }
 
   std::string toString() const;
+};
+
+class ClosureObject : public ObjectWithRtti<ObjectKind::Closure> {
+private:
+  ObjPtr<FuncObject> func;
+
+  unsigned int upvarSize;
+  DSValueBase upvars[];
+
+  ClosureObject(ObjPtr<FuncObject> func, unsigned int size)
+      : ObjectWithRtti(func->getTypeID()), func(std::move(func)), upvarSize(size) {
+    for (unsigned int i = 0; i < this->upvarSize; i++) {
+      new (&this->upvars[i]) DSValue();
+    }
+  }
+
+public:
+  static ClosureObject *create(ObjPtr<FuncObject> func, unsigned int size, const DSValue *values) {
+    void *ptr = malloc(sizeof(ClosureObject) + sizeof(DSValueBase) * size);
+    auto *closure = new (ptr) ClosureObject(std::move(func), size);
+    for (unsigned int i = 0; i < size; i++) {
+      (*closure)[i] = values[i];
+    }
+    return closure;
+  }
+
+  ~ClosureObject();
+
+  const FuncObject &getFuncObj() const { return *this->func; }
+
+  DSValue &operator[](unsigned int index) { return static_cast<DSValue &>(this->upvars[index]); }
+
+  const DSValue &operator[](unsigned int index) const {
+    return static_cast<const DSValue &>(this->upvars[index]);
+  }
+
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
+};
+
+template <typename... Arg>
+struct ObjectConstructor<ClosureObject, Arg...> {
+  static DSObject *construct(Arg &&...arg) {
+    return ClosureObject::create(std::forward<Arg>(arg)...);
+  }
+};
+
+class BoxObject : public ObjectWithRtti<ObjectKind::Box> {
+private:
+  DSValue value;
+
+public:
+  explicit BoxObject(DSValue &&value) : ObjectWithRtti(TYPE::Any), value(std::move(value)) {}
+
+  const DSValue &getValue() const { return this->value; }
+
+  void setValue(DSValue &&v) { this->value = std::move(v); }
 };
 
 class EnvCtxObject : public ObjectWithRtti<ObjectKind::EnvCtx> {

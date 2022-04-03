@@ -250,7 +250,10 @@ const char *toString(HandleKind kind);
 
 #define EACH_HANDLE_ATTR(OP)                                                                       \
   OP(READ_ONLY, (1u << 0u))                                                                        \
-  OP(GLOBAL, (1u << 1u))
+  OP(GLOBAL, (1u << 1u))                                                                           \
+  OP(BOXED, (1u << 2u))                                                                            \
+  OP(UPVAR, (1u << 3u))                                                                            \
+  OP(UNCAPTURED, (1u << 4u))
 
 enum class HandleAttr : unsigned char {
 #define GEN_ENUM(E, V) E = (V),
@@ -293,15 +296,18 @@ protected:
   unsigned short modId;
 
 protected:
-  Handle(unsigned char fmaSize, const DSType &type, unsigned int index, HandleKind kind,
+  Handle(unsigned char fmaSize, unsigned int typeId, unsigned int index, HandleKind kind,
          HandleAttr attr, unsigned short modId)
-      : tag(type.typeId() << 8 | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {
-  }
+      : tag(typeId << 8 | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {}
 
 public:
+  Handle(unsigned int typeId, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
+         unsigned short modId)
+      : Handle(0, typeId, fieldIndex, kind, attribute, modId) {}
+
   Handle(const DSType &fieldType, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
          unsigned short modId = 0)
-      : Handle(0, fieldType, fieldIndex, kind, attribute, modId) {}
+      : Handle(fieldType.typeId(), fieldIndex, kind, attribute, modId) {}
 
   ~Handle() = default;
 
@@ -341,6 +347,8 @@ private:
    * @param newKind
    */
   void setKind(HandleKind newKind) { this->kind = newKind; }
+
+  void setAttr(HandleAttr newAttr) { this->attribute = newAttr; }
 
   /**
    * not directly use it
@@ -773,7 +781,8 @@ private:
 
   MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
                unsigned short modId, HandleKind hk)
-      : Handle(paramSize + 1, recv, index, hk, HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId),
+      : Handle(paramSize + 1, recv.typeId(), index, hk, HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
+               modId),
         returnType(ret) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }

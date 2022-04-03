@@ -1,0 +1,10 @@
+
+#$test($result = 'type', $status = 1, $errorKind = 'FuncDepthLimit', $chars = 35, $lineNum = 10)
+
+function() => function() => function() => function() => function() =>
+ function() => function() => function() => function() => function() =>
+  function() => function() => function() => function() => function() =>
+   function() => function() => function() => function() => function() =>
+    function() => function() => function() => function() => function() =>
+     function() => function() => function() => function() => function() =>
+      function() => function() => function() => function() => function() => 34

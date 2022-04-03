@@ -534,7 +534,7 @@ static bool hasCmdArg(const CmdNode &node) {
   return false;
 }
 
-static bool completeSubcommand(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
+static bool completeSubcommand(const TypePool &pool, NameScope &scope, const CmdNode &cmdNode,
                                const std::string &word, CompCandidateConsumer &consumer) {
   if (hasCmdArg(cmdNode)) {
     return false;
@@ -546,7 +546,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     return false;
   }
 
-  auto &type = pool.get(handle->getTypeId());
+  auto &type = pool.get(handle.asOk()->getTypeId());
   if (!type.isModType()) {
     return false;
   }

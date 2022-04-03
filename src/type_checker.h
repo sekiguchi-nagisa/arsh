@@ -123,11 +123,13 @@ public:
 
 class FuncContext {
 public:
-  const enum Kind : unsigned int {
+  const enum Kind : unsigned char {
     TOPLEVEL,
     FUNC,
     CONSTRUCTOR,
   } kind{TOPLEVEL};
+
+  const unsigned short depth{0}; // for function nest depth
 
 private:
   unsigned int voidReturnCount{0};
@@ -144,11 +146,13 @@ public:
   FuncContext() = default;
 
   explicit FuncContext(Kind k, const DSType *type, std::unique_ptr<FuncContext> &&parent)
-      : kind(k), returnType(type), parent(std::move(parent)) {}
+      : kind(k), depth(parent->depth + 1), returnType(type), parent(std::move(parent)) {}
 
   std::unique_ptr<FuncContext> takeParent() && { return std::move(this->parent); }
 
   bool withinFunc() const { return this->kind == FUNC; }
+
+  bool withinConstructor() const { return this->kind == CONSTRUCTOR; }
 
   void clear() {
     this->returnType = nullptr;
@@ -411,9 +415,10 @@ private:
     return this->addEntry(node.getToken(), symbolName, type, HandleKind::VAR, attribute);
   }
 
-  HandlePtr addEnvEntry(Token token, const std::string &symbolName) {
+  HandlePtr addEnvEntry(Token token, const std::string &symbolName, bool allowCapture) {
+    auto attr = allowCapture ? HandleAttr() : HandleAttr::UNCAPTURED;
     return this->addEntry(token, symbolName, this->typePool.get(TYPE::String), HandleKind::ENV,
-                          HandleAttr{});
+                          attr);
   }
 
   HandlePtr addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {

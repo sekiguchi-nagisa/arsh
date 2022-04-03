@@ -349,6 +349,7 @@ nodes:
       pos: 0
       size: 61
     type:
+    kind: "FUNC"
     funcName:
       token:
         pos: 9
@@ -451,7 +452,6 @@ nodes:
     maxVarNum: 0
     handle: null
     resolvedType: null
-    kind: "FUNC"
 )"},
 
     {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
@@ -944,6 +944,7 @@ nodes:
       pos: 0
       size: 33
     type: Void
+    kind: "FUNC"
     funcName:
       token:
         pos: 9
@@ -1040,7 +1041,6 @@ nodes:
       kind: "VAR"
       attribute: "READ_ONLY | GLOBAL"
     resolvedType: "(Int, Int) -> Void"
-    kind: "FUNC"
 )"},
 };
 

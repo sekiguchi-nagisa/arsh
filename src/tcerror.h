@@ -110,8 +110,14 @@ DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
 DEFINE_TCError(UnmatchParam, "not match parameter, require size is %d, but is %d");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");
-DEFINE_TCError(ConcatParam,
-               "concatenation of `%s' type value is not allowed in parameter expansion");
+DEFINE_TCError(ConcatParam, "concatenation of `%s' type value is "
+                            "not allowed in parameter expansion");
+DEFINE_TCError(FuncDepthLimit, "nested function depth reaches limit");
+DEFINE_TCError(UpvarLimit, "number of upper variables in local function reaches limit");
+DEFINE_TCError(UncaptureEnv, "local function cannot access temporary "
+                             "defined environmental variables: `%s'");
+DEFINE_TCError(UncaptureField, "local function cannot access upper variables "
+                               "that will be assigned to fields: `%s'");
 
 #undef DEFINE_TCError
 

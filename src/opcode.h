@@ -61,6 +61,13 @@ namespace ydsh {
   OP(STORE_ENV, 0, -2)                                                                             \
   OP(NEW_ENV_CTX, 0, 1)                                                                            \
   OP(ADD2ENV_CTX, 0, -2)                                                                           \
+  OP(BOX_LOCAL, 1, 0)                                                                              \
+  OP(LOAD_BOXED, 1, 1)                                                                             \
+  OP(STORE_BOXED, 1, -1)                                                                           \
+  OP(NEW_CLOSURE, 1, 0)                                                                            \
+  OP(LOAD_UPVAR, 1, 1)                                                                             \
+  OP(LOAD_RAW_UPVAR, 1, 1)                                                                         \
+  OP(STORE_UPVAR, 1, -1)                                                                           \
   OP(POP, 0, -1)                                                                                   \
   OP(DUP, 0, 1)                                                                                    \
   OP(DUP2, 0, 2)                                                                                   \

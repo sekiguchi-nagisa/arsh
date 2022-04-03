@@ -2,8 +2,6 @@
 
 #include <vm.h>
 
-#include "../test_common.h"
-
 using BreakPointHandler = std::function<void()>;
 
 class VMInspector : public VMHook {
@@ -15,9 +13,9 @@ private:
 public:
   VMInspector() : breakOp(OpCode::HALT), handler(), called(true) {}
 
-  void setHandler(OpCode op, BreakPointHandler &&handler) {
+  void setHandler(OpCode op, BreakPointHandler &&hd) {
     this->breakOp = op;
-    this->handler = std::move(handler);
+    this->handler = std::move(hd);
     if (this->handler) {
       this->called = false;
     }
@@ -79,19 +77,19 @@ protected:
 
   DSValue getValue(const char *name) const {
     auto handle = this->state->rootModScope->lookup(name);
-    if (handle == nullptr) {
+    if (!handle) {
       return nullptr;
     }
-    return this->state->getGlobal(handle->getIndex());
+    return this->state->getGlobal(handle.asOk()->getIndex());
   }
 
   void RefCount(const char *gvarName, unsigned int refCount) {
     ASSERT_TRUE(gvarName != nullptr);
 
     auto handle = this->state->rootModScope->lookup(gvarName);
-    ASSERT_TRUE(handle != nullptr);
+    ASSERT_TRUE(handle);
 
-    auto &v = this->state->getGlobal(handle->getIndex());
+    auto &v = this->state->getGlobal(handle.asOk()->getIndex());
     ASSERT_TRUE(v.isObject());
 
     ASSERT_EQ(refCount, v.get()->getRefcount());

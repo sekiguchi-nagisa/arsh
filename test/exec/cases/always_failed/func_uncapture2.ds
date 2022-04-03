@@ -1,0 +1,10 @@
+
+#$test($result = 'type', $status = 1, $errorKind = 'UncaptureField', $chars = 23, $lineNum = 9)
+
+typedef Interval($a : Int, $b : Int) {
+    var begin = $a
+    var end = $b
+
+    var apply = function() =>
+        function() => $begin * $end
+}

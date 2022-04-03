@@ -478,6 +478,10 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
   if (node.getHandle()->is(HandleKind::ENV)) {
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
+    } else if (node.hasAttr(HandleAttr::UPVAR)) {
+      this->emit1byteIns(OpCode::LOAD_UPVAR, node.getIndex());
+    } else if (node.hasAttr(HandleAttr::BOXED)) {
+      this->emit1byteIns(OpCode::LOAD_BOXED, node.getIndex());
     } else {
       this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
     }
@@ -496,6 +500,10 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
       } else {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
       }
+    } else if (node.hasAttr(HandleAttr::UPVAR)) {
+      this->emit1byteIns(OpCode::LOAD_UPVAR, node.getIndex());
+    } else if (node.hasAttr(HandleAttr::BOXED)) {
+      this->emit1byteIns(OpCode::LOAD_BOXED, node.getIndex());
     } else {
       this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
     }
@@ -1288,6 +1296,9 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
   } else {
     this->emit1byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+    if (node.getHandle()->has(HandleAttr::BOXED)) {
+      this->emit1byteIns(OpCode::BOX_LOCAL, node.getVarIndex());
+    }
   }
 }
 
@@ -1336,6 +1347,10 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     if (varNode.getHandle()->is(HandleKind::ENV)) {
       if (varNode.hasAttr(HandleAttr::GLOBAL)) {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
+      } else if (varNode.hasAttr(HandleAttr::UPVAR)) {
+        this->emit1byteIns(OpCode::LOAD_UPVAR, index);
+      } else if (varNode.hasAttr(HandleAttr::BOXED)) {
+        this->emit1byteIns(OpCode::LOAD_BOXED, index);
       } else {
         this->emit1byteIns(OpCode::LOAD_LOCAL, index);
       }
@@ -1348,6 +1363,10 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         } else {
           this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         }
+      } else if (varNode.hasAttr(HandleAttr::UPVAR)) {
+        this->emit1byteIns(OpCode::STORE_UPVAR, index);
+      } else if (varNode.hasAttr(HandleAttr::BOXED)) {
+        this->emit1byteIns(OpCode::STORE_BOXED, index);
       } else {
         this->emit1byteIns(OpCode::STORE_LOCAL, index);
       }
@@ -1392,6 +1411,11 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
+  for (auto &paramNode : node.getParamNodes()) {
+    if (paramNode->getHandle()->has(HandleAttr::BOXED)) {
+      this->emit1byteIns(OpCode::BOX_LOCAL, paramNode->getVarIndex());
+    }
+  }
   this->visit(node.getBlockNode());
 
   auto code = this->finalizeCodeBuilder(node.getFuncName());
@@ -1401,7 +1425,20 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   auto func = DSValue::create<FuncObject>(*node.getResolvedType(), std::move(code));
 
   this->emitLdcIns(func);
+  if (!node.getCaptures().empty()) {
+    assert(!node.isMethod() && !node.isConstructor());
+    for (auto &e : node.getCaptures()) {
+      if (e->has(HandleAttr::UPVAR)) {
+        this->emit1byteIns(OpCode::LOAD_RAW_UPVAR, e->getIndex());
+      } else {
+        this->emit1byteIns(OpCode::LOAD_LOCAL, e->getIndex());
+      }
+    }
+    assert(node.getCaptures().size() <= UINT8_MAX);
+    this->emitNewClosureIns(node.getCaptures().size());
+  }
   if (!node.isAnonymousFunc()) {
+    assert(node.getHandle()->has(HandleAttr::GLOBAL));
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getHandle()->getIndex());
   }
 }
