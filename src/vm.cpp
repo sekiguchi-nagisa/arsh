@@ -1480,11 +1480,8 @@ bool VM::mainLoop(DSState &state) {
         auto &closure = state.stack.getCurrentClosure();
         auto v = state.stack.pop();
         auto &slot = closure[index];
-        if (slot.isObject() && isa<BoxObject>(slot.get())) {
-          typeAs<BoxObject>(slot).setValue(std::move(v)); // box
-        } else {
-          closure[index] = std::move(v);
-        }
+        assert(slot.isObject() && isa<BoxObject>(slot.get()));
+        typeAs<BoxObject>(slot).setValue(std::move(v)); // box
         vmnext;
       }
       vmcase(POP) {

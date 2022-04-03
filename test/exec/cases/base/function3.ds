@@ -42,6 +42,30 @@ assert $get3()(1) == 2
 assert $get3()(1) == 3
 assert $get3()(1) == 4
 
+{
+    var aa = 0
+    var f = function() => {
+        var b = $aa
+        $aa++
+        return $b
+    }
+    assert $aa == 0
+    assert $f() == 0
+    assert $aa == 1
+    assert $f() == 1
+    assert $aa == 2
+    $aa = 1000
+    assert $f() == 1000
+    assert $aa == 1001
+
+    export-env ZZZ = "a"
+    (function()=> { $ZZZ++; })()
+    assert $ZZZ == "a1"
+    (function()=> { $ZZZ++; })()
+    assert $ZZZ == "a11"
+    assert env | grep ZZZ=a11
+}
+
 
 ## local func with read-only capture
 function get4() : (Int) -> Int {

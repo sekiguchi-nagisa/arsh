@@ -1426,7 +1426,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 
   this->emitLdcIns(func);
   if (!node.getCaptures().empty()) {
-    assert(!node.isMethod() && !node.isConstructor());
+    assert(node.isAnonymousFunc());
     for (auto &e : node.getCaptures()) {
       if (e->has(HandleAttr::UPVAR)) {
         this->emit1byteIns(OpCode::LOAD_RAW_UPVAR, e->getIndex());
