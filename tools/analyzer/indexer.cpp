@@ -731,7 +731,7 @@ static ScopeKind getScopeKind(const FunctionNode &node) {
 }
 
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  if (!this->builder().isGlobal() || node.getType().isUnresolved()) {
+  if (node.getType().isUnresolved() || (!this->builder().isGlobal() && !node.isAnonymousFunc())) {
     return;
   }
 

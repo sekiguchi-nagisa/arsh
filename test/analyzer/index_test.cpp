@@ -835,6 +835,47 @@ TEST_F(IndexTest, methodOverride) {
        {modId, "(3:7~3:12)"}}));                         // 34.print()
 }
 
+TEST_F(IndexTest, upvar) {
+  unsigned short modId;
+  const char *content = R"E({
+    var value = 3433
+    function() => {
+      function() -> {
+        $value++
+        var value = 34
+        $value++
+      }
+      $value++
+    }
+    $value++
+})E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
+
+  // defintion
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 13}}, {{modId, "(1:8~1:13)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 14}}, {{modId, "(5:12~5:17)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 8, .character = 12}}, {{modId, "(1:8~1:13)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 10, .character = 10}}, {{modId, "(1:8~1:13)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 8}}, // var value = 3433
+      {{modId, "(1:8~1:13)"},                                           // itself
+       {modId, "(4:8~4:14)"},
+       {modId, "(8:6~8:12)"},
+       {modId, "(10:4~10:10)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 5, .character = 16}}, // var value = 34
+      {{modId, "(5:12~5:17)"},                                           // itself
+       {modId, "(6:8~6:14)"}}));
+}
+
 TEST_F(IndexTest, invalidVar) {
   unsigned short modId;
   const char *content = R"(

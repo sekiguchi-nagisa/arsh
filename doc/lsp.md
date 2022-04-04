@@ -9,6 +9,7 @@
 | variable (catch)                      | ✔️             | ✔️             | ✔️                 |
 | variable (function parameter)         | ✔️             | ✔️             | ✔️                 |
 | variable (this)                       | ✔️             | ✔️             | ✔️                 |
+| variable (upper variable)             | ✔️             | ✔️             | ✔️                 |
 | variable (global import)              | ✔️             | ✔️             | ✔️                 |
 | variable (inlined import)             | ✔️             | ✔️             | ✔️                 |
 | variable (named import)               | ✔️             | ✔️             | ✔️                 |
