@@ -97,6 +97,13 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         {   echo
             $P'))
     $assertArray($gvar3, $(complete $'var PZ0 = 34; var PZ1 = 34; export-env PZ2 = "34"; echo\n$P'))
+
+    $assertArray(['AA', 'AAA'], $(complete '
+        {
+            var AA = 34
+            function() => {
+                var AAA = $false
+                function() => $A'))
 }
 
 # env name
@@ -201,6 +208,8 @@ assert($(complete 'function f($').empty())
 assert($(complete '{ $T ').empty())
 assert $(complete 'ls # this is a comment ').empty()
 assert $(complete 'var a : Int.').empty()
+assert $(complete 'typedef AAA() { var ZZ = 34; function() => $Z').empty()
+assert $(complete 'ZZZ=12345 function() => $Z').empty()
 # assert $(complete 'coproc { break 34.').empty()
 # assert $(complete '{ return 34.').empty()
 

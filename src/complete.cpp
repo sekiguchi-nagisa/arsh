@@ -406,17 +406,29 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
     }
     cur->getMaxGlobalVarIndex() * 10;
   });
-  scope.walk([&](StringRef varName, const Handle &handle) {
-    if (varName.startsWith(prefix) && isVarName(varName)) {
-      int priority = handle.getIndex();
-      if (!handle.has(HandleAttr::GLOBAL)) {
-        priority += offset;
+
+  unsigned int funcScopeDepth = 0;
+  for (const auto *cur = &scope; cur != nullptr; cur = cur->parent.get()) {
+    for (auto &e : cur->getHandles()) {
+      StringRef varName = e.first;
+      auto &handle = *e.second.first;
+      if (handle.has(HandleAttr::UNCAPTURED) && funcScopeDepth) {
+        continue;
       }
-      priority *= -1;
-      consumer(varName, CompCandidateKind::VAR, priority);
+
+      if (varName.startsWith(prefix) && isVarName(varName)) {
+        int priority = handle.getIndex();
+        if (!handle.has(HandleAttr::GLOBAL)) {
+          priority += offset;
+        }
+        priority *= -1;
+        consumer(varName, CompCandidateKind::VAR, priority);
+      }
     }
-    return true;
-  });
+    if (cur->isFunc()) {
+      funcScopeDepth++;
+    }
+  }
 }
 
 static void completeExpected(const std::vector<std::string> &expected, const std::string &prefix,
