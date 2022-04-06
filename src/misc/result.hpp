@@ -31,7 +31,7 @@ struct TypeHolder {
   using type = T;
 };
 
-namespace __detail {
+namespace detail {
 
 constexpr size_t maxOf(size_t v) { return v; }
 
@@ -86,17 +86,17 @@ using resolvedType = typename std::invoke_result_t<OverloadResolver<T...>, F>::t
 template <ssize_t N>
 struct index_holder {};
 
-} // namespace __detail
+} // namespace detail
 
 template <typename U, typename... T>
 struct TypeTag {
-  static constexpr int value = __detail::toTypeIndex<U, T...>(0);
+  static constexpr int value = detail::toTypeIndex<U, T...>(0);
 };
 
 template <std::size_t N, typename T0, typename... T>
 struct TypeByIndex {
   static_assert(N < sizeof...(T) + 1, "out of range");
-  using type = typename __detail::TypeByIndex_<0, N, T0, T...>::type;
+  using type = typename detail::TypeByIndex_<0, N, T0, T...>::type;
 };
 
 // #####################
@@ -106,10 +106,10 @@ struct TypeByIndex {
 template <typename... T>
 class Storage {
 private:
-  alignas(T...) unsigned char data_[__detail::maxOf(sizeof(T)...)];
+  alignas(T...) unsigned char data_[detail::maxOf(sizeof(T)...)];
 
 public:
-  template <typename U, typename F = __detail::resolvedType<U, T...>>
+  template <typename U, typename F = detail::resolvedType<U, T...>>
   void obtain(U &&value) {
     static_assert(TypeTag<F, T...>::value > -1, "invalid type");
 
@@ -173,7 +173,7 @@ inline void copy(const Storage<R...> &src, Storage<R...> &dest) {
   dest.obtain(get<T>(src));
 }
 
-namespace __detail {
+namespace detail {
 
 template <ssize_t N, typename... R>
 inline void destroy(Storage<R...> &storage, int tag, index_holder<N>) {
@@ -226,7 +226,7 @@ inline void copy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
   return copy(src, srcTag, index_holder<sizeof...(R) - 1>{}, dest);
 }
 
-} // namespace __detail
+} // namespace detail
 
 // ###################
 // ##     Union     ##
@@ -235,7 +235,7 @@ inline void copy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
 template <typename... T>
 class Union {
 private:
-  static_assert(__detail::andAll(std::is_move_constructible<T>::value...),
+  static_assert(detail::andAll(std::is_move_constructible<T>::value...),
                 "must be move-constructible");
 
   using StorageType = Storage<T...>;
@@ -248,21 +248,21 @@ public:
 
   Union() noexcept : tag_(-1) {}
 
-  template <typename U, typename F = __detail::resolvedType<U, T...>>
+  template <typename U, typename F = detail::resolvedType<U, T...>>
   Union(U &&value) noexcept : tag_(TAG<F>) { // NOLINT
     this->value_.obtain(std::forward<U>(value));
   }
 
   Union(Union &&value) noexcept : tag_(value.tag()) {
-    __detail::move(value.value(), this->tag(), this->value());
+    detail::move(value.value(), this->tag(), this->value());
     value.tag_ = -1;
   }
 
   Union(const Union &value) : tag_(value.tag()) {
-    __detail::copy(value.value(), this->tag(), this->value());
+    detail::copy(value.value(), this->tag(), this->value());
   }
 
-  ~Union() { __detail::destroy(this->value(), this->tag()); }
+  ~Union() { detail::destroy(this->value(), this->tag()); }
 
   Union &operator=(Union &&value) noexcept {
     if (this != std::addressof(value)) {
@@ -288,15 +288,15 @@ public:
 
 private:
   void moveAssign(Union &&value) noexcept {
-    __detail::destroy(this->value(), this->tag());
-    __detail::move(value.value(), value.tag(), this->value());
+    detail::destroy(this->value(), this->tag());
+    detail::move(value.value(), value.tag(), this->value());
     this->tag_ = value.tag();
     value.tag_ = -1;
   }
 
   void copyAssign(const Union &value) {
-    __detail::destroy(this->value(), this->tag());
-    __detail::copy(value.value(), value.tag(), this->value());
+    detail::destroy(this->value(), this->tag());
+    detail::copy(value.value(), value.tag(), this->value());
     this->tag_ = value.tag();
   }
 };

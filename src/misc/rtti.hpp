@@ -28,8 +28,6 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
  * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
  */
 
-namespace __detail_rtti {} // namespace __detail_rtti
-
 template <typename To, typename From, enable_when<std::is_base_of<From, To>::value> = nullptr>
 inline bool isa(const From *obj) {
   return obj != nullptr && To::classof(obj);

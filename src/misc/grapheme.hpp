@@ -24,7 +24,7 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-namespace __detail {
+namespace detail {
 
 template <bool Bool>
 class GraphemeBoundary {
@@ -297,11 +297,11 @@ bool GraphemeScanner<Bool>::next(Result &result) {
   return result.codePointCount > 0;
 }
 
-} // namespace __detail
+} // namespace detail
 
-using GraphemeBoundary = __detail::GraphemeBoundary<true>;
+using GraphemeBoundary = detail::GraphemeBoundary<true>;
 
-using GraphemeScanner = __detail::GraphemeScanner<true>;
+using GraphemeScanner = detail::GraphemeScanner<true>;
 
 END_MISC_LIB_NAMESPACE_DECL
 

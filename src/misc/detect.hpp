@@ -26,7 +26,7 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <bool B>
 using enable_when = std::enable_if_t<B, std::nullptr_t>;
 
-namespace __detail {
+namespace detail {
 
 struct NotDetected {
   NotDetected() = delete;
@@ -44,13 +44,13 @@ struct detector<std::void_t<OP<Arg...>>, OP, Arg...> : std::true_type {
   using type = OP<Arg...>;
 };
 
-} // namespace __detail
+} // namespace detail
 
 template <template <typename...> class OP, typename... Arg>
-constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
+constexpr auto is_detected_v = detail::detector<void, OP, Arg...>::value;
 
 template <template <typename...> class OP, typename... Arg>
-using detected_t = typename __detail::detector<void, OP, Arg...>::type;
+using detected_t = typename detail::detector<void, OP, Arg...>::type;
 
 END_MISC_LIB_NAMESPACE_DECL
 

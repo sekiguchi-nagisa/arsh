@@ -70,7 +70,7 @@ public:
   unsigned int getMaxLineNum() const { return this->table.size() + this->offset; }
 };
 
-namespace __detail {
+namespace detail {
 
 /**
  * base lexer for re2c
@@ -406,9 +406,9 @@ void LexerBase<T>::updateNewline(unsigned int pos) {
   }
 }
 
-} // namespace __detail
+} // namespace detail
 
-using LexerBase = __detail::LexerBase<true>;
+using LexerBase = detail::LexerBase<true>;
 
 END_MISC_LIB_NAMESPACE_DECL
 

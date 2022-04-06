@@ -118,7 +118,7 @@ struct JSONMember {
   JSONMember(std::string &&key, JSON &&value) : key(std::move(key)), value(std::move(value)) {}
 };
 
-namespace __detail {
+namespace detail_json {
 
 inline void append(Array &) {}
 
@@ -136,14 +136,14 @@ void append(Object &object, JSONMember &&v, T &&...arg) {
   append(object, std::forward<T>(arg)...);
 }
 
-} // namespace __detail
+} // namespace detail_json
 
 inline Array array() { return {}; }
 
 template <typename... Arg>
 inline Array array(JSON &&v, Arg &&...arg) {
   auto value = array();
-  __detail::append(value, std::forward<JSON>(v), std::forward<Arg>(arg)...);
+  detail_json::append(value, std::forward<JSON>(v), std::forward<Arg>(arg)...);
   return value;
 }
 
@@ -152,7 +152,7 @@ inline Object object() { return {}; }
 template <typename... Arg>
 inline Object object(JSONMember &&m, Arg &&...arg) {
   auto value = object();
-  __detail::append(value, std::forward<JSONMember>(m), std::forward<Arg>(arg)...);
+  detail_json::append(value, std::forward<JSONMember>(m), std::forward<Arg>(arg)...);
   return value;
 }
 

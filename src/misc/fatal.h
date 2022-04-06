@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#define __BASE_FILENAME__                                                                          \
+#define BASE_FILENAME__                                                                            \
   (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
 
 /**
@@ -30,7 +30,7 @@
  */
 #define fatal(fmt, ...)                                                                            \
   do {                                                                                             \
-    fprintf(stderr, "%s:%d: [fatal error] " fmt, __BASE_FILENAME__, __LINE__, ##__VA_ARGS__);      \
+    fprintf(stderr, "%s:%d: [fatal error] " fmt, BASE_FILENAME__, __LINE__, ##__VA_ARGS__);        \
     abort();                                                                                       \
   } while (false)
 

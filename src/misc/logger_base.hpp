@@ -38,7 +38,7 @@ inline const char *toString(LogLevel level) {
   return str[static_cast<unsigned int>(level)];
 }
 
-namespace __detail_logger {
+namespace detail_logger {
 
 template <bool T>
 class LoggerBase {
@@ -171,9 +171,9 @@ void LoggerBase<T>::syncAppenderWithEnv() {
   this->setAppender(std::move(file));
 }
 
-} // namespace __detail_logger
+} // namespace detail_logger
 
-using LoggerBase = __detail_logger::LoggerBase<true>;
+using LoggerBase = detail_logger::LoggerBase<true>;
 
 struct NullLogger : public LoggerBase {
   NullLogger() : LoggerBase("") {}

@@ -23,7 +23,7 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-namespace __detail_unicode {
+namespace detail_unicode {
 
 template <bool T>
 struct UnicodeUtil {
@@ -374,9 +374,9 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
   return 1;
 }
 
-} // namespace __detail_unicode
+} // namespace detail_unicode
 
-using UnicodeUtil = __detail_unicode::UnicodeUtil<true>;
+using UnicodeUtil = detail_unicode::UnicodeUtil<true>;
 
 END_MISC_LIB_NAMESPACE_DECL
 
