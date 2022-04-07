@@ -261,12 +261,12 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           continue;
         }
         if (cmd.startsWith(cmdPrefix)) {
-          std::string fullpath(p);
-          if (fullpath.back() != '/') {
-            fullpath += '/';
+          std::string fullPath(p);
+          if (fullPath.back() != '/') {
+            fullPath += '/';
           }
-          fullpath += cmd.data();
-          if (isExecutable(fullpath.c_str())) {
+          fullPath += cmd.data();
+          if (isExecutable(fullPath.c_str())) {
             consumer(cmd, CompCandidateKind::COMMAND_NAME);
           }
         }
@@ -289,7 +289,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         std::string name("~");
         name += entry->pw_name;
         name += '/';
-        consumer(name.c_str(), CompCandidateKind::COMMAND_TILDE);
+        consumer(name, CompCandidateKind::COMMAND_TILDE);
       }
     }
     endpwent();
@@ -332,22 +332,22 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
 
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
     StringRef dname = entry->d_name;
-    if (dname.startsWith(name.c_str())) {
+    if (dname.startsWith(name)) {
       if (name.empty() && (dname == ".." || dname == ".")) {
         continue;
       }
 
-      std::string fullpath(targetDir);
-      if (fullpath.back() != '/') {
-        fullpath += '/';
+      std::string fullPath(targetDir);
+      if (fullPath.back() != '/') {
+        fullPath += '/';
       }
-      fullpath += entry->d_name;
+      fullPath += entry->d_name;
 
       if (isDirectory(dir, entry)) {
-        fullpath += '/';
+        fullPath += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {
-          if (S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
+          if (S_ISREG(getStMode(fullPath.c_str())) && access(fullPath.c_str(), X_OK) != 0) {
             continue;
           }
         } else if (hasFlag(op, CodeCompOp::DIR) && !hasFlag(op, CodeCompOp::FILE)) {
@@ -355,7 +355,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
         }
       }
 
-      StringRef fileName = fullpath;
+      StringRef fileName = fullPath;
       unsigned int len = strlen(entry->d_name);
       if (fileName.back() == '/') {
         len++;
