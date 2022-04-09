@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "emitter.h"
-#include "parser.h"
+#include "factory.h"
 
 using namespace ydsh;
+using namespace highlighter;
 
 class TokenCollector : public TokenEmitter {
 private:
@@ -26,13 +26,7 @@ static auto lex(StringRef ref) {
     content += '\n';
   }
   TokenCollector collector(content);
-  Lexer lexer("dummy", ByteBuffer(content.c_str(), content.c_str() + content.size()), nullptr);
-  Parser parser(lexer);
-  lexer.setCommentStore(makeObserver(collector));
-  parser.setTracker(&collector);
-  while (parser && !parser.hasError()) {
-    parser();
-  }
+  doHighlight(collector, "dummy", content);
   return std::move(collector).take();
 }
 
@@ -41,6 +35,17 @@ struct EmitterTest : public ::testing::Test {
                const std::pair<HighlightTokenClass, std::string> &pair) {
     ASSERT_EQ(expectClass, pair.first);
     ASSERT_EQ(expect, pair.second);
+  }
+
+  void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
+    factory.setSource(ref);
+
+    auto ret = factory.create(output);
+    ASSERT_TRUE(ret);
+    auto formatter = std::move(ret).take();
+    ASSERT_TRUE(formatter);
+    doHighlight(*formatter, "<dummy>", ref);
+    formatter->flush();
   }
 };
 
@@ -99,6 +104,114 @@ TEST_F(EmitterTest, case2) {
   collector(TokenKind::COMMAND, Token{.pos = 100, .size = 12});
   auto values = std::move(collector).take();
   ASSERT_TRUE(values.empty());
+}
+
+TEST_F(EmitterTest, color) {
+  constexpr auto c1 = styleRule("");
+  static_assert(!c1.text);
+  static_assert(!c1.background);
+  static_assert(!c1.border);
+  static_assert(!c1.bold);
+  static_assert(!c1.italic);
+  static_assert(!c1.underline);
+
+  constexpr auto c2 = styleRule("          ");
+  static_assert(!c2.text);
+  static_assert(!c2.background);
+  static_assert(!c2.border);
+  static_assert(!c2.bold);
+  static_assert(!c2.italic);
+  static_assert(!c2.underline);
+
+  constexpr auto c3 = styleRule("  bold  italic  underline bg:");
+  static_assert(!c3.text);
+  static_assert(!c3.background);
+  static_assert(!c3.border);
+  static_assert(c3.bold);
+  static_assert(c3.italic);
+  static_assert(c3.underline);
+
+  constexpr auto c4 = styleRule("#123456  bold border:#000000 italic  underline  bg:#fbd");
+  static_assert(c4.text);
+  static_assert(c4.text.red == 0x12);
+  static_assert(c4.text.green == 0x34);
+  static_assert(c4.text.blue == 0x56);
+  static_assert(c4.background);
+  static_assert(c4.background.red == 0xFF);
+  static_assert(c4.background.green == 0xbb);
+  static_assert(c4.background.blue == 0xdd);
+  static_assert(c4.border);
+  static_assert(c4.border.red == 0);
+  static_assert(c4.border.green == 0);
+  static_assert(c4.border.blue == 0);
+  static_assert(c4.bold);
+  static_assert(c4.italic);
+  static_assert(c4.underline);
+}
+
+TEST_F(EmitterTest, style) {
+  auto *style = findStyle("darcula");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("darcula", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
+  style = findStyle("null");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("null", style->getName());
+  ASSERT_FALSE(style->find(HighlightTokenClass::KEYWORD));
+
+  style = findStyle("not found ");
+  ASSERT_FALSE(style);
+}
+
+TEST_F(EmitterTest, factory) {
+  FormatterFactory factory;
+  factory.setFormatName("fjriejfoie");
+  auto ret = factory.create(std::cerr);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("unsupported formatter: fjriejfoie", ret.asErr());
+
+  factory = FormatterFactory();
+  factory.setStyleName("freafref");
+  ret = factory.create(std::cerr);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("unsupported style: freafref", ret.asErr());
+}
+
+TEST_F(EmitterTest, nullFormatter) {
+  std::stringstream stream;
+  std::string content = R"(#!/usr/bin/env ydsh
+  function sum($a : Int) : Int for Int {
+    return $this + $a
+  }
+
+  123456.sum($@.size() + $#)  # this is a comment
+
+)";
+
+  FormatterFactory factory;
+  factory.setFormatName("null");
+
+  ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
+
+  ASSERT_EQ(content, stream.str());
+}
+
+TEST_F(EmitterTest, ansiFormatter) {
+  std::stringstream stream;
+  std::string content = R"(#!/usr/bin/env ydsh
+# this is a comment
+)";
+
+  FormatterFactory factory;
+  factory.setFormatName("ansi");
+  factory.setStyleName("darcula");
+
+  ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
+
+  const char *expected = "\033[38;2;128;128;128m#!/usr/bin/env ydsh\033[0m\n"
+                         "\033[38;2;128;128;128m# this is a comment\033[0m\n";
+  ASSERT_EQ(expected, stream.str());
 }
 
 int main(int argc, char **argv) {

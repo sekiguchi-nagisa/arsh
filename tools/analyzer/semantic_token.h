@@ -23,6 +23,8 @@
 
 namespace ydsh::lsp {
 
+using namespace ydsh::highlighter;
+
 class SemanticTokenEncoder {
 private:
   std::unordered_map<SemanticTokenTypes, unsigned int> tokenTypeToIds;

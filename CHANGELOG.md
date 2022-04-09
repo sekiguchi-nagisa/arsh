@@ -19,6 +19,10 @@
       }
       ````
 
+#### Misc
+
+- add standalone syntax highlighter called ``dscolorize``
+
 ## [0.25.0] - 2022-03-31
 
 ### Added

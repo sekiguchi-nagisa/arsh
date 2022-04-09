@@ -16,7 +16,7 @@
 
 #include "emitter.h"
 
-namespace ydsh {
+namespace ydsh::highlighter {
 
 HighlightTokenClass toTokenClass(TokenKind kind) {
   switch (kind) {
@@ -138,4 +138,15 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
   }
 }
 
-} // namespace ydsh
+void doHighlight(TokenEmitter &emitter, const char *sourceName, StringRef content) {
+  assert(!content.empty() && content.back() == '\n');
+  Lexer lexer(sourceName, ByteBuffer(content.begin(), content.end()), nullptr);
+  lexer.setCommentStore(makeObserver(emitter));
+  Parser parser(lexer);
+  parser.setTracker(&emitter);
+  while (parser && !parser.hasError()) {
+    parser();
+  }
+}
+
+} // namespace ydsh::highlighter

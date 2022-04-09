@@ -19,7 +19,7 @@
 
 #include "parser.h"
 
-namespace ydsh {
+namespace ydsh::highlighter {
 
 enum class HighlightTokenClass : unsigned int {
   NONE,
@@ -70,6 +70,15 @@ private:
   virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
 };
 
-} // namespace ydsh
+/**
+ * colorize source content
+ * @param emitter
+ * @param sourceName
+ * @param content
+ * must be end with newline
+ */
+void doHighlight(TokenEmitter &emitter, const char *sourceName, StringRef content);
+
+} // namespace ydsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_EMITTER_H
