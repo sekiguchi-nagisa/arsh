@@ -33,7 +33,7 @@ public:
   Formatter(StringRef source, const Style &style, std::ostream &output)
       : TokenEmitter(source), style(style), output(output) {}
 
-  virtual void flush() = 0; // write internal buffer to output
+  virtual void finalize() = 0; // write internal buffer to output
 
 protected:
   void write(StringRef ref) { this->output.write(ref.data(), ref.size()); }
@@ -50,7 +50,7 @@ public:
   NullFormatter(StringRef source, const Style &style, std::ostream &output)
       : Formatter(source, style, output) {}
 
-  void flush() override;
+  void finalize() override;
 };
 
 enum class TermColorCap {
@@ -81,7 +81,7 @@ public:
 
   void setColorCap(TermColorCap cap) { this->colorCap = cap; }
 
-  void flush() override;
+  void finalize() override;
 };
 
 } // namespace ydsh::highlighter

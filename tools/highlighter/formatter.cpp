@@ -29,7 +29,7 @@ void NullFormatter::emit(HighlightTokenClass, Token token) {
   this->curSrcPos = token.endPos();
 }
 
-void NullFormatter::flush() {
+void NullFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
     this->write(remain);
@@ -87,7 +87,7 @@ void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
   }
 }
 
-void ANSIFormatter::flush() {
+void ANSIFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
     this->write(remain);

@@ -138,7 +138,8 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
   }
 }
 
-void doHighlight(TokenEmitter &emitter, const char *sourceName, StringRef content) {
+void tokenizeAndEmit(TokenEmitter &emitter, const char *sourceName) {
+  StringRef content = emitter.getSource();
   assert(!content.empty() && content.back() == '\n');
   Lexer lexer(sourceName, ByteBuffer(content.begin(), content.end()), nullptr);
   lexer.setCommentStore(makeObserver(emitter));

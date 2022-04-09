@@ -73,14 +73,9 @@ public:
   }
 };
 
-bool defineStyle(const char *name,
-                 const std::unordered_map<HighlightTokenClass, StyleRule> &rules) {
+bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, StyleRule> &&rules) {
   auto &styleMap = StyleMap::instance();
-  std::unordered_map<HighlightTokenClass, StyleRule> values;
-  for (auto &e : rules) {
-    values.emplace(e.first, e.second);
-  }
-  return styleMap.add(Style(name, std::move(values)));
+  return styleMap.add(Style(name, std::move(rules)));
 }
 
 const Style *findStyle(StringRef styleName) {

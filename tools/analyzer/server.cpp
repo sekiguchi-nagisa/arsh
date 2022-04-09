@@ -521,7 +521,7 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
   if (auto resolved = this->resolveSource(params.textDocument)) {
     auto &src = *resolved.asOk();
     SemanticTokenEmitter emitter(this->encoder, src);
-    doHighlight(emitter, src.getPath().c_str(), src.getContent());
+    tokenizeAndEmit(emitter, src.getPath().c_str());
     Union<SemanticTokens, std::nullptr_t> ret = std::move(emitter).take();
     return ret;
   } else {

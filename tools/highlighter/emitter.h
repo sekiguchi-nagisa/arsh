@@ -52,6 +52,8 @@ public:
 
   ~TokenEmitter() override = default;
 
+  StringRef getSource() const { return this->source; }
+
   void operator()(TokenKind kind, Token token) override;
 
   /**
@@ -74,10 +76,8 @@ private:
  * colorize source content
  * @param emitter
  * @param sourceName
- * @param content
- * must be end with newline
  */
-void doHighlight(TokenEmitter &emitter, const char *sourceName, StringRef content);
+void tokenizeAndEmit(TokenEmitter &emitter, const char *sourceName);
 
 } // namespace ydsh::highlighter
 

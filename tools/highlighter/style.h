@@ -168,7 +168,7 @@ public:
   const StyleRule *find(HighlightTokenClass tokenClass) const;
 };
 
-bool defineStyle(const char *name, const std::unordered_map<HighlightTokenClass, StyleRule> &rules);
+bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, StyleRule> &&rules);
 
 const Style *findStyle(StringRef styleName);
 

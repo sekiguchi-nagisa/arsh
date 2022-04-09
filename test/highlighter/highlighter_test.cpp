@@ -26,7 +26,7 @@ static auto lex(StringRef ref) {
     content += '\n';
   }
   TokenCollector collector(content);
-  doHighlight(collector, "dummy", content);
+  tokenizeAndEmit(collector, "dummy");
   return std::move(collector).take();
 }
 
@@ -44,8 +44,8 @@ struct EmitterTest : public ::testing::Test {
     ASSERT_TRUE(ret);
     auto formatter = std::move(ret).take();
     ASSERT_TRUE(formatter);
-    doHighlight(*formatter, "<dummy>", ref);
-    formatter->flush();
+    tokenizeAndEmit(*formatter, "<dummy>");
+    formatter->finalize();
   }
 };
 

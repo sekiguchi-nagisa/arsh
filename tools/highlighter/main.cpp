@@ -43,7 +43,7 @@ void usage(std::ostream &stream, char **argv) {
   stream << "usage: " << argv[0] << " ([option..]) [source file]" << std::endl;
 }
 
-static Optional<std::string> readAll(const char *sourceName) {
+Optional<std::string> readAll(const char *sourceName) {
   std::string buf;
   auto file = createFilePtr(fopen, sourceName, "rb");
   if (!file) {
@@ -64,7 +64,7 @@ static Optional<std::string> readAll(const char *sourceName) {
   return buf;
 }
 
-static bool colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output) {
+bool colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output) {
   auto content = readAll(sourceName);
   if (!content.hasValue()) {
     return false;
@@ -79,8 +79,8 @@ static bool colorize(FormatterFactory &factory, const char *sourceName, std::ost
   auto formatter = std::move(ret).take();
   assert(formatter);
 
-  doHighlight(*formatter, sourceName, content.unwrap());
-  formatter->flush();
+  tokenizeAndEmit(*formatter, sourceName);
+  formatter->finalize();
   return true;
 }
 
