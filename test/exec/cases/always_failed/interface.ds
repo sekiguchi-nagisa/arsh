@@ -1,7 +1,0 @@
-#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'OutsideToplevel', $status = 1)
-
-{
-    interface org_hoge_hoge {
-      var a : Int
-    }
-}

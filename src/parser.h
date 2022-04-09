@@ -192,7 +192,6 @@ protected:
 
   // parser rule definition.
   std::unique_ptr<FunctionNode> parse_function(bool needBody = true);
-  std::unique_ptr<Node> parse_interface();
 
   /**
    * not call it directory

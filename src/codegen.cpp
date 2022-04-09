@@ -1443,8 +1443,6 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) {} // do nothing
-
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
   this->visit(node.getBlockNode());

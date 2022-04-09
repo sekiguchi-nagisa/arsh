@@ -320,68 +320,6 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   }
 }
 
-std::unique_ptr<Node> Parser::parse_interface() {
-  GUARD_DEEP_NESTING(guard);
-
-  assert(CUR_KIND() == TokenKind::INTERFACE);
-  unsigned int startPos = START_POS();
-
-  this->expect(TokenKind::INTERFACE, false); // always success
-
-  // enter TYPE mode
-  this->pushLexerMode(yycTYPE);
-
-  Token token = TRY(this->expect(TokenKind::TYPE_NAME));
-
-  // exit TYPE mode
-  this->restoreLexerState(token);
-
-  auto node = std::make_unique<InterfaceNode>(startPos, this->lexer->toTokenText(token));
-  TRY(this->expect(TokenKind::LBC));
-
-  unsigned int count = 0;
-  for (bool next = true; next && CUR_KIND() != TokenKind::RBC;) {
-    // set lexer mode
-    if (this->lexer->getPrevMode().cond() != yycSTMT) {
-      this->refetch(yycSTMT);
-    }
-
-    switch (CUR_KIND()) {
-    case TokenKind::VAR:
-    case TokenKind::LET: {
-      startPos = START_POS();
-      auto readOnly = this->scan() == TokenKind::LET ? VarDeclNode::LET : VarDeclNode::VAR;
-      auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
-      TRY(this->expect(TokenKind::COLON, false));
-      auto type = TRY(this->parse_typeName());
-      node->addFieldDecl(new VarDeclNode(startPos, std::move(nameInfo), nullptr, readOnly),
-                         type.release());
-      TRY(this->parse_statementEnd());
-      count++;
-      break;
-    }
-    case TokenKind::FUNCTION: {
-      auto funcNode = TRY(this->parse_function(false));
-      TRY(this->parse_statementEnd());
-      node->addMethodDeclNode(funcNode.release());
-      count++;
-      break;
-    }
-    default:
-      next = false;
-      break;
-    }
-  }
-  if (count == 0) {
-    E_ALTER(TokenKind::FUNCTION, TokenKind::VAR, TokenKind::LET);
-  }
-
-  token = TRY(this->expect(TokenKind::RBC));
-  node->updateToken(token);
-
-  return node;
-}
-
 std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
   GUARD_DEEP_NESTING(guard);
 
@@ -558,8 +496,6 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     Token token = this->curToken; // not consume LINE_END token
     return std::make_unique<EmptyNode>(token);
   }
-  case TokenKind::INTERFACE:
-    return this->parse_interface();
   case TokenKind::ASSERT: {
     unsigned int pos = START_POS();
     this->consume(); // ASSERT

@@ -1,5 +1,0 @@
-#$test($result = 'parse', $lineNum = 4, $chars = 5, $errorKind = 'NoViableAlter', $status = 1)
-
-interface hoge {
-    $a
-}

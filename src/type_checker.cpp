@@ -1949,14 +1949,6 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   }
 }
 
-void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
-  //    if(!this->isTopLevel()) {   // only available toplevel scope
-  //        RAISE_TC_ERROR(OutsideToplevel, node);
-  //    }
-  node.setType(this->typePool.get(TYPE::Void));
-  this->reportError<OutsideToplevel>(node, "interface definition");
-}
-
 void TypeChecker::visitSourceNode(SourceNode &node) {
   assert(this->isTopLevel());
 

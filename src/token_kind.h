@@ -286,7 +286,6 @@
   OP(LET)
 
 #define EACH_LA_statement(OP)                                                                      \
-  OP(INTERFACE)                                                                                    \
   OP(ASSERT)                                                                                       \
   OP(DEFER)                                                                                        \
   OP(EXPORT_ENV)                                                                                   \

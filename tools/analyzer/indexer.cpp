@@ -762,8 +762,6 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
-void SymbolIndexer::visitInterfaceNode(InterfaceNode &) {}
-
 void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!this->isTopLevel()) {
     return;

@@ -863,41 +863,6 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(resolvedType);
 }
 
-// ###########################
-// ##     InterfaceNode     ##
-// ###########################
-
-InterfaceNode::~InterfaceNode() {
-  for (auto &node : this->methodDeclNodes) {
-    delete node;
-  }
-
-  for (auto &node : this->fieldDeclNodes) {
-    delete node;
-  }
-
-  for (auto &t : this->fieldTypeNodes) {
-    delete t;
-  }
-}
-
-void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
-  this->methodDeclNodes.push_back(methodDeclNode);
-}
-
-void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
-  this->fieldDeclNodes.push_back(node);
-  this->fieldTypeNodes.push_back(typeToken);
-  this->updateToken(typeToken->getToken());
-}
-
-void InterfaceNode::dump(NodeDumper &dumper) const {
-  DUMP(interfaceName);
-  DUMP(methodDeclNodes);
-  DUMP(fieldDeclNodes);
-  DUMP(fieldTypeNodes);
-}
-
 // ################################
 // ##     UserDefinedCmdNode     ##
 // ################################

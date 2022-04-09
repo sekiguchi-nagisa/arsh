@@ -76,7 +76,6 @@ namespace ydsh {
   OP(ElementSelfAssign)                                                                            \
   OP(PrefixAssign)                                                                                 \
   OP(Function)                                                                                     \
-  OP(Interface)                                                                                    \
   OP(UserDefinedCmd)                                                                               \
   OP(Source)                                                                                       \
   OP(SourceList)                                                                                   \
@@ -2071,38 +2070,6 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
-class InterfaceNode : public WithRtti<Node, NodeKind::Interface> {
-private:
-  std::string interfaceName;
-
-  std::vector<FunctionNode *> methodDeclNodes;
-  std::vector<VarDeclNode *> fieldDeclNodes;
-  std::vector<TypeNode *> fieldTypeNodes;
-
-public:
-  InterfaceNode(unsigned int startPos, std::string &&interfaceName)
-      : WithRtti({startPos, 0}), interfaceName(std::move(interfaceName)) {}
-
-  ~InterfaceNode() override;
-
-  const std::string &getInterfaceName() const { return this->interfaceName; }
-
-  void addMethodDeclNode(FunctionNode *methodDeclNode);
-
-  const std::vector<FunctionNode *> &getMethodDeclNodes() const { return this->methodDeclNodes; }
-
-  /**
-   * initNode of node is null.
-   */
-  void addFieldDecl(VarDeclNode *node, TypeNode *typeNode);
-
-  const std::vector<VarDeclNode *> &getFieldDeclNodes() const { return this->fieldDeclNodes; }
-
-  const std::vector<TypeNode *> &getFieldTypeNodes() const { return this->fieldTypeNodes; }
-
-  void dump(NodeDumper &dumper) const override;
-};
-
 class UserDefinedCmdNode : public WithRtti<Node, NodeKind::UserDefinedCmd> {
 private:
   NameInfo cmdName;
@@ -2413,7 +2380,6 @@ struct NodeVisitor {
   virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) = 0;
   virtual void visitPrefixAssignNode(PrefixAssignNode &node) = 0;
   virtual void visitFunctionNode(FunctionNode &node) = 0;
-  virtual void visitInterfaceNode(InterfaceNode &node) = 0;
   virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
   virtual void visitSourceNode(SourceNode &node) = 0;
   virtual void visitSourceListNode(SourceListNode &node) = 0;
@@ -2470,7 +2436,6 @@ struct BaseVisitor : public NodeVisitor {
   }
   void visitPrefixAssignNode(PrefixAssignNode &node) override { this->visitDefault(node); }
   void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
-  void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
   void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
   void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
