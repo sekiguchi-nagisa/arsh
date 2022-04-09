@@ -33,7 +33,7 @@ FormatterFactory::FormatterFactory() {
 
 Result<std::unique_ptr<Formatter>, std::string>
 FormatterFactory::create(std::ostream &stream) const {
-  // reslve formatter
+  // resolve formatter
   FormatterType formatterType = ({
     auto iter = this->getSupportedFormats().find(this->formatName);
     if (iter == this->getSupportedFormats().end()) {

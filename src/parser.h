@@ -103,7 +103,7 @@ protected:
     this->fetchNext();
   }
 
-  void restoreLexerState(Token prevToken);
+  void popLexerMode();
 
   /**
    * try to change lexer mode to STMT mode and refetech token.

@@ -106,11 +106,14 @@ void Parser::refetch(LexerMode mode) {
   this->fetchNext();
 }
 
-void Parser::restoreLexerState(Token prevToken) {
-  unsigned int pos = prevToken.pos + prevToken.size;
-  this->lexer->setPos(pos);
+void Parser::popLexerMode() {
+  bool prevNewline = this->lexer->isPrevNewLine();
+  bool prevSpace = this->lexer->isPrevSpace();
   this->lexer->popLexerMode();
+  this->lexer->setPos(START_POS());
   this->fetchNext();
+  this->lexer->setPrevNewline(prevNewline);
+  this->lexer->setPrevSpace(prevSpace);
 }
 
 void Parser::changeLexerModeToSTMT() {
@@ -476,7 +479,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
   }
 
   if (enterTYPEMode) {
-    this->restoreLexerState(typeNode->getToken());
+    this->popLexerMode();
   }
   return typeNode;
 }

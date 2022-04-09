@@ -118,6 +118,10 @@ public:
     this->cursor = this->buf.data() + pos;
   }
 
+  void setPrevNewline(bool newline) { this->prevNewLine = newline; }
+
+  void setPrevSpace(bool space) { this->prevSpace = space; }
+
   bool isPrevNewLine() const { return this->prevNewLine; }
 
   bool isPrevSpace() const { return this->prevSpace; }
