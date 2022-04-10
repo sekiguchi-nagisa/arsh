@@ -59,32 +59,43 @@ void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
   assert(this->curSrcPos <= token.pos);
   this->write(this->source.slice(this->curSrcPos, token.pos));
 
-  auto *styleRule = this->style.find(tokenClass);
-  if (styleRule) {
-    std::string v;
+  std::string escapeSeq;
+  if (auto *styleRule = this->style.find(tokenClass)) {
     if (styleRule->text) {
-      v += this->format(styleRule->text, false);
+      escapeSeq += this->format(styleRule->text, false);
     }
     if (styleRule->background) {
-      v += this->format(styleRule->text, true);
+      escapeSeq += this->format(styleRule->text, true);
     }
     if (styleRule->bold) {
-      v += "\033[1m";
+      escapeSeq += "\033[1m";
     }
     if (styleRule->italic) {
-      v += "\033[3m";
+      escapeSeq += "\033[3m";
     }
     if (styleRule->underline) {
-      v += "\033[4m";
+      escapeSeq += "\033[4m";
     }
-    this->output << v;
   }
 
-  this->write(this->source.substr(token.pos, token.size));
-  this->curSrcPos = token.endPos();
-  if (styleRule) {
-    this->output << "\033[0m";
+  // split by newline
+  auto ref = this->source.substr(token.pos, token.size);
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto r = ref.find('\n', pos);
+    auto line = ref.slice(pos, r);
+    pos = r != StringRef::npos ? r + 1 : r;
+
+    this->output << escapeSeq;
+    this->write(line);
+    if (!escapeSeq.empty()) {
+      this->output << "\033[0m";
+    }
+    if (r != StringRef::npos) {
+      this->output << '\n';
+    }
   }
+
+  this->curSrcPos = token.endPos();
 }
 
 void ANSIFormatter::finalize() {
