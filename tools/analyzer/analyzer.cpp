@@ -59,7 +59,7 @@ static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
   DefaultModuleProvider provider(loader, pool, builtin);
   FrontEnd frontEnd(provider, std::move(lexer));
   consumeAllInput(frontEnd);
-  gvarCount++; // reserve module object entry
+  gvarCount += 2; // reserve module object entry (builtin, root)
   return builtin->toModType(pool);
 }
 

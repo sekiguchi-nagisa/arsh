@@ -12,7 +12,7 @@ DSCode: top level
 Code:
    0: LOAD_CONST  2
    2: DUP
-   3: STORE_GLOBAL  61
+   3: STORE_GLOBAL  62
    6: CALL_FUNC  0
    8: POP
    9: PUSH_INVALID
@@ -33,7 +33,7 @@ DSCode: top level
   number of global variable: 63
 Code:
   0: LOAD_CONST  2
-  2: STORE_GLOBAL  60
+  2: STORE_GLOBAL  61
   5: PUSH_INVALID
   6: RETURN
 Constant Pool:

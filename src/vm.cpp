@@ -504,10 +504,9 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
 static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
                       const ModType *modType) {
   if (!modType) {
-    auto ret = state.typePool.getModTypeById(1); // get root module
-    if (ret) {                                   // not found, if root module has not compiled yet
-      modType = cast<ModType>(ret.asOk());
-    }
+    auto ret = state.typePool.getModTypeById(1);
+    assert(ret);
+    modType = cast<ModType>(ret.asOk());
   }
   if (modType) {
     std::string fullname = toCmdFullName(name);

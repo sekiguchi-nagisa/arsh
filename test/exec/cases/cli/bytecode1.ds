@@ -10,7 +10,7 @@ DSCode: top level
   number of global variable: 62
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  60
+   2: STORE_GLOBAL  61
    5: PUSH_INT  34
    7: CALL_BUILTIN2  1  %str
   10: POP
@@ -35,8 +35,8 @@ DSCode: top level
   number of global variable: 62
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  60
-   5: LOAD_GLOBAL  60
+   2: STORE_GLOBAL  61
+   5: LOAD_GLOBAL  61
    8: PUSH_INT  1
   10: CALL_FUNC  1
   12: ENTER_FINALLY  22
