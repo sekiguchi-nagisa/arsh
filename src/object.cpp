@@ -129,10 +129,10 @@ std::string DSValue::toString() const {
   case ObjectKind::Func:
     return typeAs<FuncObject>(*this).toString();
   case ObjectKind::Closure: {
-    std::string str = "closure(";
-    str += std::to_string(reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(*this).getFuncObj()));
-    str += ")";
-    return str;
+    char buf[32]; // hex of 64bit pointer is up to 16 chars
+    snprintf(buf, std::size(buf), "closure(0x%zx)",
+             reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(*this).getFuncObj()));
+    return std::string(buf);
   }
   case ObjectKind::Job: {
     std::string str = "%";
