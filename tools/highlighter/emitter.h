@@ -52,7 +52,7 @@ public:
 
   ~TokenEmitter() override = default;
 
-  StringRef getSource() const { return this->source; }
+  [[nodiscard]] StringRef getSource() const { return this->source; }
 
   void operator()(TokenKind kind, Token token) override;
 

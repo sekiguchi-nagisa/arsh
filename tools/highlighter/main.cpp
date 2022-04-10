@@ -28,7 +28,7 @@ using namespace ydsh::highlighter;
 
 #define EACH_OPT(OP)                                                                               \
   OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
-  OP(HELP2, "-h", opt::NO_ARG, "show help message")                                                \
+  OP(HELP2, "-h", opt::NO_ARG, "equivalent to `--help'")                                           \
   OP(OUTPUT, "-o", opt::HAS_ARG, "specify output file (default is stdout)")                        \
   OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
   OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
     case OptionSet::HELP:
     case OptionSet::HELP2:
       usage(std::cout, argv);
-      parser.printOption(stdout);
+      parser.printOption(std::cout);
       return 0;
     case OptionSet::OUTPUT:
       outputFileName = result.arg();
@@ -122,12 +122,12 @@ int main(int argc, char **argv) {
     parser.printOption(std::cerr);
     return 1;
   }
-  if (begin == end) {
-    usage(std::cerr, argv);
-    return 1;
+
+  const char *sourceName = "/dev/stdin";
+  if (begin != end) {
+    sourceName = *begin;
   }
 
-  const char *sourceName = *begin;
   std::ofstream output(outputFileName);
   if (!output) {
     std::cerr << "cannot open file: " << outputFileName << std::endl;
