@@ -96,7 +96,8 @@ static std::vector<std::string> getTargetCases(const char *dir) {
   ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
   // filter ignored cases
-  const char *ignoredPattern[] = {"mod", "subcmd", "shctl", "complete6", "load", "fullname"};
+  const char *ignoredPattern[] = {"mod",       "subcmd", "shctl",   "complete5",
+                                  "complete6", "load",   "fullname"};
 
   ret.erase(std::remove_if(ret.begin(), ret.end(),
                            [&ignoredPattern](const std::string &v) {
