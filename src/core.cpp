@@ -164,6 +164,29 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return nullptr;
 }
 
+NameScopePtr resolveModuleFromDesc(const DSState &state, StringRef desc) {
+  const ModType *modType = nullptr;
+  if (desc.empty()) {
+    modType = getCurRuntimeModule(state);
+    if (!modType) {
+      auto ret = state.typePool.getModTypeById(1);
+      assert(ret);
+      modType = cast<ModType>(ret.asOk());
+    }
+  } else if (desc.startsWith("module(") && desc.endsWith(")")) {
+    auto typeName = desc;
+    typeName.removePrefix(strlen("module("));
+    typeName.removeSuffix(1);
+    if (auto ret = state.typePool.getType(typeName); ret && ret.asOk()->isModType()) {
+      modType = cast<ModType>(ret.asOk());
+    }
+  }
+  if (!modType) {
+    return nullptr;
+  }
+  return NameScope::reopen(state.typePool, *state.rootModScope, *modType);
+}
+
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ArrayObject &reply;
@@ -226,15 +249,13 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
   return true;
 }
 
-unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, StringRef ref,
-                              CodeCompOp option) {
+unsigned int doCodeCompletion(DSState &st, NameScopePtr &&scope, StringRef ref, CodeCompOp option) {
+  assert(scope && scope->isGlobal());
+
   auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
   auto &compreply = typeAs<ArrayObject>(result);
 
   {
-    auto scope = underlyingModType == nullptr
-                     ? st.rootModScope
-                     : NameScope::reopen(st.typePool, *st.rootModScope, *underlyingModType);
     DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
     auto discardPoint = provider.getCurrentDiscardPoint();
 

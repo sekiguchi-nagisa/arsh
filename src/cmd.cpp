@@ -1002,8 +1002,9 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
   static auto actionMap = initCompActions();
 
   CodeCompOp compOp{};
+  StringRef moduleDesc;
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":A:")) != -1;) {
+  for (int opt; (opt = optState(argvObj, ":A:m:")) != -1;) {
     switch (opt) {
     case 'A': {
       auto iter = actionMap.find(optState.optArg);
@@ -1014,6 +1015,9 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
       setFlag(compOp, iter->second);
       break;
     }
+    case 'm':
+      moduleDesc = optState.optArg;
+      break;
     case ':':
       ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;
@@ -1027,7 +1031,12 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  doCodeCompletion(state, getCurRuntimeModule(state), line, compOp);
+  auto module = resolveModuleFromDesc(state, moduleDesc);
+  if (!module) {
+    ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
+    return 1;
+  }
+  doCodeCompletion(state, std::move(module), line, compOp);
   auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
   for (const auto &e : ret.getValues()) {
     fputs(e.asCStr(), stdout);

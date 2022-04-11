@@ -580,7 +580,7 @@ unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index
       ref = StringRef(*value, index);
     }
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-    unsigned int size = doCodeCompletion(*st, nullptr, ref);
+    unsigned int size = doCodeCompletion(*st, resolveModuleFromDesc(*st, ""), ref);
     st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
     return size;
   }

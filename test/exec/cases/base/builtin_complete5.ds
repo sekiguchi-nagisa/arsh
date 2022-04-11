@@ -72,11 +72,11 @@ assert $(setenv PATH= && complete -A external).empty()
 assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
 assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
 
-hogehoge(){}
+hogehogehuga(){}
 \{\}() {}
 a\	b(){}
 
-var udc = ["\\{\\}","a\$'\x09'b", "hogehoge"]
+var udc = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod']
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
 assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
 assert "$(complete -A udc 'e')".empty()
@@ -87,14 +87,30 @@ assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
 assert diff <(complete -A type) <(complete '34 as ')
 assert diff <(complete -A type S) <(complete '34 as S')
 
+## specify module
+source $SCRIPT_DIR/../../_module4test/comp.ds as mod
+assert diff <(complete -m $mod -A udc ) <(for $e in ['hogehoge', 'zzzaaa123'] { echo $e; })
+assert diff <(complete -m $mod -A var 'u') <(for $e in ['udc'] { echo $e; })
+assert diff <(complete -m $mod -A var 'g') <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $mod '$g' ) <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $MODULE  -A udc) <(for $e in $udc { echo $e; } | sort)
+assert $(complete -m '' '$g').empty()  # if specify empty string, use current module
+assert diff <(complete -m '' -A udc) <(for $e in $udc { echo $e; } | sort)
+
 ## invalid
 assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
 assert "$(complete -A hgorahe 2>&1)" == "ydsh: complete: hgorahe: invalid action
-complete: complete [-A action] line"
+complete: complete [-A action] [-m descriptor] line"
 assert !complete -A fjairfaj
 assert $? == 2
+
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "ydsh: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
+    "ydsh: complete: ${MODULE}3q4324: unrecognized module descriptor"
+assert !complete -m ${MODULE}3q4324
+assert $? == 1
 
 true

@@ -18,6 +18,7 @@
         $STDIN.forEach($reader)
       }
       ````
+- pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
 
 #### Misc
 
