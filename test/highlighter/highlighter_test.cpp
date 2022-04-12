@@ -160,6 +160,11 @@ TEST_F(EmitterTest, style) {
   ASSERT_STREQ("null", style->getName());
   ASSERT_FALSE(style->find(HighlightTokenClass::KEYWORD));
 
+  style = findStyle("algol");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("algol", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
   style = findStyle("not found ");
   ASSERT_FALSE(style);
 }
@@ -197,7 +202,7 @@ TEST_F(EmitterTest, nullFormatter) {
   ASSERT_EQ(content, stream.str());
 }
 
-TEST_F(EmitterTest, ansiFormatter) {
+TEST_F(EmitterTest, ansiFormatter1) {
   std::stringstream stream;
   std::string content = R"(#!/usr/bin/env ydsh
 # this is a comment
@@ -211,6 +216,27 @@ TEST_F(EmitterTest, ansiFormatter) {
 
   const char *expected = "\033[38;2;128;128;128m#!/usr/bin/env ydsh\033[0m\n"
                          "\033[38;2;128;128;128m# this is a comment\033[0m\n";
+  ASSERT_EQ(expected, stream.str());
+}
+
+TEST_F(EmitterTest, ansiFormatter2) {
+  std::stringstream stream;
+  std::string content = R"(
+#!/usr/bin/env ydsh
+assert $OSTYPE == 'Linux'
+)";
+
+  FormatterFactory factory;
+  factory.setFormatName("ansi");
+  factory.setStyleName("algol");
+
+  ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
+
+  const char *expected =
+      "\n"
+      "\033[38;2;136;136;136m\033[3m#!/usr/bin/env ydsh\033[0m\n"
+      "\033[1m\033[4massert\033[0m \033[38;2;102;102;102m\033[1m\033[3m$OSTYPE\033[0m == "
+      "\033[38;2;102;102;102m\033[3m'Linux'\033[0m\n";
   ASSERT_EQ(expected, stream.str());
 }
 

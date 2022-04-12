@@ -19,6 +19,7 @@
 #include "style.h"
 
 // for style definition. these headers seem to be unused, but actually used
+#include "styles/algol.hpp"
 #include "styles/darcula.hpp"
 #include "styles/null.hpp"
 
