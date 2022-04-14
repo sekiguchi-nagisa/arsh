@@ -47,6 +47,85 @@ double Color::distance(Color o) const {
   return std::sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
 }
 
+// #######################
+// ##     StyleRule     ##
+// #######################
+
+static Color parseColorCode(StringRef code) {
+  char data[6] = {};
+  if (code.size() == 3) { // convert rgb -> rrggbb
+    data[0] = data[1] = code[0];
+    data[2] = data[3] = code[1];
+    data[4] = data[5] = code[2];
+    code = StringRef(data, std::size(data));
+  } else if (code.size() != 6) {
+    return {};
+  }
+
+  unsigned int value = 0;
+  for (auto ch : code) {
+    if (!isHex(ch)) {
+      return {};
+    }
+    value *= 16;
+    value += hexToNum(ch);
+  }
+  return Color{
+      .red = static_cast<unsigned char>((value >> 16) & 0xFF),
+      .green = static_cast<unsigned char>((value >> 8) & 0xFF),
+      .blue = static_cast<unsigned char>(value & 0xFF),
+      .initialized = true,
+  };
+}
+
+StyleRule StyleRule::synthesize(const ValidRule &valid) const {
+  const StringRef value(valid.getView().data(), valid.getView().size());
+  StyleRule rule = *this;
+
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto ret = value.find(' ', pos);
+    auto sub = value.substr(pos, ret - pos);
+    pos = ret != StringRef::npos ? ret + 1 : ret;
+
+    if (sub.empty()) {
+      continue;
+    }
+    if (sub == "bold") {
+      rule.bold = true;
+    } else if (sub == "nobold") {
+      rule.bold = false;
+    } else if (sub == "italic") {
+      rule.italic = true;
+    } else if (sub == "noitalic") {
+      rule.italic = false;
+    } else if (sub == "underline") {
+      rule.underline = true;
+    } else if (sub == "nounderline") {
+      rule.underline = false;
+    } else if (sub == "bg:") {
+      rule.background = {};
+    } else if (sub.startsWith("bg:#")) {
+      sub.removePrefix(strlen("bg:#"));
+      Color color = parseColorCode(sub);
+      assert(color);
+      rule.background = color;
+    } else if (sub == "border:") {
+      rule.border = {};
+    } else if (sub.startsWith("border:#")) {
+      sub.removePrefix(strlen("border:#"));
+      Color color = parseColorCode(sub);
+      assert(color);
+      rule.border = color;
+    } else if (sub.startsWith("#")) {
+      sub.removePrefix(1);
+      Color color = parseColorCode(sub);
+      assert(color);
+      rule.text = color;
+    }
+  }
+  return rule;
+}
+
 const StyleRule *Style::find(HighlightTokenClass tokenClass) const {
   auto iter = this->getRules().find(tokenClass);
   if (iter != this->getRules().end()) {
@@ -74,9 +153,29 @@ public:
   }
 };
 
-bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, StyleRule> &&rules) {
+bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, ValidRule> &&rules) {
+  auto background = StyleRule();
+  if (auto iter = rules.find(HighlightTokenClass::BACKGROUND_); iter != rules.end()) {
+    background = background.synthesize(iter->second);
+  }
+
+  auto foreground = StyleRule();
+  if (auto iter = rules.find(HighlightTokenClass::FOREGROUND_); iter != rules.end()) {
+    foreground = foreground.synthesize(iter->second);
+  }
+
+  std::unordered_map<HighlightTokenClass, StyleRule> map;
+  for (auto &e : rules) {
+    if (e.first == HighlightTokenClass::FOREGROUND_ ||
+        e.first == HighlightTokenClass::BACKGROUND_) {
+      continue;
+    }
+    auto rule = foreground.synthesize(e.second);
+    map.emplace(e.first, rule);
+  }
+
   auto &styleMap = StyleMap::instance();
-  return styleMap.add(Style(name, std::move(rules)));
+  return styleMap.add(Style(name, foreground, background, std::move(map)));
 }
 
 const Style *findStyle(StringRef styleName) {

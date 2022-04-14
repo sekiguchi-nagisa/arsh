@@ -24,15 +24,16 @@ namespace ydsh::highlighter {
  * intellij darcula theme
  */
 DEFINE_HIGHLIGHT_STYLE(darcula) {
-  constexpr auto COMMENT = styleRule("#808080");
-  constexpr auto KEYWORD = styleRule("#CC7832 bold");
-  constexpr auto NUMBER = styleRule("#6897BB");
-  constexpr auto REGEX = styleRule("#646695");
-  constexpr auto STRING = styleRule("#6A8759");
-  constexpr auto VAR = styleRule("#9876AA");
-  constexpr auto FUNC = styleRule("#FFC66D");
-  constexpr auto PARAM = styleRule("#A9B7C6");
-  constexpr auto TEXT = styleRule("#D4D4D4");
+  constexpr auto COMMENT = ValidRule("#808080");
+  constexpr auto KEYWORD = ValidRule("#CC7832 bold");
+  constexpr auto NUMBER = ValidRule("#6897BB");
+  constexpr auto REGEX = ValidRule("#646695");
+  constexpr auto STRING = ValidRule("#6A8759");
+  constexpr auto VAR = ValidRule("#9876AA");
+  constexpr auto FUNC = ValidRule("#FFC66D");
+  constexpr auto PARAM = ValidRule("#A9B7C6");
+  constexpr auto TEXT = ValidRule("#D4D4D4");
+  constexpr auto BG = ValidRule("bg:#2B2B2B");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
@@ -42,7 +43,7 @@ DEFINE_HIGHLIGHT_STYLE(darcula) {
       {HighlightTokenClass::COMMAND_ARG, PARAM}, {HighlightTokenClass::REDIRECT, PARAM},
       {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, FUNC},
       {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
-      {HighlightTokenClass::NONE, TEXT},
+      {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 

@@ -36,17 +36,6 @@ struct EmitterTest : public ::testing::Test {
     ASSERT_EQ(expectClass, pair.first);
     ASSERT_EQ(expect, pair.second);
   }
-
-  void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
-    factory.setSource(ref);
-
-    auto ret = factory.create(output);
-    ASSERT_TRUE(ret);
-    auto formatter = std::move(ret).take();
-    ASSERT_TRUE(formatter);
-    tokenizeAndEmit(*formatter, "<dummy>");
-    formatter->finalize();
-  }
 };
 
 TEST_F(EmitterTest, case1) {
@@ -106,50 +95,57 @@ TEST_F(EmitterTest, case2) {
   ASSERT_TRUE(values.empty());
 }
 
-TEST_F(EmitterTest, color) {
-  constexpr auto c1 = styleRule("");
-  static_assert(!c1.text);
-  static_assert(!c1.background);
-  static_assert(!c1.border);
-  static_assert(!c1.bold);
-  static_assert(!c1.italic);
-  static_assert(!c1.underline);
+struct HighlightTest : public ::testing::Test {
+  void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
+    factory.setSource(ref);
 
-  constexpr auto c2 = styleRule("          ");
-  static_assert(!c2.text);
-  static_assert(!c2.background);
-  static_assert(!c2.border);
-  static_assert(!c2.bold);
-  static_assert(!c2.italic);
-  static_assert(!c2.underline);
+    auto ret = factory.create(output);
+    ASSERT_TRUE(ret);
+    auto formatter = std::move(ret).take();
+    ASSERT_TRUE(formatter);
+    tokenizeAndEmit(*formatter, "<dummy>");
+    formatter->finalize();
+  }
+};
 
-  constexpr auto c3 = styleRule("  bold  italic  underline bg:");
-  static_assert(!c3.text);
-  static_assert(!c3.background);
-  static_assert(!c3.border);
-  static_assert(c3.bold);
-  static_assert(c3.italic);
-  static_assert(c3.underline);
-
-  constexpr auto c4 = styleRule("#123456  bold border:#000000 italic  underline  bg:#fbd");
-  static_assert(c4.text);
-  static_assert(c4.text.red == 0x12);
-  static_assert(c4.text.green == 0x34);
-  static_assert(c4.text.blue == 0x56);
-  static_assert(c4.background);
-  static_assert(c4.background.red == 0xFF);
-  static_assert(c4.background.green == 0xbb);
-  static_assert(c4.background.blue == 0xdd);
-  static_assert(c4.border);
-  static_assert(c4.border.red == 0);
-  static_assert(c4.border.green == 0);
-  static_assert(c4.border.blue == 0);
-  static_assert(c4.bold);
-  static_assert(c4.italic);
-  static_assert(c4.underline);
+TEST_F(HighlightTest, validate) {
+  static_assert(ValidRule(""));
+  static_assert(ValidRule("          "));
+  static_assert(ValidRule("  bold  italic  underline bg:"));
+  static_assert(ValidRule("#123456  nobold border:#000000 noitalic  nounderline  bg:#fbd"));
 }
 
-TEST_F(EmitterTest, style) {
+TEST_F(HighlightTest, rule) {
+  constexpr auto base = ValidRule("bold italic underline bg:#fbd border:#ffffff");
+  constexpr auto derived = ValidRule("nobold noitalic nounderline bg: #123456 border: ");
+
+  auto ret = StyleRule().synthesize(base);
+  ASSERT_FALSE(ret.text);
+  ASSERT_TRUE(ret.bold);
+  ASSERT_TRUE(ret.italic);
+  ASSERT_TRUE(ret.underline);
+  ASSERT_TRUE(ret.background);
+  ASSERT_EQ(0xFF, ret.background.red);
+  ASSERT_EQ(0xbb, ret.background.green);
+  ASSERT_EQ(0xdd, ret.background.blue);
+  ASSERT_TRUE(ret.border);
+  ASSERT_EQ(0xFF, ret.border.red);
+  ASSERT_EQ(0xFF, ret.border.green);
+  ASSERT_EQ(0xFF, ret.border.blue);
+
+  ret = ret.synthesize(derived);
+  ASSERT_TRUE(ret.text);
+  ASSERT_EQ(0x12, ret.text.red);
+  ASSERT_EQ(0x34, ret.text.green);
+  ASSERT_EQ(0x56, ret.text.blue);
+  ASSERT_FALSE(ret.bold);
+  ASSERT_FALSE(ret.italic);
+  ASSERT_FALSE(ret.underline);
+  ASSERT_FALSE(ret.background);
+  ASSERT_FALSE(ret.border);
+}
+
+TEST_F(HighlightTest, style) {
   auto *style = findStyle("darcula");
   ASSERT_TRUE(style);
   ASSERT_STREQ("darcula", style->getName());
@@ -169,7 +165,7 @@ TEST_F(EmitterTest, style) {
   ASSERT_FALSE(style);
 }
 
-TEST_F(EmitterTest, factory) {
+TEST_F(HighlightTest, factory) {
   FormatterFactory factory;
   factory.setFormatName("fjriejfoie");
   auto ret = factory.create(std::cerr);
@@ -183,7 +179,7 @@ TEST_F(EmitterTest, factory) {
   ASSERT_EQ("unsupported style: freafref", ret.asErr());
 }
 
-TEST_F(EmitterTest, nullFormatter) {
+TEST_F(HighlightTest, nullFormatter) {
   std::stringstream stream;
   std::string content = R"(#!/usr/bin/env ydsh
   function sum($a : Int) : Int for Int {
@@ -202,7 +198,7 @@ TEST_F(EmitterTest, nullFormatter) {
   ASSERT_EQ(content, stream.str());
 }
 
-TEST_F(EmitterTest, ansiFormatter1) {
+TEST_F(HighlightTest, ansiFormatter1) {
   std::stringstream stream;
   std::string content = R"(#!/usr/bin/env ydsh
 # this is a comment
@@ -219,7 +215,7 @@ TEST_F(EmitterTest, ansiFormatter1) {
   ASSERT_EQ(expected, stream.str());
 }
 
-TEST_F(EmitterTest, ansiFormatter2) {
+TEST_F(HighlightTest, ansiFormatter2) {
   std::stringstream stream;
   std::string content = R"(
 #!/usr/bin/env ydsh

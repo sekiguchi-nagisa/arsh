@@ -42,6 +42,86 @@ struct Color {
   [[nodiscard]] double distance(Color o) const;
 };
 
+class ValidRule {
+private:
+  std::string_view view;
+
+public:
+  constexpr ValidRule(std::string_view view) : view(validate(view)) {}
+
+  constexpr std::string_view getView() const { return this->view; }
+
+  constexpr explicit operator bool() const { return true; } // for testing
+
+private:
+  static constexpr bool checkColorCode(std::string_view code) {
+    switch (code.size()) {
+    case 3:
+    case 6:
+      break;
+    default:
+      return false;
+    }
+    for (auto ch : code) {
+      if (!isHex(ch)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static constexpr bool startsWith(std::string_view value, std::string_view prefix) {
+    return value.size() >= prefix.size() && value.substr(0, prefix.size()) == prefix;
+  }
+
+  static constexpr auto find(std::string_view value, char ch,
+                             std::string_view::size_type offset = 0) {
+    for (std::string_view::size_type pos = offset; pos < value.size(); pos++) {
+      if (value[pos] == ch) {
+        return pos;
+      }
+    }
+    return std::string_view::npos;
+  }
+
+  static constexpr std::string_view validate(std::string_view value) {
+    for (std::string_view::size_type pos = 0; pos != std::string_view::npos;) {
+      auto ret = find(value, ' ', pos);
+      auto sub = value.substr(pos, ret - pos);
+      pos = ret != std::string_view::npos ? ret + 1 : ret;
+
+      if (sub.empty()) {
+        continue;
+      }
+
+      if (sub == "bold" || sub == "nobold" || sub == "italic" || sub == "noitalic" ||
+          sub == "underline" || sub == "nounderline" || sub == "bg:" || sub == "border:") {
+        continue;
+      }
+
+      if (startsWith(sub, "bg:#")) {
+        sub.remove_prefix(std::string_view("bg:#").size());
+        if (!checkColorCode(sub)) {
+          throw std::logic_error("background color code");
+        }
+      } else if (startsWith(sub, "border:#")) {
+        sub.remove_prefix(std::string_view("border:#").size());
+        if (!checkColorCode(sub)) {
+          throw std::logic_error("border color code");
+        }
+      } else if (startsWith(sub, "#")) {
+        sub.remove_prefix(1);
+        if (!checkColorCode(sub)) {
+          throw std::logic_error("color code");
+        }
+      } else {
+        throw std::logic_error("invalid rule");
+      }
+    }
+    return value;
+  }
+};
+
 struct StyleRule {
   Color text;
   Color background;
@@ -49,136 +129,54 @@ struct StyleRule {
   bool bold{false};
   bool italic{false};
   bool underline{false};
+
+  StyleRule synthesize(const ValidRule &valid) const;
 };
-
-namespace detail {
-
-constexpr Color parseColorCode(std::string_view code) {
-  char data[6] = {};
-  if (code.size() == 3) { // convert rgb -> rrggbb
-    data[0] = data[1] = code[0];
-    data[2] = data[3] = code[1];
-    data[4] = data[5] = code[2];
-    code = std::string_view(data, std::size(data));
-  } else if (code.size() != 6) {
-    return {};
-  }
-
-  unsigned int value = 0;
-  for (auto ch : code) {
-    if (!isHex(ch)) {
-      return {};
-    }
-    value *= 16;
-    value += hexToNum(ch);
-  }
-  return Color{
-      .red = static_cast<unsigned char>((value >> 16) & 0xFF),
-      .green = static_cast<unsigned char>((value >> 8) & 0xFF),
-      .blue = static_cast<unsigned char>(value & 0xFF),
-      .initialized = true,
-  };
-}
-
-constexpr bool startsWith(std::string_view value, std::string_view prefix) {
-  return value.size() >= prefix.size() && value.substr(0, prefix.size()) == prefix;
-}
-
-constexpr auto find(std::string_view value, char ch, std::string_view::size_type offset = 0) {
-  for (std::string_view::size_type pos = offset; pos < value.size(); pos++) {
-    if (value[pos] == ch) {
-      return pos;
-    }
-  }
-  return std::string_view::npos;
-}
-
-/**
- *
- * @tparam N
- * @param value
- * must be string literal
- * @return
- */
-constexpr StyleRule parseStyleRule(std::string_view value) {
-  StyleRule rule;
-  for (std::string_view::size_type pos = 0; pos != std::string_view::npos;) {
-    auto ret = find(value, ' ', pos);
-    auto sub = value.substr(pos, ret - pos);
-    pos = ret != std::string_view::npos ? ret + 1 : ret;
-
-    if (sub.empty()) {
-      continue;
-    }
-    if (sub == "bold") {
-      rule.bold = true;
-    } else if (sub == "italic") {
-      rule.italic = true;
-    } else if (sub == "underline") {
-      rule.underline = true;
-    } else if (sub == "bg:") {
-      rule.background = {};
-    } else if (startsWith(sub, "bg:#")) {
-      sub.remove_prefix(std::string_view("bg:#").size());
-      if (Color color = parseColorCode(sub)) {
-        rule.background = color;
-      } else {
-        throw std::logic_error("background color code");
-      }
-    } else if (startsWith(sub, "border:#")) {
-      sub.remove_prefix(std::string_view("border:#").size());
-      if (Color color = parseColorCode(sub)) {
-        rule.border = color;
-      } else {
-        throw std::logic_error("border color code");
-      }
-    } else if (startsWith(sub, "#")) {
-      sub.remove_prefix(1);
-      if (Color color = parseColorCode(sub)) {
-        rule.text = color;
-      } else {
-        throw std::logic_error("color code");
-      }
-    } else {
-      throw std::logic_error("invalid rule");
-    }
-  }
-  return rule;
-}
-
-} // namespace detail
-
-constexpr StyleRule styleRule(std::string_view value) { return detail::parseStyleRule(value); }
 
 class Style {
 private:
   CStrPtr name;
+  StyleRule foreground;
+  StyleRule background;
   std::unordered_map<HighlightTokenClass, StyleRule> rules;
 
 public:
-  using Rules = std::unordered_map<HighlightTokenClass, StyleRule>;
-
-  Style(const char *name, std::unordered_map<HighlightTokenClass, StyleRule> &&rules)
-      : name(CStrPtr(strdup(name))), rules(std::move(rules)) {}
+  Style(const char *name, StyleRule foreground, StyleRule background,
+        std::unordered_map<HighlightTokenClass, StyleRule> &&rules)
+      : name(CStrPtr(strdup(name))), foreground(foreground), background(background),
+        rules(std::move(rules)) {}
 
   [[nodiscard]] const char *getName() const { return this->name.get(); }
+
+  const StyleRule &getForeground() const { return this->foreground; }
+
+  const StyleRule &getBackground() const { return this->background; }
 
   [[nodiscard]] const auto &getRules() const { return this->rules; }
 
   const StyleRule *find(HighlightTokenClass tokenClass) const;
+
+  const StyleRule &findOrDefault(HighlightTokenClass tokenClass) const {
+    if (auto rule = this->find(tokenClass)) {
+      return *rule;
+    } else {
+      return this->getForeground();
+    }
+  }
 };
 
-bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, StyleRule> &&rules);
+bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, ValidRule> &&rules);
 
 const Style *findStyle(StringRef styleName);
 
 #define DEFINE_HIGHLIGHT_STYLE(name)                                                               \
   struct [[maybe_unused]] style_wrapper_##name {                                                   \
+    using Rules = std::unordered_map<HighlightTokenClass, ValidRule>;                              \
     static bool value;                                                                             \
-    static Style::Rules buildRules();                                                              \
+    static Rules buildRules();                                                                     \
   };                                                                                               \
   bool style_wrapper_##name::value = defineStyle(#name, style_wrapper_##name::buildRules());       \
-  Style::Rules style_wrapper_##name::buildRules()
+  style_wrapper_##name::Rules style_wrapper_##name::buildRules()
 
 } // namespace ydsh::highlighter
 

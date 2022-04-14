@@ -22,15 +22,16 @@
 namespace ydsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(algol) {
-  constexpr auto COMMENT = styleRule("italic #888");
-  constexpr auto KEYWORD = styleRule("underline bold");
-  constexpr auto STRING = styleRule(" italic #666");
-  constexpr auto VAR = styleRule("bold italic #666");
+  constexpr auto COMMENT = ValidRule("italic #888");
+  constexpr auto KEYWORD = ValidRule("underline bold");
+  constexpr auto STRING = ValidRule(" italic #666");
+  constexpr auto VAR = ValidRule("bold italic #666");
+  constexpr auto BG = ValidRule("bg:#ffffff");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT}, {HighlightTokenClass::KEYWORD, KEYWORD},
       {HighlightTokenClass::STRING, STRING},   {HighlightTokenClass::VARIABLE, VAR},
-      {HighlightTokenClass::TYPE, VAR},
+      {HighlightTokenClass::TYPE, VAR},        {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 

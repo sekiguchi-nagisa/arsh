@@ -62,6 +62,9 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
     return SemanticTokenTypes::type_;
   case HighlightTokenClass::MEMBER:
     return SemanticTokenTypes::property_;
+  case HighlightTokenClass::FOREGROUND_:
+  case HighlightTokenClass::BACKGROUND_:
+    break;
   }
   return {};
 }

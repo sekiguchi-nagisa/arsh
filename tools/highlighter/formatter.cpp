@@ -55,47 +55,51 @@ std::string ANSIFormatter::format(Color c, bool background) { // FIXME: 8bit col
   return value;
 }
 
-void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
-  assert(this->curSrcPos <= token.pos);
-  this->write(this->source.slice(this->curSrcPos, token.pos));
-
+void ANSIFormatter::draw(StringRef ref, const StyleRule &styleRule) {
   std::string escapeSeq;
-  if (auto *styleRule = this->style.find(tokenClass)) {
-    if (styleRule->text) {
-      escapeSeq += this->format(styleRule->text, false);
-    }
-    if (styleRule->background) {
-      escapeSeq += this->format(styleRule->text, true);
-    }
-    if (styleRule->bold) {
-      escapeSeq += "\033[1m";
-    }
-    if (styleRule->italic) {
-      escapeSeq += "\033[3m";
-    }
-    if (styleRule->underline) {
-      escapeSeq += "\033[4m";
-    }
+  if (styleRule.text) {
+    escapeSeq += this->format(styleRule.text, false);
+  }
+  if (styleRule.background) {
+    escapeSeq += this->format(styleRule.background, true);
+  }
+  if (styleRule.bold) {
+    escapeSeq += "\033[1m";
+  }
+  if (styleRule.italic) {
+    escapeSeq += "\033[3m";
+  }
+  if (styleRule.underline) {
+    escapeSeq += "\033[4m";
   }
 
   // split by newline
-  auto ref = this->source.substr(token.pos, token.size);
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = ref.find('\n', pos);
     auto line = ref.slice(pos, r);
     pos = r != StringRef::npos ? r + 1 : r;
 
-    this->output << escapeSeq;
-    this->write(line);
-    if (!escapeSeq.empty()) {
-      this->output << "\033[0m";
+    if (!line.empty()) {
+      this->output << escapeSeq;
+      this->write(line);
+      if (!escapeSeq.empty()) {
+        this->output << "\033[0m";
+      }
     }
     if (r != StringRef::npos) {
       this->output << '\n';
     }
   }
+}
 
+void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
+  assert(this->curSrcPos <= token.pos);
+  auto remain = this->source.slice(this->curSrcPos, token.pos);
+  this->write(remain);
   this->curSrcPos = token.endPos();
+
+  auto ref = this->source.substr(token.pos, token.size);
+  this->draw(ref, this->style.findOrDefault(tokenClass));
 }
 
 void ANSIFormatter::finalize() {

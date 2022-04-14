@@ -73,6 +73,8 @@ private:
    */
   std::string format(Color c, bool background);
 
+  void draw(StringRef ref, const StyleRule &styleRule);
+
   void emit(HighlightTokenClass tokenClass, Token token) override;
 
 public:
