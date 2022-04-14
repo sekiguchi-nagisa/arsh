@@ -21,6 +21,7 @@
 // for style definition. these headers seem to be unused, but actually used
 #include "styles/algol.hpp"
 #include "styles/darcula.hpp"
+#include "styles/monokai.hpp"
 #include "styles/null.hpp"
 
 namespace ydsh::highlighter {

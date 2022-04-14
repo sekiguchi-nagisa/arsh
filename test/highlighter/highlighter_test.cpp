@@ -161,6 +161,11 @@ TEST_F(HighlightTest, style) {
   ASSERT_STREQ("algol", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
+  style = findStyle("monokai");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("monokai", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
   style = findStyle("not found ");
   ASSERT_FALSE(style);
 }
