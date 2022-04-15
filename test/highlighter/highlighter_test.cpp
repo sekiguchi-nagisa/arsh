@@ -31,8 +31,8 @@ static auto lex(StringRef ref) {
 }
 
 struct EmitterTest : public ::testing::Test {
-  void compare(HighlightTokenClass expectClass, const char *expect,
-               const std::pair<HighlightTokenClass, std::string> &pair) {
+  static void compare(HighlightTokenClass expectClass, const char *expect,
+                      const std::pair<HighlightTokenClass, std::string> &pair) {
     ASSERT_EQ(expectClass, pair.first);
     ASSERT_EQ(expect, pair.second);
   }
@@ -41,51 +41,51 @@ struct EmitterTest : public ::testing::Test {
 TEST_F(EmitterTest, case1) {
   auto ret = lex("echo hello$@[0] 1>&2 # this is a comment");
   ASSERT_EQ(8, ret.size());
-  this->compare(HighlightTokenClass::COMMAND, "echo", ret[0]);
-  this->compare(HighlightTokenClass::COMMAND_ARG, "hello", ret[1]);
-  this->compare(HighlightTokenClass::VARIABLE, "$@", ret[2]);
-  this->compare(HighlightTokenClass::NONE, "[", ret[3]);
-  this->compare(HighlightTokenClass::NUMBER, "0", ret[4]);
-  this->compare(HighlightTokenClass::NONE, "]", ret[5]);
-  this->compare(HighlightTokenClass::REDIRECT, "1>&2", ret[6]);
-  this->compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[7]);
+  compare(HighlightTokenClass::COMMAND, "echo", ret[0]);
+  compare(HighlightTokenClass::COMMAND_ARG, "hello", ret[1]);
+  compare(HighlightTokenClass::VARIABLE, "$@", ret[2]);
+  compare(HighlightTokenClass::NONE, "[", ret[3]);
+  compare(HighlightTokenClass::NUMBER, "0", ret[4]);
+  compare(HighlightTokenClass::NONE, "]", ret[5]);
+  compare(HighlightTokenClass::REDIRECT, "1>&2", ret[6]);
+  compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[7]);
 
   ret = lex("var a = 3.4");
   ASSERT_EQ(4, ret.size());
-  this->compare(HighlightTokenClass::KEYWORD, "var", ret[0]);
-  this->compare(HighlightTokenClass::NONE, "a", ret[1]);
-  this->compare(HighlightTokenClass::OPERATOR, "=", ret[2]);
-  this->compare(HighlightTokenClass::NUMBER, "3.4", ret[3]);
+  compare(HighlightTokenClass::KEYWORD, "var", ret[0]);
+  compare(HighlightTokenClass::NONE, "a", ret[1]);
+  compare(HighlightTokenClass::OPERATOR, "=", ret[2]);
+  compare(HighlightTokenClass::NUMBER, "3.4", ret[3]);
 
   ret = lex("assert $/a+/i =~ 'aAa'");
   ASSERT_EQ(4, ret.size());
-  this->compare(HighlightTokenClass::KEYWORD, "assert", ret[0]);
-  this->compare(HighlightTokenClass::REGEX, "$/a+/i", ret[1]);
-  this->compare(HighlightTokenClass::OPERATOR, "=~", ret[2]);
-  this->compare(HighlightTokenClass::STRING, "'aAa'", ret[3]);
+  compare(HighlightTokenClass::KEYWORD, "assert", ret[0]);
+  compare(HighlightTokenClass::REGEX, "$/a+/i", ret[1]);
+  compare(HighlightTokenClass::OPERATOR, "=~", ret[2]);
+  compare(HighlightTokenClass::STRING, "'aAa'", ret[3]);
 
   ret = lex("assert %'int' is Signal");
   ASSERT_EQ(4, ret.size());
-  this->compare(HighlightTokenClass::KEYWORD, "assert", ret[0]);
-  this->compare(HighlightTokenClass::SIGNAL, "%'int'", ret[1]);
-  this->compare(HighlightTokenClass::OPERATOR, "is", ret[2]);
-  this->compare(HighlightTokenClass::TYPE, "Signal", ret[3]);
+  compare(HighlightTokenClass::KEYWORD, "assert", ret[0]);
+  compare(HighlightTokenClass::SIGNAL, "%'int'", ret[1]);
+  compare(HighlightTokenClass::OPERATOR, "is", ret[2]);
+  compare(HighlightTokenClass::TYPE, "Signal", ret[3]);
 
   ret = lex("@($f(!$false))");
   ASSERT_EQ(7, ret.size());
-  this->compare(HighlightTokenClass::NONE, "@(", ret[0]);
-  this->compare(HighlightTokenClass::VARIABLE, "$f", ret[1]);
-  this->compare(HighlightTokenClass::NONE, "(", ret[2]);
-  this->compare(HighlightTokenClass::OPERATOR, "!", ret[3]);
-  this->compare(HighlightTokenClass::VARIABLE, "$false", ret[4]);
-  this->compare(HighlightTokenClass::NONE, ")", ret[5]);
-  this->compare(HighlightTokenClass::NONE, ")", ret[6]);
+  compare(HighlightTokenClass::NONE, "@(", ret[0]);
+  compare(HighlightTokenClass::VARIABLE, "$f", ret[1]);
+  compare(HighlightTokenClass::NONE, "(", ret[2]);
+  compare(HighlightTokenClass::OPERATOR, "!", ret[3]);
+  compare(HighlightTokenClass::VARIABLE, "$false", ret[4]);
+  compare(HighlightTokenClass::NONE, ")", ret[5]);
+  compare(HighlightTokenClass::NONE, ")", ret[6]);
 
   ret = lex("coproc ls *");
   ASSERT_EQ(3, ret.size());
-  this->compare(HighlightTokenClass::KEYWORD, "coproc", ret[0]);
-  this->compare(HighlightTokenClass::COMMAND, "ls", ret[1]);
-  this->compare(HighlightTokenClass::COMMAND_ARG, "*", ret[2]);
+  compare(HighlightTokenClass::KEYWORD, "coproc", ret[0]);
+  compare(HighlightTokenClass::COMMAND, "ls", ret[1]);
+  compare(HighlightTokenClass::COMMAND_ARG, "*", ret[2]);
 }
 
 TEST_F(EmitterTest, case2) {
@@ -96,7 +96,7 @@ TEST_F(EmitterTest, case2) {
 }
 
 struct HighlightTest : public ::testing::Test {
-  void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
+  static void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
     factory.setSource(ref);
 
     auto ret = factory.create(output);
@@ -166,6 +166,11 @@ TEST_F(HighlightTest, style) {
   ASSERT_STREQ("monokai", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
+  style = findStyle("colorful");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("colorful", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
   style = findStyle("not found ");
   ASSERT_FALSE(style);
 }
@@ -213,7 +218,7 @@ TEST_F(HighlightTest, ansiFormatter1) {
   factory.setFormatName("ansi");
   factory.setStyleName("darcula");
 
-  ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
   const char *expected = "\033[38;2;128;128;128m#!/usr/bin/env ydsh\033[0m\n"
                          "\033[38;2;128;128;128m# this is a comment\033[0m\n";
@@ -231,13 +236,33 @@ assert $OSTYPE == 'Linux'
   factory.setFormatName("ansi");
   factory.setStyleName("algol");
 
-  ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
   const char *expected =
       "\n"
       "\033[38;2;136;136;136m\033[3m#!/usr/bin/env ydsh\033[0m\n"
       "\033[1m\033[4massert\033[0m \033[38;2;102;102;102m\033[1m\033[3m$OSTYPE\033[0m == "
       "\033[38;2;102;102;102m\033[3m'Linux'\033[0m\n";
+  ASSERT_EQ(expected, stream.str());
+}
+
+TEST_F(HighlightTest, ansiFormatter3) {
+  std::stringstream stream;
+  std::string content = R"(
+'hello
+world'
+
+)";
+
+  FormatterFactory factory;
+  factory.setFormatName("ansi");
+  factory.setStyleName("colorful");
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+
+  const char *expected = "\n"
+                         "\033[38;2;187;187;187m\033[48;2;255;240;240m'hello\033[0m\n"
+                         "\033[38;2;187;187;187m\033[48;2;255;240;240mworld'\033[0m\n\n";
   ASSERT_EQ(expected, stream.str());
 }
 
