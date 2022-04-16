@@ -47,9 +47,9 @@ private:
   std::string_view view;
 
 public:
-  constexpr ValidRule(std::string_view view) : view(validate(view)) {}
+  constexpr explicit ValidRule(std::string_view view) : view(validate(view)) {}
 
-  constexpr std::string_view getView() const { return this->view; }
+  [[nodiscard]] constexpr std::string_view getView() const { return this->view; }
 
   constexpr explicit operator bool() const { return true; } // for testing
 
@@ -130,7 +130,7 @@ struct StyleRule {
   bool italic{false};
   bool underline{false};
 
-  StyleRule synthesize(const ValidRule &valid) const;
+  [[nodiscard]] StyleRule synthesize(const ValidRule &valid) const;
 };
 
 class Style {

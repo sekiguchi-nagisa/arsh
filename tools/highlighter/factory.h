@@ -34,12 +34,16 @@ private:
 
   std::string formatName{"ansi"};
 
-  std::string styleName{"darcula"};
+  std::string styleName{getDefaultStyleName()};
 
   StringRef source;
 
 public:
+  static const char *getDefaultStyleName() { return "darcula"; }
+
   explicit FormatterFactory(const StyleMap &map);
+
+  const auto &getStyleMap() const { return this->styleMap.get(); }
 
   const auto &getSupportedFormats() const { return this->supportedFormats; }
 

@@ -31,7 +31,8 @@ using namespace ydsh::highlighter;
   OP(HELP2, "-h", opt::NO_ARG, "equivalent to `--help'")                                           \
   OP(OUTPUT, "-o", opt::HAS_ARG, "specify output file (default is stdout)")                        \
   OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
-  OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")
+  OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")    \
+  OP(LIST, "-l", opt::NO_ARG, "show supported formatters/styles")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -84,6 +85,39 @@ bool colorize(FormatterFactory &factory, const char *sourceName, std::ostream &o
   return true;
 }
 
+void showSupported(const FormatterFactory &factory, std::ostream &output) {
+  // style
+  std::vector<StringRef> names;
+  for (auto &e : factory.getStyleMap().getValues()) {
+    names.push_back(e.first);
+  }
+  std::sort(names.begin(), names.end());
+  output << "Styles:" << std::endl;
+  for (auto &e : names) {
+    output << "* " << e.toString() << std::endl;
+  }
+  output << std::endl;
+
+  // formatter
+  std::unordered_map<FormatterType, std::vector<StringRef>> values;
+  for (auto &e : factory.getSupportedFormats()) {
+    values[e.second].push_back(e.first);
+  }
+  output << "Formatters:" << std::endl;
+  for (unsigned int i = 0; i < values.size(); i++) {
+    auto type = static_cast<FormatterType>(i);
+    auto iter = values.find(type);
+    assert(iter != values.end());
+    auto &nameList = iter->second;
+    std::sort(nameList.begin(), nameList.end());
+    output << "*";
+    for (auto &e : nameList) {
+      output << " " << e.toString();
+    }
+    output << std::endl;
+  }
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -98,6 +132,7 @@ int main(int argc, char **argv) {
   opt::Result<OptionSet> result;
 
   const char *outputFileName = "/dev/stdout";
+  bool listing = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
   while ((result = parser(begin, end))) {
@@ -116,12 +151,20 @@ int main(int argc, char **argv) {
     case OptionSet::STYLE:
       factory.setStyleName(result.arg());
       break;
+    case OptionSet::LIST:
+      listing = true;
+      break;
     }
   }
   if (result.error() != opt::END) {
     std::cerr << result.formatError() << std::endl;
     parser.printOption(std::cerr);
     return 1;
+  }
+
+  if (listing) {
+    showSupported(factory, std::cout);
+    return 0;
   }
 
   const char *sourceName = "/dev/stdin";
