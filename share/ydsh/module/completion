@@ -144,7 +144,7 @@ function _comp_wrap($file : String, $target : String, $words : [String], $cursor
         $line += " "
     }
     var ret = $(bash $_helper $file $target $line)
-    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' {
+    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' && $ret[0].contains("/") {
         $ret[0] += "/"
     }
     return $ret

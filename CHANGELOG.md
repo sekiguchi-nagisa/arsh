@@ -28,6 +28,7 @@
 ### Fixed
 
 - revert 'linenoise io error checking' due to broken error reporting
+- directory detection of completion wrapper
 
 ## [0.25.0] - 2022-03-31
 
