@@ -22,7 +22,7 @@ namespace ydsh::highlighter {
 // ##     FormatterFactory     ##
 // ##############################
 
-FormatterFactory::FormatterFactory() {
+FormatterFactory::FormatterFactory(const StyleMap &map) : styleMap(std::cref(map)) {
   this->supportedFormats = {
       {"null", FormatterType::NULL_},    {"nil", FormatterType::NULL_},
       {"empty", FormatterType::NULL_},   {"ansi", FormatterType::ANSI},
@@ -45,7 +45,7 @@ FormatterFactory::create(std::ostream &stream) const {
   });
 
   // resolve style
-  const Style *style = findStyle(this->styleName);
+  const Style *style = this->styleMap.get().find(this->styleName);
   if (!style) {
     std::string value = "unsupported style: ";
     value += this->styleName;

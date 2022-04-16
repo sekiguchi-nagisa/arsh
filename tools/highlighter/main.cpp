@@ -98,7 +98,8 @@ int main(int argc, char **argv) {
   opt::Result<OptionSet> result;
 
   const char *outputFileName = "/dev/stdout";
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   while ((result = parser(begin, end))) {
     switch (result.value()) {
     case OptionSet::HELP:

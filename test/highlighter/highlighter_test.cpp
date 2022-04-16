@@ -146,43 +146,46 @@ TEST_F(HighlightTest, rule) {
 }
 
 TEST_F(HighlightTest, style) {
-  auto *style = findStyle("darcula");
+  StyleMap styleMap;
+
+  auto *style = styleMap.find("darcula");
   ASSERT_TRUE(style);
   ASSERT_STREQ("darcula", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
-  style = findStyle("null");
+  style = styleMap.find("null");
   ASSERT_TRUE(style);
   ASSERT_STREQ("null", style->getName());
   ASSERT_FALSE(style->find(HighlightTokenClass::KEYWORD));
 
-  style = findStyle("algol");
+  style = styleMap.find("algol");
   ASSERT_TRUE(style);
   ASSERT_STREQ("algol", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
-  style = findStyle("monokai");
+  style = styleMap.find("monokai");
   ASSERT_TRUE(style);
   ASSERT_STREQ("monokai", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
-  style = findStyle("colorful");
+  style = styleMap.find("colorful");
   ASSERT_TRUE(style);
   ASSERT_STREQ("colorful", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
-  style = findStyle("not found ");
+  style = styleMap.find("not found ");
   ASSERT_FALSE(style);
 }
 
 TEST_F(HighlightTest, factory) {
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   factory.setFormatName("fjriejfoie");
   auto ret = factory.create(std::cerr);
   ASSERT_FALSE(ret);
   ASSERT_EQ("unsupported formatter: fjriejfoie", ret.asErr());
 
-  factory = FormatterFactory();
+  factory = FormatterFactory(styleMap);
   factory.setStyleName("freafref");
   ret = factory.create(std::cerr);
   ASSERT_FALSE(ret);
@@ -200,7 +203,8 @@ TEST_F(HighlightTest, nullFormatter) {
 
 )";
 
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   factory.setFormatName("null");
 
   ASSERT_NO_FATAL_FAILURE(this->tokenize(factory, content, stream));
@@ -214,7 +218,8 @@ TEST_F(HighlightTest, ansiFormatter1) {
 # this is a comment
 )";
 
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   factory.setFormatName("ansi");
   factory.setStyleName("darcula");
 
@@ -232,7 +237,8 @@ TEST_F(HighlightTest, ansiFormatter2) {
 assert $OSTYPE == 'Linux'
 )";
 
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   factory.setFormatName("ansi");
   factory.setStyleName("algol");
 
@@ -254,7 +260,8 @@ world'
 
 )";
 
-  FormatterFactory factory;
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
   factory.setFormatName("ansi");
   factory.setStyleName("colorful");
 

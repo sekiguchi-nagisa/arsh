@@ -28,6 +28,8 @@ enum class FormatterType {
 
 class FormatterFactory {
 private:
+  std::reference_wrapper<const StyleMap> styleMap;
+
   std::unordered_map<std::string, FormatterType> supportedFormats; // name to actual formatter type
 
   std::string formatName{"ansi"};
@@ -37,7 +39,7 @@ private:
   StringRef source;
 
 public:
-  FormatterFactory();
+  explicit FormatterFactory(const StyleMap &map);
 
   const auto &getSupportedFormats() const { return this->supportedFormats; }
 

@@ -165,17 +165,30 @@ public:
   }
 };
 
-bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, ValidRule> &&rules);
+class StyleMap {
+private:
+  StrRefMap<Style> values;
 
-const Style *findStyle(StringRef styleName);
+public:
+  StyleMap();
+
+  bool add(Style &&style) {
+    StringRef name = style.getName();
+    return this->values.emplace(name, std::move(style)).second;
+  }
+
+  [[nodiscard]] const Style *find(StringRef name) const;
+
+  const auto &getValues() const { return this->values; }
+
+  bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, ValidRule> &&rules);
+};
 
 #define DEFINE_HIGHLIGHT_STYLE(name)                                                               \
-  struct [[maybe_unused]] style_wrapper_##name {                                                   \
+  struct style_wrapper_##name {                                                                    \
     using Rules = std::unordered_map<HighlightTokenClass, ValidRule>;                              \
-    static bool value;                                                                             \
     static Rules buildRules();                                                                     \
   };                                                                                               \
-  bool style_wrapper_##name::value = defineStyle(#name, style_wrapper_##name::buildRules());       \
   style_wrapper_##name::Rules style_wrapper_##name::buildRules()
 
 } // namespace ydsh::highlighter

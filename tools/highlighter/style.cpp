@@ -17,8 +17,6 @@
 #include <cmath>
 
 #include "style.h"
-
-// for style definition. these headers seem to be unused, but actually used
 #include "styles/algol.hpp"
 #include "styles/colorful.hpp"
 #include "styles/darcula.hpp"
@@ -136,26 +134,30 @@ const StyleRule *Style::find(HighlightTokenClass tokenClass) const {
   return nullptr;
 }
 
-class StyleMap : public Singleton<StyleMap> {
-private:
-  StrRefMap<Style> values;
+// ######################
+// ##     StyleMap     ##
+// ######################
 
-public:
-  bool add(Style &&style) {
-    StringRef name = style.getName();
-    return this->values.emplace(name, std::move(style)).second;
+#define LOAD_HIGHLIGHT_STYLE(name) defineStyle(#name, style_wrapper_##name::buildRules());
+
+StyleMap::StyleMap() {
+  LOAD_HIGHLIGHT_STYLE(algol);
+  LOAD_HIGHLIGHT_STYLE(colorful);
+  LOAD_HIGHLIGHT_STYLE(darcula);
+  LOAD_HIGHLIGHT_STYLE(monokai);
+  LOAD_HIGHLIGHT_STYLE(null);
+}
+
+const Style *StyleMap::find(StringRef name) const {
+  auto iter = this->values.find(name);
+  if (iter != this->values.end()) {
+    return &iter->second;
   }
+  return nullptr;
+}
 
-  [[nodiscard]] const Style *find(StringRef name) const {
-    auto iter = this->values.find(name);
-    if (iter != this->values.end()) {
-      return &iter->second;
-    }
-    return nullptr;
-  }
-};
-
-bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, ValidRule> &&rules) {
+bool StyleMap::defineStyle(const char *name,
+                           std::unordered_map<HighlightTokenClass, ValidRule> &&rules) {
   auto background = StyleRule();
   if (auto iter = rules.find(HighlightTokenClass::BACKGROUND_); iter != rules.end()) {
     background = background.synthesize(iter->second);
@@ -176,13 +178,7 @@ bool defineStyle(const char *name, std::unordered_map<HighlightTokenClass, Valid
     map.emplace(e.first, rule);
   }
 
-  auto &styleMap = StyleMap::instance();
-  return styleMap.add(Style(name, foreground, background, std::move(map)));
-}
-
-const Style *findStyle(StringRef styleName) {
-  auto &styleMap = StyleMap::instance();
-  return styleMap.find(styleName);
+  return this->add(Style(name, foreground, background, std::move(map)));
 }
 
 } // namespace ydsh::highlighter
