@@ -164,29 +164,6 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return nullptr;
 }
 
-NameScopePtr resolveModuleFromDesc(const DSState &state, StringRef desc) {
-  const ModType *modType = nullptr;
-  if (desc.empty()) {
-    modType = getCurRuntimeModule(state);
-    if (!modType) {
-      auto ret = state.typePool.getModTypeById(1);
-      assert(ret);
-      modType = cast<ModType>(ret.asOk());
-    }
-  } else if (desc.startsWith("module(") && desc.endsWith(")")) {
-    auto typeName = desc;
-    typeName.removePrefix(strlen("module("));
-    typeName.removeSuffix(1);
-    if (auto ret = state.typePool.getType(typeName); ret && ret.asOk()->isModType()) {
-      modType = cast<ModType>(ret.asOk());
-    }
-  }
-  if (!modType) {
-    return nullptr;
-  }
-  return NameScope::reopen(state.typePool, *state.rootModScope, *modType);
-}
-
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ArrayObject &reply;
@@ -222,14 +199,16 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
   return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
-static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
-                         const std::string &word, CompCandidateConsumer &consumer) {
+static bool kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
+                         const CmdNode &cmdNode, const std::string &word,
+                         CompCandidateConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     return false;
   }
 
   // prepare argument
+  auto ctx = DSValue::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
   auto argv = createArgv(state.typePool, lex, cmdNode, word);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
@@ -238,7 +217,7 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
 
   // kick hook
   auto ret = VM::callFunction(state, std::move(hook),
-                              makeArgs(std::move(argv), DSValue::createInt(index)));
+                              makeArgs(std::move(ctx), std::move(argv), DSValue::createInt(index)));
   if (state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
     return false;
   }
@@ -249,26 +228,98 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
   return true;
 }
 
-unsigned int doCodeCompletion(DSState &st, NameScopePtr &&scope, StringRef ref, CodeCompOp option) {
-  assert(scope && scope->isGlobal());
+struct ResolvedTempMod {
+  unsigned short index{0};
+  bool needDiscard{false};
+  bool valid{false};
+
+  explicit operator bool() const { return this->valid; }
+};
+
+static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool dupMod) {
+  if (desc.startsWith("TMP(") && desc.endsWith(")")) {
+    auto id = desc;
+    id.removePrefix(strlen("TMP("));
+    id.removeSuffix(1);
+    auto pair = convertToNum<unsigned int>(id.begin(), id.end());
+    if (!pair.second || pair.first >= state.tempModScope.size()) {
+      return {};
+    }
+
+    ResolvedTempMod ret = {
+        .index = static_cast<unsigned short>(pair.first),
+        .needDiscard = false,
+        .valid = true,
+    };
+    if (dupMod) {
+      state.tempModScope.push_back(state.tempModScope[ret.index]->cloneGlobal());
+      ret.index = state.tempModScope.size() - 1;
+      ret.needDiscard = true;
+    }
+    return ret;
+  } else {
+    const ModType *modType = nullptr;
+    if (desc.empty()) {
+      modType = getCurRuntimeModule(state);
+      if (!modType) {
+        auto ret = state.typePool.getModTypeById(1);
+        assert(ret);
+        modType = cast<ModType>(ret.asOk());
+      }
+    } else if (desc.startsWith("module(") && desc.endsWith(")")) {
+      auto typeName = desc;
+      typeName.removePrefix(strlen("module("));
+      typeName.removeSuffix(1);
+      if (auto ret = state.typePool.getType(typeName); ret && ret.asOk()->isModType()) {
+        modType = cast<ModType>(ret.asOk());
+      }
+    }
+    if (!modType) {
+      return {};
+    }
+    state.tempModScope.push_back(NameScope::reopen(state.typePool, *state.rootModScope, *modType));
+    return {
+        .index = static_cast<unsigned short>(state.tempModScope.size() - 1),
+        .needDiscard = true,
+        .valid = true,
+    };
+  }
+}
+
+static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTempMod resolved) {
+  assert(!tempModScopes.empty());
+  if (resolved.needDiscard && resolved.index == tempModScopes.size() - 1) {
+    tempModScopes.pop_back();
+  }
+}
+
+Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRef source,
+                                        const CodeCompOp option) {
+  const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
+  if (!resolvedMod) {
+    return {};
+  }
 
   auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
   auto &compreply = typeAs<ArrayObject>(result);
 
   {
+    auto scope = st.tempModScope[resolvedMod.index];
     DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
     auto discardPoint = provider.getCurrentDiscardPoint();
 
     DefaultCompConsumer consumer(compreply);
-    CodeCompleter codeCompleter(consumer, empty(option) ? makeObserver(provider) : nullptr,
+    CodeCompleter codeCompleter(consumer,
+                                willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                                 st.sysConfig, st.typePool, std::move(scope), st.logicalWorkingDir);
-    codeCompleter.setUserDefinedComp([&st](const Lexer &lex, const CmdNode &cmdNode,
-                                           const std::string &word,
-                                           CompCandidateConsumer &consumer) {
-      return kickCompHook(st, lex, cmdNode, word, consumer);
+    codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
+                                                        const std::string &word,
+                                                        CompCandidateConsumer &consumer) {
+      return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
     });
-    codeCompleter(ref, option);
+    codeCompleter(source, option);
     provider.discard(discardPoint);
+    discardTempMod(st.tempModScope, resolvedMod);
   }
 
   auto &values = compreply.refValues();

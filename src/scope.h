@@ -143,6 +143,13 @@ public:
    */
   static NameScopePtr reopen(const TypePool &pool, const NameScope &parent, const ModType &modType);
 
+  /**
+   * clone global scope. (must be global scope)
+   * @return
+   * if not global scope, return null
+   */
+  NameScopePtr cloneGlobal() const;
+
   bool isGlobal() const { return this->kind == GLOBAL; }
 
   bool isFunc() const { return this->kind == FUNC; }

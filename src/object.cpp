@@ -83,10 +83,18 @@ std::string DSValue::toString() const {
   case DSValueKind::NUMBER:
     return std::to_string(this->asNum());
   case DSValueKind::DUMMY: {
-    std::string str("DSObject(");
-    str += std::to_string(this->asTypeId());
-    str += ")";
-    return str;
+    unsigned int typeId = this->asTypeId();
+    if (typeId == static_cast<unsigned int>(TYPE::Module)) {
+      std::string str = "TMD("; // for temporary module descriptor
+      str += std::to_string(this->asNumList()[1]);
+      str += ")";
+      return str;
+    } else {
+      std::string str("DSObject(");
+      str += std::to_string(typeId);
+      str += ")";
+      return str;
+    }
   }
   case DSValueKind::GLOB_META:
     return ::toString(this->asGlobMeta());

@@ -1152,10 +1152,26 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 // ##     Module     ##
 // ####################
 
+static bool checkModLayout(DSState &state, const DSValue &value) {
+  if (value.isObject() && isa<FuncObject>(value.get())) {
+    return true;
+  }
+  raiseError(state, TYPE::InvalidOperationError, "cannot call method on temporary module object");
+  return false;
+}
+
+#define CHECK_MOD_LAYOUT(obj)                                                                      \
+  do {                                                                                             \
+    if (!checkModLayout(ctx, obj)) {                                                               \
+      RET_ERROR;                                                                                   \
+    }                                                                                              \
+  } while (false)
+
 //!bind: function _scriptName($this : Module) : String
 YDSH_METHOD module_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_name);
 
+  CHECK_MOD_LAYOUT(LOCAL(0));
   auto &obj = typeAs<FuncObject>(LOCAL(0));
   RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_NAME]);
 }
@@ -1164,6 +1180,7 @@ YDSH_METHOD module_name(RuntimeContext &ctx) {
 YDSH_METHOD module_dir(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_dir);
 
+  CHECK_MOD_LAYOUT(LOCAL(0));
   auto &obj = typeAs<FuncObject>(LOCAL(0));
   RET(obj.getCode().getConstPool()[CVAR_OFFSET_SCRIPT_DIR]);
 }
@@ -1172,6 +1189,7 @@ YDSH_METHOD module_dir(RuntimeContext &ctx) {
 YDSH_METHOD module_func(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_func);
 
+  CHECK_MOD_LAYOUT(LOCAL(0));
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());
@@ -1189,6 +1207,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
 YDSH_METHOD module_fullname(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_fullname);
 
+  CHECK_MOD_LAYOUT(LOCAL(0));
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());

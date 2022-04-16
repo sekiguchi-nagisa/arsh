@@ -32,7 +32,7 @@ function _DEF_SIGINT($s : Signal) {
 var TERM_HOOK : ((Int, Any) => Void)!
 
 # completer hook definition
-var COMP_HOOK : Func<[String], [[String], Int]>!
+var COMP_HOOK : Func<[String], [Module, [String], Int]>!
 
 # line edit op hook definition.
 var EDIT_HOOK : Func<Any, [Int, Int, String]>!

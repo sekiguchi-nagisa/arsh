@@ -92,27 +92,18 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
 }
 
 /**
- * parse and resolve corresponding module scope
- * @param state
- * @param desc
- * if empty, use current runtime module context
- * @return
- * if not recognize descriptor, return null
- */
-NameScopePtr resolveModuleFromDesc(const DSState &state, StringRef desc);
-
-/**
  * perform completion in specified underlying module context
  * @param st
- * @param scope
- * must be global scope
- * @param ref
+ * @param modDesc
+ * module descriptor for specifying completeion context
+ * @param source
  * @param option
  * @return
+ * if specify invalid module descriptor, return invalid
  * return size of completion result. (equivalent to size of $COMPREPLY)
  */
-unsigned int doCodeCompletion(DSState &st, NameScopePtr &&scope, StringRef ref,
-                              CodeCompOp option = {});
+Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRef source,
+                                        CodeCompOp option = {});
 
 class SignalVector {
 private:

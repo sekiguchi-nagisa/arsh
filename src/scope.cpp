@@ -50,6 +50,15 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
   return scope;
 }
 
+NameScopePtr NameScope::cloneGlobal() const {
+  if (!this->isGlobal()) {
+    return nullptr;
+  }
+  auto newScope = NameScopePtr ::create(this->maxVarCount, this->modId);
+  newScope->handles = this->handles;
+  return newScope;
+}
+
 NameScopePtr NameScope::enterScope(Kind newKind) {
   if (this->kind == NameScope::GLOBAL && newKind == NameScope::FUNC) {
     return NameScope::block(newKind, this->fromThis(), this->maxVarCount);

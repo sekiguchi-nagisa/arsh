@@ -19,6 +19,7 @@
       }
       ````
 - pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
+- pass module context of current completion to ``COMP_HOOK``
 
 #### Misc
 

@@ -190,14 +190,13 @@ enum class DSValueKind : unsigned char {
   OBJECT,    // not null
   NUMBER,    // uint64_t
   NUM_LIST,  // [uint32_t uint32_t, uint32_t]
-  DUMMY,     // uint64_t
+  DUMMY,     // DSType(uint32_t), uint32_t, uint32_t
   GLOB_META, // uint64_t, for glob meta character, '?', '*'
   INVALID,
   BOOL,
   SIG,   // int64_t
   INT,   // int64_t
   FLOAT, // double
-  TYPE,  // DSType
 
   // for small string (up to 14 characters)
   SSTR0,
@@ -332,11 +331,6 @@ private:
     this->d.value = value;
   }
 
-  explicit DSValue(const DSType &type) noexcept {
-    this->type.kind = DSValueKind::TYPE;
-    this->type.value = &type;
-  }
-
   /**
    * for small string construction
    */
@@ -448,7 +442,7 @@ public:
 
   unsigned int asTypeId() const {
     assert(this->kind() == DSValueKind::DUMMY);
-    return this->u64.value;
+    return this->u32s.values[0];
   }
 
   GlobMeta asGlobMeta() const {
@@ -474,11 +468,6 @@ public:
   double asFloat() const {
     assert(this->kind() == DSValueKind::FLOAT);
     return this->d.value;
-  }
-
-  const DSType &asType() const {
-    assert(this->kind() == DSValueKind::TYPE);
-    return *this->type.value;
   }
 
   StringRef asStrRef() const;
@@ -547,9 +536,12 @@ public:
 
   static DSValue createNum(unsigned int v) { return DSValue(static_cast<uint64_t>(v)); }
 
-  static DSValue createDummy(const DSType &type) {
-    DSValue ret(static_cast<uint64_t>(type.typeId()));
-    ret.u64.kind = DSValueKind::DUMMY;
+  static DSValue createDummy(const DSType &type, unsigned int v1 = 0, unsigned int v2 = 0) {
+    DSValue ret;
+    ret.u32s.kind = DSValueKind::DUMMY;
+    ret.u32s.values[0] = static_cast<uint32_t>(type.typeId());
+    ret.u32s.values[1] = v1;
+    ret.u32s.values[2] = v2;
     return ret;
   }
 
@@ -586,8 +578,6 @@ public:
   static DSValue createInt(int64_t num) { return DSValue(num); }
 
   static DSValue createFloat(double v) { return DSValue(v); }
-
-  static DSValue createType(const DSType &type) { return DSValue(type); }
 
   // for string construction
   static DSValue createStr() { return DSValue("", 0); }

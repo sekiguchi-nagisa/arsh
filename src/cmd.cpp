@@ -1031,12 +1031,10 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  auto module = resolveModuleFromDesc(state, moduleDesc);
-  if (!module) {
+  if (!doCodeCompletion(state, moduleDesc, line, compOp).hasValue()) {
     ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
     return 1;
   }
-  doCodeCompletion(state, std::move(module), line, compOp);
   auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
   for (const auto &e : ret.getValues()) {
     fputs(e.asCStr(), stdout);

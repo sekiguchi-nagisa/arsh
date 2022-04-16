@@ -92,6 +92,8 @@ public:
 
   TypePool typePool;
 
+  std::vector<NameScopePtr> tempModScope; // for completion
+
   NameScopePtr rootModScope;
 
   const ObjPtr<UnixFdObject> emptyFDObj;

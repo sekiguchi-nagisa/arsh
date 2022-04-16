@@ -54,6 +54,8 @@ enum class CodeCompOp : unsigned int {
 template <>
 struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 
+inline bool willKickFrontEnd(CodeCompOp op) { return empty(op); }
+
 inline bool isKeyword(StringRef value) { return !value.startsWith("<") || !value.endsWith(">"); }
 
 enum class CompCandidateKind {
