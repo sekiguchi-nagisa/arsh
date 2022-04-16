@@ -24,6 +24,10 @@
 
 - add standalone syntax highlighter called ``dscolorize``
 
+### Fixed
+
+- revert 'linenoise io error checking' due to broken error reporting
+
 ## [0.25.0] - 2022-03-31
 
 ### Added
