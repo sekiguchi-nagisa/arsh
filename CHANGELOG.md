@@ -35,6 +35,7 @@
 
 - revert 'linenoise io error checking' due to broken error reporting
 - directory detection of completion wrapper
+- return type resolution of anonymous function that last statement is Nothing type
 
 ## [0.25.0] - 2022-03-31
 

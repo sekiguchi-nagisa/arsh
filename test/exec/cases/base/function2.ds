@@ -66,6 +66,14 @@ assert ! (
     (function () -> {}) is () -> Any!
 )
 
+$a4 = function($i : Int) -> throw $i
+assert try { $a4(777); 100; } catch $e : Int { true; $e; } == 777
+assert (function() => exit) is () -> Nothing
+assert (function() => {34; 34; throw 34; }) is () -> Nothing
+assert (function() => _exit) is () -> Nothing
+assert (function() => _exit) is () -> Int
+assert (function() => _exit) is () -> Void
+
 # subtype with more params
 let b0 = function($a : String, $b : ArithmeticError) : Any => $a + "=" + $b.name() + ":" + $b.message()
 assert $b0 is (String, ArithmeticError) -> Any

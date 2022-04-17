@@ -1763,7 +1763,9 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
 
   if (!returnType) {
     assert(!funcType);
-    auto &type = this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
+    auto &type = blockNode.getType().isNothingType() && this->funcCtx->getReturnNodes().empty()
+                     ? this->typePool.get(TYPE::Nothing)
+                     : this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
     std::vector<const DSType *> paramTypes(node.getParamNodes().size());
     for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
       paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
