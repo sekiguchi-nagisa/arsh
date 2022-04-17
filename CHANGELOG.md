@@ -25,6 +25,12 @@
 
 - add standalone syntax highlighter called ``dscolorize``
 
+### Changed
+
+#### Module
+
+- pass completion context to completer module
+
 ### Fixed
 
 - revert 'linenoise io error checking' due to broken error reporting

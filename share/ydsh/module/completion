@@ -96,7 +96,7 @@ startwith() {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : String) : [String] {
+function _comp_arg($ctx : Module, $deflist: [(String, Int, String)], $opt : String, $prefix : String) : [String] {
     for $def in $deflist {
         $opt == case $def._0.size() {
             0 => ""
@@ -122,7 +122,7 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
                     $args.add("-A")
                     $args.add($a)
                 }
-                complete &> /dev/null $args $prefix;
+                complete &> /dev/null -m $ctx $args $prefix;
                 $COMPREPLY
             }
             else => break
@@ -162,7 +162,7 @@ function _from_compdef($ctx : Module, $words : [String], $cursor : Int) : [Strin
         # 'CMD arg '
         # 'CMD -s '
         var prev = $words.size() == 1 ? "" : $words[-1]
-        return $_comp_arg($deflist, $prev.startsWith("-") ? $prev : "", "")
+        return $_comp_arg($ctx, $deflist, $prev.startsWith("-") ? $prev : "", "")
     } else {
         # 'CMD d'
         # 'CMD -'
@@ -175,7 +175,7 @@ function _from_compdef($ctx : Module, $words : [String], $cursor : Int) : [Strin
             return $_comp_opt($deflist, $prev)
         }
         var opt = $words.size() == 2 ? "" : $words[-2]
-        return $_comp_arg($deflist, $opt.startsWith("-") ? $opt : "", $prev)
+        return $_comp_arg($ctx, $deflist, $opt.startsWith("-") ? $opt : "", $prev)
     }
 }
 
@@ -241,15 +241,6 @@ compdef() {
     ))
 }
 
-function compDelegate($words : [String], $cursor : Int) : [String] {
-    var line = ""
-    for $w in $words {
-        if !$line.empty() { $line += " "; }
-        $line += $w
-    }
-    if $cursor == $words.size() {
-        $line += " "
-    }
-    complete -- "$line" &> /dev/null
-    return $COMPREPLY
+function compDelegate($ctx : Module, $words : [String], $cursor : Int) : [String] {
+    return $_defaultHook($ctx, $words, $cursor)
 }
