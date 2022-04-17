@@ -85,7 +85,7 @@ std::string DSValue::toString() const {
   case DSValueKind::DUMMY: {
     unsigned int typeId = this->asTypeId();
     if (typeId == static_cast<unsigned int>(TYPE::Module)) {
-      std::string str = "TMD("; // for temporary module descriptor
+      std::string str = OBJ_TEMP_MOD_PREFIX; // for temporary module descriptor
       str += std::to_string(this->asNumList()[1]);
       str += ")";
       return str;
@@ -685,7 +685,7 @@ std::string FuncObject::toString() const {
   std::string str;
   switch (this->code.getKind()) {
   case CodeKind::TOPLEVEL:
-    str += "module(";
+    str += OBJ_MOD_PREFIX;
     break;
   case CodeKind::FUNCTION:
     str += "function(";

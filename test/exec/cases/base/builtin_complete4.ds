@@ -47,4 +47,71 @@ try { complete 'echo ' > /dev/null; assert $false; } catch($e) { $ex = $e; }
 assert $ex is ArithmeticError
 assert $? == 1  # if error happened
 
+# pass module context
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    complete > /dev/null -m $ctx -A var 'ass'
+    return $COMPREPLY
+}
+$assertComp('echo ', ['assertArray', "assertComp"])
+
+$ex = 45
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) -> {
+    $words.shift()
+    $c--
+    var line = ""
+    for $e in $words {
+        if !$line.empty() { $line += " "; }
+        $line += $e
+    }
+    complete -m $ctx $line > /dev/null
+    return $COMPREPLY
+}
+$assertComp('echo echo echo echo echo ', ["echo"])
+
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    complete -m $ctx '{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ echo '
+    return $COMPREPLY
+}
+ try { $assertComp('echo ', ["echo"]); } catch $e { $ex = $e; }
+ assert $ex is StackOverflowError
+
+
+# call method on temporary module object
+## fullname
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    return [ $ctx._fullname("")! ]
+}
+$ex = 34
+try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "cannot call method on temporary module object"
+
+## scriptName
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    return [ $ctx._scriptName() ]
+}
+$ex = 34
+try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "cannot call method on temporary module object"
+
+## scriptDir
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    return [ $ctx._scriptDir() ]
+}
+$ex = 34
+try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "cannot call method on temporary module object"
+
+## func
+$COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
+    $ctx._func("echo hello")()!
+    return $words
+}
+$ex = 34
+try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "cannot call method on temporary module object"
+
 true

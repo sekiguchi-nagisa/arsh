@@ -229,7 +229,7 @@ static bool kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer 
 }
 
 struct ResolvedTempMod {
-  unsigned short index{0};
+  unsigned int index{0};
   bool needDiscard{false};
   bool valid{false};
 
@@ -237,9 +237,9 @@ struct ResolvedTempMod {
 };
 
 static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool dupMod) {
-  if (desc.startsWith("TMP(") && desc.endsWith(")")) {
+  if (desc.startsWith(OBJ_TEMP_MOD_PREFIX) && desc.endsWith(")")) {
     auto id = desc;
-    id.removePrefix(strlen("TMP("));
+    id.removePrefix(strlen(OBJ_TEMP_MOD_PREFIX));
     id.removeSuffix(1);
     auto pair = convertToNum<unsigned int>(id.begin(), id.end());
     if (!pair.second || pair.first >= state.tempModScope.size()) {
@@ -247,7 +247,7 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
     }
 
     ResolvedTempMod ret = {
-        .index = static_cast<unsigned short>(pair.first),
+        .index = pair.first,
         .needDiscard = false,
         .valid = true,
     };
@@ -266,9 +266,9 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
         assert(ret);
         modType = cast<ModType>(ret.asOk());
       }
-    } else if (desc.startsWith("module(") && desc.endsWith(")")) {
+    } else if (desc.startsWith(OBJ_MOD_PREFIX) && desc.endsWith(")")) {
       auto typeName = desc;
-      typeName.removePrefix(strlen("module("));
+      typeName.removePrefix(strlen(OBJ_MOD_PREFIX));
       typeName.removeSuffix(1);
       if (auto ret = state.typePool.getType(typeName); ret && ret.asOk()->isModType()) {
         modType = cast<ModType>(ret.asOk());
@@ -279,7 +279,7 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
     }
     state.tempModScope.push_back(NameScope::reopen(state.typePool, *state.rootModScope, *modType));
     return {
-        .index = static_cast<unsigned short>(state.tempModScope.size() - 1),
+        .index = static_cast<unsigned int>(state.tempModScope.size() - 1),
         .needDiscard = true,
         .valid = true,
     };

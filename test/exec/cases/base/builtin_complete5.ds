@@ -112,5 +112,7 @@ assert "$(complete -m $MODULE"3q4324" 2>&1)" ==
     "ydsh: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
+assert "$(complete -m 'TMD(34)' 2>&1)" == "ydsh: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "ydsh: complete: TMD(hoge): unrecognized module descriptor"
 
 true

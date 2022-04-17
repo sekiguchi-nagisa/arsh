@@ -198,6 +198,10 @@ constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
     "eval", "exit", "exec", "command", "_exit",
 };
 
+// ===== Object toString =====
+constexpr const char *OBJ_TEMP_MOD_PREFIX = "TMD(";
+constexpr const char *OBJ_MOD_PREFIX = "module(";
+
 inline std::string toCmdFullName(StringRef cmdName) {
   std::string name = cmdName.toString();
   name += CMD_SYMBOL_SUFFIX;
