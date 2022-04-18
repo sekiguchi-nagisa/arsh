@@ -112,6 +112,6 @@ $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
 $ex = 34
 try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == "cannot call method on temporary module object"
+assert ($ex as InvalidOperationError).message() == "cannot call method within user-defined completer"
 
 true

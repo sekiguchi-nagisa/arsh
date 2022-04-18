@@ -1189,7 +1189,12 @@ YDSH_METHOD module_dir(RuntimeContext &ctx) {
 YDSH_METHOD module_func(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_func);
 
-  CHECK_MOD_LAYOUT(LOCAL(0));
+  if (!ctx.tempModScope.empty()) {
+    raiseError(ctx, TYPE::InvalidOperationError,
+               "cannot call method within user-defined completer");
+    RET_ERROR;
+  }
+  assert(LOCAL(0).isObject());
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());

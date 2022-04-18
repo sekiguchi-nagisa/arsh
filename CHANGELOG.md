@@ -27,6 +27,10 @@
 
 ### Changed
 
+#### Builtin
+
+- **Breaking Change**: thow ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
+
 #### Module
 
 - pass completion context to completer module
