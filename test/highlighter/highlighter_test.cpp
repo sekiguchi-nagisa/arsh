@@ -356,12 +356,18 @@ TEST_F(ColorizeTest, cli) {
   assert "$(echo '1234' | exec $colorize)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -f console)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -s darcula)" == $'\033[38;2;104;151;187m1234\033[0m'
-  assert "$(echo '1234' | exec $colorize -s null)" == $'1234'
+  assert "$(echo -n '1234' | exec $colorize -s null)" == $'1234'
   assert "$(echo '1234' | exec $colorize -s null
                                          -o /dev/stderr /dev/stdin 2>&1 > /dev/null)" == $'1234'
+
   assert exec $colorize fhauerfhai 2>&1 | grep 'cannot open file' > /dev/null
   assert exec $colorize . 2>&1 | grep 'cannot read file' > /dev/null
   assert exec $colorize -o . 2>&1 | grep 'cannot open file' > /dev/null
+
+  assert "$(echo 1234 | exec $colorize -s higjaior 2>&1)" == 'unsupported style: higjaior'
+  assert "$(echo 1234 | exec $colorize -f higjaior 2>&1)" == 'unsupported formatter: higjaior'
+
+  true
 )EOF",
                        HIGHLIGHTER_PATH);
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
