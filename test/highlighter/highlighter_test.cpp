@@ -1,6 +1,15 @@
 #include "gtest/gtest.h"
 
+#include "../test_common.h"
 #include "factory.h"
+
+#ifndef BIN_PATH
+#define "require BIN_PATH"
+#endif
+
+#ifndef HIGHLIGHTER_PATH
+#define "require HIGHLIGHTER_PATH"
+#endif
 
 using namespace ydsh;
 using namespace highlighter;
@@ -271,6 +280,91 @@ world'
                          "\033[38;2;187;187;187m\033[48;2;255;240;240m'hello\033[0m\n"
                          "\033[38;2;187;187;187m\033[48;2;255;240;240mworld'\033[0m\n\n";
   ASSERT_EQ(expected, stream.str());
+}
+
+class ColorizeTest : public ExpectOutput {
+public:
+  using ExpectOutput::expect;
+  using ExpectOutput::expectRegex;
+
+  template <typename... T>
+  static ProcBuilder ds(T &&...args) {
+    return ProcBuilder{BIN_PATH, std::forward<T>(args)...};
+  }
+};
+
+TEST_F(ColorizeTest, list) {
+  const char *out = R"(Styles:
+* algol
+* colorful
+* darcula
+* monokai
+* null
+
+Formatters:
+* empty nil null
+* ansi console term terminal
+)";
+  ProcBuilder builder = {HIGHLIGHTER_PATH, "-l"};
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, out));
+}
+
+TEST_F(ColorizeTest, help) {
+  auto out = format(R"(usage: %s [option ...] [source file]
+Options:
+    -f arg    specify output formatter (default is `ansi' formatter)
+    -h        show help message
+    -l        show supported formatters/styles
+    -o arg    specify output file (default is stdout)
+    -s arg    specify highlighter color style (default is `darcula' style)
+)",
+                    HIGHLIGHTER_PATH);
+  ProcBuilder builder = {HIGHLIGHTER_PATH, "-h"};
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, out));
+}
+
+TEST_F(ColorizeTest, invalid1) {
+  const char *out = R"(invalid option: -q
+Options:
+    -f arg    specify output formatter (default is `ansi' formatter)
+    -h        show help message
+    -l        show supported formatters/styles
+    -o arg    specify output file (default is stdout)
+    -s arg    specify highlighter color style (default is `darcula' style)
+)";
+  ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
+}
+
+TEST_F(ColorizeTest, invalid2) {
+  const char *out = R"(need argument: -o
+Options:
+    -f arg    specify output formatter (default is `ansi' formatter)
+    -h        show help message
+    -l        show supported formatters/styles
+    -o arg    specify output file (default is stdout)
+    -s arg    specify highlighter color style (default is `darcula' style)
+)";
+  ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
+}
+
+TEST_F(ColorizeTest, cli) {
+  auto source = format(R"EOF(
+  var colorize = @(%s)[0]
+
+  assert "$(echo '1234' | exec $colorize)" == $'\033[38;2;104;151;187m1234\033[0m'
+  assert "$(echo '1234' | exec $colorize -f console)" == $'\033[38;2;104;151;187m1234\033[0m'
+  assert "$(echo '1234' | exec $colorize -s darcula)" == $'\033[38;2;104;151;187m1234\033[0m'
+  assert "$(echo '1234' | exec $colorize -s null)" == $'1234'
+  assert "$(echo '1234' | exec $colorize -s null
+                                         -o /dev/stderr /dev/stdin 2>&1 > /dev/null)" == $'1234'
+  assert exec $colorize fhauerfhai 2>&1 | grep 'cannot open file' > /dev/null
+  assert exec $colorize . 2>&1 | grep 'cannot read file' > /dev/null
+  assert exec $colorize -o . 2>&1 | grep 'cannot open file' > /dev/null
+)EOF",
+                       HIGHLIGHTER_PATH);
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
 }
 
 int main(int argc, char **argv) {

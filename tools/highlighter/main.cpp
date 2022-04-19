@@ -27,8 +27,7 @@ using namespace ydsh;
 using namespace ydsh::highlighter;
 
 #define EACH_OPT(OP)                                                                               \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
-  OP(HELP2, "-h", opt::NO_ARG, "equivalent to `--help'")                                           \
+  OP(HELP, "-h", opt::NO_ARG, "show help message")                                                 \
   OP(OUTPUT, "-o", opt::HAS_ARG, "specify output file (default is stdout)")                        \
   OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
   OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")    \
@@ -41,7 +40,7 @@ enum class OptionSet : unsigned int {
 };
 
 void usage(std::ostream &stream, char **argv) {
-  stream << "usage: " << argv[0] << " ([option..]) [source file]" << std::endl;
+  stream << "usage: " << argv[0] << " [option ...] [source file]" << std::endl;
 }
 
 Optional<std::string> readAll(const char *sourceName) {
@@ -138,7 +137,6 @@ int main(int argc, char **argv) {
   while ((result = parser(begin, end))) {
     switch (result.value()) {
     case OptionSet::HELP:
-    case OptionSet::HELP2:
       usage(std::cout, argv);
       parser.printOption(std::cout);
       return 0;
