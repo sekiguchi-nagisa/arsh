@@ -37,6 +37,14 @@ struct Color {
 
   bool initialized{false};
 
+  /**
+   * parse #ffffff or #fff style string
+   * @param code
+   * @return
+   * if parse failed, return uninitialized color
+   */
+  static Color parse(StringRef code);
+
   constexpr explicit operator bool() const { return this->initialized; }
 
   [[nodiscard]] double distance(Color o) const;

@@ -25,33 +25,16 @@
 
 namespace ydsh::highlighter {
 
-/**
- * see (https://www.compuphase.com/cmetric.htm)
- * @param o
- * @return
- */
-double Color::distance(Color o) const {
-  auto r1 = static_cast<int64_t>(this->red);
-  auto g1 = static_cast<int64_t>(this->green);
-  auto b1 = static_cast<int64_t>(this->blue);
+// ###################
+// ##     Color     ##
+// ###################
 
-  auto r2 = static_cast<int64_t>(o.red);
-  auto g2 = static_cast<int64_t>(o.green);
-  auto b2 = static_cast<int64_t>(o.blue);
+Color Color::parse(StringRef code) {
+  if (code.empty() || code[0] != '#') {
+    return {};
+  }
+  code.removePrefix(1);
 
-  int64_t rmean = (r1 + r2) / 2;
-  int64_t r = r1 - r2;
-  int64_t g = g1 - g2;
-  int64_t b = b1 - b2;
-
-  return std::sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
-}
-
-// #######################
-// ##     StyleRule     ##
-// #######################
-
-static Color parseColorCode(StringRef code) {
   char data[6] = {};
   if (code.size() == 3) { // convert rgb -> rrggbb
     data[0] = data[1] = code[0];
@@ -77,6 +60,32 @@ static Color parseColorCode(StringRef code) {
       .initialized = true,
   };
 }
+
+/**
+ * see (https://www.compuphase.com/cmetric.htm)
+ * @param o
+ * @return
+ */
+double Color::distance(Color o) const {
+  auto r1 = static_cast<int64_t>(this->red);
+  auto g1 = static_cast<int64_t>(this->green);
+  auto b1 = static_cast<int64_t>(this->blue);
+
+  auto r2 = static_cast<int64_t>(o.red);
+  auto g2 = static_cast<int64_t>(o.green);
+  auto b2 = static_cast<int64_t>(o.blue);
+
+  int64_t rmean = (r1 + r2) / 2;
+  int64_t r = r1 - r2;
+  int64_t g = g1 - g2;
+  int64_t b = b1 - b2;
+
+  return std::sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
+}
+
+// #######################
+// ##     StyleRule     ##
+// #######################
 
 StyleRule StyleRule::synthesize(const ValidRule &valid) const {
   const StringRef value(valid.getView().data(), valid.getView().size());
@@ -105,20 +114,19 @@ StyleRule StyleRule::synthesize(const ValidRule &valid) const {
     } else if (sub == "bg:") {
       rule.background = {};
     } else if (sub.startsWith("bg:#")) {
-      sub.removePrefix(strlen("bg:#"));
-      Color color = parseColorCode(sub);
+      sub.removePrefix(strlen("bg:"));
+      Color color = Color::parse(sub);
       assert(color);
       rule.background = color;
     } else if (sub == "border:") {
       rule.border = {};
     } else if (sub.startsWith("border:#")) {
-      sub.removePrefix(strlen("border:#"));
-      Color color = parseColorCode(sub);
+      sub.removePrefix(strlen("border:"));
+      Color color = Color::parse(sub);
       assert(color);
       rule.border = color;
     } else if (sub.startsWith("#")) {
-      sub.removePrefix(1);
-      Color color = parseColorCode(sub);
+      Color color = Color::parse(sub);
       assert(color);
       rule.text = color;
     }

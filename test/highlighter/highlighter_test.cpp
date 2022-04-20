@@ -124,6 +124,35 @@ TEST_F(HighlightTest, validate) {
   static_assert(ValidRule("#123456  nobold border:#000000 noitalic  nounderline  bg:#fbd"));
 }
 
+TEST_F(HighlightTest, color) {
+  auto color = Color::parse("");
+  ASSERT_FALSE(color);
+
+  color = Color::parse("aaa");
+  ASSERT_FALSE(color);
+
+  color = Color::parse("#abcd");
+  ASSERT_FALSE(color);
+
+  color = Color::parse("#fffffl");
+  ASSERT_FALSE(color);
+
+  color = Color::parse("#fffffff");
+  ASSERT_FALSE(color);
+
+  color = Color::parse("#abc");
+  ASSERT_TRUE(color);
+  ASSERT_EQ(0xaa, color.red);
+  ASSERT_EQ(0xbb, color.green);
+  ASSERT_EQ(0xcc, color.blue);
+
+  color = Color::parse("#aabbcd");
+  ASSERT_TRUE(color);
+  ASSERT_EQ(0xaa, color.red);
+  ASSERT_EQ(0xbb, color.green);
+  ASSERT_EQ(0xcd, color.blue);
+}
+
 TEST_F(HighlightTest, rule) {
   constexpr auto base = ValidRule("bold italic underline bg:#fbd border:#ffffff");
   constexpr auto derived = ValidRule("nobold noitalic nounderline bg: #123456 border: ");
