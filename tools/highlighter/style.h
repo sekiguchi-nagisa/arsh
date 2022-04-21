@@ -48,6 +48,8 @@ struct Color {
   constexpr explicit operator bool() const { return this->initialized; }
 
   [[nodiscard]] double distance(Color o) const;
+
+  std::string toString() const;
 };
 
 class ValidRule {

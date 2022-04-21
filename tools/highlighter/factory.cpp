@@ -56,7 +56,8 @@ FormatterFactory::create(std::ostream &stream) const {
   case FormatterType::NULL_:
     return Ok(std::make_unique<NullFormatter>(this->source, *style, stream));
   case FormatterType::ANSI: { // FIXME: term color cap
-    auto formatter = std::make_unique<ANSIFormatter>(this->source, *style, stream);
+    TermColorCap colorCap = TermColorCap::TRUE_COLOR;
+    auto formatter = std::make_unique<ANSIFormatter>(this->source, *style, stream, colorCap);
     return Ok(std::move(formatter));
   }
   }

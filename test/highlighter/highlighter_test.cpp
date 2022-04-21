@@ -130,6 +130,7 @@ TEST_F(HighlightTest, color) {
 
   color = Color::parse("aaa");
   ASSERT_FALSE(color);
+  ASSERT_EQ("<invalid>", color.toString());
 
   color = Color::parse("#abcd");
   ASSERT_FALSE(color);
@@ -145,12 +146,53 @@ TEST_F(HighlightTest, color) {
   ASSERT_EQ(0xaa, color.red);
   ASSERT_EQ(0xbb, color.green);
   ASSERT_EQ(0xcc, color.blue);
+  ASSERT_EQ("#aabbcc", color.toString());
 
   color = Color::parse("#aabbcd");
   ASSERT_TRUE(color);
   ASSERT_EQ(0xaa, color.red);
   ASSERT_EQ(0xbb, color.green);
   ASSERT_EQ(0xcd, color.blue);
+  ASSERT_EQ("#aabbcd", color.toString());
+
+  color = Color::parse("#ffffff");
+  ASSERT_TRUE(color);
+  ASSERT_EQ(0xff, color.red);
+  ASSERT_EQ(0xff, color.green);
+  ASSERT_EQ(0xff, color.blue);
+  ASSERT_EQ("#ffffff", color.toString());
+}
+
+TEST_F(HighlightTest, closestColor) {
+  IndexedColorPalette256 colorPalette;
+  for (unsigned int i = 0; i < 256; i++) {
+    ASSERT_TRUE(colorPalette[i]);
+  }
+  ASSERT_EQ("#000000", colorPalette[0].toString());
+  ASSERT_EQ("#d78700", colorPalette[172].toString());
+  ASSERT_EQ("#0087d7", colorPalette[32].toString());
+
+  auto color = Color::parse("#c0c0c0");
+  ASSERT_TRUE(color);
+  unsigned int index = colorPalette.findClosest(color);
+  auto closest = colorPalette[index];
+  ASSERT_TRUE(closest);
+  ASSERT_EQ(color.toString(), closest.toString());
+
+  color = Color::parse("#d78700");
+  ASSERT_TRUE(color);
+  index = colorPalette.findClosest(color);
+  ASSERT_EQ(172, index);
+  closest = colorPalette[index];
+  ASSERT_TRUE(closest);
+  ASSERT_EQ("#d78700", closest.toString());
+
+  color = Color::parse("#e06c75");
+  ASSERT_TRUE(color);
+  index = colorPalette.findClosest(color);
+  closest = colorPalette[index];
+  ASSERT_TRUE(closest);
+  ASSERT_EQ("#d75f87", closest.toString());
 }
 
 TEST_F(HighlightTest, rule) {

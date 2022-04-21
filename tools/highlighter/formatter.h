@@ -58,9 +58,25 @@ enum class TermColorCap {
   INDEXED_256,
 };
 
+class IndexedColorPalette256 {
+private:
+  std::vector<Color> values;
+
+public:
+  IndexedColorPalette256();
+
+  Color operator[](unsigned char index) const { return this->values[index]; }
+
+  unsigned char findClosest(Color color) const;
+};
+
 class ANSIFormatter : public Formatter {
 private:
-  TermColorCap colorCap{TermColorCap::TRUE_COLOR};
+  const TermColorCap colorCap;
+
+  const IndexedColorPalette256 colorPalette256;
+
+  std::unordered_map<HighlightTokenClass, std::string> escapeSeqCache;
 
   /**
    * format color escape sequence
@@ -73,15 +89,13 @@ private:
    */
   std::string format(Color c, bool background);
 
-  void draw(StringRef ref, const StyleRule &styleRule);
+  const std::string &toEscapeSeq(HighlightTokenClass tokenClass);
 
   void emit(HighlightTokenClass tokenClass, Token token) override;
 
 public:
-  ANSIFormatter(StringRef source, const Style &style, std::ostream &output)
-      : Formatter(source, style, output) {}
-
-  void setColorCap(TermColorCap cap) { this->colorCap = cap; }
+  ANSIFormatter(StringRef source, const Style &style, std::ostream &output, TermColorCap cap)
+      : Formatter(source, style, output), colorCap(cap) {}
 
   void finalize() override;
 };

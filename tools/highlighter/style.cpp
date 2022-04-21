@@ -83,6 +83,18 @@ double Color::distance(Color o) const {
   return std::sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
 }
 
+std::string Color::toString() const {
+  std::string value;
+  if (this->initialized) {
+    char buf[16];
+    snprintf(buf, std::size(buf), "#%02x%02x%02x", this->red, this->green, this->blue);
+    value += buf;
+  } else {
+    value += "<invalid>";
+  }
+  return value;
+}
+
 // #######################
 // ##     StyleRule     ##
 // #######################
