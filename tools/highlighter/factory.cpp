@@ -24,10 +24,16 @@ namespace ydsh::highlighter {
 
 FormatterFactory::FormatterFactory(const StyleMap &map) : styleMap(std::cref(map)) {
   this->supportedFormats = {
-      {"null", FormatterType::NULL_},    {"nil", FormatterType::NULL_},
-      {"empty", FormatterType::NULL_},   {"ansi", FormatterType::ANSI},
-      {"term", FormatterType::ANSI},     {"console", FormatterType::ANSI},
-      {"terminal", FormatterType::ANSI},
+      {"null", FormatterType::NULL_},
+      {"nil", FormatterType::NULL_},
+      {"empty", FormatterType::NULL_},
+      {"ansi", FormatterType::TERM_TRUECOLOR},
+      {"console", FormatterType::TERM_TRUECOLOR},
+      {"term", FormatterType::TERM_TRUECOLOR},
+      {"terminal", FormatterType::TERM_TRUECOLOR},
+      {"console256", FormatterType::TERM_256},
+      {"term256", FormatterType::TERM_256},
+      {"terminal256", FormatterType::TERM_256},
   };
 }
 
@@ -55,8 +61,11 @@ FormatterFactory::create(std::ostream &stream) const {
   switch (formatterType) {
   case FormatterType::NULL_:
     return Ok(std::make_unique<NullFormatter>(this->source, *style, stream));
-  case FormatterType::ANSI: { // FIXME: term color cap
-    TermColorCap colorCap = TermColorCap::TRUE_COLOR;
+  case FormatterType::TERM_TRUECOLOR:
+  case FormatterType::TERM_256: {
+    TermColorCap colorCap = formatterType == FormatterType::TERM_TRUECOLOR
+                                ? TermColorCap::TRUE_COLOR
+                                : TermColorCap::INDEXED_256;
     auto formatter = std::make_unique<ANSIFormatter>(this->source, *style, stream, colorCap);
     return Ok(std::move(formatter));
   }

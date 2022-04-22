@@ -84,6 +84,18 @@ bool colorize(FormatterFactory &factory, const char *sourceName, std::ostream &o
   return true;
 }
 
+const char *getFormatterDescription(FormatterType type) {
+  switch (type) {
+  case FormatterType::NULL_:
+    return "output text without any formatting";
+  case FormatterType::TERM_TRUECOLOR:
+    return "format tokens with ANSI color codes (for true-color terminal)";
+  case FormatterType::TERM_256:
+    return "format tokens with ANSI color codes (for 256-color terminal)";
+  }
+  return ""; // normally unreachable, but suppress gcc warning
+}
+
 void showSupported(const FormatterFactory &factory, std::ostream &output) {
   // style
   std::vector<StringRef> names;
@@ -114,6 +126,7 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
       output << " " << e.toString();
     }
     output << std::endl;
+    output << "  - " << getFormatterDescription(type) << std::endl;
   }
 }
 

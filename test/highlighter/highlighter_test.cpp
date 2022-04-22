@@ -374,7 +374,11 @@ TEST_F(ColorizeTest, list) {
 
 Formatters:
 * empty nil null
+  - output text without any formatting
 * ansi console term terminal
+  - format tokens with ANSI color codes (for true-color terminal)
+* console256 term256 terminal256
+  - format tokens with ANSI color codes (for 256-color terminal)
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-l"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, out));
@@ -430,6 +434,8 @@ TEST_F(ColorizeTest, cli) {
   assert "$(echo -n '1234' | exec $colorize -s null)" == $'1234'
   assert "$(echo '1234' | exec $colorize -s null
                                          -o /dev/stderr /dev/stdin 2>&1 > /dev/null)" == $'1234'
+  assert "$(echo "'a'" | exec $colorize -s colorful -f term256)" ==
+                                         $'\033[38;5;7m\033[48;5;253m\'a\'\033[0m'
 
   assert exec $colorize fhauerfhai 2>&1 | grep 'cannot open file' > /dev/null
   assert exec $colorize . 2>&1 | grep 'cannot read file' > /dev/null

@@ -23,7 +23,8 @@ namespace ydsh::highlighter {
 
 enum class FormatterType {
   NULL_,
-  ANSI,
+  TERM_TRUECOLOR,
+  TERM_256,
 };
 
 class FormatterFactory {
