@@ -1875,7 +1875,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
   return 0;
 }
 
-static int showModule(const DSState &state) {
+static int listLoadedModules(const DSState &state) {
   auto &loader = state.modLoader;
   unsigned int size = loader.modSize();
   auto buf = std::make_unique<const char *[]>(size);
@@ -1886,6 +1886,41 @@ static int showModule(const DSState &state) {
     fprintf(stdout, "%s\n", buf[i]);
   }
   return 0;
+}
+
+static int showModule(const DSState &state, const ArrayObject &argvObj) {
+  const unsigned int size = argvObj.size();
+  if (size == 2) {
+    return listLoadedModules(state);
+  }
+
+  FakeModuleLoader loader(state.sysConfig);
+  auto cwd = getCWD();
+  unsigned int lastStatus = 0;
+  for (unsigned int i = 2; i < size; i++) {
+    auto ref = argvObj.getValues()[i].asStrRef();
+    if (ref.hasNullChar()) {
+      ERROR(argvObj, "contains null characters: %s", toPrintable(ref).c_str());
+      lastStatus = 1;
+      continue;
+    }
+
+    FilePtr file;
+    auto ret = loader.load(cwd.get(), ref.data(), file, ModLoadOption::IGNORE_NON_REG_FILE);
+    if (is<const char *>(ret)) {
+      const char *path = get<const char *>(ret);
+      fprintf(stdout, "%s\n", path);
+      fflush(stdout); // due to preserve output order
+      lastStatus = 0;
+    } else {
+      assert(is<ModLoadingError>(ret));
+      auto &e = get<ModLoadingError>(ret);
+      errno = e.getErrNo();
+      PERROR(argvObj, "%s", ref.data());
+      lastStatus = 1;
+    }
+  }
+  return lastStatus;
 }
 
 static int isSourced(const VMState &st) {
@@ -1963,7 +1998,7 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     } else if (ref == "unset") {
       return setOption(state, argvObj, false);
     } else if (ref == "module") {
-      return showModule(state);
+      return showModule(state, argvObj);
     } else if (ref == "info") {
       return showInfo(state);
     } else {

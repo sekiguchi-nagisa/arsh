@@ -30,6 +30,7 @@
 #### Builtin
 
 - **Breaking Change**: thow ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
+- ``shctl module`` sub-command now finds and prints full path of specified modules
 
 #### Module
 

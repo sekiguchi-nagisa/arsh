@@ -209,6 +209,17 @@ bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc);
  */
 int xexecve(const char *filePath, char *const *argv, char *const *envp);
 
+class FakeModuleLoader : public ModuleLoaderBase {
+private:
+  CStrPtr path;
+
+public:
+  explicit FakeModuleLoader(const SysConfig &config) : ModuleLoaderBase(config) {}
+
+private:
+  ModResult addNewModEntry(CStrPtr &&ptr) override;
+};
+
 } // namespace ydsh
 
 #endif // YDSH_CORE_H

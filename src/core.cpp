@@ -625,4 +625,9 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp) {
   return ret;
 }
 
+ModResult FakeModuleLoader::addNewModEntry(CStrPtr &&ptr) {
+  this->path = std::move(ptr);
+  return this->path.get();
+}
+
 } // namespace ydsh
