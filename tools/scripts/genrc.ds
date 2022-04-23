@@ -20,6 +20,8 @@ if (test -e $CONFIG_HOME) {
 if (test -e $CONFIG_HOME/ydshrc) {
     echo '`'$CONFIG_HOME/ydshrc'`' already exists
 } else {
+    (cd $CONFIG_HOME && shctl module edit > /dev/null) || { echo rcfile generation failed 1>&2; exit 1; }
+
     echo create '`'$CONFIG_HOME/ydshrc'`'
     echo 'source edit' > $CONFIG_HOME/ydshrc
 }
