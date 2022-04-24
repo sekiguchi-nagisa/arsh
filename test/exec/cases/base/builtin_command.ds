@@ -13,10 +13,12 @@ $PATH = ""
 
 try {
     command ls
+    assert $false
 } catch $e {
+    assert $? == 0
     assert $e is SystemError
 }
-assert($? != 0)
+##assert($? != 0)
 
 assert(command -p ls)
 

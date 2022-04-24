@@ -1,4 +1,4 @@
-#$test($status = 1)
+#$test($status = 0)
 
 function comp($a : [Int], $b : [Int]) : Bool {
     echo ${[$a, $b].sortWith($comp)}

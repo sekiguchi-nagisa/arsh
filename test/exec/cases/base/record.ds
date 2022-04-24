@@ -1,5 +1,5 @@
 
-#$test($status = 1)
+#$test($status = 0)
 
 # constructor without params
 typedef Empty {}

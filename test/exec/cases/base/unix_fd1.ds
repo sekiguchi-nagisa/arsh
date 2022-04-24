@@ -1,4 +1,4 @@
-#$test($status = 1)
+#$test($status = 0)
 
 assert $STDIN && $STDOUT && $STDERR
 assert $STDIN as String == "/dev/fd/0"

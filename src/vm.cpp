@@ -1944,6 +1944,7 @@ bool VM::handleException(DSState &state) {
             state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
           } else { // catch block
             state.stack.loadThrownObject();
+            state.setExitStatus(0); // clear exit status when enter catch block
           }
           return true;
         }

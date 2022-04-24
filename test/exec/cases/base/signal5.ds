@@ -1,4 +1,4 @@
-#$test($status = 1, $ignored = 'container|#')
+#$test($status = 0, $ignored = 'container|#')
 
 # kill
 
@@ -7,6 +7,7 @@ try {
     %'HUP'.kill(1);
     assert $false;
 } catch $a {
+    assert $? == 0
     $e = $a
 }
 

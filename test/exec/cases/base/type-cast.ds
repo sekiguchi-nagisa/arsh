@@ -1,4 +1,4 @@
-#$test($status = 1)
+#$test($status = 0)
 
 # int to float
 var a1 = 12

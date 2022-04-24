@@ -29,9 +29,13 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: clear exit status when enter catch block
+
 #### Builtin
 
-- **Breaking Change**: thow ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
+- **Breaking Change**: throw ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
 #### Module
