@@ -92,6 +92,8 @@ const char *getFormatterDescription(FormatterType type) {
     return "format tokens with ANSI color codes (for true-color terminal)";
   case FormatterType::TERM_256:
     return "format tokens with ANSI color codes (for 256-color terminal)";
+  case FormatterType::HTML:
+    return "format tokens as HTML codes";
   }
   return ""; // normally unreachable, but suppress gcc warning
 }

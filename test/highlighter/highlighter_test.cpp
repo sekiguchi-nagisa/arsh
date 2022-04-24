@@ -353,6 +353,28 @@ world'
   ASSERT_EQ(expected, stream.str());
 }
 
+TEST_F(HighlightTest, htmlFormatter1) {
+  std::stringstream stream;
+  std::string content = R"(
+  'hello<>&
+"world'
+
+)";
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
+  factory.setFormatName("html");
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+  const char *expected = R"EOF(<pre style="tab-size:4"><code>
+
+  <span style="color:#6a8759">&#39;hello&lt;&gt;&amp;</span>
+<span style="color:#6a8759">&quot;world&#39;</span>
+
+
+</code></pre>)EOF";
+  ASSERT_EQ(expected, stream.str());
+}
+
 class ColorizeTest : public ExpectOutput {
 public:
   using ExpectOutput::expect;
@@ -379,6 +401,8 @@ Formatters:
   - format tokens with ANSI color codes (for true-color terminal)
 * console256 term256 terminal256
   - format tokens with ANSI color codes (for 256-color terminal)
+* html
+  - format tokens as HTML codes
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-l"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, out));

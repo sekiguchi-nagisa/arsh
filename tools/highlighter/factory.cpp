@@ -34,6 +34,7 @@ FormatterFactory::FormatterFactory(const StyleMap &map) : styleMap(std::cref(map
       {"console256", FormatterType::TERM_256},
       {"term256", FormatterType::TERM_256},
       {"terminal256", FormatterType::TERM_256},
+      {"html", FormatterType::HTML},
   };
 }
 
@@ -67,6 +68,13 @@ FormatterFactory::create(std::ostream &stream) const {
                                 ? TermColorCap::TRUE_COLOR
                                 : TermColorCap::INDEXED_256;
     auto formatter = std::make_unique<ANSIFormatter>(this->source, *style, stream, colorCap);
+    return Ok(std::move(formatter));
+  }
+  case FormatterType::HTML: {
+    HTMLFormatOp formatOp{};
+    unsigned int offset = 1;
+    auto formatter =
+        std::make_unique<HTMLFormatter>(this->source, *style, stream, formatOp, offset);
     return Ok(std::move(formatter));
   }
   }

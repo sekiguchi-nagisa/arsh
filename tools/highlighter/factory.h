@@ -25,6 +25,7 @@ enum class FormatterType {
   NULL_,
   TERM_TRUECOLOR,
   TERM_256,
+  HTML,
 };
 
 class FormatterFactory {

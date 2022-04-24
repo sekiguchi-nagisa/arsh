@@ -195,4 +195,141 @@ void ANSIFormatter::finalize() {
   this->output.flush();
 }
 
+// ###########################
+// ##     HTMLFormatter     ##
+// ###########################
+
+static std::string toCSSImpl(const StyleRule &styleRule) {
+  std::vector<std::string> values;
+  if (styleRule.text) {
+    std::string value = "color:";
+    value += styleRule.text.toString();
+    values.push_back(std::move(value));
+  }
+  if (styleRule.background) {
+    std::string value = "background-color:";
+    value += styleRule.background.toString();
+    values.push_back(std::move(value));
+  }
+  if (styleRule.border) {
+    std::string value = "border:1px solid ";
+    value += styleRule.border.toString();
+    values.push_back(std::move(value));
+  }
+  if (styleRule.bold) {
+    values.emplace_back("font-weight:bold");
+  }
+  if (styleRule.italic) {
+    values.emplace_back("font-style:italic");
+  }
+  if (styleRule.underline) {
+    values.emplace_back("text-decoration:underline");
+  }
+
+  std::string value = "\"";
+  for (auto &e : values) {
+    if (value.size() > 1) {
+      value += ";";
+    }
+    value += e;
+  }
+  value += '"';
+  return value;
+}
+
+HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream &output,
+                             HTMLFormatOp op, unsigned int lineNumOffset)
+    : Formatter(source, style, output), formatOp(op), lineNumOffset(lineNumOffset) {
+  if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
+    this->output << "<html>\n<body";
+    auto css = toCSSImpl(style.getBackground());
+    if (!css.empty()) {
+      this->output << " style=" << css;
+    }
+    this->output << ">\n";
+  }
+  this->output << "<pre style=\"tab-size:4\"><code>\n";
+}
+
+const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {
+  if (auto iter = this->cssCache.find(tokenClass); iter != this->cssCache.end()) {
+    return iter->second;
+  }
+  auto &styleRule = this->style.findOrDefault(tokenClass);
+  auto pair = this->cssCache.emplace(tokenClass, toCSSImpl(styleRule));
+  assert(pair.second);
+  return pair.first->second;
+}
+
+std::string HTMLFormatter::escape(StringRef ref) const {
+  std::string value;
+  for (auto ch : ref) {
+    switch (ch) {
+    case '<':
+      value += "&lt;";
+      break;
+    case '>':
+      value += "&gt;";
+      break;
+    case '&':
+      value += "&amp;";
+      break;
+    case '"':
+      value += "&quot;";
+      break;
+    case '\'':
+      value += "&#39;";
+      break;
+    default:
+      value += ch;
+      break;
+    }
+  }
+  return value;
+}
+
+void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
+  // split by newline
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto r = ref.find('\n', pos);
+    auto line = ref.slice(pos, r);
+    pos = r != StringRef::npos ? r + 1 : r;
+
+    if (!line.empty()) {
+      if (tokenClass) {
+        this->output << "<span style=" << this->toCSS(*tokenClass);
+        this->output << ">" << this->escape(line) << "</span>";
+      } else {
+        this->write(line);
+      }
+    }
+    if (r != StringRef::npos) {
+      this->output << '\n';
+      this->newlineCount++;
+      (void)this->lineNumOffset;
+    }
+  }
+}
+
+void HTMLFormatter::emit(HighlightTokenClass tokenClass, Token token) {
+  assert(this->curSrcPos <= token.pos);
+  auto remain = this->source.slice(this->curSrcPos, token.pos);
+  this->draw(remain);
+  this->curSrcPos = token.endPos();
+  this->draw(this->source.substr(token.pos, token.size), &tokenClass);
+}
+
+void HTMLFormatter::finalize() {
+  if (this->curSrcPos < this->source.size()) {
+    auto remain = this->source.substr(this->curSrcPos);
+    this->draw(remain);
+    this->curSrcPos = this->source.size();
+  }
+  this->output << "\n</code></pre>";
+  if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
+    this->output << "\n</body>\n</html>" << std::endl;
+  }
+  this->output.flush();
+}
+
 } // namespace ydsh::highlighter

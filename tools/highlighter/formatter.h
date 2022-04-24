@@ -100,6 +100,43 @@ public:
   void finalize() override;
 };
 
+enum class HTMLFormatOp : unsigned int {
+  FULL = 1u << 0u,   // generate self-contained html (set background color)
+  LINENO = 1u << 1u, // emit line number
+};
+
+class HTMLFormatter : public Formatter {
+private:
+  const HTMLFormatOp formatOp;
+
+  const unsigned int lineNumOffset;
+
+  std::unordered_map<HighlightTokenClass, std::string> cssCache;
+
+  unsigned int newlineCount{0}; // 0-based line number count
+
+  const std::string &toCSS(HighlightTokenClass tokenClass);
+
+  std::string escape(StringRef ref) const;
+
+  void draw(StringRef ref, const HighlightTokenClass *tokenClass = nullptr);
+
+  void emit(HighlightTokenClass tokenClass, Token token) override;
+
+public:
+  HTMLFormatter(StringRef source, const Style &style, std::ostream &output, HTMLFormatOp op,
+                unsigned int lineNumOffset);
+
+  void finalize() override;
+};
+
 } // namespace ydsh::highlighter
+
+namespace ydsh {
+
+template <>
+struct allow_enum_bitop<highlighter::HTMLFormatOp> : std::true_type {};
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_FORMATTER_H
