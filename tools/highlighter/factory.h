@@ -40,6 +40,10 @@ private:
 
   StringRef source;
 
+  unsigned int lineNumOffset{1};
+
+  bool htmlFull{false};
+
 public:
   static constexpr const char *DEFAULT_STYLE_NAME = "darcula";
 
@@ -54,6 +58,10 @@ public:
   void setStyleName(const char *name) { this->styleName = name; }
 
   void setSource(StringRef src) { this->source = src; }
+
+  void setLineNumOffset(unsigned int offset) { this->lineNumOffset = offset; }
+
+  void setHTMLFull(bool set) { this->htmlFull = set; }
 
   Result<std::unique_ptr<Formatter>, std::string> create(std::ostream &stream) const;
 };

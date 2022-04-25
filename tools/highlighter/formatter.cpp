@@ -227,15 +227,11 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
   }
 
   std::string value;
-  if (!values.empty()) {
-    value += '"';
-    for (auto &e : values) {
-      if (value.size() > 1) {
-        value += ";";
-      }
-      value += e;
+  for (auto &e : values) {
+    if (!value.empty()) {
+      value += ";";
     }
-    value += '"';
+    value += e;
   }
   return value;
 }
@@ -247,7 +243,7 @@ HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream 
     this->output << "<html>\n<body";
     auto css = toCSSImpl(style.getBackground());
     if (!css.empty()) {
-      this->output << " style=" << css;
+      this->output << " style=\"" << css << "\"";
     }
     this->output << ">\n";
   }
@@ -302,7 +298,7 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
       if (tokenClass) {
         auto &css = this->toCSS(*tokenClass);
         if (!css.empty()) {
-          this->output << "<span style=" << css << ">";
+          this->output << "<span style=\"" << css << "\">";
         }
         this->output << this->escape(line);
         if (!css.empty()) {

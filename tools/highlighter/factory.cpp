@@ -72,9 +72,11 @@ FormatterFactory::create(std::ostream &stream) const {
   }
   case FormatterType::HTML: {
     HTMLFormatOp formatOp{};
-    unsigned int offset = 1;
-    auto formatter =
-        std::make_unique<HTMLFormatter>(this->source, *style, stream, formatOp, offset);
+    if (this->htmlFull) {
+      setFlag(formatOp, HTMLFormatOp::FULL);
+    }
+    auto formatter = std::make_unique<HTMLFormatter>(this->source, *style, stream, formatOp,
+                                                     this->lineNumOffset);
     return Ok(std::move(formatter));
   }
   }

@@ -433,11 +433,12 @@ Formatters:
 TEST_F(ColorizeTest, help) {
   auto out = format(R"(usage: %s [option ...] [source file]
 Options:
-    -f arg    specify output formatter (default is `ansi' formatter)
-    -h        show help message
-    -l        show supported formatters/styles
-    -o arg    specify output file (default is stdout)
-    -s arg    specify highlighter color style (default is `darcula' style)
+    --html-full    generate self-contained html (for html formatter)
+    -f arg         specify output formatter (default is `ansi' formatter)
+    -h             show help message
+    -l             show supported formatters/styles
+    -o arg         specify output file (default is stdout)
+    -s arg         specify highlighter color style (default is `darcula' style)
 )",
                     HIGHLIGHTER_PATH);
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-h"};
@@ -447,11 +448,12 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
-    -f arg    specify output formatter (default is `ansi' formatter)
-    -h        show help message
-    -l        show supported formatters/styles
-    -o arg    specify output file (default is stdout)
-    -s arg    specify highlighter color style (default is `darcula' style)
+    --html-full    generate self-contained html (for html formatter)
+    -f arg         specify output formatter (default is `ansi' formatter)
+    -h             show help message
+    -l             show supported formatters/styles
+    -o arg         specify output file (default is stdout)
+    -s arg         specify highlighter color style (default is `darcula' style)
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
@@ -460,17 +462,18 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(need argument: -o
 Options:
-    -f arg    specify output formatter (default is `ansi' formatter)
-    -h        show help message
-    -l        show supported formatters/styles
-    -o arg    specify output file (default is stdout)
-    -s arg    specify highlighter color style (default is `darcula' style)
+    --html-full    generate self-contained html (for html formatter)
+    -f arg         specify output formatter (default is `ansi' formatter)
+    -h             show help message
+    -l             show supported formatters/styles
+    -o arg         specify output file (default is stdout)
+    -s arg         specify highlighter color style (default is `darcula' style)
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
 }
 
-TEST_F(ColorizeTest, cli) {
+TEST_F(ColorizeTest, cli1) {
   auto source = format(R"EOF(
   var colorize = @(%s)[0]
 
@@ -491,6 +494,20 @@ TEST_F(ColorizeTest, cli) {
   assert "$(echo 1234 | exec $colorize -f higjaior 2>&1)" == 'unsupported formatter: higjaior'
 
   true
+)EOF",
+                       HIGHLIGHTER_PATH);
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
+}
+
+TEST_F(ColorizeTest, cli2) {
+  auto source = format(R"EOF(
+  var colorize = @(%s)[0]
+
+  assert echo 1234 | exec $colorize -f html | grep -v '<html>' > /dev/null
+  assert echo 1234 | exec $colorize -f html | grep -v '</html>' > /dev/null
+  assert echo 1234 | exec $colorize -f html --html-full | grep '<html>' > /dev/null
+  assert echo 1234 | exec $colorize -f html --html-full | grep '</html>' > /dev/null
+
 )EOF",
                        HIGHLIGHTER_PATH);
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
