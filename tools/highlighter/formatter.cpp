@@ -211,11 +211,11 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
     value += styleRule.background.toString();
     values.push_back(std::move(value));
   }
-  if (styleRule.border) {
-    std::string value = "border:1px solid ";
-    value += styleRule.border.toString();
-    values.push_back(std::move(value));
-  }
+  //  if (styleRule.border) { //FIXME: are there any styles that use border?
+  //    std::string value = "border:1px solid ";
+  //    value += styleRule.border.toString();
+  //    values.push_back(std::move(value));
+  //  }
   if (styleRule.bold) {
     values.emplace_back("font-weight:bold");
   }
@@ -226,14 +226,17 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
     values.emplace_back("text-decoration:underline");
   }
 
-  std::string value = "\"";
-  for (auto &e : values) {
-    if (value.size() > 1) {
-      value += ";";
+  std::string value;
+  if (!values.empty()) {
+    value += '"';
+    for (auto &e : values) {
+      if (value.size() > 1) {
+        value += ";";
+      }
+      value += e;
     }
-    value += e;
+    value += '"';
   }
-  value += '"';
   return value;
 }
 
@@ -297,8 +300,14 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
 
     if (!line.empty()) {
       if (tokenClass) {
-        this->output << "<span style=" << this->toCSS(*tokenClass);
-        this->output << ">" << this->escape(line) << "</span>";
+        auto &css = this->toCSS(*tokenClass);
+        if (!css.empty()) {
+          this->output << "<span style=" << css << ">";
+        }
+        this->output << this->escape(line);
+        if (!css.empty()) {
+          this->output << "</span>";
+        }
       } else {
         this->write(line);
       }

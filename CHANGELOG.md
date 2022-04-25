@@ -26,6 +26,7 @@
 - add standalone syntax highlighter called ``dscolorize``
     - support the following output formats
         - ANSI color codes for true-color terminal, 256-color terminal
+        - HTML
 
 ### Changed
 
