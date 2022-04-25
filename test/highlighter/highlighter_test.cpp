@@ -366,11 +366,10 @@ TEST_F(HighlightTest, htmlFormatter1) {
   factory.setFormatName("html");
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
-  const char *expected = R"EOF(<pre style="tab-size:4"><code>
-
+  const char *expected = R"EOF(<pre style="tab-size:4">
+<code>
   <span style="color:#bbbbbb;background-color:#fff0f0">&#39;hello&lt;&gt;&amp;</span>
 <span style="color:#bbbbbb;background-color:#fff0f0">&quot;world&#39;</span>
-
 
 </code></pre>)EOF";
   ASSERT_EQ(expected, stream.str());
@@ -390,11 +389,10 @@ assert $OSTYPE == 'Linux'
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  const char *expected = R"EOF(<pre style="tab-size:4"><code>
-
+  const char *expected = R"EOF(<pre style="tab-size:4">
+<code>
 <span style="color:#888888;font-style:italic">#!/usr/bin/env ydsh</span>
 <span style="font-weight:bold;text-decoration:underline">assert</span> <span style="color:#666666;font-weight:bold;font-style:italic">$OSTYPE</span> == <span style="color:#666666;font-style:italic">&#39;Linux&#39;</span>
-
 </code></pre>)EOF";
   ASSERT_EQ(expected, stream.str());
 }

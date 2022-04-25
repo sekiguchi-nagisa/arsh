@@ -251,7 +251,7 @@ HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream 
     }
     this->output << ">\n";
   }
-  this->output << "<pre style=\"tab-size:4\"><code>\n";
+  this->output << "<pre style=\"tab-size:4\">\n<code>";
 }
 
 const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {
@@ -334,7 +334,7 @@ void HTMLFormatter::finalize() {
     this->draw(remain);
     this->curSrcPos = this->source.size();
   }
-  this->output << "\n</code></pre>";
+  this->output << "</code></pre>";
   if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
     this->output << "\n</body>\n</html>" << std::endl;
   }
