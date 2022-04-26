@@ -38,6 +38,7 @@ enum class HighlightTokenClass : unsigned int {
   MEMBER,
   FOREGROUND_, // pseudo token class for foreground (text) color
   BACKGROUND_, // pseudo token class for background color
+  LINENO_,     // pseudo token class for line number
 };
 
 HighlightTokenClass toTokenClass(TokenKind kind);

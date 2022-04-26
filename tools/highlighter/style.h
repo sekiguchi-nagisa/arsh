@@ -49,6 +49,18 @@ struct Color {
 
   [[nodiscard]] double distance(Color o) const;
 
+  /**
+   *
+   * @param factor
+   * -1 ~ 1
+   * @return
+   */
+  [[nodiscard]] Color changeBrightness(double factor) const;
+
+  double brightness() const {
+    return static_cast<double>(this->red + this->green + this->blue) / 3.0 / 255.0;
+  }
+
   std::string toString() const;
 };
 

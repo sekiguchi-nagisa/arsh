@@ -83,6 +83,27 @@ double Color::distance(Color o) const {
   return std::sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
 }
 
+/**
+ * see ()
+ * @param factor
+ * if negative,darker color, if positive lighter color
+ * @return
+ */
+Color Color::changeBrightness(double factor) const {
+  Color c = *this;
+  if (factor < 0) {
+    factor = 1 + factor;
+    c.red = static_cast<unsigned char>(c.red * factor);
+    c.green = static_cast<unsigned char>(c.green * factor);
+    c.blue = static_cast<unsigned char>(c.blue * factor);
+  } else {
+    c.red = static_cast<unsigned char>((255 - c.red) * factor + c.red);
+    c.green = static_cast<unsigned char>((255 - c.green) * factor + c.green);
+    c.blue = static_cast<unsigned char>((255 - c.blue) * factor + c.blue);
+  }
+  return c;
+}
+
 std::string Color::toString() const {
   std::string value;
   if (this->initialized) {
@@ -158,7 +179,7 @@ const StyleRule *Style::find(HighlightTokenClass tokenClass) const {
 // ##     StyleMap     ##
 // ######################
 
-#define LOAD_HIGHLIGHT_STYLE(name) defineStyle(#name, style_wrapper_##name::buildRules());
+#define LOAD_HIGHLIGHT_STYLE(name) defineStyle(#name, style_wrapper_##name::buildRules())
 
 StyleMap::StyleMap() {
   LOAD_HIGHLIGHT_STYLE(algol);
@@ -188,15 +209,28 @@ bool StyleMap::defineStyle(const char *name,
     foreground = foreground.synthesize(iter->second);
   }
 
+  auto lineno = StyleRule();
+  if (auto iter = rules.find(HighlightTokenClass::LINENO_); iter != rules.end()) {
+    lineno = lineno.synthesize(iter->second);
+  } else {
+    auto color = background.background;
+    lineno.text = color.changeBrightness(color.brightness() > 0.5 ? -0.5 : 0.5);
+  }
+
   std::unordered_map<HighlightTokenClass, StyleRule> map;
   for (auto &e : rules) {
-    if (e.first == HighlightTokenClass::FOREGROUND_ ||
-        e.first == HighlightTokenClass::BACKGROUND_) {
+    switch (e.first) {
+    case HighlightTokenClass::FOREGROUND_:
+    case HighlightTokenClass::BACKGROUND_:
+    case HighlightTokenClass::LINENO_:
       continue;
+    default:
+      break;
     }
     auto rule = foreground.synthesize(e.second);
     map.emplace(e.first, rule);
   }
+  map.emplace(HighlightTokenClass::LINENO_, lineno);
 
   return this->add(Style(name, foreground, background, std::move(map)));
 }

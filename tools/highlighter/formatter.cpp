@@ -276,7 +276,12 @@ void HTMLFormatter::emitLineNum(unsigned int lineNum) {
   for (unsigned int i = 0; i < diff; i++) {
     padding += ' ';
   }
-  this->output << "<span>" << padding << lineNum << "</span>   ";
+  auto &css = this->toCSS(HighlightTokenClass::LINENO_);
+  this->output << "<span";
+  if (!css.empty()) {
+    this->output << " style=\"" << css << "\"";
+  }
+  this->output << ">" << padding << lineNum << "</span>   ";
 }
 
 const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {

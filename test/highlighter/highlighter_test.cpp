@@ -411,19 +411,20 @@ TEST_F(HighlightTest, htmlFormatter3) {
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
   const char *expected = "<pre style=\"tab-size:4\">\n"
-                         "<code><span>1</span>   \n"
-                         "<span>2</span>   </code></pre>";
+                         "<code><span style=\"color:#7f7f7f\">1</span>   \n"
+                         "<span style=\"color:#7f7f7f\">2</span>   </code></pre>";
   ASSERT_EQ(expected, stream.str());
 
   //
   stream = std::stringstream();
-  factory.setLineno("11");
+  factory.setStyleName("darcula");
+  factory.setLineno("9");
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
   expected = "<pre style=\"tab-size:4\">\n"
-             "<code><span>11</span>   \n"
-             "<span>12</span>   </code></pre>";
+             "<code><span style=\"color:#959595\"> 9</span>   \n"
+             "<span style=\"color:#959595\">10</span>   </code></pre>";
   ASSERT_EQ(expected, stream.str());
 }
 
