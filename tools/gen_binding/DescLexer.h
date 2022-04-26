@@ -67,4 +67,4 @@ inline bool isEOSToken(DescTokenKind kind) { return kind == DescTokenKind::EOS; 
 
 const char *toString(DescTokenKind kind);
 
-#endif // YDSH_TOOLS_DESCLEXER_H
+#endif // YDSH_TOOLS_GEN_BINDING_DESCLEXER_H

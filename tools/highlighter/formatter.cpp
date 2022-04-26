@@ -294,7 +294,7 @@ const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {
   return pair.first->second;
 }
 
-std::string HTMLFormatter::escape(StringRef ref) const {
+static std::string escape(StringRef ref) {
   std::string value;
   for (auto ch : ref) {
     switch (ch) {
@@ -334,7 +334,7 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
         if (!css.empty()) {
           this->output << "<span style=\"" << css << "\">";
         }
-        this->output << this->escape(line);
+        this->output << escape(line);
         if (!css.empty()) {
           this->output << "</span>";
         }

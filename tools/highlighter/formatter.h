@@ -67,7 +67,7 @@ public:
 
   Color operator[](unsigned char index) const { return this->values[index]; }
 
-  unsigned char findClosest(Color color) const;
+  [[nodiscard]] unsigned char findClosest(Color color) const;
 };
 
 class ANSIFormatter : public Formatter {
@@ -120,8 +120,6 @@ private:
   void emitLineNum(unsigned int lineNum);
 
   const std::string &toCSS(HighlightTokenClass tokenClass);
-
-  std::string escape(StringRef ref) const;
 
   void draw(StringRef ref, const HighlightTokenClass *tokenClass = nullptr);
 

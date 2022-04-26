@@ -41,7 +41,7 @@ static Result<JSON, std::string> parseJSON(const std::string &fileName, const st
 }
 
 static bool matchSectionEnd(const std::string &line, std::smatch &match) {
-  static std::regex re("^(<<<|---)[ \\t]*(\\d*)[ \\t]*$", std::regex_constants::ECMAScript);
+  static std::regex re(R"(^(<<<|---)[ \t]*(\d*)[ \t]*$)", std::regex_constants::ECMAScript);
   return std::regex_match(line, match, re);
 }
 
