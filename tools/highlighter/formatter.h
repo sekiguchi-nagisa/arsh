@@ -115,6 +115,10 @@ private:
 
   unsigned int newlineCount{0}; // 0-based line number count
 
+  unsigned int maxLineNumDigits{0}; // for line number width
+
+  void emitLineNum(unsigned int lineNum);
+
   const std::string &toCSS(HighlightTokenClass tokenClass);
 
   std::string escape(StringRef ref) const;

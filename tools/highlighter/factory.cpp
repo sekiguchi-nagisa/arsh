@@ -75,8 +75,18 @@ FormatterFactory::create(std::ostream &stream) const {
     if (this->htmlFull) {
       setFlag(formatOp, HTMLFormatOp::FULL);
     }
-    auto formatter = std::make_unique<HTMLFormatter>(this->source, *style, stream, formatOp,
-                                                     this->lineNumOffset);
+    if (this->lineno) {
+      setFlag(formatOp, HTMLFormatOp::LINENO);
+    }
+    unsigned int lineNumOffset = 1;
+    if (this->lineno) {
+      auto ret = convertToNum<unsigned int>(this->lineno);
+      if (ret.second) {
+        lineNumOffset = ret.first;
+      }
+    }
+    auto formatter =
+        std::make_unique<HTMLFormatter>(this->source, *style, stream, formatOp, lineNumOffset);
     return Ok(std::move(formatter));
   }
   }

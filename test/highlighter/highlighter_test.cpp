@@ -397,6 +397,36 @@ assert $OSTYPE == 'Linux'
   ASSERT_EQ(expected, stream.str());
 }
 
+TEST_F(HighlightTest, htmlFormatter3) {
+  std::stringstream stream;
+  std::string content = R"(
+)";
+
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
+  factory.setFormatName("html");
+  factory.setLineno("hoge");
+  factory.setStyleName("algol");
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+
+  const char *expected = "<pre style=\"tab-size:4\">\n"
+                         "<code><span>1</span>   \n"
+                         "<span>2</span>   </code></pre>";
+  ASSERT_EQ(expected, stream.str());
+
+  //
+  stream = std::stringstream();
+  factory.setLineno("11");
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+
+  expected = "<pre style=\"tab-size:4\">\n"
+             "<code><span>11</span>   \n"
+             "<span>12</span>   </code></pre>";
+  ASSERT_EQ(expected, stream.str());
+}
+
 class ColorizeTest : public ExpectOutput {
 public:
   using ExpectOutput::expect;
@@ -433,12 +463,13 @@ Formatters:
 TEST_F(ColorizeTest, help) {
   auto out = format(R"(usage: %s [option ...] [source file]
 Options:
-    --html-full    generate self-contained html (for html formatter)
-    -f arg         specify output formatter (default is `ansi' formatter)
-    -h             show help message
-    -l             show supported formatters/styles
-    -o arg         specify output file (default is stdout)
-    -s arg         specify highlighter color style (default is `darcula' style)
+    --html-full            generate self-contained html (for html formatter)
+    --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    -f arg                 specify output formatter (default is `ansi' formatter)
+    -h                     show help message
+    -l                     show supported formatters/styles
+    -o arg                 specify output file (default is stdout)
+    -s arg                 specify highlighter color style (default is `darcula' style)
 )",
                     HIGHLIGHTER_PATH);
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-h"};
@@ -448,12 +479,13 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
-    --html-full    generate self-contained html (for html formatter)
-    -f arg         specify output formatter (default is `ansi' formatter)
-    -h             show help message
-    -l             show supported formatters/styles
-    -o arg         specify output file (default is stdout)
-    -s arg         specify highlighter color style (default is `darcula' style)
+    --html-full            generate self-contained html (for html formatter)
+    --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    -f arg                 specify output formatter (default is `ansi' formatter)
+    -h                     show help message
+    -l                     show supported formatters/styles
+    -o arg                 specify output file (default is stdout)
+    -s arg                 specify highlighter color style (default is `darcula' style)
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
@@ -462,12 +494,13 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(need argument: -o
 Options:
-    --html-full    generate self-contained html (for html formatter)
-    -f arg         specify output formatter (default is `ansi' formatter)
-    -h             show help message
-    -l             show supported formatters/styles
-    -o arg         specify output file (default is stdout)
-    -s arg         specify highlighter color style (default is `darcula' style)
+    --html-full            generate self-contained html (for html formatter)
+    --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    -f arg                 specify output formatter (default is `ansi' formatter)
+    -h                     show help message
+    -l                     show supported formatters/styles
+    -o arg                 specify output file (default is stdout)
+    -s arg                 specify highlighter color style (default is `darcula' style)
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
@@ -507,6 +540,16 @@ TEST_F(ColorizeTest, cli2) {
   assert echo 1234 | exec $colorize -f html | grep -v '</html>' > /dev/null
   assert echo 1234 | exec $colorize -f html --html-full | grep '<html>' > /dev/null
   assert echo 1234 | exec $colorize -f html --html-full | grep '</html>' > /dev/null
+
+  assert (echo 1234 && echo 4321) |
+        exec $colorize -f html --html-lineno | grep '>1</span>' > /dev/null
+  assert (echo 1234 && echo 4321) |
+        exec $colorize -f html --html-lineno | grep '>2</span>' > /dev/null
+
+  assert (echo 1234 && echo 4321) |
+        exec $colorize -f html --html-lineno=10 | grep '>10</span>' > /dev/null
+  assert (echo 1234 && echo 4321) |
+        exec $colorize -f html --html-lineno=10 | grep '>11</span>' > /dev/null
 
 )EOF",
                        HIGHLIGHTER_PATH);

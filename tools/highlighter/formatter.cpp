@@ -236,6 +236,16 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
   return value;
 }
 
+static unsigned int digits(uint64_t value) {
+  assert(value > 0);
+  unsigned int c = 0;
+  while (value > 0) {
+    c++;
+    value /= 10;
+  }
+  return c;
+}
+
 HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream &output,
                              HTMLFormatOp op, unsigned int lineNumOffset)
     : Formatter(source, style, output), formatOp(op), lineNumOffset(lineNumOffset) {
@@ -248,6 +258,25 @@ HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream 
     this->output << ">\n";
   }
   this->output << "<pre style=\"tab-size:4\">\n<code>";
+
+  if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
+    uint64_t maxLineNum = this->lineNumOffset;
+    for (StringRef::size_type pos = 0; (pos = this->source.find('\n', pos)) != StringRef::npos;
+         pos++) {
+      maxLineNum++;
+    }
+    this->maxLineNumDigits = digits(maxLineNum);
+    this->emitLineNum(this->lineNumOffset);
+  }
+}
+
+void HTMLFormatter::emitLineNum(unsigned int lineNum) {
+  unsigned int diff = this->maxLineNumDigits - digits(lineNum);
+  std::string padding;
+  for (unsigned int i = 0; i < diff; i++) {
+    padding += ' ';
+  }
+  this->output << "<span>" << padding << lineNum << "</span>   ";
 }
 
 const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {
@@ -311,7 +340,10 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
     if (r != StringRef::npos) {
       this->output << '\n';
       this->newlineCount++;
-      (void)this->lineNumOffset;
+      if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
+        uint64_t lineNum = this->lineNumOffset + this->newlineCount;
+        this->emitLineNum(lineNum);
+      }
     }
   }
 }

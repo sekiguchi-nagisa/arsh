@@ -32,7 +32,9 @@ using namespace ydsh::highlighter;
   OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
   OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")    \
   OP(LIST, "-l", opt::NO_ARG, "show supported formatters/styles")                                  \
-  OP(HTML_FULL, "--html-full", opt::NO_ARG, "generate self-contained html (for html formatter)")
+  OP(HTML_FULL, "--html-full", opt::NO_ARG, "generate self-contained html (for html formatter)")   \
+  OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
+     "emit line number starts with ARG (for html formatter)")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -170,6 +172,9 @@ int main(int argc, char **argv) {
       break;
     case OptionSet::HTML_FULL:
       factory.setHTMLFull(true);
+      break;
+    case OptionSet::HTML_LINENO:
+      factory.setLineno(result.arg() != nullptr ? result.arg() : "1");
       break;
     }
   }

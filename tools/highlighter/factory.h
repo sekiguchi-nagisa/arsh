@@ -40,7 +40,7 @@ private:
 
   StringRef source;
 
-  unsigned int lineNumOffset{1};
+  const char *lineno{nullptr};
 
   bool htmlFull{false};
 
@@ -59,7 +59,7 @@ public:
 
   void setSource(StringRef src) { this->source = src; }
 
-  void setLineNumOffset(unsigned int offset) { this->lineNumOffset = offset; }
+  void setLineno(const char *num) { this->lineno = num; }
 
   void setHTMLFull(bool set) { this->htmlFull = set; }
 
