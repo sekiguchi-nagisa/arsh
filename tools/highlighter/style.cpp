@@ -84,7 +84,7 @@ double Color::distance(Color o) const {
 }
 
 /**
- * see ()
+ * see (http://www.pvladov.com/2012/09/make-color-lighter-or-darker.html)
  * @param factor
  * if negative,darker color, if positive lighter color
  * @return
