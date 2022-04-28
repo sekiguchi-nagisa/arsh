@@ -336,7 +336,7 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
     errno = old;
   });
 
-  for (dirent *entry; (entry = readdir(dir));) {
+  for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
     auto matcher = createWildCardMatcher<Meta>(iter, this->end, this->option);
     const WildMatchResult ret = matcher(entry->d_name);
     if (ret == WildMatchResult::FAILED) {

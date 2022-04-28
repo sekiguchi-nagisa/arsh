@@ -1157,7 +1157,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     }
     return true;
   } else {
-    const char *msg = ret == GlobMatchResult::NOMATCH ? "No matches for glob pattern"
+    const char *msg = ret == GlobMatchResult::NOMATCH ? "no matches for glob pattern"
                                                       : "number of glob results reaches limit";
     raiseGlobbingError(state, state.stack, size, msg);
     return false;
