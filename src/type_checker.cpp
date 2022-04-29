@@ -859,7 +859,7 @@ void TypeChecker::checkExpansion(CmdArgNode &node) {
   node.setExpansionSize(expansionSize);
 
   if (node.getExpansionSize() > SYS_LIMIT_EXPANSION_FRAG_NUM) {
-    this->reportError<GlobLimit>(node);
+    this->reportError<ExpandLimit>(node);
   }
 }
 

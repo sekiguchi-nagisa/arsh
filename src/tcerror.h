@@ -82,7 +82,7 @@ DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");
 DEFINE_TCError(LocalLimit, "number of local variables reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
-DEFINE_TCError(GlobLimit, "number of glob path fragments reaches limit");
+DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in source path");
 DEFINE_TCError(NoGlobMatch, "no matches for glob pattern: `%s'");
 DEFINE_TCError(GlobRetLimit, "number of glob results reaches limit: `%s'");
