@@ -557,12 +557,14 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
     if (!optional && CUR_KIND() == TokenKind::CMD_ARG_PART &&
         this->lexer->toStrRef(this->curToken) == "as") {
-      this->expectAndChangeMode(TokenKind::CMD_ARG_PART, yycNAME); // always success
+      this->curKind = TokenKind::AS;                     // force change token kind for highlight
+      this->expectAndChangeMode(TokenKind::AS, yycNAME); // always success
       Token token = TRY(this->expectAndChangeMode(TokenKind::IDENTIFIER, yycSTMT));
       node->setName(token, this->lexer->toName(token));
     } else if (CUR_KIND() == TokenKind::CMD_ARG_PART &&
                this->lexer->toStrRef(this->curToken) == "inlined") {
-      Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
+      this->curKind = TokenKind::INLINED;             // force change token kind for highlight
+      Token token = this->expect(TokenKind::INLINED); // always success
       node->setInlined(true);
       node->updateToken(token);
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
