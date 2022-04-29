@@ -303,6 +303,9 @@ enum class ForkKind : unsigned char {
 enum class GlobMeta : unsigned char {
   ANY,
   ZERO_OR_MORE,
+  BRACE_OPEN,
+  BRACE_CLOSE,
+  BRACE_SEP,
 };
 
 inline const char *toString(GlobMeta meta) {
@@ -311,6 +314,12 @@ inline const char *toString(GlobMeta meta) {
     return "?";
   case GlobMeta::ZERO_OR_MORE:
     return "*";
+  case GlobMeta::BRACE_OPEN:
+    return "{";
+  case GlobMeta::BRACE_CLOSE:
+    return "}";
+  case GlobMeta::BRACE_SEP:
+    return ",";
   }
   return ""; // normally unreachable
 }
@@ -325,7 +334,7 @@ constexpr size_t SYS_LIMIT_MOD_ID = UINT16_MAX;
 constexpr size_t SYS_LIMIT_GLOBAL_NUM = UINT16_MAX; // FIXME: check global var limit
 constexpr size_t SYS_LIMIT_LOCAL_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
-constexpr size_t SYS_LIMIT_GLOB_FRAG_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_EXPANSION_FRAG_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 256;
 constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;

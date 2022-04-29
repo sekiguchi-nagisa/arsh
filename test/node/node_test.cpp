@@ -519,7 +519,8 @@ nodes:
                           pos: 14
                           size: 2
                         type:
-                        globPathSize: 0
+                        expansionSize: 0
+                        braceExpansion: false
                         segmentNodes:
                           - nodeKind: String
                             token:
@@ -558,7 +559,8 @@ nodes:
                         pos: 29
                         size: 7
                       type:
-                      globPathSize: 0
+                      expansionSize: 0
+                      braceExpansion: false
                       segmentNodes:
                         - nodeKind: Embed
                           token:
@@ -881,7 +883,8 @@ nodes:
             pos: 4
             size: 4
           type:
-          globPathSize: 0
+          expansionSize: 0
+          braceExpansion: false
           segmentNodes:
             - nodeKind: String
               token:
@@ -922,7 +925,8 @@ nodes:
             pos: 5
             size: 1
           type: [String]
-          globPathSize: 1
+          expansionSize: 1
+          braceExpansion: false
           segmentNodes:
             - nodeKind: WildCard
               token:
@@ -930,6 +934,7 @@ nodes:
                 size: 1
               type: String
               meta: "*"
+              expand: true
       redirCount: 0
       needFork: true
       handle: null

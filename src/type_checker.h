@@ -606,6 +606,8 @@ private:
    */
   void resolvePathList(SourceListNode &node);
 
+  void checkExpansion(CmdArgNode &node);
+
   // visitor api
   void visitTypeNode(TypeNode &node) override;
   void visitNumberNode(NumberNode &node) override;

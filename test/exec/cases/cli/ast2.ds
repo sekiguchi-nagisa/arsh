@@ -20,7 +20,8 @@ nodes:
         pos: 7
         size: ${len}
       type:
-      globPathSize: 0
+      expansionSize: 0
+      braceExpansion: false
       segmentNodes:
         - nodeKind: String
           token:

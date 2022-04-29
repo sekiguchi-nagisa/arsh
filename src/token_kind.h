@@ -151,6 +151,9 @@
   TOKEN(GLOB_ANY, "<glob ?>")                                                                      \
   TOKEN(GLOB_ZERO_OR_MORE, "<glob *>")                                                             \
   TOKEN(PATH_SEP, ":")                                                                             \
+  TOKEN(BRACE_OPEN, "{")                                                                           \
+  TOKEN(BRACE_CLOSE, "}")                                                                          \
+  TOKEN(BRACE_SEP, ",")                                                                            \
   /* redir op */                                                                                   \
   TOKEN(REDIR_IN_2_FILE, "<")                                                                      \
   TOKEN(REDIR_OUT_2_FILE, "1>")                                                                    \
@@ -321,6 +324,9 @@
   OP(PATH_SEP)                                                                                     \
   OP(GLOB_ANY)                                                                                     \
   OP(GLOB_ZERO_OR_MORE)                                                                            \
+  OP(BRACE_OPEN)                                                                                   \
+  OP(BRACE_CLOSE)                                                                                  \
+  OP(BRACE_SEP)                                                                                    \
   OP(STRING_LITERAL)                                                                               \
   OP(OPEN_DQUOTE)                                                                                  \
   OP(START_SUB_CMD)                                                                                \

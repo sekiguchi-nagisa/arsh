@@ -842,6 +842,27 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   }
 }
 
+void TypeChecker::checkExpansion(CmdArgNode &node) {
+  const unsigned int size = node.getSegmentNodes().size();
+  unsigned int expansionSize = 0;
+  for (unsigned int i = 0; i < size; i++) {
+    auto &e = node.refSegmentNodes()[i];
+    if (isExpandingWildCard(*e)) {
+      if (expansionSize == 0 && i > 0) {
+        expansionSize++;
+      }
+      expansionSize++;
+    } else if (i > 0 && isExpandingWildCard(*node.getSegmentNodes()[i - 1])) {
+      expansionSize++;
+    }
+  }
+  node.setExpansionSize(expansionSize);
+
+  if (node.getExpansionSize() > SYS_LIMIT_EXPANSION_FRAG_NUM) {
+    this->reportError<GlobLimit>(node);
+  }
+}
+
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   for (auto &exprNode : node.getSegmentNodes()) {
     this->checkTypeAsExpr(*exprNode);
@@ -849,10 +870,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
            exprNode->getType().is(TYPE::UnixFD) || exprNode->getType().isNothingType() ||
            exprNode->getType().isUnresolved());
   }
-
-  if (node.getGlobPathSize() > SYS_LIMIT_GLOB_FRAG_NUM) {
-    this->reportError<GlobLimit>(node);
-  }
+  this->checkExpansion(node);
 
   // not allow String Array and UnixFD type
   if (node.getSegmentNodes().size() > 1) {
@@ -867,8 +885,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     }
   }
   assert(!node.getSegmentNodes().empty());
-  node.setType(node.getGlobPathSize() > 0 ? this->typePool.get(TYPE::StringArray)
-                                          : node.getSegmentNodes()[0]->getType());
+  node.setType(node.getExpansionSize() > 0 ? this->typePool.get(TYPE::StringArray)
+                                           : node.getSegmentNodes()[0]->getType());
 }
 
 void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
@@ -1280,6 +1298,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   case NodeKind::WildCard: {
     auto &wildCardNode = cast<WildCardNode>(node);
     auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
+    constNode->setExapnd(wildCardNode.isExpand());
     constNode->setType(wildCardNode.getType());
     return constNode;
   }
@@ -2076,7 +2095,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   }
   auto &pathNode = *node.getConstPathNode();
   std::vector<std::shared_ptr<const std::string>> ret;
-  if (pathNode.getGlobPathSize() == 0) {
+  if (pathNode.getExpansionSize() == 0) {
     std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
     if (pathNode.isTilde()) {
       expandTilde(path, true);
@@ -2127,12 +2146,14 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     this->reportError<OutsideToplevel>(node, "source statement");
     return;
   }
-  bool isGlob = node.getPathNode().getGlobPathSize() > 0 && !node.getNameInfoPtr();
+  this->checkTypeExactly(node.getPathNode());
+  bool isGlob = node.getPathNode().getExpansionSize() > 0 && !node.getNameInfoPtr();
   auto &exprType = this->typePool.get(isGlob ? TYPE::StringArray : TYPE::String);
   this->checkType(exprType, node.getPathNode());
 
   std::unique_ptr<CmdArgNode> constPathNode;
-  for (auto &e : node.getPathNode().getSegmentNodes()) {
+  auto &pathNode = node.getPathNode();
+  for (auto &e : pathNode.getSegmentNodes()) {
     auto constNode = this->evalConstant(*e);
     if (!constNode) {
       return;
@@ -2141,7 +2162,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     if (isa<StringNode>(*constNode)) {
       auto ref = StringRef(cast<StringNode>(*constNode).getValue());
       if (ref.hasNullChar()) {
-        this->reportError<NullInPath>(node.getPathNode());
+        this->reportError<NullInPath>(pathNode);
         return;
       }
     }
@@ -2151,6 +2172,9 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
       constPathNode->addSegmentNode(std::move(constNode));
     }
   }
+  constPathNode->setExpansionSize(pathNode.getExpansionSize());
+  constPathNode->setBraceExpansion(pathNode.isBraceExpansion());
+  constPathNode->setType(pathNode.getType());
   node.setConstPathNode(std::move(constPathNode));
   this->resolvePathList(node);
 }

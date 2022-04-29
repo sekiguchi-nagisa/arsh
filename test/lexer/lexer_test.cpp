@@ -1219,10 +1219,12 @@ TEST_F(LexerTest_Lv1, CMD_ARG5) {
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG6) {
-  const char *text = "{}}{";
+  const char *text = "{}}{,";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BRACE_OPEN, "{", TokenKind::BRACE_CLOSE, "}",
+                                 TokenKind::BRACE_CLOSE, "}", TokenKind::BRACE_OPEN, "{",
+                                 TokenKind::BRACE_SEP, ",", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG7) {

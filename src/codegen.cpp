@@ -770,12 +770,12 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
-  if (node.getGlobPathSize() > 0) {
+  if (node.getExpansionSize() > 0) {
     const unsigned int size = node.getSegmentNodes().size();
     unsigned int firstIndex = 0;
     for (unsigned int i = 0; i < size; i++) {
       auto &e = node.getSegmentNodes()[i];
-      if (isa<WildCardNode>(*e)) {
+      if (isExpandingWildCard(*e)) {
         this->visit(*e);
         firstIndex = i + 1;
       } else {
@@ -783,8 +783,8 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
       }
     }
     this->emit0byteIns(OpCode::PUSH_NULL); // sentinel
-    assert(node.getGlobPathSize() <= SYS_LIMIT_GLOB_FRAG_NUM);
-    this->emitGlobIns(node.getGlobPathSize(), node.isTilde());
+    assert(node.getExpansionSize() <= SYS_LIMIT_EXPANSION_FRAG_NUM);
+    this->emitGlobIns(node.getExpansionSize(), node.isTilde());
   } else {
     this->generateCmdArg(node);
     this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
@@ -818,7 +818,13 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 }
 
 void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
-  this->emit1byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta));
+  if (node.isExpand()) {
+    this->emit1byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta));
+  } else {
+    std::string value = toString(node.meta);
+    assert(value.size() == 1);
+    this->emit1byteIns(OpCode::PUSH_STR1, value[0]);
+  }
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {

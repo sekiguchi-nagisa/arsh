@@ -388,20 +388,13 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
 // ########################
 
 void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
-  if (isa<WildCardNode>(*node)) {
-    if (this->globPathSize == 0 && !this->segmentNodes.empty()) {
-      this->globPathSize++;
-    }
-    this->globPathSize++;
-  } else if (!this->segmentNodes.empty() && isa<WildCardNode>(*this->segmentNodes.back())) {
-    this->globPathSize++;
-  }
   this->updateToken(node->getToken());
   this->segmentNodes.push_back(std::move(node));
 }
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
-  DUMP(globPathSize);
+  DUMP(expansionSize);
+  DUMP(braceExpansion);
   DUMP(segmentNodes);
 }
 
@@ -429,7 +422,10 @@ void RedirNode::dump(NodeDumper &dumper) const {
 // ##     WildCardNode     ##
 // ##########################
 
-void WildCardNode::dump(NodeDumper &dumper) const { dumper.dump("meta", toString(meta)); }
+void WildCardNode::dump(NodeDumper &dumper) const {
+  dumper.dump("meta", toString(meta));
+  DUMP(expand);
+}
 
 // #####################
 // ##     CmdNode     ##

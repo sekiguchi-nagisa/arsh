@@ -1060,6 +1060,21 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
     this->consume();
     return std::make_unique<WildCardNode>(token, GlobMeta::ZERO_OR_MORE);
   }
+  case TokenKind::BRACE_OPEN:
+  case TokenKind::BRACE_CLOSE:
+  case TokenKind::BRACE_SEP: {
+    Token token = this->curToken;
+    TokenKind kind = this->scan();
+    GlobMeta meta = GlobMeta::BRACE_SEP;
+    if (kind == TokenKind::BRACE_OPEN) {
+      meta = GlobMeta::BRACE_OPEN;
+    } else if (kind == TokenKind::BRACE_CLOSE) {
+      meta = GlobMeta::BRACE_CLOSE;
+    }
+    auto node = std::make_unique<WildCardNode>(token, meta);
+    node->setExapnd(false);
+    return node;
+  }
   case TokenKind::STRING_LITERAL:
     return this->parse_stringLiteral();
   case TokenKind::OPEN_DQUOTE:

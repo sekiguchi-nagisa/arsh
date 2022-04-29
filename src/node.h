@@ -1051,7 +1051,8 @@ public:
  */
 class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
-  unsigned int globPathSize{0};
+  unsigned int expansionSize{0};
+  bool braceExpansion{false};
   std::vector<std::unique_ptr<Node>> segmentNodes;
 
 public:
@@ -1063,9 +1064,9 @@ public:
 
   void addSegmentNode(std::unique_ptr<Node> &&node);
 
-  const std::vector<std::unique_ptr<Node>> &getSegmentNodes() const { return this->segmentNodes; }
+  const auto &getSegmentNodes() const { return this->segmentNodes; }
 
-  std::vector<std::unique_ptr<Node>> &refSegmentNodes() { return this->segmentNodes; }
+  auto &refSegmentNodes() { return this->segmentNodes; }
 
   void dump(NodeDumper &dumper) const override;
 
@@ -1081,7 +1082,13 @@ public:
            cast<StringNode>(*this->segmentNodes[i]).isTilde();
   }
 
-  unsigned int getGlobPathSize() const { return this->globPathSize; }
+  bool isBraceExpansion() const { return this->braceExpansion; }
+
+  void setBraceExpansion(bool set) { this->braceExpansion = set; }
+
+  unsigned int getExpansionSize() const { return this->expansionSize; }
+
+  void setExpansionSize(unsigned int size) { this->expansionSize = size; }
 };
 
 class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {
@@ -1127,13 +1134,22 @@ public:
 class WildCardNode : public WithRtti<Node, NodeKind::WildCard> {
 public:
   const GlobMeta meta;
+  bool expand;
 
-  WildCardNode(Token token, GlobMeta p) : WithRtti(token), meta(p) {}
+  WildCardNode(Token token, GlobMeta p) : WithRtti(token), meta(p), expand(true) {}
 
   ~WildCardNode() override = default;
 
+  bool isExpand() const { return this->expand; }
+
+  void setExapnd(bool set) { this->expand = set; }
+
   void dump(NodeDumper &dumper) const override;
 };
+
+inline bool isExpandingWildCard(const Node &node) {
+  return isa<WildCardNode>(node) && cast<WildCardNode>(node).isExpand();
+}
 
 class CmdNode : public WithRtti<Node, NodeKind::Cmd> {
 private:
