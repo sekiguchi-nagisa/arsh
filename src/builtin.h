@@ -1904,6 +1904,31 @@ YDSH_METHOD fd_not(RuntimeContext &ctx) {
   RET_BOOL(fd == -1);
 }
 
+//!bind: function $OP_ITER($this : UnixFD) : Reader
+YDSH_METHOD fd_iter(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_init);
+  auto &v = LOCAL(0);
+  RET(DSValue::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
+}
+
+// ####################
+// ##     Reader     ##
+// ####################
+
+//!bind: function $OP_NEXT($this : Reader) : String
+YDSH_METHOD reader_next(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(reader_next);
+  auto &reader = typeAs<ReaderObject>(LOCAL(0));
+  RET(reader.takeLine());
+}
+
+//!bind: function $OP_HAS_NEXT($this : Reader) : Boolean
+YDSH_METHOD reader_hasNext(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(reader_hasNext);
+  auto &reader = typeAs<ReaderObject>(LOCAL(0));
+  RET_BOOL(reader.nextLine());
+}
+
 // #################
 // ##     Job     ##
 // #################

@@ -183,6 +183,8 @@ function forEach($consumer : Func<Void,[String]>) : Void for UnixFD
 function %OP_BOOL() : Boolean for UnixFD
 
 function %OP_NOT() : Boolean for UnixFD
+
+function %OP_ITER() : Reader for UnixFD
 ```
 
 ## Error type
@@ -274,6 +276,13 @@ function _scriptDir() : String for Module
 function _func($expr : String) : Func<Option<Any>> for Module
 
 function _fullname($name : String) : Option<String> for Module
+```
+
+## Reader type
+```
+function %OP_NEXT() : String for Reader
+
+function %OP_HAS_NEXT() : Boolean for Reader
 ```
 
 ## Array type

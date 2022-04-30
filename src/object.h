@@ -51,6 +51,7 @@ namespace ydsh {
   OP(Closure)                                                                                      \
   OP(Box)                                                                                          \
   OP(EnvCtx)                                                                                       \
+  OP(Reader)                                                                                       \
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
   OP(Redir)
@@ -1255,6 +1256,28 @@ public:
    * @param value
    */
   void setAndSaveEnv(DSValue &&name, DSValue &&value);
+};
+
+class ReaderObject : public ObjectWithRtti<ObjectKind::Reader> {
+private:
+  bool available{true};
+  unsigned short remainPos{0};
+  unsigned short usedSize{0};
+  char buf[256]; // NOLINT
+  ObjPtr<UnixFdObject> fdObj;
+  DSValue value; // actual read line
+
+public:
+  explicit ReaderObject(ObjPtr<UnixFdObject> &&fdObj)
+      : ObjectWithRtti(TYPE::Reader), fdObj(std::move(fdObj)) {
+    if (this->fdObj->getValue() == -1) {
+      this->available = false;
+    }
+  }
+
+  bool nextLine();
+
+  DSValue takeLine() { return std::move(this->value); }
 };
 
 } // namespace ydsh

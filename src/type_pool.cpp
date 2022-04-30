@@ -64,6 +64,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
+  this->initBuiltinType(TYPE::Reader, "Reader%", false, TYPE::Any, info_ReaderType());
 
   // initialize type template
   std::vector<const DSType *> elements = {&this->get(TYPE::Any)};

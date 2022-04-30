@@ -758,4 +758,50 @@ void EnvCtxObject::setAndSaveEnv(DSValue &&name, DSValue &&value) {
   }
 }
 
+// ####################
+// ##     Reader     ##
+// ####################
+
+bool ReaderObject::nextLine() {
+  if (!this->available) {
+    return false;
+  }
+
+  std::string line;
+  while (true) {
+    if (this->remainPos == this->usedSize) {
+      const ssize_t readSize = read(this->fdObj->getValue(), this->buf, std::size(this->buf));
+      if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+        continue;
+      }
+      if (readSize <= 0) {
+        this->available = false;
+        break;
+      }
+      this->remainPos = 0;
+      this->usedSize = readSize;
+    }
+
+    // split by newline
+    StringRef ref(this->buf + this->remainPos, this->usedSize - this->remainPos);
+    for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+      auto ret = ref.find('\n', pos);
+      line += ref.slice(pos, ret);
+      pos = ret;
+      if (ret != StringRef::npos) {
+        this->value = DSValue::createStr(std::move(line));
+        this->remainPos += pos + 1;
+        return true;
+      } else {
+        this->remainPos = this->usedSize;
+      }
+    }
+  }
+  if (!line.empty()) {
+    this->value = DSValue::createStr(std::move(line));
+    return true;
+  }
+  return false;
+}
+
 } // namespace ydsh

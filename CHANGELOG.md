@@ -11,13 +11,13 @@
 
 #### Builtin
 
-- add ``forEach`` method to ``UnixFD`` type for more efficient alternative of while-read loop
-    - also add ``each`` function for simple wrapper of ``$STDIN.forEach``
-      ````
-      function each($reader : (String) -> Void) {
-        $STDIN.forEach($reader)
-      }
-      ````
+- allow ``UnixFD`` type in ``for-in`` expression
+    - read each lines during iteration (for more efficient alternative of while-read loop)
+    ```
+    ls | for $e in $STDIN {
+      echo $e
+    }
+    ```
 - pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
 - pass module context of current completion to ``COMP_HOOK``
 

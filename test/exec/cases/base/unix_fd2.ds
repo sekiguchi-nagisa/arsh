@@ -1,12 +1,8 @@
 
 var ret : [String]
 
-function add($s : String ) {
-    $ret.add($s)
-}
-
 ## end with newline
-{ echo aaa && echo bbb && echo && echo ccc; } | $STDIN.forEach($add)
+{ echo aaa && echo bbb && echo && echo ccc; } | for $e in $STDIN { $ret.add($e); }
 
 assert $ret.size() == 4
 assert $ret[0] == 'aaa'
@@ -16,13 +12,26 @@ assert $ret[3] == 'ccc'
 $ret.clear()
 
 ## not end with newline
-{ echo aaa && echo 'bbb' && echo -en '\nccc'; } | $STDIN.forEach($add)
+{ echo aaa && echo 'bbb' && echo -en '\nccc'; } | for $e in $STDIN { $ret.add($e); }
 
 assert $ret.size() == 4
 assert $ret[0] == 'aaa'
 assert $ret[1] == 'bbb'
 assert $ret[2] == ''
 assert $ret[3] == 'ccc'
+$ret.clear()
+
+## invalid fd
+for $e in { var a = $STDIN.dup(); $a.close(); $a; } { $ret.add($e); }
+assert $ret.size() == 0
+
+{
+    var fd = <(echo -e '123\n456')
+    for $e in $fd { if $fd { $fd.close(); }; $ret.add($e); }
+}
+assert $ret.size() == 2 : "${$ret.size()}"   # closed, but still read all
+assert $ret[0] == '123'
+assert $ret[1] == '456'
 $ret.clear()
 
 ## error from read callback
@@ -33,7 +42,7 @@ function raise($s : String) {
 
 var ex = 34 as Any
 try {
-    { echo aaa && echo 'bbb' && echo -en '\nccc'; } | $STDIN.forEach($raise)
+    { echo aaa && echo 'bbb' && echo -en '\nccc'; } | for $e in $STDIN { $raise($e); }
 } catch $e {
     $ex = $e
 }
@@ -45,7 +54,6 @@ $ret.clear()
 $ex = 34
 
 ## large input
-function echo($s : String) { echo $s; }
 diff \
     <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; }) \
-    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | $STDIN.forEach($echo))
+    <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | for $e in $STDIN { echo $e; })

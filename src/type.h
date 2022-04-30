@@ -61,7 +61,8 @@ enum class TYPE : unsigned int {
   Func,
   Module,
   StringIter,
-  UnixFD,      // for Unix file descriptor
+  UnixFD, // for Unix file descriptor
+  Reader,
   StringArray, // for command argument
 
   ArithmeticError,
