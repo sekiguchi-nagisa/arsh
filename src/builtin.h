@@ -1497,23 +1497,6 @@ YDSH_METHOD array_map(RuntimeContext &ctx) {
   RET(ret);
 }*/
 
-//!bind: function forEach($this : Array<T0>, $consumer : Func<Void,[T0]>) : Void
-YDSH_METHOD array_each(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_each);
-  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
-  auto &func = LOCAL(1);
-
-  size_t size = arrayObj.size();
-  for (size_t i = 0; i < size; i++) {
-    auto e = arrayObj.getValues()[i];
-    VM::callFunction(ctx, DSValue(func), makeArgs(std::move(e)));
-    if (ctx.hasError()) {
-      RET_ERROR;
-    }
-  }
-  RET_VOID;
-}
-
 //!bind: function indexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
 YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_indexOf);

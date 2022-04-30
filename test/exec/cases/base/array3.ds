@@ -1,11 +1,4 @@
 
-# each
-var count = 0;
-
-$(seq 1 123).forEach(function($s : String) => $count++)
-assert $count == 123
-
-assert "$([1,2].forEach(function($i : Int) => echo $i))" ==  $'1\n2'
 
 ## map
 #var sum = 0
