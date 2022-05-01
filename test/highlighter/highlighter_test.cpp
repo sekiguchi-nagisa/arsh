@@ -418,6 +418,18 @@ TEST_F(HighlightTest, htmlFormatter3) {
   //
   stream = std::stringstream();
   factory.setStyleName("darcula");
+  factory.setLineno("0");
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+
+  expected = "<pre style=\"tab-size:4\">\n"
+             "<code><span style=\"color:#959595\">1</span>   \n"
+             "<span style=\"color:#959595\">2</span>   </code></pre>";
+  ASSERT_EQ(expected, stream.str());
+
+  //
+  stream = std::stringstream();
+  factory.setStyleName("darcula");
   factory.setLineno("9");
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));

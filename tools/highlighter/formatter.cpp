@@ -249,6 +249,7 @@ static unsigned int digits(uint64_t value) {
 HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream &output,
                              HTMLFormatOp op, unsigned int lineNumOffset)
     : Formatter(source, style, output), formatOp(op), lineNumOffset(lineNumOffset) {
+  assert(this->lineNumOffset);
   if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
     this->output << "<html>\n<body";
     auto css = toCSSImpl(style.getBackground());

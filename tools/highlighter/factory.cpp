@@ -81,7 +81,7 @@ FormatterFactory::create(std::ostream &stream) const {
     unsigned int lineNumOffset = 1;
     if (this->lineno) {
       auto ret = convertToNum<unsigned int>(this->lineno);
-      if (ret.second) {
+      if (ret.second && ret.first > 0) {
         lineNumOffset = ret.first;
       }
     }
