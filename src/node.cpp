@@ -389,6 +389,15 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
 
 void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
   this->updateToken(node->getToken());
+  if (isa<StringNode>(*node) && cast<StringNode>(*node).isTilde()) {
+    if (!this->segmentNodes.empty() && isa<WildCardNode>(*this->segmentNodes.back()) &&
+        cast<WildCardNode>(*this->segmentNodes.back()).isBraceMeta()) {
+      Token t = {node->getPos(), 0};
+      auto tilde = std::make_unique<WildCardNode>(t, ExpandMeta::BRACE_TILDE);
+      tilde->setExapnd(false);
+      this->segmentNodes.push_back(std::move(tilde));
+    }
+  }
   this->segmentNodes.push_back(std::move(node));
 }
 

@@ -1034,7 +1034,7 @@ private:
   const char *ptr{nullptr};
 
 public:
-  explicit GlobIter(const DSValue &value) : cur(&value) {
+  explicit GlobIter(const DSValue *value) : cur(value) {
     if (this->cur->hasStrRef()) {
       this->ptr = this->cur->asStrRef().begin();
     }
@@ -1070,23 +1070,23 @@ public:
 struct DSValueGlobMeta {
   static bool isAny(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == GlobMeta::ANY;
+    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == ExpandMeta::ANY;
   }
 
   static bool isZeroOrMore(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == GlobMeta::ZERO_OR_MORE;
+    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == ExpandMeta::ZERO_OR_MORE;
   }
 
   static void preExpand(std::string &path) { expandTilde(path, true); }
 };
 
-static void raiseGlobbingError(DSState &state, const VMState &st, unsigned int size,
+static void raiseGlobbingError(DSState &state, const DSValue *begin, const DSValue *end,
                                const char *message) {
   std::string value = message;
   value += " `";
-  for (unsigned int i = 0; i < size; i++) {
-    auto &v = st.peekByOffset(size - i);
+  for (; begin != end; ++begin) {
+    auto &v = *begin;
     if (v.hasStrRef()) {
       for (auto &e : v.asStrRef()) {
         if (e != '\0') {
@@ -1103,7 +1103,168 @@ static void raiseGlobbingError(DSState &state, const VMState &st, unsigned int s
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
-bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
+bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin,
+                         const DSValue *end, bool tilde) {
+  // check if glob path fragments have null character
+  for (auto *iter = begin; iter != end; ++iter) {
+    auto &v = *iter;
+    if (v.hasStrRef()) {
+      auto ref = v.asStrRef();
+      if (ref.hasNullChar()) {
+        raiseGlobbingError(state, begin, end, "glob pattern has null characters");
+        return false;
+      }
+    }
+  }
+
+  const unsigned int oldSize = argv.size();
+  auto appender = [&](std::string &&path) {
+    argv.append(DSValue::createStr(std::move(path)));
+    return true; // FIXME: check array size limit
+  };
+  GlobMatchOption option{};
+  if (tilde) {
+    setFlag(option, GlobMatchOption::TILDE);
+  }
+  if (hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
+    setFlag(option, GlobMatchOption::DOTGLOB);
+  }
+  if (hasFlag(state.runtimeOption, RuntimeOption::FASTGLOB)) {
+    setFlag(option, GlobMatchOption::FASTGLOB);
+  }
+  auto matcher =
+      createGlobMatcher<DSValueGlobMeta>(nullptr, GlobIter(begin), GlobIter(end), option);
+  auto ret = matcher(appender);
+  if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+    argv.sortAsStrArray(oldSize);
+    return true;
+  } else {
+    const char *msg = ret == GlobMatchResult::NOMATCH ? "no matches for glob pattern"
+                                                      : "number of glob results reaches limit";
+    raiseGlobbingError(state, begin, end, msg);
+    return false;
+  }
+}
+
+static DSValue concatPath(DSState &state, const DSValue *begin, const DSValue *end) {
+  auto ret = DSValue::createStr();
+  for (; begin != end; ++begin) {
+    if (!ret.appendAsStr(state, begin->asStrRef())) {
+      return DSValue();
+    }
+  }
+  return ret;
+}
+
+struct ExpandState {
+  unsigned char index;
+  unsigned char usedSize;
+  unsigned char closeIndex;
+};
+
+static bool needGlob(const DSValue *begin, const DSValue *end) {
+  for (; begin != end; ++begin) {
+    auto &v = *begin;
+    if (v.kind() == DSValueKind::GLOB_META) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *begin,
+                             const DSValue *end, ExpandOp expandOp) {
+  const unsigned int size = end - begin;
+  assert(size <= UINT8_MAX);
+  FlexBuffer<ExpandState> stack;
+  auto values = std::make_unique<DSValue[]>(size);
+  unsigned int usedSize = 0;
+
+  for (unsigned int i = 0; i < size; i++) {
+    auto &v = begin[i];
+    if (v.kind() == DSValueKind::GLOB_META) {
+      auto meta = v.asGlobMeta();
+      switch (meta) {
+      case ExpandMeta::BRACE_OPEN:
+        stack.push_back(ExpandState{
+            .index = static_cast<unsigned char>(i),
+            .usedSize = static_cast<unsigned char>(usedSize),
+            .closeIndex = 0,
+        });
+        goto CONTINUE;
+      case ExpandMeta::BRACE_SEP:
+        stack.back().index = i++;
+
+        // skip until brace close
+        for (int level = 1; i < size; i++) {
+          if (begin[i].kind() == DSValueKind::GLOB_META) {
+            auto next = begin[i].asGlobMeta();
+            if (next == ExpandMeta::BRACE_CLOSE) {
+              if (--level == 0) {
+                stack.back().closeIndex = i;
+                break;
+              }
+            } else if (next == ExpandMeta::BRACE_OPEN) {
+              level++;
+            }
+          }
+        }
+        goto CONTINUE;
+      case ExpandMeta::BRACE_CLOSE:
+        if (stack.back().closeIndex == i) {
+          stack.pop_back();
+        }
+        goto CONTINUE;
+      case ExpandMeta::BRACE_TILDE:
+        if (usedSize) {
+          goto CONTINUE;
+        }
+        break;
+      default:
+        break;
+      }
+    }
+    values[usedSize++] = v;
+
+  CONTINUE:
+    if (i == size - 1) {
+      auto *vbegin = values.get();
+      auto *vend = vbegin + usedSize;
+      bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
+      if (!tilde && usedSize > 0 && vbegin->kind() == DSValueKind::GLOB_META &&
+          vbegin->asGlobMeta() == ExpandMeta::BRACE_TILDE) {
+        tilde = true;
+        ++vbegin; // skip meta
+      }
+
+      if (needGlob(vbegin, vend)) {
+        if (!addGlobbingPath(state, argv, vbegin, vend, tilde)) {
+          return false;
+        }
+      } else {
+        DSValue path = concatPath(state, vbegin, vend);
+        if (tilde) {
+          std::string str = path.asStrRef().toString();
+          expandTilde(str, true);
+          path = DSValue::createStr(std::move(str));
+        }
+        if (!path.asStrRef().empty()) { // skip empty string
+          if (!argv.append(state, std::move(path))) {
+            return false;
+          }
+        }
+      }
+
+      if (!stack.empty()) {
+        i = stack.back().index;
+        usedSize = stack.back().usedSize;
+      }
+    }
+  }
+  return true;
+}
+
+bool VM::addExpandingPath(DSState &state, const unsigned int size, ExpandOp expandOp) {
   /**
    * stack layout
    *
@@ -1117,51 +1278,22 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
    * | argv | redir |
    * +------+-------+
    */
-  GlobIter begin(state.stack.peekByOffset(size));
-  GlobIter end(state.stack.peek());
-
-  // check if glob path fragments have null character
-  for (unsigned int i = 0; i < size; i++) {
-    auto &v = state.stack.peekByOffset(size - i);
-    if (v.hasStrRef()) {
-      auto ref = v.asStrRef();
-      if (ref.hasNullChar()) {
-        raiseGlobbingError(state, state.stack, size, "glob pattern has null characters");
-        return false;
-      }
-    }
+  auto &argv = typeAs<ArrayObject>(state.stack.peekByOffset(size + 2));
+  const auto *begin = &state.stack.peekByOffset(size);
+  const auto *end = &state.stack.peek();
+  bool ret;
+  if (hasFlag(expandOp, ExpandOp::BRACE)) {
+    ret = applyBraceExpansion(state, argv, begin, end, expandOp);
+  } else {
+    ret = addGlobbingPath(state, argv, begin, end, hasFlag(expandOp, ExpandOp::TILDE));
   }
 
-  auto &argv = state.stack.peekByOffset(size + 2);
-  const unsigned int oldSize = typeAs<ArrayObject>(argv).size();
-  auto appender = [&](std::string &&path) {
-    typeAs<ArrayObject>(argv).append(DSValue::createStr(std::move(path)));
-    return true; // FIXME: check array size limit
-  };
-  GlobMatchOption option{};
-  if (tilde) {
-    setFlag(option, GlobMatchOption::TILDE);
-  }
-  if (hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
-    setFlag(option, GlobMatchOption::DOTGLOB);
-  }
-  if (hasFlag(state.runtimeOption, RuntimeOption::FASTGLOB)) {
-    setFlag(option, GlobMatchOption::FASTGLOB);
-  }
-  auto matcher = createGlobMatcher<DSValueGlobMeta>(nullptr, begin, end, option);
-  auto ret = matcher(appender);
-  if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
-    typeAs<ArrayObject>(argv).sortAsStrArray(oldSize);
+  if (ret) { // pop operands
     for (unsigned int i = 0; i <= size; i++) {
       state.stack.popNoReturn();
     }
-    return true;
-  } else {
-    const char *msg = ret == GlobMatchResult::NOMATCH ? "no matches for glob pattern"
-                                                      : "number of glob results reaches limit";
-    raiseGlobbingError(state, state.stack, size, msg);
-    return false;
   }
+  return ret;
 }
 
 static NativeCode initSignalTrampoline() noexcept {
@@ -1334,7 +1466,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(PUSH_META) {
         unsigned int value = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        state.stack.push(DSValue::createGlobMeta(static_cast<GlobMeta>(value)));
+        state.stack.push(DSValue::createGlobMeta(static_cast<ExpandMeta>(value)));
         vmnext;
       }
       vmcase(PUSH_INVALID) {
@@ -1742,12 +1874,12 @@ bool VM::mainLoop(DSState &state) {
         state.stack.push(std::move(builder).takeRedir());
         vmnext;
       }
-      vmcase(ADD_GLOBBING) {
+      vmcase(ADD_EXPANDING) {
         unsigned int size = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        unsigned int v = read8(GET_CODE(state), state.stack.pc());
+        auto opt = static_cast<ExpandOp>(read8(GET_CODE(state), state.stack.pc()));
         state.stack.pc()++;
-        TRY(addGlobbingPath(state, size, v > 0));
+        TRY(addExpandingPath(state, size, opt));
         vmnext;
       }
       vmcase(CALL_CMD) vmcase(CALL_CMD_NOFORK) {

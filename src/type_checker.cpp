@@ -842,7 +842,68 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   }
 }
 
+static bool isBraceOpen(const Node &node) {
+  return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::BRACE_OPEN;
+}
+
+static void enableTilde(Node &node) {
+  if (isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::BRACE_TILDE) {
+    cast<WildCardNode>(node).setExapnd(true);
+  }
+}
+
+static void resolveBraceExpansion(CmdArgNode &node) {
+  unsigned int depth = 0;
+  FlexBuffer<unsigned int> metaPosStack;
+  auto &segmentNodes = node.refSegmentNodes();
+  const unsigned int size = segmentNodes.size();
+  for (unsigned int i = 0; i < size; i++) {
+    auto &e = *segmentNodes[i];
+    if (isa<WildCardNode>(e)) {
+      auto &wild = cast<WildCardNode>(e);
+      switch (wild.meta) {
+      case ExpandMeta::BRACE_OPEN:
+        depth++;
+        metaPosStack.push_back(i);
+        break;
+      case ExpandMeta::BRACE_SEP:
+        if (depth) {
+          metaPosStack.push_back(i);
+        }
+        break;
+      case ExpandMeta::BRACE_CLOSE:
+        if (depth) {
+          depth--;
+          unsigned int oldSize = metaPosStack.size();
+          while (!isBraceOpen(*segmentNodes[metaPosStack.back()])) {
+            auto pos = metaPosStack.back();
+            cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
+            enableTilde(*segmentNodes[pos + 1]);
+            metaPosStack.pop_back();
+          }
+          if (metaPosStack.size() < oldSize) { // {AAA,}
+            wild.setExapnd(true);
+            node.setBraceExpansion(true);
+            auto pos = metaPosStack.back();
+            cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
+            enableTilde(*segmentNodes[pos + 1]);
+          }
+          metaPosStack.pop_back();
+          if (wild.isExpand() && i + 1 < size) {
+            enableTilde(*segmentNodes[i + 1]);
+          }
+        }
+        break;
+      default:
+        break;
+      }
+    }
+  }
+}
+
 void TypeChecker::checkExpansion(CmdArgNode &node) {
+  resolveBraceExpansion(node);
+
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;
   for (unsigned int i = 0; i < size; i++) {
@@ -2048,12 +2109,12 @@ public:
 struct SourceGlobMeta {
   static bool isAny(SourceGlobIter iter) {
     auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == GlobMeta::ANY;
+    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ANY;
   }
 
   static bool isZeroOrMore(SourceGlobIter iter) {
     auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == GlobMeta::ZERO_OR_MORE;
+    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ZERO_OR_MORE;
   }
 
   static void preExpand(std::string &path) { expandTilde(path, true); }
@@ -2101,6 +2162,8 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
       expandTilde(path, true);
     }
     ret.push_back(std::make_shared<const std::string>(std::move(path)));
+  } else if (pathNode.isBraceExpansion()) {
+    fatal("unsupported\n");
   } else {
     if (isDirPattern(pathNode)) {
       std::string path = concat(pathNode, pathNode.getSegmentNodes().size());

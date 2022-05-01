@@ -446,9 +446,9 @@ public:
     return this->u32s.values[0];
   }
 
-  GlobMeta asGlobMeta() const {
+  ExpandMeta asGlobMeta() const {
     assert(this->kind() == DSValueKind::GLOB_META);
-    return static_cast<GlobMeta>(this->u64.value);
+    return static_cast<ExpandMeta>(this->u64.value);
   }
 
   bool asBool() const {
@@ -546,7 +546,7 @@ public:
     return ret;
   }
 
-  static DSValue createGlobMeta(GlobMeta meta) {
+  static DSValue createGlobMeta(ExpandMeta meta) {
     DSValue ret;
     ret.u64.kind = DSValueKind::GLOB_META;
     ret.u64.value = static_cast<unsigned int>(meta);

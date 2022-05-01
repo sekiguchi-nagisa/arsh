@@ -572,16 +572,13 @@ private:
    */
   static bool callPipeline(DSState &state, bool lastPipe, ForkKind forkKind);
 
-  /**
-   *
-   * @param state
-   * @param size
-   * @param tilde
-   * if true, apply tilde expansion
-   * @return
-   * if has error, return false.
-   */
-  static bool addGlobbingPath(DSState &state, unsigned int size, bool tilde);
+  static bool addGlobbingPath(DSState &state, ArrayObject &arv, const DSValue *begin,
+                              const DSValue *end, bool tilde);
+
+  static bool applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *begin,
+                                  const DSValue *end, ExpandOp expandOp);
+
+  static bool addExpandingPath(DSState &state, unsigned int size, ExpandOp expandOp);
 
   static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
 

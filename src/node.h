@@ -1133,16 +1133,27 @@ public:
 
 class WildCardNode : public WithRtti<Node, NodeKind::WildCard> {
 public:
-  const GlobMeta meta;
-  bool expand;
+  const ExpandMeta meta;
+  bool expand{true};
 
-  WildCardNode(Token token, GlobMeta p) : WithRtti(token), meta(p), expand(true) {}
+  WildCardNode(Token token, ExpandMeta p) : WithRtti(token), meta(p) {}
 
   ~WildCardNode() override = default;
 
   bool isExpand() const { return this->expand; }
 
   void setExapnd(bool set) { this->expand = set; }
+
+  bool isBraceMeta() const {
+    switch (this->meta) {
+    case ExpandMeta::BRACE_OPEN:
+    case ExpandMeta::BRACE_CLOSE:
+    case ExpandMeta::BRACE_SEP:
+      return true;
+    default:
+      return false;
+    }
+  }
 
   void dump(NodeDumper &dumper) const override;
 };

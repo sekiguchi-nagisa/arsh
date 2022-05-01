@@ -1,0 +1,25 @@
+
+# brace expansion test
+
+## basic
+assert "$(bash -c 'echo {a,b,c}')" == "$(echo {a,b,c})"
+assert "$(bash -c 'echo {a,b,}')" == "$(echo {a,b,})"
+assert "$(bash -c 'echo {,b,c}')" == "$(echo {,b,c})"
+assert "$(bash -c 'echo {a,,c}')" == "$(echo {a,,c})"
+
+## nested
+assert "$(echo 1{,2{,3{,4{,5}}}}@@{A,B})" ==
+            "1@@A 1@@B 12@@A 12@@B 123@@A 123@@B 1234@@A 1234@@B 12345@@A 12345@@B"
+
+## has null chars
+var aa = @(AA{a,b$'\x00'}QQQ)
+assert $aa.size() == 2
+assert $aa[0] == 'AAaQQQ'
+assert $aa[1] == $'AAb\x00QQQ'
+
+## tilde
+assert "$(echo ~{,+,-,root,/}/hoge)" == "$(echo ~/hoge ~+/hoge ~-/hoge ~root/hoge ~//hoge)"
+assert "$(bash -c 'echo {,a}{,~,}{,~}')" == "$(echo {,a}{,~,}{,~})"
+$aa = @({,~,})
+assert $aa.size() == 1
+assert $aa[0] == @(~)[0]

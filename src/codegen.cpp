@@ -156,6 +156,26 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
   }
 }
 
+void ByteCodeGenerator::emitString(std::string &&value) {
+  switch (value.size()) {
+  case 0:
+    this->emit0byteIns(OpCode::PUSH_STR0);
+    break;
+  case 1:
+    this->emit1byteIns(OpCode::PUSH_STR1, value[0]);
+    break;
+  case 2:
+    this->emit2byteIns(OpCode::PUSH_STR2, value[0], value[1]);
+    break;
+  case 3:
+    this->emit3byteIns(OpCode::PUSH_STR3, value[0], value[1], value[2]);
+    break;
+  default:
+    this->emitLdcIns(DSValue::createStr(std::move(value)));
+    break;
+  }
+}
+
 void ByteCodeGenerator::emitToString() {
   if (this->handle_STR == nullptr) {
     this->handle_STR = this->typePool.lookupMethod(this->typePool.get(TYPE::Any), OP_STR);
@@ -418,26 +438,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
   this->emitLdcIns(std::move(value));
 }
 
-void ByteCodeGenerator::visitStringNode(StringNode &node) {
-  switch (node.getValue().size()) {
-  case 0:
-    this->emit0byteIns(OpCode::PUSH_STR0);
-    break;
-  case 1:
-    this->emit1byteIns(OpCode::PUSH_STR1, node.getValue()[0]);
-    break;
-  case 2:
-    this->emit2byteIns(OpCode::PUSH_STR2, node.getValue()[0], node.getValue()[1]);
-    break;
-  case 3:
-    this->emit3byteIns(OpCode::PUSH_STR3, node.getValue()[0], node.getValue()[1],
-                       node.getValue()[2]);
-    break;
-  default:
-    this->emitLdcIns(DSValue::createStr(node.takeValue()));
-    break;
-  }
-}
+void ByteCodeGenerator::visitStringNode(StringNode &node) { this->emitString(node.takeValue()); }
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) { this->generateConcat(node); }
 
@@ -784,7 +785,11 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     }
     this->emit0byteIns(OpCode::PUSH_NULL); // sentinel
     assert(node.getExpansionSize() <= SYS_LIMIT_EXPANSION_FRAG_NUM);
-    this->emitGlobIns(node.getExpansionSize(), node.isTilde());
+    ExpandOp op = node.isBraceExpansion() ? ExpandOp::BRACE : ExpandOp::GLOB;
+    if (node.isTilde()) {
+      setFlag(op, ExpandOp::TILDE);
+    }
+    this->emitExpandIns(node.getExpansionSize(), op);
   } else {
     this->generateCmdArg(node);
     this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
@@ -821,9 +826,7 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
   if (node.isExpand()) {
     this->emit1byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta));
   } else {
-    std::string value = toString(node.meta);
-    assert(value.size() == 1);
-    this->emit1byteIns(OpCode::PUSH_STR1, value[0]);
+    this->emitString(toString(node.meta));
   }
 }
 
@@ -1650,7 +1653,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         const int byteSize = getByteSize(code);
         if (code == OpCode::FORK || code == OpCode::CALL_METHOD) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-        } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING ||
+        } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_EXPANDING ||
                    code == OpCode::INIT_FIELDS) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
         } else if (code == OpCode::CALL_BUILTIN2) {

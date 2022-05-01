@@ -300,26 +300,39 @@ enum class ForkKind : unsigned char {
   DISOWN,   // launch as disowned background job. ex. echo &!
 };
 
-enum class GlobMeta : unsigned char {
+enum class ExpandMeta : unsigned char {
   ANY,
   ZERO_OR_MORE,
+
   BRACE_OPEN,
   BRACE_CLOSE,
   BRACE_SEP,
+  BRACE_TILDE,
 };
 
-inline const char *toString(GlobMeta meta) {
+enum class ExpandOp : unsigned char {
+  TILDE = 1u << 0u,
+  GLOB = 1u << 1u,
+  BRACE = 1u << 2u,
+};
+
+template <>
+struct allow_enum_bitop<ExpandOp> : std::true_type {};
+
+inline const char *toString(ExpandMeta meta) {
   switch (meta) {
-  case GlobMeta::ANY:
+  case ExpandMeta::ANY:
     return "?";
-  case GlobMeta::ZERO_OR_MORE:
+  case ExpandMeta::ZERO_OR_MORE:
     return "*";
-  case GlobMeta::BRACE_OPEN:
+  case ExpandMeta::BRACE_OPEN:
     return "{";
-  case GlobMeta::BRACE_CLOSE:
+  case ExpandMeta::BRACE_CLOSE:
     return "}";
-  case GlobMeta::BRACE_SEP:
+  case ExpandMeta::BRACE_SEP:
     return ",";
+  case ExpandMeta::BRACE_TILDE:
+    return "";
   }
   return ""; // normally unreachable
 }

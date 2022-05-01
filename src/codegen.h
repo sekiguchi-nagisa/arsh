@@ -271,7 +271,7 @@ private:
    */
   void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
     assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_BUILTIN2 ||
-           op == OpCode::ADD_GLOBBING || op == OpCode::NEW_CLOSURE);
+           op == OpCode::ADD_EXPANDING || op == OpCode::NEW_CLOSURE);
     this->curBuilder().append8(static_cast<unsigned char>(op));
     this->curBuilder().append8(paramSize);
 
@@ -301,9 +301,9 @@ private:
    */
   void emitMethodCallIns(const MethodHandle &handle);
 
-  void emitGlobIns(unsigned char paramSize, bool tilde) {
-    this->emitValIns(OpCode::ADD_GLOBBING, paramSize, 1);
-    this->curBuilder().append8(tilde ? 1 : 0);
+  void emitExpandIns(unsigned char paramSize, ExpandOp op) {
+    this->emitValIns(OpCode::ADD_EXPANDING, paramSize, 1);
+    this->curBuilder().append8(static_cast<unsigned char>(op));
   }
 
   void emitNewClosureIns(unsigned char capturedSize) {
@@ -325,6 +325,9 @@ private:
   void emitLdcIns(const DSValue &value) { this->emitLdcIns(DSValue(value)); }
 
   void emitLdcIns(DSValue &&value);
+
+  void emitString(std::string &&value);
+
   void emitToString();
   void emitBranchIns(OpCode op, const Label &label);
 

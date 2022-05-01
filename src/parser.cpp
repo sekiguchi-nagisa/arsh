@@ -1055,23 +1055,23 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
   case TokenKind::GLOB_ANY: {
     Token token = this->curToken;
     this->consume();
-    return std::make_unique<WildCardNode>(token, GlobMeta::ANY);
+    return std::make_unique<WildCardNode>(token, ExpandMeta::ANY);
   }
   case TokenKind::GLOB_ZERO_OR_MORE: {
     Token token = this->curToken;
     this->consume();
-    return std::make_unique<WildCardNode>(token, GlobMeta::ZERO_OR_MORE);
+    return std::make_unique<WildCardNode>(token, ExpandMeta::ZERO_OR_MORE);
   }
   case TokenKind::BRACE_OPEN:
   case TokenKind::BRACE_CLOSE:
   case TokenKind::BRACE_SEP: {
     Token token = this->curToken;
     TokenKind kind = this->scan();
-    GlobMeta meta = GlobMeta::BRACE_SEP;
+    ExpandMeta meta = ExpandMeta::BRACE_SEP;
     if (kind == TokenKind::BRACE_OPEN) {
-      meta = GlobMeta::BRACE_OPEN;
+      meta = ExpandMeta::BRACE_OPEN;
     } else if (kind == TokenKind::BRACE_CLOSE) {
-      meta = GlobMeta::BRACE_CLOSE;
+      meta = ExpandMeta::BRACE_CLOSE;
     }
     auto node = std::make_unique<WildCardNode>(token, meta);
     node->setExapnd(false);
@@ -1105,6 +1105,17 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
   }
 }
 
+static bool isBrace(TokenKind kind) {
+  switch (kind) {
+  case TokenKind::BRACE_OPEN:
+  case TokenKind::BRACE_SEP:
+  case TokenKind::BRACE_CLOSE:
+    return true;
+  default:
+    return false;
+  }
+}
+
 std::unique_ptr<StringNode> Parser::parse_cmdArgPart(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
@@ -1113,7 +1124,8 @@ std::unique_ptr<StringNode> Parser::parse_cmdArgPart(CmdArgParseOpt opt) {
   Token token = TRY(this->expect(reqKind));
   auto kind = StringNode::STRING;
   if (hasFlag(opt, CmdArgParseOpt::FIRST) ||
-      (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP)) {
+      (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP) ||
+      isBrace(prevKind)) {
     if (this->lexer->startsWith(token, '~')) {
       kind = StringNode::TILDE;
     }
