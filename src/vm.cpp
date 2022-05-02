@@ -1177,7 +1177,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
   const unsigned int size = end - begin;
   assert(size <= UINT8_MAX);
   FlexBuffer<ExpandState> stack;
-  auto values = std::make_unique<DSValue[]>(size);
+  auto values = std::make_unique<DSValue[]>(size + 1); // reserve sentinel
   unsigned int usedSize = 0;
 
   for (unsigned int i = 0; i < size; i++) {
@@ -1228,6 +1228,8 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   CONTINUE:
     if (i == size - 1) {
+      values[usedSize] = DSValue(); // sentinel
+
       auto *vbegin = values.get();
       auto *vend = vbegin + usedSize;
       bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
