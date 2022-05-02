@@ -1,4 +1,4 @@
-#$test($envs = ['ASAN_OPTIONS' : 'detect_leaks=0:verbosity=1:log_threads=1'])
+#$test($envs = ['ASAN_OPTIONS' : 'detect_leaks=0'])
 ## disable leak sanitizer for workaround
 
 # brace expansion test
