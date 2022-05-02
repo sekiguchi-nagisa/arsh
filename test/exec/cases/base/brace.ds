@@ -23,3 +23,12 @@ assert "$(echo ~ ~ ~~ ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
 $aa = @({,~,})
 assert $aa.size() == 1
 assert $aa[0] == @(~)[0]
+
+## glob
+assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"
+assert "$(echo ./* ../*)" == "$(echo {./*,../*})"
+assert "$(echo */ */..)" == "$(echo */{,..})"
+
+var ex = 34 as Any
+try { echo *{$'\x00',}; } catch $e { $ex = $e; }
+assert $ex is GlobbingError

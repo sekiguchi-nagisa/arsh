@@ -42,4 +42,10 @@ assert $(echo ~/*).sort().join(" ") != $a
 shctl set dotglob
 assert $(echo ~/*).sort().join(" ") == $a
 
+# fast glob
+var aa = @(../*/../*)
+shctl set fastglob
+var bb = @(../*/../*)
+assert $aa.size() > $bb.size()
+
 true
