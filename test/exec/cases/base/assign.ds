@@ -1,4 +1,5 @@
 #$test($envs = ['ASAN_OPTIONS' : 'detect_leaks=0:verbosity=1:log_threads=1'])
+## disable leak sanitizer for workaround
 
 # global
 var a = 0
