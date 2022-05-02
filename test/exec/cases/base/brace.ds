@@ -2,10 +2,10 @@
 # brace expansion test
 
 ## basic
-assert "$(bash -c 'echo {a,b,c}')" == "$(echo {a,b,c})"
-assert "$(bash -c 'echo {a,b,}')" == "$(echo {a,b,})"
-assert "$(bash -c 'echo {,b,c}')" == "$(echo {,b,c})"
-assert "$(bash -c 'echo {a,,c}')" == "$(echo {a,,c})"
+assert "$(echo a b c)" == "$(echo {a,b,c})"
+assert "$(echo a b)" == "$(echo {a,b,})"
+assert "$(echo b c)" == "$(echo {,b,c})"
+assert "$(echo a c)" == "$(echo {a,,c})"
 
 ## nested
 assert "$(echo 1{,2{,3{,4{,5}}}}@@{A,B})" ==
@@ -19,7 +19,7 @@ assert $aa[1] == $'AAb\x00QQQ'
 
 ## tilde
 assert "$(echo ~{,+,-,root,/}/hoge)" == "$(echo ~/hoge ~+/hoge ~-/hoge ~root/hoge ~//hoge)"
-assert "$(bash -c 'echo {,a}{,~,}{,~}')" == "$(echo {,a}{,~,}{,~})"
+assert "$(echo ~ ~ ~~ ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
 $aa = @({,~,})
 assert $aa.size() == 1
 assert $aa[0] == @(~)[0]
