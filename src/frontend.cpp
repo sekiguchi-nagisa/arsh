@@ -146,9 +146,7 @@ FrontEndResult FrontEnd::enterModule() {
   const char *modPath = node.getPathList()[pathIndex]->c_str();
   node.setCurIndex(pathIndex + 1);
 
-  const char *scriptDir =
-      node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr;
-  auto ret = this->provider.load(scriptDir, modPath, this->option);
+  auto ret = this->provider.load(this->getCurScriptDir(), modPath, this->option);
   if (is<ModLoadingError>(ret)) {
     auto e = get<ModLoadingError>(ret);
     if (e.isFileNotFound() && node.isOptional()) {
