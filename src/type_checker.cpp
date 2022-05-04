@@ -2251,8 +2251,8 @@ static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_i
 
 void TypeChecker::applyBraceExpansion(Token token,
                                       std::vector<std::shared_ptr<const std::string>> &results,
-                                      SourceListNode::path_iterator begin,
-                                      SourceListNode::path_iterator end, GlobOp op) {
+                                      const SourceListNode::path_iterator begin,
+                                      const SourceListNode::path_iterator end, const GlobOp op) {
   assert(begin <= end);
   auto sentinel = std::make_unique<EmptyNode>();
   const unsigned int size = end - begin;
@@ -2317,7 +2317,7 @@ void TypeChecker::applyBraceExpansion(Token token,
       auto vend = vbegin + usedSize;
       auto newOp = op;
       if (!hasFlag(newOp, GlobOp::TILDE) && usedSize > 0 && isExpandingWildCard(**vbegin) &&
-          cast<WildCardNode>(*begin)->meta == ExpandMeta::BRACE_TILDE) {
+          cast<WildCardNode>(*vbegin)->meta == ExpandMeta::BRACE_TILDE) {
         setFlag(newOp, GlobOp::TILDE);
         ++vbegin; // skip meta
       }

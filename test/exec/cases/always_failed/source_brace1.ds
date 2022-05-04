@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars =8, $errorKind = 'NoGlobDir', $status = 1)
+
+source {/././*,}/..

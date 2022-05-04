@@ -9,6 +9,7 @@ assert "$(echo a b)" == "$(echo {a,b,})"
 assert "$(echo b c)" == "$(echo {,b,c})"
 assert "$(echo a c)" == "$(echo {a,,c})"
 assert "$(echo a,c} b,c})" == "$(echo {a,b},c})"
+assert @({,}).empty()
 
 ## nested
 assert "$(echo a b c)" == "$(echo {a,{b,c}})"

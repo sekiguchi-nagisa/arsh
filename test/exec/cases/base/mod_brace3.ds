@@ -1,0 +1,4 @@
+
+source {,,'',"",}   # ignore empty path
+
+assert $(shctl module).size() == 3  # not module loading

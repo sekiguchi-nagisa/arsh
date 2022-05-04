@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars =8, $errorKind = 'NoGlobMatch', $status = 1)
+
+source ~/{~/*,}jijfiojjafrer
