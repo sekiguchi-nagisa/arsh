@@ -1348,6 +1348,7 @@ bool VM::checkVMEvent(DSState &state) {
     } else if (DSValue handler; (handler = state.sigVector.lookup(sigNum)) != nullptr) {
       setFlag(DSState::eventDesc, VMEvent::MASK);
       if (!kickSignalHandler(state, sigNum, std::move(handler))) {
+        unsetFlag(DSState::eventDesc, VMEvent::MASK);
         return false;
       }
     }
