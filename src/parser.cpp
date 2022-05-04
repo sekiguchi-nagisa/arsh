@@ -1074,7 +1074,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
       meta = ExpandMeta::BRACE_CLOSE;
     }
     auto node = std::make_unique<WildCardNode>(token, meta);
-    node->setExapnd(false);
+    node->setExpand(false);
     return node;
   }
   case TokenKind::STRING_LITERAL:

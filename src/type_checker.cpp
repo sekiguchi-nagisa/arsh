@@ -848,7 +848,7 @@ static bool isBraceOpen(const Node &node) {
 
 static void enableTilde(Node &node) {
   if (isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::BRACE_TILDE) {
-    cast<WildCardNode>(node).setExapnd(true);
+    cast<WildCardNode>(node).setExpand(true);
   }
 }
 
@@ -877,15 +877,15 @@ static void resolveBraceExpansion(CmdArgNode &node) {
           unsigned int oldSize = stack.size();
           while (!isBraceOpen(*segmentNodes[stack.back()])) {
             auto pos = stack.back();
-            cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
+            cast<WildCardNode>(*segmentNodes[pos]).setExpand(true);
             enableTilde(*segmentNodes[pos + 1]);
             stack.pop_back();
           }
           if (stack.size() < oldSize) { // {AAA,}
-            wild.setExapnd(true);
+            wild.setExpand(true);
             node.setBraceExpansion(true);
             auto pos = stack.back();
-            cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
+            cast<WildCardNode>(*segmentNodes[pos]).setExpand(true);
             enableTilde(*segmentNodes[pos + 1]);
           }
           stack.pop_back();
@@ -1384,7 +1384,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     auto &wildCardNode = cast<WildCardNode>(node);
     if (wildCardNode.isExpand()) {
       auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
-      constNode->setExapnd(wildCardNode.isExpand());
+      constNode->setExpand(wildCardNode.isExpand());
       constNode->setBraceId(wildCardNode.getBraceId());
       constNode->setType(wildCardNode.getType());
       return constNode;

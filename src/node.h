@@ -1143,7 +1143,7 @@ public:
 
   bool isExpand() const { return this->expand; }
 
-  void setExapnd(bool set) { this->expand = set; }
+  void setExpand(bool set) { this->expand = set; }
 
   bool isBraceMeta() const {
     switch (this->meta) {

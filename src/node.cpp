@@ -394,7 +394,7 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
         cast<WildCardNode>(*this->segmentNodes.back()).isBraceMeta()) {
       Token t = {node->getPos(), 0};
       auto tilde = std::make_unique<WildCardNode>(t, ExpandMeta::BRACE_TILDE);
-      tilde->setExapnd(false);
+      tilde->setExpand(false);
       this->segmentNodes.push_back(std::move(tilde));
     }
   }
