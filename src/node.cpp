@@ -899,9 +899,15 @@ void SourceNode::dump(NodeDumper &dumper) const {
 // ##     SourceListNode     ##
 // ############################
 
+SourceListNode::~SourceListNode() {
+  for (auto &e : this->constNodes) {
+    delete e;
+  }
+}
+
 void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
-  DUMP_PTR(constPathNode);
+  DUMP(constNodes);
   DUMP_PTR(name);
   DUMP(optional);
   DUMP(inlined);

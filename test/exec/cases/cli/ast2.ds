@@ -30,7 +30,7 @@ nodes:
           type:
           kind: \"STRING\"
           value: \"$mod\"
-    constPathNode: null
+    constNodes:
     name: null
     optional: false
     inlined: false

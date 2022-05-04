@@ -30,7 +30,7 @@ nodes:
           type:
           kind: \"STRING\"
           value: \"$mod\"
-    constPathNode: null
+    constNodes:
     name: null
     optional: false
     inlined: false
@@ -151,22 +151,19 @@ nodes:
           type: String
           kind: \"STRING\"
           value: \"$mod\"
-    constPathNode:
-      nodeKind: CmdArg
-      token:
-        pos: 7
-        size: ${len}
-      type: String
-      expansionSize: 0
-      braceExpansion: false
-      segmentNodes:
-        - nodeKind: String
-          token:
-            pos: 7
-            size: ${len}
-          type: String
-          kind: \"STRING\"
-          value: \"$mod\"
+    constNodes:
+      - nodeKind: String
+        token:
+          pos: 7
+          size: ${len}
+        type: String
+        kind: \"STRING\"
+        value: \"$mod\"
+      - nodeKind: Empty
+        token:
+          pos: 0
+          size: 0
+        type:
     name: null
     optional: false
     inlined: false

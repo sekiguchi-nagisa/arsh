@@ -1382,10 +1382,18 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   }
   case NodeKind::WildCard: {
     auto &wildCardNode = cast<WildCardNode>(node);
-    auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
-    constNode->setExapnd(wildCardNode.isExpand());
-    constNode->setType(wildCardNode.getType());
-    return constNode;
+    if (wildCardNode.isExpand()) {
+      auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
+      constNode->setExapnd(wildCardNode.isExpand());
+      constNode->setBraceId(wildCardNode.getBraceId());
+      constNode->setType(wildCardNode.getType());
+      return constNode;
+    } else {
+      auto constNode = std::make_unique<StringNode>(
+          wildCardNode.getToken(), toString(wildCardNode.meta), StringNode::STRING);
+      constNode->setType(this->typePool.get(TYPE::String));
+      return constNode;
+    }
   }
   case NodeKind::UnaryOp: { // !, +, -, !
     auto &unaryNode = cast<UnaryOpNode>(node);
@@ -2144,26 +2152,27 @@ struct SourceGlobMeta {
   static void preExpand(std::string &path) { expandTilde(path, true); }
 };
 
-static std::string concat(const CmdArgNode &node, const unsigned int endOffset) {
+static std::string concat(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   std::string path;
-  for (unsigned int i = 0; i < endOffset; i++) {
-    auto &e = node.getSegmentNodes()[i];
-    assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
-    if (isa<StringNode>(*e)) {
-      path += cast<StringNode>(*e).getValue();
+  for (; begin != end; ++begin) {
+    auto &e = **begin;
+    assert(isa<StringNode>(e) || isa<WildCardNode>(e));
+    if (isa<StringNode>(e)) {
+      path += cast<StringNode>(e).getValue();
     } else {
-      path += toString(cast<WildCardNode>(*e).meta);
+      path += toString(cast<WildCardNode>(e).meta);
     }
   }
   return path;
 }
 
-static bool isDirPattern(const CmdArgNode &node) {
-  auto &nodes = node.getSegmentNodes();
-  assert(!nodes.empty());
-  for (auto iter = nodes.rbegin(); iter != nodes.crend(); ++iter) {
-    if (isa<StringNode>(**iter)) {
-      StringRef ref = cast<StringNode>(**iter).getValue();
+static bool isDirPattern(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
+  assert(begin < end);
+  ssize_t size = end - begin;
+  for (ssize_t i = size - 1; i > -1; i--) {
+    auto &e = **(begin + i);
+    if (isa<StringNode>(e)) {
+      StringRef ref = cast<StringNode>(e).getValue();
       if (ref.empty()) {
         continue;
       }
@@ -2174,57 +2183,210 @@ static bool isDirPattern(const CmdArgNode &node) {
   return false;
 }
 
+static bool appendPath(std::vector<std::shared_ptr<const std::string>> &results,
+                       std::string &&path) {
+  if (results.size() == SYS_LIMIT_EXPANSION_RESULTS) {
+    return false;
+  }
+  results.push_back(std::make_shared<const std::string>(std::move(path)));
+  return true;
+}
+
+bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
+                            const SourceListNode::path_iterator begin,
+                            const SourceListNode::path_iterator end, GlobOp op) {
+  if (isDirPattern(begin, end)) {
+    std::string path = concat(begin, end);
+    this->reportError<NoGlobDir>(token, path.c_str());
+    return false;
+  }
+
+  const unsigned int oldSize = results.size();
+  auto appender = [&results](std::string &&path) { return appendPath(results, std::move(path)); };
+  auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB;
+  if (hasFlag(op, GlobOp::TILDE)) {
+    setFlag(option, GlobMatchOption::TILDE);
+  }
+  auto matcher = createGlobMatcher<SourceGlobMeta>(
+      this->lexer->getScriptDir(), SourceGlobIter(begin), SourceGlobIter(end), option);
+  auto ret = matcher(appender);
+  if (ret == GlobMatchResult::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
+    std::sort(results.begin() + oldSize, results.end(),
+              [](const std::shared_ptr<const std::string> &x,
+                 const std::shared_ptr<const std::string> &y) { return *x < *y; });
+    return true;
+  } else {
+    std::string path = concat(begin, end);
+    if (ret == GlobMatchResult::NOMATCH) {
+      this->reportError<NoGlobMatch>(token, path.c_str());
+    } else {
+      this->reportError<ExpandRetLimit>(token);
+    }
+    return false;
+  }
+}
+
+struct SrcExpandState {
+  unsigned int index;
+  unsigned int usedSize;
+  unsigned int closeIndex;
+  unsigned int braceId;
+
+  struct Compare {
+    bool operator()(const SrcExpandState &x, unsigned int y) const { return x.braceId < y; }
+
+    bool operator()(unsigned int x, const SrcExpandState &y) const { return x < y.braceId; }
+  };
+};
+
+static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
+  for (; begin != end; ++begin) {
+    auto &v = **begin;
+    if (isExpandingWildCard(v)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void TypeChecker::applyBraceExpansion(Token token,
+                                      std::vector<std::shared_ptr<const std::string>> &results,
+                                      SourceListNode::path_iterator begin,
+                                      SourceListNode::path_iterator end, GlobOp op) {
+  assert(begin <= end);
+  auto sentinel = std::make_unique<EmptyNode>();
+  const unsigned int size = end - begin;
+  FlexBuffer<SrcExpandState> stack;
+  std::vector<Node *> values;
+  values.resize(size + 1); // reserve sentinel
+  unsigned int usedSize = 0;
+
+  for (unsigned int i = 0; i < size; i++) {
+    auto &v = begin[i];
+    if (isExpandingWildCard(*v)) {
+      auto wild = cast<WildCardNode>(v);
+      switch (wild->meta) {
+      case ExpandMeta::BRACE_OPEN: {
+        // find close index
+        unsigned int closeIndex = i + 1;
+        for (int level = 1; closeIndex < size; closeIndex++) {
+          if (isExpandingWildCard(*begin[closeIndex])) {
+            auto next = cast<WildCardNode>(begin[closeIndex])->meta;
+            if (next == ExpandMeta::BRACE_CLOSE) {
+              if (--level == 0) {
+                break;
+              }
+            } else if (next == ExpandMeta::BRACE_OPEN) {
+              level++;
+            }
+          }
+        }
+        stack.push_back(SrcExpandState{
+            .index = i,
+            .usedSize = usedSize,
+            .closeIndex = closeIndex,
+            .braceId = wild->getBraceId(),
+        });
+        goto CONTINUE;
+      }
+      case ExpandMeta::BRACE_SEP:
+      case ExpandMeta::BRACE_CLOSE: {
+        auto iter = std::lower_bound(stack.begin(), stack.end(), wild->getBraceId(),
+                                     SrcExpandState::Compare());
+        assert(iter != stack.end());
+        (*iter).index = i;
+        i = (*iter).closeIndex;
+        goto CONTINUE;
+      }
+      case ExpandMeta::BRACE_TILDE:
+        if (usedSize) {
+          goto CONTINUE;
+        }
+        break;
+      default:
+        break;
+      }
+    }
+    values[usedSize++] = v;
+
+  CONTINUE:
+    if (i == size - 1) {
+      values[usedSize] = sentinel.get(); // sentinel
+
+      auto vbegin = values.begin();
+      auto vend = vbegin + usedSize;
+      auto newOp = op;
+      if (!hasFlag(newOp, GlobOp::TILDE) && usedSize > 0 && isExpandingWildCard(**vbegin) &&
+          cast<WildCardNode>(*begin)->meta == ExpandMeta::BRACE_TILDE) {
+        setFlag(newOp, GlobOp::TILDE);
+        ++vbegin; // skip meta
+      }
+
+      if (needGlob(vbegin, vend)) {
+        if (!this->applyGlob(token, results, vbegin, vend, newOp)) {
+          return;
+        }
+      } else {
+        auto path = concat(vbegin, vend);
+        if (hasFlag(newOp, GlobOp::TILDE)) {
+          expandTilde(path, true);
+        }
+        if (!path.empty()) {
+          if (!appendPath(results, std::move(path))) {
+            this->reportError<ExpandRetLimit>(token);
+            return;
+          }
+        }
+      }
+
+      while (!stack.empty()) {
+        unsigned int oldIndex = stack.back().index;
+        auto &old = begin[oldIndex];
+        assert(isExpandingWildCard(*old));
+        if (cast<WildCardNode>(*old).meta == ExpandMeta::BRACE_CLOSE) {
+          stack.pop_back();
+        } else {
+          i = oldIndex;
+          usedSize = stack.back().usedSize;
+          break;
+        }
+      }
+    }
+  }
+}
+
 void TypeChecker::resolvePathList(SourceListNode &node) {
-  if (!node.getConstPathNode()) {
+  if (node.getConstNodes().empty()) {
     return;
   }
-  auto &pathNode = *node.getConstPathNode();
-  std::vector<std::shared_ptr<const std::string>> ret;
+  node.addConstNode(std::make_unique<EmptyNode>()); // sentinel
+  auto &pathNode = node.getPathNode();
+  auto begin = node.getConstNodes().cbegin();
+  auto end = node.getConstNodes().cend() - 1;
+
+  std::vector<std::shared_ptr<const std::string>> results;
   if (pathNode.getExpansionSize() == 0) {
-    std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
+    std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
       expandTilde(path, true);
     }
-    ret.push_back(std::make_shared<const std::string>(std::move(path)));
-  } else if (pathNode.isBraceExpansion()) {
-    fatal("unsupported\n");
+    results.push_back(std::make_shared<const std::string>(std::move(path)));
   } else {
-    if (isDirPattern(pathNode)) {
-      std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
-      this->reportError<NoGlobDir>(pathNode, path.c_str());
-      return;
-    }
-    pathNode.addSegmentNode(std::make_unique<EmptyNode>()); // sentinel
-    auto begin = SourceGlobIter(pathNode.getSegmentNodes().cbegin());
-    auto end = SourceGlobIter(pathNode.getSegmentNodes().cend() - 1);
-    auto appender = [&](std::string &&path) {
-      if (ret.size() == 4096) {
-        return false;
-      }
-      ret.push_back(std::make_shared<const std::string>(std::move(path)));
-      return true;
-    };
-    auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB;
+    GlobOp op{};
     if (pathNode.isTilde()) {
-      setFlag(option, GlobMatchOption::TILDE);
+      setFlag(op, GlobOp::TILDE);
     }
-    auto matcher =
-        createGlobMatcher<SourceGlobMeta>(this->lexer->getScriptDir(), begin, end, option);
-    auto globRet = matcher(appender);
-    if (globRet == GlobMatchResult::MATCH || node.isOptional()) {
-      std::sort(ret.begin(), ret.end(),
-                [](const std::shared_ptr<const std::string> &x,
-                   const std::shared_ptr<const std::string> &y) { return *x < *y; });
+    if (node.isOptional()) {
+      setFlag(op, GlobOp::OPTIONAL);
+    }
+
+    if (pathNode.isBraceExpansion()) {
+      this->applyBraceExpansion(pathNode.getToken(), results, begin, end, op);
     } else {
-      std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
-      if (globRet == GlobMatchResult::NOMATCH) {
-        this->reportError<NoGlobMatch>(pathNode, path.c_str());
-      } else {
-        this->reportError<GlobRetLimit>(pathNode, path.c_str());
-      }
+      this->applyGlob(pathNode.getToken(), results, begin, end, op);
     }
   }
-  node.setPathList(std::move(ret));
+  node.setPathList(std::move(results));
 }
 
 void TypeChecker::visitSourceListNode(SourceListNode &node) {
@@ -2253,16 +2415,8 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
         return;
       }
     }
-    if (!constPathNode) {
-      constPathNode = std::make_unique<CmdArgNode>(std::move(constNode));
-    } else {
-      constPathNode->addSegmentNode(std::move(constNode));
-    }
+    node.addConstNode(std::move(constNode));
   }
-  constPathNode->setExpansionSize(pathNode.getExpansionSize());
-  constPathNode->setBraceExpansion(pathNode.isBraceExpansion());
-  constPathNode->setType(pathNode.getType());
-  node.setConstPathNode(std::move(constPathNode));
   this->resolvePathList(node);
 }
 

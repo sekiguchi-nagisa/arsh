@@ -1,0 +1,7 @@
+
+source ../../_module4test/globbed{1,2}.ds
+
+assert $gg1 == "globbed1"
+assert $gg2 == "globbed2"
+
+assert $mod.hello == "hello module!!"

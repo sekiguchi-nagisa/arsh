@@ -599,6 +599,28 @@ private:
    */
   std::unique_ptr<Node> evalConstant(const Node &node);
 
+  enum class GlobOp : unsigned int {
+    TILDE = 1u << 0u,
+    OPTIONAL = 1u << 1u,
+  };
+
+  /**
+   *
+   * @param token
+   * for error reporting
+   * @param results
+   * @param begin
+   * @param end
+   * @param op
+   * @return
+   */
+  bool applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
+                 SourceListNode::path_iterator begin, SourceListNode::path_iterator end, GlobOp op);
+
+  void applyBraceExpansion(Token token, std::vector<std::shared_ptr<const std::string>> &results,
+                           SourceListNode::path_iterator begin, SourceListNode::path_iterator end,
+                           GlobOp op);
+
   /**
    * apply constant folding and generate source path list.
    * if cannot resolve path, throw error.
@@ -657,6 +679,9 @@ private:
   void visitErrorNode(ErrorNode &node) override;
   void visitEmptyNode(EmptyNode &node) override;
 };
+
+template <>
+struct allow_enum_bitop<TypeChecker::GlobOp> : std::true_type {};
 
 } // namespace ydsh
 

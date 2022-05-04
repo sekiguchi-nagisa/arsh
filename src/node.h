@@ -2211,10 +2211,7 @@ class SourceListNode : public WithRtti<Node, NodeKind::SourceList> {
 private:
   std::shared_ptr<CmdArgNode> pathNode;
 
-  /**
-   * initial value is null
-   */
-  std::unique_ptr<CmdArgNode> constPathNode;
+  std::vector<Node *> constNodes;
 
   /**
    * may be null
@@ -2233,18 +2230,20 @@ private:
   std::vector<std::shared_ptr<const std::string>> pathList; // evaluated path list
 
 public:
-  using path_iterator = decltype(pathNode->getSegmentNodes().cbegin());
+  using path_iterator = decltype(constNodes.cbegin());
 
   SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional)
       : WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
     this->updateToken(this->pathNode->getToken());
   }
 
+  ~SourceListNode() override;
+
   CmdArgNode &getPathNode() const { return *this->pathNode; }
 
-  void setConstPathNode(std::unique_ptr<CmdArgNode> &&c) { this->constPathNode = std::move(c); }
+  const auto &getConstNodes() const { return this->constNodes; }
 
-  const std::unique_ptr<CmdArgNode> &getConstPathNode() const { return this->constPathNode; }
+  void addConstNode(std::unique_ptr<Node> &&node) { this->constNodes.push_back(node.release()); }
 
   void setName(Token token, std::string &&value) {
     this->updateToken(token);

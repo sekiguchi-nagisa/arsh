@@ -8,6 +8,7 @@
 
 - allow anonymous function in local scope
     - can access upper scope variables (except for fields, temporary env)
+- support brace expansion in command argument list and source statement
 
 #### Builtin
 

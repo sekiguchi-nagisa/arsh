@@ -348,6 +348,7 @@ constexpr size_t SYS_LIMIT_GLOBAL_NUM = UINT16_MAX; // FIXME: check global var l
 constexpr size_t SYS_LIMIT_LOCAL_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
 constexpr size_t SYS_LIMIT_EXPANSION_FRAG_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_EXPANSION_RESULTS = 4096;
 constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 256;
 constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
