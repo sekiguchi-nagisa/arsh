@@ -27,6 +27,7 @@ assert $ret.size() == 0
 
 {
     var fd = <(echo -e '123\n456')
+    sleep 0.5
     for $e in $fd { if $fd { $fd.close(); }; $ret.add($e); }
 }
 assert $ret.size() == 2 : "${$ret.size()}"   # closed, but still read all
