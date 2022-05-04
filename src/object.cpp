@@ -96,8 +96,8 @@ std::string DSValue::toString() const {
       return str;
     }
   }
-  case DSValueKind::GLOB_META:
-    return ::toString(this->asGlobMeta());
+  case DSValueKind::EXPAND_META:
+    return ::toString(this->asExpandMeta().first);
   case DSValueKind::BOOL:
     return this->asBool() ? "true" : "false";
   case DSValueKind::SIG:

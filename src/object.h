@@ -188,11 +188,11 @@ public:
 
 enum class DSValueKind : unsigned char {
   EMPTY,
-  OBJECT,    // not null
-  NUMBER,    // uint64_t
-  NUM_LIST,  // [uint32_t uint32_t, uint32_t]
-  DUMMY,     // DSType(uint32_t), uint32_t, uint32_t
-  GLOB_META, // uint64_t, for glob meta character, '?', '*'
+  OBJECT,      // not null
+  NUMBER,      // uint64_t
+  NUM_LIST,    // [uint32_t uint32_t, uint32_t]
+  DUMMY,       // DSType(uint32_t), uint32_t, uint32_t
+  EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
   INVALID,
   BOOL,
   SIG,   // int64_t
@@ -446,9 +446,9 @@ public:
     return this->u32s.values[0];
   }
 
-  ExpandMeta asGlobMeta() const {
-    assert(this->kind() == DSValueKind::GLOB_META);
-    return static_cast<ExpandMeta>(this->u64.value);
+  std::pair<ExpandMeta, unsigned int> asExpandMeta() const {
+    assert(this->kind() == DSValueKind::EXPAND_META);
+    return {static_cast<ExpandMeta>(this->u32s.values[0]), this->u32s.values[1]};
   }
 
   bool asBool() const {
@@ -546,10 +546,11 @@ public:
     return ret;
   }
 
-  static DSValue createGlobMeta(ExpandMeta meta) {
+  static DSValue createExpandMeta(ExpandMeta meta, unsigned int v) {
     DSValue ret;
-    ret.u64.kind = DSValueKind::GLOB_META;
-    ret.u64.value = static_cast<unsigned int>(meta);
+    ret.u32s.kind = DSValueKind::EXPAND_META;
+    ret.u32s.values[0] = static_cast<unsigned int>(meta);
+    ret.u32s.values[1] = v;
     return ret;
   }
 

@@ -935,6 +935,7 @@ nodes:
               type: String
               meta: "*"
               expand: true
+              braceId: 0
       redirCount: 0
       needFork: true
       handle: null

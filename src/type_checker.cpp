@@ -854,7 +854,7 @@ static void enableTilde(Node &node) {
 
 static void resolveBraceExpansion(CmdArgNode &node) {
   unsigned int depth = 0;
-  FlexBuffer<unsigned int> metaPosStack;
+  FlexBuffer<unsigned int> stack;
   auto &segmentNodes = node.refSegmentNodes();
   const unsigned int size = segmentNodes.size();
   for (unsigned int i = 0; i < size; i++) {
@@ -864,35 +864,59 @@ static void resolveBraceExpansion(CmdArgNode &node) {
       switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
         depth++;
-        metaPosStack.push_back(i);
+        stack.push_back(i);
         break;
       case ExpandMeta::BRACE_SEP:
         if (depth) {
-          metaPosStack.push_back(i);
+          stack.push_back(i);
         }
         break;
       case ExpandMeta::BRACE_CLOSE:
         if (depth) {
           depth--;
-          unsigned int oldSize = metaPosStack.size();
-          while (!isBraceOpen(*segmentNodes[metaPosStack.back()])) {
-            auto pos = metaPosStack.back();
+          unsigned int oldSize = stack.size();
+          while (!isBraceOpen(*segmentNodes[stack.back()])) {
+            auto pos = stack.back();
             cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
             enableTilde(*segmentNodes[pos + 1]);
-            metaPosStack.pop_back();
+            stack.pop_back();
           }
-          if (metaPosStack.size() < oldSize) { // {AAA,}
+          if (stack.size() < oldSize) { // {AAA,}
             wild.setExapnd(true);
             node.setBraceExpansion(true);
-            auto pos = metaPosStack.back();
+            auto pos = stack.back();
             cast<WildCardNode>(*segmentNodes[pos]).setExapnd(true);
             enableTilde(*segmentNodes[pos + 1]);
           }
-          metaPosStack.pop_back();
+          stack.pop_back();
           if (wild.isExpand() && i + 1 < size) {
             enableTilde(*segmentNodes[i + 1]);
           }
         }
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
+  // add brace id
+  stack.clear();
+  unsigned int braceId = 0;
+  for (auto &e : segmentNodes) {
+    if (isExpandingWildCard(*e)) {
+      auto &wild = cast<WildCardNode>(*e);
+      switch (wild.meta) {
+      case ExpandMeta::BRACE_OPEN:
+        stack.push_back(braceId++);
+        wild.setBraceId(stack.back());
+        break;
+      case ExpandMeta::BRACE_SEP:
+        wild.setBraceId(stack.back());
+        break;
+      case ExpandMeta::BRACE_CLOSE:
+        wild.setBraceId(stack.back());
+        stack.pop_back();
         break;
       default:
         break;

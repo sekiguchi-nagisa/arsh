@@ -1070,12 +1070,13 @@ public:
 struct DSValueGlobMeta {
   static bool isAny(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == ExpandMeta::ANY;
+    return v.kind() == DSValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ANY;
   }
 
   static bool isZeroOrMore(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == ExpandMeta::ZERO_OR_MORE;
+    return v.kind() == DSValueKind::EXPAND_META &&
+           v.asExpandMeta().first == ExpandMeta::ZERO_OR_MORE;
   }
 
   static void preExpand(std::string &path) { expandTilde(path, true); }
@@ -1160,12 +1161,19 @@ struct ExpandState {
   unsigned char index;
   unsigned char usedSize;
   unsigned char closeIndex;
+  unsigned char braceId;
+
+  struct Compare {
+    bool operator()(const ExpandState &x, unsigned int y) const { return x.braceId < y; }
+
+    bool operator()(unsigned int x, const ExpandState &y) const { return x < y.braceId; }
+  };
 };
 
 static bool needGlob(const DSValue *begin, const DSValue *end) {
   for (; begin != end; ++begin) {
     auto &v = *begin;
-    if (v.kind() == DSValueKind::GLOB_META) {
+    if (v.kind() == DSValueKind::EXPAND_META) {
       return true;
     }
   }
@@ -1182,39 +1190,41 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   for (unsigned int i = 0; i < size; i++) {
     auto &v = begin[i];
-    if (v.kind() == DSValueKind::GLOB_META) {
-      auto meta = v.asGlobMeta();
-      switch (meta) {
-      case ExpandMeta::BRACE_OPEN:
-        stack.push_back(ExpandState{
-            .index = static_cast<unsigned char>(i),
-            .usedSize = static_cast<unsigned char>(usedSize),
-            .closeIndex = 0,
-        });
-        goto CONTINUE;
-      case ExpandMeta::BRACE_SEP:
-        stack.back().index = i++;
-
-        // skip until brace close
-        for (int level = 1; i < size; i++) {
-          if (begin[i].kind() == DSValueKind::GLOB_META) {
-            auto next = begin[i].asGlobMeta();
-            if (next == ExpandMeta::BRACE_CLOSE) {
+    if (v.kind() == DSValueKind::EXPAND_META) {
+      auto meta = v.asExpandMeta();
+      switch (meta.first) {
+      case ExpandMeta::BRACE_OPEN: {
+        // find close index
+        unsigned int closeIndex = i + 1;
+        for (int level = 1; closeIndex < size; closeIndex++) {
+          if (begin[closeIndex].kind() == DSValueKind::EXPAND_META) {
+            auto next = begin[closeIndex].asExpandMeta();
+            if (next.first == ExpandMeta::BRACE_CLOSE) {
               if (--level == 0) {
-                stack.back().closeIndex = i;
                 break;
               }
-            } else if (next == ExpandMeta::BRACE_OPEN) {
+            } else if (next.first == ExpandMeta::BRACE_OPEN) {
               level++;
             }
           }
         }
+        stack.push_back(ExpandState{
+            .index = static_cast<unsigned char>(i),
+            .usedSize = static_cast<unsigned char>(usedSize),
+            .closeIndex = static_cast<unsigned char>(closeIndex),
+            .braceId = static_cast<unsigned char>(meta.second),
+        });
         goto CONTINUE;
-      case ExpandMeta::BRACE_CLOSE:
-        if (stack.back().closeIndex == i) {
-          stack.pop_back();
-        }
+      }
+      case ExpandMeta::BRACE_SEP:
+      case ExpandMeta::BRACE_CLOSE: {
+        auto iter =
+            std::lower_bound(stack.begin(), stack.end(), meta.second, ExpandState::Compare());
+        assert(iter != stack.end());
+        (*iter).index = i;
+        i = (*iter).closeIndex;
         goto CONTINUE;
+      }
       case ExpandMeta::BRACE_TILDE:
         if (usedSize) {
           goto CONTINUE;
@@ -1233,8 +1243,8 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
       auto *vbegin = values.get();
       auto *vend = vbegin + usedSize;
       bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
-      if (!tilde && usedSize > 0 && vbegin->kind() == DSValueKind::GLOB_META &&
-          vbegin->asGlobMeta() == ExpandMeta::BRACE_TILDE) {
+      if (!tilde && usedSize > 0 && vbegin->kind() == DSValueKind::EXPAND_META &&
+          vbegin->asExpandMeta().first == ExpandMeta::BRACE_TILDE) {
         tilde = true;
         ++vbegin; // skip meta
       }
@@ -1257,9 +1267,17 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         }
       }
 
-      if (!stack.empty()) {
-        i = stack.back().index;
-        usedSize = stack.back().usedSize;
+      while (!stack.empty()) {
+        unsigned int oldIndex = stack.back().index;
+        auto &old = begin[oldIndex];
+        assert(old.kind() == DSValueKind::EXPAND_META);
+        if (old.asExpandMeta().first == ExpandMeta::BRACE_CLOSE) {
+          stack.pop_back();
+        } else {
+          i = oldIndex;
+          usedSize = stack.back().usedSize;
+          break;
+        }
       }
     }
   }
@@ -1466,9 +1484,11 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(PUSH_META) {
-        unsigned int value = read8(GET_CODE(state), state.stack.pc());
+        unsigned int meta = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        state.stack.push(DSValue::createGlobMeta(static_cast<ExpandMeta>(value)));
+        unsigned int v = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc()++;
+        state.stack.push(DSValue::createExpandMeta(static_cast<ExpandMeta>(meta), v));
         vmnext;
       }
       vmcase(PUSH_INVALID) {

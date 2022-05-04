@@ -1135,6 +1135,7 @@ class WildCardNode : public WithRtti<Node, NodeKind::WildCard> {
 public:
   const ExpandMeta meta;
   bool expand{true};
+  unsigned short braceId{0}; // up 85(255/3)
 
   WildCardNode(Token token, ExpandMeta p) : WithRtti(token), meta(p) {}
 
@@ -1154,6 +1155,10 @@ public:
       return false;
     }
   }
+
+  unsigned short getBraceId() const { return this->braceId; }
+
+  void setBraceId(unsigned short id) { this->braceId = id; }
 
   void dump(NodeDumper &dumper) const override;
 };

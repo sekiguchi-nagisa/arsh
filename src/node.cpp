@@ -434,6 +434,7 @@ void RedirNode::dump(NodeDumper &dumper) const {
 void WildCardNode::dump(NodeDumper &dumper) const {
   dumper.dump("meta", toString(meta));
   DUMP(expand);
+  DUMP(braceId);
 }
 
 // #####################

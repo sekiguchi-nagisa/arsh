@@ -824,7 +824,8 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 
 void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
   if (node.isExpand()) {
-    this->emit1byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta));
+    this->emit2byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta),
+                       static_cast<unsigned char>(node.getBraceId()));
   } else {
     this->emitString(toString(node.meta));
   }
@@ -1654,7 +1655,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         if (code == OpCode::FORK || code == OpCode::CALL_METHOD) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
         } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_EXPANDING ||
-                   code == OpCode::INIT_FIELDS) {
+                   code == OpCode::INIT_FIELDS || code == OpCode::PUSH_META) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
         } else if (code == OpCode::CALL_BUILTIN2) {
           unsigned int paramSize = read8(c.getCode(), i + 1);

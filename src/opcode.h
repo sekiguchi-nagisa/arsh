@@ -45,7 +45,7 @@ namespace ydsh {
   OP(PUSH_STR1, 1, 1)                                                                              \
   OP(PUSH_STR2, 2, 1)                                                                              \
   OP(PUSH_STR3, 3, 1)                                                                              \
-  OP(PUSH_META, 1, 1)                                                                              \
+  OP(PUSH_META, 2, 1)                                                                              \
   OP(PUSH_INVALID, 0, 1)                                                                           \
   OP(LOAD_CONST, 1, 1)                                                                             \
   OP(LOAD_CONST_W, 2, 1)                                                                           \
