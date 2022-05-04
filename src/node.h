@@ -1053,9 +1053,11 @@ class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
   unsigned int expansionSize{0};
   bool braceExpansion{false};
-  std::vector<std::unique_ptr<Node>> segmentNodes;
+  std::vector<std::unique_ptr<Node>> segmentNodes; // atleast one element
 
 public:
+  explicit CmdArgNode(Token token) : WithRtti(token) {}
+
   explicit CmdArgNode(std::unique_ptr<Node> &&segmentNode) : WithRtti(segmentNode->getToken()) {
     this->addSegmentNode(std::move(segmentNode));
   }

@@ -250,9 +250,16 @@ protected:
 
   std::unique_ptr<CmdArgNode> parse_cmdArg(CmdArgParseOpt opt = {});
 
-  std::unique_ptr<Node> parse_cmdArgSeg(CmdArgParseOpt opt);
+  /**
+   * parse and add command argument segment
+   * @param argNode
+   * @param opt
+   * @return
+   * return always null
+   */
+  std::unique_ptr<Node> parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt);
 
-  std::unique_ptr<StringNode> parse_cmdArgPart(CmdArgParseOpt opt);
+  std::unique_ptr<Node> parse_cmdArgSegImpl(CmdArgParseOpt opt);
 
   std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 

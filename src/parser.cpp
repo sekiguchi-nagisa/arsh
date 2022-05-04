@@ -1037,21 +1037,54 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
-  auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(opt | CmdArgParseOpt::FIRST)));
+  auto node = std::make_unique<CmdArgNode>(this->curToken);
+  TRY(this->parse_cmdArgSeg(*node, opt | CmdArgParseOpt::FIRST));
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
-    node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
+    TRY(this->parse_cmdArgSeg(*node, opt));
   }
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
+static bool isBrace(TokenKind kind) {
+  switch (kind) {
+  case TokenKind::BRACE_OPEN:
+  case TokenKind::BRACE_SEP:
+  case TokenKind::BRACE_CLOSE:
+    return true;
+  default:
+    return false;
+  }
+}
+
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
+  GUARD_DEEP_NESTING(guard);
+
+  if (CUR_KIND() == TokenKind::CMD_ARG_PART || CUR_KIND() == TokenKind::PATH_SEP) {
+    auto prevKind = this->consumedKind;
+    auto reqKind = CUR_KIND() == TokenKind::CMD_ARG_PART ? CUR_KIND() : TokenKind::PATH_SEP;
+    Token token = TRY(this->expect(reqKind));
+    auto kind = StringNode::STRING;
+    if (hasFlag(opt, CmdArgParseOpt::FIRST) ||
+        (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP) ||
+        isBrace(prevKind)) {
+      if (this->lexer->startsWith(token, '~')) {
+        kind = StringNode::TILDE;
+      }
+    }
+    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
+    argNode.addSegmentNode(std::move(node));
+  } else {
+    auto node = TRY(this->parse_cmdArgSegImpl(opt));
+    argNode.addSegmentNode(std::move(node));
+  }
+  return nullptr;
+}
+
+std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
-  case TokenKind::CMD_ARG_PART:
-  case TokenKind::PATH_SEP:
-    return this->parse_cmdArgPart(opt);
   case TokenKind::GLOB_ANY: {
     Token token = this->curToken;
     this->consume();
@@ -1103,34 +1136,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
                                                     : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
   }
-}
-
-static bool isBrace(TokenKind kind) {
-  switch (kind) {
-  case TokenKind::BRACE_OPEN:
-  case TokenKind::BRACE_SEP:
-  case TokenKind::BRACE_CLOSE:
-    return true;
-  default:
-    return false;
-  }
-}
-
-std::unique_ptr<StringNode> Parser::parse_cmdArgPart(CmdArgParseOpt opt) {
-  GUARD_DEEP_NESTING(guard);
-
-  auto prevKind = this->consumedKind;
-  auto reqKind = CUR_KIND() == TokenKind::CMD_ARG_PART ? CUR_KIND() : TokenKind::PATH_SEP;
-  Token token = TRY(this->expect(reqKind));
-  auto kind = StringNode::STRING;
-  if (hasFlag(opt, CmdArgParseOpt::FIRST) ||
-      (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP) ||
-      isBrace(prevKind)) {
-    if (this->lexer->startsWith(token, '~')) {
-      kind = StringNode::TILDE;
-    }
-  }
-  return std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
