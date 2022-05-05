@@ -25,13 +25,17 @@
 using namespace ydsh;
 using namespace lsp;
 
+#define DEFAULT_DEBOUNCE_TIME 800
+#define XSTR(E) #E
+#define STR(E) XSTR(E)
+
 #define EACH_OPT(OP)                                                                               \
   OP(LOG, "--log", opt::HAS_ARG,                                                                   \
      "specify log level (debug, info, warning, error, fatal). default is `warning'")               \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
   OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
-     "time deadline of re-build (ms). default is 800")                                             \
+     "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME))                     \
   OP(TEST, "--test", opt::HAS_ARG, "run in test mode")
 
 enum class OptionKind {
@@ -42,7 +46,7 @@ enum class OptionKind {
 
 struct Options {
   LogLevel level{LogLevel::WARNING};
-  int debounceTime{800};
+  int debounceTime{DEFAULT_DEBOUNCE_TIME};
   bool lsp{true};
   const char *testInput{nullptr};
 };

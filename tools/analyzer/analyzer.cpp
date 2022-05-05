@@ -315,8 +315,6 @@ static CompletionItemKind toItemKind(CompCandidateKind kind) {
     return CompletionItemKind::Keyword;
   case CompCandidateKind::TYPE:
     return CompletionItemKind::Class;
-  case CompCandidateKind::SIGNAL:
-    return CompletionItemKind::Event;
   default:
     return CompletionItemKind::Text;
   }
@@ -380,7 +378,7 @@ public:
         item.sortText = formatPrio(item.priority, maxDigits);
       }
     }
-    return this->items;
+    return std::move(this->items);
   }
 
 private:

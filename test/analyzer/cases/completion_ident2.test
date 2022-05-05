@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self
+# RUN: setenv ZZZ=123 && setenv ZZ@=123 && eval $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -11,31 +11,28 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "34."}
+    "text": "import-env \nZZ"
+    }
  }
 }
 
 <<<
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
   "params": {
-    "context": { "triggerCharacter": ".", "triggerKind": 2 },
-    "position": { "character": 3, "line": 0 },
+    "context": { "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
     "textDocument": { "uri": "file:///test/test.ds" }
   }
 }
 
-# complete methods
+# complete env name (ignore non-identifier names)
 
 # CHECK_IF:   "id": 1,
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": [
 #    CHECK:     {
-#    CHECK:       "kind": 2,
-#    CHECK:       "label": "abs"
-#    CHECK:     },
-#    CHECK:     {
-#    CHECK:       "kind": 2,
-#    CHECK:       "label": "toFloat"
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "ZZZ"
 #    CHECK:     }
 #    CHECK:   ]
 

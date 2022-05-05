@@ -11,41 +11,31 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "var ZZZ = $false; { var ZAAA = 34; var ZE22 = 23; var Z000 = 23;\n$Z"}
+                     "text": "var aa = (12,23)\n$aa."}
  }
 }
 
 <<<
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
   "params": {
-    "context": { "triggerKind": 1 },
-    "position": { "character": 2, "line": 1 },
+    "context": { "triggerCharacter": ".", "triggerKind": 2 },
+    "position": { "character": 4, "line": 1 },
     "textDocument": { "uri": "file:///test/test.ds" }
   }
 }
+
+# complete fields
 
 # CHECK_IF:   "id": 1,
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": [
 #    CHECK:     {
-#    CHECK:       "kind": 6,
-#    CHECK:       "label": "Z000",
-#    CHECK:       "sortText": "0"
+#    CHECK:       "kind": 5,
+#    CHECK:       "label": "_0"
 #    CHECK:     },
 #    CHECK:     {
-#    CHECK:       "kind": 6,
-#    CHECK:       "label": "ZE22",
-#    CHECK:       "sortText": "1"
-#    CHECK:     },
-#    CHECK:     {
-#    CHECK:       "kind": 6,
-#    CHECK:       "label": "ZAAA",
-#    CHECK:       "sortText": "2"
-#    CHECK:     },
-#    CHECK:     {
-#    CHECK:       "kind": 6,
-#    CHECK:       "label": "ZZZ",
-#    CHECK:       "sortText": "3"
+#    CHECK:       "kind": 5,
+#    CHECK:       "label": "_1"
 #    CHECK:     }
 #    CHECK:   ]
 
