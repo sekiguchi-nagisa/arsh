@@ -72,6 +72,9 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::PATH_SEP:
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
+  case TokenKind::BRACE_OPEN:
+  case TokenKind::BRACE_SEP:
+  case TokenKind::BRACE_CLOSE:
     return HighlightTokenClass::COMMAND_ARG;
 #define GEN_CASE(E) case TokenKind::E:
     // clang-format off
