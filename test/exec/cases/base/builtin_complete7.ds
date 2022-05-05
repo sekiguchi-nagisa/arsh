@@ -1,6 +1,12 @@
 
-var a = 34;
+# load itself
+
+var abc = 34;
 
 complete "source $SCRIPT_NAME; ech"
 assert $COMPREPLY.size() > 0
 assert $COMPREPLY[0] == 'echo'
+
+complete "source $SCRIPT_NAME; \$a"
+assert $COMPREPLY.size() > 0
+assert $COMPREPLY[0] == 'abc'

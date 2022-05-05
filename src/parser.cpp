@@ -201,6 +201,43 @@ bool Parser::inTypeNameCompletionPoint() const {
   return false;
 }
 
+template <typename Func>
+static void iteratePathList(const Lexer &lex, const Token token, Func func) {
+  StringRef ref = lex.toStrRef(token);
+  const unsigned int size = ref.size();
+  unsigned int startPos = 0;
+  for (unsigned int pos = 0; pos < size; pos++) {
+    char ch = ref[pos];
+    if (ch == ':' || pos + 1 == size) {
+      Token sub = token.slice(startPos, pos + 1);
+      func(sub);
+      startPos = pos + 1;
+    } else if (ch == '\\' && pos + 1 < size) {
+      pos++; // skip escaped
+    }
+  }
+}
+
+void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
+  Token token = this->curToken;
+  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+    iteratePathList(*this->lexer, token, [&token](Token subToken) { token = subToken; });
+    if (token.pos != this->curToken.pos || hasFlag(opt, CmdArgParseOpt::FIRST)) {
+      auto op = CodeCompOp::FILE;
+      if (this->lexer->startsWith(token, '~')) {
+        setFlag(op, CodeCompOp::TILDE);
+      }
+      this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+    }
+  } else if (hasFlag(opt, CmdArgParseOpt::FIRST)) {
+    auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
+    if (this->lexer->startsWith(token, '~')) {
+      setFlag(op, CodeCompOp::TILDE);
+    }
+    this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+  }
+}
+
 void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
   if (allowComp && this->inCompletionPoint()) {
     this->ccHandler->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size,
@@ -1060,14 +1097,23 @@ static bool isBrace(TokenKind kind) {
 std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
-  if (CUR_KIND() == TokenKind::CMD_ARG_PART || CUR_KIND() == TokenKind::PATH_SEP) {
-    auto prevKind = this->consumedKind;
-    auto reqKind = CUR_KIND() == TokenKind::CMD_ARG_PART ? CUR_KIND() : TokenKind::PATH_SEP;
-    Token token = TRY(this->expect(reqKind));
+  if (CUR_KIND() == TokenKind::CMD_ARG_PART) {
+    const auto prevKind = this->consumedKind;
+    Token token = TRY(this->expect(TokenKind::CMD_ARG_PART));
+    if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+      iteratePathList(*this->lexer, token, [&](Token subToken) {
+        auto kind = StringNode::STRING;
+        if (this->lexer->startsWith(subToken, '~') &&
+            (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
+          kind = StringNode::TILDE;
+        }
+        auto node = std::make_unique<StringNode>(subToken, this->lexer->toCmdArg(subToken), kind);
+        argNode.addSegmentNode(std::move(node));
+      });
+      return nullptr;
+    }
     auto kind = StringNode::STRING;
-    if (hasFlag(opt, CmdArgParseOpt::FIRST) ||
-        (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP) ||
-        isBrace(prevKind)) {
+    if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
       if (this->lexer->startsWith(token, '~')) {
         kind = StringNode::TILDE;
       }
@@ -1126,10 +1172,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     if (this->inCompletionPoint()) {
       if (this->inVarNameCompletionPoint()) {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
-      } else if (this->hasSpace() || this->consumedKind == TokenKind::PATH_SEP ||
-                 !hasFlag(opt, CmdArgParseOpt::MODULE)) {
-        bool tilde = this->lexer->startsWith(this->curToken, '~');
-        this->ccHandler->addCmdArgOrModRequest(this->lexer->toCmdArg(this->curToken), opt, tilde);
+      } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
+        this->tryCompleteFileNames(opt);
       }
     }
     E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE) ? ParseErrorKind::MOD_PATH

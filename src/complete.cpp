@@ -664,27 +664,6 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
   }
 }
 
-void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt,
-                                                  bool tilde) {
-  CodeCompOp op{};
-  if (hasFlag(opt, CmdArgParseOpt::FIRST)) {
-    if (tilde) {
-      setFlag(op, CodeCompOp::TILDE);
-    }
-    if (hasFlag(opt, CmdArgParseOpt::MODULE)) {
-      setFlag(op, CodeCompOp::MODULE);
-    } else {
-      setFlag(op, CodeCompOp::FILE);
-    }
-  } else if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-    if (tilde) {
-      setFlag(op, CodeCompOp::TILDE);
-    }
-    setFlag(op, CodeCompOp::FILE);
-  }
-  this->addCompRequest(op, std::move(value));
-}
-
 static LexerPtr lex(StringRef ref) {
   return LexerPtr::create("<line>", ByteBuffer(ref.begin(), ref.end()), getCWD());
 }

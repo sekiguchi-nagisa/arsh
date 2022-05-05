@@ -212,6 +212,7 @@ $assertArray($(file '.'), $(complete '34 with < '))
 $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))
 $assertArray($(file '.'), $(complete 'AAA='))
 $assertArray($(file '/bin'), $(complete 'AAA=hoge:/bin/'))
+$assertArray($(file '/usr/bin'), $(complete 'AAA=${3434}:/usr/bin/'))
 $assertArray($(file ~/), $(complete 'AAA=hoge\\:~/'))
 $assertArray($(file '.'), $(complete '@('))
 $assertArray($(file '/usr/bin'), $(complete '@(34 /usr/bin/'))
@@ -221,6 +222,7 @@ $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
 $assertArray(new [String](), $(complete 'echo :'))
 $assertArray(new [String](), $(complete 'echo 345:./'))
 $assertArray(new [String](), $(complete 'AAA=345\:'))
+$assertArray(new [String](), $(complete 'AAA=${3434}./'))
 
 var CWD = "$(pwd -P)"
 

@@ -149,6 +149,8 @@ protected:
 
   bool inTypeNameCompletionPoint() const;
 
+  void tryCompleteFileNames(CmdArgParseOpt opt);
+
   template <typename... Args>
   void makeCodeComp(Args &&...args) {
     this->incompleteNode = std::make_unique<CodeCompNode>(std::forward<Args>(args)...);

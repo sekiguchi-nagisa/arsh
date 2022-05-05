@@ -1198,9 +1198,8 @@ TEST_F(LexerTest_Lv1, CMD_ARG3) {
   const char *text = "a2134:*\\:";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "a2134", TokenKind::PATH_SEP, ":",
-                                 TokenKind::GLOB_ZERO_OR_MORE, "*", TokenKind::CMD_ARG_PART,
-                                 "\\:", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "a2134:", TokenKind::GLOB_ZERO_OR_MORE,
+                                 "*", TokenKind::CMD_ARG_PART, "\\:", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG4) {

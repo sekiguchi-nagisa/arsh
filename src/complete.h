@@ -204,8 +204,6 @@ public:
 
   void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op);
 
-  void addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt, bool tilde);
-
   void addCompHookRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
     this->lex.reset(&lexer);
     this->fallbackOp = this->compOp;

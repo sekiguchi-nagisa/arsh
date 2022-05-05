@@ -69,7 +69,6 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::COMMAND:
     return HighlightTokenClass::COMMAND;
   case TokenKind::CMD_ARG_PART:
-  case TokenKind::PATH_SEP:
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
   case TokenKind::BRACE_OPEN:
