@@ -1086,7 +1086,11 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     RET_VOID;
   }
   int num = errno;
-  std::string str = getSignalName(sigNum);
+  std::string str = "failed to send ";
+  str += getSignalName(sigNum);
+  str += " to pid(";
+  str += std::to_string(static_cast<pid_t>(pid));
+  str += ")";
   raiseSystemError(ctx, num, std::move(str));
   RET_ERROR;
 }

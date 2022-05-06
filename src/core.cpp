@@ -55,8 +55,12 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     DSState::clearPendingSignal(SIGINT);
   }
   std::string str(std::move(message));
-  str += ": ";
+  if (!str.empty()) {
+    str += ", ";
+  }
+  str += "caused by `";
   str += strerror(errorNum);
+  str += "'";
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 

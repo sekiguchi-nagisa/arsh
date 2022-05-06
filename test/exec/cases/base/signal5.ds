@@ -12,8 +12,8 @@ try {
 }
 
 if $e is SystemError {
-    assert $e.message() == if $OSTYPE !~ $/^cygwin/i { 'HUP: Operation not permitted'; }
-                                                else { 'HUP: No such process'; }
+    assert $e.message() == if $OSTYPE !~ $/^cygwin/i { "failed to send HUP to pid(1), caused by `Operation not permitted'"; }
+                                                else { "failed to send HUP to pid(1), caused by `No such process'"; }
 } else {
     assert $false
 }

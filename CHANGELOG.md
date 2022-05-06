@@ -39,6 +39,7 @@
 
 - **Breaking Change**: remove ``Array#forEach`` method due to unused
 - **Breaking Change**: throw ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
+- **Breaking Change**: change error message of ``SystemError``
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
 #### Module

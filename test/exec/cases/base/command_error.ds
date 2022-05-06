@@ -7,7 +7,7 @@ try {
     assert($false)
 } catch($e : Error) {   # not found file
     assert($e is SystemError)   # derived from errno
-    assert(echo ${$e.message()} | grep "io redirection error: $a:")
+    assert(echo ${$e.message()} | grep "io redirection error: $a, caused by")
 }
 
 
@@ -55,7 +55,7 @@ try {
     assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
-    assert(echo ${$e.message()} | grep "io redirection error: $a:")
+    assert(echo ${$e.message()} | grep "io redirection error: $a, caused by")
 }
 
 var ex = 34 as Any

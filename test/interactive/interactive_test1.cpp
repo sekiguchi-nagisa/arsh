@@ -1,6 +1,5 @@
 #include "interative_base.hpp"
 
-
 TEST_F(InteractiveTest, ctrld1) {
   this->invoke("--norc");
 
@@ -136,7 +135,7 @@ TEST_F(InteractiveTest, wait_ctrlc1) {
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
-SystemError: wait failed: %s
+SystemError: wait failed, caused by `%s'
     from (stdin):2 '<toplevel>()'
 )",
                            strerror(EINTR));
