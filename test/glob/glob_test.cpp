@@ -43,6 +43,10 @@ struct Appender {
   }
 };
 
+struct CancelPoint {
+  bool operator()() { return false; }
+};
+
 class GlobTest : public ::testing::Test {
 protected:
   std::vector<std::string> ret; // result paths
@@ -56,7 +60,8 @@ public:
 
   unsigned int testGlobBase(const char *dir, const char *pattern, GlobMatchOption option = {}) {
     Appender appender(this->ret);
-    auto matcher = createGlobMatcher<StrMetaChar>(dir, pattern, pattern + strlen(pattern), option);
+    auto matcher = createGlobMatcher<StrMetaChar>(dir, pattern, pattern + strlen(pattern),
+                                                  CancelPoint(), option);
     matcher.matchExactly(appender);
     return matcher.getMatchCount();
   }
@@ -67,8 +72,8 @@ public:
 
   unsigned int testGlobAt(const char *baseDir, const char *pattern, GlobMatchOption option = {}) {
     Appender appender(this->ret);
-    auto matcher =
-        createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern), option);
+    auto matcher = createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern),
+                                                  CancelPoint(), option);
     matcher(appender);
     return matcher.getMatchCount();
   }
@@ -520,8 +525,9 @@ TEST_F(GlobTest, fast) {
 
 TEST_F(GlobTest, fail) {
   const char *pattern = "bbb/*";
-  auto matcher = createGlobMatcher<StrMetaChar>(
-      GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), GlobMatchOption::DOTGLOB);
+  auto matcher =
+      createGlobMatcher<StrMetaChar>(GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern),
+                                     CancelPoint(), GlobMatchOption::DOTGLOB);
   auto appender = [&](std::string &&path) {
     if (this->ret.size() == 2) {
       return false;
@@ -531,6 +537,19 @@ TEST_F(GlobTest, fail) {
   };
   auto s = matcher.matchExactly(appender);
   ASSERT_EQ(GlobMatchResult::LIMIT, s);
+}
+
+TEST_F(GlobTest, cancel) {
+  const char *pattern = "bbb/*";
+  auto matcher = createGlobMatcher<StrMetaChar>(
+      GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), [] { return true; },
+      GlobMatchOption::DOTGLOB);
+  auto appender = [&](std::string &&path) {
+    this->ret.push_back(std::move(path));
+    return true;
+  };
+  auto s = matcher.matchExactly(appender);
+  ASSERT_EQ(GlobMatchResult::CANCELED, s);
 }
 
 int main(int argc, char **argv) {

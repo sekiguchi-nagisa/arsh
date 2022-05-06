@@ -27,7 +27,7 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-enum class GlobMatchOption {
+enum class GlobMatchOption : unsigned int {
   TILDE = 1u << 0u,          // apply tilde expansion before globbing
   DOTGLOB = 1u << 1u,        // match file names start with '.'
   IGNORE_SYS_DIR = 1u << 2u, // ignore system directory (/dev, /proc, /sys)
@@ -196,9 +196,10 @@ enum class GlobMatchResult {
   MATCH,
   NOMATCH,
   LIMIT,
+  CANCELED,
 };
 
-template <typename Meta, typename Iter>
+template <typename Meta, typename Iter, typename Cancel>
 class GlobMatcher {
 private:
   /**
@@ -213,9 +214,11 @@ private:
 
   unsigned int matchCount{0};
 
+  Cancel cancel; // for cancellation
+
 public:
-  GlobMatcher(const char *base, Iter begin, Iter end, GlobMatchOption option)
-      : base(base), begin(begin), end(end), option(option) {}
+  GlobMatcher(const char *base, Iter begin, Iter end, Cancel &&cancel, GlobMatchOption option)
+      : base(base), begin(begin), end(end), option(option), cancel(std::move(cancel)) {}
 
   unsigned int getMatchCount() const { return this->matchCount; }
 
@@ -259,14 +262,24 @@ private:
     }
   }
 
+  enum class Result {
+    EXIT,
+    LIMIT,
+    UNWIND,
+    CANCELED,
+  };
+
   template <typename Appender>
   GlobMatchResult invoke(std::string &&baseDir, Iter iter, Appender &appender) {
     this->matchCount = 0;
-    int s;
-    for (; (s = this->match(baseDir.c_str(), iter, appender)) == -2; popDir(baseDir))
+    Result s;
+    for (; (s = this->match(baseDir.c_str(), iter, appender)) == Result::UNWIND; popDir(baseDir))
       ;
-    if (s == -1) {
+    if (s == Result::LIMIT) {
       return GlobMatchResult::LIMIT;
+    }
+    if (s == Result::CANCELED) {
+      return GlobMatchResult::CANCELED;
     }
     return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
   }
@@ -312,23 +325,24 @@ private:
   }
 
   template <typename Appender>
-  int match(const char *baseDir, Iter &iter, Appender &appender);
+  Result match(const char *baseDir, Iter &iter, Appender &appender);
 };
 
-template <typename Meta, typename Iter>
+template <typename Meta, typename Iter, typename Cancel>
 template <typename Appender>
-int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &appender) {
+typename GlobMatcher<Meta, Iter, Cancel>::Result
+GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender &appender) {
   if (hasFlag(this->option, GlobMatchOption::IGNORE_SYS_DIR)) {
     const char *ignore[] = {"/dev", "/proc", "/sys"};
     for (auto &i : ignore) {
       if (isSameFile(i, baseDir)) {
-        return 0;
+        return Result::EXIT;
       }
     }
   }
   DIR *dir = opendir(baseDir);
   if (!dir) {
-    return 0;
+    return Result::EXIT;
   }
   auto cleanup = finally([&] {
     int old = errno;
@@ -337,6 +351,10 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
   });
 
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+    if (this->cancel()) {
+      return Result::CANCELED;
+    }
+
     auto matcher = createWildCardMatcher<Meta>(iter, this->end, this->option);
     const WildMatchResult ret = matcher(entry->d_name);
     if (ret == WildMatchResult::FAILED) {
@@ -363,22 +381,22 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
       if (!matcher.isEnd()) {
         if (ret == WildMatchResult::DOTDOT && hasFlag(this->option, GlobMatchOption::FASTGLOB)) {
           iter = matcher.getIter();
-          return -2;
+          return Result::UNWIND;
         }
         Iter next = matcher.getIter();
-        int s = this->match(name.c_str(), next, appender);
-        if (s == -1) {
-          return -1;
-        } else if (s == -2) {
+        auto s = this->match(name.c_str(), next, appender);
+        if (s == Result::UNWIND) {
           iter = next;
           rewinddir(dir);
           continue;
+        } else if (s != Result::EXIT) {
+          return s;
         }
       }
     }
     if (matcher.isEnd()) {
       if (!appender(std::move(name))) {
-        return -1;
+        return Result::LIMIT;
       }
       this->matchCount++;
     }
@@ -387,12 +405,13 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
       break;
     }
   }
-  return 0;
+  return Result::EXIT;
 }
 
-template <typename Meta, typename Iter>
-inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, GlobMatchOption option = {}) {
-  return GlobMatcher<Meta, Iter>(dir, begin, end, option);
+template <typename Meta, typename Iter, typename Cancel>
+inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, Cancel &&cancel,
+                              GlobMatchOption option) {
+  return GlobMatcher<Meta, Iter, Cancel>(dir, begin, end, std::move(cancel), option);
 }
 
 END_MISC_LIB_NAMESPACE_DECL

@@ -1120,8 +1120,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
 
   const unsigned int oldSize = argv.size();
   auto appender = [&](std::string &&path) {
-    argv.append(DSValue::createStr(std::move(path)));
-    return true; // FIXME: check array size limit
+    return argv.append(state, DSValue::createStr(std::move(path)));
   };
   GlobMatchOption option{};
   if (tilde) {
@@ -1133,16 +1132,24 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   if (hasFlag(state.runtimeOption, RuntimeOption::FASTGLOB)) {
     setFlag(option, GlobMatchOption::FASTGLOB);
   }
-  auto matcher =
-      createGlobMatcher<DSValueGlobMeta>(nullptr, GlobIter(begin), GlobIter(end), option);
+  auto matcher = createGlobMatcher<DSValueGlobMeta>(
+      nullptr, GlobIter(begin), GlobIter(end),
+      [] {
+        return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
+      },
+      option);
   auto ret = matcher(appender);
   if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
     argv.sortAsStrArray(oldSize);
     return true;
+  } else if (ret == GlobMatchResult::CANCELED) {
+    raiseSystemError(state, EINTR, "glob is canceled");
+    return false;
+  } else if (ret == GlobMatchResult::NOMATCH) {
+    raiseGlobbingError(state, begin, end, "no matches for glob pattern");
+    return false;
   } else {
-    const char *msg = ret == GlobMatchResult::NOMATCH ? "no matches for glob pattern"
-                                                      : "number of glob results reaches limit";
-    raiseGlobbingError(state, begin, end, msg);
+    assert(ret == GlobMatchResult::LIMIT && state.hasError());
     return false;
   }
 }

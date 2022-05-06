@@ -124,6 +124,28 @@ TEST_F(InteractiveTest, ctrlc5) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
+TEST_F(InteractiveTest, ctrlc6) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("echo /*/*/*/*/*/*/*/*");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /*/*/*/*/*/*/*/*\n"));
+  this->send(CTRL_C);
+
+  std::string err = format(R"([runtime error]
+SystemError: glob is canceled, caused by `%s'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR));
+
+  if (platform::platform() == platform::PlatformType::CYGWIN) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
+  } else {
+    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
+  }
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
 TEST_F(InteractiveTest, wait_ctrlc1) {
   this->invoke("--quiet", "--norc");
 

@@ -2208,7 +2208,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     setFlag(option, GlobMatchOption::TILDE);
   }
   auto matcher = createGlobMatcher<SourceGlobMeta>(
-      this->lexer->getScriptDir(), SourceGlobIter(begin), SourceGlobIter(end), option);
+      this->lexer->getScriptDir(), SourceGlobIter(begin), SourceGlobIter(end), [] { return false; },
+      option);
   auto ret = matcher(appender);
   if (ret == GlobMatchResult::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
     std::sort(results.begin() + oldSize, results.end(),

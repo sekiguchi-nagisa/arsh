@@ -34,6 +34,7 @@
 #### Core
 
 - **Breaking Change**: clear exit status when enter catch block
+- cancel runtime glob expansion by SIGINT
 
 #### Builtin
 
