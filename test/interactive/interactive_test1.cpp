@@ -124,12 +124,13 @@ TEST_F(InteractiveTest, ctrlc5) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-TEST_F(InteractiveTest, ctrlc6) {
+TEST_F(InteractiveTest, expand_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->sendLine("echo /*/*/*/*/*/*/*/*");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /*/*/*/*/*/*/*/*\n"));
+  this->sendLine("echo {/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*}");
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(PROMPT + "echo {/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*}\n"));
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
