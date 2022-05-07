@@ -214,4 +214,28 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
   return true;
 }
 
+std::string resolveURI(const SourceManager &srcMan, const uri::URI &uri) {
+  std::string path;
+  if (uri.getScheme() == "file") {
+    path = uri.getPath();
+  } else if (srcMan.getTestWorkDir() && uri.getScheme() == "test") {
+    path += *srcMan.getTestWorkDir();
+    if (path.back() != '/' && !uri.getPath().empty() && uri.getPath()[0] != '/') {
+      path += "/";
+    }
+    path += uri.getPath();
+  }
+  return path;
+}
+
+uri::URI toURI(const SourceManager &srcMan, const std::string &path) {
+  StringRef ref = path;
+  const char *scheme = "file";
+  if (srcMan.getTestWorkDir() && ref.startsWith(*srcMan.getTestWorkDir())) {
+    ref.removePrefix((*srcMan.getTestWorkDir()).size());
+    scheme = "test";
+  }
+  return uri::URI::fromPath(scheme, ref.toString());
+}
+
 } // namespace ydsh::lsp

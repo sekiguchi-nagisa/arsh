@@ -67,10 +67,17 @@ using SourcePtr = std::shared_ptr<Source>;
 
 class SourceManager {
 private:
+  std::shared_ptr<const std::string> testWorkDir; // for testing. normally null
   std::vector<SourcePtr> entries;
   StrRefMap<unsigned int> indexMap; // full-path to index mapping
 
 public:
+  void setTestWorkDir(std::string &&dir) {
+    this->testWorkDir = std::make_shared<const std::string>(std::move(dir));
+  }
+
+  const auto &getTestWorkDir() const { return this->testWorkDir; }
+
   /**
    *
    * @param id
@@ -144,6 +151,10 @@ Optional<ydsh::Token> toToken(StringRef content, const Range &range);
 Optional<Range> toRange(const Source &src, Token token);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
+
+std::string resolveURI(const SourceManager &srcMan, const uri::URI &uri);
+
+uri::URI toURI(const SourceManager &srcMan, const std::string &path);
 
 } // namespace ydsh::lsp
 

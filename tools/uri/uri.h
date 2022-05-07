@@ -92,9 +92,11 @@ public:
    */
   static URI parse(const std::string &str);
 
-  static URI fromFilePath(const std::string &filePath) {
-    return URI("file", Authority(), std::string(filePath), "", "");
+  static URI fromPath(const char *scheme, std::string &&path) {
+    return URI(scheme, Authority(), std::move(path), "", "");
   }
+
+  static URI fromFilePath(std::string &&filePath) { return fromPath("file", std::move(filePath)); }
 
   /**
    * apply percent-encoding to string

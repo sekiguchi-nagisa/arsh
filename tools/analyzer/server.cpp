@@ -86,12 +86,8 @@ Result<SourcePtr, CStrPtr> LSPServer::resolveSource(const TextDocumentIdentifier
     LOG(LogLevel::ERROR, "%s", str.get());
     return Err(std::move(str));
   }
-  if (uri.getScheme() != "file") {
-    auto str = format("only support 'file' scheme at textDocument: %s", doc.uri.c_str());
-    LOG(LogLevel::ERROR, "%s", str.get());
-    return Err(std::move(str));
-  }
-  auto src = this->result.srcMan->find(uri.getPath());
+  auto fullPath = resolveURI(*this->result.srcMan, uri);
+  auto src = this->result.srcMan->find(fullPath);
   if (!src) {
     auto str = format("broken textDocument: %s", doc.uri.c_str());
     LOG(LogLevel::ERROR, "%s", str.get());
@@ -400,14 +396,15 @@ void LSPServer::setTrace(const SetTraceParams &param) {
 void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   const char *uriStr = params.textDocument.uri.c_str();
   LOG(LogLevel::INFO, "open textDocument: %s", uriStr);
-  auto uri = uri::URI::parse(params.textDocument.uri);
-  if (!uri) {
-    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
-    return;
+  if (auto uri = uri::URI::parse(params.textDocument.uri)) {
+    if (auto fullPath = resolveURI(*this->result.srcMan, uri); !fullPath.empty()) {
+      this->updateSource(fullPath, params.textDocument.version,
+                         std::string(params.textDocument.text));
+      this->syncResult();
+      return;
+    }
   }
-  this->updateSource(uri.getPath(), params.textDocument.version,
-                     std::string(params.textDocument.text));
-  this->syncResult();
+  LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {

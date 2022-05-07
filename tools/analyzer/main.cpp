@@ -199,6 +199,16 @@ static Result<std::unique_ptr<Driver>, std::string> createDriver(const Options &
   }
 }
 
+static std::string getBaseDir(const char *path) {
+  auto fullPath = getRealpath(path);
+  if (!fullPath) {
+    fatal_perror("broken path: %s", path);
+  }
+  StringRef ref = fullPath.get();
+  auto index = ref.lastIndexOf("/");
+  return index == 0 ? "/" : ref.slice(0, index).toString();
+}
+
 int main(int argc, char **argv) {
   auto options = parseOptions(argc, argv);
   auto driver = createDriver(options);
@@ -212,6 +222,9 @@ int main(int argc, char **argv) {
     logger.setAppender(FilePtr(stderr));
     showInfo(argv, logger);
     LSPServer server(logger, FilePtr(stdin), FilePtr(stdout), options.debounceTime);
+    if (options.testInput) {
+      server.setTestWorkDir(getBaseDir(options.testInput));
+    }
     server.run();
     return 1;
   });

@@ -98,6 +98,8 @@ public:
     this->bindAll();
   }
 
+  void setTestWorkDir(std::string &&dir) { this->result.srcMan->setTestWorkDir(std::move(dir)); }
+
   ReplyImpl onCall(const std::string &name, JSON &&param) override;
 
   /**
