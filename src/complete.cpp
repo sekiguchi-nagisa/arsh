@@ -601,8 +601,8 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
-    completeModule(this->config, this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
-                   this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), consumer);
+    completeModule(this->config, this->scriptDir.c_str(), this->compWord,
+                   hasFlag(this->compOp, CodeCompOp::TILDE), consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
     completeKeyword(this->compWord, this->compOp, consumer);
@@ -677,7 +677,8 @@ static void consumeAllInput(FrontEnd &frontEnd) {
 }
 
 void CodeCompleter::operator()(StringRef ref, CodeCompOp option) {
-  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, this->scope);
+  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, this->scope,
+                                this->scriptDir);
   handler.setUserDefinedComp(this->userDefinedComp);
   if (this->provider) {
     // prepare

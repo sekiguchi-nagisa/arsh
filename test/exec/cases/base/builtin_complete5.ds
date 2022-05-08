@@ -96,6 +96,14 @@ assert diff <(complete -m $mod '$g' ) <(for $e in ['global'] { echo $e; })
 assert diff <(complete -m $MODULE  -A udc) <(for $e in $udc { echo $e; } | sort)
 assert $(complete -m '' '$g').empty()  # if specify empty string, use current module
 assert diff <(complete -m '' -A udc) <(for $e in $udc { echo $e; } | sort)
+assert diff <(cd && complete -m $mod "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })   # complete module from SCRIPT_DIR
+assert $(cd && complete -m ${$/\d+/.replace($mod as String, "1")} 
+        "source ../_module4test/inli").empty()   # if has no valid script dir(builtin, root module), use CWD
+assert $? == 0
+assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String, "1")} 
+              "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })  # if has no valid script dir(builtin, root module), use CWD
 
 ## invalid
 assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"

@@ -1,7 +1,7 @@
 
 # for inlined import
 
-source ../../_module4test/inline4.ds
+source ../../_module4test/inlined4.ds
 
 assert 4.factorial() == 24
 

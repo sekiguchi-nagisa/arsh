@@ -297,6 +297,22 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
   }
 }
 
+static std::string getScriptDir(const ModuleLoader &loader, unsigned short modId) {
+  assert(modId < loader.modSize());
+  auto &e = loader[modId];
+  std::string value;
+  if (e.first.get()[0] != '/') {
+    auto cwd = getCWD();
+    value = cwd.get();
+  } else {
+    StringRef ref = e.first.get();
+    auto pos = ref.lastIndexOf("/");
+    ref = pos == 0 ? "/" : ref.substr(0, pos);
+    value = ref.toString();
+  }
+  return value;
+}
+
 Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRef source,
                                         const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
@@ -313,9 +329,10 @@ Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRe
     auto discardPoint = provider.getCurrentDiscardPoint();
 
     DefaultCompConsumer consumer(compreply);
-    CodeCompleter codeCompleter(consumer,
-                                willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
-                                st.sysConfig, st.typePool, std::move(scope), st.logicalWorkingDir);
+    auto scriptDir = getScriptDir(st.modLoader, scope->modId);
+    CodeCompleter codeCompleter(
+        consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr, st.sysConfig,
+        st.typePool, st.logicalWorkingDir, std::move(scope), scriptDir);
     codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
                                                         const std::string &word,
                                                         CompCandidateConsumer &consumer) {

@@ -112,10 +112,7 @@ private:
 
   ObserverPtr<const Lexer> lex;
 
-  /**
-   * if empty, use cwd
-   */
-  std::string scriptDir; // for module completion
+  const std::string &scriptDir; // for module completion
 
   /**
    * current completion word
@@ -151,8 +148,10 @@ private:
 
 public:
   CodeCompletionHandler(const SysConfig &config, const TypePool &pool,
-                        const std::string &logicalWorkdir, NameScopePtr scope)
-      : config(config), pool(pool), logicalWorkdir(logicalWorkdir), scope(std::move(scope)) {}
+                        const std::string &logicalWorkdir, NameScopePtr scope,
+                        const std::string &scriptDir)
+      : config(config), pool(pool), logicalWorkdir(logicalWorkdir), scriptDir(scriptDir),
+        scope(std::move(scope)) {}
 
   void addCompRequest(CodeCompOp op, std::string &&word) {
     this->compOp = op;
@@ -229,16 +228,17 @@ private:
   ObserverPtr<FrontEnd::ModuleProvider> provider;
   const SysConfig &config;
   TypePool &pool;
-  NameScopePtr scope;
   const std::string &logicalWorkingDir;
+  NameScopePtr scope;
+  const std::string &scriptDir;
   UserDefinedComp userDefinedComp;
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
-                const SysConfig &config, TypePool &pool, NameScopePtr scope,
-                const std::string &workDir)
-      : consumer(consumer), provider(provider), config(config), pool(pool), scope(std::move(scope)),
-        logicalWorkingDir(workDir) {}
+                const SysConfig &config, TypePool &pool, const std::string &workDir,
+                NameScopePtr scope, const std::string &scriptDir)
+      : consumer(consumer), provider(provider), config(config), pool(pool),
+        logicalWorkingDir(workDir), scope(std::move(scope)), scriptDir(scriptDir) {}
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
 
