@@ -447,7 +447,7 @@ private:
   static_assert(sizeof(ModEntry) == sizeof(uint32_t));
 
   StrRefMap<unsigned int> indexMap;
-  FlexBuffer<ModEntry> entries;
+  std::vector<std::pair<CStrPtr, ModEntry>> entries;
 
   unsigned int gvarCount{0};
 
@@ -456,11 +456,7 @@ public:
 
   explicit ModuleLoader(const SysConfig &config) : ModuleLoaderBase(config) {}
 
-  ~ModuleLoader() override {
-    for (auto &e : this->indexMap) {
-      free(const_cast<char *>(e.first.data()));
-    }
-  }
+  ~ModuleLoader() override = default;
 
   ModDiscardPoint getDiscardPoint() const {
     return {
@@ -486,7 +482,7 @@ public:
     if (iter == this->indexMap.end()) {
       return nullptr;
     }
-    return &this->entries[iter->second];
+    return &this->entries[iter->second].second;
   }
 
   auto begin() const { return this->indexMap.begin(); }

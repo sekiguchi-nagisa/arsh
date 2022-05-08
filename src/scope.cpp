@@ -497,9 +497,7 @@ void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
   this->entries.erase(this->entries.begin() + discardPoint.idCount, this->entries.end());
   for (auto iter = this->indexMap.begin(); iter != this->indexMap.end();) {
     if (iter->second >= discardPoint.idCount) {
-      const char *ptr = iter->first.data();
       iter = this->indexMap.erase(iter);
-      free(const_cast<char *>(ptr));
     } else {
       ++iter;
     }
@@ -535,10 +533,10 @@ const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scop
   assert(scope.modId < this->entries.size());
   assert(scope.isGlobal());
   auto &modType = scope.toModType(pool);
-  bool reopened = scope.inRootModule() && this->entries[scope.modId].isSealed();
+  bool reopened = scope.inRootModule() && this->entries[scope.modId].second.isSealed();
   if (!reopened) {
     this->gvarCount++; // reserve module object entry
-    auto &e = this->entries[scope.modId];
+    auto &e = this->entries[scope.modId].second;
     assert(!e.isSealed());
     e.setModType(modType);
   }
@@ -549,9 +547,9 @@ ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   StringRef key(ptr.get());
   auto pair = this->indexMap.emplace(key, this->indexMap.size());
   if (pair.second) {
-    this->entries.push_back(ModEntry::create());
+    this->entries.emplace_back(std::move(ptr), ModEntry::create());
   } else { // already registered
-    auto &e = this->entries[pair.first->second];
+    auto &e = this->entries[pair.first->second].second;
     if (e.isSealed()) {
       return e.getTypeId();
     }
@@ -560,7 +558,7 @@ ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   if (this->indexMap.size() == MAX_MOD_NUM) {
     fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
   }
-  return ptr.release();
+  return key.data();
 }
 
 } // namespace ydsh
