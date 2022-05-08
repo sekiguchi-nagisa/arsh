@@ -297,22 +297,6 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
   }
 }
 
-static std::string getScriptDir(const ModuleLoader &loader, unsigned short modId) {
-  assert(modId < loader.modSize());
-  auto &e = loader[modId];
-  std::string value;
-  if (e.first.get()[0] != '/') {
-    auto cwd = getCWD();
-    value = cwd.get();
-  } else {
-    StringRef ref = e.first.get();
-    auto pos = ref.lastIndexOf("/");
-    ref = pos == 0 ? "/" : ref.substr(0, pos);
-    value = ref.toString();
-  }
-  return value;
-}
-
 Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRef source,
                                         const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
@@ -329,16 +313,15 @@ Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRe
     auto discardPoint = provider.getCurrentDiscardPoint();
 
     DefaultCompConsumer consumer(compreply);
-    auto scriptDir = getScriptDir(st.modLoader, scope->modId);
-    CodeCompleter codeCompleter(
-        consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr, st.sysConfig,
-        st.typePool, st.logicalWorkingDir, std::move(scope), scriptDir);
+    CodeCompleter codeCompleter(consumer,
+                                willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
+                                st.sysConfig, st.typePool, st.logicalWorkingDir);
     codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
                                                         const std::string &word,
                                                         CompCandidateConsumer &consumer) {
       return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
     });
-    codeCompleter(source, option);
+    codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
     provider.discard(discardPoint);
     discardTempMod(st.tempModScope, resolvedMod);
   }

@@ -229,26 +229,26 @@ private:
   const SysConfig &config;
   TypePool &pool;
   const std::string &logicalWorkingDir;
-  NameScopePtr scope;
-  const std::string &scriptDir;
   UserDefinedComp userDefinedComp;
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
-                const SysConfig &config, TypePool &pool, const std::string &workDir,
-                NameScopePtr scope, const std::string &scriptDir)
+                const SysConfig &config, TypePool &pool, const std::string &workDir)
       : consumer(consumer), provider(provider), config(config), pool(pool),
-        logicalWorkingDir(workDir), scope(std::move(scope)), scriptDir(scriptDir) {}
+        logicalWorkingDir(workDir) {}
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
 
   /**
    * if module provider is specified, parse 'ref' and complete candidates (except for 'option')
    * otherwise complete candidates corresponding to 'option'
+   * @param scope
+   * @param scriptName
    * @param ref
    * @param option
    */
-  void operator()(StringRef ref, CodeCompOp option);
+  void operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
+                  CodeCompOp option);
 };
 
 } // namespace ydsh

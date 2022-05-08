@@ -408,7 +408,7 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ck
   auto &ptr = this->addNew(src);
   CodeCompleter codeCompleter(collector,
                               makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
-                              this->sysConfig, ptr->getPool(), workDir, ptr->getScope(), workDir);
+                              this->sysConfig, ptr->getPool(), workDir);
   CodeCompOp ignoredOp{};
   switch (ckind) {
   case CmdCompKind::disabled_:
@@ -423,7 +423,7 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ck
   if (!cmdArgComp) {
     setFlag(ignoredOp, CodeCompOp::HOOK);
   }
-  codeCompleter(src.getContent(), ignoredOp);
+  codeCompleter(ptr->getScope(), src.getPath(), src.getContent(), ignoredOp);
   return std::move(collector).finalize();
 }
 

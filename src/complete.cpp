@@ -664,8 +664,8 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
   }
 }
 
-static LexerPtr lex(StringRef ref, const std::string &scriptDir) {
-  return LexerPtr::create("<line>", ByteBuffer(ref.begin(), ref.end()),
+static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
+  return LexerPtr::create(scriptName.c_str(), ByteBuffer(ref.begin(), ref.end()),
                           CStrPtr(strdup(scriptDir.c_str())));
 }
 
@@ -677,14 +677,30 @@ static void consumeAllInput(FrontEnd &frontEnd) {
   }
 }
 
-void CodeCompleter::operator()(StringRef ref, CodeCompOp option) {
-  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, this->scope,
-                                this->scriptDir);
+static std::string toScriptDir(const std::string &scriptName) {
+  std::string value;
+  if (scriptName[0] != '/') {
+    auto cwd = getCWD();
+    value = cwd.get();
+  } else {
+    StringRef ref = scriptName;
+    auto pos = ref.lastIndexOf("/");
+    ref = pos == 0 ? "/" : ref.substr(0, pos);
+    value = ref.toString();
+  }
+  return value;
+}
+
+void CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
+                               CodeCompOp option) {
+  auto scriptDir = toScriptDir(scriptName);
+  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, scope,
+                                scriptDir);
   handler.setUserDefinedComp(this->userDefinedComp);
   if (this->provider) {
     // prepare
-    FrontEnd frontEnd(*this->provider, lex(ref, this->scriptDir), FrontEndOption::ERROR_RECOVERY,
-                      makeObserver(handler));
+    FrontEnd frontEnd(*this->provider, lex(scriptName, ref, scriptDir),
+                      FrontEndOption::ERROR_RECOVERY, makeObserver(handler));
 
     // perform completion
     consumeAllInput(frontEnd);
