@@ -485,9 +485,11 @@ public:
     return &this->entries[iter->second].second;
   }
 
-  auto begin() const { return this->indexMap.begin(); }
+  const auto &operator[](unsigned int modId) const { return this->entries[modId]; }
 
-  auto end() const { return this->indexMap.end(); }
+  auto begin() const { return this->entries.begin(); }
+
+  auto end() const { return this->entries.end(); }
 
 private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;

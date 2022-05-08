@@ -1875,23 +1875,13 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
   return 0;
 }
 
-static int listLoadedModules(const DSState &state) {
-  auto &loader = state.modLoader;
-  unsigned int size = loader.modSize();
-  auto buf = std::make_unique<const char *[]>(size);
-  for (auto &e : loader) {
-    buf[e.second] = e.first.data();
-  }
-  for (unsigned int i = 0; i < size; i++) {
-    fprintf(stdout, "%s\n", buf[i]);
-  }
-  return 0;
-}
-
 static int showModule(const DSState &state, const ArrayObject &argvObj) {
   const unsigned int size = argvObj.size();
   if (size == 2) {
-    return listLoadedModules(state);
+    for (auto &e : state.modLoader) {
+      fprintf(stdout, "%s\n", e.first.get());
+    }
+    return 0;
   }
 
   FakeModuleLoader loader(state.sysConfig);
