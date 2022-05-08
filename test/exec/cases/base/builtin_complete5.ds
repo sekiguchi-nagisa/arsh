@@ -96,14 +96,20 @@ assert diff <(complete -m $mod '$g' ) <(for $e in ['global'] { echo $e; })
 assert diff <(complete -m $MODULE  -A udc) <(for $e in $udc { echo $e; } | sort)
 assert $(complete -m '' '$g').empty()  # if specify empty string, use current module
 assert diff <(complete -m '' -A udc) <(for $e in $udc { echo $e; } | sort)
+
+### complete module from SCRIPT_DIR
 assert diff <(cd && complete -m $mod "source ../_module4test/inli") \
-            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })   # complete module from SCRIPT_DIR
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
+assert diff <(cd && complete -m $mod "source ../_module4test/cycle.ds as mod_cycle; \$mod_cy") \
+            <(echo mod_cycle)   # recovery error in module, and complete
+
+### if has no valid script dir(builtin, root module), use CWD
 assert $(cd && complete -m ${$/\d+/.replace($mod as String, "1")} 
-        "source ../_module4test/inli").empty()   # if has no valid script dir(builtin, root module), use CWD
+        "source ../_module4test/inli").empty()
 assert $? == 0
 assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String, "1")} 
               "source ../_module4test/inli") \
-            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })  # if has no valid script dir(builtin, root module), use CWD
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
 
 ## invalid
 assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"

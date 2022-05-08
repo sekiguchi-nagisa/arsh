@@ -664,8 +664,9 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
   }
 }
 
-static LexerPtr lex(StringRef ref) {
-  return LexerPtr::create("<line>", ByteBuffer(ref.begin(), ref.end()), getCWD());
+static LexerPtr lex(StringRef ref, const std::string &scriptDir) {
+  return LexerPtr::create("<line>", ByteBuffer(ref.begin(), ref.end()),
+                          CStrPtr(strdup(scriptDir.c_str())));
 }
 
 static void consumeAllInput(FrontEnd &frontEnd) {
@@ -682,7 +683,7 @@ void CodeCompleter::operator()(StringRef ref, CodeCompOp option) {
   handler.setUserDefinedComp(this->userDefinedComp);
   if (this->provider) {
     // prepare
-    FrontEnd frontEnd(*this->provider, lex(ref), FrontEndOption::ERROR_RECOVERY,
+    FrontEnd frontEnd(*this->provider, lex(ref, this->scriptDir), FrontEndOption::ERROR_RECOVERY,
                       makeObserver(handler));
 
     // perform completion
