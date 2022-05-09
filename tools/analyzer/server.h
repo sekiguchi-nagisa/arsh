@@ -88,8 +88,8 @@ private:
   MarkupKind markupKind{MarkupKind::PlainText};
   bool diagVersionSupport{false};
   CmdCompKind cmdCompKind{CmdCompKind::default_};
-  bool cmdArgCompEnabled{false};
-  bool semanticHighlightEnabled{true};
+  BinaryFlag cmdArgComp{BinaryFlag::disabled};
+  BinaryFlag semanticHighlight{BinaryFlag::enabled};
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)

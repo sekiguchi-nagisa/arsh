@@ -40,7 +40,7 @@
   "params": {
     "settings": {
       "ydshd": {
-        "commandArgumentCompletionEnabled": null,
+        "commandArgumentCompletion": null,
         "commandCompletion": "default",
         "logLevel": "warning"
       }
@@ -48,7 +48,7 @@
   }
 }
 
-# CHECKERR_RE_IF: .+ <warning> \[\d+\] field: `commandArgumentCompletionEnabled' is invalid type
+# CHECKERR_RE_IF: .+ <warning> \[\d+\] field: `commandArgumentCompletion' is invalid type
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",

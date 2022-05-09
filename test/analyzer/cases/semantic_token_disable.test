@@ -14,10 +14,10 @@
   "params": {
     "settings": {
       "ydshd": {
-        "commandArgumentCompletionEnabled": false,
+        "commandArgumentCompletion": "disabled",
         "commandCompletion": "default",
         "logLevel": "error",
-        "semanticHighlightEnabled": false
+        "semanticHighlight": "disabled"
       }
     }
   }

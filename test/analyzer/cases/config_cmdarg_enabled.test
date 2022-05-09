@@ -40,7 +40,7 @@
   "params": {
     "settings": {
       "ydshd": {
-        "commandArgumentCompletionEnabled": true,
+        "commandArgumentCompletion": "enabled",
         "commandCompletion": "default",
         "logLevel": "error"
       }

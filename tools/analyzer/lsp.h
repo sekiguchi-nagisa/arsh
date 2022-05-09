@@ -767,18 +767,44 @@ void jsonify(T &t, CmdCompKind &kind) {
   }
 }
 
+#define EACH_BINARY_FLAG(OP)                                                                       \
+  OP(enabled, "enabled")                                                                           \
+  OP(disabled, "disabled")
+
+enum class BinaryFlag : unsigned char {
+#define GEN_ENUM(E, V) E,
+  EACH_BINARY_FLAG(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(BinaryFlag kind);
+
+bool toEnum(const char *str, BinaryFlag &kind);
+
+template <typename T>
+void jsonify(T &t, BinaryFlag &kind) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(kind);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), kind);
+  }
+}
+
 struct ConfigSetting {
   Optional<Union<LogLevel, JSON>> logLevel;
   Optional<Union<CmdCompKind, JSON>> commandCompletion;
-  Optional<Union<bool, JSON>> commandArgumentCompletionEnabled{false};
-  Optional<Union<bool, JSON>> semanticHighlightEnabled{true};
+  Optional<Union<BinaryFlag, JSON>> commandArgumentCompletion;
+  Optional<Union<BinaryFlag, JSON>> semanticHighlight;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(logLevel);
     JSONIFY(commandCompletion);
-    JSONIFY(commandArgumentCompletionEnabled);
-    JSONIFY(semanticHighlightEnabled);
+    JSONIFY(commandArgumentCompletion);
+    JSONIFY(semanticHighlight);
   }
 };
 

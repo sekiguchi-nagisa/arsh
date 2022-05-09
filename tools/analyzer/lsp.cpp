@@ -191,6 +191,35 @@ bool toEnum(const char *str, CmdCompKind &kind) {
   return false;
 }
 
+const char *toString(BinaryFlag kind) {
+  switch (kind) {
+#define GEN_CASE(E, V)                                                                             \
+  case BinaryFlag::E:                                                                              \
+    return V;
+    EACH_BINARY_FLAG(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, BinaryFlag &kind) {
+  StringRef ref = str;
+  BinaryFlag flags[] = {
+#define GEN_ENUM(E, V) BinaryFlag::E,
+      EACH_BINARY_FLAG(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : flags) {
+    if (ref == toString(e)) {
+      kind = e;
+      return true;
+    }
+  }
+  kind = BinaryFlag::disabled;
+  return false;
+}
+
 } // namespace ydsh::lsp
 
 namespace ydsh {

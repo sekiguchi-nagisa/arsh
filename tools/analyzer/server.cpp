@@ -478,7 +478,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     copiedArchives.revert({newSrc->getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
-    return analyzer.complete(*newSrc, this->cmdCompKind, this->cmdArgCompEnabled);
+    return analyzer.complete(*newSrc, this->cmdCompKind, this->cmdArgComp == BinaryFlag::enabled);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
@@ -503,13 +503,13 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
         getOrShowError(this->logger, wrapper.ydshd, "ydshd", [&](const ConfigSetting &setting) {
           getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
                          [&](CmdCompKind kind) { this->cmdCompKind = kind; });
-          getOrShowError(this->logger, setting.commandArgumentCompletionEnabled,
-                         "commandArgumentCompletionEnabled",
-                         [&](bool enabled) { this->cmdArgCompEnabled = enabled; });
+          getOrShowError(this->logger, setting.commandArgumentCompletion,
+                         "commandArgumentCompletion",
+                         [&](BinaryFlag enabled) { this->cmdArgComp = enabled; });
           getOrShowError(this->logger, setting.logLevel, "logLevel",
                          [&](LogLevel level) { this->logger.get().setSeverity(level); });
-          getOrShowError(this->logger, setting.semanticHighlightEnabled, "semanticHighlightEnabled",
-                         [&](bool enabled) { this->semanticHighlightEnabled = enabled; });
+          getOrShowError(this->logger, setting.semanticHighlight, "semanticHighlight",
+                         [&](BinaryFlag enabled) { this->semanticHighlight = enabled; });
         });
       });
 }
@@ -519,7 +519,7 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
   LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
   if (auto resolved = this->resolveSource(params.textDocument)) {
     Union<SemanticTokens, std::nullptr_t> ret = nullptr;
-    if (this->semanticHighlightEnabled) {
+    if (this->semanticHighlight == BinaryFlag::enabled) {
       auto &src = *resolved.asOk();
       SemanticTokenEmitter emitter(this->encoder, src);
       tokenizeAndEmit(emitter, src.getPath().c_str());
