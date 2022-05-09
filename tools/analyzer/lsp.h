@@ -771,12 +771,14 @@ struct ConfigSetting {
   Optional<Union<LogLevel, JSON>> logLevel;
   Optional<Union<CmdCompKind, JSON>> commandCompletion;
   Optional<Union<bool, JSON>> commandArgumentCompletionEnabled{false};
+  Optional<Union<bool, JSON>> semanticHighlightEnabled{true};
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(logLevel);
     JSONIFY(commandCompletion);
     JSONIFY(commandArgumentCompletionEnabled);
+    JSONIFY(semanticHighlightEnabled);
   }
 };
 

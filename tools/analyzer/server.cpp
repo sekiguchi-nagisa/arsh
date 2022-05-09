@@ -508,6 +508,8 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
                          [&](bool enabled) { this->cmdArgCompEnabled = enabled; });
           getOrShowError(this->logger, setting.logLevel, "logLevel",
                          [&](LogLevel level) { this->logger.get().setSeverity(level); });
+          getOrShowError(this->logger, setting.semanticHighlightEnabled, "semanticHighlightEnabled",
+                         [&](bool enabled) { this->semanticHighlightEnabled = enabled; });
         });
       });
 }
@@ -516,10 +518,13 @@ Reply<Union<SemanticTokens, std::nullptr_t>>
 LSPServer::semanticToken(const SemanticTokensParams &params) {
   LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
   if (auto resolved = this->resolveSource(params.textDocument)) {
-    auto &src = *resolved.asOk();
-    SemanticTokenEmitter emitter(this->encoder, src);
-    tokenizeAndEmit(emitter, src.getPath().c_str());
-    Union<SemanticTokens, std::nullptr_t> ret = std::move(emitter).take();
+    Union<SemanticTokens, std::nullptr_t> ret = nullptr;
+    if (this->semanticHighlightEnabled) {
+      auto &src = *resolved.asOk();
+      SemanticTokenEmitter emitter(this->encoder, src);
+      tokenizeAndEmit(emitter, src.getPath().c_str());
+      ret = std::move(emitter).take();
+    }
     return ret;
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));

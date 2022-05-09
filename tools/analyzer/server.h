@@ -89,6 +89,7 @@ private:
   bool diagVersionSupport{false};
   CmdCompKind cmdCompKind{CmdCompKind::default_};
   bool cmdArgCompEnabled{false};
+  bool semanticHighlightEnabled{true};
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)
