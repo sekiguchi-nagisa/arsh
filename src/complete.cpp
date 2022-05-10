@@ -189,22 +189,6 @@ static void completeGroupName(const std::string &prefix, CompCandidateConsumer &
   endgrent();
 }
 
-static std::vector<std::string> computePathList(const char *pathVal) {
-  std::vector<std::string> result;
-  result.emplace_back();
-  assert(pathVal != nullptr);
-
-  for (unsigned int i = 0; pathVal[i] != '\0'; i++) {
-    char ch = pathVal[i];
-    if (ch == ':') {
-      result.emplace_back();
-    } else {
-      result.back() += ch;
-    }
-  }
-  return result;
-}
-
 static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
                         CompCandidateConsumer &consumer, bool ignoreIdent) {
   scope.walk([&](StringRef udc, const Handle &) {
@@ -219,6 +203,22 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
     }
     return true;
   });
+}
+
+template <typename Func>
+static void iteratePathList(const char *value, Func func) {
+  StringRef ref = value;
+  std::string path;
+  for (StringRef::size_type pos = 0;;) {
+    auto ret = ref.find(':', pos);
+    path = "";
+    path += ref.slice(pos, ret);
+    func(path);
+    if (ret == StringRef::npos) {
+      break;
+    }
+    pos = ret + 1;
+  }
 }
 
 static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
@@ -245,15 +245,14 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 
   // complete external command
   if (hasFlag(option, CodeCompOp::EXTERNAL)) {
-    const char *path = getenv(ENV_PATH);
-    if (path == nullptr) {
+    const char *pathEnv = getenv(ENV_PATH);
+    if (pathEnv == nullptr) {
       return;
     }
-    auto pathList(computePathList(path));
-    for (const auto &p : pathList) {
-      DIR *dir = opendir(p.c_str());
+    iteratePathList(pathEnv, [&](const std::string &path) {
+      DIR *dir = opendir(path.c_str());
       if (dir == nullptr) {
-        continue;
+        return;
       }
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
         StringRef cmd = entry->d_name;
@@ -261,7 +260,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           continue;
         }
         if (cmd.startsWith(cmdPrefix)) {
-          std::string fullPath(p);
+          std::string fullPath = path;
           if (fullPath.back() != '/') {
             fullPath += '/';
           }
@@ -272,7 +271,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         }
       }
       closedir(dir);
-    }
+    });
   }
 }
 
