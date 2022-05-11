@@ -1115,7 +1115,7 @@ public:
         lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {}
 
   CompiledCode(CompiledCode &&c) noexcept
-      : DSCode(std::move(c)), belongedModId(c.belongedModId), name(c.name), constPool(c.constPool),
+      : DSCode(c), belongedModId(c.belongedModId), name(c.name), constPool(c.constPool),
         lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
     c.code = nullptr;

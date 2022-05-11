@@ -411,7 +411,7 @@ GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender
 template <typename Meta, typename Iter, typename Cancel>
 inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, Cancel &&cancel,
                               GlobMatchOption option) {
-  return GlobMatcher<Meta, Iter, Cancel>(dir, begin, end, std::move(cancel), option);
+  return GlobMatcher<Meta, Iter, Cancel>(dir, begin, end, std::forward<Cancel>(cancel), option);
 }
 
 END_MISC_LIB_NAMESPACE_DECL

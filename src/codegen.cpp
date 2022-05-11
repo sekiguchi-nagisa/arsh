@@ -60,7 +60,7 @@ void ConstBuffer::append(DSValue &&value) {
 
 CompiledCode CodeBuilder::build(const std::string &name) {
   if (!this->finalize()) {
-    return CompiledCode();
+    return {};
   }
 
   const unsigned int codeSize = this->codeBuffer.size();

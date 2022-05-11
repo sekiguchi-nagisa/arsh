@@ -86,7 +86,7 @@ static auto createCompileCtx() {
 PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
   if (pattern.hasNullChar()) {
     errorStr = "regex pattern contains null characters";
-    return PCRE();
+    return {};
   }
 
   uint32_t option = 0;
@@ -96,7 +96,7 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
       errorStr = "unsupported regex flag: `";
       errorStr += e;
       errorStr += "'";
-      return PCRE();
+      return {};
     }
     setFlag(option, r);
   }

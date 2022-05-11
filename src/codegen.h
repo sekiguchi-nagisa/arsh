@@ -442,7 +442,7 @@ private:
   }
 
   void initCodeBuilder(CodeKind kind, LexerPtr lex, unsigned short localVarNum) {
-    this->builders.emplace_back(this->commons.back().getModId(), lex, kind, localVarNum);
+    this->builders.emplace_back(this->commons.back().getModId(), std::move(lex), kind, localVarNum);
     this->curBuilder().constBuffer.append(this->commons.back().getScriptName());
     this->curBuilder().constBuffer.append(this->commons.back().getScriptDir());
   }

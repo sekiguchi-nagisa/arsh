@@ -28,7 +28,7 @@ void DSObject::destroy() {
   switch (this->getKind()) {
 #define GEN_CASE(K)                                                                                \
   case ObjectKind::K:                                                                              \
-    delete static_cast<K##Object *>(this);                                                         \
+    delete cast<K##Object>(this);                                                                  \
     break;
     EACH_OBJECT_KIND(GEN_CASE)
 #undef GEN_CASE

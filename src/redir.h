@@ -227,7 +227,7 @@ public:
 
 private:
   void backupFDs() {
-    for (unsigned int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
       if (this->backupFDSet & (1u << i)) {
         this->oldFds[i] = fcntl(i, F_DUPFD_CLOEXEC, 0);
       }
@@ -235,7 +235,7 @@ private:
   }
 
   void restoreFDs() {
-    for (unsigned int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
       if (this->backupFDSet & (1u << i)) {
         dup2(this->oldFds[i], i);
       }

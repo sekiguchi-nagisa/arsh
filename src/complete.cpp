@@ -693,7 +693,7 @@ static std::string toScriptDir(const std::string &scriptName) {
 void CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                                CodeCompOp option) {
   auto scriptDir = toScriptDir(scriptName);
-  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, scope,
+  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, std::move(scope),
                                 scriptDir);
   handler.setUserDefinedComp(this->userDefinedComp);
   if (this->provider) {

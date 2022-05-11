@@ -78,7 +78,7 @@ public:
 
     Value() : index_(0) {}
 
-    Value(unsigned int index) : index_(index | TAG) {}
+    explicit Value(unsigned int index) : index_(index | TAG) {}
 
     /**
      *
