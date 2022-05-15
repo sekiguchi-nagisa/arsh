@@ -43,6 +43,11 @@
 - **Breaking Change**: change error message of ``SystemError``
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
+#### LSP
+
+- **Breaking Change**: change config section names in ``workspace/didChangeConfiguration``
+- can disable semantic highlight
+
 #### Module
 
 - pass completion context to completer module
