@@ -153,6 +153,8 @@ private:
 
   std::vector<Location> findReferenceImpl(const SymbolRequest &request) const;
 
+  std::vector<DocumentHighlight> documentHighlightImpl(const SymbolRequest &request) const;
+
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request) const;
 
   DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
@@ -185,6 +187,8 @@ public:
   Reply<std::vector<Location>> gotoDefinition(const DefinitionParams &params);
 
   Reply<std::vector<Location>> findReference(const ReferenceParams &params);
+
+  Reply<std::vector<DocumentHighlight>> documentHighlight(const DocumentHighlightParams &params);
 
   Reply<Union<Hover, std::nullptr_t>> hover(const HoverParams &params);
 

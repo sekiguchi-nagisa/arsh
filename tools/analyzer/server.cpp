@@ -49,6 +49,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
   this->bind("textDocument/definition", &LSPServer::gotoDefinition);
   this->bind("textDocument/references", &LSPServer::findReference);
+  this->bind("textDocument/documentHighlight", &LSPServer::documentHighlight);
   this->bind("textDocument/hover", &LSPServer::hover);
   this->bind("textDocument/completion", &LSPServer::complete);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
@@ -153,6 +154,35 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
     assert(range.hasValue());
     values.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
+  return values;
+}
+
+std::vector<DocumentHighlight>
+LSPServer::documentHighlightImpl(const SymbolRequest &request) const {
+  const DeclSymbol *decl = nullptr;
+  findDeclaration(this->result.indexes, request,
+                  [&](const FindDeclResult &value) { decl = &value.decl; });
+  if (!decl) {
+    return {};
+  }
+
+  auto src = this->result.srcMan->findById(request.modId);
+  assert(src);
+  SymbolRequest req = {.modId = decl->getModId(), .pos = decl->getPos()};
+  std::vector<DocumentHighlight> values;
+  findAllReferences(
+      this->result.indexes, req,
+      [&](const FindRefsResult &value) {
+        if (value.symbol.getModId() == request.modId) {
+          auto range = toRange(*src, value.symbol.getToken());
+          assert(range.hasValue());
+          values.push_back(DocumentHighlight{
+              .range = range.unwrap(),
+              .kind = DocumentHighlightKind::Text,
+          });
+        }
+      },
+      false);
   return values;
 }
 
@@ -361,6 +391,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   };
   ret.capabilities.definitionProvider = true;
   ret.capabilities.referencesProvider = true;
+  ret.capabilities.documentHighlightProvider = true;
   ret.capabilities.hoverProvider = true;
   ret.capabilities.completionProvider = CompletionOptions{};
   ret.capabilities.completionProvider.unwrap().triggerCharacters =
@@ -449,6 +480,18 @@ Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &par
   this->syncResult();
   if (auto resolved = this->resolvePosition(params)) {
     return this->findReferenceImpl(resolved.asOk().second);
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<std::vector<DocumentHighlight>>
+LSPServer::documentHighlight(const DocumentHighlightParams &params) {
+  LOG(LogLevel::INFO, "highlight at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  this->syncResult();
+  if (auto resolved = this->resolvePosition(params)) {
+    return this->documentHighlightImpl(resolved.asOk().second);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

@@ -222,10 +222,14 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
 }
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &consumer) {
+                       const std::function<void(const FindRefsResult &)> &consumer,
+                       bool ignoreBuiltin) {
   unsigned int count = 0;
-  if (auto *decl = indexes.findDecl(request);
-      decl && !hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN)) {
+  if (auto *decl = indexes.findDecl(request)) {
+    if (hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
+      return 0;
+    }
+
     // add its self
     count++;
     if (consumer) {

@@ -600,6 +600,34 @@ struct ReferenceParams : public TextDocumentPositionParams,
   }
 };
 
+struct DocumentHighlightParams : public TextDocumentPositionParams,
+                                 public WorkDoneProgressParams,
+                                 public PartialResultParams {
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
+  }
+};
+
+enum class DocumentHighlightKind : int {
+  Text = 1, // default
+  Read = 2,
+  Write = 3,
+};
+
+struct DocumentHighlight {
+  Range range;
+  DocumentHighlightKind kind;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(range);
+    JSONIFY(kind);
+  }
+};
+
 struct HoverParams : public TextDocumentPositionParams, public WorkDoneProgressParams {
   template <typename T>
   void jsonify(T &t) {

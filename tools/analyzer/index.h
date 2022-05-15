@@ -358,7 +358,8 @@ struct FindRefsResult {
 };
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &consumer);
+                       const std::function<void(const FindRefsResult &)> &consumer,
+                       bool ignoreBuiltin = true);
 
 } // namespace ydsh::lsp
 

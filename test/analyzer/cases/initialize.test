@@ -17,7 +17,7 @@
 # CHECK:       },
 # CHECK:       "definitionProvider": true,
 # CHECK:       "documentFormattingProvider": false,
-# CHECK:       "documentHighlightProvider": false,
+# CHECK:       "documentHighlightProvider": true,
 # CHECK:       "documentRangeFormattingProvider": false,
 # CHECK:       "documentSymbolProvider": false,
 # CHECK:       "hoverProvider": true,
