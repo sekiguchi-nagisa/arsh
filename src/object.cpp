@@ -658,7 +658,11 @@ void ErrorObject::printStackTrace(DSState &state) {
 }
 
 DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
-  auto traces = state.getCallStack().createStackTrace();
+  std::vector<StackTraceElement> traces;
+  state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {
+    traces.push_back(std::move(e));
+    return true;
+  });
   auto name = DSValue::createStr(type.getName());
   return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
 }
@@ -675,6 +679,28 @@ unsigned int CompiledCode::getLineNum(unsigned int index) const { // FIXME: bina
     }
   }
   return this->lineNumEntries[i > 0 ? i - 1 : 0].lineNum;
+}
+
+StackTraceElement CompiledCode::toTraceElement(unsigned int index) const {
+  const char *sourceName = this->getSourceName().data();
+  unsigned int lineNum = this->getLineNum(index);
+  std::string callableName;
+  switch (this->getKind()) {
+  case CodeKind::TOPLEVEL:
+    callableName += "<toplevel>";
+    break;
+  case CodeKind::FUNCTION:
+    callableName += "function ";
+    callableName += this->getName();
+    break;
+  case CodeKind::USER_DEFINED_CMD:
+    callableName += "command ";
+    callableName += this->getName();
+    break;
+  default:
+    break;
+  }
+  return {sourceName, lineNum, std::move(callableName)};
 }
 
 // ########################

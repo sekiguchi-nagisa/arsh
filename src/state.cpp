@@ -74,38 +74,4 @@ void VMState::resize(unsigned int afterSize) {
   this->operandsSize = newSize;
 }
 
-std::vector<StackTraceElement> VMState::createStackTrace() const {
-  std::vector<StackTraceElement> stackTrace;
-  this->walkFrames([&](const ControlFrame &cur) {
-    auto &callable = cur.code;
-    if (!callable->is(CodeKind::NATIVE)) {
-      const auto *cc = static_cast<const CompiledCode *>(callable);
-
-      // create stack trace element
-      const char *sourceName = cc->getSourceName().data();
-      unsigned int lineNum = cc->getLineNum(cur.pc);
-
-      std::string callableName;
-      switch (callable->getKind()) {
-      case CodeKind::TOPLEVEL:
-        callableName += "<toplevel>";
-        break;
-      case CodeKind::FUNCTION:
-        callableName += "function ";
-        callableName += cc->getName();
-        break;
-      case CodeKind::USER_DEFINED_CMD:
-        callableName += "command ";
-        callableName += cc->getName();
-        break;
-      default:
-        break;
-      }
-      stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
-    }
-    return true;
-  });
-  return stackTrace;
-}
-
 } // namespace ydsh

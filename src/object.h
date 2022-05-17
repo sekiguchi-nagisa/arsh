@@ -1160,6 +1160,8 @@ public:
   const ExceptionEntry *getExceptionEntries() const { return this->exceptionEntries; }
 
   explicit operator bool() const noexcept { return this->code != nullptr; }
+
+  StackTraceElement toTraceElement(unsigned int index) const;
 };
 
 class FuncObject : public ObjectWithRtti<ObjectKind::Func> {

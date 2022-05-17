@@ -1765,11 +1765,11 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
 }
 
 static int printBacktrace(const VMState &state) {
-  auto traces = state.createStackTrace();
-  for (auto &s : traces) {
+  state.fillStackTrace([](StackTraceElement &&s) {
     fprintf(stdout, "from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
             s.getCallerName().c_str());
-  }
+    return true;
+  });
   return 0;
 }
 

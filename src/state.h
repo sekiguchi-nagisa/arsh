@@ -298,7 +298,20 @@ public:
     this->frame.localVarOffset = std::get<2>(tuple);
   }
 
-  std::vector<StackTraceElement> createStackTrace() const;
+  template <typename Tracer>
+  static constexpr bool tracer_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<Tracer, StackTraceElement &&>>;
+
+  template <typename Tracer, enable_when<tracer_requirement_v<Tracer>> = nullptr>
+  void fillStackTrace(Tracer tracer) const {
+    this->walkFrames([&](const ControlFrame &cur) {
+      auto &callable = cur.code;
+      if (!callable->is(CodeKind::NATIVE)) {
+        return tracer(static_cast<const CompiledCode *>(callable)->toTraceElement(cur.pc));
+      }
+      return true;
+    });
+  }
 
 private:
   void incRecDepth() { this->frame.recDepth++; }
