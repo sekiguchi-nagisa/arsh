@@ -325,6 +325,9 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
     setFlag(st->runtimeOption, RuntimeOption::MONITOR);
     setJobControlSignalSetting(*st, true);
   }
+  if (hasFlag(optionSet, DS_OPTION_XTRACE)) {
+    setFlag(st->runtimeOption, RuntimeOption::XTRACE);
+  }
 }
 
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {

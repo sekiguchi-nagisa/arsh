@@ -41,7 +41,8 @@ namespace ydsh {
   OP(HUP_EXIT, (1u << 3u), "huponexit")                                                            \
   OP(MONITOR, (1u << 4u), "monitor")                                                               \
   OP(NULLGLOB, (1u << 5u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 6u), "traceonexit")
+  OP(TRACE_EXIT, (1u << 6u), "traceonexit")                                                        \
+  OP(XTRACE, (1u << 7u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {

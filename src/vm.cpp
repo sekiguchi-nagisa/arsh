@@ -708,9 +708,31 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
+static void traceCmd(const DSState &state, const ArrayObject &argv) {
+  std::string value;
+  for (auto &e : argv.getValues()) {
+    value += " ";
+    value += e.toString();
+  }
+
+  state.getCallStack().fillStackTrace([&value](StackTraceElement &&trace) {
+    fprintf(stderr, "+ %s:%d>%s\n", trace.getSourceName().c_str(), trace.getLineNum(),
+            value.c_str());
+    value = "";
+    return false; // print only once
+  });
+
+  if (!value.empty()) {
+    fprintf(stderr, "+%s\n", value.c_str());
+  }
+}
+
 bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
                      DSValue &&redirConfig, CmdCallAttr attr) {
   auto &array = typeAs<ArrayObject>(argvObj);
+  if (hasFlag(state.runtimeOption, RuntimeOption::XTRACE)) {
+    traceCmd(state, array);
+  }
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::BUILTIN_S: {

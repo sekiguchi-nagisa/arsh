@@ -159,6 +159,7 @@ DS_PUBLIC_API(int) DSState_setDumpTarget(DSState *st, DSDumpKind kind, const cha
 #define DS_OPTION_INTERACTIVE ((unsigned int)(1u << 1u))
 #define DS_OPTION_TRACE_EXIT ((unsigned int)(1u << 2u))
 #define DS_OPTION_JOB_CONTROL ((unsigned int)(1u << 3u))
+#define DS_OPTION_XTRACE ((unsigned int)(1u << 4u))
 
 DS_PUBLIC_API(unsigned int) DSState_option(const DSState *st);
 

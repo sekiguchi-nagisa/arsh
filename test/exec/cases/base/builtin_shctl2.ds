@@ -61,4 +61,11 @@ assert $SIG[%'TTOU'] == $SIG_IGN
 assert fg 2>&1 | grep 'ydsh: fg: current: no such job'
 assert bg 2>&1 | grep 'ydsh: bg: current: no such job'
 
+## for `xtrace` option
+assert shctl show | grep 'xtrace.*  off'
+shctl set xtrace
+assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:67> echo hello"
+shctl unset xtrace
+assert "$(echo hello 2>&1 > /dev/null)" == ""
+
 true

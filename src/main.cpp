@@ -98,7 +98,7 @@ static void showFeature(FILE *fp) {
   OP(CHECK_ONLY, "--check-only", opt::NO_ARG, "not evaluate, type check only")                     \
   OP(COMPILE_ONLY, "--compile-only", opt::NO_ARG, "not evaluate, compile only")                    \
   OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement")               \
-  OP(TRACE_EXIT, "--trace-exit", opt::NO_ARG, "trace execution process to exit command")           \
+  OP(TRACE_EXIT, "--trace-exit", opt::NO_ARG, "print stack strace on exit command")                \
   OP(VERSION, "--version", opt::NO_ARG, "show version and copyright")                              \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(COMMAND, "-c", opt::HAS_ARG, "evaluate argument")                                             \
@@ -112,7 +112,8 @@ static void showFeature(FILE *fp) {
   OP(QUIET, "--quiet", opt::NO_ARG, "suppress startup message (only available interactive mode)")  \
   OP(SET_ARGS, "-s", opt::NO_ARG, "set arguments and read command from standard input")            \
   OP(INTERACTIVE, "-i", opt::NO_ARG, "run interactive mode")                                       \
-  OP(NOEXEC, "-n", opt::NO_ARG, "equivalent to `--compile-only' option")
+  OP(NOEXEC, "-n", opt::NO_ARG, "equivalent to `--compile-only' option")                           \
+  OP(XTRACE, "-x", opt::NO_ARG, "trace execution of commands")
 
 enum class OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -232,6 +233,9 @@ int main(int argc, char **argv) {
       goto INIT;
     case OptionKind::INTERACTIVE:
       forceInteractive = true;
+      break;
+    case OptionKind::XTRACE:
+      setFlag(option, DS_OPTION_XTRACE);
       break;
     }
   }
