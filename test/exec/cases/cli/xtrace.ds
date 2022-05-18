@@ -8,7 +8,12 @@ echo hello; true' 2>&1 > /dev/null)", 0,
 
 $expect("$(ds -x -e echo hello 2>&1 > /dev/null)", 0, "+ echo hello")
 
-$expect("$(echo echo hello | ds -x 2>&1 > /dev/null)", 0, "+ /dev/stdin:1> echo hello")
+var stdin = "$(echo 'echo $SCRIPT_NAME'| eval $YDSH_BIN)"
+$expect("$(echo echo hello | ds -x 2>&1 > /dev/null)", 0, "+ $stdin:1> echo hello")
+
+$expect("$(echo echo hello | ds --norc --quiet -i -x 2>&1 > /dev/null)", 0, 
+"+ (stdin):1> echo hello
++ (stdin):2> exit")
 
 ## disable
 $expect("$(ds -x -c 'shctl unset xtrace; echo hello' 2>&1 > /dev/null)", 0, "+ (string):1> shctl unset xtrace")
