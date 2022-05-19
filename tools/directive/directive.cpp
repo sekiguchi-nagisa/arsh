@@ -299,20 +299,20 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
     const char *name;
     int kind;
   } resultTable[] = {
-#define _E(K) DS_ERROR_KIND_##K
-      {"success", _E(SUCCESS)},
-      {"parse_error", _E(PARSE_ERROR)},
-      {"parse", _E(PARSE_ERROR)},
-      {"type_error", _E(TYPE_ERROR)},
-      {"type", _E(TYPE_ERROR)},
-      {"codegen", _E(CODEGEN_ERROR)},
-      {"runtime_error", _E(RUNTIME_ERROR)},
-      {"runtime", _E(RUNTIME_ERROR)},
-      {"throw", _E(RUNTIME_ERROR)},
-      {"assertion_error", _E(ASSERTION_ERROR)},
-      {"assert", _E(ASSERTION_ERROR)},
-      {"exit", _E(EXIT)},
-#undef _E
+#define DEFINE_ERROR(K) DS_ERROR_KIND_##K
+      {"success", DEFINE_ERROR(SUCCESS)},
+      {"parse_error", DEFINE_ERROR(PARSE_ERROR)},
+      {"parse", DEFINE_ERROR(PARSE_ERROR)},
+      {"type_error", DEFINE_ERROR(TYPE_ERROR)},
+      {"type", DEFINE_ERROR(TYPE_ERROR)},
+      {"codegen", DEFINE_ERROR(CODEGEN_ERROR)},
+      {"runtime_error", DEFINE_ERROR(RUNTIME_ERROR)},
+      {"runtime", DEFINE_ERROR(RUNTIME_ERROR)},
+      {"throw", DEFINE_ERROR(RUNTIME_ERROR)},
+      {"assertion_error", DEFINE_ERROR(ASSERTION_ERROR)},
+      {"assert", DEFINE_ERROR(ASSERTION_ERROR)},
+      {"exit", DEFINE_ERROR(EXIT)},
+#undef DEFINE_ERROR
   };
 
   const auto &value = node.getValue();

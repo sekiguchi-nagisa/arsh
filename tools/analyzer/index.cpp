@@ -227,7 +227,7 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
   unsigned int count = 0;
   if (auto *decl = indexes.findDecl(request)) {
     if (hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
-      return 0;
+      return false;
     }
 
     // add its self

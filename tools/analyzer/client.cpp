@@ -89,7 +89,7 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
         continue;
       }
       auto pair = parseNum(line);
-      int n = pair.second ? pair.first : 0;
+      unsigned int n = pair.second ? pair.first : 0;
       requests.emplace_back(std::move(ret).take(), n);
     } else {
       content += line;

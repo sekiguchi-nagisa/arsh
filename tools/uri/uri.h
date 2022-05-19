@@ -93,7 +93,7 @@ public:
   static URI parse(const std::string &str);
 
   static URI fromPath(const char *scheme, std::string &&path) {
-    return URI(scheme, Authority(), std::move(path), "", "");
+    return {scheme, Authority(), std::move(path), "", ""};
   }
 
   static URI fromFilePath(std::string &&filePath) { return fromPath("file", std::move(filePath)); }
