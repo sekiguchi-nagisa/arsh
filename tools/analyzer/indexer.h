@@ -37,6 +37,7 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreigns;
+  std::vector<std::pair<SymbolRef, std::string>> links;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -105,7 +106,8 @@ public:
             std::move(this->decls),
             std::move(this->symbols),
             std::move(this->foreigns),
-            std::move(*this->scope).take()};
+            std::move(*this->scope).take(),
+            std::move(this->links)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
@@ -156,6 +158,13 @@ public:
   }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
+
+  void addLink(Token token, const std::string &link) {
+    auto ref = SymbolRef::create(token, this->modId);
+    if (ref.hasValue()) {
+      this->links.emplace_back(ref.unwrap(), link);
+    }
+  }
 
 private:
   const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,

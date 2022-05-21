@@ -198,6 +198,8 @@ public:
 
   Reply<Union<SemanticTokens, std::nullptr_t>> semanticToken(const SemanticTokensParams &params);
 
+  Reply<std::vector<DocumentLink>> documentLink(const DocumentLinkParams &params);
+
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
     this->notify("textDocument/publishDiagnostics", params);

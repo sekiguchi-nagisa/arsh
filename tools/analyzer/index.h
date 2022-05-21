@@ -286,13 +286,16 @@ private:
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
+  std::vector<std::pair<SymbolRef, std::string>> links;
 
 public:
   SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
-              std::unordered_map<std::string, SymbolRef> &&globals)
+              std::unordered_map<std::string, SymbolRef> &&globals,
+              std::vector<std::pair<SymbolRef, std::string>> &&links)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
-        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)) {}
+        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)),
+        links(std::move(links)) {}
 
   unsigned short getModId() const { return this->modId; }
 
@@ -309,6 +312,8 @@ public:
   const std::vector<DeclSymbol> &getDecls() const { return this->decls; }
 
   const std::vector<Symbol> &getSymbols() const { return this->symbols; }
+
+  const auto &getLinks() const { return this->links; }
 
   struct Compare {
     bool operator()(const SymbolIndexPtr &x, unsigned short id) const { return x->getModId() < id; }

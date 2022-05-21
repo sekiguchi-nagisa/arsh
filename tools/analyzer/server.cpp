@@ -51,6 +51,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/references", &LSPServer::findReference);
   this->bind("textDocument/documentHighlight", &LSPServer::documentHighlight);
   this->bind("textDocument/hover", &LSPServer::hover);
+  this->bind("textDocument/documentLink", &LSPServer::documentLink);
   this->bind("textDocument/completion", &LSPServer::complete);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
@@ -396,6 +397,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.completionProvider = CompletionOptions{};
   ret.capabilities.completionProvider.unwrap().triggerCharacters =
       std::vector<std::string>{".", "$", "/"};
+  ret.capabilities.documentLinkProvider = DocumentLinkOptions{};
   ret.capabilities.semanticTokensProvider = SemanticTokensOptions{};
   ret.capabilities.semanticTokensProvider.unwrap().legend = SemanticTokensLegend::create();
   ret.capabilities.semanticTokensProvider.unwrap().full = true;
@@ -567,6 +569,28 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
       SemanticTokenEmitter emitter(this->encoder, src);
       tokenizeAndEmit(emitter, src.getPath().c_str());
       ret = std::move(emitter).take();
+    }
+    return ret;
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParams &params) {
+  LOG(LogLevel::INFO, "document link at: %s", params.textDocument.uri.c_str());
+  this->syncResult();
+  if (auto resolved = this->resolveSource(params.textDocument)) {
+    std::vector<DocumentLink> ret;
+    auto index = this->result.indexes.find(resolved.asOk()->getSrcId());
+    for (auto &e : index->getLinks()) {
+      auto range = toRange(*resolved.asOk(), e.first.getToken());
+      assert(range.hasValue());
+      auto value = toURI(*this->result.srcMan, e.second).toString();
+      ret.push_back(DocumentLink{
+          .range = range.unwrap(),
+          .target = value,
+          .tooltip = value,
+      });
     }
     return ret;
   } else {

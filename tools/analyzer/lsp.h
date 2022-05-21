@@ -288,15 +288,22 @@ struct SemanticTokensClientCapabilities {
   }
 };
 
+struct DocumentLinkClientCapabilities {
+  template <typename T>
+  void jsonify(T &) {}
+};
+
 struct TextDocumentClientCapabilities {
   Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
   Optional<HoverClientCapabilities> hover;
+  Optional<DocumentLinkClientCapabilities> documentLink;
   Optional<SemanticTokensClientCapabilities> semanticTokens;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(publishDiagnostics);
     JSONIFY(hover);
+    JSONIFY(documentLink);
     JSONIFY(semanticTokens);
   }
 };
@@ -445,6 +452,15 @@ struct SemanticTokensOptions : public WorkDoneProgressOptions {
   }
 };
 
+struct DocumentLinkOptions : public WorkDoneProgressOptions {
+  bool resolveProvider{false};
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(resolveProvider);
+  }
+};
+
 /**
  * for representing server capability.
  * only define supported capability
@@ -460,6 +476,7 @@ struct ServerCapabilities {
   bool workspaceSymbolProvider{false};
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};
+  Optional<DocumentLinkOptions> documentLinkProvider;
   Optional<SemanticTokensOptions> semanticTokensProvider;
 
   template <typename T>
@@ -474,6 +491,7 @@ struct ServerCapabilities {
     JSONIFY(workspaceSymbolProvider);
     JSONIFY(documentFormattingProvider);
     JSONIFY(documentRangeFormattingProvider);
+    JSONIFY(documentLinkProvider);
     JSONIFY(semanticTokensProvider);
   }
 };
@@ -873,6 +891,30 @@ struct SemanticTokens {
   void jsonify(T &t) {
     JSONIFY(resultId);
     JSONIFY(data);
+  }
+};
+
+struct DocumentLinkParams : public WorkDoneProgressParams, public PartialResultParams {
+  TextDocumentIdentifier textDocument;
+
+  template <typename T>
+  void jsonify(T &t) {
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
+    JSONIFY(textDocument);
+  }
+};
+
+struct DocumentLink {
+  Range range;
+  Optional<DocumentURI> target;
+  Optional<std::string> tooltip;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(range);
+    JSONIFY(target);
+    JSONIFY(tooltip);
   }
 };
 

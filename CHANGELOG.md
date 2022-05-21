@@ -27,7 +27,9 @@
 
 #### LSP
 
-- support ``textDocument/documentHighlight``
+- support the following requests
+    - ``textDocument/documentHighlight``
+    - ``textDocument/documentLink``
 
 #### Misc
 
