@@ -786,7 +786,7 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
                             std::to_string(node.getModType().getModId()).c_str());
   }
-  this->builder().addLink(node.getPathToken(), node.getPathName());
+  this->builder().addLink(node.getPathToken(), node.getModType().getModId(), node.getPathName());
 }
 
 void SymbolIndexer::visitSourceListNode(SourceListNode &) {}

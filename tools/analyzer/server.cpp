@@ -585,11 +585,12 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
     for (auto &e : index->getLinks()) {
       auto range = toRange(*resolved.asOk(), e.first.getToken());
       assert(range.hasValue());
-      auto value = toURI(*this->result.srcMan, e.second).toString();
+      auto src = this->result.srcMan->findById(e.first.getModId());
+      assert(src);
       ret.push_back(DocumentLink{
           .range = range.unwrap(),
-          .target = value,
-          .tooltip = value,
+          .target = toURI(*this->result.srcMan, src->getPath()).toString(),
+          .tooltip = e.second,
       });
     }
     return ret;

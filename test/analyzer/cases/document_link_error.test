@@ -11,19 +11,19 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "echo hello"}
+                     "text": "source empty.test"}
  }
 }
 
 <<<
-{"id": 1, "jsonrpc": "2.0", "method": "textDocument/semanticTokens/full",
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/documentLink",
   "params": {
-    "textDocument": { "uri": "file:///test/test2222.ds" }
+    "textDocument": { "uri": "file:///test/test.ds234" }
   }
 }
 
 # CHECK_IF:   "code": -32602,
-#    CHECK:   "message": "broken textDocument: file:///test/test2222.ds"
+#    CHECK:   "message": "broken textDocument: file:///test/test.ds234"
 #    CHECK: }
 
 <<<

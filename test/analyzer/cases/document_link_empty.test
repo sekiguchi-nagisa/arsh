@@ -10,21 +10,22 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "echo hello"}
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+    "text": "echo hello"
+    }
  }
 }
 
 <<<
-{"id": 1, "jsonrpc": "2.0", "method": "textDocument/semanticTokens/full",
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/documentLink",
   "params": {
-    "textDocument": { "uri": "file:///test/test2222.ds" }
+    "textDocument": { "uri": "test:///test.ds" }
   }
 }
 
-# CHECK_IF:   "code": -32602,
-#    CHECK:   "message": "broken textDocument: file:///test/test2222.ds"
-#    CHECK: }
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": []
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}

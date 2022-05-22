@@ -159,8 +159,8 @@ public:
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
-  void addLink(Token token, const std::string &link) {
-    auto ref = SymbolRef::create(token, this->modId);
+  void addLink(Token token, unsigned int short targetModId, const std::string &link) {
+    auto ref = SymbolRef::create(token, targetModId);
     if (ref.hasValue()) {
       this->links.emplace_back(ref.unwrap(), link);
     }
