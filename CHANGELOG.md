@@ -7,7 +7,7 @@
 #### Core
 
 - allow anonymous function in local scope
-    - can access upper scope variables (except for fields, temporary env)
+    - can access upper scope variables (except for fields, temporary environmental variables)
 - support brace expansion in command argument list and source statement
 - add ``xtrace`` runtime option
     - trace execution of commands
@@ -67,7 +67,7 @@
 - directory detection of completion wrapper
 - return type resolution of anonymous function that last statement is Nothing type
 - file name completion in prefix assignment
-- pass invalid ``SCRIPT_DIR`` in module name completion
+- invalid ``SCRIPT_DIR`` in module name completion
 - object destruction order of tuple, user-defined type, closure
 
 ## [0.25.0] - 2022-03-31

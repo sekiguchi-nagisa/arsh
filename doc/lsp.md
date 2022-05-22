@@ -1,4 +1,19 @@
 # Supported Features of Language Server Protocol
+## Supported Language Features
+
+| **Feature**                          | **status** |
+|--------------------------------------|------------|
+| ``textDocument/definition``          | ✔️         |
+| ``textDocument/references``          | ✔️         |
+| ``textDocument/documentHighlight``   | ✔️         |
+| ``textDocument/documentLink``        | ✔️         |
+| ``textDocument/hover``               | ✔️         |
+| ``textDocument/documentSymbol``      | ❌          |
+| ``textDocument/semanticTokens/full`` | ✔️         |
+| ``textDocument/completion``          | ✔️         |
+| ``textDocument/publishDiagnostics``  | ✔️         |
+| ``textDocument/rename``              | ❌          |
+
 
 ## ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
 
