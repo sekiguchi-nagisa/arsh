@@ -32,8 +32,7 @@
 | field (tuple)                         | -              | -              | ✔️                 |
 | field (user-defined type)             | ✔️             | ✔️             | ✔️                 |
 | method (builtin)                      | -              | -              | ✔️                 |
-| source path                           | -              | -              | ❌ (show path)      |
-| source path (glob)                    | -              | -              | ❌ (show path list) |
+| method (user-defined)                 | ✔️             | ✔️             | ✔️                 |
 | source (variable)                     | ✔️             | ✔️             | ✔️                 |
 | source (type alias)                   | ✔️             | ✔️             | ✔️                 |
 | source (command)                      | ✔️             | ✔️             | ✔️                 |
