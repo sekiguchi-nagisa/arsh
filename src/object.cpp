@@ -529,7 +529,7 @@ DSValue MapIterObject::next(TypePool &pool) {
 
 BaseObject::~BaseObject() {
   for (unsigned int i = 0; i < this->fieldSize; i++) {
-    (*this)[i].~DSValue();
+    (*this)[this->fieldSize - 1 - i].~DSValue(); // destruct object reverse order
   }
 }
 
@@ -733,7 +733,7 @@ std::string FuncObject::toString() const {
 
 ClosureObject::~ClosureObject() {
   for (unsigned int i = 0; i < this->upvarSize; i++) {
-    (*this)[i].~DSValue();
+    (*this)[this->upvarSize - 1 - i].~DSValue(); // destruct object reverse order
   }
 }
 
@@ -742,9 +742,9 @@ ClosureObject::~ClosureObject() {
 // ##########################
 
 EnvCtxObject::~EnvCtxObject() {
-  for (auto &e : this->envs) {
-    auto &name = e.first;
-    auto &value = e.second;
+  for (auto iter = this->envs.rbegin(); iter != this->envs.rend(); ++iter) {
+    auto &name = iter->first;
+    auto &value = iter->second;
     if (name.hasType(TYPE::Int)) {
       auto k = name.asInt();
       assert(k > -1);

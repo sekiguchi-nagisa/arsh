@@ -68,6 +68,7 @@
 - return type resolution of anonymous function that last statement is Nothing type
 - file name completion in prefix assignment
 - pass invalid ``SCRIPT_DIR`` in module name completion
+- object destruction order of tuple, user-defined type, closure
 
 ## [0.25.0] - 2022-03-31
 
