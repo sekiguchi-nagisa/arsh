@@ -253,6 +253,11 @@ TEST_F(HighlightTest, style) {
   ASSERT_STREQ("colorful", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
+  style = styleMap.find("github");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("github", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
   style = styleMap.find("not found ");
   ASSERT_FALSE(style);
 }
@@ -456,6 +461,7 @@ TEST_F(ColorizeTest, list) {
 * algol
 * colorful
 * darcula
+* github
 * monokai
 * null
 

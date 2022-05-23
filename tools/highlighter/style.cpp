@@ -20,6 +20,7 @@
 #include "styles/algol.hpp"
 #include "styles/colorful.hpp"
 #include "styles/darcula.hpp"
+#include "styles/github.hpp"
 #include "styles/monokai.hpp"
 #include "styles/null.hpp"
 
@@ -185,6 +186,7 @@ StyleMap::StyleMap() {
   LOAD_HIGHLIGHT_STYLE(algol);
   LOAD_HIGHLIGHT_STYLE(colorful);
   LOAD_HIGHLIGHT_STYLE(darcula);
+  LOAD_HIGHLIGHT_STYLE(github);
   LOAD_HIGHLIGHT_STYLE(monokai);
   LOAD_HIGHLIGHT_STYLE(null);
 }
