@@ -1057,6 +1057,8 @@ public:
     o.setCode();
   }
 
+  static bool classof(const DSCode *code) { return code->is(CodeKind::NATIVE); }
+
 private:
   void setCode() { this->code = reinterpret_cast<unsigned char *>(this->value.data()); }
 };
@@ -1162,6 +1164,8 @@ public:
   explicit operator bool() const noexcept { return this->code != nullptr; }
 
   StackTraceElement toTraceElement(unsigned int index) const;
+
+  static bool classof(const DSCode *code) { return !code->is(CodeKind::NATIVE); }
 };
 
 class FuncObject : public ObjectWithRtti<ObjectKind::Func> {

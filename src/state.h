@@ -307,7 +307,7 @@ public:
     this->walkFrames([&](const ControlFrame &cur) {
       auto &callable = cur.code;
       if (!callable->is(CodeKind::NATIVE)) {
-        return tracer(static_cast<const CompiledCode *>(callable)->toTraceElement(cur.pc));
+        return tracer(cast<CompiledCode>(callable)->toTraceElement(cur.pc));
       }
       return true;
     });

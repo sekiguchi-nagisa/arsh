@@ -1777,7 +1777,7 @@ static int printFuncName(const VMState &state) {
   auto *code = state.getFrame().code;
   const char *name = nullptr;
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
-    name = static_cast<const CompiledCode *>(code)->getName();
+    name = cast<CompiledCode>(code)->getName();
   }
   fprintf(stdout, "%s\n", name != nullptr ? name : "<toplevel>");
   return name != nullptr ? 0 : 1;
@@ -1918,12 +1918,12 @@ static int isSourced(const VMState &st) {
     return 1;
   }
 
-  auto *top = static_cast<const CompiledCode *>(st.getFrame().code);
+  auto *top = cast<CompiledCode>(st.getFrame().code);
   auto *bottom = top;
   st.walkFrames([&](const ControlFrame &frame) {
     auto *c = frame.code;
     if (!c->is(CodeKind::NATIVE)) {
-      bottom = static_cast<const CompiledCode *>(c);
+      bottom = cast<CompiledCode>(c);
     }
     return true;
   });

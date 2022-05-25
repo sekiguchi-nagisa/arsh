@@ -257,7 +257,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
 
 #define CODE(ctx) ((ctx).stack.code())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
-#define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
+#define CONST_POOL(ctx) (cast<CompiledCode>(CODE(ctx))->getConstPool())
 
 /* for substitution */
 
@@ -2023,7 +2023,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(LOAD_CUR_MOD) {
-        unsigned short modId = static_cast<const CompiledCode *>(CODE(state))->getBelongedModId();
+        unsigned short modId = cast<CompiledCode>(CODE(state))->getBelongedModId();
         auto ret = state.typePool.getModTypeById(modId);
         assert(ret);
         auto &modType = cast<ModType>(*ret.asOk());
@@ -2102,7 +2102,7 @@ bool VM::handleException(DSState &state) {
 
   for (; !state.stack.checkVMReturn(); state.stack.unwind()) {
     if (!CODE(state)->is(CodeKind::NATIVE)) {
-      auto *cc = static_cast<const CompiledCode *>(CODE(state));
+      auto *cc = cast<CompiledCode>(CODE(state));
 
       // search exception entry
       const unsigned int occurredPC = state.stack.pc() - 1;

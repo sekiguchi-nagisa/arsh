@@ -154,7 +154,7 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
       return true; // continue
     }
     if (depth == callLevel) {
-      code = static_cast<const CompiledCode *>(c);
+      code = cast<CompiledCode>(c);
       return false;
     }
     depth++;
