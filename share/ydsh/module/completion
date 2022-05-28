@@ -40,7 +40,7 @@ Options:
     --long LONG_OPTION     set long option
     --arg-list LIST        generate candidates from LIST split by ' '
     --arg-cmd CMDLINE      generate candidates from CMDLINE evaluation
-    --arg-action ACTION    generate candicates from ACTION
+    --arg-action ACTION    generate candidates from ACTION
     --comp-path            set bash completion script
     --comp-target          set completion function
     -h, --help             show this help message"
@@ -87,8 +87,8 @@ function _comp_opt($deflist : [(String, Int, String)], $prefix : String) : [Stri
 }
 
 startwith() {
-    while(read -f $'\n') {
-        $REPLY.startsWith($1) && echo $REPLY
+    for $line in $STDIN {
+        $line.startsWith($1) && echo $line
     }
 }
 

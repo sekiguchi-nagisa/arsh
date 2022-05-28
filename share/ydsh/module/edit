@@ -103,8 +103,8 @@ function _load($p : String!) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? return;
-    cat $path | while(read -r -f '') {
-        $_add($REPLY, $true)
+    cat $path | for $line in $STDIN {
+        $_add($line, $true)
     }
     $PIPESTATUS.clear()
 }

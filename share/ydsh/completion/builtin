@@ -18,8 +18,8 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : [String] {
 }
 
 _extract_sub() {
-    while(read -f $'\n') {
-        var matched = $/^ +([-a-z]+) +.+/.match($REPLY)
+    for $line in $STDIN {
+        var matched = $/^ +([-a-z]+) +.+/.match($line)
         if !$matched.empty() {
             echo ${$matched[1]!}
         }
