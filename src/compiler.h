@@ -104,9 +104,6 @@ private:
   const char *color(TermColor c) const;
 
   void printErrorLine(std::string &out, const Lexer &lexer, Token token) const;
-
-  static void appendAs(std::string &out, const char *fmt, ...)
-      __attribute__((format(printf, 2, 3)));
 };
 
 enum class CompileOption : unsigned short {

@@ -15,9 +15,9 @@
  */
 
 #include <cerrno>
-#include <cstdarg>
 
 #include "constant.h"
+#include "misc/format.hpp"
 #include "node.h"
 #include "scope.h"
 
@@ -1172,7 +1172,7 @@ static const char *toString(NodeKind kind) {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-  this->appendAs("nodeKind: %s\n", toString(node.getNodeKind()));
+  formatTo(this->buf(), "nodeKind: %s\n", toString(node.getNodeKind()));
 
   if (inArray) {
     this->enterIndent();
@@ -1184,7 +1184,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
   if (node.isUntyped()) {
     this->append("type:\n");
   } else {
-    this->appendAs("type: %s\n", node.getType().getName());
+    formatTo(this->buf(), "type: %s\n", node.getType().getName());
   }
 
   if (inArray) {
@@ -1196,15 +1196,15 @@ void NodeDumper::dumpToken(Token token) {
   this->append("token:\n");
   this->enterIndent();
   this->indent();
-  this->appendAs("pos: %d\n", token.pos);
+  formatTo(this->buf(), "pos: %d\n", token.pos);
   this->indent();
-  this->appendAs("size: %d\n", token.size);
+  formatTo(this->buf(), "size: %d\n", token.size);
   this->leaveIndent();
 }
 
-void NodeDumper::append(int ch) { this->bufs.back().value += static_cast<char>(ch); }
+void NodeDumper::append(int ch) { this->buf() += static_cast<char>(ch); }
 
-void NodeDumper::append(const char *str) { this->bufs.back().value += str; }
+void NodeDumper::append(const char *str) { this->buf() += str; }
 
 void NodeDumper::appendEscaped(const char *value) {
   this->append('"');
@@ -1239,30 +1239,16 @@ void NodeDumper::appendEscaped(const char *value) {
   this->append('"');
 }
 
-void NodeDumper::appendAs(const char *fmt, ...) {
-  va_list arg;
-
-  va_start(arg, fmt);
-  char *str = nullptr;
-  if (vasprintf(&str, fmt, arg) == -1) {
-    fatal_perror("");
-  }
-  va_end(arg);
-
-  this->append(str);
-  free(str);
-}
-
 void NodeDumper::writeName(const char *fieldName) {
   this->indent();
-  this->appendAs("%s:", fieldName);
+  formatTo(this->buf(), "%s:", fieldName);
 }
 
 void NodeDumper::enterModule(const char *sourceName, const char *header) {
   this->bufs.emplace_back();
 
   if (header) {
-    this->appendAs("%s\n", header);
+    formatTo(this->buf(), "%s\n", header);
   }
   this->dump("sourceName", sourceName);
   this->writeName("nodes");

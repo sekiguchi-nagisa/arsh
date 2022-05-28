@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <cstdarg>
-
 #include "compiler.h"
+#include "misc/format.hpp"
 
 namespace ydsh {
 
@@ -90,12 +89,12 @@ void ErrorReporter::printError(const Lexer &lex, const char *kind, Token token, 
   std::string out;
   out.reserve(256);
   unsigned int lineNumOffset = lex.getLineNumOffset();
-  appendAs(out, "%s:", lex.getSourceName().c_str());
+  formatTo(out, "%s:", lex.getSourceName().c_str());
   if (lineNumOffset > 0) {
     auto srcPos = lex.getSrcPos(token);
-    appendAs(out, "%d:%d:", srcPos.lineNum, srcPos.chars);
+    formatTo(out, "%d:%d:", srcPos.lineNum, srcPos.chars);
   }
-  appendAs(out, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
+  formatTo(out, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
            this->color(TermColor::Reset), message);
 
   if (lineNumOffset > 0) {
@@ -129,7 +128,7 @@ void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token e
                                         {omitLine ? size - 10 : size, size}};
   for (unsigned int i = 0; i < 2; i++) {
     if (i == 1 && omitLine) {
-      appendAs(out, "%s%s%s\n", this->color(TermColor::Yellow), "\n| ~~~ omit error lines ~~~ |\n",
+      formatTo(out, "%s%s%s\n", this->color(TermColor::Yellow), "\n| ~~~ omit error lines ~~~ |\n",
                this->color(TermColor::Reset));
     }
 
@@ -137,11 +136,11 @@ void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token e
     size_t stop = pairs[i].second;
     for (size_t index = start; index < stop; index++) {
       // print error line
-      appendAs(out, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(),
+      formatTo(out, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(),
                this->color(TermColor::Reset));
 
       // print line marker
-      appendAs(out, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+      formatTo(out, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
                markers[index].c_str(), this->color(TermColor::Reset));
     }
   }
@@ -195,20 +194,6 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
                                  .chars = srcPos.chars,
                                  .name = strdup(errorKind)});
   return true;
-}
-
-void ErrorReporter::appendAs(std::string &out, const char *fmt, ...) {
-  va_list arg;
-
-  va_start(arg, fmt);
-  char *str = nullptr;
-  if (vasprintf(&str, fmt, arg) == -1) {
-    fatal_perror("broken");
-  }
-  va_end(arg);
-
-  out += str;
-  free(str);
 }
 
 // ######################

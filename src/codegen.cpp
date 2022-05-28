@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <cstdarg>
-
 #include "codegen.h"
+#include "misc/format.hpp"
 #include "redir.h"
 #include "type_pool.h"
 
@@ -1557,25 +1556,8 @@ bool ByteCodeGenerator::exitModule(const SourceNode &node) {
 // ##     ByteCodeDumper     ##
 // ############################
 
-static unsigned int digit(unsigned int n) {
-  unsigned int c;
-  if (n == 0) {
-    return 1;
-  }
-  for (c = 0; n > 0; c++) {
-    n /= 10;
-  }
-  return c;
-}
-
 static std::string formatNum(unsigned int width, unsigned int num) {
-  std::string str;
-  unsigned int numWidth = digit(num);
-  for (unsigned int i = 0; i < width - numWidth; i++) {
-    str += ' ';
-  }
-  str += std::to_string(num);
-  return str;
+  return padLeft(num, width, ' ');
 }
 
 static unsigned int getMaxLineNum(const LineNumEntry *table) {
@@ -1644,7 +1626,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
 
     for (unsigned int i = 0; i < c.getCodeSize(); i++) {
       auto code = static_cast<OpCode>(c.getCode()[i]);
-      fprintf(this->fp, "  %s: %s", formatNum(digit(c.getCodeSize()), i).c_str(),
+      fprintf(this->fp, "  %s: %s", formatNum(countDigits(c.getCodeSize()), i).c_str(),
               opName[static_cast<unsigned char>(code)]);
       if (isTypeOp(code)) {
         unsigned int v = read24(c.getCode(), i + 1);
@@ -1716,7 +1698,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for (constSize = 0; c.getConstPool()[constSize]; constSize++)
       ;
     for (unsigned int i = 0; c.getConstPool()[i]; i++) {
-      fprintf(this->fp, "  %s: ", formatNum(digit(constSize), i).c_str());
+      fprintf(this->fp, "  %s: ", formatNum(countDigits(constSize), i).c_str());
       auto &v = c.getConstPool()[i];
       std::string value = v.toString();
       switch (v.kind()) {
@@ -1747,8 +1729,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for (unsigned int i = 0; c.getLineNumEntries()[i]; i++) {
       const auto &e = c.getLineNumEntries()[i];
       fprintf(this->fp, "  lineNum: %s, address: %s\n",
-              formatNum(digit(maxLineNum), e.lineNum).c_str(),
-              formatNum(digit(c.getCodeSize()), e.address).c_str());
+              formatNum(countDigits(maxLineNum), e.lineNum).c_str(),
+              formatNum(countDigits(c.getCodeSize()), e.address).c_str());
     }
   }
 

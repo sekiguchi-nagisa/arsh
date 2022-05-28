@@ -20,6 +20,7 @@
 #include <complete.h>
 #include <embed.h>
 #include <misc/files.h>
+#include <misc/format.hpp>
 
 #include "analyzer.h"
 
@@ -373,24 +374,12 @@ public:
       }
     }
     if (prioCount > 0) {
-      unsigned int maxDigits = std::to_string(prioCount).size();
+      unsigned int maxDigits = countDigits(prioCount);
       for (auto &item : this->items) {
-        item.sortText = formatPrio(item.priority, maxDigits);
+        item.sortText = padLeft(item.priority, maxDigits, '0');
       }
     }
     return std::move(this->items);
-  }
-
-private:
-  static std::string formatPrio(int priority, unsigned int digits) {
-    std::string value = std::to_string(priority);
-    unsigned int diff = digits - value.size();
-    std::string ret;
-    for (unsigned int i = 0; i < diff; i++) {
-      ret += std::to_string(0);
-    }
-    ret += value;
-    return ret;
   }
 };
 

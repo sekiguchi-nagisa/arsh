@@ -2617,13 +2617,13 @@ private:
 
   void newline() { this->append('\n'); }
 
+  std::string &buf() { return this->bufs.back().value; }
+
   void append(int ch);
 
   void append(const char *str);
 
   void appendEscaped(const char *value);
-
-  void appendAs(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
   void dumpNodeHeader(const Node &node, bool inArray = false);
 
