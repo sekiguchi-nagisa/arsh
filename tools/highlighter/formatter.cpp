@@ -16,6 +16,8 @@
 
 #include <cfloat>
 
+#include <misc/format.hpp>
+
 #include "formatter.h"
 
 namespace ydsh::highlighter {
@@ -236,16 +238,6 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
   return value;
 }
 
-static unsigned int digits(uint64_t value) {
-  assert(value > 0);
-  unsigned int c = 0;
-  while (value > 0) {
-    c++;
-    value /= 10;
-  }
-  return c;
-}
-
 HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream &output,
                              HTMLFormatOp op, unsigned int lineNumOffset)
     : Formatter(source, style, output), formatOp(op), lineNumOffset(lineNumOffset) {
@@ -266,23 +258,19 @@ HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream 
          pos++) {
       maxLineNum++;
     }
-    this->maxLineNumDigits = digits(maxLineNum);
+    this->maxLineNumDigits = countDigits(maxLineNum);
     this->emitLineNum(this->lineNumOffset);
   }
 }
 
 void HTMLFormatter::emitLineNum(unsigned int lineNum) {
-  unsigned int diff = this->maxLineNumDigits - digits(lineNum);
-  std::string padding;
-  for (unsigned int i = 0; i < diff; i++) {
-    padding += ' ';
-  }
+  std::string value = padLeft(lineNum, this->maxLineNumDigits, ' ');
   auto &css = this->toCSS(HighlightTokenClass::LINENO_);
   this->output << "<span";
   if (!css.empty()) {
     this->output << " style=\"" << css << "\"";
   }
-  this->output << ">" << padding << lineNum << "</span>   ";
+  this->output << ">" << value << "</span>   ";
 }
 
 const std::string &HTMLFormatter::toCSS(HighlightTokenClass tokenClass) {
