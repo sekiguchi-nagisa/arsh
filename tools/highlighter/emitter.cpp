@@ -56,6 +56,7 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::DEC:
   case TokenKind::UNWRAP:
   case TokenKind::CASE_ARM:
+  case TokenKind::IN:
     return HighlightTokenClass::OPERATOR;
 #define GEN_CASE(E, P, A) case TokenKind::E:
     // clang-format off
@@ -121,8 +122,13 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
 
   auto ref = this->source.substr(token.pos, token.size);
   TokenKind suffix = TokenKind::EOS;
-  if (ref.size() > 2 && ref[0] == '$') {
-    char ch = ref[ref.size() - 1];
+  if (kind == TokenKind::ENV_ASSIGN) {
+    assert(ref.back() == '=');
+    kind = TokenKind::IDENTIFIER;
+    suffix = TokenKind::ASSIGN;
+    token.size--;
+  } else if (ref.size() > 2 && ref[0] == '$') {
+    char ch = ref.back();
     if (ch == '[') {
       suffix = TokenKind::LB;
       token.size--;
