@@ -30,6 +30,7 @@ namespace ydsh {
  * enum order is corresponding to builtin variable declaration order.
  */
 enum class BuiltinVarOffset : unsigned int {
+  DUMMY_,      // dummy entry (indicate builtin module object)
   SCRIPT_NAME, // SCRIPT_NAME
   SCRIPT_DIR,  // SCRIPT_DIR
   REPLY,       // REPLY (for read command)

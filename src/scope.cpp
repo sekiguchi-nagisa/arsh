@@ -31,7 +31,7 @@ NameScopePtr NameScope::reopen(const TypePool &pool, const NameScope &parent,
                                const ModType &modType) {
   assert(parent.isGlobal());
   assert(parent.inRootModule());
-  auto scope = NameScopePtr::create(parent.maxVarCount, modType.getModId());
+  auto scope = NameScopePtr::create(parent.maxVarCount, modType.getIndex(), modType.getModId());
   assert(scope->modId == modType.getModId());
 
   // copy own handle
@@ -54,7 +54,7 @@ NameScopePtr NameScope::cloneGlobal() const {
   if (!this->isGlobal()) {
     return nullptr;
   }
-  auto newScope = NameScopePtr ::create(this->maxVarCount, this->modId);
+  auto newScope = NameScopePtr ::create(this->maxVarCount, this->modIndex, this->modId);
   newScope->handles = this->handles;
   return newScope;
 }
@@ -229,7 +229,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
     }
   }
   return pool.createModType(this->modId, std::move(newHandles), std::move(newChildren),
-                            this->getMaxGlobalVarIndex());
+                            this->modIndex);
 }
 
 Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) {
@@ -514,7 +514,8 @@ NameScopePtr ModuleLoader::createGlobalScope(const TypePool &pool, const char *n
   if (modType) {
     return this->createGlobalScopeFromFullPath(pool, get<const char *>(ret), *modType);
   } else {
-    return NameScopePtr::create(std::ref(this->gvarCount));
+    unsigned int modIndex = this->gvarCount++;
+    return NameScopePtr::create(std::ref(this->gvarCount), modIndex, 0);
   }
 }
 
@@ -522,7 +523,8 @@ NameScopePtr ModuleLoader::createGlobalScopeFromFullPath(const TypePool &pool, S
                                                          const ModType &modType) {
   auto iter = this->indexMap.find(fullPath);
   if (iter != this->indexMap.end()) {
-    auto scope = NameScopePtr::create(std::ref(this->gvarCount), iter->second);
+    unsigned int modIndex = this->gvarCount++;
+    auto scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex, iter->second);
     scope->importForeignHandles(pool, modType, ImportedModKind::GLOBAL);
     return scope;
   }
@@ -535,7 +537,6 @@ const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scop
   auto &modType = scope.toModType(pool);
   bool reopened = scope.inRootModule() && this->entries[scope.modId].second.isSealed();
   if (!reopened) {
-    this->gvarCount++; // reserve module object entry
     auto &e = this->entries[scope.modId].second;
     assert(!e.isSealed());
     e.setModType(modType);

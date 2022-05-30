@@ -74,6 +74,11 @@ public:
   const unsigned short modId;
 
   /**
+   * for module object
+   */
+  const unsigned int modIndex{0};
+
+  /**
    * may be null
    */
   const NameScopePtr parent;
@@ -120,8 +125,9 @@ public:
    * @param gvarCount
    * @param modId
    */
-  explicit NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned short modId = 0)
-      : kind(GLOBAL), modId(modId), maxVarCount(gvarCount) {}
+  NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned int modIndex,
+            unsigned short modId)
+      : kind(GLOBAL), modId(modId), modIndex(modIndex), maxVarCount(gvarCount) {}
 
   /**
    * for module scope construction.
@@ -129,8 +135,9 @@ public:
    * @param parent
    * @param modId
    */
-  NameScope(const NameScopePtr &parent, unsigned short modId)
-      : kind(GLOBAL), modId(modId), parent(parent), maxVarCount(parent->maxVarCount) {
+  NameScope(const NameScopePtr &parent, unsigned int modIndex, unsigned short modId)
+      : kind(GLOBAL), modId(modId), modIndex(modIndex), parent(parent),
+        maxVarCount(parent->maxVarCount) {
     assert(this->parent->isGlobal());
   }
 
@@ -474,6 +481,8 @@ public:
                                              const ModType &modType);
 
   const ModType &createModType(TypePool &pool, const NameScope &scope);
+
+  unsigned int getGvarCount() const { return this->gvarCount; }
 
   unsigned int modSize() const { return this->indexMap.size(); }
 

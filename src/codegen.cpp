@@ -488,7 +488,8 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 
     this->emit0byteIns(OpCode::LOAD_ENV);
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
-    this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
+    this->emit1byteIns(OpCode::LOAD_CONST,
+                       node.getIndex() - toIndex(BuiltinVarOffset::SCRIPT_NAME));
   } else {
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {

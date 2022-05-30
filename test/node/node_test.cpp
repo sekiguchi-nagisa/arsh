@@ -770,7 +770,7 @@ nodes:
       type: Boolean
       varName: "false"
       handle:
-        index: 49
+        index: 50
         kind: "VAR"
         attribute: "READ_ONLY | GLOBAL"
     iterNode:
@@ -846,7 +846,7 @@ nodes:
             type: Int
             varName: "?"
             handle:
-              index: 12
+              index: 13
               kind: "VAR"
               attribute: "GLOBAL"
       baseIndex: 0

@@ -50,7 +50,8 @@ struct EmptyConsumer {
 
 static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
                                     unsigned int &gvarCount) {
-  auto builtin = NameScopePtr::create(gvarCount);
+  unsigned int modIndex = gvarCount++;
+  auto builtin = NameScopePtr::create(gvarCount, modIndex, 0);
   EmptyConsumer emptyConsumer;
   bindBuiltins(emptyConsumer, config, pool, *builtin);
 
@@ -60,14 +61,15 @@ static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
   DefaultModuleProvider provider(loader, pool, builtin);
   FrontEnd frontEnd(provider, std::move(lexer));
   consumeAllInput(frontEnd);
-  gvarCount += 2; // reserve module object entry (builtin, root)
+  gvarCount += 1; // reserve module object entry (root)
   return builtin->toModType(pool);
 }
 
 AnalyzerContext::AnalyzerContext(const SysConfig &config, const Source &src)
     : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
   auto &builtin = createBuiltin(config, this->getPool(), this->gvarCount);
-  this->scope = NameScopePtr::create(std::ref(this->gvarCount), src.getSrcId());
+  unsigned int modIndex = this->gvarCount++;
+  this->scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex, src.getSrcId());
   this->scope->importForeignHandles(this->getPool(), builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }

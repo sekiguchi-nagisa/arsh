@@ -21,11 +21,14 @@ protected:
   NameScopePtr top;
 
   ScopeTest() {
-    this->builtin = NameScopePtr::create(std::ref(this->gvarCount));
+    this->builtin = NameScopePtr::create(std::ref(this->gvarCount), 0, 0);
     this->top = createGlobalScope();
   }
 
-  NameScopePtr createGlobalScope() { return NameScopePtr::create(this->builtin, ++this->modCount); }
+  NameScopePtr createGlobalScope() {
+    unsigned int modIndex = this->gvarCount;
+    return NameScopePtr::create(this->builtin, modIndex, ++this->modCount);
+  }
 
   const ModType &toModType(NameScopePtr &&scope) {
     auto &type = scope->toModType(this->pool);
@@ -726,7 +729,7 @@ TEST_F(ScopeTest, import2) {
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
   ASSERT_EQ(2, modType.getModId());
-  ASSERT_EQ(2, modType.getIndex());
+  ASSERT_EQ(0, modType.getIndex());
 
   // inlined import
   auto mod2 = this->createGlobalScope();
@@ -744,7 +747,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = static_cast<TYPE>(modType.typeId()),
-          .index = 2, // toModType api not increment
+          .index = 0, // toModType api not increment
           .kind = HandleKind::INLINED_MOD,
           .attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL,
           .modID = 3,
@@ -813,7 +816,7 @@ TEST_F(ScopeTest, import2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
           .type = static_cast<TYPE>(modType2.typeId()),
-          .index = 4,
+          .index = 3,
           .kind = HandleKind::GLOBAL_MOD,
           .attr = HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
           .modID = 1,

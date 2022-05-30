@@ -238,6 +238,10 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
   if (is<ModLoadingError>(ret)) {
     return get<ModLoadingError>(ret);
   } else if (is<const char *>(ret)) {
+    if(this->loader.getGvarCount() == SYS_LIMIT_GLOBAL_NUM) {
+      fatal("number of global variables reaches limit\n");  //FIXME:
+    }
+
     ByteBuffer buf;
     if (!readAll(filePtr, buf)) {
       return ModLoadingError(errno);
