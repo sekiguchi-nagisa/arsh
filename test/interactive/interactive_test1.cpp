@@ -128,9 +128,13 @@ TEST_F(InteractiveTest, expand_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->sendLine("echo {/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*}");
+  this->sendLine("echo "
+                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
+                 "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(PROMPT + "echo {/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*,/*/*/*/*/*/*/*/*}\n"));
+      this->expect(PROMPT + "echo "
+                            "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
+                            "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
