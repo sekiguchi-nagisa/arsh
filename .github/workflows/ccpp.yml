@@ -67,11 +67,43 @@ jobs:
           cd build
           ctest -j4 --output-on-failure
 
-  build_on_linux_ubuntu20_04_release:
-    runs-on: ubuntu-20.04
+  build_on_linux_ubuntu22_04:
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ g++-11, clang++-12 ]
+        cc: [ clang++-13, clang++-14 ]
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build \
+               g++ clang-13 clang-14
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
+
+
+  build_on_linux_ubuntu22_04_release:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        cc: [ g++-11, clang++-14 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v1
@@ -79,7 +111,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build \
-               g++-11 clang-12 lld lld-12 llvm-12 llvm-12-dev
+               g++-11 clang-14 lld lld-14 llvm-14 llvm-14-dev
       - name: configure
         run: |
           mkdir build
@@ -101,7 +133,7 @@ jobs:
           ctest -j4 --output-on-failure
 
   build_on_linux_sanitizer:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         option: [ address, undefined ]
@@ -110,14 +142,14 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-12
+          sudo apt install language-pack-ja ninja-build clang-14
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-12 \
+                -DCMAKE_CXX_COMPILER=clang++-14 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -132,20 +164,20 @@ jobs:
           ctest -j4 --output-on-failure
 
   build_on_linux_fuzzing:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v1
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-12
+          sudo apt install language-pack-ja ninja-build clang-14
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-12 \
+                -DCMAKE_CXX_COMPILER=clang++-14 \
                 -DUSE_EXTRA_TEST=on
       - name: build
         run: |
