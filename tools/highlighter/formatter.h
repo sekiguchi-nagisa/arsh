@@ -40,6 +40,8 @@ public:
 protected:
   void write(StringRef ref) { this->output.write(ref.data(), ref.size()); }
 
+  void drawTrivia(StringRef ref);
+
   virtual void draw(StringRef ref, const HighlightTokenClass *tokenClass) = 0;
 };
 

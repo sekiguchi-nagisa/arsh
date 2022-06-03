@@ -22,12 +22,29 @@
 
 namespace ydsh::highlighter {
 
+// #######################
+// ##     Formatter     ##
+// #######################
+
 void Formatter::emit(HighlightTokenClass tokenClass, Token token) {
   assert(this->curSrcPos <= token.pos);
-  auto remain = this->source.slice(this->curSrcPos, token.pos);
-  this->draw(remain, nullptr);
+  this->drawTrivia(this->source.slice(this->curSrcPos, token.pos));
   this->curSrcPos = token.endPos();
   this->draw(this->source.substr(token.pos, token.size), &tokenClass);
+}
+
+void Formatter::drawTrivia(StringRef ref) {
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto r = ref.find('\\', pos);
+    auto line = ref.slice(pos, r);
+    pos = r != StringRef::npos ? r + 1 : r;
+
+    this->draw(line, nullptr);
+    if (r != StringRef::npos) {
+      auto tokenClass = HighlightTokenClass::FOREGROUND_;
+      this->draw(StringRef("\\"), &tokenClass);
+    }
+  }
 }
 
 // ###########################
@@ -39,7 +56,7 @@ void NullFormatter::draw(StringRef ref, const HighlightTokenClass *) { this->wri
 void NullFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
-    this->write(remain);
+    this->drawTrivia(remain);
     this->curSrcPos = this->source.size();
   }
   this->output.flush();
@@ -192,7 +209,7 @@ void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
 void ANSIFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
-    this->write(remain);
+    this->drawTrivia(remain);
     this->curSrcPos = this->source.size();
   }
   this->output.flush();
@@ -346,7 +363,7 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
 void HTMLFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
-    this->draw(remain, nullptr);
+    this->drawTrivia(remain);
     this->curSrcPos = this->source.size();
   }
   this->output << "</code></pre>";

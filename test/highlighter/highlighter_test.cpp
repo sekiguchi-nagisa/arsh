@@ -341,7 +341,7 @@ TEST_F(HighlightTest, ansiFormatter3) {
   std::stringstream stream;
   std::string content = R"(
 'hello
-world'
+world' \
 
 )";
 
@@ -354,7 +354,8 @@ world'
 
   const char *expected = "\n"
                          "\033[38;2;187;187;187m\033[48;2;255;240;240m'hello\033[0m\n"
-                         "\033[38;2;187;187;187m\033[48;2;255;240;240mworld'\033[0m\n\n";
+                         "\033[38;2;187;187;187m\033[48;2;255;240;240mworld'\033[0m "
+                         "\033[38;2;187;187;187m\\\033[0m\n\n";
   ASSERT_EQ(expected, stream.str());
 }
 
