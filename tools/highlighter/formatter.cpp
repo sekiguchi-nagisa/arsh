@@ -22,16 +22,19 @@
 
 namespace ydsh::highlighter {
 
+void Formatter::emit(HighlightTokenClass tokenClass, Token token) {
+  assert(this->curSrcPos <= token.pos);
+  auto remain = this->source.slice(this->curSrcPos, token.pos);
+  this->draw(remain, nullptr);
+  this->curSrcPos = token.endPos();
+  this->draw(this->source.substr(token.pos, token.size), &tokenClass);
+}
+
 // ###########################
 // ##     NullFormatter     ##
 // ###########################
 
-void NullFormatter::emit(HighlightTokenClass, Token token) {
-  assert(this->curSrcPos <= token.pos);
-  this->write(this->source.slice(this->curSrcPos, token.pos));
-  this->write(this->source.substr(token.pos, token.size));
-  this->curSrcPos = token.endPos();
-}
+void NullFormatter::draw(StringRef ref, const HighlightTokenClass *) { this->write(ref); }
 
 void NullFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
@@ -160,14 +163,8 @@ const std::string &ANSIFormatter::toEscapeSeq(HighlightTokenClass tokenClass) {
   return pair.first->second;
 }
 
-void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
-  assert(this->curSrcPos <= token.pos);
-  auto remain = this->source.slice(this->curSrcPos, token.pos);
-  this->write(remain);
-  this->curSrcPos = token.endPos();
-
-  auto ref = this->source.substr(token.pos, token.size);
-  auto &escapeSeq = this->toEscapeSeq(tokenClass);
+void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
+  const std::string *escapeSeq = tokenClass ? &this->toEscapeSeq(*tokenClass) : nullptr;
 
   // split by newline
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
@@ -176,10 +173,14 @@ void ANSIFormatter::emit(HighlightTokenClass tokenClass, Token token) {
     pos = r != StringRef::npos ? r + 1 : r;
 
     if (!line.empty()) {
-      this->output << escapeSeq;
-      this->write(line);
-      if (!escapeSeq.empty()) {
-        this->output << "\033[0m";
+      if (escapeSeq) {
+        this->output << *escapeSeq;
+        this->write(line);
+        if (!escapeSeq->empty()) {
+          this->output << "\033[0m";
+        }
+      } else {
+        this->write(line);
       }
     }
     if (r != StringRef::npos) {
@@ -342,18 +343,10 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
   }
 }
 
-void HTMLFormatter::emit(HighlightTokenClass tokenClass, Token token) {
-  assert(this->curSrcPos <= token.pos);
-  auto remain = this->source.slice(this->curSrcPos, token.pos);
-  this->draw(remain);
-  this->curSrcPos = token.endPos();
-  this->draw(this->source.substr(token.pos, token.size), &tokenClass);
-}
-
 void HTMLFormatter::finalize() {
   if (this->curSrcPos < this->source.size()) {
     auto remain = this->source.substr(this->curSrcPos);
-    this->draw(remain);
+    this->draw(remain, nullptr);
     this->curSrcPos = this->source.size();
   }
   this->output << "</code></pre>";

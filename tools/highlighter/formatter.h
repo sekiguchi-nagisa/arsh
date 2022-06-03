@@ -33,10 +33,14 @@ public:
   Formatter(StringRef source, const Style &style, std::ostream &output)
       : TokenEmitter(source), style(style), output(output) {}
 
+  void emit(HighlightTokenClass tokenClass, Token token) override;
+
   virtual void finalize() = 0; // write internal buffer to output
 
 protected:
   void write(StringRef ref) { this->output.write(ref.data(), ref.size()); }
+
+  virtual void draw(StringRef ref, const HighlightTokenClass *tokenClass) = 0;
 };
 
 /**
@@ -44,7 +48,7 @@ protected:
  */
 class NullFormatter : public Formatter {
 private:
-  void emit(HighlightTokenClass tokenClass, Token token) override;
+  void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
   NullFormatter(StringRef source, const Style &style, std::ostream &output)
@@ -91,7 +95,7 @@ private:
 
   const std::string &toEscapeSeq(HighlightTokenClass tokenClass);
 
-  void emit(HighlightTokenClass tokenClass, Token token) override;
+  void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
   ANSIFormatter(StringRef source, const Style &style, std::ostream &output, TermColorCap cap)
@@ -121,9 +125,7 @@ private:
 
   const std::string &toCSS(HighlightTokenClass tokenClass);
 
-  void draw(StringRef ref, const HighlightTokenClass *tokenClass = nullptr);
-
-  void emit(HighlightTokenClass tokenClass, Token token) override;
+  void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
   HTMLFormatter(StringRef source, const Style &style, std::ostream &output, HTMLFormatOp op,
