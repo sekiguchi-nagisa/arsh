@@ -181,7 +181,7 @@ const std::string &ANSIFormatter::toEscapeSeq(HighlightTokenClass tokenClass) {
 }
 
 void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
-  const std::string *escapeSeq = tokenClass ? &this->toEscapeSeq(*tokenClass) : nullptr;
+  const auto *escapeSeq = tokenClass ? &this->toEscapeSeq(*tokenClass) : nullptr;
 
   // split by newline
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
@@ -329,6 +329,8 @@ static std::string escape(StringRef ref) {
 }
 
 void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
+  const auto *css = tokenClass ? &this->toCSS(*tokenClass) : nullptr;
+
   // split by newline
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = ref.find('\n', pos);
@@ -336,13 +338,12 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
     pos = r != StringRef::npos ? r + 1 : r;
 
     if (!line.empty()) {
-      if (tokenClass) {
-        auto &css = this->toCSS(*tokenClass);
-        if (!css.empty()) {
-          this->output << "<span style=\"" << css << "\">";
+      if (css) {
+        if (!css->empty()) {
+          this->output << "<span style=\"" << *css << "\">";
         }
         this->output << escape(line);
-        if (!css.empty()) {
+        if (!css->empty()) {
           this->output << "</span>";
         }
       } else {
