@@ -80,7 +80,6 @@
 | CALL_CMD        |                                | argv redir -> value                          | call builtin or external command.                      |
 | CALL_CMD_NOFORK |                                | argv redir -> value                          | call builtin or external command without fork          |
 | CALL_UDC        | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command                              |
-| CALL_UDC_NOFORK | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command without fork                 |
 | CALL_CMD_COMMON |                                | argv redir -> value                          | call command (user-defined, builtin, external)         |
 | BUILTIN_CMD     |                                | -> value                                     | call builtin command command                           |
 | BUILTIN_EVAL    |                                | -> value                                     | call builtin eval command                              |

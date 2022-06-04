@@ -1948,21 +1948,16 @@ bool VM::mainLoop(DSState &state) {
                         std::move(argv), std::move(redir), attr));
         vmnext;
       }
-      vmcase(CALL_UDC) vmcase(CALL_UDC_NOFORK) {
+      vmcase(CALL_UDC) {
         unsigned short index = read16(GET_CODE(state), state.stack.pc());
         state.stack.pc() += 2;
-        bool needFork = op != OpCode::CALL_UDC_NOFORK;
-        CmdCallAttr attr{};
-        if (needFork) {
-          setFlag(attr, CmdCallAttr::NEED_FORK);
-        }
 
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
 
         ResolvedCmd cmd;
         lookupUdcFromIndex(state, index, cmd, nullptr);
-        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
+        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         vmnext;
       }
       vmcase(CALL_CMD_COMMON) {
