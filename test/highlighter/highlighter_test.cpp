@@ -95,6 +95,13 @@ TEST_F(EmitterTest, case1) {
   compare(HighlightTokenClass::KEYWORD, "coproc", ret[0]);
   compare(HighlightTokenClass::COMMAND, "ls", ret[1]);
   compare(HighlightTokenClass::COMMAND_ARG, "*", ret[2]);
+
+  ret = lex("AAA=aa true");
+  ASSERT_EQ(4, ret.size());
+  compare(HighlightTokenClass::NONE, "AAA", ret[0]);
+  compare(HighlightTokenClass::OPERATOR, "=", ret[1]);
+  compare(HighlightTokenClass::COMMAND_ARG, "aa", ret[2]);
+  compare(HighlightTokenClass::COMMAND, "true", ret[3]);
 }
 
 TEST_F(EmitterTest, case2) {
