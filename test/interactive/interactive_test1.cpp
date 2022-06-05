@@ -135,6 +135,7 @@ TEST_F(InteractiveTest, expand_ctrlc1) {
       this->expect(PROMPT + "echo "
                             "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
                             "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
+  sleep(1);
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
