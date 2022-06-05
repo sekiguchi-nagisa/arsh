@@ -24,6 +24,9 @@
     ```
 - pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
 - pass module context of current completion to ``COMP_HOOK``
+- add the following method to ``Error`` type
+    - ``lineno``: get line number of occurred location
+    - ``source``: get source name of occurred location
 
 #### LSP
 

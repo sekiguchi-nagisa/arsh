@@ -194,6 +194,10 @@ function message() : String for Error
 function show() : Void for Error
 
 function name() : String for Error
+
+function lineno() : Int for Error
+
+function source() : String for Error
 ```
 
 ## Job type

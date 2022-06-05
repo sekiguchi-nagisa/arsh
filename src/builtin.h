@@ -1805,6 +1805,22 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
   RET(typeAs<ErrorObject>(LOCAL(0)).getName());
 }
 
+//!bind: function lineno($this : Error) : Int
+YDSH_METHOD error_lineno(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(error_lineno);
+  auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
+  unsigned int lineNum = getOccurredLineNum(stackTraces);
+  RET(DSValue::createInt(lineNum));
+}
+
+//!bind: function source($this : Error) : String
+YDSH_METHOD error_source(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(error_source);
+  auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
+  const char *source = getOccurredSourceName(stackTraces);
+  RET(DSValue::createStr(source));
+}
+
 // ####################
 // ##     UnixFD     ##
 // ####################
