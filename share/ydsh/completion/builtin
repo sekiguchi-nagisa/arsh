@@ -19,7 +19,7 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : [String] {
 
 _extract_sub() {
     for $line in $STDIN {
-        var matched = $/^ +([-a-z]+) +.+/.match($line)
+        var matched = $/^        ([-a-z]+) +.+/.match($line)
         if !$matched.empty() {
             echo ${$matched[1]!}
         }
@@ -36,12 +36,12 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
     }
     assert $t.size() > 1
     case $t[1] {
-    'show'|'set'|'unset' => {
+    'set'|'unset' => {
         var p = ""
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(shctl show | cut -d ' ' -f 1 | startwith "$p")
+        return $(shctl set | cut -d ' ' -f 1 | startwith "$p")
     }
     else => return new [String]()
     }

@@ -1820,38 +1820,26 @@ static void printRuntimeOpt(const char *name, unsigned int size, bool set) {
   fputs(value.c_str(), stdout);
 }
 
-static int showOption(const DSState &state, const ArrayObject &argvObj) {
-  const unsigned int size = argvObj.size();
-  RuntimeOption foundSet{};
-  if (size == 2) {
-    foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
-  } else {
-    for (unsigned int i = 2; i < size; i++) {
-      auto name = argvObj.getValues()[i].asStrRef();
-      auto option = lookupRuntimeOption(name);
-      if (empty(option)) {
-        ERROR(argvObj, "undefined runtime option: %s", toPrintable(name).c_str());
-        return 1;
-      }
-      setFlag(foundSet, option);
-    }
-  }
-
-  // print
+static void showOptions(const DSState &state) {
+  auto foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
   const unsigned int maxNameSize = computeMaxOptionNameSize();
   for (auto &e : runtimeOptions) {
     if (hasFlag(foundSet, e.option)) {
       printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
     }
   }
-  return 0;
 }
 
 static int setOption(DSState &state, const ArrayObject &argvObj, const bool set) {
   const unsigned int size = argvObj.size();
   if (size == 2) {
-    ERROR(argvObj, "`%s' subcommand requires argument", set ? "set" : "unset");
-    return 2;
+    if (set) {
+      showOptions(state);
+      return 0;
+    } else {
+      ERROR(argvObj, "`unset' subcommand requires argument");
+      return 2;
+    }
   }
 
   bool foundMonitor = false;
@@ -1981,8 +1969,6 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
       return state.isInteractive ? 0 : 1;
     } else if (ref == "function") {
       return printFuncName(state.getCallStack());
-    } else if (ref == "show") {
-      return showOption(state, argvObj);
     } else if (ref == "set") {
       return setOption(state, argvObj, true);
     } else if (ref == "unset") {

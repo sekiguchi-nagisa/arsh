@@ -7,7 +7,7 @@ assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 
 # command/eval/exec
 assert diff <(complete 'command ') <(complete -A external -A builtin "")
-# assert diff <(complete 'eval ') <(complete -A cmd)   # FIXME:
+assert diff <(complete 'eval ') <(complete -A cmd)
 assert diff <(complete 'exec ') <(complete -A external "")
 
 # unsetenv
@@ -19,7 +19,7 @@ assert diff <(complete 'unsetenv H') <(complete -A env H)
 # shctl
 _extract_sub() {
     while(read -f $'\n') {
-        var matched = $/^ +([-a-z]+) +.+/.match($REPLY)
+        var matched = $/^        ([-a-z]+) +.+/.match($REPLY)
         if !$matched.empty() {
             echo ${$matched[1]!}
         }
@@ -27,7 +27,7 @@ _extract_sub() {
 }
 
 assert diff <(complete 'shctl ') <(help shctl | _extract_sub | sort)
-assert diff <(complete 'shctl s') <(help shctl | _extract_sub | grep '^s' | sort)
+assert diff <(complete 'shctl i') <(echo info && echo is-interactive && echo is-sourced)
 
 # cd
 assert diff <(complete 'cd /') <(complete -A dir '/')

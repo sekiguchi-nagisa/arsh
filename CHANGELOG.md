@@ -53,6 +53,8 @@
 - **Breaking Change**: remove ``Array#forEach`` method due to unused
 - **Breaking Change**: throw ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
 - **Breaking Change**: change error message of ``SystemError``
+- **Breaking Change**: remove ``shctl show`` sub-command
+    - now use ``shctl set`` sub-command instead
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
 #### LSP

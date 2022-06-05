@@ -147,8 +147,8 @@ static BuiltinCmdDesc table[] = {
      "        function            print current function/command name.\n"
      "        module [MOD ...]    print full path of loaded modules or scripts.\n"
      "                            if specified MODs, find and print full path of theme\n"
-     "        show  [OPTION ...]  print runtime option setting.\n"
-     "        set   OPTION ...    set/enable/on runtime option.\n"
+     "        set  [OPTION ...]   set/enable/on runtime option.\n"
+     "                            if options is not supllied, show option setting.\n"
      "        unset OPTION ...    unset/disable/off runtime option.\n"
      "        info                show configuration (also get via 'reply' variable)."},
     {"test", "[expr]",

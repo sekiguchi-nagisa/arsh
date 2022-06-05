@@ -1,24 +1,16 @@
 
 # for option query/setting
-# show
-assert shctl show
-assert shctl show traceonexit | grep 'traceonexit.*  off'
-assert shctl show monitor | grep 'monitor.*  off'
-shctl show assert | grep 'assert.*  on' || _exit
-
-assert shctl show HUGA 2>&1 | grep 'ydsh: shctl: undefined runtime option: HUGA'
-shctl show HUGA
-assert $? == 1
+# show option setting
+assert shctl set
+assert shctl set | grep 'traceonexit.*  off'
+assert shctl set | grep 'monitor.*  off'
+shctl set | grep 'assert.*  on' || _exit
 
 # set
 shctl set traceonexit
-assert shctl show traceonexit | grep 'traceonexit.*  on'
+assert shctl set | grep 'traceonexit.*  on'
 shctl set traceonexit traceonexit
-assert shctl show traceonexit | grep 'traceonexit.*  on'
-
-assert shctl set 2>&1 | grep "ydsh: shctl: `set' subcommand requires argument"
-shctl set
-assert $? == 2
+assert shctl set | grep 'traceonexit.*  on'
 
 assert shctl set HUGA 2>&1 | grep 'ydsh: shctl: undefined runtime option: HUGA'
 shctl set HUGA
@@ -26,9 +18,9 @@ assert $? == 1
 
 # unset
 shctl unset traceonexit
-assert shctl show traceonexit | grep 'traceonexit.*  off'
+assert shctl set | grep 'traceonexit.*  off'
 shctl unset traceonexit traceonexit
-assert shctl show traceonexit | grep 'traceonexit.*  off'
+assert shctl set | grep 'traceonexit.*  off'
 
 assert shctl unset 2>&1 | grep "ydsh: shctl: `unset' subcommand requires argument"
 shctl unset
@@ -62,9 +54,9 @@ assert fg 2>&1 | grep 'ydsh: fg: current: no such job'
 assert bg 2>&1 | grep 'ydsh: bg: current: no such job'
 
 ## for `xtrace` option
-assert shctl show | grep 'xtrace.*  off'
+assert shctl set | grep 'xtrace.*  off'
 shctl set xtrace
-assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:67> echo hello"
+assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:59> echo hello"
 shctl unset xtrace
 assert "$(echo hello 2>&1 > /dev/null)" == ""
 
