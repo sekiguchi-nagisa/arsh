@@ -1882,7 +1882,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
   bool restore = false;
   GetOptState optState(2);
   if (set) {
-    switch (optState(argvObj, "dr:")) {
+    switch (optState(argvObj, ":dr:")) {
     case 'd':
       dump = true;
       break;

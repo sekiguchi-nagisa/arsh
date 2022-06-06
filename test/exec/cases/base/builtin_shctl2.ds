@@ -89,4 +89,12 @@ assert $? == 1
 assert "$(shctl set -r fjrafia=off 2>&1)" == "ydsh: shctl: undefined runtime option: fjrafia" 
 assert $? == 1
 
+assert shctl set -s  2>&1 | grep -- '-s: invalid option'
+shctl set -s  2>&1
+assert $? == 2
+
+assert shctl set -r  2>&1 | grep -- '-r: option requires argument'
+shctl set -r  2>&1
+assert $? == 1
+
 true
