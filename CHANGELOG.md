@@ -55,6 +55,10 @@
 - **Breaking Change**: change error message of ``SystemError``
 - **Breaking Change**: remove ``shctl show`` sub-command
     - now use ``shctl set`` sub-command instead
+- add some options to ``shctl set`` sub-command
+    - ``-d`` option for dumping current runtime options
+    - ``-r`` option for restore runtime options from dump
+    - if options is not specified, show current runtime option setting
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
 #### LSP

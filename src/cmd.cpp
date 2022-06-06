@@ -1821,13 +1821,49 @@ static void printRuntimeOpt(const char *name, unsigned int size, bool set) {
 }
 
 static void showOptions(const DSState &state) {
-  auto foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
   const unsigned int maxNameSize = computeMaxOptionNameSize();
   for (auto &e : runtimeOptions) {
-    if (hasFlag(foundSet, e.option)) {
-      printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
+    printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
+  }
+}
+
+static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef restoreStr) {
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto r = restoreStr.find(' ', pos);
+    auto sub = restoreStr.slice(pos, r);
+    pos = r != StringRef::npos ? r + 1 : r;
+
+    if (sub.empty()) {
+      continue;
+    }
+
+    bool set = true;
+    if (sub.endsWith("=on")) {
+      sub.removeSuffix(3);
+    } else if (sub.endsWith("=off")) {
+      set = false;
+      sub.removeSuffix(4);
+    } else {
+      ERROR(argvObj, "invalid option format: %s", toPrintable(sub).c_str());
+      return 1;
+    }
+    const auto option = lookupRuntimeOption(sub);
+    if (empty(option)) {
+      ERROR(argvObj, "undefined runtime option: %s", toPrintable(sub).c_str());
+      return 1;
+    }
+
+    // set or unset
+    if (option == RuntimeOption::MONITOR) {
+      setJobControlSignalSetting(state, set);
+    }
+    if (set) {
+      setFlag(state.runtimeOption, option);
+    } else {
+      unsetFlag(state.runtimeOption, option);
     }
   }
+  return 0;
 }
 
 static int setOption(DSState &state, const ArrayObject &argvObj, const bool set) {
@@ -1842,6 +1878,43 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
     }
   }
 
+  bool dump = false;
+  bool restore = false;
+  GetOptState optState(2);
+  if (set) {
+    switch (optState(argvObj, "dr:")) {
+    case 'd':
+      dump = true;
+      break;
+    case 'r':
+      restore = true;
+      break;
+    case '?':
+      return invalidOptionError(argvObj, optState);
+    case ':':
+      ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+      return 1;
+    default:
+      break;
+    }
+  }
+
+  if (dump) {
+    std::string value;
+    for (auto &e : runtimeOptions) {
+      value += e.name;
+      value += "=";
+      value += hasFlag(state.runtimeOption, e.option) ? "on" : "off";
+      value += " ";
+    }
+    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
+    return 0;
+  }
+  if (restore) {
+    return restoreOptions(state, argvObj, optState.optArg);
+  }
+
+  // set/unset option
   bool foundMonitor = false;
   for (unsigned int i = 2; i < size; i++) {
     auto name = argvObj.getValues()[i].asStrRef();
