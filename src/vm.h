@@ -37,12 +37,13 @@ namespace ydsh {
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
   OP(ASSERT, (1u << 0u), "assert")                                                                 \
   OP(DOTGLOB, (1u << 1u), "dotglob")                                                               \
-  OP(FASTGLOB, (1u << 2u), "fastglob")                                                             \
-  OP(HUP_EXIT, (1u << 3u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 4u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 5u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 6u), "traceonexit")                                                        \
-  OP(XTRACE, (1u << 7u), "xtrace")
+  OP(ERR_RAISE, (1u << 2u), "errraise")                                                            \
+  OP(FASTGLOB, (1u << 3u), "fastglob")                                                             \
+  OP(HUP_EXIT, (1u << 4u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 5u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 6u), "nullglob")                                                             \
+  OP(TRACE_EXIT, (1u << 7u), "traceonexit")                                                        \
+  OP(XTRACE, (1u << 8u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -194,7 +195,7 @@ public:
    * @param afterStatus
    * set exit status to it
    */
-  void throwObject(DSValue &&except, int afterStatus) {
+  void throwObject(DSValue &&except, int64_t afterStatus) {
     this->stack.setThrownObject(std::move(except));
     this->setExitStatus(afterStatus);
   }
@@ -409,7 +410,8 @@ struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
 
 enum class CmdCallAttr : unsigned int {
   SET_VAR = 1u << 0u,
-  NEED_FORK = 1u << 1u,
+  NEED_FORK = 1u << 1u, // for external command
+  RAISE = 1u << 2u,
 };
 
 template <>

@@ -608,6 +608,13 @@ static void raiseInvalidCmdError(DSState &state, StringRef ref) {
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
+static void raiseCmdExecError(DSState &state, int64_t status) {
+  std::string message = "command exit with non-zero status: `";
+  message += std::to_string(status);
+  message += "'";
+  raiseError(state, TYPE::ExecError, std::move(message), status);
+}
+
 bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
                      DSValue &&redirConfig) {
   // setup self pipe
@@ -748,6 +755,11 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     if (state.hasError()) {
       return false;
     }
+    if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
+        hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+      raiseCmdExecError(state, status);
+      return false;
+    }
     pushExitStatus(state, status);
     return true;
   }
@@ -763,7 +775,16 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     argv[size] = nullptr;
 
     if (hasFlag(attr, CmdCallAttr::NEED_FORK)) {
-      return forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
+      bool ret = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
+      if (ret) {
+        int status = state.getMaskedExitStatus();
+        if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
+            hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+          raiseCmdExecError(state, status);
+          return false;
+        }
+      }
+      return ret;
     } else {
       xexecve(cmd.filePath(), argv, nullptr);
       raiseCmdError(state, argv[0], errno);
@@ -1766,9 +1787,15 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(RETURN_UDC) {
-        auto v = state.stack.pop();
+        auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
+        auto status = state.stack.pop().asInt();
         state.stack.unwind();
-        pushExitStatus(state, v.asInt());
+        if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
+            hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+          raiseCmdExecError(state, status);
+          vmerror;
+        }
+        pushExitStatus(state, status);
         assert(!state.stack.checkVMReturn());
         vmnext;
       }
@@ -1934,11 +1961,12 @@ bool VM::mainLoop(DSState &state) {
         TRY(addExpandingPath(state, size, opt));
         vmnext;
       }
-      vmcase(CALL_CMD) vmcase(CALL_CMD_NOFORK) {
-        bool needFork = op != OpCode::CALL_CMD_NOFORK;
-        CmdCallAttr attr{};
-        if (needFork) {
-          setFlag(attr, CmdCallAttr::NEED_FORK);
+      vmcase(CALL_CMD) vmcase(CALL_CMD_NOFORK) vmcase(CALL_CMD_SILENT) {
+        CmdCallAttr attr = CmdCallAttr::RAISE | CmdCallAttr::NEED_FORK;
+        if (op == OpCode::CALL_CMD_NOFORK) {
+          unsetFlag(attr, CmdCallAttr::NEED_FORK);
+        } else if (op == OpCode::CALL_CMD_SILENT) {
+          unsetFlag(attr, CmdCallAttr::RAISE);
         }
 
         auto redir = state.stack.pop();
@@ -1948,16 +1976,21 @@ bool VM::mainLoop(DSState &state) {
                         std::move(argv), std::move(redir), attr));
         vmnext;
       }
-      vmcase(CALL_UDC) {
+      vmcase(CALL_UDC) vmcase(CALL_UDC_SILENT) {
         unsigned short index = read16(GET_CODE(state), state.stack.pc());
         state.stack.pc() += 2;
+
+        CmdCallAttr attr = CmdCallAttr::RAISE | CmdCallAttr::NEED_FORK;
+        if (op == OpCode::CALL_UDC_SILENT) {
+          unsetFlag(attr, CmdCallAttr::RAISE);
+        }
 
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
 
         ResolvedCmd cmd;
         lookupUdcFromIndex(state, index, cmd, nullptr);
-        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
+        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
         vmnext;
       }
       vmcase(CALL_CMD_COMMON) {

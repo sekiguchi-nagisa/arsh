@@ -1,0 +1,87 @@
+
+fail() {
+    var s = $1.toInt() ?? 
+      { false; 255; }
+    return $s
+}
+
+function assertStatus($s : Int, $e : Any, $ln : Int) {
+    assert $e is ExecError
+    var m = ($e as ExecError).message()
+    var lineno = ($e as ExecError).lineno()
+    var r = $/\d+/.match($m)
+    var actual = $r[0]!.toInt()!
+    assert $s == $actual : "mismatch status, expect: $s, actual: $actual"
+    assert $lineno == $ln : "mismatch lineno, expect: $ln, actual: $lineno"
+}
+
+
+
+
+
+shctl set errraise
+
+## defer
+var ex = 34 as Any
+try {
+    defer {
+        sh -c 'exit 99'
+    }
+} catch $e { $ex = $e; }
+$assertStatus(99, $ex, 28)
+
+## finally
+$ex = 34
+try {
+    try {
+        true
+    } finally {
+        fail 123
+    }
+} catch $e { $ex = $e; }
+$assertStatus(123, $ex, 39)
+
+## job
+var j1 = sh -c 'exit 56' &
+assert $j1.wait() == 56
+
+$j1 = {
+    true
+    fail 123
+    exit 0
+} &
+assert $j1.wait() == 123
+
+$j1 = {
+    true
+    fail 188
+    exit 0
+} &!
+assert $j1.wait() == 188
+
+$j1 = coproc {
+    true
+    sh -c 'exit 10'
+    fail 0
+}
+assert $j1.wait() == 10
+
+## job-builtin
+$ex = 34
+try {
+    sh -c 'exit 56' &
+    wait
+} catch $e { $ex = $e; }
+$assertStatus(56, $ex, 73)
+
+## proc-sub
+$ex = 34
+try {
+    $? = 0
+    <(exit 145)
+    >(exit 167)
+} catch $e { $ex = $e; }
+assert $ex is Int
+assert $? == 0
+
+true

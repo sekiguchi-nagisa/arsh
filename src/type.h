@@ -76,6 +76,7 @@ enum class TYPE : unsigned int {
   UnwrappingError,
   IllegalAccessError,
   InvalidOperationError,
+  ExecError,
 
   /**
    * for internal status reporting.

@@ -38,7 +38,7 @@ const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
   return st.getGlobal(handle->getIndex());
 }
 
-void raiseError(DSState &st, TYPE type, std::string &&message, int status) {
+void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
   auto except =
       ErrorObject::newError(st, st.typePool.get(type), DSValue::createStr(std::move(message)));
   st.throwObject(std::move(except), status);

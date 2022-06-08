@@ -1,0 +1,357 @@
+
+fail() {
+    var s = $1.toInt() ?? 
+      { false; 255; }
+    return $s
+}
+
+function assertStatus($s : Int, $e : Any, $ln : Int) {
+    assert $e is ExecError
+    var m = ($e as ExecError).message()
+    var lineno = ($e as ExecError).lineno()
+    var r = $/\d+/.match($m)
+    var actual = $r[0]!.toInt()!
+    assert $s == $actual : "mismatch status, expect: $s, actual: $actual"
+    assert $lineno == $ln : "mismatch lineno, expect: $ln, actual: $lineno"
+}
+
+
+
+
+
+
+
+
+
+shctl set errraise
+
+## base
+var ex = 34 as Any
+try {
+    false
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 31)
+
+$ex = 34
+try {
+    true
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 0
+
+
+## and
+$ex = 34
+try {
+    true && 
+      sh -c "exit 67"
+} catch $e { $ex = $e; }
+$assertStatus(67, $ex, 47)
+
+$ex = 34
+try {
+    if (true && 
+      sh -c "exit 67") {}
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 67
+
+$ex = 34
+try {
+    false && 
+      sh -c "exit 67"
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 1
+
+## or
+$ex = 34
+try {
+    sh -c "exit 1" || 
+      sh -c "exit 3"
+} catch $e { $ex = $e; }
+$assertStatus(3, $ex, 71)
+
+$ex = 34
+try {
+    while(sh -c "exit 1" || 
+      fail 3) { break; }
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 3
+
+## thernary
+$ex = 34
+try {
+    (false) ? 45 : $false
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 1
+
+$ex = 34
+try {
+    ($false) ? (true) : 
+       fail 56
+} catch $e { $ex = $e; }
+$assertStatus(56, $ex, 94)
+
+$ex = 34
+try {
+    ($false) ? (true) : 
+       fail hoge   # raise before return 
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 4)
+
+$ex = 34
+try {
+    var a = ($false) ? (true) : 
+       sh -c "exit 12"
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 12
+
+## block
+$ex = 45
+try {
+    { true;
+      fail 99;
+      true; }
+} catch $e { $ex = $e; }
+$assertStatus(99, $ex, 117)
+
+$ex = 45
+try {
+    if($true) { true;
+      fail 99; }
+} catch $e { $ex = $e; }
+$assertStatus(99, $ex, 125)
+
+$ex = 45
+try {
+    if($false) { true;
+      123; } else {
+          sh -c 'exit 123'
+      }
+} catch $e { $ex = $e; }
+$assertStatus(123, $ex, 133)
+
+$ex = 45
+try {
+    (if $false { $true; } 
+    else { fail 45; }) as String
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 45
+
+$ex = 45
+try {
+    (if $false { $true as Bool!; } 
+    else { fail 45; })
+} catch $e { $ex = $e; }
+$assertStatus(45, $ex, 149)
+
+## case
+## case map
+$ex = 45
+try {
+    case $ex as Int {
+        45 => false
+        else => true
+    }
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 158)
+
+$ex = 45
+try {
+    case $ex as Int {
+        459 => true
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+$assertStatus(90, $ex, 168)
+
+$ex = 45
+try {
+    $false == case $ex as Int {
+        45 => fail 89
+        else => true
+    }
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 89
+
+### case if-else
+$ex = 45
+try {
+    case $ex as String {
+        "hoge" => true
+        $/\d+/ => fail 100
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+$assertStatus(100, $ex, 188)
+
+$ex = "hoge"
+try {
+    case $ex as String {
+        "hoge" => false
+        $/\d+/ => fail 100
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 197)
+
+$ex = $false
+try {
+    case $ex as String {
+        "hoge" => true
+        $/\d+/ => fail 100
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+$assertStatus(90, $ex, 209)
+
+$ex = $false
+try {
+    var aa = case $ex as String {
+        "hoge" => true
+        $/\d+/ => fail 100
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+assert $ex is Bool   # no error
+assert $? == 90
+
+$ex = 345
+try {
+    var aa = case $ex as String {
+        "hoge" => true
+        $/\d+/ => fail 100
+        else => sh -c 'exit 90'
+    }
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 100
+
+## try-catch
+$ex = 34
+try {
+    try {
+        1/($ex as Int)
+        fail 67
+    } catch $ee : ArithmeticError {
+        fail 133
+    }
+} catch $e { $ex = $e; }
+$assertStatus(67, $ex, 241)
+
+$ex = 0
+try {
+    try {
+        1/($ex as Int)
+        fail 67
+    } catch $ee : ArithmeticError {
+        fail 133
+    }
+} catch $e { $ex = $e; }
+$assertStatus(133, $ex, 254)
+
+$ex = 34
+try {
+    try {
+        1/($ex as Int)
+        fail 67
+    } catch $ee : ArithmeticError {
+        fail 133
+    } as String
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 67
+
+$ex = 0
+try {
+    !! try {
+        1/($ex as Int)
+        fail 67
+    } catch $ee : ArithmeticError {
+        fail 133
+    }
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 133
+
+## with
+$ex = 34
+try {
+    fail 100 with > /dev/null
+} catch $e { $ex = $e; }
+$assertStatus(100, $ex, 286)
+
+$ex = 34
+try {
+    [(fail 100 with > /dev/null)]
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 100
+
+## prefix assign
+$ex = 34
+try {
+    (hoge=123 \
+       sh -c "exit $hoge")
+} catch $e { $ex = $e; }
+$assertStatus(123, $ex, 301)
+
+$ex = 34
+try {
+    var not = function($b : Bool) => !$b
+     $not(hoge=145 \
+       sh -c "exit $hoge")
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 145
+
+## funciton
+function ff1($s : Int) {
+    $s < 0 ? (false) : true
+    fail $s
+    {
+        sh -c 'exit 99'
+    }
+}
+
+$ex = 34
+try {
+    $ff1(0)
+} catch $e { $ex = $e; }
+$assertStatus(99, $ex, 319)
+
+$ex = 34
+try {
+    $ff1(-99)
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 316)
+
+$ex = 34
+try {
+    $ff1(200)
+} catch $e { $ex = $e; }
+$assertStatus(200, $ex, 317)
+
+$ex = 34
+try {
+    var f = function () => false
+    $f()
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 1
+
+$ex = 34
+try {
+    var f = function () => { return false; }
+    $f()
+} catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $? == 1
+
+true

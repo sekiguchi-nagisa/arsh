@@ -1,0 +1,10 @@
+#$test($result = 'throw', $lineNum = 10, $errorKind = 'ExecError', $status = 34)
+
+shctl set errraise
+
+fail() {
+   var a = 34
+   return $a
+}
+
+fail

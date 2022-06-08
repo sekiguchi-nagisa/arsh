@@ -298,7 +298,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
 
   // generate pipeline
   this->emitSourcePos(node.getPos());
-  this->emitPipelineIns(labels, lastPipe, forkKind);
+  this->emitPipelineIns(labels, lastPipe, forkKind); // FIXME: call context
 
   auto begin = makeLabel();
   auto end = makeLabel();
@@ -310,7 +310,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
       this->emit0byteIns(OpCode::HALT);
     }
     this->markLabel(labels[i]);
-    this->visit(*node.getNodes()[i]);
+    this->visit(*node.getNodes()[i], CmdCallCtx::STMT);
   }
   this->markLabel(end);
   this->catchException(begin, end, this->typePool.get(TYPE::ProcGuard_));
@@ -321,7 +321,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
   if (lastPipe) { // generate last pipe
     this->generateBlock(node.getBaseIndex(), 1, true, [&] {
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-      this->visit(*node.getNodes().back());
+      this->visit(*node.getNodes().back(), CmdCallCtx::AUTO);
     });
   }
 }
@@ -409,8 +409,27 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
   }
 }
 
+void ByteCodeGenerator::visit(Node &node, CmdCallCtx cmdCallCtx) {
+  bool stmt = false;
+  switch (cmdCallCtx) {
+  case CmdCallCtx::STMT:
+    stmt = true;
+    break;
+  case CmdCallCtx::EXPR:
+    stmt = false;
+    break;
+  case CmdCallCtx::AUTO:
+    stmt = this->inStmtCtx();
+    break;
+  }
+
+  this->curBuilder().cmdCallCtxs.push_back(stmt);
+  node.accept(*this);
+  this->curBuilder().cmdCallCtxs.pop_back();
+}
+
 // visitor api
-void ByteCodeGenerator::visit(Node &node) { node.accept(*this); }
+void ByteCodeGenerator::visit(Node &node) { this->visit(node, CmdCallCtx::EXPR); }
 
 void ByteCodeGenerator::visitTypeNode(TypeNode &) { fatal("unsupported\n"); }
 
@@ -533,8 +552,15 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
   }
 }
 
+static CmdCallCtx getCallCtx(TypeOpNode::OpKind kind) {
+  if (kind == TypeOpNode::TO_VOID || kind == TypeOpNode::PRINT) {
+    return CmdCallCtx::STMT;
+  }
+  return CmdCallCtx::EXPR;
+}
+
 void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
-  this->visit(node.getExprNode());
+  this->visit(node.getExprNode(), getCallCtx(node.getOpKind()));
 
   switch (node.getOpKind()) {
   case TypeOpNode::NO_CAST:
@@ -626,7 +652,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     this->emitBranchIns(elseLabel);
 
     if (kind == TokenKind::COND_AND) {
-      this->visit(*node.getRightNode());
+      this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
       this->emitJumpIns(mergeLabel);
 
       this->markLabel(elseLabel);
@@ -636,7 +662,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
       this->emitJumpIns(mergeLabel);
 
       this->markLabel(elseLabel);
-      this->visit(*node.getRightNode());
+      this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
     }
 
     this->markLabel(mergeLabel);
@@ -653,7 +679,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     this->emitBranchIns(mergeLabel);
     // if left is empty eval right
     this->emit0byteIns(OpCode::POP);
-    this->visit(*node.getRightNode());
+    this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
 
     this->markLabel(mergeLabel);
   } else if (kind == TokenKind::NULL_COALE) {
@@ -662,7 +688,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     this->visit(*node.getLeftNode());
     this->emitBranchIns(OpCode::TRY_UNWRAP, mergeLabel);
 
-    this->visit(*node.getRightNode());
+    this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
     this->markLabel(mergeLabel);
   } else if (node.getLeftNode() && node.getLeftNode()->getType().isFuncType() &&
              node.getRightNode() && node.getRightNode()->getType().isFuncType()) {
@@ -762,9 +788,13 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
 
   this->emitSourcePos(node.getPos());
   if (node.getHandle()) { // user-defined command
-    this->emit2byteIns(OpCode::CALL_UDC, node.getHandle()->getIndex());
+    OpCode ins = this->inStmtCtx() ? OpCode::CALL_UDC : OpCode::CALL_UDC_SILENT;
+    this->emit2byteIns(ins, node.getHandle()->getIndex());
   } else {
-    OpCode ins = node.getNeedFork() ? OpCode::CALL_CMD : OpCode::CALL_CMD_NOFORK;
+    OpCode ins = OpCode::CALL_CMD_NOFORK;
+    if (node.getNeedFork()) {
+      ins = this->inStmtCtx() ? OpCode::CALL_CMD : OpCode::CALL_CMD_SILENT;
+    }
     this->emit0byteIns(ins);
   }
 }
@@ -843,13 +873,12 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     this->emit0byteIns(OpCode::DO_REDIR);
     this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
 
-    this->visit(node.getExprNode());
+    this->visit(node.getExprNode(), CmdCallCtx::AUTO);
   });
 }
 
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
-  if (isa<PipelineNode>(node.getExprNode()) && node.getOpKind() != ForkKind::ARRAY &&
-      node.getOpKind() != ForkKind::STR) {
+  if (isa<PipelineNode>(node.getExprNode()) && !node.isCmdSub()) {
     this->generatePipeline(cast<PipelineNode>(node.getExprNode()), node.getOpKind());
   } else {
     auto beginLabel = makeLabel();
@@ -858,7 +887,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
     this->markLabel(beginLabel);
     this->emitForkIns(node.getOpKind(), mergeLabel);
-    this->visit(node.getExprNode());
+    this->visit(node.getExprNode(), CmdCallCtx::STMT); // FIXME: check call context
     this->markLabel(endLabel);
 
     this->catchException(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
@@ -893,7 +922,9 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
   this->generateBlock(node.getBaseIndex(), reclaimSize, needReclaim(node), [&] {
     unsigned int deferCount = 0;
     std::vector<DeferNode *> deferNodes;
-    for (auto &e : node.getNodes()) {
+    const unsigned int size = node.getNodes().size();
+    for (unsigned int i = 0; i < size; i++) {
+      auto &e = node.getNodes()[i];
       if (isa<DeferNode>(*e)) {
         deferCount++;
         this->tryFinallyLabels().push_back({
@@ -907,7 +938,8 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
         deferNodes.push_back(cast<DeferNode>(e.get()));
         this->markLabel(this->tryFinallyLabels().back().beginLabel);
       } else {
-        this->visit(*e);
+        auto callCtx = i == size - 1 ? CmdCallCtx::AUTO : CmdCallCtx::STMT;
+        this->visit(*e, callCtx);
       }
     }
 
@@ -938,7 +970,7 @@ void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
   if (node.getDropLocalSize()) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());
   }
-  this->visit(node.getBlockNode());
+  this->visit(node.getBlockNode(), CmdCallCtx::STMT);
   this->emit0byteIns(OpCode::EXIT_FINALLY);
 }
 
@@ -985,7 +1017,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
 
     this->markLabel(startLabel);
     this->emit0byteIns(OpCode::STACK_GUARD);
-    this->visit(node.getBlockNode());
+    this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
     this->markLabel(breakLabel);
     if (!node.getType().isVoidType()) {
@@ -1004,13 +1036,13 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
 
   this->visit(node.getCondNode());
   this->emitBranchIns(elseLabel);
-  this->visit(node.getThenNode());
+  this->visit(node.getThenNode(), CmdCallCtx::AUTO);
   if (!isEmptyCode(node.getElseNode()) && !node.getThenNode().getType().isNothingType()) {
     this->emitJumpIns(mergeLabel);
   }
 
   this->markLabel(elseLabel);
-  this->visit(node.getElseNode());
+  this->visit(node.getElseNode(), CmdCallCtx::AUTO);
 
   this->markLabel(mergeLabel);
 }
@@ -1055,7 +1087,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     } else {
       this->generateCaseLabels(*armNode, map);
     }
-    this->visit(*armNode);
+    this->visit(*armNode, CmdCallCtx::AUTO);
     prevType = &armNode->getType();
   }
 
@@ -1091,7 +1123,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
   }
   if (defaultIndex > -1) {           // generate default
     this->emit0byteIns(OpCode::POP); // pop stack top 'expr'
-    this->visit(*node.getArmNodes()[static_cast<unsigned int>(defaultIndex)]);
+    this->visit(*node.getArmNodes()[static_cast<unsigned int>(defaultIndex)], CmdCallCtx::AUTO);
   }
   this->markLabel(mergeLabel);
 }
@@ -1123,7 +1155,7 @@ void ByteCodeGenerator::generateIfElseArm(ArmNode &node, const MethodHandle &eqH
   this->markLabel(armMerge);
   this->emitBranchIns(armElse);
   this->emit0byteIns(OpCode::POP); // pop stack top 'expr'
-  this->visit(node);
+  this->visit(node, CmdCallCtx::AUTO);
   this->emitJumpIns(mergeLabel);
   this->markLabel(armElse);
 }
@@ -1139,7 +1171,9 @@ void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitArmNode(ArmNode &node) { this->visit(node.getActionNode()); }
+void ByteCodeGenerator::visitArmNode(ArmNode &node) {
+  this->visit(node.getActionNode(), CmdCallCtx::AUTO);
+}
 
 void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
   assert(!this->curBuilder().loopLabels.empty());
@@ -1210,7 +1244,7 @@ void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
     this->emit0byteIns(OpCode::POP);
   } else {
     this->emit1byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
-    this->visit(node.getBlockNode());
+    this->visit(node.getBlockNode(), CmdCallCtx::AUTO);
   }
 }
 
@@ -1232,7 +1266,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
   // generate try block
   this->markLabel(beginLabel);
-  this->visit(node.getExprNode());
+  this->visit(node.getExprNode(), CmdCallCtx::AUTO);
   this->markLabel(endLabel);
   if (!node.getExprNode().getType().isNothingType()) {
     if (hasFinally) {
@@ -1254,7 +1288,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     auto &catchType = innerNode->getTypeNode().getType();
     this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(),
                          blockNode.getVarSize());
-    this->visit(*catchNode);
+    this->visit(*catchNode, CmdCallCtx::AUTO);
     if (!catchNode->getType().isNothingType()) {
       if (hasFinally) {
         this->enterFinally(finallyLabel);
@@ -1408,7 +1442,7 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
         this->emit0byteIns(OpCode::ADD2ENV_CTX);
       }
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-      this->visit(*node.getExprNode());
+      this->visit(*node.getExprNode(), CmdCallCtx::AUTO);
     });
   } else {
     for (auto &e : node.getAssignNodes()) {
@@ -1425,7 +1459,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
       this->emit1byteIns(OpCode::BOX_LOCAL, paramNode->getVarIndex());
     }
   }
-  this->visit(node.getBlockNode());
+  this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
   auto code = this->finalizeCodeBuilder(node.getFuncName());
   if (!code) {
@@ -1454,7 +1488,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
-  this->visit(node.getBlockNode());
+  this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
   auto code = this->finalizeCodeBuilder(node.getCmdName());
   if (!code) {
@@ -1502,7 +1536,7 @@ bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
     this->toplevelDeferNodes().emplace_back(cast<DeferNode>(node.release()));
     this->markLabel(this->tryFinallyLabels().back().beginLabel);
   } else {
-    this->visit(*node);
+    this->visit(*node, CmdCallCtx::STMT);
   }
   return !this->hasError();
 }

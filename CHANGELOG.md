@@ -12,6 +12,8 @@
 - add ``xtrace`` runtime option
     - trace execution of commands
     - also support ``-x`` command line option
+- add experimental ``errraise`` runtime option
+    - in statement context, if exit status of command is non-zero, raise ``ExecError``
 
 #### Builtin
 

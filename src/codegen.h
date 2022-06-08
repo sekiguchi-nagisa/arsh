@@ -110,6 +110,12 @@ public:
   }
 };
 
+enum class CmdCallCtx : unsigned char {
+  STMT,
+  EXPR,
+  AUTO, // propagete current context
+};
+
 struct CodeBuilder : public CodeEmitter<true> {
   LexerPtr lexer;
 
@@ -140,9 +146,17 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes;
 
+  /**
+   * for command call
+   * if true, current is statement context (may ignore return value of command)
+   */
+  std::vector<bool> cmdCallCtxs;
+
   explicit CodeBuilder(unsigned short modId, LexerPtr lexer, CodeKind kind,
                        unsigned char localVarNum)
-      : lexer(std::move(lexer)), kind(kind), localVarNum(localVarNum), modId(modId) {}
+      : lexer(std::move(lexer)), kind(kind), localVarNum(localVarNum), modId(modId) {
+    this->cmdCallCtxs.push_back(true);
+  }
 
   CodeKind getCodeKind() const { return this->kind; }
 
@@ -212,6 +226,8 @@ private:
   bool inUDC() const { return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD; }
 
   bool inFunc() const { return this->curBuilder().getCodeKind() == CodeKind::FUNCTION; }
+
+  bool inStmtCtx() const { return this->curBuilder().cmdCallCtxs.back(); }
 
   void emitIns(OpCode op);
 
@@ -477,6 +493,13 @@ private:
   void reportError(Token token, Arg &&...arg) {
     return this->reportErrorImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
+
+  /**
+   * actual visitor entry point
+   * @param node
+   * @param cmdCallCtx
+   */
+  void visit(Node &node, CmdCallCtx cmdCallCtx);
 
   // visitor api
   void visit(Node &node) override;

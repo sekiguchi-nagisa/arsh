@@ -1333,6 +1333,16 @@ public:
     }
   }
 
+  bool isCmdSub() const {
+    switch (this->opKind) {
+    case ForkKind::STR:
+    case ForkKind::ARRAY:
+      return true;
+    default:
+      return false;
+    }
+  }
+
   void dump(NodeDumper &dumper) const override;
 };
 

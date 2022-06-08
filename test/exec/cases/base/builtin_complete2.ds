@@ -154,7 +154,7 @@ $assertArray(['abs', 'toFloat', 'zsum', 'zz'], $(complete '
 
 # type
 var types = [
-    'Any', 'ArithmeticError', "Array", 'Bool', 'Boolean', 'Error', 'Float',
+    'Any', 'ArithmeticError', "Array", 'Bool', 'Boolean', 'Error', 'ExecError', 'Float',
     'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 
     "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 

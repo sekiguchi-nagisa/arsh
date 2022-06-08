@@ -1,0 +1,5 @@
+#$test($result = 'throw', $lineNum = 5, $errorKind = 'ExecError', $status = 56)
+
+shctl set errraise
+
+sh -c 'exit 56'

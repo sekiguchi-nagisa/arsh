@@ -56,7 +56,7 @@ const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
  * @param message
  * @param status
  */
-void raiseError(DSState &st, TYPE type, std::string &&message, int status = 1);
+void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status = 1);
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
