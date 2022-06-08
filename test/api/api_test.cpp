@@ -369,7 +369,7 @@ TEST_F(APITest, eval) {
   ASSERT_EQ(-1, ret);
 }
 
-TEST_F(APITest, prompt) {
+TEST_F(APITest, prompt1) {
   const char *buf = "";
   unsigned int s = DSState_lineEdit(this->state, static_cast<DSLineEditOp>(100000), 1, &buf);
   ASSERT_EQ(0, s);
@@ -432,6 +432,24 @@ TEST_F(APITest, prompt) {
   buf = "fjrie";
   s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 2, nullptr);
   ASSERT_EQ(0, s);
+}
+
+TEST_F(APITest, prompt2) {
+  std::string defaultPrompt = "ydsh-";
+  defaultPrompt += std::to_string(X_INFO_MAJOR_VERSION);
+  defaultPrompt += ".";
+  defaultPrompt += std::to_string(X_INFO_MINOR_VERSION);
+  defaultPrompt += getuid() == 0 ? "# " : "$ ";
+
+  const char *str = R"(
+  $EDIT_HOOK = function($a : Int, $b : Int, $c : String) => 34/0
+)";
+  DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
+
+  const char *buf = "";
+  unsigned int s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 1, &buf);
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(defaultPrompt, buf);
 }
 
 static std::vector<std::string> tilde() {

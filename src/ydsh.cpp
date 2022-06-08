@@ -654,18 +654,24 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
     return 0;
   }
 
-  const char *value = nullptr;
-  if (buf) {
-    value = *buf;
-    *buf = nullptr;
-  }
-  auto args = makeArgs(DSValue::createInt(op), DSValue::createInt(index),
-                       DSValue::createStr((value && *value) ? value : ""));
-  auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  st->editOpReply = VM::callFunction(*st, std::move(func), std::move(args));
-  st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-  if (st->hasError()) {
-    return 0;
+  {
+    const char *value = nullptr;
+    if (buf) {
+      value = *buf;
+      *buf = nullptr;
+    }
+    auto args = makeArgs(DSValue::createInt(op), DSValue::createInt(index),
+                         DSValue::createStr((value && *value) ? value : ""));
+    auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
+    auto ret = VM::callFunction(*st, std::move(func), std::move(args));
+    st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
+    if (st->hasError()) {
+      if (op == DS_EDIT_PROMPT && buf) {
+        *buf = defaultPrompt(index);
+      }
+      return 0;
+    }
+    st->editOpReply = std::move(ret);
   }
 
   auto &type = st->typePool.get(st->editOpReply.getTypeID());
