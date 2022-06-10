@@ -84,4 +84,99 @@ try {
 assert $ex is Int
 assert $? == 0
 
+## command sub
+$ex = 34
+try {
+    var aa = "$(false)".size() + 435
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 90)
+
+$ex = 34
+try {
+    $(
+        sh -c 'exit 145').size()
+    assert $false
+} catch $e { $ex = $e; }
+$assertStatus(145, $ex, 96)
+
+$ex = 34
+try {
+    $({
+        $? = 111;
+    }).size()
+        assert $false
+} catch $e { $ex = $e; }
+$assertStatus(111, $ex, 104)
+
+$ex = 34
+try {
+    $({
+        true
+        eval exit 88
+        true
+    }).size()
+        assert $false
+} catch $e { $ex = $e; }
+$assertStatus(88, $ex, 113)
+
+## pipeline
+$ex = 34
+try {
+    true | 
+      false
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 125)
+
+$ex = 34
+try {
+    true | 
+      false |
+        true
+} catch $e { $ex = $e; }
+$assertStatus(1, $ex, 132)
+
+$ex = 34
+try {
+    true | false || true 
+} catch $e { $ex = $e; }
+assert $ex is Int
+assert $? == 0
+
+$ex = 34
+try {
+    false | true || true 
+} catch $e { $ex = $e; }
+assert $ex is Int
+assert $? == 0
+
+$ex = 34
+try {
+    true | 
+      false |
+        { true; }
+} catch $e { $ex = $e; }
+assert $ex is Int   # if last-pipe, not check pipeline status
+assert $? == 0
+
+## command sub with pipeline
+$ex = 34
+try {
+    $(
+        exit 67 | true)
+} catch $e { $ex = $e; }
+$assertStatus(67, $ex, 164)
+
+$ex = 34
+try {
+    $(true | 
+       sh -c "exit 167")
+} catch $e { $ex = $e; }
+$assertStatus(167, $ex, 171)
+
+## backgorund pipeline
+var jj = { sh -c "exit 156"; true; } | false &
+assert $jj.wait() == 1
+assert $jj.status(0)! == 156
+assert $jj.status(1)! == 1
+
 true

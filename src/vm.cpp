@@ -347,7 +347,8 @@ static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
 bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs, ForkKind forkKind,
                         PipeSet &pipeSet, DSValue &ret) {
   switch (forkKind) {
-  case ForkKind::NONE: {
+  case ForkKind::NONE:
+  case ForkKind::PIPE_FAIL: {
     auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj);
     // job termination
     auto waitOp =
@@ -364,6 +365,21 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
     if (errNum != 0) {
       raiseSystemError(state, errNum, "wait failed");
       return false;
+    }
+    if (forkKind == ForkKind::PIPE_FAIL && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+      unsigned int index = 0;
+      for (; index < entry->getProcSize(); index++) {
+        int s = entry->getProcs()[index].exitStatus();
+        if (s != 0) {
+          std::string message = "pipeline has non-zero status: `";
+          message += std::to_string(s);
+          message += "' at ";
+          message += std::to_string(index + 1);
+          message += "th element";
+          raiseError(state, TYPE::ExecError, std::move(message), s);
+          return false;
+        }
+      }
     }
     ret = exitStatusToBool(status);
     break;
@@ -422,16 +438,23 @@ bool VM::forkAndEval(DSState &state) {
           isStr ? readAsStr(pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
       auto waitOp =
           state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-      int ret = proc.wait(waitOp); // wait exit
+      int status = proc.wait(waitOp); // wait exit
       int errNum = errno;
       tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
       }
-      state.setExitStatus(ret);
+      state.setExitStatus(status);
       state.tryToBeForeground();
-      if (ret < 0) {
+      if (status < 0) {
         raiseSystemError(state, errNum, "wait failed");
+        return false;
+      }
+      if (status != 0 && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+        std::string message = "child process exits with non-zero status: `";
+        message += std::to_string(status);
+        message += "'";
+        raiseError(state, TYPE::ExecError, std::move(message), status);
         return false;
       }
       break;
@@ -609,7 +632,7 @@ static void raiseInvalidCmdError(DSState &state, StringRef ref) {
 }
 
 static void raiseCmdExecError(DSState &state, int64_t status) {
-  std::string message = "command exit with non-zero status: `";
+  std::string message = "command exits with non-zero status: `";
   message += std::to_string(status);
   message += "'";
   raiseError(state, TYPE::ExecError, std::move(message), status);
@@ -1908,10 +1931,12 @@ bool VM::mainLoop(DSState &state) {
         TRY(forkAndEval(state));
         vmnext;
       }
-      vmcase(PIPELINE) vmcase(PIPELINE_LP) vmcase(PIPELINE_ASYNC) {
+      vmcase(PIPELINE) vmcase(PIPELINE_SILENT) vmcase(PIPELINE_LP) vmcase(PIPELINE_ASYNC) {
         bool lastPipe = op == OpCode::PIPELINE_LP;
-        auto kind = ForkKind::NONE;
-        if (op == OpCode::PIPELINE_ASYNC) {
+        auto kind = ForkKind::PIPE_FAIL;
+        if (op == OpCode::PIPELINE_SILENT) {
+          kind = ForkKind::NONE;
+        } else if (op == OpCode::PIPELINE_ASYNC) {
           unsigned char v = read8(GET_CODE(state), state.stack.pc());
           state.stack.pc()++;
           kind = static_cast<ForkKind>(v);

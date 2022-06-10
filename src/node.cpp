@@ -508,6 +508,7 @@ void ForkNode::dump(NodeDumper &dumper) const {
 
 #define EACH_ENUM(OP)                                                                              \
   OP(ForkKind::NONE)                                                                               \
+  OP(ForkKind::PIPE_FAIL)                                                                          \
   OP(ForkKind::STR)                                                                                \
   OP(ForkKind::ARRAY)                                                                              \
   OP(ForkKind::IN_PIPE)                                                                            \

@@ -141,6 +141,7 @@ struct PipeSet {
     case ForkKind::JOB:
     case ForkKind::DISOWN:
     case ForkKind::NONE:
+    case ForkKind::PIPE_FAIL:
       break;
     }
     tryToPipe(this->in, useInPipe);

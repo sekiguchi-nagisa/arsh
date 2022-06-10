@@ -71,6 +71,7 @@
 | REF_NE          |                                | value1 value2 -> value                       | check referencial un-equality                          |
 | FORK            | 3: byte1 offset1 offset2       | -> value                                     | evaluate code in child shell                           |
 | PIPELINE        | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                          |
+| PIPELINE_SILENT | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline without status check                     |
 | PIPELINE_LP     | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline (lastPipe is true)                       |
 | PIPELINE_ASYNC  | 1: k 1: len 2: offset1 offset2 | -> value                                     | call pipeline asynchronously                           | 
 | EXPAND_TILDE    |                                | value -> value                               | perform tilde expansion                                |

@@ -291,14 +291,15 @@ constexpr const char *BUILD_ARCH =
     ;
 
 enum class ForkKind : unsigned char {
-  NONE,     // do nothing
-  STR,      // capture stdout as string. ex. "$(echo)"
-  ARRAY,    // capture stdout as string array. ex. $(echo)
-  IN_PIPE,  // capture stdin as pipe. ex. >(echo)
-  OUT_PIPE, // capture stdout as pipe. ex. <(echo)
-  COPROC,   // launch as co-process. ex. coproc echo
-  JOB,      // launch as background job. ex. echo &
-  DISOWN,   // launch as disowned background job. ex. echo &!
+  NONE,      // do nothing
+  STR,       // capture stdout as string. ex. "$(echo)"
+  ARRAY,     // capture stdout as string array. ex. $(echo)
+  IN_PIPE,   // capture stdin as pipe. ex. >(echo)
+  OUT_PIPE,  // capture stdout as pipe. ex. <(echo)
+  COPROC,    // launch as co-process. ex. coproc echo
+  JOB,       // launch as background job. ex. echo &
+  DISOWN,    // launch as disowned background job. ex. echo &!
+  PIPE_FAIL, // check all exit status of pipeline
 };
 
 enum class ExpandMeta : unsigned char {

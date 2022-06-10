@@ -99,6 +99,7 @@ namespace ydsh {
   OP(REF_NE, 0, -1)                                                                                \
   OP(FORK, 3, 1)                                                                                   \
   OP(PIPELINE, -1, 1)                                                                              \
+  OP(PIPELINE_SILENT, -1, 1)                                                                       \
   OP(PIPELINE_LP, -1, 1)                                                                           \
   OP(PIPELINE_ASYNC, -1, 1)                                                                        \
   OP(EXPAND_TILDE, 0, 0)                                                                           \

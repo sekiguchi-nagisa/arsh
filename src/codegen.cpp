@@ -298,7 +298,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
 
   // generate pipeline
   this->emitSourcePos(node.getPos());
-  this->emitPipelineIns(labels, lastPipe, forkKind); // FIXME: call context
+  this->emitPipelineIns(labels, lastPipe, forkKind);
 
   auto begin = makeLabel();
   auto end = makeLabel();
@@ -334,10 +334,11 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
   }
 
   unsigned int offset = this->currentCodeOffset();
-  this->emitIns(lastPipe                     ? OpCode::PIPELINE_LP
-                : forkKind == ForkKind::NONE ? OpCode::PIPELINE
-                                             : OpCode::PIPELINE_ASYNC);
-  if (forkKind != ForkKind::NONE) {
+  this->emitIns(lastPipe                          ? OpCode::PIPELINE_LP
+                : forkKind == ForkKind::NONE      ? OpCode::PIPELINE_SILENT
+                : forkKind == ForkKind::PIPE_FAIL ? OpCode::PIPELINE
+                                                  : OpCode::PIPELINE_ASYNC);
+  if (forkKind != ForkKind::NONE && forkKind != ForkKind::PIPE_FAIL) {
     offset++;
     this->curBuilder().append(static_cast<unsigned char>(forkKind));
   }
@@ -861,7 +862,7 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
-  this->generatePipeline(node, ForkKind::NONE);
+  this->generatePipeline(node, this->inStmtCtx() ? ForkKind::PIPE_FAIL : ForkKind::NONE);
 }
 
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
@@ -885,9 +886,10 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
-    this->markLabel(beginLabel);
+    this->emitSourcePos(node.getPos());
     this->emitForkIns(node.getOpKind(), mergeLabel);
-    this->visit(node.getExprNode(), CmdCallCtx::STMT); // FIXME: check call context
+    this->markLabel(beginLabel);
+    this->visit(node.getExprNode(), CmdCallCtx::STMT);
     this->markLabel(endLabel);
 
     this->catchException(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));

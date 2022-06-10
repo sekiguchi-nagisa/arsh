@@ -1061,6 +1061,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   case ForkKind::COPROC:
   case ForkKind::DISOWN:
   case ForkKind::NONE:
+  case ForkKind::PIPE_FAIL:
     type = &this->typePool.get(TYPE::Job);
     break;
   }
