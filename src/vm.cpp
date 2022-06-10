@@ -2218,7 +2218,7 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   }
 
   // handle uncaught exception and termination handler
-  auto kind = handleUncaughtException(state, thrown, dsError);
+  auto kind = handleUncaughtException(state, thrown, subshell, dsError);
   if (subshell || !hasFlag(op, EvalOP::SKIP_TERM) || !ret) {
     callTermHook(state, kind, std::move(thrown));
   }
@@ -2372,7 +2372,8 @@ static int parseExitStatus(const ErrorObject &obj) {
   return pair.first;
 }
 
-DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
+DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, bool subshell,
+                                        DSError *dsError) {
   if (!except) {
     return DS_ERROR_KIND_SUCCESS;
   }
@@ -2401,7 +2402,12 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
   // print error message
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   if (kind == DS_ERROR_KIND_RUNTIME_ERROR) {
-    fputs("[runtime error]\n", stderr);
+    std::string header = "[runtime error";
+    if (subshell) {
+      header += " at subshell";
+    }
+    header += "]\n";
+    fputs(header.c_str(), stderr);
     const bool bt = state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
     auto *handle = state.typePool.lookupMethod(errorType, bt ? OP_SHOW : OP_STR);
     assert(handle);

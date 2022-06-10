@@ -620,12 +620,13 @@ private:
    * print uncaught exception information.
    * @param except
    * uncaught exception
+   * @param subshell
    * @param dsError
    * if not null, set error information
    * @return
    * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
    */
-  static DSErrorKind handleUncaughtException(DSState &state, const DSValue &except,
+  static DSErrorKind handleUncaughtException(DSState &state, const DSValue &except, bool subshell,
                                              DSError *dsError);
 
   /**
