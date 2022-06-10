@@ -54,14 +54,14 @@ $expect("$(ds -c 'exec > /dev/null; echo hello' 2>&1)", 0, '')
 
 
 # command error
-$msg = "[runtime error at subshell]
+$msg = "[runtime error at subshell=1]
 SystemError: execution error: hoge: command not found
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'hoge | :' 2>&1)", 0, $msg)
 $expect("$(ds -c ': | hoge' 2>&1)", 127, $msg)
 
-$msg = "[runtime error at subshell]
+$msg = "[runtime error at subshell=1]
 SystemError: execution error: ./: Permission denied
     from (string):1 '<toplevel>()'"
 $expect("$(ds -c ': | ./' 2>&1)", 126, $msg)

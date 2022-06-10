@@ -2218,7 +2218,7 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   }
 
   // handle uncaught exception and termination handler
-  auto kind = handleUncaughtException(state, thrown, subshell, dsError);
+  auto kind = handleUncaughtException(state, thrown, dsError);
   if (subshell || !hasFlag(op, EvalOP::SKIP_TERM) || !ret) {
     callTermHook(state, kind, std::move(thrown));
   }
@@ -2372,8 +2372,7 @@ static int parseExitStatus(const ErrorObject &obj) {
   return pair.first;
 }
 
-DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, bool subshell,
-                                        DSError *dsError) {
+DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
   if (!except) {
     return DS_ERROR_KIND_SUCCESS;
   }
@@ -2403,8 +2402,9 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, b
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   if (kind == DS_ERROR_KIND_RUNTIME_ERROR) {
     std::string header = "[runtime error";
-    if (subshell) {
-      header += " at subshell";
+    if (state.subshellLevel) {
+      header += " at subshell=";
+      header += std::to_string(state.subshellLevel);
     }
     header += "]\n";
     fputs(header.c_str(), stderr);
