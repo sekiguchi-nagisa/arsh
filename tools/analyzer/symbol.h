@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_HOVER_H
-#define YDSH_TOOLS_ANALYZER_HOVER_H
+#ifndef YDSH_TOOLS_ANALYZER_SYMBOL_H
+#define YDSH_TOOLS_ANALYZER_SYMBOL_H
 
 #include "index.h"
+#include "lsp.h"
 
 namespace ydsh::lsp {
 
@@ -27,6 +28,8 @@ class Source;
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
                                  const DeclSymbol &decl, bool markup = true);
 
+SymbolKind toSymbolKind(DeclSymbol::Kind kind);
+
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_HOVER_H
+#endif // YDSH_TOOLS_ANALYZER_SYMBOL_H

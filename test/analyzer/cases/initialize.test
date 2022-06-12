@@ -22,7 +22,7 @@
 # CHECK:         "resolveProvider": false
 # CHECK:       },
 # CHECK:       "documentRangeFormattingProvider": false,
-# CHECK:       "documentSymbolProvider": false,
+# CHECK:       "documentSymbolProvider": true,
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
 # CHECK:       "semanticTokensProvider": {

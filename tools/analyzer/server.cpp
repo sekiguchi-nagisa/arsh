@@ -15,9 +15,9 @@
  */
 
 #include "server.h"
-#include "hover.h"
 #include "indexer.h"
 #include "source.h"
+#include "symbol.h"
 
 namespace ydsh::lsp {
 
@@ -52,6 +52,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/documentHighlight", &LSPServer::documentHighlight);
   this->bind("textDocument/hover", &LSPServer::hover);
   this->bind("textDocument/documentLink", &LSPServer::documentLink);
+  this->bind("textDocument/documentSymbol", &LSPServer::documentSymbol);
   this->bind("textDocument/completion", &LSPServer::complete);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
@@ -393,6 +394,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   ret.capabilities.definitionProvider = true;
   ret.capabilities.referencesProvider = true;
   ret.capabilities.documentHighlightProvider = true;
+  ret.capabilities.documentSymbolProvider = true;
   ret.capabilities.hoverProvider = true;
   ret.capabilities.completionProvider = CompletionOptions{};
   ret.capabilities.completionProvider.unwrap().triggerCharacters =
@@ -591,6 +593,34 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
           .range = range.unwrap(),
           .target = toURI(*this->result.srcMan, src->getPath()).toString(),
           .tooltip = e.second,
+      });
+    }
+    return ret;
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbolParams &params) {
+  LOG(LogLevel::INFO, "document symbol at: %s", params.textDocument.uri.c_str());
+  this->syncResult();
+  if (auto resolved = this->resolveSource(params.textDocument)) {
+    std::vector<DocumentSymbol> ret;
+    auto index = this->result.indexes.find(resolved.asOk()->getSrcId());
+    for (auto &decl : index->getDecls()) {
+      if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
+        continue;
+      }
+
+      auto range = toRange(*resolved.asOk(), decl.getToken());
+      auto name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
+      assert(range.hasValue());
+      ret.push_back(DocumentSymbol{
+          .name = std::move(name),
+          .detail = {}, // FIXME:
+          .kind = toSymbolKind(decl.getKind()),
+          .range = range.unwrap(), // FIXME:
+          .selectionRange = range.unwrap(),
       });
     }
     return ret;

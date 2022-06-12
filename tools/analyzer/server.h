@@ -200,6 +200,8 @@ public:
 
   Reply<std::vector<DocumentLink>> documentLink(const DocumentLinkParams &params);
 
+  Reply<std::vector<DocumentSymbol>> documentSymbol(const DocumentSymbolParams &params);
+
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
     this->notify("textDocument/publishDiagnostics", params);

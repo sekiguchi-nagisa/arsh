@@ -4,8 +4,8 @@
 #include <constant.h>
 
 #include "analyzer.h"
-#include "hover.h"
 #include "indexer.h"
+#include "symbol.h"
 
 #include "../test_common.h"
 

@@ -14,7 +14,7 @@ add_library(ydshd_static STATIC
         index.cpp
         indexer.cpp
         client.cpp
-        hover.cpp
+        symbol.cpp
         worker.cpp
         semantic_token.cpp
         )

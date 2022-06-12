@@ -17,8 +17,8 @@
 #include <cmd_desc.h>
 #include <constant.h>
 
-#include "hover.h"
 #include "source.h"
+#include "symbol.h"
 
 namespace ydsh::lsp {
 
@@ -139,6 +139,43 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += "\n```";
   }
   return content;
+}
+
+SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
+  SymbolKind symbolKind = SymbolKind::File;
+  switch (kind) {
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::LET:
+  case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::EXPORT_ENV:
+    symbolKind = SymbolKind::Variable;
+    break;
+  case DeclSymbol::Kind::CONST:
+  case DeclSymbol::Kind::MOD_CONST:
+    symbolKind = SymbolKind::Constant;
+    break;
+  case DeclSymbol::Kind::FUNC:
+    symbolKind = SymbolKind::Function;
+    break;
+  case DeclSymbol::Kind::CONSTRUCTOR:
+    symbolKind = SymbolKind::Constructor; // FIXME:
+    break;
+  case DeclSymbol::Kind::METHOD:
+    symbolKind = SymbolKind::Method;
+    break;
+  case DeclSymbol::Kind::BUILTIN_CMD:
+  case DeclSymbol::Kind::CMD:
+    symbolKind = SymbolKind::Function;
+    break;
+  case DeclSymbol::Kind::TYPE_ALIAS:
+  case DeclSymbol::Kind::ERROR_TYPE_DEF:
+    symbolKind = SymbolKind::Class;
+    break;
+  case DeclSymbol::Kind::MOD:
+    symbolKind = SymbolKind::Variable;
+    break;
+  }
+  return symbolKind;
 }
 
 } // namespace ydsh::lsp

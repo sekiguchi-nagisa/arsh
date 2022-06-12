@@ -35,6 +35,7 @@
 - support the following requests
     - ``textDocument/documentHighlight``
     - ``textDocument/documentLink``
+    - ``textDocument/documentSymbol``
 
 #### Misc
 
