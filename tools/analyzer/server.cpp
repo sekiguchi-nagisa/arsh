@@ -608,7 +608,8 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
     std::vector<DocumentSymbol> ret;
     auto index = this->result.indexes.find(resolved.asOk()->getSrcId());
     for (auto &decl : index->getDecls()) {
-      if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
+      if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
+          !hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
         continue;
       }
 
