@@ -134,26 +134,32 @@ public:
     MEMBER = 1u << 3u,
   };
 
+  struct Name {
+    Token token;
+    CStrPtr name;
+  };
+
 private:
   Kind kind;
   Attr attr;
   CStrPtr mangledName;
   CStrPtr info; // hover information
+  Token body;
 
 public:
-  static Optional<DeclSymbol> create(Kind kind, Attr attr, Token token, unsigned short modId,
-                                     const std::string &name, const char *info = nullptr) {
-    if (token.size > UINT16_MAX) {
+  static Optional<DeclSymbol> create(Kind kind, Attr attr, Name &&name, unsigned short modId,
+                                     const char *info, Token body) {
+    if (name.token.size > UINT16_MAX) {
       return {};
     }
-    return DeclSymbol(kind, attr, token.pos, static_cast<unsigned short>(token.size), modId, name,
-                      info != nullptr ? info : "(dummy)");
+    return DeclSymbol(kind, attr, name.token.pos, static_cast<unsigned short>(name.token.size),
+                      modId, std::move(name.name), info != nullptr ? info : "(dummy)", body);
   }
 
   DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, unsigned short mod,
-             const std::string &name, const char *info)
-      : DeclBase(pos, size, mod), kind(kind), attr(attr),
-        mangledName(CStrPtr(strdup(name.c_str()))), info(CStrPtr(strdup(info))) {}
+             CStrPtr &&name, const char *info, Token body)
+      : DeclBase(pos, size, mod), kind(kind), attr(attr), mangledName(std::move(name)),
+        info(CStrPtr(strdup(info))), body(body) {}
 
   Kind getKind() const { return this->kind; }
 
@@ -169,6 +175,8 @@ public:
    * if kind is not Kind::MOD, return {0, false}
    */
   std::pair<unsigned short, bool> getInfoAsModId() const;
+
+  Token getBody() const { return this->body; }
 
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }

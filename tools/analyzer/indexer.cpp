@@ -100,17 +100,17 @@ static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
   return DeclSymbol::mangle(recv ? recv->getNameRef() : "", k, nameInfo.getName());
 }
 
-const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type,
+const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type, Token token,
                                         DeclSymbol::Kind kind) {
   if (type.isUnresolved()) {
     return nullptr;
   }
   StringRef ref = trimTypeName(type);
-  return this->addDecl(info, kind, ref.data());
+  return this->addDecl(info, kind, ref.data(), token);
 }
 
 const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &info,
-                                            DeclSymbol::Kind kind, const char *hover,
+                                            DeclSymbol::Kind kind, const char *hover, Token body,
                                             DeclInsertOp op) {
   DeclSymbol::Attr attr = {};
   if (this->scope->isGlobal() || this->scope->isConstructor() || op == DeclInsertOp::BUILTIN) {
@@ -127,7 +127,14 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &
   }
 
   std::string mangledName = mangleSymbolName(recv, kind, info);
-  if (auto *decl = this->insertNewDecl(kind, attr, info.getToken(), mangledName, hover, op)) {
+  if (mangledName.empty()) {
+    return nullptr;
+  }
+  DeclSymbol::Name name = {
+      .token = info.getToken(),
+      .name = CStrPtr(strdup(mangledName.c_str())),
+  };
+  if (auto *decl = this->insertNewDecl(kind, attr, std::move(name), hover, body, op)) {
     if (!this->insertNewSymbol(info.getToken(), decl)) {
       return nullptr;
     }
@@ -182,19 +189,21 @@ bool IndexBuilder::addThis(const NameInfo &info, const HandlePtr &handle) {
   if (methodScope->find(mangleSymbolName(nullptr, DeclSymbol::Kind::LET, info))) {
     return this->addSymbol(info, DeclSymbol::Kind::LET, handle);
   } else {
-    return this->addDecl(info, *methodScope->getResolvedType(), DeclSymbol::Kind::LET);
+    return this->addDecl(info, *methodScope->getResolvedType(), info.getToken(),
+                         DeclSymbol::Kind::LET);
   }
 }
 
 const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
-                                              const DSType &type, DeclSymbol::Kind kind) {
+                                              const DSType &type, DeclSymbol::Kind kind,
+                                              Token token) {
   if (type.isUnresolved()) {
     return nullptr;
   }
   std::string content = trimTypeName(type).toString();
   content += " for ";
   content += trimTypeName(recv);
-  return this->addMemberDecl(recv, nameInfo, kind, content.c_str());
+  return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
 static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
@@ -234,7 +243,7 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
 }
 
 bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                             const Handle &handle) {
+                             const Handle &handle, Token token) {
   const DSType *actualRecv = &recv;
   if (recv.isModType() && !handle.isMethod()) {
     actualRecv = nullptr;
@@ -245,7 +254,7 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclS
   }
   if (handle.getModId() == 0) { // tuple field or builtin method
     std::string hover = generateBuiltinFieldOrMethodInfo(this->getPool(), recv, handle);
-    if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), DeclInsertOp::BUILTIN)) {
+    if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), token, DeclInsertOp::BUILTIN)) {
       return true;
     }
   }
@@ -269,15 +278,11 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
   }
 }
 
-DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, Token token,
-                                        const std::string &mangledName, const char *info,
+DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
+                                        DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
-  if (mangledName.empty()) {
-    return nullptr;
-  }
-
   // create DeclSymbol
-  auto ret = DeclSymbol::create(k, attr, token, this->modId, mangledName, info);
+  auto ret = DeclSymbol::create(k, attr, std::move(name), this->modId, info, body);
   if (!ret.hasValue()) {
     return nullptr;
   }
@@ -311,7 +316,7 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
   auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
                                DeclSymbol::Compare());
   if (iter != this->decls.end() && iter->getPos() == decl.getPos()) {
-    fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
+    fatal("try to add token: %s, but already added: %s\n", toString(decl.getToken()).c_str(),
           toString(iter->getToken()).c_str());
   }
   iter = this->decls.insert(iter, std::move(decl));
@@ -357,7 +362,8 @@ void SymbolIndexer::visitTypeNode(TypeNode &node) {
     if (!type.isUntyped()) {
       NameInfo info(type.getNameTypeNode().getToken(), type.getNameTypeNode().getTokenText());
       this->builder().addMember(type.getRecvTypeNode().getType(), info,
-                                DeclSymbol::Kind::TYPE_ALIAS, *type.getNameTypeNode().getHandle());
+                                DeclSymbol::Kind::TYPE_ALIAS, *type.getNameTypeNode().getHandle(),
+                                node.getToken());
     }
     break;
   }
@@ -421,7 +427,7 @@ void SymbolIndexer::visitAccessNode(AccessNode &node) {
   if (node.getHandle()) {
     NameInfo info(node.getNameNode().getToken(), node.getFieldName());
     this->builder().addMember(node.getRecvNode().getType(), info, DeclSymbol::Kind::VAR,
-                              *node.getHandle());
+                              *node.getHandle(), node.getToken());
   }
 }
 
@@ -448,7 +454,7 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     this->visit(accessNode.getRecvNode());
     NameInfo nameInfo(accessNode.getNameNode().getToken(), accessNode.getFieldName());
-    this->builder().addMember(*node.getHandle(), nameInfo);
+    this->builder().addMember(*node.getHandle(), nameInfo, node.getToken());
   } else if (node.isFuncCall()) {
     this->visit(node.getExprNode());
   }
@@ -537,17 +543,17 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
     if (this->builder().curScope().isConstructor()) {
       this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(),
                                     node.getNameInfo(), node.getTargetTypeNode().getType(),
-                                    DeclSymbol::Kind::TYPE_ALIAS);
+                                    DeclSymbol::Kind::TYPE_ALIAS, node.getToken());
     } else {
       this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
-                              DeclSymbol::Kind::TYPE_ALIAS);
+                              node.getToken(), DeclSymbol::Kind::TYPE_ALIAS);
     }
     break;
   case TypeDefNode::ERROR_DEF:
     if (this->isTopLevel()) {
       this->visit(node.getTargetTypeNode());
       this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
-                              DeclSymbol::Kind::ERROR_TYPE_DEF);
+                              node.getToken(), DeclSymbol::Kind::ERROR_TYPE_DEF);
     }
     break;
   }
@@ -584,7 +590,8 @@ void SymbolIndexer::visitJumpNode(JumpNode &node) { this->visit(node.getExprNode
 void SymbolIndexer::visitCatchNode(CatchNode &node) {
   auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visit(node.getTypeNode());
-  this->builder().addDecl(node.getNameInfo(), node.getTypeNode().getType());
+  this->builder().addDecl(node.getNameInfo(), node.getTypeNode().getType(),
+                          node.getNameInfo().getToken());
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
@@ -615,9 +622,10 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
                                   : this->builder().getPool().get(TYPE::String);
   if (this->builder().curScope().isConstructor()) {
     this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(), node.getNameInfo(),
-                                  type, fromVarDeclKind(node.getKind()));
+                                  type, fromVarDeclKind(node.getKind()), node.getToken());
   } else {
-    this->builder().addDecl(node.getNameInfo(), type, fromVarDeclKind(node.getKind()));
+    this->builder().addDecl(node.getNameInfo(), type, node.getToken(),
+                            fromVarDeclKind(node.getKind()));
   }
 }
 
@@ -640,7 +648,8 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       NameInfo info(leftNode.getToken(), leftNode.getVarName());
-      this->builder().addDecl(info, leftNode.getType(), DeclSymbol::Kind::EXPORT_ENV);
+      this->builder().addDecl(info, leftNode.getType(), e->getToken(),
+                              DeclSymbol::Kind::EXPORT_ENV);
     }
     this->visit(node.getExprNode());
   } else {
@@ -738,14 +747,16 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   if (node.getHandle()) {
     if (node.isConstructor()) {
       auto value = generateConstructorInfo(this->builder().getPool(), node);
-      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str());
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str(),
+                              node.getToken());
     } else if (node.isMethod()) {
       auto value = generateFuncInfo(node);
       this->builder().addMemberDecl(node.getRecvTypeNode()->getType(), node.getNameInfo(),
-                                    DeclSymbol::Kind::METHOD, value.c_str());
+                                    DeclSymbol::Kind::METHOD, value.c_str(), node.getToken());
     } else {
       auto value = generateFuncInfo(node);
-      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str());
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str(),
+                              node.getToken());
     }
   }
   for (auto &paramNode : node.getParamNodes()) {
@@ -757,7 +768,8 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
                                                                 ? &node.getRecvTypeNode()->getType()
                                                                 : node.getResolvedType());
   for (auto &paramNode : node.getParamNodes()) {
-    this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType());
+    this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
+                            node.getToken());
   }
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
@@ -771,7 +783,7 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
       hover = node.getReturnTypeNode()->getType().getName();
     }
-    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover);
+    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover, node.getToken());
   }
   auto udc = this->builder().intoScope(ScopeKind::FUNC);
   this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -784,7 +796,7 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   this->visitEach(node.getPathNode().getSegmentNodes());
   if (node.getNameInfo()) {
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
-                            std::to_string(node.getModType().getModId()).c_str());
+                            std::to_string(node.getModType().getModId()).c_str(), node.getToken());
   }
   this->builder().addLink(node.getPathToken(), node.getModType().getModId(), node.getPathName());
 }
@@ -858,17 +870,18 @@ void SymbolIndexer::addBuiltinSymbols() {
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
     auto &type = this->builder().getPool().get(e.second->getTypeId());
     if (kind == DeclSymbol::Kind::CMD) {
-      this->builder().addDecl(nameInfo, kind, "");
+      this->builder().addDecl(nameInfo, kind, "", nameInfo.getToken());
     } else if (auto *ptr = this->sysConfig.lookup(nameInfo.getName())) {
       assert(type.is(TYPE::String));
       std::string value = "'";
       value += *ptr;
       value += "'";
-      this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str());
+      this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str(),
+                              nameInfo.getToken());
     } else if (nameInfo.getName() == CVAR_SCRIPT_NAME || nameInfo.getName() == CVAR_SCRIPT_DIR) {
-      this->builder().addDecl(nameInfo, DeclSymbol::Kind::MOD_CONST, "");
+      this->builder().addDecl(nameInfo, DeclSymbol::Kind::MOD_CONST, "", nameInfo.getToken());
     } else {
-      this->builder().addDecl(nameInfo, type, kind);
+      this->builder().addDecl(nameInfo, type, nameInfo.getToken(), kind);
     }
     offset += 5;
   }
@@ -878,7 +891,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   auto *cmdList = getBuiltinCmdDescList();
   for (unsigned int i = 0; i < size; i++) {
     NameInfo nameInfo(Token{offset, 1}, cmdList[i].name);
-    this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_CMD, "");
+    this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_CMD, "", nameInfo.getToken());
     offset += 5;
   }
 }

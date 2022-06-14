@@ -613,15 +613,17 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
         continue;
       }
 
-      auto range = toRange(*resolved.asOk(), decl.getToken());
+      auto selectionRange = toRange(*resolved.asOk(), decl.getToken());
+      auto range = toRange(*resolved.asOk(), decl.getBody());
       auto name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
+      assert(selectionRange.hasValue());
       assert(range.hasValue());
       ret.push_back(DocumentSymbol{
           .name = std::move(name),
           .detail = {}, // FIXME:
           .kind = toSymbolKind(decl.getKind()),
-          .range = range.unwrap(), // FIXME:
-          .selectionRange = range.unwrap(),
+          .range = range.unwrap(),
+          .selectionRange = selectionRange.unwrap(),
       });
     }
     return ret;

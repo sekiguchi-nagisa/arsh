@@ -125,11 +125,12 @@ public:
     return this->curScope().findMethodScope() && varName == VAR_THIS && handle.getIndex() == 0;
   }
 
-  const DeclSymbol *addDecl(const NameInfo &info, const DSType &type,
+  const DeclSymbol *addDecl(const NameInfo &info, const DSType &type, Token token,
                             DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
-  const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
-    return this->addDeclImpl(nullptr, info, kind, hover, DeclInsertOp::NORMAL);
+  const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover,
+                            Token token) {
+    return this->addDeclImpl(nullptr, info, kind, hover, token, DeclInsertOp::NORMAL);
   }
 
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind, const HandlePtr &hd) {
@@ -139,22 +140,22 @@ public:
   bool addThis(const NameInfo &info, const HandlePtr &hd);
 
   bool addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                 const Handle &handle);
+                 const Handle &handle, Token token);
 
-  bool addMember(const MethodHandle &handle, const NameInfo &nameInfo) {
+  bool addMember(const MethodHandle &handle, const NameInfo &nameInfo, Token token) {
     return this->addMember(this->getPool().get(handle.getRecvTypeId()), nameInfo,
-                           DeclSymbol::Kind::METHOD, handle);
+                           DeclSymbol::Kind::METHOD, handle, token);
   }
 
   const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo, const DSType &type,
-                                  DeclSymbol::Kind kind);
+                                  DeclSymbol::Kind kind, Token token);
 
   const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
-                                  DeclSymbol::Kind kind, const char *info) {
+                                  DeclSymbol::Kind kind, const char *info, Token token) {
     if (recv.isUnresolved()) {
       return nullptr;
     }
-    return this->addDeclImpl(&recv, nameInfo, kind, info, DeclInsertOp::MEMBER);
+    return this->addDeclImpl(&recv, nameInfo, kind, info, token, DeclInsertOp::MEMBER);
   }
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
@@ -177,7 +178,7 @@ private:
   };
 
   const DeclSymbol *addDeclImpl(const DSType *recv, const NameInfo &info, DeclSymbol::Kind kind,
-                                const char *hover, DeclInsertOp op);
+                                const char *hover, Token body, DeclInsertOp op);
 
   const Symbol *addSymbolImpl(const DSType *recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                               const Handle *handle);
@@ -186,14 +187,14 @@ private:
    * create new DeclSymbol and insert to decl list
    * @param k
    * @param attr
-   * @param token
-   * @param mangledName
+   * @param name
    * @param info
+   * @param body
    * @param op
    * @return
    */
-  DeclSymbol *insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, Token token,
-                            const std::string &mangledName, const char *info, DeclInsertOp op);
+  DeclSymbol *insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr, DeclSymbol::Name &&name,
+                            const char *info, Token body, DeclInsertOp op);
 
   /**
    * create new Symbol from DeclVBase and insert to symbol list
