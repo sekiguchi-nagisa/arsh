@@ -2487,10 +2487,6 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   } else {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
   }
-  if (this->hasError()) {
-    node = std::make_unique<ErrorNode>(std::move(node));
-    node->setType(this->typePool.get(TYPE::Void));
-  }
   return std::move(node);
 }
 

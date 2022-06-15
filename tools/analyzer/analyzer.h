@@ -63,6 +63,16 @@ public:
   bool enterModule(unsigned short modId, int version);
 
   bool exitModule();
+
+private:
+  Context *findContext(unsigned short srcId) {
+    for (auto iter = this->contexts.rbegin(); iter != this->contexts.rend(); ++iter) {
+      if (iter->src->getSrcId() == srcId) {
+        return &*iter;
+      }
+    }
+    return nullptr;
+  }
 };
 
 struct NodeConsumer {

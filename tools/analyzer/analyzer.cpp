@@ -248,13 +248,13 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
 
 bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                          const ParseError &parseError) {
-  assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
-  (void)ctx;
-  auto range = toRange(*this->contexts.back().src, parseError.getErrorToken());
+  auto *cur = this->findContext(ctx.back()->scope->modId);
+  assert(cur);
+  auto range = toRange(*cur->src, parseError.getErrorToken());
   if (!range.hasValue()) {
     return false;
   }
-  this->contexts.back().diagnostics.push_back(Diagnostic{
+  cur->diagnostics.push_back(Diagnostic{
       .range = range.unwrap(),
       .severity = DiagnosticSeverity::Error,
       .message = parseError.getMessage(),
@@ -268,13 +268,13 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   if (!firstAppear) {
     return false;
   }
-  assert(ctx.back()->scope->modId == this->contexts.back().src->getSrcId());
-  (void)ctx;
-  auto range = toRange(*this->contexts.back().src, checkError.getToken());
+  auto *cur = this->findContext(ctx.back()->scope->modId);
+  assert(cur);
+  auto range = toRange(*cur->src, checkError.getToken());
   if (!range.hasValue()) {
     return false;
   }
-  this->contexts.back().diagnostics.push_back(Diagnostic{
+  cur->diagnostics.push_back(Diagnostic{
       .range = range.unwrap(),
       .severity = DiagnosticSeverity::Error, // FIXME: support warning ?
       .message = checkError.getMessage(),

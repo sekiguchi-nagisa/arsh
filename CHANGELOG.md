@@ -83,6 +83,7 @@
 - invalid ``SCRIPT_DIR`` in module name completion
 - object destruction order of tuple, user-defined type, closure
 - ``DSSatte_lineEdit`` does not set default prompt when intrenal ``EDIT_HOOK`` throw error
+- emit diagnostics to wrong textDocument
 
 ## [0.25.0] - 2022-03-31
 

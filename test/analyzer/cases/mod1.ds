@@ -1,0 +1,5 @@
+
+typedef Interval($a : Int, $b : Int) {
+    var begin = $a
+    var end = $b
+}
