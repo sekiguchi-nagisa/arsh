@@ -1,0 +1,4 @@
+# RUN: echo 1>&2 $RANDOM && echo 1>&2 hello
+
+# CHECK_ERR_RE_IF: \d+
+#       CHECK_ERR: hello

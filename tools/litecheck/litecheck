@@ -154,8 +154,11 @@ function _to_chunk($checks : [Directive]) : [[Directive]] {
     for $c in $checks {
         if $c.type.endsWith("_IF") || $c.type.endsWith("_RE") {
             $ret.add(new [Directive]())
-        } elif !$ret.empty() && !$ret.peek().empty() && $ret.peek().peek().type.endsWith("_RE") {
-            $ret.add(new [Directive]())
+        } elif !$ret.empty() && !$ret.peek().empty()  {
+            var pp = $ret.peek().peek()
+            if $pp.type.endsWith("_RE") || $pp.type.endsWith("_RE_IF") {
+                $ret.add(new [Directive]())
+            }
         }
         $ret.peek().add($c)
     }
@@ -163,7 +166,7 @@ function _to_chunk($checks : [Directive]) : [[Directive]] {
 }
 
 function _match_chunk_re($checks : [Directive], $output : [String]) : Bool {
-    assert $checks.size() == 1
+    assert $checks.size() == 1 : "expect is 1, actual is ${$checks.size()}"
 
     var out = $output.join($'\n')
     var re = $checks[0].line as Regex
