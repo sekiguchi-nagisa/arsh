@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <pwd.h>
 #include <unistd.h>
 
 #include <memory>
