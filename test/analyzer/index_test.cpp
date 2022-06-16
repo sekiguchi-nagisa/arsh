@@ -980,6 +980,9 @@ typedef Interval {
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval { var value = new Interval!(); }; var a = new Interval();\n$a.value",
       Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval! for Interval\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover(
+      "typedef Interval { var value = new Interval!(); }; var aaa = new [[Interval]]();\n$aaa",
+      Position{.line = 1, .character = 2}, "```ydsh\nvar aaa : [[Interval]]\n```"));
 
   // user-defined method
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for Int { return $this; }\n12.value()",

@@ -85,6 +85,7 @@
 - ``DSSatte_lineEdit`` does not set default prompt when intrenal ``EDIT_HOOK`` throw error
 - emit diagnostics to wrong textDocument
 - broken ``CHECK_RE_IF``, ``CHECK_ERR_RE_IF`` parsing
+- invalid user-defined type name format in hover
 
 ## [0.25.0] - 2022-03-31
 

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <regex>
+
 #include <cmd_desc.h>
 
 #include "indexer.h"
@@ -81,12 +83,9 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
   }
 }
 
-static StringRef trimTypeName(const DSType &type) {
-  auto ref = type.getNameRef();
-  if (auto pos = ref.find("."); pos != StringRef::npos) {
-    ref = ref.substr(pos + 1);
-  }
-  return ref;
+static std::string normalizeTypeName(const DSType &type) {
+  static std::regex re(R"(%mod\d+\.)", std::regex_constants::ECMAScript);
+  return std::regex_replace(type.getName(), re, "");
 }
 
 static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
@@ -105,8 +104,7 @@ const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type
   if (type.isUnresolved()) {
     return nullptr;
   }
-  StringRef ref = trimTypeName(type);
-  return this->addDecl(info, kind, ref.data(), token);
+  return this->addDecl(info, kind, normalizeTypeName(type).c_str(), token);
 }
 
 const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &info,
@@ -200,9 +198,9 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   if (type.isUnresolved()) {
     return nullptr;
   }
-  std::string content = trimTypeName(type).toString();
+  std::string content = normalizeTypeName(type);
   content += " for ";
-  content += trimTypeName(recv);
+  content += normalizeTypeName(recv);
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
@@ -222,12 +220,12 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
       content += "$p";
       content += std::to_string(i);
       content += " : ";
-      content += trimTypeName(methodHandle.getParamTypeAt(i));
+      content += normalizeTypeName(methodHandle.getParamTypeAt(i));
     }
     content += ") : ";
-    content += trimTypeName(methodHandle.getReturnType());
+    content += normalizeTypeName(methodHandle.getReturnType());
     content += " for ";
-    content += trimTypeName(recv);
+    content += normalizeTypeName(recv);
     return content;
   } else {
     /**
@@ -235,9 +233,9 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
      */
     assert(recv.isTupleType());
     auto &fieldType = pool.get(handle.getTypeId());
-    std::string content = trimTypeName(fieldType).toString();
+    std::string content = normalizeTypeName(fieldType);
     content += " for ";
-    content += trimTypeName(recv);
+    content += normalizeTypeName(recv);
     return content;
   }
 }
@@ -669,13 +667,13 @@ static std::string generateFuncInfo(const FunctionNode &node) {
     value += "$";
     value += paramNode->getVarName();
     value += " : ";
-    value += trimTypeName(paramNode->getExprNode()->getType());
+    value += normalizeTypeName(paramNode->getExprNode()->getType());
   }
   value += ") : ";
-  value += trimTypeName(node.getReturnTypeNode()->getType());
+  value += normalizeTypeName(node.getReturnTypeNode()->getType());
   if (node.isMethod()) {
     value += " for ";
-    value += trimTypeName(node.getRecvTypeNode()->getType());
+    value += normalizeTypeName(node.getRecvTypeNode()->getType());
   }
   return value;
 }
@@ -694,7 +692,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += "$";
       value += paramNode->getVarName();
       value += " : ";
-      value += trimTypeName(paramNode->getExprNode()->getType());
+      value += normalizeTypeName(paramNode->getExprNode()->getType());
     }
     value += ")";
   }
@@ -709,9 +707,9 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += declNode.getVarName();
       value += " : ";
       if (declNode.getExprNode()) {
-        value += trimTypeName(declNode.getExprNode()->getType());
+        value += normalizeTypeName(declNode.getExprNode()->getType());
       } else {
-        value += trimTypeName(pool.get(TYPE::String));
+        value += normalizeTypeName(pool.get(TYPE::String));
       }
       value += "\n";
     } else if (isa<TypeDefNode>(*e)) {
@@ -720,7 +718,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
         value += "    typedef ";
         value += defNode.getName();
         value += " = ";
-        value += trimTypeName(defNode.getTargetTypeNode().getType());
+        value += normalizeTypeName(defNode.getTargetTypeNode().getType());
         value += "\n";
       }
     }
