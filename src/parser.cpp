@@ -206,14 +206,16 @@ static void iteratePathList(const Lexer &lex, const Token token, Func func) {
   StringRef ref = lex.toStrRef(token);
   const unsigned int size = ref.size();
   unsigned int startPos = 0;
-  for (unsigned int pos = 0; pos < size; pos++) {
-    char ch = ref[pos];
-    if (ch == ':' || pos + 1 == size) {
-      Token sub = token.slice(startPos, pos + 1);
+  unsigned int pos = 0;
+  while (pos < size) {
+    char ch = ref[pos++];
+    if (ch == '\\' && pos < size) {
+      pos++;
+    }
+    if (ch == ':' || pos == size) {
+      Token sub = token.slice(startPos, pos);
       func(sub);
-      startPos = pos + 1;
-    } else if (ch == '\\' && pos + 1 < size) {
-      pos++; // skip escaped
+      startPos = pos;
     }
   }
 }
