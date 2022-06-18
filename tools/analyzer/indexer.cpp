@@ -357,7 +357,7 @@ void SymbolIndexer::visitTypeNode(TypeNode &node) {
   case TypeNode::Qualified: {
     auto &type = cast<QualifiedTypeNode>(node);
     this->visit(type.getRecvTypeNode());
-    if (!type.isUntyped()) {
+    if (!type.isUntyped() && !type.getType().isUnresolved()) {
       NameInfo info(type.getNameTypeNode().getToken(), type.getNameTypeNode().getTokenText());
       this->builder().addMember(type.getRecvTypeNode().getType(), info,
                                 DeclSymbol::Kind::TYPE_ALIAS, *type.getNameTypeNode().getHandle(),
