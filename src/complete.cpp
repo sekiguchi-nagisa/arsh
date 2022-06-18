@@ -267,6 +267,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
       if (dir == nullptr) {
         return true;
       }
+      auto cleanup = finally([dir] { closedir(dir); });
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
         if (cancel && cancel->isCanceled()) {
           return false;
@@ -287,7 +288,6 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           }
         }
       }
-      closedir(dir);
       return true;
     }));
   }
@@ -348,6 +348,7 @@ static bool completeFileName(const char *baseDir, const std::string &prefix, con
     return true;
   }
 
+  auto cleanup = finally([dir] { closedir(dir); });
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
     if (cancel && cancel->isCanceled()) {
       return false;
@@ -387,7 +388,6 @@ static bool completeFileName(const char *baseDir, const std::string &prefix, con
                                                        : CompCandidateKind::COMMAND_ARG);
     }
   }
-  closedir(dir);
   return true;
 }
 

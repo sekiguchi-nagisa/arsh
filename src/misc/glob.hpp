@@ -344,7 +344,7 @@ GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender
   if (!dir) {
     return Result::EXIT;
   }
-  auto cleanup = finally([&] {
+  auto cleanup = finally([dir] {
     int old = errno;
     closedir(dir);
     errno = old;
