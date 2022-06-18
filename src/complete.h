@@ -96,6 +96,12 @@ private:
   virtual void consume(std::string &&, CompCandidateKind, int priority) = 0;
 };
 
+struct CompCancel {
+  virtual ~CompCancel() = default;
+
+  virtual bool isCanceled() const = 0;
+};
+
 using UserDefinedComp =
     std::function<bool(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
                        CompCandidateConsumer &consumer)>;
@@ -113,6 +119,8 @@ private:
   ObserverPtr<const Lexer> lex;
 
   const std::string &scriptDir; // for module completion
+
+  ObserverPtr<CompCancel> cancel;
 
   /**
    * current completion word
@@ -204,7 +212,7 @@ public:
   void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op);
 
   void addCompHookRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
-    this->lex.reset(&lexer);
+    this->lex = makeObserver(lexer);
     this->fallbackOp = this->compOp;
     this->compOp = CodeCompOp::HOOK;
     this->cmdNode = std::move(node);
@@ -216,7 +224,15 @@ public:
 
   void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp = comp; }
 
-  void invoke(CompCandidateConsumer &consumer);
+  void setCancel(ObserverPtr<CompCancel> c) { this->cancel = c; }
+
+  /**
+   *
+   * @param consumer
+   * @return
+   * if cancelled, return false
+   */
+  bool invoke(CompCandidateConsumer &consumer);
 };
 
 template <>
@@ -230,6 +246,7 @@ private:
   TypePool &pool;
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
+  ObserverPtr<CompCancel> cancel;
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
@@ -239,6 +256,8 @@ public:
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
 
+  void setCancel(CompCancel &c) { this->cancel = makeObserver(c); }
+
   /**
    * if module provider is specified, parse 'ref' and complete candidates (except for 'option')
    * otherwise complete candidates corresponding to 'option'
@@ -246,8 +265,10 @@ public:
    * @param scriptName
    * @param ref
    * @param option
+   * @return
+   * if cancelled, return false
    */
-  void operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
+  bool operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                   CodeCompOp option);
 };
 

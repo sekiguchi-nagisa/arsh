@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "../test_common.h"
 #include <vm.h>
 
 using BreakPointHandler = std::function<void()>;
@@ -35,7 +36,7 @@ public:
   void vmThrowHook(DSState &) override {}
 };
 
-class VMTest : public ::testing::Test {
+class VMTest : public ExpectOutput {
 protected:
   DSState *state;
   VMInspector inspector;
@@ -93,6 +94,17 @@ protected:
     ASSERT_TRUE(v.isObject());
 
     ASSERT_EQ(refCount, v.get()->getRefcount());
+  }
+
+  Output evalInChild(const char *code, OpCode breakOp, BreakPointHandler &&handler) {
+    IOConfig config{IOConfig::INHERIT, IOConfig::PIPE, IOConfig::PIPE};
+    auto handle = ProcBuilder::spawn(config, [&] {
+      this->setBreakPointHandler(breakOp, std::move(handler));
+      int r = DSState_eval(this->state, "<dummy>", code, strlen(code), nullptr);
+      DSState_delete(&this->state);
+      return r;
+    });
+    return handle.waitAndGetResult(true);
   }
 };
 
@@ -255,6 +267,51 @@ TEST_F(VMTest, abort) {
 TEST_F(VMTest, exit) {
   ASSERT_NO_FATAL_FAILURE(this->eval("false || exit; var c = 34", DS_ERROR_KIND_EXIT));
   ASSERT_NO_FATAL_FAILURE(this->eval("$c;", DS_ERROR_KIND_RUNTIME_ERROR));
+}
+
+TEST_F(VMTest, compCancel) {
+  // interrupt file name completion
+  const char *code = R"(
+complete -A file ''
+)";
+  const char *err = R"([runtime error]
+SystemError: code completion is cancelled, caused by `Interrupted system call'
+    from <dummy>:2 '<toplevel>()')";
+  auto output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
+    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    raise(SIGINT);
+  });
+  ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
+
+  // interrupt module name completion
+  code = R"(
+complete -A module ''
+)";
+  output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
+    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    raise(SIGINT);
+  });
+  ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
+
+  // interrupt command name completion
+  code = R"(
+complete -A cmd ''
+)";
+  output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
+    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    raise(SIGINT);
+  });
+  ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
+
+  // interrupt
+  code = R"(
+complete 'echo '
+)";
+  output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
+    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    raise(SIGINT);
+  });
+  ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
 }
 
 TEST(ProcTableTest, base) {

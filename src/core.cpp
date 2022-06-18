@@ -180,6 +180,13 @@ public:
   }
 };
 
+class DefaultCompCancel : public CompCancel {
+public:
+  bool isCanceled() const override {
+    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
+  }
+};
+
 static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
                           const std::string &word) {
   std::vector<DSValue> values;
@@ -321,7 +328,13 @@ Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRe
                                                         CompCandidateConsumer &consumer) {
       return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
     });
-    codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
+    DefaultCompCancel cancel;
+    codeCompleter.setCancel(cancel);
+
+    if (!codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option)) {
+      compreply.refValues().clear(); // if cancelled, clear completion results
+      raiseSystemError(st, EINTR, "code completion is cancelled");
+    }
     provider.discard(discardPoint);
     discardTempMod(st.tempModScope, resolvedMod);
   }

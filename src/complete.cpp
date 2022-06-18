@@ -205,24 +205,37 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
   });
 }
 
-template <typename Func>
-static void iteratePathList(const char *value, Func func) {
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!E) {                                                                                      \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+template <typename T>
+static constexpr bool iterate_requirement_v =
+    std::is_same_v<bool, std::invoke_result_t<T, const std::string &>>;
+
+template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
+static bool iteratePathList(const char *value, Func func) {
   StringRef ref = value;
   std::string path;
   for (StringRef::size_type pos = 0;;) {
     auto ret = ref.find(':', pos);
     path = "";
     path += ref.slice(pos, ret);
-    func(path);
+    TRY(func(path));
     if (ret == StringRef::npos) {
       break;
     }
     pos = ret + 1;
   }
+  return true;
 }
 
-static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
-                            const CodeCompOp option, CompCandidateConsumer &consumer) {
+static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
+                            const CodeCompOp option, CompCandidateConsumer &consumer,
+                            ObserverPtr<CompCancel> cancel) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     completeUDC(scope, cmdPrefix, consumer, hasFlag(option, CodeCompOp::NO_IDENT));
@@ -247,14 +260,18 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
   if (hasFlag(option, CodeCompOp::EXTERNAL)) {
     const char *pathEnv = getenv(ENV_PATH);
     if (pathEnv == nullptr) {
-      return;
+      return true;
     }
-    iteratePathList(pathEnv, [&](const std::string &path) {
+    TRY(iteratePathList(pathEnv, [&](const std::string &path) {
       DIR *dir = opendir(path.c_str());
       if (dir == nullptr) {
-        return;
+        return true;
       }
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+        if (cancel && cancel->isCanceled()) {
+          return false;
+        }
+
         StringRef cmd = entry->d_name;
         if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(cmd[0])) {
           continue;
@@ -271,12 +288,14 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         }
       }
       closedir(dir);
-    });
+      return true;
+    }));
   }
+  return true;
 }
 
-static void completeFileName(const char *baseDir, const std::string &prefix, const CodeCompOp op,
-                             CompCandidateConsumer &consumer) {
+static bool completeFileName(const char *baseDir, const std::string &prefix, const CodeCompOp op,
+                             CompCandidateConsumer &consumer, ObserverPtr<CompCancel> cancel) {
   const auto s = prefix.find_last_of('/');
 
   // complete tilde
@@ -292,7 +311,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
       }
     }
     endpwent();
-    return;
+    return true;
   }
 
   // complete file name
@@ -326,10 +345,14 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
 
   DIR *dir = opendir(targetDir.c_str());
   if (dir == nullptr) {
-    return;
+    return true;
   }
 
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+    if (cancel && cancel->isCanceled()) {
+      return false;
+    }
+
     StringRef dname = entry->d_name;
     if (dname.startsWith(name)) {
       if (name.empty() && (dname == ".." || dname == ".")) {
@@ -365,27 +388,29 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
     }
   }
   closedir(dir);
+  return true;
 }
 
-static void completeModule(const SysConfig &config, const char *scriptDir,
-                           const std::string &prefix, bool tilde, CompCandidateConsumer &consumer) {
+static bool completeModule(const SysConfig &config, const char *scriptDir,
+                           const std::string &prefix, bool tilde, CompCandidateConsumer &consumer,
+                           ObserverPtr<CompCancel> cancel) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
   }
 
   // complete from SCRIPT_DIR
-  completeFileName(scriptDir, prefix, op, consumer);
+  TRY(completeFileName(scriptDir, prefix, op, consumer, cancel));
 
   if (!prefix.empty() && prefix[0] == '/') {
-    return;
+    return true;
   }
 
   // complete from local module dir
-  completeFileName(config.getModuleHome().c_str(), prefix, op, consumer);
+  TRY(completeFileName(config.getModuleHome().c_str(), prefix, op, consumer, cancel));
 
   // complete from system module dir
-  completeFileName(config.getModuleDir().c_str(), prefix, op, consumer);
+  return completeFileName(config.getModuleDir().c_str(), prefix, op, consumer, cancel);
 }
 
 /**
@@ -574,9 +599,9 @@ static bool completeSubcommand(const TypePool &pool, NameScope &scope, const Cmd
   return true;
 }
 
-void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
+bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   if (!this->hasCompRequest()) {
-    return; // do nothing
+    return true; // do nothing
   }
 
   if (hasFlag(this->compOp, CodeCompOp::ENV)) {
@@ -587,7 +612,7 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   }
   if (hasFlag(this->compOp, CodeCompOp::EXTERNAL) || hasFlag(this->compOp, CodeCompOp::UDC) ||
       hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-    completeCmdName(*this->scope, this->compWord, this->compOp, consumer);
+    TRY(completeCmdName(*this->scope, this->compWord, this->compOp, consumer, this->cancel));
   }
   if (hasFlag(this->compOp, CodeCompOp::USER)) {
     completeUserName(this->compWord, consumer);
@@ -597,11 +622,12 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   }
   if (hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
       hasFlag(this->compOp, CodeCompOp::DIR)) {
-    completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer);
+    TRY(completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer,
+                         this->cancel));
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
-    completeModule(this->config, this->scriptDir.c_str(), this->compWord,
-                   hasFlag(this->compOp, CodeCompOp::TILDE), consumer);
+    TRY(completeModule(this->config, this->scriptDir.c_str(), this->compWord,
+                       hasFlag(this->compOp, CodeCompOp::TILDE), consumer, this->cancel));
   }
   if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
     completeKeyword(this->compWord, this->compOp, consumer);
@@ -621,12 +647,14 @@ void CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
     if (this->userDefinedComp &&
         this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, consumer)) {
-      return;
+      return true;
     }
     if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, consumer)) {
-      completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, consumer);
+      TRY(completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, consumer,
+                           this->cancel));
     }
   }
+  return true;
 }
 
 void CodeCompletionHandler::addVarNameRequest(std::string &&value, NameScopePtr curScope) {
@@ -690,12 +718,13 @@ static std::string toScriptDir(const std::string &scriptName) {
   return value;
 }
 
-void CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
+bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                                CodeCompOp option) {
   auto scriptDir = toScriptDir(scriptName);
   CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, std::move(scope),
                                 scriptDir);
   handler.setUserDefinedComp(this->userDefinedComp);
+  handler.setCancel(this->cancel);
   if (this->provider) {
     // prepare
     FrontEnd frontEnd(*this->provider, lex(scriptName, ref, scriptDir),
@@ -704,10 +733,10 @@ void CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
     // perform completion
     consumeAllInput(frontEnd);
     handler.ignore(option);
-    handler.invoke(this->consumer);
+    return handler.invoke(this->consumer);
   } else {
     handler.addCompRequest(option, ref.toString());
-    handler.invoke(this->consumer);
+    return handler.invoke(this->consumer);
   }
 }
 
