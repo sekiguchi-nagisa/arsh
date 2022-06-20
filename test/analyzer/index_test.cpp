@@ -1048,6 +1048,23 @@ var AAA = 'hello'
                                       "'\n```"));
 }
 
+TEST_F(IndexTest, docSymbol) {
+  ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::VAR));
+  ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::LET));
+  ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::IMPORT_ENV));
+  ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::EXPORT_ENV));
+  ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::MOD));
+  ASSERT_EQ(SymbolKind::Constant, toSymbolKind(DeclSymbol::Kind::CONST));
+  ASSERT_EQ(SymbolKind::Constant, toSymbolKind(DeclSymbol::Kind::MOD_CONST));
+  ASSERT_EQ(SymbolKind::Function, toSymbolKind(DeclSymbol::Kind::FUNC));
+  ASSERT_EQ(SymbolKind::Function, toSymbolKind(DeclSymbol::Kind::CMD));
+  ASSERT_EQ(SymbolKind::Function, toSymbolKind(DeclSymbol::Kind::BUILTIN_CMD));
+  ASSERT_EQ(SymbolKind::Method, toSymbolKind(DeclSymbol::Kind::METHOD));
+  ASSERT_EQ(SymbolKind::Constructor, toSymbolKind(DeclSymbol::Kind::CONSTRUCTOR));
+  ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::TYPE_ALIAS));
+  ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::ERROR_TYPE_DEF));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
