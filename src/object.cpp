@@ -82,6 +82,12 @@ std::string DSValue::toString() const {
   switch (this->kind()) {
   case DSValueKind::NUMBER:
     return std::to_string(this->asNum());
+  case DSValueKind::NUM_LIST: {
+    auto &nums = this->asNumList();
+    char buf[256];
+    snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
+    return std::string(buf);
+  }
   case DSValueKind::DUMMY: {
     unsigned int typeId = this->asTypeId();
     if (typeId == static_cast<unsigned int>(TYPE::Module)) {
