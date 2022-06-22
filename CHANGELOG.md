@@ -18,7 +18,7 @@
 #### Builtin
 
 - allow ``UnixFD`` type in ``for-in`` expression
-    - read each lines during iteration (for more efficient alternative of while-read loop)
+    - read each lines during iteration (for more efficient alternative of while-read pattern)
     ```
     ls | for $e in $STDIN {
       echo $e
@@ -26,7 +26,7 @@
     ```
 - pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
 - pass module context of current completion to ``COMP_HOOK``
-- add the following method to ``Error`` type
+- add the following methods to ``Error`` type
     - ``lineno``: get line number of occurred location
     - ``source``: get source name of occurred location
 
@@ -63,7 +63,7 @@
     - now use ``shctl set`` sub-command instead
 - add some options to ``shctl set`` sub-command
     - ``-d`` option for dumping current runtime options
-    - ``-r`` option for restore runtime options from dump
+    - ``-r`` option for restoring runtime options from dump
     - if options is not specified, show current runtime option setting
 - ``shctl module`` sub-command now finds and prints full path of specified modules
 
@@ -84,9 +84,9 @@
 - file name completion in prefix assignment
 - invalid ``SCRIPT_DIR`` in module name completion
 - object destruction order of tuple, user-defined type, closure
-- ``DSSatte_lineEdit`` does not set default prompt when intrenal ``EDIT_HOOK`` throw error
+- ``DSSatte_lineEdit`` does not set default prompt when internal ``EDIT_HOOK`` throw error
 - emit diagnostics to wrong textDocument
-- broken ``CHECK_RE_IF``, ``CHECK_ERR_RE_IF`` parsing
+- broken ``CHECK_RE_IF``, ``CHECKERR_RE_IF`` parsing
 - invalid user-defined type name format in hover
 
 ## [0.25.0] - 2022-03-31
