@@ -950,9 +950,9 @@ TEST_F(IndexTest, hover) {
   // variable or function
   ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimport-env HOME : String\n```"));
+      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimportenv HOME : String\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexport-env ZZZ : String\n```"));
+      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexportenv ZZZ : String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
                                       "```ydsh\nfunction hoge($s : Int) : Void\n```"));
 

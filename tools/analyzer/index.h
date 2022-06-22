@@ -217,9 +217,9 @@ public:
     case DeclSymbol::Kind::LET:
       return "let";
     case DeclSymbol::Kind::EXPORT_ENV:
-      return "export-env";
+      return "exportenv";
     case DeclSymbol::Kind::IMPORT_ENV:
-      return "import-env";
+      return "importenv";
     default:
       return "";
     }
