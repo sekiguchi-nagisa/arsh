@@ -52,6 +52,7 @@
 - cancel runtime glob expansion by SIGINT
 - cancel runtime code completion by SIGINT
 - show sub-shell level when handle uncaught exception
+- deprecate ``import-env``, ``export-env`` keywords. now use ``importenv``, ``exportenv`` instead.
 
 #### Builtin
 

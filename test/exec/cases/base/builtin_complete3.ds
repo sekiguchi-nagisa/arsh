@@ -15,11 +15,11 @@ break3() {}
 case4() {}
 continue5(){}
 coproc6(){}
-export-env7(){}
+exportenv7(){}
 for8(){}
 function9(){}
 ifnames(){}
-import-env10(){}
+importenv10(){}
 return11(){}
 source!12(){}
 tryaffix(){}
@@ -67,15 +67,15 @@ $assertArray(["coproc", "coproc6"], $(complete 'copro'))
 $assertArray(["coproc", "coproc6"], $(complete 'coproc'))
 $assertArray($({complete -A cmd 'd'; echo 'defer' && echo 'do'; } | sort | uniq ), $(complete 'd'))
 $assertArray($({complete -A cmd 'do'; echo 'do'; } | sort | uniq ), $(complete 'do'))
-$assertArray(["export-env", "export-env7"], $(complete 'export-en'))
-$assertArray(["export-env", "export-env7"], $(complete 'export-env'))
+$assertArray(["exportenv", "exportenv7"], $(complete 'exporten'))
+$assertArray(["exportenv", "exportenv7"], $(complete 'exportenv'))
 $assertArray($({complete -A cmd 'fo'; echo 'for'; } | sort | uniq ), $(complete 'fo'))
 $assertArray($({complete -A cmd 'for'; echo 'for'; } | sort | uniq ), $(complete 'for'))
 $assertArray(["function", "function9"], $(complete 'functio'))
 $assertArray(["function", "function9"], $(complete 'function'))
 $assertArray($({complete -A cmd 'if'; echo 'if'; } | sort | uniq ), $(complete 'if'))
-$assertArray(["import-env", "import-env10"], $(complete 'import-en'))
-$assertArray(["import-env", "import-env10"], $(complete 'import-env'))
+$assertArray(["importenv", "importenv10"], $(complete 'importen'))
+$assertArray(["importenv", "importenv10"], $(complete 'importenv'))
 $assertArray($({complete -A cmd 'le'; echo 'let'; } | sort | uniq ), $(complete 'le'))
 $assertArray($({complete -A cmd 'let'; echo 'let'; } | sort | uniq ), $(complete 'let'))
 $assertArray($({complete -A cmd 'ne'; echo 'new'; } | sort | uniq ), $(complete 'ne'))

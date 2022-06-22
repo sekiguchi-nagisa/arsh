@@ -87,7 +87,7 @@ __cmd() {
                            '!', '+', '-', 'throw', 'coproc',
 
                             'assert', 'defer',
-                           'export-env', 'import-env',
+                           'exportenv', 'importenv',
                            'let', 'source', 'source!', 'typedef',
                            'var', ';'])
     }
@@ -219,7 +219,7 @@ $assertArray($(file ~/), $(complete 'AAA=${1234}:~/'))
 $assertArray($(file '.'), $(complete '@('))
 $assertArray($(file '/usr/bin'), $(complete '@(34 /usr/bin/'))
 $assertArray($(file ~/), $(complete '@(${45 + 45} ~/'))
-$assertArray(new [String](), $(complete 'import-env home '))
+$assertArray(new [String](), $(complete 'importenv home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
 $assertArray(new [String](), $(complete 'echo :'))
 $assertArray(new [String](), $(complete 'echo 345:./'))

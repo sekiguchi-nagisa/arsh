@@ -15,7 +15,7 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : [String] {
     if $c < $t.size() && $t.peek() == '-' {
         return ['-A', '-b', '-E', '-H', '-n', '-P', '-S']
     }
-    import-env PATH : ""
+    importenv PATH : ""
     PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete &> /dev/null -A external ${$c < $t.size() ? $t.peek() : ""}
     return $COMPREPLY
 }

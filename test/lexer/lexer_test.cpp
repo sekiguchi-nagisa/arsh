@@ -229,7 +229,14 @@ TEST_F(LexerTest_Lv1, else_tok2) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ELSE, text, TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, exportenv_tok) {
+TEST_F(LexerTest_Lv1, exportenv_tok1) {
+  const char *text = "export-env";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EXPORT_ENV, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
+}
+
+TEST_F(LexerTest_Lv1, exportenv_tok2) {
   const char *text = "export-env";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EXPORT_ENV, text, TokenKind::EOS, ""));
@@ -267,8 +274,15 @@ TEST_F(LexerTest_Lv1, if_tok) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::IF, text, TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, importenv_tok) {
+TEST_F(LexerTest_Lv1, importenv_tok1) {
   const char *text = "import-env";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::IMPORT_ENV, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
+}
+
+TEST_F(LexerTest_Lv1, importenv_tok2) {
+  const char *text = "importenv";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::IMPORT_ENV, text, TokenKind::EOS, ""));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));

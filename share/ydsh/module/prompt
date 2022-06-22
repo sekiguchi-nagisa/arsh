@@ -14,7 +14,7 @@ let _cache = [
 ]
 
 function renderPrompt($p : String) : String {
-    import-env PWD : "."
+    importenv PWD : "."
     var ret = ""
     let size = $p.size()
     for(var i = 0; $i < $size; $i++) {

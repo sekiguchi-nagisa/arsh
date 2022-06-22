@@ -36,12 +36,12 @@
   TOKEN(DO, "do")                                                                                  \
   TOKEN(ELIF, "elif")                                                                              \
   TOKEN(ELSE, "else")                                                                              \
-  TOKEN(EXPORT_ENV, "export-env")                                                                  \
+  TOKEN(EXPORT_ENV, "exportenv")                                                                   \
   TOKEN(FINALLY, "finally")                                                                        \
   TOKEN(FOR, "for")                                                                                \
   TOKEN(FUNCTION, "function")                                                                      \
   TOKEN(IF, "if")                                                                                  \
-  TOKEN(IMPORT_ENV, "import-env")                                                                  \
+  TOKEN(IMPORT_ENV, "importenv")                                                                   \
   TOKEN(INTERFACE, "interface")                                                                    \
   TOKEN(LET, "let")                                                                                \
   TOKEN(NEW, "new")                                                                                \

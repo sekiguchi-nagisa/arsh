@@ -15,7 +15,7 @@ assert $? == 1
 
 assert !checkenv CCC
 assert ! checkenv EEE
-assert { import-env EEE; $EEE; }.empty()
+assert { importenv EEE; $EEE; }.empty()
 assert ! checkenv DDD
 
 assert "$(setenv CCC 2>&1)" == "ydsh: setenv: CCC: Invalid argument"

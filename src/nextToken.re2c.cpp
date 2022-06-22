@@ -160,11 +160,13 @@ INIT:
     <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
     <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
     <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
+    <STMT> "exportenv"       { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
     <EXPR> "finally"         { RET(FINALLY); }
     <STMT,EXPR> "for"        { RET_OR_COMP(FOR); }
     <STMT> "function"        { MODE(NAME); RET_OR_COMP(FUNCTION); }
     <STMT> "if"              { RET_OR_COMP(IF); }
     <STMT> "import-env"      { MODE(NAME); RET_OR_COMP(IMPORT_ENV); }
+    <STMT> "importenv"       { MODE(NAME); RET_OR_COMP(IMPORT_ENV); }
     <STMT> "interface"       { RET(INTERFACE); }
     <STMT> "let"             { MODE(NAME); RET_OR_COMP(LET); }
     <STMT> "new"             { MODE(EXPR); RET_OR_COMP(NEW); }

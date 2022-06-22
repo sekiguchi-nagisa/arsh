@@ -9,8 +9,8 @@ assert diff <(complete -A variable '') <(complete '$')
 assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
 
 ## env
-assert diff <(complete -A env 'X') <(complete 'import-env X')
-assert diff <(complete -A env '') <(complete 'import-env ')
+assert diff <(complete -A env 'X') <(complete 'importenv X')
+assert diff <(complete -A env '') <(complete 'importenv ')
 
 ## signal
 assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
@@ -52,7 +52,7 @@ let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
             '!', '+', '-', 'throw', 'coproc', 
 
             'typedef', 'assert', 'defer',
-            'export-env', 'import-env',
+            'exportenv', 'importenv',
             'let', 'source', 'source!', 'var', ';']
 
 let expr = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
