@@ -217,7 +217,7 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
       if (i > 0) {
         content += ", ";
       }
-      content += "$p";
+      content += "p";
       content += std::to_string(i);
       content += " : ";
       content += normalizeTypeName(methodHandle.getParamTypeAt(i));
@@ -664,7 +664,6 @@ static std::string generateFuncInfo(const FunctionNode &node) {
     if (i > 0) {
       value += ", ";
     }
-    value += "$";
     value += paramNode->getVarName();
     value += " : ";
     value += normalizeTypeName(paramNode->getExprNode()->getType());
@@ -689,7 +688,6 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       if (i > 0) {
         value += ", ";
       }
-      value += "$";
       value += paramNode->getVarName();
       value += " : ";
       value += normalizeTypeName(paramNode->getExprNode()->getType());

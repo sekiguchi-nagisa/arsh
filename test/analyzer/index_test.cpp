@@ -954,7 +954,7 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexportenv ZZZ : String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
-                                      "```ydsh\nfunction hoge($s : Int) : Void\n```"));
+                                      "```ydsh\nfunction hoge(s : Int) : Void\n```"));
 
   // user-defined command
   ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Boolean\n```"));
@@ -970,10 +970,11 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef Interval { var begin = 34; }; var a = new Interval();\n$a",
                   Position{.line = 1, .character = 0}, "```ydsh\nvar a : Interval\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("typedef Interval { let value = new Interval!(); }\nvar a = new Interval();",
-                  Position{.line = 1, .character = 15}, R"(```ydsh
-typedef Interval {
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
+                                      "Interval!(); }\nvar a = new Interval();",
+                                      Position{.line = 1, .character = 15}, R"(```ydsh
+typedef Interval(s : Int) {
+    var n : Int
     let value : Interval!
 }
 ```)"));
@@ -1022,7 +1023,7 @@ TEST_F(IndexTest, hoverBuiltin) {
                                       "```ydsh\nfunction size() : Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice($p0 : Int, $p1 : Int) : String for String\n```"));
+                  "```ydsh\nfunction slice(p0 : Int, p1 : Int) : String for String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {
