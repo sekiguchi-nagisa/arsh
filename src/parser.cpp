@@ -289,23 +289,23 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
     this->refetch(yycEXPR);
   }
   auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo));
-  TRY(this->expect(TokenKind::LP));
+  TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
 
   for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
     if (count > 0) {
       if (CUR_KIND() != TokenKind::COMMA) {
         E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
       }
-      this->consume(); // COMMA
+      TRY(this->expectAndChangeMode(TokenKind::COMMA, yycPARAM));
     }
 
-    if (CUR_KIND() == TokenKind::APPLIED_NAME) {
-      auto param = this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName); // always success
+    if (CUR_KIND() == TokenKind::PARAM_NAME) {
+      auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
       TRY(this->expect(TokenKind::COLON, false));
       auto type = TRY(this->parse_typeName());
       node->addParamNode(std::move(param), std::move(type));
     } else {
-      E_ALTER(TokenKind::APPLIED_NAME, TokenKind::RP);
+      E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
     }
   }
   this->expect(TokenKind::RP); // always success
@@ -676,22 +676,22 @@ std::unique_ptr<Node> Parser::parse_typedef() {
     auto node =
         std::make_unique<FunctionNode>(startPos, std::move(nameInfo), FunctionNode::CONSTRUCTOR);
     if (CUR_KIND() == TokenKind::LP) {
-      this->consume(); // LP
+      TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
       for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
         if (count > 0) {
           if (CUR_KIND() != TokenKind::COMMA) {
             E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
           }
-          this->consume(); // COMMA
+          TRY(this->expectAndChangeMode(TokenKind::COMMA, yycPARAM));
         }
 
-        if (CUR_KIND() == TokenKind::APPLIED_NAME) {
-          auto param = this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName); // always success
+        if (CUR_KIND() == TokenKind::PARAM_NAME) {
+          auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
           TRY(this->expect(TokenKind::COLON, false));
           auto type = TRY(this->parse_typeName());
           node->addParamNode(std::move(param), std::move(type));
         } else {
-          E_ALTER(TokenKind::APPLIED_NAME, TokenKind::RP);
+          E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
         }
       }
       this->expect(TokenKind::RP); // always success
@@ -846,14 +846,13 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
 std::unique_ptr<Node> Parser::parse_forExpression() {
   GUARD_DEEP_NESTING(guard);
 
-  assert(CUR_KIND() == TokenKind::FOR);
   unsigned int startPos = START_POS();
-  this->consume(); // FOR
+  TRY(this->expectAndChangeMode(TokenKind::FOR, yycPARAM));
 
   if (CUR_KIND() == TokenKind::LP) { // for
     auto ctx = this->inSkippableNLCtx();
 
-    this->consume(); // LP
+    this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
     auto initNode = TRY(this->parse_statementImpl());
     TRY(this->expect(TokenKind::LINE_END));
@@ -881,7 +880,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     }
     return node;
   } else { // for-in
-    auto name = TRY(this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName));
+    auto name = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
     TRY(this->expect(TokenKind::IN));
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = this->parse_block();
@@ -949,7 +948,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
     TRY(this->expect(TokenKind::LP));
   }
 
-  auto nameInfo = TRY(this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName));
+  auto nameInfo = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
   std::unique_ptr<TypeNode> typeToken;
   if (CUR_KIND() == TokenKind::COLON) {
     this->expect(TokenKind::COLON, false); // always success

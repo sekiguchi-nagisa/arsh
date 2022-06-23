@@ -152,7 +152,7 @@ INIT:
     <STMT> "assert"          { RET_OR_COMP(ASSERT); }
     <STMT> "break"           { RET_OR_COMP(BREAK); }
     <STMT> "case"            { RET_OR_COMP(CASE); }
-    <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
+    <EXPR> "catch"           { MODE(PARAM); RET(CATCH); }
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "defer"           { RET_OR_COMP(DEFER); }
@@ -202,7 +202,8 @@ INIT:
     <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
     <STMT,EXPR,CMD> "("      { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(LP); }
-    <STMT,EXPR,CMD> ")"      { POP_MODE(); RET(RP); }
+    <STMT,EXPR,CMD,PARAM> ")"
+                             { POP_MODE(); RET(RP); }
     <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(LB); }
     <STMT,EXPR> "]"          { POP_MODE(); RET(RB); }
     <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
@@ -317,21 +318,25 @@ INIT:
     <TYPE> "!" / [^=~]       { RET(TYPE_OPT); }
     <TYPE> ("=>" | "->")     { RET(TYPE_ARROW); }
 
+    <PARAM> VAR_NAME         { MODE(EXPR); RET(PARAM_NAME); }
+    <PARAM> APPLIED_NAME     { MODE(EXPR); RET(PARAM_NAME); }
+    <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
+
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
-    <STMT,EXPR,NAME,TYPE> NEW_LINE
+    <STMT,EXPR,NAME,TYPE,PARAM> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
-    <STMT,EXPR,NAME,CMD,TYPE> COMMENT
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM> COMMENT
                              { if(this->inCompletionPoint()) { setComplete(false); }
                                STORE_COMMENT(); SKIP(); }
-    <STMT,EXPR,NAME,CMD,TYPE> [ \t]+
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM> [ \t]+
                              { FIND_SPACE(); }
-    <STMT,EXPR,NAME,CMD,TYPE> "\\" [\r\n]
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\r\n]
                              { UPDATE_LN(); SKIP(); }
 
 
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE> *      { RET(INVALID); }
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> "\000" { REACH_EOS();}
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> *      { RET(INVALID); }
   */
 
 END:

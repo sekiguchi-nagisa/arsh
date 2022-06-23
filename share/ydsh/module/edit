@@ -22,11 +22,11 @@ function _sync() {
     for(; $HISTORY.size() > $HISTSIZE; $HISTORY.pop()) {}
 }
 
-function _error($s : String) {
+function _error(s : String) {
     echo 1>&2 history: $s
 }
 
-function _usage($fd : UnixFD, $short : Boolean) : Int {
+function _usage(fd : UnixFD, short : Boolean) : Int {
     echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
     $short && return 2;
 
@@ -43,7 +43,7 @@ function _usage($fd : UnixFD, $short : Boolean) : Int {
     return 2
 }
 
-function _show($argv : [String]) : Int {
+function _show(argv : [String]) : Int {
     let histSize = $HISTORY.size()
     let size = $argv.size()
     var offset = $histSize
@@ -70,7 +70,7 @@ function _show($argv : [String]) : Int {
     return 0
 }
 
-function _add($s : String, $p : Boolean) {
+function _add(s : String, p : Boolean) {
     $HISTSIZE == 0 && return;
     if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
 
@@ -86,7 +86,7 @@ function _add($s : String, $p : Boolean) {
     $HISTORY.add($s)
 }
 
-function _default_search($q : String) : String {
+function _default_search(q : String) : String {
     command -v fzf &> /dev/null || return ""
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
@@ -95,11 +95,11 @@ function _default_search($q : String) : String {
     } | sort | uniq | fzf --inline-info $arg)"
 }
 
-function _search($q : String) : String {
+function _search(q : String) : String {
     return ($HISTSEARCH ?? $_default_search)($q)
 }
 
-function _load($p : String!) {
+function _load(p : String!) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? return;
@@ -109,7 +109,7 @@ function _load($p : String!) {
     $PIPESTATUS.clear()
 }
 
-function _save($p : String!) {
+function _save(p : String!) {
     let limit = 4096
     if $HISTFILESIZE > $limit {
         $HISTFILESIZE = $limit
@@ -209,7 +209,7 @@ source $SCRIPT_DIR/prompt
 
 var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
 
-function _prompt($i : Int) : String {
+function _prompt(i : Int) : String {
     var value = $i == 1 ? $PS1 : $i == 2 ? $PS2 : ""
     if $i == 1 && $PROMPT_HOOK {
         $value = $PROMPT_HOOK!($value)
@@ -220,7 +220,7 @@ function _prompt($i : Int) : String {
 
 # entry point for line editing op
 
-function _editHook($op : Int, $index : Int, $text : String) : Any {
+function _editHook(op : Int, index : Int, text : String) : Any {
     $_sync()
 
     case $op {

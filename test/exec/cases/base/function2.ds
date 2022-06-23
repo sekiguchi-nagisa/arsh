@@ -10,7 +10,7 @@ var a1 = function ($a : Int)
 assert $a1 is (Int) => String
 assert $a1(34) == "<34>"
 
-assert (function($a : Int, $b : String) => {
+assert (function(a : Int, $b : String) => {
     var r = ""
     for(var i = 0; $i < $a; $i++) {
         $r += $b
@@ -23,7 +23,7 @@ assert (function () -> {}) is () -> Void
 assert (function () => 34 as Void) is ()->Void
 
 # single expression with return
-assert (function ($i : Int) => {
+assert (function (i : Int) => {
     if $i < 0 {
         return
     } elif $i > 0 {
@@ -38,7 +38,7 @@ assert (function ($i : Int) => {
 var a2 = function() : Void => 34
 assert $a2 is () -> Void
 
-var a3 = function ($s : String) : String! => $s
+var a3 = function (s : String) : String! => $s
 assert $a3 is (String) -> String!
 assert $a3('hello')! == 'hello'
 
@@ -75,7 +75,7 @@ assert (function() => _exit) is () -> Int
 assert (function() => _exit) is () -> Void
 
 # subtype with more params
-let b0 = function($a : String, $b : ArithmeticError) : Any => $a + "=" + $b.name() + ":" + $b.message()
+let b0 = function($a : String, b : ArithmeticError) : Any => $a + "=" + $b.name() + ":" + $b.message()
 assert $b0 is (String, ArithmeticError) -> Any
 assert ! ($b0 is (Any, Error) -> String)
 assert ! ($b0 is (Any, ArithmeticError) -> Any)

@@ -2,7 +2,7 @@
 
 # for path manipulation
 
-function basename($s : String) : String {
+function basename(s : String) : String {
     if $s.empty() { return $s; }
 
     # skip last '/'
@@ -19,7 +19,7 @@ function basename($s : String) : String {
     return $s.slice($i + 1, $end)
 }
 
-function dirname($s : String) : String {
+function dirname(s : String) : String {
     if $s.empty() { return "."; }
 
     # skip last '/'
@@ -39,7 +39,7 @@ function dirname($s : String) : String {
     return $i == 0 ? "." : $s.slice(0, $i)
 }
 
-function tilde($s : String) : String! {
+function tilde(s : String) : String! {
     $s.startsWith('~') || return $s
 
     var b = $s.from(1)

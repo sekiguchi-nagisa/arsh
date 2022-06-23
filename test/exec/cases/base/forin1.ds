@@ -13,7 +13,7 @@ assert($i == 5)
 # Map for-in
 $i = 0;
 var tt : [(String, Int)]
-for $e in ["a" : 1,
+for e in ["a" : 1,
             "b" : 2,
             "c" : 3,
             "d" : 4] {
@@ -29,7 +29,7 @@ var bb = ["a" : 1,
             "b" : 2,
             "c" : 3,
             "d" : 4]
-for $e in $bb {
+for e in $bb {
     assert($e is Tuple<String, Int>)
     assert $bb[$e._0] == $e._1
     $i = $i + 1
@@ -46,7 +46,7 @@ for $a in "あ0🇯🇵漢　" {
 assert($i == $r.size())
 
 var count = 0
-for $s in "" {
+for s in "" {
     $count++
 }
 assert $count == 0

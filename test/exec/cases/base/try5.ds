@@ -7,7 +7,8 @@ function f($v : Int) : [Int] {
         try {
             12 / $v
             $a.add(0)
-        } catch $e {
+        } catch
+        e {
             $a.add(1)
         }
         $a.add(2)

@@ -24,10 +24,12 @@ assert $m[3] == 4
 ## put
 $ex = 34
 try {
-    for $a in $m {
+    for
+      a in $m {
         $m.put(0, -9)
     }
-} catch $e {
+} catch
+  e {
     $ex = $e
 }
 assert $ex is InvalidOperationError
@@ -53,7 +55,7 @@ assert $m.size() == 2
 ## remove
 $ex = 34
 try {
-    for $a in $m {
+    for a in $m {
         $m.remove(0)
     }
 } catch $e {

@@ -1,0 +1,4 @@
+#$test($result = 'parse', $lineNum = 4, $chars = 7, $errorKind = 'InvalidToken', $status = 1)
+
+try {}
+catch(23) {}

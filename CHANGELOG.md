@@ -53,6 +53,7 @@
 - cancel runtime code completion by SIGINT
 - show sub-shell level when handle uncaught exception
 - deprecate ``import-env``, ``export-env`` keywords. now use ``importenv``, ``exportenv`` instead.
+- omit ``$`` sigil in parameter declarations (catch, function, constructor, for-in)
 
 #### Builtin
 

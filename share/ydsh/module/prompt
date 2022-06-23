@@ -13,7 +13,7 @@ let _cache = [
     '$' : $UID == 0 ? '#' : '$',
 ]
 
-function renderPrompt($p : String) : String {
+function renderPrompt(p : String) : String {
     importenv PWD : "."
     var ret = ""
     let size = $p.size()
@@ -57,7 +57,7 @@ function renderPrompt($p : String) : String {
     return "$(echo -en $ret)"
 }
 
-function _usage($fd : UnixFD, $short : Boolean) : Int  {
+function _usage(fd : UnixFD, short : Boolean) : Int  {
     echo > $fd usage: prompt [-h] [--help] [+prompt]
     if $short { return 2; }
 

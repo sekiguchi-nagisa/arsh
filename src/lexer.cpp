@@ -83,6 +83,9 @@ std::string LexerMode::toString() const {
   case yycDSTRING:
     mode = "DSTRING(";
     break;
+  case yycPARAM:
+    mode = "PARAM(";
+    break;
   }
   std::string value = mode;
   if (this->skipNL()) {

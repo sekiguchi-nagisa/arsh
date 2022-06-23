@@ -52,7 +52,8 @@ assert($f is Func<Int, [Func<Int, [Int]>, Int]>)
 assert($f($func, 12) == 24)
 
 # multiple return type
-function make_pair($a : Float) : String, Int {
+function make_pair(
+   a : Float) : String, Int {
     var str = $a as String
     return ($str, $str.size())
 }

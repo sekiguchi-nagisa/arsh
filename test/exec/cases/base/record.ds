@@ -65,7 +65,10 @@ assert $ccc1._next!._values[0] == 'a'
 assert $ccc1._next!._values[1] == 'b'
 
 ## recursive constructor call
-typedef DDD($v : String, $c : Int, $n : Int) {
+typedef DDD(
+  v : String,
+ c : Int,
+  n : Int) {
     var data = ""
     for(var i = $c; $i < $n; $i++) {
         $data += $v

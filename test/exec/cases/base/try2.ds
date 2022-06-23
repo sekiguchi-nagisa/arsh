@@ -100,7 +100,7 @@ try {
     try {
         1 / 0
         assert($false)
-    } catch($e : OutOfRangeError) {
+    } catch(e : OutOfRangeError) {
         assert($false)
     } finally {
         $j = $j + 1
@@ -126,6 +126,6 @@ function h() {
 
 try {
     $h()
-} catch($e) {
+} catch(e) {
     assert($e is ArithmeticError)
 }

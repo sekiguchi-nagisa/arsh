@@ -1,4 +1,4 @@
-#$test($result = 'parse', $lineNum = 4, $chars = 6, $errorKind = 'TokenMismatched', $status = 1)
+#$test($result = 'parse', $lineNum = 4, $chars = 6, $errorKind = 'InvalidToken', $status = 1)
 
 try {  var a = 45 } catch($e) { }
 catch% # recognized as 'catch %'

@@ -4,7 +4,7 @@
 
 source $SCRIPT_DIR/path
 
-function _empty($ctx : Module, $words : [String], $cursor : Int) : [String] {
+function _empty(ctx : Module, words : [String], cursor : Int) : [String] {
     return new [String]()
 }
 
@@ -12,7 +12,7 @@ typedef Completer = typeof($_empty)
 
 let _compMap : [String : Completer]
 
-function _defaultHook($ctx : Module, $words : [String], $cursor : Int) : [String] {
+function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String] {
     if !(command -v $words[0] 2>&1 > /dev/null) {
         return new [String]()
     }
@@ -23,7 +23,7 @@ function _defaultHook($ctx : Module, $words : [String], $cursor : Int) : [String
 }
 
 # if $cmd is empty string, treat as fallback handler
-function compAdd($cmd : String, $comp : Completer) : Completer! {
+function compAdd(cmd : String, comp : Completer) : Completer! {
     $COMP_HOOK = $_defaultHook
     return $_compMap.put($cmd, $comp)
 }
@@ -71,9 +71,9 @@ let _compdefMap : [
 #
 # $prefix starts with '-'
 #
-function _comp_opt($deflist : [(String, Int, String)], $prefix : String) : [String] {
+function _comp_opt(deflist : [(String, Int, String)], prefix : String) : [String] {
     var ret = new [String]()
-    for $def in $deflist {
+    for def in $deflist {
         var opt = case $def._0.size() {
             0 => continue
             1 => '-' + $def._0
@@ -96,8 +96,8 @@ startwith() {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg($ctx : Module, $deflist: [(String, Int, String)], $opt : String, $prefix : String) : [String] {
-    for $def in $deflist {
+function _comp_arg(ctx : Module, deflist: [(String, Int, String)], opt : String, prefix : String) : [String] {
+    for def in $deflist {
         $opt == case $def._0.size() {
             0 => ""
             1 => '-' + $def._0
@@ -131,12 +131,12 @@ function _comp_arg($ctx : Module, $deflist: [(String, Int, String)], $opt : Stri
     return new [String]()
 }
 
-function _comp_wrap($file : String, $target : String, $words : [String], $cursor : Int): [String] {
+function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
     test -f "$file" || return new [String]()
     let _helper = "$SCRIPT_DIR/../completion-wrapper.bash"
 
     var line = ""
-    for $w in $words {
+    for w in $words {
         if !$line.empty() { $line += " "; }
         $line += $w
     }
@@ -150,7 +150,7 @@ function _comp_wrap($file : String, $target : String, $words : [String], $cursor
     return $ret
 }
 
-function _from_compdef($ctx : Module, $words : [String], $cursor : Int) : [String] {
+function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String] {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? return new [String]()
     if $deflist[0]._1 == 3 {
@@ -241,6 +241,6 @@ compdef() {
     ))
 }
 
-function compDelegate($ctx : Module, $words : [String], $cursor : Int) : [String] {
+function compDelegate(ctx : Module, words : [String], cursor : Int) : [String] {
     return $_defaultHook($ctx, $words, $cursor)
 }

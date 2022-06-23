@@ -71,6 +71,7 @@
   /* applied name */                                                                               \
   TOKEN(APPLIED_NAME, "<$ Name>")                                                                  \
   TOKEN(SPECIAL_NAME, "<$ Char>")                                                                  \
+  TOKEN(PARAM_NAME, "<Parameter>")                                                                 \
   /* bracket */                                                                                    \
   TOKEN(LP, "(")  /* ( */                                                                          \
   TOKEN(RP, ")")  /* ) */                                                                          \
