@@ -652,11 +652,12 @@ TEST_F(LexerTest_Lv1, string_expr6) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-TEST_F(LexerTest_Lv1, invalid_string_expr) {
+TEST_F(LexerTest_Lv1, string_expr7) {
   const char *text = R"("hello$")";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::OPEN_DQUOTE, "\"", TokenKind::STR_ELEMENT, "hello",
-                                 TokenKind::INVALID, "$"));
+                                 TokenKind::STR_ELEMENT, "$", TokenKind::CLOSE_DQUOTE, "\"",
+                                 TokenKind::EOS, ""));
 }
 
 // regex literal

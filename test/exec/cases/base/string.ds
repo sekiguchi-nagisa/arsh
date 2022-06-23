@@ -9,6 +9,8 @@ assert('a\nb' == $'a\\nb')
 assert('a\rb' == $'a\\rb')
 assert('a\tb' == $'a\\tb')
 assert('a\o' == $'a\o')
+assert " $ " == ' $ '
+assert "$" == '$'
 assert($'\101\066' == "A6")     # octal
 assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex

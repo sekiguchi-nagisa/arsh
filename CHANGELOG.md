@@ -89,6 +89,7 @@
 - emit diagnostics to wrong textDocument
 - broken ``CHECK_RE_IF``, ``CHECKERR_RE_IF`` parsing
 - invalid user-defined type name format in hover
+- ``$`` in double-quoted string literal
 
 ## [0.25.0] - 2022-03-31
 

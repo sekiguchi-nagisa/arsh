@@ -265,8 +265,8 @@ INIT:
 
     <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
     <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
-    <DSTRING,CMD> "$"        { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
-                               else { ERROR();} }
+    <DSTRING> "$"            { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
+                               else { RET(STR_ELEMENT); } }
     <DSTRING,CMD> INNER_NAME { RET_OR_COMP(APPLIED_NAME); }
     <DSTRING,CMD> INNER_SPECIAL_NAME
                              { RET(SPECIAL_NAME); }
@@ -287,6 +287,8 @@ INIT:
     <CMD> APPLIED_NAME "["   { PUSH_MODE_SKIP_NL(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
     <CMD> SPECIAL_NAME "["   { PUSH_MODE_SKIP_NL(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
     <CMD> APPLIED_NAME "("   { PUSH_MODE_SKIP_NL(STMT); RET(APPLIED_NAME_WITH_PAREN); }
+    <CMD> "$"                { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
+                               else { ERROR();} }
 
     <CMD> "<"                { RET(REDIR_IN_2_FILE); }
     <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
