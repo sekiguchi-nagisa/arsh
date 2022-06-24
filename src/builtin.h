@@ -259,6 +259,10 @@ YDSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
 YDSH_METHOD int_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_abs);
   int64_t value = LOCAL(0).asInt();
+  if (value == INT64_MIN) {
+    raiseError(ctx, TYPE::ArithmeticError, "absolute value of INT_MIN is not defined");
+    RET_ERROR;
+  }
   RET(DSValue::createInt(std::abs(value)));
 }
 
