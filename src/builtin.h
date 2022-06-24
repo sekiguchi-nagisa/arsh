@@ -94,8 +94,12 @@ YDSH_METHOD int_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this : Int) : Int
 YDSH_METHOD int_minus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_minus);
-  int64_t v = -LOCAL(0).asInt();
-  RET(DSValue::createInt(v));
+  int64_t v = LOCAL(0).asInt();
+  if (v == INT64_MIN) {
+    raiseError(ctx, TYPE::ArithmeticError, "negative value of INT_MIN is not defined");
+    RET_ERROR;
+  }
+  RET(DSValue::createInt(-v));
 }
 
 //!bind: function $OP_NOT($this : Int) : Int

@@ -77,6 +77,13 @@ assert(12 == + 12)
 assert(-12 == - 12)
 assert((! 43) is Int)
 
+$ex = 34
+try {
+    let INT_MIN = -1 - 9223372036854775807
+    assert - $INT_MIN == $INT_MIN
+} catch e { $ex = $e; }
+assert $ex is ArithmeticError
+
 assert(3456 != 345)
 assert(3543 < 9999)
 assert(32 > -999)
@@ -100,8 +107,10 @@ assert 0.abs() == 0
 assert (-0).abs() == 0
 
 $ex = 34
-try { assert (-1 - 9223372036854775807).abs() == -1 - 9223372036854775807; }
-catch e { $ex = $e; }
+try {
+    let INT_MIN = -1 - 9223372036854775807
+    assert $INT_MIN.abs() == $INT_MIN;
+} catch e { $ex = $e; }
 assert $ex is ArithmeticError
 
 # to Float

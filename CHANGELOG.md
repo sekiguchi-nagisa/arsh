@@ -67,7 +67,7 @@
     - ``-r`` option for restoring runtime options from dump
     - if options is not specified, show current runtime option setting
 - ``shctl module`` sub-command now finds and prints full path of specified modules
-- throw ``ArithmeticError`` when call ``Int#abs`` to INT_MIN
+- throw ``ArithmeticError`` when call ``Int#abs``, ``-`` to INT_MIN
 
 #### LSP
 
