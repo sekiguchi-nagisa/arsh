@@ -139,7 +139,30 @@ TEST_F(InteractiveTest, expand_ctrlc1) {
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
-SystemError: glob is canceled, caused by `%s'
+SystemError: glob expansion is canceled, caused by `%s'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR));
+
+  if (platform::platform() == platform::PlatformType::CYGWIN) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
+  } else {
+    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
+  }
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
+TEST_F(InteractiveTest, expand_ctrlc2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("echo {1..9999999999}");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo {1..9999999999}\n"));
+  sleep(1);
+  this->send(CTRL_C);
+
+  std::string err = format(R"([runtime error]
+SystemError: brace expansion is canceled, caused by `%s'
     from (stdin):1 '<toplevel>()'
 )",
                            strerror(EINTR));

@@ -1200,17 +1200,13 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
     setFlag(option, GlobMatchOption::FASTGLOB);
   }
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
-      nullptr, GlobIter(begin), GlobIter(end),
-      [] {
-        return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
-      },
-      option);
+      nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
   auto ret = matcher(appender);
   if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
     argv.sortAsStrArray(oldSize);
     return true;
   } else if (ret == GlobMatchResult::CANCELED) {
-    raiseSystemError(state, EINTR, "glob is canceled");
+    raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;
   } else if (ret == GlobMatchResult::NOMATCH) {
     raiseGlobbingError(state, begin, end, "no matches for glob pattern");
@@ -1354,6 +1350,11 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   CONTINUE:
     if (i == size - 1) {
+      if(DSState::isInterrupted()) {
+        raiseSystemError(state, EINTR, "brace expansion is canceled");
+        return false;
+      }
+
       values[usedSize] = DSValue(); // sentinel
 
       auto *vbegin = values.get();

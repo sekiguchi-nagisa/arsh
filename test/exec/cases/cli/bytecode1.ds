@@ -184,3 +184,35 @@ Line Number Table:
 Exception Table:"
 
 $expect("$(ds --dump-code -n -c 'echo {1..5}')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 20
+  max stack depth: 6
+  number of local variable: 0
+  number of global variable: 60
+Code:
+   0: LOAD_CONST  2
+   2: NEW_CMD
+   3: PUSH_NULL
+   4: PUSH_META  6  0
+   7: LOAD_CONST  3
+   9: PUSH_META  7  0
+  12: PUSH_NULL
+  13: ADD_EXPANDING  3  4
+  16: CALL_CMD
+  17: POP
+  18: PUSH_INVALID
+  19: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: String echo
+  3: Any (5, -1, 2, [3, 1, 0])
+Line Number Table:
+  lineNum: 1, address: 16
+Exception Table:"
+
+$expect("$(ds --dump-code -n -c 'echo {-01..6..-2}')", 0, $out)

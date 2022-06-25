@@ -181,6 +181,10 @@ public:
     }
   }
 
+  static bool isInterrupted() {
+    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
+  }
+
   NON_COPYABLE(DSState);
 
   DSState();

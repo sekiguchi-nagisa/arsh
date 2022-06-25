@@ -49,7 +49,7 @@
 #### Core
 
 - **Breaking Change**: clear exit status when enter catch block
-- cancel runtime glob expansion by SIGINT
+- cancel runtime glob/brace expansion by SIGINT
 - cancel runtime code completion by SIGINT
 - show sub-shell level when handle uncaught exception
 - deprecate ``import-env``, ``export-env`` keywords. now use ``importenv``, ``exportenv`` instead.

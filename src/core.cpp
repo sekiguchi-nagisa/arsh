@@ -182,9 +182,7 @@ public:
 
 class DefaultCompCancel : public CompCancel {
 public:
-  bool isCanceled() const override {
-    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
-  }
+  bool isCanceled() const override { return DSState ::isInterrupted(); }
 };
 
 static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
