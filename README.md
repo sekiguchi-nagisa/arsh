@@ -33,8 +33,6 @@ Currently, under heavy development. Language specification is subject to change 
 ### Other Tested platform
 
 * Linux
-    * x86
-    * Arm32
     * Arm64
 * macOS
     * x86-64
