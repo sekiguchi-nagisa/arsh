@@ -132,6 +132,12 @@ TokenKind Lexer::nextToken(Token &token) {
 
     ENV_ASSIGN = CMD "=";
 
+    CHAR_SEQ_BODY = [a-zA-Z0-9] ".." [a-zA-Z0-9];
+    INT_SEQ_BODY = [+-]?[0-9]+ ".." [+-]?[0-9]+;
+    SEQ_STEP = [+-]? [0-9]+;
+    BRACE_INT_SEQ  = "{" INT_SEQ_BODY  (".." SEQ_STEP )? "}";
+    BRACE_CHAR_SEQ = "{" CHAR_SEQ_BODY (".." SEQ_STEP )? "}";
+
     REGEX_CHAR = "\\/" | [^\r\n\000/];
     REGEX = "$/" REGEX_CHAR* "/" [_a-z]*;
 
@@ -276,6 +282,8 @@ INIT:
     <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
+    <CMD> BRACE_CHAR_SEQ     { RET(BRACE_CHAR_SEQ); }
+    <CMD> BRACE_INT_SEQ      { RET(BRACE_INT_SEQ); }
     <CMD> "?"                { RET(GLOB_ANY); }
     <CMD> "*"                { RET(GLOB_ZERO_OR_MORE); }
     <CMD> "{"                { RET(BRACE_OPEN); }

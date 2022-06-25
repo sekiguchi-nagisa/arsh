@@ -899,6 +899,8 @@ public:
   unsigned int getFieldSize() const { return this->fieldSize; }
 
   // for tuple type
+  std::string toString() const;
+
   bool opStrAsTupleRecord(StrBuilder &builder) const;
 };
 

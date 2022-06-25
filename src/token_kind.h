@@ -154,6 +154,8 @@
   TOKEN(BRACE_OPEN, "{")                                                                           \
   TOKEN(BRACE_CLOSE, "}")                                                                          \
   TOKEN(BRACE_SEP, ",")                                                                            \
+  TOKEN(BRACE_CHAR_SEQ, "<Brace Char Seq>")                                                        \
+  TOKEN(BRACE_INT_SEQ, "<Brace Int Seq>")                                                          \
   /* redir op */                                                                                   \
   TOKEN(REDIR_IN_2_FILE, "<")                                                                      \
   TOKEN(REDIR_OUT_2_FILE, "1>")                                                                    \
@@ -321,6 +323,8 @@
 
 #define EACH_LA_cmdArg(OP)                                                                         \
   OP(CMD_ARG_PART)                                                                                 \
+  OP(BRACE_CHAR_SEQ)                                                                               \
+  OP(BRACE_INT_SEQ)                                                                                \
   OP(GLOB_ANY)                                                                                     \
   OP(GLOB_ZERO_OR_MORE)                                                                            \
   OP(BRACE_OPEN)                                                                                   \

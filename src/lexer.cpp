@@ -16,7 +16,6 @@
 
 #include "lexer.h"
 #include "misc/fatal.h"
-#include "misc/hash.hpp"
 #include "misc/num_util.hpp"
 
 namespace ydsh {

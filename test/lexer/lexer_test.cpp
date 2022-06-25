@@ -1322,6 +1322,34 @@ TEST_F(LexerTest_Lv1, CMD_ARG15) {
       EXPECT(TokenKind::CMD_ARG_PART, "\\?\\*\\?", TokenKind::GLOB_ANY, "?", TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, BRACE_SEQ1) {
+  const char *text = "{0..9}";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BRACE_CHAR_SEQ, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, BRACE_SEQ2) {
+  const char *text = "{-00034..+45678..+000}";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BRACE_INT_SEQ, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, BRACE_SEQ3) {
+  const char *text = "{0..a..+9}";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BRACE_CHAR_SEQ, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, BRACE_SEQ4) {
+  const char *text = "{Z..a..-009}";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BRACE_CHAR_SEQ, text, TokenKind::EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, ENV_ASSIGN1) {
   const char *text = "_1Ab9=23";
   this->initLexer(text);

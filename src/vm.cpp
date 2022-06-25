@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <random>
 
+#include "brace.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/glob.hpp"
@@ -1253,12 +1254,32 @@ static bool needGlob(const DSValue *begin, const DSValue *end) {
   return false;
 }
 
+/**
+ *
+ * @param cur
+ * @param rangeState
+ * (begin, end, step, (digits, kind))
+ * @return
+ */
+static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
+  auto &nums = obj[3].asNumList();
+  BraceRange range = {
+      .begin = obj[0].asInt(),
+      .end = obj[1].asInt(),
+      .step = obj[2].asInt(),
+      .digits = nums[0],
+      .kind = static_cast<BraceRange::Kind>(nums[1]),
+  };
+  return tryUpdateSeqValue(cur, range);
+}
+
 bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *begin,
                              const DSValue *end, ExpandOp expandOp) {
   const unsigned int size = end - begin;
   assert(size <= UINT8_MAX);
   FlexBuffer<ExpandState> stack;
   auto values = std::make_unique<DSValue[]>(size + 1); // reserve sentinel
+  FlexBuffer<int64_t> seqStack;
   unsigned int usedSize = 0;
 
   for (unsigned int i = 0; i < size; i++) {
@@ -1303,6 +1324,28 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
           goto CONTINUE;
         }
         break;
+      case ExpandMeta::BRACE_SEQ_OPEN: {
+        i++;
+        stack.push_back(ExpandState{
+            .index = static_cast<unsigned char>(i + 1),
+            .usedSize = static_cast<unsigned char>(usedSize),
+            .closeIndex = static_cast<unsigned char>(i + 1),
+            .braceId = static_cast<unsigned char>(meta.second),
+        });
+
+        auto &seq = typeAs<BaseObject>(begin[i]); // (begin, end, step, (digits, kind))
+        assert(seq.getFieldSize() == 4);
+        seqStack.push_back(seq[0].asInt());
+        goto CONTINUE;
+      }
+      case ExpandMeta::BRACE_SEQ_CLOSE: {
+        auto &nums = typeAs<BaseObject>(begin[i - 1])[3].asNumList();
+        unsigned int digits = nums[0];
+        auto kind = static_cast<BraceRange::Kind>(nums[1]);
+        values[usedSize++] = DSValue::createStr(
+            formatSeqValue(seqStack.back(), digits, kind == BraceRange::Kind::CHAR));
+        goto CONTINUE;
+      }
       default:
         break;
       }
@@ -1344,8 +1387,18 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
         assert(old.kind() == DSValueKind::EXPAND_META);
-        if (old.asExpandMeta().first == ExpandMeta::BRACE_CLOSE) {
+        auto meta = old.asExpandMeta().first;
+        if (meta == ExpandMeta::BRACE_CLOSE) {
           stack.pop_back();
+        } else if (meta == ExpandMeta::BRACE_SEQ_CLOSE) {
+          if (tryUpdate(seqStack.back(), typeAs<BaseObject>(begin[oldIndex - 1]))) {
+            i = oldIndex - 1;
+            usedSize = stack.back().usedSize;
+            break;
+          } else {
+            stack.pop_back();
+            seqStack.pop_back();
+          }
         } else {
           i = oldIndex;
           usedSize = stack.back().usedSize;

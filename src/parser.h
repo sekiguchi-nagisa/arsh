@@ -263,6 +263,14 @@ protected:
 
   std::unique_ptr<Node> parse_cmdArgSegImpl(CmdArgParseOpt opt);
 
+  /**
+   * parse sequence style brace expansion
+   * @param argNode
+   * @return
+   * if not recognize brace sequence style brace expansion, return false
+   */
+  bool parse_braceSeq(CmdArgNode &argNode);
+
   std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 
   std::unique_ptr<Node> parse_expression() {

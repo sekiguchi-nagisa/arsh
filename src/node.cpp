@@ -435,6 +435,26 @@ void WildCardNode::dump(NodeDumper &dumper) const {
   DUMP(braceId);
 }
 
+// ##########################
+// ##     BraceSeqNode     ##
+// ##########################
+
+void BraceSeqNode::dump(NodeDumper &dumper) const {
+  DUMP(range.begin);
+  DUMP(range.end);
+  DUMP(range.step);
+  DUMP(range.digits);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(BraceRange::Kind::INT)                                                                        \
+  OP(BraceRange::Kind::CHAR)                                                                       \
+  OP(BraceRange::Kind::OUT_OF_RANGE)                                                               \
+  OP(BraceRange::Kind::OUT_OF_RANGE_STEP)
+
+  DUMP_ENUM(range.kind, EACH_ENUM);
+#undef EACH_ENUM
+}
+
 // #####################
 // ##     CmdNode     ##
 // #####################

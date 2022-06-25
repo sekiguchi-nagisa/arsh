@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "brace.h"
 #include "constant.h"
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -57,6 +58,7 @@ namespace ydsh {
   OP(ArgArray)                                                                                     \
   OP(Redir)                                                                                        \
   OP(WildCard)                                                                                     \
+  OP(BraceSeq)                                                                                     \
   OP(Pipeline)                                                                                     \
   OP(With)                                                                                         \
   OP(Fork)                                                                                         \
@@ -1168,6 +1170,18 @@ public:
 inline bool isExpandingWildCard(const Node &node) {
   return isa<WildCardNode>(node) && cast<WildCardNode>(node).isExpand();
 }
+
+class BraceSeqNode : public WithRtti<Node, NodeKind::BraceSeq> {
+private:
+  BraceRange range;
+
+public:
+  BraceSeqNode(Token token, const BraceRange &range) : WithRtti(token), range(range) {}
+
+  const auto &getRange() const { return this->range; }
+
+  void dump(NodeDumper &dumper) const override;
+};
 
 class CmdNode : public WithRtti<Node, NodeKind::Cmd> {
 private:
@@ -2405,6 +2419,7 @@ struct NodeVisitor {
   virtual void visitArgArrayNode(ArgArrayNode &node) = 0;
   virtual void visitRedirNode(RedirNode &node) = 0;
   virtual void visitWildCardNode(WildCardNode &node) = 0;
+  virtual void visitBraceSeqNode(BraceSeqNode &node) = 0;
   virtual void visitPipelineNode(PipelineNode &node) = 0;
   virtual void visitWithNode(WithNode &node) = 0;
   virtual void visitAssertNode(AssertNode &node) = 0;
@@ -2458,6 +2473,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitArgArrayNode(ArgArrayNode &node) override { this->visitDefault(node); }
   void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
   void visitWildCardNode(WildCardNode &node) override { this->visitDefault(node); }
+  void visitBraceSeqNode(BraceSeqNode &node) override { this->visitDefault(node); }
   void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
   void visitWithNode(WithNode &node) override { this->visitDefault(node); }
   void visitForkNode(ForkNode &node) override { this->visitDefault(node); }

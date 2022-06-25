@@ -310,6 +310,8 @@ enum class ExpandMeta : unsigned char {
   BRACE_CLOSE,
   BRACE_SEP,
   BRACE_TILDE,
+  BRACE_SEQ_OPEN,
+  BRACE_SEQ_CLOSE,
 };
 
 enum class ExpandOp : unsigned char {
@@ -328,8 +330,10 @@ inline const char *toString(ExpandMeta meta) {
   case ExpandMeta::ZERO_OR_MORE:
     return "*";
   case ExpandMeta::BRACE_OPEN:
+  case ExpandMeta::BRACE_SEQ_OPEN:
     return "{";
   case ExpandMeta::BRACE_CLOSE:
+  case ExpandMeta::BRACE_SEQ_CLOSE:
     return "}";
   case ExpandMeta::BRACE_SEP:
     return ",";

@@ -140,6 +140,8 @@ std::string DSValue::toString() const {
     return typeAs<ArrayObject>(*this).toString();
   case ObjectKind::Map:
     return typeAs<MapObject>(*this).toString();
+  case ObjectKind::Base:
+    return typeAs<BaseObject>(*this).toString();
   case ObjectKind::Func:
     return typeAs<FuncObject>(*this).toString();
   case ObjectKind::Closure: {
@@ -537,6 +539,18 @@ BaseObject::~BaseObject() {
   for (unsigned int i = 0; i < this->fieldSize; i++) {
     (*this)[this->fieldSize - 1 - i].~DSValue(); // destruct object reverse order
   }
+}
+
+std::string BaseObject::toString() const {
+  std::string value = "(";
+  for (unsigned int i = 0; i < this->fieldSize; i++) {
+    if (i > 0) {
+      value += ", ";
+    }
+    value += (*this)[i].toString();
+  }
+  value += ")";
+  return value;
 }
 
 bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {

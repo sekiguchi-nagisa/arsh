@@ -15,6 +15,7 @@
  */
 
 #include "parser.h"
+#include "brace.h"
 #include "complete.h"
 #include "signals.h"
 
@@ -1098,9 +1099,10 @@ static bool isBrace(TokenKind kind) {
 std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
-  if (CUR_KIND() == TokenKind::CMD_ARG_PART) {
+  switch (CUR_KIND()) {
+  case TokenKind::CMD_ARG_PART: {
     const auto prevKind = this->consumedKind;
-    Token token = TRY(this->expect(TokenKind::CMD_ARG_PART));
+    Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
     if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
       iteratePathList(*this->lexer, token, [&](Token subToken) {
         auto kind = StringNode::STRING;
@@ -1121,11 +1123,23 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     }
     auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
     argNode.addSegmentNode(std::move(node));
-  } else {
+    return nullptr;
+  }
+  case TokenKind::BRACE_CHAR_SEQ:
+  case TokenKind::BRACE_INT_SEQ: {
+    Token token = this->curToken;
+    if (!this->parse_braceSeq(argNode)) {
+      auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token));
+      argNode.addSegmentNode(std::move(node));
+    }
+    return nullptr;
+  }
+  default: {
     auto node = TRY(this->parse_cmdArgSegImpl(opt));
     argNode.addSegmentNode(std::move(node));
+    return nullptr;
   }
-  return nullptr;
+  }
 }
 
 std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
@@ -1170,17 +1184,41 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   EACH_LA_paramExpansion(GEN_LA_CASE) return this->parse_paramExpansion();
     // clang-format on
   default:
-    if (this->inCompletionPoint()) {
-      if (this->inVarNameCompletionPoint()) {
-        this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
-      } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
-        this->tryCompleteFileNames(opt);
-      }
+    if (this->inVarNameCompletionPoint()) {
+      this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
+    } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
+      this->tryCompleteFileNames(opt);
     }
     E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE) ? ParseErrorKind::MOD_PATH
                                                     : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
   }
+}
+
+bool Parser::parse_braceSeq(CmdArgNode &argNode) {
+  assert(CUR_KIND() == TokenKind::BRACE_CHAR_SEQ || CUR_KIND() == TokenKind::BRACE_INT_SEQ);
+  const Token token = this->curToken;
+  const TokenKind kind = this->scan();
+  const Token seqToken = token.slice(1, token.size - 1); // skip '{' '}'
+
+  auto range = toBraceRange(this->lexer->toStrRef(seqToken), kind == TokenKind::BRACE_CHAR_SEQ);
+  switch (range.kind) {
+  case BraceRange::Kind::CHAR:
+  case BraceRange::Kind::INT:
+    break;
+  case BraceRange::Kind::OUT_OF_RANGE:
+  case BraceRange::Kind::OUT_OF_RANGE_STEP:
+    reportTokenFormatError(kind, token, "contains out of range number");
+    return false;
+  }
+
+  argNode.addSegmentNode(
+      std::make_unique<WildCardNode>(token.slice(0, 1), ExpandMeta::BRACE_SEQ_OPEN));
+  auto node = std::make_unique<BraceSeqNode>(seqToken, range);
+  argNode.addSegmentNode(std::move(node));
+  argNode.addSegmentNode(
+      std::make_unique<WildCardNode>(token.sliceFrom(token.size - 1), ExpandMeta::BRACE_SEQ_CLOSE));
+  return true;
 }
 
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,

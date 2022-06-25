@@ -13,11 +13,29 @@ var sep = "{,}"
 assert "$(echo 1a2 1\{,}2 1b2)" == "$(echo 1{a,$sep,b}2)"
 assert @({,}).empty()
 
+## sequence
+assert "$(echo {1..10})" == "1 2 3 4 5 6 7 8 9 10"
+assert "$(echo {0..8})" == "0 1 2 3 4 5 6 7 8"
+assert "$(echo {0..z..5})" == "0 5 : ? D I N S X ] b g l q v"
+assert "$(echo {0..z..-5})" == "v q l g b ] X S N I D ? : 5 0"
+assert "$(echo {9..0..5})" == "9 4"
+assert "$(echo {Z..a..2})" == "Z \ ^ `"
+assert "$(echo {0..~..5})" == "{0..~..5}"
+assert "$(echo {-0..+1})" == "0 1"
+assert "$(echo {-1..+200..50})" == "-1 49 99 149 199"
+assert "$(echo {-0..200..50})" == "0 50 100 150 200"
+assert "$(echo {-000..200..+50})" == "0000 0050 0100 0150 0200"
+assert "$(echo {-01..6..2})" == "-01 001 003 005"
+assert "$(echo {-01..+6..-2})" == "005 003 001 -01"
+assert "$(echo {-1..6..000200})" == "-1"
+
+
 ## nested
 assert "$(echo a b c)" == "$(echo {a,{b,c}})"
 assert "$(echo a b c)" == "$(echo {{a,b},c})"
 assert "$(echo 1{,2{,3{,4{,5}}}}@@{A,B})" ==
             "1@@A 1@@B 12@@A 12@@B 123@@A 123@@B 1234@@A 1234@@B 12345@@A 12345@@B"
+assert "$(echo 1{2,{a..d}})" == "12 1a 1b 1c 1d"
 
 ## has null chars
 var aa = @(AA{a,b$'\x00'}QQQ)

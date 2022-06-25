@@ -861,6 +861,20 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
   }
 }
 
+void ByteCodeGenerator::visitBraceSeqNode(BraceSeqNode &node) {
+  /**
+   * (begin, end, step, (digits, kind))
+   */
+  auto value = DSValue::create<BaseObject>(this->typePool.get(TYPE::Any), 4);
+  auto &obj = typeAs<BaseObject>(value);
+  auto &range = node.getRange();
+  obj[0] = DSValue::createInt(range.begin);
+  obj[1] = DSValue::createInt(range.end);
+  obj[2] = DSValue::createInt(range.step);
+  obj[3] = DSValue::createNumList(range.digits, static_cast<unsigned int>(range.kind), 0);
+  this->emitLdcIns(std::move(value));
+}
+
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
   this->generatePipeline(node, this->inStmtCtx() ? ForkKind::PIPE_FAIL : ForkKind::NONE);
 }

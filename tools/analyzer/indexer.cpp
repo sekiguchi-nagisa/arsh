@@ -517,6 +517,8 @@ void SymbolIndexer::visitRedirNode(RedirNode &node) { this->visit(node.getTarget
 
 void SymbolIndexer::visitWildCardNode(WildCardNode &) {}
 
+void SymbolIndexer::visitBraceSeqNode(BraceSeqNode &) {}
+
 void SymbolIndexer::visitPipelineNode(PipelineNode &node) { this->visitEach(node.getNodes()); }
 
 void SymbolIndexer::visitWithNode(WithNode &node) {

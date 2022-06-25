@@ -78,6 +78,10 @@
 
 - pass completion context to completer module
 
+#### Misc
+
+- temporary disable 32bit support
+
 ### Fixed
 
 - revert 'linenoise io error checking' due to broken error reporting

@@ -894,6 +894,10 @@ static void resolveBraceExpansion(CmdArgNode &node) {
           }
         }
         break;
+      case ExpandMeta::BRACE_SEQ_OPEN:
+      case ExpandMeta::BRACE_SEQ_CLOSE:
+        node.setBraceExpansion(true);
+        break;
       default:
         break;
       }
@@ -908,6 +912,7 @@ static void resolveBraceExpansion(CmdArgNode &node) {
       auto &wild = cast<WildCardNode>(*e);
       switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
+      case ExpandMeta::BRACE_SEQ_OPEN:
         stack.push_back(braceId++);
         wild.setBraceId(stack.back());
         break;
@@ -915,6 +920,7 @@ static void resolveBraceExpansion(CmdArgNode &node) {
         wild.setBraceId(stack.back());
         break;
       case ExpandMeta::BRACE_CLOSE:
+      case ExpandMeta::BRACE_SEQ_CLOSE:
         wild.setBraceId(stack.back());
         stack.pop_back();
         break;
@@ -996,6 +1002,10 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 }
 
 void TypeChecker::visitWildCardNode(WildCardNode &node) {
+  node.setType(this->typePool.get(TYPE::String));
+}
+
+void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
   node.setType(this->typePool.get(TYPE::String));
 }
 
@@ -1395,6 +1405,12 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       constNode->setType(this->typePool.get(TYPE::String));
       return constNode;
     }
+  }
+  case NodeKind::BraceSeq: {
+    auto &seqNode = cast<BraceSeqNode>(node);
+    auto constNode = std::make_unique<BraceSeqNode>(seqNode.getToken(), seqNode.getRange());
+    constNode->setType(seqNode.getType());
+    return constNode;
   }
   case NodeKind::UnaryOp: { // !, +, -, !
     auto &unaryNode = cast<UnaryOpNode>(node);
@@ -2261,6 +2277,8 @@ void TypeChecker::applyBraceExpansion(Token token,
   FlexBuffer<SrcExpandState> stack;
   std::vector<Node *> values;
   values.resize(size + 1); // reserve sentinel
+  FlexBuffer<int64_t> seqStack;
+  std::vector<std::unique_ptr<Node>> seqNodes;
   unsigned int usedSize = 0;
 
   for (unsigned int i = 0; i < size; i++) {
@@ -2305,6 +2323,28 @@ void TypeChecker::applyBraceExpansion(Token token,
           goto CONTINUE;
         }
         break;
+      case ExpandMeta::BRACE_SEQ_OPEN: {
+        i++;
+        stack.push_back(SrcExpandState{
+            .index = i + 1,
+            .usedSize = usedSize,
+            .closeIndex = i + 1,
+            .braceId = wild->getBraceId(),
+        });
+
+        auto &range = cast<BraceSeqNode>(begin[i])->getRange();
+        seqStack.push_back(range.begin);
+        seqNodes.push_back(nullptr);
+        goto CONTINUE;
+      }
+      case ExpandMeta::BRACE_SEQ_CLOSE: {
+        auto &range = cast<BraceSeqNode>(begin[i - 1])->getRange();
+        auto value =
+            formatSeqValue(seqStack.back(), range.digits, range.kind == BraceRange::Kind::CHAR);
+        seqNodes.back() = std::make_unique<StringNode>(std::move(value));
+        values[usedSize++] = seqNodes.back().get();
+        goto CONTINUE;
+      }
       default:
         break;
       }
@@ -2345,8 +2385,20 @@ void TypeChecker::applyBraceExpansion(Token token,
         unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
         assert(isExpandingWildCard(*old));
-        if (cast<WildCardNode>(*old).meta == ExpandMeta::BRACE_CLOSE) {
+        auto meta = cast<WildCardNode>(*old).meta;
+        if (meta == ExpandMeta::BRACE_CLOSE) {
           stack.pop_back();
+        } else if (meta == ExpandMeta::BRACE_SEQ_CLOSE) {
+          auto &range = cast<BraceSeqNode>(begin[oldIndex - 1])->getRange();
+          if (tryUpdateSeqValue(seqStack.back(), range)) {
+            i = oldIndex - 1;
+            usedSize = stack.back().usedSize;
+            break;
+          } else {
+            stack.pop_back();
+            seqStack.pop_back();
+            seqNodes.pop_back();
+          }
         } else {
           i = oldIndex;
           usedSize = stack.back().usedSize;
@@ -2409,7 +2461,8 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     if (!constNode) {
       return;
     }
-    assert(isa<StringNode>(*constNode) || isa<WildCardNode>(*constNode));
+    assert(isa<StringNode>(*constNode) || isa<WildCardNode>(*constNode) ||
+           isa<BraceSeqNode>(*constNode));
     if (isa<StringNode>(*constNode)) {
       auto ref = StringRef(cast<StringNode>(*constNode).getValue());
       if (ref.hasNullChar()) {

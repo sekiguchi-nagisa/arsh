@@ -248,6 +248,7 @@ set(YDSH_SRC
         src/paths.cpp
         src/compiler.cpp
         src/sysconfig.cpp
+        src/brace.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})
