@@ -6,6 +6,6 @@ var aa = IFS=$'\n' $(shctl module)
 assert $aa.size() == 5
 assert "$(basename $aa[0])" == '(builtin)'
 assert "$(basename $aa[1])" == '(root)'
-assert "$(basename $aa[2])" == 'mod_brace3.ds'
+assert "$(basename $aa[2])" == 'mod_brace4.ds'
 assert "$(basename $aa[3])" == 'module3.ds'
 assert "$(basename $aa[4])" == 'module1.ds'
