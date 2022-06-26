@@ -408,10 +408,24 @@ private:
   void emitSourcePos(unsigned int pos);
 
   /**
-   * begin and end have already been marked.
+   * generate catch-block
+   * if begin == end (try-block is empty), omit catch block
+   * @param begin
+   * begin of try-block (inclusive)
+   * must be marked
+   * @param end
+   * end of try-block (exclusive)
+   * must be marked
+   * @param type
+   * catching exception type
+   * @param localOffset
+   * try block local variable offset (for stack unwinding)
+   * @param localSize
+   * try block local variable size (for stack unwinding)
    */
   void catchException(const Label &begin, const Label &end, const DSType &type,
                       unsigned short localOffset = 0, unsigned short localSize = 0);
+
   void enterFinally(const Label &label) { this->emitJumpIns(label, OpCode::ENTER_FINALLY); }
 
   /**

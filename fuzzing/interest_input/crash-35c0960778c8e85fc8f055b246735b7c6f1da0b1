@@ -1,0 +1,66 @@
+
+# anonymous function in topelvel scope
+
+# single expression
+assert (function() => 34 ) is () -> Int
+var a1 = function ($a : Int)
+   =>
+    return "<$a>"
+
+assert $a1 is (Int) => String
+assert $a1(34) == "<34>"
+
+assert (function($a : Int, $b : String) => {
+    var r = ""
+    for(var i = 0; $i < $a; $i++) {
+        $r += $b
+    }
+    $r
+} )(5, 'a') == 'aaaaa'
+
+assert (function () -> {;}) is () -> Void
+assert (function () -> {}) is () -> Void
+assert (function () => 34 as Void) is ()->Void
+
+# single expression with return
+assert (function ($i : Int) => {
+    if $i < 0 {
+        return
+    } elif $i > 0 {
+        return
+    }
+    34.2
+}) is (Int) ->
+   Void
+
+
+# single expression with return type
+var a2 = function() : Void => 34
+assert $a2 is () -> Void
+
+var a3 = function ($s : String) : String! => $s
+assert $a3 is (String) -> String!
+assert $a3('hello')! == 'hello'
+
+var a4 = (function ($a : Int) : Any => $a)
+assert $a4 is (Int) => Any
+assert $a4(34) is Any
+asert $a4(-199) as Int == -199
+
+# subtype
+$a4 = $a1
+assert $a4 is (Int) => String
+assert $a4(333) is String
+assert $a4(333) as String == '<333>'
+assert ($a4 as (Int) -> String)(99) == '<99>'
+
+assert (function() -> 23) is () -> Int
+assert (function() -> 23) is () -> Int!
+assert (function() -> 23) is () -> Any
+assert (function() -> 23) is () -> Void
+assert (function() => {}) is () => Void
+assert ! (
+    (function () -> {}&) is () -> Any
+)
+assert ! (
+    (ƒunction () -> {}) is () -> ¿‘t ! ((function($s : String) : Any => $s) is (String) => String)

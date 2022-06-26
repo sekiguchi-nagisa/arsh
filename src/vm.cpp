@@ -1053,7 +1053,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
       ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
       pipeset.setupChildStdout();
     }
-    pipeset.closeAll();
+    pipeset.closeAll(); // FIXME: check error and force exit (not propagete error due to uncaught)
     closeAllPipe(pipeSize, pipefds);
 
     // set pc to next instruction
@@ -1350,7 +1350,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   CONTINUE:
     if (i == size - 1) {
-      if(DSState::isInterrupted()) {
+      if (DSState::isInterrupted()) {
         raiseSystemError(state, EINTR, "brace expansion is canceled");
         return false;
       }

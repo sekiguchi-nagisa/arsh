@@ -190,3 +190,52 @@ Exception Table:
   begin: 18, end: 27, type: process guard%%, dest: 27, offset: 0, size: 0"
 
 $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 17
+  max stack depth: 1
+  number of local variable: 1
+  number of global variable: 60
+Code:
+   0: PIPELINE_LP 2  6  7
+   6: HALT
+   7: STORE_LOCAL  0
+   9: PUSH_INT  23
+  11: RECLAIM_LOCAL  0  1
+  14: POP
+  15: PUSH_INVALID
+  16: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+  lineNum: 1, address:  0
+Exception Table:"
+
+$expect("$(ds -n --dump-code -c '{;;}|23')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 8
+  max stack depth: 1
+  number of local variable: 0
+  number of global variable: 60
+Code:
+  0: FORK  6  5
+  4: HALT
+  5: POP
+  6: PUSH_INVALID
+  7: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+  lineNum: 1, address: 0
+Exception Table:"
+
+$expect("$(ds -n --dump-code -c '{;}&')", 0, $out)

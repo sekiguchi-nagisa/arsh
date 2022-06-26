@@ -231,6 +231,9 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
 
 void ByteCodeGenerator::catchException(const Label &begin, const Label &end, const DSType &type,
                                        unsigned short localOffset, unsigned short localSize) {
+  if (begin->getIndex() == end->getIndex()) {
+    return;
+  }
   const unsigned int index = this->currentCodeOffset();
   this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
 }
