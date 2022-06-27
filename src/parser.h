@@ -283,17 +283,6 @@ protected:
 
   std::unique_ptr<Node> parse_primaryExpression();
 
-  template <typename Func>
-  auto expectNum(TokenKind kind, Func func) {
-    auto token = this->expect(kind);
-    int status = 0;
-    auto out = (this->lexer->*func)(token, status);
-    if (status != 0) {
-      this->reportTokenFormatError(kind, token, "out of range");
-    }
-    return std::make_pair(token, out);
-  }
-
   std::unique_ptr<Node> parse_arrayBody(Token token, std::unique_ptr<Node> &&firstNode);
 
   std::unique_ptr<Node> parse_mapBody(Token token, std::unique_ptr<Node> &&keyNode);

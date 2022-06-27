@@ -44,9 +44,16 @@ struct BraceRange {
  * begin..end..step
  * @param isChar
  * if true, char range, otherwise, int range
+ * @param error
+ * for error reporting
  * @return
  */
-BraceRange toBraceRange(StringRef ref, bool isChar);
+BraceRange toBraceRange(StringRef ref, bool isChar, std::string &error);
+
+inline BraceRange toBraceRange(StringRef ref, bool isChar) {
+  std::string error;
+  return toBraceRange(ref, isChar, error);
+}
 
 std::string formatSeqValue(int64_t v, unsigned int digits, bool isChar);
 

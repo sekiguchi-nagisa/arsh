@@ -137,9 +137,6 @@ bool Lexer::singleToString(Token token, std::string &out) const {
 bool Lexer::escapedSingleToString(Token token, std::string &out) const {
   assert(this->withinRange(token));
 
-  out.clear();
-  out.reserve(token.size - 3);
-
   StringRef ref = this->toStrRef(token);
   ref.removePrefix(2); // prefix "$'"
   ref.removeSuffix(1); // suffix "'"
@@ -165,6 +162,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
         }
         break;
       default:
+        out.assign(iter, ret.consumedSize);
         return false;
       }
     }

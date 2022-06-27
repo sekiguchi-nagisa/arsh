@@ -78,7 +78,7 @@ TEST(BraceSeqTest, base1) {
   {
     StringRef ref = "Z..0..9223372036854775808";
     auto range = toBraceRange(ref, true);
-    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE, range.kind);
+    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE_STEP, range.kind);
   }
 
   {
@@ -100,7 +100,7 @@ TEST(BraceSeqTest, base1) {
   {
     StringRef ref = "a..F..-9223372036854775809";
     auto range = toBraceRange(ref, true);
-    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE, range.kind);
+    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE_STEP, range.kind);
   }
 }
 
@@ -236,7 +236,7 @@ TEST(BraceSeqTest, base2) {
   {
     StringRef ref = "-0099..922339..99999999999999999999999999999";
     auto range = toBraceRange(ref, false);
-    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE, range.kind);
+    ASSERT_EQ(BraceRange::Kind::OUT_OF_RANGE_STEP, range.kind);
   }
 }
 

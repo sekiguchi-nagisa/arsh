@@ -54,6 +54,7 @@
 - show sub-shell level when handle uncaught exception
 - deprecate ``import-env``, ``export-env`` keywords. now use ``importenv``, ``exportenv`` instead.
 - omit ``$`` sigil in parameter declarations (catch, function, constructor, for-in)
+- improve token format error messages
 
 #### Builtin
 

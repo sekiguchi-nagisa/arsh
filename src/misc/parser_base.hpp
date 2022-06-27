@@ -162,7 +162,9 @@ protected:
 
   void reportInvalidTokenError(unsigned int size, const T *alters);
 
-  void reportTokenFormatError(T kind, Token token, const char *msg);
+  void reportTokenFormatError(T kind, Token token, std::string &&msg) {
+    this->createError(kind, token, TOKEN_FORMAT, std::move(msg));
+  }
 
   void reportDeepNestingError();
 
@@ -267,16 +269,6 @@ void ParserBase<T, LexerImpl, Tracker>::reportInvalidTokenError(unsigned int siz
   std::vector<T> expectedTokens(alters, alters + size);
   this->createError(this->curKind, this->curToken, INVALID_TOKEN, std::move(expectedTokens),
                     std::move(message));
-}
-
-template <typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::reportTokenFormatError(T kind, Token token,
-                                                               const char *msg) {
-  std::string message(msg);
-  message += ": ";
-  message += toString(kind);
-
-  this->createError(kind, token, TOKEN_FORMAT, std::move(message));
 }
 
 template <typename T, typename LexerImpl, typename Tracker>

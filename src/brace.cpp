@@ -84,7 +84,7 @@ static int64_t toReversedBegin(int64_t begin, int64_t end, int64_t step) {
   return static_cast<int64_t>(value);
 }
 
-BraceRange toBraceRange(StringRef ref, bool isChar) {
+BraceRange toBraceRange(StringRef ref, bool isChar, std::string &error) {
   BraceRange braceRange = {
       .begin = 0,
       .end = 0,
@@ -112,9 +112,15 @@ BraceRange toBraceRange(StringRef ref, bool isChar) {
     braceRange.end = static_cast<unsigned char>(end[0]);
   } else {
     auto ret1 = toBraceInt(begin);
-    auto ret2 = toBraceInt(end);
-    if (!ret1 || !ret2) {
+    if (!ret1) {
       braceRange.kind = BraceRange::Kind::OUT_OF_RANGE;
+      error = begin.toString();
+      goto END;
+    }
+    auto ret2 = toBraceInt(end);
+    if (!ret2) {
+      braceRange.kind = BraceRange::Kind::OUT_OF_RANGE;
+      error = end.toString();
       goto END;
     }
     braceRange.begin = ret1.value;
@@ -125,7 +131,8 @@ BraceRange toBraceRange(StringRef ref, bool isChar) {
   if (!step.empty()) {
     auto ret = toBraceInt(step);
     if (!ret) {
-      braceRange.kind = BraceRange::Kind::OUT_OF_RANGE;
+      braceRange.kind = BraceRange::Kind::OUT_OF_RANGE_STEP;
+      error = step.toString();
       goto END;
     }
     int64_t v = ret.value;
@@ -135,6 +142,7 @@ BraceRange toBraceRange(StringRef ref, bool isChar) {
       break;
     case INT64_MIN:
       braceRange.kind = BraceRange::Kind::OUT_OF_RANGE_STEP;
+      error = step.toString();
       goto END;
     default:
       if (v < 0) {

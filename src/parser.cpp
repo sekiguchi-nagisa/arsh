@@ -1201,15 +1201,27 @@ bool Parser::parse_braceSeq(CmdArgNode &argNode) {
   const TokenKind kind = this->scan();
   const Token seqToken = token.slice(1, token.size - 1); // skip '{' '}'
 
-  auto range = toBraceRange(this->lexer->toStrRef(seqToken), kind == TokenKind::BRACE_CHAR_SEQ);
+  std::string error;
+  auto range =
+      toBraceRange(this->lexer->toStrRef(seqToken), kind == TokenKind::BRACE_CHAR_SEQ, error);
   switch (range.kind) {
   case BraceRange::Kind::CHAR:
   case BraceRange::Kind::INT:
     break;
-  case BraceRange::Kind::OUT_OF_RANGE:
-  case BraceRange::Kind::OUT_OF_RANGE_STEP:
-    reportTokenFormatError(kind, token, "contains out of range number");
+  case BraceRange::Kind::OUT_OF_RANGE: {
+    std::string message = "out of range number: ";
+    message += error;
+    message += ", must be int64";
+    reportTokenFormatError(kind, token, std::move(message));
     return false;
+  }
+  case BraceRange::Kind::OUT_OF_RANGE_STEP: {
+    std::string message = "out of range increment number: ";
+    message += error;
+    message += ", must be int64_min +1 to int64_max";
+    reportTokenFormatError(kind, token, std::move(message));
+    return false;
+  }
   }
 
   argNode.addSegmentNode(
@@ -1433,12 +1445,24 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     return std::make_unique<NewNode>(startPos, std::move(type), std::move(argsNode));
   }
   case TokenKind::INT_LITERAL: {
-    auto pair = TRY(this->expectNum(TokenKind::INT_LITERAL, &Lexer::toInt64));
-    return NumberNode::newInt(pair.first, pair.second);
+    Token token = TRY(this->expect(TokenKind::INT_LITERAL));
+    int status = 0;
+    auto value = this->lexer->toInt64(token, status);
+    if (status != 0) {
+      this->reportTokenFormatError(TokenKind::INT_LITERAL, token, "out of range int literal");
+      return nullptr;
+    }
+    return NumberNode::newInt(token, value);
   }
   case TokenKind::FLOAT_LITERAL: {
-    auto pair = TRY(this->expectNum(TokenKind::FLOAT_LITERAL, &Lexer::toDouble));
-    return NumberNode::newFloat(pair.first, pair.second);
+    Token token = TRY(this->expect(TokenKind::FLOAT_LITERAL));
+    int status = 0;
+    double value = this->lexer->toDouble(token, status);
+    if (status != 0) {
+      this->reportTokenFormatError(TokenKind::FLOAT_LITERAL, token, "out of range float literal");
+      return nullptr;
+    }
+    return NumberNode::newFloat(token, value);
   }
   case TokenKind::STRING_LITERAL:
     return this->parse_stringLiteral();
@@ -1652,7 +1676,9 @@ std::unique_ptr<Node> Parser::parse_signalLiteral() {
   ref.removeSuffix(1); // skip suffix [']
   int num = getSignalNum(ref);
   if (num < 0) {
-    reportTokenFormatError(TokenKind::SIGNAL_LITERAL, token, "unsupported signal");
+    std::string message = "unsupported signal: ";
+    message += ref;
+    reportTokenFormatError(TokenKind::SIGNAL_LITERAL, token, std::move(message));
     return nullptr;
   }
   return NumberNode::newSignal(token, num);
@@ -1670,7 +1696,9 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
   std::string str;
   bool s = this->lexer->singleToString(token, str);
   if (!s) {
-    reportTokenFormatError(TokenKind::STRING_LITERAL, token, "illegal escape sequence");
+    std::string message = "illegal escape sequence: ";
+    message += str;
+    reportTokenFormatError(TokenKind::STRING_LITERAL, token, std::move(message));
     return nullptr;
   }
   return std::make_unique<StringNode>(token, std::move(str));
