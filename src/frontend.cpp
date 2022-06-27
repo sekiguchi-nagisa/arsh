@@ -28,6 +28,10 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
     return createTCError<CircularMod>(node, path);
   } else if (e.isFileNotFound()) {
     return createTCError<NotFoundMod>(node, path);
+  } else if (e.isModLimit()) {
+    return createTCError<ModLimit>(node);
+  } else if (e.isVarLimit()) {
+    return createTCError<GlobalLimit>(node);
   } else {
     return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
   }
@@ -173,7 +177,8 @@ FrontEndResult FrontEnd::enterModule() {
     assert(is<const ModType *>(ret));
     auto &modType = *get<const ModType *>(ret);
     if (this->curScope()->modId == modType.getModId()) { // when load module from completion context
-      auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
+      auto error = wrapModLoadingError(node.getPathNode(), modPath,
+                                       ModLoadingError(ModLoadingError::CIRCULAR_LOAD));
       this->listener &&this->listener->handleTypeError(this->contexts, error, true);
       if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
         return FrontEndResult::inModule(std::make_unique<ErrorNode>(error.getToken()));
@@ -238,8 +243,8 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
   if (is<ModLoadingError>(ret)) {
     return get<ModLoadingError>(ret);
   } else if (is<const char *>(ret)) {
-    if(this->loader.getGvarCount() == SYS_LIMIT_GLOBAL_NUM) {
-      fatal("number of global variables reaches limit\n");  //FIXME:
+    if (this->loader.getGvarCount() == SYS_LIMIT_GLOBAL_NUM) {
+      return ModLoadingError(ModLoadingError::VAR_LIMIT);
     }
 
     ByteBuffer buf;

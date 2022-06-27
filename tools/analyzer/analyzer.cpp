@@ -180,13 +180,13 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
   auto src = this->srcMan.find(path);
   if (src) { // already loaded
     if (auto archive = this->archives.find(src->getSrcId()); archive && archive->isEmpty()) {
-      return ModLoadingError(0); // nested import
+      return ModLoadingError(ModLoadingError::CIRCULAR_LOAD); // nested import
     }
     return src->getSrcId();
   } else {
     src = this->srcMan.update(path, 0, ""); // dummy
     if (!src) {
-      fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
+      fatal("module id reaches limit(%u)\n", MAX_MOD_NUM); // FIXME: propagate error
     }
     return src->getPath().c_str();
   }

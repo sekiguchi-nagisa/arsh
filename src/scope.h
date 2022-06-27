@@ -355,13 +355,25 @@ private:
   int value;
 
 public:
+  enum Kind : int {
+    CIRCULAR_LOAD = 0,
+    MOD_LIMIT = -1,
+    VAR_LIMIT = -2,
+  };
+
   explicit ModLoadingError(int value) : value(value) {}
+
+  explicit ModLoadingError(Kind k) : ModLoadingError(static_cast<int>(k)) {}
 
   int getErrNo() const { return this->value; }
 
   bool isFileNotFound() const { return this->getErrNo() == ENOENT; }
 
-  bool isCircularLoad() const { return this->getErrNo() == 0; }
+  bool isCircularLoad() const { return this->getErrNo() == static_cast<int>(CIRCULAR_LOAD); }
+
+  bool isModLimit() const { return this->getErrNo() == static_cast<int>(MOD_LIMIT); }
+
+  bool isVarLimit() const { return this->getErrNo() == static_cast<int>(VAR_LIMIT); }
 };
 
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;

@@ -81,6 +81,7 @@ DEFINE_TCError(NotCallable, "Func type object is not directly callable");
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");
 DEFINE_TCError(LocalLimit, "number of local variables reaches limit");
+DEFINE_TCError(GlobalLimit, "number of global variables reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
 DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in source path");
@@ -105,6 +106,7 @@ DEFINE_TCError(ConflictSymbol, "at global import, detect symbol conflict: `%s' i
 DEFINE_TCError(NotOpenMod, "cannot read module: `%s', by `%s'");
 DEFINE_TCError(NotFoundMod, "module not found: `%s'");
 DEFINE_TCError(CircularMod, "circular module import: `%s'");
+DEFINE_TCError(ModLimit, "number of loaded modules reaches limit");
 DEFINE_TCError(Required, "require `%s' type, but is `%s' type");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
 DEFINE_TCError(UnmatchParam, "not match parameter, require size is %d, but is %d");

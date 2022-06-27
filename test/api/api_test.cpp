@@ -5,6 +5,7 @@
 #include <config.h>
 #include <constant.h>
 #include <misc/fatal.h>
+#include <misc/format.hpp>
 #include <misc/resource.hpp>
 #include <ydsh/ydsh.h>
 
@@ -852,6 +853,41 @@ TEST_F(APITest, module7) {
   ASSERT_EQ(1, e.lineNum);
   ASSERT_EQ(1, e.chars);
   ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+  DSError_release(&e);
+}
+
+TEST_F(APITest, moduleLimit) {
+  constexpr unsigned int limit = 0xFFFF + 10;
+  const unsigned int digits = ydsh::countDigits(limit);
+  for (unsigned int i = 0; i < limit; i++) {
+    std::string name = "mod_";
+    name += ydsh::padLeft(i, digits, '0');
+    this->createTempFile(name.c_str(), "true");
+  }
+
+  const char *dir = this->getTempDirName();
+  std::string source = format(R"(
+source %s/mod_{0..04095}
+source %s/mod_{04096..8191}
+source %s/mod_{08192..12286}
+source %s/mod_{12287..16381}
+source %s/mod_{16381..20476}
+source %s/mod_{20477..24571}
+source %s/mod_{24572..28666}
+source %s/mod_{28667..32761}
+source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, root module)
+source %s/mod_32765
+)",
+                              dir, dir, dir, dir, dir, dir, dir, dir, dir, dir);
+
+  DSError e;
+  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
+  ASSERT_EQ(1, r);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+  ASSERT_STREQ("ModLimit", e.name);
+  ASSERT_EQ(11, e.lineNum);
+  ASSERT_EQ(8, e.chars);
+
   DSError_release(&e);
 }
 

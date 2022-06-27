@@ -548,16 +548,17 @@ ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   StringRef key(ptr.get());
   auto pair = this->indexMap.emplace(key, this->indexMap.size());
   if (pair.second) {
+    if (this->indexMap.size() > MAX_MOD_NUM) {
+      this->indexMap.erase(key);
+      return ModLoadingError(ModLoadingError::MOD_LIMIT);
+    }
     this->entries.emplace_back(std::move(ptr), ModEntry::create());
   } else { // already registered
     auto &e = this->entries[pair.first->second].second;
     if (e.isSealed()) {
       return e.getTypeId();
     }
-    return ModLoadingError(0);
-  }
-  if (this->indexMap.size() == MAX_MOD_NUM) {
-    fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
+    return ModLoadingError(ModLoadingError::CIRCULAR_LOAD);
   }
   return key.data();
 }

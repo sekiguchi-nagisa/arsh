@@ -1966,6 +1966,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj) {
     } else {
       assert(is<ModLoadingError>(ret));
       auto &e = get<ModLoadingError>(ret);
+      assert(e.getErrNo() > 0); // always return valid errno
       errno = e.getErrNo();
       PERROR(argvObj, "%s", ref.data());
       lastStatus = 1;
