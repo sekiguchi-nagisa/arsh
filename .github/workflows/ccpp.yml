@@ -71,14 +71,14 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ clang++-13, clang++-14 ]
+        cc: [ g++-12, clang++-13, clang++-14 ]
     steps:
       - uses: actions/checkout@v1
       - name: prepare
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build \
-               g++ clang-13 clang-14
+               g++-12 clang-13 clang-14
       - name: configure
         run: |
           mkdir build
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ g++-11, clang++-14 ]
+        cc: [ g++-12, clang++-14 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v1
@@ -111,7 +111,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build \
-               g++-11 clang-14 lld lld-14 llvm-14 llvm-14-dev
+               g++-12 clang-14 lld lld-14 llvm-14 llvm-14-dev
       - name: configure
         run: |
           mkdir build
