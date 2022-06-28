@@ -331,11 +331,15 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRegisterOp op) {
   // check var index limit
   if (!hasFlag(op, NameRegisterOp::AS_ALIAS)) {
-    if (!handle->has(HandleAttr::GLOBAL)) {
+    if (handle->has(HandleAttr::GLOBAL)) {
+      if (this->maxVarCount.get() == SYS_LIMIT_GLOBAL_NUM) {
+        return Err(NameRegisterError::GLOBAL_LIMIT);
+      }
+    } else { // local
       assert(!this->isGlobal());
       assert(!this->isFunc());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
-        return Err(NameRegisterError::LIMIT);
+        return Err(NameRegisterError::LOCAL_LIMIT);
       }
     }
   }

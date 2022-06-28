@@ -30,7 +30,8 @@ namespace ydsh {
 
 enum class NameRegisterError {
   DEFINED,
-  LIMIT,
+  LOCAL_LIMIT,
+  GLOBAL_LIMIT,
   INVALID_TYPE,
 };
 

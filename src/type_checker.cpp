@@ -315,8 +315,11 @@ HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, cons
     case NameRegisterError::DEFINED:
       this->reportError<DefinedSymbol>(token, symbolName.c_str());
       break;
-    case NameRegisterError::LIMIT:
+    case NameRegisterError::LOCAL_LIMIT:
       this->reportError<LocalLimit>(token);
+      break;
+    case NameRegisterError::GLOBAL_LIMIT:
+      this->reportError<GlobalLimit>(token);
       break;
     case NameRegisterError::INVALID_TYPE:
       break; // normally unreachable
