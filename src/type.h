@@ -768,14 +768,6 @@ public:
   const std::vector<const DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
 };
 
-class MethodHandle;
-
-struct MethodHandleDeleter {
-  void operator()(MethodHandle *ptr) const { free(ptr); }
-};
-
-using MethodHandlePtr = std::unique_ptr<MethodHandle, MethodHandleDeleter>;
-
 class MethodHandle : public Handle {
 private:
   static_assert(sizeof(Handle) == 16);
@@ -797,20 +789,24 @@ private:
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
-  ~MethodHandle() = default;
-
-  static MethodHandlePtr create(const DSType &recv, unsigned int index, const DSType &ret,
-                                unsigned char paramSize) {
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const DSType &ret, unsigned char paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
-    return MethodHandlePtr(handle);
+    return std::unique_ptr<MethodHandle>(handle);
   }
 
 public:
   NON_COPYABLE(MethodHandle);
 
-  static MethodHandlePtr create(const DSType &recv, unsigned int index, const DSType &ret,
-                                const std::vector<const DSType *> &params, unsigned short modId);
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
+
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const DSType &ret,
+                                              const std::vector<const DSType *> &params,
+                                              unsigned short modId);
 
   /**
    * for constructor
@@ -820,14 +816,13 @@ public:
    * @param modId
    * @return
    */
-  static MethodHandlePtr create(const DSType &recv, unsigned int index,
-                                const std::vector<const DSType *> &params, unsigned short modId) {
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const std::vector<const DSType *> &params,
+                                              unsigned short modId) {
     auto handle = create(recv, index, recv, params, modId);
     handle->kind = HandleKind::CONSTRUCTOR;
     return handle;
   }
-
-  void destroy() { free(this); }
 
   const DSType &getReturnType() const { return this->returnType; }
 

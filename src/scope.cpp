@@ -130,7 +130,7 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);
   const unsigned int index = this->getMaxGlobalVarIndex();
-  MethodHandlePtr handle;
+  std::unique_ptr<MethodHandle> handle;
   if (name == OP_INIT) {
     handle = MethodHandle::create(recvType, index, paramTypes, this->modId);
   } else {

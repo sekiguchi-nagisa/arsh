@@ -314,15 +314,16 @@ std::string toString(HandleAttr attr) {
 
 void Handle::destroy() {
   if (this->famSize()) {
-    cast<MethodHandle>(this)->destroy();
+    delete cast<MethodHandle>(this);
   } else {
     delete this;
   }
 }
 
-MethodHandlePtr MethodHandle::create(const DSType &recv, unsigned int index, const DSType &ret,
-                                     const std::vector<const DSType *> &params,
-                                     unsigned short modId) {
+std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
+                                                   const DSType &ret,
+                                                   const std::vector<const DSType *> &params,
+                                                   unsigned short modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
@@ -330,7 +331,7 @@ MethodHandlePtr MethodHandle::create(const DSType &recv, unsigned int index, con
   for (size_t i = 0; i < paramSize; i++) {
     handle->paramTypes[i] = params[i];
   }
-  return MethodHandlePtr(handle);
+  return std::unique_ptr<MethodHandle>(handle);
 }
 
 } // namespace ydsh

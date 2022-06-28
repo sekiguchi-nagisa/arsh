@@ -94,7 +94,7 @@ public:
 
     ~Value() {
       if (this->index_ > 0) {
-        this->handle_->destroy();
+        delete this->handle_;
       }
     }
 

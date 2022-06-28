@@ -178,7 +178,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
     for (unsigned int i = 0; i < famSize - 1; i++) {
       paramTypes.push_back(TRY(this->unpackType()));
     }
-    MethodHandlePtr handle;
+    std::unique_ptr<MethodHandle> handle;
     if (kind == HandleKind::METHOD) {
       handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
     } else {
