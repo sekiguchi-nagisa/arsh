@@ -11,7 +11,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "source ../"}
+                     "text": "source /"}
  }
 }
 
@@ -19,10 +19,10 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
-#    CHECK:         "message": "cannot read module: `../', by `Is a directory'",
+#    CHECK:         "message": "cannot read module: `/', by `Is a directory'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
-#    CHECK:             "character": 10,
+#    CHECK:             "character": 8,
 #    CHECK:             "line": 0
 #    CHECK:           },
 #    CHECK:           "start": {
