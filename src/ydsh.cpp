@@ -427,7 +427,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     if (error.isCircularLoad()) {
       errNum = ETXTBSY;
     } else if (error.isModLimit() || error.isVarLimit()) {
-      errNum = ERANGE;
+      errNum = EPERM;
     }
     reportFileError(fileName, errNum, e);
     return 1;

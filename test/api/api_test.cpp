@@ -901,7 +901,7 @@ source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, r
   r = DSState_loadAndEval(this->state, src.c_str(), &e);
   ASSERT_EQ(1, r);
   ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
-  ASSERT_STREQ(strerror(ERANGE), e.name);
+  ASSERT_STREQ(strerror(EPERM), e.name);
   DSError_release(&e);
 }
 
