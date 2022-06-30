@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.26.0] - 2022-06-30
 
 ### Added
 
@@ -24,8 +24,8 @@
       echo $e
     }
     ```
-- pass module context (module descriptor) to builtin ``complete`` command via ``-m`` option
-- pass module context of current completion to ``COMP_HOOK``
+- pass module context (module descriptor) to user-defined completer (``COMP_HOOK``)
+    - also pass module context to builtin ``complete`` command via ``-m`` option
 - add the following methods to ``Error`` type
     - ``lineno``: get line number of occurred location
     - ``source``: get source name of occurred location
@@ -77,7 +77,7 @@
 
 #### Module
 
-- pass completion context to completer module
+- **Breaking Change**: pass completion context to completer module
 
 #### Misc
 
