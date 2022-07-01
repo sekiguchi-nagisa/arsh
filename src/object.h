@@ -177,7 +177,7 @@ public:
   explicit StringObject(std::string &&value)
       : ObjectWithRtti(TYPE::String), value(std::move(value)) {}
 
-  explicit StringObject(const StringRef &ref) : StringObject(ref.toString()) {}
+  explicit StringObject(StringRef ref) : StringObject(ref.toString()) {}
 
   const char *getValue() const { return this->value.c_str(); }
 
