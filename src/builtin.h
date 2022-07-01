@@ -1007,7 +1007,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
     RET_ERROR;
   }
-  RET(DSValue::create<RegexObject>(pattern.data(), std::move(re)));
+  RET(DSValue::create<RegexObject>(std::move(re)));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean

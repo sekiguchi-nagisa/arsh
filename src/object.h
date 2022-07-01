@@ -673,12 +673,10 @@ class ArrayObject;
 
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:
-  std::string str; // for string representation
   PCRE re;
 
 public:
-  RegexObject(std::string str, PCRE &&re)
-      : ObjectWithRtti(TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
+  explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
 
   bool search(DSState &state, StringRef ref) { return this->match(state, ref, nullptr) >= 0; }
 
@@ -706,7 +704,7 @@ public:
    */
   bool replace(DSState &state, DSValue &value, StringRef repl);
 
-  const std::string &getStr() const { return this->str; }
+  const char *getStr() const { return this->re.getPattern(); }
 };
 
 class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {

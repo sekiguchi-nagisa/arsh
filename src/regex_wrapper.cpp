@@ -33,6 +33,7 @@
 namespace ydsh {
 
 PCRE::~PCRE() {
+  free(this->pattern);
 #ifdef USE_PCRE
   pcre2_code_free(static_cast<pcre2_code *>(this->code));
   pcre2_match_data_free(static_cast<pcre2_match_data *>(this->data));
@@ -117,7 +118,7 @@ PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
     pcre2_get_error_message(errcode, buffer, sizeof(buffer));
     errorStr = reinterpret_cast<const char *>(buffer);
   }
-  return PCRE(code, data);
+  return PCRE(strdup(pattern.data()), code, data);
 #else
   errorStr = "regex is not supported";
   return PCRE();

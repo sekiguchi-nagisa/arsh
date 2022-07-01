@@ -34,17 +34,21 @@ struct PCREVersion {
   explicit operator bool() const { return !(this->major == 0 && this->minor == 0); }
 };
 
-struct PCRE {
-  void *code; // pcre2_code
-  void *data; // pcre2_match_data
+class PCRE {
+private:
+  char *pattern; // original pattern string
+  void *code;    // pcre2_code
+  void *data;    // pcre2_match_data
 
+public:
   NON_COPYABLE(PCRE);
 
-  PCRE() : code(nullptr), data(nullptr) {}
+  PCRE() : pattern(nullptr), code(nullptr), data(nullptr) {}
 
-  explicit PCRE(void *code, void *data) : code(code), data(data) {}
+  explicit PCRE(char *pattern, void *code, void *data) : pattern(pattern), code(code), data(data) {}
 
-  PCRE(PCRE &&re) noexcept : code(re.code), data(re.data) {
+  PCRE(PCRE &&re) noexcept : pattern(re.pattern), code(re.code), data(re.data) {
+    re.pattern = nullptr;
     re.code = nullptr;
     re.data = nullptr;
   }
@@ -64,6 +68,8 @@ struct PCRE {
   }
 
   explicit operator bool() const { return this->code != nullptr; }
+
+  const char *getPattern() const { return this->pattern; }
 
   int match(StringRef ref, std::string &errorStr);
 
