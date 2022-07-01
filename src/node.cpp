@@ -1199,14 +1199,13 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
 
   this->indent();
   this->dumpToken(node.getToken());
-  this->indent();
 
-  this->append("type:");
-  if (!node.isUntyped()) {
-    this->append(" ");
-    this->appendEscaped(node.getType().getName());
+  if (node.isUntyped()) {
+    this->indent();
+    this->append("type:\n");
+  } else {
+    this->dump("type", node.getType().getName());
   }
-  this->newline();
 
   if (inArray) {
     this->leaveIndent();
