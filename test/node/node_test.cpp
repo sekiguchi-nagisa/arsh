@@ -138,19 +138,19 @@ nodes:
     token:
       pos: 0
       size: 7
-    type: Void
+    type: "Void"
     exprNode:
       nodeKind: StringExpr
       token:
         pos: 0
         size: 7
-      type: String
+      type: "String"
       nodes:
         - nodeKind: String
           token:
             pos: 1
             size: 5
-          type: String
+          type: "String"
           kind: "STRING"
           value: "hello"
     targetTypeToken: null
@@ -260,13 +260,13 @@ nodes:
     token:
       pos: 0
       size: 3
-    type: Void
+    type: "Void"
     nodes:
       - nodeKind: Empty
         token:
           pos: 1
           size: 1
-        type: Void
+        type: "Void"
     baseIndex: 0
     varSize: 0
     maxVarSize: 0
@@ -610,19 +610,19 @@ nodes:
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
 
-    {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"(
+    {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"EOF(
 nodes:
   - nodeKind: Case
     token:
       pos: 0
       size: 47
-    type: Void
+    type: "Void"
     exprNode:
       nodeKind: Number
       token:
         pos: 5
         size: 6
-      type: Signal
+      type: "Signal"
       kind: "Signal"
       intValue: 2
     armNodes:
@@ -630,13 +630,13 @@ nodes:
         token:
           pos: 14
           size: 17
-        type: Void
+        type: "Void"
         this->patternNodes:
           - nodeKind: Number
             token:
               pos: 14
               size: 6
-            type: Signal
+            type: "Signal"
             kind: "Signal"
             intValue: 2
         this->constPatternNodes:
@@ -644,7 +644,7 @@ nodes:
             token:
               pos: 14
               size: 6
-            type: Signal
+            type: "Signal"
             kind: "Signal"
             intValue: 2
         this->actionNode:
@@ -652,19 +652,19 @@ nodes:
           token:
             pos: 24
             size: 7
-          type: Void
+          type: "Void"
           exprNode:
             nodeKind: Map
             token:
               pos: 24
               size: 7
-            type: [Int : Int]
+            type: "[Int : Int]"
             keyNodes:
               - nodeKind: Number
                 token:
                   pos: 25
                   size: 2
-                type: Int
+                type: "Int"
                 kind: "Int"
                 intValue: 34
             valueNodes:
@@ -672,7 +672,7 @@ nodes:
                 token:
                   pos: 28
                   size: 2
-                type: Int
+                type: "Int"
                 kind: "Int"
                 intValue: 34
           targetTypeToken: null
@@ -681,7 +681,7 @@ nodes:
         token:
           pos: 33
           size: 13
-        type: Void
+        type: "Void"
         this->patternNodes:
         this->constPatternNodes:
         this->actionNode:
@@ -689,25 +689,25 @@ nodes:
           token:
             pos: 41
             size: 5
-          type: Void
+          type: "Void"
           exprNode:
             nodeKind: Tuple
             token:
               pos: 41
               size: 5
-            type: (Int,)
+            type: "(Int,)"
             nodes:
               - nodeKind: Number
                 token:
                   pos: 42
                   size: 2
-                type: Int
+                type: "Int"
                 kind: "Int"
                 intValue: 34
           targetTypeToken: null
           opKind: "TO_VOID"
     caseKind: "MAP"
-)"},
+)EOF"},
 
     {DumpOp::untyped, R"(typedef i = (Int) -> Int)", 0, 0, R"(
 nodes:
@@ -755,19 +755,19 @@ nodes:
     token:
       pos: 0
       size: 15
-    type: Void
+    type: "Void"
     initNode:
       nodeKind: Empty
       token:
         pos: 0
         size: 0
-      type: Void
+      type: "Void"
     condNode:
       nodeKind: Var
       token:
         pos: 5
         size: 8
-      type: Boolean
+      type: "Boolean"
       varName: "false"
       handle:
         index: 50
@@ -778,19 +778,19 @@ nodes:
       token:
         pos: 0
         size: 0
-      type: Void
+      type: "Void"
     blockNode:
       nodeKind: Block
       token:
         pos: 13
         size: 2
-      type: Nothing
+      type: "Nothing"
       nodes:
         - nodeKind: Jump
           token:
             pos: 0
             size: 0
-          type: Nothing
+          type: "Nothing"
           opKind: "CONTINUE"
           fieldOffset: 0
           fieldSize: 0
@@ -800,7 +800,7 @@ nodes:
             token:
               pos: 0
               size: 0
-            type: Void
+            type: "Void"
       baseIndex: 0
       varSize: 0
       maxVarSize: 0
@@ -814,7 +814,7 @@ nodes:
     token:
       pos: 0
       size: 6
-    type: Void
+    type: "Void"
     cmdName:
       token:
         pos: 0
@@ -827,13 +827,13 @@ nodes:
       token:
         pos: 4
         size: 2
-      type: Nothing
+      type: "Nothing"
       nodes:
         - nodeKind: Jump
           token:
             pos: 6
             size: 0
-          type: Nothing
+          type: "Nothing"
           opKind: "RETURN"
           fieldOffset: 0
           fieldSize: 0
@@ -843,7 +843,7 @@ nodes:
             token:
               pos: 6
               size: 0
-            type: Int
+            type: "Int"
             varName: "?"
             handle:
               index: 13
@@ -904,19 +904,19 @@ nodes:
     token:
       pos: 0
       size: 6
-    type: Void
+    type: "Void"
     exprNode:
       nodeKind: Cmd
       token:
         pos: 0
         size: 6
-      type: Boolean
+      type: "Boolean"
       nameNode:
         nodeKind: String
         token:
           pos: 0
           size: 4
-        type: String
+        type: "String"
         kind: "STRING"
         value: "echo"
       argNodes:
@@ -924,7 +924,7 @@ nodes:
           token:
             pos: 5
             size: 1
-          type: [String]
+          type: "[String]"
           expansionSize: 1
           braceExpansion: false
           segmentNodes:
@@ -932,7 +932,7 @@ nodes:
               token:
                 pos: 5
                 size: 1
-              type: String
+              type: "String"
               meta: "*"
               expand: true
               braceId: 0
@@ -949,7 +949,7 @@ nodes:
     token:
       pos: 0
       size: 33
-    type: Void
+    type: "Void"
     kind: "FUNC"
     funcName:
       token:
@@ -961,7 +961,7 @@ nodes:
         token:
           pos: 11
           size: 8
-        type: Void
+        type: "Void"
         varName:
           token:
             pos: 11
@@ -972,7 +972,7 @@ nodes:
           token:
             pos: 16
             size: 3
-          type: Int
+          type: "Int"
           typeKind: "Base"
           typeName: "Int"
           handle: null
@@ -985,7 +985,7 @@ nodes:
         token:
           pos: 21
           size: 8
-        type: Void
+        type: "Void"
         varName:
           token:
             pos: 21
@@ -996,7 +996,7 @@ nodes:
           token:
             pos: 26
             size: 3
-          type: Int
+          type: "Int"
           typeKind: "Base"
           typeName: "Int"
           handle: null
@@ -1010,7 +1010,7 @@ nodes:
       token:
         pos: 0
         size: 0
-      type: Void
+      type: "Void"
       typeKind: "Base"
       typeName: "Void"
       handle: null
@@ -1020,13 +1020,13 @@ nodes:
       token:
         pos: 31
         size: 2
-      type: Nothing
+      type: "Nothing"
       nodes:
         - nodeKind: Jump
           token:
             pos: 0
             size: 0
-          type: Nothing
+          type: "Nothing"
           opKind: "RETURN"
           fieldOffset: 0
           fieldSize: 0
@@ -1036,7 +1036,7 @@ nodes:
             token:
               pos: 0
               size: 0
-            type: Void
+            type: "Void"
       baseIndex: 0
       varSize: 2
       maxVarSize: 2

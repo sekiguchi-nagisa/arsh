@@ -134,13 +134,13 @@ nodes:
     token:
       pos: 0
       size: ${$len + 'source '.size()}
-    type: Void
+    type: \"Void\"
     pathNode:
       nodeKind: CmdArg
       token:
         pos: 7
         size: ${len}
-      type: String
+      type: \"String\"
       expansionSize: 0
       braceExpansion: false
       segmentNodes:
@@ -148,7 +148,7 @@ nodes:
           token:
             pos: 7
             size: ${len}
-          type: String
+          type: \"String\"
           kind: \"STRING\"
           value: \"$mod\"
     constNodes:
@@ -156,7 +156,7 @@ nodes:
         token:
           pos: 7
           size: ${len}
-        type: String
+        type: \"String\"
         kind: \"STRING\"
         value: \"$mod\"
       - nodeKind: Empty
@@ -174,7 +174,7 @@ nodes:
     token:
       pos: 0
       size: ${$len + 'source '.size()}
-    type: Void
+    type: \"Void\"
     name: null
     modType: \"%mod2\"
     pathName: \"$mod\"
@@ -191,7 +191,7 @@ nodes:
     token:
       pos: 1
       size: 39
-    type: Void
+    type: \"Void\"
     kind: \"FUNC\"
     funcName:
       token:
@@ -203,7 +203,7 @@ nodes:
         token:
           pos: 15
           size: 8
-        type: Void
+        type: \"Void\"
         varName:
           token:
             pos: 15
@@ -214,7 +214,7 @@ nodes:
           token:
             pos: 20
             size: 3
-          type: Int
+          type: \"Int\"
           typeKind: \"Base\"
           typeName: \"Int\"
           handle: null
@@ -228,7 +228,7 @@ nodes:
       token:
         pos: 0
         size: 0
-      type: Void
+      type: \"Void\"
       typeKind: \"Base\"
       typeName: \"Void\"
       handle: null
@@ -238,19 +238,19 @@ nodes:
       token:
         pos: 25
         size: 15
-      type: Nothing
+      type: \"Nothing\"
       nodes:
         - nodeKind: TypeOp
           token:
             pos: 31
             size: 7
-          type: Void
+          type: \"Void\"
           exprNode:
             nodeKind: BinaryOp
             token:
               pos: 31
               size: 7
-            type: Int
+            type: \"Int\"
             leftNode: null
             rightNode: null
             op: \"/\"
@@ -259,19 +259,19 @@ nodes:
               token:
                 pos: 31
                 size: 4
-              type: Int
+              type: \"Int\"
               exprNode:
                 nodeKind: Access
                 token:
                   pos: 31
                   size: 4
-                type: Any
+                type: \"Any\"
                 recvNode:
                   nodeKind: Number
                   token:
                     pos: 31
                     size: 2
-                  type: Int
+                  type: \"Int\"
                   kind: \"Int\"
                   intValue: 10
                 nameNode:
@@ -289,13 +289,13 @@ nodes:
                 token:
                   pos: 0
                   size: 38
-                type: Void
+                type: \"Void\"
                 nodes:
                   - nodeKind: Var
                     token:
                       pos: 36
                       size: 2
-                    type: Int
+                    type: \"Int\"
                     varName: \"s\"
                     handle:
                       index: 0
@@ -309,7 +309,7 @@ nodes:
           token:
             pos: 0
             size: 0
-          type: Nothing
+          type: \"Nothing\"
           opKind: \"RETURN\"
           fieldOffset: 0
           fieldSize: 0
@@ -319,7 +319,7 @@ nodes:
             token:
               pos: 0
               size: 0
-            type: Void
+            type: \"Void\"
       baseIndex: 0
       varSize: 1
       maxVarSize: 1
