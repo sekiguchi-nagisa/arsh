@@ -61,22 +61,16 @@ void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status = 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
 /**
- *
+ * get and set signal handler.
+ * if handler is null, not set handler.
  * @param st
  * @param sigNum
  * @param handler
- * must be FuncObject
- */
-void installSignalHandler(DSState &st, int sigNum, const DSValue &handler);
-
-/**
- *
- * @param st
- * @param sigNum
+ * may be null
  * @return
- * if sigNum is invalid (ex. pseudo-signal), return SIG_DFL object
+ * old signal handler
  */
-DSValue getSignalHandler(const DSState &st, int sigNum);
+ObjPtr<FuncObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<FuncObject> handler);
 
 /**
  * if set is true, ignore some signals.
@@ -84,6 +78,20 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  * @param set
  */
 void setJobControlSignalSetting(DSState &st, bool set);
+
+/**
+ * synchronize actual signal handler setting with SignalVector
+ * also set SIGCHLD handler.
+ * @param st
+ */
+void setSignalSetting(DSState &st);
+
+/**
+ * clear installed signal handlers and set to SIG_DFL (except for SIGCHLD).
+ * not block signal
+ * @param state
+ */
+void resetSignalSettingUnblock(DSState &state);
 
 const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
 
@@ -110,20 +118,19 @@ private:
   /**
    * pair.second must be FuncObject
    */
-  std::vector<std::pair<int, DSValue>> data;
+  std::vector<std::pair<int, ObjPtr<FuncObject>>> data;
 
 public:
   SignalVector() = default;
   ~SignalVector() = default;
 
   /**
-   * if func is null, delete handler.
+   * if value is null, delete handler.
    * @param sigNum
    * @param value
-   * must be FuncObject
    * may be null
    */
-  void insertOrUpdate(int sigNum, const DSValue &value);
+  void insertOrUpdate(int sigNum, ObjPtr<FuncObject> value);
 
   /**
    *
@@ -131,29 +138,11 @@ public:
    * @return
    * if not found, return null obj.
    */
-  DSValue lookup(int sigNum) const;
+  ObjPtr<FuncObject> lookup(int sigNum) const;
 
-  const std::vector<std::pair<int, DSValue>> &getData() const { return this->data; };
+  const auto &getData() const { return this->data; };
 
-  enum class UnsafeSigOp {
-    DFL,
-    IGN,
-    SET,
-  };
-
-  /**
-   * unsafe op.
-   * @param sigNum
-   * @param op
-   * @param handler
-   * may be nullptr
-   */
-  void install(int sigNum, UnsafeSigOp op, const DSValue &handler);
-
-  /**
-   * clear all handler and set to SIG_DFL.
-   */
-  void clear();
+  void clear() { this->data.clear(); }
 };
 
 template <typename... T>

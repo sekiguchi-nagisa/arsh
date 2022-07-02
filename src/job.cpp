@@ -42,15 +42,13 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
       setJobControlSignalSetting(st, false);
     }
 
-    // clear queued signal
+    // reset signal setting
     DSState::clearPendingSignal();
     unsetFlag(DSState::eventDesc, VMEvent::MASK);
+    resetSignalSettingUnblock(st);
 
     // clear JobTable entries
     st.jobTable.detachAll();
-
-    // clear signal handler
-    st.sigVector.clear();
 
     // clear termination hook
     assert(st.termHookIndex != 0);

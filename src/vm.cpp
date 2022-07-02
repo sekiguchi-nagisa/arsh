@@ -2250,7 +2250,7 @@ bool VM::handleException(DSState &state) {
 EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
   assert(state.stack.recDepth() > 0);
   if (state.stack.recDepth() == 1) {
-    installSignalHandler(state, SIGCHLD, nullptr);
+    setSignalSetting(state);
   }
 
   const unsigned int oldLevel = state.subshellLevel;

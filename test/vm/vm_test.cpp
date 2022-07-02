@@ -210,7 +210,7 @@ TEST_F(VMTest, stacktop) {
 
 TEST_F(VMTest, sig1) {
   ASSERT_NO_FATAL_FAILURE(this->eval("function f($s : Signal) {}"));
-  auto func = this->getValue("f");
+  auto func = toObjPtr<FuncObject>(this->getValue("f"));
   ASSERT_TRUE(func != nullptr);
 
   SignalVector v;
@@ -236,7 +236,7 @@ TEST_F(VMTest, sig1) {
   ASSERT_TRUE(v.lookup(-3) == nullptr);
 
   // update
-  auto func1 = this->getValue("SIG_DFL");
+  auto func1 = toObjPtr<FuncObject>(this->getValue("SIG_DFL"));
   ASSERT_EQ(func, v.lookup(3));
   ASSERT_NE(func, func1);
   v.insertOrUpdate(3, func1);
@@ -246,12 +246,12 @@ TEST_F(VMTest, sig1) {
   // remove
   v.insertOrUpdate(4, nullptr);
   ASSERT_EQ(2u, v.getData().size());
-  ASSERT_EQ(DSValue(), v.lookup(4));
+  ASSERT_TRUE(v.lookup(4) == nullptr);
 
   // do nothing
   v.insertOrUpdate(5, nullptr);
   ASSERT_EQ(2u, v.getData().size());
-  ASSERT_EQ(DSValue(), v.lookup(5));
+  ASSERT_TRUE(v.lookup(5) == nullptr);
 }
 
 TEST_F(VMTest, error) {

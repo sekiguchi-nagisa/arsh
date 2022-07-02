@@ -64,14 +64,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
-void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
-  SignalGuard guard;
-
-  auto &DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL);
-  auto &IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN);
-
-  DSValue actualHandler;
-  auto op = SignalVector::UnsafeSigOp::SET;
+static bool isUnhandledSignal(int sigNum) {
   switch (sigNum) {
   case SIGBUS:
   case SIGSEGV:
@@ -81,64 +74,116 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
      * not handle or ignore these signals due to prevent undefined behavior.
      * see.
      * https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
-     *      http://man7.org/linux/man-pages/man2/sigaction.2.html
+     * http://man7.org/linux/man-pages/man2/sigaction.2.html
      */
-    return;
+    return true;
   case SIGKILL:
   case SIGSTOP:
     /**
-     * sigaction dose not accept these signals
+     * sigaction does not accept these signals
      */
-    return;
+    return true;
   default:
-    break;
+    return false;
   }
-
-  if (handler == DFL_handler) {
-    op = SignalVector::UnsafeSigOp::DFL;
-  } else if (handler == IGN_handler) {
-    op = SignalVector::UnsafeSigOp::IGN;
-  } else {
-    actualHandler = handler;
-  }
-
-  st.sigVector.install(sigNum, op, actualHandler);
 }
 
-DSValue getSignalHandler(const DSState &st, int sigNum) {
-  auto &DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL);
-  auto &IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN);
+// when called this handler, all signals are blocked due to signal mask
+static void signalHandler(int sigNum) {
+  DSState::pendingSigSet.add(sigNum);
+  setFlag(DSState::eventDesc, VMEvent::SIGNAL);
+}
 
-  auto handler = st.sigVector.lookup(sigNum);
-
-  if (handler == nullptr) {
-    struct sigaction action {};
-    if (sigaction(sigNum, nullptr, &action) == 0) {
-      if (action.sa_handler == SIG_IGN) {
-        return IGN_handler;
-      }
-    }
-    return DFL_handler;
+static struct sigaction newSigaction(int sigNum) {
+  struct sigaction action {};
+  if (sigNum != SIGINT) { // always restart system call except for SIGINT
+    action.sa_flags = SA_RESTART;
   }
-  return handler;
+  sigfillset(&action.sa_mask);
+  return action;
+}
+
+static ObjPtr<FuncObject> installUnblock(DSState &st, int sigNum, ObjPtr<FuncObject> handler) {
+  auto DFL_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_DFL));
+  auto IGN_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_IGN));
+
+  // save old handler
+  auto oldHandler = st.sigVector.lookup(sigNum);
+
+  // set actual signal handler
+  struct sigaction oldAction {};
+  struct sigaction newAction = newSigaction(sigNum);
+  struct sigaction *action = nullptr;
+  if (handler && !isUnhandledSignal(sigNum) && sigNum != SIGCHLD) {
+    if (handler == DFL_handler) {
+      newAction.sa_handler = SIG_DFL;
+      handler = nullptr;
+    } else if (handler == IGN_handler) {
+      newAction.sa_handler = SIG_IGN;
+      handler = nullptr;
+    } else {
+      newAction.sa_handler = signalHandler;
+    }
+    action = &newAction;
+    st.sigVector.insertOrUpdate(sigNum, std::move(handler));
+  }
+  sigaction(sigNum, action, &oldAction);
+
+  if (!oldHandler) {
+    if (oldAction.sa_handler == SIG_IGN) {
+      oldHandler = IGN_handler;
+    } else {
+      oldHandler = DFL_handler;
+    }
+  }
+  return oldHandler;
+}
+
+ObjPtr<FuncObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<FuncObject> handler) {
+  SignalGuard guard;
+  return installUnblock(st, sigNum, std::move(handler));
 }
 
 void setJobControlSignalSetting(DSState &st, bool set) {
   SignalGuard guard;
 
-  auto op = set ? SignalVector::UnsafeSigOp::IGN : SignalVector::UnsafeSigOp::DFL;
-  DSValue handler;
+  auto DFL_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_DFL));
+  auto IGN_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_IGN));
 
+  auto handle = set ? IGN_handler : DFL_handler;
   if (set) {
-    st.sigVector.install(SIGINT, SignalVector::UnsafeSigOp::SET,
-                         getBuiltinGlobal(st, VAR_DEF_SIGINT));
+    installUnblock(st, SIGINT, toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_DEF_SIGINT)));
   } else {
-    st.sigVector.install(SIGINT, op, handler);
+    installUnblock(st, SIGINT, handle);
   }
-  st.sigVector.install(SIGQUIT, op, handler);
-  st.sigVector.install(SIGTSTP, op, handler);
-  st.sigVector.install(SIGTTIN, op, handler);
-  st.sigVector.install(SIGTTOU, op, handler);
+  installUnblock(st, SIGQUIT, handle);
+  installUnblock(st, SIGTSTP, handle);
+  installUnblock(st, SIGTTIN, handle);
+  installUnblock(st, SIGTTOU, handle);
+}
+
+void setSignalSetting(DSState &state) {
+  SignalGuard guard;
+
+  for (auto &e : state.sigVector.getData()) {
+    int sigNum = e.first;
+    assert(!isUnhandledSignal(sigNum));
+    auto action = newSigaction(sigNum);
+    action.sa_handler = signalHandler;
+    sigaction(sigNum, &action, nullptr);
+  }
+  auto action = newSigaction(SIGCHLD);
+  action.sa_handler = signalHandler;
+  sigaction(SIGCHLD, &action, nullptr);
+}
+
+void resetSignalSettingUnblock(DSState &state) {
+  for (auto &e : state.sigVector.getData()) {
+    struct sigaction action {};
+    action.sa_handler = SIG_DFL;
+    sigaction(e.first, &action, nullptr);
+  }
+  state.sigVector.clear();
 }
 
 const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int callLevel) {
@@ -358,71 +403,25 @@ struct SigEntryComp {
   bool operator()(int x, const Entry &y) const { return x < y.first; }
 };
 
-void SignalVector::insertOrUpdate(int sigNum, const DSValue &func) {
+void SignalVector::insertOrUpdate(int sigNum, ObjPtr<FuncObject> value) {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
-    if (func) {
-      iter->second = func; // update
+    if (value) {
+      iter->second = std::move(value); // update
     } else {
       this->data.erase(iter); // remove
     }
-  } else if (func) {
-    this->data.insert(iter, std::make_pair(sigNum, func)); // insert
+  } else if (value) {
+    this->data.insert(iter, std::make_pair(sigNum, std::move(value))); // insert
   }
 }
 
-DSValue SignalVector::lookup(int sigNum) const {
+ObjPtr<FuncObject> SignalVector::lookup(int sigNum) const {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
     return iter->second;
   }
   return nullptr;
-}
-
-// when called this handler, all signals are blocked due to signal mask
-static void signalHandler(int sigNum) {
-  DSState::pendingSigSet.add(sigNum);
-  setFlag(DSState::eventDesc, VMEvent::SIGNAL);
-}
-
-void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler) {
-  if (sigNum == SIGCHLD) {
-    op = UnsafeSigOp::SET;
-  }
-
-  // set posix signal handler
-  struct sigaction action {};
-  if (sigNum != SIGINT) { // always restart system call except for SIGINT
-    action.sa_flags = SA_RESTART;
-  }
-  sigfillset(&action.sa_mask);
-
-  switch (op) {
-  case UnsafeSigOp::DFL:
-    action.sa_handler = SIG_DFL;
-    break;
-  case UnsafeSigOp::IGN:
-    action.sa_handler = SIG_IGN;
-    break;
-  case UnsafeSigOp::SET:
-    action.sa_handler = signalHandler;
-    break;
-  }
-  sigaction(sigNum, &action, nullptr);
-
-  // register handler
-  if (sigNum != SIGCHLD) {
-    this->insertOrUpdate(sigNum, handler);
-  }
-}
-
-void SignalVector::clear() {
-  for (auto &e : this->data) {
-    struct sigaction action {};
-    action.sa_handler = SIG_DFL;
-    sigaction(e.first, &action, nullptr);
-  }
-  this->data.clear();
 }
 
 struct StrErrorConsumer : public ErrorConsumer {
