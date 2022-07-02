@@ -13,7 +13,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         '?', '@', 'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
         'EDIT_HOOK', 'EUID', 'FALSE', 'False', 'IFS', 'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME',
          'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
-        'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
+        'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN', 'SIG_NUL',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
         'TRUE', 'True', 'UID', 'YDSH_BIN', 'YDSH_VERSION',
         'assertArray', 'false', 'reply', 'true', 'types',

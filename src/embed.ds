@@ -18,6 +18,9 @@ function _DEF_SIGINT($s : Signal) {
     throw new SystemError($s.message());
 }
 
+# null signal handler
+let SIG_NUL : typeof($SIG_DFL)!
+
 # termination hook definition
 var TERM_HOOK : ((Int, Any) => Void)!
 

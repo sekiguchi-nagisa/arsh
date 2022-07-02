@@ -940,8 +940,9 @@ source %s/mod_{24572..28666}
   ASSERT_EQ(1, r);
   ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
   ASSERT_STREQ("GlobalLimit", e.name);
-  ASSERT_EQ(9, e.lineNum);
-  ASSERT_EQ(8, e.chars);
+  ASSERT_STRNE("(string)", e.fileName);
+  ASSERT_EQ(1, e.lineNum);
+  ASSERT_EQ(5, e.chars);
   DSError_release(&e);
 }
 
