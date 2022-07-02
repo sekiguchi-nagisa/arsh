@@ -240,7 +240,8 @@ public:
   OP(NAMED_MOD)   /* module holder (named imported) */                                             \
   OP(GLOBAL_MOD)  /* module holder (global imported) */                                            \
   OP(INLINED_MOD) /* module holder (inlined imported) */                                           \
-  OP(MOD_CONST)   /* module specific constant */
+  OP(MOD_CONST)   /* module specific constant */                                                   \
+  OP(SYS_CONST)   /* system specific constant */
 
 enum class HandleKind : unsigned char {
 #define GEN_ENUM(E) E,

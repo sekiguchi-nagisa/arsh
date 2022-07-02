@@ -1476,7 +1476,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       } else {
         break;
       }
-    } else if (varNode.hasAttr(HandleAttr::GLOBAL)) {
+    } else if (varNode.getHandle()->is(HandleKind::SYS_CONST)) {
       auto *ptr = this->config.lookup(varNode.getVarName());
       if (!ptr) {
         break;

@@ -56,6 +56,10 @@ public:
     this->consumer(*handle.asOk(), type);
   }
 
+  void bindSysConst(const SysConfig &config, const char *constName) {
+    this->bind(constName, *config.lookup(constName), HandleKind::SYS_CONST, HandleAttr::READ_ONLY);
+  }
+
 private:
   const auto &toType(int64_t) const { return this->pool.get(TYPE::Int); }
 
@@ -180,7 +184,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * for version detection
    * must be String_Object
    */
-  binder.bind(SysConfig::VERSION, *config.lookup(SysConfig::VERSION));
+  binder.bindSysConst(config, SysConfig::VERSION);
 
   /**
    * uid of shell
@@ -197,37 +201,37 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::OSTYPE, *config.lookup(SysConfig::OSTYPE));
+  binder.bindSysConst(config, SysConfig::OSTYPE);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::MACHTYPE, *config.lookup(SysConfig::MACHTYPE));
+  binder.bindSysConst(config, SysConfig::MACHTYPE);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::CONFIG_HOME, *config.lookup(SysConfig::CONFIG_HOME));
+  binder.bindSysConst(config, SysConfig::CONFIG_HOME);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::DATA_HOME, *config.lookup(SysConfig::DATA_HOME));
+  binder.bindSysConst(config, SysConfig::DATA_HOME);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::DATA_DIR, *config.lookup(SysConfig::DATA_DIR));
+  binder.bindSysConst(config, SysConfig::DATA_DIR);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::MODULE_HOME, *config.lookup(SysConfig::MODULE_HOME));
+  binder.bindSysConst(config, SysConfig::MODULE_HOME);
 
   /**
    * must be String_Object
    */
-  binder.bind(SysConfig::MODULE_DIR, *config.lookup(SysConfig::MODULE_DIR));
+  binder.bindSysConst(config, SysConfig::MODULE_DIR);
 
   /**
    * dummy object for signal handler setting
