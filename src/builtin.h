@@ -1103,6 +1103,18 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+//!bind: function trap($this: Signal, $handler: Option<Func<Void,[Signal]>>): Func<Void,[Signal]>
+YDSH_METHOD signal_trap(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(signal_trap);
+  int sigNum = LOCAL(0).asSig();
+  auto value = LOCAL(1);
+  auto old = getSignalHandler(ctx, sigNum);
+  if (!value.isInvalid()) {
+    installSignalHandler(ctx, sigNum, std::move(value));
+  }
+  RET(old);
+}
+
 //!bind: function $OP_EQ($this : Signal, $target : Signal) : Boolean
 YDSH_METHOD signal_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_eq);
@@ -1119,21 +1131,21 @@ YDSH_METHOD signal_ne(RuntimeContext &ctx) {
 // ##     Signals     ##
 // #####################
 
-//!bind: function $OP_GET($this : Signals, $s : Signal) : Func<Void,[Signal]>
+//!bind: function $OP_GET($this : Signals, $key : String) : Signal
 YDSH_METHOD signals_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_get);
-  int sigNum = LOCAL(1).asSig();
-  RET(getSignalHandler(ctx, sigNum));
+  auto key = LOCAL(1).asStrRef();
+  int sigNum = getSignalNum(key);
+  if (sigNum < 0) {
+    std::string msg = "undefined signal: ";
+    msg += key;
+    raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
+    RET_ERROR;
+  }
+  RET(DSValue::createSig(sigNum));
 }
 
-//!bind: function $OP_SET($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
-YDSH_METHOD signals_set(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(signals_set);
-  installSignalHandler(ctx, LOCAL(1).asSig(), LOCAL(2));
-  RET_VOID;
-}
-
-//!bind: function signal($this : Signals, $key : String) : Option<Signal>
+//!bind: function get($this : Signals, $key : String) : Option<Signal>
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_signal);
   auto key = LOCAL(1).asStrRef();

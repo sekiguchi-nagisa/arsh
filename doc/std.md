@@ -253,6 +253,8 @@ function message() : String for Signal
 
 function kill($pid : Int) : Void for Signal
 
+function trap($handler : Option<Func<Void,[Signal]>>) : Func<Void,[Signal]> for Signal
+
 function %OP_EQ($target : Signal) : Boolean for Signal
 
 function %OP_NE($target : Signal) : Boolean for Signal
@@ -260,11 +262,9 @@ function %OP_NE($target : Signal) : Boolean for Signal
 
 ## Signals type
 ```
-function %OP_GET($s : Signal) : Func<Void,[Signal]> for Signals
+function %OP_GET($key : String) : Signal for Signals
 
-function %OP_SET($s : Signal, $action : Func<Void,[Signal]>) : Void for Signals
-
-function signal($key : String) : Option<Signal> for Signals
+function get($key : String) : Option<Signal> for Signals
 
 function list() : Array<Signal> for Signals
 ```

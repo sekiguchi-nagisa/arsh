@@ -11,6 +11,6 @@ function g($s : Signal) {
 }
 
 $TERM_HOOK = $f
-$SIG[%'TERM'] = $g
+$SIG['TERM'].trap($g)
 
 assert false

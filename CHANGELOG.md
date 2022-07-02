@@ -6,6 +6,12 @@
 
 ### Builtin
 
+- **Breaking Change**: change signal related methods
+    - remove ``Signals#[]=``, ``Signals#signal`` methods
+    - add ``Signals#[]``, ``Signal#get`` methods for get corresponding signal
+        - if corresponding signal is not found, ``Signals#[]`` method throw ``KeyNotFoundError``
+    - add ``Signal#trap`` method for get and set signal handler corresponding to signal
+        - if specified ``SIG_NUL``, does not set signal handler
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``

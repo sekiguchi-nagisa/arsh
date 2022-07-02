@@ -6,11 +6,11 @@ function f($s : Signal) {
 }
 
 function raise($s : String) {
-    $SIG.signal($s)!.kill($PID)
+    $SIG.get($s)!.kill($PID)
 }
 
-$SIG[%'HUP'] = $f
-$SIG[%'term'] = $f
+%'HUP'.trap($f)
+%'term'.trap($f)
 
 true
 $raise('hup')

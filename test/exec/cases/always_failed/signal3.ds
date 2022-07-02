@@ -1,7 +1,7 @@
 #$test($result = 'exit', $lineNum = 12, $status = 1)
 
 function raise($s : String) {
-    /bin/kill -s ${$SIG.signal($s)!.name()} $PID
+    /bin/kill -s ${$SIG.get($s)!.name()} $PID
 }
 
 function f($s : Signal) {
@@ -12,16 +12,16 @@ function g($s : Signal) {
     exit $s
 }
 
-$SIG[%'hup'] = $f
+$SIG['hup'].trap($f)
 
 try {
     $raise('hup')
 } catch $e {
     assert $e is Signal : "$e"
-    assert ($e as Signal).name() == %'hup'.name()
+    assert ($e as Signal).name() == $SIG['hup'].name()
 }
 
-$SIG[%'hup'] = $g
+$SIG['hup'].trap($g)
 $raise('hup')
 
 exit 0

@@ -16,7 +16,7 @@ assert $f2[0.000/-0.000] == "c"
 # Signal
 var sg = [%'hup' : "hung up", %'kill' : "killed"]
 assert $sg[%'SigHuP'] == "hung up"
-assert $sg[$SIG.signal("KILL")!] == "killed"
+assert $sg[$SIG.get("KILL")!] == "killed"
 
 # duplicated key
 var dd = ["a" : 23, "a" : 54]

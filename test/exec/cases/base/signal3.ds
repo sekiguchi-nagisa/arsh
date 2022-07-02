@@ -1,6 +1,6 @@
 
 function raise($s : String) {
-    /bin/kill -s ${$SIG.signal($s)!.name()} $PID
+    /bin/kill -s ${$SIG.get($s)!.name()} $PID
     #echo $?
 }
 
@@ -19,8 +19,8 @@ function g2($s : Signal) {
     $raised--
 }
 
-$SIG[%'HUP'] = $g1
-$SIG[%'term'] = $g2
+$SIG['HUP'].trap($g1)
+$SIG['term'].trap($g2)
 
 # recursive signal handler invocation is not allowed
 $raise('hup')

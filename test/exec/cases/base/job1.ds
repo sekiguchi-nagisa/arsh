@@ -103,7 +103,7 @@ function handle($s : Signal) {
     echo ${$s.name()}
     exit $s
 }
-$j = { $SIG[%'cont'] = $handle; for(;;) { true; } } &
+$j = { $SIG['cont'].trap($handle); for(;;) { true; } } &
 sleep 1
 $j.raise(%'STOP')
 $j.raise(%'CONT')

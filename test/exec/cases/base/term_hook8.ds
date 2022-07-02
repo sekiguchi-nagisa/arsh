@@ -12,7 +12,7 @@ function ss($s : Signal) {
     exit 100
 }
 
-$SIG[%'TERM'] = $ss
+$SIG['TERM'].trap($ss)
 
 %'term'.kill($$)
 

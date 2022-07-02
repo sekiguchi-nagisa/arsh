@@ -94,18 +94,18 @@ TEST_F(InteractiveTest, signal) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'int'] as String) != $SIG_IGN as String"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'int'] as String) != $SIG_DFL as String"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'quit'] as String) == $SIG_IGN as String"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'tstp'] as String) == $SIG_IGN as String"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'ttin'] as String) == $SIG_IGN as String"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ($SIG[%'ttou'] as String) == $SIG_IGN as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['int'].trap($SIG_NUL) as String) != $SIG_IGN as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['int'].trap($SIG_NUL) as String) != $SIG_DFL as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['quit'].trap($SIG_NUL) as String) == $SIG_IGN as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['tstp'].trap($SIG_NUL) as String) == $SIG_IGN as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['ttin'].trap($SIG_NUL) as String) == $SIG_IGN as String"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert ($SIG['ttou'].trap($SIG_NUL) as String) == $SIG_IGN as String"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

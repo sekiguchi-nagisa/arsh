@@ -12,7 +12,7 @@ function SIG_DFL($s : Signal) {
 }
 function SIG_IGN($s : Signal) {}
 
-$SIG[%'hup'] = $SIG_DFL
+%'hup'.trap($SIG_DFL)
 
 function _DEF_SIGINT($s : Signal) {
     throw new SystemError($s.message());
