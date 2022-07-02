@@ -178,4 +178,18 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
   return symbolKind;
 }
 
+std::string toString(ConstEntry entry) {
+  std::string value;
+  switch (entry.data.k) {
+  case ConstEntry::INT:
+  case ConstEntry::SIG:
+    value += std::to_string(static_cast<unsigned int>(entry.data.v));
+    break;
+  case ConstEntry::BOOL:
+    value += entry.data.v ? "true" : "false";
+    break;
+  }
+  return value;
+}
+
 } // namespace ydsh::lsp

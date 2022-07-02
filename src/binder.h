@@ -60,6 +60,15 @@ public:
     this->bind(constName, *config.lookup(constName), HandleKind::SYS_CONST, HandleAttr::READ_ONLY);
   }
 
+  void bindSmallConst(const char *constName, ConstEntry::Kind k, unsigned char value) {
+    ConstEntry entry;
+    entry.data.k = k;
+    entry.data.v = value;
+    auto handle = this->scope.defineConst(constName, entry);
+    (void)handle;
+    assert(static_cast<bool>(handle));
+  }
+
 private:
   const auto &toType(int64_t) const { return this->pool.get(TYPE::Int); }
 
@@ -180,11 +189,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   }
 
   // set builtin variables
-  /**
-   * for version detection
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::VERSION);
 
   /**
    * uid of shell
@@ -197,6 +201,12 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Int_Object
    */
   binder.bind("EUID", geteuid());
+
+  /**
+   * for version detection
+   * must be String_Object
+   */
+  binder.bindSysConst(config, SysConfig::VERSION);
 
   /**
    * must be String_Object
@@ -233,6 +243,24 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bindSysConst(config, SysConfig::MODULE_DIR);
 
+  // define small constants
+  /**
+   * must be int
+   */
+  binder.bindSmallConst("ON_EXIT", ConstEntry::Kind::INT, TERM_ON_EXIT);
+  binder.bindSmallConst("ON_ERR", ConstEntry::Kind::INT, TERM_ON_ERR);
+  binder.bindSmallConst("ON_ASSERT", ConstEntry::Kind::INT, TERM_ON_ASSERT);
+
+  /**
+   * must be bool
+   */
+  binder.bindSmallConst("TRUE", ConstEntry::Kind::BOOL, 1);
+  binder.bindSmallConst("True", ConstEntry::Kind::BOOL, 1);
+  binder.bindSmallConst("true", ConstEntry::Kind::BOOL, 1);
+  binder.bindSmallConst("FALSE", ConstEntry::Kind::BOOL, 0);
+  binder.bindSmallConst("False", ConstEntry::Kind::BOOL, 0);
+  binder.bindSmallConst("false", ConstEntry::Kind::BOOL, 0);
+
   /**
    * dummy object for signal handler setting
    * must be DSObject
@@ -253,13 +281,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be UnixFD_Object
    */
   binder.bind(VAR_STDERR, stderr);
-
-  /**
-   * must be Int_Object
-   */
-  binder.bind("ON_EXIT", TERM_ON_EXIT);
-  binder.bind("ON_ERR", TERM_ON_ERR);
-  binder.bind("ON_ASSERT", TERM_ON_ASSERT);
 
   /**
    * must be StringObject

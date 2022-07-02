@@ -8,9 +8,12 @@ assert($TRUE == $true)
 assert($false == $False)
 assert($FALSE == $false)
 assert(! $true == $false)
+assert($TRUE != $False)
 assert(! ! $true == $true)
 assert(! ! $TRUE)
+assert(! $false)
 
 # inheritance
 assert($true is Boolean)
+assert($false is Boolean)
 assert($a is Any)

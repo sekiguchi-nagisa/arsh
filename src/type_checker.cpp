@@ -551,6 +551,9 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
   case NumberNode::Signal:
     node.setType(this->typePool.get(TYPE::Signal));
     break;
+  case NumberNode::Bool:
+    node.setType(this->typePool.get(TYPE::Boolean)); // normally unreachable
+    break;
   }
 }
 
@@ -1482,6 +1485,24 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         break;
       }
       value = *ptr;
+    } else if (varNode.getHandle()->is(HandleKind::SMALL_CONST)) {
+      ConstEntry entry;
+      entry.u32 = varNode.getIndex();
+      std::unique_ptr<Node> constNode;
+      auto v = static_cast<unsigned int>(entry.data.v);
+      switch (entry.data.k) {
+      case ConstEntry::Kind::INT:
+        constNode = NumberNode::newInt(token, static_cast<int64_t>(v));
+        break;
+      case ConstEntry::Kind::BOOL:
+        constNode = NumberNode::newBool(token, v != 0);
+        break;
+      case ConstEntry::Kind::SIG:
+        constNode = NumberNode::newSignal(token, v);
+        break;
+      }
+      this->checkTypeAsExpr(*constNode);
+      return constNode;
     } else {
       break;
     }

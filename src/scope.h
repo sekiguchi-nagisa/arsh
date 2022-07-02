@@ -240,6 +240,8 @@ public:
     return this->defineMethod(pool, recvType, OP_INIT, recvType, paramTypes);
   }
 
+  NameRegisterResult defineConst(std::string &&name, ConstEntry entry);
+
   /**
    * import handle from foreign module (ModType)
    * @param type

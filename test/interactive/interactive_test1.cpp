@@ -93,7 +93,7 @@ TEST_F(InteractiveTest, ctrlc4) {
   std::string err = format(R"(ydsh: read: 0: %s
 [runtime error]
 SystemError: %s
-    from (builtin):17 'function _DEF_SIGINT()'
+    from (builtin):11 'function _DEF_SIGINT()'
     from (stdin):1 '<toplevel>()'
 )",
                            strerror(EINTR), strsignal(SIGINT));

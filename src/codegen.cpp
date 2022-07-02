@@ -456,6 +456,9 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     assert(node.getIntValue() >= 0 && node.getIntValue() <= UINT8_MAX);
     this->emit1byteIns(OpCode::PUSH_SIG, node.getIntValue());
     return;
+  case NumberNode::Bool: // normally unreachable
+    this->emit0byteIns(node.getIntValue() ? OpCode::PUSH_TRUE : OpCode::PUSH_FALSE);
+    return;
   }
   this->emitLdcIns(std::move(value));
 }
@@ -513,6 +516,20 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
     this->emit1byteIns(OpCode::LOAD_CONST,
                        node.getIndex() - toIndex(BuiltinVarOffset::SCRIPT_NAME));
+  } else if (node.getHandle()->is(HandleKind::SMALL_CONST)) {
+    ConstEntry entry;
+    entry.u32 = node.getIndex();
+    switch (entry.data.k) {
+    case ConstEntry::INT:
+      this->emit1byteIns(OpCode::PUSH_INT, entry.data.v);
+      break;
+    case ConstEntry::BOOL:
+      this->emit0byteIns(entry.data.v ? OpCode::PUSH_TRUE : OpCode::PUSH_FALSE);
+      break;
+    case ConstEntry::SIG:
+      this->emit1byteIns(OpCode::PUSH_SIG, entry.data.v);
+      break;
+    }
   } else {
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {

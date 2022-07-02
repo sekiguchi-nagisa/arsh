@@ -30,6 +30,8 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
 
 SymbolKind toSymbolKind(DeclSymbol::Kind kind);
 
+std::string toString(ConstEntry entry);
+
 } // namespace ydsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_SYMBOL_H

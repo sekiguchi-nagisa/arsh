@@ -19,6 +19,7 @@
 #include <cmd_desc.h>
 
 #include "indexer.h"
+#include "symbol.h"
 
 namespace ydsh::lsp {
 
@@ -850,9 +851,18 @@ static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> 
   } else if (isCmdFullName(entry.first)) {
     return DeclSymbol::Kind::CMD;
   } else {
-    if (entry.second->is(HandleKind::ENV)) {
+    switch (entry.second->getKind()) {
+    case HandleKind::ENV:
       return DeclSymbol::Kind::IMPORT_ENV;
+    case HandleKind::MOD_CONST:
+      return DeclSymbol::Kind::MOD_CONST;
+    case HandleKind::SYS_CONST:
+    case HandleKind::SMALL_CONST:
+      return DeclSymbol::Kind::CONST;
+    default:
+      break;
     }
+
     if (entry.second->has(HandleAttr::READ_ONLY)) {
       return DeclSymbol::Kind::LET;
     }
@@ -867,17 +877,23 @@ void SymbolIndexer::addBuiltinSymbols() {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));
     auto &type = this->builder().getPool().get(e.second->getTypeId());
-    if (kind == DeclSymbol::Kind::CMD) {
+    if (kind == DeclSymbol::Kind::CMD || kind == DeclSymbol::Kind::MOD_CONST) {
       this->builder().addDecl(nameInfo, kind, "", nameInfo.getToken());
-    } else if (auto *ptr = this->sysConfig.lookup(nameInfo.getName())) {
-      assert(type.is(TYPE::String));
-      std::string value = "'";
-      value += *ptr;
-      value += "'";
-      this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str(),
-                              nameInfo.getToken());
-    } else if (nameInfo.getName() == CVAR_SCRIPT_NAME || nameInfo.getName() == CVAR_SCRIPT_DIR) {
-      this->builder().addDecl(nameInfo, DeclSymbol::Kind::MOD_CONST, "", nameInfo.getToken());
+    } else if (kind == DeclSymbol::Kind::CONST) {
+      if (e.second->is(HandleKind::SYS_CONST)) {
+        auto *ptr = this->sysConfig.lookup(nameInfo.getName());
+        assert(ptr);
+        assert(type.is(TYPE::String));
+        std::string value = "'";
+        value += *ptr;
+        value += "'";
+        this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str(),
+                                nameInfo.getToken());
+      } else if (e.second->is(HandleKind::SMALL_CONST)) {
+        ConstEntry entry;
+        entry.u32 = e.second->getIndex();
+        this->builder().addDecl(nameInfo, kind, toString(entry).c_str(), nameInfo.getToken());
+      }
     } else {
       this->builder().addDecl(nameInfo, type, nameInfo.getToken(), kind);
     }

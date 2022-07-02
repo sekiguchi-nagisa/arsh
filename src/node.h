@@ -342,7 +342,8 @@ inline std::unique_ptr<TypeNode> newVoidTypeNode() {
 #define EACH_NUMBER_NODE_KIND(OP)                                                                  \
   OP(Int)                                                                                          \
   OP(Float)                                                                                        \
-  OP(Signal)
+  OP(Signal)                                                                                       \
+  OP(Bool)
 
 class NumberNode : public WithRtti<Node, NodeKind::Number> {
 public:
@@ -381,6 +382,18 @@ public:
   static std::unique_ptr<NumberNode> newSignal(Token token, int value) {
     auto node = std::make_unique<NumberNode>(token, Signal);
     node->intValue = value;
+    return node;
+  }
+
+  /**
+   * for constant expression
+   * @param token
+   * @param value
+   * @return
+   */
+  static std::unique_ptr<NumberNode> newBool(Token token, bool value) {
+    auto node = std::make_unique<NumberNode>(token, Bool);
+    node->intValue = value ? 1 : 0;
     return node;
   }
 

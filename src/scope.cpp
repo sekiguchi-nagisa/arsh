@@ -139,6 +139,32 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
   return this->add(std::move(fullname), HandlePtr(handle.release()));
 }
 
+NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) {
+  if (definedInBuiltin(*this, name)) {
+    return Err(NameRegisterError::DEFINED);
+  }
+  HandleAttr attr = HandleAttr::READ_ONLY;
+  if (this->isGlobal()) {
+    setFlag(attr, HandleAttr::GLOBAL);
+  }
+
+  TYPE typeId = TYPE::Any;
+  switch (entry.data.k) {
+  case ConstEntry::INT:
+    typeId = TYPE::Int;
+    break;
+  case ConstEntry::BOOL:
+    typeId = TYPE::Boolean;
+    break;
+  case ConstEntry::SIG:
+    typeId = TYPE::Signal;
+    break;
+  }
+  auto handle = HandlePtr::create(static_cast<unsigned int>(typeId), entry.u32,
+                                  HandleKind::SMALL_CONST, attr, this->modId);
+  return this->add(std::move(name), std::move(handle), NameRegisterOp::AS_ALIAS);
+}
+
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
                                             ImportedModKind k) {
   const bool global = hasFlag(k, ImportedModKind::GLOBAL);

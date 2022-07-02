@@ -343,6 +343,23 @@ inline const char *toString(ExpandMeta meta) {
   return ""; // normally unreachable
 }
 
+struct ConstEntry {
+  enum Kind : unsigned char {
+    INT,
+    BOOL,
+    SIG,
+  };
+
+  union {
+    unsigned int u32;
+
+    struct {
+      Kind k;
+      unsigned char v;
+    } data;
+  };
+};
+
 // ===== limit ======
 
 constexpr size_t SYS_LIMIT_TYPE_ID = 0xFFFFFF; // UINT24_MAX

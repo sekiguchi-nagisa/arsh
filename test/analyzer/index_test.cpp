@@ -1049,6 +1049,19 @@ var AAA = 'hello'
                                       "'\n```"));
 }
 
+TEST_F(IndexTest, hoverConst) {
+  ASSERT_NO_FATAL_FAILURE(this->hover("$TRUE", 0, "```ydsh\nconst TRUE = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$True", 0, "```ydsh\nconst True = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$true", 0, "```ydsh\nconst true = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$FALSE", 0, "```ydsh\nconst FALSE = false\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$False", 0, "```ydsh\nconst False = false\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$false", 0, "```ydsh\nconst false = false\n```"));
+
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ASSERT", 0, "```ydsh\nconst ON_ASSERT = 4\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ERR", 0, "```ydsh\nconst ON_ERR = 2\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_EXIT", 0, "```ydsh\nconst ON_EXIT = 1\n```"));
+}
+
 TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::VAR));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::LET));

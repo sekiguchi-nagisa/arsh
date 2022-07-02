@@ -153,13 +153,12 @@ void NumberNode::dump(NodeDumper &dumper) const {
 
   switch (this->kind) {
   case Int:
+  case Signal:
+  case Bool:
     DUMP(intValue);
     break;
   case Float:
     DUMP(floatValue);
-    break;
-  case Signal:
-    DUMP(intValue);
     break;
   }
 }

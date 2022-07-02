@@ -6,16 +6,6 @@ if !(checkenv PATH) {
 
 typedef Bool = Boolean
 
-# define boolean constant
-let TRUE = :
-let True = $TRUE
-let true = $True
-
-let FALSE = !$true
-let False = $FALSE
-let false = $False
-
-
 # dummy function for signal handler
 function SIG_DFL($s : Signal) {
     if $s == %'HUP' { exit ${$s.value() + 128}; }
@@ -43,3 +33,5 @@ var CMD_FALLBACK : ((String, [String]) -> Void)!
 _cmd_fallback_handler() {
     ($CMD_FALLBACK ?? { return 0; })($0, $@)
 }
+
+true
