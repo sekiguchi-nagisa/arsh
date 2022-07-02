@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Changed
+
+### Builtin
+
+- now some builtin variables are constants
+    - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
+    - ``TRUE``, ``True``, ``true``
+    - ``FALSE``, ``False``, ``false``
+
 ### Fixed
 
 - invalid string in ast dump
