@@ -1486,8 +1486,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       }
       value = *ptr;
     } else if (varNode.getHandle()->is(HandleKind::SMALL_CONST)) {
-      ConstEntry entry;
-      entry.u32 = varNode.getIndex();
+      ConstEntry entry(varNode.getIndex());
       std::unique_ptr<Node> constNode;
       auto v = static_cast<unsigned int>(entry.data.v);
       switch (entry.data.k) {

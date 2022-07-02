@@ -517,8 +517,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     this->emit1byteIns(OpCode::LOAD_CONST,
                        node.getIndex() - toIndex(BuiltinVarOffset::SCRIPT_NAME));
   } else if (node.getHandle()->is(HandleKind::SMALL_CONST)) {
-    ConstEntry entry;
-    entry.u32 = node.getIndex();
+    ConstEntry entry(node.getIndex());
     switch (entry.data.k) {
     case ConstEntry::INT:
       this->emit1byteIns(OpCode::PUSH_INT, entry.data.v);

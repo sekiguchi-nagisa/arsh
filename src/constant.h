@@ -358,6 +358,13 @@ struct ConstEntry {
       unsigned char v;
     } data;
   };
+
+  explicit ConstEntry(unsigned int value) : u32(value) {}
+
+  ConstEntry(Kind k, unsigned char v) : u32(0) {
+    this->data.k = k;
+    this->data.v = v;
+  }
 };
 
 // ===== limit ======

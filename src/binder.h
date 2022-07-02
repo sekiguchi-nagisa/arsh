@@ -61,9 +61,7 @@ public:
   }
 
   void bindSmallConst(const char *constName, ConstEntry::Kind k, unsigned char value) {
-    ConstEntry entry;
-    entry.data.k = k;
-    entry.data.v = value;
+    ConstEntry entry(k, value);
     auto handle = this->scope.defineConst(constName, entry);
     (void)handle;
     assert(static_cast<bool>(handle));

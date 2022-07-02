@@ -890,8 +890,7 @@ void SymbolIndexer::addBuiltinSymbols() {
         this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str(),
                                 nameInfo.getToken());
       } else if (e.second->is(HandleKind::SMALL_CONST)) {
-        ConstEntry entry;
-        entry.u32 = e.second->getIndex();
+        ConstEntry entry(e.second->getIndex());
         this->builder().addDecl(nameInfo, kind, toString(entry).c_str(), nameInfo.getToken());
       }
     } else {
