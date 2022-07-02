@@ -95,11 +95,7 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
   }
 
   if (handler == DFL_handler) {
-    if (sigNum == SIGHUP) {
-      actualHandler = handler;
-    } else {
-      op = SignalVector::UnsafeSigOp::DFL;
-    }
+    op = SignalVector::UnsafeSigOp::DFL;
   } else if (handler == IGN_handler) {
     op = SignalVector::UnsafeSigOp::IGN;
   } else {

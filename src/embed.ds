@@ -7,9 +7,7 @@ if !(checkenv PATH) {
 typedef Bool = Boolean
 
 # dummy function for signal handler
-function SIG_DFL($s : Signal) {
-    if $s == %'HUP' { exit ${$s.value() + 128}; }
-}
+function SIG_DFL($s : Signal) {}
 function SIG_IGN($s : Signal) {}
 
 %'hup'.trap($SIG_DFL)
