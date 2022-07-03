@@ -34,14 +34,13 @@ DEFINE_HIGHLIGHT_STYLE(monokai) {
   constexpr auto BG = ValidRule("bg:#272822");
 
   return {
-      {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
-      {HighlightTokenClass::OPERATOR, KEYWORD},  {HighlightTokenClass::NUMBER, NUMBER},
-      {HighlightTokenClass::REGEX, STRING},      {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::SIGNAL, VAR},        {HighlightTokenClass::COMMAND, FUNC},
-      {HighlightTokenClass::COMMAND_ARG, PARAM}, {HighlightTokenClass::REDIRECT, PARAM},
-      {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
-      {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
-      {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},
+      {HighlightTokenClass::OPERATOR, KEYWORD}, {HighlightTokenClass::NUMBER, NUMBER},
+      {HighlightTokenClass::REGEX, STRING},     {HighlightTokenClass::STRING, STRING},
+      {HighlightTokenClass::COMMAND, FUNC},     {HighlightTokenClass::COMMAND_ARG, PARAM},
+      {HighlightTokenClass::REDIRECT, PARAM},   {HighlightTokenClass::VARIABLE, VAR},
+      {HighlightTokenClass::TYPE, TYPE},        {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
+      {HighlightTokenClass::FOREGROUND_, TEXT}, {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 

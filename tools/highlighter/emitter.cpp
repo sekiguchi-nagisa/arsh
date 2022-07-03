@@ -101,8 +101,6 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::CLOSE_DQUOTE:
   case TokenKind::STR_ELEMENT:
     return HighlightTokenClass::STRING;
-  case TokenKind::SIGNAL_LITERAL:
-    return HighlightTokenClass::SIGNAL;
   case TokenKind::TYPE_NAME:
   case TokenKind::FUNC:
     return HighlightTokenClass::TYPE;

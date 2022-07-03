@@ -35,7 +35,7 @@ assert "${$'AA\x00BB'}" == $'AA\x00BB'
 assert "${"ab cd " } " == 'ab cd  '
 
 ## Signal
-assert "${%'INT'}" == %'INT' as String
+assert "$SIGINT" == $SIGINT as String
 
 ## Error
 assert "${new Error("hello")}" == (new Error("hello")) as String

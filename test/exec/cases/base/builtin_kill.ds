@@ -71,19 +71,19 @@ assert { kill hoge; $?; } == 1
 var j = for(;;) { true; } &
 kill ${$j.pid(0)!}
 assert $? == 0
-assert $j.wait() == 128 + %'term'.value()
+assert $j.wait() == 128 + $SIGTERM.value()
 assert !$j.pid(0)
 
 $j = for(;;) { true; } &
 kill -9 ${$j.pid(0)!}
 assert $? == 0
-assert $j.wait() == 128 + %'kill'.value()
+assert $j.wait() == 128 + $SIGKILL.value()
 assert "$(kill -9 999999999 2>&1)" == "ydsh: kill: 999999999: No such process"
 assert { kill -9 999999999; $?; } == 1
 
 $j = for(;;) { true; } &
 assert { kill -9 999999999 ${$j.pid(0)!}; $?; } == 0
-assert $j.wait() == 128 + %'kill'.value()
+assert $j.wait() == 128 + $SIGKILL.value()
 
 # kill specified job
 assert "$(kill %-456 2>&1)" == 'ydsh: kill: %-456: no such job'
@@ -94,4 +94,4 @@ assert { kill %hoge; $?; } == 1
 
 $j = for(;;) { true; } &
 assert { kill -9 $j; $?; } == 0
-assert $j.wait() == 128 + %'kill'.value()
+assert $j.wait() == 128 + $SIGKILL.value()

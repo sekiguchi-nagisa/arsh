@@ -73,10 +73,10 @@ TEST_F(EmitterTest, case1) {
   compare(HighlightTokenClass::OPERATOR, "=~", ret[2]);
   compare(HighlightTokenClass::STRING, "'aAa'", ret[3]);
 
-  ret = lex("assert %'int' is Signal");
+  ret = lex("assert $SIGINT is Signal");
   ASSERT_EQ(4, ret.size());
   compare(HighlightTokenClass::KEYWORD, "assert", ret[0]);
-  compare(HighlightTokenClass::SIGNAL, "%'int'", ret[1]);
+  compare(HighlightTokenClass::VARIABLE, "$SIGINT", ret[1]);
   compare(HighlightTokenClass::OPERATOR, "is", ret[2]);
   compare(HighlightTokenClass::TYPE, "Signal", ret[3]);
 

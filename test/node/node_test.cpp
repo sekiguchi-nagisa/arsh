@@ -610,59 +610,65 @@ nodes:
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
 
-    {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"EOF(
+    {DumpOp::typed, R"(case $SIGINT { $SIGINT => [34:34]; else => (34,)})", 0, 0, R"EOF(
 nodes:
   - nodeKind: Case
     token:
       pos: 0
-      size: 47
+      size: 49
     type: "Void"
     exprNode:
-      nodeKind: Number
+      nodeKind: Var
       token:
         pos: 5
-        size: 6
+        size: 7
       type: "Signal"
-      kind: "Signal"
-      intValue: 2
+      varName: "SIGINT"
+      handle:
+        index: 514
+        kind: "SMALL_CONST"
+        attribute: "READ_ONLY | GLOBAL"
     armNodes:
       - nodeKind: Arm
         token:
-          pos: 14
-          size: 17
+          pos: 15
+          size: 18
         type: "Void"
         this->patternNodes:
-          - nodeKind: Number
+          - nodeKind: Var
             token:
-              pos: 14
-              size: 6
+              pos: 15
+              size: 7
             type: "Signal"
-            kind: "Signal"
-            intValue: 2
+            varName: "SIGINT"
+            handle:
+              index: 514
+              kind: "SMALL_CONST"
+              attribute: "READ_ONLY | GLOBAL"
         this->constPatternNodes:
           - nodeKind: Number
             token:
-              pos: 14
-              size: 6
+              pos: 15
+              size: 7
             type: "Signal"
             kind: "Signal"
             intValue: 2
         this->actionNode:
           nodeKind: TypeOp
           token:
-            pos: 24
+            pos: 26
             size: 7
           type: "Void"
           exprNode:
             nodeKind: Map
             token:
-              pos: 24
+              pos: 26
               size: 7
             type: "[Int : Int]"
             keyNodes:
               - nodeKind: Number
                 token:
-                  pos: 25
+                  pos: 27
                   size: 2
                 type: "Int"
                 kind: "Int"
@@ -670,7 +676,7 @@ nodes:
             valueNodes:
               - nodeKind: Number
                 token:
-                  pos: 28
+                  pos: 30
                   size: 2
                 type: "Int"
                 kind: "Int"
@@ -679,7 +685,7 @@ nodes:
           opKind: "TO_VOID"
       - nodeKind: Arm
         token:
-          pos: 33
+          pos: 35
           size: 13
         type: "Void"
         this->patternNodes:
@@ -687,19 +693,19 @@ nodes:
         this->actionNode:
           nodeKind: TypeOp
           token:
-            pos: 41
+            pos: 43
             size: 5
           type: "Void"
           exprNode:
             nodeKind: Tuple
             token:
-              pos: 41
+              pos: 43
               size: 5
             type: "(Int,)"
             nodes:
               - nodeKind: Number
                 token:
-                  pos: 42
+                  pos: 44
                   size: 2
                 type: "Int"
                 kind: "Int"

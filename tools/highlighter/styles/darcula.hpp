@@ -36,14 +36,13 @@ DEFINE_HIGHLIGHT_STYLE(darcula) {
   constexpr auto BG = ValidRule("bg:#2B2B2B");
 
   return {
-      {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
-      {HighlightTokenClass::OPERATOR, KEYWORD},  {HighlightTokenClass::NUMBER, NUMBER},
-      {HighlightTokenClass::REGEX, REGEX},       {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::SIGNAL, VAR},        {HighlightTokenClass::COMMAND, FUNC},
-      {HighlightTokenClass::COMMAND_ARG, PARAM}, {HighlightTokenClass::REDIRECT, PARAM},
-      {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, FUNC},
-      {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
-      {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},
+      {HighlightTokenClass::OPERATOR, KEYWORD}, {HighlightTokenClass::NUMBER, NUMBER},
+      {HighlightTokenClass::REGEX, REGEX},      {HighlightTokenClass::STRING, STRING},
+      {HighlightTokenClass::COMMAND, FUNC},     {HighlightTokenClass::COMMAND_ARG, PARAM},
+      {HighlightTokenClass::REDIRECT, PARAM},   {HighlightTokenClass::VARIABLE, VAR},
+      {HighlightTokenClass::TYPE, FUNC},        {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
+      {HighlightTokenClass::FOREGROUND_, TEXT}, {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 

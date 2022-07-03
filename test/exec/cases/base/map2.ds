@@ -14,8 +14,8 @@ assert $f2[-0.000] == "a"
 assert $f2[0.000/-0.000] == "c"
 
 # Signal
-var sg = [%'hup' : "hung up", %'kill' : "killed"]
-assert $sg[%'SigHuP'] == "hung up"
+var sg = [$SIGHUP : "hung up", $SIGKILL : "killed"]
+assert $sg[$SIGHUP] == "hung up"
 assert $sg[$SIG.get("KILL")!] == "killed"
 
 # duplicated key

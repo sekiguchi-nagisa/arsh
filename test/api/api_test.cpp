@@ -1142,7 +1142,7 @@ TEST_F(JobTest, jobctrl1) {
 
   const char *str = R"(
         sh -c 'kill -s STOP $$; exit 180'
-        assert $? == 128 + %'stop'.value()
+        assert $? == 128 + $SIGSTOP.value()
         assert { fg %1; $?; } == 180 : "$?"
         fg %1
 )";
@@ -1152,7 +1152,7 @@ TEST_F(JobTest, jobctrl1) {
 
   str = R"(
         sh -c 'kill -s STOP $$; exit 18'
-        assert $? == 128 + %'stop'.value()
+        assert $? == 128 + $SIGSTOP.value()
         fg
 )";
   result = EXEC(str);
@@ -1171,10 +1171,10 @@ TEST_F(JobTest, jobctrl2) {
 
   const char *str = R"(
         var j = {
-             %'stop'.kill($PID)
+             $SIGSTOP.kill($PID)
              exit 99
         } &
-        assert $j.wait() == 128 + %'stop'.value()
+        assert $j.wait() == 128 + $SIGSTOP.value()
         assert $j.poll()
         assert { bg; $?; } == 0
         var r = $j.wait()
@@ -1186,10 +1186,10 @@ TEST_F(JobTest, jobctrl2) {
 
   str = R"(
         var j = {
-             %'stop'.kill($PID)
+             $SIGSTOP.kill($PID)
              exit 99
         } &
-        assert $j.wait() == 128 + %'stop'.value()
+        assert $j.wait() == 128 + $SIGSTOP.value()
         assert $j.poll()
         assert { bg %1 %2; $?; } == 1
         var r = $j.wait()

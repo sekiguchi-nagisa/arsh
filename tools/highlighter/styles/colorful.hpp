@@ -30,7 +30,6 @@ DEFINE_HIGHLIGHT_STYLE(colorful) {
   constexpr auto VAR = ValidRule("#963");
   constexpr auto STRING = ValidRule("bg:#fff0f0");
   constexpr auto REGEX = ValidRule("bg:#fff0ff #000");
-  constexpr auto SYMBOL = ValidRule("#A60 bg:");
   constexpr auto NUMBER = ValidRule("bold #60E");
   constexpr auto TYPE = ValidRule("bold #B06");
   constexpr auto BG = ValidRule("bg:#ffffff");
@@ -39,10 +38,9 @@ DEFINE_HIGHLIGHT_STYLE(colorful) {
       {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
       {HighlightTokenClass::OPERATOR, OPERATOR}, {HighlightTokenClass::NUMBER, NUMBER},
       {HighlightTokenClass::REGEX, REGEX},       {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::SIGNAL, SYMBOL},     {HighlightTokenClass::COMMAND, FUNC},
-      {HighlightTokenClass::REDIRECT, OPERATOR}, {HighlightTokenClass::VARIABLE, VAR},
-      {HighlightTokenClass::TYPE, TYPE},         {HighlightTokenClass::FOREGROUND_, TEXT},
-      {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::REDIRECT, OPERATOR},
+      {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
+      {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 

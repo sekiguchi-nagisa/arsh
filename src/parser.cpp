@@ -1468,8 +1468,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     return this->parse_stringLiteral();
   case TokenKind::REGEX_LITERAL:
     return this->parse_regexLiteral();
-  case TokenKind::SIGNAL_LITERAL:
-    return this->parse_signalLiteral();
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
@@ -1666,22 +1664,6 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
     }
   }
   return mapNode;
-}
-
-std::unique_ptr<Node> Parser::parse_signalLiteral() {
-  assert(CUR_KIND() == TokenKind::SIGNAL_LITERAL);
-  Token token = this->expect(TokenKind::SIGNAL_LITERAL); // always success
-  auto ref = this->lexer->toStrRef(token);
-  ref.removePrefix(2); // skip prefix [%']
-  ref.removeSuffix(1); // skip suffix [']
-  int num = getSignalNum(ref);
-  if (num < 0) {
-    std::string message = "unsupported signal: ";
-    message += ref;
-    reportTokenFormatError(TokenKind::SIGNAL_LITERAL, token, std::move(message));
-    return nullptr;
-  }
-  return NumberNode::newSignal(token, num);
 }
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {

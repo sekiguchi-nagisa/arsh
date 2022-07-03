@@ -280,7 +280,7 @@ TEST_F(CmdlineTest, signal) {
   std::string str = strsignal(SIGKILL);
   str += "\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
-  ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str));
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${$SIG['kill'].message()}"), 0, str));
 
   if (platform::platform() == platform::PlatformType::DARWIN) {
     return;
@@ -292,7 +292,7 @@ TEST_F(CmdlineTest, signal) {
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
         var j = while(true) {} &
-        $j.raise(%'quit')
+        $j.raise($SIGQUIT)
         var s = $j.wait()
         exit $s
 )");

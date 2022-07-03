@@ -194,8 +194,6 @@ INIT:
     <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
     <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
     <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
-    <STMT> "%" ['] VAR_NAME [']
-                             { MODE(EXPR); RET(SIGNAL_LITERAL); }
     <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
     <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
     <STMT> ">("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }

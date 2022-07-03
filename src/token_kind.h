@@ -62,7 +62,6 @@
   TOKEN(FLOAT_LITERAL, "<Float Literal>")                                                          \
   TOKEN(STRING_LITERAL, "<String Literal>")                                                        \
   TOKEN(REGEX_LITERAL, "<Regex Literal>")                                                          \
-  TOKEN(SIGNAL_LITERAL, "<Signal Literal>")                                                        \
   TOKEN(OPEN_DQUOTE, "\"")                                                                         \
   TOKEN(START_SUB_CMD, "$(")                                                                       \
   TOKEN(START_IN_SUB, ">(")                                                                        \
@@ -255,7 +254,6 @@
   OP(FLOAT_LITERAL)                                                                                \
   OP(STRING_LITERAL)                                                                               \
   OP(REGEX_LITERAL)                                                                                \
-  OP(SIGNAL_LITERAL)                                                                               \
   OP(OPEN_DQUOTE)                                                                                  \
   OP(START_SUB_CMD)                                                                                \
   OP(APPLIED_NAME)                                                                                 \

@@ -81,22 +81,22 @@ assert $j2.wait() == 0
 # signal
 $j = for(;;) { true; } &
 assert $j.poll()
-$j.raise(%'STOP')
+$j.raise($SIGSTOP)
 assert $j.poll()
 
-$j.raise(%'CONT')
+$j.raise($SIGCONT)
 assert $j.poll()
-$j.raise(%'term')
-assert $j.wait() == %'term'.value() + 128
-assert $j.status(0)! == %'term'.value() + 128
+$j.raise($SIGTERM)
+assert $j.wait() == $SIGTERM.value() + 128
+assert $j.status(0)! == $SIGTERM.value() + 128
 assert !$j.poll()
 
 ## coredump
 $j = for(;;) { true; } &
-$j.raise(%'quit')
-assert $j.wait() == %'quit'.value() + 128
+$j.raise($SIGQUIT)
+assert $j.wait() == $SIGQUIT.value() + 128
 assert !$j.poll()
-$j.raise(%'term')   # do nothing
+$j.raise($SIGTERM)   # do nothing
 
 # handle SIGCONT
 function handle($s : Signal) {
@@ -105,10 +105,10 @@ function handle($s : Signal) {
 }
 $j = { $SIG['cont'].trap($handle); for(;;) { true; } } &
 sleep 1
-$j.raise(%'STOP')
-$j.raise(%'CONT')
-assert $j.wait() == %'cont'.value()
-assert $j.status(0)! == %'cont'.value()
+$j.raise($SIGSTOP)
+$j.raise($SIGCONT)
+assert $j.wait() == $SIGCONT.value()
+assert $j.status(0)! == $SIGCONT.value()
 
 # detach
 $j = coproc { sleep 1; false; }

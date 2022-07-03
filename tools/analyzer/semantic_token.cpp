@@ -48,8 +48,6 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
     return SemanticTokenTypes::regexp_;
   case HighlightTokenClass::STRING:
     return SemanticTokenTypes::string_;
-  case HighlightTokenClass::SIGNAL:
-    return SemanticTokenTypes::event_;
   case HighlightTokenClass::COMMAND:
     return SemanticTokenTypes::function_;
   case HighlightTokenClass::COMMAND_ARG:

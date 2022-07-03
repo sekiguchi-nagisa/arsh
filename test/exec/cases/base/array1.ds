@@ -169,11 +169,11 @@ assert $s4[4] == 3.14
 assert $s4[5] == 23.0/0.0
 assert $s4[6].isNan()
 
-var s5 = [%'int', %'kill', %'HUp']
+var s5 = [$SIGINT, $SIGKILL, $SIGHUP]
 $s5.sort()
-assert $s5[0] == %'hUp'
-assert $s5[1] == %'INt'
-assert $s5[2] == %'KiLl'
+assert $s5[0] == $SIGHUP
+assert $s5[1] == $SIGINT
+assert $s5[2] == $SIGKILL
 
 
 # remove

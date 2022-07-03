@@ -29,7 +29,6 @@ enum class HighlightTokenClass : unsigned int {
   NUMBER,
   REGEX,
   STRING,
-  SIGNAL,
   COMMAND,
   COMMAND_ARG,
   REDIRECT,

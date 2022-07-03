@@ -64,7 +64,7 @@ assert $args.size() == 1
 assert $args[0] == 'hhh aaa'
 
 ## Signal
-$args = @(${%'INT'})
+$args = @($SIGINT)
 assert $args.size() == 1
 assert $args[0] == '2'
 

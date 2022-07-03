@@ -287,8 +287,6 @@ protected:
 
   std::unique_ptr<Node> parse_mapBody(Token token, std::unique_ptr<Node> &&keyNode);
 
-  std::unique_ptr<Node> parse_signalLiteral();
-
   std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);
 
   std::unique_ptr<Node> parse_stringLiteral();
