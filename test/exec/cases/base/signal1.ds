@@ -1,14 +1,16 @@
 
-assert %'HUP' is Signal
-assert %'HuP' as Any is Signal
-assert %'Sighup'.name() == 'HUP'
-assert %'INT'.value() == (%'int' as String).toInt()!
+assert $SIGHUP is Signal
+assert $SIGHUP as Any is Signal
+assert $SIGHUP.name() == 'HUP'
+assert $SIGINT.value() == ($SIGINT as String).toInt()!
 
-assert %'TRAP' is Signal
-assert %'tRAp'.name() == 'TRAP'
+assert $SIGALRM is Signal
+assert $SIGALRM.name() == 'ALRM'
+assert $SIGCHLD is Signal
+assert $SIGCHLD.name() == 'CHLD'
 
 var s = $SIG.get('hUp')!
-assert $s as String == %'HUP' as String
+assert $s as String == $SIGHUP as String
 $s = $SIG.get('sigterm')!
 assert $s as Any is Signal
 assert $s.name() == 'TERM'

@@ -9,8 +9,10 @@ function raise($s : String) {
     $SIG.get($s)!.kill($PID)
 }
 
-%'HUP'.trap($f)
-%'term'.trap($f)
+assert $SIG_NUL is typeof($f)!
+
+$SIGHUP.trap($f)
+$SIGTERM.trap($f)
 
 true
 $raise('hup')

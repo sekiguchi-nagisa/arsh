@@ -4,7 +4,7 @@
 
 var e = 34 as Any
 try {
-    %'HUP'.kill(1);
+    $SIGHUP.kill(1);
     assert $false;
 } catch $a {
     assert $? == 0

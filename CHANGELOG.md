@@ -16,6 +16,10 @@
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``
     - ``FALSE``, ``False``, ``false``
+- add builtin signal constants (POSIX.1-1990 standard signal)
+    - ``SIGABRT``, ``SIGALRM``, ``SIGCHLD``, ``SIGCONT``, ``SIGFPE``, ``SIGHUP``,
+    - ``SIGILL``, ``SIGINT``, ``SIGKILL``, ``SIGPIPE``, ``SIGQUIT``, ``SIGSEGV``,
+    - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 
 ### Fixed
 

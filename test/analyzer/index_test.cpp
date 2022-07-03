@@ -1060,6 +1060,9 @@ TEST_F(IndexTest, hoverConst) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ASSERT", 0, "```ydsh\nconst ON_ASSERT = 4\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ERR", 0, "```ydsh\nconst ON_ERR = 2\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$ON_EXIT", 0, "```ydsh\nconst ON_EXIT = 1\n```"));
+
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGHUP", 0, "```ydsh\nconst SIGHUP = signal(1)\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```ydsh\nconst SIGKILL = signal(9)\n```"));
 }
 
 TEST_F(IndexTest, docSymbol) {

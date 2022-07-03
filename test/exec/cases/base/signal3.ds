@@ -26,9 +26,9 @@ $SIG['term'].trap($g2)
 $raise('hup')
 assert $a.size() == 2
 assert $a[0]._0.name() == 'HUP'
-assert $a[0]._0 == %'hup'
+assert $a[0]._0 == $SIGHUP
 assert $a[0]._1 == 1
 assert $a[1]._0.name() == 'TERM'
-assert $a[1]._0 != %'hup'
-assert $a[1]._0 == %'terM'
+assert $a[1]._0 != $SIGHUP
+assert $a[1]._0 == $SIGTERM
 assert $a[1]._1 == 1

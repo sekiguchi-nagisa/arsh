@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include "scope.h"
+#include "signals.h"
 #include "type_pool.h"
 
 namespace ydsh {
@@ -60,9 +61,9 @@ public:
     this->bind(constName, *config.lookup(constName), HandleKind::SYS_CONST, HandleAttr::READ_ONLY);
   }
 
-  void bindSmallConst(const char *constName, ConstEntry::Kind k, unsigned char value) {
+  void bindSmallConst(std::string &&constName, ConstEntry::Kind k, unsigned char value) {
     ConstEntry entry(k, value);
-    auto handle = this->scope.defineConst(constName, entry);
+    auto handle = this->scope.defineConst(std::move(constName), entry);
     (void)handle;
     assert(static_cast<bool>(handle));
   }
@@ -284,6 +285,18 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be StringObject
    */
   binder.bind(VAR_YDSH_BIN, "");
+
+  // signal constants (POSIX.1-1990 standard)
+  auto *signalPairs = getSignalList();
+  for (unsigned int i = 0; signalPairs[i].name; i++) {
+    auto &pair = signalPairs[i];
+    std::string name = "SIG";
+    name += pair.name;
+    binder.bindSmallConst(std::move(name), ConstEntry::Kind::SIG, pair.sigNum);
+    if (pair.sigNum == SIGTTOU) {
+      break;
+    }
+  }
 }
 
 } // namespace ydsh

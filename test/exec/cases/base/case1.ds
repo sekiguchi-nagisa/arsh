@@ -59,11 +59,11 @@ assert "$($case2(12))" == ""
 
 function case3($s : Signal)  : String{
     return case $s {
-        %'hup' => "hung up!!"
+        $SIGHUP => "hung up!!"
         else => $s.name()
-        %'kill' => "killed!!"
+        $SIGKILL => "killed!!"
     }
 }
-assert $case3(%'STOP') == "STOP"
-assert $case3(%'SIGHUP') == "hung up!!"
-assert $case3(%'kIlL') == "killed!!"
+assert $case3($SIG['STOP']) == "STOP"
+assert $case3($SIG['SIGHUP']) == "hung up!!"
+assert $case3($SIG['kIlL']) == "killed!!"

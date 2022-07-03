@@ -2,7 +2,7 @@
 var ex = 23 as Any
 
 try {
-    %'INT'.kill(	9223372036854775807)
+    $SIGINT.kill(	9223372036854775807)
 } catch $e {
     $ex = $e
 }
