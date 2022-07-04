@@ -83,6 +83,11 @@ static bool isUnhandledSignal(int sigNum) {
      * sigaction does not accept these signals
      */
     return true;
+  case SIGCHLD:
+    /**
+     * for automatically wait process termination
+     */
+    return true;
   default:
     return false;
   }
@@ -114,7 +119,7 @@ static ObjPtr<FuncObject> installUnblock(DSState &st, int sigNum, ObjPtr<FuncObj
   struct sigaction oldAction {};
   struct sigaction newAction = newSigaction(sigNum);
   struct sigaction *action = nullptr;
-  if (handler && !isUnhandledSignal(sigNum) && sigNum != SIGCHLD) {
+  if (handler && !isUnhandledSignal(sigNum)) {
     if (handler == DFL_handler) {
       newAction.sa_handler = SIG_DFL;
       handler = nullptr;
