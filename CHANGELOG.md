@@ -22,6 +22,11 @@
     - ``SIGILL``, ``SIGINT``, ``SIGKILL``, ``SIGPIPE``, ``SIGQUIT``, ``SIGSEGV``,
     - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 
+### API
+
+- **Breaking Change**: change interface of ``DSState_complete``
+    - now get completion candidates from ``DSState_getCompletion`` api
+
 ### Fixed
 
 - invalid string in ast dump

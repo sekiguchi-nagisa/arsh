@@ -371,30 +371,37 @@ DS_PUBLIC_API(const char *) DSState_copyright();
 DS_PUBLIC_API(unsigned int) DSState_featureBit();
 
 /* for input completion */
+/**
+ * do code completion
+ * @param st
+ * not null
+ * @param data
+ * not null
+ * @param size
+ * size of data
+ * @return
+ * return number of completion candidates.
+ * if has error, return -1
+ */
+DS_PUBLIC_API(int) DSState_complete(DSState *st, const char *data, unsigned int size);
 
-typedef enum {
-  DS_COMP_INVOKE, // invoke completion
-  DS_COMP_GET,    // get completion result at index
-  DS_COMP_SIZE,   // get size of completion result
-  DS_COMP_CLEAR,  // clear completion result
-} DSCompletionOp;
+typedef struct {
+  const char *value;
+  unsigned int size;
+  unsigned int attr;
+} DSCompletion;
 
 /**
- * do completion op
+ * get completion candidate specified by index
  * @param st
- * not null.
- * @param op
+ * not null
  * @param index
- * indicates index of completion result or cursor of completing line
- * @param value
- * if DS_COMP_INVOKE, *value may not be null terminate
+ * @param comp
+ * not null
  * @return
- * if failed or no completion result, return 0.
- * if op is 'DS_COMP_SIZE' or 'DS_COMP_INVOKE', return size of completion result.
- * otherwise, return always 1.
+ * if success, return 0. otherwise return -1
  */
-DS_PUBLIC_API(unsigned int)
-DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
+DS_PUBLIC_API(int) DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp);
 
 /* for line editing (history, prompt) */
 

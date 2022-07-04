@@ -572,40 +572,38 @@ const char *DSState_initExecutablePath(DSState *st) {
   return nullptr;
 }
 
-unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index,
-                              const char **value) {
-  GUARD_NULL(st, 0);
+int DSState_complete(DSState *st, const char *data, unsigned int size) {
+  if (st == nullptr || data == nullptr) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  StringRef ref(data, size);
+  auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto ret = doCodeCompletion(*st, "", ref);
+  assert(ret.hasValue());
+  st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
+  unsigned int len = ret.unwrap();
+  assert(len <= ArrayObject::MAX_SIZE);
+  return static_cast<int>(len);
+}
+
+int DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp) {
+  if (st == nullptr || comp == nullptr) {
+    errno = EINVAL;
+    return -1;
+  }
 
   auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
-
-  switch (op) {
-  case DS_COMP_INVOKE: {
-    StringRef ref;
-    if (value != nullptr && *value != nullptr) {
-      ref = StringRef(*value, index);
-    }
-    auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-    auto ret = doCodeCompletion(*st, "", ref);
-    assert(ret.hasValue());
-    st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-    return ret.unwrap();
+  if (index < compreply.getValues().size()) {
+    StringRef ref = compreply.getValues()[index].asStrRef();
+    comp->value = ref.data();
+    comp->size = ref.size();
+    comp->attr = 0; // FIXME:
+    return 0;
   }
-  case DS_COMP_GET:
-    if (value == nullptr) {
-      break;
-    }
-    *value = nullptr;
-    if (index < compreply.getValues().size()) {
-      *value = compreply.getValues()[index].asCStr();
-    }
-    break;
-  case DS_COMP_SIZE:
-    return compreply.getValues().size();
-  case DS_COMP_CLEAR:
-    compreply.refValues().clear();
-    break;
-  }
-  return 0;
+  errno = EINVAL;
+  return -1;
 }
 
 #define XSTR(v) #v

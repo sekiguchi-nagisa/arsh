@@ -483,53 +483,56 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
   return t;
 }
 
-TEST_F(APITest, complete) {
+TEST_F(APITest, complete1) {
   // null arguments
-  unsigned int s = DSState_complete(nullptr, DS_COMP_INVOKE, 1, nullptr); // do nothing
-  ASSERT_EQ(0, s);
+  errno = 0;
+  int s = DSState_complete(nullptr, "", 0);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  const char *line = "echo ~";
-  s = DSState_complete(this->state, DS_COMP_INVOKE, 0, &line);
-  ASSERT_EQ(0, s);
+  errno = 0;
+  s = DSState_complete(this->state, nullptr, 12);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  s = DSState_complete(this->state, DS_COMP_INVOKE, 6, nullptr);
-  ASSERT_EQ(0, s);
+  errno = 0;
+  DSCompletion comp{};
+  s = DSState_getCompletion(nullptr, 0, &comp);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  const char *ss = nullptr;
-  s = DSState_complete(this->state, DS_COMP_INVOKE, 6, &ss);
-  ASSERT_EQ(0, s);
+  errno = 0;
+  comp = DSCompletion{};
+  s = DSState_getCompletion(this->state, 0, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  // invalid op
-  s = DSState_complete(this->state, static_cast<DSCompletionOp>(10000), 6, &line); // do nothing
-  ASSERT_EQ(0, s);
+  errno = 0;
+  comp = DSCompletion{};
+  s = DSState_getCompletion(this->state, 1, &comp);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  unsigned int size = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
-  ASSERT_EQ(0, size);
-  s = DSState_complete(this->state, DS_COMP_GET, size, &line);
-  ASSERT_STREQ(nullptr, line);
+  s = DSState_complete(this->state, "echo ", 0);
   ASSERT_EQ(0, s);
-  s = DSState_complete(this->state, DS_COMP_GET, 0, nullptr);
-  ASSERT_EQ(0, s);
+}
 
-  line = "echo ~";
-  s = DSState_complete(this->state, DS_COMP_INVOKE, 6, &line);
+TEST_F(APITest, complete2) {
+  int s = DSState_complete(this->state, "echo ~", 6);
   ASSERT_TRUE(s > 0);
   auto expect = tilde();
-  for (auto &e : expect) {
-    std::cerr << e << std::endl;
-  }
+  //  for (auto &e : expect) {
+  //    std::cerr << e << std::endl;
+  //  }
   ASSERT_EQ(expect.size(), s);
-  for (unsigned int i = 0; i < s; i++) {
-    const char *ret = nullptr;
-    s = DSState_complete(this->state, DS_COMP_GET, i, &ret);
-    ASSERT_STREQ(expect[i].c_str(), ret);
+  for (unsigned int i = 0; i < static_cast<unsigned int>(s); i++) {
+    DSCompletion comp{};
+    s = DSState_getCompletion(this->state, i, &comp);
+    ASSERT_STREQ(expect[i].c_str(), comp.value);
     ASSERT_EQ(0, s);
   }
-  s = DSState_complete(this->state, DS_COMP_CLEAR, 0, nullptr);
-  ASSERT_EQ(0, s);
-  s = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
-  ASSERT_EQ(0, s);
 
+  std::string line;
   const char *prefix;
   if (ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
     prefix = "~N";
@@ -538,15 +541,14 @@ TEST_F(APITest, complete) {
     prefix = "~r";
     line = "echo ~r";
   }
-  s = DSState_complete(this->state, DS_COMP_INVOKE, 7, &line);
+  s = DSState_complete(this->state, line.c_str(), 7);
   ASSERT_TRUE(s > 0);
-  size = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
   expect = filter(expect, prefix);
-  ASSERT_EQ(expect.size(), size);
-  for (unsigned int i = 0; i < size; i++) {
-    const char *ret = nullptr;
-    s = DSState_complete(this->state, DS_COMP_GET, i, &ret);
-    ASSERT_STREQ(expect[i].c_str(), ret);
+  ASSERT_EQ(expect.size(), s);
+  for (unsigned int i = 0; i < static_cast<unsigned int>(s); i++) {
+    DSCompletion comp{};
+    s = DSState_getCompletion(this->state, i, &comp);
+    ASSERT_STREQ(expect[i].c_str(), comp.value);
     ASSERT_EQ(0, s);
   }
 }
