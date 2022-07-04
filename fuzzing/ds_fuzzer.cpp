@@ -47,7 +47,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
   case FuzzPolicy::COMPLETE: {
     const char *buf = (const char *)data;
-    DSState_complete(state, DS_COMP_INVOKE, size, &buf);
+    DSState_complete(state, buf, size);
     break;
   }
   }
