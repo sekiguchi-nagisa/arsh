@@ -27,6 +27,7 @@
 - **Breaking Change**: change interface of ``DSState_complete``
     - now get completion candidates from ``DSState_getCompletion`` api
 - **Breaking Change**: change interface of ``DSState_lineEdit``
+    - add ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``
 
 ### Fixed
 

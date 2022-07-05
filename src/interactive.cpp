@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -24,8 +25,8 @@
 
 #include <linenoise.h>
 
-#include "misc/grapheme.hpp"
 #include "misc/resource.hpp"
+#include "misc/unicode.hpp"
 #include <ydsh/ydsh.h>
 
 static DSState *state;
@@ -126,13 +127,7 @@ static bool readLine(std::string &line) {
 // for linenoise encoding function
 using namespace ydsh;
 
-struct WidthProperty {
-  UnicodeUtil::AmbiguousCharWidth eaw{UnicodeUtil::HALF_WIDTH};
-  unsigned char flagSeqWidth{4};
-  bool zwjSeqFallback{true};
-};
-
-static WidthProperty widthProperty;
+static unsigned int widthFlags;
 
 static constexpr const char PROPERTY_EAW[] = "○";
 static constexpr const char PROPERTY_EMOJI_FLAG_SEQ[] = "🇯🇵";
@@ -144,64 +139,46 @@ static const char *propertyStr[] = {
 };
 
 static int checkProperty(const char *str, size_t pos) {
+  DSLineEdit edit{};
   if (strcmp(str, PROPERTY_EAW) == 0) {
-    widthProperty.eaw = UnicodeUtil::HALF_WIDTH;
     if (pos - 1 == 2) {
-      widthProperty.eaw = UnicodeUtil::FULL_WIDTH;
+      DSLineEdit_setFullWidth(&edit);
     }
   } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
-    widthProperty.flagSeqWidth = pos - 1;
+    DSLineEdit_setFlagSeqWidth(&edit, pos - 1);
   } else if (strcmp(str, PROPERTY_EMOJI_ZWJ_SEQ) == 0) {
-    widthProperty.zwjSeqFallback = pos - 1 > 2;
+    if (pos - 1 > 2) {
+      DSLineEdit_setZWJFallback(&edit);
+    }
   }
+  widthFlags = edit.flags;
   return 0;
-}
-
-static std::size_t graphemeWidth(const GraphemeScanner::Result &ret) {
-  size_t width = 0;
-  unsigned int flagSeqCount = 0;
-  for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    int w = UnicodeUtil::width(ret.codePoints[i], widthProperty.eaw);
-    if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
-      flagSeqCount++;
-    }
-    if (w > 0) {
-      width += w;
-    }
-  }
-  if (flagSeqCount == 2) {
-    return widthProperty.flagSeqWidth;
-  }
-  if (width > 2 && widthProperty.zwjSeqFallback) {
-    return width;
-  }
-  return width < 2 ? 1 : 2;
 }
 
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, std::size_t pos,
                                         std::size_t *columSize) {
-  StringRef ref(buf + pos, bufSize - pos);
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
-  scanner.next(ret);
-  if (columSize != nullptr && ret.codePointCount > 0) {
-    *columSize = graphemeWidth(ret);
+  DSLineEdit edit{};
+  edit.data = buf + pos;
+  edit.index = bufSize - pos;
+  edit.flags = widthFlags;
+  DSState_lineEdit(state, DS_EDIT_NEXT_CHAR_LEN, &edit);
+  if (columSize) {
+    *columSize = edit.out2;
   }
-  return ret.ref.size();
+  return edit.out;
 }
 
 static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_t pos,
                                         std::size_t *columSize) {
-  StringRef ref(buf, pos);
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
-  while (scanner.hasNext()) {
-    scanner.next(ret);
+  DSLineEdit edit{};
+  edit.data = buf;
+  edit.index = pos;
+  edit.flags = widthFlags;
+  DSState_lineEdit(state, DS_EDIT_PREV_CHAR_LEN, &edit);
+  if (columSize) {
+    *columSize = edit.out2;
   }
-  if (columSize != nullptr && ret.codePointCount > 0) {
-    *columSize = graphemeWidth(ret);
-  }
-  return ret.ref.size();
+  return edit.out;
 }
 
 static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int *codePoint) {

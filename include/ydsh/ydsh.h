@@ -417,12 +417,20 @@ typedef enum {
   DS_EDIT_HIST_SAVE,   // save history to file
   DS_EDIT_HIST_SEARCH, // search history
   DS_EDIT_PROMPT,      // get prompt
+
+  /* for unicode-aware cursor move */
+  DS_EDIT_NEXT_CHAR_LEN,
+  DS_EDIT_PREV_CHAR_LEN,
 } DSLineEditOp;
 
 typedef struct {
-  const char *data; // for input/output
+  const char *data; /* for input/output */
+
   unsigned int index;
+  unsigned int flags; /* for extra input */
+
   unsigned int out;
+  unsigned int out2; /* for additional output */
 } DSLineEdit;
 
 /**
@@ -436,6 +444,28 @@ typedef struct {
  * if success, return 0. otherwise return -1
  */
 DS_PUBLIC_API(int) DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit);
+
+/* for DS_EDIT_NEXT_CHAR_LEN or DS_EDIT_PREV_CHAR_LEN */
+
+static inline void DSLineEdit_setFullWidth(DSLineEdit *edit) { edit->flags |= (1u << 0u); }
+
+static inline int DSLineEdit_isFullWidth(const DSLineEdit *edit) {
+  return edit->flags & (1u << 0u);
+}
+
+static inline void DSLineEdit_setZWJFallback(DSLineEdit *edit) { edit->flags |= (1u << 1u); }
+
+static inline int DSLineEdit_isZWJFallback(const DSLineEdit *edit) {
+  return edit->flags & (1u << 1u);
+}
+
+static inline void DSLineEdit_setFlagSeqWidth(DSLineEdit *edit, unsigned char width) {
+  edit->flags |= (((unsigned int)width) << 8u);
+}
+
+static inline unsigned char DSLineEdit_getFlagSeqWidth(const DSLineEdit *edit) {
+  return (unsigned char)(edit->flags >> 8u);
+}
 
 #ifdef __cplusplus
 }

@@ -24,6 +24,7 @@
 #include "compiler.h"
 #include "logger.h"
 #include "misc/files.h"
+#include "misc/grapheme.hpp"
 #include "vm.h"
 #include <embed.h>
 #include <ydsh/ydsh.h>
@@ -648,6 +649,8 @@ static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
   return true;
 }
 
+static int getCharLen(DSLineEditOp op, DSLineEdit &edit);
+
 int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   errno = EINVAL;
   if (st == nullptr || edit == nullptr) {
@@ -665,10 +668,17 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   OP(DS_EDIT_HIST_LOAD)                                                                            \
   OP(DS_EDIT_HIST_SAVE)                                                                            \
   OP(DS_EDIT_HIST_SEARCH)                                                                          \
-  OP(DS_EDIT_PROMPT)
+  OP(DS_EDIT_PROMPT)                                                                               \
+  OP(DS_EDIT_NEXT_CHAR_LEN)                                                                        \
+  OP(DS_EDIT_PREV_CHAR_LEN)
 
   GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, -1);
 #undef EACH_DS_LINE_EDIT_OP
+
+  // for char len op
+  if (op == DS_EDIT_NEXT_CHAR_LEN || op == DS_EDIT_PREV_CHAR_LEN) {
+    return getCharLen(op, *edit);
+  }
 
   if (!callEditHook(*st, op, *edit)) {
     if (op == DS_EDIT_PROMPT) {
@@ -711,4 +721,51 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   }
   errno = EINVAL;
   return -1;
+}
+
+static unsigned int graphemeWidth(const DSLineEdit &edit, const GraphemeScanner::Result &ret) {
+  const auto eaw =
+      DSLineEdit_isFullWidth(&edit) ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
+  unsigned int width = 0;
+  unsigned int flagSeqCount = 0;
+  for (unsigned int i = 0; i < ret.codePointCount; i++) {
+    int w = UnicodeUtil::width(ret.codePoints[i], eaw);
+    if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
+      flagSeqCount++;
+    }
+    if (w > 0) {
+      width += w;
+    }
+  }
+  if (flagSeqCount == 2) {
+    return DSLineEdit_getFlagSeqWidth(&edit);
+  }
+  if (width > 2 && DSLineEdit_isZWJFallback(&edit)) {
+    return width;
+  }
+  return width < 2 ? 1 : 2;
+}
+
+static int getCharLen(DSLineEditOp op, DSLineEdit &edit) {
+  assert(op == DS_EDIT_NEXT_CHAR_LEN || op == DS_EDIT_PREV_CHAR_LEN);
+
+  if (!edit.data) {
+    errno = EINVAL;
+    return -1;
+  }
+  StringRef ref(edit.data, edit.index);
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  while (scanner.hasNext()) {
+    scanner.next(ret);
+    if (op == DS_EDIT_NEXT_CHAR_LEN) {
+      break;
+    }
+  }
+  edit.out = ret.ref.size();
+  edit.out2 = 0;
+  if (ret.codePointCount > 0) {
+    edit.out2 = graphemeWidth(edit, ret);
+  }
+  return 0;
 }
