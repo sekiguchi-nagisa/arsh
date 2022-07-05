@@ -371,43 +371,60 @@ TEST_F(APITest, eval) {
 }
 
 TEST_F(APITest, prompt1) {
-  const char *buf = "";
-  unsigned int s = DSState_lineEdit(this->state, static_cast<DSLineEditOp>(100000), 1, &buf);
-  ASSERT_EQ(0, s);
+  int s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  s = DSState_lineEdit(nullptr, DS_EDIT_PROMPT, 1, &buf);
-  ASSERT_EQ(0, s);
+  DSLineEdit edit{};
+  edit.index = 1;
+  s = DSState_lineEdit(nullptr, DS_EDIT_PROMPT, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 1, nullptr);
+  edit = DSLineEdit{};
+  edit.index = 10000;
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit); // if invalid index, return ""
   ASSERT_EQ(0, s);
+  ASSERT_STREQ("", edit.data);
+  ASSERT_EQ(0, edit.out);
 
   // default prompt
-  buf = "fer";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 1, &buf);
-  ASSERT_EQ(0, s);
-
   std::string p = "ydsh-";
   p += std::to_string(X_INFO_MAJOR_VERSION);
   p += ".";
   p += std::to_string(X_INFO_MINOR_VERSION);
   p += getuid() == 0 ? "# " : "$ ";
-  ASSERT_EQ(p, buf);
 
-  buf = "hhhhh";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 2, &buf);
+  edit = DSLineEdit{};
+  edit.index = 1; // primary prompt
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
   ASSERT_EQ(0, s);
-  ASSERT_STREQ("> ", buf);
+  ASSERT_EQ(p, edit.data);
+  ASSERT_EQ(p.size(), edit.out);
 
-  buf = "farjhfu";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 5, &buf);
+  edit = DSLineEdit{};
+  edit.index = 2; // secondary prompt
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
   ASSERT_EQ(0, s);
-  ASSERT_STREQ("", buf);
+  ASSERT_STREQ("> ", edit.data);
+  ASSERT_EQ(2, edit.out);
 
-  buf = "fjrie";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, -82, &buf);
+  edit = DSLineEdit{};
+  edit.index = 3; // 3rd prompt is not supported
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
   ASSERT_EQ(0, s);
-  ASSERT_STREQ("", buf);
+  ASSERT_STREQ("", edit.data);
+  ASSERT_EQ(0, edit.out);
 
+  edit = DSLineEdit{};
+  edit.index = 4; // 4th prompt is not supported
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
+  ASSERT_EQ(0, s);
+  ASSERT_STREQ("", edit.data);
+  ASSERT_EQ(0, edit.out);
+}
+
+TEST_F(APITest, prompt2) {
   // use module
   const char *str = "source " API_TEST_WORK_DIR "/../../share/ydsh/module/edit;\n"
                     "source " API_TEST_WORK_DIR "/../../share/ydsh/module/prompt;\n"
@@ -415,27 +432,32 @@ TEST_F(APITest, prompt1) {
   int r = DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
   ASSERT_EQ(0, r);
 
-  buf = "fjrie";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 1, &buf);
-  ASSERT_EQ(1, s);
-  ASSERT_STREQ("hello>", buf);
+  std::string primary = "hello>";
+  std::string secondary = "second>";
 
-  buf = "fjrie";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 2, &buf);
-  ASSERT_EQ(1, s);
-  ASSERT_STREQ("second>", buf);
-
-  buf = "fjrie";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, -82, &buf);
-  ASSERT_EQ(1, s);
-  ASSERT_STREQ("", buf);
-
-  buf = "fjrie";
-  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 2, nullptr);
+  DSLineEdit edit{};
+  edit.index = 1; // primary
+  int s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
   ASSERT_EQ(0, s);
+  ASSERT_EQ(primary, edit.data);
+  ASSERT_EQ(primary.size(), edit.out);
+
+  edit = DSLineEdit{};
+  edit.index = 2; // secondary
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(secondary, edit.data);
+  ASSERT_EQ(secondary.size(), edit.out);
+
+  edit = DSLineEdit{};
+  edit.index = 10000; // invalid
+  s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
+  ASSERT_EQ(0, s);
+  ASSERT_STREQ("", edit.data);
+  ASSERT_EQ(0, edit.out);
 }
 
-TEST_F(APITest, prompt2) {
+TEST_F(APITest, prompt3) {
   std::string defaultPrompt = "ydsh-";
   defaultPrompt += std::to_string(X_INFO_MAJOR_VERSION);
   defaultPrompt += ".";
@@ -447,10 +469,11 @@ TEST_F(APITest, prompt2) {
 )";
   DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
 
-  const char *buf = "";
-  unsigned int s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, 1, &buf);
+  DSLineEdit edit{};
+  edit.index = 1;
+  int s = DSState_lineEdit(this->state, DS_EDIT_PROMPT, &edit);
   ASSERT_EQ(0, s);
-  ASSERT_EQ(defaultPrompt, buf);
+  ASSERT_EQ(defaultPrompt, edit.data);
 }
 
 static std::vector<std::string> tilde() {

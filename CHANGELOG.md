@@ -26,6 +26,7 @@
 
 - **Breaking Change**: change interface of ``DSState_complete``
     - now get completion candidates from ``DSState_getCompletion`` api
+- **Breaking Change**: change interface of ``DSState_lineEdit``
 
 ### Fixed
 

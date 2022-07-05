@@ -158,7 +158,6 @@ TEST_F(InteractiveTest, expand_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("echo {1..9999999999}");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo {1..9999999999}\n"));
-  sleep(1);
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
@@ -168,9 +167,9 @@ SystemError: brace expansion is canceled, caused by `%s'
                            strerror(EINTR));
 
   if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] { this->expect(PROMPT, err); }));
   } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] { this->expect("^C%\n" + PROMPT, err); }));
   }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }

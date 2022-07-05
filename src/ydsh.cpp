@@ -627,8 +627,32 @@ static const char *defaultPrompt(int n) {
 #undef XSTR
 #undef STR
 
-unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf) {
-  GUARD_NULL(st, 0);
+static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
+  auto func = getBuiltinGlobal(st, VAR_EIDT_HOOK);
+  if (func.isInvalid()) {
+    return false;
+  }
+  const char *data = edit.data;
+  if (!data) {
+    data = "";
+  }
+  auto args =
+      makeArgs(DSValue::createInt(op), DSValue::createInt(edit.index), DSValue::createStr(data));
+  auto old = st.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto ret = VM::callFunction(st, std::move(func), std::move(args));
+  st.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
+  if (st.hasError()) {
+    return false;
+  }
+  st.editOpReply = std::move(ret);
+  return true;
+}
+
+int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
+  errno = EINVAL;
+  if (st == nullptr || edit == nullptr) {
+    return -1;
+  }
 
 #define EACH_DS_LINE_EDIT_OP(OP)                                                                   \
   OP(DS_EDIT_HIST_SIZE)                                                                            \
@@ -643,35 +667,17 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
   OP(DS_EDIT_HIST_SEARCH)                                                                          \
   OP(DS_EDIT_PROMPT)
 
-  GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, 0);
+  GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, -1);
 #undef EACH_DS_LINE_EDIT_OP
 
-  auto func = getBuiltinGlobal(*st, VAR_EIDT_HOOK);
-  if (func.isInvalid()) {
-    if (op == DS_EDIT_PROMPT && buf) {
-      *buf = defaultPrompt(index);
-    }
-    return 0;
-  }
-
-  {
-    const char *value = nullptr;
-    if (buf) {
-      value = *buf;
-      *buf = nullptr;
-    }
-    auto args = makeArgs(DSValue::createInt(op), DSValue::createInt(index),
-                         DSValue::createStr((value && *value) ? value : ""));
-    auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-    auto ret = VM::callFunction(*st, std::move(func), std::move(args));
-    st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-    if (st->hasError()) {
-      if (op == DS_EDIT_PROMPT && buf) {
-        *buf = defaultPrompt(index);
-      }
+  if (!callEditHook(*st, op, *edit)) {
+    if (op == DS_EDIT_PROMPT) {
+      edit->data = defaultPrompt(edit->index);
+      edit->out = strlen(edit->data);
       return 0;
     }
-    st->editOpReply = std::move(ret);
+    errno = EINVAL;
+    return -1;
   }
 
   auto &type = st->typePool.get(st->editOpReply.getTypeID());
@@ -679,24 +685,30 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
   case DS_EDIT_HIST_SIZE:
     if (type.is(TYPE::Int)) {
       auto ret = st->editOpReply.asInt();
-      return ret <= 0 ? 0 : static_cast<unsigned int>(ret);
+      unsigned int size = ret <= 0 ? 0 : static_cast<unsigned int>(ret);
+      edit->out = size;
+      return 0;
     }
-    return 0;
+    break;
   case DS_EDIT_HIST_GET:
   case DS_EDIT_HIST_SEARCH:
   case DS_EDIT_PROMPT:
-    if (!type.is(TYPE::String) || buf == nullptr) {
+    if (type.is(TYPE::String)) {
+      StringRef ref;
+      if (op == DS_EDIT_PROMPT) {
+        st->prompt = st->editOpReply;
+        ref = st->prompt.asStrRef();
+      } else {
+        ref = st->editOpReply.asStrRef();
+      }
+      edit->data = ref.data();
+      edit->out = ref.size();
       return 0;
-    }
-    if (op == DS_EDIT_PROMPT) {
-      st->prompt = st->editOpReply;
-      *buf = st->prompt.asCStr();
-    } else {
-      *buf = st->editOpReply.asCStr();
     }
     break;
   default:
     break;
   }
-  return 1;
+  errno = EINVAL;
+  return -1;
 }

@@ -419,19 +419,23 @@ typedef enum {
   DS_EDIT_PROMPT,      // get prompt
 } DSLineEditOp;
 
+typedef struct {
+  const char *data; // for input/output
+  unsigned int index;
+  unsigned int out;
+} DSLineEdit;
+
 /**
  * do line edit op
  * @param st
+ * not null
  * @param op
- * @param index
- * @param buf
+ * @param edit
+ * not null
  * @return
- * if failed or not set EDIT_HOOK, return 0.
- * if op is DS_EDIT_HIST_SIZE, return size of history.
- * otherwise, return non-zero value
+ * if success, return 0. otherwise return -1
  */
-DS_PUBLIC_API(unsigned int)
-DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
+DS_PUBLIC_API(int) DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit);
 
 #ifdef __cplusplus
 }

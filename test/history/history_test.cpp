@@ -41,33 +41,52 @@ public:
   void setHistFileSize(unsigned int size) { this->assignUintValue(VAR_HISTFILESIZE, size); }
 
   unsigned int historySize() {
-    return DSState_lineEdit(this->state, DS_EDIT_HIST_SIZE, 0, nullptr);
+    DSLineEdit edit{};
+    DSState_lineEdit(this->state, DS_EDIT_HIST_SIZE, &edit);
+    return edit.out;
   }
 
   const char *getHistory(unsigned int index) {
-    const char *buf = nullptr;
-    DSState_lineEdit(this->state, DS_EDIT_HIST_GET, index, &buf);
-    return buf;
+    DSLineEdit edit{};
+    edit.index = index;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_GET, &edit);
+    return edit.data;
   }
 
   void setHistory(unsigned int index, const char *line) {
-    DSState_lineEdit(this->state, DS_EDIT_HIST_SET, index, &line);
+    DSLineEdit edit{};
+    edit.index = index;
+    edit.data = line;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_SET, &edit);
   }
 
   void delHistory(unsigned int index) {
-    DSState_lineEdit(this->state, DS_EDIT_HIST_DEL, index, nullptr);
+    DSLineEdit edit{};
+    edit.index = index;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_DEL, &edit);
   }
 
-  void addHistory(const char *value) { DSState_lineEdit(this->state, DS_EDIT_HIST_ADD, 0, &value); }
+  void addHistory(const char *value) {
+    DSLineEdit edit{};
+    edit.data = value;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_ADD, &edit);
+  }
 
-  void clearHistory() { DSState_lineEdit(this->state, DS_EDIT_HIST_CLEAR, 0, nullptr); }
+  void clearHistory() {
+    DSLineEdit edit{};
+    DSState_lineEdit(this->state, DS_EDIT_HIST_CLEAR, &edit);
+  }
 
   void loadHistory(const char *fileName = nullptr) {
-    DSState_lineEdit(this->state, DS_EDIT_HIST_LOAD, 0, &fileName);
+    DSLineEdit edit{};
+    edit.data = fileName;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_LOAD, &edit);
   }
 
   void saveHistory(const char *fileName = nullptr) {
-    DSState_lineEdit(this->state, DS_EDIT_HIST_SAVE, 0, &fileName);
+    DSLineEdit edit{};
+    edit.data = fileName;
+    DSState_lineEdit(this->state, DS_EDIT_HIST_SAVE, &edit);
   }
 
 private:
