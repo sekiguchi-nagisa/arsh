@@ -237,8 +237,8 @@ public:
   static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
 
   struct Result {
-    StringRef ref;               // grapheme cluster
-    unsigned int codePointCount; // count of containing code points
+    StringRef ref;                  // grapheme cluster
+    unsigned int codePointCount{0}; // count of containing code points
     int codePoints[MAX_GRAPHEME_CODE_POINTS];
     typename GraphemeBoundary<Bool>::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
   };

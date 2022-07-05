@@ -127,7 +127,13 @@ static bool readLine(std::string &line) {
 // for linenoise encoding function
 using namespace ydsh;
 
-static unsigned int widthFlags;
+struct WidthProperty {
+  bool fullWidth{false};
+  unsigned char flagSeqWidth{4};
+  bool zwjSeqFallback{true};
+};
+
+static WidthProperty widthProperty;
 
 static constexpr const char PROPERTY_EAW[] = "○";
 static constexpr const char PROPERTY_EMOJI_FLAG_SEQ[] = "🇯🇵";
@@ -139,20 +145,27 @@ static const char *propertyStr[] = {
 };
 
 static int checkProperty(const char *str, size_t pos) {
-  DSLineEdit edit{};
   if (strcmp(str, PROPERTY_EAW) == 0) {
+    widthProperty.fullWidth = false;
     if (pos - 1 == 2) {
-      DSLineEdit_setFullWidth(&edit);
+      widthProperty.fullWidth = true;
     }
   } else if (strcmp(str, PROPERTY_EMOJI_FLAG_SEQ) == 0) {
-    DSLineEdit_setFlagSeqWidth(&edit, pos - 1);
+    widthProperty.flagSeqWidth = pos - 1;
   } else if (strcmp(str, PROPERTY_EMOJI_ZWJ_SEQ) == 0) {
-    if (pos - 1 > 2) {
-      DSLineEdit_setZWJFallback(&edit);
-    }
+    widthProperty.zwjSeqFallback = pos - 1 > 2;
   }
-  widthFlags = edit.flags;
   return 0;
+}
+
+static void setWidthProperty(DSLineEdit &edit) {
+  if (widthProperty.fullWidth) {
+    DSLineEdit_setFullWidth(&edit);
+  }
+  DSLineEdit_setFlagSeqWidth(&edit, widthProperty.flagSeqWidth);
+  if (widthProperty.zwjSeqFallback) {
+    DSLineEdit_setZWJFallback(&edit);
+  }
 }
 
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, std::size_t pos,
@@ -160,7 +173,7 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, st
   DSLineEdit edit{};
   edit.data = buf + pos;
   edit.index = bufSize - pos;
-  edit.flags = widthFlags;
+  setWidthProperty(edit);
   DSState_lineEdit(state, DS_EDIT_NEXT_CHAR_LEN, &edit);
   if (columSize) {
     *columSize = edit.out2;
@@ -173,7 +186,7 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_
   DSLineEdit edit{};
   edit.data = buf;
   edit.index = pos;
-  edit.flags = widthFlags;
+  setWidthProperty(edit);
   DSState_lineEdit(state, DS_EDIT_PREV_CHAR_LEN, &edit);
   if (columSize) {
     *columSize = edit.out2;
