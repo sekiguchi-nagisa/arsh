@@ -476,6 +476,183 @@ TEST_F(APITest, prompt3) {
   ASSERT_EQ(defaultPrompt, edit.data);
 }
 
+TEST_F(APITest, charLen1) {
+  // invalid
+  DSLineEdit edit{};
+  std::string line = "あaa";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(nullptr, DS_EDIT_NEXT_CHAR_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  line = "あaa";
+  edit.data = line.c_str();
+  edit.index = 3;
+  s = DSState_lineEdit(nullptr, DS_EDIT_PREV_CHAR_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(nullptr, DS_EDIT_NEXT_CHAR_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+}
+
+TEST_F(APITest, charLen2) {
+  // next char
+  auto edit = DSLineEdit{};
+  std::string line = "あaう";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // あ
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // a
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // う
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // end
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(0, edit.out);
+  ASSERT_EQ(0, edit.out2);
+}
+
+TEST_F(APITest, charLen3) {
+  // prev char
+  auto edit = DSLineEdit{};
+  std::string line = "あaう";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, &edit); // う
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, &edit); // a
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, &edit); // あ
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, &edit); // start
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(0, edit.out);
+  ASSERT_EQ(0, edit.out2);
+}
+
+TEST_F(APITest, charLen4) {
+  // next char
+  auto edit = DSLineEdit{};
+  std::string line = "○a○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // ○
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // a
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  DSLineEdit_setFullWidth(&edit);
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // ○
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  DSLineEdit_setFlagSeqWidth(&edit, 2);
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // 🇦🇽
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(8, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // b
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  DSLineEdit_setFlagSeqWidth(&edit, 4);
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // 🇦🇽
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(8, edit.out);
+  ASSERT_EQ(4, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // 💁🏾‍♀️
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(17, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // c
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  DSLineEdit_setZWJFallback(&edit);
+  DSLineEdit_setFullWidth(&edit);
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); // 💁🏾‍♀️
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(17, edit.out);
+  ASSERT_EQ(6, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  edit.flags = 0;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit); //
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(4, edit.out);
+  ASSERT_EQ(1, edit.out2); // regional indicator is half
+}
+
 static std::vector<std::string> tilde() {
   std::vector<std::string> v;
   setpwent();
