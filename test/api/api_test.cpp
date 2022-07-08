@@ -498,6 +498,24 @@ TEST_F(APITest, charLen1) {
   s = DSState_lineEdit(nullptr, DS_EDIT_NEXT_CHAR_LEN, &edit);
   ASSERT_EQ(-1, s);
   ASSERT_EQ(EINVAL, errno);
+
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_CHAR_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_CHAR_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
 }
 
 TEST_F(APITest, charLen2) {
