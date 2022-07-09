@@ -614,12 +614,12 @@ private:
 
   union {
     struct {
-      unsigned int index;
+      unsigned short values[2]; // (index, error)
       Imported v[3];
     } e3;
 
     struct {
-      unsigned int index;
+      unsigned short values[2]; // (index, error)
       Imported *ptr;
     } children;
   } data;
@@ -632,12 +632,12 @@ private:
 public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
-          unsigned int index)
+          unsigned int index, bool error)
       : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
     this->meta.u16_2.v1 = modID;
     this->meta.u16_2.v2 = 0;
-    this->data.e3.index = index;
-    this->reopen(std::move(handles), std::move(children));
+    this->data.e3.values[0] = index;
+    this->reopen(std::move(handles), std::move(children), error);
   }
 
   ~ModType();
@@ -659,7 +659,9 @@ public:
    * get module object index
    * @return
    */
-  unsigned int getIndex() const { return this->data.e3.index; }
+  unsigned int getIndex() const { return this->data.e3.values[0]; }
+
+  bool hasError() const { return this->data.e3.values[1]; }
 
   /**
    * for indicating module object index
@@ -709,8 +711,8 @@ private:
     return nullptr;
   }
 
-  void reopen(std::unordered_map<std::string, HandlePtr> &&handles,
-              FlexBuffer<Imported> &&children) {
+  void reopen(std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
+              bool error) {
     this->disposeChildren();
     this->handleMap = std::move(handles);
     this->meta.u16_2.v2 = children.size();
@@ -721,6 +723,7 @@ private:
     } else {
       this->data.children.ptr = children.take();
     }
+    this->data.e3.values[1] = error ? 1 : 0;
   }
 
   void disposeChildren() {

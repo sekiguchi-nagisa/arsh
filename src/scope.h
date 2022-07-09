@@ -62,6 +62,9 @@ class NameScope;
 using NameScopePtr = IntrusivePtr<NameScope>;
 
 class NameScope : public RefCount<NameScope> {
+private:
+  bool error{false}; // if true, has some errors in this module
+
 public:
   const enum Kind : unsigned char {
     GLOBAL,
@@ -165,6 +168,10 @@ public:
   bool inBuiltinModule() const { return this->modId == 0; }
 
   bool inRootModule() const { return this->modId == 1; }
+
+  bool hasError() const { return this->error; }
+
+  void setError(bool set) { this->error = set; }
 
   unsigned int getCurLocalIndex() const { return this->curLocalIndex; }
 

@@ -97,8 +97,9 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
     imported.emplace_back(e.kind(), std::move(archive));
   }
 
-  auto archive = std::make_shared<ModuleArchive>(this->getModId(), this->getVersion(),
-                                                 std::move(handles), std::move(imported));
+  auto archive =
+      std::make_shared<ModuleArchive>(modType.getModId(), this->getVersion(), modType.hasError(),
+                                      std::move(handles), std::move(imported));
   archives.add(archive);
   return archive;
 }

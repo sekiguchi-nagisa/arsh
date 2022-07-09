@@ -210,9 +210,10 @@ public:
   TypeOrError finalizeRecordType(const RecordType &recordType,
                                  std::unordered_map<std::string, HandlePtr> &&handles);
 
-  const ModType &createModType(unsigned short modID,
+  const ModType &createModType(unsigned short modId,
                                std::unordered_map<std::string, HandlePtr> &&handles,
-                               FlexBuffer<ModType::Imported> &&children, unsigned int index);
+                               FlexBuffer<ModType::Imported> &&children, unsigned int index,
+                               bool error);
 
   const ModType &getBuiltinModType() const {
     auto *type = this->getModTypeById(0).take();

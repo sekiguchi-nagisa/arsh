@@ -181,22 +181,25 @@ using ModuleArchivePtr = std::shared_ptr<ModuleArchive>;
 
 class ModuleArchive {
 private:
-  const unsigned short modId{0};
   const int version{0};
+  const unsigned short modId{0};
+  const bool error{false};
   std::vector<Archive> handles;
   std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
 
 public:
   ModuleArchive() = default;
 
-  explicit ModuleArchive(unsigned short modID, int version, std::vector<Archive> &&handles,
-                         std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
-      : modId(modID), version(version), handles(std::move(handles)), imported(std::move(imported)) {
-  }
+  ModuleArchive(unsigned short modId, int version, bool error, std::vector<Archive> &&handles,
+                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
+      : version(version), modId(modId), error(error), handles(std::move(handles)),
+        imported(std::move(imported)) {}
+
+  int getVersion() const { return this->version; }
 
   unsigned short getModId() const { return this->modId; }
 
-  int getVersion() const { return this->version; }
+  bool hasError() const { return this->error; }
 
   const auto &getHandles() const { return this->handles; }
 

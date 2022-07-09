@@ -255,7 +255,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
     }
   }
   return pool.createModType(this->modId, std::move(newHandles), std::move(newChildren),
-                            this->modIndex);
+                            this->modIndex, this->error);
 }
 
 Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) {

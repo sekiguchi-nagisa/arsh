@@ -120,6 +120,7 @@ DEFINE_TCError(UncaptureEnv, "local function cannot access temporary "
                              "defined environmental variables: `%s'");
 DEFINE_TCError(UncaptureField, "local function cannot access upper variables "
                                "that will be assigned to fields: `%s'");
+DEFINE_TCError(ErrorMod, "syntax or semantic errors occurred in `%s'");
 
 #undef DEFINE_TCError
 

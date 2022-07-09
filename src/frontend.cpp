@@ -48,6 +48,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse() {
   if (this->parser()) {
     node = this->parser()();
     if (this->parser().hasError()) {
+      this->curScope()->setError(true);
       this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
     } else if (this->uastDumper) {
       this->uastDumper(*node);
@@ -63,6 +64,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   node = this->checker()(this->prevType, std::move(node), this->curScope());
   this->prevType = &node->getType();
   if (this->checker().hasError()) {
+    this->curScope()->setError(true);
     auto &errors = this->checker().getErrors();
     if (this->listener) {
       for (size_t i = 0; i < errors.size(); i++) {

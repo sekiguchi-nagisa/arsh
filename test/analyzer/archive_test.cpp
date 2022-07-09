@@ -46,7 +46,8 @@ struct ArchiveBuilder {
     for (auto &e : this->children) {
       imported.emplace_back(ImportedModKind::GLOBAL, e.build());
     }
-    return std::make_shared<ModuleArchive>(this->id, 0, std::move(handles), std::move(imported));
+    return std::make_shared<ModuleArchive>(this->id, 0, false, std::move(handles),
+                                           std::move(imported));
   }
 };
 
@@ -716,7 +717,7 @@ struct Builder {
     std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> deps;
     build(deps, std::forward<Args>(args)...);
     auto src = this->srcMan.update(path, 0, "");
-    auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), src->getVersion(),
+    auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), src->getVersion(), false,
                                                    std::move(handles), std::move(deps));
     this->archives.add(archive);
     return archive;

@@ -381,7 +381,8 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
     return nullptr;
   }
   auto handleMap = ret.unwrap();
-  return &pool.createModType(archive.getModId(), std::move(handleMap), std::move(children), 0);
+  return &pool.createModType(archive.getModId(), std::move(handleMap), std::move(children), 0,
+                             archive.hasError());
 }
 
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
