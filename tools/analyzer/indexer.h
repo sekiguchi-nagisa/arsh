@@ -17,8 +17,10 @@
 #ifndef YDSH_TOOLS_ANALYZER_INDEXER_H
 #define YDSH_TOOLS_ANALYZER_INDEXER_H
 
-#include "analyzer.h"
+#include <sysconfig.h>
+
 #include "index.h"
+#include "pass.h"
 
 namespace ydsh::lsp {
 
@@ -205,12 +207,11 @@ private:
   const Symbol *insertNewSymbol(Token token, const DeclBase *decl);
 };
 
-class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
+class SymbolIndexer : public NodePass {
 private:
   const SysConfig &sysConfig;
   SymbolIndexes &indexes;
   std::vector<IndexBuilder> builders;
-  int visitingDepth{0};
 
 public:
   SymbolIndexer(const SysConfig &config, SymbolIndexes &indexes)
@@ -220,89 +221,32 @@ public:
 
   bool enterModule(unsigned short modId, int version,
                    const std::shared_ptr<TypePool> &pool) override;
-  bool exitModule(std::unique_ptr<Node> &&node) override;
-  bool consume(std::unique_ptr<Node> &&node) override;
+  bool exitModule(const std::unique_ptr<Node> &node) override;
 
 protected:
-  void visitTypeNode(TypeNode &node) override;
-  void visitNumberNode(NumberNode &node) override;
-  void visitStringNode(StringNode &node) override;
-  void visitStringExprNode(StringExprNode &node) override;
-  void visitRegexNode(RegexNode &node) override;
-  void visitArrayNode(ArrayNode &node) override;
-  void visitMapNode(MapNode &node) override;
-  void visitTupleNode(TupleNode &node) override;
+  void visitBase(BaseTypeNode &node) override;
+  void visitQualified(QualifiedTypeNode &node) override;
+
   void visitVarNode(VarNode &node) override;
   void visitAccessNode(AccessNode &node) override;
-  void visitTypeOpNode(TypeOpNode &node) override;
-  void visitUnaryOpNode(UnaryOpNode &node) override;
-  void visitBinaryOpNode(BinaryOpNode &node) override;
-  void visitArgsNode(ArgsNode &node) override;
   void visitApplyNode(ApplyNode &node) override;
-  void visitEmbedNode(EmbedNode &node) override;
-  void visitNewNode(NewNode &node) override;
-  void visitForkNode(ForkNode &node) override;
   void visitCmdNode(CmdNode &node) override;
-  void visitCmdArgNode(CmdArgNode &node) override;
-  void visitArgArrayNode(ArgArrayNode &node) override;
-  void visitRedirNode(RedirNode &node) override;
-  void visitWildCardNode(WildCardNode &node) override;
-  void visitBraceSeqNode(BraceSeqNode &node) override;
-  void visitPipelineNode(PipelineNode &node) override;
-  void visitWithNode(WithNode &node) override;
-  void visitAssertNode(AssertNode &node) override;
   void visitBlockNode(BlockNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
-  void visitDeferNode(DeferNode &node) override;
   void visitLoopNode(LoopNode &node) override;
-  void visitIfNode(IfNode &node) override;
-  void visitCaseNode(CaseNode &node) override;
-  void visitArmNode(ArmNode &node) override;
-  void visitJumpNode(JumpNode &node) override;
   void visitCatchNode(CatchNode &node) override;
-  void visitTryNode(TryNode &node) override;
   void visitVarDeclNode(VarDeclNode &node) override;
-  void visitAssignNode(AssignNode &node) override;
-  void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
   void visitPrefixAssignNode(PrefixAssignNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
   void visitSourceNode(SourceNode &node) override;
-  void visitSourceListNode(SourceListNode &node) override;
-  void visitCodeCompNode(CodeCompNode &node) override;
-  void visitErrorNode(ErrorNode &node) override;
-  void visitEmptyNode(EmptyNode &node) override;
-  void visit(Node &node) override;
 
 private:
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
-  void visit(T *node) {
-    if (node) {
-      this->visit(*node);
-    }
-  }
-
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
-  void visit(const std::unique_ptr<T> &node) {
-    if (node) {
-      this->visit(*node);
-    }
-  }
-
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
-  void visitEach(const std::vector<std::unique_ptr<T>> &nodes) {
-    for (const auto &item : nodes) {
-      this->visit(item);
-    }
-  }
-
   void visitBlockWithCurrentScope(const BlockNode &blockNode) {
     this->visitEach(blockNode.getNodes());
   }
 
   IndexBuilder &builder() { return this->builders.back(); }
-
-  bool isTopLevel() const { return this->visitingDepth == 1; }
 
   void addBuiltinSymbols();
 };

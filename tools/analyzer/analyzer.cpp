@@ -203,8 +203,8 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
   if (action.dumper) {
     frontEnd.setASTDumper(*action.dumper);
   }
-  action.consumer &&action.consumer->enterModule(
-      this->current()->getModId(), this->current()->getVersion(), this->current()->getPoolPtr());
+  action.pass &&action.pass->enterModule(this->current()->getModId(), this->current()->getVersion(),
+                                         this->current()->getPoolPtr());
 
   // run front end
   frontEnd.setupASTDump();
@@ -219,18 +219,18 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
     }
     switch (ret.kind) {
     case FrontEndResult::IN_MODULE:
-      action.consumer &&action.consumer->consume(std::move(ret.node));
+      action.pass &&action.pass->consume(ret.node);
       break;
     case FrontEndResult::ENTER_MODULE:
       action.emitter &&action.emitter->enterModule(this->current()->getModId(),
                                                    this->current()->getVersion());
-      action.consumer &&action.consumer->enterModule(this->current()->getModId(),
-                                                     this->current()->getVersion(),
-                                                     this->current()->getPoolPtr());
+      action.pass &&action.pass->enterModule(this->current()->getModId(),
+                                             this->current()->getVersion(),
+                                             this->current()->getPoolPtr());
       break;
     case FrontEndResult::EXIT_MODULE:
       action.emitter &&action.emitter->exitModule();
-      action.consumer &&action.consumer->exitModule(std::move(ret.node));
+      action.pass &&action.pass->exitModule(ret.node);
       break;
     case FrontEndResult::FAILED:
       break;
@@ -238,7 +238,7 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
   }
   frontEnd.teardownASTDump();
   action.emitter &&action.emitter->exitModule();
-  action.consumer &&action.consumer->exitModule(nullptr);
+  action.pass &&action.pass->exitModule(nullptr);
   return std::move(*this->current()).buildArchive(archives);
 }
 

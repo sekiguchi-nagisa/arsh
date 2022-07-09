@@ -20,12 +20,12 @@
 #include <atomic>
 
 #include <frontend.h>
-#include <node.h>
 #include <scope.h>
 #include <type_pool.h>
 
 #include "archive.h"
 #include "lsp.h"
+#include "pass.h"
 #include "source.h"
 
 namespace ydsh::lsp {
@@ -75,19 +75,10 @@ private:
   }
 };
 
-struct NodeConsumer {
-  virtual ~NodeConsumer() = default;
-
-  virtual bool enterModule(unsigned short modID, int version,
-                           const std::shared_ptr<TypePool> &pool) = 0;
-  virtual bool exitModule(std::unique_ptr<Node> &&node) = 0;
-  virtual bool consume(std::unique_ptr<Node> &&node) = 0;
-};
-
 struct AnalyzerAction {
   ObserverPtr<DiagnosticEmitter> emitter;
   ObserverPtr<NodeDumper> dumper;
-  ObserverPtr<NodeConsumer> consumer;
+  ObserverPtr<NodePass> pass;
 };
 
 class CancelPoint {

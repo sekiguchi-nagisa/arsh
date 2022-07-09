@@ -231,8 +231,10 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
 
   AnalyzerAction action;
   SymbolIndexer indexer(param.sysConfig, param.ret.indexes);
+  MultipleNodePass passes;
+  passes.add(makeObserver(indexer));
   action.emitter.reset(&param.emitter);
-  action.consumer.reset(&indexer);
+  action.pass = makeObserver(passes);
 
   // rebuild
   Analyzer analyzer(param.sysConfig, *param.ret.srcMan, param.ret.archives, param.cancelPoint);

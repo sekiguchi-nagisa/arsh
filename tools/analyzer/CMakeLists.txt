@@ -17,6 +17,7 @@ add_library(ydshd_static STATIC
         symbol.cpp
         worker.cpp
         semantic_token.cpp
+        pass.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 

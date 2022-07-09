@@ -75,7 +75,7 @@ protected:
     SymbolIndexes indexes;
     SymbolIndexer indexer(sysConfig, indexes);
     action.dumper.reset(&dumper);
-    action.consumer.reset(&indexer);
+    action.pass.reset(&indexer);
     Analyzer analyzer(sysConfig, man, archives);
     analyzer.analyze(*src, action);
     tmpFile.reset();

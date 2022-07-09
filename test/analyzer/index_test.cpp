@@ -56,7 +56,7 @@ public:
     ASSERT_TRUE(src);
     AnalyzerAction action;
     SymbolIndexer indexer(this->sysConfig, this->indexes);
-    action.consumer.reset(&indexer);
+    action.pass.reset(&indexer);
     Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
     auto ret = analyzer.analyze(*src, action);
     ASSERT_TRUE(ret);
