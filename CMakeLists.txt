@@ -144,7 +144,7 @@ endif ()
 download_project(
         PROJ linenoise
         GIT_REPOSITORY https://github.com/sekiguchi-nagisa/linenoise.git
-        GIT_TAG aa752a5e4169d671b993aa58a37f7b85add9d80d
+        GIT_TAG 25d9c4edc9461b756efa6edbe96e41cbe7b66529
         GIT_PROGRESS 1
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )

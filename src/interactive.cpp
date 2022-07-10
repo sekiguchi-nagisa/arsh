@@ -282,6 +282,11 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
   return nullptr;
 }
 
+static const char *highlight(const char *buf, size_t bufLen, size_t *retLen) {
+  *retLen = bufLen;
+  return buf; // FIXME:
+}
+
 static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {
   if (rcfile.empty()) { // for --norc option
     return {DS_ERROR_KIND_SUCCESS, 0};
@@ -314,6 +319,8 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
   linenoiseSetHistoryCallback(historyCallback);
 
   linenoiseSetPropertyCheckCallback(checkProperty, propertyStr, std::size(propertyStr));
+
+  linenoiseSetHighlightCallback(highlight);
 
   unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
   DSState_setOption(dsState, option);
