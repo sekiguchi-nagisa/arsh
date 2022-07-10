@@ -579,6 +579,14 @@ enum class ImportedModKind : unsigned char {
 template <>
 struct allow_enum_bitop<ImportedModKind> : std::true_type {};
 
+enum class ModAttr : unsigned char {
+  HAS_ERRORS = 1u << 0u,  // there any errors in this module
+  UNREACHABLE = 1u << 1u, // last statement in this module is Nothing type
+};
+
+template <>
+struct allow_enum_bitop<ModAttr> : std::true_type {};
+
 class ModType : public DSType {
 public:
   friend class TypePool;
@@ -614,12 +622,12 @@ private:
 
   union {
     struct {
-      unsigned short values[2]; // (index, error)
+      unsigned short values[2]; // (index, ModAttr)
       Imported v[3];
     } e3;
 
     struct {
-      unsigned short values[2]; // (index, error)
+      unsigned short values[2]; // (index, ModAttr)
       Imported *ptr;
     } children;
   } data;
@@ -632,12 +640,12 @@ private:
 public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
-          unsigned int index, bool error)
+          unsigned int index, ModAttr attr)
       : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
     this->meta.u16_2.v1 = modID;
     this->meta.u16_2.v2 = 0;
     this->data.e3.values[0] = index;
-    this->reopen(std::move(handles), std::move(children), error);
+    this->reopen(std::move(handles), std::move(children), attr);
   }
 
   ~ModType();
@@ -661,7 +669,7 @@ public:
    */
   unsigned int getIndex() const { return this->data.e3.values[0]; }
 
-  bool hasError() const { return this->data.e3.values[1]; }
+  ModAttr getAttr() const { return static_cast<ModAttr>(this->data.e3.values[1]); }
 
   /**
    * for indicating module object index
@@ -712,7 +720,7 @@ private:
   }
 
   void reopen(std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
-              bool error) {
+              ModAttr attr) {
     this->disposeChildren();
     this->handleMap = std::move(handles);
     this->meta.u16_2.v2 = children.size();
@@ -723,7 +731,7 @@ private:
     } else {
       this->data.children.ptr = children.take();
     }
-    this->data.e3.values[1] = error ? 1 : 0;
+    this->data.e3.values[1] = static_cast<unsigned char>(attr);
   }
 
   void disposeChildren() {

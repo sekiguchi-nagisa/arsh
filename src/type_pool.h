@@ -213,7 +213,7 @@ public:
   const ModType &createModType(unsigned short modId,
                                std::unordered_map<std::string, HandlePtr> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index,
-                               bool error);
+                               ModAttr modAttr);
 
   const ModType &getBuiltinModType() const {
     auto *type = this->getModTypeById(0).take();

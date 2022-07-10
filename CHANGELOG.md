@@ -32,6 +32,7 @@
 ### Fixed
 
 - invalid string in ast dump
+- correctly propagate unreachable code error from loaded module
 
 ## [0.26.0] - 2022-06-30
 

@@ -156,6 +156,8 @@ public:
 
   unsigned short getCurModId() const { return this->curScope()->modId; }
 
+  const DSType *getPrevType() const { return this->prevType; }
+
   bool hasUnconsumedPath() const {
     auto &e = this->getCurSrcListNode();
     return e && e->hasUnconsumedPath();

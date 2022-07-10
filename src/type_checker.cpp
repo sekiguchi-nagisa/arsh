@@ -2114,7 +2114,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   if (node.isInlined()) {
     setFlag(importedKind, ImportedModKind::INLINED);
   }
-  if (node.getModType().hasError()) { // if error recovery is enabled
+  if (hasFlag(node.getModType().getAttr(), ModAttr::HAS_ERRORS)) { // if error recovery is enabled
     this->reportError<ErrorMod>(node, node.getPathName().c_str());
   }
   auto ret = this->curScope->importForeignHandles(this->typePool, node.getModType(), importedKind);

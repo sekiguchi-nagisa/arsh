@@ -48,7 +48,9 @@ std::unique_ptr<Node> FrontEnd::tryToParse() {
   if (this->parser()) {
     node = this->parser()();
     if (this->parser().hasError()) {
-      this->curScope()->setError(true);
+      auto modAttr = this->curScope()->getModAttr();
+      setFlag(modAttr, ModAttr::HAS_ERRORS);
+      this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
       this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
     } else if (this->uastDumper) {
       this->uastDumper(*node);
@@ -64,7 +66,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   node = this->checker()(this->prevType, std::move(node), this->curScope());
   this->prevType = &node->getType();
   if (this->checker().hasError()) {
-    this->curScope()->setError(true);
+    this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
     auto &errors = this->checker().getErrors();
     if (this->listener) {
       for (size_t i = 0; i < errors.size(); i++) {
@@ -193,17 +195,17 @@ FrontEndResult FrontEnd::enterModule() {
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
   assert(!this->contexts.empty());
-  const unsigned int varNum = this->contexts.back()->scope->getMaxLocalVarIndex();
+  const unsigned int varNum = this->curScope()->getMaxLocalVarIndex();
+  if (this->prevType != nullptr && this->prevType->isNothingType()) {
+    this->curScope()->updateModAttr(ModAttr::UNREACHABLE);
+    this->prevType = &this->getTypePool().get(TYPE::Void);
+  }
   auto &modType = this->provider.newModTypeFromCurContext(this->contexts);
   this->contexts.pop_back();
 
   auto node = this->getCurSrcListNode()->create(modType, true);
   if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     node->setMaxVarNum(varNum);
-    if (this->prevType != nullptr && this->prevType->isNothingType()) {
-      this->prevType = &this->getTypePool().get(TYPE::Void);
-      node->setNothing(true);
-    }
   }
 
   if (this->uastDumper) {

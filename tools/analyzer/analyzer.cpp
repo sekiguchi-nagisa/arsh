@@ -98,7 +98,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   }
 
   auto archive =
-      std::make_shared<ModuleArchive>(modType.getModId(), this->getVersion(), modType.hasError(),
+      std::make_shared<ModuleArchive>(modType.getModId(), this->getVersion(), modType.getAttr(),
                                       std::move(handles), std::move(imported));
   archives.add(archive);
   return archive;
@@ -240,7 +240,10 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
   frontEnd.teardownASTDump();
   action.emitter &&action.emitter->exitModule();
   action.pass &&action.pass->exitModule(nullptr);
-  return std::move(*this->current()).buildArchive(archives);
+  if (auto *prevType = frontEnd.getPrevType(); prevType && prevType->isNothingType()) {
+    this->current()->getScope()->updateModAttr(ModAttr::UNREACHABLE);
+  }
+  return std::move(*this->current()).buildArchive(this->archives);
 }
 
 // ###############################

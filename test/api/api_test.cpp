@@ -929,7 +929,7 @@ TEST_F(APITest, load5) {
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
   DSError_release(&e);
 
-  // use loaded moudle
+  // use loaded module
   std::string line = format(R"(
 true
 source %s as m
@@ -940,6 +940,32 @@ assert $m.mod_load_success
   r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
   ASSERT_EQ(0, r);
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSError_release(&e);
+}
+
+TEST_F(APITest, load6) {
+  auto modName = this->createTempFile("mod.ds", "var aaa = 34; \nexit $aaa");
+
+  DSError e;
+  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  ASSERT_EQ(34, r);
+  ASSERT_EQ(DS_ERROR_KIND_EXIT, e.kind);
+  ASSERT_EQ(2, e.lineNum);
+  DSError_release(&e);
+
+  // use loaded module
+  std::string line = format(R"(
+source %s as m    # last statement of loaded module is Nothing type
+echo hello
+)",
+                            modName.c_str());
+
+  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
+  ASSERT_EQ(1, r);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+  ASSERT_STREQ("Unreachable", e.name);
+  ASSERT_EQ(5, e.lineNum);
+  ASSERT_EQ(1, e.chars);
   DSError_release(&e);
 }
 

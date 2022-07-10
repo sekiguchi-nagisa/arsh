@@ -63,7 +63,7 @@ using NameScopePtr = IntrusivePtr<NameScope>;
 
 class NameScope : public RefCount<NameScope> {
 private:
-  bool error{false}; // if true, has some errors in this module
+  ModAttr modAtter{}; // for global scope (module scope)
 
 public:
   const enum Kind : unsigned char {
@@ -169,9 +169,9 @@ public:
 
   bool inRootModule() const { return this->modId == 1; }
 
-  bool hasError() const { return this->error; }
+  ModAttr getModAttr() const { return this->modAtter; }
 
-  void setError(bool set) { this->error = set; }
+  void updateModAttr(ModAttr attr) { setFlag(this->modAtter, attr); }
 
   unsigned int getCurLocalIndex() const { return this->curLocalIndex; }
 

@@ -328,18 +328,18 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
 const ModType &TypePool::createModType(unsigned short modId,
                                        std::unordered_map<std::string, HandlePtr> &&handles,
                                        FlexBuffer<ModType::Imported> &&children, unsigned int index,
-                                       bool error) {
+                                       ModAttr modAttr) {
   auto name = toModTypeName(modId);
   auto *type = this->get(name);
   if (type == nullptr) {
     type = this->newType<ModType>(this->get(TYPE::Module), modId, std::move(handles),
-                                  std::move(children), index, error);
+                                  std::move(children), index, modAttr);
     assert(type);
   } else { // re-open (only allow root module)
     assert(type->isModType());
     auto &modType = cast<ModType>(*this->getMut(type->typeId()));
     assert(modType.isRoot());
-    modType.reopen(std::move(handles), std::move(children), error);
+    modType.reopen(std::move(handles), std::move(children), modAttr);
   }
   return cast<ModType>(*type);
 }

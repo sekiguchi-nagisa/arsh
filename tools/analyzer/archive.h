@@ -183,23 +183,23 @@ class ModuleArchive {
 private:
   const int version{0};
   const unsigned short modId{0};
-  const bool error{false};
+  const ModAttr attr{};
   std::vector<Archive> handles;
   std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
 
 public:
   ModuleArchive() = default;
 
-  ModuleArchive(unsigned short modId, int version, bool error, std::vector<Archive> &&handles,
+  ModuleArchive(unsigned short modId, int version, ModAttr attr, std::vector<Archive> &&handles,
                 std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
-      : version(version), modId(modId), error(error), handles(std::move(handles)),
+      : version(version), modId(modId), attr(attr), handles(std::move(handles)),
         imported(std::move(imported)) {}
 
   int getVersion() const { return this->version; }
 
   unsigned short getModId() const { return this->modId; }
 
-  bool hasError() const { return this->error; }
+  ModAttr getModAttr() const { return this->attr; }
 
   const auto &getHandles() const { return this->handles; }
 

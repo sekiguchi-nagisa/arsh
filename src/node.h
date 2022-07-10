@@ -2205,7 +2205,7 @@ private:
 
   const bool inlined;
 
-  bool nothing{false};
+  const bool nothing;
 
   /**
    * maximum number of local variable in this module
@@ -2217,7 +2217,8 @@ public:
              std::shared_ptr<const NameInfo> name, const ModType &modType,
              std::shared_ptr<const std::string> pathName, bool firstAppear, bool inlined)
       : WithRtti(token), pathNode(std::move(pathNode)), name(std::move(name)), modType(modType),
-        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined) {}
+        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined),
+        nothing(hasFlag(this->modType.getAttr(), ModAttr::UNREACHABLE)) {}
 
   ~SourceNode() override = default;
 
@@ -2234,8 +2235,6 @@ public:
   bool isFirstAppear() const { return this->firstAppear; }
 
   bool isInlined() const { return this->inlined; }
-
-  void setNothing(bool set) { this->nothing = set; }
 
   bool isNothing() const { return this->nothing; }
 
