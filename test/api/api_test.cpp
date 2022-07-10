@@ -214,7 +214,7 @@ TEST_F(APITest, lineNum2) {
   auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
   DSState_loadAndEval(this->state, fileName1.c_str(), &e);
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  ASSERT_EQ(3, DSState_lineNum(this->state));
+  ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
   DSError_release(&e);
 
   fileName1 = this->createTempFile("targe2.ds", "45/'de'");
@@ -222,7 +222,7 @@ TEST_F(APITest, lineNum2) {
   ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
   ASSERT_EQ(1, e.lineNum);
   ASSERT_EQ(4, e.chars);
-  ASSERT_EQ(2, DSState_lineNum(this->state));
+  ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
   DSError_release(&e);
 }
 
@@ -964,7 +964,7 @@ echo hello
   ASSERT_EQ(1, r);
   ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
   ASSERT_STREQ("Unreachable", e.name);
-  ASSERT_EQ(5, e.lineNum);
+  ASSERT_EQ(3, e.lineNum);
   ASSERT_EQ(1, e.chars);
   DSError_release(&e);
 }

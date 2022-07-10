@@ -59,7 +59,9 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
   auto errorConsumer = newErrorConsumer(dsError);
   Compiler compiler(moduleProvider, std::move(ctx), compileOption, &dumpTarget, errorConsumer);
   int ret = compiler(func);
-  state.lineNum = compiler.lineNum();
+  if (!state.lineNum) {
+    state.lineNum = compiler.lineNum();
+  }
   return ret;
 }
 
@@ -390,6 +392,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
   auto lexer = LexerPtr::create(sourceName == nullptr ? "(stdin)" : sourceName,
                                 ByteBuffer(data, data + size), getCWD());
   lexer->setLineNumOffset(st->lineNum);
+  st->lineNum = 0;
   auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }

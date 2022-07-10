@@ -75,7 +75,7 @@ DS_PUBLIC_API(void) DSState_delete(DSState **st);
 DS_PUBLIC_API(DSExecMode) DSState_mode(const DSState *st);
 
 /**
- * affect DSState_eval() result. (not affect DSState_loadAndEval())
+ * affect DSState_eval() result. (not affect DSState_loadModule())
  * @param st
  * @param lineNum
  * if st is null, do nothing
@@ -83,7 +83,7 @@ DS_PUBLIC_API(DSExecMode) DSState_mode(const DSState *st);
 DS_PUBLIC_API(void) DSState_setLineNum(DSState *st, unsigned int lineNum);
 
 /**
- * get line number after latest evaluation or setLineNum().
+ * get line number after latest DSState_eval() or setLineNum().
  * @param st
  * @return
  * if st is null, return always 0
