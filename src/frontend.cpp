@@ -48,8 +48,6 @@ std::unique_ptr<Node> FrontEnd::tryToParse() {
   if (this->parser()) {
     node = this->parser()();
     if (this->parser().hasError()) {
-      auto modAttr = this->curScope()->getModAttr();
-      setFlag(modAttr, ModAttr::HAS_ERRORS);
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
       this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
     } else if (this->uastDumper) {
