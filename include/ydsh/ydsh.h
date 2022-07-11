@@ -417,6 +417,7 @@ typedef enum {
   DS_EDIT_HIST_SAVE,   // save history to file
   DS_EDIT_HIST_SEARCH, // search history
   DS_EDIT_PROMPT,      // get prompt
+  DS_EDIT_HIGHLIGHT,   // syntax highlight
 
   /* for unicode-aware cursor move */
   DS_EDIT_NEXT_CHAR_LEN,

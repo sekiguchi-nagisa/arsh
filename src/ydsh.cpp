@@ -636,9 +636,13 @@ static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
   if (func.isInvalid()) {
     return false;
   }
-  const char *data = edit.data;
-  if (!data) {
-    data = "";
+  StringRef data = "";
+  if (edit.data) {
+    if (op == DSLineEditOp::DS_EDIT_HIGHLIGHT) {
+      data = StringRef(edit.data, edit.index);
+    } else {
+      data = edit.data;
+    }
   }
   auto args =
       makeArgs(DSValue::createInt(op), DSValue::createInt(edit.index), DSValue::createStr(data));
@@ -672,6 +676,7 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   OP(DS_EDIT_HIST_SAVE)                                                                            \
   OP(DS_EDIT_HIST_SEARCH)                                                                          \
   OP(DS_EDIT_PROMPT)                                                                               \
+  OP(DS_EDIT_HIGHLIGHT)                                                                            \
   OP(DS_EDIT_NEXT_CHAR_LEN)                                                                        \
   OP(DS_EDIT_PREV_CHAR_LEN)
 
@@ -687,6 +692,9 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
     if (op == DS_EDIT_PROMPT) {
       edit->data = defaultPrompt(edit->index);
       edit->out = strlen(edit->data);
+      return 0;
+    } else if (op == DS_EDIT_HIGHLIGHT) {
+      edit->out = edit->index;
       return 0;
     }
     errno = EINVAL;
@@ -706,6 +714,7 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   case DS_EDIT_HIST_GET:
   case DS_EDIT_HIST_SEARCH:
   case DS_EDIT_PROMPT:
+  case DS_EDIT_HIGHLIGHT:
     if (type.is(TYPE::String)) {
       StringRef ref;
       if (op == DS_EDIT_PROMPT) {

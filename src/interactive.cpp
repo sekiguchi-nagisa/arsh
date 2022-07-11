@@ -283,8 +283,12 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 }
 
 static const char *highlight(const char *buf, size_t bufLen, size_t *retLen) {
-  *retLen = bufLen;
-  return buf; // FIXME:
+  DSLineEdit edit{};
+  edit.data = buf;
+  edit.index = bufLen;
+  DSState_lineEdit(state, DS_EDIT_HIGHLIGHT, &edit);
+  *retLen = edit.out;
+  return edit.data;
 }
 
 static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {

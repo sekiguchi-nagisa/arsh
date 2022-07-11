@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+#### API
+
+- add the following line edit op
+    - ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``: for unicode-aware character length counting
+    - ``DS_EDIT_HIGHLIGHT``: for syntax highlighting
+
 ### Changed
 
-### Builtin
+#### Builtin
 
 - **Breaking Change**: change signal related methods
     - remove ``Signals#[]=``, ``Signals#signal`` methods
@@ -22,12 +30,12 @@
     - ``SIGILL``, ``SIGINT``, ``SIGKILL``, ``SIGPIPE``, ``SIGQUIT``, ``SIGSEGV``,
     - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 
-### API
+#### API
 
 - **Breaking Change**: change interface of ``DSState_complete``
     - now get completion candidates from ``DSState_getCompletion`` api
 - **Breaking Change**: change interface of ``DSState_lineEdit``
-    - add ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``
+    - introduce ``DSLineEdit`` struct
 
 ### Fixed
 
