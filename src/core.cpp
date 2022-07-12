@@ -348,52 +348,56 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
   }
 }
 
-Optional<unsigned int> doCodeCompletion(DSState &st, StringRef modDesc, StringRef source,
-                                        const CodeCompOp option) {
+static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef source,
+                         const CodeCompOp option, ArrayObject &compreply) {
+  auto scope = st.tempModScope[resolvedMod.index];
+  DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
+  auto discardPoint = provider.getCurrentDiscardPoint();
+
+  DefaultCompConsumer consumer(compreply);
+  CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
+                              st.sysConfig, st.typePool, st.logicalWorkingDir);
+  codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
+                                                      const std::string &word,
+                                                      CompCandidateConsumer &consumer) {
+    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
+  });
+  DefaultCompCancel cancel;
+  codeCompleter.setCancel(cancel);
+
+  bool ret = codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
+  provider.discard(discardPoint);
+  discardTempMod(st.tempModScope, resolvedMod);
+  return ret;
+}
+
+int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
   if (!resolvedMod) {
-    return {};
+    errno = EINVAL;
+    return -1;
   }
 
   auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
   auto &compreply = typeAs<ArrayObject>(result);
 
-  {
-    auto scope = st.tempModScope[resolvedMod.index];
-    DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
-    auto discardPoint = provider.getCurrentDiscardPoint();
-
-    DefaultCompConsumer consumer(compreply);
-    CodeCompleter codeCompleter(consumer,
-                                willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
-                                st.sysConfig, st.typePool, st.logicalWorkingDir);
-    codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
-                                                        const std::string &word,
-                                                        CompCandidateConsumer &consumer) {
-      return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
+  bool ret = completeImpl(st, resolvedMod, source, option, compreply);
+  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result)); // override COMPREPLY
+  if (ret) {
+    auto &values = compreply.refValues();
+    compreply.sortAsStrArray();
+    auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+      return x.asStrRef() == y.asStrRef();
     });
-    DefaultCompCancel cancel;
-    codeCompleter.setCancel(cancel);
-
-    if (!codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option)) {
-      compreply.refValues().clear(); // if cancelled, clear completion results
-      raiseSystemError(st, EINTR, "code completion is cancelled");
-    }
-    provider.discard(discardPoint);
-    discardTempMod(st.tempModScope, resolvedMod);
+    values.erase(iter, values.end());
+    ASSERT_ARRAY_SIZE(compreply); // FIXME: check array size limit
+    return static_cast<int>(values.size());
+  } else {
+    compreply.refValues().clear(); // if cancelled, clear completion results
+    raiseSystemError(st, EINTR, "code completion is cancelled");
+    errno = EINTR;
+    return -1;
   }
-
-  auto &values = compreply.refValues();
-  compreply.sortAsStrArray();
-  auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-    return x.asStrRef() == y.asStrRef();
-  });
-  values.erase(iter, values.end());
-  ASSERT_ARRAY_SIZE(compreply); // FIXME: check array size limit
-
-  // override COMPREPLY
-  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result));
-  return values.size();
 }
 
 // ##########################

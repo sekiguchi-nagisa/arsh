@@ -229,8 +229,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 
   const char *line = actualBuf.c_str();
   int ret = DSState_complete(state, line, actualCursor);
-  assert(ret > -1);
-  lc->len = static_cast<unsigned int>(ret);
+  lc->len = ret > -1 ? static_cast<unsigned int>(ret) : 0;
   lc->cvec = static_cast<char **>(malloc(sizeof(char *) * lc->len));
   for (unsigned int i = 0; i < lc->len; i++) {
     DSCompletion comp{};

@@ -1031,8 +1031,10 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  if (!doCodeCompletion(state, moduleDesc, line, compOp).hasValue()) {
-    ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
+  if (doCodeCompletion(state, moduleDesc, line, compOp) < 0) {
+    if (errno == EINVAL) {
+      ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
+    }
     return 1;
   }
   auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));

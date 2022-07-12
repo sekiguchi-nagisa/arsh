@@ -381,7 +381,7 @@ DS_PUBLIC_API(unsigned int) DSState_featureBit();
  * size of data
  * @return
  * return number of completion candidates.
- * if has error, return -1
+ * if has error, return -1 (set EINVAL, EINTR)
  */
 DS_PUBLIC_API(int) DSState_complete(DSState *st, const char *data, unsigned int size);
 

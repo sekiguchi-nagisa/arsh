@@ -585,11 +585,8 @@ int DSState_complete(DSState *st, const char *data, unsigned int size) {
   StringRef ref(data, size);
   auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto ret = doCodeCompletion(*st, "", ref);
-  assert(ret.hasValue());
   st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-  unsigned int len = ret.unwrap();
-  assert(len <= ArrayObject::MAX_SIZE);
-  return static_cast<int>(len);
+  return ret;
 }
 
 int DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp) {
