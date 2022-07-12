@@ -8,6 +8,9 @@
 # CHECK_IF: }
 
 <<<
+
+## propagate error from loaded module
+
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",

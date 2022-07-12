@@ -7,13 +7,12 @@
 # CHECK_IF:     "capabilities": {
 # CHECK_IF: }
 
-## import the module last statement is Nothing type
-
 <<<
+
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
-                     "text": "source $SCRIPT_DIR/mod3.ds\necho hello"}
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///mod3.ds",
+                     "text": "var a = 123\nexit $a"}
  }
 }
 
@@ -23,14 +22,25 @@
 #    CHECK:     "uri": "test:///mod3.ds"
 #    CHECK:   }
 
+<<< 50
+
+## import already loaded module
+
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+                     "text": "source $SCRIPT_DIR/mod3.ds\necho hello"}
+ }
+}
+
 # CHECK_IF:   "method": "textDocument/publishDiagnostics",
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
-# CHECK_RE:         "message": "unreachable code",
+#    CHECK:         "message": "unreachable code",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
-# CHECK_RE:             "character": 10,
+#    CHECK:             "character": 10,
 #    CHECK:             "line": 1
 #    CHECK:           },
 #    CHECK:           "start": {
@@ -44,7 +54,7 @@
 #    CHECK:     "uri": "test:///test.ds"
 #    CHECK:   }
 
-<<< 120
+<<< 80
 
 {"jsonrpc": "2.0", "method": "textDocument/didClose",
   "params": { "textDocument": { "uri": "file:///test/test.ds" } } }
