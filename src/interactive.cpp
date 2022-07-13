@@ -229,12 +229,22 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 
   const char *line = actualBuf.c_str();
   int ret = DSState_complete(state, line, actualCursor);
+  lc->attr = 0;
   lc->len = ret > -1 ? static_cast<unsigned int>(ret) : 0;
+  if (ret < 0 && errno == EINTR) {
+    lc->attr |= LINENOISE_COMPLETION_ATTR_INTR;
+  }
   lc->cvec = static_cast<char **>(malloc(sizeof(char *) * lc->len));
   for (unsigned int i = 0; i < lc->len; i++) {
     DSCompletion comp{};
     DSState_getCompletion(state, i, &comp);
     lc->cvec[i] = strdup(comp.value);
+  }
+  if (lc->len == 1) {
+    size_t size = strlen(lc->cvec[0]);
+    if (lc->cvec[0][size - 1] == '/') {
+      lc->attr |= LINENOISE_COMPLETION_ATTR_NOSP;
+    }
   }
 }
 
