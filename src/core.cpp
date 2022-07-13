@@ -381,23 +381,26 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
   auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
   auto &compreply = typeAs<ArrayObject>(result);
 
-  bool ret = completeImpl(st, resolvedMod, source, option, compreply);
+  const bool ret = completeImpl(st, resolvedMod, source, option, compreply);
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result)); // override COMPREPLY
-  if (ret) {
-    auto &values = compreply.refValues();
+
+  auto &values = compreply.refValues();
+  if (values.size() > 1) {
     compreply.sortAsStrArray();
     auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
       return x.asStrRef() == y.asStrRef();
     });
     values.erase(iter, values.end());
     ASSERT_ARRAY_SIZE(compreply); // FIXME: check array size limit
-    return static_cast<int>(values.size());
-  } else {
-    compreply.refValues().clear(); // if cancelled, clear completion results
+  }
+
+  if (!ret || DSState::isInterrupted()) {
+    values.clear(); // if cancelled, clear completion results
     raiseSystemError(st, EINTR, "code completion is cancelled");
     errno = EINTR;
     return -1;
   }
+  return static_cast<int>(values.size());
 }
 
 // ##########################
