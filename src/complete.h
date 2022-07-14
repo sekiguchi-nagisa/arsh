@@ -102,9 +102,13 @@ struct CompCancel {
   virtual bool isCanceled() const = 0;
 };
 
+/**
+ * if failed (cannot call user-defined comp or error), return -1
+ * otherwise, return number of consumed completion candidates
+ */
 using UserDefinedComp =
-    std::function<bool(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
-                       CompCandidateConsumer &consumer)>;
+    std::function<int(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
+                      CompCandidateConsumer &consumer)>;
 
 class CodeCompletionHandler {
 private:
@@ -266,7 +270,7 @@ public:
    * @param ref
    * @param option
    * @return
-   * if cancelled, return false
+   * if cancelled (interrupted by signal or has error), return false
    */
   bool operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                   CodeCompOp option);

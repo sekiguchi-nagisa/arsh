@@ -12,6 +12,10 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: cancel code completion when user-defined completer throws an error
+
 #### Builtin
 
 - **Breaking Change**: change signal related methods

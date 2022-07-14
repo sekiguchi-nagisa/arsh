@@ -645,9 +645,13 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeType(this->pool, this->recvType, *this->scope, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
-    if (this->userDefinedComp &&
-        this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, consumer)) {
-      return true;
+    if (this->userDefinedComp) {
+      int s = this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, consumer);
+      if (s < 0 && errno == EINTR) {
+        return false;
+      } else if (s > -1) {
+        return true;
+      }
     }
     if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, consumer)) {
       TRY(completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, consumer,

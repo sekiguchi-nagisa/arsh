@@ -254,12 +254,13 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
   return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
-static bool kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
-                         const CmdNode &cmdNode, const std::string &word,
-                         CompCandidateConsumer &consumer) {
+static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
+                        const CmdNode &cmdNode, const std::string &word,
+                        CompCandidateConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
-    return false;
+    errno = EINVAL;
+    return -1;
   }
 
   // prepare argument
@@ -273,14 +274,19 @@ static bool kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer 
   // kick hook
   auto ret = VM::callFunction(state, std::move(hook),
                               makeArgs(std::move(ctx), std::move(argv), DSValue::createInt(index)));
-  if (state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
-    return false;
+  if (state.hasError()) {
+    errno = EINTR;
+    return -1;
   }
-
+  unsigned int size = typeAs<ArrayObject>(ret).size();
+  if (size == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
     consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG);
   }
-  return true;
+  return static_cast<int>(size);
 }
 
 struct ResolvedTempMod {
@@ -396,7 +402,9 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
 
   if (!ret || DSState::isInterrupted()) {
     values.clear(); // if cancelled, clear completion results
-    raiseSystemError(st, EINTR, "code completion is cancelled");
+    if (!st.hasError()) {
+      raiseSystemError(st, EINTR, "code completion is cancelled");
+    }
     errno = EINTR;
     return -1;
   }
