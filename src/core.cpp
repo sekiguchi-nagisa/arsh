@@ -408,7 +408,7 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
 // ##########################
 
 struct SigEntryComp {
-  using Entry = std::pair<int, DSValue>;
+  using Entry = std::pair<int, ObjPtr<FuncObject>>;
 
   bool operator()(const Entry &x, int y) const { return x.first < y; }
 
