@@ -131,9 +131,12 @@ function _comp_arg(ctx : Module, deflist: [(String, Int, String)], opt : String,
     return new [String]()
 }
 
+var BASH_COMPLETION_RUNNER_PATH = "$MODULE_HOME/bcrun/bcrun"
+
 function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
     test -f "$file" || return new [String]()
-    let _helper = "$SCRIPT_DIR/../completion-wrapper.bash"
+    let _helper = $BASH_COMPLETION_RUNNER_PATH
+    command -v $_helper > /dev/null || return new [String]()
 
     var line = ""
     for w in $words {
