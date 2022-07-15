@@ -132,7 +132,8 @@ assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["sortWith"], $(complete '[[34],[67]].so'))
-$assertArray(['_fullname', '_func', '_scriptDir', '_scriptName', "compAdd", 'compDelegate'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
+$assertArray(["BASH_COMPLETION_RUNNER_PATH", '_fullname', '_func', '_scriptDir', '_scriptName', "compAdd", 'compDelegate'], 
+                $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
 $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
