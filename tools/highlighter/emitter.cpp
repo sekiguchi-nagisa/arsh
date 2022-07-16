@@ -146,10 +146,10 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
   }
 }
 
-void tokenizeAndEmit(TokenEmitter &emitter, const char *sourceName) {
+void tokenizeAndEmit(TokenEmitter &emitter) {
   StringRef content = emitter.getSource();
   assert(!content.empty() && content.back() == '\n');
-  Lexer lexer(sourceName, ByteBuffer(content.begin(), content.end()), nullptr);
+  Lexer lexer("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
   lexer.setCommentStore(makeObserver(emitter));
   Parser parser(lexer);
   parser.setTracker(&emitter);

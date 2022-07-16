@@ -82,7 +82,7 @@ bool colorize(FormatterFactory &factory, const char *sourceName, std::ostream &o
   auto formatter = std::move(ret).take();
   assert(formatter);
 
-  tokenizeAndEmit(*formatter, sourceName);
+  tokenizeAndEmit(*formatter);
   formatter->finalize();
   return true;
 }

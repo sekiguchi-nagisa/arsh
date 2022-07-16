@@ -77,9 +77,8 @@ private:
 /**
  * colorize source content
  * @param emitter
- * @param sourceName
  */
-void tokenizeAndEmit(TokenEmitter &emitter, const char *sourceName);
+void tokenizeAndEmit(TokenEmitter &emitter);
 
 } // namespace ydsh::highlighter
 
