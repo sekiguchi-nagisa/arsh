@@ -30,10 +30,12 @@ protected:
   unsigned int curSrcPos{0};
 
 public:
-  Formatter(StringRef source, const Style &style, std::ostream &output)
-      : TokenEmitter(source), style(style), output(output) {}
+  Formatter(const Style &style, std::ostream &output)
+      : TokenEmitter(""), style(style), output(output) {}
 
   void emit(HighlightTokenClass tokenClass, Token token) override;
+
+  virtual void initialize(StringRef newSource);
 
   virtual void finalize() = 0; // write internal buffer to output
 
@@ -53,8 +55,7 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  NullFormatter(StringRef source, const Style &style, std::ostream &output)
-      : Formatter(source, style, output) {}
+  NullFormatter(const Style &style, std::ostream &output) : Formatter(style, output) {}
 
   void finalize() override;
 };
@@ -100,8 +101,8 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  ANSIFormatter(StringRef source, const Style &style, std::ostream &output, TermColorCap cap)
-      : Formatter(source, style, output), colorCap(cap) {}
+  ANSIFormatter(const Style &style, std::ostream &output, TermColorCap cap)
+      : Formatter(style, output), colorCap(cap) {}
 
   void finalize() override;
 };
@@ -130,8 +131,11 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  HTMLFormatter(StringRef source, const Style &style, std::ostream &output, HTMLFormatOp op,
-                unsigned int lineNumOffset);
+  HTMLFormatter(const Style &style, std::ostream &output, HTMLFormatOp op,
+                unsigned int lineNumOffset)
+      : Formatter(style, output), formatOp(op), lineNumOffset(lineNumOffset) {}
+
+  void initialize(StringRef newSource) override;
 
   void finalize() override;
 };

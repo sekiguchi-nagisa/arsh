@@ -33,6 +33,11 @@ void Formatter::emit(HighlightTokenClass tokenClass, Token token) {
   this->draw(this->source.substr(token.pos, token.size), &tokenClass);
 }
 
+void Formatter::initialize(StringRef newSource) {
+  this->source = newSource;
+  this->curSrcPos = 0;
+}
+
 void Formatter::drawTrivia(StringRef ref) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = ref.find('\\', pos);
@@ -256,31 +261,6 @@ static std::string toCSSImpl(const StyleRule &styleRule) {
   return value;
 }
 
-HTMLFormatter::HTMLFormatter(StringRef source, const Style &style, std::ostream &output,
-                             HTMLFormatOp op, unsigned int lineNumOffset)
-    : Formatter(source, style, output), formatOp(op), lineNumOffset(lineNumOffset) {
-  assert(this->lineNumOffset);
-  if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
-    this->output << "<html>\n<body";
-    auto css = toCSSImpl(style.getBackground());
-    if (!css.empty()) {
-      this->output << " style=\"" << css << "\"";
-    }
-    this->output << ">\n";
-  }
-  this->output << "<pre style=\"tab-size:4\">\n<code>";
-
-  if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
-    uint64_t maxLineNum = this->lineNumOffset;
-    for (StringRef::size_type pos = 0; (pos = this->source.find('\n', pos)) != StringRef::npos;
-         pos++) {
-      maxLineNum++;
-    }
-    this->maxLineNumDigits = countDigits(maxLineNum);
-    this->emitLineNum(this->lineNumOffset);
-  }
-}
-
 void HTMLFormatter::emitLineNum(unsigned int lineNum) {
   std::string value = padLeft(lineNum, this->maxLineNumDigits, ' ');
   auto &css = this->toCSS(HighlightTokenClass::LINENO_);
@@ -358,6 +338,31 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
         this->emitLineNum(lineNum);
       }
     }
+  }
+}
+
+void HTMLFormatter::initialize(StringRef newSource) {
+  Formatter::initialize(newSource);
+
+  this->newlineCount = 0;
+  if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
+    this->output << "<html>\n<body";
+    auto css = toCSSImpl(style.getBackground());
+    if (!css.empty()) {
+      this->output << " style=\"" << css << "\"";
+    }
+    this->output << ">\n";
+  }
+  this->output << "<pre style=\"tab-size:4\">\n<code>";
+
+  if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
+    uint64_t maxLineNum = this->lineNumOffset;
+    for (StringRef::size_type pos = 0; (pos = this->source.find('\n', pos)) != StringRef::npos;
+         pos++) {
+      maxLineNum++;
+    }
+    this->maxLineNumDigits = countDigits(maxLineNum);
+    this->emitLineNum(this->lineNumOffset);
   }
 }
 

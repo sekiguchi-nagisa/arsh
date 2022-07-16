@@ -38,8 +38,6 @@ private:
 
   std::string styleName{DEFAULT_STYLE_NAME};
 
-  StringRef source;
-
   const char *lineno{nullptr};
 
   bool htmlFull{false};
@@ -56,8 +54,6 @@ public:
   void setFormatName(const char *name) { this->formatName = name; }
 
   void setStyleName(const char *name) { this->styleName = name; }
-
-  void setSource(StringRef src) { this->source = src; }
 
   void setLineno(const char *num) { this->lineno = num; }
 

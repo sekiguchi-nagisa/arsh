@@ -47,7 +47,7 @@ protected:
   /**
    * must be end with newline
    */
-  const StringRef source;
+  StringRef source;
 
 public:
   explicit TokenEmitter(StringRef source) : source(source) {}

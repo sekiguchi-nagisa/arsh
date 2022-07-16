@@ -113,12 +113,11 @@ TEST_F(EmitterTest, case2) {
 
 struct HighlightTest : public ::testing::Test {
   static void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
-    factory.setSource(ref);
-
     auto ret = factory.create(output);
     ASSERT_TRUE(ret);
     auto formatter = std::move(ret).take();
     ASSERT_TRUE(formatter);
+    formatter->initialize(ref);
     tokenizeAndEmit(*formatter);
     formatter->finalize();
   }
@@ -490,6 +489,7 @@ Formatters:
 TEST_F(ColorizeTest, help) {
   auto out = format(R"(usage: %s [option ...] [source file]
 Options:
+    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
@@ -506,6 +506,7 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
+    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
@@ -521,6 +522,7 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(need argument: -o
 Options:
+    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
