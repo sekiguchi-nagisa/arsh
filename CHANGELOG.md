@@ -10,6 +10,11 @@
     - ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``: for unicode-aware character length counting
     - ``DS_EDIT_HIGHLIGHT``: for syntax highlighting
 
+#### Completion
+
+- add the following completions
+    - docker
+
 ### Changed
 
 #### Core
@@ -40,6 +45,11 @@
     - now get completion candidates from ``DSState_getCompletion`` api
 - **Breaking Change**: change interface of ``DSState_lineEdit``
     - introduce ``DSLineEdit`` struct
+
+#### Module
+
+- **Breaking Change**: remove completion-wrapper. now use foreign ``bcrun`` instead
+    - now support ``bash-completion``-aware completion scripts
 
 ### Fixed
 
