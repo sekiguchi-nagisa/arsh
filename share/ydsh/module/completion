@@ -131,12 +131,13 @@ function _comp_arg(ctx : Module, deflist: [(String, Int, String)], opt : String,
     return new [String]()
 }
 
-var BASH_COMPLETION_RUNNER_PATH = "$MODULE_HOME/bcrun/bcrun"
+var BCRUN_PATH = "$MODULE_HOME/bcrun/bcrun"
+var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 
 function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
     test -f "$file" || return new [String]()
-    let _helper = $BASH_COMPLETION_RUNNER_PATH
-    command -v $_helper > /dev/null || return new [String]()
+    command -v "$BCRUN_PATH" > /dev/null || return new [String]()
+    test -f "$BASH_COMPLETION_PATH" || return new [String]()
 
     var line = ""
     for w in $words {
@@ -146,7 +147,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     if $cursor == $words.size() {
         $line += " "
     }
-    var ret = $(bash $_helper $file $target $line)
+    var ret = $(bash "$BCRUN_PATH" "$BASH_COMPLETION_PATH" "$file" $target $line)
     if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' && $ret[0].contains("/") {
         $ret[0] += "/"
     }
