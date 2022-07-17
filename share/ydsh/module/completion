@@ -131,6 +131,24 @@ function _comp_arg(ctx : Module, deflist: [(String, Int, String)], opt : String,
     return new [String]()
 }
 
+let _bash_completion_dirs = [
+    '/etc/bash_completion.d/',
+    '/usr/share/bash-completion/completions/',
+    '/usr/local/etc/bash_completion.d/',
+    '/usr/local/share/bash-completion/completions/',
+
+    '/opt/homebrew/etc/bash_completion.d/',
+    '/opt/homebrew/share/bash-completion/completions/',
+]
+
+function findBashCompScript(name : String) : String {
+    for dir in $_bash_completion_dirs {
+        var path = $dir + $name
+        test -f $path && return $path
+    }
+    return "."
+}
+
 var BCRUN_PATH = "$MODULE_HOME/bcrun/bcrun"
 var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 

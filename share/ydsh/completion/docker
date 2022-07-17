@@ -4,24 +4,8 @@
 
 source $SCRIPT_DIR/../module/completion
 
-function _lookup() : String {
-    var list = [
-        '/etc/bash_completion.d/docker',
-        '/usr/share/bash-completion/completions/docker',
-        '/usr/local/etc/bash_completion.d/docker',
-        '/usr/local/share/bash-completion/completions/docker',
-
-        '/opt/homebrew/etc/bash_completion.d/docker',
-        '/opt/homebrew/share/bash-completion/completions/docker',
-    ]
-    for $i in $list {
-        test -f $i && return $i
-    }
-    return "."
-}
-
 {
-    var path = $_lookup()
+    var path = $findBashCompScript("docker")
     compdef --cmd docker --comp-path "$path" --comp-target _docker
     compdef --cmd dockerd --comp-path "$path" --comp-target _docker
 }

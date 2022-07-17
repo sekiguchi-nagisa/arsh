@@ -3,9 +3,6 @@
 source $SCRIPT_DIR/../module/completion
 
 {
-    var path = for $p in ['/usr/share/bash-completion/completions/perf', '/etc/bash_completion.d/perf'] {
-        test -f $p && break $p
-    }
-    $path ??= '.'
-    compdef --cmd perf --comp-path ${$path!} --comp-target _perf
+    var path = $findBashCompScript("perf")
+    compdef --cmd perf --comp-path $path --comp-target _perf
 }
