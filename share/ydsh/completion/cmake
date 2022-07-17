@@ -1,0 +1,10 @@
+#!/usr/bin/env ydsh
+
+# git completion for ydsh
+
+source $SCRIPT_DIR/../module/completion
+
+{
+    var path = $findBashCompScript("cmake")
+    compdef --cmd cmake --comp-path "$path" --comp-target _cmake
+}

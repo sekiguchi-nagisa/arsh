@@ -14,6 +14,7 @@
 
 - add the following completions
     - docker
+    - cmake, ctest
 
 ### Changed
 
