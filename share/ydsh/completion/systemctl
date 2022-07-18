@@ -1,0 +1,10 @@
+#!/usr/bin/env ydsh
+
+# git completion for ydsh
+
+source $SCRIPT_DIR/../module/completion
+
+{
+    var path = $findBashCompScript("systemctl")
+    compdef --cmd systemctl --comp-path "$path" --comp-target _systemctl
+}

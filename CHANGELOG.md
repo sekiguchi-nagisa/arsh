@@ -15,6 +15,7 @@
 - add the following completions
     - docker
     - cmake, ctest
+    - systemctl, journalctl
 
 ### Changed
 
