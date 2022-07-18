@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 Nagisa Sekiguchi
+ * Copyright (C) 2015-2022 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,6 @@ extern "C" {
 
 struct DSState;
 typedef struct DSState DSState;
-
-/*********************/
-/**     DSState     **/
-/*********************/
 
 typedef enum {
   DS_EXEC_MODE_NORMAL,
@@ -406,18 +402,18 @@ DS_PUBLIC_API(int) DSState_getCompletion(const DSState *st, unsigned int index, 
 /* for line editing (history, prompt) */
 
 typedef enum {
-  DS_EDIT_HIST_SIZE,   // current history buffer size
-  DS_EDIT_HIST_GET,    // get history at index
-  DS_EDIT_HIST_SET,    // set history at index
-  DS_EDIT_HIST_DEL,    // delete history at index
-  DS_EDIT_HIST_CLEAR,  // clear all of history
-  DS_EDIT_HIST_INIT,   // add empty string to buffer
-  DS_EDIT_HIST_ADD,    // add history to buffer
-  DS_EDIT_HIST_LOAD,   // load history from file
-  DS_EDIT_HIST_SAVE,   // save history to file
-  DS_EDIT_HIST_SEARCH, // search history
-  DS_EDIT_PROMPT,      // get prompt
-  DS_EDIT_HIGHLIGHT,   // syntax highlight
+  DS_EDIT_HIST_SIZE,   /* current history buffer size */
+  DS_EDIT_HIST_GET,    /* get history at index */
+  DS_EDIT_HIST_SET,    /* set history at index */
+  DS_EDIT_HIST_DEL,    /* delete history at index */
+  DS_EDIT_HIST_CLEAR,  /* clear all of history */
+  DS_EDIT_HIST_INIT,   /* add empty string to buffer */
+  DS_EDIT_HIST_ADD,    /* add history to buffer */
+  DS_EDIT_HIST_LOAD,   /* load history from file */
+  DS_EDIT_HIST_SAVE,   /* save history to file */
+  DS_EDIT_HIST_SEARCH, /* search history */
+  DS_EDIT_PROMPT,      /* get prompt */
+  DS_EDIT_HIGHLIGHT,   /* syntax highlight */
 
   /* for unicode-aware cursor move */
   DS_EDIT_NEXT_CHAR_LEN,
