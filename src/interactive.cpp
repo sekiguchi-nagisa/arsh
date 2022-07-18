@@ -235,16 +235,14 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     lc->attr |= LINENOISE_COMPLETION_ATTR_INTR;
   }
   lc->cvec = static_cast<char **>(malloc(sizeof(char *) * lc->len));
+  DSCompletion comp{};
   for (unsigned int i = 0; i < lc->len; i++) {
-    DSCompletion comp{};
+    comp = DSCompletion{};
     DSState_getCompletion(state, i, &comp);
     lc->cvec[i] = strdup(comp.value);
   }
-  if (lc->len == 1) {
-    size_t size = strlen(lc->cvec[0]);
-    if (lc->cvec[0][size - 1] == '/') {
-      lc->attr |= LINENOISE_COMPLETION_ATTR_NOSP;
-    }
+  if (lc->len == 1 && DSCompletion_isNoSpace(&comp)) {
+    lc->attr |= LINENOISE_COMPLETION_ATTR_NOSP;
   }
 }
 

@@ -387,6 +387,8 @@ typedef struct {
   unsigned int attr;
 } DSCompletion;
 
+#define DS_COMP_ATTR_NOSPACE ((unsigned int)(1u << 0u))
+
 /**
  * get completion candidate specified by index
  * @param st
@@ -398,6 +400,10 @@ typedef struct {
  * if success, return 0. otherwise return -1
  */
 DS_PUBLIC_API(int) DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp);
+
+static inline int DSCompletion_isNoSpace(const DSCompletion *comp) {
+  return comp->attr & DS_COMP_ATTR_NOSPACE;
+}
 
 /* for line editing (history, prompt) */
 

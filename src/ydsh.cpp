@@ -596,11 +596,14 @@ int DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *c
   }
 
   auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
-  if (index < compreply.getValues().size()) {
+  if (unsigned int size = compreply.getValues().size(); index < size) {
     StringRef ref = compreply.getValues()[index].asStrRef();
     comp->value = ref.data();
     comp->size = ref.size();
-    comp->attr = 0; // FIXME:
+    comp->attr = 0;
+    if (size == 1 && st->compShouldNoSpace) {
+      setFlag(comp->attr, DS_COMP_ATTR_NOSPACE);
+    }
     return 0;
   }
   errno = EINVAL;

@@ -110,6 +110,12 @@ public:
    */
   DSValue prompt;
 
+  /**
+   * for completion
+   * if true, should not insert space after completion
+   */
+  bool compShouldNoSpace{false};
+
   bool isInteractive{false};
 
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT};

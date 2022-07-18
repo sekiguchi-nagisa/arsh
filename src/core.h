@@ -103,7 +103,7 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
  * perform completion in specified underlying module context
  * @param st
  * @param modDesc
- * module descriptor for specifying completeion context
+ * module descriptor for specifying completion context
  * @param source
  * @param option
  * @return

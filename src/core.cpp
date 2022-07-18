@@ -408,6 +408,15 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
     errno = EINTR;
     return -1;
   }
+
+  // check space insertion
+  st.compShouldNoSpace = false;
+  if (values.size() == 1) { // FIXME: more sophisticated space insertion checking
+    StringRef first = values[0].asStrRef();
+    if (first.back() == '/') {
+      st.compShouldNoSpace = true;
+    }
+  }
   return static_cast<int>(values.size());
 }
 

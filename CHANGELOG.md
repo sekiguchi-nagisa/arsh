@@ -46,6 +46,7 @@
 
 - **Breaking Change**: change interface of ``DSState_complete``
     - now get completion candidates from ``DSState_getCompletion`` api
+    - add ``DS_COMP_ATTR_NOSPACE`` attribute
 - **Breaking Change**: change interface of ``DSState_lineEdit``
     - introduce ``DSLineEdit`` struct
 
