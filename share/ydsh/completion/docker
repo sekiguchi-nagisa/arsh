@@ -4,8 +4,5 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("docker")
-    compdef --cmd docker --comp-path "$path" --comp-target _docker
-    compdef --cmd dockerd --comp-path "$path" --comp-target _docker
-}
+compdef --cmd docker --comp-path "docker" --comp-target _docker
+compdef --cmd dockerd --comp-path "docker" --comp-target _docker

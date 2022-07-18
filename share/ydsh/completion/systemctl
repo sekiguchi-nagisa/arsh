@@ -4,7 +4,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("systemctl")
-    compdef --cmd systemctl --comp-path "$path" --comp-target _systemctl
-}
+compdef --cmd systemctl --comp-path "systemctl" --comp-target _systemctl

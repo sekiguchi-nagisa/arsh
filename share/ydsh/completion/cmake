@@ -4,7 +4,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("cmake")
-    compdef --cmd cmake --comp-path "$path" --comp-target _cmake
-}
+compdef --cmd cmake --comp-path "cmake" --comp-target _cmake

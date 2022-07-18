@@ -2,7 +2,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("perf")
-    compdef --cmd perf --comp-path $path --comp-target _perf
-}
+compdef --cmd perf --comp-path "perf" --comp-target _perf

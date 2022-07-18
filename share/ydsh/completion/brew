@@ -2,7 +2,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("brew")
-    compdef --cmd brew --comp-path $path --comp-target _brew
-}
+compdef --cmd brew --comp-path "brew" --comp-target _brew

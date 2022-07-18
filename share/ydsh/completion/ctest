@@ -4,7 +4,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("ctest")
-    compdef --cmd ctest --comp-path "$path" --comp-target _ctest
-}
+compdef --cmd ctest --comp-path "ctest" --comp-target _ctest

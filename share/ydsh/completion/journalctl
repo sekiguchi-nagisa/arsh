@@ -4,7 +4,4 @@
 
 source $SCRIPT_DIR/../module/completion
 
-{
-    var path = $findBashCompScript("journalctl")
-    compdef --cmd journalctl --comp-path "$path" --comp-target _journalctl
-}
+compdef --cmd journalctl --comp-path "journalctl" --comp-target _journalctl

@@ -229,6 +229,9 @@ compdef() {
         }
         '--comp-path' => {
             $opt = $@.get($i + 1) ?? return $_require($v, "")
+            if !$opt!.contains('/') {   # if not full-path, resolve full-path
+                $opt = $findBashCompScript($opt!)
+            }
             $i++
         }
         '--arg-list' | '--arg-cmd' | '--arg-action' | "--comp-target" => {
