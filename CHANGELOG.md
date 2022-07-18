@@ -16,6 +16,7 @@
     - docker
     - cmake, ctest
     - systemctl, journalctl
+    - launchctl
 
 ### Changed
 
