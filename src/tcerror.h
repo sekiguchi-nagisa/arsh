@@ -109,6 +109,7 @@ DEFINE_TCError(CircularMod, "circular module import: `%s'");
 DEFINE_TCError(ModLimit, "number of loaded modules reaches limit");
 DEFINE_TCError(Required, "require `%s' type, but is `%s' type");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
+DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type is not allowed");
 DEFINE_TCError(UnmatchParam, "not match parameter, require size is %d, but is %d");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");

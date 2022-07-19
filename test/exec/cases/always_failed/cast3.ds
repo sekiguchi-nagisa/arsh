@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 4, $chars = 3, $errorKind = 'NothingCast', $status = 1)
+
+var aa =
+  (throw 234) \
+    as
+    Int

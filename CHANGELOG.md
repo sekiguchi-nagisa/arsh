@@ -23,6 +23,7 @@
 #### Core
 
 - **Breaking Change**: cancel code completion when user-defined completer throws an error
+- **Breaking Change**: not allow explicit cast from ``Nothing`` type
 
 #### Builtin
 

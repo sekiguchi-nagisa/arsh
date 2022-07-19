@@ -474,6 +474,11 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
   auto &exprType = node.getExprNode().getType();
   auto &targetType = node.getType();
 
+  if (exprType.isNothingType()) {
+    this->reportError<NothingCast>(node);
+    return;
+  }
+
   if (node.getType().isVoidType()) {
     node.setOpKind(TypeOpNode::TO_VOID);
     return;

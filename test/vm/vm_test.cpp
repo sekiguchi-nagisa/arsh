@@ -199,7 +199,7 @@ TEST_F(VMTest, deinit10) {
 TEST_F(VMTest, stacktop) {
   const char *text = R"(
 {
-  var a = 34; var b = do { $@.slice(0,(break 90) as Int); } while($false);
+  var a = 34; var b = do { $@.slice(0,$true ? (break 90) : 23); } while($false);
   $RANDOM
 }
 )";
