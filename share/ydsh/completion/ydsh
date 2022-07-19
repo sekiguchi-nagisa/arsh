@@ -2,10 +2,57 @@
 
 source $SCRIPT_DIR/../module/completion
 
+## ydsh completion
 eval $YDSH_BIN --help | grep '    -' | cut -d ' ' -f 5 | cut -d '[' -f 1 |
 for $REPLY in $STDIN {
     var k = $REPLY.startsWith('--') ? "--long" : "--short"
     var o = $REPLY.startsWith('--') ? $REPLY.from(2) : $REPLY.from(1)
     compdef --cmd ydsh $k $o
 }
+
+## ydshd
+compdef --cmd ydshd --long debounce-time
+compdef --cmd ydshd --long help
+compdef --cmd ydshd --long language-server
+compdef --cmd ydshd --long log  --arg-list 'debug info warning error fatal'
+compdef --cmd ydshd --long test --arg-action file
+
+## dscolorize
+compdef --cmd dscolorize --long daemon
+compdef --cmd dscolorize --long html-full
+compdef --cmd dscolorize --long html-lineno=
+compdef --cmd dscolorize --short h
+compdef --cmd dscolorize --short l
+compdef --cmd dscolorize --short o --arg-action file
+
+if (command -v dscolorize &> /dev/null) {
+    var lines = IFS=$'\n' $(dscolorize -l)
+    let size = $lines.size()
+    var i = 0
+    if $lines[$i] == 'Styles:' {
+        var list = ""
+        $i++
+        for (; $i < $size && $lines[$i] !~ $/^\w/; $i++) {
+            var line = $lines[$i]
+            $line.startsWith("*") || continue
+            $line = $line.replace("* ", "")
+            if !$list.empty() { $list += " "; }
+            $list += $line
+        }
+        compdef --cmd dscolorize --short s --arg-list "$list"
+    }
+    if $lines[$i] == 'Formatters:' {
+        var list = ""
+        $i++
+        for (; $i < $size && $lines[$i] !~ $/^\w/; $i++) {
+            var line = $lines[$i]
+            $line.startsWith("*") || continue
+            $line = $line.replace("* ", "")
+            if !$list.empty() { $list += " "; }
+            $list += $line
+        }
+        compdef --cmd dscolorize --short f --arg-list "$list"
+    }
+}
+
 true

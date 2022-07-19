@@ -17,6 +17,7 @@
     - cmake, ctest
     - systemctl, journalctl
     - launchctl
+    - ydshd, dscolorize
 
 ### Changed
 
