@@ -686,7 +686,8 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     if (exprType.isOptionType()) {
       node.setType(cast<OptionType>(exprType).getElementType());
     } else {
-      this->reportError<Required>(*node.getExprNode(), "Option type", exprType.getName());
+      this->reportError<Required>(*node.getExprNode(), this->typePool.get(TYPE::Nothing).getName(),
+                                  exprType.getName());
     }
   } else {
     if (exprType.isOptionType()) {
@@ -724,7 +725,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       this->checkTypeWithCoercion(elementType, node.refRightNode());
       node.setType(elementType);
     } else {
-      this->reportError<Required>(*node.getLeftNode(), "Option type", leftType.getName());
+      this->reportError<Required>(*node.getLeftNode(), this->typePool.get(TYPE::Nothing).getName(),
+                                  leftType.getName());
     }
     return;
   }
