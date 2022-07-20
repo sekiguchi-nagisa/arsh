@@ -263,7 +263,7 @@ TEST_F(PrecedenceTest, bg) {
 
 TEST_F(PrecedenceTest, coproc) {
   ASSERT_NO_FATAL_FAILURE(
-      this->equals("(12 = ((coproc ((34 | 45) && 56))&))", "12 = coproc 34 | 45 && 56 &"));
+      this->equals("(12 = (((coproc (34 | 45)) && 56) &))", "12 = coproc 34 | 45 && 56 &"));
 }
 
 TEST_F(PrecedenceTest, envAssign) {

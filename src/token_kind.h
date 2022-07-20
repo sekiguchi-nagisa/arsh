@@ -217,10 +217,10 @@
   OP(WITH, 9, INFIX)                                                                               \
   OP(ENV_ASSIGN, 8, PREFIX)                                                                        \
   OP(PIPE, 7, INFIX)                                                                               \
-  OP(COND_AND, 6, INFIX)                                                                           \
-  OP(COND_OR, 5, INFIX)                                                                            \
-  OP(TERNARY, 4, INFIX)                                                                            \
-  OP(COPROC, 3, PREFIX | RASSOC)                                                                   \
+  OP(COPROC, 6, PREFIX | RASSOC)                                                                   \
+  OP(COND_AND, 5, INFIX)                                                                           \
+  OP(COND_OR, 4, INFIX)                                                                            \
+  OP(TERNARY, 3, INFIX)                                                                            \
   OP(BACKGROUND, 2, INFIX)                                                                         \
   OP(DISOWN_BG, 2, INFIX)                                                                          \
   EACH_ASSIGN_OPERATOR(OP)
