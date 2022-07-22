@@ -416,9 +416,6 @@ bool VM::forkAndEval(DSState &state) {
   const auto forkKind = static_cast<ForkKind>(read8(GET_CODE(state), state.stack.pc()));
   const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
 
-  // flush standard stream due to prevent mixing io buffer
-  flushStdFD();
-
   // set in/out pipe
   PipeSet pipeset(forkKind);
   const bool rootShell = state.isRootShell();

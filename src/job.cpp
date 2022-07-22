@@ -20,12 +20,16 @@
 #include <cerrno>
 
 #include "logger.h"
+#include "redir.h"
 #include "vm.h"
 
 namespace ydsh {
 
 Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
   SignalGuard guard;
+
+  // flush standard stream due to prevent mixing io buffer
+  flushStdFD();
 
   if (st.jobTable.size() >= UINT16_MAX) {
     errno = EAGAIN;
