@@ -33,6 +33,7 @@
     dd if=~ of=/somewhere   # expand 'if=~' to 'if=$HOME'
     ```
     - also perform file name completion after ``=``
+    - except for redirection target and source path
 
 #### Builtin
 

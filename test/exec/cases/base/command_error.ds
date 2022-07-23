@@ -58,6 +58,14 @@ try {
     assert(echo ${$e.message()} | grep "io redirection error: $a, caused by")
 }
 
+try {
+    cat < if=~
+    assert($false)
+} catch($e : Error) {
+    assert($e is SystemError)
+    assert $e.message() == "io redirection error: if=~, caused by `No such file or directory'"
+}
+
 var ex = 34 as Any
 try {
     echo hello >> $'hello\x00world'

@@ -32,6 +32,7 @@ enum class CmdArgParseOpt : unsigned int {
   FIRST = 1u << 0u,
   MODULE = 1u << 1u,
   ASSIGN = 1u << 2u,
+  REDIR = 1u << 3u,
 };
 
 template <>

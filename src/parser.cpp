@@ -252,7 +252,8 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
       setFlag(op, CodeCompOp::TILDE);
     }
 
-    if (hasFlag(op, CodeCompOp::MODULE) || hasFlag(op, CodeCompOp::TILDE)) {
+    if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE) ||
+        hasFlag(op, CodeCompOp::TILDE)) {
       this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
     } else {
       assert(op == CodeCompOp::FILE);
@@ -1085,7 +1086,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     // clang-format on
     {
       TokenKind kind = this->scan();
-      return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()));
+      return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR)));
     }
     // clang-format off
   EACH_LA_redirNoFile(GEN_LA_CASE)
@@ -1152,6 +1153,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
         return true;
       });
     } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
+               !hasFlag(opt, CmdArgParseOpt::REDIR) &&
                !this->lexer->startsWith(token, '~')) { // for `dd if=path' style argument
       Token prefixToken = token;
       iteratePathList(*this->lexer, token, '=', [&](Token subToken, bool) {
