@@ -23,15 +23,16 @@
 
 #### Core
 
+- **Breaking Change**: remove signal literal. use signal constants instead (see below)
 - **Breaking Change**: cancel code completion when user-defined completer throws an error
 - **Breaking Change**: not allow explicit cast from ``Nothing`` type
 - **Breaking Change**: change operator precedence of ``coproc``
     - like zsh, ``coproc [pipeline]``
-- **Breaking Change**: in command argument, perform tilde expansion after ``=`` like the follow
+- **Breaking Change**: in command argument, perform tilde expansion after ``=``
     ```shell
     dd if=~ of=/somewhere   # expand 'if=~' to 'if=$HOME'
     ```
-- **Breaking Change**: in command argument, complete file name after ``=``
+    - also perform file name completion after ``=``
 
 #### Builtin
 
@@ -41,7 +42,6 @@
         - if corresponding signal is not found, ``Signals#[]`` method throw ``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
         - if specified ``SIG_NUL``, does not set signal handler
-- **Breaking Change**: remove signal literal. use signal constants instead
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``
