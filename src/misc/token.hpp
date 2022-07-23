@@ -23,8 +23,8 @@
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
 struct Token {
-  unsigned int pos;
-  unsigned int size;
+  unsigned int pos{0};
+  unsigned int size{0};
 
   unsigned int endPos() const { return this->pos + this->size; }
 
