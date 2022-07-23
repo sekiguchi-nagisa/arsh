@@ -1140,7 +1140,7 @@ YDSH_METHOD signals_get(RuntimeContext &ctx) {
   int sigNum = getSignalNum(key);
   if (sigNum < 0) {
     std::string msg = "undefined signal: ";
-    msg += key;
+    msg += toPrintable(key);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
@@ -1861,7 +1861,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
   }
   int e = errno;
   std::string msg = "open failed: ";
-  msg += ref;
+  msg += toPrintable(ref);
   raiseSystemError(ctx, e, std::move(msg));
   RET_ERROR;
 }

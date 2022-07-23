@@ -23,6 +23,7 @@ assert ! $SIG.get($'sys\x00name')
 var ex = 34 as Any
 try { $SIG[$'sys\x00name']; } catch $e { $ex = $e; }
 assert $ex is KeyNotFoundError
+assert ($ex as KeyNotFoundError).message() == "undefined signal: sys\x00name"
 
 assert $SIG.list()[0] is Signal
 

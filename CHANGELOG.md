@@ -34,6 +34,7 @@
     ```
     - also perform file name completion after ``=``
     - except for redirection target and source path
+- escape unprintable character when throw some errors
 
 #### Builtin
 

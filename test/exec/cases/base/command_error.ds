@@ -73,6 +73,7 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
+assert ($ex as SystemError).message() == "io redirection error: hello\x00world, caused by `Invalid argument'"
 
 
 # command fallback

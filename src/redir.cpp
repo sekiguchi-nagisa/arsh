@@ -221,7 +221,7 @@ bool RedirObject::redirect(DSState &st) {
           auto ref = pair.second.asStrRef();
           if (!ref.empty()) {
             msg += ": ";
-            msg += ref;
+            msg += toPrintable(ref);
           }
         } else if (pair.second.hasType(TYPE::UnixFD)) {
           msg += ": ";

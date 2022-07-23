@@ -73,3 +73,4 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
+assert ($ex as SystemError).message() == "open failed: ./hogehoge\x0034, caused by `Invalid argument'"
