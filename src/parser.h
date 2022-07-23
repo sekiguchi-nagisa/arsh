@@ -165,6 +165,11 @@ protected:
     return std::make_unique<VarNode>(token, this->lexer->toName(token));
   }
 
+  void addCmdArgSeg(CmdArgNode &cmdArgNode, Token token, StringNode::StringKind k) {
+    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), k);
+    cmdArgNode.addSegmentNode(std::move(node));
+  }
+
   template <typename Func>
   NameInfo expectName(TokenKind kind, Func func) {
     auto actual = this->curKind;

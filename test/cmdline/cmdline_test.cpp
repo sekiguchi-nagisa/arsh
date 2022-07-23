@@ -481,11 +481,11 @@ TEST_F(CmdlineTest2, import3) {
 }
 
 TEST_F(CmdlineTest2, import4) {
-  std::string str = format("(string):1:10: [semantic error] module not found: `hogehuga'\n"
-                           "source   hogehuga\n"
+  std::string str = format("(string):1:10: [semantic error] module not found: `hoge=~/huga'\n"
+                           "source   hoge=~/huga\n"
                            "         %s\n",
-                           makeLineMarker("hogehuga").c_str());
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("source   hogehuga"), 1, "", str));
+                           makeLineMarker("hoge=~/huga").c_str());
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("source   hoge=~/huga"), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import5) {

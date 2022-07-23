@@ -245,8 +245,11 @@ assert($test(! false))
 ## expand to HOME
 import-env HOME
 assert($HOME == "$(echo ~)")
+assert "if=$HOME" == "$(echo if=~)"
+assert "if\\=$HOME" == "$(echo if\\=~)"
 assert($HOME + "/" == "$(echo ~/)")
 assert($HOME + "/hoge" == "$(echo ~/hoge)")
+assert "if=$HOME/AAA=~" == "$(echo if=~/AAA=~)"
 assert("~g" == "$(echo ~'g')")
 assert($HOME + "/h" == "$(echo ~/'h')")
 var home = $HOME
@@ -319,3 +322,7 @@ if ! $OSTYPE.startsWith("CYGWIN") {
 ## no expand
 assert "$(echo :~)" == ':~'
 assert "$(echo \\:~)" == '\:~'
+assert "if=~" == "$(echo if\=~)"
+assert "if=\~" == "$(echo if=\\~)"
+assert "~if=~" == "$(echo ~\if=~)"
+assert "34if=~" == "$(echo ${34}if=~)"

@@ -27,6 +27,11 @@
 - **Breaking Change**: not allow explicit cast from ``Nothing`` type
 - **Breaking Change**: change operator precedence of ``coproc``
     - like zsh, ``coproc [pipeline]``
+- **Breaking Change**: in command argument, perform tilde expansion after ``=`` like the follow
+    ```shell
+    dd if=~ of=/somewhere   # expand 'if=~' to 'if=$HOME'
+    ```
+- **Breaking Change**: in command argument, complete file name after ``=``
 
 #### Builtin
 

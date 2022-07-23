@@ -158,6 +158,12 @@ private:
    */
   CodeCompOp fallbackOp{};
 
+  /**
+   * for file name completion with tilde expansion like the following case
+   *  `dd if=~/'
+   */
+  unsigned int compWordOffset{0};
+
 public:
   CodeCompletionHandler(const SysConfig &config, const TypePool &pool,
                         const std::string &logicalWorkdir, NameScopePtr scope,
@@ -169,6 +175,8 @@ public:
     this->compOp = op;
     this->compWord = std::move(word);
   }
+
+  void setCompWordOffset(unsigned int offset) { this->compWordOffset = offset; }
 
   void ignore(CodeCompOp ignored) { unsetFlag(this->compOp, ignored); }
 

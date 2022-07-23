@@ -207,7 +207,7 @@ static constexpr bool iterate_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<Iterate, Token>>;
 
 template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
-static void iteratePathList(const Lexer &lex, const Token token, Func func) {
+static void iteratePathList(const Lexer &lex, const Token token, char delim, Func func) {
   StringRef ref = lex.toStrRef(token);
   const unsigned int size = ref.size();
   unsigned int startPos = 0;
@@ -217,7 +217,7 @@ static void iteratePathList(const Lexer &lex, const Token token, Func func) {
     if (ch == '\\' && pos < size) {
       pos++;
     }
-    if (ch == ':' || pos == size) {
+    if (ch == delim || pos == size) {
       Token sub = token.slice(startPos, pos);
       if (!func(sub)) {
         return;
@@ -225,6 +225,11 @@ static void iteratePathList(const Lexer &lex, const Token token, Func func) {
       startPos = pos;
     }
   }
+}
+
+template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
+static void iteratePathList(const Lexer &lex, const Token token, Func func) {
+  iteratePathList(lex, token, ':', std::move(func));
 }
 
 void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
@@ -246,7 +251,27 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
     if (this->lexer->startsWith(token, '~')) {
       setFlag(op, CodeCompOp::TILDE);
     }
-    this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+
+    if (hasFlag(op, CodeCompOp::MODULE) || hasFlag(op, CodeCompOp::TILDE)) {
+      this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+    } else {
+      assert(op == CodeCompOp::FILE);
+      Token prefixToken;
+      iteratePathList(*this->lexer, token, '=', [&prefixToken](Token subToken) {
+        prefixToken = subToken;
+        return false;
+      });
+      auto compWord = this->lexer->toCmdArg(prefixToken);
+      if (token != prefixToken) {
+        auto remainToken = token.sliceFrom(prefixToken.size);
+        if (this->lexer->startsWith(remainToken, '~')) {
+          setFlag(op, CodeCompOp::TILDE);
+        }
+        this->ccHandler->setCompWordOffset(compWord.size());
+        compWord += this->lexer->toCmdArg(remainToken);
+      }
+      this->ccHandler->addCompRequest(op, std::move(compWord));
+    }
   }
 }
 
@@ -1119,28 +1144,41 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
             (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
           kind = StringNode::TILDE;
         }
-        auto node = std::make_unique<StringNode>(subToken, this->lexer->toCmdArg(subToken), kind);
-        argNode.addSegmentNode(std::move(node));
+        this->addCmdArgSeg(argNode, subToken, kind);
         return true;
       });
-      return nullptr;
-    }
-    auto kind = StringNode::STRING;
-    if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
-      if (this->lexer->startsWith(token, '~')) {
-        kind = StringNode::TILDE;
+    } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
+               !this->lexer->startsWith(token, '~')) { // for `dd if=path' style argument
+      Token prefixToken;
+      iteratePathList(*this->lexer, token, '=', [&](Token subToken) {
+        prefixToken = subToken;
+        return false;
+      });
+      this->addCmdArgSeg(argNode, prefixToken, StringNode::STRING);
+      if (prefixToken != token) { // prefix='if=', remain='path'
+        auto remainToken = token.sliceFrom(prefixToken.size);
+        auto kind = StringNode::STRING;
+        if (this->lexer->startsWith(remainToken, '~')) {
+          kind = StringNode::TILDE;
+        }
+        this->addCmdArgSeg(argNode, remainToken, kind);
       }
+    } else {
+      auto kind = StringNode::STRING;
+      if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
+        if (this->lexer->startsWith(token, '~')) {
+          kind = StringNode::TILDE;
+        }
+      }
+      this->addCmdArgSeg(argNode, token, kind);
     }
-    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
-    argNode.addSegmentNode(std::move(node));
     return nullptr;
   }
   case TokenKind::BRACE_CHAR_SEQ:
   case TokenKind::BRACE_INT_SEQ: {
     Token token = this->curToken;
     if (!this->parse_braceSeq(argNode)) {
-      auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token));
-      argNode.addSegmentNode(std::move(node));
+      this->addCmdArgSeg(argNode, token, StringNode::STRING);
     }
     return nullptr;
   }

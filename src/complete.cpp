@@ -294,16 +294,18 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
   return true;
 }
 
-static bool completeFileName(const char *baseDir, const std::string &prefix, const CodeCompOp op,
+static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCompOp op,
                              CompCandidateConsumer &consumer, ObserverPtr<CompCancel> cancel) {
-  const auto s = prefix.find_last_of('/');
+  const auto s = prefix.lastIndexOf("/");
 
   // complete tilde
-  if (prefix[0] == '~' && s == std::string::npos && hasFlag(op, CodeCompOp::TILDE)) {
+  if (hasFlag(op, CodeCompOp::TILDE) && prefix[0] == '~' && s == StringRef::npos) {
     setpwent();
     for (struct passwd *entry; (entry = getpwent()) != nullptr;) {
       StringRef pwname = entry->pw_name;
-      if (pwname.startsWith(prefix.c_str() + 1)) {
+      auto tmp = prefix;
+      tmp.removePrefix(1); // skip '~'
+      if (pwname.startsWith(tmp)) {
         std::string name("~");
         name += entry->pw_name;
         name += '/';
@@ -322,8 +324,8 @@ static bool completeFileName(const char *baseDir, const std::string &prefix, con
   std::string targetDir;
   if (s == 0) {
     targetDir = "/";
-  } else if (s != std::string::npos) {
-    targetDir = prefix.substr(0, s);
+  } else if (s != StringRef::npos) {
+    targetDir = prefix.substr(0, s).toString();
     if (hasFlag(op, CodeCompOp::TILDE)) {
       expandTilde(targetDir, true);
     }
@@ -336,11 +338,9 @@ static bool completeFileName(const char *baseDir, const std::string &prefix, con
   /**
    * resolve name
    */
-  std::string name;
-  if (s != std::string::npos) {
-    name = prefix.substr(s + 1);
-  } else {
-    name = prefix;
+  StringRef name = prefix;
+  if (s != StringRef::npos) {
+    name = name.substr(s + 1);
   }
 
   DIR *dir = opendir(targetDir.c_str());
@@ -622,7 +622,8 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   }
   if (hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
       hasFlag(this->compOp, CodeCompOp::DIR)) {
-    TRY(completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->compOp, consumer,
+    auto prefix = StringRef(this->compWord).substr(this->compWordOffset);
+    TRY(completeFileName(this->logicalWorkdir.c_str(), prefix, this->compOp, consumer,
                          this->cancel));
   }
   if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
@@ -654,7 +655,8 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
       }
     }
     if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, consumer)) {
-      TRY(completeFileName(this->logicalWorkdir.c_str(), this->compWord, this->fallbackOp, consumer,
+      auto prefix = StringRef(this->compWord).substr(this->compWordOffset);
+      TRY(completeFileName(this->logicalWorkdir.c_str(), prefix, this->fallbackOp, consumer,
                            this->cancel));
     }
   }
