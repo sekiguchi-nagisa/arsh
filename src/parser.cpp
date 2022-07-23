@@ -256,7 +256,7 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
       this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
     } else {
       assert(op == CodeCompOp::FILE);
-      Token prefixToken;
+      Token prefixToken = token;
       iteratePathList(*this->lexer, token, '=', [&prefixToken](Token subToken) {
         prefixToken = subToken;
         return false;
@@ -1149,7 +1149,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       });
     } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
                !this->lexer->startsWith(token, '~')) { // for `dd if=path' style argument
-      Token prefixToken;
+      Token prefixToken = token;
       iteratePathList(*this->lexer, token, '=', [&](Token subToken) {
         prefixToken = subToken;
         return false;
