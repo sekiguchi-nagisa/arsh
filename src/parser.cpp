@@ -204,10 +204,10 @@ bool Parser::inTypeNameCompletionPoint() const {
 
 template <typename Iterate>
 static constexpr bool iterate_requirement_v =
-    std::is_same_v<bool, std::invoke_result_t<Iterate, Token>>;
+    std::is_same_v<bool, std::invoke_result_t<Iterate, Token, bool>>;
 
 template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
-static void iteratePathList(const Lexer &lex, const Token token, char delim, Func func) {
+static void iteratePathList(const Lexer &lex, const Token token, const char delim, Func func) {
   StringRef ref = lex.toStrRef(token);
   const unsigned int size = ref.size();
   unsigned int startPos = 0;
@@ -219,7 +219,7 @@ static void iteratePathList(const Lexer &lex, const Token token, char delim, Fun
     }
     if (ch == delim || pos == size) {
       Token sub = token.slice(startPos, pos);
-      if (!func(sub)) {
+      if (!func(sub, ch == delim)) {
         return;
       }
       startPos = pos;
@@ -227,18 +227,18 @@ static void iteratePathList(const Lexer &lex, const Token token, char delim, Fun
   }
 }
 
-template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
-static void iteratePathList(const Lexer &lex, const Token token, Func func) {
-  iteratePathList(lex, token, ':', std::move(func));
-}
-
 void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
   Token token = this->curToken;
   if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-    iteratePathList(*this->lexer, token, [&token](Token subToken) {
+    bool lastSplit = false;
+    iteratePathList(*this->lexer, token, ':', [&token, &lastSplit](Token subToken, bool s) {
       token = subToken;
+      lastSplit = s;
       return true;
     });
+    if (lastSplit) { // for `AAA=BBB:'
+      token = Token{token.endPos(), 0};
+    }
     if (token.pos != this->curToken.pos || hasFlag(opt, CmdArgParseOpt::FIRST)) {
       auto op = CodeCompOp::FILE;
       if (this->lexer->startsWith(token, '~')) {
@@ -257,8 +257,10 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
     } else {
       assert(op == CodeCompOp::FILE);
       Token prefixToken = token;
-      iteratePathList(*this->lexer, token, '=', [&prefixToken](Token subToken) {
+      bool lastSplit = false;
+      iteratePathList(*this->lexer, token, '=', [&prefixToken, &lastSplit](Token subToken, bool s) {
         prefixToken = subToken;
+        lastSplit = s;
         return false;
       });
       auto compWord = this->lexer->toCmdArg(prefixToken);
@@ -269,6 +271,8 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
         }
         this->ccHandler->setCompWordOffset(compWord.size());
         compWord += this->lexer->toCmdArg(remainToken);
+      } else if (lastSplit) { // for `echo AAA='
+        this->ccHandler->setCompWordOffset(compWord.size());
       }
       this->ccHandler->addCompRequest(op, std::move(compWord));
     }
@@ -1138,7 +1142,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     const auto prevKind = this->consumedKind;
     Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
     if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-      iteratePathList(*this->lexer, token, [&](Token subToken) {
+      iteratePathList(*this->lexer, token, ':', [&](Token subToken, bool) {
         auto kind = StringNode::STRING;
         if (this->lexer->startsWith(subToken, '~') &&
             (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
@@ -1150,7 +1154,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
                !this->lexer->startsWith(token, '~')) { // for `dd if=path' style argument
       Token prefixToken = token;
-      iteratePathList(*this->lexer, token, '=', [&](Token subToken) {
+      iteratePathList(*this->lexer, token, '=', [&](Token subToken, bool) {
         prefixToken = subToken;
         return false;
       });
