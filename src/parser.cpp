@@ -265,14 +265,16 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
         return false;
       });
       auto compWord = this->lexer->toCmdArg(prefixToken);
-      if (token != prefixToken) {
+      if (token != prefixToken) { // for `echo if=./' or `echo if=~'
         auto remainToken = token.sliceFrom(prefixToken.size);
-        if (this->lexer->startsWith(remainToken, '~')) {
-          setFlag(op, CodeCompOp::TILDE);
+        if (prefixToken.size > 1) { // ignore `echo =./', `echo =~'
+          if (this->lexer->startsWith(remainToken, '~')) {
+            setFlag(op, CodeCompOp::TILDE);
+          }
+          this->ccHandler->setCompWordOffset(compWord.size());
         }
-        this->ccHandler->setCompWordOffset(compWord.size());
         compWord += this->lexer->toCmdArg(remainToken);
-      } else if (lastSplit) { // for `echo AAA='
+      } else if (lastSplit && prefixToken.size > 1) { // for `echo AAA=' (except for `echo =')
         this->ccHandler->setCompWordOffset(compWord.size());
       }
       this->ccHandler->addCompRequest(op, std::move(compWord));
@@ -1164,7 +1166,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       if (prefixToken != token) { // prefix='if=', remain='path'
         auto remainToken = token.sliceFrom(prefixToken.size);
         auto kind = StringNode::STRING;
-        if (this->lexer->startsWith(remainToken, '~')) {
+        if (this->lexer->startsWith(remainToken, '~') && prefixToken.size > 1) {
           kind = StringNode::TILDE;
         }
         this->addCmdArgSeg(argNode, remainToken, kind);

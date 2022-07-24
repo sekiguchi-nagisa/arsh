@@ -247,6 +247,7 @@ import-env HOME
 assert($HOME == "$(echo ~)")
 assert "if=$HOME" == "$(echo if=~)"
 assert "if\\=$HOME" == "$(echo if\\=~)"
+assert "\\=$HOME" == "$(echo \\=~)"
 assert($HOME + "/" == "$(echo ~/)")
 assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert "if=$HOME/AAA=~" == "$(echo if=~/AAA=~)"
@@ -326,3 +327,5 @@ assert "if=~" == "$(echo if\=~)"
 assert "if=\~" == "$(echo if=\\~)"
 assert "~if=~" == "$(echo ~\if=~)"
 assert "34if=~" == "$(echo ${34}if=~)"
+assert "=~" == "$(echo \=~)"
+assert "=~" == "$(echo =~)"
