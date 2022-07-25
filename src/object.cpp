@@ -880,8 +880,8 @@ TimerObject::TimerObject() : ObjectWithRtti(TYPE::Any) {
 
 static std::string formatTimeval(const struct timeval &time) {
   char buf[64];
-  snprintf(buf, std::size(buf), "%ldm%02ld.%03lds", time.tv_sec / 60, time.tv_sec % 60,
-           time.tv_usec / 1000);
+  snprintf(buf, std::size(buf), "%ldm%02ld.%03ds", time.tv_sec / 60, time.tv_sec % 60,
+           static_cast<int>(time.tv_usec / 1000));
   std::string value = buf;
   return value;
 }
@@ -891,10 +891,11 @@ using time_point_diff =
 
 static std::string formatTimePoint(const time_point_diff &time) {
   char buf[64];
-  snprintf(buf, std::size(buf), "%ldm%02ld.%03lds",
-           std::chrono::duration_cast<std::chrono::minutes>(time).count(),
-           std::chrono::duration_cast<std::chrono::seconds>(time).count() % 60,
-           std::chrono::duration_cast<std::chrono::milliseconds>(time).count() % 1000);
+  snprintf(
+      buf, std::size(buf), "%ldm%02d.%03ds",
+      std::chrono::duration_cast<std::chrono::minutes>(time).count(),
+      static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(time).count() % 60),
+      static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(time).count() % 1000));
   std::string value = buf;
   return value;
 }
