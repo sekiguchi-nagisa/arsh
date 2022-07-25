@@ -99,6 +99,7 @@ TEST_F(UnicodeTest, codepoint2utf8) {
   ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("ｱ"));
   ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("𣏤"));
   ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("𣴀"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("�"));
 }
 
 TEST_F(UnicodeTest, base) {
@@ -118,6 +119,8 @@ TEST_F(UnicodeTest, codePoint) {
   ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x0150, "Ő"));
   ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x305F, "た"));
   ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x25E56, "𥹖"));
+  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(UnicodeUtil::REPLACEMENT_CHAR_CODE,
+                                                UnicodeUtil::REPLACEMENT_CHAR_UTF8));
 }
 
 TEST_F(UnicodeTest, multi) {
@@ -165,8 +168,7 @@ TEST_F(UnicodeTest, multi2) {
   toCodePoint("◯", code);
 
   // C
-  const char *r = nullptr;
-  r = setlocale(LC_CTYPE, "C");
+  const char *r = setlocale(LC_CTYPE, "C");
   ASSERT_TRUE(r != nullptr);
   ASSERT_EQ(1, UnicodeUtil::localeAwareWidth(code));
 

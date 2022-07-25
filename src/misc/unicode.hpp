@@ -29,6 +29,10 @@ template <bool T>
 struct UnicodeUtil {
   static_assert(T, "not allowed instantiation");
 
+  static constexpr int REPLACEMENT_CHAR_CODE = 0xFFFD;
+
+  static constexpr const char *REPLACEMENT_CHAR_UTF8 = "\xEF\xBF\xBD";
+
   /**
    * if b is illegal start byte of UTF-8, skip it.
    */
@@ -233,8 +237,9 @@ unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *en
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin, const char *end, int &codePoint) {
-  const unsigned int size = utf8ValidateChar(begin, end);
+unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end0, int &codePoint) {
+  const unsigned int size = utf8ValidateChar(begin0, end0);
+  auto begin = reinterpret_cast<const unsigned char *>(begin0);
   switch (size) {
   case 1:
     codePoint = static_cast<unsigned char>(begin[0]);
