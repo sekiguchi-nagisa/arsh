@@ -4,6 +4,11 @@
 
 ### Added
 
+#### Core
+
+- add ``time`` expression
+    - like bash or zsh, ``time [pipeline]``
+
 #### API
 
 - add the following line edit op
