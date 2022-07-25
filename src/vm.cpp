@@ -1706,6 +1706,10 @@ bool VM::mainLoop(DSState &state) {
         typeAs<EnvCtxObject>(state.stack.peek()).setAndSaveEnv(std::move(name), std::move(value));
         vmnext;
       }
+      vmcase(NEW_TIMER) {
+        state.stack.push(DSValue::create<TimerObject>());
+        vmnext;
+      }
       vmcase(BOX_LOCAL) {
         unsigned char index = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;

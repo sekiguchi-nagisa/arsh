@@ -17,9 +17,12 @@
 #ifndef YDSH_OBJECT_H
 #define YDSH_OBJECT_H
 
+#include <sys/resource.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <array>
+#include <chrono>
 #include <memory>
 #include <tuple>
 
@@ -52,6 +55,7 @@ namespace ydsh {
   OP(Box)                                                                                          \
   OP(EnvCtx)                                                                                       \
   OP(Reader)                                                                                       \
+  OP(Timer)                                                                                        \
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
   OP(Redir)
@@ -1287,6 +1291,22 @@ public:
   DSValue takeLine() { return std::move(this->value); }
 };
 
-} // namespace ydsh
+struct UserSysTime {
+  struct timeval user {};
+  struct timeval sys {};
+};
+
+class TimerObject : public ObjectWithRtti<ObjectKind::Timer> {
+private:
+  std::chrono::high_resolution_clock::time_point realTime; // for real-time
+  UserSysTime userSysTime;
+
+public:
+  TimerObject();
+
+  ~TimerObject();
+};
+
+}; // namespace ydsh
 
 #endif // YDSH_OBJECT_H

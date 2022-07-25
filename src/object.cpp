@@ -804,9 +804,9 @@ void EnvCtxObject::setAndSaveEnv(DSValue &&name, DSValue &&value) {
   }
 }
 
-// ####################
-// ##     Reader     ##
-// ####################
+// ##########################
+// ##     ReaderObject     ##
+// ##########################
 
 bool ReaderObject::nextLine() {
   if (!this->available) {
@@ -848,6 +848,86 @@ bool ReaderObject::nextLine() {
     return true;
   }
   return false;
+}
+
+// #########################
+// ##     TimerObject     ##
+// #########################
+
+static UserSysTime getTime() {
+  struct rusage self;
+  getrusage(RUSAGE_SELF, &self);
+
+  struct rusage children;
+  getrusage(RUSAGE_CHILDREN, &children);
+
+  struct timeval utime;
+  timeradd(&self.ru_utime, &children.ru_utime, &utime);
+
+  struct timeval stime;
+  timeradd(&self.ru_stime, &children.ru_stime, &stime);
+
+  return {
+      .user = utime,
+      .sys = stime,
+  };
+}
+
+TimerObject::TimerObject() : ObjectWithRtti(TYPE::Any) {
+  this->realTime = std::chrono::high_resolution_clock::now();
+  this->userSysTime = getTime();
+}
+
+static std::string formatTimeval(const struct timeval &time) {
+  char buf[64];
+  snprintf(buf, std::size(buf), "%ldm%02ld.%03lds", time.tv_sec / 60, time.tv_sec % 60,
+           time.tv_usec / 1000);
+  std::string value = buf;
+  return value;
+}
+
+using time_point_diff =
+    decltype(std::chrono::high_resolution_clock::now() - std::chrono::high_resolution_clock::now());
+
+static std::string formatTimePoint(const time_point_diff &time) {
+  char buf[64];
+  snprintf(buf, std::size(buf), "%ldm%02ld.%03lds",
+           std::chrono::duration_cast<std::chrono::minutes>(time).count(),
+           std::chrono::duration_cast<std::chrono::seconds>(time).count() % 60,
+           std::chrono::duration_cast<std::chrono::milliseconds>(time).count() % 1000);
+  std::string value = buf;
+  return value;
+}
+
+TimerObject::~TimerObject() {
+  auto curTime = getTime();
+  auto real = std::chrono::high_resolution_clock::now();
+
+  // get diff
+  auto realDiff = real - this->realTime;
+  struct timeval userTimeDiff {};
+  timersub(&curTime.user, &this->userSysTime.user, &userTimeDiff);
+  struct timeval systemTimeDiff {};
+  timersub(&curTime.sys, &this->userSysTime.sys, &systemTimeDiff);
+
+  // show time
+  std::string times[] = {
+      formatTimePoint(realDiff),
+      formatTimeval(userTimeDiff),
+      formatTimeval(systemTimeDiff),
+  };
+  std::size_t maxLen = std::max({times[0].size(), times[1].size(), times[2].size()});
+  const char *prefix[] = {"real", "user", "sys "};
+  std::string out = "\n";
+  for (unsigned int i = 0; i < std::size(prefix); i++) {
+    out += prefix[i];
+    out += "    ";
+    out.append(maxLen - times[i].size(), ' ');
+    out += times[i];
+    out += '\n';
+  }
+  fputs(out.c_str(), stderr);
+  fflush(stderr);
 }
 
 } // namespace ydsh

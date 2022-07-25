@@ -1410,6 +1410,11 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::COPROC)));
     return ForkNode::newCoproc(token, std::move(exprNode));
   }
+  case TokenKind::TIME: {
+    auto token = this->expect(TokenKind::TIME); // always success
+    auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::TIME)));
+    return std::make_unique<TimeNode>(token, std::move(exprNode));
+  }
   default:
     return this->parse_suffixExpression();
   }

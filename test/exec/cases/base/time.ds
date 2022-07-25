@@ -1,0 +1,21 @@
+
+assert time echo hello
+
+echo hey
+assert (time 34) == 34
+
+var fmt1 = "$((time { var aa = 34; $aa; }) with 2>&1)"
+
+var fmt2 = "$((time { sleep 1; }) with 2>&1)"
+
+echo
+
+assert echo $fmt1 | grep 'real    0m00\.[0-9][0-9][0-9]s'
+assert echo $fmt1 | grep 'user    0m00\.[0-9][0-9][0-9]s'
+assert echo $fmt1 | grep 'sys     0m00\.[0-9][0-9][0-9]s'
+
+echo
+
+assert echo $fmt2 | grep 'real    0m01\.[0-9][0-9][0-9]s'
+assert echo $fmt2 | grep 'user    0m00\.[0-9][0-9][0-9]s'
+assert echo $fmt2 | grep 'sys     0m00\.[0-9][0-9][0-9]s'

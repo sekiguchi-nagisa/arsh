@@ -1063,6 +1063,17 @@ void TypeChecker::visitWithNode(WithNode &node) {
   node.setType(type);
 }
 
+void TypeChecker::visitTimeNode(TimeNode &node) {
+  auto scope = this->intoBlock();
+
+  // register timer entry
+  this->addEntry(node, "%%timer", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
+
+  auto &type = this->checkTypeExactly(node.getExprNode());
+  node.setBaseIndex(this->curScope->getBaseIndex());
+  node.setType(type);
+}
+
 void TypeChecker::visitForkNode(ForkNode &node) {
   auto child = this->funcCtx->intoChild();
   this->checkType(nullptr, node.getExprNode(),

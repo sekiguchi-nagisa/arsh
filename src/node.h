@@ -61,6 +61,7 @@ namespace ydsh {
   OP(BraceSeq)                                                                                     \
   OP(Pipeline)                                                                                     \
   OP(With)                                                                                         \
+  OP(Time)                                                                                         \
   OP(Fork)                                                                                         \
   OP(Assert)                                                                                       \
   OP(Block)                                                                                        \
@@ -1304,6 +1305,28 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+// for time expression
+class TimeNode : public WithRtti<Node, NodeKind::Time> {
+private:
+  std::unique_ptr<Node> exprNode;
+
+  unsigned int baseIndex{0};
+
+public:
+  TimeNode(Token token, std::unique_ptr<Node> &&exprNode)
+      : WithRtti(token), exprNode(std::move(exprNode)) {
+    this->updateToken(this->exprNode->getToken());
+  }
+
+  Node &getExprNode() const { return *this->exprNode; }
+
+  void setBaseIndex(unsigned int index) { this->baseIndex = index; }
+
+  unsigned int getBaseIndex() const { return this->baseIndex; }
+
+  void dump(NodeDumper &dumper) const override;
+};
+
 class ForkNode : public WithRtti<Node, NodeKind::Fork> {
 private:
   ForkKind opKind;
@@ -2434,6 +2457,7 @@ struct NodeVisitor {
   virtual void visitBraceSeqNode(BraceSeqNode &node) = 0;
   virtual void visitPipelineNode(PipelineNode &node) = 0;
   virtual void visitWithNode(WithNode &node) = 0;
+  virtual void visitTimeNode(TimeNode &node) = 0;
   virtual void visitAssertNode(AssertNode &node) = 0;
   virtual void visitBlockNode(BlockNode &node) = 0;
   virtual void visitTypeDefNode(TypeDefNode &node) = 0;
@@ -2488,6 +2512,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitBraceSeqNode(BraceSeqNode &node) override { this->visitDefault(node); }
   void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
   void visitWithNode(WithNode &node) override { this->visitDefault(node); }
+  void visitTimeNode(TimeNode &node) override { this->visitDefault(node); }
   void visitForkNode(ForkNode &node) override { this->visitDefault(node); }
   void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
   void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }

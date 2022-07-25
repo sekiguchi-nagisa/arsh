@@ -63,7 +63,7 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   EACH_OPERATOR(GEN_CASE)
     // clang-format on
 #undef GEN_CASE
-    if (kind == TokenKind::COPROC) {
+    if (kind == TokenKind::COPROC || kind == TokenKind::TIME) {
       return HighlightTokenClass::KEYWORD;
     }
     return HighlightTokenClass::OPERATOR;

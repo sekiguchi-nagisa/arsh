@@ -33,6 +33,7 @@
 | STORE_ENV       |                                | value1 value2 ->                             | set environmental variable                             |
 | NEW_ENV_CTX     |                                | -> value                                     | push new EnvCtxObject onto the stack                   |
 | ADD2ENV_CTX     |                                | ctx name value -> ctx                        | set and save env                                       |
+| NEW_TIMER       |                                | -> value                                     | push new TimerObject onto the stack                    |
 | BOX_LOCAL       | 1: byte1                       | [no change]                                  | box local variable                                     |
 | LOAD_BOXED      | 1: byte1                       | -> value                                     | load a value from a local variable and unbox           |
 | STORE_BOXED     | 1: byte1                       | value ->                                     | box a value and store it to a local variable           |

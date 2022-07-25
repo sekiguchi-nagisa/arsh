@@ -48,8 +48,8 @@ assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')
 ## keyword
 let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
-            'break', 'continue', 'return',
-            '!', '+', '-', 'throw', 'coproc', 
+            'break', 'continue', 'return', 'time',
+            '!', '+', '-', 'throw', 'coproc',
 
             'typedef', 'assert', 'defer',
             'exportenv', 'importenv',
@@ -57,7 +57,7 @@ let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
 
 let expr = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
-            'break', 'continue', 'return',
+            'break', 'continue', 'return', 'time',
             '!', '+', '-', 'throw', 'coproc']
 
 assert diff <(complete -A expr_kw '') <(for $e in $expr { echo $e; } | sort)

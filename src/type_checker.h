@@ -656,6 +656,7 @@ private:
   void visitBraceSeqNode(BraceSeqNode &node) override;
   void visitPipelineNode(PipelineNode &node) override;
   void visitWithNode(WithNode &node) override;
+  void visitTimeNode(TimeNode &node) override;
   void visitForkNode(ForkNode &node) override;
   void visitAssertNode(AssertNode &node) override;
   void visitBlockNode(BlockNode &node) override;

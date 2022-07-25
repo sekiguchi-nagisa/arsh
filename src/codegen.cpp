@@ -911,6 +911,14 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
   });
 }
 
+void ByteCodeGenerator::visitTimeNode(TimeNode &node) {
+  this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+    this->emit0byteIns(OpCode::NEW_TIMER);
+    this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+    this->visit(node.getExprNode(), CmdCallCtx::AUTO);
+  });
+}
+
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
   if (isa<PipelineNode>(node.getExprNode()) && !node.isCmdSub()) {
     this->generatePipeline(cast<PipelineNode>(node.getExprNode()), node.getOpKind());

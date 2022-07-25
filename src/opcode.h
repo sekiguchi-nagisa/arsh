@@ -61,6 +61,7 @@ namespace ydsh {
   OP(STORE_ENV, 0, -2)                                                                             \
   OP(NEW_ENV_CTX, 0, 1)                                                                            \
   OP(ADD2ENV_CTX, 0, -2)                                                                           \
+  OP(NEW_TIMER, 0, 1)                                                                              \
   OP(BOX_LOCAL, 1, 0)                                                                              \
   OP(LOAD_BOXED, 1, 1)                                                                             \
   OP(STORE_BOXED, 1, -1)                                                                           \

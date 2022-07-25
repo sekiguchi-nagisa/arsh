@@ -1054,6 +1054,42 @@ nodes:
       attribute: "READ_ONLY | GLOBAL"
     resolvedType: "(Int, Int) -> Void"
 )"},
+
+    {DumpOp::typed, R"(time echo)", 1, 0, R"(
+nodes:
+  - nodeKind: TypeOp
+    token:
+      pos: 0
+      size: 9
+    type: "Void"
+    exprNode:
+      nodeKind: Time
+      token:
+        pos: 0
+        size: 9
+      type: "Boolean"
+      exprNode:
+        nodeKind: Cmd
+        token:
+          pos: 5
+          size: 4
+        type: "Boolean"
+        nameNode:
+          nodeKind: String
+          token:
+            pos: 5
+            size: 4
+          type: "String"
+          kind: "STRING"
+          value: "echo"
+        argNodes:
+        redirCount: 0
+        needFork: true
+        handle: null
+      baseIndex: 0
+    targetTypeToken: null
+    opKind: "TO_VOID"
+)"},
 };
 
 TEST_P(NodeDumpTest, base) { ASSERT_NO_FATAL_FAILURE(this->test()); }

@@ -131,6 +131,8 @@ void NodePass::visitWithNode(WithNode &node) {
   this->visitEach(node.getRedirNodes());
 }
 
+void NodePass::visitTimeNode(TimeNode &node) { this->visit(node.getExprNode()); }
+
 void NodePass::visitAssertNode(AssertNode &node) {
   this->visit(node.getCondNode());
   this->visit(node.getMessageNode());

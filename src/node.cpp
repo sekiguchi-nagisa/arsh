@@ -517,6 +517,15 @@ void WithNode::dump(NodeDumper &dumper) const {
 }
 
 // ######################
+// ##     TimeNode     ##
+// ######################
+
+void TimeNode::dump(NodeDumper &dumper) const {
+  DUMP_PTR(exprNode);
+  DUMP(baseIndex);
+}
+
+// ######################
 // ##     ForkNode     ##
 // ######################
 
@@ -844,9 +853,9 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(rightNode);
 }
 
-// ########################
-// ##     EnvCtxNode     ##
-// ########################
+// ##############################
+// ##     PrefixAssignNode     ##
+// ##############################
 
 void PrefixAssignNode::dump(NodeDumper &dumper) const {
   DUMP(declNodes);

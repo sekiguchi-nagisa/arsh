@@ -123,6 +123,13 @@ public:
     this->close();
   }
 
+  void visitTimeNode(TimeNode &node) override {
+    this->open();
+    this->append("time");
+    this->visit(node.getExprNode());
+    this->close();
+  }
+
   void visitRedirNode(RedirNode &node) override {
     this->append(toString(node.getRedirectOP()));
     this->visit(node.getTargetNode());
@@ -264,6 +271,13 @@ TEST_F(PrecedenceTest, bg) {
 TEST_F(PrecedenceTest, coproc) {
   ASSERT_NO_FATAL_FAILURE(
       this->equals("(12 = (((coproc (34 | 45)) && 56) &))", "12 = coproc 34 | 45 && 56 &"));
+}
+
+TEST_F(PrecedenceTest, time) {
+  ASSERT_NO_FATAL_FAILURE(this->equals("(time (12 | (34 with 2> 56)))", "time 12 | 34 with 2> 56"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->equals("(time ((12 && 34) with 2> 56))", "time (12 && 34) with 2> 56"));
+  ASSERT_NO_FATAL_FAILURE(this->equals("(((time (coproc 12)) || 34) &)", "time coproc 12 || 34 &"));
 }
 
 TEST_F(PrecedenceTest, envAssign) {

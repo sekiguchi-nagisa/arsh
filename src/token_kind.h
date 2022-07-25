@@ -50,6 +50,7 @@
   TOKEN(SOURCE_OPT, "source!")                                                                     \
   TOKEN(TRY, "try")                                                                                \
   TOKEN(THROW, "throw")                                                                            \
+  TOKEN(TIME, "time")                                                                              \
   TOKEN(TYPEDEF, "typedef")                                                                        \
   TOKEN(VAR, "var")                                                                                \
   TOKEN(WHILE, "while")                                                                            \
@@ -218,6 +219,7 @@
   OP(ENV_ASSIGN, 8, PREFIX)                                                                        \
   OP(PIPE, 7, INFIX)                                                                               \
   OP(COPROC, 6, PREFIX | RASSOC)                                                                   \
+  OP(TIME, 6, PREFIX | RASSOC)                                                                     \
   OP(COND_AND, 5, INFIX)                                                                           \
   OP(COND_OR, 4, INFIX)                                                                            \
   OP(TERNARY, 3, INFIX)                                                                            \
@@ -282,6 +284,7 @@
   OP(MINUS)                                                                                        \
   OP(THROW)                                                                                        \
   OP(COPROC)                                                                                       \
+  OP(TIME)                                                                                         \
   EACH_LA_primary(OP)
 
 #define EACH_LA_varDecl(OP)                                                                        \

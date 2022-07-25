@@ -558,6 +558,7 @@ private:
   void visitAssignNode(AssignNode &node) override;
   void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
   void visitPrefixAssignNode(PrefixAssignNode &node) override;
+  void visitTimeNode(TimeNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
   void visitSourceNode(SourceNode &node) override;
