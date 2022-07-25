@@ -204,8 +204,8 @@ jobs:
       - name: build and test
         uses: ./tools/dockerfiles/alpine
 
-  build_on_mac:
-    runs-on: macos-10.15
+  build_on_mac_11:
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v1
       - name: prepare
@@ -227,8 +227,8 @@ jobs:
           cd build
           ctest -j4 --output-on-failure
 
-  build_on_mac_11:
-    runs-on: macos-11.0
+  build_on_mac_12:
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v1
       - name: prepare
