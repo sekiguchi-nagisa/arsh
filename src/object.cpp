@@ -364,6 +364,25 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
   return true;
 }
 
+DSValue DSValue::createStr(const GraphemeScanner::Result &ret) {
+  if (!ret.hasInvalid) {
+    return DSValue::createStr(ret.ref);
+  }
+
+  std::string value;
+  for (unsigned int i = 0; i < ret.codePointCount; i++) {
+    auto codePoint = ret.codePoints[i];
+    if (codePoint == -1) {
+      value += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+    } else {
+      char buf[8];
+      unsigned int bufSize = UnicodeUtil::codePointToUtf8(codePoint, buf);
+      value.append(buf, bufSize);
+    }
+  }
+  return DSValue::createStr(std::move(value));
+}
+
 // ###########################
 // ##     UnixFD_Object     ##
 // ###########################

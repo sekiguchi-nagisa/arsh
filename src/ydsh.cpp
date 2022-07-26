@@ -24,7 +24,6 @@
 #include "compiler.h"
 #include "logger.h"
 #include "misc/files.h"
-#include "misc/grapheme.hpp"
 #include "vm.h"
 #include <embed.h>
 #include <ydsh/ydsh.h>

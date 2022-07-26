@@ -49,6 +49,12 @@
         - if corresponding signal is not found, ``Signals#[]`` method throw ``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
         - if specified ``SIG_NUL``, does not set signal handler
+- **Breaking Change**: replace invalid utf8 byte sequence with replacement character (U+FFFD) in the following
+  String method
+    - ``charAt``
+    - ``chars``
+    - ``width``
+    - iterator
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``

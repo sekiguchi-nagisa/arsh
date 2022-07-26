@@ -220,6 +220,31 @@ assert '👨‍👨‍👦'.width() == 2
 assert "$(LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 LC_CTYPE=ja_JP.UTF-8 eval $YDSH_BIN -c 'echo ${"○".width()}')" == "2"
 assert "$(LANG=C LC_ALL=C LC_CTYPE=C eval $YDSH_BIN -c 'echo ${"○".width()}')" == "1"
 
+
+## broken encodeed string
+var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
+assert $invalid.count() == 5
+$gca = $invalid.chars()
+assert $gca.size() == 5
+assert $gca[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[1] == $'\x24'
+assert $gca[2] == $'\uFFFD'
+assert $gca[3] == $'\uFFFD'
+assert $gca[4] == $'\uFFFD\u0E33'
+assert $gca[0] == $invalid.charAt(0)
+assert $gca[1] == $invalid.charAt(1)
+assert $gca[2] == $invalid.charAt(2)
+assert $gca[3] == $invalid.charAt(3)
+assert $gca[4] == $invalid.charAt(4)
+assert $invalid.width() == 9
+assert $invalid.width() == 
+{ 
+    var aa = 0 
+    for a in $gca { $aa += $a.width(); }
+    $aa
+}
+
+
 assert("-2147483648".toInt()! == -1 - 2147483647)
 assert("-2147483649".toInt())
 assert("2147483647".toInt()! == 2147483647)

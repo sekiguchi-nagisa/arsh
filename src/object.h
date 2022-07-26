@@ -30,6 +30,7 @@
 #include "lexer.h"
 #include "misc/buffer.hpp"
 #include "misc/fatal.h"
+#include "misc/grapheme.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 #include "opcode.h"
@@ -606,6 +607,14 @@ public:
     }
     return DSValue::create<StringObject>(std::move(value));
   }
+
+  /**
+   * create String from grapheme cluster.
+   * if has invalid code points, replace theme with 'unicode replacementment char'
+   * @param ret
+   * @return
+   */
+  static DSValue createStr(const GraphemeScanner::Result &ret);
 };
 
 template <typename T>

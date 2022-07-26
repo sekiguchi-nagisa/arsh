@@ -26,7 +26,6 @@
 #include <type_traits>
 
 #include "misc/files.h"
-#include "misc/grapheme.hpp"
 #include "misc/num_util.hpp"
 #include "signals.h"
 #include "vm.h"
@@ -595,7 +594,7 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
   while (scanner.next(ret)) {
-    array.append(DSValue::createStr(ret.ref));
+    array.append(DSValue::createStr(ret));
   }
   ASSERT_ARRAY_SIZE(array);
   RET(value);
@@ -613,7 +612,9 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
   while (scanner.next(ret)) {
     int width = 0;
     for (unsigned int i = 0; i < ret.codePointCount; i++) {
-      int w = UnicodeUtil::width(ret.codePoints[i], eaw);
+      auto codePoint = ret.codePoints[i];
+      codePoint = codePoint < 0 ? UnicodeUtil::REPLACEMENT_CHAR_CODE : codePoint;
+      int w = UnicodeUtil::width(codePoint, eaw);
       if (w > 0) {
         width += w;
       }
@@ -688,7 +689,7 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
   ssize_t count = 0;
   for (; scanner.next(ret); count++) {
     if (count == pos) {
-      RET(DSValue::createStr(ret.ref));
+      RET(DSValue::createStr(ret));
     }
   }
   std::string msg = "character count is ";
@@ -981,7 +982,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
   (void)r;
   assert(r);
   iter[1] = asDSValue(scanner);
-  RET(DSValue::createStr(ret.ref));
+  RET(DSValue::createStr(ret));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean

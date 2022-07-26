@@ -436,7 +436,7 @@ TEST(GraphemeBreakTestBase, expect) {
   ASSERT_EQ(expect, input);
 }
 
-TEST(GraphemeBreakTestBase, scan) {
+TEST(GraphemeBreakTestBase, scan1) {
   GraphemeScanner scanner("abc");
   ASSERT_TRUE(scanner.hasNext());
   GraphemeScanner::Result ret;
@@ -493,6 +493,52 @@ TEST(GraphemeBreakTestBase, scan) {
   s = scanner.next(ret);
   ASSERT_TRUE(s);
   ASSERT_FALSE(scanner.hasNext());
+}
+
+TEST(GraphemeBreakTestBase, scan2) {
+  GraphemeScanner scanner("\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3");
+  ASSERT_TRUE(scanner.hasNext());
+  GraphemeScanner::Result ret;
+
+  bool s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\xC2", ret.ref);
+  ASSERT_EQ(-1, ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
+  ASSERT_TRUE(scanner.hasNext());
+
+  s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\x24", ret.ref);
+  ASSERT_EQ(0x24, ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
+  ASSERT_TRUE(scanner.hasNext());
+
+  s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\xE0", ret.ref);
+  ASSERT_EQ(-1, ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
+  ASSERT_TRUE(scanner.hasNext());
+
+  s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\xA4", ret.ref);
+  ASSERT_EQ(-1, ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
+  ASSERT_TRUE(scanner.hasNext());
+
+  // not break before spacing mark U+0E33(E0 B8 B3), event if broken code point
+  s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\xC2\xE0\xB8\xB3", ret.ref);
+  ASSERT_EQ(-1, ret.codePoints[0]);
+  ASSERT_EQ(0x0E33, ret.codePoints[1]);
+  ASSERT_EQ(2, ret.codePointCount);
+  ASSERT_FALSE(scanner.hasNext());
+
+  s = scanner.next(ret);
+  ASSERT_FALSE(s);
 }
 
 TEST_P(GraphemeBreakTest, base) {

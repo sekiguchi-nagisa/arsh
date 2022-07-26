@@ -237,8 +237,9 @@ public:
   static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
 
   struct Result {
-    StringRef ref;                  // grapheme cluster
-    unsigned int codePointCount{0}; // count of containing code points
+    StringRef ref; // grapheme cluster
+    bool hasInvalid{false};
+    unsigned short codePointCount{0}; // count of containing code points
     int codePoints[MAX_GRAPHEME_CODE_POINTS];
     typename GraphemeBoundary<Bool>::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
   };
@@ -253,34 +254,32 @@ public:
   bool next(Result &result);
 };
 
-inline int toCodePoint(StringRef ref, size_t pos) {
-  int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
-  if (codePoint < 0) {
-    unsigned char ch = ref[pos];
-    codePoint = ch; // broken encoding
-  }
-  return codePoint;
-}
-
 template <bool Bool>
 bool GraphemeScanner<Bool>::next(Result &result) {
-  size_t startPos = this->prevPos;
-  size_t byteSize = 0;
+  const size_t startPos = this->prevPos;
+  result.hasInvalid = false;
   result.codePointCount = 0;
   if (this->prevPos != this->curPos) {
     result.codePointCount = 1;
-    result.codePoints[0] = toCodePoint(this->ref, this->prevPos);
+    result.codePoints[0] =
+        UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->prevPos, this->ref.end());
+    result.hasInvalid = result.codePoints[0] == -1;
   }
 
   while (this->curPos < this->ref.size()) {
-    size_t pos = this->curPos;
-    size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
-    int codePoint = toCodePoint(this->ref, this->curPos);
+    const size_t pos = this->curPos;
+    int codePoint = 0;
+    unsigned int consumedSize =
+        UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->curPos, this->ref.end(), codePoint);
+    if (consumedSize < 1) {
+      consumedSize = 1;
+      result.hasInvalid = true;
+    }
     auto breakProperty = GraphemeBoundary<Bool>::getBreakProperty(codePoint);
     assert(result.codePointCount < std::size(result.codePoints));
-    this->curPos = nextPos;
+    this->curPos += consumedSize;
     if (this->boundary.scanBoundary(breakProperty)) {
-      byteSize = pos - this->prevPos;
+      size_t byteSize = pos - this->prevPos;
       result.ref = this->ref.substr(startPos, byteSize);
       this->prevPos = pos;
       return true;
@@ -290,7 +289,7 @@ bool GraphemeScanner<Bool>::next(Result &result) {
     result.breakProperties[index] = breakProperty;
   }
   if (this->curPos == this->ref.size()) {
-    byteSize = this->curPos - this->prevPos;
+    size_t byteSize = this->curPos - this->prevPos;
     result.ref = this->ref.substr(startPos, byteSize);
     this->prevPos = this->curPos;
   }
