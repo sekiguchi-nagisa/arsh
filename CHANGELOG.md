@@ -77,6 +77,7 @@
 - correctly propagate unreachable code error from loaded module
 - incorrect line number after call ``DSState_loadModule`` api
 - not perform file name completion after ``:``
+- broken hex escape sequence handling in dollar string and echo command
 
 ## [0.26.0] - 2022-06-30
 

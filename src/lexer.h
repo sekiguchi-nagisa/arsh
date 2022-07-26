@@ -225,7 +225,8 @@ using LexerPtr = IntrusivePtr<Lexer>;
 
 struct EscapeSeqResult {
   enum Kind : unsigned char {
-    OK,         // success
+    OK_CODE,    // success as code point
+    OK_BYTE,    // success as byte
     END,        // reach end
     NEED_CHARS, // need one or more characters
     UNKNOWN,    // unknown escape sequence
@@ -234,7 +235,7 @@ struct EscapeSeqResult {
   unsigned short consumedSize;
   int codePoint;
 
-  explicit operator bool() const { return this->kind == OK; }
+  explicit operator bool() const { return this->kind == OK_CODE || this->kind == OK_BYTE; }
 };
 
 /**

@@ -2212,6 +2212,7 @@ TEST_F(EscapeSeqTest, base) {
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\\\", ARRAY('\\')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xFq", ARRAY(0x0F, 'q')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xa11", ARRAY(0xa1, '1')));
+  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xC2", ARRAY(0xc2)));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xW", ARRAY('\\', 'x', 'W')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\x", ARRAY('\\', 'x')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\", ARRAY('\\')));
@@ -2250,7 +2251,7 @@ TEST_F(EscapeSeqTest, error) {
 
   ref = "\\x1w";
   ret = parseEscapeSeq(ref.begin(), ref.end(), false);
-  ASSERT_EQ(EscapeSeqResult::OK, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::OK_BYTE, ret.kind);
   ASSERT_EQ('\x01', ret.codePoint);
   ASSERT_EQ(3, ret.consumedSize);
 

@@ -146,11 +146,19 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
     if (*iter == '\\') {
       auto ret = parseEscapeSeq(iter, end, false);
       switch (ret.kind) {
-      case EscapeSeqResult::OK: {
+      case EscapeSeqResult::OK_CODE: {
         char buf[4];
         unsigned int size = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
         assert(size);
         out.append(buf, size);
+        iter += ret.consumedSize;
+        continue;
+      }
+      case EscapeSeqResult::OK_BYTE: {
+        auto b = static_cast<unsigned int>(ret.codePoint);
+        char buf[1];
+        buf[0] = static_cast<unsigned char>(b);
+        out.append(buf, 1);
         iter += ret.consumedSize;
         continue;
       }
@@ -283,9 +291,17 @@ bool Lexer::toEnvName(Token token, std::string &out) const {
   return true;
 }
 
+static EscapeSeqResult okByte(unsigned char b, unsigned short size) {
+  return {
+      .kind = EscapeSeqResult::OK_BYTE,
+      .consumedSize = size,
+      .codePoint = b,
+  };
+}
+
 static EscapeSeqResult ok(int code, unsigned short size) {
   return {
-      .kind = EscapeSeqResult::OK,
+      .kind = EscapeSeqResult::OK_CODE,
       .consumedSize = size,
       .codePoint = code,
   };
@@ -344,7 +360,10 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
         break;
       }
     }
-    if (code <= 0x10FFFF) {
+    if (limit == 2) { // byte
+      assert(code <= UINT8_MAX);
+      return okByte(static_cast<unsigned char>(code), static_cast<unsigned short>(begin - old));
+    } else if (code <= 0x10FFFF) {
       return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
     } else {
       return err(EscapeSeqResult::RANGE, static_cast<unsigned short>(begin - old));

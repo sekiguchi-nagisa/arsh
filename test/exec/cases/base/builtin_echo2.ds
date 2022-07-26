@@ -11,6 +11,8 @@ assert("$(echo -e 'hello\t\nworld')" == $'hello\t\nworld')
 assert("$(echo -e '\0101\066')" == "A6")    # octal number
 assert("$(echo -e '\x09\x7E')" == $'\t~')   # hex number
 assert("$(echo -e '\x9\x7e')" == $'\t~')    # hex number
+assert "$(echo -e '\xC2\xA3')" == $'\xC2\xA3'   # hex (utf-8)
+assert "$(echo -e '\xC2\xA3')" == $'£'      # hex (utf-8)
 assert("$(echo -e '\xG')" == '\xG')         # invalid hex number
 assert("$(echo -e 'a\0b')" == $'a\x00b')    # also print nul character
 assert("$(echo -e '\a')" == $'\x07')
@@ -23,6 +25,9 @@ assert "$(echo -e '\u7058')" == '灘'
 assert "$(echo -e '\U7058')" == '灘'
 assert "$(echo -e '\U07058')" == '灘'
 assert "$(echo -e '\U20118')" == '𠄘'
+assert "$(echo -e '\u00A3')" == '£'
+assert "$(echo -e '\u00A3')" == $'\xC2\xA3'
+assert "$(echo -e '\u00A3')" == $'\u00a3'
 assert "$(echo -e '@(\UFFFFFF)@')" == '@()@'
 assert "$(echo -e '@(\UFFFFFFF)@')" == '@()@'
 assert "$(echo -e '@(\UFFFFFFFF)@')" == '@()@'

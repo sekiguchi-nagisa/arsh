@@ -15,6 +15,7 @@ assert($'\101\066' == "A6")     # octal
 assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex
 assert($'\r' == $'\x0D')    # hex
+assert $'\xC2\xA3' == '£'  # hex (utf-8)
 assert $'\x00' != ''        # nul character
 assert $'\a' == $'\x07'
 assert $'\b' == $'\x08'
@@ -25,6 +26,8 @@ assert $'\'' == "'"
 
 assert $'\u7058' == '灘'
 assert $'\U20118' == '𠄘'
+assert $'\u00A3' == '£'
+assert $'\u00A3' == $'\xC2\xA3'
 
 assert('a
 b' == "a
