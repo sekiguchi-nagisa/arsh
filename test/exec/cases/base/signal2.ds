@@ -9,8 +9,6 @@ function raise($s : String) {
     $SIG.get($s)!.kill($PID)
 }
 
-assert $SIG_NUL is typeof($f)!
-
 $SIGHUP.trap($f)
 $SIGTERM.trap($f)
 

@@ -32,23 +32,23 @@ assert $? == 1
 
 ## for `monitor' option
 ### in monitor off
-assert $SIG['INT'].trap($SIG_NUL) == $SIG_DFL : "${$SIG['INT']}"
-assert $SIG['QUIT'].trap($SIG_NUL) == $SIG_DFL
-assert $SIG['TSTP'].trap($SIG_NUL) == $SIG_DFL
-assert $SIG['TTIN'].trap($SIG_NUL) == $SIG_DFL
-assert $SIG['TTOU'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['INT'].trap() == $SIG_DFL : "${$SIG['INT']}"
+assert $SIG['QUIT'].trap() == $SIG_DFL
+assert $SIG['TSTP'].trap() == $SIG_DFL
+assert $SIG['TTIN'].trap() == $SIG_DFL
+assert $SIG['TTOU'].trap() == $SIG_DFL
 
 assert fg 2>&1 | grep 'ydsh: fg: no job control in this shell'
 assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 
 ### in monitor on
 shctl set monitor
-assert $SIG['INT'].trap($SIG_NUL) != $SIG_IGN # set monitor, set internal sigint handler
-assert $SIG['INT'].trap($SIG_NUL) != $SIG_DFL
-assert $SIG['QUIT'].trap($SIG_NUL) == $SIG_IGN
-assert $SIG['TSTP'].trap($SIG_NUL) == $SIG_IGN
-assert $SIG['TTIN'].trap($SIG_NUL) == $SIG_IGN
-assert $SIG['TTOU'].trap($SIG_NUL) == $SIG_IGN
+assert $SIG['INT'].trap() != $SIG_IGN # set monitor, set internal sigint handler
+assert $SIG['INT'].trap() != $SIG_DFL
+assert $SIG['QUIT'].trap() == $SIG_IGN
+assert $SIG['TSTP'].trap() == $SIG_IGN
+assert $SIG['TTIN'].trap() == $SIG_IGN
+assert $SIG['TTOU'].trap() == $SIG_IGN
 
 assert fg 2>&1 | grep 'ydsh: fg: current: no such job'
 assert bg 2>&1 | grep 'ydsh: bg: current: no such job'

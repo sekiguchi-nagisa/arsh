@@ -1,55 +1,55 @@
 
 # if not set custom signal handler, return SIG_DFL
-assert $SIG['QUIT'].trap($SIG_NUL) as String == $SIG_DFL as String
+assert $SIG['QUIT'].trap() as String == $SIG_DFL as String
 
 # if signal is ignored, return SIG_IGN
 $SIG['INT'].trap($SIG_IGN) # ignore signal
-assert $SIG['INT'].trap($SIG_NUL) as String == $SIG_IGN as String
+assert $SIG['INT'].trap() as String == $SIG_IGN as String
 
 function f($a : Signal) {}
 $SIG['INT'].trap($f)
-assert $SIG['INT'].trap($SIG_NUL) as String == $f as String
+assert $SIG['INT'].trap() as String == $f as String
 
 
 $SIG['INT'].trap($SIG_DFL) # ignore signal
-assert $SIG['INT'].trap($SIG_NUL) as String == $SIG_DFL as String
+assert $SIG['INT'].trap() as String == $SIG_DFL as String
 
 
 # cannot change SIGCHLD handler (due to internal process management)
 # SIGCHLD handler is always SIG_DFL
 $SIG['CHLD'].trap($SIG_IGN)
-assert $SIG['CHLD'].trap($SIG_NUL) as String == $SIG_DFL as String
+assert $SIG['CHLD'].trap() as String == $SIG_DFL as String
 
 $SIG['CHLD'].trap($f)
-assert $SIG['CHLD'].trap($SIG_NUL) as String == $SIG_DFL as String
+assert $SIG['CHLD'].trap() as String == $SIG_DFL as String
 
 # when set custom signal handler for SIGSEGV, SIGILL, SIGFPE, SIGBUS, SIGKILL or SIGSTOP, always set SIG_DFL
 $SIG['segv'].trap($SIG_IGN)
-assert $SIG['segv'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['segv'].trap() == $SIG_DFL
 $SIG['segv'].trap($f)
-assert $SIG['segv'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['segv'].trap() == $SIG_DFL
 
 $SIG['ill'].trap($SIG_IGN)
-assert $SIG['ill'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['ill'].trap() == $SIG_DFL
 $SIG['ill'].trap($f)
-assert $SIG['ill'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['ill'].trap() == $SIG_DFL
 
 $SIG['fpe'].trap($SIG_IGN)
-assert $SIG['fpe'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['fpe'].trap() == $SIG_DFL
 $SIG['fpe'].trap($f)
-assert $SIG['fpe'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['fpe'].trap() == $SIG_DFL
 
 $SIG['bus'].trap($SIG_IGN)
-assert $SIG['bus'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['bus'].trap() == $SIG_DFL
 $SIG['bus'].trap($f)
-assert $SIG['siGBuS'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['siGBuS'].trap() == $SIG_DFL
 
 $SIG['stop'].trap($SIG_IGN)
-assert $SIG['STOP'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['STOP'].trap() == $SIG_DFL
 $SIG['sToP'].trap($f)
-assert $SIG['siGsTOp'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['siGsTOp'].trap() == $SIG_DFL
 
 $SIG['kill'].trap($SIG_IGN)
-assert $SIG['KILL'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['KILL'].trap() == $SIG_DFL
 $SIG['kIlL'].trap($f)
-assert $SIG['siGKiLl'].trap($SIG_NUL) == $SIG_DFL
+assert $SIG['siGKiLl'].trap() == $SIG_DFL
