@@ -220,6 +220,11 @@ assert '👨‍👨‍👦'.width() == 2
 assert "$(LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 LC_CTYPE=ja_JP.UTF-8 eval $YDSH_BIN -c 'echo ${"○".width()}')" == "2"
 assert "$(LANG=C LC_ALL=C LC_CTYPE=C eval $YDSH_BIN -c 'echo ${"○".width()}')" == "1"
 
+## explicitly specify east-asian width
+assert "○".width(1) == 1
+assert "○".width(2) == 2
+assert "あ".width(1) == 2
+assert "あ".width(2) == 2
 
 ## broken encodeed string
 var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
@@ -236,7 +241,8 @@ assert $gca[1] == $invalid.charAt(1)
 assert $gca[2] == $invalid.charAt(2)
 assert $gca[3] == $invalid.charAt(3)
 assert $gca[4] == $invalid.charAt(4)
-##assert $invalid.width() == 9
+assert $invalid.width(2) == 9
+assert $invalid.width(1) == 6
 assert $invalid.width() == 
 { 
     var aa = 0 

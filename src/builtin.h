@@ -600,15 +600,22 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function width($this : String) : Int
+//!bind: function width($this : String, $eaw : Option<Int>) : Int
 YDSH_METHOD string_width(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_width);
   auto ref = LOCAL(0).asStrRef();
+  auto v = LOCAL(1);
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
   int64_t value = 0;
-  auto eaw = UnicodeUtil::isCJKLocale() ? UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH
-                                        : UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+
+  // resolve east-asian width option
+  auto n = v.isInvalid() ? 0 : v.asInt();
+  auto eaw = n == 2                       ? UnicodeUtil::FULL_WIDTH
+             : n == 1                     ? UnicodeUtil::HALF_WIDTH
+             : UnicodeUtil::isCJKLocale() ? UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH
+                                          : UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+
   while (scanner.next(ret)) {
     int width = 0;
     for (unsigned int i = 0; i < ret.codePointCount; i++) {
