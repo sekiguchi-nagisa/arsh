@@ -453,10 +453,19 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
   }
 }
 
+static unsigned int getMinParamSize(const CallableTypes &types) {
+  unsigned int paramSize = types.paramSize;
+  for (; paramSize > 0 && types.paramTypes[paramSize - 1]->isOptionType(); --paramSize)
+    ;
+  return paramSize;
+}
+
 void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   unsigned int argSize = node.getNodes().size();
   unsigned int paramSize = types.paramSize;
-  if (argSize != paramSize) {
+  unsigned int minParamSize = getMinParamSize(types);
+
+  if (argSize < minParamSize || argSize > paramSize) {
     this->reportError<UnmatchParam>(node, paramSize, argSize);
   }
   unsigned int maxSize = std::max(argSize, paramSize);
@@ -465,6 +474,15 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
       this->checkTypeWithCoercion(*types.paramTypes[i], node.refNodes()[i]);
     } else if (i < argSize) {
       this->checkTypeAsExpr(*node.getNodes()[i]);
+    }
+  }
+
+  // add optional args
+  if (argSize >= minParamSize && argSize < paramSize) {
+    for (unsigned int i = argSize; i < paramSize; i++) {
+      auto *type = types.paramTypes[i];
+      assert(type->isOptionType());
+      node.addNode(std::make_unique<NewNode>(cast<OptionType>(*type)));
     }
   }
   this->checkTypeExactly(node);
@@ -770,14 +788,14 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
-  auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
+  auto &type = this->checkTypeAsExpr(*node.getTargetTypeNode());
   CallableTypes callableTypes(this->typePool.getUnresolvedType());
   if (!type.isOptionType() && !type.isArrayType() && !type.isMapType()) {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool, type)) {
       callableTypes = handle->toCallableTypes();
       node.setHandle(handle);
     } else {
-      this->reportError<UndefinedInit>(node.getTargetTypeNode(), type.getName());
+      this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
     }
   }
   this->checkArgsNode(callableTypes, node.getArgsNode());

@@ -72,3 +72,14 @@ assert $make_pair is
 
 assert $void == $void
 assert $void != $void2
+
+# optional arg
+
+function max(a : Int, b : Int!) : Int {
+   var r = ($b ?? return $a)
+   return $a < $r ? $r : $a
+}
+assert $max is (Int, Int!) -> Int
+assert $max(12) == 12
+assert $max(12, -1) == 12
+assert $max(12, 90) == 90

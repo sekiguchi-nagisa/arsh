@@ -871,7 +871,7 @@ public:
  */
 class NewNode : public WithRtti<Node, NodeKind::New> {
 private:
-  std::unique_ptr<TypeNode> targetTypeNode;
+  std::unique_ptr<TypeNode> targetTypeNode; // normally not null
 
   std::unique_ptr<ArgsNode> argsNode;
 
@@ -889,7 +889,16 @@ public:
       : WithRtti(targetTypeNode->getToken()), targetTypeNode(std::move(targetTypeNode)),
         argsNode(std::make_unique<ArgsNode>(this->getToken())) {}
 
-  TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
+  /**
+   * for optional arguments
+   * @param type
+   */
+  explicit NewNode(const OptionType &type)
+      : WithRtti({0, 0}), argsNode(std::make_unique<ArgsNode>()) {
+    this->setType(type);
+  }
+
+  TypeNode *getTargetTypeNode() const { return this->targetTypeNode.get(); }
 
   ArgsNode &getArgsNode() const { return *this->argsNode; }
 

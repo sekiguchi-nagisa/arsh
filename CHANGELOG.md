@@ -8,6 +8,13 @@
 
 - add ``time`` expression
     - like bash or zsh, ``time [pipeline]``
+- support optional arguments in func, method, constructor call
+    - can omit last argument that types are Option type
+      ```
+      function sum(a : Int, b : Int!) { return $a + ($b ?? 0) }
+      assert $sum(23, 23) == 46
+      assert $sum(34) == 34    # last parameter is Option type
+      ```
 
 #### API
 
