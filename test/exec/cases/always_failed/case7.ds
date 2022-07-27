@@ -4,5 +4,5 @@
 var a = 'ims'
 
 case 'hello'  {
-new Regex ('34') => 34
+new Regex ('34' ,"", 2) => 34
 }

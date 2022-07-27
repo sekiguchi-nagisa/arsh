@@ -997,11 +997,12 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
-//!bind: function $OP_INIT($this : Regex, $str : String, $flag : String) : Regex
+//!bind: function $OP_INIT($this : Regex, $str : String, $flag : Option<String>) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_init);
   auto pattern = LOCAL(1).asStrRef();
-  auto flag = LOCAL(2).asStrRef();
+  auto v = LOCAL(2);
+  auto flag = v.isInvalid() ? "" : v.asStrRef();
   std::string errorStr;
   auto re = PCRE::compile(pattern, flag, errorStr);
   if (!re) {
