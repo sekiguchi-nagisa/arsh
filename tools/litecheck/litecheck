@@ -96,11 +96,11 @@ function _parse_directives(path : String) : [String: [Directive]] {
             if !$line.startsWith(" ") {
                 var prefix = $matched[0]!
                 if !$line.empty() {
-                    $prefix = $prefix.to($prefix.lastIndexOf($line))
+                    $prefix = $prefix.slice(0, $prefix.lastIndexOf($line))
                 }
                 $_error($ln, "invalid directive format, must be start with `$prefix '")
             }
-            $line = $line.from(1) # skip first ' '
+            $line = $line.slice(1) # skip first ' '
             $line :- $_error($ln, "invalid directive format, need non-emtpy string")
 
             var key = $type

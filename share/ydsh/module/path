@@ -42,7 +42,7 @@ function dirname(s : String) : String {
 function tilde(s : String) : String! {
     $s.startsWith('~') || return $s
 
-    var b = $s.from(1)
+    var b = $s.slice(1)
     var r = "$(echo ~$b)"
     return $r == $s ? new String!() : $r
 }

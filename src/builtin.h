@@ -755,24 +755,15 @@ static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
   return sliceImpl(obj, static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex));
 }
 
-//!bind: function slice($this : String, $start : Int, $stop : Int) : String
+//!bind: function slice($this : String, $start : Int, $stop : Option<Int>) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
-  RET(slice(LOCAL(0).asStrRef(), LOCAL(1).asInt(), LOCAL(2).asInt()));
-}
-
-//!bind: function from($this : String, $start : Int) : String
-YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_sliceFrom);
-  auto strObj = LOCAL(0).asStrRef();
-  RET(slice(strObj, LOCAL(1).asInt(), strObj.size()));
-}
-
-//!bind: function to($this : String, $stop : Int) : String
-YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_sliceTo);
-  auto strObj = LOCAL(0).asStrRef();
-  RET(slice(strObj, 0, LOCAL(1).asInt()));
+  auto ref = LOCAL(0).asStrRef();
+  auto start = LOCAL(1).asInt();
+  auto v = LOCAL(2);
+  assert(ref.size() <= StringObject::MAX_SIZE);
+  auto stop = v.isInvalid() ? static_cast<int64_t>(ref.size()) : v.asInt();
+  RET(slice(ref, start, stop));
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
@@ -1426,29 +1417,15 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function slice($this : Array<T0>, $from : Int, $to : Int) : Array<T0>
+//!bind: function slice($this : Array<T0>, $from : Int, $to : Option<Int>) : Array<T0>
 YDSH_METHOD array_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_slice);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto start = LOCAL(1).asInt();
-  auto stop = LOCAL(2).asInt();
+  auto v = LOCAL(2);
+  assert(obj.size() <= ArrayObject::MAX_SIZE);
+  auto stop = v.isInvalid() ? static_cast<int64_t>(obj.size()) : v.asInt();
   RET(slice(obj, start, stop));
-}
-
-//!bind: function from($this : Array<T0>, $from : Int) : Array<T0>
-YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_sliceFrom);
-  auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  auto start = LOCAL(1).asInt();
-  RET(slice(obj, start, obj.getValues().size()));
-}
-
-//!bind: function to($this : Array<T0>, $to : Int) : Array<T0>
-YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_sliceTo);
-  auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  auto stop = LOCAL(1).asInt();
-  RET(slice(obj, 0, stop));
 }
 
 //!bind: function copy($this : Array<T0>) : Array<T0>

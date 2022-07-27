@@ -133,11 +133,7 @@ function %OP_GET($index : Int) : String for String
 
 function charAt($index : Int) : String for String
 
-function slice($start : Int, $stop : Int) : String for String
-
-function from($start : Int) : String for String
-
-function to($stop : Int) : String for String
+function slice($start : Int, $stop : Option<Int>) : String for String
 
 function startsWith($target : String) : Boolean for String
 
@@ -315,11 +311,7 @@ function addAll($value : Array<T0>) : Array<T0> for Array<T0>
 
 function swap($index : Int, $value : T0) : T0 for Array<T0>
 
-function slice($from : Int, $to : Int) : Array<T0> for Array<T0>
-
-function from($from : Int) : Array<T0> for Array<T0>
-
-function to($to : Int) : Array<T0> for Array<T0>
+function slice($from : Int, $to : Option<Int>) : Array<T0> for Array<T0>
 
 function copy() : Array<T0> for Array<T0>
 

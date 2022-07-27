@@ -95,16 +95,16 @@ assert $bb[0]
 assert !$bb[1]
 assert !$bb[2]
 
-assert $bb.from(1) as String == [$false, $false] as String
-assert $bb.from(4).size() == 0
+assert $bb.slice(1) as String == [$false, $false] as String
+assert $bb.slice(4).size() == 0
 
 {
-    var r = [1,2,3].from(3)
+    var r = [1,2,3].slice(3)
     assert $r.empty()
 }
 
-assert [0, 1, 2, 3].to(2) as String == [0, 1] as String
-assert [0].to(-3).size() == 0
+assert [0, 1, 2, 3].slice(0, 2) as String == [0, 1] as String
+assert [0].slice(0, -3).size() == 0
 
 {
     var c = [1]

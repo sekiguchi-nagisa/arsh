@@ -62,6 +62,8 @@
     - ``chars``
     - ``width``
     - iterator
+- **Breaking Change**: remove ``String#to``, ``String#from``, ``Array#to``, ``Array#from`` method
+    - use slice method instead
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``
@@ -72,6 +74,8 @@
     - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 - for optional argument, change last parameter type with Option type in the following builtin methods
     - ``Regex#init``
+    - ``String#slice``
+    - ``Array#slice``
 - now ``String#width`` method can explicity specify east-aisan width
 
 #### API

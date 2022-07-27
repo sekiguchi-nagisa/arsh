@@ -8,7 +8,7 @@ let _cache = [
     'H' : "$(uname -n)",
     's' : $basename($0),
     'u' : $user,
-    'v' : $YDSH_VERSION.to($YDSH_VERSION.lastIndexOf('.')),
+    'v' : $YDSH_VERSION.slice(0, $YDSH_VERSION.lastIndexOf('.')),
     'V' : $YDSH_VERSION,
     '$' : $UID == 0 ? '#' : '$',
 ]
@@ -35,7 +35,7 @@ function renderPrompt(p : String) : String {
             }
             'w' => {
                 if $PWD.startsWith($home) {
-                    $ch = "~" + $PWD.from($home.size())
+                    $ch = "~" + $PWD.slice($home.size())
                 } else {
                     $ch = $PWD
                 }
@@ -94,7 +94,7 @@ prompt() {
     case $1 {
     '-h' | '--help' => return $_usage($STDOUT, $false); 
     else => {
-        if $1.startsWith('+') { echo ${$renderPrompt($1.from(1))}; return 0; }
+        if $1.startsWith('+') { echo ${$renderPrompt($1.slice(1))}; return 0; }
         echo > $STDERR prompt: $1: invalid option;
         return $_usage($STDERR, $true);
     }
