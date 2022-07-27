@@ -9,8 +9,6 @@ typedef Bool = Boolean
 # dummy function for signal handler
 function SIG_DFL($s : Signal) {}
 function SIG_IGN($s : Signal) {}
-## null signal handler
-let SIG_NUL : typeof($SIG_DFL)!
 
 function _DEF_SIGINT($s : Signal) {
     throw new SystemError($s.message());
