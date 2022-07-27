@@ -236,7 +236,7 @@ assert $gca[1] == $invalid.charAt(1)
 assert $gca[2] == $invalid.charAt(2)
 assert $gca[3] == $invalid.charAt(3)
 assert $gca[4] == $invalid.charAt(4)
-assert $invalid.width() == 9
+##assert $invalid.width() == 9
 assert $invalid.width() == 
 { 
     var aa = 0 
