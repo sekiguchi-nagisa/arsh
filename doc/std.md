@@ -321,7 +321,7 @@ function sort() : Array<T0> where T0 : Value_ for Array<T0>
 
 function sortWith($comp : Func<Boolean,[T0,T0]>) : Array<T0> for Array<T0>
 
-function join($delim : String) : String for Array<T0>
+function join($delim : Option<String>) : String for Array<T0>
 
 function indexOf($target : T0) : Int where T0 : Value_ for Array<T0>
 

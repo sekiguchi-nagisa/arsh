@@ -1465,11 +1465,12 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function join($this : Array<T0>, $delim : String) : String
+//!bind: function join($this : Array<T0>, $delim : Option<String>) : String
 YDSH_METHOD array_join(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_join);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  auto delim = LOCAL(1).asStrRef();
+  auto v = LOCAL(1);
+  auto delim = v.isInvalid() ? "" : v.asStrRef();
 
   StrBuilder builder(ctx);
   size_t count = 0;

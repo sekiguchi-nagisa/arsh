@@ -75,6 +75,7 @@
     - ``Regex#init``
     - ``String#slice``
     - ``Array#slice``
+    - ``Array#join``
 - now ``String#width`` method can explicitly specify east-asian width
 
 #### API
