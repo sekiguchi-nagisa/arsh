@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
