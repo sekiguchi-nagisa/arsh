@@ -55,8 +55,7 @@
     - add ``Signals#[]``, ``Signal#get`` methods for get corresponding signal
         - if corresponding signal is not found, ``Signals#[]`` method throw ``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
-        - if specified ``SIG_NUL``, does not set signal handler
-- **Breaking Change**: replace invalid utf8 byte sequence with replacement character (U+FFFD) in the following
+- **Breaking Change**: replace invalid utf8 byte with replacement character (U+FFFD) in the following
   String method
     - ``charAt``
     - ``chars``
@@ -76,7 +75,7 @@
     - ``Regex#init``
     - ``String#slice``
     - ``Array#slice``
-- now ``String#width`` method can explicity specify east-aisan width
+- now ``String#width`` method can explicitly specify east-asian width
 
 #### API
 
@@ -94,7 +93,7 @@
 ### Fixed
 
 - invalid string in ast dump
-- correctly propagate unreachable code error from loaded module
+- not propagate unreachable code error from loaded module
 - incorrect line number after call ``DSState_loadModule`` api
 - not perform file name completion after ``:``
 - broken hex escape sequence handling in dollar string and echo command
