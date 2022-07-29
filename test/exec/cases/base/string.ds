@@ -225,7 +225,7 @@ assert "○".width(2) == 2
 assert "あ".width(1) == 2
 assert "あ".width(2) == 2
 
-## broken encodeed string
+## broken encoded string
 var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
 assert $invalid.count() == 5
 $gca = $invalid.chars()
@@ -248,6 +248,12 @@ assert $invalid.width() ==
     for a in $gca { $aa += $a.width(); }
     $aa
 }
+
+## sanitize
+assert $invalid.sanitize() == $'\x24\u0E33'
+assert $invalid.sanitize("") == $'\x24\u0E33'
+assert $invalid.sanitize($'\uFFFD') == $'\uFFFD\x24\uFFFD\uFFFD\uFFFD\u0E33'
+assert ($'@@\x00' + $invalid + $'\x00#\x00\x00').sanitize() == $'@@\x24\u0E33#'
 
 
 assert("-2147483648".toInt()! == -1 - 2147483647)

@@ -149,6 +149,8 @@ function split($delim : String) : Array<String> for String
 
 function replace($target : String, $rep : String) : String for String
 
+function sanitize($repl : Option<String>) : String for String
+
 function toInt() : Option<Int> for String
 
 function toFloat() : Option<Float> for String

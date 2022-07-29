@@ -865,6 +865,40 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
   RET(buf);
 }
 
+//!bind: function sanitize($this : String, $repl : Option<String>) : String
+YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_sanitize);
+  auto ref = LOCAL(0).asStrRef();
+  auto v = LOCAL(1);
+  auto repl = v.isInvalid() ? "" : v.asStrRef();
+
+  auto ret = DSValue::createStr();
+  auto begin = ref.begin();
+  auto old = begin;
+  for (const auto end = ref.end(); begin != end;) {
+    int codePoint = 0;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(begin, end, codePoint);
+    if (byteSize == 0 || codePoint == 0) { // replace invalid utf8 byte or nul char
+      if (!ret.appendAsStr(ctx, StringRef(old, begin - old)) || !ret.appendAsStr(ctx, repl)) {
+        RET_ERROR;
+      }
+      begin++;
+      old = begin;
+    } else {
+      begin += byteSize;
+    }
+  }
+
+  if (old == ref.begin()) {
+    RET(LOCAL(0));
+  } else {
+    if (!ret.appendAsStr(ctx, StringRef(old, begin - old))) {
+      RET_ERROR;
+    }
+    RET(ret);
+  }
+}
+
 //!bind: function toInt($this : String) : Option<Int>
 YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);

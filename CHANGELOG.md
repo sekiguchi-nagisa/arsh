@@ -16,6 +16,15 @@
       assert $sum(34) == 34    # last parameter is Option type
       ```
 
+#### Builtin
+
+- add builtin signal constants (POSIX.1-1990 standard signal)
+    - ``SIGABRT``, ``SIGALRM``, ``SIGCHLD``, ``SIGCONT``, ``SIGFPE``, ``SIGHUP``,
+    - ``SIGILL``, ``SIGINT``, ``SIGKILL``, ``SIGPIPE``, ``SIGQUIT``, ``SIGSEGV``,
+    - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
+- add ``String#sanitize`` method
+    - replace invalid utf8 bytes and null characters
+
 #### API
 
 - add the following line edit op
@@ -35,7 +44,7 @@
 
 #### Core
 
-- **Breaking Change**: remove signal literal. use signal constants instead (see below)
+- **Breaking Change**: remove signal literal. use signal constants instead
 - **Breaking Change**: cancel code completion when user-defined completer throws an error
 - **Breaking Change**: not allow explicit cast from ``Nothing`` type
 - **Breaking Change**: change operator precedence of ``coproc``
@@ -67,10 +76,6 @@
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``
     - ``FALSE``, ``False``, ``false``
-- add builtin signal constants (POSIX.1-1990 standard signal)
-    - ``SIGABRT``, ``SIGALRM``, ``SIGCHLD``, ``SIGCONT``, ``SIGFPE``, ``SIGHUP``,
-    - ``SIGILL``, ``SIGINT``, ``SIGKILL``, ``SIGPIPE``, ``SIGQUIT``, ``SIGSEGV``,
-    - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 - for optional argument, change last parameter type with Option type in the following builtin methods
     - ``Regex#init``
     - ``String#slice``

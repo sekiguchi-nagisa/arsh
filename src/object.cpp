@@ -380,6 +380,7 @@ DSValue DSValue::createStr(const GraphemeScanner::Result &ret) {
       value.append(buf, bufSize);
     }
   }
+  assert(value.size() <= StringObject::MAX_SIZE);
   return DSValue::createStr(std::move(value));
 }
 
