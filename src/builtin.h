@@ -655,15 +655,18 @@ struct ArrayIndex {
 };
 
 // check index range and get resolved index
-static ArrayIndex resolveIndex(int64_t index, size_t size) {
+static ArrayIndex resolveIndex(int64_t index, size_t size, bool allowSize) {
+  assert(ArrayObject::MAX_SIZE == StringObject::MAX_SIZE);
   assert(size <= ArrayObject::MAX_SIZE);
   index += (index < 0 ? size : 0);
-  bool s = index > -1 && static_cast<size_t>(index) < size;
+  bool s = (index > -1 && static_cast<size_t>(index) < size) ||
+           (allowSize && static_cast<size_t>(index) == size);
   return {static_cast<size_t>(index), s};
 }
 
-static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size) {
-  auto ret = resolveIndex(index, size);
+static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size,
+                               bool allowSize = false) {
+  auto ret = resolveIndex(index, size, allowSize);
   if (!ret) {
     std::string message("size is ");
     message += std::to_string(size);
@@ -1307,7 +1310,7 @@ YDSH_METHOD array_get2(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   size_t size = obj.getValues().size();
   auto index = LOCAL(1).asInt();
-  auto ret = resolveIndex(index, size);
+  auto ret = resolveIndex(index, size, false);
   if (!ret) {
     RET(DSValue::createInvalid());
   }
@@ -1359,15 +1362,14 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
 
 static bool array_insertImpl(DSState &ctx, int64_t index, const DSValue &v) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  size_t size0 = obj.getValues().size();
-  if (size0 == ArrayObject::MAX_SIZE) {
+  size_t size = obj.getValues().size();
+  if (size == ArrayObject::MAX_SIZE) {
     raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
     return false;
   }
 
-  ArrayIndex ret{static_cast<unsigned int>(index), true};
-  auto size = static_cast<int64_t>(size0);
-  if (index != size && !(ret = resolveIndex(ctx, index, size0))) {
+  auto ret = resolveIndex(ctx, index, size, true);
+  if (!ret) {
     return false;
   }
   obj.refValues().insert(obj.refValues().begin() + ret.index, v);
