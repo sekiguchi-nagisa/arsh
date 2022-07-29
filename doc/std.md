@@ -139,7 +139,7 @@ function startsWith($target : String) : Boolean for String
 
 function endsWith($target : String) : Boolean for String
 
-function indexOf($target : String) : Int for String
+function indexOf($target : String, $index : Option<Int>) : Int for String
 
 function lastIndexOf($target : String) : Int for String
 
@@ -325,7 +325,7 @@ function sortWith($comp : Func<Boolean,[T0,T0]>) : Array<T0> for Array<T0>
 
 function join($delim : Option<String>) : String for Array<T0>
 
-function indexOf($target : T0) : Int where T0 : Value_ for Array<T0>
+function indexOf($target : T0, $index : Option<Int>) : Int where T0 : Value_ for Array<T0>
 
 function lastIndexOf($target : T0) : Int where T0 : Value_ for Array<T0>
 

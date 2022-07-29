@@ -112,6 +112,20 @@ assert("".indexOf("") == 0)
 assert("".indexOf($'\x00') == -1)
 assert("".indexOf("aaa") == -1)
 
+assert "12341234".indexOf("1", 0) == 0
+assert "12341234".indexOf("1", 1) == 4
+assert "12341234".indexOf("1", 8) == -1
+assert "12341234".indexOf("2", -4) == 5
+assert "12341234".indexOf("23", 0) == 1
+assert "12341234".indexOf("23", 2) == 5
+assert("".indexOf("", 0) == 0)
+var ex = 34 as Any
+try { "1234".indexOf('1', 5); } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+$ex = 34
+try { "1234".indexOf('1', -5); } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+
 assert($a.lastIndexOf("l") == 9)
 assert("00000".lastIndexOf("00") == 3)
 assert("00000".lastIndexOf("6") == -1)

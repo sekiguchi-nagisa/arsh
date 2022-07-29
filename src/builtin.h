@@ -785,12 +785,14 @@ YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
   RET_BOOL(left.endsWith(right));
 }
 
-//!bind: function indexOf($this : String, $target : String) : Int
+//!bind: function indexOf($this : String, $target : String, $index : Option<Int>) : Int
 YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_indexOf);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
-  auto index = left.indexOf(right);
+  auto v = LOCAL(2);
+  auto offset = TRY(resolveIndex(ctx, v.isInvalid() ? 0 : v.asInt(), left.size(), true));
+  auto index = left.find(right, offset.index);
   assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
   auto actual = static_cast<ssize_t>(index); // for integer promotion
   RET(DSValue::createInt(static_cast<int64_t>(actual)));
@@ -1546,15 +1548,18 @@ YDSH_METHOD array_map(RuntimeContext &ctx) {
   RET(ret);
 }*/
 
-//!bind: function indexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
+//!bind: function indexOf($this : Array<T0>, $target : T0, $index : Option<Int>) : Int where T0 : Value_
 YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_indexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
+  auto v = LOCAL(2);
   size_t size = arrayObj.size();
   assert(size <= ArrayObject::MAX_SIZE);
+  auto offset = TRY(resolveIndex(ctx, v.isInvalid() ? 0 : v.asInt(), size, true));
+
   int64_t index = -1;
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = offset.index; i < size; i++) {
     if (arrayObj.getValues()[i].equals(value)) {
       index = static_cast<int64_t>(i);
       break;

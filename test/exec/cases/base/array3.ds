@@ -13,6 +13,20 @@ assert [2,34,-18].indexOf(343) == -1
 assert [3,2,34,2,-18].indexOf(2) == 1
 assert new [String]().indexOf('34') == -1
 
+assert [3,2,34,2,-18].indexOf(2, 0) == 1
+assert [3,2,34,2,-18].indexOf(2, 1) == 1
+assert [3,2,34,2,-18].indexOf(2, 2) == 3
+assert [3,2,34,2,-18].indexOf(2, 5) == -1
+assert [3,2,34,2,-18].indexOf(2, -2) == 3
+assert [3,2,34,2,-18].indexOf(2, -5) == 1
+
+var ex = 34 as Any
+try { [3,2,34,2,-18].indexOf(2, 6); } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+$ex = 34
+try { [3,2,34,2,-18].indexOf(2, -6); } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+
 # lastIndexOf
 assert [2,34,-18].lastIndexOf(34) == 1
 assert [2,34,-18].lastIndexOf(2) == 0
