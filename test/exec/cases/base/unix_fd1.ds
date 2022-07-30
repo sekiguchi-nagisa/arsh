@@ -1,5 +1,8 @@
 #$test($status = 0)
 
+assert $STDIN is UnixFD
+assert $STDIN is FD
+
 assert $STDIN && $STDOUT && $STDERR
 assert $STDIN as String == "/dev/fd/0"
 assert $STDOUT as String == "/dev/fd/1"
