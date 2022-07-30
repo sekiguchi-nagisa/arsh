@@ -247,13 +247,7 @@ public:
 
   bool isJobControl() const { return hasFlag(this->runtimeOption, RuntimeOption::MONITOR); }
 
-  bool isRootShell() const {
-    auto shellpid = this->getGlobal(BuiltinVarOffset::SHELL_PID).asInt();
-    auto pid = this->getGlobal(BuiltinVarOffset::PID).asInt();
-    return shellpid == pid;
-  }
-
-  bool isForeground() const { return this->isJobControl() && this->isRootShell(); }
+  bool isRootShell() const { return this->subshellLevel == 0; }
 
   /**
    *
@@ -263,7 +257,7 @@ public:
    * if error, return -1 and set errno
    */
   int tryToBeForeground() const {
-    if (this->isForeground()) {
+    if (this->isJobControl() && this->isRootShell()) {
       return beForeground(0);
     }
     return 1;
