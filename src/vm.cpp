@@ -418,9 +418,9 @@ bool VM::forkAndEval(DSState &state) {
 
   // set in/out pipe
   PipeSet pipeset(forkKind);
-  const bool rootShell = state.isRootShell();
-  pid_t pgid = rootShell ? 0 : getpgid(0);
-  auto proc = Proc::fork(state, pgid, needForeground(forkKind) && rootShell);
+  const bool foreground = state.isRootShell() && needForeground(forkKind);
+  const pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
+  auto proc = Proc::fork(state, pgid, foreground);
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
     tryToClose(pipeset.out[WRITE_PIPE]);
@@ -1017,12 +1017,13 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
 
   // fork
   Proc childs[procSize];
-  const bool rootShell = state.isRootShell();
-  pid_t pgid = rootShell ? 0 : getpgid(0);
+  const bool foreground = state.isRootShell() && needForeground(forkKind);
+  pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
   Proc proc; // NOLINT
 
   unsigned int procIndex;
-  for (procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0;
+  for (procIndex = 0;
+       procIndex < procSize && (proc = Proc::fork(state, pgid, foreground)).pid() > 0;
        procIndex++) {
     childs[procIndex] = proc;
     if (pgid == 0) {

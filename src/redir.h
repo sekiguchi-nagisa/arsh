@@ -56,9 +56,10 @@ inline unsigned int getChangedFD(RedirOP op) {
 #define GEN_CASE(ENUM, BITS)                                                                       \
   case RedirOP::ENUM:                                                                              \
     return BITS;
-    EACH_RedirOP(GEN_CASE)
+  EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
-        case RedirOP::NOP : break;
+      case RedirOP::NOP:
+    break;
   }
   return 0;
 }
@@ -173,7 +174,20 @@ struct PipeSet {
 };
 
 inline bool needForeground(ForkKind kind) {
-  return kind == ForkKind::ARRAY || kind == ForkKind::STR;
+  switch (kind) {
+  case ForkKind::NONE:
+  case ForkKind::STR:
+  case ForkKind::ARRAY:
+  case ForkKind::PIPE_FAIL:
+    return true;
+  case ForkKind::IN_PIPE:
+  case ForkKind::OUT_PIPE:
+  case ForkKind::COPROC:
+  case ForkKind::JOB:
+  case ForkKind::DISOWN:
+    return false;
+  }
+  return false; // unreachable. for suppress gcc warning
 }
 
 inline void flushStdFD() {
