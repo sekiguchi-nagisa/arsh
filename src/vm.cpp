@@ -429,7 +429,28 @@ static bool needForeground(ForkKind kind) {
   return false; // unreachable. for suppress gcc warning
 }
 
-static pid_t resolvePGID(bool rootShell, ForkKind) { return rootShell ? 0 : getpgid(0); }
+/**
+ * for `setpgid(pid, pgid)`
+ *
+ * @param rootShell
+ * @return
+ * if created child process should be process group leader (create job), return 0
+ * otherwise, return its parent process group id (default)
+ */
+static pid_t resolvePGID(bool rootShell, ForkKind kind) {
+  if (rootShell) {
+    //    if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
+    //      /**
+    //       * in root shell, created child process should be process group leader
+    //       * (except for command substitution)
+    //       */
+    //      return 0;
+    //    }
+    (void)kind;
+    return 0;
+  }
+  return getpgid(0);
+}
 
 bool VM::forkAndEval(DSState &state) {
   const auto forkKind = static_cast<ForkKind>(read8(GET_CODE(state), state.stack.pc()));

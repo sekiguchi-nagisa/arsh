@@ -76,10 +76,10 @@ private:
    */
   unsigned char exitStatus_;
 
+  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
+
 public:
   Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
-
-  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
 
   pid_t pid() const { return this->pid_; }
 
@@ -123,16 +123,43 @@ public:
    */
   int send(int sigNum) const;
 
+  enum class Op : unsigned char {
+    JOB_CONTROL = 1u << 0u, // enable job control in child process
+    FOREGROUND = 1u << 1u,  // child process should be foreground-job
+  };
+
   /**
    * after fork, reset signal setting in child process.
    * if Proc#pid() is -1, fork failed due to EAGAIN.
    * @param st
    * @param pgid
+   * PGID of created child process. only affect if job control is enabled
    * @param foreground
+   * if true, created child process should be foreground
+   * only affect if job control is enabled
    * @return
    */
   static Proc fork(DSState &st, pid_t pgid, bool foreground);
+
+  /**
+   * create new child process.
+   * after fork, reset user-defined signal handler setting in child process.
+   * @param st
+   * @param pgid
+   * PGID of created child process. only affect if JOB_CONTROL is set
+   * @param op
+   * if set JOB_CONTROL, enable job control in created child process and
+   * reset job control signal setting.
+   * if set FOREGROUND, created child process should be foreground.
+   * (only affect if JOB_CONTROL is set)
+   * @return
+   * if Proc#pid() is -1, fork failed due to EAGAIN.
+   */
+  static Proc fork(DSState &st, pid_t pgid, Op op);
 };
+
+template <>
+struct allow_enum_bitop<Proc::Op> : std::true_type {};
 
 class ProcTable;
 

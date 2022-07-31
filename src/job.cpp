@@ -26,6 +26,17 @@
 namespace ydsh {
 
 Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
+  Op op{};
+  if (foreground) {
+    setFlag(op, Op::FOREGROUND);
+  }
+  if (st.isJobControl()) {
+    setFlag(op, Op::JOB_CONTROL);
+  }
+  return fork(st, pgid, op);
+}
+
+Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
   SignalGuard guard;
 
   // flush standard stream due to prevent mixing io buffer
@@ -38,9 +49,9 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
 
   pid_t pid = ::fork();
   if (pid == 0) { // child process
-    if (st.isJobControl()) {
+    if (hasFlag(op, Op::JOB_CONTROL)) {
       setpgid(0, pgid);
-      if (foreground) {
+      if (hasFlag(op, Op::FOREGROUND)) {
         beForeground(0);
       }
       setJobControlSignalSetting(st, false);
@@ -64,9 +75,9 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
 
     st.subshellLevel++;
   } else if (pid > 0) {
-    if (st.isJobControl()) {
+    if (hasFlag(op, Op::JOB_CONTROL)) {
       setpgid(pid, pgid);
-      if (foreground) {
+      if (hasFlag(op, Op::FOREGROUND)) {
         beForeground(pid);
       }
     }
@@ -74,7 +85,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
   return Proc(pid);
 }
 
-//#ifdef USE_LOGGING
+// #ifdef USE_LOGGING
 static const char *toString(WaitOp op) {
   const char *str = nullptr;
   switch (op) {
@@ -87,7 +98,7 @@ static const char *toString(WaitOp op) {
   }
   return str;
 }
-//#endif
+// #endif
 
 WaitResult waitForProc(pid_t pid, WaitOp op) {
   int option = 0;
