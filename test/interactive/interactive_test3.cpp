@@ -13,6 +13,15 @@ TEST_F(InteractiveTest, ctrlc1) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+static std::string promptAfterCtrlC(const std::string &prompt) {
+  std::string value;
+  if (platform::platform() != platform::PlatformType::CYGWIN) {
+    value += "^C%\n";
+  }
+  value += prompt;
+  return value;
+}
+
 TEST_F(InteractiveTest, ctrlc2) {
   this->invoke("--quiet", "--norc");
 
@@ -23,12 +32,7 @@ TEST_F(InteractiveTest, ctrlc2) {
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
-
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
@@ -42,11 +46,7 @@ TEST_F(InteractiveTest, ctrlc3) {
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
@@ -67,11 +67,7 @@ SystemError: %s
 )",
                            strerror(EINTR), strsignal(SIGINT));
 
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -85,11 +81,7 @@ TEST_F(InteractiveTest, ctrlc5) {
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
@@ -113,11 +105,7 @@ SystemError: glob expansion is canceled, caused by `%s'
 )",
                            strerror(EINTR));
 
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -135,11 +123,7 @@ SystemError: brace expansion is canceled, caused by `%s'
 )",
                            strerror(EINTR));
 
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] { this->expect(PROMPT, err); }));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] { this->expect("^C%\n" + PROMPT, err); }));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -159,11 +143,7 @@ SystemError: wait failed, caused by `%s'
 )",
                            strerror(EINTR));
 
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -179,11 +159,7 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
 
   std::string err = strsignal(SIGINT);
   err += "\n";
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
-  } else {
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
-  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
