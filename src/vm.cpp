@@ -412,6 +412,25 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
   return true;
 }
 
+static bool needForeground(ForkKind kind) {
+  switch (kind) {
+  case ForkKind::NONE:
+  case ForkKind::STR:
+  case ForkKind::ARRAY:
+  case ForkKind::PIPE_FAIL:
+    return true;
+  case ForkKind::IN_PIPE:
+  case ForkKind::OUT_PIPE:
+  case ForkKind::COPROC:
+  case ForkKind::JOB:
+  case ForkKind::DISOWN:
+    return false;
+  }
+  return false; // unreachable. for suppress gcc warning
+}
+
+static pid_t resolvePGID(bool rootShell, ForkKind) { return rootShell ? 0 : getpgid(0); }
+
 bool VM::forkAndEval(DSState &state) {
   const auto forkKind = static_cast<ForkKind>(read8(GET_CODE(state), state.stack.pc()));
   const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
@@ -419,7 +438,7 @@ bool VM::forkAndEval(DSState &state) {
   // set in/out pipe
   PipeSet pipeset(forkKind);
   const bool foreground = state.isRootShell() && needForeground(forkKind);
-  const pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
+  const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   auto proc = Proc::fork(state, pgid, foreground);
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
@@ -647,8 +666,8 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     fatal_perror("fcntl error");
   }
 
-  bool rootShell = state.isRootShell();
-  pid_t pgid = rootShell ? 0 : getpgid(0);
+  const bool rootShell = state.isRootShell();
+  const pid_t pgid = resolvePGID(rootShell, ForkKind::NONE);
   auto proc = Proc::fork(state, pgid, rootShell);
   if (proc.pid() == -1) {
     raiseCmdError(state, argv[0], EAGAIN);
@@ -1018,7 +1037,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
   // fork
   Proc childs[procSize];
   const bool foreground = state.isRootShell() && needForeground(forkKind);
-  pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
+  pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   Proc proc; // NOLINT
 
   unsigned int procIndex;

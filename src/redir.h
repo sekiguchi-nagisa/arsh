@@ -22,7 +22,6 @@
 
 #include <cstdio>
 
-#include "constant.h"
 #include "job.h"
 #include "object.h"
 
@@ -172,23 +171,6 @@ struct PipeSet {
     tryToClose(this->out);
   }
 };
-
-inline bool needForeground(ForkKind kind) {
-  switch (kind) {
-  case ForkKind::NONE:
-  case ForkKind::STR:
-  case ForkKind::ARRAY:
-  case ForkKind::PIPE_FAIL:
-    return true;
-  case ForkKind::IN_PIPE:
-  case ForkKind::OUT_PIPE:
-  case ForkKind::COPROC:
-  case ForkKind::JOB:
-  case ForkKind::DISOWN:
-    return false;
-  }
-  return false; // unreachable. for suppress gcc warning
-}
 
 inline void flushStdFD() {
   fflush(stdin);
