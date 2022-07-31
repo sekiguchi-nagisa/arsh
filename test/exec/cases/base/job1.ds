@@ -67,6 +67,7 @@ assert $j.status(0)! == 3
 
 var j2 = true &
 $j = {
+ sleep 0.5
  assert !$j2.pid(0)
  assert !$j2.poll()
  var s = try { $j2.wait(); } catch $ex { assert $ex is SystemError; 100; }
