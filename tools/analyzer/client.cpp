@@ -143,7 +143,7 @@ void Client::run(const std::vector<ClientRequest> &requests) {
     if (req.msec > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
     }
-    int timeout = index == size - 1 ? 1000 : 50;
+    int timeout = index == size - 1 ? 500 : 50;
     while (waitReply(this->transport.getInput().get(), timeout)) {
       auto ret = this->recv();
       if (!ret.hasValue()) {
