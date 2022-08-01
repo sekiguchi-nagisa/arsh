@@ -79,11 +79,11 @@ __cmd() {
     case $type {
     '--expr' => $eachEcho(['new', '"', '$(', '>(', '@(', '<(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while', 'function',
-                           'break', 'continue', 'return', 
+                           'break', 'continue', 'return', 'time',
                            '!', '+', '-', 'throw', 'coproc'])
     '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while', 'function',
-                           'break', 'continue', 'return',
+                           'break', 'continue', 'return', 'time',
                            '!', '+', '-', 'throw', 'coproc',
 
                             'assert', 'defer',
