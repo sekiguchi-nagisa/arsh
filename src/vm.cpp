@@ -456,7 +456,7 @@ static pid_t resolvePGID(bool rootShell, ForkKind kind) {
   return getpgid(0);
 }
 
-static Proc::Op resolveForkOp(const DSState &st, ForkKind kind) {
+static Proc::Op resolveProcOp(const DSState &st, ForkKind kind) {
   Proc::Op op{};
   if (st.isJobControl()) {
     if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
@@ -479,7 +479,7 @@ bool VM::forkAndEval(DSState &state) {
   // set in/out pipe
   PipeSet pipeset(forkKind);
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
-  auto proc = Proc::fork(state, pgid, resolveForkOp(state, forkKind));
+  auto proc = Proc::fork(state, pgid, resolveProcOp(state, forkKind));
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
     tryToClose(pipeset.out[WRITE_PIPE]);
@@ -708,7 +708,8 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
 
   const bool rootShell = state.isRootShell();
   const pid_t pgid = resolvePGID(rootShell, ForkKind::NONE);
-  auto proc = Proc::fork(state, pgid, rootShell);
+  const auto procOp = resolveProcOp(state, ForkKind::NONE);
+  auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() == -1) {
     raiseCmdError(state, argv[0], EAGAIN);
     return false;
@@ -1076,7 +1077,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
 
   // fork
   Proc childs[procSize];
-  const auto procOp = resolveForkOp(state, forkKind);
+  const auto procOp = resolveProcOp(state, forkKind);
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
   pid_t pgid = resolvePGID(state.isRootShell(), forkKind);

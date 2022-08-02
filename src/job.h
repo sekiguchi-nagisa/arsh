@@ -129,19 +129,6 @@ public:
   };
 
   /**
-   * after fork, reset signal setting in child process.
-   * if Proc#pid() is -1, fork failed due to EAGAIN.
-   * @param st
-   * @param pgid
-   * PGID of created child process. only affect if job control is enabled
-   * @param foreground
-   * if true, created child process should be foreground
-   * only affect if job control is enabled
-   * @return
-   */
-  static Proc fork(DSState &st, pid_t pgid, bool foreground);
-
-  /**
    * create new child process.
    * after fork, reset user-defined signal handler setting in child process.
    * @param st

@@ -360,7 +360,7 @@ struct JobTableTest : public VMTest {
 
   template <typename Func>
   Job newJob(Func func) {
-    auto proc = Proc::fork(*this->state, 0, false);
+    auto proc = Proc::fork(*this->state, 0, Proc::Op::JOB_CONTROL);
     if (proc.pid() == 0) {
       int s = func();
       exit(s);
@@ -370,7 +370,7 @@ struct JobTableTest : public VMTest {
 
   template <typename Func>
   Job newAttactedJob(Func func) {
-    auto proc = Proc::fork(*this->state, 0, false);
+    auto proc = Proc::fork(*this->state, 0, Proc::Op::JOB_CONTROL);
     if (proc.pid() == 0) {
       int s = func();
       exit(s);

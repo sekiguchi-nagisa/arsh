@@ -25,17 +25,6 @@
 
 namespace ydsh {
 
-Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
-  Op op{};
-  if (foreground) {
-    setFlag(op, Op::FOREGROUND);
-  }
-  if (st.isJobControl()) {
-    setFlag(op, Op::JOB_CONTROL);
-  }
-  return fork(st, pgid, op);
-}
-
 Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
   SignalGuard guard;
 
