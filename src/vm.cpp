@@ -268,6 +268,9 @@ static DSValue readAsStr(int fd) {
     char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+      if (errno == EINTR) {
+        DSState::clearPendingSignal(SIGINT); // ignore SIGINT
+      }
       continue;
     }
     if (readSize <= 0) {
@@ -294,6 +297,9 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
     char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+      if (errno == EINTR) {
+        DSState::clearPendingSignal(SIGINT); // ignore SIGINT
+      }
       continue;
     }
     if (readSize <= 0) {
@@ -439,17 +445,31 @@ static bool needForeground(ForkKind kind) {
  */
 static pid_t resolvePGID(bool rootShell, ForkKind kind) {
   if (rootShell) {
-    //    if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
-    //      /**
-    //       * in root shell, created child process should be process group leader
-    //       * (except for command substitution)
-    //       */
-    //      return 0;
-    //    }
-    (void)kind;
-    return 0;
+    if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
+      /**
+       * in root shell, created child process should be process group leader
+       * (except for command substitution)
+       */
+      return 0;
+    }
   }
   return getpgid(0);
+}
+
+static Proc::Op resolveForkOp(const DSState &st, ForkKind kind) {
+  Proc::Op op{};
+  if (st.isJobControl()) {
+    if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
+      /**
+       * in command substitution, always disable JOB_CONTROL
+       */
+      setFlag(op, Proc::Op::JOB_CONTROL);
+    }
+  }
+  if (st.isRootShell() && needForeground(kind)) {
+    setFlag(op, Proc::Op::FOREGROUND);
+  }
+  return op;
 }
 
 bool VM::forkAndEval(DSState &state) {
@@ -458,9 +478,8 @@ bool VM::forkAndEval(DSState &state) {
 
   // set in/out pipe
   PipeSet pipeset(forkKind);
-  const bool foreground = state.isRootShell() && needForeground(forkKind);
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
-  auto proc = Proc::fork(state, pgid, foreground);
+  auto proc = Proc::fork(state, pgid, resolveForkOp(state, forkKind));
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
     tryToClose(pipeset.out[WRITE_PIPE]);
@@ -1057,13 +1076,12 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
 
   // fork
   Proc childs[procSize];
-  const bool foreground = state.isRootShell() && needForeground(forkKind);
+  const auto procOp = resolveForkOp(state, forkKind);
   pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   Proc proc; // NOLINT
 
   unsigned int procIndex;
-  for (procIndex = 0;
-       procIndex < procSize && (proc = Proc::fork(state, pgid, foreground)).pid() > 0;
+  for (procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, procOp)).pid() > 0;
        procIndex++) {
     childs[procIndex] = proc;
     if (pgid == 0) {

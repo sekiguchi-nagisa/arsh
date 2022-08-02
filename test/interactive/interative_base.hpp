@@ -2,6 +2,9 @@
 #ifndef YDSH_TEST_INTERATIVE_BASE_HPP
 #define YDSH_TEST_INTERATIVE_BASE_HPP
 
+#include <chrono>
+#include <thread>
+
 #include "gtest/gtest.h"
 
 #include "../../tools/platform/platform.h"
@@ -23,6 +26,7 @@ using namespace ydsh;
 #define CTRL_C "\x03"
 #define CTRL_D "\x04"
 #define CTRL_F "\x06"
+#define CTRL_Z "\x1A"
 
 #define UP "\x1b[A"
 #define DOWN "\x1b[B"

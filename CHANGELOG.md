@@ -55,6 +55,7 @@
     ```
     - also perform file name completion after ``=``
     - except for redirection target and source path
+- **Breaking Change**: always disable job-control in command substitution
 - escape unprintable character when throw some errors
 
 #### Builtin

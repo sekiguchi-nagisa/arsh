@@ -163,6 +163,91 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
+TEST_F(InteractiveTest, ctrlz1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("sh -c 'while true; do true; done'");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "sh -c 'while true; do true; done'\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("^Z%\n" + PROMPT));
+
+  // send CTRL_C, but already stopped.
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  // resume and kill
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, ctrlz2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  const char *line = "var a = $(while(true){})";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("^Z"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // send 'echo hello', but still wait output (not stopped)
+  this->sendLine("echo hello");
+  ASSERT_NO_FATAL_FAILURE(this->expect("echo hello\n"));
+
+  // send CTRL_C and terminated
+  this->send(CTRL_C);
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, ctrlz3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // launch new ydsh (new process group)
+  this->sendLine("eval $YDSH_BIN --quiet --norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "eval $YDSH_BIN --quiet --norc\n" + PROMPT));
+
+  const char *line = "var a = $(while(true){})";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("^Z"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // send 'echo hello', but still wait output (not stopped)
+  this->sendLine("echo hello");
+  ASSERT_NO_FATAL_FAILURE(this->expect("echo hello\n"));
+
+  // send CTRL_C and terminated
+  this->send(CTRL_C);
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
