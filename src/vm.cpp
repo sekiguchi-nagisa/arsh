@@ -1077,11 +1077,15 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
   // fork
   Proc childs[procSize];
   const auto procOp = resolveForkOp(state, forkKind);
+  auto procOpRemain = procOp;
+  unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
   pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   Proc proc; // NOLINT
 
   unsigned int procIndex;
-  for (procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, procOp)).pid() > 0;
+  for (procIndex = 0;
+       procIndex < procSize &&
+       (proc = Proc::fork(state, pgid, procIndex == 0 ? procOp : procOpRemain)).pid() > 0;
        procIndex++) {
     childs[procIndex] = proc;
     if (pgid == 0) {
