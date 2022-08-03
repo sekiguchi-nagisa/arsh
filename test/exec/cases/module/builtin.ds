@@ -1,6 +1,9 @@
 
 source ../../../../share/ydsh/completion/builtin
 
+importenv PATH
+$PATH = "/usr/bin:/bin:"
+
 # help
 assert diff <(complete 'help ') <(help | cut -d ' ' -f 1)
 assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
