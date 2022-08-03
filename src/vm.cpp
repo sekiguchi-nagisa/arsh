@@ -262,18 +262,19 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
 
 /* for substitution */
 
-static DSValue readAsStr(int fd) {
+static bool readAsStr(DSState &state, int fd, DSValue &ret) {
   std::string str;
   while (true) {
     char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
-    if (readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-      if (errno == EINTR) {
-        DSState::clearPendingSignal(SIGINT); // ignore SIGINT
-      }
+    if (readSize == -1 && errno == EAGAIN) {
       continue;
     }
     if (readSize <= 0) {
+      if (readSize < 0) {
+        raiseSystemError(state, errno, "command substitution failed");
+        return false;
+      }
       break;
     }
     str.append(buf, readSize);
@@ -283,10 +284,11 @@ static DSValue readAsStr(int fd) {
   for (; !str.empty() && str.back() == '\n'; str.pop_back())
     ;
 
-  return DSValue::createStr(std::move(str));
+  ret = DSValue::createStr(std::move(str));
+  return true;
 }
 
-static DSValue readAsStrArray(const DSState &state, int fd) {
+static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
   auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   unsigned int skipCount = 1;
   std::string str;
@@ -296,13 +298,14 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
   while (true) {
     char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
-    if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
-      if (errno == EINTR) {
-        DSState::clearPendingSignal(SIGINT); // ignore SIGINT
-      }
+    if (readSize == -1 && errno == EAGAIN) {
       continue;
     }
     if (readSize <= 0) {
+      if (readSize < 0) {
+        raiseSystemError(state, errno, "command substitution failed");
+        return false;
+      }
       break;
     }
 
@@ -337,7 +340,8 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
     array.append(DSValue::createStr(std::move(str))); // FIXME: checl array size limit
   }
 
-  return obj;
+  ret = std::move(obj);
+  return true;
 }
 
 static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
@@ -490,19 +494,22 @@ bool VM::forkAndEval(DSState &state) {
     case ForkKind::STR:
     case ForkKind::ARRAY: {
       tryToClose(pipeset.in[WRITE_PIPE]);
-      const bool isStr = forkKind == ForkKind::STR;
-      obj =
-          isStr ? readAsStr(pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
-      auto waitOp =
-          state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+      bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
+                                           : readAsStrArray(state, pipeset.out[READ_PIPE], obj);
+      auto waitOp = !ret                                          ? WaitOp::NONBLOCKING
+                    : state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED
+                                                                  : WaitOp::BLOCKING;
       int status = proc.wait(waitOp); // wait exit
       int errNum = errno;
       tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
       }
-      state.setExitStatus(status);
       state.tryToBeForeground();
+      if (!ret) {
+        DSState::clearPendingSignal(SIGINT); // always clear SIGINT
+        return false;
+      }
       if (status < 0) {
         raiseSystemError(state, errNum, "wait failed");
         return false;
@@ -514,6 +521,7 @@ bool VM::forkAndEval(DSState &state) {
         raiseError(state, TYPE::ExecError, std::move(message), status);
         return false;
       }
+      state.setExitStatus(status);
       break;
     }
     default:

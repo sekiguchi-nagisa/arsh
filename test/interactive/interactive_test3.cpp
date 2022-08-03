@@ -193,7 +193,7 @@ TEST_F(InteractiveTest, ctrlz2) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  const char *line = "var a = $(while(true){})";
+  const char *line = "var a = \"$(while(true){})\"";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -209,10 +209,14 @@ TEST_F(InteractiveTest, ctrlz2) {
 
   // send CTRL_C and terminated
   this->send(CTRL_C);
-  std::string err = strsignal(SIGINT);
-  err += "\n";
+
+  std::string err = format(R"([runtime error]
+SystemError: command substitution failed, caused by `%s'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
 TEST_F(InteractiveTest, ctrlz3) {
@@ -240,12 +244,16 @@ TEST_F(InteractiveTest, ctrlz3) {
 
   // send CTRL_C and terminated
   this->send(CTRL_C);
-  std::string err = strsignal(SIGINT);
-  err += "\n";
+
+  std::string err = format(R"([runtime error]
+SystemError: command substitution failed, caused by `%s'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
 int main(int argc, char **argv) {

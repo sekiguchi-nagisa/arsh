@@ -55,7 +55,10 @@
     ```
     - also perform file name completion after ``=``
     - except for redirection target and source path
-- **Breaking Change**: always disable job-control in command substitution
+- **Breaking Change**: change command substitution behavior
+    - always disable job-control in command substitution
+    - propagate IO error as ``SystemError``
+    - cancel command substitution by SIGINT
 - escape unprintable character when throw some errors
 
 #### Builtin
