@@ -2,7 +2,7 @@
 
 TEST_F(InteractiveTest, exit) {
   this->invoke("--quiet", "--norc");
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->expect(PROMPT); }));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 30", 30, WaitStatus::EXITED));
 }
 
@@ -321,7 +321,7 @@ TEST_F(InteractiveTest, readAfterLastPipe) {
 TEST_F(InteractiveTest, printStackTop) {
   this->invoke("--quiet", "--norc");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->expect(PROMPT); }));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
       this->withTimeout(300, [&] { this->sendLineAndExpect("34|$false", ": Boolean = false"); }));
   ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->sendLineAndExpect("34|true"); }));

@@ -3,11 +3,10 @@
 TEST_F(InteractiveTest, ctrld1) {
   this->invoke("--norc");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] {
-    std::string re = "ydsh, version .+, build by .+\nCopy.+\nydsh-.+";
-    re += (getuid() == 0 ? "# " : "\\$ ");
-    this->expectRegex(re);
-  }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  std::string re = "ydsh, version .+, build by .+\nCopy.+\nydsh-.+";
+  re += (getuid() == 0 ? "# " : "\\$ ");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(re););
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -78,7 +77,8 @@ TEST_F(InteractiveTest, history1) {
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&] { this->expect(PROMPT); }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
@@ -110,7 +110,8 @@ TEST_F(InteractiveTest, history2) {
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&] { this->expect(PROMPT); }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
@@ -137,7 +138,8 @@ TEST_F(InteractiveTest, history3) {
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&] { this->expect(PROMPT); }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
@@ -171,7 +173,8 @@ TEST_F(InteractiveTest, history4) {
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&] { this->expect(PROMPT); }));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
