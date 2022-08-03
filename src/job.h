@@ -504,7 +504,7 @@ private:
    * @return
    * return corresponding proc
    */
-  std::pair<Job, unsigned int> updateProcState(WaitResult ret);
+  std::pair<Job, unsigned int> updateProcState(WaitResult ret, bool showSignal);
 
   /**
    * not directly use it

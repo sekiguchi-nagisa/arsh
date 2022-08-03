@@ -360,7 +360,7 @@ void JobTable::waitForAny() {
     if (ret.pid == -1) {
       break;
     }
-    this->updateProcState(ret);
+    this->updateProcState(ret, false);
   }
   this->removeTerminatedJobs();
 }
@@ -413,7 +413,7 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
     if (ret.pid == -1) {
       return -1;
     }
-    auto pair = this->updateProcState(ret);
+    auto pair = this->updateProcState(ret, true);
     if (!job) {
       return 0;
     } else if (pair.first && pair.first == job) {
@@ -464,13 +464,13 @@ JobTable::ConstEntryIter JobTable::findIter(unsigned int jobId) const {
   return this->jobs.end();
 }
 
-std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
+std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret, bool showSignal) {
   if (ProcTable::Entry * entry; (entry = this->procTable.findProc(ret.pid))) {
     assert(!entry->isDeleted());
     auto iter = this->findIter(entry->jobId());
     assert(iter != this->jobs.end());
     auto &job = *iter;
-    bool showSignal = entry->procOffset() == job->getProcSize() - 1;
+    showSignal = entry->procOffset() == job->getProcSize() - 1 && showSignal;
     auto &proc = job->procs[entry->procOffset()];
     proc.updateState(ret, showSignal);
     if (proc.is(Proc::State::TERMINATED)) {
