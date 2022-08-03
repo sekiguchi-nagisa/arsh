@@ -28,7 +28,7 @@ TEST_F(InteractiveTest, ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("cat");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "cat\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
@@ -42,7 +42,7 @@ TEST_F(InteractiveTest, ctrlc3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("cat < /dev/zero > /dev/null");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "cat < /dev/zero > /dev/null\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
@@ -56,7 +56,7 @@ TEST_F(InteractiveTest, ctrlc4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("read");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "read\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
   std::string err = format(R"(ydsh: read: 0: %s
@@ -77,7 +77,7 @@ TEST_F(InteractiveTest, ctrlc5) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("read | grep hoge");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "read | grep hoge\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
@@ -96,7 +96,7 @@ TEST_F(InteractiveTest, expand_ctrlc1) {
       this->expect(PROMPT + "echo "
                             "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
                             "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
@@ -134,7 +134,7 @@ TEST_F(InteractiveTest, wait_ctrlc1) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
   this->sendLine("$j.wait()");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$j.wait()\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
   std::string err = format(R"([runtime error]
@@ -154,7 +154,7 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true){} &", ": Job = %1"));
   this->sendLine("fg");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\n"));
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
   std::string err = strsignal(SIGINT);

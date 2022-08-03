@@ -17,6 +17,9 @@
 #ifndef YDSH_TEST_COMMON_H
 #define YDSH_TEST_COMMON_H
 
+#include <chrono>
+#include <thread>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -140,6 +143,7 @@ public:
   void invoke(T &&...args) {
     std::vector<std::string> values = {std::forward<T>(args)...};
     this->invokeImpl(values);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   void invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut = false);
