@@ -143,12 +143,8 @@ TEST_F(ProcTest, pty4) {
 
   // start with raw mode
   auto handle = ProcBuilder::spawn(config, [&] {
-    FILE *fp = fopen("/dev/null", "w");
-    if (!fp) {
-      fatal_perror("open failed");
-    }
     while (true) {
-      fputs("do nothing", fp);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     return 0;
   });
@@ -157,7 +153,6 @@ TEST_F(ProcTest, pty4) {
   auto r = write(handle.in(), str.c_str(), str.size());
   (void)r;
   fsync(handle.in());
-  std::this_thread::sleep_for(std::chrono::milliseconds(800));
   auto ret2 = handle.waitAndGetResult(false);
   if (ydsh::platform::isWindows(ydsh::platform::platform())) {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED);
