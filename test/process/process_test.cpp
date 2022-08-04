@@ -157,7 +157,7 @@ TEST_F(ProcTest, pty4) {
   auto r = write(handle.in(), str.c_str(), str.size());
   (void)r;
   fsync(handle.in());
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  std::this_thread::sleep_for(std::chrono::milliseconds(800));
   auto ret2 = handle.waitAndGetResult(false);
   if (ydsh::platform::isWindows(ydsh::platform::platform())) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED));
