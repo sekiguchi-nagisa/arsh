@@ -277,6 +277,10 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
       }
       break;
     }
+    if (str.size() > StringObject::MAX_SIZE - readSize) {
+      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+      return false;
+    }
     str.append(buf, readSize);
   }
 
@@ -285,10 +289,6 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
     ;
 
   ret = DSValue::createStr(std::move(str));
-
-  if (DSState::isInterrupted()) {
-    return false;
-  }
   return true;
 }
 
@@ -326,10 +326,16 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
       }
       skipCount = 0;
       if (fieldSep) {
-        array.append(DSValue::createStr(std::move(str))); // FIXME: check array size limit
+        if (!array.append(state, DSValue::createStr(std::move(str)))) {
+          return false;
+        }
         str = "";
         skipCount = isSpace(ch) ? 2 : 1;
         continue;
+      }
+      if (str.size() == StringObject::MAX_SIZE) {
+        raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+        return false;
       }
       str += ch;
     }
@@ -341,7 +347,9 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
 
   // append remain
   if (!str.empty() || !hasSpace(ifsRef)) {
-    array.append(DSValue::createStr(std::move(str))); // FIXME: checl array size limit
+    if (!array.append(state, DSValue::createStr(std::move(str)))) {
+      return false;
+    }
   }
 
   ret = std::move(obj);

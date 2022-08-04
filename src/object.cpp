@@ -346,7 +346,7 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
   const bool small = isSmallStr(this->kind());
   const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
   if (size > StringObject::MAX_SIZE - value.size()) {
-    raiseError(state, TYPE::OutOfRangeError, "reach String size limit");
+    raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
     return false;
   }
 

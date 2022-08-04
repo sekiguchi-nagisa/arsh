@@ -166,7 +166,11 @@ constexpr const char *EXEC_ERROR = "execution error: ";
 constexpr const char *REDIR_ERROR = "io redirection error";
 constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
 constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
+
+// =====  error message  =====
+
 constexpr const char *CMD_SUB_ERROR = "command substitution failed";
+constexpr const char *STRING_LIMIT_ERROR = "reach String size limit";
 
 // =====  generic type name  =====
 
