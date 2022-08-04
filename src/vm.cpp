@@ -272,7 +272,7 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
     }
     if (readSize <= 0) {
       if (readSize < 0) {
-        raiseSystemError(state, errno, "command substitution failed");
+        raiseSystemError(state, errno, CMD_SUB_ERROR);
         return false;
       }
       break;
@@ -285,6 +285,10 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
     ;
 
   ret = DSValue::createStr(std::move(str));
+
+  if (DSState::isInterrupted()) {
+    return false;
+  }
   return true;
 }
 
@@ -303,7 +307,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
     }
     if (readSize <= 0) {
       if (readSize < 0) {
-        raiseSystemError(state, errno, "command substitution failed");
+        raiseSystemError(state, errno, CMD_SUB_ERROR);
         return false;
       }
       break;
@@ -498,12 +502,16 @@ bool VM::forkAndEval(DSState &state) {
       tryToClose(pipeset.in[WRITE_PIPE]);
       bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
                                            : readAsStrArray(state, pipeset.out[READ_PIPE], obj);
-      if (!ret) {
+      if (!ret || DSState::isInterrupted()) {
         /**
          * if read failed, not wait termination (always attach to job table)
          */
         tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
         state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
+
+        if (ret && DSState::isInterrupted()) {
+          raiseSystemError(state, EINTR, CMD_SUB_ERROR);
+        }
         DSState::clearPendingSignal(SIGINT); // always clear SIGINT
         return false;
       }
