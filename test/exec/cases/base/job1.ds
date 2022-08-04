@@ -65,7 +65,7 @@ $j = {
 assert $j.wait() == 3
 assert $j.status(0)! == 3
 
-var j2 = true &
+var j2 = sleep 0.5 &
 $j = {
  sleep 0.5
  assert !$j2.pid(0)
