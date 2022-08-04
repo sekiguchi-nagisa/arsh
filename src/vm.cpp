@@ -483,7 +483,8 @@ bool VM::forkAndEval(DSState &state) {
   // set in/out pipe
   PipeSet pipeset(forkKind);
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
-  auto proc = Proc::fork(state, pgid, resolveProcOp(state, forkKind));
+  const auto procOp = resolveProcOp(state, forkKind);
+  auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
     tryToClose(pipeset.out[WRITE_PIPE]);
@@ -492,7 +493,8 @@ bool VM::forkAndEval(DSState &state) {
 
     switch (forkKind) {
     case ForkKind::STR:
-    case ForkKind::ARRAY: {
+    case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
+      assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
       tryToClose(pipeset.in[WRITE_PIPE]);
       bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
                                            : readAsStrArray(state, pipeset.out[READ_PIPE], obj);
@@ -505,7 +507,6 @@ bool VM::forkAndEval(DSState &state) {
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
       }
-      state.tryToBeForeground();
       if (!ret) {
         DSState::clearPendingSignal(SIGINT); // always clear SIGINT
         return false;
