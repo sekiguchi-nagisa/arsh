@@ -496,29 +496,9 @@ bool VM::forkAndEval(DSState &state) {
     case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
       assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
       tryToClose(pipeset.in[WRITE_PIPE]);
-      if (forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
-                                    : readAsStrArray(state, pipeset.out[READ_PIPE], obj)) {
-        auto waitOp =
-            state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-        int status = proc.wait(waitOp); // wait exit
-        int errNum = errno;
-        tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
-        if (!proc.is(Proc::State::TERMINATED)) {
-          state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
-        }
-        if (status < 0) {
-          raiseSystemError(state, errNum, "wait failed");
-          return false;
-        }
-        if (status != 0 && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-          std::string message = "child process exits with non-zero status: `";
-          message += std::to_string(status);
-          message += "'";
-          raiseError(state, TYPE::ExecError, std::move(message), status);
-          return false;
-        }
-        state.setExitStatus(status);
-      } else {
+      bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
+                                           : readAsStrArray(state, pipeset.out[READ_PIPE], obj);
+      if (!ret) {
         /**
          * if read failed, not wait termination (always attach to job table)
          */
@@ -527,6 +507,27 @@ bool VM::forkAndEval(DSState &state) {
         DSState::clearPendingSignal(SIGINT); // always clear SIGINT
         return false;
       }
+
+      auto waitOp =
+          state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+      int status = proc.wait(waitOp); // wait exit
+      int errNum = errno;
+      tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+      if (!proc.is(Proc::State::TERMINATED)) {
+        state.jobTable.attach(JobObject::create(proc, state.emptyFDObj, state.emptyFDObj));
+      }
+      if (status < 0) {
+        raiseSystemError(state, errNum, "wait failed");
+        return false;
+      }
+      if (status != 0 && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+        std::string message = "child process exits with non-zero status: `";
+        message += std::to_string(status);
+        message += "'";
+        raiseError(state, TYPE::ExecError, std::move(message), status);
+        return false;
+      }
+      state.setExitStatus(status);
       break;
     }
     default:
