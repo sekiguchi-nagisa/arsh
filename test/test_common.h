@@ -93,10 +93,10 @@ private:
 struct ExpectOutput : public ::testing::Test {
   void expect(const Output &output, int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
               const std::string &out = "", const std::string &err = "") {
-    EXPECT_EQ(out, output.out);
-    EXPECT_EQ(err, output.err);
     EXPECT_EQ(status, output.status.value);
     EXPECT_EQ(type, output.status.kind);
+    EXPECT_EQ(out, output.out);
+    EXPECT_EQ(err, output.err);
     ASSERT_FALSE(this->HasFailure());
   }
 
