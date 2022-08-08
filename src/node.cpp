@@ -487,6 +487,7 @@ void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
     for (auto &e : pipe.nodes) {
       this->addNodeImpl(std::move(e));
     }
+    this->updateToken(pipe.getToken());
   } else {
     this->addNodeImpl(std::move(node));
   }
