@@ -1633,7 +1633,8 @@ bool ByteCodeGenerator::exitModule(const SourceNode &node) {
 // ##     ByteCodeDumper     ##
 // ############################
 
-static std::string formatNum(unsigned int width, unsigned int num) {
+static std::string formatNum(unsigned int maxNum, unsigned int num) {
+  unsigned int width = countDigits(maxNum > 0 ? maxNum - 1 : maxNum);
   return padLeft(num, width, ' ');
 }
 
@@ -1703,7 +1704,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
 
     for (unsigned int i = 0; i < c.getCodeSize(); i++) {
       auto code = static_cast<OpCode>(c.getCode()[i]);
-      fprintf(this->fp, "  %s: %s", formatNum(countDigits(c.getCodeSize()), i).c_str(),
+      fprintf(this->fp, "  %s: %s", formatNum(c.getCodeSize(), i).c_str(),
               opName[static_cast<unsigned char>(code)]);
       if (isTypeOp(code)) {
         unsigned int v = read24(c.getCode(), i + 1);
@@ -1775,7 +1776,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for (constSize = 0; c.getConstPool()[constSize]; constSize++)
       ;
     for (unsigned int i = 0; c.getConstPool()[i]; i++) {
-      fprintf(this->fp, "  %s: ", formatNum(countDigits(constSize), i).c_str());
+      fprintf(this->fp, "  %s: ", formatNum(constSize, i).c_str());
       auto &v = c.getConstPool()[i];
       std::string value = v.toString();
       switch (v.kind()) {
@@ -1805,9 +1806,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     const unsigned int maxLineNum = getMaxLineNum(c.getLineNumEntries());
     for (unsigned int i = 0; c.getLineNumEntries()[i]; i++) {
       const auto &e = c.getLineNumEntries()[i];
-      fprintf(this->fp, "  lineNum: %s, address: %s\n",
-              formatNum(countDigits(maxLineNum), e.lineNum).c_str(),
-              formatNum(countDigits(c.getCodeSize()), e.address).c_str());
+      fprintf(this->fp, "  lineNum: %s, address: %s\n", formatNum(maxLineNum, e.lineNum).c_str(),
+              formatNum(c.getCodeSize(), e.address).c_str());
     }
   }
 

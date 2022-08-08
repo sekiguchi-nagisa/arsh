@@ -50,17 +50,17 @@ DSCode: function hoge
   max stack depth: 2
   number of local variable: 1
 Code:
-   0: PUSH_INT  10
-   2: LOAD_LOCAL  0
-   4: CALL_BUILTIN2  2  %div
-   7: POP
-   8: PUSH_INVALID
-   9: RETURN
+  0: PUSH_INT  10
+  2: LOAD_LOCAL  0
+  4: CALL_BUILTIN2  2  %div
+  7: POP
+  8: PUSH_INVALID
+  9: RETURN
 Constant Pool:
   0: String $mod
   1: String $(dirname $mod)
 Line Number Table:
-  lineNum: 3, address:  2
+  lineNum: 3, address: 2
 Exception Table:"
 
 $expect("$(ds -n --dump-code -c "source $mod")", 0, $out)
