@@ -682,6 +682,13 @@ public:
 
 inline DSValue exitStatusToBool(int64_t s) { return DSValue::createBool(s == 0); }
 
+/**
+ * convert to printable string
+ * @param ref
+ * @return
+ */
+std::string toPrintable(StringRef ref);
+
 class ArrayObject;
 
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {

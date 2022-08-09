@@ -126,22 +126,6 @@ int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
   return ret;
 }
 
-std::string toPrintable(StringRef ref) {
-  auto old = errno;
-  std::string ret;
-  for (int ch : ref) { // for arm32/arm64
-    if ((ch >= 0 && ch < 32) || ch == 127) {
-      char d[16];
-      snprintf(d, std::size(d), "\\x%02x", ch);
-      ret += d;
-    } else {
-      ret += static_cast<char>(ch);
-    }
-  }
-  errno = old;
-  return ret;
-}
-
 static void printAllUsage(FILE *fp) {
   unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();

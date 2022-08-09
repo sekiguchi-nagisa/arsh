@@ -1793,7 +1793,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                 .push_back(std::ref(cast<FuncObject>(v.get())->getCode()));
           }
         }
-        fprintf(this->fp, "%s %s", type.getName(), value.c_str());
+        fprintf(this->fp, "%s %s", type.getName(), toPrintable(value).c_str());
         break;
       }
       }

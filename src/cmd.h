@@ -47,13 +47,6 @@ using builtin_command_t = int (*)(DSState &state, ArrayObject &argvObj);
 
 builtin_command_t lookupBuiltinCommand(const char *commandName);
 
-/**
- * convert to printable string
- * @param ref
- * @return
- */
-std::string toPrintable(StringRef ref);
-
 // common function for field splitting
 inline bool isSpace(char ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }
 
