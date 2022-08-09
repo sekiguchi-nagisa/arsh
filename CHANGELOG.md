@@ -65,16 +65,16 @@
 
 - **Breaking Change**: change signal related methods
     - remove ``Signals#[]=``, ``Signals#signal`` methods
-    - add ``Signals#[]``, ``Signal#get`` methods for get corresponding signal
-        - if corresponding signal is not found, ``Signals#[]`` method throw ``KeyNotFoundError``
+    - add ``Signals#[]``, ``Signals#get`` methods for get corresponding signal
+        - if corresponding signal is not found, ``Signals#[]`` method throws``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
 - **Breaking Change**: replace invalid utf8 byte with replacement character (U+FFFD) in the following
-  String method
+  String methods
     - ``charAt``
     - ``chars``
     - ``width``
     - iterator
-- **Breaking Change**: remove ``String#to``, ``String#from``, ``Array#to``, ``Array#from`` method
+- **Breaking Change**: remove ``String#to``, ``String#from``, ``Array#to``, ``Array#from`` methods
     - use slice method instead
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
