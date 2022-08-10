@@ -22,6 +22,19 @@ static std::string promptAfterCtrlC(const std::string &prompt) {
   return value;
 }
 
+static std::string promptAfterCtrlZ(const std::string &prompt) {
+  std::string value;
+  if (platform::platform() != platform::PlatformType::CYGWIN) {
+    value += "^Z%\n";
+  }
+  value += prompt;
+  return value;
+}
+
+static const char *ctrlZChar() {
+  return platform::platform() != platform::PlatformType::CYGWIN ? "^Z" : "";
+}
+
 TEST_F(InteractiveTest, ctrlc2) {
   this->invoke("--quiet", "--norc");
 
@@ -172,7 +185,7 @@ TEST_F(InteractiveTest, ctrlz1) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_Z);
   ASSERT_NO_FATAL_FAILURE(
-      this->expect("^Z%\n" + PROMPT, "[1] + Stopped  sh -c while true; do true; done\n"));
+      this->expect(promptAfterCtrlZ(PROMPT), "[1] + Stopped  sh -c while true; do true; done\n"));
 
   // send CTRL_C, but already stopped.
   this->send(CTRL_C);
@@ -202,7 +215,8 @@ TEST_F(InteractiveTest, ctrlz2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true 2){}\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("^Z%\n" + PROMPT, "[2] + Stopped  while(true 2){}\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(promptAfterCtrlZ(PROMPT), "[2] + Stopped  while(true 2){}\n"));
 
   // resume all jobs
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("bg %1 %2", "[1]  while(true 1){}\n"
@@ -246,7 +260,7 @@ TEST_F(InteractiveTest, ctrlz3) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_Z);
   ASSERT_NO_FATAL_FAILURE(
-      this->expect("^Z%\n" + PROMPT, "[1] + Stopped  while(true 1){} | loop 2\n"));
+      this->expect(promptAfterCtrlZ(PROMPT), "[1] + Stopped  while(true 1){} | loop 2\n"));
 
   // resume and kill
   this->sendLine("fg");
@@ -271,7 +285,7 @@ TEST_F(InteractiveTest, cmdsub_ctrlz1) {
 
   // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
   this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("^Z"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(ctrlZChar()));
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // send 'echo hello', but still wait output (not stopped)
@@ -306,7 +320,7 @@ TEST_F(InteractiveTest, cmdsub_ctrlz2) {
 
   // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
   this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("^Z"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(ctrlZChar()));
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // send 'echo hello', but still wait output (not stopped)

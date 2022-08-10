@@ -72,6 +72,10 @@ TEST_F(ProcTest, pty1) {
 }
 
 TEST_F(ProcTest, pty2) {
+  if (ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+    return; // workaround for Cygwin
+  }
+
   IOConfig config;
   config.in = IOConfig::PTY;
   config.out = IOConfig::PTY;
