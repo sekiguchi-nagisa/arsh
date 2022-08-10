@@ -76,4 +76,4 @@ endif ()
 #=====================#
 
 add_library(test_common STATIC test_common.cpp)
-target_link_libraries(test_common process)
+target_link_libraries(test_common process platform)

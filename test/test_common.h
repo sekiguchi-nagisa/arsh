@@ -27,6 +27,8 @@
 #include <ansi.h>
 #include <process.h>
 
+#include "../tools/platform/platform.h"
+
 using namespace process;
 
 // common utility for test
@@ -143,7 +145,16 @@ public:
   void invoke(T &&...args) {
     std::vector<std::string> values = {std::forward<T>(args)...};
     this->invokeImpl(values);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto sleepTime = std::chrono::milliseconds(100);
+    switch (ydsh::platform::platform()) {
+    case ydsh::platform::PlatformType::DARWIN:
+    case ydsh::platform::PlatformType::CYGWIN:
+      sleepTime = std::chrono::milliseconds(200);
+      break;
+    default:
+      break;
+    }
+    std::this_thread::sleep_for(sleepTime);
   }
 
   void invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut = false);

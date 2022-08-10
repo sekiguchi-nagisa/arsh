@@ -4,7 +4,6 @@
 
 #include "gtest/gtest.h"
 
-#include "../../tools/platform/platform.h"
 #include "../test_common.h"
 #include <config.h>
 

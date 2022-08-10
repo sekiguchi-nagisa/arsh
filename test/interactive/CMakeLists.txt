@@ -10,7 +10,7 @@ set(TEST_NAME interactive_test1)
 add_executable(${TEST_NAME}
         interactive_test1.cpp
         )
-target_link_libraries(${TEST_NAME} gtest gtest_main test_common platform)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 add_test(${TEST_NAME} ${TEST_NAME})
 
@@ -19,7 +19,7 @@ set(TEST_NAME interactive_test2)
 add_executable(${TEST_NAME}
         interactive_test2.cpp
         )
-target_link_libraries(${TEST_NAME} gtest gtest_main test_common platform)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 add_test(${TEST_NAME} ${TEST_NAME})
 
@@ -28,6 +28,6 @@ set(TEST_NAME interactive_test3)
 add_executable(${TEST_NAME}
         interactive_test3.cpp
         )
-target_link_libraries(${TEST_NAME} gtest gtest_main test_common platform)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 add_test(${TEST_NAME} ${TEST_NAME})
