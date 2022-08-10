@@ -63,7 +63,7 @@ inline std::string padLeft(uint64_t num, unsigned int width, char padding) {
 }
 
 template <typename Func>
-static constexpr bool splitter_requirement_v =
+constexpr bool splitter_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<Func, StringRef, bool>>;
 
 template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>

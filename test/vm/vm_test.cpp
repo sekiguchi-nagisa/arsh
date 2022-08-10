@@ -371,7 +371,7 @@ struct JobTableTest : public VMTest {
   }
 
   template <typename Func>
-  Job newAttactedJob(Func func) {
+  Job newAttachedJob(Func func) {
     auto proc = Proc::fork(*this->state, 0, Proc::Op::JOB_CONTROL);
     if (proc.pid() == 0) {
       int s = func();
@@ -502,7 +502,7 @@ TEST_F(JobTableTest, waitJob) {
   ASSERT_EQ(0, this->jobTable().size());
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 
-  auto job1 = this->newAttactedJob([] { return 23; });
+  auto job1 = this->newAttachedJob([] { return 23; });
   ASSERT_TRUE(job1->available());
   int s = this->jobTable().waitForJob(job1, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(23, s);
