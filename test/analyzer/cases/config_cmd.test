@@ -1,4 +1,5 @@
 # RUN: PATH="/usr/bin:/bin" eval $cmd --test $self --debounce-time 5
+# REQUIRE: $OSTYPE !~ $/cygwin/i
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -11,7 +12,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "sh^() {}\nsh"}
+                     "text": "sh...() {}\nsh"}
  }
 }
 
@@ -34,7 +35,7 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh^"
+#    CHECK:       "label": "sh..."
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
@@ -101,11 +102,11 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-# CHECK_RE:       "label": "sh(\.exe)?"
+#    CHECK:       "label": "sh"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh^"
+#    CHECK:       "label": "sh..."
 #    CHECK:     },
 # CHECK_IF:       "label": "shctl"
 # CHECK_IF:   ]
