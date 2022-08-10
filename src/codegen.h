@@ -113,7 +113,7 @@ public:
 enum class CmdCallCtx : unsigned char {
   STMT,
   EXPR,
-  AUTO, // propagete current context
+  AUTO, // propagate current context
 };
 
 struct CodeBuilder : public CodeEmitter<true> {

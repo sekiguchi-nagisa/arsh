@@ -116,40 +116,42 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 32
+  code size: 34
   max stack depth: 5
   number of local variable: 0
   number of global variable: 51
 Code:
-   0: PIPELINE_ASYNC 6 3  8  18  28
-   9: LOAD_CONST  2
-  11: NEW_CMD
-  12: PUSH_NULL
-  13: LOAD_CONST  3
-  15: ADD_CMD_ARG  0
-  17: CALL_CMD_NOFORK
-  18: HALT
-  19: LOAD_CONST  4
-  21: NEW_CMD
-  22: PUSH_NULL
-  23: LOAD_CONST  5
-  25: ADD_CMD_ARG  0
-  27: CALL_CMD_NOFORK
-  28: HALT
-  29: POP
-  30: PUSH_INVALID
-  31: RETURN
+   0: LOAD_CONST  2
+   2: PIPELINE_ASYNC 6 3  8  18  28
+  11: LOAD_CONST  3
+  13: NEW_CMD
+  14: PUSH_NULL
+  15: LOAD_CONST  4
+  17: ADD_CMD_ARG  0
+  19: CALL_CMD_NOFORK
+  20: HALT
+  21: LOAD_CONST  5
+  23: NEW_CMD
+  24: PUSH_NULL
+  25: LOAD_CONST  6
+  27: ADD_CMD_ARG  0
+  29: CALL_CMD_NOFORK
+  30: HALT
+  31: POP
+  32: PUSH_INVALID
+  33: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: String echo
-  3: String hello
-  4: String echo
-  5: String hello
+  2: String echo hello\x00echo hello
+  3: String echo
+  4: String hello
+  5: String echo
+  6: String hello
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:
-  begin: 9, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
+  begin: 11, end: 30, type: process guard%%, dest: 30, offset: 0, size: 0"
 
 $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 
@@ -157,7 +159,7 @@ $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 36
+  code size: 38
   max stack depth: 4
   number of local variable: 0
   number of global variable: 51
@@ -166,28 +168,30 @@ Code:
    2: LOAD_GLOBAL  5
    5: CALL_BUILTIN2  1  %interp
    8: LOOKUP_HASH
-   9: GOTO  34
-  14: FORK  6  14
-  18: LOAD_CONST  3
-  20: NEW_CMD
-  21: PUSH_NULL
-  22: PUSH_STR1  `8'
-  24: ADD_CMD_ARG  0
-  26: CALL_CMD_NOFORK
-  27: HALT
-  28: POP
-  29: GOTO  34
-  34: PUSH_INVALID
-  35: RETURN
+   9: GOTO  36
+  14: LOAD_CONST  3
+  16: FORK  6  14
+  20: LOAD_CONST  4
+  22: NEW_CMD
+  23: PUSH_NULL
+  24: PUSH_STR1  `8'
+  26: ADD_CMD_ARG  0
+  28: CALL_CMD_NOFORK
+  29: HALT
+  30: POP
+  31: GOTO  36
+  36: PUSH_INVALID
+  37: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
   2: Void [999 : 14]
-  3: String sleep
+  3: String sleep 8
+  4: String sleep
 Line Number Table:
   lineNum: 1, address:  2
 Exception Table:
-  begin: 18, end: 27, type: process guard%%, dest: 27, offset: 0, size: 0"
+  begin: 20, end: 29, type: process guard%%, dest: 29, offset: 0, size: 0"
 
 $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
 
@@ -195,22 +199,24 @@ $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 17
+  code size: 19
   max stack depth: 1
   number of local variable: 1
   number of global variable: 51
 Code:
-   0: PIPELINE_LP 2  6  7
-   6: HALT
-   7: STORE_LOCAL  0
-   9: PUSH_INT  23
-  11: RECLAIM_LOCAL  0  1
-  14: POP
-  15: PUSH_INVALID
-  16: RETURN
+   0: LOAD_CONST  2
+   2: PIPELINE_LP 2  6  7
+   8: HALT
+   9: STORE_LOCAL  0
+  11: PUSH_INT  23
+  13: RECLAIM_LOCAL  0  1
+  16: POP
+  17: PUSH_INVALID
+  18: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
+  2: String {;;}\x0023
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:"
@@ -221,19 +227,21 @@ $expect("$(ds -n --dump-code -c '{;;}|23')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 8
+  code size: 10
   max stack depth: 1
   number of local variable: 0
   number of global variable: 51
 Code:
-  0: FORK  6  5
-  4: HALT
-  5: POP
-  6: PUSH_INVALID
-  7: RETURN
+  0: LOAD_CONST  2
+  2: FORK  6  5
+  6: HALT
+  7: POP
+  8: PUSH_INVALID
+  9: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
+  2: String {;}
 Line Number Table:
   lineNum: 1, address: 0
 Exception Table:"

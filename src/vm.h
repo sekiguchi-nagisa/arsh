@@ -549,10 +549,10 @@ private:
   static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
                                             DSValue &&restoreFD, CmdCallAttr attr);
 
-  static bool attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
-                             ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
+  static bool attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize,
+                             const Proc *procs, ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
 
-  static bool forkAndEval(DSState &state);
+  static bool forkAndEval(DSState &state, DSValue &&desc);
 
   static bool forkAndExec(DSState &state, const char *filePath, char *const *argv,
                           DSValue &&redirConfig);
@@ -577,7 +577,7 @@ private:
    * @return
    * if has error, return false.
    */
-  static bool callPipeline(DSState &state, bool lastPipe, ForkKind forkKind);
+  static bool callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind forkKind);
 
   static bool addGlobbingPath(DSState &state, ArrayObject &arv, const DSValue *begin,
                               const DSValue *end, bool tilde);

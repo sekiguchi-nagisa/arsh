@@ -288,6 +288,17 @@ unsigned int ByteCodeGenerator::concatCmdArgSegment(CmdArgNode &node, unsigned i
   return index;
 }
 
+static DSValue toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
+  std::string value;
+  for (auto &e : node.getNodes()) {
+    if (!value.empty()) {
+      value += '\0';
+    }
+    formatJobDesc(lexer.toStrRef(e->getToken()), value);
+  }
+  return DSValue::createStr(std::move(value));
+}
+
 void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) {
   const bool lastPipe = node.isLastPipe();
   const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
@@ -301,6 +312,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
 
   // generate pipeline
   this->emitSourcePos(node.getPos());
+  this->emitLdcIns(toPipelineDesc(*this->curBuilder().lexer, node));
   this->emitPipelineIns(labels, lastPipe, forkKind);
 
   auto begin = makeLabel();
@@ -919,6 +931,12 @@ void ByteCodeGenerator::visitTimeNode(TimeNode &node) {
   });
 }
 
+static DSValue toForkDesc(const Lexer &lexer, const ForkNode &node) {
+  std::string value;
+  formatJobDesc(lexer.toStrRef(node.getExprNode().getToken()), value);
+  return DSValue::createStr(std::move(value));
+}
+
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
   if (isa<PipelineNode>(node.getExprNode()) && !node.isCmdSub()) {
     this->generatePipeline(cast<PipelineNode>(node.getExprNode()), node.getOpKind());
@@ -928,6 +946,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     auto mergeLabel = makeLabel();
 
     this->emitSourcePos(node.getPos());
+    this->emitLdcIns(toForkDesc(*this->curBuilder().lexer, node));
     this->emitForkIns(node.getOpKind(), mergeLabel);
     this->markLabel(beginLabel);
     this->visit(node.getExprNode(), CmdCallCtx::STMT);

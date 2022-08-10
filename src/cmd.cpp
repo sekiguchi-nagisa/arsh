@@ -46,6 +46,7 @@ static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
 static int builtin_help(DSState &state, ArrayObject &argvObj);
+static int builtin_jobs(DSState &state, ArrayObject &argvObj);
 static int builtin_kill(DSState &state, ArrayObject &argvObj);
 static int builtin_pwd(DSState &state, ArrayObject &argvObj);
 static int builtin_read(DSState &state, ArrayObject &argvObj);
@@ -74,6 +75,7 @@ static auto initBuiltinMap() {
       {"fg", builtin_fg_bg},
       {"hash", builtin_hash},
       {"help", builtin_help},
+      {"jobs", builtin_jobs},
       {"kill", builtin_kill},
       {"pwd", builtin_pwd},
       {"read", builtin_read},
@@ -1117,7 +1119,7 @@ static bool printNumOrName(StringRef str) {
 using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
 
 static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
-                                bool alloNoChild) {
+                                bool allowNoChild) {
   bool isJob = arg.startsWith("%");
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair.second) {
@@ -1138,7 +1140,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
   } else {
     if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
       return ProcOrJob(e);
-    } else if (alloNoChild) {
+    } else if (allowNoChild) {
       return ProcOrJob(id);
     } else {
       ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
@@ -1249,9 +1251,11 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-static Job tryToGetJob(const JobTable &table, StringRef name) {
+static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
   if (name.startsWith("%")) {
     name.removePrefix(1);
+  } else if (needPrefix) {
+    return nullptr;
   }
   Job job;
   auto pair = toInt32(name);
@@ -1273,16 +1277,19 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   Job job;
   StringRef arg = "current";
   if (size == 1) {
-    job = state.jobTable.getLatestJob();
+    job = state.jobTable.getCurrentJob();
   } else {
     arg = argvObj.getValues()[1].asStrRef();
-    job = tryToGetJob(state.jobTable, arg);
+    job = tryToGetJob(state.jobTable, arg, false);
   }
 
   int ret = 0;
   if (job) {
     if (fg) {
       beForeground(job->getPid(0));
+      job->showInfo(stdout, JobInfoFormat::DESC);
+    } else {
+      job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
     }
     job->send(SIGCONT);
     state.jobTable.waitForAny();
@@ -1297,6 +1304,10 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   if (fg) {
     int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED); // FIXME: check root shell
     int errNum = errno;
+    if (job->available()) {
+      state.jobTable.setCurrentJob(job);
+      job->showInfo();
+    }
     state.tryToBeForeground();
     if (errNum != 0) {
       errno = errNum;
@@ -1308,8 +1319,9 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   // process remain arguments
   for (unsigned int i = 2; i < size; i++) {
     arg = argvObj.getValues()[i].asStrRef();
-    job = tryToGetJob(state.jobTable, arg);
+    job = tryToGetJob(state.jobTable, arg, false);
     if (job) {
+      job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
       job->send(SIGCONT);
     } else {
       ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
@@ -2114,6 +2126,108 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
     }
   }
   return lastStatus;
+}
+
+enum class JobsTarget {
+  ALL,
+  RUNNING,
+  STOPPED,
+};
+
+enum class JobsOutput {
+  DEFAULT,
+  PID_ONLY,
+  VERBOSE,
+};
+
+static void showJobInfo(const JobTable &jobTable, const Job &next, JobsTarget target,
+                        JobsOutput output, const Job &job) {
+  if (job->isDisowned()) {
+    return; // always ignore disowned jobs
+  }
+  switch (target) {
+  case JobsTarget::ALL:
+    break;
+  case JobsTarget::RUNNING:
+    if (!job->getProcs()[0].is(Proc::State::RUNNING)) {
+      return;
+    }
+    break;
+  case JobsTarget::STOPPED:
+    if (!job->getProcs()[0].is(Proc::State::STOPPED)) {
+      return;
+    }
+    break;
+  }
+
+  JobInfoFormat fmt{};
+  switch (output) {
+  case JobsOutput::PID_ONLY:
+    fmt = JobInfoFormat::PID;
+    break;
+  case JobsOutput::DEFAULT:
+  case JobsOutput::VERBOSE:
+    fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
+    if (job == jobTable.getCurrentJob()) {
+      setFlag(fmt, JobInfoFormat::CUR_JOB);
+    } else if (job == next) {
+      setFlag(fmt, JobInfoFormat::NEXT_CUR_JOB);
+    } else {
+      setFlag(fmt, JobInfoFormat::OTHER_JOB);
+    }
+    if (output == JobsOutput::VERBOSE) {
+      setFlag(fmt, JobInfoFormat::PID | JobInfoFormat::CHILD);
+    }
+    break;
+  }
+  job->showInfo(stdout, fmt);
+}
+
+static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
+  auto target = JobsTarget::ALL;
+  auto output = JobsOutput::DEFAULT;
+
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "lprs")) != -1;) {
+    switch (opt) {
+    case 'l':
+      output = JobsOutput::VERBOSE;
+      break;
+    case 'p':
+      output = JobsOutput::PID_ONLY;
+      break;
+    case 'r':
+      target = JobsTarget::RUNNING;
+      break;
+    case 's':
+      target = JobsTarget::STOPPED;
+      break;
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  auto next = state.jobTable.findNextCurrentJob();
+  if (optState.index == argvObj.size()) { // show all jobs
+    for (auto &job : state.jobTable) {
+      showJobInfo(state.jobTable, next, target, output, job);
+    }
+    return 0;
+  }
+
+  // show specified jobs
+  bool hasError = false;
+  for (unsigned int i = optState.index; i < argvObj.size(); i++) {
+    auto ref = argvObj.getValues()[i].asStrRef();
+    auto job = tryToGetJob(state.jobTable, ref, true);
+    if (!job) {
+      ERROR(argvObj, "%s: no such job", toPrintable(ref).c_str());
+      hasError = true;
+      continue;
+    }
+    showJobInfo(state.jobTable, next, target, output, job);
+  }
+  return hasError ? 1 : 0;
 }
 
 } // namespace ydsh

@@ -349,13 +349,14 @@ TEST(ProcTableTest, base) {
   ASSERT_EQ(0, table.getEntries().size());
 }
 
-static JobTable::ConstEntryIter getBeginIter(const JobTable &table) { return table.beginJob(); }
+static JobTable::ConstEntryIter getBeginIter(const JobTable &table) { return table.begin(); }
 
-static JobTable::ConstEntryIter getEndIter(const JobTable &table) { return table.endJob(); }
+static JobTable::ConstEntryIter getEndIter(const JobTable &table) { return table.end(); }
 
 struct JobTableTest : public VMTest {
   Job newJob() {
-    return JobObject::create(Proc(), this->state->emptyFDObj, this->state->emptyFDObj);
+    return JobObject::create(Proc(), this->state->emptyFDObj, this->state->emptyFDObj,
+                             DSValue::createStr());
   }
 
   template <typename Func>
@@ -365,7 +366,8 @@ struct JobTableTest : public VMTest {
       int s = func();
       exit(s);
     }
-    return JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj);
+    return JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
+                             DSValue::createStr());
   }
 
   template <typename Func>
@@ -375,7 +377,8 @@ struct JobTableTest : public VMTest {
       int s = func();
       exit(s);
     }
-    auto job = JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj);
+    auto job = JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
+                                 DSValue::createStr());
     this->state->jobTable.attach(job);
     return job;
   }
@@ -398,37 +401,37 @@ TEST_F(JobTableTest, attach) {
 
   jobTable.attach(job1);
   ASSERT_EQ(1u, job1->getJobID());
-  ASSERT_EQ(job1, jobTable.getLatestJob());
+  ASSERT_EQ(job1, jobTable.getCurrentJob());
 
   jobTable.attach(job2);
   ASSERT_EQ(2u, job2->getJobID());
-  ASSERT_EQ(job2, jobTable.getLatestJob());
+  ASSERT_EQ(job2, jobTable.getCurrentJob());
 
   jobTable.attach(job3);
   ASSERT_EQ(3u, job3->getJobID());
-  ASSERT_EQ(job3, jobTable.getLatestJob());
+  ASSERT_EQ(job3, jobTable.getCurrentJob());
 
   jobTable.attach(job4);
   ASSERT_EQ(4u, job4->getJobID());
-  ASSERT_EQ(job4, jobTable.getLatestJob());
+  ASSERT_EQ(job4, jobTable.getCurrentJob());
 
   jobTable.attach(job5);
   ASSERT_EQ(5u, job5->getJobID());
-  ASSERT_EQ(job5, jobTable.getLatestJob());
+  ASSERT_EQ(job5, jobTable.getCurrentJob());
   ASSERT_EQ(5, jobTable.size());
 
   int s = jobTable.waitForJob(job2, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(12, s);
   ASSERT_EQ(4, jobTable.size());
-  ASSERT_EQ(job5, jobTable.getLatestJob());
+  ASSERT_EQ(job5, jobTable.getCurrentJob());
 
   job3->disowned();
-  ASSERT_EQ(job5, jobTable.getLatestJob());
+  ASSERT_EQ(job5, jobTable.getCurrentJob());
 
   s = jobTable.waitForJob(job5, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(15, s);
   ASSERT_EQ(3, jobTable.size());
-  ASSERT_EQ(job4, jobTable.getLatestJob());
+  ASSERT_EQ(job4, jobTable.getCurrentJob());
 
   // job entry layout
   auto begin = getBeginIter(jobTable);
@@ -443,7 +446,7 @@ TEST_F(JobTableTest, attach) {
   // re-attach
   jobTable.attach(job5);
   ASSERT_EQ(2u, job5->getJobID());
-  ASSERT_EQ(job5, jobTable.getLatestJob());
+  ASSERT_EQ(job5, jobTable.getCurrentJob());
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());
@@ -459,7 +462,7 @@ TEST_F(JobTableTest, attach) {
   // re-attach
   jobTable.attach(job2);
   ASSERT_EQ(5u, job2->getJobID());
-  ASSERT_EQ(job2, jobTable.getLatestJob());
+  ASSERT_EQ(job2, jobTable.getCurrentJob());
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());
@@ -477,7 +480,7 @@ TEST_F(JobTableTest, attach) {
   // re-attach
   jobTable.attach(job6);
   ASSERT_EQ(6u, job6->getJobID());
-  ASSERT_EQ(job6, jobTable.getLatestJob());
+  ASSERT_EQ(job6, jobTable.getCurrentJob());
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());

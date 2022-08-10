@@ -153,7 +153,7 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true){} &", ": Job = %1"));
   this->sendLine("fg");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true){}\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
@@ -171,7 +171,8 @@ TEST_F(InteractiveTest, ctrlz1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "sh -c 'while true; do true; done'\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("^Z%\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect("^Z%\n" + PROMPT, "[1] + Stopped  sh -c while true; do true; done\n"));
 
   // send CTRL_C, but already stopped.
   this->send(CTRL_C);
@@ -179,7 +180,7 @@ TEST_F(InteractiveTest, ctrlz1) {
 
   // resume and kill
   this->sendLine("fg");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nsh -c while true; do true; done\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
@@ -190,6 +191,76 @@ TEST_F(InteractiveTest, ctrlz1) {
 }
 
 TEST_F(InteractiveTest, ctrlz2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true 1){} &", ": Job = %1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true 2){} &", ": Job = %2"));
+
+  // foreground and suspend
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true 2){}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("^Z%\n" + PROMPT, "[2] + Stopped  while(true 2){}\n"));
+
+  // resume all jobs
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("bg %1 %2", "[1]  while(true 1){}\n"
+                                                              "[2]  while(true 2){}"));
+
+  // show jobs list
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] - Running  while(true 1){}\n"
+                                                          "[2] + Running  while(true 2){}"));
+
+  // foreground [2] and interrupt
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true 2){}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  this->send(CTRL_C);
+
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  // foreground [1] and interrupt
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true 1){}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  this->send(CTRL_C);
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  // show empty jobs
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
+TEST_F(InteractiveTest, ctrlz3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("loop() { while(true $@){} }"));
+  this->sendLine("while(true 1){}  |  loop 2");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "while(true 1){}  |  loop 2\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect("^Z%\n" + PROMPT, "[1] + Stopped  while(true 1){} | loop 2\n"));
+
+  // resume and kill
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true 1){} | loop 2\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, cmdsub_ctrlz1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -219,7 +290,7 @@ SystemError: command substitution failed, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
-TEST_F(InteractiveTest, ctrlz3) {
+TEST_F(InteractiveTest, cmdsub_ctrlz2) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));

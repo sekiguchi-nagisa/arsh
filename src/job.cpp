@@ -20,6 +20,7 @@
 #include <cerrno>
 
 #include "logger.h"
+#include "misc/format.hpp"
 #include "redir.h"
 #include "vm.h"
 
@@ -210,6 +211,57 @@ int Proc::send(int sigNum) const {
 // ##     JobObject     ##
 // #######################
 
+static void formatPipeline(const StringRef ref, std::string &out) {
+  splitByDelim(ref, '\0', [&out](StringRef sub, bool delim) {
+    out += sub;
+    if (delim) {
+      out += " | ";
+    }
+    return true;
+  });
+}
+
+std::string JobObject::formatInfo(JobInfoFormat fmt) const {
+  std::string value;
+  if (hasFlag(fmt, JobInfoFormat::JOB_ID)) {
+    value += "[";
+    value += std::to_string(this->getJobID());
+    value += "]";
+
+    if (hasFlag(fmt, JobInfoFormat::CUR_JOB)) {
+      value += " +";
+    } else if (hasFlag(fmt, JobInfoFormat::NEXT_CUR_JOB)) {
+      value += " -";
+    } else if (hasFlag(fmt, JobInfoFormat::OTHER_JOB)) {
+      value += "  ";
+    }
+  }
+  if (hasFlag(fmt, JobInfoFormat::PID)) {
+    if (!value.empty()) {
+      value += " ";
+    }
+    value += std::to_string(this->getProcs()[0].pid());
+  }
+  if (hasFlag(fmt, JobInfoFormat::STATE)) {
+    if (!value.empty()) {
+      value += " ";
+    }
+    if (this->state == State::RUNNING) {
+      value += this->getProcs()[0].is(Proc::State::STOPPED) ? "Stopped" : "Running";
+    } else {
+      value += "Done";
+    }
+  }
+  if (hasFlag(fmt, JobInfoFormat::DESC)) {
+    if (!value.empty()) {
+      value += "  ";
+    }
+    formatPipeline(this->desc.asStrRef(), value);
+  }
+  value += "\n";
+  return value;
+}
+
 bool JobObject::restoreStdin() {
   if (this->oldStdin > -1 && this->isControlled()) {
     dup2(this->oldStdin, STDIN_FILENO);
@@ -327,19 +379,19 @@ void ProcTable::batchedRemove() {
 // ##     JobTable     ##
 // ######################
 
-void JobTable::attach(Job job, bool disowned) {
-  if (job->getJobID() != 0) { // already attached
-    return;
+Job JobTable::attach(Job job, bool disowned) {
+  if (job->getJobID() == 0) { // not attached
+    auto ret = this->findEmptyEntry();
+    this->jobs.insert(this->jobs.begin() + ret, job);
+    job->jobID = ret + 1;
+    this->procTable.add(job);
+    if (disowned) {
+      job->disown = true;
+    } else {
+      this->current = job;
+    }
   }
-  auto ret = this->findEmptyEntry();
-  this->jobs.insert(this->jobs.begin() + ret, job);
-  job->jobID = ret + 1;
-  this->procTable.add(job);
-  if (disowned) {
-    job->disown = true;
-  } else {
-    this->latest = std::move(job);
-  }
+  return job;
 }
 
 int JobTable::waitForJob(Job &job, WaitOp op) {
@@ -512,16 +564,10 @@ void JobTable::removeTerminatedJobs() {
     job->disowned();
   }
 
-  // change latest entry
-  if (this->latest && !this->latest->available()) {
-    this->latest = nullptr;
-    for (auto i = this->jobs.rbegin(); i != this->jobs.rend(); ++i) {
-      auto &j = *i;
-      if (!j->isDisowned()) {
-        this->latest = j;
-        break;
-      }
-    }
+  // change current job
+  if (this->current && !this->current->available()) {
+    this->current = nullptr;
+    this->current = this->findNextCurrentJob();
   }
 }
 

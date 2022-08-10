@@ -152,6 +152,22 @@ class ProcTable;
 
 class JobTable;
 
+enum class JobInfoFormat : unsigned int {
+  JOB_ID = 1u << 0u,
+  STATE = 1u << 1u,
+  CUR_JOB = 1u << 2u,
+  NEXT_CUR_JOB = 1u << 3u,
+  OTHER_JOB = 1u << 4u,
+  PID = 1u << 5u,
+  CHILD = 1u << 6u,
+  DESC = 1u << 7u,
+
+  DEFAULT = JOB_ID | STATE | CUR_JOB | DESC,
+};
+
+template <>
+struct allow_enum_bitop<JobInfoFormat> : std::true_type {};
+
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 public:
   static_assert(std::is_standard_layout_v<Proc>, "failed");
@@ -189,6 +205,8 @@ private:
 
   unsigned short procSize;
 
+  DSValue desc; // for jobs command output. must be String
+
   /**
    * initial size is procSize
    */
@@ -199,9 +217,9 @@ private:
   NON_COPYABLE(JobObject);
 
   JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
-            ObjPtr<UnixFdObject> outObj)
+            ObjPtr<UnixFdObject> outObj, DSValue &&desc)
       : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)),
-        procSize(size) {
+        procSize(size), desc(std::move(desc)) {
     for (unsigned int i = 0; i < this->procSize; i++) {
       this->procs[i] = procs[i];
     }
@@ -212,16 +230,18 @@ private:
 
 public:
   static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
-                                  ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
+                                  ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
+                                  DSValue &&desc) {
     void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
-    auto *entry = new (ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
+    auto *entry = new (ptr)
+        JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
     return ObjPtr<JobObject>(entry);
   }
 
   static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj,
-                                  ObjPtr<UnixFdObject> outObj) {
+                                  ObjPtr<UnixFdObject> outObj, DSValue &&desc) {
     Proc procs[1] = {proc};
-    return create(1, procs, false, std::move(inObj), std::move(outObj));
+    return create(1, procs, false, std::move(inObj), std::move(outObj), std::move(desc));
   }
 
   static void operator delete(void *ptr) noexcept { // NOLINT
@@ -258,6 +278,14 @@ public:
   DSValue getInObj() const { return this->inObj; }
 
   DSValue getOutObj() const { return this->outObj; }
+
+  std::string formatInfo(JobInfoFormat fmt) const;
+
+  void showInfo(FILE *fp = stderr, JobInfoFormat fmt = JobInfoFormat::DEFAULT) const {
+    auto value = this->formatInfo(fmt);
+    fputs(value.c_str(), fp);
+    fflush(fp);
+  }
 
   /**
    * restore STDIN_FD
@@ -397,9 +425,9 @@ private:
   ProcTable procTable;
 
   /**
-   * latest attached entry.
+   * latest attached entry (current jos).
    */
-  Job latest;
+  Job current;
 
 public:
   NON_COPYABLE(JobTable);
@@ -410,7 +438,7 @@ public:
   JobTable() = default;
   ~JobTable() = default;
 
-  void attach(Job job, bool disowned = false);
+  Job attach(Job job, bool disowned = false);
 
   void detachAll() {
     for (auto &e : this->jobs) {
@@ -420,7 +448,7 @@ public:
     }
     this->jobs.clear();
     this->procTable.clear();
-    this->latest.reset();
+    this->current.reset();
   }
 
   /**
@@ -442,7 +470,33 @@ public:
 
   int waitForAll(WaitOp op, bool waitOne = false);
 
-  const Job &getLatestJob() const { return this->latest; }
+  const Job &getCurrentJob() const { return this->current; }
+
+  /**
+   *
+   * @param job
+   * must be already attached job (still available and owned)
+   */
+  void setCurrentJob(Job job) {
+    if (job->getJobID() != 0 && job->available() && !job->isDisowned()) {
+      this->current = std::move(job);
+    }
+  }
+
+  /**
+   * get job that would become default (current) after current job exits
+   * @return
+   * if no jobs, return nullptr
+   */
+  Job findNextCurrentJob() const {
+    for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
+      auto &j = *iter;
+      if (j != this->current && !j->isDisowned()) {
+        return j;
+      }
+    }
+    return nullptr;
+  }
 
   /**
    * get Job by job id
@@ -453,7 +507,7 @@ public:
    */
   Job find(unsigned int jobId) const {
     auto iter = this->findIter(jobId);
-    if (iter == this->endJob() || (*iter)->isDisowned()) {
+    if (iter == this->end() || (*iter)->isDisowned()) {
       return nullptr;
     }
     return *iter;
@@ -474,9 +528,9 @@ public:
   unsigned int size() const { return this->jobs.size(); }
 
   // helper method for entry lookup
-  ConstEntryIter beginJob() const { return this->jobs.begin(); }
+  ConstEntryIter begin() const { return this->jobs.begin(); }
 
-  ConstEntryIter endJob() const { return this->jobs.end(); }
+  ConstEntryIter end() const { return this->jobs.end(); }
 
   const ProcTable &getProcTable() const { return this->procTable; }
 

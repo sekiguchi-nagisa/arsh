@@ -20,5 +20,5 @@ assert($? != 0)
 assert(help huga cd hoge)
 
 # all help
-assert("$(help)".split($'\n').size() == 28)
-assert("$(help -s)".split($'\n').size() == 28)
+assert("$(help)".split($'\n').size() == 29)
+assert("$(help -s)".split($'\n').size() == 29)

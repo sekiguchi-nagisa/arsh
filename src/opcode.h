@@ -98,11 +98,11 @@ namespace ydsh {
   OP(LOOKUP_HASH, 0, -2)                                                                           \
   OP(REF_EQ, 0, -1)                                                                                \
   OP(REF_NE, 0, -1)                                                                                \
-  OP(FORK, 3, 1)                                                                                   \
-  OP(PIPELINE, -1, 1)                                                                              \
-  OP(PIPELINE_SILENT, -1, 1)                                                                       \
-  OP(PIPELINE_LP, -1, 1)                                                                           \
-  OP(PIPELINE_ASYNC, -1, 1)                                                                        \
+  OP(FORK, 3, 0)                                                                                   \
+  OP(PIPELINE, -1, 0)                                                                              \
+  OP(PIPELINE_SILENT, -1, 0)                                                                       \
+  OP(PIPELINE_LP, -1, 0)                                                                           \
+  OP(PIPELINE_ASYNC, -1, 0)                                                                        \
   OP(EXPAND_TILDE, 0, 0)                                                                           \
   OP(NEW_CMD, 0, 0)                                                                                \
   OP(ADD_CMD_ARG, 1, -1)                                                                           \

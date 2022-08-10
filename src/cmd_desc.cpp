@@ -34,6 +34,7 @@ static BuiltinCmdDesc table[] = {
      "    without cleaning the resources."},
     {"bg", "[job_spec ...]",
      "    Move jobs to the background.\n"
+     "    JOB_SPEC is represented as [%]? [1-9][0-9].\n"
      "    If JOB_SPEC is not present, latest job is used."},
     {"cd", "[-LP] [dir]",
      "    Changing the current directory to DIR.  The Environment variable\n"
@@ -111,12 +112,21 @@ static BuiltinCmdDesc table[] = {
     {"false", "", "    Always failure (exit status is 1)."},
     {"fg", "[job_spec]",
      "    Move job to the foreground.\n"
+     "    JOB_SPEC is represented as [%]? [1-9][0-9].\n"
      "    If JOB_SPEC is not present, latest job is used."},
     {"hash", "[-r] [command ...]",
      "    Cache file path of specified commands.  If -r option is supplied,\n"
      "    removes specified command path (if not specified, remove all cache).\n"
      "    If option is not supplied, display all cached path."},
     {"help", "[-s] [pattern ...]", "    Display helpful information about builtin commands."},
+    {"jobs", "[-lprs] [jobspec ...]",
+     "    Display status of jobs specified by JOBSPEC\n"
+     "    If JOBSPEC is not specified, display all status of all jobs.\n"
+     "    Options:\n"
+     "        -l    show verbose information\n"
+     "        -p    show process id only\n"
+     "        -r    only allow running jobs\n"
+     "        -s    only allow stopped jobs"},
     {"kill", "[-s signal] pid | jobspec ... or kill -l [signal...]",
      "    Send a signal to a process or job.\n"
      "    If signal is not specified, then SIGTERM is assumed.\n"

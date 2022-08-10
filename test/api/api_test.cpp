@@ -1392,8 +1392,10 @@ TEST_F(JobTest, jobctrl1) {
         fg %1
 )";
   result = EXEC(str);
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %1: no such job"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(result, 1, WaitStatus::EXITED,
+                                       "sh -c kill -s STOP $$; exit 180",
+                                       "[1] + Stopped  sh -c kill -s STOP $$; exit 180\n"
+                                       "ydsh: fg: %1: no such job"));
 
   str = R"(
         sh -c 'kill -s STOP $$; exit 18'
@@ -1401,7 +1403,9 @@ TEST_F(JobTest, jobctrl1) {
         fg
 )";
   result = EXEC(str);
-  ASSERT_NO_FATAL_FAILURE(this->expect(result, 18));
+  ASSERT_NO_FATAL_FAILURE(this->expect(result, 18, WaitStatus::EXITED,
+                                       "sh -c kill -s STOP $$; exit 18",
+                                       "[1] + Stopped  sh -c kill -s STOP $$; exit 18"));
 }
 
 TEST_F(JobTest, jobctrl2) {
@@ -1415,35 +1419,37 @@ TEST_F(JobTest, jobctrl2) {
                                        "ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job"));
 
   const char *str = R"(
-        var j = {
-             $SIGSTOP.kill($PID)
-             exit 99
-        } &
-        assert $j.wait() == 128 + $SIGSTOP.value()
-        assert $j.poll()
-        assert { bg; $?; } == 0
-        var r = $j.wait()
-        assert $r == 99 : $r as String
+var j = {
+     $SIGSTOP.kill($PID)
+     exit 99
+} &
+assert $j.wait() == 128 + $SIGSTOP.value()
+assert $j.poll()
+assert { bg; $?; } == 0
+var r = $j.wait()
+assert $r == 99 : $r as String
         true
 )";
   result = EXEC(str);
-  ASSERT_NO_FATAL_FAILURE(this->expect(result));
+  ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED,
+                                       "[1]  {\\n     $SIGSTOP.kill($PID)\\n     exit 99\\n}"));
 
   str = R"(
-        var j = {
-             $SIGSTOP.kill($PID)
-             exit 99
-        } &
-        assert $j.wait() == 128 + $SIGSTOP.value()
-        assert $j.poll()
-        assert { bg %1 %2; $?; } == 1
-        var r = $j.wait()
-        assert $r == 99 : $r as String
-        true
+var j = {
+     $SIGSTOP.kill($PID)
+     exit 99
+} &
+assert $j.wait() == 128 + $SIGSTOP.value()
+assert $j.poll()
+assert { bg %1 %2; $?; } == 1
+var r = $j.wait()
+assert $r == 99 : $r as String
+true
   )";
   result = EXEC(str);
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED,
+                                       "[1]  {\\n     $SIGSTOP.kill($PID)\\n     exit 99\\n}",
+                                       "ydsh: bg: %2: no such job"));
 }
 
 int main(int argc, char **argv) {

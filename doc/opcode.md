@@ -70,11 +70,11 @@
 | LOOKUP_HASH     |                                | hashmap key ->                               | jump to the offset from stack top hashmap              |
 | REF_EQ          |                                | value1 value2 -> value                       | check referencial equality                             |
 | REF_NE          |                                | value1 value2 -> value                       | check referencial un-equality                          |
-| FORK            | 3: byte1 offset1 offset2       | -> value                                     | evaluate code in child shell                           |
-| PIPELINE        | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                          |
-| PIPELINE_SILENT | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline without status check                     |
-| PIPELINE_LP     | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline (lastPipe is true)                       |
-| PIPELINE_ASYNC  | 1: k 1: len 2: offset1 offset2 | -> value                                     | call pipeline asynchronously                           | 
+| FORK            | 3: byte1 offset1 offset2       | desc -> value                                | evaluate code in child shell                           |
+| PIPELINE        | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline                                          |
+| PIPELINE_SILENT | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline without status check                     |
+| PIPELINE_LP     | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline (lastPipe is true)                       |
+| PIPELINE_ASYNC  | 1: k 1: len 2: offset1 offset2 | desc -> value                                | call pipeline asynchronously                           | 
 | EXPAND_TILDE    |                                | value -> value                               | perform tilde expansion                                |
 | NEW_CMD         |                                | value -> value                               | pop stack top and store it to new argv                 |
 | ADD_CMD_ARG     | 1: byte1                       | argv redir value -> argv redir               | add stack top value as command argument                |

@@ -18,10 +18,10 @@
 #define MISC_LIB_FORMAT_HPP
 
 #include <cstdarg>
-#include <cstring>
-#include <string>
 
+#include "detect.hpp"
 #include "fatal.h"
+#include "string_ref.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -60,6 +60,28 @@ inline std::string padLeft(uint64_t num, unsigned int width, char padding) {
   }
   value += std::to_string(num);
   return value;
+}
+
+template <typename Func>
+static constexpr bool splitter_requirement_v =
+    std::is_same_v<bool, std::invoke_result_t<Func, StringRef, bool>>;
+
+template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>
+inline bool splitByDelim(const StringRef ref, const char delim, Func func) {
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto retPos = ref.find(delim, pos);
+    auto sub = ref.slice(pos, retPos);
+    pos = retPos;
+    bool foundDelim = false;
+    if (retPos != StringRef::npos) {
+      foundDelim = true;
+      pos++;
+    }
+    if (!func(sub, foundDelim)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 END_MISC_LIB_NAMESPACE_DECL
