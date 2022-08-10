@@ -164,7 +164,8 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
 // ##################
 
 bool Proc::updateState(WaitResult ret, bool showSignal) {
-  if (this->is(State::TERMINATED) || ret.pid != this->pid()) {
+  assert(ret.pid == this->pid());
+  if (this->is(State::TERMINATED)) {
     return false;
   }
 
@@ -193,15 +194,11 @@ bool Proc::updateState(WaitResult ret, bool showSignal) {
   } else if (WIFCONTINUED(status)) {
     this->state_ = State::RUNNING;
   }
-
-  if (this->state_ == State::TERMINATED) {
-    this->pid_ = -1;
-  }
   return true;
 }
 
 int Proc::send(int sigNum) const {
-  if (this->pid() > 0) {
+  if (!this->is(State::TERMINATED)) {
     return kill(this->pid(), sigNum);
   }
   return 0;

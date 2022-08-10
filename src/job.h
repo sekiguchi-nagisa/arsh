@@ -264,7 +264,10 @@ public:
    * @return
    * after termination, return -1.
    */
-  pid_t getPid(unsigned int index) const { return this->procs[index].pid(); }
+  pid_t getPid(unsigned int index) const {
+    auto &proc = this->procs[index];
+    return proc.is(Proc::State::TERMINATED) ? -1 : proc.pid();
+  }
 
   /**
    *
