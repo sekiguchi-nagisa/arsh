@@ -1286,7 +1286,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   int ret = 0;
   if (job) {
     if (fg) {
-      beForeground(job->getPid(0));
+      beForeground(job->getValidPid(0));
       job->showInfo(stdout, JobInfoFormat::DESC);
     } else {
       job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);

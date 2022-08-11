@@ -2047,7 +2047,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
   auto index = LOCAL(1).asInt();
 
   if (index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
-    int pid = job.getPid(index);
+    int pid = job.getValidPid(index);
     if (pid < 0 || !job.available()) {
       RET(DSValue::createInvalid());
     }

@@ -274,7 +274,7 @@ void JobObject::send(int sigNum) const {
     return;
   }
 
-  if (pid_t pid = this->getPid(0); pid > -1 && pid == getpgid(pid)) {
+  if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {
     kill(-pid, sigNum);
     return;
   }

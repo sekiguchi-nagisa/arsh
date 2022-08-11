@@ -267,14 +267,19 @@ public:
   const Proc *getProcs() const { return this->procs; }
 
   /**
-   *
+   * get valid pid
    * @param index
    * @return
-   * after termination, return -1.
+   * after termination (or uncontrolled), return -1.
    */
-  pid_t getPid(unsigned int index) const {
-    auto &proc = this->procs[index];
-    return proc.is(Proc::State::TERMINATED) ? -1 : proc.pid();
+  pid_t getValidPid(unsigned int index) const {
+    if (this->isControlled()) {
+      auto &proc = this->procs[index];
+      if (!proc.is(Proc::State::TERMINATED)) {
+        return proc.pid();
+      }
+    }
+    return -1;
   }
 
   /**
@@ -388,7 +393,7 @@ public:
 
   void add(const Job &job) {
     for (unsigned int i = 0; i < job->getProcSize(); i++) {
-      this->addProc(job->getPid(i), job->getJobID(), i);
+      this->addProc(job->getValidPid(i), job->getJobID(), i);
     }
   }
 
