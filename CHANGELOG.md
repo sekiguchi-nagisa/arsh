@@ -61,6 +61,8 @@
     - always disable job-control in command substitution
     - propagate IO error as ``SystemError``
     - cancel command substitution by SIGINT
+- **Breaking Change**: during sub-shell creation, not clear job entry
+    - for builtin ``jobs`` command within sub-shell
 - show job information via CTRL-Z/``fg``/``bg``
 - escape unprintable character when throw some errors
 

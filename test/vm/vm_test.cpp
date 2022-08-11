@@ -422,6 +422,8 @@ TEST_F(JobTableTest, attach) {
 
   int s = jobTable.waitForJob(job2, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(12, s);
+  ASSERT_EQ(JobObject::State::TERMINATED, job2->state());
+  ASSERT_EQ(0, job2->getJobID()); // after termination, jobId will be 0
   ASSERT_EQ(4, jobTable.size());
   ASSERT_EQ(job5, jobTable.getCurrentJob());
 
@@ -430,6 +432,8 @@ TEST_F(JobTableTest, attach) {
 
   s = jobTable.waitForJob(job5, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(15, s);
+  ASSERT_EQ(JobObject::State::TERMINATED, job5->state());
+  ASSERT_EQ(0, job5->getJobID()); // after termination, jobId will be 0
   ASSERT_EQ(3, jobTable.size());
   ASSERT_EQ(job4, jobTable.getCurrentJob());
 
@@ -443,15 +447,13 @@ TEST_F(JobTableTest, attach) {
   ++begin;
   ASSERT_EQ(getEndIter(jobTable), begin);
 
-  // re-attach
+  // re-attach terminated job (do nothing)
   jobTable.attach(job5);
-  ASSERT_EQ(2u, job5->getJobID());
-  ASSERT_EQ(job5, jobTable.getCurrentJob());
+  ASSERT_EQ(0u, job5->getJobID());
+  ASSERT_EQ(job4, jobTable.getCurrentJob());
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(2u, (*begin)->getJobID());
   ++begin;
   ASSERT_EQ(3u, (*begin)->getJobID());
   ++begin;
@@ -459,27 +461,9 @@ TEST_F(JobTableTest, attach) {
   ++begin;
   ASSERT_EQ(getEndIter(jobTable), begin);
 
-  // re-attach
-  jobTable.attach(job2);
-  ASSERT_EQ(5u, job2->getJobID());
-  ASSERT_EQ(job2, jobTable.getCurrentJob());
-
-  begin = getBeginIter(jobTable);
-  ASSERT_EQ(1u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(2u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(3u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(4u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(5u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(getEndIter(jobTable), begin);
-
-  // re-attach
+  // attach
   jobTable.attach(job6);
-  ASSERT_EQ(6u, job6->getJobID());
+  ASSERT_EQ(2u, job6->getJobID());
   ASSERT_EQ(job6, jobTable.getCurrentJob());
 
   begin = getBeginIter(jobTable);
@@ -490,10 +474,6 @@ TEST_F(JobTableTest, attach) {
   ASSERT_EQ(3u, (*begin)->getJobID());
   ++begin;
   ASSERT_EQ(4u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(5u, (*begin)->getJobID());
-  ++begin;
-  ASSERT_EQ(6u, (*begin)->getJobID());
   ++begin;
   ASSERT_EQ(getEndIter(jobTable), begin);
 }

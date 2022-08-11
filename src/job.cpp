@@ -53,7 +53,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
     resetSignalSettingUnblock(st);
 
     // clear JobTable entries
-    st.jobTable.detachAll();
+    st.jobTable.loseControlOfJobs();
 
     // clear termination hook
     assert(st.termHookIndex != 0);
@@ -376,7 +376,8 @@ void ProcTable::batchedRemove() {
 // ######################
 
 Job JobTable::attach(Job job, bool disowned) {
-  if (job->getJobID() == 0) { // not attached
+  if (job->getJobID() == 0 && job->available()) { // not attached
+    assert(!job->isDisowned());
     auto ret = this->findEmptyEntry();
     this->jobs.insert(this->jobs.begin() + ret, job);
     job->jobID = ret + 1;

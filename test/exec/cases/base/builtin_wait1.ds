@@ -19,4 +19,24 @@ wait $ppid 423
 assert $? == 127
 assert "$(wait $ppid 423 2>&1)" == "ydsh: wait: $ppid: not a child of this shell"
 
+## wait disowned
+$j1 = { sleep 1; exit 33; } &!
+wait $j1
+assert $? == 127
+assert $j1.wait() == 33
+
+## wait in child
+$j1 = { sleep 2; exit 66; } &
+$j2 = {
+    assert $j1 as String == '%1'
+    var s = try { wait $j1; $?; } 
+            catch $e { assert $e is SystemError; 100; }
+    exit $s
+} &
+
+wait
+
+assert $j1.wait() == 66
+assert $j2.wait() == 255  # wait for no-child is not throw (return 255)
+
 true

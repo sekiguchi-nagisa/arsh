@@ -454,7 +454,6 @@ private:
 public:
   NON_COPYABLE(JobTable);
 
-  using EntryIter = std::vector<Job>::iterator;
   using ConstEntryIter = std::vector<Job>::const_iterator;
 
   JobTable() = default;
@@ -462,15 +461,15 @@ public:
 
   Job attach(Job job, bool disowned = false);
 
-  void detachAll() {
+  /**
+   * for subshell
+   * job table still maintains jobs, but not control theme
+   */
+  void loseControlOfJobs() {
     for (auto &e : this->jobs) {
-      e->jobID = 0;
-      e->disown();
       e->setState(JobObject::State::UNCONTROLLED);
     }
-    this->jobs.clear();
     this->procTable.clear();
-    this->current.reset();
   }
 
   /**
@@ -513,7 +512,7 @@ public:
   Job findNextCurrentJob() const {
     for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
       auto &j = *iter;
-      if (j != this->current && !j->isDisowned()) {
+      if (j != this->current && j->available() && !j->isDisowned()) {
         return j;
       }
     }

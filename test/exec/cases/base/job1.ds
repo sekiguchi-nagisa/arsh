@@ -21,6 +21,7 @@ assert $j as String == "%1"
 assert $j.wait() == 0
 assert $j.status(0)! == 0
 assert $j.status(1)! == 0
+assert $j as String == "%0"  # after termination, jobId will be 0
 
 
 # disowned background job
@@ -67,6 +68,7 @@ assert $j.status(0)! == 3
 
 var j2 = sleep 0.5 &
 $j = {
+ assert $j2 as String != '%0'
  sleep 0.5
  assert !$j2.pid(0)
  assert !$j2.poll()
