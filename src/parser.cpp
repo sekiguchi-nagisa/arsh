@@ -118,12 +118,29 @@ void Parser::popLexerMode() {
 }
 
 void Parser::changeLexerModeToSTMT() {
-  if (this->lexer->getPrevMode().cond() != yycSTMT) {
-    if (CUR_KIND() != TokenKind::LP && CUR_KIND() != TokenKind::LB &&
-        CUR_KIND() != TokenKind::LBC) {
-      this->refetch(yycSTMT);
-    }
+  const auto prev = this->lexer->getPrevMode().cond();
+  if (prev == yycSTMT) { // already statement mode
+    return;
   }
+  switch (CUR_KIND()) {
+  case TokenKind::LP:
+  case TokenKind::LB:
+  case TokenKind::LBC:
+    return;
+  case TokenKind::START_INTERP:
+  case TokenKind::START_SUB_CMD:
+  case TokenKind::OPEN_DQUOTE:
+  case TokenKind::APPLIED_NAME_WITH_BRACKET:
+  case TokenKind::SPECIAL_NAME_WITH_BRACKET:
+  case TokenKind::APPLIED_NAME_WITH_PAREN:
+  case TokenKind::START_IN_SUB:
+  case TokenKind::START_OUT_SUB:
+    this->lexer->popLexerMode();
+    break;
+  default:
+    break;
+  }
+  this->refetch(yycSTMT);
 }
 
 Token Parser::expect(TokenKind kind, bool fetchNext) {

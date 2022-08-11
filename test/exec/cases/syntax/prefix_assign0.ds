@@ -1,0 +1,32 @@
+
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+)
