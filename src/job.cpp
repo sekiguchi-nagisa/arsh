@@ -243,7 +243,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
     if (!value.empty()) {
       value += " ";
     }
-    if (this->state == State::RUNNING) {
+    if (this->state() == State::RUNNING) {
       value += this->getProcs()[0].is(Proc::State::STOPPED) ? "Stopped" : "Running";
     } else {
       value += "Done";
@@ -382,7 +382,7 @@ Job JobTable::attach(Job job, bool disowned) {
     job->jobID = ret + 1;
     this->procTable.add(job);
     if (disowned) {
-      job->disown = true;
+      job->disown();
     } else {
       this->current = job;
     }
@@ -557,7 +557,7 @@ void JobTable::removeTerminatedJobs() {
   for (; this->jobs.size() != removedIndex; this->jobs.pop_back()) {
     auto &job = this->jobs.back();
     job->jobID = 0;
-    job->disowned();
+    job->disown();
   }
 
   // change current job

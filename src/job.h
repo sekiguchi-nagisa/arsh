@@ -199,11 +199,13 @@ private:
    */
   unsigned short jobID{0};
 
-  State state{State::RUNNING};
+  /**
+   * if disowned
+   * 1xxx xxxx
+   */
+  unsigned char meta{static_cast<unsigned char>(State::RUNNING)};
 
-  bool disown{false};
-
-  unsigned short procSize;
+  unsigned char procSize;
 
   DSValue desc; // for jobs command output. must be String
 
@@ -220,6 +222,7 @@ private:
             ObjPtr<UnixFdObject> outObj, DSValue &&desc)
       : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)),
         procSize(size), desc(std::move(desc)) {
+    assert(size <= UINT8_MAX);
     for (unsigned int i = 0; i < this->procSize; i++) {
       this->procs[i] = procs[i];
     }
@@ -248,13 +251,18 @@ public:
     free(ptr);
   }
 
-  unsigned short getProcSize() const { return this->procSize; }
+  unsigned int getProcSize() const { return this->procSize; }
 
-  bool available() const { return this->state == State::RUNNING; }
+  State state() const { return static_cast<State>(0x7F & this->meta); }
 
-  bool isDisowned() const { return this->disown; }
+  bool available() const { return this->state() == State::RUNNING; }
 
-  void disowned() { this->disown = true; }
+  bool isDisowned() const {
+    auto v = static_cast<unsigned char>(this->meta);
+    return static_cast<signed char>(v) < 0;
+  }
+
+  void disown() { this->meta |= 0x80; }
 
   const Proc *getProcs() const { return this->procs; }
 
@@ -276,7 +284,7 @@ public:
    */
   unsigned short getJobID() const { return this->jobID; }
 
-  bool isControlled() const { return this->state != State::UNCONTROLLED; }
+  bool isControlled() const { return this->state() != State::UNCONTROLLED; }
 
   DSValue getInObj() const { return this->inObj; }
 
@@ -315,7 +323,7 @@ public:
         }
       }
       if (c == this->getProcSize()) {
-        this->state = State::TERMINATED;
+        this->setState(State::TERMINATED);
       }
     }
   }
@@ -335,6 +343,12 @@ public:
    * if cannot terminate (has no-ownership or has error), return -1 and set errno
    */
   int wait(WaitOp op);
+
+private:
+  void setState(State s) {
+    unsigned char d = 0x80 & this->meta;
+    this->meta = static_cast<unsigned char>(s) | d;
+  }
 };
 
 using Job = ObjPtr<JobObject>;
@@ -446,8 +460,8 @@ public:
   void detachAll() {
     for (auto &e : this->jobs) {
       e->jobID = 0;
-      e->disowned();
-      e->state = JobObject::State::UNCONTROLLED;
+      e->disown();
+      e->setState(JobObject::State::UNCONTROLLED);
     }
     this->jobs.clear();
     this->procTable.clear();

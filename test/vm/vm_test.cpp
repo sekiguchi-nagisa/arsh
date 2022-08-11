@@ -425,7 +425,7 @@ TEST_F(JobTableTest, attach) {
   ASSERT_EQ(4, jobTable.size());
   ASSERT_EQ(job5, jobTable.getCurrentJob());
 
-  job3->disowned();
+  job3->disown();
   ASSERT_EQ(job5, jobTable.getCurrentJob());
 
   s = jobTable.waitForJob(job5, WaitOp::BLOCK_UNTRACED);

@@ -2029,7 +2029,7 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_detach);
   auto job = toObjPtr<JobObject>(LOCAL(0));
-  job->disowned();
+  job->disown();
   RET_VOID;
 }
 
