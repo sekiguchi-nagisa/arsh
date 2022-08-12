@@ -35,7 +35,8 @@ assert $j.wait() == 128 + $SIGKILL.value()
 $j = coproc {
     $SIGTSTP.kill($PID)
 }
-sleep 1
+sleep 0.5
+$j.poll()
 
 assert "$(jobs)" == '[1] + Stopped  {\n    $SIGTSTP.kill($PID)\n}'
 
