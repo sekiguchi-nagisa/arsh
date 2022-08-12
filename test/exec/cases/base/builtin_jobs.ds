@@ -55,14 +55,19 @@ defer {
 
 var out = IFS=$'\n' $(jobs)
 assert $out.size() == 2
-assert $out[0] == '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}' : "${$out[0]}"
-assert $out[1] == '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
-                                  '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...' : "${$out[1]}"
+let info1 = '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}'
+let info2 = '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
+                                  '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...'
+assert $out[0] == $info1 : "${$out[0]}"
+assert $out[1] == $info2 : "${$out[1]}"
+
+# specify jobspec
+assert "$(jobs %1)" == $info1
+assert "$(jobs %2)" == $info2
 
 # -r -s option
-assert "$(jobs -r)" == '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
-                                  '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...' : "${$out[1]}"
-assert "$(jobs -s)" == '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}' : "${$out[0]}"
+assert "$(jobs -r)" == $info2 : "${$out[1]}"
+assert "$(jobs -s)" == $info1 : "${$out[0]}"
 
 # -p option
 $out = IFS=$'\n' $(jobs -p)
