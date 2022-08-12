@@ -1,0 +1,74 @@
+
+# jobs command is available even if job control is disable
+
+## error
+
+assert "$(jobs -q 2>&1)" == "ydsh: jobs: -q: invalid option
+jobs: jobs [-lprs] [jobspec ...]"
+assert $? == 2
+
+assert "$(jobs aaa bbb 2>&1)" == "ydsh: jobs: aaa: no such job
+ydsh: jobs: bbb: no such job"
+assert $? == 1
+
+assert "$(jobs aaa %bbb 2>&1)" == "ydsh: jobs: aaa: no such job
+ydsh: jobs: %bbb: no such job"
+assert $? == 1
+
+## job info format
+### background job
+var j = while(true) { true; } & 
+
+defer {
+    $j.raise($SIGKILL)
+}
+
+assert "$(jobs)" == "[1] + Running  while(true) { true; }"
+
+### disowned
+$j.detach()
+assert "$(jobs)".empty()
+$j.raise($SIGKILL)
+assert $j.wait() == 128 + $SIGKILL.value()
+
+### coproc
+$j = coproc {
+    $SIGTSTP.kill($PID)
+}
+sleep 0.5
+
+assert "$(jobs)" == '[1] + Stopped  {\n    $SIGTSTP.kill($PID)\n}'
+
+### too large backgorund job
+var j2 = while(true) {
+    "0 abcdefghijklmnopqrsutvwxyz" +
+    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+    "2 abcdefghijklmnopqrsutvwxyz" +
+    "3 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+    "4 abcdefghijklmnopqrsutvwxyz" +
+    "5 ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+} & 
+
+defer {
+    $j2.raise($SIGKILL)
+}
+
+var out = IFS=$'\n' $(jobs)
+assert $out.size() == 2
+assert $out[0] == '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}' : "${$out[0]}"
+assert $out[1] == '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
+                                  '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...' : "${$out[1]}"
+
+# -r -s option
+assert "$(jobs -r)" == '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
+                                  '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...' : "${$out[1]}"
+assert "$(jobs -s)" == '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}' : "${$out[0]}"
+
+# -p option
+$out = IFS=$'\n' $(jobs -p)
+assert $out.size() == 2
+assert $out[0] == $j.pid(0)! as String
+assert $out[1] == $j2.pid(0)! as String
+
+true
+

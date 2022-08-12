@@ -512,7 +512,7 @@ public:
   Job findNextCurrentJob() const {
     for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
       auto &j = *iter;
-      if (j != this->current && j->available() && !j->isDisowned()) {
+      if (j != this->current && j->state() != JobObject::State::TERMINATED && !j->isDisowned()) {
         return j;
       }
     }

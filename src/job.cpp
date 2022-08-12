@@ -218,6 +218,35 @@ static void formatPipeline(const StringRef ref, std::string &out) {
   });
 }
 
+static Proc::State resolvePipelineState(const JobObject &job) {
+  unsigned int termCount = 0;
+  unsigned int size = job.getProcSize();
+  for (unsigned int i = 0; i < size; i++) {
+    switch (job.getProcs()[i].state()) {
+    case Proc::State::RUNNING:
+      break;
+    case Proc::State::STOPPED:
+      return Proc::State::STOPPED;
+    case Proc::State::TERMINATED:
+      termCount++;
+      break;
+    }
+  }
+  return termCount == size ? Proc::State::TERMINATED : Proc::State::RUNNING;
+}
+
+static const char *toString(Proc::State state) {
+  switch (state) {
+  case Proc::State::RUNNING:
+    return "Running";
+  case Proc::State::STOPPED:
+    return "Stopped";
+  case Proc::State::TERMINATED:
+    return "Done";
+  }
+  return ""; // normally unreachable, but suppress gcc warning
+}
+
 std::string JobObject::formatInfo(JobInfoFormat fmt) const {
   std::string value;
   if (hasFlag(fmt, JobInfoFormat::JOB_ID)) {
@@ -243,11 +272,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
     if (!value.empty()) {
       value += " ";
     }
-    if (this->state() == State::RUNNING) {
-      value += this->getProcs()[0].is(Proc::State::STOPPED) ? "Stopped" : "Running";
-    } else {
-      value += "Done";
-    }
+    value += toString(resolvePipelineState(*this));
   }
   if (hasFlag(fmt, JobInfoFormat::DESC)) {
     if (!value.empty()) {
