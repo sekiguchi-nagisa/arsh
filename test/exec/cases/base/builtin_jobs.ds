@@ -33,12 +33,12 @@ assert $j.wait() == 128 + $SIGKILL.value()
 
 ### coproc
 $j = coproc {
-    $SIGTSTP.kill($PID)
+    while(true 1) {}
 }
-sleep 0.5
+$j.raise($SIGSTOP)
 $j.poll()
 
-assert "$(jobs)" == '[1] + Stopped  {\n    $SIGTSTP.kill($PID)\n}'
+assert "$(jobs)" == '[1] + Stopped  {\n    while(true 1) {}\n}'
 
 ### too large backgorund job
 var j2 = while(true) {
@@ -56,7 +56,7 @@ defer {
 
 var out = IFS=$'\n' $(jobs)
 assert $out.size() == 2
-let info1 = '[1] - Stopped  {\n    $SIGTSTP.kill($PID)\n}'
+let info1 = '[1] - Stopped  {\n    while(true 1) {}\n}'
 let info2 = '[2] + Running  while(true) {\n    "0 abcdefghijklmnopqrsutvwxyz" +\n' + 
                                   '    "1 ABCDEFGHIJKLMNOPQRSTUVWXYZ" +\n  ...'
 assert $out[0] == $info1 : "${$out[0]}"
