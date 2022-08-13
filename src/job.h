@@ -271,7 +271,9 @@ public:
 
   State state() const { return static_cast<State>(0x7F & this->meta); }
 
-  bool available() const { return this->state() == State::RUNNING; }
+  bool is(State st) const { return this->state() == st; }
+
+  bool available() const { return this->is(State::RUNNING); }
 
   bool isDisowned() const {
     auto v = static_cast<unsigned char>(this->meta);
@@ -305,7 +307,7 @@ public:
    */
   unsigned short getJobID() const { return this->jobID; }
 
-  bool isControlled() const { return this->state() != State::UNCONTROLLED; }
+  bool isControlled() const { return !this->is(State::UNCONTROLLED); }
 
   DSValue getInObj() const { return this->inObj; }
 
@@ -528,7 +530,7 @@ public:
   Job findNextCurrentJob() const {
     for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
       auto &j = *iter;
-      if (j != this->current && j->state() != JobObject::State::TERMINATED && !j->isDisowned()) {
+      if (j != this->current && !j->is(JobObject::State::TERMINATED) && !j->isDisowned()) {
         return j;
       }
     }
