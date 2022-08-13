@@ -163,7 +163,7 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
 // ##     Proc     ##
 // ##################
 
-bool Proc::updateState(WaitResult ret, bool showSignal) {
+bool Proc::updateState(WaitResult ret) {
   assert(ret.pid == this->pid());
   if (this->is(State::TERMINATED)) {
     return false;
@@ -175,19 +175,14 @@ bool Proc::updateState(WaitResult ret, bool showSignal) {
     this->exitStatus_ = WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
     int sigNum = WTERMSIG(status);
-    bool hasCoreDump = false;
     this->state_ = State::TERMINATED;
     this->exitStatus_ = sigNum + 128;
-
+    this->signaled_ = true;
 #ifdef WCOREDUMP
     if (WCOREDUMP(status)) {
-      hasCoreDump = true;
+      this->coreDump_ = true;
     }
 #endif
-    if (showSignal) {
-      fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dumped)" : "");
-      fflush(stderr);
-    }
   } else if (WIFSTOPPED(status)) {
     this->state_ = State::STOPPED;
     this->exitStatus_ = WSTOPSIG(status) + 128;
@@ -195,6 +190,14 @@ bool Proc::updateState(WaitResult ret, bool showSignal) {
     this->state_ = State::RUNNING;
   }
   return true;
+}
+
+void Proc::showSignal() const {
+  if (this->is(State::TERMINATED) && this->signaled()) {
+    int sigNum = this->exitStatus_ - 128;
+    fprintf(stderr, "%s%s\n", strsignal(sigNum), this->coreDump() ? " (core dumped)" : "");
+    fflush(stderr); // FIXME: insert newline when terminated by CTRL-C or CTRL-Z
+  }
 }
 
 int Proc::send(int sigNum) const {
@@ -434,7 +437,7 @@ void JobTable::waitForAny() {
     if (ret.pid == -1) {
       break;
     }
-    this->updateProcState(ret, false);
+    this->updateProcState(ret);
   }
   this->removeTerminatedJobs();
 }
@@ -487,7 +490,7 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
     if (ret.pid == -1) {
       return -1;
     }
-    auto pair = this->updateProcState(ret, true);
+    auto pair = this->updateProcState(ret);
     if (!job) {
       return 0;
     } else if (pair.first && pair.first == job) {
@@ -498,7 +501,8 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
         return last->exitStatus();
       }
     }
-    if (!job->available()) {
+    if (job->state() == JobObject::State::TERMINATED) {
+      job->getProcs()[job->getProcSize() - 1].showSignal();
       return job->exitStatus();
     }
   }
@@ -538,15 +542,14 @@ JobTable::ConstEntryIter JobTable::findIter(unsigned int jobId) const {
   return this->jobs.end();
 }
 
-std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret, bool showSignal) {
+std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
   if (ProcTable::Entry * entry; (entry = this->procTable.findProc(ret.pid))) {
     assert(!entry->isDeleted());
     auto iter = this->findIter(entry->jobId());
     assert(iter != this->jobs.end());
     auto &job = *iter;
-    showSignal = entry->procOffset() == job->getProcSize() - 1 && showSignal;
     auto &proc = job->procs[entry->procOffset()];
-    proc.updateState(ret, showSignal);
+    proc.updateState(ret);
     if (proc.is(Proc::State::TERMINATED)) {
       this->procTable.deleteProc(*entry);
     }

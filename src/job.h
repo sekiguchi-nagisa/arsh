@@ -74,12 +74,16 @@ private:
   /**
    * enabled when `state' is TERMINATED.
    */
-  unsigned char exitStatus_;
+  unsigned char exitStatus_{0};
 
-  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
+  bool signaled_{false};
+
+  bool coreDump_{false};
+
+  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING) {}
 
 public:
-  Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
+  Proc() : pid_(-1), state_(State::TERMINATED) {}
 
   pid_t pid() const { return this->pid_; }
 
@@ -88,6 +92,10 @@ public:
   bool is(State s) const { return this->state() == s; }
 
   int exitStatus() const { return this->exitStatus_; }
+
+  bool signaled() const { return this->signaled_; }
+
+  bool coreDump() const { return this->coreDump_; }
 
   /**
    * wait for termination
@@ -105,7 +113,10 @@ public:
       }
       WaitResult ret = waitForProc(this->pid(), op);
       if (ret.pid > 0) {
-        this->updateState(ret, showSignal);
+        this->updateState(ret);
+        if (showSignal) {
+          this->showSignal();
+        }
       } else if (ret.pid < 0) {
         return -1;
       }
@@ -113,7 +124,12 @@ public:
     return this->exitStatus_;
   }
 
-  bool updateState(WaitResult ret, bool showSignal);
+  bool updateState(WaitResult ret);
+
+  /**
+   * show signal message to stderr (for terminated by signal)
+   */
+  void showSignal() const;
 
   /**
    * send signal to proc
@@ -579,7 +595,7 @@ private:
    * @return
    * return corresponding proc
    */
-  std::pair<Job, unsigned int> updateProcState(WaitResult ret, bool showSignal);
+  std::pair<Job, unsigned int> updateProcState(WaitResult ret);
 
   /**
    * not directly use it
