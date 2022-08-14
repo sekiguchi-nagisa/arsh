@@ -1277,7 +1277,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   Job job;
   StringRef arg = "current";
   if (size == 1) {
-    job = state.jobTable.getCurrentJob();
+    job = state.jobTable.syncAndGetCurPrevJobs().cur;
   } else {
     arg = argvObj.getValues()[1].asStrRef();
     job = tryToGetJob(state.jobTable, arg, false);
@@ -2140,8 +2140,8 @@ enum class JobsOutput {
   VERBOSE,
 };
 
-static void showJobInfo(const JobTable &jobTable, const Job &next, JobsTarget target,
-                        JobsOutput output, const Job &job) {
+static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, JobsOutput output,
+                        const Job &job) {
   if (job->isDisowned()) {
     return; // always ignore disowned jobs
   }
@@ -2168,9 +2168,9 @@ static void showJobInfo(const JobTable &jobTable, const Job &next, JobsTarget ta
   case JobsOutput::DEFAULT:
   case JobsOutput::VERBOSE:
     fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
-    if (job == jobTable.getCurrentJob()) {
+    if (job == entry.cur) {
       setFlag(fmt, JobInfoFormat::CUR_JOB);
-    } else if (job == next) {
+    } else if (job == entry.prev) {
       setFlag(fmt, JobInfoFormat::NEXT_CUR_JOB);
     } else {
       setFlag(fmt, JobInfoFormat::OTHER_JOB);
@@ -2207,10 +2207,10 @@ static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
     }
   }
 
-  auto next = state.jobTable.findNextCurrentJob();
+  auto &entry = state.jobTable.syncAndGetCurPrevJobs();
   if (optState.index == argvObj.size()) { // show all jobs
     for (auto &job : state.jobTable) {
-      showJobInfo(state.jobTable, next, target, output, job);
+      showJobInfo(entry, target, output, job);
     }
     return 0;
   }
@@ -2225,7 +2225,7 @@ static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
       hasError = true;
       continue;
     }
-    showJobInfo(state.jobTable, next, target, output, job);
+    showJobInfo(entry, target, output, job);
   }
   return hasError ? 1 : 0;
 }

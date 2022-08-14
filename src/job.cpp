@@ -413,7 +413,7 @@ Job JobTable::attach(Job job, bool disowned) {
     if (disowned) {
       job->disown();
     } else {
-      this->current = job;
+      this->setCurrentJob(job);
     }
   }
   return job;
@@ -459,6 +459,37 @@ int JobTable::waitForAll(WaitOp op, bool waitOne) {
   this->removeTerminatedJobs();
   errno = e;
   return lastStatus;
+}
+
+const JobTable::CurPrevJobs &JobTable::syncAndGetCurPrevJobs() {
+  if (auto &prev = this->curPrevJobs.prev; prev && prev->isDisowned()) {
+    prev = nullptr;
+  }
+  if (auto &cur = this->curPrevJobs.cur; cur && cur->isDisowned()) {
+    cur = std::move(this->curPrevJobs.prev);
+    this->curPrevJobs.prev = nullptr;
+  }
+
+  if (!this->curPrevJobs.prev) {
+    for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
+      auto &j = *iter;
+      if (j->is(JobObject::State::TERMINATED) || j->isDisowned()) {
+        continue;
+      }
+      if (j != this->curPrevJobs.cur) {
+        this->curPrevJobs.prev = j;
+        if (!this->curPrevJobs.cur) {
+          this->curPrevJobs.cur = std::move(this->curPrevJobs.prev);
+          this->curPrevJobs.prev = nullptr;
+        } else {
+          break;
+        }
+      }
+    }
+  } else {
+    assert(this->curPrevJobs.cur);
+  }
+  return this->curPrevJobs;
 }
 
 static const Proc *findLastStopped(const Job &job) {
@@ -589,10 +620,13 @@ void JobTable::removeTerminatedJobs() {
     job->disown();
   }
 
-  // change current job
-  if (this->current && !this->current->available()) {
-    this->current = nullptr;
-    this->current = this->findNextCurrentJob();
+  // clear cur/prev job
+  if (auto &prev = this->curPrevJobs.prev; prev && prev->is(JobObject::State::TERMINATED)) {
+    prev = nullptr;
+  }
+  if (auto &cur = this->curPrevJobs.cur; cur && cur->is(JobObject::State::TERMINATED)) {
+    cur = std::move(this->curPrevJobs.prev);
+    this->curPrevJobs.prev = nullptr;
   }
 }
 

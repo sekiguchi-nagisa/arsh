@@ -459,15 +459,18 @@ public:
 };
 
 class JobTable {
+public:
+  struct CurPrevJobs {
+    Job cur; // latest attached entry
+    Job prev;
+  };
+
 private:
   std::vector<Job> jobs;
 
   ProcTable procTable;
 
-  /**
-   * latest attached entry (current jos).
-   */
-  Job current;
+  CurPrevJobs curPrevJobs;
 
 public:
   NON_COPYABLE(JobTable);
@@ -509,33 +512,27 @@ public:
 
   int waitForAll(WaitOp op, bool waitOne = false);
 
-  const Job &getCurrentJob() const { return this->current; }
-
   /**
    *
    * @param job
    * must be already attached job (still available and owned)
    */
   void setCurrentJob(Job job) {
-    if (job->getJobID() != 0 && job->available() && !job->isDisowned()) {
-      this->current = std::move(job);
+    if (job->getJobID() != 0 && job->available() && !job->isDisowned() &&
+        this->curPrevJobs.cur != job) {
+      if (auto &cur = this->curPrevJobs.cur; cur && cur->isDisowned()) {
+        cur = nullptr;
+      }
+      this->curPrevJobs.prev = std::move(this->curPrevJobs.cur);
+      this->curPrevJobs.cur = std::move(job);
     }
   }
 
   /**
-   * get job that would become default (current) after current job exits
+   * sync and get cur/prev job
    * @return
-   * if no jobs, return nullptr
    */
-  Job findNextCurrentJob() const {
-    for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
-      auto &j = *iter;
-      if (j != this->current && !j->is(JobObject::State::TERMINATED) && !j->isDisowned()) {
-        return j;
-      }
-    }
-    return nullptr;
-  }
+  const CurPrevJobs &syncAndGetCurPrevJobs();
 
   /**
    * get Job by job id

@@ -388,6 +388,11 @@ struct JobTableTest : public VMTest {
 
 TEST_F(JobTableTest, attach) {
   JobTable jobTable;
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_FALSE(e.cur);
+    ASSERT_FALSE(e.prev);
+  }
 
   auto job1 = newJob();
   auto job2 = newJob([] { return 12; });
@@ -401,41 +406,73 @@ TEST_F(JobTableTest, attach) {
 
   jobTable.attach(job1);
   ASSERT_EQ(1u, job1->getJobID());
-  ASSERT_EQ(job1, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job1, e.cur);
+    ASSERT_FALSE(e.prev);
+  }
 
   jobTable.attach(job2);
   ASSERT_EQ(2u, job2->getJobID());
-  ASSERT_EQ(job2, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job2, e.cur);
+    ASSERT_EQ(job1, e.prev);
+  }
 
   jobTable.attach(job3);
   ASSERT_EQ(3u, job3->getJobID());
-  ASSERT_EQ(job3, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job3, e.cur);
+    ASSERT_EQ(job2, e.prev);
+  }
 
   jobTable.attach(job4);
   ASSERT_EQ(4u, job4->getJobID());
-  ASSERT_EQ(job4, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job4, e.cur);
+    ASSERT_EQ(job3, e.prev);
+  }
 
   jobTable.attach(job5);
   ASSERT_EQ(5u, job5->getJobID());
-  ASSERT_EQ(job5, jobTable.getCurrentJob());
   ASSERT_EQ(5, jobTable.size());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job5, e.cur);
+    ASSERT_EQ(job4, e.prev);
+  }
 
   int s = jobTable.waitForJob(job2, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(12, s);
   ASSERT_EQ(JobObject::State::TERMINATED, job2->state());
   ASSERT_EQ(0, job2->getJobID()); // after termination, jobId will be 0
   ASSERT_EQ(4, jobTable.size());
-  ASSERT_EQ(job5, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job5, e.cur);
+    ASSERT_EQ(job4, e.prev);
+  }
 
   job3->disown();
-  ASSERT_EQ(job5, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job5, e.cur);
+    ASSERT_EQ(job4, e.prev);
+  }
 
   s = jobTable.waitForJob(job5, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(15, s);
   ASSERT_EQ(JobObject::State::TERMINATED, job5->state());
   ASSERT_EQ(0, job5->getJobID()); // after termination, jobId will be 0
   ASSERT_EQ(3, jobTable.size());
-  ASSERT_EQ(job4, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job4, e.cur);
+    ASSERT_EQ(job1, e.prev);
+  }
 
   // job entry layout
   auto begin = getBeginIter(jobTable);
@@ -450,7 +487,11 @@ TEST_F(JobTableTest, attach) {
   // re-attach terminated job (do nothing)
   jobTable.attach(job5);
   ASSERT_EQ(0u, job5->getJobID());
-  ASSERT_EQ(job4, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job4, e.cur);
+    ASSERT_EQ(job1, e.prev);
+  }
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());
@@ -464,7 +505,11 @@ TEST_F(JobTableTest, attach) {
   // attach
   jobTable.attach(job6);
   ASSERT_EQ(2u, job6->getJobID());
-  ASSERT_EQ(job6, jobTable.getCurrentJob());
+  {
+    auto &e = jobTable.syncAndGetCurPrevJobs();
+    ASSERT_EQ(job6, e.cur);
+    ASSERT_EQ(job4, e.prev);
+  }
 
   begin = getBeginIter(jobTable);
   ASSERT_EQ(1u, (*begin)->getJobID());
