@@ -115,6 +115,7 @@
 - broken hex escape sequence handling in dollar string and echo command
 - line marker of nested pipeline
 - broken lexer state in prefix assignment parsing
+- ``Broken Pipe`` signal message after evaluation of last-pipe
 
 ## [0.26.0] - 2022-06-30
 

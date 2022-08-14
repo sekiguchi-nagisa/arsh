@@ -1,10 +1,11 @@
+#$test($err = '')
 
 assert (echo hello | grep hello) is Boolean
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 0
 
-assert (cat /dev/zero | 34) is Int
+assert (cat /dev/zero | 34) is Int  # not show signal message in last-pipe
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 141 : "require: 141, actual: ${$PIPESTATUS[0]}" # EPIPE
 assert $PIPESTATUS[1] == 0 : "require: 0, actual: ${$PIPESTATUS[1]}"
@@ -27,12 +28,12 @@ assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 0
 
 
-var t = echo | ($PID, $PPID)
+var t = echo | ($PID, $PPID)    # not show signal message in last-pipe
 assert $t._0 == $PID
 assert $t._1 == $PPID
 
 # ignore read pipe
-cat /dev/urandom | {}
+cat /dev/urandom | {}    # not show signal message in last-pipe
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 141
 assert $PIPESTATUS[1] == 0

@@ -215,9 +215,14 @@ private:
    */
   unsigned short jobID{0};
 
+  static constexpr unsigned char ATTR_DISOWNED = 1u << 7u;
+  static constexpr unsigned char ATTR_LAST_PIPE = 1u << 6u;
+
+  static constexpr unsigned char STATE_MASK = 0x0F;
+
   /**
-   * if disowned
-   * 1xxx xxxx
+   * upper 4bit is attribute
+   * lower 4bit is job state
    */
   unsigned char meta{static_cast<unsigned char>(State::RUNNING)};
 
@@ -244,6 +249,7 @@ private:
     }
     if (saveStdin) {
       this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+      setFlag(this->meta, ATTR_LAST_PIPE);
     }
   }
 
@@ -269,18 +275,17 @@ public:
 
   unsigned int getProcSize() const { return this->procSize; }
 
-  State state() const { return static_cast<State>(0x7F & this->meta); }
+  State state() const { return static_cast<State>(STATE_MASK & this->meta); }
 
   bool is(State st) const { return this->state() == st; }
 
   bool available() const { return this->is(State::RUNNING); }
 
-  bool isDisowned() const {
-    auto v = static_cast<unsigned char>(this->meta);
-    return static_cast<signed char>(v) < 0;
-  }
+  bool isDisowned() const { return hasFlag(this->meta, ATTR_DISOWNED); }
 
-  void disown() { this->meta |= 0x80; }
+  void disown() { setFlag(this->meta, ATTR_DISOWNED); }
+
+  bool isLastPipe() const { return hasFlag(this->meta, ATTR_LAST_PIPE); }
 
   const Proc *getProcs() const { return this->procs; }
 
@@ -369,8 +374,8 @@ public:
 
 private:
   void setState(State s) {
-    unsigned char d = 0x80 & this->meta;
-    this->meta = static_cast<unsigned char>(s) | d;
+    unsigned char attr = ~STATE_MASK & this->meta;
+    this->meta = static_cast<unsigned char>(s) | attr;
   }
 };
 

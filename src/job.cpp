@@ -532,7 +532,7 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
         return last->exitStatus();
       }
     }
-    if (job->is(JobObject::State::TERMINATED)) {
+    if (job->is(JobObject::State::TERMINATED) && !job->isLastPipe()) {
       job->getProcs()[job->getProcSize() - 1].showSignal();
       return job->exitStatus();
     }
