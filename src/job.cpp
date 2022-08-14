@@ -259,7 +259,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
 
     if (hasFlag(fmt, JobInfoFormat::CUR_JOB)) {
       value += " +";
-    } else if (hasFlag(fmt, JobInfoFormat::NEXT_CUR_JOB)) {
+    } else if (hasFlag(fmt, JobInfoFormat::PREV_JOB)) {
       value += " -";
     } else if (hasFlag(fmt, JobInfoFormat::OTHER_JOB)) {
       value += "  ";

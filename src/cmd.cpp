@@ -2171,7 +2171,7 @@ static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, J
     if (job == entry.cur) {
       setFlag(fmt, JobInfoFormat::CUR_JOB);
     } else if (job == entry.prev) {
-      setFlag(fmt, JobInfoFormat::NEXT_CUR_JOB);
+      setFlag(fmt, JobInfoFormat::PREV_JOB);
     } else {
       setFlag(fmt, JobInfoFormat::OTHER_JOB);
     }

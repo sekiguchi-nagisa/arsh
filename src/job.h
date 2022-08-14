@@ -172,7 +172,7 @@ enum class JobInfoFormat : unsigned int {
   JOB_ID = 1u << 0u,
   STATE = 1u << 1u,
   CUR_JOB = 1u << 2u,
-  NEXT_CUR_JOB = 1u << 3u,
+  PREV_JOB = 1u << 3u,
   OTHER_JOB = 1u << 4u,
   PID = 1u << 5u,
   CHILD = 1u << 6u,
