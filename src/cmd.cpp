@@ -2079,11 +2079,15 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
   auto cleanup = finally([&] { state.jobTable.waitForAny(); });
 
-  if (optState.index == argvObj.size()) {
-    return state.jobTable.waitForAll(op, breakNext);
-  }
-
   std::vector<std::pair<Job, int>> targets;
+  if (optState.index == argvObj.size()) {
+    for (auto &j : state.jobTable) {
+      if (j->isDisowned()) {
+        continue;
+      }
+      targets.emplace_back(j, -1);
+    }
+  }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
     auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);

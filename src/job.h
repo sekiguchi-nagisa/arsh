@@ -515,8 +515,6 @@ public:
    */
   void waitForAny();
 
-  int waitForAll(WaitOp op, bool waitOne = false);
-
   /**
    *
    * @param job

@@ -442,25 +442,6 @@ void JobTable::waitForAny() {
   this->removeTerminatedJobs();
 }
 
-int JobTable::waitForAll(WaitOp op, bool waitOne) {
-  SignalGuard guard;
-  DSState::clearPendingSignal(SIGCHLD);
-
-  int lastStatus = 0;
-  for (auto &job : this->jobs) {
-    if (!job->isDisowned()) {
-      lastStatus = waitForJobImpl(job, op);
-      if (lastStatus < 0 || waitOne) {
-        break;
-      }
-    }
-  }
-  int e = errno;
-  this->removeTerminatedJobs();
-  errno = e;
-  return lastStatus;
-}
-
 const JobTable::CurPrevJobs &JobTable::syncAndGetCurPrevJobs() {
   if (auto &prev = this->curPrevJobs.prev; prev && prev->isDisowned()) {
     prev = nullptr;
