@@ -419,9 +419,9 @@ Job JobTable::attach(Job job, bool disowned) {
   return job;
 }
 
-int JobTable::waitForJob(Job &job, WaitOp op) {
+int JobTable::waitForJob(const Job &job, WaitOp op) {
   LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
-  int status = waitForJobImpl(job, op);
+  int status = this->waitForJobImpl(job, op);
   int e = errno;
   this->removeTerminatedJobs();
   errno = e;
@@ -489,7 +489,7 @@ static const Proc *findLastStopped(const Job &job) {
   return last;
 }
 
-int JobTable::waitForJobImpl(Job &job, WaitOp op) {
+int JobTable::waitForJobImpl(const Job &job, WaitOp op) {
   if (job && !job->available()) {
     return job->wait(op);
   }

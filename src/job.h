@@ -501,12 +501,13 @@ public:
   /**
    * if has ownership, wait termination.
    * @param job
+   * may be null. if null, return immediately
    * @param op
    * @return
    * exit status of last process.
    * after waiting termination, remove entry.
    */
-  int waitForJob(Job &job, WaitOp op);
+  int waitForJob(const Job &job, WaitOp op);
 
   /**
    * update status of managed jobs.
@@ -605,7 +606,7 @@ private:
    * @param op
    * @return
    */
-  int waitForJobImpl(Job &job, WaitOp op);
+  int waitForJobImpl(const Job &job, WaitOp op);
 
   void removeTerminatedJobs();
 };

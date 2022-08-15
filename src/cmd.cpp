@@ -2109,14 +2109,13 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   // wait jobs
   int lastStatus = 0;
   if (breakNext) {
-    Job job;
     do {
       for (auto &target : targets) {
         if (!target.first->available()) {
           return target.first->exitStatus();
         }
       }
-    } while ((lastStatus = state.jobTable.waitForJob(job, op)) > -1);
+    } while ((lastStatus = state.jobTable.waitForJob(nullptr, op)) > -1);
   } else {
     for (auto &target : targets) {
       lastStatus = state.jobTable.waitForJob(target.first, op);
