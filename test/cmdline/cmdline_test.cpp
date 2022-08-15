@@ -284,10 +284,26 @@ ArithmeticError: zero division
 }
 
 TEST_F(CmdlineTest, signal) {
+  // simple command
   std::string str = strsignal(SIGKILL);
   str += "\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${$SIG['kill'].message()}"), 0, str));
+
+  // pipeline
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(DS("echo hello | sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
+
+  // command substitution
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS("$(sh -c 'kill -s kill $$')"), 128 + SIGKILL, "", str));
+
+  // background job (not report signal message)
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(DS("var j = sh -c 'kill -s kill $$' & exit ${$j.wait()}"), 128 + SIGKILL));
+
+  // background job (not report signal message)
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(DS("sh -c 'kill -s kill $$' & wait"), 128 + SIGKILL));
 
   if (platform::platform() == platform::PlatformType::DARWIN) {
     return;
@@ -298,9 +314,7 @@ TEST_F(CmdlineTest, signal) {
   str += " (core dumped)\n";
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
-        var j = while(true) {} &
-        $j.raise($SIGQUIT)
-        var s = $j.wait()
+        echo | sh -c 'kill -s quit $$'
         exit $s
 )");
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));

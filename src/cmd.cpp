@@ -1307,6 +1307,8 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     if (job->isRunning()) {
       state.jobTable.setCurrentJob(job);
       job->showInfo();
+    } else if (job->isTerminated()) {
+      job->getProcs()[job->getProcSize() - 1].showSignal();
     }
     state.tryToBeForeground();
     if (errNum != 0) {
