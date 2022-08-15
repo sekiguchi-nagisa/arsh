@@ -380,7 +380,7 @@ bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, c
     int status = entry->wait(waitOp);
     int errNum = errno;
     state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
-    if (entry->available()) {
+    if (entry->isRunning()) {
       auto job = state.jobTable.attach(entry);
       if (job->getProcs()[0].is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();

@@ -279,7 +279,9 @@ public:
 
   bool is(State st) const { return this->state() == st; }
 
-  bool available() const { return this->is(State::RUNNING); }
+  bool isRunning() const { return this->is(State::RUNNING); }
+
+  bool isTerminated() const { return this->is(State::TERMINATED); }
 
   bool isDisowned() const { return hasFlag(this->meta, ATTR_DISOWNED); }
 
@@ -343,7 +345,7 @@ public:
   void send(int sigNum) const;
 
   void updateState() {
-    if (this->available()) {
+    if (this->isRunning()) {
       unsigned int c = 0;
       for (unsigned int i = 0; i < this->getProcSize(); i++) {
         if (this->getProcs()[i].is(Proc::State::TERMINATED)) {
@@ -522,7 +524,7 @@ public:
    * must be already attached job (still available and owned)
    */
   void setCurrentJob(Job job) {
-    if (job->getJobID() != 0 && job->available() && !job->isDisowned() &&
+    if (job->getJobID() != 0 && job->isRunning() && !job->isDisowned() &&
         this->curPrevJobs.cur != job) {
       if (auto &cur = this->curPrevJobs.cur; cur && cur->isDisowned()) {
         cur = nullptr;

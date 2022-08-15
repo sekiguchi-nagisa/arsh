@@ -1998,7 +1998,7 @@ YDSH_METHOD job_poll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_poll);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   ctx.jobTable.waitForJob(job, WaitOp::NONBLOCKING);
-  RET_BOOL(job->available());
+  RET_BOOL(job->isRunning());
 }
 
 //!bind: function wait($this : Job) : Int
@@ -2048,7 +2048,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 
   if (index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
     int pid = job.getValidPid(index);
-    if (pid < 0 || !job.available()) {
+    if (pid < 0 || !job.isRunning()) {
       RET(DSValue::createInvalid());
     }
     RET(DSValue::createInt(pid));

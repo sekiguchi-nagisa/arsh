@@ -298,7 +298,7 @@ bool JobObject::restoreStdin() {
 }
 
 void JobObject::send(int sigNum) const {
-  if (!this->available()) {
+  if (!this->isRunning()) {
     return;
   }
 
@@ -319,7 +319,7 @@ int JobObject::wait(WaitOp op) {
 
   errno = 0;
   int lastStatus = 0;
-  if (this->available()) {
+  if (this->isRunning()) {
     for (unsigned short i = 0; i < this->procSize; i++) {
       auto &proc = this->procs[i];
       lastStatus = proc.wait(op, i == this->procSize - 1);
@@ -329,7 +329,7 @@ int JobObject::wait(WaitOp op) {
     }
     this->updateState();
   }
-  if (!this->available()) {
+  if (!this->isRunning()) {
     return this->exitStatus();
   }
   return lastStatus;
@@ -404,7 +404,7 @@ void ProcTable::batchedRemove() {
 // ######################
 
 Job JobTable::attach(Job job, bool disowned) {
-  if (job->getJobID() == 0 && job->available()) { // not attached
+  if (job->getJobID() == 0 && job->isRunning()) { // not attached
     assert(!job->isDisowned());
     auto ret = this->findEmptyEntry();
     this->jobs.insert(this->jobs.begin() + ret, job);
@@ -454,7 +454,7 @@ const JobTable::CurPrevJobs &JobTable::syncAndGetCurPrevJobs() {
   if (!this->curPrevJobs.prev) {
     for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
       auto &j = *iter;
-      if (j->is(JobObject::State::TERMINATED) || j->isDisowned()) {
+      if (j->isTerminated() || j->isDisowned()) {
         continue;
       }
       if (j != this->curPrevJobs.cur) {
@@ -490,7 +490,7 @@ static const Proc *findLastStopped(const Job &job) {
 }
 
 int JobTable::waitForJobImpl(const Job &job, WaitOp op) {
-  if (job && !job->available()) {
+  if (job && !job->isRunning()) {
     return job->wait(op);
   }
   if (const Proc * p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
@@ -513,7 +513,7 @@ int JobTable::waitForJobImpl(const Job &job, WaitOp op) {
         return last->exitStatus();
       }
     }
-    if (job->is(JobObject::State::TERMINATED) && !job->isLastPipe()) {
+    if (job->isTerminated() && !job->isLastPipe()) {
       job->getProcs()[job->getProcSize() - 1].showSignal();
       return job->exitStatus();
     }
@@ -579,7 +579,7 @@ void JobTable::removeTerminatedJobs() {
 
   unsigned int removedIndex;
   for (removedIndex = 0; removedIndex < this->jobs.size(); removedIndex++) {
-    if (!this->jobs[removedIndex]->available()) {
+    if (!this->jobs[removedIndex]->isRunning()) {
       break;
     }
   }
@@ -588,8 +588,8 @@ void JobTable::removeTerminatedJobs() {
   }
 
   for (unsigned int i = removedIndex + 1; i < this->jobs.size(); i++) {
-    if (this->jobs[i]->available()) {
-      assert(!this->jobs[removedIndex]->available());
+    if (this->jobs[i]->isRunning()) {
+      assert(!this->jobs[removedIndex]->isRunning());
       std::swap(this->jobs[i], this->jobs[removedIndex]);
       removedIndex++;
     }
@@ -602,10 +602,10 @@ void JobTable::removeTerminatedJobs() {
   }
 
   // clear cur/prev job
-  if (auto &prev = this->curPrevJobs.prev; prev && prev->is(JobObject::State::TERMINATED)) {
+  if (auto &prev = this->curPrevJobs.prev; prev && prev->isTerminated()) {
     prev = nullptr;
   }
-  if (auto &cur = this->curPrevJobs.cur; cur && cur->is(JobObject::State::TERMINATED)) {
+  if (auto &cur = this->curPrevJobs.cur; cur && cur->isTerminated()) {
     cur = std::move(this->curPrevJobs.prev);
     this->curPrevJobs.prev = nullptr;
   }

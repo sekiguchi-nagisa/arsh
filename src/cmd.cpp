@@ -1304,7 +1304,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   if (fg) {
     int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED); // FIXME: check root shell
     int errNum = errno;
-    if (job->available()) {
+    if (job->isRunning()) {
       state.jobTable.setCurrentJob(job);
       job->showInfo();
     }
@@ -2111,7 +2111,7 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   if (breakNext) {
     do {
       for (auto &target : targets) {
-        if (!target.first->available()) {
+        if (!target.first->isRunning()) {
           return target.first->exitStatus();
         }
       }
