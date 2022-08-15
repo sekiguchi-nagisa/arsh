@@ -302,8 +302,7 @@ TEST_F(CmdlineTest, signal) {
       this->expect(DS("var j = sh -c 'kill -s kill $$' & exit ${$j.wait()}"), 128 + SIGKILL));
 
   // background job (not report signal message)
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(DS("sh -c 'kill -s kill $$' & wait"), 128 + SIGKILL));
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$' & wait"), 128 + SIGKILL));
 
   if (platform::platform() == platform::PlatformType::DARWIN) {
     return;
@@ -315,7 +314,6 @@ TEST_F(CmdlineTest, signal) {
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
         echo | sh -c 'kill -s quit $$'
-        exit $s
 )");
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
 }
