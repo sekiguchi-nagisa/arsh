@@ -313,7 +313,8 @@ TEST_F(CmdlineTest, signal) {
   str += " (core dumped)\n";
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
-        echo | sh -c 'kill -s quit $$'
+        echo | eval $YDSH_BIN -c 'kill -s quit $$'
+        exit $?
 )");
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
 }
