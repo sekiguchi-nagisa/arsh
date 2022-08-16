@@ -445,6 +445,7 @@ void JobTable::waitForAny() {
       break;
     }
     if (auto [job, offset] = this->updateProcState(ret); job && job->isTerminated()) {
+      (void)offset;
       this->notifyTermination(job);
     }
   }
