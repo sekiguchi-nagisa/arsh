@@ -780,3 +780,9 @@ static int getCharLen(DSLineEditOp op, DSLineEdit &edit) {
   }
   return 0;
 }
+
+void DSState_watchNotification(DSState *st, DSNotifyCallback *callback) {
+  if (st) {
+    st->jobTable.setNotifyCallback(callback);
+  }
+}

@@ -54,6 +54,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
 
     // clear JobTable entries
     st.jobTable.loseControlOfJobs();
+    st.jobTable.setNotifyCallback(nullptr);
 
     // clear termination hook
     assert(st.termHookIndex != 0);
@@ -176,7 +177,7 @@ bool Proc::updateState(WaitResult ret) {
   } else if (WIFSIGNALED(status)) {
     int sigNum = WTERMSIG(status);
     this->state_ = State::TERMINATED;
-    this->exitStatus_ = sigNum + 128;
+    this->exitStatus_ = sigNum + SIGNALED_STATUS_OFFSET;
     this->signaled_ = true;
 #ifdef WCOREDUMP
     if (WCOREDUMP(status)) {
@@ -185,7 +186,7 @@ bool Proc::updateState(WaitResult ret) {
 #endif
   } else if (WIFSTOPPED(status)) {
     this->state_ = State::STOPPED;
-    this->exitStatus_ = WSTOPSIG(status) + 128;
+    this->exitStatus_ = WSTOPSIG(status) + SIGNALED_STATUS_OFFSET;
   } else if (WIFCONTINUED(status)) {
     this->state_ = State::RUNNING;
   }
@@ -194,7 +195,7 @@ bool Proc::updateState(WaitResult ret) {
 
 void Proc::showSignal() const {
   if (this->is(State::TERMINATED) && this->signaled()) {
-    int sigNum = this->exitStatus_ - 128;
+    int sigNum = this->asSigNum();
     fprintf(stderr, "%s%s\n", strsignal(sigNum), this->coreDump() ? " (core dumped)" : "");
     fflush(stderr); // FIXME: insert newline when terminated by CTRL-C or CTRL-Z
   }
@@ -238,18 +239,6 @@ static Proc::State resolvePipelineState(const JobObject &job) {
   return termCount == size ? Proc::State::TERMINATED : Proc::State::RUNNING;
 }
 
-static const char *toString(Proc::State state) {
-  switch (state) {
-  case Proc::State::RUNNING:
-    return "Running";
-  case Proc::State::STOPPED:
-    return "Stopped";
-  case Proc::State::TERMINATED:
-    return "Done";
-  }
-  return ""; // normally unreachable, but suppress gcc warning
-}
-
 std::string JobObject::formatInfo(JobInfoFormat fmt) const {
   std::string value;
   if (hasFlag(fmt, JobInfoFormat::JOB_ID)) {
@@ -275,7 +264,25 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
     if (!value.empty()) {
       value += " ";
     }
-    value += toString(resolvePipelineState(*this));
+    switch (resolvePipelineState(*this)) {
+    case Proc::State::RUNNING:
+      value += "Running";
+      break;
+    case Proc::State::STOPPED:
+      value += "Stopped";
+      break;
+    case Proc::State::TERMINATED: {
+      auto &last = this->lastProc();
+      assert(last.is(Proc::State::TERMINATED));
+      if (last.signaled()) {
+        int sigNum = last.asSigNum();
+        value += strsignal(sigNum);
+      } else {
+        value += "Done";
+      }
+      break;
+    }
+    }
   }
   if (hasFlag(fmt, JobInfoFormat::DESC)) {
     if (!value.empty()) {
@@ -419,9 +426,9 @@ Job JobTable::attach(Job job, bool disowned) {
   return job;
 }
 
-int JobTable::waitForJob(const Job &job, WaitOp op) {
+int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
   LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
-  int status = this->waitForJobImpl(job, op);
+  int status = this->waitForJobImpl(job, op, suppressNotify);
   int e = errno;
   this->removeTerminatedJobs();
   errno = e;
@@ -437,7 +444,9 @@ void JobTable::waitForAny() {
     if (ret.pid == -1) {
       break;
     }
-    this->updateProcState(ret);
+    if (auto [job, offset] = this->updateProcState(ret); job && job->isTerminated()) {
+      this->notifyTermination(job);
+    }
   }
   this->removeTerminatedJobs();
 }
@@ -489,7 +498,7 @@ static const Proc *findLastStopped(const Job &job) {
   return last;
 }
 
-int JobTable::waitForJobImpl(const Job &job, WaitOp op) {
+int JobTable::waitForJobImpl(const Job &job, WaitOp op, bool suppressNotify) {
   if (job && !job->isRunning()) {
     return job->wait(op);
   }
@@ -502,11 +511,16 @@ int JobTable::waitForJobImpl(const Job &job, WaitOp op) {
     if (ret.pid == -1) {
       return -1;
     }
-    auto pair = this->updateProcState(ret);
+    auto [j, offset] = this->updateProcState(ret);
+    if (j && j->isTerminated()) {
+      if (j != job || !suppressNotify) {
+        this->notifyTermination(j);
+      }
+    }
     if (!job) {
       return 0;
-    } else if (pair.first && pair.first == job) {
-      auto &proc = job->getProcs()[pair.second];
+    } else if (j == job) {
+      auto &proc = job->getProcs()[offset];
       lastStatus = proc.exitStatus();
       if (const Proc * last; proc.is(Proc::State::STOPPED) && op == WaitOp::BLOCK_UNTRACED &&
                              (last = findLastStopped(job))) {
@@ -563,11 +577,25 @@ std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
     proc.updateState(ret);
     if (proc.is(Proc::State::TERMINATED)) {
       this->procTable.deleteProc(*entry);
+      if (this->notifyCallback && this->procTable.getDeletedCount() == 1) {
+        this->syncAndGetCurPrevJobs();
+      }
     }
     job->updateState();
     return {job, entry->procOffset()};
   }
   return {nullptr, 0};
+}
+
+void JobTable::notifyTermination(const ydsh::Job &job) {
+  assert(job);
+  if (!this->notifyCallback || !job->isTerminated() || job->isDisowned() || job->isLastPipe()) {
+    return;
+  }
+  auto fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
+  setFlag(fmt, this->curPrevJobs.getJobType(job));
+  auto info = job->formatInfo(fmt);
+  this->notifyCallback(DSNotifyKind::JOB_TERMINATE, info.c_str());
 }
 
 void JobTable::removeTerminatedJobs() {

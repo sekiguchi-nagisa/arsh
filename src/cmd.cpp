@@ -1285,12 +1285,13 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
 
   int ret = 0;
   if (job) {
+    auto fmt = JobInfoFormat::DESC;
     if (fg) {
       beForeground(job->getValidPid(0));
-      job->showInfo(stdout, JobInfoFormat::DESC);
     } else {
-      job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
+      setFlag(fmt, JobInfoFormat::JOB_ID);
     }
+    job->showInfo(stdout, fmt);
     job->send(SIGCONT);
     state.jobTable.waitForAny();
   } else {
@@ -1302,13 +1303,13 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   }
 
   if (fg) {
-    int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED); // FIXME: check root shell
+    int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED, true); // FIXME: check root shell
     int errNum = errno;
     if (job->isRunning()) {
       state.jobTable.setCurrentJob(job);
       job->showInfo();
     } else if (job->isTerminated()) {
-      job->getProcs()[job->getProcSize() - 1].showSignal();
+      job->lastProc().showSignal();
     }
     state.tryToBeForeground();
     if (errNum != 0) {
@@ -2173,13 +2174,7 @@ static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, J
   case JobsOutput::DEFAULT:
   case JobsOutput::VERBOSE:
     fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
-    if (job == entry.cur) {
-      setFlag(fmt, JobInfoFormat::CUR_JOB);
-    } else if (job == entry.prev) {
-      setFlag(fmt, JobInfoFormat::PREV_JOB);
-    } else {
-      setFlag(fmt, JobInfoFormat::OTHER_JOB);
-    }
+    setFlag(fmt, entry.getJobType(job));
     if (output == JobsOutput::VERBOSE) {
       setFlag(fmt, JobInfoFormat::PID | JobInfoFormat::CHILD);
     }

@@ -23,11 +23,11 @@
 #include <type_traits>
 #include <vector>
 
+#include <ydsh/ydsh.h>
+
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
 #include "object.h"
-
-struct DSState;
 
 namespace ydsh {
 
@@ -68,6 +68,8 @@ public:
   };
 
 private:
+  static constexpr unsigned char SIGNALED_STATUS_OFFSET = 128;
+
   pid_t pid_;
   State state_;
 
@@ -94,6 +96,11 @@ public:
   int exitStatus() const { return this->exitStatus_; }
 
   bool signaled() const { return this->signaled_; }
+
+  int asSigNum() const {
+    assert(this->signaled());
+    return this->exitStatus() - SIGNALED_STATUS_OFFSET;
+  }
 
   bool coreDump() const { return this->coreDump_; }
 
@@ -291,6 +298,8 @@ public:
 
   const Proc *getProcs() const { return this->procs; }
 
+  const Proc &lastProc() const { return this->getProcs()[this->getProcSize() - 1]; }
+
   /**
    * get valid pid
    * @param index
@@ -429,7 +438,7 @@ public:
   const Entry *findProc(pid_t pid) const;
 
   /**
-   * call markDelete() in specified entry by pid.
+   * call deleteProc() in specified entry by pid.
    * actual delete operation is not performed until call batchedRemove()
    * @param pid
    * @return
@@ -470,6 +479,16 @@ public:
   struct CurPrevJobs {
     Job cur; // latest attached entry
     Job prev;
+
+    JobInfoFormat getJobType(const Job &job) const {
+      if (this->cur == job) {
+        return JobInfoFormat::CUR_JOB;
+      } else if (this->prev == job) {
+        return JobInfoFormat::PREV_JOB;
+      } else {
+        return JobInfoFormat::OTHER_JOB;
+      }
+    }
   };
 
 private:
@@ -479,6 +498,8 @@ private:
 
   CurPrevJobs curPrevJobs;
 
+  DSNotifyCallback *notifyCallback{nullptr};
+
 public:
   NON_COPYABLE(JobTable);
 
@@ -486,6 +507,8 @@ public:
 
   JobTable() = default;
   ~JobTable() = default;
+
+  void setNotifyCallback(DSNotifyCallback *callback) { this->notifyCallback = callback; }
 
   Job attach(Job job, bool disowned = false);
 
@@ -505,11 +528,13 @@ public:
    * @param job
    * may be null. if null, return immediately
    * @param op
+   * @param suppressNotify
+   * if true, suppress notification of specified job termination
    * @return
    * exit status of last process.
    * after waiting termination, remove entry.
    */
-  int waitForJob(const Job &job, WaitOp op);
+  int waitForJob(const Job &job, WaitOp op, bool suppressNotify = false);
 
   /**
    * update status of managed jobs.
@@ -606,9 +631,12 @@ private:
    * not directly use it
    * @param job
    * @param op
+   * @param suppressNotify
    * @return
    */
-  int waitForJobImpl(const Job &job, WaitOp op);
+  int waitForJobImpl(const Job &job, WaitOp op, bool suppressNotify);
+
+  void notifyTermination(const Job &job);
 
   void removeTerminatedJobs();
 };

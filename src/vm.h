@@ -20,8 +20,6 @@
 #include <chrono>
 #include <cstdio>
 
-#include <ydsh/ydsh.h>
-
 #include "cmd.h"
 #include "core.h"
 #include "job.h"

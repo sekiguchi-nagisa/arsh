@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <vector>
 
 #include <linenoise.h>
 
@@ -83,6 +84,21 @@ static const char *prompt(unsigned int n) {
   return edit.data;
 }
 
+static std::vector<std::string> notifyQueue;
+
+static int notifyCallback(DSNotifyKind, const char *message) {
+  notifyQueue.push_back(message);
+  return 0;
+}
+
+static void showNotification() {
+  for (auto &e : notifyQueue) {
+    fputs(e.c_str(), stderr);
+    fflush(stderr);
+  }
+  notifyQueue.clear();
+}
+
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
@@ -91,6 +107,10 @@ static bool readLine(std::string &line) {
 
   bool continuation = false;
   while (true) {
+    if (!continuation) {
+      showNotification();
+    }
+
     errno = 0;
     auto str = ydsh::CStrPtr(linenoise(prompt(continuation ? 2 : 1)));
     if (str == nullptr) {
@@ -341,6 +361,8 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
   }
 
   loadHistory();
+
+  DSState_watchNotification(dsState, notifyCallback);
 
   int status = 0;
   for (std::string line; readLine(line);) {
