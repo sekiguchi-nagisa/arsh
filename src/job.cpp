@@ -277,6 +277,9 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
       if (last.signaled()) {
         int sigNum = last.asSigNum();
         value += strsignal(sigNum);
+      } else if (int s = last.exitStatus(); s != 0) {
+        value += "Exit ";
+        value += std::to_string(s);
       } else {
         value += "Done";
       }

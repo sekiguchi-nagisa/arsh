@@ -203,6 +203,8 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("1", ": Int = 1", "[1] + Interrupt: 2  while(true){}\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -238,9 +240,55 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("2", ": Int = 2", "[1] + Interrupt: 2  while(true){}\n"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
+TEST_F(InteractiveTest, wait1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("sleep 1 &", ": Job = %1"));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait", "", "[1] + Done  sleep 1\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
+TEST_F(InteractiveTest, wait2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("{ sleep 1; exit 45; } &", ": Job = %1"));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1230 + 4", ": Int = 1234",
+                                                  "[1] + Exit 45  { sleep 1; exit 45; }\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
+TEST_F(InteractiveTest, wait3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
+
+  std::string err = "[1] + ";
+  err += strsignal(SIGKILL);
+  err += "  while(true){}\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); wait $j", "", err.c_str()));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 137));
+}
+
+TEST_F(InteractiveTest, wait4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &!"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs")); // disowned job is not printed
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); $j.wait()", ": Int = 137"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
 int main(int argc, char **argv) {
