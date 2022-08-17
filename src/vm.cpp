@@ -2587,7 +2587,9 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     auto *handle = state.typePool.lookupMethod(errorType, bt ? OP_SHOW : OP_STR);
     assert(handle);
 
+    setFlag(DSState::eventDesc, VMEvent::MASK);
     DSValue ret = VM::callMethod(state, *handle, DSValue(except), makeArgs());
+    unsetFlag(DSState::eventDesc, VMEvent::MASK);
     if (state.hasError()) {
       state.stack.clearThrownObject();
       fputs("cannot obtain string representation\n", stderr);
