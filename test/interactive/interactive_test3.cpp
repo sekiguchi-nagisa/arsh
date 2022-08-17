@@ -203,8 +203,8 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("1", ": Int = 1", "[1] + Interrupt: 2  while(true){}\n"));
+  err = format("[1] + %s  while(true){}\n", strsignal(SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1", err.c_str()));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -240,8 +240,8 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("2", ": Int = 2", "[1] + Interrupt: 2  while(true){}\n"));
+  err = format("[1] %s  while(true){}\n", strsignal(SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2", err.c_str()));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
@@ -274,9 +274,7 @@ TEST_F(InteractiveTest, wait3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
 
-  std::string err = "[1] + ";
-  err += strsignal(SIGKILL);
-  err += "  while(true){}\n";
+  std::string err = format("[1] + %s  while(true){}\n", strsignal(SIGKILL));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); wait $j", "", err.c_str()));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 137));
 }
