@@ -1,6 +1,6 @@
 
-#ifndef YDSH_TEST_INTERATIVE_BASE_HPP
-#define YDSH_TEST_INTERATIVE_BASE_HPP
+#ifndef YDSH_TEST_INTERACTIVE_BASE_HPP
+#define YDSH_TEST_INTERACTIVE_BASE_HPP
 
 #include "gtest/gtest.h"
 
@@ -32,7 +32,7 @@ using namespace ydsh;
 
 #define PROMPT this->prompt
 
-static inline std::string initPrompt() {
+inline std::string initPrompt() {
   std::string v = "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
   v += (getuid() == 0 ? "# " : "$ ");
   return v;
@@ -45,4 +45,26 @@ struct InteractiveTest : public InteractiveShellBase {
   }
 };
 
-#endif // YDSH_TEST_INTERATIVE_BASE_HPP
+inline std::string promptAfterCtrlC(const std::string &prompt) {
+  std::string value;
+  if (platform::platform() != platform::PlatformType::CYGWIN) {
+    value += "^C%\n";
+  }
+  value += prompt;
+  return value;
+}
+
+inline std::string promptAfterCtrlZ(const std::string &prompt) {
+  std::string value;
+  if (platform::platform() != platform::PlatformType::CYGWIN) {
+    value += "^Z%\n";
+  }
+  value += prompt;
+  return value;
+}
+
+inline const char *ctrlZChar() {
+  return platform::platform() != platform::PlatformType::CYGWIN ? "^Z" : "";
+}
+
+#endif // YDSH_TEST_INTERACTIVE_BASE_HPP

@@ -1,4 +1,4 @@
-#include "interative_base.hpp"
+#include "interactive_base.hpp"
 
 TEST_F(InteractiveTest, exit) {
   this->invoke("--quiet", "--norc");
