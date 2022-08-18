@@ -462,16 +462,6 @@ Job JobTable::attach(Job job, bool disowned) {
   return job;
 }
 
-int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
-  LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
-  int status = this->waitForJobImpl(job, op, suppressNotify);
-  int e = errno;
-  this->removeTerminatedJobs();
-  errno = e;
-  LOG(DUMP_WAIT, "@@exit");
-  return status;
-}
-
 void JobTable::waitForAny() {
   SignalGuard guard;
   DSState::clearPendingSignal(SIGCHLD);
@@ -535,13 +525,20 @@ static const Proc *findLastStopped(const Job &job) {
   return last;
 }
 
-int JobTable::waitForJobImpl(const Job &job, WaitOp op, bool suppressNotify) {
+int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
+  LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
   if (job && !job->isRunning()) {
     return job->wait(op);
   }
   if (const Proc * p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
     return p->exitStatus();
   }
+
+  auto cleanup = finally([&] {
+    int old = errno;
+    this->removeTerminatedJobs();
+    errno = old;
+  });
 
   int lastStatus = 0;
   for (WaitResult ret; (ret = waitForProc(-1, op)).pid != 0;) {

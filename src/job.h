@@ -627,15 +627,6 @@ private:
    */
   std::pair<Job, unsigned int> updateProcState(WaitResult ret);
 
-  /**
-   * not directly use it
-   * @param job
-   * @param op
-   * @param suppressNotify
-   * @return
-   */
-  int waitForJobImpl(const Job &job, WaitOp op, bool suppressNotify);
-
   void notifyTermination(const Job &job);
 
   void removeTerminatedJobs();
