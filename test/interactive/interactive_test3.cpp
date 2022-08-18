@@ -240,7 +240,7 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  err = format("[1] %s  while(true){}\n", strsignal(SIGINT));
+  err = format("[1] + %s  while(true){}\n", strsignal(SIGINT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2", err.c_str()));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
