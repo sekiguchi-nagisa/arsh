@@ -203,8 +203,8 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  err = format("[1] + %s  while(true){}\n", strsignal(SIGINT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1", err.c_str()));
+  err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("1", ": Int = 1", err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -240,8 +240,8 @@ SystemError: command substitution failed, caused by `%s'
 )",
                            strerror(EINTR));
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  err = format("[1] + %s  while(true){}\n", strsignal(SIGINT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2", err.c_str()));
+  err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("2", ": Int = 2", err));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
@@ -253,7 +253,8 @@ TEST_F(InteractiveTest, wait1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("sleep 1 &", ": Job = %1"));
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait", "", "[1] + Done  sleep 1\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpectRegex("wait", "", "^\\[1\\] \\+ [0-9]+ Done  sleep 1\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
@@ -263,8 +264,8 @@ TEST_F(InteractiveTest, wait2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("{ sleep 1; exit 45; } &", ": Job = %1"));
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1230 + 4", ": Int = 1234",
-                                                  "[1] + Exit 45  { sleep 1; exit 45; }\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(
+      "1230 + 4", ": Int = 1234", "^\\[1\\] \\+ [0-9]+ Exit 45  \\{ sleep 1; exit 45; \\}\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
@@ -274,8 +275,8 @@ TEST_F(InteractiveTest, wait3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
 
-  std::string err = format("[1] + %s  while(true){}\n", strsignal(SIGKILL));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); wait $j", "", err.c_str()));
+  std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.raise($SIGKILL); wait $j", "", err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 137));
 }
 

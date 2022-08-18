@@ -222,21 +222,42 @@ static void formatPipeline(const StringRef ref, std::string &out) {
   });
 }
 
-static Proc::State resolvePipelineState(const JobObject &job) {
-  unsigned int termCount = 0;
-  unsigned int size = job.getProcSize();
-  for (unsigned int i = 0; i < size; i++) {
-    switch (job.getProcs()[i].state()) {
-    case Proc::State::RUNNING:
-      break;
-    case Proc::State::STOPPED:
-      return Proc::State::STOPPED;
-    case Proc::State::TERMINATED:
-      termCount++;
-      break;
+static std::vector<std::string> splitPipeline(const StringRef ref) {
+  std::vector<std::string> values;
+  splitByDelim(ref, '\0', [&values](StringRef sub, bool delim) {
+    std::string value = sub.toString();
+    if (delim) {
+      value += " |";
     }
+    values.push_back(std::move(value));
+    return true;
+  });
+  return values;
+}
+
+static void formatProcState(const Proc &proc, std::string &out) {
+  if (!out.empty()) {
+    out += " ";
   }
-  return termCount == size ? Proc::State::TERMINATED : Proc::State::RUNNING;
+  switch (proc.state()) {
+  case Proc::State::RUNNING:
+    out += "Running";
+    break;
+  case Proc::State::STOPPED:
+    out += "Stopped";
+    break;
+  case Proc::State::TERMINATED:
+    if (proc.signaled()) {
+      int sigNum = proc.asSigNum();
+      out += strsignal(sigNum);
+    } else if (int s = proc.exitStatus(); s != 0) {
+      out += "Exit ";
+      out += std::to_string(s);
+    } else {
+      out += "Done";
+    }
+    break;
+  }
 }
 
 std::string JobObject::formatInfo(JobInfoFormat fmt) const {
@@ -254,46 +275,58 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
       value += "  ";
     }
   }
-  if (hasFlag(fmt, JobInfoFormat::PID)) {
-    if (!value.empty()) {
-      value += " ";
-    }
-    value += std::to_string(this->getProcs()[0].pid());
-  }
-  if (hasFlag(fmt, JobInfoFormat::STATE)) {
-    if (!value.empty()) {
-      value += " ";
-    }
-    switch (resolvePipelineState(*this)) {
-    case Proc::State::RUNNING:
-      value += "Running";
-      break;
-    case Proc::State::STOPPED:
-      value += "Stopped";
-      break;
-    case Proc::State::TERMINATED: {
-      auto &last = this->lastProc();
-      assert(last.is(Proc::State::TERMINATED));
-      if (last.signaled()) {
-        int sigNum = last.asSigNum();
-        value += strsignal(sigNum);
-      } else if (int s = last.exitStatus(); s != 0) {
-        value += "Exit ";
-        value += std::to_string(s);
-      } else {
-        value += "Done";
+
+  // format remain
+  if (!hasFlag(fmt, JobInfoFormat::VERBOSE)) {
+    if (hasFlag(fmt, JobInfoFormat::PID)) {
+      if (!value.empty()) {
+        value += " ";
       }
-      break;
+      value += std::to_string(this->getProcs()[0].pid());
     }
+    if (hasFlag(fmt, JobInfoFormat::STATE)) {
+      formatProcState(this->lastProc(), value);
     }
-  }
-  if (hasFlag(fmt, JobInfoFormat::DESC)) {
-    if (!value.empty()) {
+    if (hasFlag(fmt, JobInfoFormat::DESC)) {
+      if (!value.empty()) {
+        value += "  ";
+      }
+      formatPipeline(this->desc.asStrRef(), value);
+    }
+    value += "\n";
+  } else {
+    unsigned int prefixLen = value.size();
+    size_t pidLen = 0;
+    size_t stateLen = 0;
+    std::vector<std::pair<std::string, std::string>> flagments;
+    for (unsigned int i = 0; i < this->procSize; i++) {
+      auto &proc = this->getProcs()[i];
+      auto pid = std::to_string(proc.pid());
+      std::string state;
+      formatProcState(proc, state);
+      pidLen = std::max(pidLen, pid.size());
+      stateLen = std::max(stateLen, state.size());
+      flagments.emplace_back(std::move(pid), std::move(state));
+    }
+    auto descs = splitPipeline(this->desc.asStrRef());
+    assert(descs.size() >= this->procSize);
+    for (unsigned int i = 0; i < this->procSize; i++) {
+      if (i > 0) {
+        value.append(prefixLen, ' ');
+      }
+      value += ' ';
+      auto &pid = flagments[i].first;
+      value += pid;
+      value.append(pidLen - pid.size(), ' ');
+      value += ' ';
+      auto &state = flagments[i].second;
+      value += state;
+      value.append(stateLen - state.size(), ' ');
       value += "  ";
+      value += descs[i];
+      value += '\n';
     }
-    formatPipeline(this->desc.asStrRef(), value);
   }
-  value += "\n";
   return value;
 }
 
@@ -596,7 +629,8 @@ void JobTable::notifyTermination(const ydsh::Job &job) {
   if (!this->notifyCallback || !job->isTerminated() || job->isDisowned() || job->isLastPipe()) {
     return;
   }
-  auto fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
+  auto fmt =
+      JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC | JobInfoFormat::VERBOSE;
   setFlag(fmt, this->curPrevJobs.getJobType(job));
   auto info = job->formatInfo(fmt);
   this->notifyCallback(DSNotifyKind::JOB_TERMINATE, info.c_str());

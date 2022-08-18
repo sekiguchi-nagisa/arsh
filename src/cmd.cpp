@@ -2176,7 +2176,7 @@ static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, J
     fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
     setFlag(fmt, entry.getJobType(job));
     if (output == JobsOutput::VERBOSE) {
-      setFlag(fmt, JobInfoFormat::PID | JobInfoFormat::CHILD);
+      setFlag(fmt, JobInfoFormat::PID | JobInfoFormat::VERBOSE);
     }
     break;
   }

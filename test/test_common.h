@@ -239,6 +239,27 @@ public:
     ASSERT_NO_FATAL_FAILURE(this->expect(eout, err));
   }
 
+  void sendLineAndExpectRegex(const char *line, const std::string &out, const std::string &err) {
+    this->sendLine(line);
+
+    std::string eout;
+    if (strlen(line) != 0) {
+      eout = this->prompt;
+    }
+    eout += line;
+    eout += "\n";
+    eout += out;
+    if (!out.empty()) {
+      eout += "\n";
+    }
+    eout += this->prompt;
+
+    auto pair = this->readAll();
+    EXPECT_EQ(pair.first, eout);
+    EXPECT_THAT(pair.second, ::testing::MatchesRegex(err));
+    ASSERT_FALSE(this->HasFailure());
+  }
+
   void sendLineAndWait(const char *line, int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
     this->send(line);
