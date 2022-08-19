@@ -78,5 +78,10 @@ assert $out.size() == 2
 assert $out[0] == $j.pid(0)! as String
 assert $out[1] == $j2.pid(0)! as String
 
+# -l option
+$out = IFS=$'\n' $(jobs -l $j)
+assert $out.size() == 1
+assert $out[0] == "[1] - ${$j.pid(0)!} Stopped  {\n    while(true 1) {}\n}"
+
 true
 
