@@ -439,7 +439,7 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
     size_t size = reply.size();
     assert(size <= ArrayObject::MAX_SIZE);
     st.compShouldNoSpace = !needSpace(reply, candidateKind);
-    return static_cast<int>(reply.size());
+    return static_cast<int>(size);
   }
 }
 
