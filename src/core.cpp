@@ -219,7 +219,7 @@ private:
   DSState &state;
   DSValue reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
-  bool error{false};
+  bool overflow{false};
 
 public:
   explicit DefaultCompConsumer(DSState &state)
@@ -227,10 +227,10 @@ public:
         reply(DSValue::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
 
   void consume(std::string &&value, CompCandidateKind k, int) override {
-    if (!this->error) {
+    if (!this->overflow) {
       auto &obj = typeAs<ArrayObject>(this->reply);
       if (!obj.append(this->state, DSValue::createStr(std::move(value)))) {
-        this->error = true;
+        this->overflow = true;
         return;
       }
       this->kind = k;
@@ -240,9 +240,6 @@ public:
   CompCandidateKind getKind() const { return this->kind; }
 
   DSValue finalize() && {
-    if (this->error) {
-      return DSValue::createInvalid();
-    }
     if (auto &values = typeAs<ArrayObject>(this->reply).refValues(); values.size() > 1) {
       typeAs<ArrayObject>(this->reply).sortAsStrArray();
       auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
@@ -425,23 +422,17 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
   DefaultCompConsumer consumer(st);
   const bool ret = completeImpl(st, resolvedMod, source, option, consumer);
   const auto candidateKind = consumer.getKind();
-  {
-    auto result = std::move(consumer).finalize();
-    if (result.isInvalid()) {
-      assert(st.hasError());
-      errno = EINTR;
-      return -1;
-    }
-    st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result)); // override COMPREPLY
-  }
+  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion
   auto &reply = typeAs<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
-  if (!ret || DSState::isInterrupted()) {
+  if (!ret || DSState::isInterrupted() || st.hasError()) {
     reply.refValues().clear(); // if cancelled, clear completion results
+    reply.refValues().shrink_to_fit();
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
+    DSState::clearPendingSignal(SIGINT);
     errno = EINTR;
     return -1;
   } else {
