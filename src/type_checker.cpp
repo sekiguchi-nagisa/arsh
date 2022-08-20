@@ -2543,7 +2543,10 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
   switch (node.getKind()) {
   case CodeCompNode::VAR:
-    this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()), this->curScope);
+  case CodeCompNode::VAR_IN_CMD_ARG:
+    this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()),
+                                       node.getKind() == CodeCompNode::VAR_IN_CMD_ARG,
+                                       this->curScope);
     break;
   case CodeCompNode::MEMBER: {
     assert(node.getExprNode());

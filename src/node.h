@@ -2354,9 +2354,10 @@ public:
 class CodeCompNode : public WithRtti<Node, NodeKind::CodeComp> {
 public:
   enum Kind : unsigned int {
-    VAR,    // complete variable names
-    MEMBER, // complete members (field or method)
-    TYPE,   // complete type name (maybe type alias)
+    VAR,            // complete variable names
+    VAR_IN_CMD_ARG, // complete variable names (within command argument)
+    MEMBER,         // complete members (field or method)
+    TYPE,           // complete type name (maybe type alias)
   };
 
 private:

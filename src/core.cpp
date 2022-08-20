@@ -402,12 +402,38 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
 }
 
 static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
-  if (obj.size() == 1) { // FIXME: more sophisticated space insertion checking
-    StringRef first = obj.getValues()[0].asStrRef();
+  if (obj.size() != 1) {
+    return true; // do nothing
+  }
+
+  StringRef first = obj.getValues()[0].asStrRef();
+  switch (kind) {
+  case CompCandidateKind::COMMAND_NAME:
+    break;
+  case CompCandidateKind::COMMAND_NAME_PART:
+  case CompCandidateKind::COMMAND_ARG:
+  case CompCandidateKind::COMMAND_TILDE:
     if (first.back() == '/') {
       return false;
     }
-    (void)kind;
+    break;
+  case CompCandidateKind::ENV:
+  case CompCandidateKind::USER:
+  case CompCandidateKind::GROUP:
+    break;
+  case CompCandidateKind::VAR:
+    return false;
+  case CompCandidateKind::VAR_IN_CMD_ARG:
+    break;
+  case CompCandidateKind::SIGNAL:
+    break;
+  case CompCandidateKind::FIELD:
+  case CompCandidateKind::METHOD:
+    return false;
+  case CompCandidateKind::KEYWORD:
+    break;
+  case CompCandidateKind::TYPE:
+    return false;
   }
   return true;
 }

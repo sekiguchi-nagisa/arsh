@@ -420,7 +420,7 @@ static bool completeModule(const SysConfig &config, const char *scriptDir,
  * not start with '$'
  * @param consumer
  */
-static void completeVarName(const NameScope &scope, const std::string &prefix,
+static void completeVarName(const NameScope &scope, const std::string &prefix, bool inCmdArg,
                             CompCandidateConsumer &consumer) {
   int offset = ({
     const NameScope *cur = &scope;
@@ -446,7 +446,8 @@ static void completeVarName(const NameScope &scope, const std::string &prefix,
           priority += offset;
         }
         priority *= -1;
-        consumer(varName, CompCandidateKind::VAR, priority);
+        consumer(varName, inCmdArg ? CompCandidateKind::VAR_IN_CMD_ARG : CompCandidateKind::VAR,
+                 priority);
       }
     }
     if (cur->isFunc()) {
@@ -634,7 +635,8 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeKeyword(this->compWord, this->compOp, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::VAR)) {
-    completeVarName(*this->scope, this->compWord, consumer);
+    bool inCmdArg = hasFlag(this->compOp, CodeCompOp::CMD_ARG);
+    completeVarName(*this->scope, this->compWord, inCmdArg, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::EXPECT)) {
     completeExpected(this->extraWords, this->compWord, consumer);
@@ -661,11 +663,6 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     }
   }
   return true;
-}
-
-void CodeCompletionHandler::addVarNameRequest(std::string &&value, NameScopePtr curScope) {
-  this->scope = std::move(curScope);
-  this->addCompRequest(CodeCompOp::VAR, std::move(value));
 }
 
 void CodeCompletionHandler::addTypeNameRequest(std::string &&value, const DSType *type,

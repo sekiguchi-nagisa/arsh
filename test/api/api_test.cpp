@@ -101,6 +101,29 @@ struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
   APITest() : INIT_TEMP_FILE_FACTORY(api_test) { this->state = DSState_create(); }
 
   ~APITest() override { DSState_delete(&this->state); }
+
+  void testCompSpace(const std::string &line, const std::string &expect) {
+    this->testCompSpaceImpl(line, true, expect);
+  }
+
+  void testCompNoSpace(const std::string &line, const std::string &expect) {
+    this->testCompSpaceImpl(line, false, expect);
+  }
+
+private:
+  void testCompSpaceImpl(const std::string &line, bool space, const std::string &expect) {
+    DSCompletion comp{};
+    int r = DSState_complete(this->state, line.c_str(), line.size());
+    ASSERT_EQ(1, r);
+    int s = DSState_getCompletion(this->state, 0, &comp);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(expect, comp.value);
+    if (space) {
+      ASSERT_FALSE(DSCompletion_isNoSpace(&comp));
+    } else {
+      ASSERT_TRUE(DSCompletion_isNoSpace(&comp));
+    }
+  }
 };
 
 TEST_F(APITest, create) {
@@ -769,6 +792,33 @@ TEST_F(APITest, complete2) {
     ASSERT_STREQ(expect[i].c_str(), comp.value);
     ASSERT_EQ(0, s);
   }
+}
+
+TEST_F(APITest, complete3) {
+  // variable
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("$OSTYP", "OSTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("\"$OSTYP", "OSTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("echo $OSTYP", "OSTYPE"));
+
+  // env
+  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("importenv HOME", "HOME"));
+
+  // member
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("1234.ab", "abs"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("(34,)._0", "_0"));
+
+  // type
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("1234 as Stri", "String"));
+
+  // keyword
+  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("whil", "while"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("for aaa i", "in"));
+
+  // file name
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("/bi", "bin/"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("echo /bi", "bin/"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("~roo", "~root/"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("echo ~roo", "~root/"));
 }
 
 TEST_F(APITest, option) {

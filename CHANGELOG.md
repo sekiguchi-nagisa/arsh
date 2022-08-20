@@ -104,6 +104,10 @@
 - **Breaking Change**: change interface of ``DSState_lineEdit``
     - introduce ``DSLineEdit`` struct
 
+#### Interactive
+
+- adjust space insertion behavior after inserting completion item
+
 #### Module
 
 - **Breaking Change**: remove completion-wrapper. now use foreign ``bcrun`` instead

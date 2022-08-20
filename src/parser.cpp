@@ -1264,7 +1264,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     // clang-format on
   default:
     if (this->inVarNameCompletionPoint()) {
-      this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
+      this->makeCodeComp(CodeCompNode::VAR_IN_CMD_ARG, nullptr, this->curToken);
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       this->tryCompleteFileNames(opt);
     }

@@ -313,6 +313,7 @@ bool DiagnosticEmitter::exitModule() {
 static CompletionItemKind toItemKind(CompCandidateKind kind) {
   switch (kind) {
   case CompCandidateKind::VAR:
+  case CompCandidateKind::VAR_IN_CMD_ARG:
     return CompletionItemKind::Variable;
   case CompCandidateKind::FIELD:
     return CompletionItemKind::Field;

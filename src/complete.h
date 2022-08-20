@@ -47,7 +47,8 @@ enum class CodeCompOp : unsigned int {
   EXPECT = 1u << 16u,   /* complete expected token */
   MEMBER = 1u << 17u,   /* complete member (field/method) */
   TYPE = 1u << 18u,     /* complete type name */
-  HOOK = 1u << 19u,     /* for user-defined completion hook */
+  CMD_ARG = 1u << 19u,  /* for command argument */
+  HOOK = 1u << 20u,     /* for user-defined completion hook */
   COMMAND = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -67,6 +68,7 @@ enum class CompCandidateKind {
   USER,
   GROUP,
   VAR,
+  VAR_IN_CMD_ARG,
   SIGNAL,
   FIELD,
   METHOD,
@@ -205,7 +207,14 @@ public:
     }
   }
 
-  void addVarNameRequest(std::string &&value, NameScopePtr curScope);
+  void addVarNameRequest(std::string &&value, bool inCmdArg, NameScopePtr curScope) {
+    this->scope = std::move(curScope);
+    auto op = CodeCompOp::VAR;
+    if (inCmdArg) {
+      setFlag(op, CodeCompOp::CMD_ARG);
+    }
+    this->addCompRequest(op, std::move(value));
+  }
 
   void addTypeNameRequest(std::string &&value, const DSType *type, NameScopePtr curScope);
 
