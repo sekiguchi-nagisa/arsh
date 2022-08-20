@@ -337,8 +337,8 @@ INIT:
     <TYPE> "!" / [^=~]       { RET(TYPE_OPT); }
     <TYPE> ("=>" | "->")     { RET(TYPE_ARROW); }
 
-    <PARAM> VAR_NAME         { MODE(EXPR); RET(PARAM_NAME); }
-    <PARAM> APPLIED_NAME     { MODE(EXPR); RET(PARAM_NAME); }
+    <PARAM> VAR_NAME         { MODE(EXPR); RET_OR_COMP(PARAM_NAME); }
+    <PARAM> APPLIED_NAME     { MODE(EXPR); RET_OR_COMP(PARAM_NAME); }
     <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
 
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
