@@ -773,7 +773,7 @@ public:
   }
 
   void sortAsStrArray(unsigned int beginOffset = 0) {
-    std::sort(values.begin() + beginOffset, values.end(),
+    std::sort(this->values.begin() + beginOffset, this->values.end(),
               [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
   }
 };

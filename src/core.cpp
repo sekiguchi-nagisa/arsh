@@ -216,13 +216,41 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
 
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
-  ArrayObject &reply;
+  DSState &state;
+  DSValue reply;
+  CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
+  bool error{false};
 
 public:
-  explicit DefaultCompConsumer(ArrayObject &obj) : reply(obj) {}
+  explicit DefaultCompConsumer(DSState &state)
+      : state(state),
+        reply(DSValue::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
 
-  void consume(std::string &&value, CompCandidateKind, int) override {
-    this->reply.append(DSValue::createStr(value)); // FIXME: check array size limit
+  void consume(std::string &&value, CompCandidateKind k, int) override {
+    if (!this->error) {
+      auto &obj = typeAs<ArrayObject>(this->reply);
+      if (!obj.append(this->state, DSValue::createStr(std::move(value)))) {
+        this->error = true;
+        return;
+      }
+      this->kind = k;
+    }
+  }
+
+  CompCandidateKind getKind() const { return this->kind; }
+
+  DSValue finalize() && {
+    if (this->error) {
+      return DSValue::createInvalid();
+    }
+    if (auto &values = typeAs<ArrayObject>(this->reply).refValues(); values.size() > 1) {
+      typeAs<ArrayObject>(this->reply).sortAsStrArray();
+      auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+        return x.asStrRef() == y.asStrRef();
+      });
+      values.erase(iter, values.end());
+    }
+    return std::move(this->reply);
   }
 };
 
@@ -355,12 +383,11 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
 }
 
 static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef source,
-                         const CodeCompOp option, ArrayObject &compreply) {
+                         const CodeCompOp option, DefaultCompConsumer &consumer) {
   auto scope = st.tempModScope[resolvedMod.index];
   DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
   auto discardPoint = provider.getCurrentDiscardPoint();
 
-  DefaultCompConsumer consumer(compreply);
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
   codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
@@ -377,6 +404,17 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
   return ret;
 }
 
+static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
+  if (obj.size() == 1) { // FIXME: more sophisticated space insertion checking
+    StringRef first = obj.getValues()[0].asStrRef();
+    if (first.back() == '/') {
+      return false;
+    }
+    (void)kind;
+  }
+  return true;
+}
+
 int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
   if (!resolvedMod) {
@@ -384,40 +422,34 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
     return -1;
   }
 
-  auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
-  auto &compreply = typeAs<ArrayObject>(result);
-
-  const bool ret = completeImpl(st, resolvedMod, source, option, compreply);
-  st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result)); // override COMPREPLY
-
-  auto &values = compreply.refValues();
-  if (values.size() > 1) {
-    compreply.sortAsStrArray();
-    auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-      return x.asStrRef() == y.asStrRef();
-    });
-    values.erase(iter, values.end());
-    ASSERT_ARRAY_SIZE(compreply); // FIXME: check array size limit
+  DefaultCompConsumer consumer(st);
+  const bool ret = completeImpl(st, resolvedMod, source, option, consumer);
+  const auto candidateKind = consumer.getKind();
+  {
+    auto result = std::move(consumer).finalize();
+    if (result.isInvalid()) {
+      assert(st.hasError());
+      errno = EINTR;
+      return -1;
+    }
+    st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result)); // override COMPREPLY
   }
 
+  // check space insertion
+  auto &reply = typeAs<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
   if (!ret || DSState::isInterrupted()) {
-    values.clear(); // if cancelled, clear completion results
+    reply.refValues().clear(); // if cancelled, clear completion results
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
     errno = EINTR;
     return -1;
+  } else {
+    size_t size = reply.size();
+    assert(size <= ArrayObject::MAX_SIZE);
+    st.compShouldNoSpace = !needSpace(reply, candidateKind);
+    return static_cast<int>(reply.size());
   }
-
-  // check space insertion
-  st.compShouldNoSpace = false;
-  if (values.size() == 1) { // FIXME: more sophisticated space insertion checking
-    StringRef first = values[0].asStrRef();
-    if (first.back() == '/') {
-      st.compShouldNoSpace = true;
-    }
-  }
-  return static_cast<int>(values.size());
 }
 
 // ##########################
