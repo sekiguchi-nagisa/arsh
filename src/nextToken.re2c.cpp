@@ -35,6 +35,16 @@
     RET_(_kind);                                                                                   \
   } while (false)
 
+#define RET_OR_COMP_INFIX(k)                                                                       \
+  do {                                                                                             \
+    auto _kind = TokenKind::k;                                                                     \
+    if (this->inCompletionPoint()) {                                                               \
+      this->setCompTokenKind(TokenKind::INVALID);                                                  \
+      _kind = TokenKind::COMPLETION;                                                               \
+    }                                                                                              \
+    RET_(_kind);                                                                                   \
+  } while (false)
+
 #define REACH_EOS()                                                                                \
   do {                                                                                             \
     if (this->isEnd()) {                                                                           \
@@ -158,16 +168,16 @@ INIT:
     <STMT> "assert"          { RET_OR_COMP(ASSERT); }
     <STMT> "break"           { RET_OR_COMP(BREAK); }
     <STMT> "case"            { RET_OR_COMP(CASE); }
-    <EXPR> "catch"           { MODE(PARAM); RET(CATCH); }
+    <EXPR> "catch"           { MODE(PARAM); RET_OR_COMP_INFIX(CATCH); }
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "defer"           { RET_OR_COMP(DEFER); }
     <STMT> "do"              { RET_OR_COMP(DO); }
-    <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
-    <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
+    <EXPR> "elif"            { MODE(STMT); RET_OR_COMP_INFIX(ELIF); }
+    <STMT,EXPR> "else"       { MODE(EXPR); RET_OR_COMP_INFIX(ELSE); }
     <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
     <STMT> "exportenv"       { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
-    <EXPR> "finally"         { RET(FINALLY); }
+    <EXPR> "finally"         { RET_OR_COMP_INFIX(FINALLY); }
     <STMT,EXPR> "for"        { RET_OR_COMP(FOR); }
     <STMT> "function"        { MODE(NAME); RET_OR_COMP(FUNCTION); }
     <STMT> "if"              { RET_OR_COMP(IF); }
@@ -231,9 +241,9 @@ INIT:
     <EXPR> ">="              { MODE(STMT); RET(GE); }
     <EXPR> "=="              { MODE(STMT); RET(EQ); }
     <EXPR> "!="              { MODE(STMT); RET(NE); }
-    <EXPR> "and"             { MODE(STMT); RET(AND); }
-    <EXPR> "or"              { MODE(STMT); RET(OR); }
-    <EXPR> "xor"             { MODE(STMT); RET(XOR); }
+    <EXPR> "and"             { MODE(STMT); RET_OR_COMP_INFIX(AND); }
+    <EXPR> "or"              { MODE(STMT); RET_OR_COMP_INFIX(OR); }
+    <EXPR> "xor"             { MODE(STMT); RET_OR_COMP_INFIX(XOR); }
     <EXPR,CMD> "&&"          { MODE(STMT); RET(COND_AND); }
     <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
     <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
@@ -257,10 +267,10 @@ INIT:
     <EXPR> "??="             { MODE(STMT); RET(NULL_ASSIGN); }
     <EXPR> ("=>" | "->")     { MODE(STMT); RET(CASE_ARM); }
 
-    <EXPR> "as"              { RET(AS); }
-    <EXPR> "is"              { RET(IS); }
-    <EXPR> "in"              { MODE(STMT); RET(IN); }
-    <EXPR> "with"            { MODE(CMD); RET(WITH); }
+    <EXPR> "as"              { RET_OR_COMP_INFIX(AS); }
+    <EXPR> "is"              { RET_OR_COMP_INFIX(IS); }
+    <EXPR> "in"              { MODE(STMT); RET_OR_COMP_INFIX(IN); }
+    <EXPR> "with"            { MODE(CMD); RET_OR_COMP_INFIX(WITH); }
     <EXPR,CMD> "&"           { MODE(STMT); RET(BACKGROUND); }
     <EXPR,CMD> ("&!" | "&|") { MODE(STMT); RET(DISOWN_BG); }
 

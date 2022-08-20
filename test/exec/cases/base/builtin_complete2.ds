@@ -172,8 +172,6 @@ var types = [
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))
 $assertArray(['Bool', 'Boolean', 'Boolean0'], $(complete 'typedef Boolean0 : ArithmeticError; 34 is [B'));
 $assertArray(['Bool', 'Boolean', 'Boolean0'], $(complete 'typedef Boolean0 {}; 34 is [B'))
-assert $(complete '34 is').empty()
-assert $(complete '34 as').empty()
 $assertArray(['StackOverflowError', 'String'], $(complete 'var a :St'))
 $assertArray($types, $(complete 'var a :'))
 $assertArray($types, $(complete '234 as '))

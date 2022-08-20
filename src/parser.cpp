@@ -667,7 +667,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
       node->updateToken(token);
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       auto ref = this->lexer->toStrRef(this->curToken);
-      if (!optional && ref == "a") {
+      if (!optional && StringRef("as").startsWith(ref) && !ref.empty()) {
         TRY(this->expect(TokenKind::AS)); // FIXME:
       } else if (StringRef("inlined").startsWith(ref) && !ref.empty()) {
         TRY(this->expect(TokenKind::INLINED)); // FIXME:
@@ -887,6 +887,12 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
     this->consume(); // ELSE
     armNode = std::make_unique<ArmNode>(pos);
   } else {
+    if (this->inCompletionPoint()) {
+      auto ref = this->lexer->toStrRef(this->curToken);
+      if (StringRef("else").startsWith(ref) && !ref.empty()) {
+        TRY(this->expect(TokenKind::ELSE));
+      }
+    }
     auto base = getPrecedence(TokenKind::PIPE) + 1;
     armNode = std::make_unique<ArmNode>(TRY(this->parse_expression(base)));
     while (CUR_KIND() == TokenKind::PIPE) {
