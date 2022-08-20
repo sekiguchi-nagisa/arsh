@@ -57,7 +57,8 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       switch (ret.asErr()) {
       case NameLookupError::NOT_FOUND:
-        this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
+        this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str(),
+                                          recvType.getName());
         break;
       case NameLookupError::MOD_PRIVATE:
         this->reportError<PrivateField>(nameNode, nameNode.getTokenText().c_str());
@@ -414,7 +415,8 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     if (!this->checkAccessNode(accessNode)) {
       node.setType(this->typePool.getUnresolvedType());
       this->reportError<UndefinedMethod>(accessNode.getNameNode(),
-                                         accessNode.getFieldName().c_str());
+                                         accessNode.getFieldName().c_str(),
+                                         accessNode.getRecvNode().getType().getName());
     }
   }
 
@@ -675,7 +677,8 @@ void TypeChecker::visitVarNode(VarNode &node) {
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
-    this->reportError<UndefinedField>(node.getNameNode(), node.getFieldName().c_str());
+    this->reportError<UndefinedField>(node.getNameNode(), node.getFieldName().c_str(),
+                                      node.getRecvNode().getType().getName());
   }
 }
 
@@ -821,7 +824,8 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         assert(handle->getReturnType() == type);
         node.setHandle(handle);
       } else { // if exprType is optional
-        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str());
+        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str(),
+                                           exprType.getName());
         node.setType(this->typePool.getUnresolvedType());
       }
     }
@@ -837,7 +841,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         node.setHandle(handle);
         node.setType(handle->getReturnType());
       } else {
-        this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR);
+        this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR, exprType.getName());
         node.setType(this->typePool.getUnresolvedType());
       }
     }

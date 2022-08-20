@@ -122,7 +122,7 @@ $e
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
   s = "for $a in 34 {}";
-  msg = "(string):1:11: [semantic error] undefined method: `%iter'\n"
+  msg = "(string):1:11: [semantic error] undefined method: `%iter' for `Int' type\n"
         "for $a in 34 {}\n"
         "          ^~\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
@@ -135,7 +135,7 @@ TEST_F(CmdlineTest, marker3) {
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
 
-  msg = R"((string):1:13: [semantic error] undefined field: `t'
+  msg = R"((string):1:13: [semantic error] undefined field: `t' for `Boolean' type
 echo ${true.t}
             ^
 )";
@@ -156,7 +156,7 @@ $a = true|(true|false)
 }
 
 TEST_F(CmdlineTest, marker4) {
-  const char *msg = R"((string):1:10: [semantic error] undefined field: `d'
+  const char *msg = R"((string):1:10: [semantic error] undefined field: `d' for `String' type
 'まま○2'.d
          ^
 )";
@@ -164,7 +164,7 @@ TEST_F(CmdlineTest, marker4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
 
   if (setlocale(LC_CTYPE, "ja_JP.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d'
+    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
@@ -174,7 +174,7 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "zh_CN.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d'
+    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
@@ -184,7 +184,7 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "ko_KR.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d'
+    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
