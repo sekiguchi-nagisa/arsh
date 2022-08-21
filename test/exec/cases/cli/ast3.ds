@@ -303,6 +303,7 @@ nodes:
                       attribute: \"\"
               handle: \"9\"
               kind: \"METHOD_CALL\"
+              attr: \"BINARY\"
           targetTypeToken: null
           opKind: \"TO_VOID\"
         - nodeKind: Jump

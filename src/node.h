@@ -784,7 +784,13 @@ public:
     UNRESOLVED,
     FUNC_CALL,
     METHOD_CALL,
-    INDEX_CALL, // special case of method call
+  };
+
+  enum Attr : unsigned int {
+    DEFAULT,
+    INDEX,
+    UNARY,
+    BINARY,
   };
 
 private:
@@ -797,6 +803,8 @@ private:
   const MethodHandle *handle{nullptr};
 
   Kind kind;
+
+  Attr attr{DEFAULT};
 
 public:
   ApplyNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<ArgsNode> &&argsNode,
@@ -818,8 +826,23 @@ public:
   static std::unique_ptr<ApplyNode> newIndexCall(std::unique_ptr<Node> &&recvNode, Token token,
                                                  std::unique_ptr<Node> &&indexNode) {
     auto node = newMethodCall(std::move(recvNode), token, std::string(OP_GET));
-    node->setKind(INDEX_CALL);
+    node->setAttr(INDEX);
     node->argsNode->addNode(std::move(indexNode));
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newUnary(TokenKind op, Token opToken,
+                                             std::unique_ptr<Node> &&recvNode) {
+    auto node = newMethodCall(std::move(recvNode), opToken, resolveUnaryOpName(op));
+    node->setAttr(UNARY);
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newBinary(std::unique_ptr<Node> &&leftNode, TokenKind op,
+                                              Token opToken, std::unique_ptr<Node> &&rightNode) {
+    auto node = ApplyNode::newMethodCall(std::move(leftNode), opToken, resolveBinaryOpName(op));
+    node->getArgsNode().addNode(std::move(rightNode));
+    node->setAttr(BINARY);
     return node;
   }
 
@@ -833,7 +856,7 @@ public:
   }
 
   void setMethodName(std::string &&name) {
-    assert(this->isIndexCall());
+    assert(this->isIndexOp());
     cast<AccessNode>(*this->exprNode).getNameNode().setVarName(std::move(name));
   }
 
@@ -846,11 +869,17 @@ public:
 
   void setKind(Kind k) { this->kind = k; }
 
+  Attr getAttr() const { return this->attr; }
+
   bool isFuncCall() const { return this->getKind() == FUNC_CALL; }
 
-  bool isMethodCall() const { return this->getKind() == METHOD_CALL || this->isIndexCall(); }
+  bool isMethodCall() const { return this->getKind() == METHOD_CALL; }
 
-  bool isIndexCall() const { return this->getKind() == INDEX_CALL; }
+  bool isIndexOp() const { return this->getAttr() == INDEX; }
+
+  bool isBinaryOp() const { return this->getAttr() == BINARY; }
+
+  bool isUnaryOp() const { return this->getAttr() == UNARY; }
 
   void setHandle(const MethodHandle *h) { this->handle = h; }
 
@@ -864,6 +893,9 @@ public:
   }
 
   void dump(NodeDumper &dumper) const override;
+
+private:
+  void setAttr(Attr a) { this->attr = a; }
 };
 
 /**
@@ -993,7 +1025,10 @@ public:
    * create ApplyNode and set to this->applyNode.
    * exprNode will be null.
    */
-  ApplyNode &createApplyNode();
+  ApplyNode &createApplyNode() {
+    this->methodCallNode = ApplyNode::newUnary(this->op, this->opToken, std::move(this->exprNode));
+    return *this->methodCallNode;
+  }
 
   /**
    * return null, before call this->createApplyNode().
@@ -1066,7 +1101,11 @@ public:
 
   void setOptNode(std::unique_ptr<Node> &&node) { this->optNode = std::move(node); }
 
-  void createApplyNode();
+  void createApplyNode() {
+    auto applyNode = ApplyNode::newBinary(std::move(this->leftNode), this->op, this->opToken,
+                                          std::move(this->rightNode));
+    this->setOptNode(std::move(applyNode));
+  }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2404,12 +2443,6 @@ public:
 };
 
 // helper function for node creation
-
-const char *resolveUnaryOpName(TokenKind op);
-
-const char *resolveBinaryOpName(TokenKind op);
-
-TokenKind resolveAssignOp(TokenKind op);
 
 std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&varName,
                                           std::unique_ptr<Node> &&exprNode,

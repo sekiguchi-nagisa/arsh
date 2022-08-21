@@ -15,7 +15,6 @@
  */
 
 #include "node.h"
-#include "constant.h"
 #include "misc/format.hpp"
 #include "scope.h"
 
@@ -313,10 +312,18 @@ void ApplyNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(UNRESOLVED)                                                                                   \
   OP(FUNC_CALL)                                                                                    \
-  OP(METHOD_CALL)                                                                                  \
-  OP(INDEX_CALL)
+  OP(METHOD_CALL)
 
   DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(DEFAULT)                                                                                      \
+  OP(INDEX)                                                                                        \
+  OP(UNARY)                                                                                        \
+  OP(BINARY)
+
+  DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
 }
 
@@ -350,12 +357,6 @@ void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
 // ##     UnaryOpNode     ##
 // #########################
 
-ApplyNode &UnaryOpNode::createApplyNode() {
-  this->methodCallNode = ApplyNode::newMethodCall(std::move(this->exprNode), this->opToken,
-                                                  resolveUnaryOpName(this->op));
-  return *this->methodCallNode;
-}
-
 void UnaryOpNode::dump(NodeDumper &dumper) const {
   DUMP(op);
   DUMP_PTR(exprNode);
@@ -365,13 +366,6 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
 // ##########################
 // ##     BinaryOpNode     ##
 // ##########################
-
-void BinaryOpNode::createApplyNode() {
-  auto applyNode = ApplyNode::newMethodCall(std::move(this->leftNode), this->opToken,
-                                            resolveBinaryOpName(this->op));
-  applyNode->getArgsNode().addNode(std::move(this->rightNode));
-  this->setOptNode(std::move(applyNode));
-}
 
 void BinaryOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(leftNode);
@@ -818,7 +812,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
   this->updateToken(this->rightNode->getToken());
 
   // init recv, indexNode
-  assert(leftNode->isIndexCall());
+  assert(leftNode->isIndexOp());
   auto opToken = cast<AccessNode>(leftNode->getExprNode()).getNameNode().getToken();
   auto pair = ApplyNode::split(std::move(leftNode));
   this->recvNode = std::move(pair.first);
@@ -978,84 +972,6 @@ void ErrorNode::dump(NodeDumper &) const {}
 void EmptyNode::dump(NodeDumper &) const {} // do nothing
 
 // for node creation
-
-const char *resolveUnaryOpName(TokenKind op) {
-  switch (op) {
-  case TokenKind::PLUS: // +
-    return OP_PLUS;
-  case TokenKind::MINUS: // -
-    return OP_MINUS;
-  case TokenKind::NOT: // not
-    return OP_NOT;
-  default:
-    fatal("unsupported unary op: %s\n", toString(op));
-  }
-}
-
-const char *resolveBinaryOpName(TokenKind op) {
-  switch (op) {
-  case TokenKind::ADD:
-    return OP_ADD;
-  case TokenKind::SUB:
-    return OP_SUB;
-  case TokenKind::MUL:
-    return OP_MUL;
-  case TokenKind::DIV:
-    return OP_DIV;
-  case TokenKind::MOD:
-    return OP_MOD;
-  case TokenKind::EQ:
-    return OP_EQ;
-  case TokenKind::NE:
-    return OP_NE;
-  case TokenKind::LT:
-    return OP_LT;
-  case TokenKind::GT:
-    return OP_GT;
-  case TokenKind::LE:
-    return OP_LE;
-  case TokenKind::GE:
-    return OP_GE;
-  case TokenKind::AND:
-    return OP_AND;
-  case TokenKind::OR:
-    return OP_OR;
-  case TokenKind::XOR:
-    return OP_XOR;
-  case TokenKind::MATCH:
-    return OP_MATCH;
-  case TokenKind::UNMATCH:
-    return OP_UNMATCH;
-  default:
-    fatal("unsupported binary op: %s\n", toString(op));
-  }
-}
-
-TokenKind resolveAssignOp(TokenKind op) {
-  switch (op) {
-  case TokenKind::INC:
-    return TokenKind::ADD;
-  case TokenKind::DEC:
-    return TokenKind::SUB;
-  case TokenKind::ADD_ASSIGN:
-    return TokenKind::ADD;
-  case TokenKind::SUB_ASSIGN:
-    return TokenKind::SUB;
-  case TokenKind::MUL_ASSIGN:
-    return TokenKind::MUL;
-  case TokenKind::DIV_ASSIGN:
-    return TokenKind::DIV;
-  case TokenKind::MOD_ASSIGN:
-    return TokenKind::MOD;
-  case TokenKind::STR_ASSIGN:
-    return TokenKind::STR_CHECK;
-  case TokenKind::NULL_ASSIGN:
-    return TokenKind::NULL_COALE;
-  default:
-    fatal("unsupported assign op: %s\n", toString(op));
-  }
-}
-
 std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&varName,
                                           std::unique_ptr<Node> &&exprNode,
                                           std::unique_ptr<BlockNode> &&blockNode) {
@@ -1093,7 +1009,7 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
    */
   if (op == TokenKind::ASSIGN) {
     // assign to element(actually call SET)
-    if (isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
+    if (isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexOp()) {
       auto &indexNode = cast<ApplyNode>(*leftNode);
       indexNode.setMethodName(std::string(OP_SET));
       indexNode.getArgsNode().addNode(std::move(rightNode));
@@ -1109,7 +1025,7 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
   // assign to element
   auto opNode = std::make_unique<BinaryOpNode>(std::make_unique<EmptyNode>(rightNode->getToken()),
                                                resolveAssignOp(op), token, std::move(rightNode));
-  if (isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
+  if (isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexOp()) {
     auto *indexNode = cast<ApplyNode>(leftNode.release());
     return std::make_unique<ElementSelfAssignNode>(std::unique_ptr<ApplyNode>(indexNode),
                                                    std::move(opNode));

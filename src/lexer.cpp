@@ -15,6 +15,7 @@
  */
 
 #include "lexer.h"
+#include "constant.h"
 #include "misc/fatal.h"
 #include "misc/num_util.hpp"
 
@@ -58,6 +59,83 @@ bool isAssignOp(TokenKind kind) {
 #undef GEN_OP
   default:
     return false;
+  }
+}
+
+const char *resolveUnaryOpName(TokenKind op) {
+  switch (op) {
+  case TokenKind::PLUS: // +
+    return OP_PLUS;
+  case TokenKind::MINUS: // -
+    return OP_MINUS;
+  case TokenKind::NOT: // not
+    return OP_NOT;
+  default:
+    fatal("unsupported unary op: %s\n", toString(op));
+  }
+}
+
+const char *resolveBinaryOpName(TokenKind op) {
+  switch (op) {
+  case TokenKind::ADD:
+    return OP_ADD;
+  case TokenKind::SUB:
+    return OP_SUB;
+  case TokenKind::MUL:
+    return OP_MUL;
+  case TokenKind::DIV:
+    return OP_DIV;
+  case TokenKind::MOD:
+    return OP_MOD;
+  case TokenKind::EQ:
+    return OP_EQ;
+  case TokenKind::NE:
+    return OP_NE;
+  case TokenKind::LT:
+    return OP_LT;
+  case TokenKind::GT:
+    return OP_GT;
+  case TokenKind::LE:
+    return OP_LE;
+  case TokenKind::GE:
+    return OP_GE;
+  case TokenKind::AND:
+    return OP_AND;
+  case TokenKind::OR:
+    return OP_OR;
+  case TokenKind::XOR:
+    return OP_XOR;
+  case TokenKind::MATCH:
+    return OP_MATCH;
+  case TokenKind::UNMATCH:
+    return OP_UNMATCH;
+  default:
+    fatal("unsupported binary op: %s\n", toString(op));
+  }
+}
+
+TokenKind resolveAssignOp(TokenKind op) {
+  switch (op) {
+  case TokenKind::INC:
+    return TokenKind::ADD;
+  case TokenKind::DEC:
+    return TokenKind::SUB;
+  case TokenKind::ADD_ASSIGN:
+    return TokenKind::ADD;
+  case TokenKind::SUB_ASSIGN:
+    return TokenKind::SUB;
+  case TokenKind::MUL_ASSIGN:
+    return TokenKind::MUL;
+  case TokenKind::DIV_ASSIGN:
+    return TokenKind::DIV;
+  case TokenKind::MOD_ASSIGN:
+    return TokenKind::MOD;
+  case TokenKind::STR_ASSIGN:
+    return TokenKind::STR_CHECK;
+  case TokenKind::NULL_ASSIGN:
+    return TokenKind::NULL_COALE;
+  default:
+    fatal("unsupported assign op: %s\n", toString(op));
   }
 }
 

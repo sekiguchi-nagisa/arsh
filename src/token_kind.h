@@ -415,6 +415,12 @@ inline bool isIDStart(char ch) {
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
 }
 
+const char *resolveUnaryOpName(TokenKind op);
+
+const char *resolveBinaryOpName(TokenKind op);
+
+TokenKind resolveAssignOp(TokenKind op);
+
 } // namespace ydsh
 
 #endif // YDSH_TOKEN_KIND_H

@@ -313,6 +313,7 @@ nodes:
       nodes:
     handle: null
     kind: "METHOD_CALL"
+    attr: "DEFAULT"
 )"},
 
     {DumpOp::untyped, R"(34+1)", 0, 0, R"(
@@ -600,6 +601,7 @@ nodes:
         nodes:
       handle: null
       kind: "METHOD_CALL"
+      attr: "DEFAULT"
     messageNode:
       nodeKind: String
       token:
