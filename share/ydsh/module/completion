@@ -56,28 +56,28 @@ function _require($opt : String, $msg : String) : Int {
     } with 1>&2
 }
 
+typedef _CompDef(o : String!, t : Int!, a : String!) {
+    let option = $o ?? ""   # option (length 0: empty, 1: short, 2<=: long, other)
+    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
+    let arg = $a ?? ""      # argument
+}
+
 let _compdefMap : [
     String :        # command name
-    [
-        (
-            String, # option (length 0: empty, 1: short, 2<=: long, other)
-            Int,    # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
-            String  # argument
-        )
-    ]
+    [ _CompDef ]
 ]
 
 
 #
 # $prefix starts with '-'
 #
-function _comp_opt(deflist : [(String, Int, String)], prefix : String) : [String] {
+function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
     var ret = new [String]()
     for def in $deflist {
-        var opt = case $def._0.size() {
+        var opt = case $def.option.size() {
             0 => continue
-            1 => '-' + $def._0
-            else => '--' + $def._0
+            1 => '-' + $def.option
+            else => '--' + $def.option
         }
         if $opt.startsWith($prefix) {
             $ret.add($opt)
@@ -96,16 +96,16 @@ startwith() {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg(ctx : Module, deflist: [(String, Int, String)], opt : String, prefix : String) : [String] {
+function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String] {
     for def in $deflist {
-        $opt == case $def._0.size() {
+        $opt == case $def.option.size() {
             0 => ""
-            1 => '-' + $def._0
-            else => '--' + $def._0
+            1 => '-' + $def.option
+            else => '--' + $def.option
         } || continue
 
-        var arg = $def._2
-        return case $def._1 {
+        var arg = $def.arg
+        return case $def.type {
             0 => {
                 var r : [String]
                 for $a in $arg.split(" ") {
@@ -175,8 +175,8 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
 function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String] {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? return new [String]()
-    if $deflist[0]._1 == 3 {
-        return $_comp_wrap($deflist[0]._0, $deflist[0]._2, $words, $cursor)
+    if $deflist[0].type == 3 {
+        return $_comp_wrap($deflist[0].option, $deflist[0].arg, $words, $cursor)
     }
 
     if $words.size() == $cursor {    # complete arguments or options
@@ -254,16 +254,12 @@ compdef() {
     !$opt && !$arg && return 0 # do nothing
 
     var deflist = $_compdefMap.get($cmd!) ?? {
-        var tmp : typeof($_compdefMap[''])
+        var tmp : [_CompDef]
         $_compdefMap[$cmd!] = $tmp
         $tmp
     }
 
-    $deflist.add((
-        $opt ?? "",
-        $argType ?? -1,
-        $arg ?? ""
-    ))
+    $deflist.add(new _CompDef($opt, $argType, $arg))
 }
 
 function compDelegate(ctx : Module, words : [String], cursor : Int) : [String] {
