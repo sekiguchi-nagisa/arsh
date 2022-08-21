@@ -81,6 +81,12 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
         }
         if $opt.startsWith($prefix) {
             $ret.add($opt)
+        } elif $opt.startsWith("--") && $opt[-1] == "=" {
+            # opt -> --opt=
+            # prefix -> --opt=hoge
+            if $prefix.startsWith($opt) {
+                $ret.add($opt)
+            }
         }
     }
     return $ret
@@ -194,7 +200,16 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String] 
         assert $words.size() > 1
         var prev = $words[-1]
         if $prev.startsWith('-') { # 'CMD -', 'CMD --d'
-            return $_comp_opt($deflist, $prev)
+            var ret = $_comp_opt($deflist, $prev)
+            if $ret.size() == 1 {
+                var opt = $ret[0]
+                if $opt.startsWith("--") && $opt[-1] == "=" {
+                    # for `--opt=' style option
+                    $prev = $prev.slice($opt.size())
+                    return $_comp_arg($ctx, $deflist, $opt, $prev)
+                }
+            }
+            return $ret
         }
         var opt = $words.size() == 2 ? "" : $words[-2]
         return $_comp_arg($ctx, $deflist, $opt.startsWith("-") ? $opt : "", $prev)

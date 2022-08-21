@@ -9,9 +9,9 @@ for $REPLY in $STDIN {
     var o = $REPLY.startsWith('--') ? $REPLY.slice(2) : $REPLY.slice(1)
     compdef --cmd ydsh $k $o
 }
-compdef --cmd ydsh --long dump-ast=
-compdef --cmd ydsh --long dump-untyped-ast=
-compdef --cmd ydsh --long dump-code=
+compdef --cmd ydsh --long dump-ast= --arg-action file
+compdef --cmd ydsh --long dump-untyped-ast= --arg-action file
+compdef --cmd ydsh --long dump-code= --arg-action file
 
 ## ydshd
 compdef --cmd ydshd --long debounce-time
