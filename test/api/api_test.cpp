@@ -801,7 +801,7 @@ TEST_F(APITest, complete3) {
   ASSERT_NO_FATAL_FAILURE(this->testCompSpace("echo $OSTYP", "OSTYPE"));
 
   // env
-  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("importenv HOME", "HOME"));
+  ASSERT_NO_FATAL_FAILURE(this->testCompSpace("importenv SHLVL", "SHLVL"));
 
   // member
   ASSERT_NO_FATAL_FAILURE(this->testCompNoSpace("1234.ab", "abs"));
