@@ -321,7 +321,8 @@ void ApplyNode::dump(NodeDumper &dumper) const {
   OP(DEFAULT)                                                                                      \
   OP(INDEX)                                                                                        \
   OP(UNARY)                                                                                        \
-  OP(BINARY)
+  OP(BINARY)                                                                                       \
+  OP(ITER)
 
   DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
@@ -819,15 +820,13 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
   this->indexNode = std::move(pair.second);
 
   // init getter node
-  this->getterNode =
-      ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_GET));
-  this->getterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
+  this->getterNode = ApplyNode::newIndexCall(std::make_unique<EmptyNode>(), opToken,
+                                             std::make_unique<EmptyNode>());
 
   // init setter node
   this->setterNode =
-      ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_SET));
-  this->setterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
-  this->setterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
+      ApplyNode::newIndexCall(std::make_unique<EmptyNode>(), opToken, std::make_unique<EmptyNode>(),
+                              std::make_unique<EmptyNode>());
 }
 
 void ElementSelfAssignNode::setRecvType(const DSType &type) {
@@ -978,7 +977,7 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&varN
   Token dummy = {startPos, 1};
 
   // create for-init
-  auto call_iter = ApplyNode::newMethodCall(std::move(exprNode), std::string(OP_ITER));
+  auto call_iter = ApplyNode::newIter(std::move(exprNode));
   std::string reset_var_name = "%reset_";
   reset_var_name += std::to_string(startPos);
   auto reset_varDecl =

@@ -791,6 +791,7 @@ public:
     INDEX,
     UNARY,
     BINARY,
+    ITER,
   };
 
 private:
@@ -831,6 +832,16 @@ public:
     return node;
   }
 
+  static std::unique_ptr<ApplyNode> newIndexCall(std::unique_ptr<Node> &&recvNode, Token token,
+                                                 std::unique_ptr<Node> &&indexNode,
+                                                 std::unique_ptr<Node> &&rightNode) {
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), token, std::string(OP_SET));
+    node->getArgsNode().addNode(std::move(indexNode));
+    node->getArgsNode().addNode(std::move(rightNode));
+    node->setAttr(INDEX);
+    return node;
+  }
+
   static std::unique_ptr<ApplyNode> newUnary(TokenKind op, Token opToken,
                                              std::unique_ptr<Node> &&recvNode) {
     auto node = newMethodCall(std::move(recvNode), opToken, resolveUnaryOpName(op));
@@ -843,6 +854,12 @@ public:
     auto node = ApplyNode::newMethodCall(std::move(leftNode), opToken, resolveBinaryOpName(op));
     node->getArgsNode().addNode(std::move(rightNode));
     node->setAttr(BINARY);
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newIter(std::unique_ptr<Node> &&recvNode) {
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_ITER));
+    node->setAttr(ITER);
     return node;
   }
 
