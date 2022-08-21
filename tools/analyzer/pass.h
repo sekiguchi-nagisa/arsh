@@ -22,6 +22,10 @@
 
 namespace ydsh::lsp {
 
+/**
+ * for common class for node traverse
+ * if a node is untyped, not visit it
+ */
 class NodePass : protected ydsh::NodeVisitor {
 protected:
   int64_t visitingDepth{0};

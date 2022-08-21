@@ -227,6 +227,9 @@ void NodePass::visitErrorNode(ErrorNode &node) {
 void NodePass::visitEmptyNode(EmptyNode &) {}
 
 void NodePass::visit(Node &node) {
+  if (node.isUntyped()) {
+    return; // ignore Untyped node
+  }
   this->visitingDepth++;
   NodeVisitor::visit(node);
   this->visitingDepth--;

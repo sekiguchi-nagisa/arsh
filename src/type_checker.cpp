@@ -746,6 +746,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       this->checkTypeWithCoercion(elementType, node.refRightNode());
       node.setType(elementType);
     } else {
+      this->checkTypeAsExpr(*node.getRightNode());
       this->reportError<Required>(*node.getLeftNode(), this->typePool.get(TYPE::Nothing).getName(),
                                   leftType.getName());
     }
