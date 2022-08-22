@@ -405,6 +405,9 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
   case ApplyNode::ITER:
     this->reportError<NotIterable>(node.getRecvNode(), node.getRecvNode().getType().getName());
     break;
+  case ApplyNode::MAP_NEXT_KEY:
+  case ApplyNode::MAP_NEXT_VALUE:
+    break; // normally unreachable
   }
 }
 
@@ -807,12 +810,31 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
 void TypeChecker::visitArgsNode(ArgsNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
-  CallableTypes callableTypes = this->resolveCallee(node);
-  this->checkArgsNode(callableTypes, node.getArgsNode());
-  node.setType(*callableTypes.returnType);
-  if (node.getType().isNothingType() &&
-      this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
-    this->reportError<InsideFinally>(node);
+  switch (node.getAttr()) {
+  case ApplyNode::MAP_NEXT_KEY:
+  case ApplyNode::MAP_NEXT_VALUE: {
+    assert(isa<AccessNode>(node.getExprNode()));
+    auto &accessNode = cast<AccessNode>(node.getExprNode());
+    accessNode.setType(this->typePool.get(TYPE::Any));
+    auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
+    if (recvType.isMapType()) {
+      auto &mapType = cast<MapType>(recvType);
+      node.setType(node.getAttr() == ApplyNode::MAP_NEXT_KEY ? mapType.getKeyType()
+                                                             : mapType.getValueType());
+    } else {
+      this->reportError<Required>(accessNode.getRecvNode(), TYPE_MAP, recvType.getName());
+    }
+    break;
+  }
+  default:
+    CallableTypes callableTypes = this->resolveCallee(node);
+    this->checkArgsNode(callableTypes, node.getArgsNode());
+    node.setType(*callableTypes.returnType);
+    if (node.getType().isNothingType() &&
+        this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
+      this->reportError<InsideFinally>(node);
+    }
+    break;
   }
 }
 

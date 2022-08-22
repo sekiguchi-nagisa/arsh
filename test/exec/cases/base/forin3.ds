@@ -1,0 +1,36 @@
+
+# for unpack map entry
+
+var keys : [String]
+var values : [Int]
+
+var map = ['aaa'
+                          :
+                           1
+                           ,
+                           'bbb' : 2,
+                            'ccc' : 33]
+
+for 
+k
+, v
+ in 
+ $map
+{
+    $keys.add($k)
+    $values.add($v)
+}
+
+assert $keys.size() == 3
+assert $values.size() == 3
+
+$keys = $keys.sort()
+$values = $values.sort()
+
+assert $keys[0] == 'aaa'
+assert $keys[1] == 'bbb'
+assert $keys[2] == 'ccc'
+
+assert $values[0] == 1
+assert $values[1] == 2
+assert $values[2] == 33

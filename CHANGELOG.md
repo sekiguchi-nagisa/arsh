@@ -15,6 +15,12 @@
       assert $sum(23, 23) == 46
       assert $sum(34) == 34    # last parameter is Option type
       ```
+- unpack key-value pair during map iteration
+  ```
+  for k, v in ['a' : 12, 'b': 34] {
+    echo $k $v
+  }
+  ```
 
 #### Builtin
 

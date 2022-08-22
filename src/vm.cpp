@@ -1919,6 +1919,13 @@ bool VM::mainLoop(DSState &state) {
         typeAs<MapObject>(state.stack.peek()).set(std::move(key), std::move(value));
         vmnext;
       }
+      vmcase(MAP_NEXT) {
+        auto mapIter = state.stack.pop();
+        auto [k, v] = typeAs<MapIterObject>(mapIter).nextUnpack();
+        state.stack.push(std::move(v));
+        state.stack.push(std::move(k));
+        vmnext;
+      }
       vmcase(NEW) {
         unsigned int v = read24(GET_CODE(state), state.stack.pc());
         state.stack.pc() += 3;

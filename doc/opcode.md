@@ -49,6 +49,7 @@
 | APPEND          |                                | value1 value2 -> value1                      | append string value2 with string value1                |
 | APPEND_ARRAY    |                                | value1 value2 -> value1                      | append value2 into value1                              |
 | APPEND_MAP      |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1                   |
+| MAP_NEXT        |                                | recv -> value key                            | get next map entry                                     |
 | NEW             | 3: byte1 ~ byte3               | -> value                                     | create an empty object of a specified type             |
 | INIT_FIELDS     | 2: offset size                 | value -> value                               | init object fields                                     |
 | CALL_FUNC       | 1: param                       | func param1 ~ paramN -> result               | apply function object                                  |

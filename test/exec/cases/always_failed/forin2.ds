@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 3, $chars = 13, $errorKind = 'Required', $status = 1)
+
+for a, b in [1234] {
+    echo $aaa
+}

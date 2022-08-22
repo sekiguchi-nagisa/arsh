@@ -945,7 +945,12 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     }
     return node;
   } else { // for-in
-    auto name = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
+    auto key = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
+    NameInfo value({0, 0}, "");
+    if (CUR_KIND() == TokenKind::COMMA) { // for k, v
+      this->expectAndChangeMode(TokenKind::COMMA, yycPARAM);
+      value = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
+    }
     TRY(this->expect(TokenKind::IN));
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = this->parse_block();
@@ -958,8 +963,8 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
       return nullptr;
     }
 
-    auto node =
-        createForInNode(startPos, std::move(name), std::move(exprNode), std::move(blockNode));
+    auto node = createForInNode(startPos, std::move(key), std::move(value), std::move(exprNode),
+                                std::move(blockNode));
     if (comp) {
       this->incompleteNode = std::move(node);
     }

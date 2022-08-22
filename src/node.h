@@ -792,6 +792,8 @@ public:
     UNARY,
     BINARY,
     ITER,
+    MAP_NEXT_KEY,
+    MAP_NEXT_VALUE,
   };
 
 private:
@@ -860,6 +862,18 @@ public:
   static std::unique_ptr<ApplyNode> newIter(std::unique_ptr<Node> &&recvNode) {
     auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_ITER));
     node->setAttr(ITER);
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newMapNextKey(std::unique_ptr<Node> &&recvNode) {
+    auto node = newIter(std::move(recvNode));
+    node->setAttr(MAP_NEXT_KEY);
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newMapNextValue(std::unique_ptr<Node> &&recvNode) {
+    auto node = newIter(std::move(recvNode));
+    node->setAttr(MAP_NEXT_VALUE);
     return node;
   }
 
@@ -2460,9 +2474,8 @@ public:
 };
 
 // helper function for node creation
-
-std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&varName,
-                                          std::unique_ptr<Node> &&exprNode,
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&keyName,
+                                          NameInfo &&valueName, std::unique_ptr<Node> &&exprNode,
                                           std::unique_ptr<BlockNode> &&blockNode);
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token,

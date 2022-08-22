@@ -874,6 +874,12 @@ public:
   bool hasNext() const { return this->iter != typeAs<MapObject>(this->obj).getValueMap().cend(); }
 
   DSValue next(TypePool &pool);
+
+  std::pair<const DSValue, DSValue> nextUnpack() {
+    auto en = *this->iter;
+    ++this->iter;
+    return en;
+  }
 };
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
