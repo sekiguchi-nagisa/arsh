@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 3, $chars = 12, $errorKind = 'NotIterable', $status = 1)
+
+for aaa in 1234 {
+    echo $aaa
+}

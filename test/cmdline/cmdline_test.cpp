@@ -121,10 +121,25 @@ $e
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
+  // iterator
   s = "for $a in 34 {}";
-  msg = "(string):1:11: [semantic error] undefined method: `%iter' for `Int' type\n"
+  msg = "(string):1:11: [semantic error] cannot iterate `Int' type\n"
         "for $a in 34 {}\n"
         "          ^~\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+
+  // index set
+  s = "$SIG['a'] = 34";
+  msg = "(string):1:5: [semantic error] undefined method: `[]=' for `Signals' type\n"
+        "$SIG['a'] = 34\n"
+        "    ^\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+
+  // index get
+  s = "23[0]";
+  msg = "(string):1:3: [semantic error] undefined method: `[]' for `Int' type\n"
+        "23[0]\n"
+        "  ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 

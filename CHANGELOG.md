@@ -68,6 +68,7 @@
     - not show signal messages after call ``Job#poll``, ``Job#wait``, builtin wait command
 - show job information via CTRL-Z/``fg``/``bg``
 - escape unprintable character when throw some errors
+- improve method lookup error messages
 
 #### Builtin
 

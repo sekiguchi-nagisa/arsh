@@ -280,7 +280,7 @@ nodes:
                     pos: 34
                     size: 1
                   type:
-                  varName: \"%div\"
+                  varName: \"%b_/\"
                   handle: null
                 handle: null
                 additionalOp: \"NOP\"

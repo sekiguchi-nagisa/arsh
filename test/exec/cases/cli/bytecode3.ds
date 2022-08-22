@@ -52,7 +52,7 @@ DSCode: function hoge
 Code:
   0: PUSH_INT  10
   2: LOAD_LOCAL  0
-  4: CALL_BUILTIN2  2  %div
+  4: CALL_BUILTIN2  2  %b_/
   7: POP
   8: PUSH_INVALID
   9: RETURN

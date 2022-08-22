@@ -381,6 +381,33 @@ void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt
   this->errors.emplace_back(token, kind, CStrPtr(str));
 }
 
+void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::AccessNode &node) {
+  const char *methodName = node.getFieldName().c_str();
+  switch (attr) {
+  case ApplyNode::DEFAULT:
+  case ApplyNode::INDEX:
+    if (attr == ApplyNode::INDEX) {
+      methodName += strlen(INDEX_OP_NAME_PREFIX);
+    }
+    this->reportError<UndefinedMethod>(node.getNameNode(), methodName,
+                                       node.getRecvNode().getType().getName());
+    break;
+  case ApplyNode::UNARY:
+    methodName += strlen(UNARY_OP_NAME_PREFIX);
+    this->reportError<UndefinedUnary>(node.getNameNode(), methodName,
+                                      node.getRecvNode().getType().getName());
+    break;
+  case ApplyNode::BINARY:
+    methodName += strlen(BINARY_OP_NAME_PREFIX);
+    this->reportError<UndefinedBinary>(node.getNameNode(), methodName,
+                                       node.getRecvNode().getType().getName());
+    break;
+  case ApplyNode::ITER:
+    this->reportError<NotIterable>(node.getRecvNode(), node.getRecvNode().getType().getName());
+    break;
+  }
+}
+
 // for ApplyNode type checking
 /**
  * lookup resolve function/method like the following step
@@ -414,9 +441,7 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     // if method is not found, resolve field
     if (!this->checkAccessNode(accessNode)) {
       node.setType(this->typePool.getUnresolvedType());
-      this->reportError<UndefinedMethod>(accessNode.getNameNode(),
-                                         accessNode.getFieldName().c_str(),
-                                         accessNode.getRecvNode().getType().getName());
+      this->reportMethodLookupError(node.getAttr(), accessNode);
     }
   }
 

@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $chars = 6, $errorKind = 'UndefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 6, $errorKind = 'UndefinedUnary', $status = 1)
 
 case 45 {
     --"hello" => echo

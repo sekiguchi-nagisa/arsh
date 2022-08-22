@@ -98,35 +98,53 @@ constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
 constexpr const char *OP_INIT = "%init";
 
 // unary op definition
-constexpr const char *OP_PLUS = "%plus";   // +
-constexpr const char *OP_MINUS = "%minus"; // -
-constexpr const char *OP_NOT = "%not";     // not
+#define DEFINE_UNARY_OP_NAME(OP) "%u_" OP
+
+constexpr const char *UNARY_OP_NAME_PREFIX = DEFINE_UNARY_OP_NAME("");
+
+constexpr const char *OP_PLUS = DEFINE_UNARY_OP_NAME("+");
+constexpr const char *OP_MINUS = DEFINE_UNARY_OP_NAME("-");
+constexpr const char *OP_NOT = DEFINE_UNARY_OP_NAME("!");
+
+#undef DEFINE_UNARY_OP_NAME
 
 // binary op definition
-constexpr const char *OP_ADD = "%add"; // +
-constexpr const char *OP_SUB = "%sub"; // -
-constexpr const char *OP_MUL = "%mul"; // *
-constexpr const char *OP_DIV = "%div"; // /
-constexpr const char *OP_MOD = "%mod"; // %
+#define DEFINE_BINARY_OP_NAME(OP) "%b_" OP
 
-constexpr const char *OP_EQ = "%eq"; // ==
-constexpr const char *OP_NE = "%ne"; // !=
+constexpr const char *BINARY_OP_NAME_PREFIX = DEFINE_BINARY_OP_NAME("");
 
-constexpr const char *OP_LT = "%lt"; // <
-constexpr const char *OP_GT = "%gt"; // >
-constexpr const char *OP_LE = "%le"; // <=
-constexpr const char *OP_GE = "%ge"; // >=
+constexpr const char *OP_ADD = DEFINE_BINARY_OP_NAME("+");
+constexpr const char *OP_SUB = DEFINE_BINARY_OP_NAME("-");
+constexpr const char *OP_MUL = DEFINE_BINARY_OP_NAME("*");
+constexpr const char *OP_DIV = DEFINE_BINARY_OP_NAME("/");
+constexpr const char *OP_MOD = DEFINE_BINARY_OP_NAME("%");
 
-constexpr const char *OP_AND = "%and"; // &
-constexpr const char *OP_OR = "%or";   // |
-constexpr const char *OP_XOR = "%xor"; // ^
+constexpr const char *OP_EQ = DEFINE_BINARY_OP_NAME("==");
+constexpr const char *OP_NE = DEFINE_BINARY_OP_NAME("!=");
 
-constexpr const char *OP_MATCH = "%match";     // =~
-constexpr const char *OP_UNMATCH = "%unmatch"; // !~
+constexpr const char *OP_LT = DEFINE_BINARY_OP_NAME("<");
+constexpr const char *OP_GT = DEFINE_BINARY_OP_NAME(">");
+constexpr const char *OP_LE = DEFINE_BINARY_OP_NAME("<=");
+constexpr const char *OP_GE = DEFINE_BINARY_OP_NAME(">=");
+
+constexpr const char *OP_AND = DEFINE_BINARY_OP_NAME("and");
+constexpr const char *OP_OR = DEFINE_BINARY_OP_NAME("or");
+constexpr const char *OP_XOR = DEFINE_BINARY_OP_NAME("xor");
+
+constexpr const char *OP_MATCH = DEFINE_BINARY_OP_NAME("=~");
+constexpr const char *OP_UNMATCH = DEFINE_BINARY_OP_NAME("!~");
+
+#undef DEFINE_BINARY_OP_NAME
 
 // indexer op
-constexpr const char *OP_GET = "%get"; // []
-constexpr const char *OP_SET = "%set"; // [] =
+#define DEFINE_INDEX_OP_NAME(OP) "%i_" OP
+
+constexpr const char *INDEX_OP_NAME_PREFIX = DEFINE_INDEX_OP_NAME("");
+
+constexpr const char *OP_GET = DEFINE_INDEX_OP_NAME("[]");
+constexpr const char *OP_SET = DEFINE_INDEX_OP_NAME("[]=");
+
+#undef DEFINE_INDEX_OP_NAME
 
 // iterator (for-in)
 constexpr const char *OP_ITER = "%iter";

@@ -1,4 +1,4 @@
-#$test($result = 'type', $errorKind = 'UndefinedMethod', $lineNum = 7, $chars = 11, $status = 1)
+#$test($result = 'type', $errorKind = 'UndefinedBinary', $lineNum = 7, $chars = 11, $status = 1)
 
 function f() {}
 

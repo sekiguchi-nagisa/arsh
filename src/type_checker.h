@@ -481,6 +481,8 @@ private:
     this->errors.emplace_back(token, std::move(e));
   }
 
+  void reportMethodLookupError(ApplyNode::Attr attr, const AccessNode &node);
+
   // for apply node type checking
   /**
    * check type ApplyNode and resolve callee(handle or function type).
