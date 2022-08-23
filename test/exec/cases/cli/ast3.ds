@@ -274,14 +274,11 @@ nodes:
                   type: \"Int\"
                   kind: \"Int\"
                   intValue: 10
-                nameNode:
-                  nodeKind: Var
+                nameInfo:
                   token:
                     pos: 34
                     size: 1
-                  type:
-                  varName: \"%b_/\"
-                  handle: null
+                  name: \"%b_/\"
                 handle: null
                 additionalOp: \"NOP\"
               argsNode:

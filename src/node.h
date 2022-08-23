@@ -554,6 +554,8 @@ public:
 
   const std::string &getName() const { return this->name; }
 
+  void setName(std::string &&n) { this->name = std::move(n); }
+
   explicit operator bool() const { return !this->name.empty(); }
 };
 
@@ -593,12 +595,6 @@ public:
 
   const std::string &getVarName() const { return this->varName; }
 
-  /**
-   * force rewrite varName
-   * @param name
-   */
-  void setVarName(std::string &&name) { this->varName = std::move(name); }
-
   void dump(NodeDumper &dumper) const override;
 };
 
@@ -611,23 +607,30 @@ public:
 
 private:
   std::unique_ptr<Node> recvNode;
-  std::unique_ptr<VarNode> nameNode;
+  NameInfo nameInfo;
   AdditionalOp additionalOp{NOP};
 
 public:
-  AccessNode(std::unique_ptr<Node> &&recvNode, std::unique_ptr<VarNode> &&nameNode)
+  AccessNode(std::unique_ptr<Node> &&recvNode, NameInfo &&nameInfo)
       : WithRtti(recvNode->getToken()), recvNode(std::move(recvNode)),
-        nameNode(std::move(nameNode)) {
-    this->updateToken(this->nameNode->getToken());
+        nameInfo(std::move(nameInfo)) {
+    this->updateToken(this->nameInfo.getToken());
   }
 
   Node &getRecvNode() const { return *this->recvNode; }
 
   std::unique_ptr<Node> &refRecvNode() { return this->recvNode; }
 
-  const std::string &getFieldName() const { return this->nameNode->getVarName(); }
+  const std::string &getFieldName() const { return this->nameInfo.getName(); }
 
-  VarNode &getNameNode() const { return *this->nameNode; }
+  /**
+   * force rewrite field name
+   */
+  void setFieldName(std::string &&name) { this->nameInfo.setName(std::move(name)); }
+
+  Token getNameToken() const { return this->nameInfo.getToken(); }
+
+  const NameInfo &getField() const { return this->nameInfo; }
 
   void setAdditionalOp(AdditionalOp op) { this->additionalOp = op; }
 
@@ -862,7 +865,7 @@ public:
 
   void setMethodName(std::string &&name) {
     assert(this->isIndexOp());
-    cast<AccessNode>(*this->exprNode).getNameNode().setVarName(std::move(name));
+    cast<AccessNode>(*this->exprNode).setFieldName(std::move(name));
   }
 
   Node &getRecvNode() const {

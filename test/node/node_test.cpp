@@ -294,14 +294,11 @@ nodes:
         type:
         kind: "STRING"
         value: "hey"
-      nameNode:
-        nodeKind: Var
+      nameInfo:
         token:
           pos: 6
           size: 4
-        type:
-        varName: "size"
-        handle: null
+        name: "size"
       handle: null
       additionalOp: "NOP"
     argsNode:
@@ -575,14 +572,11 @@ nodes:
             baseIndex: 0
             inFork: true
           opKind: "ForkKind::JOB"
-        nameNode:
-          nodeKind: Var
+        nameInfo:
           token:
             pos: 40
             size: 4
-          type:
-          varName: "poll"
-          handle: null
+          name: "poll"
         handle: null
         additionalOp: "NOP"
       argsNode:

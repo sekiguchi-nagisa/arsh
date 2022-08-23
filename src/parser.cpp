@@ -1453,8 +1453,8 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
       if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) {
         this->makeCodeComp(CodeCompNode::MEMBER, std::move(node), this->curToken);
       }
-      Token token = TRY(this->expect(TokenKind::IDENTIFIER));
-      node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
+      auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+      node = std::make_unique<AccessNode>(std::move(node), std::move(nameInfo));
       if (CUR_KIND() == TokenKind::LP && !this->hasLineTerminator()) { // treat as method call
         auto argsNode = TRY(this->parse_arguments());
         node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode),
@@ -1854,19 +1854,19 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 
 std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
   std::unique_ptr<Node> node;
-  std::vector<std::unique_ptr<VarNode>> nodes;
+  std::vector<NameInfo> names;
 
   const char *ptr = this->lexer->toStrRef(token).data();
   for (unsigned int index = token.size - 1; index != 0; index--) {
     if (ptr[index] == '.') {
       Token fieldToken = token.sliceFrom(index + 1);
-      nodes.push_back(this->newVarNode(fieldToken));
+      names.emplace_back(fieldToken, this->lexer->toName(fieldToken));
       token = token.slice(0, index);
     }
   }
   node = this->newVarNode(token);
-  for (; !nodes.empty(); nodes.pop_back()) {
-    node = std::make_unique<AccessNode>(std::move(node), std::move(nodes.back()));
+  for (; !names.empty(); names.pop_back()) {
+    node = std::make_unique<AccessNode>(std::move(node), std::move(names.back()));
   }
   return node;
 }
@@ -1883,14 +1883,14 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
   case TokenKind::APPLIED_NAME_WITH_FIELD: {
     const Token token = this->expect(TokenKind::APPLIED_NAME_WITH_FIELD);
 
-    // split '${recv.field1.field2}'
-    // split begin token '${'
+    // split `${recv.field1.field2}'
+    // split begin token `${'
     Token beginToken = token.slice(0, 2);
 
     // split inner names
     Token innerToken = token.slice(2, token.size - 1);
 
-    // split end token '}'
+    // split end token `}'
     Token endToken = token.sliceFrom(token.size - 1);
 
     return std::make_unique<EmbedNode>(beginToken.pos, kind, this->toAccessNode(innerToken),

@@ -376,17 +376,17 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
     if (attr == ApplyNode::INDEX) {
       methodName += strlen(INDEX_OP_NAME_PREFIX);
     }
-    this->reportError<UndefinedMethod>(node.getNameNode(), methodName,
+    this->reportError<UndefinedMethod>(node.getNameToken(), methodName,
                                        node.getRecvNode().getType().getName());
     break;
   case ApplyNode::UNARY:
     methodName += strlen(UNARY_OP_NAME_PREFIX);
-    this->reportError<UndefinedUnary>(node.getNameNode(), methodName,
+    this->reportError<UndefinedUnary>(node.getNameToken(), methodName,
                                       node.getRecvNode().getType().getName());
     break;
   case ApplyNode::BINARY:
     methodName += strlen(BINARY_OP_NAME_PREFIX);
-    this->reportError<UndefinedBinary>(node.getNameNode(), methodName,
+    this->reportError<UndefinedBinary>(node.getNameToken(), methodName,
                                        node.getRecvNode().getType().getName());
     break;
   case ApplyNode::ITER:
@@ -463,7 +463,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
     case NameLookupError::UNCAPTURE_FIELD:
       break;
     case NameLookupError::MOD_PRIVATE:
-      this->reportError<PrivateField>(node.getNameNode(), node.getFieldName().c_str());
+      this->reportError<PrivateField>(node.getNameToken(), node.getFieldName().c_str());
       break;
     }
     return false;
@@ -692,7 +692,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
-    this->reportError<UndefinedField>(node.getNameNode(), node.getFieldName().c_str(),
+    this->reportError<UndefinedField>(node.getNameToken(), node.getFieldName().c_str(),
                                       node.getRecvNode().getType().getName());
   }
 }
@@ -1798,8 +1798,9 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         this->reportError<ReadOnlySymbol>(leftNode, cast<VarNode>(leftNode).getVarName().c_str());
       } else {
         assert(isa<AccessNode>(leftNode));
-        auto &nameNode = cast<AccessNode>(leftNode).getNameNode();
-        this->reportError<ReadOnlyField>(nameNode, nameNode.getVarName().c_str());
+        auto &accessNode = cast<AccessNode>(leftNode);
+        this->reportError<ReadOnlyField>(accessNode.getNameToken(),
+                                         accessNode.getFieldName().c_str());
       }
     }
   } else {

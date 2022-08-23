@@ -230,7 +230,7 @@ void VarNode::dump(NodeDumper &dumper) const {
 
 void AccessNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(recvNode);
-  DUMP_PTR(nameNode);
+  DUMP(nameInfo);
   DUMP_PTR(handle);
 
 #define EACH_ENUM(OP)                                                                              \
@@ -289,8 +289,8 @@ void ArgsNode::dump(NodeDumper &dumper) const {
 
 std::unique_ptr<ApplyNode> ApplyNode::newMethodCall(std::unique_ptr<Node> &&recvNode, Token token,
                                                     std::string &&methodName) {
-  auto exprNode = std::make_unique<AccessNode>(
-      std::move(recvNode), std::make_unique<VarNode>(token, std::move(methodName)));
+  auto exprNode =
+      std::make_unique<AccessNode>(std::move(recvNode), NameInfo(token, std::move(methodName)));
   return std::make_unique<ApplyNode>(std::move(exprNode), std::make_unique<ArgsNode>(),
                                      METHOD_CALL);
 }
@@ -807,7 +807,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
 
   // init recv, indexNode
   assert(leftNode->isIndexOp());
-  auto opToken = cast<AccessNode>(leftNode->getExprNode()).getNameNode().getToken();
+  auto opToken = cast<AccessNode>(leftNode->getExprNode()).getNameToken();
   auto pair = ApplyNode::split(std::move(leftNode));
   this->recvNode = std::move(pair.first);
   this->indexNode = std::move(pair.second);

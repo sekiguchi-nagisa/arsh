@@ -376,7 +376,7 @@ void SymbolIndexer::visitAccessNode(AccessNode &node) {
   this->visit(node.getRecvNode());
   assert(!node.isUntyped());
   if (node.getHandle()) {
-    NameInfo info(node.getNameNode().getToken(), node.getFieldName());
+    NameInfo info = node.getField();
     this->builder().addMember(node.getRecvNode().getType(), info, DeclSymbol::Kind::VAR,
                               *node.getHandle(), node.getToken());
   }
@@ -386,7 +386,7 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
   if (node.isMethodCall() && node.getHandle()) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     this->visit(accessNode.getRecvNode());
-    NameInfo nameInfo(accessNode.getNameNode().getToken(), accessNode.getFieldName());
+    NameInfo nameInfo = accessNode.getField();
     this->builder().addMember(*node.getHandle(), nameInfo, node.getToken());
   } else if (node.isFuncCall()) {
     this->visit(node.getExprNode());

@@ -70,10 +70,7 @@ void NodePass::visitTupleNode(TupleNode &node) { this->visitEach(node.getNodes()
 
 void NodePass::visitVarNode(VarNode &) {}
 
-void NodePass::visitAccessNode(AccessNode &node) {
-  this->visit(node.getRecvNode());
-  this->visit(node.getNameNode());
-}
+void NodePass::visitAccessNode(AccessNode &node) { this->visit(node.getRecvNode()); }
 
 void NodePass::visitTypeOpNode(TypeOpNode &node) {
   this->visit(node.getExprNode());
