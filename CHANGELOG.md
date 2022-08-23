@@ -72,6 +72,7 @@
     - for builtin ``jobs`` command within sub-shell
 - **Breaking Change**: after background job termination, not show signal message
     - not show signal messages after call ``Job#poll``, ``Job#wait``, builtin wait command
+- **Breaking Change**: remove multi-return type due to unused
 - show job information via CTRL-Z/``fg``/``bg``
 - escape unprintable character when throw some errors
 - improve method lookup error messages

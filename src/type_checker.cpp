@@ -95,19 +95,6 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     }
     return this->typePool.createFuncType(returnType, std::move(paramTypes));
   }
-  case TypeNode::Return: {
-    auto &typeNode = cast<ReturnTypeNode>(node);
-    unsigned int size = typeNode.getTypeNodes().size();
-    if (size == 1) {
-      return Ok(&this->checkTypeExactly(*typeNode.getTypeNodes()[0]));
-    }
-
-    std::vector<const DSType *> types(size);
-    for (unsigned int i = 0; i < size; i++) {
-      types[i] = &this->checkTypeExactly(*typeNode.getTypeNodes()[i]);
-    }
-    return this->typePool.createTupleType(std::move(types));
-  }
   case TypeNode::TypeOf:
     auto &typeNode = cast<TypeOfNode>(node);
     auto &type = this->checkTypeAsSomeExpr(typeNode.getExprNode());

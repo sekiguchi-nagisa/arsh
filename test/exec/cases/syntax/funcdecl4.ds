@@ -1,2 +1,2 @@
 
-function f() : Float, Int, String { throw 23; }
+function f() : String { throw 23; }

@@ -363,22 +363,15 @@ nodes:
         pos: 15
         size: 12
       type:
-      typeKind: "Return"
-      typeNodes:
-        - nodeKind: Type
-          token:
-            pos: 15
-            size: 12
-          type:
-          typeKind: "TypeOf"
-          exprNode:
-            nodeKind: Regex
-            token:
-              pos: 22
-              size: 4
-            type:
-            reStr: "d"
-            reFlag: ""
+      typeKind: "TypeOf"
+      exprNode:
+        nodeKind: Regex
+        token:
+          pos: 22
+          size: 4
+        type:
+        reStr: "d"
+        reFlag: ""
     recvTypeNode: null
     blockNode:
       nodeKind: Block

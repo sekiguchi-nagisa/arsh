@@ -94,7 +94,6 @@ protected:
   virtual void visitQualified(QualifiedTypeNode &node);
   virtual void visitReified(ReifiedTypeNode &node);
   virtual void visitFunc(FuncTypeNode &node);
-  virtual void visitReturn(ReturnTypeNode &node);
   virtual void visitTypeOf(TypeOfNode &node);
 
   template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>

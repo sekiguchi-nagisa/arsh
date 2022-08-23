@@ -373,15 +373,8 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   std::unique_ptr<TypeNode> retTypeNode;
   if (CUR_KIND() == TokenKind::COLON) {
     this->expect(TokenKind::COLON, false); // always success
-    auto type = std::make_unique<ReturnTypeNode>(TRY(this->parse_typeName()));
-    while (CUR_KIND() == TokenKind::COMMA) {
-      this->expectAndChangeMode(TokenKind::COMMA, yycEXPR, false); // always success
-      type->addTypeNode(TRY(this->parse_typeName()));
-    }
-    retTypeNode = std::move(type);
-  }
-
-  if (!retTypeNode && !node->isAnonymousFunc()) {
+    retTypeNode = TRY(this->parse_typeName());
+  } else if (!node->isAnonymousFunc()) {
     retTypeNode = newVoidTypeNode();
   }
   node->setReturnTypeNode(std::move(retTypeNode));

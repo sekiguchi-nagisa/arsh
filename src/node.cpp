@@ -125,15 +125,6 @@ void FuncTypeNode::dump(NodeDumper &dumper) const {
   DUMP(paramTypeNodes);
 }
 
-// ############################
-// ##     ReturnTypeNode     ##
-// ############################
-
-void ReturnTypeNode::dump(NodeDumper &dumper) const {
-  TypeNode::dump(dumper);
-  DUMP(typeNodes);
-}
-
 // ########################
 // ##     TypeOfNode     ##
 // ########################

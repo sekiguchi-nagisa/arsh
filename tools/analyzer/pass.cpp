@@ -41,9 +41,6 @@ void NodePass::visitTypeNode(TypeNode &node) {
   case TypeNode::Func:
     this->visitFunc(cast<FuncTypeNode>(node));
     break;
-  case TypeNode::Return:
-    this->visitReturn(cast<ReturnTypeNode>(node));
-    break;
   case TypeNode::TypeOf:
     this->visitTypeOf(cast<TypeOfNode>(node));
     break;
@@ -248,8 +245,6 @@ void NodePass::visitFunc(FuncTypeNode &node) {
   this->visitEach(node.getParamTypeNodes());
   this->visit(node.getReturnTypeNode());
 }
-
-void NodePass::visitReturn(ReturnTypeNode &node) { this->visitEach(node.getTypeNodes()); }
 
 void NodePass::visitTypeOf(TypeOfNode &node) { this->visit(node.getExprNode()); }
 

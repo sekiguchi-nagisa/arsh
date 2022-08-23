@@ -162,7 +162,6 @@ public:
   OP(Qualified)                                                                                    \
   OP(Reified)                                                                                      \
   OP(Func)                                                                                         \
-  OP(Return)                                                                                       \
   OP(TypeOf)
 
 /**
@@ -286,31 +285,6 @@ public:
   }
 
   TypeNode &getReturnTypeNode() const { return *this->returnTypeNode; }
-
-  void dump(NodeDumper &dumper) const override;
-};
-
-/**
- * for multiple return type
- */
-class ReturnTypeNode : public TypeNode {
-private:
-  std::vector<std::unique_ptr<TypeNode>> typeNodes;
-
-public:
-  explicit ReturnTypeNode(std::unique_ptr<TypeNode> &&typeNode)
-      : TypeNode(TypeNode::Return, typeNode->getToken()) {
-    this->addTypeNode(std::move(typeNode));
-  }
-
-  void addTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
-    this->updateToken(typeNode->getToken());
-    this->typeNodes.push_back(std::move(typeNode));
-  }
-
-  const std::vector<std::unique_ptr<TypeNode>> &getTypeNodes() const { return this->typeNodes; }
-
-  bool hasMultiReturn() const { return this->typeNodes.size() > 1; }
 
   void dump(NodeDumper &dumper) const override;
 };
