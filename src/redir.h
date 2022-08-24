@@ -116,8 +116,8 @@ inline void redirInToNull() {
 }
 
 struct PipeSet {
-  pipe_t in;
-  pipe_t out;
+  pipe_t in{-1};
+  pipe_t out{-1};
 
   explicit PipeSet(ForkKind kind) { // FIXME: error reporting
     bool useInPipe = false;

@@ -1956,7 +1956,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj) {
 
   FakeModuleLoader loader(state.sysConfig);
   auto cwd = getCWD();
-  unsigned int lastStatus = 0;
+  int lastStatus = 0;
   for (unsigned int i = 2; i < size; i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
     if (ref.hasNullChar()) {

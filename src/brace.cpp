@@ -64,7 +64,7 @@ static BraceInt toBraceInt(StringRef ref) {
   }
 
   if (ok && digits > 0) { // resolve digits
-    uint64_t v = static_cast<uint64_t>(value == INT64_MIN ? INT64_MAX : std::abs(value));
+    auto v = static_cast<uint64_t>(value == INT64_MIN ? INT64_MAX : std::abs(value));
     digits += countDigits(v) + (negate ? 1 : 0);
   }
 

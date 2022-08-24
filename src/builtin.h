@@ -604,7 +604,7 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
 YDSH_METHOD string_width(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_width);
   auto ref = LOCAL(0).asStrRef();
-  auto v = LOCAL(1);
+  auto &v = LOCAL(1);
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
   int64_t value = 0;
@@ -763,7 +763,7 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
   auto ref = LOCAL(0).asStrRef();
   auto start = LOCAL(1).asInt();
-  auto v = LOCAL(2);
+  auto &v = LOCAL(2);
   assert(ref.size() <= StringObject::MAX_SIZE);
   auto stop = v.isInvalid() ? static_cast<int64_t>(ref.size()) : v.asInt();
   RET(slice(ref, start, stop));
@@ -1460,7 +1460,7 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_slice);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto start = LOCAL(1).asInt();
-  auto v = LOCAL(2);
+  auto &v = LOCAL(2);
   assert(obj.size() <= ArrayObject::MAX_SIZE);
   auto stop = v.isInvalid() ? static_cast<int64_t>(obj.size()) : v.asInt();
   RET(slice(obj, start, stop));
@@ -1936,7 +1936,7 @@ YDSH_METHOD fd_not(RuntimeContext &ctx) {
 
 //!bind: function $OP_ITER($this : UnixFD) : Reader
 YDSH_METHOD fd_iter(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(fd_init);
+  SUPPRESS_WARNING(fd_iter);
   auto &v = LOCAL(0);
   RET(DSValue::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
 }

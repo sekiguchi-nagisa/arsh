@@ -928,6 +928,7 @@ void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP(curIndex);
 
   std::vector<std::string> tmp;
+  tmp.reserve(this->pathList.size());
   for (auto &e : this->pathList) {
     tmp.push_back(*e);
   }

@@ -87,7 +87,7 @@ static const char *prompt(unsigned int n) {
 static std::vector<std::string> notifyQueue;
 
 static int notifyCallback(DSNotifyKind, const char *message) {
-  notifyQueue.push_back(message);
+  notifyQueue.emplace_back(message);
   return 0;
 }
 
