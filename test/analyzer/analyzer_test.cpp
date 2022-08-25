@@ -134,7 +134,7 @@ static ProcBuilder litecheck(const std::string &scriptPath) {
 }
 
 struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
-  void doTest() {
+  static void doTest() {
     auto result = litecheck(GetParam()).exec();
     ASSERT_EQ(WaitStatus::EXITED, result.kind);
     ASSERT_EQ(0, result.value);
@@ -143,7 +143,7 @@ struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
 
 TEST_P(AnalyzerTest, base) {
   printf("@@ test script %s\n", GetParam().c_str());
-  ASSERT_NO_FATAL_FAILURE(this->doTest());
+  ASSERT_NO_FATAL_FAILURE(doTest());
 }
 
 INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,

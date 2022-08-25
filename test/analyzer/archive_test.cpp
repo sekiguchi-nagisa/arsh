@@ -43,6 +43,7 @@ struct ArchiveBuilder {
   ModuleArchivePtr build() const {
     std::vector<Archive> handles;
     std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+    imported.reserve(this->children.size());
     for (auto &e : this->children) {
       imported.emplace_back(ImportedModKind::GLOBAL, e.build());
     }
@@ -127,6 +128,7 @@ protected:
   static auto toSorted(const std::unordered_map<std::string, HandlePtr> &handleMap) {
     using Entry = std::pair<std::string, HandlePtr>;
     std::vector<Entry> ret;
+    ret.reserve(handleMap.size());
     for (auto &e : handleMap) {
       ret.emplace_back(e.first, e.second);
     }

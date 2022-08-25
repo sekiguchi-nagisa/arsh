@@ -1210,7 +1210,7 @@ TEST_F(APITest, globalLimit) {
     std::string value = "var var_";
     value += name;
     value += " = true";
-    this->createTempFile(name.c_str(), value.c_str());
+    this->createTempFile(name.c_str(), value);
   }
 
   const char *dir = this->getTempDirName();

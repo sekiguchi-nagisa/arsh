@@ -147,7 +147,7 @@ public:
   }
 };
 
-typedef std::vector<std::pair<TokenKind, const char *>> ExpectedList;
+using ExpectedList = std::vector<std::pair<TokenKind, const char *>>;
 
 void addPair(ExpectedList &) {}
 
@@ -2189,11 +2189,11 @@ struct EscapeSeqTest : public ::testing::Test {
   template <unsigned int N>
   void assertEscape(StringRef ref, const int (&codes)[N], bool needPrefix = false) {
     std::vector<int> expect(std::begin(codes), std::end(codes));
-    this->assertEscape(ref, std::move(expect), needPrefix);
+    assertEscape(ref, std::move(expect), needPrefix);
   }
 
   void assertEscape(StringRef ref, int code, bool needPrefix = false) {
-    this->assertEscape(ref, ARRAY(code), needPrefix);
+    assertEscape(ref, ARRAY(code), needPrefix);
   }
 };
 

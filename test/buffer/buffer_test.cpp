@@ -4,7 +4,7 @@
 
 using namespace ydsh;
 
-typedef FlexBuffer<unsigned int> IBuffer;
+using IBuffer = FlexBuffer<unsigned int>;
 
 TEST(BufferTest, case1) {
   IBuffer buffer;

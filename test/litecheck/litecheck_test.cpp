@@ -59,11 +59,11 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
   }
 
   void doTest() {
-    ASSERT_TRUE(StringRef(this->GetParam()).endsWith(".test"));
+    ASSERT_TRUE(StringRef(GetParam()).endsWith(".test"));
 
     // parse status
     int status = ({
-      StringRef ref = this->GetParam();
+      StringRef ref = GetParam();
       ref.removeSuffix(strlen(".test"));
       auto pos = ref.lastIndexOf("-");
       ASSERT_TRUE(pos != StringRef::npos);
@@ -77,7 +77,7 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
 
     // read expected output
     auto expected = ({
-      StringRef ref = this->GetParam();
+      StringRef ref = GetParam();
       ref.removeSuffix(strlen(".test"));
       std::string fileName = ref.toString();
       fileName += ".expected";
@@ -93,7 +93,7 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
       readAll(input);
     });
 
-    auto result = litecheck(this->GetParam()).execAndGetResult(false);
+    auto result = litecheck(GetParam()).execAndGetResult(false);
     ASSERT_EQ(WaitStatus::EXITED, result.status.kind);
     ASSERT_EQ(status, result.status.value);
     ASSERT_EQ(expected, result.err);

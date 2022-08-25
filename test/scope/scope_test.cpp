@@ -36,7 +36,7 @@ protected:
     return type;
   }
 
-  static void expect(const Entry &e, HandlePtr handle) { expect(e, handle.get()); }
+  static void expect(const Entry &e, const HandlePtr &handle) { expect(e, handle.get()); }
 
   static void expect(const Entry &e, const Handle *handle) {
     ASSERT_TRUE(handle);
