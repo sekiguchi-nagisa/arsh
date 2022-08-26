@@ -1,0 +1,7 @@
+
+#$test($result = 'type', $errorKind = 'NotInferParamUnmatch', $lineNum = 6, $chars = 16, $status = 1)
+
+var FF : ((Int) -> Int)!
+
+$FF = function(aaa,
+               bbb) -> 34

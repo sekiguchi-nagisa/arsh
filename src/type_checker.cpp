@@ -111,8 +111,10 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
    */
   if (targetNode.isUntyped()) {
     this->visitingDepth++;
+    this->requiredTypes.push_back(requiredType);
     targetNode.setType(this->typePool.getUnresolvedType());
     targetNode.accept(*this);
+    this->requiredTypes.pop_back();
     this->visitingDepth--;
   }
 
@@ -2062,6 +2064,42 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   node.getBlockNode().addNode(std::move(returnNode));
 }
 
+void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
+  assert(node.isAnonymousFunc());
+
+  // resolve required func type
+  const FunctionType *funcType = nullptr;
+  if (auto *type = this->getRequiredType(); type) {
+    if (type->isOptionType()) {
+      type = &cast<OptionType>(type)->getElementType();
+    }
+    if (type->isFuncType()) {
+      funcType = cast<FunctionType>(type);
+    }
+  }
+
+  // infer param type if type is missing
+  const unsigned int paramSize = node.getParamNodes().size();
+  const bool doInference = funcType && paramSize == funcType->getParamSize();
+  for (unsigned int i = 0; i < paramSize; i++) {
+    auto &paramNode = node.getParamNodes()[i];
+    if (!paramNode->getExprNode()) {
+      auto exprNode = std::make_unique<EmptyNode>();
+      if (doInference) {
+        exprNode->setType(funcType->getParamTypeAt(i));
+      } else {
+        exprNode->setType(this->typePool.getUnresolvedType());
+        if(!funcType) {
+          this->reportError<NotInferParamNoFunc>(*paramNode);
+        } else {
+          this->reportError<NotInferParamUnmatch>(*paramNode);
+        }
+      }
+      paramNode->setExprNode(std::move(exprNode));
+    }
+  }
+}
+
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
   if (!this->curScope->isGlobal() && !node.isAnonymousFunc()) { // only available toplevel scope
@@ -2083,6 +2121,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
 
   if (node.isConstructor()) {
     this->registerRecordType(node);
+  } else if (node.isAnonymousFunc()) {
+    this->inferParamTypes(node);
   }
 
   // resolve param type, return type

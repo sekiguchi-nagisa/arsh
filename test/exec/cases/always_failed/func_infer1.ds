@@ -1,0 +1,11 @@
+
+#$test($result = 'type', $errorKind = 'NotInferParamNoFunc', $lineNum = 4, $chars = 21, $status = 1)
+
+function (ii : Int, jj) => {
+    if $i < 0 {
+      return 12
+    } elif $i > 0 {
+      return 'fre'
+    }
+    return 's'
+}

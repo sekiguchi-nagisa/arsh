@@ -1,0 +1,46 @@
+
+# param type inference
+
+var FF = function(a : Int, b : String) => $a + $b
+var FF2 : typeof($FF)!
+
+## inference in right-hand side
+$FF = function(a, b) => $a + "=" + $b
+assert $FF(1, "q") == "1=q"
+
+$FF = function(a, b : String) => $a + "&" + $b
+assert $FF(12, "q") == "12&q"
+
+## inference in right-hand side with option type
+$FF2 = function(a,b) => "($a, $b)"
+assert $FF2!(1,"e") == "(1, e)"
+assert $FF2! is (Int, String) -> String
+
+$FF2 = function(a: Int,b) => "($a~$b)"
+assert $FF2!(1,"e") == "(1~e)"
+
+## inference in arguments
+function kick(a : () -> Void, f : (ArithmeticError, String) -> Void) {
+    try {
+        $a()
+    } catch e : ArithmeticError {
+        $f($e, "NG")
+    }
+}
+
+var ret : (Error, String)!
+
+$kick(function() => {
+    45 / 0
+}, function(a : Error, b) => {
+    $ret = ($a, $b)
+})
+
+assert $ret!._0 is ArithmeticError
+assert $ret!._1 == "NG"
+
+## inference in array
+var FFs = [ $FF, function(a, b) => "$a<>$b", function(a : Any, b) => "$a@@$b" ]
+assert $FFs[0](23, "a") == "23&a"
+assert $FFs[1](23, "a") == "23<>a"
+assert $FFs[2](23, "a") == "23@@a"

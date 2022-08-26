@@ -1938,8 +1938,6 @@ public:
 
   Kind getKind() const { return this->kind; }
 
-  void setAttribute(const Handle &handle);
-
   void setHandle(HandlePtr ptr) { this->handle = std::move(ptr); }
 
   const HandlePtr &getHandle() const { return this->handle; }
@@ -1950,6 +1948,12 @@ public:
    * may be null
    */
   Node *getExprNode() const { return this->exprNode.get(); }
+
+  /**
+   * for param type inference
+   * @param node
+   */
+  void setExprNode(std::unique_ptr<Node> &&node) { this->exprNode = std::move(node); }
 
   unsigned int getVarIndex() const { return this->handle->getIndex(); }
 

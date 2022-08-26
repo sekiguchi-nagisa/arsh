@@ -285,6 +285,8 @@ protected:
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
+  FlexBuffer<const DSType *> requiredTypes;
+
   std::vector<TypeCheckError> errors;
 
 public:
@@ -371,6 +373,8 @@ protected:
 
 private:
   TypeOrError toType(TypeNode &node);
+
+  const DSType *getRequiredType() const { return this->requiredTypes.back(); }
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
     this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
@@ -523,6 +527,8 @@ private:
   void postprocessFunction(FunctionNode &node);
 
   void postprocessConstructor(FunctionNode &node);
+
+  void inferParamTypes(FunctionNode &node);
 
   // for case-expression
   struct PatternMap {

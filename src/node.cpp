@@ -759,6 +759,7 @@ VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
                          std::unique_ptr<Node> &&exprNode, Kind kind)
     : WithRtti({startPos, 0}), kind(kind), varName(std::move(varName)),
       exprNode(std::move(exprNode)) {
+  this->updateToken(this->varName.getToken());
   if (this->exprNode != nullptr) {
     this->updateToken(this->exprNode->getToken());
   }

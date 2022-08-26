@@ -360,9 +360,12 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
 
     if (CUR_KIND() == TokenKind::PARAM_NAME) {
       auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
-      TRY(this->expect(TokenKind::COLON, false));
-      auto type = TRY(this->parse_typeName());
-      node->addParamNode(std::move(param), std::move(type));
+      std::unique_ptr<TypeNode> typeNode;
+      if (!node->isAnonymousFunc() || CUR_KIND() == TokenKind::COLON) {
+        TRY(this->expect(TokenKind::COLON, false));
+        typeNode = TRY(this->parse_typeName());
+      }
+      node->addParamNode(std::move(param), std::move(typeNode));
     } else {
       E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
     }

@@ -125,6 +125,10 @@ DEFINE_TCError(UncaptureEnv, "local function cannot access temporary "
 DEFINE_TCError(UncaptureField, "local function cannot access upper variables "
                                "that will be assigned to fields: `%s'");
 DEFINE_TCError(ErrorMod, "syntax or semantic errors occurred in `%s'");
+DEFINE_TCError(NotInferParamNoFunc, "cannot infer parameter type, "
+                                    "because current context does not require function type");
+DEFINE_TCError(NotInferParamUnmatch, "cannot infer parameter type, "
+                                     "because number of parameter is not match");
 
 #undef DEFINE_TCError
 
