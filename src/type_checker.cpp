@@ -724,8 +724,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     if (exprType.isOptionType()) {
       node.setType(cast<OptionType>(exprType).getElementType());
     } else {
-      this->reportError<Required>(*node.getExprNode(), this->typePool.get(TYPE::Nothing).getName(),
-                                  exprType.getName());
+      this->reportError<Required>(*node.getExprNode(), TYPE_OPTION, exprType.getName());
     }
   } else {
     if (exprType.isOptionType()) {
@@ -764,8 +763,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       node.setType(elementType);
     } else {
       this->checkTypeAsExpr(*node.getRightNode());
-      this->reportError<Required>(*node.getLeftNode(), this->typePool.get(TYPE::Nothing).getName(),
-                                  leftType.getName());
+      this->reportError<Required>(*node.getLeftNode(), TYPE_OPTION, leftType.getName());
     }
     return;
   }
@@ -2089,7 +2087,7 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
         exprNode->setType(funcType->getParamTypeAt(i));
       } else {
         exprNode->setType(this->typePool.getUnresolvedType());
-        if(!funcType) {
+        if (!funcType) {
           this->reportError<NotInferParamNoFunc>(*paramNode);
         } else {
           this->reportError<NotInferParamUnmatch>(*paramNode);
@@ -2172,7 +2170,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     return;
   }
 
-  if (node.getReturnTypeNode()) {
+  if (node.getReturnTypeNode()) { // for Nothing type user-defined command
     this->checkType(this->typePool.get(TYPE::Nothing), *node.getReturnTypeNode());
   }
 

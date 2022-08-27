@@ -168,9 +168,23 @@ $a = true|(true|false)
 )";
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ds("-c", "var a = 34;\n$a = true|(true|false)"), 1, "", msg));
+
+  msg = R"((string):1:3: [semantic error] require `Option' type, but is `Int' type
+  23!
+  ^~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "  23!"), 1, "", msg));
+
+  msg = R"((string):1:3: [semantic error] require `Option' type, but is `Int' type
+  23 ?? 45
+  ^~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "  23 ?? 45"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker4) {
+  // for east asian width
+
   const char *msg = R"((string):1:10: [semantic error] undefined field: `d' for `String' type
 'まま○2'.d
          ^
