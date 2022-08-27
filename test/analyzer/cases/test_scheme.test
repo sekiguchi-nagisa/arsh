@@ -19,7 +19,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
-#    CHECK:         "message": "require `Int' type, but is `Boolean' type",
+#    CHECK:         "message": "require `Int' type, but is `Bool' type",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
 #    CHECK:             "character": 11,

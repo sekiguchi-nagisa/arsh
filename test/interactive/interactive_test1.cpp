@@ -115,7 +115,7 @@ TEST_F(InteractiveTest, tab) {
   this->send("\t");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE  False.+"));
   this->send("\t\r");
-  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+: Boolean = false.+"));
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+: Bool = false.+"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -124,7 +124,7 @@ TEST_F(InteractiveTest, edit1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->send("t" CTRL_A "$" CTRL_F "re" CTRL_B "u\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$true\n: Boolean = true\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$true\n: Bool = true\n" + PROMPT));
 
   this->send("''" CTRL_F CTRL_F CTRL_B "い" CTRL_B "あ" CTRL_F
              "う" CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B "\r");

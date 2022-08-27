@@ -52,7 +52,7 @@ TypePool::TypePool() {
 
   this->initBuiltinType(TYPE::Int, "Int", false, TYPE::Value_, info_IntType());
   this->initBuiltinType(TYPE::Float, "Float", false, TYPE::Value_, info_FloatType());
-  this->initBuiltinType(TYPE::Boolean, "Boolean", false, TYPE::Value_, info_BooleanType());
+  this->initBuiltinType(TYPE::Boolean, "Bool", false, TYPE::Value_, info_BooleanType());
   this->initBuiltinType(TYPE::String, "String", false, TYPE::Value_, info_StringType());
 
   this->initBuiltinType(TYPE::Regex, "Regex", false, TYPE::Any, info_RegexType());
@@ -63,7 +63,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Func, "Func", false, TYPE::Any, info_Dummy());
   this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
-  this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
+  this->initBuiltinType(TYPE::UnixFD, "FD", false, TYPE::Any, info_UnixFDType());
   this->initBuiltinType(TYPE::Reader, "Reader%", false, TYPE::Any, info_ReaderType());
 
   // initialize type template

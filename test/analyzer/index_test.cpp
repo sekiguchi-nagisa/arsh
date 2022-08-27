@@ -957,7 +957,7 @@ TEST_F(IndexTest, hover) {
                                       "```ydsh\nfunction hoge(s : Int) : Void\n```"));
 
   // user-defined command
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Boolean\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
 
@@ -1002,7 +1002,8 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
                                       "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
                                       "\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBool", 1, "```ydsh\ntypedef Bool = Boolean\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("$true is\nBoolean", 1, "```ydsh\ntypedef Boolean = Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_5'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
@@ -1017,7 +1018,7 @@ TEST_F(IndexTest, hoverBuiltin) {
   // builtin tuple or method
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '');$a._2\n$a._2",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar _2 : String for (Int, Boolean, String)\n```"));
+                                      "```ydsh\nvar _2 : String for (Int, Bool, String)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("''.size();[1].size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
                                       "```ydsh\nfunction size() : Int for [Int]\n```"));

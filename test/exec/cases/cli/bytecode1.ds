@@ -50,7 +50,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: (Any) -> Boolean function(f)
+  2: (Any) -> Bool function(f)
 Line Number Table:
   lineNum: 1, address:  5
 Exception Table:
@@ -71,7 +71,7 @@ Line Number Table:
   lineNum: 1, address: 0
 Exception Table:"
 
-var cmd = 'function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}'
+var cmd = 'function f($a : Any) : Bool { return $a is Array<Int>; }; try { $f(1) } finally {3}'
 $expect("$(ds --dump-code -c $cmd)", 0, $out)
 
 

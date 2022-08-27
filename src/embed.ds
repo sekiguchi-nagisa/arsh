@@ -4,7 +4,7 @@ if !(checkenv PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
 
-typedef Bool = Boolean; typedef FD = UnixFD
+typedef Boolean = Bool; typedef UnixFD = FD
 
 # dummy function for signal handler
 function SIG_DFL($s : Signal) {}

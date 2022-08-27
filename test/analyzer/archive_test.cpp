@@ -540,7 +540,7 @@ TEST_F(ArchiveTest, mod4) {
   auto *handle2 = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
   ASSERT_TRUE(handle2);
   ASSERT_EQ(4, handle2->getModId());
-  ret = this->newPool().getType("[Boolean]");
+  ret = this->newPool().getType("[Bool]");
   ASSERT_TRUE(ret);
   ASSERT_EQ(ret.asOk()->typeId(), handle2->getTypeId());
 }

@@ -323,7 +323,7 @@ TEST_F(InteractiveTest, printStackTop) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->withTimeout(300, [&] { this->sendLineAndExpect("34|$false", ": Boolean = false"); }));
+      this->withTimeout(300, [&] { this->sendLineAndExpect("34|$false", ": Bool = false"); }));
   ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->sendLineAndExpect("34|true"); }));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
 
@@ -377,7 +377,7 @@ TEST_F(InteractiveTest, moduleError1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   auto eout = format("" INTERACTIVE_TEST_WORK_DIR
-                     "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Boolean' type\n"
+                     "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Bool' type\n"
                      "34 / /\n"
                      "     ^\n"
                      "(stdin):1:8: [note] at module import\n"
@@ -402,7 +402,7 @@ TEST_F(InteractiveTest, moduleError2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   auto eout = format("" INTERACTIVE_TEST_WORK_DIR
-                     "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Boolean' type\n"
+                     "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Bool' type\n"
                      "34 / /\n"
                      "     ^\n"
                      "(stdin):1:8: [note] at module import\n"

@@ -150,7 +150,7 @@ TEST_F(CmdlineTest, marker3) {
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
 
-  msg = R"((string):1:13: [semantic error] undefined field: `t' for `Boolean' type
+  msg = R"((string):1:13: [semantic error] undefined field: `t' for `Bool' type
 echo ${true.t}
             ^
 )";
@@ -162,7 +162,7 @@ throw 23; assert $false
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "throw 23; assert $false"), 1, "", msg));
 
-  msg = R"((string):2:6: [semantic error] require `Int' type, but is `Boolean' type
+  msg = R"((string):2:6: [semantic error] require `Int' type, but is `Bool' type
 $a = true|(true|false)
      ^~~~~~~~~~~~~~~~~
 )";

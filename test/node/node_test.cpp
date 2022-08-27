@@ -762,7 +762,7 @@ nodes:
       token:
         pos: 5
         size: 8
-      type: "Boolean"
+      type: "Bool"
       varName: "false"
       handle:
         index: 1
@@ -905,7 +905,7 @@ nodes:
       token:
         pos: 0
         size: 6
-      type: "Boolean"
+      type: "Bool"
       nameNode:
         nodeKind: String
         token:
@@ -1056,13 +1056,13 @@ nodes:
       token:
         pos: 0
         size: 9
-      type: "Boolean"
+      type: "Bool"
       exprNode:
         nodeKind: Cmd
         token:
           pos: 5
           size: 4
-        type: "Boolean"
+        type: "Bool"
         nameNode:
           nodeKind: String
           token:

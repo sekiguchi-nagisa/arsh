@@ -34,7 +34,7 @@ struct Func_t : Type {};
 DEFINE_TYPE(Int);
 DEFINE_TYPE(String);
 DEFINE_TYPE(Error);
-DEFINE_TYPE(Boolean);
+DEFINE_TYPE(Bool);
 DEFINE_TYPE(Float);
 DEFINE_TYPE(Void);
 
@@ -155,11 +155,11 @@ TEST_F(TypeTest, builtinName) {
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int", this->pool.get(TYPE::Int)));
 
-  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Boolean", this->pool.get(TYPE::Boolean)));
+  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Bool", this->pool.get(TYPE::Boolean)));
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Float", this->pool.get(TYPE::Float)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.get(TYPE::String)));
-  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("UnixFD", this->pool.get(TYPE::UnixFD)));
+  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("FD", this->pool.get(TYPE::UnixFD)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("[String]", this->pool.get(TYPE::StringArray)));
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Error", this->pool.get(TYPE::Error)));
@@ -245,7 +245,7 @@ TEST_F(TypeTest, typeToken) {
       this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertSuperType(
-      this->toType<Map_t<Boolean_t, Tuple_t<Float_t, String_t>>>(), this->pool.get(TYPE::Any)));
+      this->toType<Map_t<Bool_t, Tuple_t<Float_t, String_t>>>(), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.get(TYPE::Any)));
 

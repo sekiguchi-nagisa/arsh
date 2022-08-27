@@ -76,6 +76,10 @@
 - show job information via CTRL-Z/``fg``/``bg``
 - escape unprintable character when throw some errors
 - improve method lookup error messages
+- change actual name of ``Boolean``, ``UnixFD`` type
+    - ``Boolean`` -> ``Bool``
+    - ``UnixFD`` -> ``FD``
+    - old type name is still valid name (now defined as type alias)
 
 #### Builtin
 
