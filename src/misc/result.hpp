@@ -76,7 +76,7 @@ struct OverloadResolver<> {
 template <typename F, typename... T>
 using resolvedType = typename std::invoke_result_t<OverloadResolver<T...>, F>::type;
 
-template <ssize_t N>
+template <int N>
 struct index_holder {};
 
 } // namespace detail
@@ -168,7 +168,7 @@ inline void copy(const Storage<R...> &src, Storage<R...> &dest) {
 
 namespace detail {
 
-template <ssize_t N, typename... R>
+template <int N, typename... R>
 inline void destroy(Storage<R...> &storage, int tag, index_holder<N>) {
   if constexpr (N == -1) {
   } // do nothing
@@ -185,7 +185,7 @@ inline void destroy(Storage<R...> &storage, int tag) {
   destroy(storage, tag, index_holder<sizeof...(R) - 1>{});
 }
 
-template <ssize_t N, typename... R>
+template <int N, typename... R>
 inline void move(Storage<R...> &src, int srcTag, index_holder<N>, Storage<R...> &dest) {
   if constexpr (N == -1) {
   } // do nothing
@@ -202,7 +202,7 @@ inline void move(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
   move(src, srcTag, index_holder<sizeof...(R) - 1>{}, dest);
 }
 
-template <ssize_t N, typename... R>
+template <int N, typename... R>
 inline void copy(const Storage<R...> &src, int srcTag, index_holder<N>, Storage<R...> &dest) {
   if constexpr (N == -1) {
   } // do nothing
