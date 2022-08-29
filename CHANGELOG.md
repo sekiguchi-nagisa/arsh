@@ -96,6 +96,8 @@
     - iterator
 - **Breaking Change**: remove ``String#to``, ``String#from``, ``Array#to``, ``Array#from`` methods
     - use slice method instead
+- **Breaking Change**: ``Regex#replace`` method internally use ``pcre2_substitute`` api
+    - now expand meta characters during replacement
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``

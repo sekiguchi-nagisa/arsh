@@ -443,39 +443,18 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
 }
 
 bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
-  auto ret = DSValue::createStr();
-  unsigned int count = 0;
-  for (auto target = value.asStrRef(); !target.empty(); count++) {
-    std::string errorStr;
-    int matchCount = this->re.match(target, errorStr);
-    if (matchCount < 0) {
-      if (!errorStr.empty()) {
-        raiseError(state, TYPE::InvalidOperationError, std::move(errorStr));
-        return false;
-      }
-
-      if (count == 0) { // do nothing
-        return true;
-      } else if (!ret.appendAsStr(state, target)) {
-        return false;
-      }
-      break;
-    }
-
-    PCRECapture capture; // NOLINT
-    bool set = this->re.getCaptureAt(0, capture);
-    (void)set;
-    assert(set);
-
-    if (!ret.appendAsStr(state, target.slice(0, capture.begin))) {
+  std::string output;
+  auto ret = this->re.substitute(value.asStrRef(), repl, true, output);
+  if (ret < 0) {
+    raiseError(state, TYPE::InvalidOperationError, std::move(output));
+    return false;
+  } else {
+    if (output.size() > StringObject::MAX_SIZE) {
+      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
       return false;
     }
-    if (!ret.appendAsStr(state, repl)) {
-      return false;
-    }
-    target = target.slice(capture.end, target.size());
+    value = DSValue::createStr(std::move(output));
   }
-  value = std::move(ret);
   return true;
 }
 

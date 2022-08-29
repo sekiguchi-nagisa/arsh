@@ -18,6 +18,7 @@
 #define YDSH_REGEX_WRAPPER_H
 
 #include "misc/noncopyable.h"
+#include "misc/result.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
@@ -71,16 +72,46 @@ public:
 
   const char *getPattern() const { return this->pattern; }
 
+  /**
+   *
+   * @param ref
+   * @param errorStr
+   * @return
+   * if success, return positive value
+   * if 0, no match
+   * if error, return negative value
+   */
   int match(StringRef ref, std::string &errorStr);
 
   /**
    *
    * @param index
+   * must be less than match count
    * @param capture
    * @return
    * if not set, return false
    */
   bool getCaptureAt(unsigned int index, PCRECapture &capture);
+
+  /**
+   *
+   * @param target
+   * @param replacement
+   * @param global
+   * if true, replace all matched string
+   * if false, replace first matched string
+   * @param output
+   * if has error, write error message
+   * if success, write replaced string
+   * @return
+   * if success, return replacement count (may be 0)
+   * if has error, return negative value
+   */
+  int substitute(StringRef target, StringRef replacement, bool global, std::string &output);
+
+private:
+  int substituteImpl(StringRef target, StringRef replacement, unsigned int option, char *output,
+                     size_t &outputLen);
 };
 
 } // namespace ydsh

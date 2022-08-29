@@ -114,6 +114,22 @@ assert $/a(a(bc))/.replace('aabc-', "1234") == '1234-'
 assert $/(aa(bc))/.replace('aabcaabc', "1234") == '12341234'
 assert $/^hello$/.replace('hello ', "@") == 'hello '
 assert $/^hello$/.replace('hello', "@") == '@'
+assert $/(\d+)=(\d+)/.replace('12=34, a=1, 1=b, 56=78', '$2=$1') == "34=12, a=1, 1=b, 78=56"
+
+## replace large string
+var large = "abcdefghijklmnopqrstuvwxyz"
+$large += $large
+$large += $large
+$large += $large
+$large += $large
+assert $large.size() > 256   ## greater than internal static buffer size
+
+var elarge = "abef=cdghijklmnopqrstuvwxyz"
+$elarge += $elarge
+$elarge += $elarge
+$elarge += $elarge
+$elarge += $elarge
+assert $/(cd)(ef)/.replace($large, '$2=$1') == $elarge
 
 # internal error
 var ex = 34 as Any
@@ -175,3 +191,23 @@ try {
 }
 assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+
+$ex = 34 as Any
+try {
+    var m  = $/dddd/.replace('dddd', '($1)')
+    assert $m != '@'
+} catch e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == 'unknown substring'
+
+$ex = 34 as Any
+try {
+    var m  = $/dddd/.replace($'d\xFF\x12ddd', '34')
+    assert $m != '@'
+} catch e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == 'UTF-8 error: illegal byte (0xfe or 0xff)'

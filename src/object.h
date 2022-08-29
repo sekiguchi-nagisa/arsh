@@ -698,7 +698,7 @@ private:
 public:
   explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
 
-  bool search(DSState &state, StringRef ref) { return this->match(state, ref, nullptr) >= 0; }
+  bool search(DSState &state, StringRef ref) { return this->match(state, ref, nullptr) > 0; }
 
   /**
    * @param state

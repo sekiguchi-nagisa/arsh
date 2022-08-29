@@ -162,11 +162,14 @@ PCREVersion PCRE::version() {
 int PCRE::match(StringRef ref, std::string &errorStr) {
 #ifdef USE_PCRE
   int matchCount =
-      pcre2_match(static_cast<pcre2_code *>(this->code), (PCRE2_SPTR)ref.data(), ref.size(), 0, 0,
-                  static_cast<pcre2_match_data *>(this->data), nullptr);
-  if (matchCount < 0 && matchCount != PCRE2_ERROR_NOMATCH) {
+      pcre2_match(static_cast<pcre2_code *>(this->code), reinterpret_cast<PCRE2_SPTR>(ref.data()),
+                  ref.size(), 0, 0, static_cast<pcre2_match_data *>(this->data), nullptr);
+  if (matchCount == PCRE2_ERROR_NOMATCH) {
+    matchCount = 0;
+  }
+  if (matchCount < 0) {
     PCRE2_UCHAR buffer[256];
-    pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
+    pcre2_get_error_message(matchCount, buffer, std::size(buffer));
     errorStr = reinterpret_cast<const char *>(buffer);
   }
   return matchCount;
@@ -194,6 +197,69 @@ bool PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
   (void)index;
   (void)capture;
   return false;
+#endif
+}
+
+int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool global,
+                     std::string &output) {
+#ifdef USE_PCRE
+  const unsigned int option = PCRE2_SUBSTITUTE_OVERFLOW_LENGTH | PCRE2_SUBSTITUTE_UNSET_EMPTY |
+                              (global ? PCRE2_SUBSTITUTE_GLOBAL : 0);
+
+  char buf[256]; // for small string
+  size_t outputLen = std::size(buf);
+
+  int ret = this->substituteImpl(target, replacement, option, buf, outputLen);
+  if (ret >= 0) { // // substitution success (maybe no match)
+    output = std::string(buf, outputLen);
+    return ret;
+  } else if (ret == PCRE2_ERROR_NOMEMORY) {
+    /**
+     * allocate buffer (also reserve sentinel)
+     */
+    output.resize(outputLen + 1, '\0');
+    outputLen = output.size();
+    ret = this->substituteImpl(target, replacement, option, output.data(), outputLen);
+    if (ret >= 0) {
+      /**
+       * outputLen is actual replaced string size (except for null terminated character).
+       * as a result, must remove excessive null characters
+       */
+      assert(output.size() > outputLen);
+      output.resize(outputLen);
+      return ret;
+    }
+  }
+  assert(ret < 0);
+  pcre2_get_error_message(ret, reinterpret_cast<PCRE2_UCHAR *>(buf), std::size(buf));
+  output = buf;
+  return ret;
+
+#else
+  (void)target;
+  (void)replacement;
+  (void)global;
+  output = "regex is not supported";
+  return -999;
+#endif
+}
+
+int PCRE::substituteImpl(ydsh::StringRef target, ydsh::StringRef replacement, unsigned int option,
+                         char *output, size_t &outputLen) {
+#ifdef USE_PCRE
+  return pcre2_substitute(static_cast<pcre2_code *>(this->code),
+                          reinterpret_cast<PCRE2_SPTR>(target.data()), target.size(), 0, option,
+                          static_cast<pcre2_match_data *>(this->data), nullptr,
+                          reinterpret_cast<PCRE2_SPTR>(replacement.data()), replacement.size(),
+                          reinterpret_cast<PCRE2_UCHAR *>(output), &outputLen);
+
+#else
+  (void)target;
+  (void)replacement;
+  (void)option;
+  (void)output;
+  (void)outputLen;
+  return -999;
 #endif
 }
 
