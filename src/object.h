@@ -711,18 +711,9 @@ public:
    */
   int match(DSState &state, StringRef ref, ArrayObject *out);
 
-  /**
-   * @param state
-   * if has error, set error to state
-   * @param value
-   * if replace success, write result to it.
-   * must be String
-   * @param repl
-   * replacing string
-   * @return
-   * if string creation failed, return false
-   */
-  bool replace(DSState &state, DSValue &value, StringRef repl);
+  bool replace(StringRef target, StringRef replacement, std::string &output) {
+    return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
+  }
 
   const char *getStr() const { return this->re.getPattern(); }
 };

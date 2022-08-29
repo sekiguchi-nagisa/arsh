@@ -1085,9 +1085,14 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 YDSH_METHOD regex_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_replace);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto target = LOCAL(1);
-  TRY(re.replace(ctx, target, LOCAL(2).asStrRef()));
-  RET(target);
+  std::string out;
+  if (re.replace(LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), out)) {
+    assert(out.size() <= StringObject::MAX_SIZE);
+    RET(DSValue::createStr(std::move(out)));
+  } else {
+    raiseError(ctx, TYPE::InvalidOperationError, std::move(out));
+    RET_ERROR;
+  }
 }
 
 // ####################

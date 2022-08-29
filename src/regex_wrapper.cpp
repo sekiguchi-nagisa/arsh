@@ -201,7 +201,7 @@ bool PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
 }
 
 int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool global,
-                     std::string &output) {
+                     const size_t bufLimit, std::string &output) {
 #ifdef USE_PCRE
   const unsigned int option = PCRE2_SUBSTITUTE_OVERFLOW_LENGTH | PCRE2_SUBSTITUTE_UNSET_EMPTY |
                               (global ? PCRE2_SUBSTITUTE_GLOBAL : 0);
@@ -213,7 +213,7 @@ int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool g
   if (ret >= 0) { // // substitution success (maybe no match)
     output = std::string(buf, outputLen);
     return ret;
-  } else if (ret == PCRE2_ERROR_NOMEMORY) {
+  } else if (ret == PCRE2_ERROR_NOMEMORY && outputLen <= bufLimit) {
     /**
      * allocate buffer (also reserve sentinel)
      */
@@ -227,6 +227,7 @@ int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool g
        */
       assert(output.size() > outputLen);
       output.resize(outputLen);
+      assert(output.size() <= bufLimit);
       return ret;
     }
   }

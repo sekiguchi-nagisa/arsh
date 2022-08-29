@@ -100,6 +100,8 @@ public:
    * @param global
    * if true, replace all matched string
    * if false, replace first matched string
+   * @param bufLimit
+   * limit of final replaced string length
    * @param output
    * if has error, write error message
    * if success, write replaced string
@@ -107,7 +109,8 @@ public:
    * if success, return replacement count (may be 0)
    * if has error, return negative value
    */
-  int substitute(StringRef target, StringRef replacement, bool global, std::string &output);
+  int substitute(StringRef target, StringRef replacement, bool global, size_t bufLimit,
+                 std::string &output);
 
 private:
   int substituteImpl(StringRef target, StringRef replacement, unsigned int option, char *output,

@@ -442,22 +442,6 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
   return matchCount;
 }
 
-bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
-  std::string output;
-  auto ret = this->re.substitute(value.asStrRef(), repl, true, output);
-  if (ret < 0) {
-    raiseError(state, TYPE::InvalidOperationError, std::move(output));
-    return false;
-  } else {
-    if (output.size() > StringObject::MAX_SIZE) {
-      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
-      return false;
-    }
-    value = DSValue::createStr(std::move(output));
-  }
-  return true;
-}
-
 // ##########################
 // ##     Array_Object     ##
 // ##########################
