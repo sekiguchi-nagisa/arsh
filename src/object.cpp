@@ -426,7 +426,7 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
   std::string errorStr;
   int matchCount = this->re.match(ref, errorStr);
   if (!errorStr.empty()) {
-    raiseError(state, TYPE::InvalidOperationError, std::move(errorStr));
+    raiseError(state, TYPE::RegexMatchError, std::move(errorStr));
   }
   if (out && matchCount > 0) {
     out->refValues().reserve(matchCount);

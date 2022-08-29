@@ -139,8 +139,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -149,8 +149,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -159,8 +159,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -169,8 +169,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -179,8 +179,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -189,8 +189,8 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'match limit exceeded'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match limit exceeded'
 
 $ex = 34 as Any
 try {
@@ -199,8 +199,8 @@ try {
 } catch e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'unknown substring'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'unknown substring'
 
 $ex = 34 as Any
 try {
@@ -209,5 +209,5 @@ try {
 } catch e {
     $ex = $e
 }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'UTF-8 error: illegal byte (0xfe or 0xff)'
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'UTF-8 error: illegal byte (0xfe or 0xff)'

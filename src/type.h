@@ -72,6 +72,7 @@ enum class TYPE : unsigned int {
   SystemError, // for errno
   StackOverflowError,
   RegexSyntaxError,
+  RegexMatchError,
   GlobbingError,
   UnwrappingError,
   IllegalAccessError,

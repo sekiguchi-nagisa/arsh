@@ -1090,7 +1090,7 @@ YDSH_METHOD regex_replace(RuntimeContext &ctx) {
     assert(out.size() <= StringObject::MAX_SIZE);
     RET(DSValue::createStr(std::move(out)));
   } else {
-    raiseError(ctx, TYPE::InvalidOperationError, std::move(out));
+    raiseError(ctx, TYPE::RegexMatchError, std::move(out));
     RET_ERROR;
   }
 }
