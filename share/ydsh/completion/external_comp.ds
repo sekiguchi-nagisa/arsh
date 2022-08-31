@@ -4,12 +4,20 @@
 source $SCRIPT_DIR/../module/completion
 
 compdef --cmd brew --comp-path "brew" --comp-target _brew
+compdef --cmd btrfs --comp-path "btrfs" --comp-target _btrfs
 compdef --cmd cmake --comp-path "cmake" --comp-target _cmake
 compdef --cmd ctest --comp-path "ctest" --comp-target _ctest
 compdef --cmd docker --comp-path "docker" --comp-target _docker
 compdef --cmd dockerd --comp-path "docker" --comp-target _docker
+compdef --cmd ip --comp-path "ip" --comp-target _ip
 compdef --cmd journalctl --comp-path "journalctl" --comp-target _journalctl
 compdef --cmd launchctl --comp-path "launchctl" --comp-target _launchctl
+compdef --cmd localectl --comp-path "localectl" --comp-target _localectl
+compdef --cmd machinectl --comp-path "machinectl" --comp-target _machinectl
+compdef --cmd nmcli --comp-path "nmcli" --comp-target _nmcli
 compdef --cmd perf --comp-path "perf" --comp-target _perf
 compdef --cmd systemctl --comp-path "systemctl" --comp-target _systemctl
+compdef --cmd virsh --comp-path "virsh" --comp-target _virsh_complete
+compdef --cmd yast --comp-path "yast" --comp-target _yast2
+compdef --cmd yast2 --comp-path "yast" --comp-target _yast2
 compdef --cmd zypper --comp-path /etc/bash_completion.d/zypper.sh --comp-target _zypper

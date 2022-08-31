@@ -49,6 +49,7 @@
     - systemctl, journalctl
     - launchctl
     - ydshd, dscolorize
+    - btrfs, ip, localectl, machinectl, nmcli, virtsh, yast, yast2
 
 ### Changed
 
