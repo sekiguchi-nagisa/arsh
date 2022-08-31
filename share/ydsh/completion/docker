@@ -1,8 +1,0 @@
-#!/usr/bin/env ydsh
-
-# git completion for ydsh
-
-source $SCRIPT_DIR/../module/completion
-
-compdef --cmd docker --comp-path "docker" --comp-target _docker
-compdef --cmd dockerd --comp-path "docker" --comp-target _docker

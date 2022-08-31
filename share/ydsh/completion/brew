@@ -1,5 +1,0 @@
-#!/usr/bin/env ydsh
-
-source $SCRIPT_DIR/../module/completion
-
-compdef --cmd brew --comp-path "brew" --comp-target _brew

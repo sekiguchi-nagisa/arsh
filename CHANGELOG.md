@@ -42,6 +42,7 @@
 
 #### Completion
 
+- merge external completion script with single file
 - add the following completions
     - docker
     - cmake, ctest

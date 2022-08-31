@@ -1,5 +1,0 @@
-#!/usr/bin/env ydsh
-
-source $SCRIPT_DIR/../module/completion
-
-compdef --cmd launchctl --comp-path "launchctl" --comp-target _launchctl

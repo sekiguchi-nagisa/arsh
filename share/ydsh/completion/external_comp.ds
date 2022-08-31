@@ -1,0 +1,15 @@
+
+# for external bash completion-aware scripts
+
+source $SCRIPT_DIR/../module/completion
+
+compdef --cmd brew --comp-path "brew" --comp-target _brew
+compdef --cmd cmake --comp-path "cmake" --comp-target _cmake
+compdef --cmd ctest --comp-path "ctest" --comp-target _ctest
+compdef --cmd docker --comp-path "docker" --comp-target _docker
+compdef --cmd dockerd --comp-path "docker" --comp-target _docker
+compdef --cmd journalctl --comp-path "journalctl" --comp-target _journalctl
+compdef --cmd launchctl --comp-path "launchctl" --comp-target _launchctl
+compdef --cmd perf --comp-path "perf" --comp-target _perf
+compdef --cmd systemctl --comp-path "systemctl" --comp-target _systemctl
+compdef --cmd zypper --comp-path /etc/bash_completion.d/zypper.sh --comp-target _zypper

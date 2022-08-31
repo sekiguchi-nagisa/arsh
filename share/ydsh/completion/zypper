@@ -1,5 +1,0 @@
-#!/usr/bin/env ydsh
-
-source $SCRIPT_DIR/../module/completion
-
-compdef --cmd zypper --comp-path /etc/bash_completion.d/zypper.sh --comp-target _zypper
