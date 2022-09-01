@@ -3,6 +3,8 @@
 source ../../../../share/ydsh/completion/sudo
 source ../../../../share/ydsh/completion/printenv
 
+exportenv PATH = "/usr/bin:/bin:"
+
 sudo() {}   # workaround for sudo not installed env
 
 assert complete 'sudo ' | grep '^mount$'
@@ -18,3 +20,16 @@ assert diff <(complete 'sudo -') <(for $a in ['-A', '-b', '-E', '-H', '-n', '-P'
 
 assert complete 'sudo -E -A printenv ' | grep PATH
 assert complete 'sudo -A -E printenv HO' | grep HOME
+
+## change PATH
+
+source ../../../../share/ydsh/module/completion as comp
+
+comp compdef --cmd halt --arg-action signal
+
+assert complete 'halt KI' 
+assert $COMPREPLY.size() == 0
+
+assert complete 'sudo halt KI'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "KILL"

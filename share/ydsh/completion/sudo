@@ -8,7 +8,10 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : [String] {
         case $v {
         $/^-.*$/ => continue
         else => if $i < $t.size() - 1 || $c == $t.size() {
-                    return $compDelegate($ctx, $t.slice($i), $c - $i)
+                    return {
+                        importenv PATH : ""
+                        PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin $compDelegate($ctx, $t.slice($i), $c - $i)
+                    }
                 }
         }
     }

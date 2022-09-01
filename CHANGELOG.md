@@ -141,6 +141,7 @@
 - broken lexer state in prefix assignment parsing
 - ``Broken Pipe`` signal message after evaluation of last-pipe
 - infix keyword completion
+- PATH handling of sudo completion
 
 ## [0.26.0] - 2022-06-30
 
