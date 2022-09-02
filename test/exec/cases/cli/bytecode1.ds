@@ -116,30 +116,30 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 34
+  code size: 32
   max stack depth: 5
   number of local variable: 0
   number of global variable: 51
 Code:
    0: LOAD_CONST  2
-   2: PIPELINE_ASYNC 6 3  8  18  28
+   2: PIPELINE_ASYNC 6 3  8  17  26
   11: LOAD_CONST  3
   13: NEW_CMD
   14: PUSH_NULL
   15: LOAD_CONST  4
-  17: ADD_CMD_ARG  0
-  19: CALL_CMD_NOFORK
-  20: HALT
-  21: LOAD_CONST  5
-  23: NEW_CMD
-  24: PUSH_NULL
-  25: LOAD_CONST  6
-  27: ADD_CMD_ARG  0
-  29: CALL_CMD_NOFORK
-  30: HALT
-  31: POP
-  32: PUSH_INVALID
-  33: RETURN
+  17: ADD_CONST_CMD_ARG
+  18: CALL_CMD_NOFORK
+  19: HALT
+  20: LOAD_CONST  5
+  22: NEW_CMD
+  23: PUSH_NULL
+  24: LOAD_CONST  6
+  26: ADD_CONST_CMD_ARG
+  27: CALL_CMD_NOFORK
+  28: HALT
+  29: POP
+  30: PUSH_INVALID
+  31: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -151,7 +151,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:
-  begin: 11, end: 30, type: process guard%%, dest: 30, offset: 0, size: 0"
+  begin: 11, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
 
 $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 
@@ -159,7 +159,7 @@ $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 38
+  code size: 37
   max stack depth: 4
   number of local variable: 0
   number of global variable: 51
@@ -168,20 +168,20 @@ Code:
    2: LOAD_GLOBAL  5
    5: CALL_BUILTIN2  1  %interp
    8: LOOKUP_HASH
-   9: GOTO  36
+   9: GOTO  35
   14: LOAD_CONST  3
-  16: FORK  6  14
+  16: FORK  6  13
   20: LOAD_CONST  4
   22: NEW_CMD
   23: PUSH_NULL
   24: PUSH_STR1  `8'
-  26: ADD_CMD_ARG  0
-  28: CALL_CMD_NOFORK
-  29: HALT
-  30: POP
-  31: GOTO  36
-  36: PUSH_INVALID
-  37: RETURN
+  26: ADD_CONST_CMD_ARG
+  27: CALL_CMD_NOFORK
+  28: HALT
+  29: POP
+  30: GOTO  35
+  35: PUSH_INVALID
+  36: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -191,7 +191,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  2
 Exception Table:
-  begin: 20, end: 29, type: process guard%%, dest: 29, offset: 0, size: 0"
+  begin: 20, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
 
 $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
 

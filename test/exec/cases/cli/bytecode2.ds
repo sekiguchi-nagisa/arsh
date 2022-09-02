@@ -6,7 +6,7 @@ source $SCRIPT_DIR/expect.ds
 var out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 38
+  code size: 37
   max stack depth: 5
   number of local variable: 1
   number of global variable: 51
@@ -14,22 +14,22 @@ Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  0
    4: ENTER_FINALLY  14
-   9: GOTO  33
+   9: GOTO  32
   14: LOAD_CONST  2
   16: NEW_CMD
   17: NEW_REDIR
   18: LOAD_LOCAL  0
   20: CALL_BUILTIN2  1  %str
-  23: ADD_CMD_ARG  1
-  25: LOAD_CONST  3
-  27: ADD_REDIR_OP  1
-  29: DO_REDIR
-  30: CALL_CMD
-  31: POP
-  32: EXIT_FINALLY
-  33: RECLAIM_LOCAL  0  1
-  36: PUSH_INVALID
-  37: RETURN
+  23: ADD_CMD_ARG
+  24: LOAD_CONST  3
+  26: ADD_REDIR_OP  1
+  28: DO_REDIR
+  29: CALL_CMD
+  30: POP
+  31: EXIT_FINALLY
+  32: RECLAIM_LOCAL  0  1
+  35: PUSH_INVALID
+  36: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -47,7 +47,7 @@ $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; }')"
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 30
+  code size: 29
   max stack depth: 4
   number of local variable: 1
   number of global variable: 51
@@ -63,15 +63,15 @@ Code:
   12: NEW_REDIR
   13: LOAD_LOCAL  0
   15: CALL_BUILTIN2  1  %str
-  18: ADD_CMD_ARG  1
-  20: LOAD_CONST  4
-  22: ADD_REDIR_OP  1
-  24: DO_REDIR
-  25: CALL_CMD
-  26: POP
-  27: EXIT_FINALLY
-  28: PUSH_INVALID
-  29: RETURN
+  18: ADD_CMD_ARG
+  19: LOAD_CONST  4
+  21: ADD_REDIR_OP  1
+  23: DO_REDIR
+  24: CALL_CMD
+  25: POP
+  26: EXIT_FINALLY
+  27: PUSH_INVALID
+  28: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
