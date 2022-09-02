@@ -78,6 +78,7 @@ function _add(s : String, p : Boolean) {
         $s.empty() && return;
         if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
         if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
+        $s.contains($'\n') && return
     }
 
     if $HISTORY.size() == $HISTSIZE {
@@ -236,7 +237,7 @@ function _editHook(op : Int, index : Int, text : String) : Any {
         1 => return $HISTORY[$index];
 
         # DS_EDIT_HIST_SET
-        2 => $HISTORY[$index] = $text;
+        2 => if !$text.contains($'\n') { $HISTORY[$index] = $text; }
 
         # DS_EDIT_HIST_DEL
         3 => $HISTORY.remove($index)

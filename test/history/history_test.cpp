@@ -128,6 +128,29 @@ TEST_F(HistoryTest, add) {
 
   // null
   ASSERT_EQ(nullptr, this->getHistory(100));
+
+  // skip empty line
+  this->addHistory("");
+  ASSERT_EQ(2u, this->historySize());
+  ASSERT_STREQ("bbb", this->getHistory(0));
+  ASSERT_STREQ("ccc", this->getHistory(1));
+
+  // skip starts with space
+  this->addHistory(" fafra");
+  ASSERT_EQ(2u, this->historySize());
+  ASSERT_STREQ("bbb", this->getHistory(0));
+  ASSERT_STREQ("ccc", this->getHistory(1));
+
+  this->addHistory("\tfafra");
+  ASSERT_EQ(2u, this->historySize());
+  ASSERT_STREQ("bbb", this->getHistory(0));
+  ASSERT_STREQ("ccc", this->getHistory(1));
+
+  // skip contains newlines
+  this->addHistory("ddddd\neeee");
+  ASSERT_EQ(2u, this->historySize());
+  ASSERT_STREQ("bbb", this->getHistory(0));
+  ASSERT_STREQ("ccc", this->getHistory(1));
 }
 
 TEST_F(HistoryTest, set) {
@@ -146,6 +169,9 @@ TEST_F(HistoryTest, set) {
 
   this->setHistory(1000, "ccc"); // do nothing, if out of range
   ASSERT_EQ(2u, this->historySize());
+
+  this->setHistory(0, "eeee\nwwww");  // do nothing, if contains newlines
+  ASSERT_STREQ("aaa", this->getHistory(0));
 }
 
 TEST_F(HistoryTest, remove) {
