@@ -223,6 +223,19 @@ assert $gca[5] == '9'
 assert $gca[6] == '0'
 assert $gca[7] == '🇯🇵'
 
+var words = $'\r1234\n🇯🇵3.14あい👨‍👨‍👦/カナ'.words()
+assert $words.size() == 10
+assert $words[0] == $'\r'
+assert $words[1] == '1234'
+assert $words[2] == $'\n'
+assert $words[3] == '🇯🇵'
+assert $words[4] == '3.14'
+assert $words[5] == 'あ'
+assert $words[6] == 'い'
+assert $words[7] == '👨‍👨‍👦'
+assert $words[8] == '/'
+assert $words[9] == 'カナ'
+
 assert '🇯🇵'.width() == 2
 assert '4334 '.width() == 5
 assert $'\n\t'.width() == 0

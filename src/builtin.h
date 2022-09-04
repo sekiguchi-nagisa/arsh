@@ -27,6 +27,7 @@
 
 #include "misc/files.h"
 #include "misc/num_util.hpp"
+#include "misc/word.hpp"
 #include "signals.h"
 #include "vm.h"
 #include <ydsh/ydsh.h>
@@ -595,6 +596,34 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   auto &array = typeAs<ArrayObject>(value);
   while (scanner.next(ret)) {
     array.append(DSValue::createStr(ret));
+  }
+  ASSERT_ARRAY_SIZE(array);
+  RET(value);
+}
+
+//!bind: function words($this : String) : Array<String>
+YDSH_METHOD string_words(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_words);
+  auto ref = LOCAL(0).asStrRef();
+  auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto &array = typeAs<ArrayObject>(value);
+  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8WordScanner scanner(stream);
+  while (scanner.hasNext()) {
+    ref = scanner.next();
+    std::string word;
+    const auto *end = ref.end();
+    for (auto *iter = ref.begin(); iter != end;) {
+      unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end);
+      if (size < 1) {
+        word += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+        iter++;
+      } else {
+        word += StringRef(iter, size);
+        iter += size;
+      }
+    }
+    array.append(DSValue::createStr(std::move(word)));
   }
   ASSERT_ARRAY_SIZE(array);
   RET(value);

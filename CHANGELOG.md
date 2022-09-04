@@ -30,6 +30,8 @@
     - ``SIGSTOP``, ``SIGTERM``, ``SIGTSTP``, ``SIGTTIN``, ``SIGTTOU``, ``SIGUSR1``, ``SIGUSR2``
 - add ``String#sanitize`` method
     - replace invalid utf8 bytes and null characters
+- add ``String#words`` method
+    - split string with words (follow unicode word boundary)
 - add builtin ``jobs`` command
     - show job information (except for disowned jobs)
 

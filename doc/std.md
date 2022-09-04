@@ -127,6 +127,8 @@ function count() : Int for String
 
 function chars() : Array<String> for String
 
+function words() : Array<String> for String
+
 function width($eaw : Option<Int>) : Int for String
 
 function %OP_GET($index : Int) : String for String
