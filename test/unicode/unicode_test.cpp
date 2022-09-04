@@ -4,6 +4,7 @@
 
 #include <misc/grapheme.hpp>
 #include <misc/num_util.hpp>
+#include <misc/word.hpp>
 
 #include "../test_common.h"
 
@@ -388,8 +389,6 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
       }
       output.back().push_back(codePoint);
     }
-
-    ASSERT_EQ(expected.size(), output.size());
     ASSERT_EQ(expected, output);
   }
 
@@ -411,7 +410,6 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
       outputList.push_back(ret.ref.toString());
     }
     ASSERT_FALSE(scanner.hasNext());
-    ASSERT_EQ(expectedList.size(), outputList.size());
     ASSERT_EQ(expectedList, outputList);
   }
 };
@@ -546,7 +544,7 @@ TEST_P(GraphemeBreakTest, base) {
   ASSERT_NO_FATAL_FAILURE(doTest2());
 }
 
-static std::vector<std::string> getTargets() {
+static std::vector<std::string> getGraphemeTargets() {
 #include GRAPHEME_BREAK_TEST_H
   std::vector<std::string> ret;
   for (auto &e : grapheme_break_tests) {
@@ -555,7 +553,58 @@ static std::vector<std::string> getTargets() {
   return ret;
 }
 
-INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest, ::testing::ValuesIn(getTargets()));
+INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest,
+                         ::testing::ValuesIn(getGraphemeTargets()));
+
+struct WordBreakTest : public ::testing::TestWithParam<std::string> {
+  static void doTest() {
+    auto input = getInput(GetParam());
+    auto expected = getExpected(GetParam());
+
+    ASSERT_FALSE(input.empty());
+    ASSERT_FALSE(expected.empty());
+    for (auto &e : expected) {
+      ASSERT_FALSE(e.empty());
+    }
+
+    std::vector<std::vector<int>> output;
+    output.emplace_back();
+    WordBoundary boundary;
+    FlexBuffer<WordBoundary::BreakProperty> properties;
+    for (auto &codePoint : input) {
+      properties.push_back(WordBoundary::getBreakProperty(codePoint));
+    }
+    const unsigned int size = input.size();
+    for (unsigned int i = 0; i < size; i++) {
+      auto codePoint = input[i];
+      auto *iter = properties.begin() + i;
+      auto *end = properties.end();
+      if (boundary.scanBoundary(iter, end)) {
+        output.emplace_back();
+      }
+      output.back().push_back(codePoint);
+    }
+    ASSERT_EQ(expected, output);
+  }
+};
+
+TEST(WordBreakTestBase, base) {
+  //  auto p = WordBoundary::getBreakProperty(12);
+  //  WordBoundary().scanBoundary(p);
+}
+
+TEST_P(WordBreakTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+static std::vector<std::string> getWordTargets() {
+#include WORD_BREAK_TEST_H
+  std::vector<std::string> ret;
+  for (auto &e : word_break_tests) {
+    ret.emplace_back(e);
+  }
+  return ret;
+}
+
+INSTANTIATE_TEST_SUITE_P(WordBreakTest, WordBreakTest, ::testing::ValuesIn(getWordTargets()));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

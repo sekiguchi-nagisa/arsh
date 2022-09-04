@@ -8,7 +8,14 @@ eval $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.h
 echo try update $src/grapheme_break_property.h
 eval $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_property.ds $src/misc/grapheme_break_property.h
 
+echo try update $src/word_break_property.h
+eval $YDSH_BIN $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_property.h
+
+## for test case
 var test = "$SCRIPT_DIR/../../test"
 
 echo try update $test/unicode/grapheme_break_test.h
 eval $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.h
+
+echo try update $test/unicode/word_break_test.h
+eval $YDSH_BIN $SCRIPT_DIR/gen_word_break_test.ds $test/unicode/word_break_test.h
