@@ -314,6 +314,26 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
 
   p = GraphemeBoundary::getBreakProperty(0x1F6B9); // Emoji/Extended_Pictographic
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Extended_Pictographic, p);
+
+  p = GraphemeBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE); // placement char
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+}
+
+TEST_F(UnicodeTest, wordBreakProperty) {
+  int code = 0;
+  toCodePoint("1", code);
+  auto p = WordBoundary::getBreakProperty(code);
+  ASSERT_EQ(WordBoundary::BreakProperty::Numeric, p);
+
+  toCodePoint(".", code);
+  p = WordBoundary::getBreakProperty(code);
+  ASSERT_EQ(WordBoundary::BreakProperty::MidNumLet, p);
+
+  p = WordBoundary::getBreakProperty(0x0E33);
+  ASSERT_EQ(WordBoundary::BreakProperty::Any, p);
+
+  p = WordBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE);
+  ASSERT_EQ(WordBoundary::BreakProperty::Any, p);
 }
 
 static std::vector<int> getInput(const std::string &param) {
