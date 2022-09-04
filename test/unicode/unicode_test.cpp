@@ -556,6 +556,27 @@ static std::vector<std::string> getGraphemeTargets() {
 INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest,
                          ::testing::ValuesIn(getGraphemeTargets()));
 
+class CodePointStream {
+private:
+  FlexBuffer<WordBoundary::BreakProperty> properties;
+  unsigned int index{0};
+
+public:
+  explicit CodePointStream(const std::vector<int> &codePoints) {
+    for (auto &codePoint : codePoints) {
+      this->properties.push_back(WordBoundary::getBreakProperty(codePoint));
+    }
+  }
+
+  explicit operator bool() const { return this->index < this->properties.size(); }
+
+  unsigned int saveState() const { return this->index; }
+
+  void restoreState(unsigned int i) { this->index = i; }
+
+  WordBoundary::BreakProperty nextProperty() { return this->properties[this->index++]; }
+};
+
 struct WordBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto input = getInput(GetParam());
@@ -569,31 +590,130 @@ struct WordBreakTest : public ::testing::TestWithParam<std::string> {
 
     std::vector<std::vector<int>> output;
     output.emplace_back();
-    WordBoundary boundary;
-    FlexBuffer<WordBoundary::BreakProperty> properties;
-    for (auto &codePoint : input) {
-      properties.push_back(WordBoundary::getBreakProperty(codePoint));
-    }
-    const unsigned int size = input.size();
-    for (unsigned int i = 0; i < size; i++) {
-      auto codePoint = input[i];
-      auto *iter = properties.begin() + i;
-      auto *end = properties.end();
-      if (boundary.scanBoundary(iter, end)) {
+    CodePointStream stream(input);
+    auto scanner = makeWordScanner(stream);
+    for (unsigned int count = 0; stream; count++) {
+      auto codePoint = input[count];
+      if (scanner.scanBoundary()) {
         output.emplace_back();
       }
       output.back().push_back(codePoint);
     }
+
     ASSERT_EQ(expected, output);
+  }
+
+  static void doTest2() {
+    auto input = getInput(GetParam());
+    auto expected = getExpected(GetParam());
+
+    ASSERT_FALSE(input.empty());
+    ASSERT_FALSE(expected.empty());
+    for (auto &e : expected) {
+      ASSERT_FALSE(e.empty());
+    }
+
+    std::string inputStr = toUTF8(input);
+    std::vector<std::string> expectedList;
+    for (auto &e : expected) {
+      expectedList.push_back(toUTF8(e));
+    }
+
+    Utf8WordStream stream(inputStr.c_str(), inputStr.c_str() + inputStr.size());
+    Utf8WordScanner scanner(stream);
+    std::vector<std::string> outputList;
+    while (scanner.hasNext()) {
+      outputList.push_back(scanner.next().toString());
+    }
+    ASSERT_EQ(expectedList, outputList);
   }
 };
 
-TEST(WordBreakTestBase, base) {
-  //  auto p = WordBoundary::getBreakProperty(12);
-  //  WordBoundary().scanBoundary(p);
+TEST(WordBreakTestBase, base1) {
+  StringRef ref = "\n1234";
+  Utf8WordStream stream(ref.begin(), ref.end());
+  auto scanner = makeWordScanner(stream);
+
+  // newline
+  auto old1 = stream.iter;
+  auto old2 = old1;
+  while (true) {
+    old2 = stream.iter;
+    if (scanner.scanBoundary()) {
+      break;
+    }
+  }
+  auto consumed = StringRef(old1, old2 - old1).toString();
+  ASSERT_EQ("\n", consumed);
+  ASSERT_TRUE(stream);
+
+  // 1234 i word
+  old1 = old2;
+  while (true) {
+    old2 = stream.iter;
+    if (scanner.scanBoundary()) {
+      break;
+    }
+  }
+  consumed = StringRef(old1, old2 - old1).toString();
+  ASSERT_EQ("1234", consumed);
+  ASSERT_FALSE(stream);
+
+  // reach end
+  old1 = old2;
+  while (true) {
+    old2 = stream.iter;
+    if (scanner.scanBoundary()) {
+      break;
+    }
+  }
+  consumed = StringRef(old1, old2 - old1).toString();
+  ASSERT_EQ("", consumed);
+  ASSERT_FALSE(stream);
 }
 
-TEST_P(WordBreakTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+TEST(WordBreakTestBase, base2) {
+  StringRef ref = "\r1234\n🇯🇵3.14";
+  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8WordScanner scanner(stream);
+
+  ASSERT_TRUE(scanner.hasNext());
+
+  // \r
+  auto consumed = scanner.next().toString();
+  ASSERT_EQ("\r", consumed);
+  ASSERT_TRUE(scanner.hasNext());
+
+  // 1234
+  consumed = scanner.next().toString();
+  ASSERT_EQ("1234", consumed);
+  ASSERT_TRUE(scanner.hasNext());
+
+  // \n
+  consumed = scanner.next().toString();
+  ASSERT_EQ("\n", consumed);
+  ASSERT_TRUE(scanner.hasNext());
+
+  // 🇯🇵
+  consumed = scanner.next().toString();
+  ASSERT_EQ("🇯🇵", consumed);
+  ASSERT_TRUE(scanner.hasNext());
+
+  //  3.14
+  consumed = scanner.next().toString();
+  ASSERT_EQ("3.14", consumed);
+  ASSERT_FALSE(scanner.hasNext());
+
+  //
+  consumed = scanner.next().toString();
+  ASSERT_EQ("", consumed);
+  ASSERT_FALSE(scanner.hasNext());
+}
+
+TEST_P(WordBreakTest, base) {
+  ASSERT_NO_FATAL_FAILURE(doTest());
+  ASSERT_NO_FATAL_FAILURE(doTest2());
+}
 
 static std::vector<std::string> getWordTargets() {
 #include WORD_BREAK_TEST_H

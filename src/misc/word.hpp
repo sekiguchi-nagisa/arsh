@@ -34,6 +34,7 @@ public:
   // for word boundary
   enum class BreakProperty : unsigned char {
     SOT, // for WB1
+    EOT, // sentinel
 
     Any,
     CR,
@@ -64,47 +65,6 @@ public:
   };
 
   static BreakProperty getBreakProperty(int codePoint);
-
-private:
-  /**
-   * may be indicate previous code point property
-   */
-  BreakProperty state{BreakProperty::SOT};
-
-  /**
-   * for WB3c
-   */
-  bool zwj{false};
-
-public:
-  WordBoundary() = default;
-
-  BreakProperty getState() const { return this->state; }
-
-  /**
-   * scan word boundary
-   * @param begin
-   * @param end
-   * @return
-   * if word boundary is between prev codepoint and cur codepoint, return true
-   */
-  bool scanBoundary(const BreakProperty *begin, const BreakProperty *end);
-
-private:
-  static const BreakProperty *skipEFZ(const BreakProperty *begin, const BreakProperty *end) {
-    for (; begin != end; ++begin) {
-      switch (*begin) {
-      case BreakProperty::Extend:
-      case BreakProperty::Format:
-      case BreakProperty::ZWJ:
-        continue;
-      default:
-        break;
-      }
-      break;
-    }
-    return begin;
-  }
 };
 
 template <bool Bool>
@@ -134,46 +94,95 @@ typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(
   return BreakProperty::Any;
 }
 
+} // namespace detail
+
+using WordBoundary = detail::WordBoundary<true>;
+
+template <typename Stream>
+class WordScanner {
+private:
+  WordBoundary::BreakProperty state{WordBoundary::BreakProperty::SOT};
+  bool zwj{false};
+  Stream &stream;
+
+public:
+  explicit WordScanner(Stream &stream) : stream(stream) {}
+
+  const Stream &getStream() const { return this->stream; }
+
+  /**
+   * low level api. normally unused
+   * @return
+   * if code point between prev and cur is word boundary, return true
+   */
+  bool scanBoundary();
+
+private:
+  /**
+   * lookahead next property (except for Extend, Format, ZWJ)
+   * restore stream state
+   * @return
+   */
+  WordBoundary::BreakProperty lookahead() {
+    auto p = WordBoundary::BreakProperty::EOT;
+    auto oldState = this->stream.saveState();
+    while (this->stream) {
+      p = this->stream.nextProperty();
+      switch (p) {
+      case WordBoundary::BreakProperty::Extend:
+      case WordBoundary::BreakProperty::Format:
+      case WordBoundary::BreakProperty::ZWJ:
+        continue;
+      default:
+        break;
+      }
+      break;
+    }
+    this->stream.restoreState(oldState);
+    return p;
+  }
+};
+
 // see, https://www.unicode.org/reports/tr29/tr29-39.html#Word_Boundaries
-template <bool Bool>
-bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakProperty *end) {
-  if (begin == end) {
+template <typename Stream>
+bool WordScanner<Stream>::scanBoundary() {
+  if (!this->stream) {
     return true;
   }
-  const auto after = *(begin++);
+  const auto after = this->stream.nextProperty();
   const auto before = this->state;
   this->state = after;
   const bool prevZWJ = this->zwj;
-  this->zwj = after == BreakProperty::ZWJ;
+  this->zwj = after == WordBoundary::BreakProperty::ZWJ;
 
-  if (prevZWJ && after == BreakProperty::Extended_Pictographic) {
+  if (prevZWJ && after == WordBoundary::BreakProperty::Extended_Pictographic) {
     return false; // WB3c
   }
 
-  if (before == BreakProperty::SOT) {
+  if (before == WordBoundary::BreakProperty::SOT) {
     return false;
   }
 
   switch (before) {
-  case BreakProperty::CR:
-    if (after == BreakProperty::LF) {
+  case WordBoundary::BreakProperty::CR:
+    if (after == WordBoundary::BreakProperty::LF) {
       return false; // WB3
     }
     return true; // WB3a
-  case BreakProperty::Newline:
-  case BreakProperty::LF:
+  case WordBoundary::BreakProperty::Newline:
+  case WordBoundary::BreakProperty::LF:
     return true; // WB3a
   default:
     switch (after) {
-    case BreakProperty::Newline:
-    case BreakProperty::CR:
-    case BreakProperty::LF:
+    case WordBoundary::BreakProperty::Newline:
+    case WordBoundary::BreakProperty::CR:
+    case WordBoundary::BreakProperty::LF:
       return true; // WB3b
-    case BreakProperty::Extend:
-    case BreakProperty::Format:
-    case BreakProperty::ZWJ:
-      if (before == BreakProperty::WSegSpace) {
-        this->state = BreakProperty::WSegSpace_EFZ;
+    case WordBoundary::BreakProperty::Extend:
+    case WordBoundary::BreakProperty::Format:
+    case WordBoundary::BreakProperty::ZWJ:
+      if (before == WordBoundary::BreakProperty::WSegSpace) {
+        this->state = WordBoundary::BreakProperty::WSegSpace_EFZ;
         return false; // WB3d, WB4
       } else {
         this->state = before; // consume (Extend|Format|ZWJ)
@@ -185,37 +194,34 @@ bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakPro
     break;
   }
 
+  auto requiredProperty = WordBoundary::BreakProperty::SOT;
+
   switch (before) {
-  case BreakProperty::WSegSpace:
-    if (after == BreakProperty::WSegSpace) {
+  case WordBoundary::BreakProperty::WSegSpace:
+    if (after == WordBoundary::BreakProperty::WSegSpace) {
       return false; // WB3d
     }
     break;
-  case BreakProperty::ALetter:
-  case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+  case WordBoundary::BreakProperty::ALetter:
+  case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
     switch (after) {
-    case BreakProperty::ALetter:
-    case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-      return false;                    // WB5
-    case BreakProperty::MidLetter:
-    case BreakProperty::MidNumLet:
-    case BreakProperty::Single_Quote:
-      begin = skipEFZ(begin, end);
-      if (begin != end &&
-          (*begin == BreakProperty::ALetter || *begin == BreakProperty::Hebrew_Letter)) {
-        this->state = BreakProperty::AHLetter_Mid_NumLetQ;
-        return false; // WB6
-      }
+    case WordBoundary::BreakProperty::ALetter:
+    case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+      return false;                                  // WB5
+    case WordBoundary::BreakProperty::MidLetter:
+    case WordBoundary::BreakProperty::MidNumLet:
+    case WordBoundary::BreakProperty::Single_Quote:
+      requiredProperty = WordBoundary::BreakProperty::AHLetter_Mid_NumLetQ; // for WB6
       break;
     default:
       break;
     }
     break;
-  case BreakProperty::AHLetter_Mid_NumLetQ:
+  case WordBoundary::BreakProperty::AHLetter_Mid_NumLetQ:
     switch (after) {
-    case BreakProperty::ALetter:
-    case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-      return false;                    // WB7
+    case WordBoundary::BreakProperty::ALetter:
+    case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+      return false;                                  // WB7
     default:
       break;
     }
@@ -223,27 +229,23 @@ bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakPro
   default:
     break;
   }
-  if (before == BreakProperty::Hebrew_Letter) {
-    if (after == BreakProperty::Single_Quote) {
+  if (before == WordBoundary::BreakProperty::Hebrew_Letter) {
+    if (after == WordBoundary::BreakProperty::Single_Quote) {
       return false; // WB7a
-    } else if (after == BreakProperty::Double_Quote) {
-      begin = skipEFZ(begin, end);
-      if (begin != end && *begin == BreakProperty::Hebrew_Letter) {
-        this->state = BreakProperty::Hebrew_Letter_DQ;
-        return false; // WB7b
-      }
+    } else if (after == WordBoundary::BreakProperty::Double_Quote) {
+      requiredProperty = WordBoundary::BreakProperty::Hebrew_Letter_DQ; // for WB7b
     }
-  } else if (before == BreakProperty::Hebrew_Letter_DQ) {
-    if (after == BreakProperty::Hebrew_Letter) {
+  } else if (before == WordBoundary::BreakProperty::Hebrew_Letter_DQ) {
+    if (after == WordBoundary::BreakProperty::Hebrew_Letter) {
       return false; // WB7c
     }
   }
 
   switch (before) {
-  case BreakProperty::Numeric:
-  case BreakProperty::ALetter:
-  case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-    if (after == BreakProperty::Numeric) {
+  case WordBoundary::BreakProperty::Numeric:
+  case WordBoundary::BreakProperty::ALetter:
+  case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+    if (after == WordBoundary::BreakProperty::Numeric) {
       return false; // WB8, WB9
     }
     break;
@@ -252,31 +254,28 @@ bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakPro
   }
 
   switch (before) {
-  case BreakProperty::Numeric:
+  case WordBoundary::BreakProperty::Numeric:
     switch (after) {
-    case BreakProperty::ALetter:
-    case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-      return false;                    // WB10
-    case BreakProperty::MidNum:
-    case BreakProperty::MidNumLet:
-    case BreakProperty::Single_Quote:
-      begin = skipEFZ(begin, end);
-      if (begin != end && *begin == BreakProperty::Numeric) {
-        this->state = BreakProperty::Numeric_Mid_NumLetQ;
-        return false; // WB12
-      }
+    case WordBoundary::BreakProperty::ALetter:
+    case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+      return false;                                  // WB10
+    case WordBoundary::BreakProperty::MidNum:
+    case WordBoundary::BreakProperty::MidNumLet:
+    case WordBoundary::BreakProperty::Single_Quote: {
+      requiredProperty = WordBoundary::BreakProperty::Numeric_Mid_NumLetQ; // for WB12
       break;
+    }
     default:
       break;
     }
     break;
-  case BreakProperty::Numeric_Mid_NumLetQ:
-    if (after == BreakProperty::Numeric) {
+  case WordBoundary::BreakProperty::Numeric_Mid_NumLetQ:
+    if (after == WordBoundary::BreakProperty::Numeric) {
       return false; // WB11
     }
     break;
-  case BreakProperty::Katakana:
-    if (after == BreakProperty::Katakana) {
+  case WordBoundary::BreakProperty::Katakana:
+    if (after == WordBoundary::BreakProperty::Katakana) {
       return false; // WB13
     }
     break;
@@ -284,31 +283,58 @@ bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakPro
     break;
   }
 
+  if (requiredProperty != WordBoundary::BreakProperty::SOT) {
+    auto next = this->lookahead();
+    switch (requiredProperty) {
+    case WordBoundary::BreakProperty::Numeric_Mid_NumLetQ:
+      if (next == WordBoundary::BreakProperty::Numeric) {
+        this->state = requiredProperty;
+        return false; // WB12
+      }
+      break;
+    case WordBoundary::BreakProperty::Hebrew_Letter_DQ:
+      if (next == WordBoundary::BreakProperty::Hebrew_Letter) {
+        this->state = requiredProperty;
+        return false; // WB7b
+      }
+      break;
+    case WordBoundary::BreakProperty::AHLetter_Mid_NumLetQ:
+      if (next == WordBoundary::BreakProperty::ALetter ||
+          next == WordBoundary::BreakProperty::Hebrew_Letter) {
+        this->state = requiredProperty;
+        return false; // WB6
+      }
+      break;
+    default:
+      break;
+    }
+  }
+
   switch (before) {
-  case BreakProperty::ALetter:
-  case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-  case BreakProperty::Numeric:
-  case BreakProperty::Katakana:
-    if (after == BreakProperty::ExtendNumLet) {
+  case WordBoundary::BreakProperty::ALetter:
+  case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+  case WordBoundary::BreakProperty::Numeric:
+  case WordBoundary::BreakProperty::Katakana:
+    if (after == WordBoundary::BreakProperty::ExtendNumLet) {
       return false; // WB13a
     }
     break;
-  case BreakProperty::ExtendNumLet:
+  case WordBoundary::BreakProperty::ExtendNumLet:
     switch (after) {
-    case BreakProperty::ExtendNumLet:
+    case WordBoundary::BreakProperty::ExtendNumLet:
       return false; // WB13a
-    case BreakProperty::ALetter:
-    case BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-    case BreakProperty::Numeric:
-    case BreakProperty::Katakana:
+    case WordBoundary::BreakProperty::ALetter:
+    case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
+    case WordBoundary::BreakProperty::Numeric:
+    case WordBoundary::BreakProperty::Katakana:
       return false; // WB13b
     default:
       break;
     }
     break;
-  case BreakProperty::Regional_Indicator:
-    if (after == BreakProperty::Regional_Indicator) {
-      this->state = BreakProperty::Any;
+  case WordBoundary::BreakProperty::Regional_Indicator:
+    if (after == WordBoundary::BreakProperty::Regional_Indicator) {
+      this->state = WordBoundary::BreakProperty::Any;
       return false; // WB15, WB16
     }
     break;
@@ -318,9 +344,62 @@ bool WordBoundary<Bool>::scanBoundary(const BreakProperty *begin, const BreakPro
   return true; // WB999
 }
 
-} // namespace detail
+template <typename Stream>
+inline WordScanner<Stream> makeWordScanner(Stream &stream) {
+  return WordScanner<Stream>(stream);
+}
 
-using WordBoundary = detail::WordBoundary<true>;
+struct Utf8WordStream {
+  const char *iter{nullptr};
+  const char *end{nullptr};
+
+  Utf8WordStream(const char *begin, const char *end) : iter(begin), end(end) {}
+
+  explicit operator bool() const { return this->iter != this->end; }
+
+  const char *saveState() const { return this->iter; }
+
+  void restoreState(const char *ptr) { this->iter = ptr; }
+
+  WordBoundary::BreakProperty nextProperty() {
+    int codePoint = 0;
+    unsigned int size = UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint);
+    if (size < 1) {
+      codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
+      this->iter++;
+    } else {
+      this->iter += size;
+    }
+    return WordBoundary::getBreakProperty(codePoint);
+  }
+};
+
+class Utf8WordScanner : public WordScanner<Utf8WordStream> {
+private:
+  const char *wordBegin;
+
+public:
+  explicit Utf8WordScanner(Utf8WordStream &stream)
+      : WordScanner(stream), wordBegin(this->getIter()) {}
+
+  bool hasNext() const { return this->wordBegin != this->getStream().end; }
+
+  StringRef next() {
+    auto *begin = this->wordBegin;
+    const char *end;
+    while (true) {
+      end = this->getIter();
+      if (this->scanBoundary()) {
+        break;
+      }
+    }
+    this->wordBegin = end;
+    return StringRef(begin, end - begin);
+  }
+
+private:
+  const char *getIter() const { return this->getStream().iter; }
+};
 
 END_MISC_LIB_NAMESPACE_DECL
 
