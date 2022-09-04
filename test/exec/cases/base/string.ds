@@ -276,6 +276,15 @@ assert $invalid.width() ==
     $aa
 }
 
+$words = $invalid.words()
+assert $words.size() == 6
+assert $words[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $words[1] == $'\x24'
+assert $words[2] == $'\uFFFD'
+assert $words[3] == $'\uFFFD'
+assert $words[4] == $'\uFFFD'
+assert $words[5] == $'\u0E33'
+
 ## sanitize
 assert $invalid.sanitize() == $'\x24\u0E33'
 assert $invalid.sanitize("") == $'\x24\u0E33'
