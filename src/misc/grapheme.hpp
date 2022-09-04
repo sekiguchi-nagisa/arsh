@@ -114,11 +114,9 @@ bool GraphemeBoundary<Bool>::scanBoundary(BreakProperty breakProperty) {
   auto before = this->state;
   this->state = after;
 
-  if (before == BreakProperty::SOT) {
-    return false;
-  }
-
   switch (before) {
+  case BreakProperty::SOT:
+    return false;
   case BreakProperty::CR:
     if (after == BreakProperty::LF) {
       return false; // GB3

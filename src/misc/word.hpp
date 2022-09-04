@@ -159,11 +159,9 @@ bool WordScanner<Stream>::scanBoundary() {
     return false; // WB3c
   }
 
-  if (before == WordBoundary::BreakProperty::SOT) {
-    return false;
-  }
-
   switch (before) {
+  case WordBoundary::BreakProperty::SOT:
+    return false;
   case WordBoundary::BreakProperty::CR:
     if (after == WordBoundary::BreakProperty::LF) {
       return false; // WB3
@@ -218,12 +216,10 @@ bool WordScanner<Stream>::scanBoundary() {
     }
     break;
   case WordBoundary::BreakProperty::AHLetter_Mid_NumLetQ:
-    switch (after) {
-    case WordBoundary::BreakProperty::ALetter:
-    case WordBoundary::BreakProperty::Hebrew_Letter: // AHLetter = (ALetter | Hebrew_Letter)
-      return false;                                  // WB7
-    default:
-      break;
+    // AHLetter = (ALetter | Hebrew_Letter)
+    if (after == WordBoundary::BreakProperty::ALetter ||
+        after == WordBoundary::BreakProperty::Hebrew_Letter) {
+      return false; // WB7
     }
     break;
   default:
