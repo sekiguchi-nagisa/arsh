@@ -694,6 +694,100 @@ TEST_F(APITest, charLen4) {
   ASSERT_EQ(1, edit.out2); // regional indicator is half
 }
 
+TEST_F(APITest, wordLen1) {
+  // next word
+  auto edit = DSLineEdit{};
+  std::string line = "/home/カタカナあい";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // /
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // home
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(4, edit.out);
+  ASSERT_EQ(4, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // /
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(1, edit.out);
+  ASSERT_EQ(1, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // カタカナ
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(12, edit.out);
+  ASSERT_EQ(8, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // あ
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); // い
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data += edit.out;
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit); //
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(0, edit.out);
+  ASSERT_EQ(0, edit.out2);
+}
+
+TEST_F(APITest, wordLen2) {
+  // prev char
+  auto edit = DSLineEdit{};
+  std::string line = "3.14アアabcう";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit); // う
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(2, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit); // abc
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(3, edit.out);
+  ASSERT_EQ(3, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit); // アア
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(6, edit.out);
+  ASSERT_EQ(4, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit); // 3.14
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(4, edit.out);
+  ASSERT_EQ(4, edit.out2);
+
+  edit.data = line.c_str();
+  edit.index -= edit.out;
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit); //
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(0, edit.out);
+  ASSERT_EQ(0, edit.out2);
+}
+
 static std::vector<std::string> tilde() {
   std::vector<std::string> v;
   setpwent();

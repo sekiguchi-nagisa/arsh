@@ -24,6 +24,7 @@
 #include "compiler.h"
 #include "logger.h"
 #include "misc/files.h"
+#include "misc/word.hpp"
 #include "vm.h"
 #include <embed.h>
 #include <ydsh/ydsh.h>
@@ -657,6 +658,8 @@ static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
 
 static int getCharLen(DSLineEditOp op, DSLineEdit &edit);
 
+static int getWordLen(DSLineEditOp op, DSLineEdit &edit);
+
 int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   errno = EINVAL;
   if (st == nullptr || edit == nullptr) {
@@ -677,14 +680,23 @@ int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
   OP(DS_EDIT_PROMPT)                                                                               \
   OP(DS_EDIT_HIGHLIGHT)                                                                            \
   OP(DS_EDIT_NEXT_CHAR_LEN)                                                                        \
-  OP(DS_EDIT_PREV_CHAR_LEN)
+  OP(DS_EDIT_PREV_CHAR_LEN)                                                                        \
+  OP(DS_EDIT_NEXT_WORD_LEN)                                                                        \
+  OP(DS_EDIT_PREV_WORD_LEN)
 
   GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, -1);
 #undef EACH_DS_LINE_EDIT_OP
 
-  // for char len op
-  if (op == DS_EDIT_NEXT_CHAR_LEN || op == DS_EDIT_PREV_CHAR_LEN) {
+  // for char/word len op
+  switch (op) {
+  case DS_EDIT_NEXT_CHAR_LEN:
+  case DS_EDIT_PREV_CHAR_LEN:
     return getCharLen(op, *edit);
+  case DS_EDIT_NEXT_WORD_LEN:
+  case DS_EDIT_PREV_WORD_LEN:
+    return getWordLen(op, *edit);
+  default:
+    break;
   }
 
   if (!callEditHook(*st, op, *edit)) {
@@ -777,6 +789,32 @@ static int getCharLen(DSLineEditOp op, DSLineEdit &edit) {
   edit.out2 = 0;
   if (ret.codePointCount > 0) {
     edit.out2 = graphemeWidth(edit, ret);
+  }
+  return 0;
+}
+
+static int getWordLen(DSLineEditOp op, DSLineEdit &edit) {
+  assert(op == DS_EDIT_NEXT_WORD_LEN || op == DS_EDIT_PREV_WORD_LEN);
+
+  if (!edit.data) {
+    errno = EINVAL;
+    return -1;
+  }
+  StringRef ref(edit.data, edit.index);
+  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8WordScanner scanner(stream);
+  while (scanner.hasNext()) {
+    ref = scanner.next();
+    if (op == DS_EDIT_NEXT_WORD_LEN) {
+      break;
+    }
+  }
+  edit.out = ref.size();
+  edit.out2 = 0;
+  for (GraphemeScanner graphemeScanner(ref); graphemeScanner.hasNext();) {
+    GraphemeScanner::Result ret;
+    graphemeScanner.next(ret);
+    edit.out2 += graphemeWidth(edit, ret);
   }
   return 0;
 }

@@ -424,6 +424,8 @@ typedef enum {
   /* for unicode-aware cursor move */
   DS_EDIT_NEXT_CHAR_LEN,
   DS_EDIT_PREV_CHAR_LEN,
+  DS_EDIT_NEXT_WORD_LEN,
+  DS_EDIT_PREV_WORD_LEN,
 } DSLineEditOp;
 
 typedef struct {
@@ -448,7 +450,11 @@ typedef struct {
  */
 DS_PUBLIC_API(int) DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit);
 
-/* for DS_EDIT_NEXT_CHAR_LEN or DS_EDIT_PREV_CHAR_LEN */
+/*
+ * for DS_EDIT_NEXT_CHAR_LEN, DS_EDIT_PREV_CHAR_LEN,
+ * DS_EDIT_NEXT_WORD_LEN, DS_EDIT_PREV_WORD_LEN
+ *
+ * */
 
 static inline void DSLineEdit_setFullWidth(DSLineEdit *edit) { edit->flags |= (1u << 0u); }
 
