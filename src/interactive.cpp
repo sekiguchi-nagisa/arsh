@@ -240,6 +240,32 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
   return UnicodeUtil::utf8ToCodePoint(buf, bufSize, *codePoint);
 }
 
+static std::size_t encoding_nextWordLen(const char *buf, std::size_t bufSize, std::size_t pos,
+                                        std::size_t *columSize) {
+  DSLineEdit edit{};
+  edit.data = buf + pos;
+  edit.index = bufSize - pos;
+  setWidthProperty(edit);
+  DSState_lineEdit(state, DS_EDIT_NEXT_WORD_LEN, &edit);
+  if (columSize) {
+    *columSize = edit.out2;
+  }
+  return edit.out;
+}
+
+static std::size_t encoding_prevWordLen(const char *buf, std::size_t, std::size_t pos,
+                                        std::size_t *columSize) {
+  DSLineEdit edit{};
+  edit.data = buf;
+  edit.index = pos;
+  setWidthProperty(edit);
+  DSState_lineEdit(state, DS_EDIT_PREV_WORD_LEN, &edit);
+  if (columSize) {
+    *columSize = edit.out2;
+  }
+  return edit.out;
+}
+
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
   std::string actualBuf(*lineBuf);
   size_t actualCursor = actualBuf.size() + cursor;
@@ -340,7 +366,8 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
   *linenoiseOutputFD() = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
   *linenoiseErrorFD() = *linenoiseOutputFD();
 
-  linenoiseSetEncodingFunctions(encoding_prevCharLen, encoding_nextCharLen, encoding_readCode);
+  linenoiseSetEncodingFunctions(encoding_prevCharLen, encoding_nextCharLen, encoding_readCode,
+                                encoding_prevWordLen, encoding_nextWordLen);
 
   linenoiseSetMultiLine(1);
 

@@ -119,6 +119,7 @@ TEST_F(InteractiveTest, tab) {
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
+
 TEST_F(InteractiveTest, edit1) {
   this->invoke("--quiet", "--norc");
 
@@ -129,6 +130,19 @@ TEST_F(InteractiveTest, edit1) {
   this->send("''" CTRL_F CTRL_F CTRL_B "い" CTRL_B "あ" CTRL_F
              "う" CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B "\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'あいう'\n: String = あいう\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, edit2) {
+  this->invoke("--quiet", "--norc");
+
+  // for unicode-aware word edit
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send("echo /usr/shareケケケ" CTRL_W CTRL_W "bin\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /usr/bin\n/usr/bin\n" + PROMPT));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

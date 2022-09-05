@@ -127,6 +127,8 @@
 #### Interactive
 
 - adjust space insertion behavior after inserting completion item
+- ``CTRL-W`` op (delete previous word) is now unicode-aware
+    - follow unicode word boundary
 
 #### Module
 
