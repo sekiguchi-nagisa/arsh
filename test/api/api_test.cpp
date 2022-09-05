@@ -788,6 +788,48 @@ TEST_F(APITest, wordLen2) {
   ASSERT_EQ(0, edit.out2);
 }
 
+TEST_F(APITest, wordLen3) {
+  // invalid
+  DSLineEdit edit{};
+  std::string line = "あaa";
+  edit.data = line.c_str();
+  edit.index = line.size();
+  int s = DSState_lineEdit(nullptr, DS_EDIT_NEXT_WORD_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  line = "あaa";
+  edit.data = line.c_str();
+  edit.index = 3;
+  s = DSState_lineEdit(nullptr, DS_EDIT_PREV_WORD_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(nullptr, DS_EDIT_NEXT_WORD_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, nullptr);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(this->state, DS_EDIT_PREV_WORD_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+
+  edit = DSLineEdit{};
+  s = DSState_lineEdit(this->state, DS_EDIT_NEXT_WORD_LEN, &edit);
+  ASSERT_EQ(-1, s);
+  ASSERT_EQ(EINVAL, errno);
+}
+
 static std::vector<std::string> tilde() {
   std::vector<std::string> v;
   setpwent();
