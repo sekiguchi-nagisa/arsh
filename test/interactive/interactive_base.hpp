@@ -25,6 +25,8 @@ using namespace ydsh;
 #define CTRL_W "\x17"
 #define CTRL_Z "\x1A"
 
+#define ESC_(E) "\x1b" E
+
 #define UP "\x1b[A"
 #define DOWN "\x1b[B"
 
