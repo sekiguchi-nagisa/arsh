@@ -240,6 +240,7 @@ int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool g
   (void)target;
   (void)replacement;
   (void)global;
+  (void)bufLimit;
   output = "regex is not supported";
   return -999;
 #endif
