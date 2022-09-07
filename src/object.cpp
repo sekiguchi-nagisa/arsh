@@ -880,8 +880,8 @@ TimerObject::TimerObject() : ObjectWithRtti(TYPE::Any) {
 
 static std::string formatTimeval(const struct timeval &time) {
   char buf[64];
-  snprintf(buf, std::size(buf), "%ldm%02ld.%03ds", time.tv_sec / 60, time.tv_sec % 60,
-           static_cast<int>(time.tv_usec / 1000));
+  snprintf(buf, std::size(buf), "%lldm%02lld.%03ds", static_cast<long long>(time.tv_sec / 60),
+           static_cast<long long>(time.tv_sec % 60), static_cast<int>(time.tv_usec / 1000));
   std::string value = buf;
   return value;
 }
