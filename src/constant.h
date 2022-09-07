@@ -403,7 +403,11 @@ constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
 constexpr size_t SYS_LIMIT_EXPANSION_FRAG_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_EXPANSION_RESULTS = 4096;
 constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
+#ifdef __CYGWIN__
+constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 200;
+#else
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 256;
+#endif
 constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
 constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_JOB_DESC_LEN = 96;
