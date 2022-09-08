@@ -46,6 +46,16 @@ TEST(BraceSeqTest, base1) {
   }
 
   {
+    StringRef ref = "1..9..-5";
+    auto range = toBraceRange(ref, true);
+    ASSERT_EQ(BraceRange::Kind::CHAR, range.kind);
+    ASSERT_EQ('6', range.begin);
+    ASSERT_EQ('1', range.end);
+    ASSERT_EQ(5, range.step);
+    ASSERT_EQ(0, range.digits);
+  }
+
+  {
     StringRef ref = "0..9..-2";
     auto range = toBraceRange(ref, true);
     ASSERT_EQ(BraceRange::Kind::CHAR, range.kind);
@@ -183,6 +193,16 @@ TEST(BraceSeqTest, base2) {
     ASSERT_EQ(INT64_MIN, range.end);
     ASSERT_EQ(7, range.step);
     ASSERT_EQ(strlen("-009223372036854775807"), range.digits);
+  }
+
+  {
+    StringRef ref = "009223372036854775807..-9223372036854775808..-7";
+    auto range = toBraceRange(ref, false);
+    ASSERT_EQ(BraceRange::Kind::INT, range.kind);
+    ASSERT_EQ(-9223372036854775807, range.begin);
+    ASSERT_EQ(INT64_MAX, range.end);
+    ASSERT_EQ(7, range.step);
+    ASSERT_EQ(strlen("009223372036854775807"), range.digits);
   }
 
   {
