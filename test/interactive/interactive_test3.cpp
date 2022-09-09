@@ -274,6 +274,8 @@ TEST_F(InteractiveTest, wait3) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$(wait $j); assert $? == 255", ": [String] = []"));
 
   std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.raise($SIGKILL); wait $j", "", err));
@@ -286,8 +288,13 @@ TEST_F(InteractiveTest, wait4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &!"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs")); // disowned job is not printed
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs $j", "", "ydsh: jobs: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$(jobs $j)", ": [String] = []", "ydsh: jobs: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("wait $j; assert $? == 127", "", "ydsh: wait: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); $j.wait()", ": Int = 137"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
 int main(int argc, char **argv) {
