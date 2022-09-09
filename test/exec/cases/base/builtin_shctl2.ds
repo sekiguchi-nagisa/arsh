@@ -50,8 +50,8 @@ assert $SIG['TSTP'].trap() == $SIG_IGN
 assert $SIG['TTIN'].trap() == $SIG_IGN
 assert $SIG['TTOU'].trap() == $SIG_IGN
 
-assert fg 2>&1 | grep 'ydsh: fg: current: no such job'
-assert bg 2>&1 | grep 'ydsh: bg: current: no such job'
+assert fg 2>&1 | grep 'ydsh: fg: no job control in this shell'  # in subell, job control is disabled even if monitor option is enabled
+assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 
 ## for `xtrace` option
 assert shctl set | grep 'xtrace.*  off'

@@ -243,9 +243,11 @@ public:
 
   void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const;
 
-  bool isJobControl() const { return hasFlag(this->runtimeOption, RuntimeOption::MONITOR); }
-
   bool isRootShell() const { return this->subshellLevel == 0; }
+
+  bool isJobControl() const {
+    return this->isRootShell() && hasFlag(this->runtimeOption, RuntimeOption::MONITOR);
+  }
 
   /**
    *
@@ -255,7 +257,7 @@ public:
    * if error, return -1 and set errno
    */
   int tryToBeForeground() const {
-    if (this->isJobControl() && this->isRootShell()) {
+    if (this->isJobControl()) {
       return beForeground(0);
     }
     return 1;

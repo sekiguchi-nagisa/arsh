@@ -274,8 +274,14 @@ TEST_F(InteractiveTest, wait3) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
+
+  // fg/bg/wait in subshell
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$(wait $j); assert $? == 255", ": [String] = []"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$(fg $j); assert $? == 1", ": [String] = []",
+                                                  "ydsh: fg: no job control in this shell\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$(bg $j); assert $? == 1", ": [String] = []",
+                                                  "ydsh: bg: no job control in this shell\n"));
 
   std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.raise($SIGKILL); wait $j", "", err));

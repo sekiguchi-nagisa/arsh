@@ -375,8 +375,7 @@ bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, c
     auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
                                    std::move(desc));
     // job termination
-    auto waitOp =
-        state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+    auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
     int status = entry->wait(waitOp);
     int errNum = errno;
     state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
@@ -485,9 +484,10 @@ static Proc::Op resolveProcOp(const DSState &st, ForkKind kind) {
        */
       setFlag(op, Proc::Op::JOB_CONTROL);
     }
-  }
-  if (st.isRootShell() && needForeground(kind)) {
-    setFlag(op, Proc::Op::FOREGROUND);
+
+    if (needForeground(kind)) {
+      setFlag(op, Proc::Op::FOREGROUND);
+    }
   }
   return op;
 }
@@ -529,8 +529,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
         return false;
       }
 
-      auto waitOp =
-          state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+      auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
       int status = proc.wait(waitOp); // wait exit
       int errNum = errno;
       tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
@@ -755,8 +754,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     fatal_perror("fcntl error");
   }
 
-  const bool rootShell = state.isRootShell();
-  const pid_t pgid = resolvePGID(rootShell, ForkKind::NONE);
+  const pid_t pgid = resolvePGID(state.isRootShell(), ForkKind::NONE);
   const auto procOp = resolveProcOp(state, ForkKind::NONE);
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() == -1) {
@@ -788,7 +786,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
 
     // wait process or job termination
     int status;
-    auto waitOp = rootShell && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+    auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
     status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {

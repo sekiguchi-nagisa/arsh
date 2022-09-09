@@ -78,6 +78,7 @@
 - **Breaking Change**: after background job termination, not show signal message
     - not show signal messages after call ``Job#poll``, ``Job#wait``, builtin wait command
 - **Breaking Change**: remove multi-return type due to unused
+- **Breaking Change**: disable job control within subshell even if monitor option is enabled
 - show job information via CTRL-Z/``fg``/``bg``
 - escape unprintable character when throw some errors
 - improve method lookup error messages
