@@ -184,7 +184,7 @@ function _comp_autoload(cmd : String) : String! {
 
     # find actual completion target
     var target = for line in $STDIN {
-        if $/ *complete +-F +/ =~ $line {
+        if $/ *complete( +.+)? +-F +/ =~ $line {
             var foundF = $false
             break for ss in $line.split(' ') {
                 if $foundF {
