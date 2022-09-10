@@ -100,7 +100,8 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
 }
 
 /**
- * perform completion in specified underlying module context
+ * perform completion in specified underlying module context.
+ * during execution preserve exit status and IFS
  * @param st
  * @param modDesc
  * module descriptor for specifying completion context

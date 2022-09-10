@@ -581,12 +581,8 @@ int DSState_complete(DSState *st, const char *data, unsigned int size) {
     errno = EINVAL;
     return -1;
   }
-
   StringRef ref(data, size);
-  auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  auto ret = doCodeCompletion(*st, "", ref);
-  st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-  return ret;
+  return doCodeCompletion(*st, "", ref);
 }
 
 int DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp) {
@@ -646,9 +642,12 @@ static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
   }
   auto args =
       makeArgs(DSValue::createInt(op), DSValue::createInt(edit.index), DSValue::createStr(data));
-  auto old = st.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto oldStatus = st.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto oldIFS = st.getGlobal(BuiltinVarOffset::IFS);
+  st.setGlobal(BuiltinVarOffset::IFS, DSValue::createStr(VAL_DEFAULT_IFS)); // set to default
   auto ret = VM::callFunction(st, std::move(func), std::move(args));
-  st.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
+  st.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
+  st.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   if (st.hasError()) {
     return false;
   }

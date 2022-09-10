@@ -297,8 +297,13 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
   }
 
   // kick hook
+  auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
+  state.setGlobal(BuiltinVarOffset::IFS, DSValue::createStr(VAL_DEFAULT_IFS)); // set to default
   auto ret = VM::callFunction(state, std::move(hook),
                               makeArgs(std::move(ctx), std::move(argv), DSValue::createInt(index)));
+  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
+  state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   if (state.hasError()) {
     errno = EINTR;
     return -1;

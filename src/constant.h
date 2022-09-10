@@ -177,6 +177,7 @@ constexpr const char *ENV_TERM = "TERM";
 // =====  default value  =====
 
 constexpr const char *VAL_DEFAULT_PATH = "/bin:/usr/bin:/usr/local/bin";
+constexpr const char *VAL_DEFAULT_IFS = " \t\n";
 
 // =====  system error message prefix  =====
 

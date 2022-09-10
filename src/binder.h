@@ -136,7 +136,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * for internal field splitting.
    * must be String_Object.
    */
-  binder.bind("IFS", " \t\n", HandleAttr());
+  binder.bind("IFS", VAL_DEFAULT_IFS, HandleAttr());
 
   /**
    * maintain completion result.
