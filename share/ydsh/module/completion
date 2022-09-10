@@ -147,12 +147,12 @@ let _bash_completion_dirs = [
     '/opt/homebrew/share/bash-completion/completions/',
 ]
 
-function findBashCompScript(name : String) : String {
+function findBashCompScript(name : String) : String! {
     for dir in $_bash_completion_dirs {
         var path = $dir + $name
         test -f $path && return $path
     }
-    return "."
+    return new String!()
 }
 
 var BCRUN_PATH = "$MODULE_HOME/bcrun/bcrun"
@@ -178,9 +178,37 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     return $ret
 }
 
+# for lazy loading bash completion script
+function _comp_autoload(cmd : String) : String! {
+    var path = $findBashCompScript($cmd) ?? return new String!()
+
+    # find actual completion target
+    var target = for line in $STDIN {
+        if $/ *complete +-F +/ =~ $line {
+            var foundF = $false
+            break for ss in $line.split(' ') {
+                if $foundF {
+                    $ss.startsWith('_') && break $ss
+                } elif $ss == '-F' {
+                    $foundF = $true
+                }
+            }
+        }
+    } with < $path
+
+    if $target {
+        var t = $target!
+        eval compdef --cmd $cmd --comp-path $cmd --comp-target $t && return $cmd
+    }
+    return new String!()
+}
+
 function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String] {
     var cmd = $words[0]
-    var deflist = $_compdefMap.get($cmd) ?? return new [String]()
+    var deflist = $_compdefMap.get($cmd) ?? {
+        $cmd = $_comp_autoload($cmd) ?? return new [String]()
+        $_compdefMap[$cmd]
+    }
     if $deflist[0].type == 3 {
         return $_comp_wrap($deflist[0].option, $deflist[0].arg, $words, $cursor)
     }
@@ -245,7 +273,7 @@ compdef() {
         '--comp-path' => {
             $opt = $@.get($i + 1) ?? return $_require($v, "")
             if !$opt!.contains('/') {   # if not full-path, resolve full-path
-                $opt = $findBashCompScript($opt!)
+                $opt = $findBashCompScript($opt!) ?? return 1; # do nothing
             }
             $i++
         }

@@ -43,16 +43,9 @@
     - ``DS_EDIT_HIGHLIGHT``: for syntax highlighting
 - add ``DSState_watchNotification`` api for job termination notification
 
-#### Completion
+#### Module
 
-- merge external completion script with single file
-- add the following completions
-    - docker
-    - cmake, ctest
-    - systemctl, journalctl
-    - launchctl
-    - ydshd, dscolorize
-    - btrfs, ip, localectl, machinectl, nmcli, virtsh, yast, yast2
+- ``completion`` module autoload bash-completion script
 
 ### Changed
 
