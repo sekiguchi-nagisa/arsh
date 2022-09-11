@@ -22,7 +22,7 @@ namespace ydsh {
 
 struct BraceInt {
   int64_t value;
-  unsigned int digits;
+  unsigned int digits; // if no-padding, it is 0
   bool ok;
 
   explicit operator bool() const { return this->ok; }
@@ -125,6 +125,13 @@ BraceRange toBraceRange(StringRef ref, bool isChar, std::string &error) {
     }
     braceRange.begin = ret1.value;
     braceRange.end = ret2.value;
+
+    // resolve digits
+    if (ret1.digits && !ret2.digits) {
+      ret2.digits = std::to_string(ret2.value).size();
+    } else if (!ret1.digits && ret2.digits) {
+      ret1.digits = std::to_string(ret1.value).size();
+    }
     braceRange.digits = std::max(ret1.digits, ret2.digits);
   }
 

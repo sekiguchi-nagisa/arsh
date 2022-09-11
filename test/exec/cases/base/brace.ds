@@ -31,6 +31,20 @@ assert "$(echo {-1..6..000200})" == "-1"
 assert "$(echo {-9223372036854775808..9223372036854775807..9223372036854775807})" == 
              "-9223372036854775808 -1 9223372036854775806"
 
+var expect = ""
+for (var i = 100; $i >= 9; $i--) {
+    if !$expect.empty() { $expect += " "; }
+    $expect += ("00" + $i).slice(-3)
+}
+assert "$(echo {100..09})" == $expect
+
+$expect = ""
+for (var i = 9; $i <= 100; $i++) {
+    if !$expect.empty() { $expect += " "; }
+    $expect += ("00" + $i).slice(-3)
+}
+assert "$(echo {09..100})" == $expect
+
 
 ## nested
 assert "$(echo a b c)" == "$(echo {a,{b,c}})"
