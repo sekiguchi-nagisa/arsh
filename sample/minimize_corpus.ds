@@ -1,25 +1,25 @@
 #!/usr/bin/env ydsh
 
-function usage($s : String) : Nothing {
-    $s != '' && {
-        echo $s 1>&2
+usage() : Nothing {
+    if !$@.empty() {
+        echo $@ 1>&2
     }
     echo [usage] $0 [fuzzer path] [corpus path] 1>&2
     exit 1
 }
 
-let BIN = $1.realpath() ?? $usage("")
-test -x $BIN || $usage("$BIN must be executable")
+let BIN = $1.realpath() ?? usage
+test -x $BIN || usage "$BIN" must be executable
 
-let ORG_DIR = $2.realpath() ?? $usage("")
-test -d $ORG_DIR || $usage("$ORG_DIR must be directory")
+let ORG_DIR = $2.realpath() ?? usage
+test -d $ORG_DIR || usage "$ORG_DIR" must be directory
 
 let NEW_DIR = "${ORG_DIR}_new"
-test -e $NEW_DIR && $usage("$NEW_DIR is alreays exists")
+test -e $NEW_DIR && usage "$NEW_DIR" is alreays exists
 
 mkdir $NEW_DIR
 
-eval $BIN -merge=1 $NEW_DIR $ORG_DIR && {
+YDSH_SUPPRESS_COMPILE_ERROR=on eval $BIN -merge=1 $NEW_DIR $ORG_DIR && {
     echo move $NEW_DIR to $ORG_DIR
     rm -rf $ORG_DIR
     mv $NEW_DIR $ORG_DIR
