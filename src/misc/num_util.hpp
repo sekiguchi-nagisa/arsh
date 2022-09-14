@@ -17,9 +17,9 @@
 #ifndef MISC_LIB_NUM_UTIL_HPP
 #define MISC_LIB_NUM_UTIL_HPP
 
+#include <cctype>
 #include <cerrno>
 #include <climits>
-#include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -27,6 +27,12 @@
 #include <limits>
 #include <memory>
 #include <utility>
+
+#ifdef __APPLE__
+#include <xlocale.h>
+#else
+#include <locale.h>
+#endif
 
 #include "detect.hpp"
 
