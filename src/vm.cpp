@@ -77,6 +77,7 @@ static void initEnv() {
   // set locale
   setlocale(LC_ALL, "");
   setlocale(LC_MESSAGES, "C");
+  setlocale(LC_NUMERIC, "C");
 
   // set environmental variables
 

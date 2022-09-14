@@ -143,6 +143,7 @@
 - infix keyword completion
 - PATH handling of sudo completion
 - length error of brace expansion
+- string representation of ``Float`` object is locale independent
 
 ## [0.26.0] - 2022-06-30
 

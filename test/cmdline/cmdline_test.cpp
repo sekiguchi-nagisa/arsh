@@ -352,6 +352,13 @@ TEST_F(CmdlineTest, execPath) {
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo -n $YDSH_BIN"), 0, BIN_PATH));
 }
 
+TEST_F(CmdlineTest, locale) {
+  {
+    auto builder = ds("-c", "echo ${3.14}").addEnv("LANG", "German"); // locale independent
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "3.140000\n"));
+  }
+}
+
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
   CmdlineTest2() : INIT_TEMP_FILE_FACTORY(cmdline_test) {}
 };
