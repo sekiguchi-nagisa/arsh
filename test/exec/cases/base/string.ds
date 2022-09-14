@@ -294,15 +294,15 @@ assert ($'@@\x00' + $invalid + $'\x00#\x00\x00').sanitize() == $'@@\x24\u0E33#'
 
 assert("-2147483648".toInt()! == -1 - 2147483647)
 assert("-2147483649".toInt())
-assert("2147483647".toInt()! == 2147483647)
+assert("+2147483647".toInt()! == 2147483647)
 assert("2147483648".toInt())
-assert "0xFFFFfaec".toInt()!  == 0xFFFFfaec
+assert "+0xFFFFfaec".toInt()!  == 0xFFFFfaec
 assert "0XFFFFfaec".toInt()!  == 0XFFFFfaec
 assert "0XFFFFFFFF".toInt()!  == 0XFFFFFFFF
 assert "-0XFa".toInt()! == -0xFA
 assert "0XFFFFFFFFa".toInt()
 assert "-0xFFFFFFF".toInt()! == -0xFFFFFFF
-assert "0012345".toInt()!  == 0012345
+assert "+0012345".toInt()!  == 0012345
 assert "0o12345".toInt()!  == 0o12345
 assert "0O12345".toInt()!  == 0O12345
 assert "-0O12345".toInt()! == -0O12345

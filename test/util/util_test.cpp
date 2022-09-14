@@ -193,14 +193,14 @@ TEST(NumTest, base8) {
   ASSERT_EQ(0, ret.first);
   ASSERT_EQ(n, begin);
 
-  n = "D06";
+  n = "+D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
   ASSERT_FALSE(ret.second);
   ASSERT_EQ(EINVAL, errno);
   ASSERT_EQ(0, ret.first);
-  ASSERT_EQ(n, begin);
+  ASSERT_EQ(n + 1, begin);
 
   n = "02D06";
   begin = n;
@@ -329,7 +329,7 @@ TEST(NumTest, base16) {
   ASSERT_EQ(0x123u, ret.first);
   ASSERT_EQ(end, begin);
 
-  n = "D06";
+  n = "+D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
@@ -345,7 +345,7 @@ TEST(NumTest, base16) {
   ASSERT_EQ(0u, ret.first);
   ASSERT_EQ(end, begin);
 
-  n = "06";
+  n = "+06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
@@ -414,7 +414,7 @@ TEST(NumTest, int32) {
   ret = convertToNum<int32_t>(n, toEnd(n));
   ASSERT_FALSE(ret.second);
 
-  n = "2147483647";
+  n = "+2147483647";
   ret = convertToNum<int32_t>(n, toEnd(n));
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(2147483647, ret.first);
@@ -478,7 +478,7 @@ TEST(NumTest, int32) {
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(074, ret.first);
 
-  n = "0O8";
+  n = "+0O8";
   ret = convertToNum<int32_t>(n, toEnd(n));
   ASSERT_FALSE(ret.second);
 

@@ -231,6 +231,10 @@ template <typename T,
           enable_when<std::is_unsigned<T>::value &&
                       (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
 inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
+  if (begin != end && *begin == '+') {
+    ++begin;
+  }
+
   if (base == 0) {
     base = parseBase(begin, end);
   }
@@ -252,9 +256,9 @@ template <typename T,
                       (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
 inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
   bool sign = false;
-  if (begin != end && *begin == '-') {
-    ++begin;
+  if (begin != end && *begin == '-' && *(begin + 1) != '+') {
     sign = true;
+    ++begin;
   }
 
   using UT = std::make_unsigned_t<T>;
