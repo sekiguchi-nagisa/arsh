@@ -300,6 +300,14 @@ inline std::pair<T, bool> convertToNum(const char *str, int base = 0) {
   return convertToNum<T>(str, str + strlen(str), base);
 }
 
+/**
+ * for int literal parsing.
+ * unlike convertToNum api, accept out of range signed value such as 0xFFFFFFFFFFFFFFFF
+ * @tparam T
+ * @param begin
+ * @param end
+ * @return
+ */
 template <typename T, enable_when<std::is_signed<T>::value> = nullptr>
 inline std::pair<T, bool> fromIntLiteral(const char *begin, const char *end) {
   bool negate = false;

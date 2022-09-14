@@ -209,7 +209,13 @@ public:
   std::string toName(Token token) const;
 
   /**
+   * for int literal parsing.
+   * also parse bit representation (octal/hex notation) of number.
+   * unlike convertToNum api, accept out-of-range number such as 0xFFFFFFFFFFFFFFFF
+   * @param token
+   * @param status
    * if converted number is out of range, status is 1.
+   * @return
    */
   int64_t toInt64(Token token, int &status) const;
 

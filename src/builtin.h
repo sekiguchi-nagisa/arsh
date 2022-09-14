@@ -937,8 +937,7 @@ YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
 YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);
   auto ref = LOCAL(0).asStrRef();
-  auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
-
+  auto ret = convertToNum<int64_t>(ref.begin(), ref.end());
   RET(ret.second ? DSValue::createInt(ret.first) : DSValue::createInvalid());
 }
 
