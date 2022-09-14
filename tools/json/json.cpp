@@ -347,14 +347,11 @@ JSON JSONParser::parseNumber() {
   data[token.size] = '\0';
 
   if (isFloat(data)) {
-    int status = 0;
-    auto v = convertToDouble(data, status);
-    if (status == 0) {
-      return v;
+    if (auto ret = convertToDouble(data); ret.second == 0) {
+      return ret.first;
     }
   } else {
-    auto ret = convertToNum<int64_t>(data);
-    if (ret.second) {
+    if (auto ret = convertToNum<int64_t>(data); ret.second) {
       return static_cast<int64_t>(ret.first);
     }
   }

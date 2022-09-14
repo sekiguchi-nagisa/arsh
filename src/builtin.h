@@ -946,10 +946,12 @@ YDSH_METHOD string_toInt(RuntimeContext &ctx) {
 YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toFloat);
   auto ref = LOCAL(0).asStrRef();
-  int status = 0;
-  double value = convertToDouble(ref.data(), status, false);
-
-  RET(status == 0 ? DSValue::createFloat(value) : DSValue::createInvalid());
+  if (!ref.hasNullChar()) {
+    if (auto ret = convertToDouble(ref.data(), false); ret.second == 0) {
+      RET(DSValue::createFloat(ret.first));
+    }
+  }
+  RET(DSValue::createInvalid());
 }
 
 static GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {

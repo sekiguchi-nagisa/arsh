@@ -17,15 +17,18 @@
 #ifndef MISC_LIB_NUM_UTIL_HPP
 #define MISC_LIB_NUM_UTIL_HPP
 
-#include "detect.hpp"
 #include <cerrno>
 #include <climits>
+#include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <utility>
+
+#include "detect.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -319,38 +322,56 @@ inline std::pair<T, bool> fromIntLiteral(const char *begin, const char *end) {
   return {static_cast<T>(ret.first), false};
 }
 
+class Locale {
+private:
+  locale_t value;
+
+public:
+  Locale(int mask, const char *locale, locale_t base = nullptr)
+      : value(newlocale(mask, locale, base)) {}
+
+  ~Locale() { freelocale(this->value); }
+
+  locale_t get() const { return this->value; }
+
+  static locale_t C() {
+    static Locale clocale(LC_ALL_MASK, "C");
+    return clocale.get();
+  }
+};
+
 /**
+ * parse double with locale independent way
+ * @param str
+ * @param skipIllegalChar
+ * @return (value, status)
  * if success, status is 0.
  * if out of range, status is 1.
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline double convertToDouble(const char *str, int &status, bool skipIllegalChar = false) {
+inline std::pair<double, int> convertToDouble(const char *str, bool skipIllegalChar = false) {
   errno = 0;
 
   // convert to double
+  if (std::isspace(*str)) {
+    return {0, -1};
+  }
   char *end;
-  const double value = strtod(str, &end);
+  const double value = strtod_l(str, &end, Locale::C());
+  int status = 0;
 
   // check error
   if (value == 0 && end == str) {
     status = -1;
-    return 0;
-  }
-  if (*end != '\0' && !skipIllegalChar) {
+  } else if (*end != '\0' && !skipIllegalChar) {
     status = -2;
-    return 0;
-  }
-  if (value == 0 && errno == ERANGE) {
+  } else if (value == 0 && errno == ERANGE) {
     status = 1;
-    return 0;
-  }
-  if ((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
+  } else if ((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
     status = 1;
-    return 0;
   }
-  status = 0;
-  return value;
+  return {value, status};
 }
 
 constexpr bool isDecimal(char ch) { return ch >= '0' && ch <= '9'; }

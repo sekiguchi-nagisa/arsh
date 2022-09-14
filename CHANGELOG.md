@@ -117,6 +117,7 @@
     - add ``DS_COMP_ATTR_NOSPACE`` attribute
 - **Breaking Change**: change interface of ``DSState_lineEdit``
     - introduce ``DSLineEdit`` struct
+- after ``DSState_createWithMode``, set ``LC_NUMERIC`` to ``C``
 
 #### Interactive
 
@@ -143,7 +144,7 @@
 - infix keyword completion
 - PATH handling of sudo completion
 - length error of brace expansion
-- string representation of ``Float`` object is locale independent
+- broken float number parsing (prefix spaces, locale dependent-format)
 
 ## [0.26.0] - 2022-06-30
 

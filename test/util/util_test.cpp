@@ -497,6 +497,40 @@ TEST(NumTest, int32) {
   ASSERT_EQ(0, ret.first);
 }
 
+TEST(NumTest, double1) {
+  setlocale(LC_NUMERIC, "German"); // decimal_point is different in German locale
+
+  const char *n = "3.14";
+  auto ret = convertToDouble(n);
+  ASSERT_EQ(0, ret.second);
+  ASSERT_EQ(3.14, ret.first);
+
+  n = "3.14###";
+  ret = convertToDouble(n, false); // disallow illegal suffix
+  ASSERT_EQ(-2, ret.second);
+  ASSERT_EQ(3.14, ret.first);
+
+  n = "3.14###";
+  ret = convertToDouble(n, true); // allow illegal suffix
+  ASSERT_EQ(0, ret.second);
+  ASSERT_EQ(3.14, ret.first);
+
+  n = " 3.14";
+  ret = convertToDouble(n); // disallow prefix spaces
+  ASSERT_EQ(-1, ret.second);
+  ASSERT_EQ(0, ret.first);
+
+  n = "@3.14";
+  ret = convertToDouble(n); // disallow prefix spaces
+  ASSERT_EQ(-1, ret.second);
+  ASSERT_EQ(0, ret.first);
+
+  n = "3.14e9999999999999999999999";
+  ret = convertToDouble(n); // huge value
+  ASSERT_EQ(1, ret.second);
+  ASSERT_EQ(HUGE_VAL, ret.first);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

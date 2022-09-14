@@ -341,9 +341,10 @@ int64_t Lexer::toInt64(Token token, int &status) const {
 
 double Lexer::toDouble(Token token, int &status) const {
   assert(this->withinRange(token));
-  double value = convertToDouble(this->toTokenText(token).c_str(), status);
-  assert(status > -1);
-  return value;
+  auto ret = convertToDouble(this->toTokenText(token).c_str());
+  assert(ret.second > -1);
+  status = ret.second;
+  return ret.first;
 }
 
 static bool isIdStart(char ch) {
