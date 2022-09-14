@@ -300,36 +300,6 @@ inline std::pair<T, bool> convertToNum(const char *str, int base = 0) {
   return convertToNum<T>(str, str + strlen(str), base);
 }
 
-/**
- * for int literal parsing.
- * unlike convertToNum api, accept out of range signed value such as 0xFFFFFFFFFFFFFFFF
- * @tparam T
- * @param begin
- * @param end
- * @return
- */
-template <typename T, enable_when<std::is_signed<T>::value> = nullptr>
-inline std::pair<T, bool> fromIntLiteral(const char *begin, const char *end) {
-  bool negate = false;
-  if (begin != end && *begin == '-') {
-    ++begin;
-    negate = true;
-  }
-  bool decimal = begin != end && *begin != '0';
-
-  using UT = std::make_unsigned_t<T>;
-  auto ret = convertToNum<UT>(begin, end);
-  if (ret.second) {
-    if (decimal) {
-      return makeSigned(ret.first, negate);
-    }
-    if (!negate) {
-      return {static_cast<T>(ret.first), true};
-    }
-  }
-  return {static_cast<T>(ret.first), false};
-}
-
 class Locale {
 private:
   locale_t value;

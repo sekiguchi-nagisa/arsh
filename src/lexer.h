@@ -213,16 +213,11 @@ public:
    * also parse bit representation (octal/hex notation) of number.
    * unlike convertToNum api, accept out-of-range number such as 0xFFFFFFFFFFFFFFFF
    * @param token
-   * @param status
-   * if converted number is out of range, status is 1.
    * @return
    */
-  int64_t toInt64(Token token, int &status) const;
+  std::pair<int64_t, bool> toInt64(Token token) const;
 
-  /**
-   * if converted number is out of range, status is 1.
-   */
-  double toDouble(Token token, int &status) const;
+  std::pair<double, bool> toDouble(Token token) const;
 
   bool toEnvName(Token token, std::string &out) const;
 };

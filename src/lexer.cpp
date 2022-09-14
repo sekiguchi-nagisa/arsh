@@ -332,19 +332,26 @@ std::string Lexer::toName(Token token) const {
   return name;
 }
 
-int64_t Lexer::toInt64(Token token, int &status) const {
+std::pair<int64_t, bool> Lexer::toInt64(Token token) const {
   auto ref = this->toStrRef(token);
-  auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
-  status = ret.second ? 0 : 1;
-  return ret.first;
+  assert(!ref.empty());
+  const bool decimal = ref[0] != '0';
+  auto [value, status] = convertToNum<uint64_t>(ref.begin(), ref.end());
+  if (status) {
+    if (decimal) {
+      return makeSigned(value, false);
+    } else {
+      return {static_cast<int64_t>(value), true};
+    }
+  }
+  return {static_cast<int64_t>(value), false};
 }
 
-double Lexer::toDouble(Token token, int &status) const {
+std::pair<double, bool> Lexer::toDouble(Token token) const {
   assert(this->withinRange(token));
   auto ret = convertToDouble(this->toTokenText(token).c_str());
   assert(ret.second > -1);
-  status = ret.second;
-  return ret.first;
+  return {ret.first, ret.second == 0};
 }
 
 static bool isIdStart(char ch) {

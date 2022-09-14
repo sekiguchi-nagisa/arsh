@@ -1531,9 +1531,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   }
   case TokenKind::INT_LITERAL: {
     Token token = TRY(this->expect(TokenKind::INT_LITERAL));
-    int status = 0;
-    auto value = this->lexer->toInt64(token, status);
-    if (status != 0) {
+    auto [value, status] = this->lexer->toInt64(token);
+    if (!status) {
       this->reportTokenFormatError(TokenKind::INT_LITERAL, token, "out of range int literal");
       return nullptr;
     }
@@ -1541,9 +1540,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   }
   case TokenKind::FLOAT_LITERAL: {
     Token token = TRY(this->expect(TokenKind::FLOAT_LITERAL));
-    int status = 0;
-    double value = this->lexer->toDouble(token, status);
-    if (status != 0) {
+    auto [value, status] = this->lexer->toDouble(token);
+    if (!status) {
       this->reportTokenFormatError(TokenKind::FLOAT_LITERAL, token, "out of range float literal");
       return nullptr;
     }
