@@ -109,8 +109,9 @@
     - ``String#slice``
     - ``Array#slice``
     - ``Array#join``
-- now ``String#width`` method can explicitly specify east-asian width
-- specify start index to ``String#indexOf``, ``Array#indexOf``
+- specify east-asian width to ``String#width`` method
+- specify start index to ``String#indexOf``, ``Array#indexOf`` methods
+- specify radix to ``String#toInt`` method
 
 #### API
 

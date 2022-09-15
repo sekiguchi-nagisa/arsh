@@ -933,12 +933,18 @@ YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function toInt($this : String) : Option<Int>
+//!bind: function toInt($this : String, $radix : Option<Int>) : Option<Int>
 YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);
   auto ref = LOCAL(0).asStrRef();
-  auto ret = convertToNum<int64_t>(ref.begin(), ref.end());
-  RET(ret.second ? DSValue::createInt(ret.first) : DSValue::createInvalid());
+  auto v = LOCAL(1);
+  if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
+    auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
+    if (ret.second) {
+      RET(DSValue::createInt(ret.first));
+    }
+  }
+  RET(DSValue::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
