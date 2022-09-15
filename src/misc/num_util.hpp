@@ -91,9 +91,9 @@ inline bool smul_overflow(long long x, long long y, long long &r) {
   return __builtin_smulll_overflow(x, y, &r);
 }
 
-inline int parseBase(const char *&begin, const char *end) {
+inline unsigned int parseBase(const char *&begin, const char *end) {
   if (begin == end) {
-    return -1;
+    return 0; // failed
   }
 
   if (*begin == '0') {
@@ -148,22 +148,22 @@ inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
 template <typename T,
           enable_when<std::is_unsigned<T>::value &&
                       (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
+inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsigned int base) {
+  if (begin != end && *begin == '+') {
+    ++begin;
+  }
+
+  if (base == 0) {
+    base = parseBase(begin, end);
+  }
+
   errno = 0;
-  if (begin == end) {
+  if (begin == end || base < 2 || base > 36) {
     errno = EINVAL;
     return {0, false};
   }
 
-  if (*begin == '0') {
-    bool status = true;
-    if (++begin != end) {
-      status = false;
-      errno = EINVAL;
-    }
-    return {0, status};
-  }
-
+  T radix = static_cast<T>(base);
   T ret = 0;
   bool status = true;
   do {
@@ -171,44 +171,9 @@ inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
     T v;
     if (ch >= '0' && ch <= '9') {
       v = ch - '0';
-    } else {
-      errno = EINVAL;
-      status = false;
-      break;
-    }
-    if (mul_overflow(ret, 10, ret) || // ret = ret * 10
-        add_overflow(ret, v, ret)) {  // ret = ret + v
-      errno = ERANGE;
-      status = false;
-      break;
-    }
-  } while (++begin != end);
-
-  return {ret, status};
-}
-
-template <typename T,
-          enable_when<std::is_unsigned<T>::value &&
-                      (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, int base) {
-  errno = 0;
-
-  if (begin == end) {
-    errno = EINVAL;
-    return {0, false};
-  }
-
-  T baseT = static_cast<T>(base);
-  T ret = 0;
-  bool status = true;
-  do {
-    char ch = *begin;
-    T v;
-    if (ch >= '0' && ch <= '9') {
-      v = ch - '0';
-    } else if (ch >= 'a' && ch <= 'f') {
+    } else if (ch >= 'a' && ch <= 'z') {
       v = 10 + (ch - 'a');
-    } else if (ch >= 'A' && ch <= 'F') {
+    } else if (ch >= 'A' && ch <= 'Z') {
       v = 10 + (ch - 'A');
     } else {
       errno = EINVAL;
@@ -216,13 +181,13 @@ inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, i
       break;
     }
 
-    if (v >= baseT) {
+    if (v >= radix) {
       errno = EINVAL;
       status = false;
       break;
     }
 
-    if (mul_overflow(ret, baseT, ret) || // ret = ret * base
+    if (mul_overflow(ret, radix, ret) || // ret = ret * radix
         add_overflow(ret, v, ret)) {     // ret = ret + v
       errno = ERANGE;
       status = false;
@@ -234,33 +199,9 @@ inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, i
 }
 
 template <typename T,
-          enable_when<std::is_unsigned<T>::value &&
-                      (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
-  if (begin != end && *begin == '+') {
-    ++begin;
-  }
-
-  if (base == 0) {
-    base = parseBase(begin, end);
-  }
-
-  switch (base) {
-  case 8:
-  case 16:
-    return parseOctalOrHex<T>(begin, end, base);
-  case 10:
-    return parseDecimal<T>(begin, end);
-  default:
-    errno = EINVAL;
-    return {0, false};
-  }
-}
-
-template <typename T,
           enable_when<std::is_signed<T>::value &&
                       (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
+inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsigned int base) {
   bool sign = false;
   if (begin != end && *begin == '-' && *(begin + 1) != '+') {
     sign = true;
@@ -293,7 +234,7 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int 
  * if detect overflow, return {0, false}
  */
 template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToNum(const char *begin, const char *end, int base = 0) {
+inline std::pair<T, bool> convertToNum(const char *begin, const char *end, unsigned int base = 0) {
   return parseInteger<T>(begin, end, base);
 }
 
@@ -306,7 +247,7 @@ inline std::pair<T, bool> convertToNum(const char *begin, const char *end, int b
  * @return
  */
 template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToNum(const char *str, int base = 0) {
+inline std::pair<T, bool> convertToNum(const char *str, unsigned int base = 0) {
   return convertToNum<T>(str, str + strlen(str), base);
 }
 

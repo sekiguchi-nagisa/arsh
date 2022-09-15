@@ -260,10 +260,9 @@ TEST(NumTest, base10) {
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
-  ASSERT_EQ(n + 1, begin);
+  ASSERT_TRUE(ret.second);
+  ASSERT_EQ(6, ret.first);
+  ASSERT_EQ(end, begin);
 
   n = "02D06";
   begin = n;
@@ -271,8 +270,8 @@ TEST(NumTest, base10) {
   ret = parseInteger<uint32_t>(begin, end, 10);
   ASSERT_FALSE(ret.second);
   ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
-  ASSERT_EQ(n + 1, begin);
+  ASSERT_EQ(2, ret.first);
+  ASSERT_EQ(n + 2, begin);
 
   n = "2D06";
   begin = n;
@@ -495,6 +494,48 @@ TEST(NumTest, int32) {
   ret = convertToNum<int32_t>(n, toEnd(n));
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
+}
+
+TEST(NumTest, radix) {
+  const char *n = "GE";
+  auto ret = convertToNum<int32_t>(n, toEnd(n), 17);
+  ASSERT_TRUE(ret.second);
+  ASSERT_EQ(17 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.first);
+
+  n = "0";
+  ret = convertToNum<int32_t>(n, toEnd(n), 1);
+  ASSERT_FALSE(ret.second);
+  ASSERT_EQ(EINVAL, errno);
+
+  n = "FF";
+  ret = convertToNum<int32_t>(n, toEnd(n), 15);
+  ASSERT_FALSE(ret.second);
+  ASSERT_EQ(EINVAL, errno);
+
+  n = "gE";
+  ret = convertToNum<int32_t>(n, toEnd(n), 16);
+  ASSERT_FALSE(ret.second);
+  ASSERT_EQ(EINVAL, errno);
+
+  n = "ge";
+  ret = convertToNum<int32_t>(n, toEnd(n), 37);
+  ASSERT_FALSE(ret.second);
+  ASSERT_EQ(EINVAL, errno);
+
+  n = "@";
+  ret = convertToNum<int32_t>(n, toEnd(n), 33);
+  ASSERT_FALSE(ret.second);
+  ASSERT_EQ(EINVAL, errno);
+
+  n = "zZ";
+  ret = convertToNum<int32_t>(n, toEnd(n), 36);
+  ASSERT_TRUE(ret.second);
+  ASSERT_EQ(36 * ('Z' - 'A' + 10) + ('Z' - 'A' + 10), ret.first);
+
+  n = "GE";
+  ret = convertToNum<int32_t>(n, toEnd(n), 35);
+  ASSERT_TRUE(ret.second);
+  ASSERT_EQ(35 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.first);
 }
 
 TEST(NumTest, double1) {
