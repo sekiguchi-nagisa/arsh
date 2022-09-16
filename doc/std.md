@@ -73,7 +73,7 @@ function %OP_LE($target : Float) : Boolean for Float
 
 function %OP_GE($target : Float) : Boolean for Float
 
-function isNan() : Boolean for Float
+function isNaN() : Boolean for Float
 
 function isInf() : Boolean for Float
 

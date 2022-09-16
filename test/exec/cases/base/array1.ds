@@ -167,7 +167,7 @@ assert $s4[2] == -0.0
 assert $s4[3] == 0.0
 assert $s4[4] == 3.14
 assert $s4[5] == 23.0/0.0
-assert $s4[6].isNan()
+assert $s4[6].isNaN()
 
 var s5 = [$SIGINT, $SIGKILL, $SIGHUP]
 $s5.sort()

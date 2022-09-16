@@ -100,6 +100,7 @@
 - **Breaking Change**: ``Regex`` methods throw ``RegexMatchError`` instead of ``InvalidOperationError``
 - **Breaking Change**: change ``String#toInt`` method behavior with other programming languages such golang, java
     - now ``'0xFFFFFFFFFFFFFFFF'.toInt()`` is out-of-range
+- **Breaking Change**: rename ``isNan`` method with ``isNaN`` in ``Float`` type
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``

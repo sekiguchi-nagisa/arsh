@@ -44,9 +44,9 @@ assert (-$inf) != $inf
 assert $inf == $inf
 assert $nan != $nan
 
-assert(!34.0.isNan())
-assert($nan.isNan())
-assert(!$inf.isNan())
+assert(!34.0.isNaN())
+assert($nan.isNaN())
+assert(!$inf.isNaN())
 
 assert(!23.0.isInf())
 assert($inf.isInf())
@@ -107,8 +107,8 @@ assert 1.5.abs() == 1.5
 assert (-1.4).abs() == 1.4
 assert 0.0.abs() == 0.0
 assert (-0.0).abs() == 0.0
-assert ($nan).abs().isNan()
-assert (-$nan).abs().isNan()
+assert ($nan).abs().isNaN()
+assert (-$nan).abs().isNaN()
 assert $inf.abs() == $inf
 assert (-$inf).abs() == $inf
 

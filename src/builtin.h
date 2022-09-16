@@ -387,9 +387,9 @@ YDSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
 
 // =====  additional float op  ======
 
-//!bind: function isNan($this : Float): Boolean
-YDSH_METHOD float_isNan(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(float_isNan);
+//!bind: function isNaN($this : Float): Boolean
+YDSH_METHOD float_isNaN(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(float_isNaN);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isnan(value));
 }
