@@ -77,7 +77,7 @@ static void initEnv() {
   // set locale
   setlocale(LC_ALL, "");
   setlocale(LC_MESSAGES, "C");
-  setlocale(LC_NUMERIC, "C");
+  setlocale(LC_NUMERIC, "C"); // always use C locale (for std::to_string)
 
   // set environmental variables
 
@@ -2376,6 +2376,8 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
   if (state.stack.recDepth() == 1) {
     setSignalSetting(state);
   }
+
+  LC_NUMERIC_C.use(); // always use C locale (for std::to_string)
 
   const unsigned int oldLevel = state.subshellLevel;
 

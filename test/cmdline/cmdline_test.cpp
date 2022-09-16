@@ -354,7 +354,7 @@ TEST_F(CmdlineTest, execPath) {
 
 TEST_F(CmdlineTest, locale) {
   {
-    auto builder = ds("-c", "echo ${3.14}").addEnv("LANG", "German"); // locale independent
+    auto builder = ds("-c", "echo ${3.14}").addEnv("LANG", "de_DE.UTF-8"); // locale independent
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "3.140000\n"));
   }
 }

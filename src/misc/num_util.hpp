@@ -263,11 +263,10 @@ public:
 
   locale_t get() const { return this->value; }
 
-  static locale_t C() {
-    static Locale clocale(LC_ALL_MASK, "C");
-    return clocale.get();
-  }
+  void use() const { uselocale(this->value); }
 };
+
+inline auto LC_NUMERIC_C = Locale(LC_NUMERIC_MASK, "C");
 
 /**
  * parse double with locale independent way
@@ -287,7 +286,7 @@ inline std::pair<double, int> convertToDouble(const char *str, bool skipIllegalC
     return {0, -1};
   }
   char *end;
-  const double value = strtod_l(str, &end, Locale::C());
+  const double value = strtod_l(str, &end, LC_NUMERIC_C.get());
   int status = 0;
 
   // check error

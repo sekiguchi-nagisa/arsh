@@ -234,6 +234,8 @@ struct Serializer {
 };
 
 std::string JSON::serialize(unsigned int tab) const {
+  LC_NUMERIC_C.use(); // always use C locale (for std::to_string)
+
   Serializer serializer(tab);
   serializer(*this);
   return std::move(serializer.str);

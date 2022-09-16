@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <algorithm>
 #include <cassert>
 #include <cstring>
 
@@ -24,6 +23,7 @@
 #include "compiler.h"
 #include "logger.h"
 #include "misc/files.h"
+#include "misc/num_util.hpp"
 #include "misc/word.hpp"
 #include "vm.h"
 #include <embed.h>
@@ -68,6 +68,8 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
 static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
                       std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
                       const DiscardPoint &point, DSError *dsError) {
+  LC_NUMERIC_C.use(); // always use C locale (for std::to_string)
+
   ObjPtr<FuncObject> func;
   int ret = compile(state, moduleProvider, std::move(ctx), compileOption, dsError, func);
   if (ret != 0) {
