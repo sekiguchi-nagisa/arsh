@@ -1075,14 +1075,15 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_init);
   auto pattern = LOCAL(1).asStrRef();
   auto v = LOCAL(2);
-  auto flag = v.isInvalid() ? "" : v.asStrRef();
+  auto flagStr = v.isInvalid() ? "" : v.asStrRef();
   std::string errorStr;
-  auto re = PCRE::compile(pattern, flag, errorStr);
-  if (!re) {
-    raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
-    RET_ERROR;
+  if (auto flag = PCRE::parseCompileFlag(flagStr, errorStr); flag.hasValue()) {
+    if (auto re = PCRE::compile(pattern, flag.unwrap(), errorStr)) {
+      RET(DSValue::create<RegexObject>(std::move(re)));
+    }
   }
-  RET(DSValue::create<RegexObject>(std::move(re)));
+  raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
+  RET_ERROR;
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean

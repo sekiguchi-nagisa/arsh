@@ -17,6 +17,7 @@
 #ifndef YDSH_REGEX_WRAPPER_H
 #define YDSH_REGEX_WRAPPER_H
 
+#include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/result.hpp"
 #include "misc/string_ref.hpp"
@@ -34,6 +35,20 @@ struct PCREVersion {
 
   explicit operator bool() const { return !(this->major == 0 && this->minor == 0); }
 };
+
+#define EACH_PCRE_COMPILE_FLAG(OP)                                                                 \
+  OP(CASELESS, (1u << 0u), 'i')                                                                    \
+  OP(MULTILINE, (1u << 1u), 'm')                                                                   \
+  OP(DOTALL, (1u << 2u), 's')
+
+enum class PCRECompileFlag : unsigned int {
+#define GEN_ENUM2(E, B, C) E = B,
+  EACH_PCRE_COMPILE_FLAG(GEN_ENUM2)
+#undef GEN_ENUN2
+};
+
+template <>
+struct allow_enum_bitop<PCRECompileFlag> : std::true_type {};
 
 class PCRE {
 private:
@@ -56,7 +71,9 @@ public:
 
   ~PCRE();
 
-  static PCRE compile(StringRef pattern, StringRef flag, std::string &errorStr);
+  static Optional<PCRECompileFlag> parseCompileFlag(StringRef value, std::string &errorStr);
+
+  static PCRE compile(StringRef pattern, PCRECompileFlag flag, std::string &errorStr);
 
   static PCREVersion version();
 

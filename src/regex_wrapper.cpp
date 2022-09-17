@@ -40,25 +40,44 @@ PCRE::~PCRE() {
 #endif
 }
 
+Optional<PCRECompileFlag> PCRE::parseCompileFlag(StringRef value, std::string &errorStr) {
+  PCRECompileFlag flag{};
+  for (char ch : value) {
+    switch (ch) {
+      // clang-format off
+#define GEN_CASE(E, B, C) case C: setFlag(flag, PCRECompileFlag::E); break;
+    EACH_PCRE_COMPILE_FLAG(GEN_CASE)
+#undef GEN_CASE
+      // clang-format on
+    default:
+      errorStr = "unsupported regex flag: `";
+      errorStr += ch;
+      errorStr += "'";
+      return {};
+    }
+  }
+  return flag;
+}
+
 /**
  * convert flag character to regex flag (option)
  * @param ch
  * @return
  * if specified unsupported flag character, return 0
  */
-static uint32_t toRegexFlag(char ch) {
-  switch (ch) {
+static uint32_t toRegexFlag(PCRECompileFlag flag) {
+  uint32_t option = 0;
 #ifdef USE_PCRE
-  case 'i':
-    return PCRE2_CASELESS;
-  case 'm':
-    return PCRE2_MULTILINE;
-  case 's':
-    return PCRE2_DOTALL;
-#endif
-  default:
-    return 0;
+#define GEN_FLAG(E, B, C)                                                                          \
+  if (hasFlag(flag, PCRECompileFlag::E)) {                                                         \
+    setFlag(option, PCRE2_##E);                                                                    \
   }
+
+  EACH_PCRE_COMPILE_FLAG(GEN_FLAG)
+
+#undef GEN_FLAG
+#endif
+  return option;
 }
 
 #ifdef USE_PCRE
@@ -84,23 +103,13 @@ static auto createCompileCtx() {
 
 #endif
 
-PCRE PCRE::compile(StringRef pattern, StringRef flag, std::string &errorStr) {
+PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorStr) {
   if (pattern.hasNullChar()) {
     errorStr = "regex pattern contains null characters";
     return {};
   }
 
-  uint32_t option = 0;
-  for (auto &e : flag) {
-    unsigned int r = toRegexFlag(e);
-    if (!r) {
-      errorStr = "unsupported regex flag: `";
-      errorStr += e;
-      errorStr += "'";
-      return {};
-    }
-    setFlag(option, r);
-  }
+  uint32_t option = toRegexFlag(flag);
 
 #ifdef USE_PCRE
   static auto compileCtx = createCompileCtx();
