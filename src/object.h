@@ -716,6 +716,8 @@ public:
   }
 
   const char *getStr() const { return this->re.getPattern(); }
+
+  PCRECompileFlag getCompileFlag() const { return this->re.getCompileFlag(); }
 };
 
 class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {

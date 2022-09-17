@@ -1,5 +1,24 @@
 #$test($status = 0)
 
+# regex flags
+assert ! $/$/.isCaseless()
+assert ! $/$/.isMultiLine()
+assert ! $/$/.isDotAll()
+assert $/$/ims.isCaseless()
+assert $/$/ism.isMultiLine()
+assert $/$/iissm.isDotAll()
+
+assert !new Regex("ss").isCaseless()
+assert !new Regex("ss").isMultiLine()
+assert !new Regex("ss").isDotAll()
+assert !new Regex("ss", "").isCaseless()
+assert !new Regex("ss", "").isMultiLine()
+assert !new Regex("ss", "").isDotAll()
+assert new Regex("ss", "iissm").isCaseless()
+assert new Regex("ss", "sism").isMultiLine()
+assert new Regex("ss", "iissm").isDotAll()
+
+
 assert $/a/ =~ 'bac'
 
 assert $/abc/ !~ 'cdf'

@@ -89,6 +89,8 @@ public:
 
   const char *getPattern() const { return this->pattern; }
 
+  PCRECompileFlag getCompileFlag() const;
+
   /**
    *
    * @param ref

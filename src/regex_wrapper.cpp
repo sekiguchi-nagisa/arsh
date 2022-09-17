@@ -168,6 +168,24 @@ PCREVersion PCRE::version() {
   return v;
 }
 
+PCRECompileFlag PCRE::getCompileFlag() const {
+  PCRECompileFlag flag{};
+
+#ifdef USE_PCRE
+  uint32_t option = 0;
+  pcre2_pattern_info(static_cast<pcre2_code *>(this->code), PCRE2_INFO_ARGOPTIONS, &option);
+
+#define GEN_FLAG(E, B, C)                                                                          \
+  if (hasFlag(option, PCRE2_##E)) {                                                                \
+    setFlag(flag, PCRECompileFlag::E);                                                             \
+  }
+
+  EACH_PCRE_COMPILE_FLAG(GEN_FLAG)
+
+#endif
+  return flag;
+}
+
 int PCRE::match(StringRef ref, std::string &errorStr) {
 #ifdef USE_PCRE
   int matchCount =

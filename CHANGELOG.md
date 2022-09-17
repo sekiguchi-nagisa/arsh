@@ -32,6 +32,10 @@
     - replace invalid utf8 bytes and null characters
 - add ``String#words`` method
     - split string with words (follow unicode word boundary)
+- add the following regex flag check methods
+    - ``isMultiLine``
+    - ``isCaseless``
+    - ``isDotAll``
 - add builtin ``jobs`` command
     - show job information (except for disowned jobs)
 

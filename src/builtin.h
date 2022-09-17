@@ -1086,6 +1086,30 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+//!bind: function isCaseless($this : Regex) : Boolean
+YDSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_isCaseless);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  auto flag = re.getCompileFlag();
+  RET_BOOL(hasFlag(flag, PCRECompileFlag::CASELESS));
+}
+
+//!bind: function isMultiLine($this : Regex) : Boolean
+YDSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_isMultiLine);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  auto flag = re.getCompileFlag();
+  RET_BOOL(hasFlag(flag, PCRECompileFlag::MULTILINE));
+}
+
+//!bind: function isDotAll($this : Regex) : Boolean
+YDSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_isDotAll);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  auto flag = re.getCompileFlag();
+  RET_BOOL(hasFlag(flag, PCRECompileFlag::DOTALL));
+}
+
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);

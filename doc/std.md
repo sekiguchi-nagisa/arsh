@@ -234,6 +234,12 @@ function %OP_HAS_NEXT() : Boolean for StringIter
 ```
 function %OP_INIT($str : String, $flag : Option<String>) : Regex for Regex
 
+function isCaseless() : Boolean for Regex
+
+function isMultiLine() : Boolean for Regex
+
+function isDotAll() : Boolean for Regex
+
 function %OP_MATCH($target : String) : Boolean for Regex
 
 function %OP_UNMATCH($target : String) : Boolean for Regex
