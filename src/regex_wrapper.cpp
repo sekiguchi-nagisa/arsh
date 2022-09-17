@@ -59,15 +59,10 @@ Optional<PCRECompileFlag> PCRE::parseCompileFlag(StringRef value, std::string &e
   return flag;
 }
 
-/**
- * convert flag character to regex flag (option)
- * @param ch
- * @return
- * if specified unsupported flag character, return 0
- */
+#ifdef USE_PCRE
+
 static uint32_t toRegexFlag(PCRECompileFlag flag) {
   uint32_t option = 0;
-#ifdef USE_PCRE
 #define GEN_FLAG(E, B, C)                                                                          \
   if (hasFlag(flag, PCRECompileFlag::E)) {                                                         \
     setFlag(option, PCRE2_##E);                                                                    \
@@ -76,11 +71,8 @@ static uint32_t toRegexFlag(PCRECompileFlag flag) {
   EACH_PCRE_COMPILE_FLAG(GEN_FLAG)
 
 #undef GEN_FLAG
-#endif
   return option;
 }
-
-#ifdef USE_PCRE
 
 static auto createCompileCtx() {
   struct Deleter {
@@ -109,11 +101,10 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
     return {};
   }
 
-  uint32_t option = toRegexFlag(flag);
-
 #ifdef USE_PCRE
   static auto compileCtx = createCompileCtx();
 
+  uint32_t option = toRegexFlag(flag);
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
   int errcode;
   PCRE2_SIZE erroffset;
@@ -129,6 +120,7 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
   }
   return PCRE(strdup(pattern.data()), code, data);
 #else
+  (void)flag;
   errorStr = "regex is not supported";
   return PCRE();
 #endif
