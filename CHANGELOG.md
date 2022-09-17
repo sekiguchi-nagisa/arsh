@@ -45,7 +45,7 @@
     - ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``: for unicode-aware character length counting
     - ``DS_EDIT_NEXT_WORD_LEN``, ``DS_EDIT_PREV_WORD_LEN``: for unicode-aware word length counting
     - ``DS_EDIT_HIGHLIGHT``: for syntax highlighting
-- add ``DSState_watchNotification`` api for job termination notification
+- add ``DSState_showNotification`` api for job termination notification
 
 #### Module
 

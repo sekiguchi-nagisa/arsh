@@ -476,27 +476,8 @@ static inline unsigned char DSLineEdit_getFlagSeqWidth(const DSLineEdit *edit) {
   return (unsigned char)(edit->flags >> 8u);
 }
 
-/* for internal event notification */
-
-typedef enum {
-  JOB_TERMINATE, /* if background job has terminated */
-} DSNotifyKind;
-
-/**
- * within notification callback, does not change system-wide setting (such as signal, environmental
- * variables, CWD, ..etc).
- * also does not call DSState_* api
- */
-typedef int(DSNotifyCallback)(DSNotifyKind kind, const char *message);
-
-/**
- * set notification callback
- * @param st
- * not null
- * @param callback
- * may be null
- */
-DS_PUBLIC_API(void) DSState_watchNotification(DSState *st, DSNotifyCallback *callback);
+/* for job termination notification */
+DS_PUBLIC_API(void) DSState_showNotification(DSState *st);
 
 #ifdef __cplusplus
 }

@@ -84,21 +84,6 @@ static const char *prompt(unsigned int n) {
   return edit.data;
 }
 
-static std::vector<std::string> notifyQueue;
-
-static int notifyCallback(DSNotifyKind, const char *message) {
-  notifyQueue.emplace_back(message);
-  return 0;
-}
-
-static void showNotification() {
-  for (auto &e : notifyQueue) {
-    fputs(e.c_str(), stderr);
-    fflush(stderr);
-  }
-  notifyQueue.clear();
-}
-
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
@@ -108,7 +93,7 @@ static bool readLine(std::string &line) {
   bool continuation = false;
   while (true) {
     if (!continuation) {
-      showNotification();
+      DSState_showNotification(state);
     }
 
     errno = 0;
@@ -388,8 +373,6 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
   }
 
   loadHistory();
-
-  DSState_watchNotification(dsState, notifyCallback);
 
   int status = 0;
   for (std::string line; readLine(line);) {

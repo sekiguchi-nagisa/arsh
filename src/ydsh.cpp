@@ -317,6 +317,7 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
   // set compile option
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
     st->isInteractive = true;
+    st->jobTable.setNotifyCallback(makeObserver(st->notifyCallback));
   }
 
   // set runtime option
@@ -341,6 +342,7 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
   // unset compile option
   if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
     st->isInteractive = false;
+    st->jobTable.setNotifyCallback(nullptr);
   }
 
   // unset runtime option
@@ -820,8 +822,8 @@ static int getWordLen(DSLineEditOp op, DSLineEdit &edit) {
   return 0;
 }
 
-void DSState_watchNotification(DSState *st, DSNotifyCallback *callback) {
+void DSState_showNotification(DSState *st) {
   if (st) {
-    st->jobTable.setNotifyCallback(callback);
+    st->notifyCallback.showAndClear();
   }
 }

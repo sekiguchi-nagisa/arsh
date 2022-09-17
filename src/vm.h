@@ -20,6 +20,8 @@
 #include <chrono>
 #include <cstdio>
 
+#include <ydsh/ydsh.h>
+
 #include "cmd.h"
 #include "core.h"
 #include "job.h"
@@ -144,6 +146,8 @@ public:
   SignalVector sigVector;
 
   JobTable jobTable;
+
+  JobNotifyCallback notifyCallback;
 
 private:
   friend class ydsh::VM;

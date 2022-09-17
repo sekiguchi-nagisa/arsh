@@ -630,7 +630,7 @@ void JobTable::notifyTermination(const ydsh::Job &job) {
       JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC | JobInfoFormat::VERBOSE;
   setFlag(fmt, this->curPrevJobs.getJobType(job));
   auto info = job->formatInfo(fmt);
-  this->notifyCallback(DSNotifyKind::JOB_TERMINATE, info.c_str());
+  this->notifyCallback->add(std::move(info));
 }
 
 void JobTable::removeTerminatedJobs() {

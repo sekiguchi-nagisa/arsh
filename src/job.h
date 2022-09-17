@@ -23,8 +23,6 @@
 #include <type_traits>
 #include <vector>
 
-#include <ydsh/ydsh.h>
-
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
 #include "object.h"
@@ -474,6 +472,22 @@ public:
   void batchedRemove();
 };
 
+class JobNotifyCallback {
+private:
+  std::vector<std::string> values;
+
+public:
+  void add(std::string &&v) { this->values.push_back(std::move(v)); }
+
+  void showAndClear() {
+    for (auto &e : this->values) {
+      fputs(e.c_str(), stderr);
+      fflush(stderr);
+    }
+    this->values.clear();
+  }
+};
+
 class JobTable {
 public:
   struct CurPrevJobs {
@@ -498,7 +512,7 @@ private:
 
   CurPrevJobs curPrevJobs;
 
-  DSNotifyCallback *notifyCallback{nullptr};
+  ObserverPtr<JobNotifyCallback> notifyCallback;
 
 public:
   NON_COPYABLE(JobTable);
@@ -508,7 +522,9 @@ public:
   JobTable() = default;
   ~JobTable() = default;
 
-  void setNotifyCallback(DSNotifyCallback *callback) { this->notifyCallback = callback; }
+  void setNotifyCallback(ObserverPtr<JobNotifyCallback> callback) {
+    this->notifyCallback = callback;
+  }
 
   Job attach(Job job, bool disowned = false);
 
