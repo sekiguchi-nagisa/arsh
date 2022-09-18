@@ -85,7 +85,7 @@ static std::string escape(StringRef ref, CompCandidateKind kind) {
   }
 
   while (iter != end) {
-    int ch = *(iter++);
+    int ch = *(iter++); // for arm32/arm64
     if (ch == '\\' && iter != end && needEscape(*iter, kind)) {
       buf += '\\';
       ch = *(iter++);

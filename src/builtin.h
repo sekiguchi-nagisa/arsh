@@ -937,7 +937,7 @@ YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
 YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);
   auto ref = LOCAL(0).asStrRef();
-  auto v = LOCAL(1);
+  auto &v = LOCAL(1);
   if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
     auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
     if (ret.second) {

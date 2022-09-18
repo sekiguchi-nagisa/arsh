@@ -35,8 +35,8 @@ extern char **environ; // NOLINT
 namespace ydsh {
 
 // builtin command definition
-static int builtin___gets(DSState &state, ArrayObject &argvObj);
-static int builtin___puts(DSState &state, ArrayObject &argvObj);
+static int builtin_gets(DSState &state, ArrayObject &argvObj);
+static int builtin_puts(DSState &state, ArrayObject &argvObj);
 static int builtin_cd(DSState &state, ArrayObject &argvObj);
 static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
@@ -62,8 +62,8 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj);
 static auto initBuiltinMap() {
   return StrRefMap<builtin_command_t>{
       {":", builtin_true},
-      {"__gets", builtin___gets},
-      {"__puts", builtin___puts},
+      {"__gets", builtin_gets},
+      {"__puts", builtin_puts},
       {"_exit", builtin_exit},
       {"bg", builtin_fg_bg},
       {"cd", builtin_cd},
@@ -389,7 +389,7 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
 /**
  * for stdin redirection test
  */
-static int builtin___gets(DSState &, ArrayObject &) {
+static int builtin_gets(DSState &, ArrayObject &) {
   char buf[256];
   ssize_t readSize = 0;
   while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
@@ -402,7 +402,7 @@ static int builtin___gets(DSState &, ArrayObject &) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(DSState &, ArrayObject &argvObj) {
+static int builtin_puts(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "1:2:")) != -1;) {
     switch (opt) {
