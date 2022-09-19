@@ -7,7 +7,7 @@ mkdir -p build-em
 cd build-em || exit 1
 
 # first normal build
-cmake "$ROOT" -G Ninja
+cmake "$ROOT" -G Ninja -DUSE_PCRE=off
 ninja
 
 # second build by emscripten
