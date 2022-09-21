@@ -15,7 +15,6 @@
  */
 
 #include <cstdarg>
-
 #include <vector>
 
 #include "complete.h"
@@ -23,6 +22,7 @@
 #include "misc/glob.hpp"
 #include "paths.h"
 #include "type_checker.h"
+#include <config.h>
 
 namespace ydsh {
 
@@ -2612,6 +2612,11 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     }
     node.addConstNode(std::move(constNode));
   }
+#ifdef FUZZING_BUILD_MODE
+  if (const char *env = getenv("YDSH_SUPPRESS_MOD_LOADING")) {
+    return;
+  }
+#endif
   this->resolvePathList(node);
 }
 
