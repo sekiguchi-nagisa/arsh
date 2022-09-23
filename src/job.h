@@ -17,14 +17,9 @@
 #ifndef YDSH_JOB_H
 #define YDSH_JOB_H
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <type_traits>
 #include <vector>
 
-#include "misc/resource.hpp"
-#include "misc/result.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -222,6 +217,7 @@ private:
 
   static constexpr unsigned char ATTR_DISOWNED = 1u << 7u;
   static constexpr unsigned char ATTR_LAST_PIPE = 1u << 6u;
+  static constexpr unsigned char ATTR_GROUPED = 1u << 5u;
 
   static constexpr unsigned char STATE_MASK = 0x0F;
 
@@ -245,18 +241,7 @@ private:
   NON_COPYABLE(JobObject);
 
   JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
-            ObjPtr<UnixFdObject> outObj, DSValue &&desc)
-      : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)),
-        procSize(size), desc(std::move(desc)) {
-    assert(size <= UINT8_MAX);
-    for (unsigned int i = 0; i < this->procSize; i++) {
-      this->procs[i] = procs[i];
-    }
-    if (saveStdin) {
-      this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
-      setFlag(this->meta, ATTR_LAST_PIPE);
-    }
-  }
+            ObjPtr<UnixFdObject> outObj, DSValue &&desc);
 
 public:
   static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
@@ -293,6 +278,8 @@ public:
   void disown() { setFlag(this->meta, ATTR_DISOWNED); }
 
   bool isLastPipe() const { return hasFlag(this->meta, ATTR_LAST_PIPE); }
+
+  bool isGrouped() const { return hasFlag(this->meta, ATTR_GROUPED); }
 
   const Proc *getProcs() const { return this->procs; }
 

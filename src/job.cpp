@@ -212,6 +212,23 @@ int Proc::send(int sigNum) const {
 // ##     JobObject     ##
 // #######################
 
+JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
+                     ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj, DSValue &&desc)
+    : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size),
+      desc(std::move(desc)) {
+  assert(size <= UINT8_MAX);
+  for (unsigned int i = 0; i < this->procSize; i++) {
+    this->procs[i] = procs[i];
+  }
+  if (saveStdin) {
+    this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    setFlag(this->meta, ATTR_LAST_PIPE);
+  }
+  if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {
+    setFlag(this->meta, ATTR_GROUPED); // belong its own process group
+  }
+}
+
 static void formatPipeline(const StringRef ref, std::string &out) {
   splitByDelim(ref, '\0', [&out](StringRef sub, bool delim) {
     out += sub;
@@ -345,8 +362,9 @@ void JobObject::send(int sigNum) const {
     return;
   }
 
-  if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {
-    kill(-pid, sigNum);
+  if (this->isGrouped()) {
+    pid_t pgid = this->getProcs()[0].pid(); // first process pid is equivalent to pgid
+    kill(-pgid, sigNum);
     return;
   }
   for (unsigned int i = 0; i < this->procSize; i++) {
