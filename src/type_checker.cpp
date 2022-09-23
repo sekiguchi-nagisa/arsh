@@ -22,7 +22,6 @@
 #include "misc/glob.hpp"
 #include "paths.h"
 #include "type_checker.h"
-#include <config.h>
 
 namespace ydsh {
 

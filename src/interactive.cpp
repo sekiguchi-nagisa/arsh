@@ -21,7 +21,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <vector>
 
 #include <linenoise.h>
 
