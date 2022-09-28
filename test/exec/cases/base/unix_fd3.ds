@@ -8,15 +8,15 @@ function stream() : FD {
 let fd = $stream()
 
 ff() {
-    assert sh -c 'read < "$1"' dummy $fd
-    assert sh -c 'read < "$1"' dummy $1
-    assert sh -c 'read < "$1"' dummy $fd
+    assert sh -c 'read AAA < "$1"' dummy $fd
+    assert sh -c 'read AAA < "$1"' dummy $1
+    assert sh -c 'read AAA < "$1"' dummy $fd
 
     assert eval $YDSH_BIN -c 'read < "$1"; assert $REPLY == "abcdefghijklmnopqrstuvwxyz"' dummy $1
     assert eval $YDSH_BIN -c 'read < "$1"; assert $REPLY == "abcdefghijklmnopqrstuvwxyz"' dummy $fd
 
-    assert sh -c 'read < "$1"' dummy $1
-    assert sh -c 'read < "$1"' dummy $fd
+    assert sh -c 'read AAA < "$1"' dummy $1
+    assert sh -c 'read AAA < "$1"' dummy $fd
 }
 
 ff $fd
