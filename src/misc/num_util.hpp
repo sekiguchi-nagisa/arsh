@@ -20,6 +20,7 @@
 #include <cctype>
 #include <cerrno>
 #include <climits>
+#include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -30,8 +31,6 @@
 
 #ifdef __APPLE__
 #include <xlocale.h>
-#else
-#include <locale.h>
 #endif
 
 #include "detect.hpp"
