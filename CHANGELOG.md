@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.27.1] - 2022-09-29
+
+### Fixed
+
+- accidentally close FD object within nested user-defined command
+
 ## [0.27.0] - 2022-09-25
 
 ### Added

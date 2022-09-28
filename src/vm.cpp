@@ -363,8 +363,8 @@ static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
   }
   int v = fd;
   fd = -1;
+  setCloseOnExec(v, true);
   auto value = DSValue::create<UnixFdObject>(v);
-  typeAs<UnixFdObject>(value).closeOnExec(true);
   return toObjPtr<UnixFdObject>(value);
 }
 

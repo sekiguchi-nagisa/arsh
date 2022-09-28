@@ -411,11 +411,19 @@ UnixFdObject::~UnixFdObject() {
   }
 }
 
-bool UnixFdObject::closeOnExec(bool close) const {
+void UnixFdObject::closeOnExec(bool set) {
   if (this->fd <= STDERR_FILENO) {
-    return false;
+    return;
   }
-  return setCloseOnExec(this->fd, close);
+  if (set) {
+    if (--this->passingCount == 0) {
+      setCloseOnExec(this->fd, true);
+    }
+  } else {
+    if (this->passingCount++ == 0) {
+      setCloseOnExec(this->fd, false);
+    }
+  }
 }
 
 // #########################

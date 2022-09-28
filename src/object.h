@@ -146,6 +146,7 @@ using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
 class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
 private:
   int fd;
+  int passingCount{0};
 
 public:
   explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
@@ -161,13 +162,13 @@ public:
   }
 
   /**
-   * set close-on-exec flag to file descriptor.
+   * try to set close-on-exec flag to file descriptor.
    * if fd is STDIN, STDOUT or STDERR, not set flag.
-   * @param close
-   * @return
-   * if failed, return false
+   * @param set
+   * if true, try to set close-on-exec
+   * if false, try to unset close-on-exec
    */
-  bool closeOnExec(bool close) const;
+  void closeOnExec(bool set);
 
   int getValue() const { return this->fd; }
 };

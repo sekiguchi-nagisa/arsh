@@ -1,0 +1,22 @@
+
+function stream() : FD {
+    return <(for(var i = 0; $i < 1000000000000000000; $i++) {
+        echo abcdefghijklmnopqrstuvwxyz
+    })
+}
+
+let fd = $stream()
+
+ff() {
+    assert sh -c 'read < "$1"' dummy $fd
+    assert sh -c 'read < "$1"' dummy $1
+    assert sh -c 'read < "$1"' dummy $fd
+
+    assert eval $YDSH_BIN -c 'read < "$1"; assert $REPLY == "abcdefghijklmnopqrstuvwxyz"' dummy $1
+    assert eval $YDSH_BIN -c 'read < "$1"; assert $REPLY == "abcdefghijklmnopqrstuvwxyz"' dummy $fd
+
+    assert sh -c 'read < "$1"' dummy $1
+    assert sh -c 'read < "$1"' dummy $fd
+}
+
+ff $fd
