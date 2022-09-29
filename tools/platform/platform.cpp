@@ -40,7 +40,7 @@ const char *toString(PlatformType c) {
 }
 
 static bool detectContainer() {
-  std::ifstream stream("/proc/1/cgroup");
+  std::ifstream stream("/proc/self/cgroup");
   if (!stream) {
     return false;
   }
