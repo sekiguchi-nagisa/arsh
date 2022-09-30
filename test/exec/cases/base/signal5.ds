@@ -1,10 +1,9 @@
-#$test($status = 0, $ignored = 'container|#')
 
 # kill
 
 var e = 34 as Any
 try {
-    $SIGHUP.kill(1);
+    $SIGHUP.kill(2147483647 - 5);
     assert $false;
 } catch $a {
     assert $? == 0
@@ -12,8 +11,7 @@ try {
 }
 
 if $e is SystemError {
-    assert $e.message() == if $OSTYPE !~ $/^cygwin/i { "failed to send HUP to pid(1), caused by `Operation not permitted'"; }
-                                                else { "failed to send HUP to pid(1), caused by `No such process'"; }
+    assert $e.message() == "failed to send HUP to pid(2147483642), caused by `No such process'";
 } else {
     assert $false
 }

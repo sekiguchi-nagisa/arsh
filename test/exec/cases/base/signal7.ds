@@ -6,9 +6,16 @@ try {
 } catch $e {
     $ex = $e
 }
-
 assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/No such process/
 
+$ex = 34
+try {
+    $SIGINT.kill(	-9223372036854775807)
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
 assert ($ex as SystemError).message() =~ $/No such process/
 
 true

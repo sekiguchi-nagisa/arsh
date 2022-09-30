@@ -5,6 +5,7 @@
 ### Fixed
 
 - accidentally close FD object within nested user-defined command
+- pid range checking of ``Signal#kill`` method
 
 ## [0.27.0] - 2022-09-25
 
