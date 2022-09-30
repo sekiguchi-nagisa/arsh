@@ -1182,7 +1182,7 @@ YDSH_METHOD signal_message(RuntimeContext &ctx) {
 }
 
 static bool checkPidLimit(int64_t value) {
-  if (value <= std::numeric_limits<pid_t>::max()) {
+  if (value >= std::numeric_limits<pid_t>::min() && value <= std::numeric_limits<pid_t>::max()) {
     return true;
   }
   errno = ESRCH;
