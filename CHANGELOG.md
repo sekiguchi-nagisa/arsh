@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### API
+
+- **Breaking Change**: remove ``DSState_setExitStatus``
+
 ## [0.27.1] - 2022-09-30
 
 ### Fixed

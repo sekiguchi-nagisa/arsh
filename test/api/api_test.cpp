@@ -978,21 +978,23 @@ TEST_F(APITest, option) {
 
 TEST_F(APITest, status) {
   int s = DSState_exitStatus(this->state);
-  ASSERT_EQ(0, s);
+  ASSERT_EQ(0, s); // initial exit status is 0
 
-  DSState_setExitStatus(this->state, 34);
-  s = DSState_exitStatus(this->state);
-  ASSERT_EQ(34, s);
-  ASSERT_EQ(0, DSState_exitStatus(nullptr));
-
-  DSState_setExitStatus(nullptr, 3400); // do nothing
-  DSState_setExitStatus(this->state, 3400);
-  s = DSState_exitStatus(this->state);
-  ASSERT_EQ(72, s);
-
-  std::string src = "$? = 9876";
+  std::string src = "$? = 98";
   int ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+  ASSERT_EQ(98, ret);
+  ASSERT_EQ(ret, DSState_exitStatus(this->state));
+
+  // truncate
+  src = "$? = 9876";
+  ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
   ASSERT_EQ(148, ret);
+  ASSERT_EQ(ret, DSState_exitStatus(this->state));
+
+  // negative number
+  src = "$? = -1";
+  ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+  ASSERT_EQ(255, ret);
   ASSERT_EQ(ret, DSState_exitStatus(this->state));
 }
 

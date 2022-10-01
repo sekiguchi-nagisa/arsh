@@ -260,11 +260,6 @@ int DSState_exitStatus(const DSState *st) {
   return st->getMaskedExitStatus();
 }
 
-void DSState_setExitStatus(DSState *st, int status) {
-  GUARD_NULL(st);
-  st->setExitStatus(status);
-}
-
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
   GUARD_NULL(st, -1);
 

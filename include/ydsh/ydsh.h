@@ -122,14 +122,6 @@ DS_PUBLIC_API(const char *) DSState_initExecutablePath(DSState *st);
  */
 DS_PUBLIC_API(int) DSState_exitStatus(const DSState *st);
 
-/**
- * update exit status
- * @param st
- * if null, do nothing
- * @param status
- */
-DS_PUBLIC_API(void) DSState_setExitStatus(DSState *st, int status);
-
 /* for internal data structure dump */
 typedef enum {
   DS_DUMP_KIND_UAST, /* dump untyped abstract syntax tree */
