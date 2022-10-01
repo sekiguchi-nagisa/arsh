@@ -4,6 +4,11 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: ``TERM_HOOK`` is called when call ``DSState_delete`` or subshell exit
+    - in interactive mode, now does not call ``TERM_HOOK`` in uncaught exception
+
 #### API
 
 - **Breaking Change**: remove ``DSState_setExitStatus``

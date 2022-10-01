@@ -6,6 +6,7 @@
 
 #include "../test_common.h"
 #include <config.h>
+#include <constant.h>
 
 #ifndef INTERACTIVE_TEST_WORK_DIR
 #error "require INTERACTIVE_TEST_WORK_DIR"

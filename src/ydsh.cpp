@@ -186,6 +186,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 
 void DSState_delete(DSState **st) {
   if (st != nullptr) {
+    VM::callTermHook(**st);
     delete (*st);
     *st = nullptr;
   }

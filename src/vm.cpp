@@ -2387,23 +2387,18 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &valu
    * if return form subshell, subshellLevel is greater than old.
    */
   const bool subshell = oldLevel != state.subshellLevel;
-  DSValue thrown;
   if (ret) {
     value = state.stack.pop();
   } else {
     if (!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
       return EvalRet::HAS_ERROR;
     }
-    thrown = state.stack.takeThrownObject();
   }
 
   // handle uncaught exception and termination handler
-  auto kind = handleUncaughtException(state, thrown, dsError);
-  if (subshell || !hasFlag(op, EvalOP::SKIP_TERM) || !ret) {
-    callTermHook(state, kind, std::move(thrown));
-  }
-
+  handleUncaughtException(state, dsError);
   if (subshell) {
+    callTermHook(state);
     exit(state.getMaskedExitStatus());
   }
   return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
@@ -2422,10 +2417,6 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
     auto &modType = cast<ModType>(type);
     unsigned int index = modType.getIndex();
     state.setGlobal(index, DSValue(func));
-
-    if (state.isInteractive && modType.isRoot()) {
-      setFlag(op, EvalOP::SKIP_TERM);
-    }
   }
 
   // prepare stack
@@ -2484,11 +2475,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
 
   static auto cmdTrampoline = initCmdTrampoline();
 
-  EvalOP op = EvalOP::SKIP_TERM;
-  if (propagate) {
-    setFlag(op, EvalOP::PROPAGATE);
-  }
-
+  const auto op = propagate ? EvalOP::PROPAGATE : EvalOP{};
   DSValue ret;
   auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
   prepareArguments(state.stack, std::move(obj), {0, {}});
@@ -2515,8 +2502,7 @@ DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&rec
 
   if (handle.isNative() ? windStackFrame(state, actualParamSize, actualParamSize, code)
                         : prepareMethodCall(state, handle.getIndex(), actualParamSize)) {
-    EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    startEval(state, op, nullptr, ret);
+    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
   }
   if (handle.getReturnType().isVoidType()) {
     ret = DSValue(); // clear return value
@@ -2534,8 +2520,7 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
   DSValue ret;
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
-    EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    startEval(state, op, nullptr, ret);
+    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
   }
   if (cast<FunctionType>(type).getReturnType().isVoidType()) {
     ret = DSValue(); // clear return value
@@ -2552,11 +2537,12 @@ static int parseExitStatus(const ErrorObject &obj) {
   return pair.first;
 }
 
-DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
-  if (!except) {
+DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
+  if (!state.hasError()) {
     return DS_ERROR_KIND_SUCCESS;
   }
 
+  auto except = state.stack.takeThrownObject();
   auto &errorType = state.typePool.get(except.getTypeID());
   DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
   if (errorType.is(TYPE::ShellExit_)) {
@@ -2617,20 +2603,26 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
                 .chars = 0,
                 .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
   }
+  state.stack.setThrownObject(std::move(except)); // restore thrown object
   return kind;
 }
 
-void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-  auto funcObj = getBuiltinGlobal(state, VAR_TERM_HOOK);
+bool VM::callTermHook(DSState &state) {
+  auto except = state.stack.takeThrownObject();
+  assert(state.termHookIndex != 0);
+  auto funcObj = state.getGlobal(state.termHookIndex);
   if (funcObj.kind() == DSValueKind::INVALID) {
-    return;
+    return false;
   }
 
   int termKind = TERM_ON_EXIT;
-  if (kind == DS_ERROR_KIND_RUNTIME_ERROR) {
-    termKind = TERM_ON_ERR;
-  } else if (kind == DS_ERROR_KIND_ASSERTION_ERROR) {
-    termKind = TERM_ON_ASSERT;
+  if (except) {
+    auto &type = state.typePool.get(except.getTypeID());
+    if (type.is(TYPE::AssertFail_)) {
+      termKind = TERM_ON_ASSERT;
+    } else if (!type.is(TYPE::ShellExit_)) {
+      termKind = TERM_ON_ERR;
+    }
   }
 
   auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
@@ -2644,6 +2636,10 @@ void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
   // restore old value
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldExitStatus));
   unsetFlag(DSState::eventDesc, VMEvent::MASK);
+
+  // clear TERM_HOOK
+  state.setGlobal(state.termHookIndex, DSValue::createInvalid());
+  return true;
 }
 
 } // namespace ydsh

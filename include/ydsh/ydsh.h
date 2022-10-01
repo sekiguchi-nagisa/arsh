@@ -55,7 +55,8 @@ DS_PUBLIC_API(DSState *) DSState_createWithMode(DSExecMode mode);
 static inline DSState *DSState_create() { return DSState_createWithMode(DS_EXEC_MODE_NORMAL); }
 
 /**
- * delete DSState. after release object, assign null to ctx.
+ * delete DSState. before call destructor, call TERM_HOOK
+ * after release object, assign null to ctx.
  * @param st
  * may be null
  */

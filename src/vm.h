@@ -60,7 +60,6 @@ enum class VMEvent : unsigned int {
 
 enum class EvalOP : unsigned int {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
-  SKIP_TERM = 1u << 1u, // not call termination handler (except for subshell).
 };
 
 enum class EvalRet : unsigned int {
@@ -625,24 +624,14 @@ private:
                                        std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
   /**
-   * print uncaught exception information.
-   * @param except
-   * uncaught exception
-   * @param subshell
+   * print uncaught exception information. (not clear thrown object)
+   * @param state
    * @param dsError
    * if not null, set error information
    * @return
    * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
    */
-  static DSErrorKind handleUncaughtException(DSState &state, const DSValue &except,
-                                             DSError *dsError);
-
-  /**
-   * call user-defined termination handler specified by TERM_HOOK.
-   * @param kind
-   * @param except
-   */
-  static void callTermHook(DSState &state, DSErrorKind kind, DSValue &&except);
+  static DSErrorKind handleUncaughtException(DSState &state, DSError *dsError);
 
 public:
   // entry point
@@ -689,6 +678,16 @@ public:
    */
   static DSValue callFunction(DSState &state, DSValue &&funcObj,
                               std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+  /**
+   * call user-defined termination handler specified by TERM_HOOK.
+   * after call TERM_HOOK, clear thrown object and TERM_HOOK
+   * @param state
+   * @return
+   * if call term hook, return true.
+   * if not call (not found hook), return false
+   */
+  static bool callTermHook(DSState &state);
 };
 
 } // namespace ydsh
