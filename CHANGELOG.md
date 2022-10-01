@@ -13,8 +13,8 @@
 
 #### Core
 
-- **Breaking Change**: ``TERM_HOOK`` is called when call ``DSState_delete`` or subshell exit
-    - in interactive mode, now does not call ``TERM_HOOK`` in uncaught exception
+- **Breaking Change**: change evaluation order of ``TERM_HOOK``. now only called from ``DSState_delete`` or subshell exit
+    - in interactive mode, does not call ``TERM_HOOK`` in uncaught exception
 
 #### API
 
