@@ -10,11 +10,12 @@ function _defaultHook(s : Int, e : Any) {
     }
 }
 
-function atexit(s : Int, h : typeof($TERM_HOOK!)) {
+function atexit(h : typeof($TERM_HOOK!), s : Int!) {
     if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
         $_TERM_HOOKS.clear()
     }
     $TERM_HOOK = $_defaultHook
     $h == $_defaultHook && return
-    $_TERM_HOOKS.add(($s, $h))
+    var t = $s ?? $ON_ASSERT or $ON_ERR or $ON_EXIT
+    $_TERM_HOOKS.add(($t, $h))
 }

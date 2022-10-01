@@ -1,18 +1,16 @@
 
 # for temp file creation
 
+source ../../../share/ydsh/module/atexit
+
 let _TEMPS = new [String]()
-function _clear_temp($s : Int, $e : Any) {
+
+$atexit(function(s, e) => {
     for $e in $_TEMPS {
         rm -rf $e
     }
     $_TEMPS.clear()
-}
-
-
-source ../../../share/ydsh/module/atexit
-
-$atexit($ON_EXIT or $ON_ASSERT or $ON_ERR, $_clear_temp)
+})
 
 function file() : String {
     let tmpfile = "$(mktemp 2> /dev/null || mktemp -t $RANDOM)"
