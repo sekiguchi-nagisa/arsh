@@ -12,7 +12,7 @@ enum class Kind : unsigned int {
   E,
 };
 
-TEST(ArgsTest, base) {
+TEST(ArgsTest, base1) {
   opt::Parser<Kind> parser = {
       {Kind::A, "--a", opt::NO_ARG, "hogehoge"},
       {Kind::B, "--out", opt::HAS_ARG, "hogehoge"},
@@ -97,6 +97,37 @@ TEST(ArgsTest, base) {
   ASSERT_STREQ(nullptr, result.arg());
   ASSERT_EQ(opt::END, result.error());
   ASSERT_EQ(end, begin);
+}
+
+TEST(ArgsTest, base2) {
+  opt::Parser<Kind> parser = {
+      {Kind::C, "--dump", opt::OPT_ARG, "hogehoge"},
+      {Kind::D, "--dump2", opt::NO_ARG, "hogehoge"},
+  };
+
+  const char *args[] = {"--dump2", "--dump=34"};
+
+  auto begin = std::begin(args);
+  auto end = std::end(args);
+
+  opt::Result<Kind> result;
+  ASSERT_FALSE(result);
+  ASSERT_STREQ(nullptr, result.recog());
+  ASSERT_STREQ(nullptr, result.arg());
+  ASSERT_EQ(opt::END, result.error());
+
+  result = parser(begin, end);
+  ASSERT_TRUE(result);
+  ASSERT_STREQ("--dump2", result.recog());
+  ASSERT_STREQ(nullptr, result.arg());
+  ASSERT_EQ(Kind::D, result.value());
+  ASSERT_STREQ("--dump=34", *begin);
+
+  result = parser(begin, end);
+  ASSERT_TRUE(result);
+  ASSERT_STREQ("--dump=34", result.recog());
+  ASSERT_STREQ("34", result.arg());
+  ASSERT_EQ(Kind::C, result.value());
 }
 
 TEST(GetOptTest, base) {

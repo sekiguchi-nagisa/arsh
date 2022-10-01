@@ -256,10 +256,7 @@ Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
       }
       ++begin;
       return result;
-    } else if (option.flag == OptionFlag::OPT_ARG) {
-      if (*cursor != '=') {
-        break;
-      }
+    } else if (option.flag == OptionFlag::OPT_ARG && *cursor == '=') {
       result.arg_ = ++cursor;
       ++begin;
       return result;
