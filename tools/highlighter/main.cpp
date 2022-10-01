@@ -38,6 +38,8 @@ using namespace ydsh::highlighter;
   OP(HTML_FULL, "--html-full", opt::NO_ARG, "generate self-contained html (for html formatter)")   \
   OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
      "emit line number starts with ARG (for html formatter)")                                      \
+  OP(HTML_LINENO_TABLE, "--html-lineno-table", opt::NO_ARG,                                        \
+     "emit line number as table (for html formatter)")                                             \
   OP(DAEMON, "--daemon", opt::NO_ARG, "run as daemon (always read from stdin)")
 
 enum class OptionSet : unsigned int {
@@ -219,6 +221,9 @@ int main(int argc, char **argv) {
       break;
     case OptionSet::HTML_LINENO:
       factory.setLineno(result.arg() != nullptr ? result.arg() : "1");
+      break;
+    case OptionSet::HTML_LINENO_TABLE:
+      factory.setHTMLTable(true);
       break;
     case OptionSet::DAEMON:
       daemon = true;

@@ -42,6 +42,8 @@ private:
 
   bool htmlFull{false};
 
+  bool htmlTable{false};
+
 public:
   static constexpr const char *DEFAULT_STYLE_NAME = "darcula";
 
@@ -58,6 +60,8 @@ public:
   void setLineno(const char *num) { this->lineno = num; }
 
   void setHTMLFull(bool set) { this->htmlFull = set; }
+
+  void setHTMLTable(bool set) { this->htmlTable = set; }
 
   Result<std::unique_ptr<Formatter>, std::string> create(std::ostream &stream) const;
 };

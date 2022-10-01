@@ -333,7 +333,8 @@ void HTMLFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
     if (r != StringRef::npos) {
       this->output << '\n';
       this->newlineCount++;
-      if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
+      if (hasFlag(this->formatOp, HTMLFormatOp::LINENO) &&
+          !hasFlag(this->formatOp, HTMLFormatOp::TABLE)) {
         uint64_t lineNum = this->lineNumOffset + this->newlineCount;
         this->emitLineNum(lineNum);
       }
@@ -353,15 +354,30 @@ void HTMLFormatter::initialize(StringRef newSource) {
     }
     this->output << ">\n";
   }
-  this->output << "<pre style=\"tab-size:4\">\n<code>";
 
   if (hasFlag(this->formatOp, HTMLFormatOp::LINENO)) {
+    // pre-compute max line number
     uint64_t maxLineNum = this->lineNumOffset;
     for (StringRef::size_type pos = 0; (pos = this->source.find('\n', pos)) != StringRef::npos;
          pos++) {
       maxLineNum++;
     }
     this->maxLineNumDigits = countDigits(maxLineNum);
+
+    if (hasFlag(this->formatOp, HTMLFormatOp::TABLE)) {
+      this->output << R"(<table class="highlight_table"><tr><td class="linenos">
+<div class="lineno_div" style=")"
+                   << this->toCSS(HighlightTokenClass::LINENO_) << "\"><pre>";
+      for (uint64_t count = this->lineNumOffset; count < maxLineNum; count++) {
+        std::string value = padLeft(count, this->maxLineNumDigits, ' ');
+        this->output << value << "\n";
+      }
+      this->output << "</pre></div></td><td class=\"code\">\n";
+    }
+  }
+  this->output << "<div class=\"highlight\"><pre style=\"tab-size:4\">\n<code>";
+  if (hasFlag(this->formatOp, HTMLFormatOp::LINENO) &&
+      !hasFlag(this->formatOp, HTMLFormatOp::TABLE)) {
     this->emitLineNum(this->lineNumOffset);
   }
 }
@@ -372,7 +388,10 @@ void HTMLFormatter::finalize() {
     this->drawTrivia(remain);
     this->curSrcPos = this->source.size();
   }
-  this->output << "</code></pre>";
+  this->output << "</code></pre></div>";
+  if (hasFlag(this->formatOp, HTMLFormatOp::TABLE)) {
+    this->output << "\n</td></tr></table>";
+  }
   if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
     this->output << "\n</body>\n</html>" << std::endl;
   }

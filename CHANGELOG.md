@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Misc
+
+- add ``--html-lineno-table`` option to ``dscolorize``
+    - now generation line number as table
+
 ### Changed
 
 #### Core

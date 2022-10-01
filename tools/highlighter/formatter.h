@@ -110,6 +110,7 @@ public:
 enum class HTMLFormatOp : unsigned int {
   FULL = 1u << 0u,   // generate self-contained html (set background color)
   LINENO = 1u << 1u, // emit line number
+  TABLE = 1u << 2u,  // emit as table (always conbine LINENO option)
 };
 
 class HTMLFormatter : public Formatter {

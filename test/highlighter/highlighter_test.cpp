@@ -376,14 +376,20 @@ TEST_F(HighlightTest, htmlFormatter1) {
   FormatterFactory factory(styleMap);
   factory.setStyleName("colorful");
   factory.setFormatName("html");
+  factory.setHTMLFull(true);
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
-  const char *expected = R"EOF(<pre style="tab-size:4">
+  const char *expected = R"EOF(<html>
+<body style="background-color:#ffffff">
+<div class="highlight"><pre style="tab-size:4">
 <code>
   <span style="color:#bbbbbb;background-color:#fff0f0">&#39;hello&lt;&gt;&amp;</span>
 <span style="color:#bbbbbb;background-color:#fff0f0">&quot;world&#39;</span>
 
-</code></pre>)EOF";
+</code></pre></div>
+</body>
+</html>
+)EOF";
   ASSERT_EQ(expected, stream.str());
 }
 
@@ -401,11 +407,11 @@ assert $OSTYPE == 'Linux'
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  const char *expected = R"EOF(<pre style="tab-size:4">
+  const char *expected = R"EOF(<div class="highlight"><pre style="tab-size:4">
 <code>
 <span style="color:#888888;font-style:italic">#!/usr/bin/env ydsh</span>
 <span style="font-weight:bold;text-decoration:underline">assert</span> <span style="color:#666666;font-weight:bold;font-style:italic">$OSTYPE</span> == <span style="color:#666666;font-style:italic">&#39;Linux&#39;</span>
-</code></pre>)EOF";
+</code></pre></div>)EOF";
   ASSERT_EQ(expected, stream.str());
 }
 
@@ -422,9 +428,9 @@ TEST_F(HighlightTest, htmlFormatter3) {
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  const char *expected = "<pre style=\"tab-size:4\">\n"
+  const char *expected = "<div class=\"highlight\"><pre style=\"tab-size:4\">\n"
                          "<code><span style=\"color:#7f7f7f\">1</span>   \n"
-                         "<span style=\"color:#7f7f7f\">2</span>   </code></pre>";
+                         "<span style=\"color:#7f7f7f\">2</span>   </code></pre></div>";
   ASSERT_EQ(expected, stream.str());
 
   //
@@ -434,9 +440,9 @@ TEST_F(HighlightTest, htmlFormatter3) {
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  expected = "<pre style=\"tab-size:4\">\n"
+  expected = "<div class=\"highlight\"><pre style=\"tab-size:4\">\n"
              "<code><span style=\"color:#959595\">1</span>   \n"
-             "<span style=\"color:#959595\">2</span>   </code></pre>";
+             "<span style=\"color:#959595\">2</span>   </code></pre></div>";
   ASSERT_EQ(expected, stream.str());
 
   //
@@ -446,9 +452,76 @@ TEST_F(HighlightTest, htmlFormatter3) {
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  expected = "<pre style=\"tab-size:4\">\n"
+  expected = "<div class=\"highlight\"><pre style=\"tab-size:4\">\n"
              "<code><span style=\"color:#959595\"> 9</span>   \n"
-             "<span style=\"color:#959595\">10</span>   </code></pre>";
+             "<span style=\"color:#959595\">10</span>   </code></pre></div>";
+  ASSERT_EQ(expected, stream.str());
+}
+
+TEST_F(HighlightTest, htmlFormatter4) {
+  std::stringstream stream;
+  std::string content = R"(
+#!/usr/bin/env ydsh
+assert $OSTYPE == 'Linux'
+)";
+
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
+  factory.setFormatName("html");
+  factory.setStyleName("algol");
+  factory.setLineno("10");
+  factory.setHTMLTable(true);
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+
+  const char *expected = R"EOF(<table class="highlight_table"><tr><td class="linenos">
+<div class="lineno_div" style="color:#7f7f7f"><pre>10
+11
+12
+</pre></div></td><td class="code">
+<div class="highlight"><pre style="tab-size:4">
+<code>
+<span style="color:#888888;font-style:italic">#!/usr/bin/env ydsh</span>
+<span style="font-weight:bold;text-decoration:underline">assert</span> <span style="color:#666666;font-weight:bold;font-style:italic">$OSTYPE</span> == <span style="color:#666666;font-style:italic">&#39;Linux&#39;</span>
+</code></pre></div>
+</td></tr></table>)EOF";
+  ASSERT_EQ(expected, stream.str());
+}
+
+TEST_F(HighlightTest, htmlFormatter5) {
+  std::stringstream stream;
+  std::string content = R"(
+  'hello<>&
+"world'
+
+)";
+  StyleMap styleMap;
+  FormatterFactory factory(styleMap);
+  factory.setStyleName("colorful");
+  factory.setFormatName("html");
+  factory.setHTMLFull(true);
+  factory.setLineno("9");
+  factory.setHTMLTable(true);
+
+  ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
+  const char *expected = R"EOF(<html>
+<body style="background-color:#ffffff">
+<table class="highlight_table"><tr><td class="linenos">
+<div class="lineno_div" style="color:#7f7f7f"><pre> 9
+10
+11
+12
+</pre></div></td><td class="code">
+<div class="highlight"><pre style="tab-size:4">
+<code>
+  <span style="color:#bbbbbb;background-color:#fff0f0">&#39;hello&lt;&gt;&amp;</span>
+<span style="color:#bbbbbb;background-color:#fff0f0">&quot;world&#39;</span>
+
+</code></pre></div>
+</td></tr></table>
+</body>
+</html>
+)EOF";
   ASSERT_EQ(expected, stream.str());
 }
 
@@ -492,6 +565,7 @@ Options:
     --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    --html-lineno-table    emit line number as table (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
     -h                     show help message
     -l                     show supported formatters/styles
@@ -509,6 +583,7 @@ Options:
     --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    --html-lineno-table    emit line number as table (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
     -h                     show help message
     -l                     show supported formatters/styles
@@ -525,6 +600,7 @@ Options:
     --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
+    --html-lineno-table    emit line number as table (for html formatter)
     -f arg                 specify output formatter (default is `ansi' formatter)
     -h                     show help message
     -l                     show supported formatters/styles
@@ -579,6 +655,13 @@ TEST_F(ColorizeTest, cli2) {
         exec $colorize -f html --html-lineno=10 | grep '>10</span>' > /dev/null
   assert (echo 1234 && echo 4321) |
         exec $colorize -f html --html-lineno=10 | grep '>11</span>' > /dev/null
+
+  assert (echo 1234 && echo 4321) |
+    exec $colorize -f html --html-lineno=10 --html-lineno-table | grep '<table' > /dev/null
+  assert (echo 1234 && echo 4321) |
+    exec $colorize -f html --html-lineno=10 --html-lineno-table | grep '11' > /dev/null
+  assert (echo 1234 && echo 4321) |
+    exec $colorize -f html --html-lineno=10 --html-lineno-table | grep -v '>10</span>' > /dev/null
 
 )EOF",
                        HIGHLIGHTER_PATH);
