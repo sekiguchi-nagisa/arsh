@@ -218,19 +218,19 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
 }
 
 bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
-                                       DSValue &&restoreFD, const CmdCallAttr attr) {
+                                       DSValue &&redirConfig, const CmdCallAttr attr) {
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) {
     // reset exit status
     state.setExitStatus(0);
   }
 
   // set parameter
-  state.stack.reserve(3);
+  state.stack.reserve(UDC_PARAM_N);
   state.stack.push(DSValue::createNum(static_cast<unsigned int>(attr)));
-  state.stack.push(std::move(restoreFD));
+  state.stack.push(std::move(redirConfig));
   state.stack.push(std::move(argvObj));
 
-  if (!windStackFrame(state, 3, 3, code)) {
+  if (!windStackFrame(state, UDC_PARAM_N, UDC_PARAM_N, code)) {
     return false;
   }
 
@@ -813,7 +813,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
 }
 
 bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&argvObj,
-                           DSValue &&restoreFD) {
+                           DSValue &&redirConfig) {
   auto &array = typeAs<ArrayObject>(argvObj);
   if (array.size() == 1) {
     ERROR(array, "require subcommand");
@@ -837,7 +837,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
   }
   auto &udc = typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
   array.takeFirst();
-  return prepareUserDefinedCommandCall(state, udc, std::move(argvObj), std::move(restoreFD),
+  return prepareUserDefinedCommandCall(state, udc, std::move(argvObj), std::move(redirConfig),
                                        CmdCallAttr::SET_VAR);
 }
 

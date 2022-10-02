@@ -550,7 +550,7 @@ private:
    *             |     offset    |
    */
   static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
-                                            DSValue &&restoreFD, CmdCallAttr attr);
+                                            DSValue &&redirConfig, CmdCallAttr attr);
 
   static bool attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize,
                              const Proc *procs, ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
@@ -561,7 +561,7 @@ private:
                           DSValue &&redirConfig);
 
   static bool prepareSubCommand(DSState &state, const ModType &modType, DSValue &&argvObj,
-                                DSValue &&restoreFD);
+                                DSValue &&redirConfig);
 
   static bool callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj,
                           DSValue &&redirConfig, CmdCallAttr attr = {});
