@@ -6,22 +6,21 @@ var CNF_HOOK : ((String, [String]) -> Void)!
 
 var ISDIR_HOOK : ((String) -> Void)!
 
-function _default_cnf(s : String, a : [String]) {
-    echo 1>&2 $s: command not found
-    $? = 1
-}
 
-function _default_isdir(s : String) {
-    echo 1>&2 $s: is a directory
-    $? = 1
-}
-
-function _cnf(c : String, a : [String]) {
+function DEFAULT_CNF(c : String, a : [String]) {
     if $c.indexOf('/') != -1 || $c == '.' || $c == '..' {
-        ($ISDIR_HOOK ?? $_default_isdir)($c)
+        ($ISDIR_HOOK ?? 
+            function(s) => { 
+                echo 1>&2 $s: is a directory; 
+                $? = 1; 
+            })($c)
     } else {
-        ($CNF_HOOK ?? $_default_cnf)($c, $a)
+        ($CNF_HOOK ?? 
+            function(s, ss) => {
+                echo 1>&2 $s: command not found; 
+                $? = 1; 
+            })($c, $a)
     }
 }
 
-$CMD_FALLBACK = $_cnf
+$CMD_FALLBACK = $DEFAULT_CNF

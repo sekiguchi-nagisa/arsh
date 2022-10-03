@@ -94,7 +94,7 @@ prompt() {
     case $1 {
     '-h' | '--help' => return $_usage($STDOUT, $false); 
     else => {
-        if $1.startsWith('+') { echo ${$renderPrompt($1.slice(1))}; return 0; }
+        if $1.startsWith('+') { echo $renderPrompt($1.slice(1)); return 0; }
         echo > $STDERR prompt: $1: invalid option;
         return $_usage($STDERR, $true);
     }

@@ -114,7 +114,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
         return case $def.type {
             0 => {
                 var r : [String]
-                for $a in $arg.split(" ") {
+                for a in $arg.split(" ") {
                     if $a.startsWith($prefix) {
                         $r.add($a)
                     }
@@ -124,7 +124,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             1 => $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
             2 => {
                 var args : [String]
-                for $a in $arg.split("|") {
+                for a in $arg.split("|") {
                     $args.add("-A")
                     $args.add($a)
                 }
