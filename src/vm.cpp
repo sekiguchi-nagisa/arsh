@@ -931,7 +931,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
 
     state.stack.reserve(4);
     state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));
-    state.stack.push(state.stack.getLocal(modType->getIndex()));
+    state.stack.push(state.getGlobal(modType->getIndex()));
     state.stack.push(std::move(cmdName));
     state.stack.push(argvObj);
     return prepareFuncCall(state, 3);

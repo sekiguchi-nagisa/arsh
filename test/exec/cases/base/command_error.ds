@@ -78,17 +78,17 @@ assert ($ex as SystemError).message() == "io redirection error: hello\x00world, 
 
 # command fallback
 function fallback($m : Module, $a : String, $s : [String]) {
-    echo fallback $a: $s
+    echo fallback $m $a: $s
 }
 $CMD_FALLBACK = $fallback
 
 hogehuga
 assert $? == 0
-assert hogehuga12 a b c | grep 'fallback hogehuga12: a b c'
+assert hogehuga12 a b c | grep "fallback $MODULE hogehuga12: a b c"
 
 ..
 assert $? == 0
-assert .. 1 | grep 'fallback ..: 1'
+assert .. 1 | grep "fallback $MODULE ..: 1"
 
 assert "$(command -V hgoe)" == ""
 
