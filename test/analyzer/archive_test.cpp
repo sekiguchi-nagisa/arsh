@@ -297,7 +297,7 @@ TEST_F(ArchiveTest, base) {
 TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", HandleKind::ENV));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("c", "((String, [String]) -> Void)!"));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("c", "((Module, String, [String]) -> Void)!"));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void"));
 }
 

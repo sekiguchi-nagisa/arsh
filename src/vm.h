@@ -290,6 +290,7 @@ public:
     BUILTIN_S,    // builtin command written by vm api (ex. command, eval, exec)
     BUILTIN,      // builtin command
     EXTERNAL,     // external command
+    FALLBACK,     // for CMD_CALLBACK
     INVALID,      // invalid command name (contains null character)
     ILLEGAL_UDC,  // uninitialized user-defined command
   };
@@ -342,6 +343,14 @@ public:
     cmd.kind_ = CmdKind::EXTERNAL;
     cmd.belongModTypeId_ = 0;
     cmd.filePath_ = path;
+    return cmd;
+  }
+
+  static ResolvedCmd fallback() {
+    ResolvedCmd cmd; // NOLINT
+    cmd.kind_ = CmdKind::FALLBACK;
+    cmd.belongModTypeId_ = 0;
+    cmd.filePath_ = nullptr;
     return cmd;
   }
 

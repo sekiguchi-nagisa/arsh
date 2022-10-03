@@ -7,7 +7,7 @@ var CNF_HOOK : ((String, [String]) -> Void)!
 var ISDIR_HOOK : ((String) -> Void)!
 
 
-function DEFAULT_CNF(c : String, a : [String]) {
+function DEFAULT_CNF(m : Module, c : String, a : [String]) {
     if $c.indexOf('/') != -1 || $c == '.' || $c == '..' {
         ($ISDIR_HOOK ?? 
             function(s) => { 

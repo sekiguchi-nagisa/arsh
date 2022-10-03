@@ -687,9 +687,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, StringRef ref,
     if (hasFlag(this->resolveOp, FROM_FALLBACK) &&
         (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
       if (getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
-        bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, &state.typePool.getBuiltinModType());
-        (void)r;
-        assert(r);
+        return ResolvedCmd::fallback();
       }
     }
   }
@@ -924,6 +922,20 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
       return false;
     }
   }
+  case ResolvedCmd::FALLBACK: {
+    const auto *modType = getCurRuntimeModule(state);
+    if (!modType) {
+      modType = cast<ModType>(state.typePool.getModTypeById(1).asOk());
+    }
+    auto cmdName = typeAs<ArrayObject>(argvObj).takeFirst();
+
+    state.stack.reserve(4);
+    state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));
+    state.stack.push(state.stack.getLocal(modType->getIndex()));
+    state.stack.push(std::move(cmdName));
+    state.stack.push(argvObj);
+    return prepareFuncCall(state, 3);
+  }
   case ResolvedCmd::INVALID:
     raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
     return false;
@@ -1034,6 +1046,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         }
         break;
       }
+      case ResolvedCmd::FALLBACK:
       case ResolvedCmd::INVALID:
       case ResolvedCmd::ILLEGAL_UDC:
         break;

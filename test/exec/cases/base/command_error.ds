@@ -77,7 +77,7 @@ assert ($ex as SystemError).message() == "io redirection error: hello\x00world, 
 
 
 # command fallback
-function fallback($a : String, $s : [String]) {
+function fallback($m : Module, $a : String, $s : [String]) {
     echo fallback $a: $s
 }
 $CMD_FALLBACK = $fallback

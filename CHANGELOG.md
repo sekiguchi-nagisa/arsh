@@ -13,8 +13,14 @@
 
 #### Core
 
-- **Breaking Change**: change evaluation order of ``TERM_HOOK``. now only called from ``DSState_delete`` or subshell exit
+- **Breaking Change**: change evaluation order of ``TERM_HOOK``
+    - now only called from ``DSState_delete`` or subshell exit
     - in interactive mode, does not call ``TERM_HOOK`` in uncaught exception
+
+#### Builtin
+
+- **Breaking Change**: change interface of ``CMD_FALLBACK``
+    - now pass caller module context to fallback handler
 
 #### API
 

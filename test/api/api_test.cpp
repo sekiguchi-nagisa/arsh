@@ -1369,13 +1369,13 @@ source %s/mod_{24572..28666}
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
   DSError_release(&e);
 
-  source = format("source %s/mod_{28667..32761}", dir);
+  source = format("source %s/mod_{28667..32760}", dir);
   r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
   ASSERT_EQ(1, r);
   ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
   ASSERT_STREQ("GlobalLimit", e.name);
-  ASSERT_EQ(9, e.lineNum);
-  ASSERT_EQ(8, e.chars);
+  ASSERT_EQ(1, e.lineNum);
+  ASSERT_EQ(5, e.chars);
   DSError_release(&e);
 }
 

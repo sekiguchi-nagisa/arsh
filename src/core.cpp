@@ -594,6 +594,7 @@ std::string resolveFullCommandName(const DSState &state, StringRef name, const M
       return cmd.filePath();
     }
     break;
+  case ResolvedCmd::FALLBACK:
   case ResolvedCmd::INVALID:
   case ResolvedCmd::ILLEGAL_UDC:
     break;

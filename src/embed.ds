@@ -24,10 +24,6 @@ var COMP_HOOK : Func<[String], [Module, [String], Int]>!
 var EDIT_HOOK : Func<Any, [Int, Int, String]>!
 
 # command fallback handler definition
-var CMD_FALLBACK : ((String, [String]) -> Void)!
-
-_cmd_fallback_handler() {
-    ($CMD_FALLBACK ?? { return 0; })($0, $@)
-}
+var CMD_FALLBACK : ((Module, String, [String]) -> Void)!
 
 true
