@@ -1157,6 +1157,27 @@ echo hello
   DSError_release(&e);
 }
 
+TEST_F(APITest, cmdfallback) {
+  auto modName = this->createTempFile("mod.ds", R"(
+  $CMD_FALLBACK = function(m,c,a) => {
+    echo $m $c $a;
+    ($m as Any) as Module
+    assert ($m as Any) is Module
+    $? = 99;
+  };
+)");
+
+  DSError e;
+  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  ASSERT_EQ(0, r);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSError_release(&e);
+
+  const char *argv[] = {"jfirejfoaei", nullptr};
+  r = DSState_exec(this->state, (char **)argv);
+  ASSERT_EQ(99, r);
+}
+
 template <typename Func>
 static Output invoke(Func func) {
   IOConfig config;

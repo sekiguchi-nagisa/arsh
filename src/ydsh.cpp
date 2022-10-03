@@ -130,6 +130,7 @@ static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
   state->termHookIndex = handle.asOk()->getIndex();
   state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->modLoader.createModType(state->typePool, *state->rootModScope);
+  DSState_eval(state, "(root)", "", 0, nullptr); // dummy
   state->lineNum = 1;
   state->setExitStatus(0);
 }
