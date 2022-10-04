@@ -2099,7 +2099,7 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
   node.setType(this->typePool.get(TYPE::Void));
-  if (!this->curScope->isGlobal() && !node.isAnonymousFunc()) { // only available toplevel scope
+  if (!this->isTopLevel() && !node.isAnonymousFunc()) { // only available toplevel scope
     const char *message;
     if (node.isConstructor()) {
       message = "type definition";

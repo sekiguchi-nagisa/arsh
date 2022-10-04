@@ -1,6 +1,0 @@
-#$test($result = 'type', $errorKind = 'Unacceptable', $lineNum = 3, $chars = 17, $status = 1)
-
-function f($a : Void) {
-    echo hello
-}
-$f

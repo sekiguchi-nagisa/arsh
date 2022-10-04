@@ -1,0 +1,4 @@
+#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $chars = 5, $status = 1)
+
+$true ||
+    function f() {}

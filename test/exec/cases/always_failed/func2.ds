@@ -1,9 +1,6 @@
-#$test($result = 'type', $errorKind = 'UnfoundReturn', $lineNum = 3, $chars = 31, $status = 1)
+#$test($result = 'type', $errorKind = 'Unacceptable', $lineNum = 3, $chars = 17, $status = 1)
 
-function f($a : Int) : String {
-    if($a == 3) {
-        return ""
-    } elif($a > 3) {
-        return "hello"
-    }
+function f($a : Void) {
+    echo hello
 }
+$f

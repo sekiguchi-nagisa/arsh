@@ -1,0 +1,9 @@
+#$test($result = 'type', $errorKind = 'UnfoundReturn', $lineNum = 3, $chars = 31, $status = 1)
+
+function f($a : Int) : String {
+    if($a == 3) {
+        return ""
+    } elif($a > 3) {
+        return "hello"
+    }
+}

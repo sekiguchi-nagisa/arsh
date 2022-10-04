@@ -1,7 +1,9 @@
-#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $chars = 5, $status = 1)
+#$test($result = 'type', $errorKind = 'DefinedSymbol', $lineNum = 7, $chars = 10, $status = 1)
 
-if($false) {
-    function hoge() {
-        echo hello
-    }
+function f() {
+    echo hello
+}
+
+function f() : Int {    #redefinition
+    return 54
 }

@@ -1,9 +1,0 @@
-#$test($result = 'type', $errorKind = 'DefinedSymbol', $lineNum = 7, $chars = 10, $status = 1)
-
-function f() {
-    echo hello
-}
-
-function f() : Int {    #redefinition
-    return 54
-}

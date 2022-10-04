@@ -1,7 +1,0 @@
-#$test($result = 'type', $errorKind = 'UndefinedBinary', $lineNum = 7, $chars = 11, $status = 1)
-
-function f() {}
-
-function g() : Int { return 45; }
-
-assert $f == $g
