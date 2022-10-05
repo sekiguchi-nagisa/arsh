@@ -80,6 +80,7 @@ namespace ydsh {
   OP(PrefixAssign)                                                                                 \
   OP(Function)                                                                                     \
   OP(UserDefinedCmd)                                                                               \
+  OP(FuncList)                                                                                     \
   OP(Source)                                                                                       \
   OP(SourceList)                                                                                   \
   OP(CodeComp)                                                                                     \
@@ -2219,6 +2220,8 @@ public:
 
   bool isConstructor() const { return this->kind == CONSTRUCTOR; }
 
+  bool isNamedFunc() const { return this->kind == FUNC && !this->funcName.getName().empty(); }
+
   bool isMethod() const { return this->kind == FUNC && static_cast<bool>(this->getRecvTypeNode()); }
 
   void dump(NodeDumper &dumper) const override;
@@ -2228,7 +2231,7 @@ class UserDefinedCmdNode : public WithRtti<Node, NodeKind::UserDefinedCmd> {
 private:
   NameInfo cmdName;
 
-  unsigned int udcIndex{0};
+  HandlePtr handle;
   unsigned int maxVarNum{0};
   std::unique_ptr<TypeNode> returnTypeNode; // may be null
   std::unique_ptr<BlockNode> blockNode;
@@ -2248,9 +2251,9 @@ public:
 
   const std::string &getCmdName() const { return this->cmdName.getName(); }
 
-  unsigned int getUdcIndex() const { return this->udcIndex; }
+  void setHandle(HandlePtr &&hd) { this->handle = std::move(hd); }
 
-  void setUdcIndex(unsigned int index) { this->udcIndex = index; }
+  const HandlePtr &getHandle() const { return this->handle; }
 
   BlockNode &getBlockNode() const { return *this->blockNode; }
 
@@ -2259,6 +2262,24 @@ public:
   void setMaxVarNum(unsigned int num) { this->maxVarNum = num; }
 
   unsigned int getMaxVarNum() const { return this->maxVarNum; }
+
+  void dump(NodeDumper &dumper) const override;
+};
+
+class FuncListNode : public WithRtti<Node, NodeKind::FuncList> {
+private:
+  /**
+   * must be named function, method, user-defined command
+   */
+  std::vector<std::unique_ptr<Node>> nodes;
+
+public:
+  FuncListNode(std::vector<std::unique_ptr<Node>> &&nodes)
+      : WithRtti(nodes[0]->getToken()), nodes(std::move(nodes)) {
+    this->updateToken(this->nodes.back()->getToken());
+  }
+
+  const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2529,6 +2550,7 @@ struct NodeVisitor {
   virtual void visitPrefixAssignNode(PrefixAssignNode &node) = 0;
   virtual void visitFunctionNode(FunctionNode &node) = 0;
   virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
+  virtual void visitFuncListNode(FuncListNode &node) = 0;
   virtual void visitSourceNode(SourceNode &node) = 0;
   virtual void visitSourceListNode(SourceListNode &node) = 0;
   virtual void visitCodeCompNode(CodeCompNode &node) = 0;
@@ -2587,6 +2609,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitPrefixAssignNode(PrefixAssignNode &node) override { this->visitDefault(node); }
   void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
+  void visitFuncListNode(FuncListNode &node) override { this->visitDefault(node); }
   void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
   void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
   void visitCodeCompNode(CodeCompNode &node) override { this->visitDefault(node); }

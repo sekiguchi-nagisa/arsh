@@ -1,0 +1,13 @@
+#$test($result = 'type', $lineNum = 5, $chars = 8, $errorKind = 'UndefinedMethod', $status = 1)
+
+function AAA(b : Int) : Int for Int {
+    return $this +
+    $b.BBB()   # cannot access backward defined method
+
+}
+
+{}
+
+function BBB() : Int for Int {
+    return $this * 100
+}

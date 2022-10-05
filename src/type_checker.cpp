@@ -326,7 +326,7 @@ static auto initDeniedNameList() {
   return set;
 }
 
-const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
+HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   static auto deniedList = initDeniedNameList();
   if (deniedList.find(node.getCmdName()) != deniedList.end()) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str()); // FIXME: better error message
@@ -349,7 +349,7 @@ const Handle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   auto ret =
       this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
   if (ret) {
-    return ret.asOk().get();
+    return std::move(ret).take();
   } else if (ret.asErr() == NameRegisterError::DEFINED) {
     this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
   }
@@ -2097,123 +2097,168 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
   }
 }
 
-void TypeChecker::visitFunctionNode(FunctionNode &node) {
-  node.setType(this->typePool.get(TYPE::Void));
-  if (!this->isTopLevel() && !node.isAnonymousFunc()) { // only available toplevel scope
-    const char *message;
-    if (node.isConstructor()) {
-      message = "type definition";
-    } else if (node.isMethod()) {
-      message = "method definition";
-    } else {
-      message = "named function definition";
+void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
+  if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
+    node.setType(this->typePool.get(TYPE::Void));
+    if (!this->isTopLevel() && !node.isAnonymousFunc()) { // only available toplevel scope
+      const char *message;
+      if (node.isConstructor()) {
+        message = "type definition";
+      } else if (node.isMethod()) {
+        message = "method definition";
+      } else {
+        message = "named function definition";
+      }
+      this->reportError<OutsideToplevel>(node, message);
+      return;
     }
-    this->reportError<OutsideToplevel>(node, message);
-    return;
-  }
-  if (this->funcCtx->depth == SYS_LIMIT_FUNC_DEPTH) {
-    this->reportError<FuncDepthLimit>(node);
-    return;
+    if (this->funcCtx->depth == SYS_LIMIT_FUNC_DEPTH) {
+      this->reportError<FuncDepthLimit>(node);
+      return;
+    }
+
+    if (node.isConstructor()) {
+      this->registerRecordType(node);
+    } else if (node.isAnonymousFunc()) {
+      this->inferParamTypes(node);
+    }
+
+    // resolve param type, return type
+    for (auto &paramNode : node.getParamNodes()) {
+      this->checkTypeAsSomeExpr(*paramNode->getExprNode());
+    }
+    if (node.getReturnTypeNode()) {
+      this->checkTypeExactly(*node.getReturnTypeNode());
+    }
+
+    if (node.isMethod()) {
+      this->checkTypeAsSomeExpr(*node.getRecvTypeNode());
+    }
+
+    // register function/constructor handle
+    this->registerFuncHandle(node);
   }
 
-  if (node.isConstructor()) {
-    this->registerRecordType(node);
-  } else if (node.isAnonymousFunc()) {
-    this->inferParamTypes(node);
+  if (hasFlag(op, FuncCheckOp::CHECK_BODY)) {
+    // func body
+    const auto *returnType =
+        node.getReturnTypeNode() ? &node.getReturnTypeNode()->getType() : nullptr;
+    assert(!node.isConstructor() || (node.isConstructor() && !returnType));
+    auto func = this->intoFunc(returnType,
+                               node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
+    // register parameter
+    if (node.isMethod()) {
+      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
+      this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
+    }
+    for (auto &paramNode : node.getParamNodes()) {
+      this->checkTypeExactly(*paramNode);
+    }
+    // check type func body
+    this->checkTypeWithCurrentScope(
+        node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
+    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+
+    // post process
+    if (node.isConstructor()) {
+      this->postprocessConstructor(node);
+    } else {
+      this->postprocessFunction(node);
+    }
+  }
+}
+
+void TypeChecker::visitFunctionNode(FunctionNode &node) {
+  this->checkTypeFunction(node, FuncCheckOp::REGISTER_NAME | FuncCheckOp::CHECK_BODY);
+}
+
+void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCheckOp op) {
+  if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
+    node.setType(this->typePool.get(TYPE::Void));
+
+    if (!this->isTopLevel()) { // only available toplevel scope
+      this->reportError<OutsideToplevel>(node, "user-defined command definition");
+      return;
+    }
+
+    if (node.getReturnTypeNode()) { // for Nothing type user-defined command
+      this->checkType(this->typePool.get(TYPE::Nothing), *node.getReturnTypeNode());
+    }
+
+    // register command name
+    if (auto handle = this->addUdcEntry(node)) {
+      node.setHandle(std::move(handle));
+    }
   }
 
-  // resolve param type, return type
-  for (auto &paramNode : node.getParamNodes()) {
-    this->checkTypeAsSomeExpr(*paramNode->getExprNode());
-  }
-  auto *returnType =
-      node.getReturnTypeNode() ? &this->checkTypeExactly(*node.getReturnTypeNode()) : nullptr;
+  if (hasFlag(op, FuncCheckOp::CHECK_BODY)) {
+    // check type udc body
+    auto *returnType = &this->typePool.get(TYPE::Int);
+    if (node.getHandle()) {
+      returnType =
+          &cast<FunctionType>(this->typePool.get(node.getHandle()->getTypeId())).getReturnType();
+    }
+    {
+      auto func = this->intoFunc(returnType); // pseudo return type
+      // register dummy parameter (for propagating command attr)
+      this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-  if (node.isMethod()) {
-    this->checkTypeAsSomeExpr(*node.getRecvTypeNode());
-  }
+      // register dummy parameter (for closing file descriptor)
+      this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-  // register function/constructor handle
-  this->registerFuncHandle(node);
+      // register special characters (@, #, 0, 1, ... 9)
+      this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
+      this->addEntry(node, "#", this->typePool.get(TYPE::Int), HandleAttr::READ_ONLY);
+      for (unsigned int i = 0; i < 10; i++) {
+        this->addEntry(node, std::to_string(i), this->typePool.get(TYPE::String),
+                       HandleAttr::READ_ONLY);
+      }
 
-  // func body
-  assert(!node.isConstructor() || (node.isConstructor() && !returnType));
-  auto func = this->intoFunc(returnType,
-                             node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
-  // register parameter
-  if (node.isMethod()) {
-    NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
-    this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
-  }
-  for (auto &paramNode : node.getParamNodes()) {
-    this->checkTypeExactly(*paramNode);
-  }
-  // check type func body
-  this->checkTypeWithCurrentScope(
-      node.isAnonymousFunc() ? nullptr : &this->typePool.get(TYPE::Void), node.getBlockNode());
-  node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+      // check type command body
+      this->checkTypeWithCurrentScope(node.getBlockNode());
+      node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+    }
 
-  // post process
-  if (node.isConstructor()) {
-    this->postprocessConstructor(node);
-  } else {
-    this->postprocessFunction(node);
+    // insert return node if not found
+    if (node.getBlockNode().getNodes().empty() ||
+        !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
+      if (returnType->isNothingType()) {
+        this->reportError<UnfoundReturn>(node.getBlockNode());
+      } else {
+        unsigned int lastPos = node.getBlockNode().getToken().endPos();
+        auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
+        this->checkTypeAsExpr(*varNode);
+        addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
+      }
+    }
   }
 }
 
 void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  node.setType(this->typePool.get(TYPE::Void));
+  this->checkTypeUserDefinedCmd(node, FuncCheckOp::REGISTER_NAME | FuncCheckOp::CHECK_BODY);
+}
 
-  if (!this->isTopLevel()) { // only available toplevel scope
-    this->reportError<OutsideToplevel>(node, "user-defined command definition");
-    return;
-  }
-
-  if (node.getReturnTypeNode()) { // for Nothing type user-defined command
-    this->checkType(this->typePool.get(TYPE::Nothing), *node.getReturnTypeNode());
-  }
-
-  // register command name
-  auto *returnType = &this->typePool.get(TYPE::Int);
-  if (auto *handle = this->addUdcEntry(node)) {
-    node.setUdcIndex(handle->getIndex());
-    returnType = &cast<FunctionType>(this->typePool.get(handle->getTypeId())).getReturnType();
-  }
-
-  // check type udc body
-  {
-    auto func = this->intoFunc(returnType); // pseudo return type
-    // register dummy parameter (for propagating command attr)
-    this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
-
-    // register dummy parameter (for closing file descriptor)
-    this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
-
-    // register special characters (@, #, 0, 1, ... 9)
-    this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
-    this->addEntry(node, "#", this->typePool.get(TYPE::Int), HandleAttr::READ_ONLY);
-    for (unsigned int i = 0; i < 10; i++) {
-      this->addEntry(node, std::to_string(i), this->typePool.get(TYPE::String),
-                     HandleAttr::READ_ONLY);
-    }
-
-    // check type command body
-    this->checkTypeWithCurrentScope(node.getBlockNode());
-    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
-  }
-
-  // insert return node if not found
-  if (node.getBlockNode().getNodes().empty() ||
-      !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
-    if (returnType->isNothingType()) {
-      this->reportError<UnfoundReturn>(node.getBlockNode());
+void TypeChecker::visitFuncListNode(FuncListNode &node) {
+  // register names
+  for (auto &e : node.getNodes()) {
+    if (isa<FunctionNode>(*e)) {
+      this->checkTypeFunction(cast<FunctionNode>(*e), FuncCheckOp::REGISTER_NAME);
     } else {
-      unsigned int lastPos = node.getBlockNode().getToken().endPos();
-      auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
-      this->checkTypeAsExpr(*varNode);
-      addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
+      assert(isa<UserDefinedCmdNode>(*e));
+      this->checkTypeUserDefinedCmd(cast<UserDefinedCmdNode>(*e), FuncCheckOp::REGISTER_NAME);
     }
   }
+
+  // check body
+  for (auto &e : node.getNodes()) {
+    if (isa<FunctionNode>(*e)) {
+      this->checkTypeFunction(cast<FunctionNode>(*e), FuncCheckOp::CHECK_BODY);
+    } else {
+      assert(isa<UserDefinedCmdNode>(*e));
+      this->checkTypeUserDefinedCmd(cast<UserDefinedCmdNode>(*e), FuncCheckOp::CHECK_BODY);
+    }
+  }
+  node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {

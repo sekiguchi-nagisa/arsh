@@ -78,7 +78,27 @@ Parser::Parser(Lexer &lexer, bool singleExpr, ObserverPtr<CodeCompletionHandler>
   this->fetchNext();
 }
 
+static bool isNamedFuncOrUdc(const std::unique_ptr<Node> &node) {
+  if (!node) {
+    return false;
+  }
+
+  if (isa<UserDefinedCmdNode>(*node)) {
+    return true;
+  }
+  if (isa<FunctionNode>(*node)) {
+    auto &funcNode = cast<FunctionNode>(*node);
+    return funcNode.isNamedFunc() || funcNode.isMethod();
+  }
+  return false;
+}
+
 std::unique_ptr<Node> Parser::operator()() {
+  if (this->remain) {
+    this->remain = false;
+    return std::move(this->remainNode);
+  }
+
   this->skippableNewlines.clear();
   this->skippableNewlines.push_back(false);
 
@@ -96,6 +116,30 @@ std::unique_ptr<Node> Parser::operator()() {
       this->clear(); // force ignore parse error
       this->lexer->setComplete(false);
       node = std::move(this->incompleteNode);
+    } else if (isNamedFuncOrUdc(node)) {
+      std::vector<std::unique_ptr<Node>> funcNodes;
+      while (this->curKind != TokenKind::EOS) {
+        this->remainNode = this->parse_statement();
+        this->remain = true;
+        if (this->incompleteNode) {
+          this->clear(); // force ignore parse error
+          this->lexer->setComplete(false);
+          this->remainNode = std::move(this->incompleteNode);
+          break;
+        } else if (isNamedFuncOrUdc(this->remainNode)) {
+          if (funcNodes.empty()) {
+            funcNodes.push_back(std::move(node));
+          }
+          funcNodes.push_back(std::move(this->remainNode));
+          this->remain = false;
+        } else {
+          break;
+        }
+      }
+
+      if (!funcNodes.empty()) {
+        node = std::make_unique<FuncListNode>(std::move(funcNodes));
+      }
     }
     return node;
   }

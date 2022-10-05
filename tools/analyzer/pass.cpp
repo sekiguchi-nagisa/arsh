@@ -204,6 +204,12 @@ void NodePass::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->visit(node.getBlockNode());
 }
 
+void NodePass::visitFuncListNode(FuncListNode &node) {
+  this->visitingDepth--;
+  this->visitEach(node.getNodes());
+  this->visitingDepth++;
+}
+
 void NodePass::visitSourceNode(SourceNode &node) {
   this->visitEach(node.getPathNode().getSegmentNodes());
 }

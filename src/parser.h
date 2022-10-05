@@ -77,6 +77,10 @@ private:
 
   std::unique_ptr<Node> incompleteNode; // for code completion
 
+  std::unique_ptr<Node> remainNode;
+
+  bool remain{false};
+
   bool inStmtCompCtx{false};
 
   const bool singleExpr;
@@ -91,7 +95,9 @@ public:
 
   std::unique_ptr<Node> operator()();
 
-  explicit operator bool() const { return this->curKind != TokenKind::EOS; }
+  explicit operator bool() const { return this->remain || this->curKind != TokenKind::EOS; }
+
+  bool hasError() const { return ParserBase::hasError() && !this->remain; }
 
 protected:
   /**

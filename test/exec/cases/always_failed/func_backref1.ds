@@ -1,0 +1,13 @@
+#$test($result = 'type', $lineNum = 5, $chars = 5, $errorKind = 'UndefinedSymbol', $status = 1)
+
+function AAA(a : Int, b : Int) : Int {
+    return $a +
+    $BBB($b)   # cannot access backward defined symbol
+
+}
+
+assert $AAA(1,2) == 45
+
+function BBB(a : Int) : Int {
+    return $a * 100
+}

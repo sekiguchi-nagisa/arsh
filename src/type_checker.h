@@ -448,7 +448,7 @@ private:
    * @return
    * if can not add entry, return null
    */
-  const Handle *addUdcEntry(const UserDefinedCmdNode &node);
+  HandlePtr addUdcEntry(const UserDefinedCmdNode &node);
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 
@@ -529,6 +529,15 @@ private:
   void postprocessConstructor(FunctionNode &node);
 
   void inferParamTypes(FunctionNode &node);
+
+  enum class FuncCheckOp : unsigned int {
+    REGISTER_NAME = 1u << 0u,
+    CHECK_BODY = 1u << 1u,
+  };
+
+  void checkTypeFunction(FunctionNode &node, FuncCheckOp op);
+
+  void checkTypeUserDefinedCmd(UserDefinedCmdNode &node, FuncCheckOp op);
 
   // for case-expression
   struct PatternMap {
@@ -683,6 +692,7 @@ private:
   void visitPrefixAssignNode(PrefixAssignNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+  void visitFuncListNode(FuncListNode &node) override;
   void visitSourceNode(SourceNode &node) override;
   void visitSourceListNode(SourceListNode &node) override;
   void visitCodeCompNode(CodeCompNode &node) override;
@@ -692,6 +702,9 @@ private:
 
 template <>
 struct allow_enum_bitop<TypeChecker::GlobOp> : std::true_type {};
+
+template <>
+struct allow_enum_bitop<TypeChecker::FuncCheckOp> : std::true_type {};
 
 } // namespace ydsh
 

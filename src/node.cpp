@@ -892,11 +892,17 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
   DUMP(cmdName);
-  DUMP(udcIndex);
+  DUMP_PTR(handle);
   DUMP_PTR(returnTypeNode);
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);
 }
+
+// ##########################
+// ##     FuncListNode     ##
+// ##########################
+
+void FuncListNode::dump(ydsh::NodeDumper &dumper) const { DUMP(nodes); }
 
 // ########################
 // ##     SourceNode     ##

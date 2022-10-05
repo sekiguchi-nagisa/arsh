@@ -1,0 +1,36 @@
+
+function f11(a : Int) : Int {
+    return $a + $f22($a)
+}
+
+function f22(a : Int) : Int {
+    c11 $a
+    return $? * 100
+}
+
+c11() {
+    c22 $@
+}
+
+c22() {
+    return $1.size().factorial()
+}
+
+function factorial() : Int for Int {
+    return $this.factorial_impl()
+}
+
+function factorial_impl() : Int for Int {
+    return $this == 0 ? 1 : $this * ($this - 1).factorial_impl()
+}
+
+
+c22 11
+assert $? == 2.factorial()
+
+c11
+assert $? == 0.factorial()
+
+assert $f11(2) == 102
+
+true

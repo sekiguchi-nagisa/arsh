@@ -1565,7 +1565,13 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   auto func = DSValue::create<FuncObject>(this->typePool.get(TYPE::Void), std::move(code));
 
   this->emitLdcIns(func);
-  this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
+  this->emit2byteIns(OpCode::STORE_GLOBAL, node.getHandle()->getIndex());
+}
+
+void ByteCodeGenerator::visitFuncListNode(FuncListNode &node) {
+  for (auto &e : node.getNodes()) {
+    this->visit(*e);
+  }
 }
 
 void ByteCodeGenerator::visitSourceNode(SourceNode &) {} // do nothing

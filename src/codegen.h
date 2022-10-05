@@ -561,6 +561,7 @@ private:
   void visitTimeNode(TimeNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+  void visitFuncListNode(FuncListNode &node) override;
   void visitSourceNode(SourceNode &node) override;
   void visitSourceListNode(SourceListNode &node) override;
   void visitCodeCompNode(CodeCompNode &node) override;

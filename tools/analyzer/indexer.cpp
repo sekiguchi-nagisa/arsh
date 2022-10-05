@@ -641,7 +641,7 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!this->isTopLevel()) {
     return;
   }
-  if (node.getUdcIndex() > 0) {
+  if (node.getHandle()) {
     const char *hover = this->builder().getPool().get(TYPE::Boolean).getName();
     if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
       hover = node.getReturnTypeNode()->getType().getName();

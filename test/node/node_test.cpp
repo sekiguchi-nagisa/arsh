@@ -815,7 +815,10 @@ nodes:
         pos: 0
         size: 1
       name: "f"
-    udcIndex: 50
+    handle:
+      index: 50
+      kind: "VAR"
+      attribute: "READ_ONLY | GLOBAL"
     returnTypeNode: null
     blockNode:
       nodeKind: Block
