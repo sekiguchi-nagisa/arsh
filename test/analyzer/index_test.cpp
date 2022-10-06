@@ -876,6 +876,112 @@ TEST_F(IndexTest, upvar) {
        {modId, "(6:8~6:14)"}}));
 }
 
+TEST_F(IndexTest, backrefFunc) {
+  unsigned short modId;
+  const char *content = R"E(
+  function AAA() {
+    $BBB()
+  }
+  function BBB() {
+    $AAA()
+  }
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:11~1:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{modId, "(4:11~4:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 12}}, {{modId, "(4:11~4:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 5}}, {{modId, "(1:11~1:14)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // function AAA()
+      {{modId, "(1:11~1:14)"},                                           // itself
+       {modId, "(5:4~5:8)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 4, .character = 12}}, // function BBB()
+      {{modId, "(4:11~4:14)"},                                           // itself
+       {modId, "(2:4~2:8)"}}));
+}
+
+TEST_F(IndexTest, backrefMethod) {
+  unsigned short modId;
+  const char *content = R"E(
+  function AAA() for Int {
+    $this.BBB()
+  }
+  function BBB() for Int {
+    $this.AAA()
+  }
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 6}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:11~1:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 13}}, {{modId, "(4:11~4:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 12}}, {{modId, "(4:11~4:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 12}}, {{modId, "(1:11~1:14)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // function AAA()
+      {{modId, "(1:11~1:14)"},                                           // itself
+       {modId, "(5:10~5:13)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 4, .character = 12}}, // function BBB()
+      {{modId, "(4:11~4:14)"},                                           // itself
+       {modId, "(2:10~2:13)"}}));
+}
+
+TEST_F(IndexTest, backrefUDC) {
+  unsigned short modId;
+  const char *content = R"E(
+  AAA() {
+    BBB 34
+  }
+  # comment
+  BBB() {
+    AAA 45
+  }
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 4}}, {{modId, "(1:2~1:5)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 4}}, {{modId, "(5:2~5:5)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 3}}, {{modId, "(5:2~5:5)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 7}}, {{modId, "(1:2~1:5)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 5}}, // AAA()
+                     {{modId, "(1:2~1:5)"},                                            // itself
+                      {modId, "(6:4~6:7)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 5, .character = 3}}, // BBB()
+                     {{modId, "(5:2~5:5)"},                                            // itself
+                      {modId, "(2:4~2:7)"}}));
+}
+
 TEST_F(IndexTest, invalidVar) {
   unsigned short modId;
   const char *content = R"(
@@ -944,6 +1050,29 @@ typedef AAA($a : Int) {
 }
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 5}));
+}
+
+TEST_F(IndexTest, invalidBackref) {
+  unsigned short modId;
+  const char *content = R"(
+  function AAA() {
+    $BBB()
+  }
+  $AAA()
+  function BBB() {
+    $AAA()
+  }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 8}}, std::vector<Loc>()));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 5, .character = 13}}, // BBB()
+                     {{modId, "(5:11~5:14)"}}));                                        // itself
 }
 
 TEST_F(IndexTest, hover) {

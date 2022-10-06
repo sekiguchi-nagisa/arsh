@@ -4,6 +4,29 @@
 
 ### Added
 
+#### Core
+
+- support mutual recursion of named function, method, user-defined command
+    - now the following code is valid
+      ```
+      function even(n : Int) : Bool {
+        if $n == 0 {
+          return $true
+        } else {
+          return $odd($n - 1)
+        }
+      }
+      
+      function odd(n : Int) : Bool {
+        if $n == 0 {
+          return $false
+        } else {
+          return $even($n - 1)
+        }
+      }
+      ```
+    - ``even`` can refer backward defined functions that are defined immediately after it
+
 #### Misc
 
 - add ``--html-lineno-table`` option to ``dscolorize``

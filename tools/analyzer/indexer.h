@@ -239,6 +239,7 @@ protected:
   void visitPrefixAssignNode(PrefixAssignNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+  void visitFuncListNode(FuncListNode &node) override;
   void visitSourceNode(SourceNode &node) override;
 
 private:
@@ -246,11 +247,27 @@ private:
     this->visitEach(blockNode.getNodes());
   }
 
+  enum class FuncVisitOp : unsigned int {
+    VISIT_NAME = 1u << 0u,
+    VISIR_BODY = 1u << 1u,
+  };
+
+  void visitFunctionImpl(FunctionNode &node, FuncVisitOp op);
+
+  void visitUserDefinedCmdImpl(UserDefinedCmdNode &node, FuncVisitOp op);
+
   IndexBuilder &builder() { return this->builders.back(); }
 
   void addBuiltinSymbols();
 };
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+template <>
+struct allow_enum_bitop<lsp::SymbolIndexer::FuncVisitOp> : std::true_type {};
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_ANALYZER_INDEXER_H

@@ -333,11 +333,9 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
   auto &symbol = ret.unwrap();
   auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
                                Symbol::Compare());
-  if (iter != this->symbols.end()) {
-    if (iter->getPos() == decl->getPos()) {
-      fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
-            toString(iter->getToken()).c_str());
-    }
+  if (iter != this->symbols.end() && iter->getPos() == symbol.getPos()) {
+    fatal("try to add token: %s, but already added: %s\n", toString(symbol.getToken()).c_str(),
+          toString(iter->getToken()).c_str());
   }
   iter = this->symbols.insert(iter, symbol);
   return &(*iter);
@@ -602,54 +600,92 @@ static ScopeKind getScopeKind(const FunctionNode &node) {
   }
 }
 
-void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  if (node.getType().isUnresolved() || (!this->builder().isGlobal() && !node.isAnonymousFunc())) {
-    return;
+void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) {
+  if (hasFlag(op, FuncVisitOp::VISIT_NAME)) {
+    if (node.getType().isUnresolved() || (!this->builder().isGlobal() && !node.isAnonymousFunc())) {
+      return;
+    }
+
+    if (node.getHandle()) {
+      if (node.isConstructor()) {
+        auto value = generateConstructorInfo(this->builder().getPool(), node);
+        this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str(),
+                                node.getToken());
+      } else if (node.isMethod()) {
+        auto value = generateFuncInfo(node);
+        this->builder().addMemberDecl(node.getRecvTypeNode()->getType(), node.getNameInfo(),
+                                      DeclSymbol::Kind::METHOD, value.c_str(), node.getToken());
+      } else {
+        auto value = generateFuncInfo(node);
+        this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str(),
+                                node.getToken());
+      }
+    }
+    for (auto &paramNode : node.getParamNodes()) {
+      NodePass::visit(paramNode->getExprNode());
+    }
+    NodePass::visit(node.getReturnTypeNode());
+    NodePass::visit(node.getRecvTypeNode());
   }
 
-  if (node.getHandle()) {
-    if (node.isConstructor()) {
-      auto value = generateConstructorInfo(this->builder().getPool(), node);
-      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str(),
-                              node.getToken());
-    } else if (node.isMethod()) {
-      auto value = generateFuncInfo(node);
-      this->builder().addMemberDecl(node.getRecvTypeNode()->getType(), node.getNameInfo(),
-                                    DeclSymbol::Kind::METHOD, value.c_str(), node.getToken());
-    } else {
-      auto value = generateFuncInfo(node);
-      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC, value.c_str(),
+  if (hasFlag(op, FuncVisitOp::VISIR_BODY)) {
+    auto func = this->builder().intoScope(getScopeKind(node),
+                                          node.isMethod() ? &node.getRecvTypeNode()->getType()
+                                                          : node.getResolvedType());
+    for (auto &paramNode : node.getParamNodes()) {
+      this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
                               node.getToken());
     }
+    this->visitBlockWithCurrentScope(node.getBlockNode());
   }
-  for (auto &paramNode : node.getParamNodes()) {
-    NodePass::visit(paramNode->getExprNode());
+}
+
+void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
+  this->visitFunctionImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIR_BODY);
+}
+
+void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const FuncVisitOp op) {
+  if (hasFlag(op, FuncVisitOp::VISIT_NAME)) {
+    if (!this->isTopLevel()) {
+      return;
+    }
+    if (node.getHandle()) {
+      const char *hover = this->builder().getPool().get(TYPE::Boolean).getName();
+      if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
+        hover = node.getReturnTypeNode()->getType().getName();
+      }
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover, node.getToken());
+    }
   }
-  NodePass::visit(node.getReturnTypeNode());
-  NodePass::visit(node.getRecvTypeNode());
-  auto func = this->builder().intoScope(getScopeKind(node), node.isMethod()
-                                                                ? &node.getRecvTypeNode()->getType()
-                                                                : node.getResolvedType());
-  for (auto &paramNode : node.getParamNodes()) {
-    this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
-                            node.getToken());
+
+  if (hasFlag(op, FuncVisitOp::VISIR_BODY)) {
+    auto udc = this->builder().intoScope(ScopeKind::FUNC);
+    this->visitBlockWithCurrentScope(node.getBlockNode());
   }
-  this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
 void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  if (!this->isTopLevel()) {
-    return;
-  }
-  if (node.getHandle()) {
-    const char *hover = this->builder().getPool().get(TYPE::Boolean).getName();
-    if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
-      hover = node.getReturnTypeNode()->getType().getName();
+  this->visitUserDefinedCmdImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIR_BODY);
+}
+
+void SymbolIndexer::visitFuncListNode(FuncListNode &node) {
+  // register decl
+  for (auto &e : node.getNodes()) {
+    if (isa<FunctionNode>(*e)) {
+      this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIT_NAME);
+    } else if (isa<UserDefinedCmdNode>(*e)) {
+      this->visitUserDefinedCmdImpl(cast<UserDefinedCmdNode>(*e), FuncVisitOp::VISIT_NAME);
     }
-    this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover, node.getToken());
   }
-  auto udc = this->builder().intoScope(ScopeKind::FUNC);
-  this->visitBlockWithCurrentScope(node.getBlockNode());
+
+  // register body
+  for (auto &e : node.getNodes()) {
+    if (isa<FunctionNode>(*e)) {
+      this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIR_BODY);
+    } else if (isa<UserDefinedCmdNode>(*e)) {
+      this->visitUserDefinedCmdImpl(cast<UserDefinedCmdNode>(*e), FuncVisitOp::VISIR_BODY);
+    }
+  }
 }
 
 void SymbolIndexer::visitSourceNode(SourceNode &node) {
