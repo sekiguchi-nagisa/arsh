@@ -1082,6 +1082,150 @@ nodes:
     targetTypeToken: null
     opKind: "TO_VOID"
 )"},
+
+    {DumpOp::typed, R"(function ff() { $gg(); }; function gg() {})", 0, 2, R"(
+nodes:
+  - nodeKind: FuncList
+    token:
+      pos: 0
+      size: 42
+    type: "Void"
+    nodes:
+      - nodeKind: Function
+        token:
+          pos: 0
+          size: 24
+        type: "Void"
+        kind: "FUNC"
+        funcName:
+          token:
+            pos: 9
+            size: 2
+          name: "ff"
+        paramNodes:
+        returnTypeNode:
+          nodeKind: Type
+          token:
+            pos: 0
+            size: 0
+          type: "Void"
+          typeKind: "Base"
+          typeName: "Void"
+          handle: null
+        recvTypeNode: null
+        blockNode:
+          nodeKind: Block
+          token:
+            pos: 14
+            size: 10
+          type: "Nothing"
+          nodes:
+            - nodeKind: Apply
+              token:
+                pos: 16
+                size: 5
+              type: "Void"
+              exprNode:
+                nodeKind: Var
+                token:
+                  pos: 16
+                  size: 3
+                type: "() -> Void"
+                varName: "gg"
+                handle:
+                  index: 51
+                  kind: "VAR"
+                  attribute: "READ_ONLY | GLOBAL"
+              argsNode:
+                nodeKind: Args
+                token:
+                  pos: 19
+                  size: 2
+                type: "Void"
+                nodes:
+              handle: null
+              kind: "FUNC_CALL"
+              attr: "DEFAULT"
+            - nodeKind: Jump
+              token:
+                pos: 0
+                size: 0
+              type: "Nothing"
+              opKind: "RETURN"
+              fieldOffset: 0
+              fieldSize: 0
+              tryDepth: 0
+              exprNode:
+                nodeKind: Empty
+                token:
+                  pos: 0
+                  size: 0
+                type: "Void"
+          baseIndex: 0
+          varSize: 0
+          maxVarSize: 0
+          firstDeferOffset: -1
+        maxVarNum: 0
+        handle:
+          index: 50
+          kind: "VAR"
+          attribute: "READ_ONLY | GLOBAL"
+        resolvedType: "() -> Void"
+      - nodeKind: Function
+        token:
+          pos: 26
+          size: 16
+        type: "Void"
+        kind: "FUNC"
+        funcName:
+          token:
+            pos: 35
+            size: 2
+          name: "gg"
+        paramNodes:
+        returnTypeNode:
+          nodeKind: Type
+          token:
+            pos: 0
+            size: 0
+          type: "Void"
+          typeKind: "Base"
+          typeName: "Void"
+          handle: null
+        recvTypeNode: null
+        blockNode:
+          nodeKind: Block
+          token:
+            pos: 40
+            size: 2
+          type: "Nothing"
+          nodes:
+            - nodeKind: Jump
+              token:
+                pos: 0
+                size: 0
+              type: "Nothing"
+              opKind: "RETURN"
+              fieldOffset: 0
+              fieldSize: 0
+              tryDepth: 0
+              exprNode:
+                nodeKind: Empty
+                token:
+                  pos: 0
+                  size: 0
+                type: "Void"
+          baseIndex: 0
+          varSize: 0
+          maxVarSize: 0
+          firstDeferOffset: -1
+        maxVarNum: 0
+        handle:
+          index: 51
+          kind: "VAR"
+          attribute: "READ_ONLY | GLOBAL"
+        resolvedType: "() -> Void"
+)"},
 };
 
 TEST_P(NodeDumpTest, base) { ASSERT_NO_FATAL_FAILURE(this->test()); }
