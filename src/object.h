@@ -59,7 +59,8 @@ namespace ydsh {
   OP(Timer)                                                                                        \
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
-  OP(Redir)
+  OP(Redir)                                                                                        \
+  OP(LineEditor)
 
 /**
  * for LLVM-style RTTI

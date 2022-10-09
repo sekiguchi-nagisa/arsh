@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "core.h"
+#include "line_editor.h"
 #include "misc/files.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
