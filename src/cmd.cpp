@@ -1801,9 +1801,23 @@ static constexpr struct {
 #undef GEN_OPT
 };
 
-static RuntimeOption lookupRuntimeOption(StringRef name) {
+static RuntimeOption recognizeRuntimeOption(StringRef name) {
+  // normalize option name (remove _ -, lower-case)
+  std::string optName;
+  for (char ch : name) {
+    if (ch >= 'a' && ch <= 'z') {
+      optName += ch;
+    } else if (ch >= 'A' && ch <= 'Z') {
+      optName += static_cast<char>(ch - 'A' + 'a');
+    } else if (ch == '_' || ch == '-') {
+      continue;
+    } else {
+      return RuntimeOption{};
+    }
+  }
+
   for (auto &e : runtimeOptions) {
-    if (name == e.name) {
+    if (optName == e.name) {
       return e.option;
     }
   }
@@ -1856,9 +1870,9 @@ static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef 
       ERROR(argvObj, "invalid option format: %s", toPrintable(sub).c_str());
       return 1;
     }
-    const auto option = lookupRuntimeOption(sub);
+    const auto option = recognizeRuntimeOption(sub);
     if (empty(option)) {
-      ERROR(argvObj, "undefined runtime option: %s", toPrintable(sub).c_str());
+      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(sub).c_str());
       return 1;
     }
 
@@ -1927,9 +1941,9 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
   bool foundMonitor = false;
   for (unsigned int i = 2; i < size; i++) {
     auto name = argvObj.getValues()[i].asStrRef();
-    auto option = lookupRuntimeOption(name);
+    auto option = recognizeRuntimeOption(name);
     if (empty(option)) {
-      ERROR(argvObj, "undefined runtime option: %s", toPrintable(name).c_str());
+      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(name).c_str());
       return 1;
     }
     if (option == RuntimeOption::MONITOR && !foundMonitor) {

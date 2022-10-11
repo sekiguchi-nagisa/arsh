@@ -7,26 +7,26 @@ assert shctl set | grep 'monitor.*  off'
 shctl set | grep 'assert.*  on' || _exit
 
 # set
-shctl set traceonexit
+assert shctl set traceonexit
 assert shctl set | grep 'traceonexit.*  on'
-shctl set traceonexit traceonexit
+assert shctl set TRAC-E_ON_Exit tracE_onexit
 assert shctl set | grep 'traceonexit.*  on'
 
-assert shctl set HUGA 2>&1 | grep 'ydsh: shctl: undefined runtime option: HUGA'
+assert shctl set HUGA 2>&1 | grep 'ydsh: shctl: unrecognized runtime option: HUGA'
 shctl set HUGA
 assert $? == 1
 
 # unset
-shctl unset traceonexit
+assert shctl unset traceonexit
 assert shctl set | grep 'traceonexit.*  off'
-shctl unset traceonexit traceonexit
+assert shctl unset traceonexit traceonexit
 assert shctl set | grep 'traceonexit.*  off'
 
 assert shctl unset 2>&1 | grep "ydsh: shctl: `unset' subcommand requires argument"
 shctl unset
 assert $? == 2
 
-assert shctl unset HUGA 2>&1 | grep 'ydsh: shctl: undefined runtime option: HUGA'
+assert shctl unset HUGA 2>&1 | grep 'ydsh: shctl: unrecognized runtime option: HUGA'
 shctl unset HUGA
 assert $? == 1
 
@@ -65,7 +65,7 @@ assert "$(echo hello 2>&1 > /dev/null)" == ""
 shctl set -d
 var oldOpt = $REPLY
 var oldOut = "$(shctl set)"
-shctl set dotglob nullglob traceonexit fastglob
+shctl set Do_tGlob Nu__Llglob_ tRaceON__exit _Fastg_lob
 shctl set -d
 assert $oldOpt != $REPLY
 assert $oldOut != "$(shctl set)"
@@ -86,7 +86,7 @@ assert $? == 1
 assert "$(shctl set -r dotglob=offf 2>&1)" == "ydsh: shctl: invalid option format: dotglob=offf" 
 assert $? == 1
 
-assert "$(shctl set -r fjrafia=off 2>&1)" == "ydsh: shctl: undefined runtime option: fjrafia" 
+assert "$(shctl set -r fjrafia=off 2>&1)" == "ydsh: shctl: unrecognized runtime option: fjrafia" 
 assert $? == 1
 
 assert shctl set -s  2>&1 | grep -- '-s: invalid option'

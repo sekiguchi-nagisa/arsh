@@ -44,6 +44,11 @@
 
 - **Breaking Change**: change interface of ``CMD_FALLBACK``
     - now pass caller module context to fallback handler
+- improve runtime option recognition
+    - now allow upper case letter, _, - like the follow
+      ```
+      shctl set TRACE_ON_EXIT Null-Glob
+      ```
 
 #### API
 
