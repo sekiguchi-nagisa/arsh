@@ -63,6 +63,7 @@
   TOKEN(FLOAT_LITERAL, "<Float Literal>")                                                          \
   TOKEN(STRING_LITERAL, "<String Literal>")                                                        \
   TOKEN(REGEX_LITERAL, "<Regex Literal>")                                                          \
+  TOKEN(BACKQUOTE_LITERAL, "<Backquote Literal>")                                                  \
   TOKEN(OPEN_DQUOTE, "\"")                                                                         \
   TOKEN(START_SUB_CMD, "$(")                                                                       \
   TOKEN(START_IN_SUB, ">(")                                                                        \
@@ -256,6 +257,7 @@
   OP(FLOAT_LITERAL)                                                                                \
   OP(STRING_LITERAL)                                                                               \
   OP(REGEX_LITERAL)                                                                                \
+  OP(BACKQUOTE_LITERAL)                                                                            \
   OP(OPEN_DQUOTE)                                                                                  \
   OP(START_SUB_CMD)                                                                                \
   OP(APPLIED_NAME)                                                                                 \
@@ -304,7 +306,7 @@
 
 #define EACH_LA_stringExpression(OP)                                                               \
   OP(STR_ELEMENT)                                                                                  \
-  EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(CLOSE_DQUOTE)
+  EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL) OP(CLOSE_DQUOTE)
 
 #define EACH_LA_redirFile(OP)                                                                      \
   OP(REDIR_IN_2_FILE)                                                                              \
@@ -336,6 +338,7 @@
   OP(START_SUB_CMD)                                                                                \
   OP(START_IN_SUB)                                                                                 \
   OP(START_OUT_SUB)                                                                                \
+  OP(BACKQUOTE_LITERAL)                                                                            \
   EACH_LA_paramExpansion(OP) OP(COMPLETION)
 
 #define EACH_LA_cmdArg_LP(OP) EACH_LA_cmdArg(OP) OP(LP)

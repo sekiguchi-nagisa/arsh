@@ -786,6 +786,37 @@ TEST_F(LexerTest_Lv1, atparen) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
+TEST_F(LexerTest_Lv1, backquote1) {
+  const char *text = "``";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BACKQUOTE_LITERAL, "``", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, backquote2) {
+  const char *text = "`# this is`";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::BACKQUOTE_LITERAL, "`# this is`", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, backquote3) {
+  const char *text = R"("`# this is\``")";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::OPEN_DQUOTE, "\"", TokenKind::BACKQUOTE_LITERAL,
+                                 "`# this is\\``", TokenKind::CLOSE_DQUOTE, "\"", TokenKind::EOS,
+                                 ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, backquote4) {
+  const char *text = "echo `# this is\\`\n`";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::BACKQUOTE_LITERAL,
+                                 "`# this is\\`\n`", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
 // applied name
 TEST_F(LexerTest_Lv1, appliedName1) {
   const char *text = "$w10i_fArhue";

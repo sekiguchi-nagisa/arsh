@@ -12,8 +12,8 @@ error() : Nothing {
 }
 
 # check arguments
-let SRC_PATH = $1.realpath() ?? usage "must be valid src path: `$1'"
-let DEST_PATH = $2.realpath() ?? usage "must be valid dest path: `$2'"
+let SRC_PATH = $1.realpath() ?? usage "must be valid src path: '$1'"
+let DEST_PATH = $2.realpath() ?? usage "must be valid dest path: '$2'"
 
 let SRC_BACKUP = "$SRC_PATH/BACKUP"
 let DEST_BACKUP = "$DEST_PATH/BACKUP"
@@ -23,16 +23,16 @@ let DEST_BACKUP_NEW = "$DEST_PATH/BACKUP-new"
 
 $SRC_PATH != $DEST_PATH || usage "dest path must be different from src path"
 
-test -d $SRC_BACKUP || usage "require initial snapshot in `$SRC_BACKUP'"
+test -d $SRC_BACKUP || usage "require initial snapshot in '$SRC_BACKUP'"
 
-test -d $DEST_BACKUP || usage "require initial backup in `$DEST_BACKUP'"
+test -d $DEST_BACKUP || usage "require initial backup in '$DEST_BACKUP'"
 
-$UID == 0 || usage "require root privilege. use `sudo'"
+$UID == 0 || usage "require root privilege. use 'sudo'"
 
 assert command -V date > /dev/null
 mount | grep $SRC_BACKUP && umount $SRC_BACKUP
 
-echo perform backup operation "`$SRC_PATH'" to "`$DEST_PATH'"
+echo perform backup operation "'$SRC_PATH'" to "'$DEST_PATH'"
 read -p 'confirm (y/n): '
 if $REPLY.lower() != "y" {
     echo not perform backup operation

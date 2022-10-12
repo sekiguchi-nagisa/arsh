@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 2, $errorKind = 'NoBackquote', $status = 1)
+
+"AAA=
+ `echo hello`"

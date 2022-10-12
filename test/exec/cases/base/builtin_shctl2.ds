@@ -22,7 +22,7 @@ assert shctl set | grep 'traceonexit.*  off'
 assert shctl unset traceonexit traceonexit
 assert shctl set | grep 'traceonexit.*  off'
 
-assert shctl unset 2>&1 | grep "ydsh: shctl: `unset' subcommand requires argument"
+assert shctl unset 2>&1 | grep "ydsh: shctl: \`unset' subcommand requires argument"
 shctl unset
 assert $? == 2
 

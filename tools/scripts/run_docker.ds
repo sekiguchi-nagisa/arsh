@@ -20,8 +20,8 @@ if !(test -d $root) {
 let workdir = "$SCRIPT_DIR/../../".realpath()!
 
 var name = "build_${$basename($root)}:1"
-echo Dockfile path: "`$root/Dockerfile'"
-echo build docker image: "`$name'"
+echo Dockfile path: "'$root/Dockerfile'"
+echo build docker image: "'$name'"
 
 docker build -t $name -f $root/Dockerfile $workdir || exit $?
 

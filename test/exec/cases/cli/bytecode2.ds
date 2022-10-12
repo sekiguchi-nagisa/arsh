@@ -96,7 +96,7 @@ DSCode: top level
 Code:
    0: LOAD_CONST  2
    2: STORE_GLOBAL  50
-   5: PUSH_STR1  `f'
+   5: PUSH_STR1  \`f'
    7: NEW_CMD
    8: PUSH_NULL
    9: CALL_UDC  50
@@ -137,7 +137,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: String `\$a == 99'
+  2: String \`\$a == 99'
 Line Number Table:
   lineNum: 1, address:  8
 Exception Table:

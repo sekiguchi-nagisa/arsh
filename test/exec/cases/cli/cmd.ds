@@ -13,7 +13,7 @@ $expect("$(ds -c '#echo hello' 2>&1)", 0, '') # do nothing
 
 
 # assertion
-var msg = "Assertion Error: `(12 == 4)'
+var msg = "Assertion Error: \`(12 == 4)'
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert(12 == 4)' 2>&1)", 1, $msg)

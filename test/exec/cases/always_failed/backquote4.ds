@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 3, $chars = 10, $errorKind = 'NoBackquote', $status = 1)
+
+echo AAA `  # this is a comment` \
+    `# this is a comment` BBB    # not allow inline comment backquote literal

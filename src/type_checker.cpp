@@ -599,6 +599,9 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
 }
 
 void TypeChecker::visitStringNode(StringNode &node) {
+  if (node.getKind() == StringNode::BACKQUOTE) {
+    this->reportError<NoBackquote>(node);
+  }
   node.setType(this->typePool.get(TYPE::String));
 }
 

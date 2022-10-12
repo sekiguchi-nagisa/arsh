@@ -63,7 +63,7 @@ try {
     assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
-    assert $e.message() == "io redirection error: if=~, caused by `No such file or directory'"
+    assert $e.message() == "io redirection error: if=~, caused by \`No such file or directory'"
 }
 
 var ex = 34 as Any
@@ -73,7 +73,7 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
-assert ($ex as SystemError).message() == "io redirection error: hello\x00world, caused by `Invalid argument'"
+assert ($ex as SystemError).message() == "io redirection error: hello\x00world, caused by \`Invalid argument'"
 
 
 # command fallback

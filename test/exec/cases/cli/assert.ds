@@ -16,13 +16,13 @@ var msg = "Assertion Error: hello assertion
 $expect("$(ds -c $cmd 2>&1)", 1, $msg)
 
 # assert without message
-$msg = "Assertion Error: `\$false'
+$msg = "Assertion Error: \`\$false'
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert $false' 2>&1)", 1, $msg)
 
 
-$msg = "Assertion Error: `34 == 43'
+$msg = "Assertion Error: \`34 == 43'
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert 34 == 43' 2>&1)", 1, $msg)

@@ -271,6 +271,7 @@ std::string Lexer::doubleElementToString(Token token) const {
       switch (next) {
       case '"':
       case '$':
+      case '`':
       case '\\':
         ch = next;
         break;

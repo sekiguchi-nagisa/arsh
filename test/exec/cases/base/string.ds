@@ -23,6 +23,7 @@ assert $'\e' == $'\x1b'
 assert $'\E' == $'\x1b'
 assert $'\f' == $'\x0C'
 assert $'\'' == "'"
+assert '`' == "\`"
 
 assert $'\u7058' == '灘'
 assert $'\U20118' == '𠄘'

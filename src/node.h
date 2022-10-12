@@ -398,6 +398,7 @@ public:
   enum StringKind {
     STRING,
     TILDE,
+    BACKQUOTE,
   };
 
 private:

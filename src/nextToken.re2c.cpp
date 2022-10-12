@@ -119,7 +119,7 @@ TokenKind Lexer::nextToken(Token &token) {
     FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
     SQUOTE_CHAR = '\\' ['] | [^'\000];
-    DQUOTE_CHAR = "\\" [^\000] | [^$\\"\000];
+    DQUOTE_CHAR = "\\" [^\000] | [^$\\"`\000];
     VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
     SPECIAL_NAMES = [@#?$0-9];
 
@@ -127,6 +127,7 @@ TokenKind Lexer::nextToken(Token &token) {
     ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];
     APPLIED_NAME = "$" VAR_NAME;
     SPECIAL_NAME = "$" SPECIAL_NAMES;
+    BACKQUOTE_LITERAL = [`] ("\\" [^\000] | [^`\000])* [`];
 
     INNER_NAME = APPLIED_NAME | "${" VAR_NAME "}";
     INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
@@ -204,6 +205,7 @@ INIT:
     <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
     <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
     <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
+    <STMT> BACKQUOTE_LITERAL { UPDATE_LN(); MODE(EXPR); RET(BACKQUOTE_LITERAL); }
     <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
     <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
     <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
@@ -289,6 +291,8 @@ INIT:
                              { RET(APPLIED_NAME_WITH_FIELD); }
     <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL(STMT); RET(START_INTERP); }
     <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
+    <DSTRING,CMD> BACKQUOTE_LITERAL
+                             { UPDATE_LN(); RET(BACKQUOTE_LITERAL); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
     <CMD> BRACE_CHAR_SEQ     { RET(BRACE_CHAR_SEQ); }

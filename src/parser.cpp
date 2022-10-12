@@ -1301,6 +1301,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
     return this->parse_cmdSubstitution();
+  case TokenKind::BACKQUOTE_LITERAL:
+    return this->parse_backquoteLiteral();
   case TokenKind::START_IN_SUB:
   case TokenKind::START_OUT_SUB:
     return this->parse_procSubstitution();
@@ -1595,6 +1597,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     return this->parse_stringLiteral();
   case TokenKind::REGEX_LITERAL:
     return this->parse_regexLiteral();
+  case TokenKind::BACKQUOTE_LITERAL:
+    return this->parse_backquoteLiteral();
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
@@ -1825,6 +1829,12 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
   return std::make_unique<RegexNode>(token, std::move(str), std::move(flag));
 }
 
+std::unique_ptr<Node> Parser::parse_backquoteLiteral() {
+  Token token = TRY(this->expect(TokenKind::BACKQUOTE_LITERAL));
+  return std::make_unique<StringNode>(token, this->lexer->toTokenText(token),
+                                      StringNode::BACKQUOTE);
+}
+
 std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
   GUARD_DEEP_NESTING(guard);
 
@@ -1875,6 +1885,11 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
       }
     case TokenKind::START_SUB_CMD: {
       auto subNode = TRY(this->parse_cmdSubstitution(true));
+      node->addExprNode(std::move(subNode));
+      break;
+    }
+    case TokenKind::BACKQUOTE_LITERAL: {
+      auto subNode = TRY(this->parse_backquoteLiteral());
       node->addExprNode(std::move(subNode));
       break;
     }

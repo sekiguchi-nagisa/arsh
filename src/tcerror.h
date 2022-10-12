@@ -129,6 +129,7 @@ DEFINE_TCError(NotInferParamNoFunc, "cannot infer parameter type, "
                                     "because current context does not require function type");
 DEFINE_TCError(NotInferParamUnmatch, "cannot infer parameter type, "
                                      "because number of parameter is not match");
+DEFINE_TCError(NoBackquote, "backquote command substitution is not allowed. use $( ) instead");
 
 #undef DEFINE_TCError
 

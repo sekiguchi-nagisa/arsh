@@ -305,6 +305,8 @@ protected:
 
   std::unique_ptr<Node> parse_regexLiteral();
 
+  std::unique_ptr<Node> parse_backquoteLiteral();
+
   /**
    * parse argument list (1, 2, 4,)
    * @param first

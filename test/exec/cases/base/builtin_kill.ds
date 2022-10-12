@@ -40,7 +40,7 @@ $IFS = $OLD_IFS
 assert $expect.size() == $actual.size()
 for(var i = 0; $i < $expect.size(); $i++) {
     var e_str = "${$expect[$i].value() < 10 ? " " + $expect[$i] : $expect[$i] as String}) SIG${$expect[$i].name()}"
-    assert $e_str == $actual[$i] : "`$e_str', `${$actual[$i]}'"
+    assert $e_str == $actual[$i] : "\`$e_str', \`${$actual[$i]}'"
 }
 
 

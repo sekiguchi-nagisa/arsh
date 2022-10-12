@@ -160,7 +160,8 @@ void NumberNode::dump(NodeDumper &dumper) const {
 void StringNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(STRING)                                                                                       \
-  OP(TILDE)
+  OP(TILDE)                                                                                        \
+  OP(BACKQUOTE)
 
   DUMP_ENUM(kind, EACH_ENUM);
 

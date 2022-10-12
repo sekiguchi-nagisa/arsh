@@ -39,6 +39,9 @@
 - **Breaking Change**: change evaluation order of ``TERM_HOOK``
     - now only called from ``DSState_delete`` or subshell exit
     - in interactive mode, does not call ``TERM_HOOK`` in uncaught exception
+- **Breaking Change**: improve error checking of backquote literal
+    - now syntactically accept backquote literal, but always report semantic error
+    - now does not allow backquote characters without escape within double-quoted string literal
 
 #### Builtin
 

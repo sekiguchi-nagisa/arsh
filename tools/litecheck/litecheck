@@ -66,7 +66,7 @@ typedef Directive(t : String, l : String, n : Int) {
     let type = $t   # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
     assert !$l.empty()
     let line = case $type {
-        "STATUS" => $_parse_num($l) ?? throw new Error("$STATUS directive must be positive number: `$l'")
+        "STATUS" => $_parse_num($l) ?? throw new Error("$STATUS directive must be positive number: \`$l'")
         $/CHECK.*_RE.*/ => new Regex($l, "")
         else => $l as Any
     }
@@ -98,7 +98,7 @@ function _parse_directives(path : String) : [String: [Directive]] {
                 if !$line.empty() {
                     $prefix = $prefix.slice(0, $prefix.lastIndexOf($line))
                 }
-                $_error($ln, "invalid directive format, must be start with `$prefix '")
+                $_error($ln, "invalid directive format, must be start with \`$prefix '")
             }
             $line = $line.slice(1) # skip first ' '
             $line :- $_error($ln, "invalid directive format, need non-emtpy string")
@@ -122,7 +122,7 @@ function _parse_directives(path : String) : [String: [Directive]] {
     case $map[$RUN].size() {
         0 => $_error(1, "require $RUN directive or shebang")
         1 => if $map[$RUN][0].type == $SHEBANG {
-                test -x $self || $_error(1, "must be executable: `$self'")
+                test -x $self || $_error(1, "must be executable: \`$self'")
                 $map[$RUN].shift()
             } else {
                 assert $map[$RUN][0].type == $RUN
@@ -242,7 +242,7 @@ function _run_and_check(map : [String : [Directive]]) : Int {
             try {
                 $MODULE._func($d)
             } catch $e : Error {
-                $_error($dd.ln, "invalid $RUN directive: `$d', caused by" + $'\n' + $e.message())
+                $_error($dd.ln, "invalid $RUN directive: \`$d', caused by" + $'\n' + $e.message())
             }
         }
     }
@@ -271,7 +271,7 @@ function _run_and_check(map : [String : [Directive]]) : Int {
     }
     if !$map[$STATUS].empty() {
         var estatus = $map[$STATUS][0].line as Int
-        $s == $estatus || _error "exit status is mismatched, expected: `$estatus', actual: `$s'"
+        $s == $estatus || _error "exit status is mismatched, expected: \`$estatus', actual: \`$s'"
     }
     return $ret
 }
@@ -289,7 +289,7 @@ litecheck() {
                 $i++
                 $bin = $@[$i]
             } else {
-                _usage "`$arg' option requires argument"
+                _usage "\`$arg' option requires argument"
             }
         $/^-.*/ => _usage "invalid option: $arg"
         else => { $file = $arg; break; }
@@ -298,13 +298,13 @@ litecheck() {
 
     ## check file existence
     $file ?? _usage "require file"
-    $self = $file!.realpath() ?? _usage "file not found: `${$file!}'"
+    $self = $file!.realpath() ?? _usage "file not found: \`${$file!}'"
     test -f $self || _usage "require regular file: ${$file!}"
 
     ## check bin
     if $bin {
-        $cmd = $bin!.realpath() ?? _usage "file not found: `${$bin!}'"
-        (test -f $cmd && test -x $cmd) || _usage "must be executable: `${$bin!}'"
+        $cmd = $bin!.realpath() ?? _usage "file not found: \`${$bin!}'"
+        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin!}'"
     }
 
     # read directive
@@ -314,10 +314,10 @@ litecheck() {
     for d in $map[$REQUIRE] {
         var cond = try { $MODULE._func($d.line as String)(); } 
                    catch e : Error { 
-                       $_error($d.ln, "invalid $REQUIRE directive: `${$d.line}', caused by" + $'\n' + $e.message());
+                       $_error($d.ln, "invalid $REQUIRE directive: \`${$d.line}', caused by" + $'\n' + $e.message());
                    }
-        $cond is Bool || $_error($d.ln, "$REQUIRE directive must be boolean expression: `${$d.line}'")
-        $cond! as Bool || { echo skip "`$self'"; exit 125; }
+        $cond is Bool || $_error($d.ln, "$REQUIRE directive must be boolean expression: \`${$d.line}'")
+        $cond! as Bool || { echo skip "\`$self'"; exit 125; }
     }
 
     # run command
