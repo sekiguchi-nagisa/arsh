@@ -2268,9 +2268,8 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(LOAD_CUR_MOD) {
         unsigned short modId = cast<CompiledCode>(CODE(state))->getBelongedModId();
-        auto ret = state.typePool.getModTypeById(modId);
-        assert(ret);
-        auto &modType = cast<ModType>(*ret.asOk());
+        auto &entry = state.modLoader[modId];
+        auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
         unsigned int index = modType.getIndex();
         state.stack.push(state.getGlobal(index));
         vmnext;
