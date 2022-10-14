@@ -2587,7 +2587,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
     header += "]\n";
     fputs(header.c_str(), stderr);
     const bool bt = state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-    auto *handle = state.typePool.lookupMethod(errorType, bt ? METHOD_SHOW : OP_STR);
+    auto *handle = state.typePool.lookupMethod(errorType, bt ? OP_SHOW : OP_STR);
     assert(handle);
 
     setFlag(DSState::eventDesc, VMEvent::MASK);

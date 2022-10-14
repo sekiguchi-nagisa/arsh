@@ -65,6 +65,8 @@ Code:
   2: INSTANCE_OF  [Int]
   6: RETURN
 Constant Pool:
+  0: String (string)
+  1: String $(pwd)
 Line Number Table:
   lineNum: 1, address: 0
 Exception Table:"

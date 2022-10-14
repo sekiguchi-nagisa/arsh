@@ -57,6 +57,8 @@ Code:
   8: PUSH_INVALID
   9: RETURN
 Constant Pool:
+  0: String $mod
+  1: String $(dirname $mod)
 Line Number Table:
   lineNum: 3, address: 2
 Exception Table:"

@@ -166,6 +166,31 @@ struct CodeBuilder : public CodeEmitter<true> {
   CompiledCode build(const std::string &name);
 };
 
+class ModuleCommon {
+private:
+  unsigned short modId;
+  DSValue scriptName;
+  DSValue scriptDir;
+
+public:
+  ModuleCommon() = default;
+
+  /**
+   *
+   * @param name
+   * @param scriptDir
+   */
+  ModuleCommon(unsigned short modId, const std::string &name, const char *scriptDir)
+      : modId(modId), scriptName(DSValue::createStr(name)),
+        scriptDir(DSValue::createStr(scriptDir)) {}
+
+  unsigned short getModId() const { return this->modId; }
+
+  DSValue getScriptName() const { return this->scriptName; }
+
+  DSValue getScriptDir() const { return this->scriptDir; }
+};
+
 class ByteCodeGenerator : protected NodeVisitor {
 private:
   TypePool &typePool;
@@ -173,6 +198,8 @@ private:
   const MethodHandle *handle_STR{nullptr};
 
   std::vector<CodeBuilder> builders;
+
+  std::vector<ModuleCommon> commons;
 
   CodeGenError error;
 
@@ -435,28 +462,19 @@ private:
 
   void initToplevelCodeBuilder(unsigned short modId, LexerPtr lex, unsigned short localVarNum) {
     assert(lex->getScriptDir());
-    this->initCodeBuilder(CodeKind::TOPLEVEL, modId, std::move(lex), localVarNum);
+    this->commons.emplace_back(modId, lex->getSourceName(), lex->getScriptDir());
+    this->initCodeBuilder(CodeKind::TOPLEVEL, std::move(lex), localVarNum);
   }
 
-  /**
-   * for function or user-defined command
-   * @param kind
-   * @param localVarNum
-   */
-  void initFuncCodeBuilder(CodeKind kind, unsigned short localVarNum) {
+  void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
     auto lex = this->builders.back().lexer;
-    auto modId = this->builders.back().modId;
-    this->initCodeBuilder(kind, modId, lex, localVarNum);
+    this->initCodeBuilder(kind, lex, localVarNum);
   }
 
-  void initCodeBuilder(CodeKind kind, unsigned short modId, LexerPtr lex,
-                       unsigned short localVarNum) {
-    this->builders.emplace_back(modId, std::move(lex), kind, localVarNum);
-    if (kind == CodeKind::TOPLEVEL) {
-      auto &lexer = *this->curBuilder().lexer;
-      this->curBuilder().constBuffer.append(DSValue::createStr(lexer.getSourceName()));
-      this->curBuilder().constBuffer.append(DSValue::createStr(lexer.getScriptDir()));
-    }
+  void initCodeBuilder(CodeKind kind, LexerPtr lex, unsigned short localVarNum) {
+    this->builders.emplace_back(this->commons.back().getModId(), std::move(lex), kind, localVarNum);
+    this->curBuilder().constBuffer.append(this->commons.back().getScriptName());
+    this->curBuilder().constBuffer.append(this->commons.back().getScriptDir());
   }
 
   CompiledCode finalizeCodeBuilder(const std::string &name) {
