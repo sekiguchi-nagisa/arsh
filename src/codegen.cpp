@@ -94,7 +94,8 @@ CompiledCode CodeBuilder::build(const std::string &name) {
       .localSize = 0,
   }; // sentinel
 
-  return CompiledCode(this->modId, name, code, constPool, entries, except);
+  return CompiledCode(this->lexer->getSourceName(), this->modId, name, code, constPool, entries,
+                      except);
 }
 
 // ###############################
@@ -526,8 +527,14 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 
     this->emit0byteIns(OpCode::LOAD_ENV);
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
-    this->emit1byteIns(OpCode::LOAD_CONST,
-                       node.getIndex() - toIndex(BuiltinVarOffset::SCRIPT_NAME));
+    this->emit0byteIns(OpCode::LOAD_CUR_MOD);
+
+    unsigned int index = node.getIndex();
+    const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)  ? METHOD_SCRIPT_NAME
+                     : index == toIndex(BuiltinVarOffset::SCRIPT_DIR) ? METHOD_SCRIPT_DIR
+                                                                      : "";
+    auto *handle = this->typePool.lookupMethod(this->typePool.get(TYPE::Module), op);
+    this->emitMethodCallIns(*handle);
   } else if (node.getHandle()->is(HandleKind::SMALL_CONST)) {
     ConstEntry entry(node.getIndex());
     switch (entry.data.k) {
@@ -1521,7 +1528,7 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
-  this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
+  this->initFuncCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
   for (auto &paramNode : node.getParamNodes()) {
     if (paramNode->getHandle()->has(HandleAttr::BOXED)) {
       this->emit1byteIns(OpCode::BOX_LOCAL, paramNode->getVarIndex());
@@ -1555,7 +1562,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 }
 
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
+  this->initFuncCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
   this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
   auto code = this->finalizeCodeBuilder(node.getCmdName());
@@ -1633,15 +1640,15 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
     this->toplevelDeferNodes().pop_back();
   }
 
+  auto lex = this->curBuilder().lexer;
   auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {
     auto v = DSValue::create<FuncObject>(modType, std::move(code));
     func = ObjPtr<FuncObject>(&typeAs<FuncObject>(v));
   } else {
-    this->reportError<TooLargeToplevel>(token, this->commons.back().getScriptName().asCStr());
+    this->reportError<TooLargeToplevel>(token, lex->getSourceName().c_str());
   }
-  this->commons.pop_back();
   return func;
 }
 
