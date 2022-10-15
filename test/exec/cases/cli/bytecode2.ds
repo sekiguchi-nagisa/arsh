@@ -131,13 +131,11 @@ Code:
   29: PUSH_INT  99
   31: CALL_BUILTIN2  2  %b_==
   34: BRANCH_NOT  6
-  37: LOAD_CONST  2
+  37: LOAD_CONST  0
   39: ASSERT_FAIL
   40: EXIT_FINALLY
 Constant Pool:
-  0: String (string)
-  1: String $(pwd)
-  2: String \`\$a == 99'
+  0: String \`\$a == 99'
 Line Number Table:
   lineNum: 1, address:  8
 Exception Table:
@@ -180,8 +178,6 @@ Code:
   19: STORE_LOCAL  0
   21: EXIT_FINALLY
 Constant Pool:
-  0: String (string)
-  1: String $(pwd)
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:

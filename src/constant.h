@@ -161,7 +161,9 @@ constexpr const char *OP_INTERP = "%interp"; // for interpolation
 constexpr const char *OP_TO_INT = "toInt";
 constexpr const char *OP_TO_FLOAT = "toFloat";
 
-constexpr const char *OP_SHOW = "show";
+constexpr const char *METHOD_SHOW = "show";
+constexpr const char *METHOD_SCRIPT_NAME = "_scriptName";
+constexpr const char *METHOD_SCRIPT_DIR = "_scriptDir";
 
 // =====  environmental variable  =====
 

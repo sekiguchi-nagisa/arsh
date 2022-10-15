@@ -1112,6 +1112,11 @@ private:
   /**
    * must not be null
    */
+  char *sourceName{nullptr};
+
+  /**
+   * must not be null
+   */
   char *name{nullptr};
 
   /**
@@ -1132,15 +1137,19 @@ private:
 public:
   NON_COPYABLE(CompiledCode);
 
-  CompiledCode(unsigned short modId, const std::string &name, DSCode code, DSValue *constPool,
-               LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept
-      : DSCode(code), belongedModId(modId), name(strdup(name.c_str())), constPool(constPool),
-        lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) {}
+  CompiledCode(const std::string &sourceName, unsigned short modId, const std::string &name,
+               DSCode code, DSValue *constPool, LineNumEntry *sourcePosEntries,
+               ExceptionEntry *exceptionEntries) noexcept
+      : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
+        name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
+        exceptionEntries(exceptionEntries) {}
 
   CompiledCode(CompiledCode &&c) noexcept
-      : DSCode(c), belongedModId(c.belongedModId), name(c.name), constPool(c.constPool),
-        lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
+      : DSCode(c), belongedModId(c.belongedModId), sourceName(c.sourceName), name(c.name),
+        constPool(c.constPool), lineNumEntries(c.lineNumEntries),
+        exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
+    c.sourceName = nullptr;
     c.code = nullptr;
     c.constPool = nullptr;
     c.lineNumEntries = nullptr;
@@ -1150,6 +1159,7 @@ public:
   CompiledCode() noexcept : DSCode() { this->code = nullptr; }
 
   ~CompiledCode() {
+    free(this->sourceName);
     free(this->name);
     free(this->code);
     delete[] this->constPool;
@@ -1167,7 +1177,7 @@ public:
 
   unsigned short getBelongedModId() const { return this->belongedModId; }
 
-  StringRef getSourceName() const { return this->constPool[0].asStrRef(); }
+  StringRef getSourceName() const { return this->sourceName; }
 
   /**
    * must not be null.
