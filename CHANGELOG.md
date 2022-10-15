@@ -42,6 +42,10 @@
 - **Breaking Change**: improve error checking of backquote literal
     - now syntactically accept backquote literal, but always report semantic error
     - now does not allow backquote characters without escape within double-quoted string literal
+- **Breaking Change**: change internal implementation of ``SCRIPT_DIR``, ``SCRIPT_NAME``
+    - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and ``Module#_scriptName``
+    - in interctive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
+        - run-time ``SCRIPT_DIR`` always indicates latest compile-time ``SCRIPT_DIR``
 
 #### Builtin
 

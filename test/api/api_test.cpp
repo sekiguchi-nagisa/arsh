@@ -126,6 +126,15 @@ private:
   }
 };
 
+struct Deleter {
+  void operator()(DSError *e) const {
+    DSError_release(e);
+    delete e;
+  }
+};
+
+static auto newError() { return std::unique_ptr<DSError, Deleter>(new DSError()); }
+
 TEST_F(APITest, create) {
   DSState *st = DSState_createWithMode(static_cast<DSExecMode>(100));
   ASSERT_FALSE(st);
@@ -998,15 +1007,6 @@ TEST_F(APITest, status) {
   ASSERT_EQ(ret, DSState_exitStatus(this->state));
 }
 
-struct Deleter {
-  void operator()(DSError *e) const {
-    DSError_release(e);
-    delete e;
-  }
-};
-
-static auto newError() { return std::unique_ptr<DSError, Deleter>(new DSError()); }
-
 TEST_F(APITest, abort) {
   std::string src = "function f( $a : String, $b : String) : Int { exit 54; }";
   auto e = newError();
@@ -1185,6 +1185,96 @@ static Output invoke(Func func) {
   config.err = IOConfig::PIPE;
 
   return ProcBuilder::spawn(config, [func]() { return func(); }).waitAndGetResult(true);
+}
+
+TEST_F(APITest, scriptDir) {
+  std::string text = R"(
+  function check(v : String) : Bool {
+    case $v {
+    $SCRIPT_DIR => return true
+    else => return false
+    }
+  }
+
+  function test1() : Bool {
+    return $check($SCRIPT_DIR)
+  }
+  function test2() : Bool {
+    return $check($MODULE._scriptDir())
+  }
+  assert $test1()
+  assert $test2()
+)";
+
+  auto error = newError();
+  int ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+  ASSERT_EQ(0, ret);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, error->kind);
+  error = newError();
+
+  /**
+   * after change CWD, SCRIPT_DIR is also changed with CWD.
+   * as a result, runtiem SCRIPT_DIR and compile runtime SCRIPT_DIR are different
+   */
+  auto output = invoke([&] {
+    if (chdir(this->getTempDirName()) != 0) {
+      fatal_perror("chdir failed");
+    }
+    text = "assert $test1()";
+    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    DSState_delete(&this->state);
+    return ret;
+  });
+  ASSERT_EQ(1, output.status.value);
+  ASSERT_EQ("", output.out);
+  ASSERT_EQ(R"(Assertion Error: `$test1()'
+    from (string):17 '<toplevel>()')",
+            output.err);
+
+  output = invoke([&] {
+    if (chdir(this->getTempDirName()) != 0) {
+      fatal_perror("chdir failed");
+    }
+    text = "assert $test2()";
+    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    DSState_delete(&this->state);
+    return ret;
+  });
+  ASSERT_EQ(1, output.status.value);
+  ASSERT_EQ("", output.out);
+  ASSERT_EQ(R"(Assertion Error: `$test2()'
+    from (string):17 '<toplevel>()')",
+            output.err);
+
+  output = invoke([&] {
+    if (chdir(this->getTempDirName()) != 0) {
+      fatal_perror("chdir failed");
+    }
+    text = "assert $check($MODULE._scriptDir())";
+    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    DSState_delete(&this->state);
+    return ret;
+  });
+  ASSERT_EQ(1, output.status.value);
+  ASSERT_EQ("", output.out);
+  ASSERT_EQ(R"(Assertion Error: `$check($MODULE._scriptDir())'
+    from (string):17 '<toplevel>()')",
+            output.err);
+
+  output = invoke([&] {
+    if (chdir(this->getTempDirName()) != 0) {
+      fatal_perror("chdir failed");
+    }
+    text = "assert $check($SCRIPT_DIR)";
+    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    DSState_delete(&this->state);
+    return ret;
+  });
+  ASSERT_EQ(1, output.status.value);
+  ASSERT_EQ("", output.out);
+  ASSERT_EQ(R"(Assertion Error: `$check($SCRIPT_DIR)'
+    from (string):17 '<toplevel>()')",
+            output.err);
 }
 
 TEST_F(APITest, module1) {
