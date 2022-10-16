@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 7, $chars = 10, $errorKind = 'PosArgRange', $status = 1)
+
+echo $0000000000000000000000000
+ehco ${00000000000000000000000000000}
+echo $0000000000000000000000001
+echo "${002147483647}"
+echo "faf${9223372036854775809}"
