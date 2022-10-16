@@ -245,3 +245,44 @@ Line Number Table:
 Exception Table:"
 
 $expect("$(ds -n --dump-code -c '{;}&')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 36
+  max stack depth: 4
+  number of local variable: 0
+  number of global variable: 50
+Code:
+   0: LOAD_CONST  2
+   2: NEW_CMD
+   3: PUSH_NULL
+   4: LOAD_GLOBAL  15
+   7: CALL_BUILTIN2  1  size
+  10: CALL_BUILTIN2  1  %str
+  13: ADD_CMD_ARG
+  14: LOAD_GLOBAL  17
+  17: ADD_CMD_ARG
+  18: LOAD_GLOBAL  15
+  21: PUSH_INT  1
+  23: GET_POS_ARG
+  24: ADD_CMD_ARG
+  25: LOAD_GLOBAL  15
+  28: LOAD_CONST  3
+  30: GET_POS_ARG
+  31: ADD_CMD_ARG
+  32: CALL_CMD
+  33: POP
+  34: PUSH_INVALID
+  35: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: String echo
+  3: Int 9999
+Line Number Table:
+  lineNum: 1, address:  4
+Exception Table:"
+
+$expect("$(ds -n --dump-code -c 'echo $# $0 $1 ${9999}')", 0, $out)

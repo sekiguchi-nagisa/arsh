@@ -428,6 +428,8 @@ nodes:
                         type:
                         varName: "true"
                         handle: null
+                        extraOp: "NONE"
+                        extraValue: 0
                       handle: null
                 - nodeKind: StringExpr
                   token:
@@ -617,6 +619,8 @@ nodes:
         index: 514
         kind: "SMALL_CONST"
         attribute: "READ_ONLY | GLOBAL"
+      extraOp: "NONE"
+      extraValue: 0
     armNodes:
       - nodeKind: Arm
         token:
@@ -634,6 +638,8 @@ nodes:
               index: 514
               kind: "SMALL_CONST"
               attribute: "READ_ONLY | GLOBAL"
+            extraOp: "NONE"
+            extraValue: 0
         this->constPatternNodes:
           - nodeKind: Number
             token:
@@ -768,6 +774,8 @@ nodes:
         index: 1
         kind: "SMALL_CONST"
         attribute: "READ_ONLY | GLOBAL"
+      extraOp: "NONE"
+      extraValue: 0
     iterNode:
       nodeKind: Empty
       token:
@@ -847,6 +855,8 @@ nodes:
               index: 13
               kind: "VAR"
               attribute: "GLOBAL"
+            extraOp: "NONE"
+            extraValue: 0
       baseIndex: 0
       varSize: 14
       maxVarSize: 14
@@ -875,6 +885,8 @@ nodes:
           type:
           varName: "IFS"
           handle: null
+          extraOp: "NONE"
+          extraValue: 0
         rightNode:
           nodeKind: CmdArg
           token:
@@ -1136,6 +1148,8 @@ nodes:
                   index: 51
                   kind: "VAR"
                   attribute: "READ_ONLY | GLOBAL"
+                extraOp: "NONE"
+                extraValue: 0
               argsNode:
                 nodeKind: Args
                 token:

@@ -326,6 +326,6 @@ assert "$(echo \\:~)" == '\:~'
 assert "if=~" == "$(echo if\=~)"
 assert "if=\~" == "$(echo if=\\~)"
 assert "~if=~" == "$(echo ~\if=~)"
-assert "34if=~" == "$(echo ${34}if=~)"
+assert "if=~" == "$(echo ${34}if=~)"
 assert "=~" == "$(echo \=~)"
 assert "=~" == "$(echo =~)"

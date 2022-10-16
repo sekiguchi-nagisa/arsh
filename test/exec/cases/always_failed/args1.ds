@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 7, $chars = 8, $errorKind = 'PosArgRange', $status = 1)
+
+assert $0000000000000000000000000 == 'fjriae'
+assert "${00000000000000000000000000000}" == 'fjriae'
+assert $0000000000000000000000001 == ''
+assert $002147483647 == 'fjriae'
+assert $002147483648 == 'fjriae'

@@ -52,6 +52,11 @@
   echo $a a          # output is ' a'
   echo ${['', 'a']}  # output is ' a'
   ```
+- **Breaking Change**: allow positional arguments up to INT32_MAX decimal
+    - now ``"${34}"`` indicates positional argument (does not indicate int literal)
+    - also allow redundant prefix ``0``, such ``000``, ``0009``
+    - always synchronize current ``@`` content
+- **Breaking Change**: ``#`` variable always indicates current ``@`` size
 
 #### Builtin
 

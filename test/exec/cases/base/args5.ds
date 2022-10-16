@@ -1,0 +1,32 @@
+# positional parameter
+
+#$test($result = 'SUCCESS', $params = ['AA', 'BB', 'CC',])
+
+assert $@.size() == 3
+assert $# == 3
+
+assert "${001}" == "AA"
+assert "${2}" == "BB"
+assert "$0003" == "CC"
+
+## modify @
+
+$@.add('DD')
+$@.reverse()
+assert $@.size() == 4
+assert $# == 4
+assert "${001}" == "DD"
+assert "${2}" == "CC"
+assert "$0003" == "BB"
+assert $004 == 'AA'
+assert $005 == ''
+
+var aa = $@
+$aa.clear()
+assert $@.size() == 0
+assert $# == 0
+assert $001 == ''
+assert $2 == ''
+assert $3 == ''
+assert $4 == ''
+assert $5 == ''

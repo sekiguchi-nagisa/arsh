@@ -121,7 +121,7 @@ TokenKind Lexer::nextToken(Token &token) {
     SQUOTE_CHAR = '\\' ['] | [^'\000];
     DQUOTE_CHAR = "\\" [^\000] | [^$\\"`\000];
     VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
-    SPECIAL_NAMES = [@#?$0-9];
+    SPECIAL_NAMES = ([@#?$] | [0-9]+);
 
     STRING_LITERAL = ['] [^'\000]* ['];
     ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];

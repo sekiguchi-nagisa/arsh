@@ -16,6 +16,7 @@
 
 #include "node.h"
 #include "misc/format.hpp"
+#include "misc/num_util.hpp"
 #include "scope.h"
 
 // helper macro for node dumper
@@ -222,9 +223,30 @@ void TupleNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 // ##     VarNode     ##
 // #####################
 
+VarNode::VarNode(ydsh::Token token, std::string &&varName)
+    : WithRtti(token), varName(std::move(varName)) {
+  assert(!this->varName.empty());
+  char ch = this->varName[0];
+  if (ch == '#') {
+    this->extraOp = ARGS_LEN;
+  } else if (isDecimal(ch)) {
+    this->extraOp = POSITIONAL_ARG;
+  }
+}
+
 void VarNode::dump(NodeDumper &dumper) const {
   DUMP(varName);
   DUMP_PTR(handle);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(NONE)                                                                                         \
+  OP(ARGS_LEN)                                                                                     \
+  OP(POSITIONAL_ARG)
+
+  DUMP_ENUM(extraOp, EACH_ENUM);
+#undef EACH_ENUM
+
+  DUMP(extraValue);
 }
 
 // ########################

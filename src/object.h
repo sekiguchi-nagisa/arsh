@@ -727,7 +727,7 @@ private:
   std::vector<DSValue> values;
 
 public:
-  static constexpr size_t MAX_SIZE = INT32_MAX;
+  static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
 
   using IterType = std::vector<DSValue>::const_iterator;
 

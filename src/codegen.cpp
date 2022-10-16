@@ -451,29 +451,23 @@ void ByteCodeGenerator::visit(Node &node) { this->visit(node, CmdCallCtx::EXPR);
 void ByteCodeGenerator::visitTypeNode(TypeNode &) { fatal("unsupported\n"); }
 
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
-  DSValue value;
   switch (node.kind) {
-  case NumberNode::Int: {
-    auto num = node.getIntValue();
-    if (num >= 0 && num <= UINT8_MAX) {
-      this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(num));
-      return;
-    }
-    value = DSValue::createInt(num);
+  case NumberNode::Int:
+    this->emitInt(node.getIntValue());
+    break;
+  case NumberNode::Float: {
+    auto value = DSValue::createFloat(node.getFloatValue());
+    this->emitLdcIns(std::move(value));
     break;
   }
-  case NumberNode::Float:
-    value = DSValue::createFloat(node.getFloatValue());
-    break;
   case NumberNode::Signal:
     assert(node.getIntValue() >= 0 && node.getIntValue() <= UINT8_MAX);
     this->emit1byteIns(OpCode::PUSH_SIG, node.getIntValue());
-    return;
+    break;
   case NumberNode::Bool: // normally unreachable
     this->emit0byteIns(node.getIntValue() ? OpCode::PUSH_TRUE : OpCode::PUSH_FALSE);
-    return;
+    break;
   }
-  this->emitLdcIns(std::move(value));
 }
 
 void ByteCodeGenerator::visitStringNode(StringNode &node) { this->emitString(node.takeValue()); }
@@ -566,6 +560,23 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     } else {
       this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
     }
+  }
+
+  switch (node.getExtraOp()) {
+  case VarNode::ARGS_LEN: {
+    auto *handle = this->typePool.lookupMethod(this->typePool.get(TYPE::StringArray), "size");
+    assert(handle);
+    this->emitMethodCallIns(*handle);
+    break;
+  }
+  case VarNode::POSITIONAL_ARG:
+    if (node.getExtraValue() > 0) {
+      this->emitInt(static_cast<int64_t>(node.getExtraValue()));
+      this->emit0byteIns(OpCode::GET_POS_ARG);
+    }
+    break;
+  case VarNode::NONE:
+    break;
   }
 }
 

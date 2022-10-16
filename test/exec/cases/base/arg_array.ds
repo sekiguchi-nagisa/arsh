@@ -23,9 +23,17 @@ assert @().empty()
 
 # to command argument
 ## Int
-var args = @(${234})
+var args = @(${(234)})
 assert $args.size() == 1
 assert $args[0] == '234'
+
+$args = @(${ 345 })
+assert $args.size() == 1
+assert $args[0] == '345'
+
+$args = @(${345})
+assert $args.size() == 1
+assert $args[0] == ''  # recognized as positional arguments
 
 $args = @(\${345})
 assert $args.size() == 1

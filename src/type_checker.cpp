@@ -20,6 +20,7 @@
 #include "complete.h"
 #include "constant.h"
 #include "misc/glob.hpp"
+#include "misc/num_util.hpp"
 #include "paths.h"
 #include "type_checker.h"
 
@@ -669,28 +670,62 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-  auto ret = this->curScope->lookup(node.getVarName());
-  if (ret) {
-    auto handle = std::move(ret).take();
-    node.setHandle(handle);
-    node.setType(this->typePool.get(handle->getTypeId()));
-  } else {
-    switch (ret.asErr()) {
-    case NameLookupError::NOT_FOUND:
-      this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
-      break;
-    case NameLookupError::MOD_PRIVATE:
-      break; // unreachable
-    case NameLookupError::UPVAR_LIMIT:
-      this->reportError<UpvarLimit>(node);
-      break;
-    case NameLookupError::UNCAPTURE_ENV:
-      this->reportError<UncaptureEnv>(node, node.getVarName().c_str());
-      break;
-    case NameLookupError::UNCAPTURE_FIELD:
-      this->reportError<UncaptureField>(node, node.getVarName().c_str());
-      break;
+  switch (node.getExtraOp()) {
+  case VarNode::NONE: {
+    auto ret = this->curScope->lookup(node.getVarName());
+    if (ret) {
+      auto handle = std::move(ret).take();
+      node.setHandle(handle);
+      node.setType(this->typePool.get(handle->getTypeId()));
+    } else {
+      switch (ret.asErr()) {
+      case NameLookupError::NOT_FOUND:
+        this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
+        break;
+      case NameLookupError::MOD_PRIVATE:
+        break; // unreachable
+      case NameLookupError::UPVAR_LIMIT:
+        this->reportError<UpvarLimit>(node);
+        break;
+      case NameLookupError::UNCAPTURE_ENV:
+        this->reportError<UncaptureEnv>(node, node.getVarName().c_str());
+        break;
+      case NameLookupError::UNCAPTURE_FIELD:
+        this->reportError<UncaptureField>(node, node.getVarName().c_str());
+        break;
+      }
     }
+    break;
+  }
+  case VarNode::ARGS_LEN: { // $#
+    auto ret = this->curScope->lookup("@");
+    assert(ret);
+    node.setHandle(ret.asOk());
+    node.setType(this->typePool.get(TYPE::Int));
+    break;
+  }
+  case VarNode::POSITIONAL_ARG: { // $0, $1 ...
+    StringRef ref = node.getVarName();
+    if (auto pair = convertToNum<uint32_t>(ref.begin(), ref.end(), 10);
+        pair.second && pair.first <= SYS_LIMIT_ARRAY_MAX) {
+      if (pair.first == 0) { // $0
+        auto ret = this->curScope->lookup("0");
+        assert(ret);
+        auto handle = ret.asOk();
+        node.setHandle(handle);
+        node.setType(this->typePool.get(handle->getTypeId()));
+      } else {
+        auto ret = this->curScope->lookup("@");
+        assert(ret);
+        node.setHandle(ret.asOk());
+        node.setExtraValue(pair.first);
+        node.setType(this->typePool.get(TYPE::String));
+      }
+    } else {
+      this->reportError<PosArgRange>(node, node.getVarName().c_str());
+    }
+    break;
+  }
   }
 }
 

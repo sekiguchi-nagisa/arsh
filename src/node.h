@@ -587,15 +587,30 @@ public:
 };
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
+public:
+  enum ExtraOp : unsigned int {
+    NONE,
+    ARGS_LEN,
+    POSITIONAL_ARG,
+  };
+
 private:
   std::string varName;
+  ExtraOp extraOp{NONE};
+  unsigned int extraValue{0}; // for POSITIONAL_ARG
 
 public:
-  VarNode(Token token, std::string &&varName) : WithRtti(token), varName(std::move(varName)) {}
+  VarNode(Token token, std::string &&varName);
 
   ~VarNode() override = default;
 
   const std::string &getVarName() const { return this->varName; }
+
+  ExtraOp getExtraOp() const { return this->extraOp; }
+
+  void setExtraValue(unsigned int v) { this->extraValue = v; }
+
+  unsigned int getExtraValue() const { return this->extraValue; }
 
   void dump(NodeDumper &dumper) const override;
 };

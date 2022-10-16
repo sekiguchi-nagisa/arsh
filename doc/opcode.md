@@ -96,6 +96,7 @@
 | RAND              |                                | -> value                                     | generate random number and push stack top                       |
 | GET_SECOND        |                                | -> value                                     | get differential time between current and base                  |
 | SET_SECOND        |                                | value ->                                     | set base time                                                   |
+| GET_POS_ARG       |                                | args pos -> value                            | get positional argument                                         |
 | UNWRAP            |                                | value -> value                               | unwrap option value                                             |
 | CHECK_UNWRAP      |                                | value -> value                               | check if option value has a value                               |
 | TRY_UNWRAP        | 2: offset1 offset2             | value -> / [no change]                       | try to unwrap option value                                      |

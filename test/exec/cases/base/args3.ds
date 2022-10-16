@@ -4,8 +4,8 @@
 
 assert($@.size() == $# && $# == 4)
 assert($1 == $@[0] && $1 == 'a')
-assert($2 == $@[1] && $2 == 'b')
-assert($3 == $@[2] && $3 == '')
+assert($02 == $@[1] && $0000000002 == 'b')
+assert($0003 == $@[2] && $3 == '')
 assert($4 == $@[3] && $4 == 'c')
 
 # rest positional parameter is empty

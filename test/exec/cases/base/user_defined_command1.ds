@@ -39,16 +39,17 @@ assert("$(echo2 a b c)" == "a b c")
 let oldshell = $0
 echo3() {
     assert $0 != $oldshell
-    assert $0 == 'echo3'    # set user-defined command name to $0
+    assert $000 == 'echo3'    # set user-defined command name to $0
     assert $# == $@.size()
 }
 assert echo3 a b c
 
 echo4() {
-    echo $1 $2 $3 $4 $5 $6 $7 $8 $9
+    echo $0001 $2 $3 ${0004} $5 $6 $7 $8 $9 $10 $0011
 }
-assert "$(echo4 1 2 3)" == "1 2 3      "
-assert "$(echo4 1 2 3 4 5 6 7 8 9 10 11)" == "1 2 3 4 5 6 7 8 9"
+assert "$(echo4 1 2 3)" == "1 2 3        "
+assert "$(echo4 1 2 3 4 5 6 7 8 9 10 11)" == "1 2 3 4 5 6 7 8 9 10 11"
+assert "$(echo4 1 2 3 4 5 6 7 8 9 10 11 12 13)" == "1 2 3 4 5 6 7 8 9 10 11"
 
 
 # command override

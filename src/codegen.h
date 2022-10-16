@@ -316,6 +316,14 @@ private:
 
   void emitLdcIns(DSValue &&value);
 
+  void emitInt(int64_t v) {
+    if(v >= 0 && v <= UINT8_MAX) {
+      this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(v));
+    } else {
+      this->emitLdcIns(DSValue::createInt(v));
+    }
+  }
+
   void emitString(std::string &&value);
 
   void emitToString();

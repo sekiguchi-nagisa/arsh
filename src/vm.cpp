@@ -2296,6 +2296,18 @@ bool VM::mainLoop(DSState &state) {
         state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
         vmnext;
       }
+      vmcase(GET_POS_ARG) {
+        auto pos = state.stack.pop().asInt();
+        auto args = state.stack.pop();
+        auto v = DSValue::createStr();
+        assert(pos > 0 && static_cast<uint64_t>(pos) <= ArrayObject::MAX_SIZE);
+        unsigned int index = static_cast<uint64_t>(pos) - 1;
+        if (index < typeAs<ArrayObject>(args).size()) {
+          v = typeAs<ArrayObject>(args).getValues()[index];
+        }
+        state.stack.push(std::move(v));
+        vmnext;
+      }
       vmcase(UNWRAP) {
         if (state.stack.peek().kind() == DSValueKind::INVALID) {
           raiseError(state, TYPE::UnwrappingError, "invalid value");

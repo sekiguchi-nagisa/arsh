@@ -112,6 +112,8 @@ nodes:
             type:
             varName: \"s\"
             handle: null
+            extraOp: \"NONE\"
+            extraValue: 0
           op: \"/\"
           optNode: null
       baseIndex: 0
@@ -298,6 +300,8 @@ nodes:
                       index: 0
                       kind: \"VAR\"
                       attribute: \"\"
+                    extraOp: \"NONE\"
+                    extraValue: 0
               handle: \"9\"
               kind: \"METHOD_CALL\"
               attr: \"BINARY\"

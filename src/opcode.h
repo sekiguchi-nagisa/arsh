@@ -124,6 +124,7 @@ namespace ydsh {
   OP(RAND, 0, 1)                                                                                   \
   OP(GET_SECOND, 0, 1)                                                                             \
   OP(SET_SECOND, 0, -1)                                                                            \
+  OP(GET_POS_ARG, 0, -1)                                                                           \
   OP(UNWRAP, 0, 0)                                                                                 \
   OP(CHECK_UNWRAP, 0, 0)                                                                           \
   OP(TRY_UNWRAP, 2, 0)                                                                             \
