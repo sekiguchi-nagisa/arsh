@@ -42,6 +42,31 @@ SystemError: brace expansion is canceled, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
+TEST_F(InteractiveTest, expand_ctrlc3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("shctl set NULL_GLOB"));
+  this->sendLine("echo "
+                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
+                 "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(PROMPT + "echo "
+                            "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
+                            "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+
+  std::string err = format(R"([runtime error]
+SystemError: glob expansion is canceled, caused by `%s'
+    from (stdin):2 '<toplevel>()'
+)",
+                           strerror(EINTR));
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
 TEST_F(InteractiveTest, wait_ctrlc1) {
   this->invoke("--quiet", "--norc");
 

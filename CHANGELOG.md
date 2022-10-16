@@ -76,6 +76,7 @@
 ### Fixed
 
 - broken error check of glob in ``source!`` statement
+- broken error check of runtime glob expansion when ``nullglob`` option is enabled
 
 ## [0.27.1] - 2022-09-30
 

@@ -1314,7 +1314,8 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
       nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
   auto ret = matcher(appender);
-  if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+  if (ret == GlobMatchResult::MATCH ||
+      (ret == GlobMatchResult::NOMATCH && hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB))) {
     argv.sortAsStrArray(oldSize);
     return true;
   } else if (ret == GlobMatchResult::CANCELED) {
