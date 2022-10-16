@@ -1,4 +1,4 @@
 
 #$test($result = 'exit', $status = 23, $lineNum = 2, $out=$'hello module!!\nexit!!\n', $fileName = '../_module4test/exit.ds')
 
-source ../../_module4test/e*
+source $SCRIPT_DIR/../../_module4test/e*

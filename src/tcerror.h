@@ -84,10 +84,12 @@ DEFINE_TCError(LocalLimit, "number of local variables reaches limit");
 DEFINE_TCError(GlobalLimit, "number of global variables reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
 DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
-DEFINE_TCError(NullInPath, "found null characters in source path");
+DEFINE_TCError(NullInPath, "found null characters in module path");
 DEFINE_TCError(NoGlobMatch, "no matches for glob pattern: `%s'");
 DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
-DEFINE_TCError(NoGlobDir, "glob pattern always matches directory: `%s'");
+DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, but always "
+                          "matches directory: `%s'");
+DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
 DEFINE_TCError(Constant, "must be constant expression");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");

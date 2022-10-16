@@ -1,5 +1,5 @@
 
-source ../../_module4test/glo*
+source $SCRIPT_DIR/../../_module4test/glo*
 
 assert $gg1 == "globbed1"
 assert $gg2 == "globbed2"

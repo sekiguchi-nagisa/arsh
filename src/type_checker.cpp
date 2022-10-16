@@ -2438,13 +2438,13 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
 
   const unsigned int oldSize = results.size();
   auto appender = [&results](std::string &&path) { return appendPath(results, std::move(path)); };
-  auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB;
+  auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB |
+                GlobMatchOption::ABSOLUTE_BASE_DIR;
   if (hasFlag(op, GlobOp::TILDE)) {
     setFlag(option, GlobMatchOption::TILDE);
   }
   auto matcher = createGlobMatcher<SourceGlobMeta>(
-      this->lexer->getScriptDir(), SourceGlobIter(begin), SourceGlobIter(end), [] { return false; },
-      option);
+      nullptr, SourceGlobIter(begin), SourceGlobIter(end), [] { return false; }, option);
   auto ret = matcher(appender);
   if (ret == GlobMatchResult::MATCH ||
       (ret == GlobMatchResult::NOMATCH && hasFlag(op, GlobOp::OPTIONAL))) {
@@ -2456,6 +2456,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     std::string path = concat(begin, end);
     if (ret == GlobMatchResult::NOMATCH) {
       this->reportError<NoGlobMatch>(token, path.c_str());
+    } else if (ret == GlobMatchResult::NEED_ABSOLUTE_BASE_DIR) {
+      this->reportError<NoRelativeGlob>(token, path.c_str());
     } else {
       this->reportError<ExpandRetLimit>(token);
     }

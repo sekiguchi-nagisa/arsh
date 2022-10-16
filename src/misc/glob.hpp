@@ -28,10 +28,11 @@
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
 enum class GlobMatchOption : unsigned int {
-  TILDE = 1u << 0u,          // apply tilde expansion before globbing
-  DOTGLOB = 1u << 1u,        // match file names start with '.'
-  IGNORE_SYS_DIR = 1u << 2u, // ignore system directory (/dev, /proc, /sys)
-  FASTGLOB = 1u << 3u,       // posix incompatible optimized search
+  TILDE = 1u << 0u,             // apply tilde expansion before globbing
+  DOTGLOB = 1u << 1u,           // match file names start with '.'
+  IGNORE_SYS_DIR = 1u << 2u,    // ignore system directory (/dev, /proc, /sys)
+  FASTGLOB = 1u << 3u,          // posix incompatible optimized search
+  ABSOLUTE_BASE_DIR = 1u << 4u, // only allow absolute base dir
 };
 
 template <>
@@ -197,6 +198,7 @@ enum class GlobMatchResult {
   NOMATCH,
   LIMIT,
   CANCELED,
+  NEED_ABSOLUTE_BASE_DIR,
 };
 
 template <typename Meta, typename Iter, typename Cancel>
@@ -226,6 +228,9 @@ public:
   GlobMatchResult operator()(Appender &appender) {
     Iter iter = this->begin;
     std::string baseDir = this->resolveBaseDir(iter);
+    if (hasFlag(this->option, GlobMatchOption::ABSOLUTE_BASE_DIR) && baseDir[0] != '/') {
+      return GlobMatchResult::NEED_ABSOLUTE_BASE_DIR;
+    }
     return this->invoke(std::move(baseDir), iter, appender);
   }
 

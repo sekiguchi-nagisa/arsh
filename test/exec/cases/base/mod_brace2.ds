@@ -1,5 +1,5 @@
 
-source ../../_module4test/{gl*{1,2},module1}*
+source $SCRIPT_DIR/../../_module4test/{gl*{1,2},module1}*
 
 assert $gg1 == "globbed1"
 assert $gg2 == "globbed2"

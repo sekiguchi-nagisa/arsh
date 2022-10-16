@@ -1,5 +1,5 @@
 
-source ../../_module4test/module{1..4..-2}*
+source $SCRIPT_DIR/../../_module4test/module{1..4..-2}*
 
 
 var aa = IFS=$'\n' $(shctl module)
