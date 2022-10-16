@@ -57,6 +57,7 @@
     - also allow redundant prefix ``0``, such ``000``, ``0009``
     - always synchronize current ``@`` content
 - **Breaking Change**: ``#`` variable always indicates current ``@`` size
+- **Breaking Change**: disallow relative glob pattern in source statement
 
 #### Builtin
 
