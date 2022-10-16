@@ -448,11 +448,10 @@ public:
    *
    * @param state
    * @param arg
-   * @param skipEmptyStr
    * @return
    * if has error, return false
    */
-  bool add(DSValue &&arg, bool skipEmptyStr = true);
+  bool add(DSValue &&arg);
 
   DSValue takeRedir() && { return std::move(this->redir); }
 };

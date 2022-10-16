@@ -1146,11 +1146,6 @@ public:
 
   void dump(NodeDumper &dumper) const override;
 
-  /**
-   * if true, ignore evaluated empty string.
-   */
-  bool isIgnorableEmptyString() const;
-
   bool isTilde() const { return this->isTildeAt(0); }
 
   bool isTildeAt(unsigned int i) const {

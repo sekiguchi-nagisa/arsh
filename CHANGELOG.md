@@ -46,6 +46,12 @@
     - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and ``Module#_scriptName``
     - in interctive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
         - run-time ``SCRIPT_DIR`` always indicates latest compile-time ``SCRIPT_DIR``
+- **Breaking Change**: now does not ignore null string in command arguments
+  ```
+  var a = ''
+  echo $a a          # output is ' a'
+  echo ${['', 'a']}  # output is ' a'
+  ```
 
 #### Builtin
 

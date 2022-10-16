@@ -602,7 +602,7 @@ bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
   }
 }
 
-bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
+bool CmdArgsBuilder::add(DSValue &&arg) {
   GUARD_RECURSION(this->state);
 
   if (arg.isInvalid()) {
@@ -610,9 +610,6 @@ bool CmdArgsBuilder::add(DSValue &&arg, bool skipEmptyStr) {
   }
 
   if (arg.hasStrRef()) {
-    if (skipEmptyStr && arg.asStrRef().empty()) {
-      return true; // do nothing
-    }
     return this->argv->append(this->state, std::move(arg));
   }
 

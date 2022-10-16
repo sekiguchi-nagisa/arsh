@@ -395,11 +395,6 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(segmentNodes);
 }
 
-bool CmdArgNode::isIgnorableEmptyString() const {
-  return this->segmentNodes.size() > 1 || (!isa<StringNode>(*this->segmentNodes.back()) &&
-                                           !isa<StringExprNode>(*this->segmentNodes.back()));
-}
-
 // ##########################
 // ##     ArgArrayNode     ##
 // ##########################

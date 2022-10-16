@@ -107,7 +107,6 @@ namespace ydsh {
   OP(EXPAND_TILDE, 0, 0)                                                                           \
   OP(NEW_CMD, 0, 0)                                                                                \
   OP(ADD_CMD_ARG, 0, -1)                                                                           \
-  OP(ADD_CONST_CMD_ARG, 0, -1)                                                                     \
   OP(ADD_EXPANDING, 2, 0)                                                                          \
   OP(CALL_CMD, 0, -1)                                                                              \
   OP(CALL_CMD_NOFORK, 0, -1)                                                                       \

@@ -79,7 +79,6 @@
 | EXPAND_TILDE      |                                | value -> value                               | perform tilde expansion                                         |
 | NEW_CMD           |                                | value -> value                               | pop stack top and store it to new argv                          |
 | ADD_CMD_ARG       |                                | argv redir value -> argv redir               | add stack top value as command argument                         |
-| ADD_CONST_CMD_ARG |                                | argv redir value -> argv redir               | add stack top value as command argument (not skip empty string) |
 | ADD_EXPANDING     | 2: len option                  | argv redir value1 ~ valueN+1 -> argv redir   | apply brace/glob expansion and add results to argv              |
 | CALL_CMD          |                                | argv redir -> value                          | call builtin or external command.                               |
 | CALL_CMD_NOFORK   |                                | argv redir -> value                          | call builtin or external command without fork                   |

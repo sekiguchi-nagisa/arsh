@@ -2152,7 +2152,7 @@ bool VM::mainLoop(DSState &state) {
         state.stack.push(std::move(obj));
         vmnext;
       }
-      vmcase(ADD_CMD_ARG) vmcase(ADD_CONST_CMD_ARG) {
+      vmcase(ADD_CMD_ARG) {
         /**
          * stack layout
          *
@@ -2164,8 +2164,7 @@ bool VM::mainLoop(DSState &state) {
         auto arg = state.stack.pop();
         auto redir = state.stack.pop();
         CmdArgsBuilder builder(state, toObjPtr<ArrayObject>(state.stack.peek()), std::move(redir));
-        bool skipEmptyStr = op == OpCode::ADD_CMD_ARG;
-        TRY(builder.add(std::move(arg), skipEmptyStr));
+        TRY(builder.add(std::move(arg)));
         state.stack.push(std::move(builder).takeRedir());
         vmnext;
       }

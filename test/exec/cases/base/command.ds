@@ -101,7 +101,7 @@ assert($? == 0)
 echo ${["a", "2"]} | grep 'a 2'         # Array
 assert($? == 0)
 
-test "$(echo ${["", "a", "", "b"]})" = "a b"   # String Array(ignore empty string)
+test "$(echo ${["", "a", "", "b"]})" = " a  b"   # String Array
 assert($? == 0)
 
 echo ${(1, "a", $true)} | grep '1 a true' # Tuple
@@ -188,7 +188,7 @@ var c2 = "$(echo "he${"ll" + "o"} world")"
 assert($c2 == "hello world")
 
 $a = ""
-assert("$(echo $a hello $a)" == "hello")
+assert("$(echo $a hello $a)" == " hello ")
 
 assert("$(echo "" 23)" == " 23")
 assert("$(ls -la 2>&1 > /dev/null)" == "")

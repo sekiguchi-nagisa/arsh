@@ -865,8 +865,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     this->emitExpandIns(node.getExpansionSize(), op);
   } else {
     this->generateCmdArg(node);
-    this->emit0byteIns(node.isIgnorableEmptyString() ? OpCode::ADD_CMD_ARG
-                                                     : OpCode::ADD_CONST_CMD_ARG);
+    this->emit0byteIns(OpCode::ADD_CMD_ARG);
   }
 }
 
