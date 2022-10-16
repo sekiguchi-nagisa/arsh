@@ -46,10 +46,8 @@ enum class BuiltinVarOffset : unsigned int {
   EXIT_STATUS, // ?
   SHELL_PID,   // $
   ARGS,        // @
-  ARGS_SIZE,   // #
+  ARGS_SIZE,   // # (dummy entry for completion)
   POS_0,       // 0 (for script name)
-  POS_1,       // 1 (for argument)
-               /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
 };
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
@@ -203,9 +201,9 @@ constexpr const char *TYPE_FUNC = "Func";
 
 // =====  UDC parameter offset =====
 
-constexpr unsigned int UDC_PARAM_ATTR = 0;
-constexpr unsigned int UDC_PARAM_REDIR = 1;
-constexpr unsigned int UDC_PARAM_ARGV = 2;
+constexpr unsigned int UDC_PARAM_ATTR = 0;  // &&attr
+constexpr unsigned int UDC_PARAM_REDIR = 1; // &&redir
+constexpr unsigned int UDC_PARAM_ARGV = 2;  // @
 constexpr unsigned int UDC_PARAM_N = UDC_PARAM_ARGV + 1;
 
 // =====  termination kind  =====

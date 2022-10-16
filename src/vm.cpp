@@ -237,22 +237,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) { // set variable
     auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
     auto cmdName = argv.takeFirst();
-    const unsigned int argSize = argv.getValues().size();
-    state.stack.setLocal(UDC_PARAM_ARGV + 1, DSValue::createInt(argSize)); // #
-    state.stack.setLocal(UDC_PARAM_ARGV + 2, std::move(cmdName));          // 0
-    unsigned int limit = 9;
-    if (argSize < limit) {
-      limit = argSize;
-    }
-
-    unsigned int index = 0;
-    for (; index < limit; index++) {
-      state.stack.setLocal(index + UDC_PARAM_ARGV + 3, argv.getValues()[index]);
-    }
-
-    for (; index < 9; index++) {
-      state.stack.setLocal(index + UDC_PARAM_ARGV + 3, DSValue::createStr()); // set remain
-    }
+    state.stack.setLocal(UDC_PARAM_ARGV + 1, std::move(cmdName)); // 0
   }
   return true;
 }

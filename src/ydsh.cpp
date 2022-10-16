@@ -215,46 +215,18 @@ void DSState_setShellName(DSState *st, const char *shellName) {
   }
 }
 
-// set positional parameters
-static void finalizeScriptArg(DSState *st) {
-  assert(st);
-  auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-
-  // update argument size
-  const unsigned int size = array.getValues().size();
-  st->setGlobal(BuiltinVarOffset::ARGS_SIZE, DSValue::createInt(size));
-
-  unsigned int limit = 9;
-  if (size < limit) {
-    limit = size;
-  }
-
-  // update positional parameter
-  unsigned int index = 0;
-  for (; index < limit; index++) {
-    unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-    st->setGlobal(i, array.getValues()[index]);
-  }
-
-  for (; index < 9; index++) {
-    unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-    st->setGlobal(i, DSValue::createStr());
-  }
-}
-
 void DSState_setArguments(DSState *st, char *const *args) {
   GUARD_NULL(st);
 
   // clear previous arguments
-  typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS)).refValues().clear();
+  auto &argsObj = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
+  argsObj.refValues().clear();
 
   if (args) {
     for (unsigned int i = 0; args[i] != nullptr; i++) {
-      auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-      array.append(DSValue::createStr(args[i])); // FIXME: check limit
+      argsObj.append(DSValue::createStr(args[i])); // FIXME: check limit
     }
   }
-  finalizeScriptArg(st);
 }
 
 int DSState_exitStatus(const DSState *st) {

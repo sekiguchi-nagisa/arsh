@@ -169,8 +169,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("@", pool.get(TYPE::StringArray));
 
   /**
-   * contains size of argument. ($#)
-   * must be Int_Object
+   * dummy object for completion. actually not used
    */
   binder.bind("#", 0);
 
@@ -179,13 +178,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be String_Object
    */
   binder.bind("0", "ydsh");
-
-  /**
-   * initialize positional parameter
-   */
-  for (unsigned int i = 0; i < 9; i++) {
-    binder.bind(std::to_string(i + 1).c_str(), "");
-  }
 
   // set builtin variables
 

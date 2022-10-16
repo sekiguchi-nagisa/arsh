@@ -2244,13 +2244,9 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       // register dummy parameter (for closing file descriptor)
       this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-      // register special characters (@, #, 0, 1, ... 9)
+      // register special characters (@, 0)
       this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
-      this->addEntry(node, "#", this->typePool.get(TYPE::Int), HandleAttr::READ_ONLY);
-      for (unsigned int i = 0; i < 10; i++) {
-        this->addEntry(node, std::to_string(i), this->typePool.get(TYPE::String),
-                       HandleAttr::READ_ONLY);
-      }
+      this->addEntry(node, "0", this->typePool.get(TYPE::String), HandleAttr::READ_ONLY);
 
       // check type command body
       this->checkTypeWithCurrentScope(node.getBlockNode());

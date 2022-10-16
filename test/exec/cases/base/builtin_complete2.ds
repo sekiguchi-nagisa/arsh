@@ -8,9 +8,8 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 # complete global variable name
 {
     var gvars = [
-        '#', '$',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '?', '@', 'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
+        '#', '$', '0', '?', '@',
+        'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
         'EDIT_HOOK', 'EUID', 'FALSE', 'False', 'IFS', 'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME',
          'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',

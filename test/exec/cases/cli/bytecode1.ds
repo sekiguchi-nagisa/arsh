@@ -7,10 +7,10 @@ DSCode: top level
   code size: 13
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 42
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  50
+   2: STORE_GLOBAL  41
    5: PUSH_INT  34
    7: CALL_BUILTIN2  1  %str
   10: POP
@@ -32,11 +32,11 @@ DSCode: top level
   code size: 29
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 42
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  50
-   5: LOAD_GLOBAL  50
+   2: STORE_GLOBAL  41
+   5: LOAD_GLOBAL  41
    8: PUSH_INT  1
   10: CALL_FUNC  1
   12: ENTER_FINALLY  22
@@ -79,7 +79,7 @@ DSCode: top level
   code size: 46
   max stack depth: 2
   number of local variable: 2
-  number of global variable: 50
+  number of global variable: 41
 Code:
    0: PUSH_INT  0
    2: STORE_LOCAL  0
@@ -117,7 +117,7 @@ DSCode: top level
   code size: 32
   max stack depth: 5
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 41
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_ASYNC 6 3  8  17  26
@@ -160,7 +160,7 @@ DSCode: top level
   code size: 37
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 41
 Code:
    0: LOAD_CONST  2
    2: LOAD_GLOBAL  5
@@ -200,7 +200,7 @@ DSCode: top level
   code size: 19
   max stack depth: 1
   number of local variable: 1
-  number of global variable: 50
+  number of global variable: 41
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_LP 2  6  7
@@ -228,7 +228,7 @@ DSCode: top level
   code size: 10
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 41
 Code:
   0: LOAD_CONST  2
   2: FORK  6  5
@@ -253,7 +253,7 @@ DSCode: top level
   code size: 36
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 41
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD
