@@ -2446,7 +2446,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
       this->lexer->getScriptDir(), SourceGlobIter(begin), SourceGlobIter(end), [] { return false; },
       option);
   auto ret = matcher(appender);
-  if (ret == GlobMatchResult::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
+  if (ret == GlobMatchResult::MATCH ||
+      (ret == GlobMatchResult::NOMATCH && hasFlag(op, GlobOp::OPTIONAL))) {
     std::sort(results.begin() + oldSize, results.end(),
               [](const std::shared_ptr<const std::string> &x,
                  const std::shared_ptr<const std::string> &y) { return *x < *y; });

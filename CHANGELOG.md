@@ -72,6 +72,10 @@
 
 - **Breaking Change**: remove ``DSState_setExitStatus``
 
+### Fixed
+
+- broken error check of glob in ``source!`` statement
+
 ## [0.27.1] - 2022-09-30
 
 ### Fixed
