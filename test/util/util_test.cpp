@@ -400,98 +400,98 @@ TEST(NumTest, base16) {
 TEST(NumTest, int32) {
   // decimal
   const char *n = "12345";
-  auto ret = convertToNum<int32_t>(n, toEnd(n));
+  auto ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(12345, ret.first);
 
   n = "0";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
 
   n = "111111111111111111";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_FALSE(ret.second);
 
   n = "+2147483647";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(2147483647, ret.first);
 
   n = "2147483648";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_FALSE(ret.second);
 
   n = "-0";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
 
   n = "-10";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(-10, ret.first);
 
   n = "-10";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(-10, ret.first);
 
   n = "-2147483647";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(-2147483647, ret.first);
 
   n = "-2147483648";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(-2147483648, ret.first);
 
   // octal
   n = "00000";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
 
   n = "070";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(070, ret.first);
 
   n = "080";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_FALSE(ret.second);
 
   n = "0o074";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(074, ret.first);
 
   n = "0o00000000000";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
 
   n = "0O74";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(074, ret.first);
 
   n = "+0O8";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_FALSE(ret.second);
 
   n = "-0O8";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_FALSE(ret.second);
 
   n = "-0O74";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(-074, ret.first);
 
   n = "-00000";
-  ret = convertToNum<int32_t>(n, toEnd(n));
+  ret = convertToNum<int32_t>(n, toEnd(n), 0);
   ASSERT_TRUE(ret.second);
   ASSERT_EQ(0, ret.first);
 }

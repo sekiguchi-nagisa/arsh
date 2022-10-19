@@ -42,7 +42,7 @@ void DeclBase::addRef(SymbolRef ref) {
 
 std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
   auto ref = this->getInfo();
-  auto value = convertToNum<int>(ref.begin(), ref.end());
+  auto value = convertToDecimal<int>(ref.begin(), ref.end());
   if (value.second && value.first <= UINT16_MAX && value.first >= 0) {
     return {static_cast<unsigned short>(value.first), true};
   }

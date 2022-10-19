@@ -337,7 +337,7 @@ std::pair<int64_t, bool> Lexer::toInt64(Token token) const {
   auto ref = this->toStrRef(token);
   assert(!ref.empty());
   const bool decimal = ref[0] != '0';
-  auto [value, status] = convertToNum<uint64_t>(ref.begin(), ref.end());
+  auto [value, status] = convertToNum<uint64_t>(ref.begin(), ref.end(), 0);
   if (status) {
     if (decimal) {
       return makeSigned(value, false);

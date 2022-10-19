@@ -233,21 +233,18 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsi
  * if detect overflow, return {0, false}
  */
 template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToNum(const char *begin, const char *end, unsigned int base = 0) {
+inline std::pair<T, bool> convertToNum(const char *begin, const char *end, unsigned int base) {
   return parseInteger<T>(begin, end, base);
 }
 
-/**
- *
- * @tparam T
- * @param str
- * must be null terminated string
- * @param base
- * @return
- */
 template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToNum(const char *str, unsigned int base = 0) {
-  return convertToNum<T>(str, str + strlen(str), base);
+inline std::pair<T, bool> convertToDecimal(const char *begin, const char *end) {
+  return convertToNum<T>(begin, end, 10);
+}
+
+template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
+inline std::pair<T, bool> convertToDecimal(const char *str) {
+  return convertToDecimal<T>(str, str + strlen(str));
 }
 
 class Locale {

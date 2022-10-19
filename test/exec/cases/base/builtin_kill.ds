@@ -54,6 +54,9 @@ assert { kill -l hup hoge; $?; } == 1
 assert "$(kill -l 1 hup)" == $'HUP\n1'
 assert { kill -l 1 hup; $?; } == 0
 
+assert "$(kill -l 9)" == 'KILL'
+assert "$(kill -l 00009)" == 'KILL'
+
 assert "$(kill -l 9999999999999999999999999999999 2>&1)" == 
        "ydsh: kill: 9999999999999999999999999999999: invalid signal specification"
 assert {kill -l 9999999999999999999999999999999; $?} == 1

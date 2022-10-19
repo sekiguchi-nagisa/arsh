@@ -89,18 +89,23 @@ assert($? == 0)
 test 23 -eq -4
 assert($? == 1)
 
+test -90 -eq -0090  # treat as decimal
+assert $? == 0
+
 test -9 -ne 00
 assert($? == 0)
 
-test -90 -ne -0090
-assert($? == 2)
+#test -90 -ne -0090
+#assert($? == 2)
 
 test -90 -ne -0070
 assert($? == 0)
 
-assert test 0xFF -eq 0Xff
+test 0xFF -eq 0Xff
+assert $? == 2 # only allow decimal
 
-assert test 076 -eq 0o0076
+test 076 -eq 0o0076
+assert $? == 2 # only allow decimal
 
 test -9223372036854775808 -lt 23456767
 assert($? == 0)

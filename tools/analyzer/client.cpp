@@ -54,7 +54,7 @@ static std::pair<unsigned int, bool> parseNum(const std::string &line) {
   std::smatch match;
   if (matchSectionEnd(line, match) && match.length(2) > 0) {
     auto value = match.str(2);
-    return convertToNum<unsigned int>(value.c_str());
+    return convertToDecimal<unsigned int>(value.c_str());
   }
   return {0, false};
 }

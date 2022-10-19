@@ -353,7 +353,7 @@ JSON JSONParser::parseNumber() {
       return ret.first;
     }
   } else {
-    if (auto ret = convertToNum<int64_t>(data); ret.second) {
+    if (auto ret = convertToDecimal<int64_t>(data); ret.second) {
       return static_cast<int64_t>(ret.first);
     }
   }

@@ -99,7 +99,7 @@ static Options parseOptions(int argc, char **argv) {
     exit(1);
   }
   if (debounceTime) {
-    auto pair = convertToNum<int>(debounceTime);
+    auto pair = convertToDecimal<int>(debounceTime);
     if (!pair.second) {
       fprintf(stderr, "require valid number (0~): %s\n", debounceTime);
       exit(1);

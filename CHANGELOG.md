@@ -63,6 +63,7 @@
 
 - **Breaking Change**: change interface of ``CMD_FALLBACK``
     - now pass caller module context to fallback handler
+- **Breaking Change**: only allow decimal integer in ``test`` command like bash
 - improve runtime option recognition
     - now allow upper case letter, _, - like the follow
       ```
@@ -77,6 +78,9 @@
 
 - broken error check of glob in ``source!`` statement
 - broken error check of runtime glob expansion when ``nullglob`` option is enabled
+- fix number parsing in some builtin commands
+    - now only allow decimal number except for explicitly requiring hex/octal numbers
+    - allow redundant prefix 0
 
 ## [0.27.1] - 2022-09-30
 

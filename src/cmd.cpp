@@ -358,7 +358,7 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (argvObj.getValues().size() > 1) {
     auto value = argvObj.getValues()[1].asStrRef();
-    auto pair = convertToNum<int64_t>(value.begin(), value.end());
+    auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
     if (pair.second) {
       ret = pair.first;
     }
@@ -561,11 +561,15 @@ static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
   }
 }
 
+static std::pair<int, bool> toInt32(StringRef str) {
+  return convertToDecimal<int32_t>(str.begin(), str.end());
+}
+
 static int parseFD(StringRef value) {
   if (value.startsWith("/dev/fd/")) {
     value.removePrefix(strlen("/dev/fd/"));
   }
-  auto ret = convertToNum<int32_t>(value.begin(), value.end());
+  auto ret = toInt32(value);
   if (!ret.second || ret.first < 0) {
     return -1;
   }
@@ -705,14 +709,14 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         break;
       }
       EACH_INT_COMP_OP(GEN_CASE) {
-        auto pair = convertToNum<int64_t>(left.begin(), left.end());
+        auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
         int64_t n1 = pair.first;
         if (!pair.second) {
           ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
           return 2;
         }
 
-        pair = convertToNum<int64_t>(right.begin(), right.end());
+        pair = convertToDecimal<int64_t>(right.begin(), right.end());
         int64_t n2 = pair.first;
         if (!pair.second) {
           ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
@@ -795,7 +799,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) { // FIXME: timeou
       break;
     }
     case 't': {
-      auto ret = convertToNum<int64_t>(optState.optArg.begin(), optState.optArg.end());
+      auto ret = convertToDecimal<int64_t>(optState.optArg.begin(), optState.optArg.end());
       int64_t t = ret.first;
       if (ret.second) {
         if (t > -1 && t <= INT32_MAX) {
@@ -1076,10 +1080,6 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     }
   }
   return 0;
-}
-
-static std::pair<int, bool> toInt32(StringRef str) {
-  return convertToNum<int32_t>(str.begin(), str.end());
 }
 
 static int toSigNum(StringRef str) {
@@ -1434,7 +1434,7 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
     return true;
   }
 
-  auto pair = convertToNum<underlying_t>(str);
+  auto pair = convertToDecimal<underlying_t>(str);
   if (!pair.second) {
     return false;
   }

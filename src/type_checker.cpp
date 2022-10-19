@@ -706,7 +706,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
   }
   case VarNode::POSITIONAL_ARG: { // $0, $1 ...
     StringRef ref = node.getVarName();
-    if (auto pair = convertToNum<uint32_t>(ref.begin(), ref.end(), 10);
+    if (auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
         pair.second && pair.first <= SYS_LIMIT_ARRAY_MAX) {
       if (pair.first == 0) { // $0
         auto ret = this->curScope->lookup("0");

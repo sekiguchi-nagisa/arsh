@@ -44,7 +44,7 @@ static int64_t getShellLevel() {
   char *shlvl = getenv(ENV_SHLVL);
   int64_t level = 0;
   if (shlvl != nullptr) {
-    auto pair = convertToNum<int64_t>(shlvl);
+    auto pair = convertToDecimal<int64_t>(shlvl);
     if (pair.second && pair.first > -1) {
       level = pair.first;
     }
@@ -2541,7 +2541,7 @@ static int parseExitStatus(const ErrorObject &obj) {
   auto ref = obj.getMessage().asStrRef();
   auto r = ref.lastIndexOf(" ");
   ref.removePrefix(r + 1);
-  auto pair = convertToNum<int32_t>(ref.begin(), ref.end());
+  auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
   assert(pair.second);
   return pair.first;
 }
