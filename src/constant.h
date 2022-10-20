@@ -35,19 +35,22 @@ enum class BuiltinVarOffset : unsigned int {
   SCRIPT_DIR,  // SCRIPT_DIR
   REPLY,       // REPLY (for read command)
   REPLY_VAR,   // reply (fo read command)
-  PID,         // PID (current process)
-  PPID,        // PPID
   MODULE,      // MODULE
   RANDOM,      // RANDOM
   SECONDS,     // SECONDS
   IFS,         // IFS
   COMPREPLY,   // COMPREPLY
+  STDIN,       // STDIN
+  STDOUT,      // STDOUT
+  STDERR,      // STDERR
   PIPESTATUS,  // PIPESTATUS
   EXIT_STATUS, // ?
-  SHELL_PID,   // $
   ARGS,        // @
   ARGS_SIZE,   // # (dummy entry for completion)
   POS_0,       // 0 (for script name)
+  SHELL_PID,   // $
+  PID,         // PID (current process)
+  PPID,        // PPID
 };
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
@@ -58,16 +61,10 @@ inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsign
 
 // =====  builtin variable  =====
 
-// io
-constexpr const char *VAR_STDIN = "STDIN";
-constexpr const char *VAR_STDOUT = "STDOUT";
-constexpr const char *VAR_STDERR = "STDERR";
-
 // shell builtin
 constexpr const char *VAR_EIDT_HOOK = "EDIT_HOOK";
 constexpr const char *VAR_CMD_FALLBACK = "CMD_FALLBACK";
 constexpr const char *VAR_DEF_SIGINT = "_DEF_SIGINT";
-constexpr const char *CMD_FALLBACK_HANDLER = "_cmd_fallback_handler";
 
 constexpr const char *VAR_HISTFILE = "HISTFILE";
 constexpr const char *VAR_HISTSIZE = "HISTSIZE";

@@ -163,7 +163,7 @@ DSCode: top level
   number of global variable: 41
 Code:
    0: LOAD_CONST  2
-   2: LOAD_GLOBAL  5
+   2: LOAD_GLOBAL  19
    5: CALL_BUILTIN2  1  %interp
    8: LOOKUP_HASH
    9: GOTO  35

@@ -852,7 +852,7 @@ nodes:
             type: "Int"
             varName: "?"
             handle:
-              index: 13
+              index: 14
               kind: "VAR"
               attribute: "GLOBAL"
             extraOp: "NONE"

@@ -105,18 +105,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("reply", *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::String)).take());
 
   /**
-   * process id of current process.
-   * must be Int_Object
-   */
-  binder.bind("PID", getpid());
-
-  /**
-   * parent process id of current process.
-   * must be Int_Object
-   */
-  binder.bind("PPID", getppid());
-
-  /**
    * dummy object for module
    */
   binder.bind("MODULE", pool.get(TYPE::Module));
@@ -145,6 +133,21 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("COMPREPLY", pool.get(TYPE::StringArray));
 
   /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDIN", stdin);
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDOUT", stdout);
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDERR", stderr);
+
+  /**
    * contains latest executed pipeline status.
    * must be Array_Object
    */
@@ -155,12 +158,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Int_Object
    */
   binder.bind("?", 0, HandleAttr());
-
-  /**
-   * process id of root shell. ($$)
-   * must be Int_Object
-   */
-  binder.bind("$", getpid());
 
   /**
    * contains script argument(exclude script name). ($@)
@@ -179,6 +176,24 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bind("0", "ydsh");
 
+  /**
+   * process id of root shell. ($$)
+   * must be Int_Object
+   */
+  binder.bind("$", getpid());
+
+  /**
+   * process id of current process.
+   * must be Int_Object
+   */
+  binder.bind("PID", getpid());
+
+  /**
+   * parent process id of current process.
+   * must be Int_Object
+   */
+  binder.bind("PPID", getppid());
+
   // set builtin variables
 
   /**
@@ -192,6 +207,19 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Int_Object
    */
   binder.bind("EUID", geteuid());
+
+  /**
+   * dummy object for signal handler setting
+   * must be DSObject
+   */
+  binder.bind("SIG", pool.get(TYPE::Signals));
+
+  /**
+   * must be StringObject
+   */
+  binder.bind(VAR_YDSH_BIN, "");
+
+  // builtin constant
 
   /**
    * for version detection
@@ -251,32 +279,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bindSmallConst("FALSE", ConstEntry::Kind::BOOL, 0);
   binder.bindSmallConst("False", ConstEntry::Kind::BOOL, 0);
   binder.bindSmallConst("false", ConstEntry::Kind::BOOL, 0);
-
-  /**
-   * dummy object for signal handler setting
-   * must be DSObject
-   */
-  binder.bind("SIG", pool.get(TYPE::Signals));
-
-  /**
-   * must be UnixFD_Object
-   */
-  binder.bind(VAR_STDIN, stdin);
-
-  /**
-   * must be UnixFD_Object
-   */
-  binder.bind(VAR_STDOUT, stdout);
-
-  /**
-   * must be UnixFD_Object
-   */
-  binder.bind(VAR_STDERR, stderr);
-
-  /**
-   * must be StringObject
-   */
-  binder.bind(VAR_YDSH_BIN, "");
 
   // signal constants (POSIX.1-1990 standard)
   auto *signalPairs = getSignalList();
