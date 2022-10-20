@@ -49,7 +49,7 @@ $ex = 34 as Any
 try { $j.pid(1); } catch $e { $ex = $e; }
 assert $ex is OutOfRangeError
 
-echo hello > $j[0]
+echo hello >& $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
 
 assert $j.wait() == 0

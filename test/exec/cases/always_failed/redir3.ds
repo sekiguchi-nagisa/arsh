@@ -1,0 +1,5 @@
+
+#$test($result = 'type', $lineNum = 5, $chars = 14, $errorKind = 'RedirFdRange', $status = 1)
+
+
+echo fjriajf 000056> /dev/null

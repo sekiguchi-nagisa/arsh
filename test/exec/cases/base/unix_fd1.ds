@@ -38,7 +38,7 @@ assert $ex is SystemError
 ## redirection
 $ex = 34
 try {
-    cat < $fd
+    cat <& $fd
 } catch $e {
     $ex = $e
 }
@@ -46,15 +46,7 @@ assert $ex is SystemError
 
 $ex = 54
 try {
-    echo heyy &> $fd
-} catch $e {
-    $ex = $e
-}
-assert $ex is SystemError
-
-$ex = 543
-try {
-    echo heyy &>> $fd
+    echo heyy >& $fd
 } catch $e {
     $ex = $e
 }

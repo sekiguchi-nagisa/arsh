@@ -133,6 +133,9 @@ DEFINE_TCError(NotInferParamUnmatch, "cannot infer parameter type, "
                                      "because number of parameter is not match");
 DEFINE_TCError(NoBackquote, "backquote command substitution is not allowed. use $( ) instead");
 DEFINE_TCError(PosArgRange, "positional argument is out-of-range (up to INT32_MAX): `%s'");
+DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only allow 0,1,2");
+DEFINE_TCError(NeedFd,
+               "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
 
 #undef DEFINE_TCError
 

@@ -58,10 +58,10 @@ function renderPrompt(p : String) : String {
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
-    echo > $fd usage: prompt [-h] [--help] [+prompt]
+    echo >& $fd usage: prompt [-h] [--help] [+prompt]
     if $short { return 2; }
 
-    echo > $fd "Prompt Escape Sequence:
+    echo >& $fd "Prompt Escape Sequence:
     \a    bell
     \d    date
     \e    escape sequence
@@ -95,7 +95,7 @@ prompt() {
     '-h' | '--help' => return $_usage($STDOUT, $false); 
     else => {
         if $1.startsWith('+') { echo $renderPrompt($1.slice(1)); return 0; }
-        echo > $STDERR prompt: $1: invalid option;
+        echo >& $STDERR prompt: $1: invalid option;
         return $_usage($STDERR, $true);
     }
     }

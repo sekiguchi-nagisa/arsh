@@ -889,21 +889,20 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
   this->emit0byteIns(OpCode::POP);
 }
 
-static RedirOP resolveRedirOp(TokenKind kind) {
-  switch (kind) {
-#define GEN_CASE(ENUM, BITS)                                                                       \
-  case TokenKind::REDIR_##ENUM:                                                                    \
-    return RedirOP::ENUM;
-    EACH_RedirOP(GEN_CASE)
-#undef GEN_CASE
-        default : fatal("unsupported redir op: %s\n", toString(kind));
-  }
-}
-
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
-  this->generateCmdArg(node.getTargetNode());
-  this->emit1byteIns(OpCode::ADD_REDIR_OP,
-                     static_cast<unsigned char>(resolveRedirOp(node.getRedirectOP())));
+  if (int newFd = node.getNewFd(); newFd >= 0 && newFd <= 2) {
+    if (int targeFd = node.getTargetFd(); targeFd >= 0 && targeFd <= 2) {
+      unsigned int index = toIndex(BuiltinVarOffset::STDIN) + targeFd;
+      this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
+    } else {
+      this->generateCmdArg(node.getTargetNode());
+    }
+    const auto offset = static_cast<unsigned int>(OpCode::ADD_REDIR_OP0);
+    auto op = static_cast<OpCode>(offset + newFd);
+    this->emit1byteIns(op, static_cast<unsigned char>(node.getRedirOp()));
+  } else {
+    fatal("unsupported\n");
+  }
 }
 
 void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {

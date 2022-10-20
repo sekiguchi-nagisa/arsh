@@ -502,10 +502,12 @@ nodes:
                   argNodes:
                     - nodeKind: Redir
                       token:
-                        pos: 14
-                        size: 2
+                        pos: 12
+                        size: 4
                       type:
-                      op: "1>"
+                      fdName: "1"
+                      newFd: -1
+                      op: "RedirOp::REDIR_OUT"
                       targetNode:
                         nodeKind: CmdArg
                         token:
@@ -522,6 +524,7 @@ nodes:
                             type:
                             kind: "STRING"
                             value: "34"
+                      targetFd: -1
                   redirCount: 1
                   needFork: true
                   handle: null
@@ -542,10 +545,12 @@ nodes:
                 redirNodes:
                   - nodeKind: Redir
                     token:
-                      pos: 29
-                      size: 7
+                      pos: 27
+                      size: 9
                     type:
-                    op: "<"
+                    fdName: "0"
+                    newFd: -1
+                    op: "RedirOp::REDIR_IN"
                     targetNode:
                       nodeKind: CmdArg
                       token:
@@ -570,6 +575,7 @@ nodes:
                             kind: "Float"
                             floatValue: 34.100000
                           handle: null
+                    targetFd: -1
                 baseIndex: 0
             baseIndex: 0
             inFork: true

@@ -40,9 +40,8 @@ PipelineObject::~PipelineObject() {
   this->state.jobTable.waitForAny();
 }
 
-static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {
-  return pair.first == RedirOP::NOP && pair.second.isObject() &&
-         isa<UnixFdObject>(pair.second.get());
+static bool isPassingFD(const RedirObject::Entry &entry) {
+  return entry.op == RedirOp::NOP && entry.value.isObject() && isa<UnixFdObject>(entry.value.get());
 }
 
 RedirObject::~RedirObject() {
@@ -52,18 +51,18 @@ RedirObject::~RedirObject() {
   }
 
   // set close-on-exec flag to fds
-  for (auto &e : this->ops) {
-    if (isPassingFD(e) && e.second.get()->getRefcount() > 1) {
-      typeAs<UnixFdObject>(e.second).closeOnExec(true);
+  for (auto &e : this->entries) {
+    if (isPassingFD(e) && e.value.get()->getRefcount() > 1) {
+      typeAs<UnixFdObject>(e.value).closeOnExec(true);
     }
   }
 }
 
-static int doIOHere(const StringRef &value) {
+static int doIOHere(const StringRef &value, int newFd) {
   pipe_t pipe[1];
   initAllPipe(1, pipe);
 
-  dup2(pipe[0][READ_PIPE], STDIN_FILENO);
+  dup2(pipe[0][READ_PIPE], newFd);
 
   if (value.size() + 1 <= PIPE_BUF) {
     int errnum = 0;
@@ -108,126 +107,128 @@ enum class RedirOpenFlag {
 
 /**
  *
- * @param fileName
+ * @param fileName must be String
  * @param openFlag
- * @param targetFD
+ * @param newFD
  * @return
  * if failed, return non-zero value (errno)
  */
-static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int targetFD) {
-  if (fileName.hasType(TYPE::String)) {
-    int flag = 0;
-    switch (openFlag) {
-    case RedirOpenFlag::READ:
-      flag = O_RDONLY;
-      break;
-    case RedirOpenFlag::WRITE:
-      flag = O_WRONLY | O_CREAT | O_TRUNC;
-      break;
-    case RedirOpenFlag::APPEND:
-      flag = O_WRONLY | O_APPEND | O_CREAT;
-      break;
-    }
+static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int newFd) {
+  assert(fileName.hasStrRef());
+  int flag = 0;
+  switch (openFlag) {
+  case RedirOpenFlag::READ:
+    flag = O_RDONLY;
+    break;
+  case RedirOpenFlag::WRITE:
+    flag = O_WRONLY | O_CREAT | O_TRUNC;
+    break;
+  case RedirOpenFlag::APPEND:
+    flag = O_WRONLY | O_APPEND | O_CREAT;
+    break;
+  }
 
-    auto ref = fileName.asStrRef();
-    if (ref.hasNullChar()) {
-      return EINVAL;
-    }
+  auto ref = fileName.asStrRef();
+  if (ref.hasNullChar()) {
+    return EINVAL;
+  }
 
-    int fd = open(ref.data(), flag, 0666);
-    if (fd < 0) {
-      return errno;
-    }
-    if (dup2(fd, targetFD) < 0) {
-      int e = errno;
-      close(fd);
-      return e;
-    }
+  int fd = open(ref.data(), flag, 0666);
+  if (fd < 0) {
+    return errno;
+  }
+  if (dup2(fd, newFd) < 0) {
+    int e = errno;
     close(fd);
-  } else {
-    assert(fileName.hasType(TYPE::UnixFD));
-    int fd = typeAs<UnixFdObject>(fileName).getValue();
-    if (openFlag == RedirOpenFlag::APPEND) {
-      if (lseek(fd, 0, SEEK_END) == -1) {
-        return errno;
-      }
+    return e;
+  }
+  close(fd);
+  return 0;
+}
+
+void RedirObject::addEntry(DSValue &&value, RedirOp op, int newFd) {
+  if (op == RedirOp::REDIR_OUT_ERR || op == RedirOp::APPEND_OUT_ERR) {
+    this->backupFDSet |= 1u << 1u;
+    this->backupFDSet |= 1u << 2u;
+  } else if (newFd >= 0 && newFd <= 2) {
+    this->backupFDSet |= 1u << static_cast<unsigned int>(newFd);
+  }
+  this->entries.push_back(Entry{
+      .value = std::move(value),
+      .op = op,
+      .newFd = newFd,
+  });
+}
+
+static RedirOpenFlag resolveOpenFlag(RedirOp op) {
+  switch (op) {
+  case RedirOp::REDIR_IN:
+    return RedirOpenFlag::READ;
+  case RedirOp::REDIR_OUT:
+    return RedirOpenFlag::WRITE;
+  case RedirOp::APPEND_OUT:
+    return RedirOpenFlag::APPEND;
+  case RedirOp::REDIR_OUT_ERR:
+    return RedirOpenFlag::WRITE;
+  case RedirOp::APPEND_OUT_ERR:
+    return RedirOpenFlag::APPEND;
+  case RedirOp::NOP:
+  case RedirOp::DUP_FD:
+  case RedirOp::HERE_STR:
+    break;
+  }
+  return RedirOpenFlag::READ;
+}
+
+static int redirectImpl(const RedirObject::Entry &entry) {
+  switch (entry.op) {
+  case RedirOp::NOP:
+    break;
+  case RedirOp::REDIR_IN:
+  case RedirOp::REDIR_OUT:
+  case RedirOp::APPEND_OUT:
+    return redirectToFile(entry.value, resolveOpenFlag(entry.op), entry.newFd);
+  case RedirOp::REDIR_OUT_ERR:
+  case RedirOp::APPEND_OUT_ERR:
+    if (int r = redirectToFile(entry.value, resolveOpenFlag(entry.op), STDOUT_FILENO); r != 0) {
+      return r;
     }
-    if (dup2(fd, targetFD) < 0) {
+    if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
       return errno;
     }
+    return 0;
+  case RedirOp::DUP_FD: {
+    auto &src = typeAs<UnixFdObject>(entry.value);
+    if (dup2(src.getValue(), entry.newFd) < 0) {
+      return errno;
+    }
+    return 0;
+  }
+  case RedirOp::HERE_STR:
+    return doIOHere(entry.value.asStrRef(), entry.newFd);
   }
   return 0;
 }
 
-static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
-  switch (pair.first) {
-  case RedirOP::IN_2_FILE:
-    return redirectToFile(pair.second, RedirOpenFlag::READ, STDIN_FILENO);
-  case RedirOP::OUT_2_FILE:
-    return redirectToFile(pair.second, RedirOpenFlag::WRITE, STDOUT_FILENO);
-  case RedirOP::OUT_2_FILE_APPEND:
-    return redirectToFile(pair.second, RedirOpenFlag::APPEND, STDOUT_FILENO);
-  case RedirOP::ERR_2_FILE:
-    return redirectToFile(pair.second, RedirOpenFlag::WRITE, STDERR_FILENO);
-  case RedirOP::ERR_2_FILE_APPEND:
-    return redirectToFile(pair.second, RedirOpenFlag::APPEND, STDERR_FILENO);
-  case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-    int r = redirectToFile(pair.second, RedirOpenFlag::WRITE, STDOUT_FILENO);
-    if (r != 0) {
-      return r;
-    }
-    if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
-      return errno;
-    }
-    return 0;
-  }
-  case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-    int r = redirectToFile(pair.second, RedirOpenFlag::APPEND, STDOUT_FILENO);
-    if (r != 0) {
-      return r;
-    }
-    if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
-      return errno;
-    }
-    return 0;
-  }
-  case RedirOP::MERGE_ERR_2_OUT:
-    if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
-      return errno;
-    }
-    return 0;
-  case RedirOP::MERGE_OUT_2_ERR:
-    if (dup2(STDERR_FILENO, STDOUT_FILENO) < 0) {
-      return errno;
-    }
-    return 0;
-  case RedirOP::HERE_STR:
-    return doIOHere(pair.second.asStrRef());
-  case RedirOP::NOP:
-    break;
-  }
-  return 0; // do nothing
-}
-
-bool RedirObject::redirect(DSState &st) {
-  this->backupFDs();
-  for (auto &pair : this->ops) {
-    int r = redirectImpl(pair);
+bool RedirObject::redirect(DSState &state) {
+  this->saveFDs();
+  for (auto &entry : this->entries) {
+    int r = redirectImpl(entry);
     if (this->backupFDSet > 0 && r != 0) {
       std::string msg = REDIR_ERROR;
-      if (pair.second) {
-        if (pair.second.hasType(TYPE::String)) {
-          auto ref = pair.second.asStrRef();
+      if (entry.value) {
+        if (entry.value.hasType(TYPE::String)) {
+          auto ref = entry.value.asStrRef();
           if (!ref.empty()) {
             msg += ": ";
             msg += toPrintable(ref);
           }
-        } else if (pair.second.hasType(TYPE::UnixFD)) {
+        } else if (entry.value.hasType(TYPE::UnixFD)) { // FIXME:
           msg += ": ";
-          msg += std::to_string(typeAs<UnixFdObject>(pair.second).getValue());
+          msg += std::to_string(typeAs<UnixFdObject>(entry.value).getValue());
         }
       }
-      raiseSystemError(st, r, std::move(msg));
+      raiseSystemError(state, r, std::move(msg));
       return false;
     }
   }

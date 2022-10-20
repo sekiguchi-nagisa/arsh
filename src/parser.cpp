@@ -1147,24 +1147,65 @@ std::unique_ptr<Node> Parser::parse_command() {
   return node;
 }
 
+static std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref) {
+  unsigned int i = 0;
+  for (; i < ref.size(); i++) {
+    char ch = ref[i];
+    if (ch >= '0' && ch <= '9') {
+      continue;
+    } else {
+      break;
+    }
+  }
+  auto prefix = ref.slice(0, i);
+  RedirOp op = RedirOp::NOP;
+
+#define EACH_REDIR_OP_MAPPING(OP)                                                                  \
+  OP(REDIR_IN, REDIR_IN, 0)                                                                        \
+  OP(REDIR_OUT, REDIR_OUT, 1)                                                                      \
+  OP(REDIR_APPEND, APPEND_OUT, 1)                                                                  \
+  OP(REDIR_OUT_ERR, REDIR_OUT_ERR, 1)                                                              \
+  OP(REDIR_APPEND_OUT_ERR, APPEND_OUT_ERR, 1)                                                      \
+  OP(REDIR_DUP_IN, DUP_FD, 0)                                                                      \
+  OP(REDIR_DUP_OUT, DUP_FD, 1)                                                                     \
+  OP(REDIR_HERE_STR, HERE_STR, 0)
+
+  switch (kind) {
+#define GEN_REDIR_CASE(K, O, D)                                                                    \
+  case TokenKind::K:                                                                               \
+    if (prefix.empty()) {                                                                          \
+      prefix = #D;                                                                                 \
+    }                                                                                              \
+    op = RedirOp::O;                                                                               \
+    break;
+
+    // clang-format off
+  EACH_REDIR_OP_MAPPING(GEN_REDIR_CASE)
+    // clang-format on
+
+#undef GEN_REDIR_CASE
+  default:
+    break;
+  }
+
+#undef EACH_REDIR_OP_MAPPING
+  return {prefix.toString(), op};
+}
+
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
     // clang-format off
-  EACH_LA_redirFile(GEN_LA_CASE)
-    // clang-format on
-    {
-      TokenKind kind = this->scan();
-      return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR)));
-    }
-    // clang-format off
-  EACH_LA_redirNoFile(GEN_LA_CASE)
+  EACH_LA_redir(GEN_LA_CASE)
     // clang-format on
     {
       Token token = this->curToken;
       TokenKind kind = this->scan();
-      return std::make_unique<RedirNode>(kind, token);
+      auto pair = resolveRedirOp(kind, this->lexer->toStrRef(token));
+      auto node = TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR));
+      return std::make_unique<RedirNode>(token, std::move(pair.first), pair.second,
+                                         std::move(node));
     }
   default:
     E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));

@@ -1195,24 +1195,33 @@ public:
 
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
-  TokenKind op;
+  std::string fdName;
+  int newFd{-1};
+  RedirOp op;
   std::unique_ptr<CmdArgNode> targetNode;
+  int targetFd{-1};
 
 public:
-  RedirNode(TokenKind kind, std::unique_ptr<CmdArgNode> &&node)
-      : WithRtti(node->getToken()), op(kind), targetNode(std::move(node)) {}
-
-  RedirNode(TokenKind kind, Token token)
-      : RedirNode(kind, std::make_unique<CmdArgNode>(
-                            std::make_unique<StringNode>(token, std::string("")))) {}
+  RedirNode(Token opToken, std::string &&fdName, RedirOp op, std::unique_ptr<CmdArgNode> &&node)
+      : WithRtti(opToken), fdName(std::move(fdName)), op(op), targetNode(std::move(node)) {
+    this->updateToken(this->targetNode->getToken());
+  }
 
   ~RedirNode() override = default;
 
-  TokenKind getRedirectOP() const { return this->op; }
+  const std::string &getFdName() const { return this->fdName; }
+
+  void setNewFd(int fd) { this->newFd = fd; }
+
+  int getNewFd() const { return this->newFd; }
+
+  RedirOp getRedirOp() const { return this->op; }
 
   CmdArgNode &getTargetNode() { return *this->targetNode; }
 
-  bool isHereStr() const { return this->op == TokenKind::REDIR_HERE_STR; }
+  void setTargetFd(int fd) { this->targetFd = fd; }
+
+  int getTargetFd() const { return this->targetFd; }
 
   void dump(NodeDumper &dumper) const override;
 };

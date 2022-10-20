@@ -1,0 +1,5 @@
+
+#$test($result = 'type', $lineNum = 5, $chars = 20, $errorKind = 'NeedFd', $status = 1)
+
+
+echo fjriajf 000>& 111  # only allow 0,1,2

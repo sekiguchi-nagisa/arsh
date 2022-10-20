@@ -6,7 +6,7 @@ assert $j.in()
 assert $j.out()
 assert $j.size() == 2
 
-echo -e 'world\nhello\nworld' > $j[0]
+echo -e 'world\nhello\nworld' >& $j[0]
 $j[0].close()
 var r = new [String]()
 while(read -u $j[1]) {

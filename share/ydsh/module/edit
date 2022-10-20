@@ -27,10 +27,10 @@ function _error(s : String) {
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int {
-    echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
+    echo >& $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
     $short && return 2;
 
-    echo > $fd "Display or manipulate history list.
+    echo >& $fd "Display or manipulate history list.
     Options:
         -c        clear the history list
         -d offset delete the history entry at OFFSET

@@ -347,8 +347,6 @@ TEST_F(RedirectTest, merge) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 &> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 >& %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("__puts -1 AAA -2 123 &>> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\nAAA\n123\n"));
@@ -369,9 +367,6 @@ TEST_F(RedirectTest, merge) {
 
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("sh -c 'echo AAA && echo 123 1>&2' &> %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("sh -c 'echo AAA && echo 123 1>&2' >& %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("sh -c 'echo AAA && echo 123 1>&2' &>> %s", this->getTargetName()), 0));
@@ -395,9 +390,6 @@ TEST_F(RedirectTest, merge) {
       this->expect(CL("eval sh -c 'echo AAA && echo 123 1>&2' &> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("eval sh -c 'echo AAA && echo 123 1>&2' >& %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("eval sh -c 'echo AAA && echo 123 1>&2' &>> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\nAAA\n123\n"));
 
@@ -416,9 +408,6 @@ TEST_F(RedirectTest, merge) {
 
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("{ __puts -1 AAA -2 123; } with &> %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("{ __puts -1 AAA -2 123; } with >& %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("{ __puts -1 AAA -2 123; } with &>> %s", this->getTargetName()), 0));
@@ -442,9 +431,6 @@ TEST_F(RedirectTest, merge) {
       this->expect(CL("command __puts -1 AAA -2 123 &> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command __puts -1 AAA -2 123 >& %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("command __puts -1 AAA -2 123 &>> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\nAAA\n123\n"));
 
@@ -466,9 +452,6 @@ TEST_F(RedirectTest, merge) {
       CL("command sh -c 'echo AAA && echo 123 1>&2' &> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("command sh -c 'echo AAA && echo 123 1>&2' >& %s", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\n"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(
       CL("command sh -c 'echo AAA && echo 123 1>&2' &>> %s", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n123\nAAA\n123\n"));
 
@@ -484,32 +467,28 @@ TEST_F(RedirectTest, merge) {
 }
 
 TEST_F(RedirectTest, fd) {
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("var a = new UnixFD('%s'); echo -n 'hello ' > $a; echo world > $a", this->getTargetName()),
-      0));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(CL("var a = new UnixFD('%s'); echo -n 'hello ' >& $a;\n echo world 1>& $a",
+                      this->getTargetName()),
+                   0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("var a = new UnixFD('%s'); echo 12345 >> $a", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n12345\n"));
+      this->expect(CL("var a = new UnixFD('%s'); echo 12345 1>& $a", this->getTargetName()), 0));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("12345\nworld\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("var a = new UnixFD('%s'); __puts -2 AAA 2>> $a", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n12345\nAAA\n"));
+      this->expect(CL("var a = new UnixFD('%s'); __puts -2 AAA 2>& $a", this->getTargetName()), 0));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n5\nworld\n"));
 
   auto v = CL("var a = new UnixFD('%s')\n"
               "var r = new [String]()\n"
               "while(read -u $a) { $r.add($REPLY); }\n"
               "true\n"
               "assert $r.size() == 3\n"
-              "assert $r[0] == 'hello world'\n"
-              "assert $r[1] == '12345'\n"
-              "assert $r[2] == 'AAA'\n",
+              "assert $r[0] == 'AAA'\n"
+              "assert $r[1] == '5'\n"
+              "assert $r[2] == 'world'",
               this->getTargetName());
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
-
-  // not recreation file if already exist
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("var a = new UnixFD('%s'); echo 12345 > $a; echo ZZZ >> $a", this->getTargetName()), 0));
-  ASSERT_NO_FATAL_FAILURE(this->contentEq("12345\nworld\n12345\nAAA\nZZZ\n"));
 }
 
 int main(int argc, char **argv) {

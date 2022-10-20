@@ -312,6 +312,17 @@ constexpr const char *BUILD_ARCH =
 #endif
     ;
 
+enum class RedirOp : unsigned char {
+  NOP,            // dummy
+  REDIR_IN,       // [n]< word
+  REDIR_OUT,      // [n]> word
+  APPEND_OUT,     // [n]>> word
+  REDIR_OUT_ERR,  // &> word
+  APPEND_OUT_ERR, // &>> word
+  DUP_FD,         // [n]<& N or [n]>& N
+  HERE_STR,       // [n]<<< word
+};
+
 enum class ForkKind : unsigned char {
   NONE,      // do nothing
   STR,       // capture stdout as string. ex. "$(echo)"

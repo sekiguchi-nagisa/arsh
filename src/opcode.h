@@ -118,7 +118,9 @@ namespace ydsh {
   OP(BUILTIN_EVAL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \
   OP(NEW_REDIR, 0, 1)                                                                              \
-  OP(ADD_REDIR_OP, 1, -1)                                                                          \
+  OP(ADD_REDIR_OP0, 1, -1)                                                                         \
+  OP(ADD_REDIR_OP1, 1, -1)                                                                         \
+  OP(ADD_REDIR_OP2, 1, -1)                                                                         \
   OP(DO_REDIR, 0, 0)                                                                               \
   OP(LOAD_CUR_MOD, 0, 1)                                                                           \
   OP(RAND, 0, 1)                                                                                   \

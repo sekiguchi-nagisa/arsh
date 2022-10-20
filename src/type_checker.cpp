@@ -1094,16 +1094,57 @@ void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
   node.setType(this->typePool.get((TYPE::StringArray)));
 }
 
+/**
+ * only allow [0-9]+ format command argument
+ * @param argNode
+ * @return
+ */
+static std::pair<int32_t, bool> toNumericCmdArg(const CmdArgNode &argNode) {
+  if (argNode.getSegmentNodes().size() == 1 && isa<StringNode>(*argNode.getSegmentNodes()[0])) {
+    auto &strNode = cast<StringNode>(*argNode.getSegmentNodes()[0]);
+    if (strNode.getToken().size == strNode.getValue().size()) {
+      StringRef ref = strNode.getValue();
+      return convertToDecimal<int32_t>(ref.begin(), ref.end());
+    }
+  }
+  return {0, false};
+}
+
 void TypeChecker::visitRedirNode(RedirNode &node) {
+  {
+    // check fd format
+    StringRef ref = node.getFdName();
+    auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
+    if (pair.second && pair.first >= 0 && pair.first <= 2) {
+      node.setNewFd(pair.first);
+    } else {
+      this->reportError<RedirFdRange>(node, node.getFdName().c_str());
+    }
+  }
+
   auto &argNode = node.getTargetNode();
-  this->checkTypeAsExpr(argNode);
-
-  // not allow String Array type
-  this->checkType(nullptr, argNode, &this->typePool.get(TYPE::StringArray));
-
-  // not UnixFD type, if IOHere
-  if (node.isHereStr()) {
-    this->checkType(nullptr, argNode, &this->typePool.get(TYPE::UnixFD));
+  switch (node.getRedirOp()) {
+  case RedirOp::NOP:
+  case RedirOp::REDIR_IN:
+  case RedirOp::REDIR_OUT:
+  case RedirOp::APPEND_OUT:
+  case RedirOp::REDIR_OUT_ERR:
+  case RedirOp::APPEND_OUT_ERR:
+  case RedirOp::HERE_STR:
+    this->checkType(this->typePool.get(TYPE::String), argNode);
+    break;
+  case RedirOp::DUP_FD: {
+    auto &type = this->checkTypeExactly(argNode);
+    if (!type.is(TYPE::UnixFD)) {
+      auto pair = toNumericCmdArg(argNode);
+      if (pair.second && pair.first >= 0 && pair.first <= 2) {
+        node.setTargetFd(pair.first);
+      } else {
+        this->reportError<NeedFd>(argNode);
+      }
+    }
+    break;
+  }
   }
   node.setType(this->typePool.get(TYPE::Any)); // FIXME:
 }

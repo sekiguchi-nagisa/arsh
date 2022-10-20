@@ -1,0 +1,5 @@
+# not allow command argument concatenation of UnixFD type
+
+#$test($result = 'parse', $lineNum = 5, $chars = 9, $errorKind = 'CMD_ARG', $status = 1)
+
+echo 34>(echo hello)  # recongnized as '34>' (

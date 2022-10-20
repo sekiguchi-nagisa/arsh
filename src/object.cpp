@@ -623,7 +623,7 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
         typeAs<UnixFdObject>(arg).closeOnExec(false);
-        typeAs<RedirObject>(this->redir).addRedirOp(RedirOP::NOP, std::move(arg));
+        typeAs<RedirObject>(this->redir).addEntry(std::move(arg), RedirOp::NOP, -1);
       }
       return r;
     }

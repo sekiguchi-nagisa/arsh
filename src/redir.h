@@ -27,42 +27,6 @@
 
 namespace ydsh {
 
-constexpr unsigned int FD_BIT_0 = 1u << 0u;
-constexpr unsigned int FD_BIT_1 = 1u << 1u;
-constexpr unsigned int FD_BIT_2 = 1u << 2u;
-
-#define EACH_RedirOP(OP)                                                                           \
-  OP(IN_2_FILE, FD_BIT_0)                                                                          \
-  OP(OUT_2_FILE, FD_BIT_1)                                                                         \
-  OP(OUT_2_FILE_APPEND, FD_BIT_1)                                                                  \
-  OP(ERR_2_FILE, FD_BIT_2)                                                                         \
-  OP(ERR_2_FILE_APPEND, FD_BIT_2)                                                                  \
-  OP(MERGE_ERR_2_OUT_2_FILE, (FD_BIT_2 | FD_BIT_1))                                                \
-  OP(MERGE_ERR_2_OUT_2_FILE_APPEND, (FD_BIT_2 | FD_BIT_1))                                         \
-  OP(MERGE_ERR_2_OUT, FD_BIT_2)                                                                    \
-  OP(MERGE_OUT_2_ERR, FD_BIT_1)                                                                    \
-  OP(HERE_STR, FD_BIT_0)
-
-enum class RedirOP : unsigned char {
-#define GEN_ENUM(ENUM, BITS) ENUM,
-  EACH_RedirOP(GEN_ENUM)
-#undef GEN_ENUM
-      NOP,
-};
-
-inline unsigned int getChangedFD(RedirOP op) {
-  switch (op) {
-#define GEN_CASE(ENUM, BITS)                                                                       \
-  case RedirOP::ENUM:                                                                              \
-    return BITS;
-  EACH_RedirOP(GEN_CASE)
-#undef GEN_CASE
-      case RedirOP::NOP:
-    break;
-  }
-  return 0;
-}
-
 constexpr unsigned int READ_PIPE = 0;
 constexpr unsigned int WRITE_PIPE = 1;
 
@@ -199,12 +163,19 @@ public:
  * for io redirection
  */
 class RedirObject : public ObjectWithRtti<ObjectKind::Redir> {
+public:
+  struct Entry {
+    DSValue value;
+    RedirOp op;
+    int newFd; // ignore it when op is REDIR_OUT_ERR or APPEND_OUT_ERR
+  };
+
 private:
   unsigned int backupFDSet{0}; // if corresponding bit is set, backup old fd
 
-  std::vector<std::pair<RedirOP, DSValue>> ops;
-
   int oldFds[3];
+
+  std::vector<Entry> entries;
 
 public:
   NON_COPYABLE(RedirObject);
@@ -213,17 +184,14 @@ public:
 
   ~RedirObject();
 
-  void addRedirOp(RedirOP op, DSValue &&arg) {
-    this->ops.emplace_back(op, std::move(arg));
-    this->backupFDSet |= getChangedFD(op);
-  }
+  void addEntry(DSValue &&value, RedirOp op, int newFd);
 
   void ignoreBackup() { this->backupFDSet = 0; }
 
-  bool redirect(DSState &st);
+  bool redirect(DSState &state);
 
 private:
-  void backupFDs() {
+  void saveFDs() {
     for (int i = 0; i < 3; i++) {
       if (this->backupFDSet & (1u << i)) {
         this->oldFds[i] = fcntl(i, F_DUPFD_CLOEXEC, 0);

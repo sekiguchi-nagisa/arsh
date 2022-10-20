@@ -2239,12 +2239,12 @@ bool VM::mainLoop(DSState &state) {
         state.stack.push(DSValue::create<RedirObject>());
         vmnext;
       }
-      vmcase(ADD_REDIR_OP) {
-        unsigned char v = read8(GET_CODE(state), state.stack.pc());
+      vmcase(ADD_REDIR_OP0) vmcase(ADD_REDIR_OP1) vmcase(ADD_REDIR_OP2) {
+        const int newFd = static_cast<int>(op) - static_cast<int>(OpCode::ADD_REDIR_OP0);
+        const auto redirOp = static_cast<RedirOp>(read8(GET_CODE(state), state.stack.pc()));
         state.stack.pc()++;
         auto value = state.stack.pop();
-        typeAs<RedirObject>(state.stack.peek())
-            .addRedirOp(static_cast<RedirOP>(v), std::move(value));
+        typeAs<RedirObject>(state.stack.peek()).addEntry(std::move(value), redirOp, newFd);
         vmnext;
       }
       vmcase(DO_REDIR) {

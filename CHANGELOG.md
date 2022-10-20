@@ -58,6 +58,14 @@
     - always synchronize current ``@`` content
 - **Breaking Change**: ``#`` variable always indicates current ``@`` size
 - **Breaking Change**: disallow relative glob pattern in source statement
+- **Breaking Change**: overhaul io redirection
+    - support ``<&`` operator
+    - now ``&>`` and ``>&`` are different semantics
+    - ``<``, ``>``, ``>>``, ``&>``, ``&>>`` operators only accept ``String`` expression
+        - when redirect to ``FD`` object, use ``>&`` or ``<&`` instead
+    - ``1>&2``and ``2>&1`` are recognized as ``1>& 2``, ``2>& 1``
+    - now support ``[n]> word`` style notation.
+        - ``[n]`` indicate decimal file descriptor numbers (only allow 0, 1, 2)
 
 #### Builtin
 

@@ -57,9 +57,6 @@ assert($? != 0)
 ls fheriuf &> /dev/null | grep fheriuf
 assert($? != 0)
 
-ls fheriuf >& /dev/null | grep fheriuf
-assert($? != 0)
-
 echo hello 1>&2 | grep hello
 assert($? != 0)
 

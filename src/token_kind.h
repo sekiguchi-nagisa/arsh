@@ -158,15 +158,13 @@
   TOKEN(BRACE_CHAR_SEQ, "<Brace Char Seq>")                                                        \
   TOKEN(BRACE_INT_SEQ, "<Brace Int Seq>")                                                          \
   /* redir op */                                                                                   \
-  TOKEN(REDIR_IN_2_FILE, "<")                                                                      \
-  TOKEN(REDIR_OUT_2_FILE, "1>")                                                                    \
-  TOKEN(REDIR_OUT_2_FILE_APPEND, "1>>")                                                            \
-  TOKEN(REDIR_ERR_2_FILE, "2>")                                                                    \
-  TOKEN(REDIR_ERR_2_FILE_APPEND, "2>>")                                                            \
-  TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE, "&>")                                                        \
-  TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>")                                                \
-  TOKEN(REDIR_MERGE_ERR_2_OUT, "2>&1")                                                             \
-  TOKEN(REDIR_MERGE_OUT_2_ERR, "1>&2")                                                             \
+  TOKEN(REDIR_IN, "<")                                                                             \
+  TOKEN(REDIR_OUT, ">")                                                                            \
+  TOKEN(REDIR_APPEND, ">>")                                                                        \
+  TOKEN(REDIR_OUT_ERR, "&>")                                                                       \
+  TOKEN(REDIR_APPEND_OUT_ERR, "&>>")                                                               \
+  TOKEN(REDIR_DUP_IN, "<&")                                                                        \
+  TOKEN(REDIR_DUP_OUT, ">&")                                                                       \
   TOKEN(REDIR_HERE_STR, "<<<")                                                                     \
   TOKEN(PIPE, "|")                                                                                 \
   TOKEN(BACKGROUND, "&")                                                                           \
@@ -308,21 +306,15 @@
   OP(STR_ELEMENT)                                                                                  \
   EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL) OP(CLOSE_DQUOTE)
 
-#define EACH_LA_redirFile(OP)                                                                      \
-  OP(REDIR_IN_2_FILE)                                                                              \
-  OP(REDIR_OUT_2_FILE)                                                                             \
-  OP(REDIR_OUT_2_FILE_APPEND)                                                                      \
-  OP(REDIR_ERR_2_FILE)                                                                             \
-  OP(REDIR_ERR_2_FILE_APPEND)                                                                      \
-  OP(REDIR_MERGE_ERR_2_OUT_2_FILE)                                                                 \
-  OP(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND)                                                          \
+#define EACH_LA_redir(OP)                                                                          \
+  OP(REDIR_IN)                                                                                     \
+  OP(REDIR_OUT)                                                                                    \
+  OP(REDIR_APPEND)                                                                                 \
+  OP(REDIR_OUT_ERR)                                                                                \
+  OP(REDIR_APPEND_OUT_ERR)                                                                         \
+  OP(REDIR_DUP_IN)                                                                                 \
+  OP(REDIR_DUP_OUT)                                                                                \
   OP(REDIR_HERE_STR)
-
-#define EACH_LA_redirNoFile(OP)                                                                    \
-  OP(REDIR_MERGE_ERR_2_OUT)                                                                        \
-  OP(REDIR_MERGE_OUT_2_ERR)
-
-#define EACH_LA_redir(OP) EACH_LA_redirFile(OP) EACH_LA_redirNoFile(OP)
 
 #define EACH_LA_cmdArg(OP)                                                                         \
   OP(CMD_ARG_PART)                                                                                 \

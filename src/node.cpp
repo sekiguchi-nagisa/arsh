@@ -428,8 +428,24 @@ void ArgArrayNode::dump(NodeDumper &dumper) const { DUMP(argNodes); }
 // #######################
 
 void RedirNode::dump(NodeDumper &dumper) const {
-  DUMP(op);
+  DUMP(fdName);
+  DUMP(newFd);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(RedirOp::NOP)                                                                                 \
+  OP(RedirOp::REDIR_IN)                                                                            \
+  OP(RedirOp::REDIR_OUT)                                                                           \
+  OP(RedirOp::APPEND_OUT)                                                                          \
+  OP(RedirOp::REDIR_OUT_ERR)                                                                       \
+  OP(RedirOp::APPEND_OUT_ERR)                                                                      \
+  OP(RedirOp::DUP_FD)                                                                              \
+  OP(RedirOp::HERE_STR)
+
+  DUMP_ENUM(op, EACH_ENUM);
+#undef EACH_ENUM
+
   DUMP_PTR(targetNode);
+  DUMP(targetFd);
 }
 
 // ##########################

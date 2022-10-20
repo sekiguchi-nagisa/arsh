@@ -90,7 +90,9 @@
 | BUILTIN_EVAL      |                                | -> value                                     | call builtin eval command                                       |
 | BUILTIN_EXEC      |                                | -> value / [terminate]                       | call builtin exec command                                       |
 | NEW_REDIR         |                                | -> value                                     | create new RedireConfig                                         |
-| ADD_REDIR_OP      | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target                       |
+| ADD_REDIR_OP0     | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stdin)              |
+| ADD_REDIR_OP1     | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stdout)             |
+| ADD_REDIR_OP2     | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stderr)             |
 | DO_REDIR          |                                | value -> value                               | perform redirection                                             |
 | LOAD_CUR_MOD      |                                | -> value                                     | load a current module                                           |
 | RAND              |                                | -> value                                     | generate random number and push stack top                       |

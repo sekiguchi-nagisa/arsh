@@ -311,16 +311,14 @@ INIT:
     <CMD> "$"                { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
                                else { ERROR();} }
 
-    <CMD> "<"                { RET(REDIR_IN_2_FILE); }
-    <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
-    <CMD> ("1>>" | ">>")     { RET(REDIR_OUT_2_FILE_APPEND); }
-    <CMD> "2>"               { RET(REDIR_ERR_2_FILE); }
-    <CMD> "2>>"              { RET(REDIR_ERR_2_FILE_APPEND); }
-    <CMD> (">&" | "&>")      { RET(REDIR_MERGE_ERR_2_OUT_2_FILE); }
-    <CMD> "&>>"              { RET(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND); }
-    <CMD> "2>&1"             { RET(REDIR_MERGE_ERR_2_OUT); }
-    <CMD> "1>&2"             { RET(REDIR_MERGE_OUT_2_ERR); }
-    <CMD> "<<<"              { RET(REDIR_HERE_STR); }
+    <CMD> [0-9]* "<"         { RET(REDIR_IN); }
+    <CMD> [0-9]* ">"         { RET(REDIR_OUT); }
+    <CMD> [0-9]* ">>"        { RET(REDIR_APPEND); }
+    <CMD> [0-9]* "&>"        { RET(REDIR_OUT_ERR); }
+    <CMD> [0-9]* "&>>"       { RET(REDIR_APPEND_OUT_ERR); }
+    <CMD> [0-9]* "<&"        { RET(REDIR_DUP_IN); }
+    <CMD> [0-9]* ">&"        { RET(REDIR_DUP_OUT); }
+    <CMD> [0-9]* "<<<"       { RET(REDIR_HERE_STR); }
     <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 

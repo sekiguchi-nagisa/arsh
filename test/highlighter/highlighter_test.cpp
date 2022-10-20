@@ -48,16 +48,17 @@ struct EmitterTest : public ::testing::Test {
 };
 
 TEST_F(EmitterTest, case1) {
-  auto ret = lex("echo hello$@[0] 1>&2 # this is a comment");
-  ASSERT_EQ(8, ret.size());
+  auto ret = lex("echo hello$@[0] 001>&22 # this is a comment");
+  ASSERT_EQ(9, ret.size());
   compare(HighlightTokenClass::COMMAND, "echo", ret[0]);
   compare(HighlightTokenClass::COMMAND_ARG, "hello", ret[1]);
   compare(HighlightTokenClass::VARIABLE, "$@", ret[2]);
   compare(HighlightTokenClass::NONE, "[", ret[3]);
   compare(HighlightTokenClass::NUMBER, "0", ret[4]);
   compare(HighlightTokenClass::NONE, "]", ret[5]);
-  compare(HighlightTokenClass::REDIRECT, "1>&2", ret[6]);
-  compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[7]);
+  compare(HighlightTokenClass::REDIRECT, "001>&", ret[6]);
+  compare(HighlightTokenClass::COMMAND_ARG, "22", ret[7]);
+  compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[8]);
 
   ret = lex("var a = 3.4");
   ASSERT_EQ(4, ret.size());

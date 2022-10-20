@@ -1,0 +1,6 @@
+# not allow String Array type in redirection target
+
+#$test($result = 'type', $lineNum = 6, $chars = 14, $errorKind = 'Required', $status = 1)
+
+
+echo hello > ${["fer", "fr"]} 54fherui   # illegal target
