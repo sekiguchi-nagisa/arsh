@@ -1144,6 +1144,18 @@ std::unique_ptr<Node> Parser::parse_command() {
       break;
     }
   }
+
+  switch (CUR_KIND()) {
+    // clang-format off
+  EACH_LA_redir(GEN_LA_CASE)
+    // clang-format on
+    {
+      this->createError(this->curKind, this->curToken, REDIR_NEED_SPACE,
+                        "require space before redirection");
+    }
+  default:
+    break;
+  }
   return node;
 }
 

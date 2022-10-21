@@ -73,6 +73,8 @@ private:
 #undef GEN_ENUM
   };
 
+  static constexpr const char *REDIR_NEED_SPACE = "RedirNeedSpace";
+
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
   std::unique_ptr<Node> incompleteNode; // for code completion
