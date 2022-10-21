@@ -1470,8 +1470,8 @@ TEST_F(LexerTest_Lv1, redir2) {
   const char *text = "12345>&2";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(
-      EXPECT(TokenKind::REDIR_OUT, "12345>&", TokenKind::CMD_ARG_PART, "2", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::REDIR_DUP_OUT, "12345>&", TokenKind::CMD_ARG_PART, "2",
+                                 TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, redir3) {
@@ -1479,15 +1479,15 @@ TEST_F(LexerTest_Lv1, redir3) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   ASSERT_NO_FATAL_FAILURE(
-      EXPECT(TokenKind::REDIR_OUT, "00<&", TokenKind::CMD_ARG_PART, "222", TokenKind::EOS, ""));
+      EXPECT(TokenKind::REDIR_DUP_IN, "00<&", TokenKind::CMD_ARG_PART, "222", TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, redir4) {
+TEST_F(LexerTest_Lv1, illegal_redir) {
   const char *text = "hello00>>&";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "hello00",
-                                 TokenKind::REDIR_APPEND_OUT_ERR, ">>&", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "hello00", TokenKind::REDIR_APPEND, ">>",
+                                 TokenKind::BACKGROUND, "&", TokenKind::EOS, ""));
 }
 
 /**
