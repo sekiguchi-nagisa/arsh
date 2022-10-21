@@ -1458,6 +1458,38 @@ TEST_F(LexerTest_Lv1, ENV_ASSIGN5) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, text, TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, redir1) {
+  const char *text = "12345>hoge";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_OUT, "12345>", TokenKind::CMD_ARG_PART, "hoge", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, redir2) {
+  const char *text = "12345>&2";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_OUT, "12345>&", TokenKind::CMD_ARG_PART, "2", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, redir3) {
+  const char *text = "00<&222";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_OUT, "00<&", TokenKind::CMD_ARG_PART, "222", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, redir4) {
+  const char *text = "hello00>>&";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "hello00",
+                                 TokenKind::REDIR_APPEND_OUT_ERR, ">>&", TokenKind::EOS, ""));
+}
+
 /**
  * test expr token in stmt mode.
  */

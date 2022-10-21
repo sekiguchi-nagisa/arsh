@@ -257,7 +257,7 @@ TEST_F(RedirectTest, STDERR) {
       CL("__puts -2 123 2> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("__puts -2 ABC 2>> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+      CL("__puts -2 ABC 002>> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
 
   // external
@@ -336,10 +336,10 @@ TEST_F(RedirectTest, STDERR) {
 
 TEST_F(RedirectTest, merge) {
   // builtin command
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1"), 0, "AAA\n123\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&01"), 0, "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 > /dev/null"), 0, "123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 2> /dev/null"), 0, "AAA\n"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 1>&2"), 0, "", "AAA\n123\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 1>& 0002"), 0, "", "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("__puts -1 AAA -2 123 1>&2 > /dev/null"), 0, "", "123\n"));
   ASSERT_NO_FATAL_FAILURE(
@@ -400,9 +400,9 @@ TEST_F(RedirectTest, merge) {
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("{ __puts -1 AAA -2 123; } with 2>&1 2> /dev/null"), 0, "AAA\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("{ __puts -1 AAA -2 123; } with 1>&2"), 0, "", "AAA\n123\n"));
+      this->expect(CL("{ __puts -1 AAA -2 123; } with 001>& 2"), 0, "", "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("{ __puts -1 AAA -2 123; } with 1>&2 > /dev/null"), 0, "", "123\n"));
+      this->expect(CL("{ __puts -1 AAA -2 123; } with 1<&2 > /dev/null"), 0, "", "123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("{ __puts -1 AAA -2 123; } with 1>&2 2> /dev/null"), 0, "", "AAA\n"));
 
@@ -417,13 +417,13 @@ TEST_F(RedirectTest, merge) {
   // builtin command
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -1 AAA -2 123 2>&1"), 0, "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command __puts -1 AAA -2 123 2>&1 > /dev/null"), 0, "123\n"));
+      this->expect(CL("command __puts -1 AAA -2 123 02>&1 > /dev/null"), 0, "123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command __puts -1 AAA -2 123 2>&1 2> /dev/null"), 0, "AAA\n"));
+      this->expect(CL("command __puts -1 AAA -2 123 2<& 1 2> /dev/null"), 0, "AAA\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command __puts -1 AAA -2 123 1>&2"), 0, "", "AAA\n123\n"));
+      this->expect(CL("command __puts -1 AAA -2 123 >&2"), 0, "", "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command __puts -1 AAA -2 123 1>&2 > /dev/null"), 0, "", "123\n"));
+      this->expect(CL("command __puts -1 AAA -2 123 001>& 2 > /dev/null"), 0, "", "123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("command __puts -1 AAA -2 123 1>&2 2> /dev/null"), 0, "", "AAA\n"));
 
@@ -436,7 +436,7 @@ TEST_F(RedirectTest, merge) {
 
   // external command
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("command sh -c \"echo AAA && echo 123 1>&2\" 2>&1"), 0, "AAA\n123\n"));
+      this->expect(CL("command sh -c \"echo AAA && echo 123 1>& 2\" 2>&1"), 0, "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("command sh -c \"echo AAA && echo 123 1>&2\" 2>&1 > /dev/null"), 0, "123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -444,9 +444,9 @@ TEST_F(RedirectTest, merge) {
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("command sh -c \"echo AAA && echo 123 1>&2\" 1>&2"), 0, "", "AAA\n123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("command sh -c \"echo AAA && echo 123 1>&2\" 1>&2 > /dev/null"), 0, "", "123\n"));
+      CL("command sh -c \"echo AAA && echo 123 1>&2\" 0001>&2 > /dev/null"), 0, "", "123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("command sh -c \"echo AAA && echo 123 1>&2\" 1>&2 2> /dev/null"), 0, "", "AAA\n"));
+      CL("command sh -c \"echo AAA && echo 123 1>&2\" 1>& 2 2> /dev/null"), 0, "", "AAA\n"));
 
   ASSERT_NO_FATAL_FAILURE(this->expect(
       CL("command sh -c 'echo AAA && echo 123 1>&2' &> %s", this->getTargetName()), 0));
@@ -462,7 +462,7 @@ TEST_F(RedirectTest, merge) {
   ASSERT_NO_FATAL_FAILURE(this->expect(
       CL("__puts -1 AAA -2 123 1> /dev/null | grep AAA 2> /dev/null"), 1, "", "123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 1> /dev/null 2>&1 | grep AAA"), 1));
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 | grep 123"), 0, "123\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>& 1 | grep 123"), 0, "123\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 1> /dev/null | grep AAA"), 1));
 }
 
@@ -479,15 +479,37 @@ TEST_F(RedirectTest, fd) {
       this->expect(CL("var a = new UnixFD('%s'); __puts -2 AAA 2>& $a", this->getTargetName()), 0));
   ASSERT_NO_FATAL_FAILURE(this->contentEq("AAA\n5\nworld\n"));
 
-  auto v = CL("var a = new UnixFD('%s')\n"
-              "var r = new [String]()\n"
-              "while(read -u $a) { $r.add($REPLY); }\n"
-              "true\n"
-              "assert $r.size() == 3\n"
-              "assert $r[0] == 'AAA'\n"
-              "assert $r[1] == '5'\n"
-              "assert $r[2] == 'world'",
+  auto v = CL(R"(
+    var a = new UnixFD('%s')
+    var r = $(cat <& $a)
+    assert $r.size() == 3
+    assert $r[0] == "AAA"
+    assert $r[1] == "5"
+    assert $r[2] == "world"
+)",
               this->getTargetName());
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
+
+  v = CL(R"(
+    var a = new UnixFD('%s')
+    var r = $(cat 0000<&$a)
+    assert $r.size() == 3
+    assert $r[0] == "AAA"
+    assert $r[1] == "5"
+    assert $r[2] == "world"
+)",
+         this->getTargetName());
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
+
+  v = CL("var a = new UnixFD('%s')\n"
+         "var r = new [String]()\n"
+         "while(read -u $a) { $r.add($REPLY); }\n"
+         "true\n"
+         "assert $r.size() == 3\n"
+         "assert $r[0] == 'AAA'\n"
+         "assert $r[1] == '5'\n"
+         "assert $r[2] == 'world'",
+         this->getTargetName());
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
 }
 
