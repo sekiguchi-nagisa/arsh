@@ -208,50 +208,25 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 
 ModType::~ModType() { this->disposeChildren(); }
 
-HandlePtr ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
-  if (auto handle = this->find(fieldName); handle) {
+HandlePtr ModType::lookupImpl(const TypePool &pool, const std::string &name,
+                              bool searchGlobal) const {
+  if (auto handle = this->find(name); handle) {
     return handle;
   }
 
-  // search public symbol from inlined imported module
-  if (fieldName.empty() || fieldName[0] == '_') {
-    return nullptr;
-  }
-  unsigned int size = this->getChildSize();
-  for (unsigned int i = 0; i < size; i++) {
-    auto child = this->getChildAt(i);
-    if (child.isInlined()) {
-      auto &type = pool.get(child.typeId());
-      assert(type.isModType());
-      if (auto handle = cast<ModType>(type).find(fieldName)) {
-        return handle;
-      }
-    }
-  }
-  return nullptr;
-}
-
-const Handle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
-                                                   const std::string &name) const {
-  // search own symbols
-  auto handle = this->find(name);
-  if (handle) {
-    return handle.get();
-  }
-
-  // search public symbol from globally loaded module
+  // search public symbol from globally/inlined imported modules
   if (name.empty() || name[0] == '_') {
     return nullptr;
   }
   unsigned int size = this->getChildSize();
   for (unsigned int i = 0; i < size; i++) {
-    auto e = this->getChildAt(i);
-    if (e.isGlobal()) {
-      auto &type = pool.get(e.typeId());
+    auto child = this->getChildAt(i);
+    bool target = searchGlobal ? child.isGlobal() : child.isInlined();
+    if (target) {
+      auto &type = pool.get(child.typeId());
       assert(type.isModType());
-      handle = cast<ModType>(type).find(name);
-      if (handle) {
-        return handle.get();
+      if (auto handle = cast<ModType>(type).find(name)) {
+        return handle;
       }
     }
   }

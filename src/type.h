@@ -698,7 +698,9 @@ public:
 
   const auto &getHandleMap() const { return this->handleMap; }
 
-  HandlePtr lookup(const TypePool &pool, const std::string &fieldName) const;
+  HandlePtr lookup(const TypePool &pool, const std::string &fieldName) const {
+    return this->lookupImpl(pool, fieldName, false);
+  }
 
   /**
    * for runtime symbol lookup
@@ -707,7 +709,12 @@ public:
    * @param name
    * @return
    */
-  const Handle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const;
+  const Handle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const {
+    if (auto handle = this->lookupImpl(pool, name, true); handle) {
+      return handle.get();
+    }
+    return nullptr;
+  }
 
   static bool classof(const DSType *type) { return type->isModType(); }
 
@@ -719,6 +726,17 @@ private:
     }
     return nullptr;
   }
+
+  /**
+   * lookup visible symbol at module
+   * @param pool
+   * @param name
+   * @param searchGlobal
+   * if true, also lookup globally imported modules
+   * if false, only lookup from inlined imported modules
+   * @return
+   */
+  HandlePtr lookupImpl(const TypePool &pool, const std::string &name, bool searchGlobal) const;
 
   void reopen(std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
               ModAttr attr) {
