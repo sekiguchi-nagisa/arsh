@@ -89,6 +89,7 @@
 - fix number parsing in some builtin commands
     - now only allow decimal number except for explicitly requiring hex/octal numbers
     - allow redundant prefix 0
+- crash indexing of source statements that have glob/brace expnasion
 
 ## [0.27.1] - 2022-09-30
 

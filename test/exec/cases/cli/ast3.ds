@@ -182,6 +182,7 @@ nodes:
     pathName: \"$mod\"
     firstAppear: true
     inlined: false
+    srcIndex: 0
     maxVarNum: 0
 maxVarNum: 0
 maxGVarNum: 43

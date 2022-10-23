@@ -692,8 +692,11 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (!this->isTopLevel()) {
     return;
   }
-  this->visitEach(node.getPathNode().getSegmentNodes());
+  if (node.getSrcIndex() == 0) {
+    this->visitEach(node.getPathNode().getSegmentNodes());
+  }
   if (node.getNameInfo()) {
+    assert(node.getSrcIndex() == 0);
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
                             std::to_string(node.getModType().getModId()).c_str(), node.getToken());
   }

@@ -2329,6 +2329,8 @@ private:
 
   const bool inlined;
 
+  const unsigned short srcIndex;
+
   /**
    * maximum number of local variable in this module
    */
@@ -2337,9 +2339,11 @@ private:
 public:
   SourceNode(Token token, std::shared_ptr<CmdArgNode> pathNode,
              std::shared_ptr<const NameInfo> name, const ModType &modType,
-             std::shared_ptr<const std::string> pathName, bool firstAppear, bool inlined)
+             std::shared_ptr<const std::string> pathName, bool firstAppear, bool inlined,
+             unsigned short srcIndex)
       : WithRtti(token), pathNode(std::move(pathNode)), name(std::move(name)), modType(modType),
-        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined) {}
+        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined),
+        srcIndex(srcIndex) {}
 
   ~SourceNode() override = default;
 
@@ -2358,6 +2362,8 @@ public:
   bool isInlined() const { return this->inlined; }
 
   bool isUnreachable() const { return hasFlag(this->modType.getAttr(), ModAttr::UNREACHABLE); }
+
+  unsigned short getSrcIndex() const { return this->srcIndex; }
 
   void setMaxVarNum(unsigned int v) { this->maxVarNum = v; }
 
@@ -2432,9 +2438,9 @@ public:
   bool hasUnconsumedPath() const { return this->curIndex < this->pathList.size(); }
 
   std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
+    unsigned int index = this->curIndex - 1;
     return std::make_unique<SourceNode>(this->token, this->pathNode, this->name, modType,
-                                        this->pathList[this->curIndex - 1], first,
-                                        this->isInlined());
+                                        this->pathList[index], first, this->isInlined(), index);
   }
 
   void dump(NodeDumper &dumper) const override;
