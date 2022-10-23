@@ -948,7 +948,6 @@ void SourceNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathName);
   DUMP(firstAppear);
   DUMP(inlined);
-  DUMP(nothing);
   DUMP(maxVarNum);
 }
 

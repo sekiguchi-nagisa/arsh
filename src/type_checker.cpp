@@ -2370,7 +2370,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
       this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
   }
-  node.setType(this->typePool.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
+  node.setType(this->typePool.get(node.isUnreachable() ? TYPE::Nothing : TYPE::Void));
 }
 
 class SourceGlobIter {
