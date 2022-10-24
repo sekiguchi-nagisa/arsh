@@ -1,0 +1,14 @@
+
+# for named import
+# also access user-defined method (defined in same module of user-defined type) even though named import
+
+source ../../_module4test/method_user_type.ds as mod
+
+var v = new mod.Interval(10, 25)
+assert $v.begin == 10
+assert $v.end == 25
+assert $v.dist() == 15
+
+
+var e = new mod.APIError("failed: 45")
+assert $e.getKind() == 'failed'

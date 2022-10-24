@@ -708,7 +708,6 @@ unsigned int CompiledCode::getLineNum(unsigned int index) const { // FIXME: bina
 }
 
 StackTraceElement CompiledCode::toTraceElement(unsigned int index) const {
-  const char *sourceName = this->getSourceName().data();
   unsigned int lineNum = this->getLineNum(index);
   std::string callableName;
   switch (this->getKind()) {
@@ -726,7 +725,7 @@ StackTraceElement CompiledCode::toTraceElement(unsigned int index) const {
   default:
     break;
   }
-  return {sourceName, lineNum, std::move(callableName)};
+  return {this->sourceName, lineNum, std::move(callableName)};
 }
 
 // ########################

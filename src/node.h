@@ -1543,30 +1543,50 @@ public:
   const enum Kind : unsigned char {
     ALIAS,
     ERROR_DEF,
+    METHOD_IMPORT,
   } kind;
 
 private:
   NameInfo nameInfo;
   std::unique_ptr<TypeNode> targetTypeNode; // for ALIAS, ERROR_DEF
 
+  // for method import
+  NameInfo methodNameInfo;
+  std::unique_ptr<TypeNode> recvTypeNode;
+
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
-              Kind kind)
+              Kind kind, NameInfo &&method, std::unique_ptr<TypeNode> &&recvTypeNode)
       : WithRtti({startPos, 1}), kind(kind), nameInfo(std::move(name)),
-        targetTypeNode(std::move(targetTypeNode)) {
+        targetTypeNode(std::move(targetTypeNode)), methodNameInfo(std::move(method)),
+        recvTypeNode(std::move(recvTypeNode)) {
     this->updateToken(this->targetTypeNode->getToken());
+    if (this->recvTypeNode) {
+      this->updateToken(this->recvTypeNode->getToken());
+    }
   }
 
 public:
   static std::unique_ptr<TypeDefNode> alias(unsigned int startPos, NameInfo &&alias,
                                             std::unique_ptr<TypeNode> &&targetTypeNode) {
-    return std::unique_ptr<TypeDefNode>(
-        new TypeDefNode(startPos, std::move(alias), std::move(targetTypeNode), ALIAS));
+    NameInfo info({0, 0}, "");
+    return std::unique_ptr<TypeDefNode>(new TypeDefNode(
+        startPos, std::move(alias), std::move(targetTypeNode), ALIAS, std::move(info), nullptr));
   }
 
   static std::unique_ptr<TypeDefNode> errorDef(unsigned int startPos, NameInfo &&name,
                                                std::unique_ptr<TypeNode> &&targetTypeNode) {
+    NameInfo info({0, 0}, "");
+    return std::unique_ptr<TypeDefNode>(new TypeDefNode(
+        startPos, std::move(name), std::move(targetTypeNode), ERROR_DEF, std::move(info), nullptr));
+  }
+
+  static std::unique_ptr<TypeDefNode> methodImport(unsigned int startPos, NameInfo &&name,
+                                                   std::unique_ptr<TypeNode> &&modTypeNode,
+                                                   NameInfo &&method,
+                                                   std::unique_ptr<TypeNode> &&recvTypeNode) {
     return std::unique_ptr<TypeDefNode>(
-        new TypeDefNode(startPos, std::move(name), std::move(targetTypeNode), ERROR_DEF));
+        new TypeDefNode(startPos, std::move(name), std::move(modTypeNode), METHOD_IMPORT,
+                        std::move(method), std::move(recvTypeNode)));
   }
 
   ~TypeDefNode() override = default;
@@ -1578,6 +1598,10 @@ public:
   Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
+
+  const NameInfo &getMethodNameInfo() const { return this->methodNameInfo; }
+
+  TypeNode &getRecvTypeNode() const { return *this->recvTypeNode; }
 
   void dump(NodeDumper &dumper) const override;
 };
