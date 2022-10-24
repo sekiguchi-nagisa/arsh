@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 26, $errorKind = 'UndefinedMethodInMod', $status = 1)
+
+source ../../_module4test/method.ds as mod
+
+function factorial = mod.factorial for Float
