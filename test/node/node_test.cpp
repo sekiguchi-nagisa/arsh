@@ -754,6 +754,12 @@ nodes:
           typeName: "Int"
           handle: null
     kind: "ALIAS"
+    methodNameInfo:
+      token:
+        pos: 0
+        size: 0
+      name: ""
+    recvTypeNode: null
 )"},
 
     {DumpOp::typed, R"(while($false){})", 0, 0, R"(

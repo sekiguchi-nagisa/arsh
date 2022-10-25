@@ -207,7 +207,9 @@ protected:
   std::unique_ptr<Node> toAccessNode(Token token) const;
 
   // parser rule definition.
-  std::unique_ptr<FunctionNode> parse_function(bool needBody = true);
+  std::unique_ptr<Node> parse_function(bool needBody = true);
+
+  std::unique_ptr<Node> parse_methodImport(unsigned startPos, NameInfo &&nameInfo);
 
   /**
    * not call it directory

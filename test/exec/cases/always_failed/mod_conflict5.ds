@@ -1,7 +1,7 @@
-#$test($result = 'type', $lineNum = 7, $chars = 1, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
+##$test($result = 'type', $lineNum = 7, $chars = 1, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
 function print() : Int for Any {
     return ($this as String).size()
 }
 
-source ../../_module4test/method.ds as mod
+source ../../_module4test/method.ds as mod  # not import `print'

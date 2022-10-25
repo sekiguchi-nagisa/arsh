@@ -667,13 +667,7 @@ TEST_F(ArchiveTest, method1) {
   (void)modType;
 
   auto method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
-  ASSERT_TRUE(method);
-  ASSERT_TRUE(method->isMethod());
-  ASSERT_EQ(1, method->getParamSize());
-  ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
-  ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(method->getRecvTypeId()));
-  ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
-  ASSERT_TRUE(method->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
+  ASSERT_FALSE(method);
 
   method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
   ASSERT_FALSE(method);

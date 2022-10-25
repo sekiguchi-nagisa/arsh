@@ -100,6 +100,7 @@ DEFINE_TCError(DefinedMethod, "already defined method: `%s' for `%s' type");
 DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'");
 DEFINE_TCError(UndefinedField, "undefined field: `%s' for `%s' type");
 DEFINE_TCError(UndefinedMethod, "undefined method: `%s' for `%s' type");
+DEFINE_TCError(UndefinedMethodInMod, "undefined method: `%s' for `%s' type in `%s'");
 DEFINE_TCError(UndefinedInit, "constructor is not defined in `%s' type");
 DEFINE_TCError(UndefinedUnary, "undefined unary op: `%s' for `%s' type");
 DEFINE_TCError(UndefinedBinary, "undefined binary op: `%s' for `%s' type");

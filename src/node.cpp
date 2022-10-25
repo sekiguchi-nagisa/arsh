@@ -607,10 +607,14 @@ void TypeDefNode::dump(NodeDumper &dumper) const {
 
 #define EACH_ENUM(OP)                                                                              \
   OP(ALIAS)                                                                                        \
-  OP(ERROR_DEF)
+  OP(ERROR_DEF)                                                                                    \
+  OP(METHOD_IMPORT)
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
+
+  DUMP(methodNameInfo);
+  DUMP_PTR(recvTypeNode);
 }
 
 // #######################
