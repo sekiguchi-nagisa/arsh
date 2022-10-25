@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 5, $chars = 22, $errorKind = 'Required', $status = 1)
-
-source ../../_module4test/method.ds as mod
-
-function factorial = Int.factorial for Int

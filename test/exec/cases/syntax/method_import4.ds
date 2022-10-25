@@ -1,5 +1,0 @@
-#$test($result = 'parse', $lineNum = 5,$chars = 26,  $errorKind = 'TokenMismatched', $status = 1)
-
-source ../../_module4test/method.ds as mod
-
-function method = typedef($mod).hoge for

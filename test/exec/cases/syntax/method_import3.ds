@@ -1,3 +1,0 @@
-#$test($result = 'parse', $lineNum = 3,$chars = 31,  $errorKind = 'TYPE', $status = 1)
-
-function method = mod.hoge for
