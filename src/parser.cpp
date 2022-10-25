@@ -392,7 +392,7 @@ std::unique_ptr<Node> Parser::parse_function(bool needBody) {
     this->refetch(yycEXPR);
   }
 
-  if (nameInfo && CUR_KIND() == TokenKind::ASSIGN) {
+  if (nameInfo && CUR_KIND() == TokenKind::ACCESSOR) {
     return this->parse_methodImport(startPos, std::move(nameInfo));
   }
 
@@ -467,16 +467,21 @@ std::unique_ptr<Node> Parser::parse_function(bool needBody) {
 }
 
 // function name = mod.method for Recv
-std::unique_ptr<Node> Parser::parse_methodImport(unsigned int startPos, NameInfo &&nameInfo) {
-  TRY(this->expectAndChangeMode(TokenKind::ASSIGN, yycNAME)); // FIXME: completion
-  Token modToken = TRY(this->expect(TokenKind::IDENTIFIER));
-  auto modType = std::make_unique<BaseTypeNode>(modToken, this->lexer->toName(modToken));
-  TRY(this->expect(TokenKind::ACCESSOR));
+std::unique_ptr<Node> Parser::parse_methodImport(unsigned int startPos, NameInfo &&modName) {
+  auto modType = std::make_unique<BaseTypeNode>(modName.getToken(), std::move(modName).takeName());
+  TRY(this->expect(TokenKind::ACCESSOR)); // FIXME: completion
   auto methodName = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
   TRY(this->expect(TokenKind::FOR, false));
   auto recvType = TRY(this->parse_typeName());
-  return TypeDefNode::methodImport(startPos, std::move(nameInfo), std::move(modType),
-                                   std::move(methodName), std::move(recvType));
+  NameInfo nameInfo;
+  if (CUR_KIND() == TokenKind::AS) {
+    TRY(this->expectAndChangeMode(TokenKind::AS, yycNAME));
+    nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+  } else {
+    nameInfo = methodName;
+  }
+  return TypeDefNode::methodImport(startPos, std::move(modType), std::move(methodName),
+                                   std::move(recvType), std::move(nameInfo));
 }
 
 std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {

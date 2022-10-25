@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 7, $chars = 35, $errorKind = 'DefinedMethod', $status = 1)
+
+source ../../_module4test/method.ds as mod
+
+function __factorial() for Int {}
+
+function mod.factorial for Int as __factorial

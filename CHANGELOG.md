@@ -71,7 +71,7 @@
     - otherwise, explicitly import methods like the follow
       ```
       source module_factorial as mod  # function factorial() : Int for Int
-      function factorial = mod.factorial for Int  # import factorial for Int type
+      function mod.factorial for Int  # import factorial for Int type
       34.factorial()
       ```
 

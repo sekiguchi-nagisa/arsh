@@ -2,6 +2,6 @@
 
 source ../base/mod_method2.ds
 
-function fff = mod.factorial for Int
+function mod.factorial for Int as fff
 
 34.factorial()  # factorial is imported in `mod_method2.ds`, but not import

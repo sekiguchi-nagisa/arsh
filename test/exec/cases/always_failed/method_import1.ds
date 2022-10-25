@@ -3,5 +3,5 @@
 source ../../_module4test/method.ds as mod
 
 {
-  function factorial = mod.factorial for Int
+  function mod.factorial for Int
 }

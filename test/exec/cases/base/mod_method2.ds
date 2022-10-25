@@ -6,18 +6,18 @@ source ../../_module4test/method.ds as mod
 
 function _factorial() : Int for Int { return $this * 100; }  # override private method
 
-function factorial = mod.factorial for Int
+function mod.factorial for Int
 
 assert 4.factorial() == 24
 assert 4._factorial() == 400
 
-function print = mod.print for Any
+function mod.print for Any
 assert "$('34'.print())" == 'Any: 34'
 
-function print = mod.print for String
+function mod.print for String
 assert "$('34'.print())" == 'String: 34'
 assert "$(34.print())" == 'Any: 34'
 assert "$((12,$false).print())" == 'Any: 12 false'
 
-function print = mod.print for Int
+function mod.print for Int as print
 assert "$(34.print())" == 'Int: 34'

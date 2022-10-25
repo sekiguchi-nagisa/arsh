@@ -1,5 +1,5 @@
-#$test($result = 'type', $lineNum = 5, $chars = 22, $errorKind = 'Required', $status = 1)
+#$test($result = 'type', $lineNum = 5, $chars = 10, $errorKind = 'Required', $status = 1)
 
 source ../../_module4test/method.ds as mod
 
-function factorial = Int.factorial for Int
+function Int.factorial for Int as hoge

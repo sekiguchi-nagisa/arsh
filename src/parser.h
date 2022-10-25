@@ -209,7 +209,7 @@ protected:
   // parser rule definition.
   std::unique_ptr<Node> parse_function(bool needBody = true);
 
-  std::unique_ptr<Node> parse_methodImport(unsigned startPos, NameInfo &&nameInfo);
+  std::unique_ptr<Node> parse_methodImport(unsigned startPos, NameInfo &&modName);
 
   /**
    * not call it directory
