@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 6, $chars = 3, $errorKind = 'OutsideToplevel', $status = 1)
+
+source ../../_module4test/method.ds as mod
+
+{
+  function factorial = mod.factorial for Int
+}
