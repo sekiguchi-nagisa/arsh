@@ -404,7 +404,7 @@ new FFF.GGG('34')
                       {1, "(6:8~6:11)"}})); // new FFF.GGG('34')
 }
 
-TEST_F(IndexTest, namedImport) { // FIXME: method import
+TEST_F(IndexTest, namedImport) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -423,12 +423,12 @@ as mod
 $mod.AAA + $mod.BBB()
 mod 2>&1 > /dev/null CCC 34
 new [mod.DDD]()
- #23.EEE()
+23.EEE()
 new mod.FFF().value
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 12}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 13}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -444,8 +444,8 @@ new mod.FFF().value
       Request{.modId = modId, .position = {.line = 3, .character = 23}}, {{2, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{2, "(5:8~5:11)"}}));
-  //  ASSERT_NO_FATAL_FAILURE(this->findDecl(
-  //      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{2, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{2, "(6:9~6:12)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 6, .character = 10}}, {{2, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -475,10 +475,9 @@ new mod.FFF().value
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 2, .position = {.line = 5, .character = 9}}, {{2, "(5:8~5:11)"}, // itself
                                                                      {1, "(4:9~4:12)"}}));
-  //  ASSERT_NO_FATAL_FAILURE(this->findRefs(
-  //      Request{.modId = 2, .position = {.line = 6, .character = 10}}, {{2, "(6:9~6:12)"}, //
-  //      itself
-  //                                                                      {1, "(5:3~5:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 2, .position = {.line = 6, .character = 10}}, {{2, "(6:9~6:12)"}, // itself
+                                                                      {1, "(5:3~5:6)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 2, .position = {.line = 7, .character = 10}}, {{2, "(7:8~7:11)"}, // itself
                                                                       {1, "(6:8~6:11)"}}));
@@ -487,7 +486,7 @@ new mod.FFF().value
                                                                       {1, "(6:14~6:19)"}}));
 }
 
-TEST_F(IndexTest, namedImportInlined) { // FIXME: method import
+TEST_F(IndexTest, namedImportInlined) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -509,12 +508,12 @@ as mod
 $mod.AAA + $mod.BBB()
 mod CCC
 new [mod.DDD]()
-# 34.EEE()
+34.EEE()
 new mod.FFF().value
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 12}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 13}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -530,8 +529,8 @@ new mod.FFF().value
       Request{.modId = modId, .position = {.line = 3, .character = 5}}, {{3, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 10}}, {{3, "(5:8~5:11)"}}));
-  //  ASSERT_NO_FATAL_FAILURE(this->findDecl(
-  //      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{3, "(6:9~6:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 4}}, {{3, "(6:9~6:12)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 6, .character = 10}}, {{3, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -561,10 +560,9 @@ new mod.FFF().value
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 3, .position = {.line = 5, .character = 9}}, {{3, "(5:8~5:11)"}, // itself
                                                                      {1, "(4:9~4:12)"}}));
-  //  ASSERT_NO_FATAL_FAILURE(this->findRefs(
-  //      Request{.modId = 3, .position = {.line = 6, .character = 10}}, {{3, "(6:9~6:12)"}, //
-  //      itself
-  //                                                                      {1, "(5:3~5:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = 3, .position = {.line = 6, .character = 10}}, {{3, "(6:9~6:12)"}, // itself
+                                                                      {1, "(5:3~5:6)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = 3, .position = {.line = 7, .character = 10}}, {{3, "(7:8~7:11)"}, // itself
                                                                       {1, "(6:8~6:11)"}}));

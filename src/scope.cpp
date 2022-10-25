@@ -165,15 +165,6 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
   return this->add(std::move(name), std::move(handle), NameRegisterOp::AS_ALIAS);
 }
 
-static bool isSameModuleMethod(const TypePool &pool, const Handle &handle) {
-  if (!handle.isMethod()) {
-    return false;
-  }
-  auto &methodHandle = cast<MethodHandle>(handle);
-  auto &recv = pool.get(methodHandle.getRecvTypeId());
-  return recv.getBelongedModId() == handle.getModId();
-}
-
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,
                                             ImportedModKind k) {
   const bool global = hasFlag(k, ImportedModKind::GLOBAL);
@@ -192,13 +183,8 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   // import actual handles
   for (auto &e : type.getHandleMap()) {
     assert(this->modId != e.second->getModId());
-    if (!global && !e.second->isConstructor() && !isSameModuleMethod(pool, *e.second)) {
-      /**
-       * in named import, does not import handles except for the following
-       *   * constructor
-       *   * user-defined method that defined in same module as receiver type
-       */
-      continue;
+    if (!global && !e.second->isMethod()) {
+      continue; // in named import, not import Handle (except for MethodHandle)
     }
     StringRef name = e.first;
     if (name.startsWith("_")) {

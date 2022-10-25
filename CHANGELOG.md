@@ -66,14 +66,6 @@
     - ``1>&2``and ``2>&1`` are recognized as ``1>& 2``, ``2>& 1``
     - now support ``[n]> word`` style notation.
         - ``[n]`` indicate decimal file descriptor numbers (only allow 0, 1, 2)
-- **Breaking Change**: change method resolution of named import
-    - if methods are defined in same module as receiver, implicitly import theme
-    - otherwise, explicitly import methods like the follow
-      ```
-      source module_factorial as mod  # function factorial() : Int for Int
-      function factorial = mod.factorial for Int  # import factorial for Int type
-      34.factorial()
-      ```
 
 #### Builtin
 

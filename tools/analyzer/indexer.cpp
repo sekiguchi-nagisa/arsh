@@ -456,8 +456,6 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
                               node.getToken(), DeclSymbol::Kind::ERROR_TYPE_DEF);
     }
     break;
-  case TypeDefNode::METHOD_IMPORT:
-    break; // FIXME:
   }
 }
 

@@ -218,19 +218,6 @@ public:
   bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
   /**
-   *
-   * @return
-   * if user-defined error type or user-defined record type, return belonged (defined) module id
-   * otherwise, return 0
-   */
-  unsigned short getBelongedModId() const;
-
-  bool isUserDefinedType() const {
-    return this->isRecordType() || /* fast path (mod id of record type is always not 0)*/
-           this->getBelongedModId() != 0;
-  }
-
-  /**
    * if type is not number type, return -1.
    */
   int getNumTypeIndex() const {

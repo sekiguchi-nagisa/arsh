@@ -294,10 +294,6 @@ inline bool isVarName(StringRef ref) {
          !isMagicMethodName(ref) && !isMethodFullName(ref);
 }
 
-inline bool isQualifiedTypeName(StringRef ref) {
-  return ref.startsWith(MOD_SYMBOL_PREFIX) && ref.contains(".");
-}
-
 // =====  other constants  =====
 
 constexpr const char *BUILD_ARCH =

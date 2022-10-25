@@ -1281,31 +1281,6 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
     }
     break;
   }
-  case TypeDefNode::METHOD_IMPORT: {
-    if (!this->isTopLevel()) { // only available toplevel scope
-      this->reportError<OutsideToplevel>(node, "method import statement");
-      break;
-    }
-    auto &modType = this->checkType(this->typePool.get(TYPE::Module), node.getTargetTypeNode());
-    auto &recvType = this->checkTypeAsSomeExpr(node.getRecvTypeNode());
-    if (auto &methodName = node.getMethodNameInfo().getName();
-        modType.isModType() && methodName[0] != '_') {
-      std::string name = toMethodFullName(recvType.typeId(), methodName);
-      if (auto handle = cast<ModType>(modType).lookup(this->typePool, name); handle) {
-        std::string aliasName = toMethodFullName(recvType.typeId(), node.getName());
-        auto ret = this->curScope->defineAlias(std::move(aliasName), handle);
-        if (!ret) {
-          this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getName().c_str(),
-                                           recvType.getName());
-        }
-      } else {
-        this->reportError<UndefinedMethodInMod>(node.getMethodNameInfo().getToken(),
-                                                node.getMethodNameInfo().getName().c_str(),
-                                                recvType.getName(), modType.getName());
-      }
-    }
-    break;
-  }
   }
   node.setType(this->typePool.get(TYPE::Void));
 }

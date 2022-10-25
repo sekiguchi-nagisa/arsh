@@ -17,7 +17,6 @@
 #include <array>
 #include <cstdarg>
 
-#include "misc/num_util.hpp"
 #include "tcerror.h"
 #include "type_pool.h"
 
@@ -157,22 +156,6 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   }
   auto *type = targetType.getSuperType();
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
-}
-
-unsigned short DSType::getBelongedModId() const {
-  if (this->typeKind() != TypeKind::Record && this->typeKind() != TypeKind::Error) {
-    return 0; // fast path
-  }
-  if (auto ref = this->getNameRef(); isQualifiedTypeName(this->getNameRef())) {
-    auto index = ref.find('.');
-    assert(index != StringRef::npos);
-    auto modTypeName = ref.slice(0, index);
-    modTypeName.removePrefix(strlen(MOD_SYMBOL_PREFIX));
-    auto pair = convertToDecimal<uint32_t>(modTypeName.begin(), modTypeName.end());
-    assert(pair.second && pair.first <= SYS_LIMIT_MOD_ID);
-    return static_cast<unsigned short>(pair.first);
-  }
-  return 0;
 }
 
 // #######################
