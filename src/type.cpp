@@ -159,7 +159,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
 }
 
-unsigned short DSType::getBelongedModId() const {
+unsigned short DSType::resolveBelongedModId() const {
   if (this->typeKind() != TypeKind::Record && this->typeKind() != TypeKind::Error) {
     return 0; // fast path
   }

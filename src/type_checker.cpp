@@ -1981,7 +1981,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
 
   if (node.isMethod()) {
     auto &recvType = node.getRecvTypeNode()->getType();
-    const auto recvModId = recvType.getBelongedModId();
+    const auto recvModId = recvType.resolveBelongedModId();
     if (recvModId == 0) {
       this->reportError<NeedUdType>(*node.getRecvTypeNode());
     } else if (recvModId != this->curScope->modId) {

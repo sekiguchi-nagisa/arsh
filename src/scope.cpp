@@ -171,7 +171,7 @@ static bool isSameModuleMethod(const TypePool &pool, const Handle &handle) {
   }
   auto &methodHandle = cast<MethodHandle>(handle);
   auto &recv = pool.get(methodHandle.getRecvTypeId());
-  return recv.getBelongedModId() == handle.getModId();
+  return recv.resolveBelongedModId() == handle.getModId();
 }
 
 std::string NameScope::importForeignHandles(const TypePool &pool, const ModType &type,

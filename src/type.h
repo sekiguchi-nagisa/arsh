@@ -223,11 +223,11 @@ public:
    * if user-defined error type or user-defined record type, return belonged (defined) module id
    * otherwise, return 0
    */
-  unsigned short getBelongedModId() const;
+  unsigned short resolveBelongedModId() const;
 
   bool isUserDefinedType() const {
     return this->isRecordType() || /* fast path (mod id of record type is always not 0)*/
-           this->getBelongedModId() != 0;
+           this->resolveBelongedModId() != 0;
   }
 
   /**
