@@ -100,6 +100,7 @@ DEFINE_TCError(DefinedMethod, "already defined method: `%s' for `%s' type");
 DEFINE_TCError(NeedUdType, "method definition is only allowed for user-defined type");
 DEFINE_TCError(SameModOfRecv, "method definition is only allowed at the same module "
                               "that `%s' type is defined");
+DEFINE_TCError(SameNameField, "cannot define method: `%s', since `%s' type has same name field");
 DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'");
 DEFINE_TCError(UndefinedField, "undefined field: `%s' for `%s' type");
 DEFINE_TCError(UndefinedMethod, "undefined method: `%s' for `%s' type");

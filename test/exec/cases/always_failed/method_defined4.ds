@@ -1,14 +1,4 @@
-
-# for user-defined type
-typedef Interval($b : Int, $e : Int) {
-    let begin = $b
-    let end = $e
-}
-
-function dist() : Int for Interval {
-    return $this.end - $this.begin
-}
-assert new Interval(12, 69).dist() == 57
+#$test($result = 'type', $lineNum = 9, $chars = 10, $errorKind = 'SameNameField', $status = 1)
 
 # same name field/method
 typedef IntFloat(a : Int, b : Float) {

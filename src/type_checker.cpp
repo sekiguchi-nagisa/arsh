@@ -1986,6 +1986,9 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       this->reportError<NeedUdType>(*node.getRecvTypeNode());
     } else if (recvModId != this->curScope->modId) {
       this->reportError<SameModOfRecv>(node, recvType.getName());
+    } else if (this->curScope->lookupField(this->typePool, recvType, node.getFuncName())) {
+      this->reportError<SameNameField>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
+                                       recvType.getName());
     } else {
       auto ret = this->curScope->defineMethod(this->typePool, recvType, node.getFuncName(),
                                               node.getReturnTypeNode()->getType(), paramTypes);

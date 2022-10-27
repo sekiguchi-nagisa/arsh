@@ -66,7 +66,9 @@
     - ``1>&2``and ``2>&1`` are recognized as ``1>& 2``, ``2>& 1``
     - now support ``[n]> word`` style notation.
         - ``[n]`` indicate decimal file descriptor numbers (only allow 0, 1, 2)
-- **Breaking Change**: method definitions are only allowed for user-defined type that defined at same module
+- **Breaking Change**: change user-defined method
+    - now only allowed for user-defined type that defined at same module
+    - cannot define same name method as field
 
 #### Builtin
 
