@@ -106,7 +106,7 @@ TEST_F(InteractiveTest, ctrlc5) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-TEST_F(InteractiveTest, tab) {
+TEST_F(InteractiveTest, tab1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -116,6 +116,18 @@ TEST_F(InteractiveTest, tab) {
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE  False.+"));
   this->send("\t\r");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+: Bool = false.+"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, tab2) {
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send("$RC\t");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+RC_VAR"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: String = rc file.+"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

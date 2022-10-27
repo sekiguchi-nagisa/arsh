@@ -98,6 +98,7 @@
     - now only allow decimal number except for explicitly requiring hex/octal numbers
     - allow redundant prefix 0
 - crash indexing of source statements that have glob/brace expansion
+- fix module symbol synchronization of ``DSState_loadModule`` api
 
 ## [0.27.1] - 2022-09-30
 

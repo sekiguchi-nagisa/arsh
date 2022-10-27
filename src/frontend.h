@@ -221,6 +221,10 @@ public:
   const ModType &
   newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
 
+  const ModType &newModType(const NameScope &s) {
+    return this->loader.createModType(this->pool, s);
+  }
+
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
 
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option,

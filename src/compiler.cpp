@@ -279,7 +279,10 @@ END:
     assert(ret);
     auto msg = this->provider.getScope()->importForeignHandles(
         this->provider.getPool(), cast<ModType>(*ret.asOk()), ImportedModKind::GLOBAL);
-    if (!msg.empty()) {
+    if (msg.empty()) {
+      assert(this->provider.getScope()->inRootModule());
+      this->provider.newModType(*this->provider.getScope());
+    } else {
       auto node = std::make_unique<EmptyNode>(Token{0, 0});
       auto error = createTCError<ConflictSymbol>(
           *node, msg.c_str(), this->frontEnd.getCurrentLexer()->getSourceName().c_str());
