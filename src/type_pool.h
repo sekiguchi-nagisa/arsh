@@ -200,7 +200,6 @@ public:
    * @param typeName
    * @param superType
    * must be subtype of Error type
-   * @param belongedModId
    * @return
    */
   TypeOrError createErrorType(const std::string &typeName, const DSType &superType,

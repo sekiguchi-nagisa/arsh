@@ -548,8 +548,6 @@ private:
   std::string name;
 
 public:
-  NameInfo() : token({0, 0}) {}
-
   NameInfo(Token token, std::string &&name) : token(token), name(std::move(name)) {}
 
   NameInfo(Token token, const std::string &name) : NameInfo(token, std::string(name)) {}
@@ -557,8 +555,6 @@ public:
   Token getToken() const { return this->token; }
 
   const std::string &getName() const { return this->name; }
-
-  std::string takeName() && { return std::move(this->name); }
 
   void setName(std::string &&n) { this->name = std::move(n); }
 
@@ -1547,20 +1543,11 @@ public:
   const enum Kind : unsigned char {
     ALIAS,
     ERROR_DEF,
-    METHOD_IMPORT,
   } kind;
 
 private:
   NameInfo nameInfo;
   std::unique_ptr<TypeNode> targetTypeNode; // for ALIAS, ERROR_DEF
-
-  /**
-   * for method import.
-   *
-   * function [targetTypeNode].[methodNameInfo] for [recvTypeNode] as [nameInfo]
-   */
-  NameInfo methodNameInfo;
-  std::unique_ptr<TypeNode> recvTypeNode;
 
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
               Kind kind)
@@ -1582,18 +1569,6 @@ public:
         new TypeDefNode(startPos, std::move(name), std::move(targetTypeNode), ERROR_DEF));
   }
 
-  static std::unique_ptr<TypeDefNode>
-  methodImport(unsigned int startPos, std::unique_ptr<TypeNode> &&modTypeNode, NameInfo &&method,
-               std::unique_ptr<TypeNode> &&recvTypeNode, NameInfo &&name) {
-    std::unique_ptr<TypeDefNode> node(
-        new TypeDefNode(startPos, std::move(name), std::move(modTypeNode), METHOD_IMPORT));
-    node->methodNameInfo = std::move(method);
-    node->recvTypeNode = std::move(recvTypeNode);
-    node->updateToken(node->recvTypeNode->getToken());
-    node->updateToken(node->nameInfo.getToken());
-    return node;
-  }
-
   ~TypeDefNode() override = default;
 
   const NameInfo &getNameInfo() const { return this->nameInfo; }
@@ -1603,10 +1578,6 @@ public:
   Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
-
-  const NameInfo &getMethodNameInfo() const { return this->methodNameInfo; }
-
-  TypeNode &getRecvTypeNode() const { return *this->recvTypeNode; }
 
   void dump(NodeDumper &dumper) const override;
 };

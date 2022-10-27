@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 5, $chars = 14, $errorKind = 'PrivateMethodInMod', $status = 1)
-
-source ../../_module4test/method.ds as mod
-
-function mod._factorial for Int as _factorial

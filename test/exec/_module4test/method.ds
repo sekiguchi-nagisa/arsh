@@ -1,20 +1,27 @@
 
-function _factorial() : Int for Int {
-    return $this == 0 ? 1 : $this * ($this - 1)._factorial()
+typedef BigInt(a : Int) { let v = $a; }
+
+function _factorial() : Int for BigInt {
+    return $this.v == 0 ? 1 : $this.v * new BigInt($this.v - 1)._factorial()
 }
 
-function factorial() : Int for Int {
+function factorial() : Int for BigInt {
     return $this._factorial()
 }
 
-function print() for String {
-    echo String: $this
+typedef ANY : Error
+typedef STRING : ANY
+typedef INT : ANY
+typedef INT_BOOL : ANY
+
+function print() for STRING {
+    echo String: ${$this.message()}
 }
 
-function print() for Any {
-    echo Any: $this
+function print() for ANY {
+    echo Any: ${$this.message()}
 }
 
-function print() for Int {
-    echo Int: $this
+function print() for INT {
+    echo Int: ${$this.message()}
 }

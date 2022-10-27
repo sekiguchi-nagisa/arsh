@@ -1,3 +1,0 @@
-#$test($result = 'parse', $lineNum = 3,$chars = 24,  $errorKind = 'TYPE', $status = 1)
-
-function mod.method for

@@ -1,4 +1,6 @@
 
+typedef INT(a : Int) { var v = $a; }
+
 function f11(a : Int) : Int {
     return $a + $f22($a)
 }
@@ -13,23 +15,23 @@ c11() {
 }
 
 c22() {
-    return $1.size().factorial()
+    return new INT($1.size()).factorial()
 }
 
-function factorial() : Int for Int {
+function factorial() : Int for INT {
     return $this.factorial_impl()
 }
 
-function factorial_impl() : Int for Int {
-    return $this == 0 ? 1 : $this * ($this - 1).factorial_impl()
+function factorial_impl() : Int for INT {
+    return $this.v == 0 ? 1 : $this.v * new INT($this.v - 1).factorial_impl()
 }
 
 
 c22 11
-assert $? == 2.factorial()
+assert $? == new INT(2).factorial()
 
 c11
-assert $? == 0.factorial()
+assert $? == new INT(0).factorial()
 
 assert $f11(2) == 102
 

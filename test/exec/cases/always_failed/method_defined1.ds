@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 3, $chars = 10, $errorKind = 'DefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 3, $chars = 27, $errorKind = 'NeedUdType', $status = 1)
 
 function size() : Int for String {
     return $this.count() + 100

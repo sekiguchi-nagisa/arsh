@@ -4,20 +4,8 @@
 
 source ../../_module4test/method.ds as mod
 
-function _factorial() : Int for Int { return $this * 100; }  # override private method
+assert new mod.BigInt(4).factorial() == 24
 
-function mod.factorial for Int
-
-assert 4.factorial() == 24
-assert 4._factorial() == 400
-
-function mod.print for Any
-assert "$('34'.print())" == 'Any: 34'
-
-function mod.print for String
-assert "$('34'.print())" == 'String: 34'
-assert "$(34.print())" == 'Any: 34'
-assert "$((12,$false).print())" == 'Any: 12 false'
-
-function mod.print for Int as print
-assert "$(34.print())" == 'Int: 34'
+assert "$(new mod.STRING('34').print())" == 'String: 34'
+assert "$(new mod.INT(34 as String).print())" == 'Int: 34'
+assert "$(new mod.INT_BOOL("${(12,$false)}").print())" == 'Any: 12 false'

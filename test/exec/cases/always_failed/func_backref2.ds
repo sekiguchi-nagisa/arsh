@@ -1,13 +1,15 @@
-#$test($result = 'type', $lineNum = 5, $chars = 8, $errorKind = 'UndefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 7, $chars = 8, $errorKind = 'UndefinedMethod', $status = 1)
 
-function AAA(b : Int) : Int for Int {
-    return $this +
+typedef INT() {}
+
+function AAA(b : Int) : Int for INT {
+    return ($this as String).size() +
     $b.BBB()   # cannot access backward defined method
 
 }
 
-{}
+{ 34; }
 
-function BBB() : Int for Int {
-    return $this * 100
+function BBB() : Int for INT {
+    return ($this as String).size() * 100
 }

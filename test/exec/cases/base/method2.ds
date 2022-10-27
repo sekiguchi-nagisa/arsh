@@ -8,21 +8,31 @@ typedef Interval($b : Int, $e : Int) {
 function dist() : Int for Interval {
     return $this.end - $this.begin
 }
+assert new Interval(12, 69).dist() == 57
 
 # same name field/method
-function _0() : String for (Int,Float) {
+typedef IntFloat(a : Int, b : Float) {
+    let _0 = $a;
+    let _1 = $b
+}
+
+function _0() : String for IntFloat {
     return $this._0 as String
 }
 
-assert (78,3.12)._0() == '78'    # if has same name field and method, first lookup method
-assert (78,3.12)._0 == 78
+assert new IntFloat(78,3.12)._0() == '78'    # if has same name field and method, first lookup method
+assert new IntFloat(78,3.12)._0 == 78
 
 # same name field/method with func object
-function _0() : String for (()-> Bool, Int) {
+typedef BoolFuncInt(a : ()-> Bool, b : Int) {
+    let _0 = $a
+    let _1 = $b
+}
+function _0() : String for BoolFuncInt {
     return $this._1 as String
 }
 
 var aaa = function() => $true
 
-assert ($aaa, 9999)._0() == '9999'   # call user-defined method
-assert (($aaa, 9999)._0)() == $true  # call function (field)
+assert new BoolFuncInt($aaa, 9999)._0() == '9999'   # call user-defined method
+assert (new BoolFuncInt($aaa, 9999)._0)() == $true  # call function (field)

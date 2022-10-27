@@ -1281,35 +1281,6 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
     }
     break;
   }
-  case TypeDefNode::METHOD_IMPORT: {
-    if (!this->isTopLevel()) { // only available toplevel scope
-      this->reportError<OutsideToplevel>(node, "method import statement");
-      break;
-    }
-    auto &modType = this->checkType(this->typePool.get(TYPE::Module), node.getTargetTypeNode());
-    auto &recvType = this->checkTypeAsSomeExpr(node.getRecvTypeNode());
-    if (auto &methodName = node.getMethodNameInfo().getName(); modType.isModType()) {
-      std::string name = toMethodFullName(recvType.typeId(), methodName);
-      auto handle = cast<ModType>(modType).lookup(this->typePool, name);
-      if (!handle) {
-        this->reportError<UndefinedMethodInMod>(node.getMethodNameInfo().getToken(),
-                                                methodName.c_str(), recvType.getName(),
-                                                modType.getName());
-        break;
-      } else if (methodName[0] == '_') {
-        this->reportError<PrivateMethodInMod>(node.getMethodNameInfo().getToken(),
-                                              methodName.c_str(), recvType.getName(),
-                                              modType.getName());
-        break;
-      }
-      std::string aliasName = toMethodFullName(recvType.typeId(), node.getName());
-      if (!this->curScope->defineAlias(std::move(aliasName), handle)) {
-        this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getName().c_str(),
-                                         recvType.getName());
-      }
-    }
-    break;
-  }
   }
   node.setType(this->typePool.get(TYPE::Void));
 }
@@ -2010,14 +1981,21 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
 
   if (node.isMethod()) {
     auto &recvType = node.getRecvTypeNode()->getType();
-    auto ret = this->curScope->defineMethod(this->typePool, recvType, node.getFuncName(),
-                                            node.getReturnTypeNode()->getType(), paramTypes);
-    if (ret) {
-      assert(ret.asOk()->isMethod());
-      node.setHandle(std::move(ret).take());
+    const auto recvModId = recvType.getBelongedModId();
+    if (recvModId == 0) {
+      this->reportError<NeedUdType>(*node.getRecvTypeNode());
+    } else if (recvModId != this->curScope->modId) {
+      this->reportError<SameModOfRecv>(node, recvType.getName());
     } else {
-      this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
-                                       recvType.getName());
+      auto ret = this->curScope->defineMethod(this->typePool, recvType, node.getFuncName(),
+                                              node.getReturnTypeNode()->getType(), paramTypes);
+      if (ret) {
+        assert(ret.asOk()->isMethod());
+        node.setHandle(std::move(ret).take());
+      } else {
+        this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
+                                         recvType.getName());
+      }
     }
   } else if (node.getReturnTypeNode()) { // for named function
     assert(!node.isConstructor());

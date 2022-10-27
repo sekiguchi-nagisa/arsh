@@ -1,13 +1,16 @@
-#$test($result = 'type', $lineNum = 11, $chars = 10, $errorKind = 'DefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 14, $chars = 10, $errorKind = 'DefinedMethod', $status = 1)
 
-function compare($t : String) : Bool for String {
-    return $this < $t
+typedef STRING : Error
+typedef ERROR : Error
+
+function compare($t : String) : Bool for STRING {
+    return $this.message() < $t
 }
 
-function compare($t : Int) : Bool for Error {
+function compare($t : Int) : Bool for ERROR {
     return ($this as String).size() < $t
 }
 
-function compare($t : Int) : Bool for String {
+function compare($t : Int) : Bool for STRING {
     return $this.size() < $t
 }

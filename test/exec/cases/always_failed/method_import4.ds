@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 5, $chars = 14, $errorKind = 'UndefinedMethodInMod', $status = 1)
-
-source ../../_module4test/method.ds as mod
-
-function mod.factorial12 for Int

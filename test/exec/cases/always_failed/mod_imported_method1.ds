@@ -1,7 +1,0 @@
-#$test($result = 'type', $lineNum = 7, $chars = 4, $errorKind = 'UndefinedMethod', $status = 1)
-
-source ../base/mod_method2.ds
-
-function mod.factorial for Int as fff
-
-34.factorial()  # factorial is imported in `mod_method2.ds`, but not import

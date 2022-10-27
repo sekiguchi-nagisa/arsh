@@ -3,8 +3,8 @@
 
 source ../../_module4test/inlined4.ds
 
-assert 4.factorial() == 24
+assert new BigInt(4).factorial() == 24
 
-assert "$('34'.print())" == 'String: 34'
-assert "$(34.print())" == 'Int: 34'
-assert "$((12,$false).print())" == 'Tuple<Int, Boolean>: 12 false'
+assert "$(new STRING('34').print())" == 'String: 34'
+assert "$(new INT(34 as String).print())" == 'Int: 34'
+assert "$(new INT_BOOL("${(12,$false)}").print())" == 'Any: 12 false'

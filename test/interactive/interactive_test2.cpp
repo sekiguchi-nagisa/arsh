@@ -496,11 +496,13 @@ TEST_F(InteractiveTest, illegalMethod) {
   const char *eout = "[runtime error]\n"
                      "ArithmeticError: zero division\n"
                      "    from (stdin):1 '<toplevel>()'\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23/0; function f() for Int {}", "", eout));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("typedef BigInt(a:Int) { let v = $a;}; 23/0; "
+                                                  "function f() for BigInt {}",
+                                                  "", eout));
   eout = "[runtime error]\n"
          "IllegalAccessError: attempt to call uninitialized method or constructor\n"
          "    from (stdin):2 '<toplevel>()'\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34.f()", "", eout));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("new BigInt(34).f()", "", eout));
 
   // illegal constructor call
   eout = "[runtime error]\n"

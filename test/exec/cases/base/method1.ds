@@ -1,57 +1,45 @@
 
-function print() for Int {
-    echo Int: $this
+typedef ANY : Error
+typedef INT : ANY
+typedef STR : ANY
+
+function print() for INT {
+    echo INT: ${$this.message()}
 }
 
-assert "$(12345.print())" == 'Int: 12345'
+assert "$(new INT('12345').print())" == 'INT: 12345'
 
 # defined in base type
-function print() : Void for Any {
-    echo Any: "$this"
+function print() : Void for ANY {
+    echo ANY: "${$this.message()}"
 }
 
-assert "$(12345.print())" == 'Int: 12345'
-assert "$($True.print())" == 'Any: true'
-assert "$('hello'.print())" == 'Any: hello'
-
-typedef APIError : Error
-
-function print() for Error {
-    echo Error: ${$this.message()}
-}
-
-assert "$(new APIError("this is an APIError").print())" == 'Error: this is an APIError'
-
+assert "$(new INT('12345').print())" == 'INT: 12345'
+assert "$(new ANY("$True").print())" == 'ANY: true'
+assert "$(new STR('hello').print())" == 'ANY: hello'
 
 # recursive call
-function _factorial() : Int for Int {
-    return $this == 0 ? 1 : $this * ($this - 1)._factorial()
+typedef BigInt(a : Int) { let v = $a; }
+
+function _factorial() : Int for BigInt {
+    return $this.v == 0 ? 1 : $this.v * new BigInt($this.v - 1)._factorial()
 }
 
-function factorial() : Int for Int {
+function factorial() : Int for BigInt {
     return $this._factorial()
 }
 
-assert 0.factorial() == 1
-assert 1.factorial() == 1
-assert 2.factorial() == 2
-assert 3.factorial() == 6
-assert 4.factorial() == 24
-
-# defined for reified type
-function sum() : Int for [Int] {
-    var s = 0;
-    for $e in $this { $s += $e; }
-    return $s
-}
-
-assert [1,2,3,4,5,6,7,8,9,10].sum() == 55
+assert new BigInt(0).factorial() == 1
+assert new BigInt(1).factorial() == 1
+assert new BigInt(2).factorial() == 2
+assert new BigInt(3).factorial() == 6
+assert new BigInt(4).factorial() == 24
 
 # optional arg
-function ff(b : Int!, c : Bool!) : String for String {
-    return $this + ($b ?? 0) + ($c ?? $false)
+function ff(b : Int!, c : Bool!) : String for STR {
+    return $this.message() + ($b ?? 0) + ($c ?? $false)
 }
 
-assert "@".ff() == '@0false'
-assert "_".ff(4) == '_4false'
-assert '__'.ff(40, $true) == '__40true'
+assert new STR("@").ff() == '@0false'
+assert new STR("_").ff(4) == '_4false'
+assert new STR('__').ff(40, $true) == '__40true'
