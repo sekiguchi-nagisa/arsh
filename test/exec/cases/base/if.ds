@@ -10,7 +10,7 @@ assert($func(2))
 assert(!$func(3))
 
 assert if $true { $true; } else { $false; }
-assert if $false { throw 34; } else { $true; }
+assert if $false { throw new Error(""); } else { $true; }
 
 var i = 0
 if $true { $i = 1; $i; } else { $i = 100; $true; }

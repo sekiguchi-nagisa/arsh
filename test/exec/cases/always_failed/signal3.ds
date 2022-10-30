@@ -5,7 +5,7 @@ function raise($s : String) {
 }
 
 function f($s : Signal) {
-    throw $s
+    throw new SystemError($s.name())
 }
 
 function g($s : Signal) {
@@ -17,8 +17,8 @@ $SIG['hup'].trap($f)
 try {
     $raise('hup')
 } catch $e {
-    assert $e is Signal : "$e"
-    assert ($e as Signal).name() == $SIG['hup'].name()
+    assert $e is Error : "$e"
+    assert ($e as Error).message() == $SIG['hup'].name()
 }
 
 $SIG['hup'].trap($g)

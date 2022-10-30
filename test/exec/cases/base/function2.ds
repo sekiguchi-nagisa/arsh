@@ -66,10 +66,10 @@ assert ! (
     (function () -> {}) is () -> Any!
 )
 
-$a4 = function($i : Int) -> throw $i
-assert try { $a4(777); 100; } catch $e : Int { true; $e; } == 777
+$a4 = function($i : Int) -> throw new Error("$i")
+assert try { $a4(777); 100 as String; } catch $e : Error { true; $e.message(); } == '777'
 assert (function() => exit) is () -> Nothing
-assert (function() => {34; 34; throw 34; }) is () -> Nothing
+assert (function() => {34; 34; throw new Error(""); }) is () -> Nothing
 assert (function() => _exit) is () -> Nothing
 assert (function() => _exit) is () -> Int
 assert (function() => _exit) is () -> Void

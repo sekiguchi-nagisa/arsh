@@ -213,7 +213,7 @@ nodes:
             size: 0
           type:
           typeKind: "Base"
-          typeName: "Any"
+          typeName: "Error"
           handle: null
         blockNode:
           nodeKind: Block

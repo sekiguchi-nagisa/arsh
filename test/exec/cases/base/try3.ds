@@ -4,18 +4,18 @@
 
 function f($i : Int) {
     var a = [1, 2]
-    throw ($a[$i] / $i)
+    throw new InvalidOperationError(($a[$i] / $i)as String)
 }
 
 function raise($f : Func<Void, [Int]>, $i : Int) {
     try {
         $f($i)
-    } catch $e : Int {
-        throw 'I'
+    } catch $e : InvalidOperationError {
+        throw new TypeCastError('I')
     } catch $e : ArithmeticError {
-        throw 'A'
+        throw new TypeCastError('A')
     } catch( $e : OutOfRangeError) {
-        throw 'O'
+        throw new TypeCastError('O')
     }
 }
 
@@ -23,8 +23,8 @@ var c = 0
 for $i in ['A', 'I', 'O'] {
     try {
         $raise($f, $c)
-    } catch $e : String {
-        assert $e == $i
+    } catch $e : TypeCastError {
+        assert $e.message() == $i
     }
     $c = $c + 1
 }

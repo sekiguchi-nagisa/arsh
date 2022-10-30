@@ -6,7 +6,7 @@ function raise($a : Int) : Nothing {
 }
 
 defer {
-    var v = (throw 23) | $raise(34) | 130
+    var v = (throw new ExecError("34")) | $raise(34) | 130
     $raise($v)
 }
 

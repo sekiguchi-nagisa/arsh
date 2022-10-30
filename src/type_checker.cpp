@@ -1749,7 +1749,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     if (this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
       this->reportError<InsideFinally>(node);
     }
-    this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());
+    this->checkType(this->typePool.get(TYPE::Error), node.getExprNode());
     break;
   case JumpNode::RETURN:
   case JumpNode::RETURN_INIT: // normally unreachable
@@ -1760,7 +1760,8 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
-  auto &exceptionType = this->checkTypeAsSomeExpr(node.getTypeNode());
+  this->checkTypeAsSomeExpr(node.getTypeNode());
+  auto &exceptionType = this->checkType(this->typePool.get(TYPE::Error), node.getTypeNode());
   /**
    * not allow Void, Nothing and Option type.
    */

@@ -6,7 +6,7 @@ function fatal($s : String) : Nothing {
 }
 
 function abort() : Nothing {
-    throw 34
+    throw new Error('34')
 }
 
 assert $abort is Func<Nothing>

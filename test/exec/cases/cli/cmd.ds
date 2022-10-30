@@ -33,10 +33,6 @@ SystemError: execution error: lajfeoifreo: command not found
 
 $expect("$(ds -c 'lajfeoifreo' 2>&1)", 127, $msg)
 
-var cmd = "var a = \$'he\x00llo'; throw \$a"
-
-$expect("$(ds -c $cmd 2>&1)", 1, $'[runtime error]\nhe\x00llo')
-
 
 # normal
 $expect("$(ds -c '__puts -3' 2>&1)", 1, '')

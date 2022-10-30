@@ -305,12 +305,12 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
-inline std::unique_ptr<TypeNode> newAnyTypeNode() {
-  return std::make_unique<BaseTypeNode>(Token{0, 0}, std::string("Any"));
-}
-
 inline std::unique_ptr<TypeNode> newVoidTypeNode() {
   return std::make_unique<BaseTypeNode>(Token{0, 0}, std::string("Void"));
+}
+
+inline std::unique_ptr<TypeNode> newErrorTypeNode() {
+  return std::make_unique<BaseTypeNode>(Token{0, 0}, "Error");
 }
 
 // expression definition
@@ -1862,7 +1862,7 @@ public:
   CatchNode(unsigned int startPos, NameInfo &&exceptionName, std::unique_ptr<TypeNode> &&typeNode,
             std::unique_ptr<BlockNode> &&blockNode)
       : WithRtti({startPos, 0}), exceptionName(std::move(exceptionName)),
-        typeNode(typeNode != nullptr ? std::move(typeNode) : newAnyTypeNode()),
+        typeNode(typeNode != nullptr ? std::move(typeNode) : newErrorTypeNode()),
         blockNode(std::move(blockNode)) {
     this->updateToken(this->blockNode->getToken());
   }

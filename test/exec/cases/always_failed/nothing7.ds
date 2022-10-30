@@ -1,7 +1,7 @@
 #$test($result = 'type', $lineNum = 10, $chars = 5, $errorKind = 'InsideFinally', $status = 1)
 
 function f() : Nothing {
-    throw 34
+    throw new Error("hay")
 }
 
 try {

@@ -40,7 +40,7 @@ try {
     } catch($e : KeyNotFoundError) {
         assert($false)
     }
-} catch $e : Boolean {
+} catch $e : InvalidOperationError {
     assert $false
 } catch $e : ArithmeticError {
     assert $true

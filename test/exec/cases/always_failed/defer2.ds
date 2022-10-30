@@ -6,7 +6,7 @@ raise() : Nothing {
 }
 
 defer {
-    var v = 34 | (throw 23) | raise 2 | 130
+    var v = 34 | (throw new ExecError(23 as String)) | raise 2 | 130
     echo hello && raise $v
 }
 

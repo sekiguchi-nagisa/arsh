@@ -3,12 +3,12 @@
 try {
     if($true) {
         if($true) {
-            throw 34
+            throw new SystemError('')
         }
     }
-    throw 2
+    throw new ArithmeticError("2")
 } catch($e) {
-    throw 45
+    throw $e
 } finally {
     echo hello
 }

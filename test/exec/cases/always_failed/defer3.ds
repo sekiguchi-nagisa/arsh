@@ -6,7 +6,7 @@ raise() : Nothing {
 }
 
 defer {
-    var v = 34 | (throw 23) | raise 2
+    var v = 34 | (throw new SystemError('23')) | raise 2
     true && throw 34
 }
 

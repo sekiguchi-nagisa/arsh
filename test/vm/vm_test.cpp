@@ -127,11 +127,13 @@ TEST_F(VMTest, deinit1) {
 }
 
 TEST_F(VMTest, deinit2) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $@; throw 34; }", DS_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(
+      this->eval("{ var b = $@; throw new Error(''); }", DS_ERROR_KIND_RUNTIME_ERROR));
   ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-  ASSERT_NO_FATAL_FAILURE(this->eval("{ var a = $@; { var b = $@; var c = $b; throw 34; }}",
-                                     DS_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(
+      this->eval("{ var a = $@; { var b = $@; var c = $b; throw new Error(''); }}",
+                 DS_ERROR_KIND_RUNTIME_ERROR));
   ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 }
 
@@ -183,17 +185,18 @@ TEST_F(VMTest, deinit8) {
 }
 
 TEST_F(VMTest, deinit9) {
-  ASSERT_NO_FATAL_FAILURE(this->eval(
-      "try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }",
-      DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
-      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
+  ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw new "
+                                     "Error('34'); } finally {  $RANDOM; }",
+                                     DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                                     [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, deinit10) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var "
-                                     "b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
-                                     DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
-                                     [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
+  ASSERT_NO_FATAL_FAILURE(
+      this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : RegexMatchError { var "
+                 "b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
+                 DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                 [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, stacktop) {

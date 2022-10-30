@@ -22,12 +22,6 @@ UnwrappingError: invalid value
 $expect("$(echo -n 'var a = (9, new Int!()); $a' | repl 2>&1)", 1, $msg)
 
 
-$msg = "[runtime error]
-cannot obtain string representation"
-
-$expect("$(echo -n 'var a = (9, new Int!()); throw $a' | repl 2>&1)", 1, $msg)
-
-
 # option type
 $expect("$(echo -n 'var a = $true as Option<Boolean>; $a' | repl 2>&1)", 0, ': Bool! = true')
 

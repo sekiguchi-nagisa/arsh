@@ -69,6 +69,8 @@
 - **Breaking Change**: change user-defined method
     - now only allowed for user-defined type that defined at same module
     - cannot define same name method as field
+- **Breaking Change**: overhaul exception handling
+    - now only throw and catch derived types from ``Error`` type
 
 #### Builtin
 

@@ -18,12 +18,13 @@ try {
 }
 
 try {
-    $true ? throw 23 : 54
-} catch($e : Error) {
+    $true ? throw new InvalidOperationError('34') : 54
+} catch($e : SystemError) {
     assert($false)
-} catch($e : String) {
+} catch($e : OutOfRangeError) {
     assert($false)
 } catch($e) {
-    assert($e is Int)
-    assert($e as Int == 23)
+    assert $e is Error
+    assert($e is InvalidOperationError)
+    assert(($e as InvalidOperationError).message() == '34')
 }

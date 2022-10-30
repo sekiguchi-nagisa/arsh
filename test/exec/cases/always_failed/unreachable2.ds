@@ -1,4 +1,4 @@
 #$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $chars = 1, $lineNum = 4)
 
-{ { throw 34  }  }
+{ { throw new Error('34')  }  }
 assert($false)

@@ -30,7 +30,7 @@ typedef VVV = Void
 typedef NNN = Nothing
 
 function vvv() : VVV {}
-function nnn() : NNN { throw 23; }
+function nnn() : NNN { throw new Error('23'); }
 
 assert $vvv is () => Void
 assert $vvv is () -> VVV

@@ -156,11 +156,12 @@ echo ${true.t}
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF(echo ${true.t})EOF"), 1, "", msg));
 
-  msg = R"((string):1:11: [semantic error] unreachable code
-throw 23; assert $false
-          ^~~~~~~~~~~~~
+  msg = R"((string):1:32: [semantic error] unreachable code
+throw new Error(23 as String); assert $false
+                               ^~~~~~~~~~~~~
 )";
-  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "throw 23; assert $false"), 1, "", msg));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(ds("-c", "throw new Error(23 as String); assert $false"), 1, "", msg));
 
   msg = R"((string):2:6: [semantic error] require `Int' type, but is `Bool' type
 $a = true|(true|false)

@@ -61,32 +61,12 @@ TEST_F(InteractiveTest, except2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("throw 2", "", "[runtime error]\n2\n"));
-
-  this->send(CTRL_D);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
-}
-
-TEST_F(InteractiveTest, except5) {
-  this->invoke("--quiet", "--norc");
-
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-
   const char *estr = R"([runtime error]
 ArithmeticError: zero division
     from (stdin):1 '<toplevel>()'
 )";
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("45 / 0", "", estr));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1, WaitStatus::EXITED));
-}
-
-TEST_F(InteractiveTest, except4) {
-  this->invoke("--quiet", "--norc");
-
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("throw 2", "", "[runtime error]\n2\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1, WaitStatus::EXITED));
 }
 
@@ -302,7 +282,12 @@ TEST_F(InteractiveTest, throwFromLastPipe) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true | throw 12", "", "[runtime error]\n12\n"));
+
+  const char *estr = R"([runtime error]
+ExecError: foo
+    from (stdin):1 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true | throw new ExecError('foo')", "", estr));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
