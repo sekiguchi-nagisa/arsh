@@ -2052,7 +2052,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(THROW) {
         auto obj = state.stack.pop();
-        state.throwObject(std::move(obj), 1);
+        state.throwObject(std::move(obj));
         vmerror;
       }
       vmcase(ENTER_FINALLY) {
@@ -2537,15 +2537,6 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
   return ret;
 }
 
-static int parseExitStatus(const ErrorObject &obj) {
-  auto ref = obj.getMessage().asStrRef();
-  auto r = ref.lastIndexOf(" ");
-  ref.removePrefix(r + 1);
-  auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
-  assert(pair.second);
-  return pair.first;
-}
-
 DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   if (!state.hasError()) {
     return DS_ERROR_KIND_SUCCESS;
@@ -2556,10 +2547,17 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
   if (errorType.is(TYPE::ShellExit_)) {
     kind = DS_ERROR_KIND_EXIT;
-    state.setExitStatus(parseExitStatus(typeAs<ErrorObject>(except)));
   } else if (errorType.is(TYPE::AssertFail_)) {
     kind = DS_ERROR_KIND_ASSERTION_ERROR;
-    state.setExitStatus(1);
+  }
+  switch (kind) {
+  case DS_ERROR_KIND_RUNTIME_ERROR:
+  case DS_ERROR_KIND_ASSERTION_ERROR:
+  case DS_ERROR_KIND_EXIT:
+    state.setExitStatus(typeAs<ErrorObject>(except).getStatus());
+    break;
+  default:
+    break;
   }
 
   // get error line number
@@ -2575,7 +2573,8 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
 
   // print error message
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  if (kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+  if (kind == DS_ERROR_KIND_RUNTIME_ERROR || kind == DS_ERROR_KIND_ASSERTION_ERROR ||
+      hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
     std::string header = "[runtime error";
     if (state.subshellLevel) {
       header += " at subshell=";
@@ -2583,26 +2582,9 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
     }
     header += "]\n";
     fputs(header.c_str(), stderr);
-    const bool bt = state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-    auto *handle = state.typePool.lookupMethod(errorType, bt ? METHOD_SHOW : OP_STR);
-    assert(handle);
-
-    setFlag(DSState::eventDesc, VMEvent::MASK);
-    DSValue ret = VM::callMethod(state, *handle, DSValue(except), makeArgs());
-    unsetFlag(DSState::eventDesc, VMEvent::MASK);
-    if (state.hasError()) {
-      state.stack.clearThrownObject();
-      fputs("cannot obtain string representation\n", stderr);
-    } else if (!bt) {
-      auto ref = ret.asStrRef();
-      fwrite(ref.data(), sizeof(char), ref.size(), stderr);
-      fputc('\n', stderr);
-    }
-  } else if (kind == DS_ERROR_KIND_ASSERTION_ERROR ||
-             hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
     typeAs<ErrorObject>(except).printStackTrace(state);
+    fflush(stderr);
   }
-  fflush(stderr);
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
 
   if (dsError != nullptr) {

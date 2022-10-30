@@ -22,7 +22,8 @@ TEST_F(InteractiveTest, assert) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  const char *e = "Assertion Error: `(1 == 2)'\n"
+  const char *e = "[runtime error]\n"
+                  "Assertion Error: `(1 == 2)'\n"
                   "    from (stdin):1 '<toplevel>()'\n";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(1 == 2)", 1, WaitStatus::EXITED, "", e));
 }
@@ -206,7 +207,8 @@ TEST_F(InteractiveTest, termHook3) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
 
-  const char *estr = R"(Assertion Error: `false'
+  const char *estr = R"([runtime error]
+Assertion Error: `false'
     from (stdin):2 '<toplevel>()'
 )";
   std::string err = format("atexit: %d, 1\n", TERM_ON_ASSERT);

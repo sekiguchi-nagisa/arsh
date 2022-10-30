@@ -39,9 +39,9 @@ const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
 }
 
 void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
-  auto except =
-      ErrorObject::newError(st, st.typePool.get(type), DSValue::createStr(std::move(message)));
-  st.throwObject(std::move(except), status);
+  auto except = ErrorObject::newError(st, st.typePool.get(type),
+                                      DSValue::createStr(std::move(message)), status);
+  st.throwObject(std::move(except));
 }
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
@@ -566,7 +566,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
     }
     auto message = DSValue::createStr(std::move(errorConsumer.value));
     auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
-                                       std::move(message));
+                                       std::move(message), 1);
     return Err(toObjPtr<ErrorObject>(error));
   }
 }

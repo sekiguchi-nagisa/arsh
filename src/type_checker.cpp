@@ -1760,12 +1760,8 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
-  this->checkTypeAsSomeExpr(node.getTypeNode());
   auto &exceptionType = this->checkType(this->typePool.get(TYPE::Error), node.getTypeNode());
-  /**
-   * not allow Void, Nothing and Option type.
-   */
-  if (exceptionType.isOptionType()) {
+  if (exceptionType.isNothingType()) {
     this->reportError<Unacceptable>(node.getTypeNode(), exceptionType.getName());
   }
 

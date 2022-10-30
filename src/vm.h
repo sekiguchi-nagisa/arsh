@@ -202,14 +202,11 @@ public:
 
   /**
    * set thrownObject and update exit status
-   * @param except
+   * @param except must be ErrorObject
    * @param afterStatus
    * set exit status to it
    */
-  void throwObject(DSValue &&except, int64_t afterStatus) {
-    this->stack.setThrownObject(std::move(except));
-    this->setExitStatus(afterStatus);
-  }
+  void throwObject(DSValue &&except) { this->stack.setThrownObject(std::move(except)); }
 
   // variable manipulation
   void setGlobal(unsigned int index, const DSValue &obj) { this->setGlobal(index, DSValue(obj)); }

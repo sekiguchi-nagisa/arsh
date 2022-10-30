@@ -683,14 +683,16 @@ void ErrorObject::printStackTrace(DSState &state) {
   }
 }
 
-DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
+DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message,
+                              int64_t status) {
   std::vector<StackTraceElement> traces;
   state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {
     traces.push_back(std::move(e));
     return true;
   });
   auto name = DSValue::createStr(type.getName());
-  return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
+  return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), status,
+                                      std::move(traces));
 }
 
 // ##########################

@@ -307,7 +307,8 @@ ArithmeticError: zero division
 
         assert false
 )";
-  e = R"(Assertion Error: `false'
+  e = R"([runtime error]
+Assertion Error: `false'
     from (string):7 '<toplevel>()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));

@@ -1334,7 +1334,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
   if (ret) {
     RET(DSValue(ret.asOk()));
   } else {
-    ctx.throwObject(DSValue(ret.asErr()), 1);
+    ctx.throwObject(DSValue(ret.asErr()));
     RET_ERROR;
   }
 }
@@ -1899,7 +1899,7 @@ YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
 YDSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1))));
+  RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), 1)));
 }
 
 //!bind: function message($this : Error) : String

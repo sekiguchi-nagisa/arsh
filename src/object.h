@@ -971,12 +971,13 @@ class ErrorObject : public ObjectWithRtti<ObjectKind::Error> {
 private:
   DSValue message;
   DSValue name;
+  int64_t status;
   std::vector<StackTraceElement> stackTrace;
 
 public:
-  ErrorObject(const DSType &type, DSValue &&message, DSValue &&name,
+  ErrorObject(const DSType &type, DSValue &&message, DSValue &&name, int64_t status,
               std::vector<StackTraceElement> &&stackTrace)
-      : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)),
+      : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
         stackTrace(std::move(stackTrace)) {}
 
   bool opStr(StrBuilder &builder) const;
@@ -984,6 +985,8 @@ public:
   const DSValue &getMessage() const { return this->message; }
 
   const DSValue &getName() const { return this->name; }
+
+  int64_t getStatus() const { return this->status; }
 
   /**
    * print stack trace to stderr
@@ -995,11 +998,13 @@ public:
   /**
    * create new Error_Object and create stack trace
    */
-  static DSValue newError(const DSState &state, const DSType &type, const DSValue &message) {
-    return newError(state, type, DSValue(message));
+  static DSValue newError(const DSState &state, const DSType &type, const DSValue &message,
+                          int64_t status) {
+    return newError(state, type, DSValue(message), status);
   }
 
-  static DSValue newError(const DSState &state, const DSType &type, DSValue &&message);
+  static DSValue newError(const DSState &state, const DSType &type, DSValue &&message,
+                          int64_t status);
 };
 
 enum class CodeKind : unsigned char {

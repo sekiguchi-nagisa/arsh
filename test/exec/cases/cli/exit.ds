@@ -3,14 +3,19 @@ source $SCRIPT_DIR/expect.ds
 
 $expect("$(ds -c 'exit 89' 2>&1)", 89, '')
 
-$expectRegex("$(ds --trace-exit -c 'exit 23' 2>&1)", 23, $/^Shell Exit: terminated by exit 23\n.+/)
+$expectRegex("$(ds --trace-exit -c 'exit 23' 2>&1)", 23, 
+    $/^\[runtime error\]\nShell Exit: terminated by exit 23\n.+/)
 
-$expectRegex("$(ds -c 'shctl set traceonexit; exit 45' 2>&1)", 45, $/^Shell Exit: terminated by exit 45\n.+/)
+$expectRegex("$(ds -c 'shctl set traceonexit; exit 45' 2>&1)", 45, 
+    $/^\[runtime error\]\nShell Exit: terminated by exit 45\n.+/)
 
 $expect("$(ds --trace-exit -c 'shctl unset traceonexit; exit 100' 2>&1)", 100, '')
 
-$expectRegex("$(ds --trace-exit -c 'exit 2300' 2>&1)", 252, $/^Shell Exit: terminated by exit 252\n.+/)
+$expectRegex("$(ds --trace-exit -c 'exit 2300' 2>&1)", 252, 
+    $/^\[runtime error\]\nShell Exit: terminated by exit 252\n.+/)
 
-$expectRegex("$(ds --trace-exit -c '$? = 123; exit hoge' 2>&1)", 123, $/^Shell Exit: terminated by exit 123\n.+/)
+$expectRegex("$(ds --trace-exit -c '$? = 123; exit hoge' 2>&1)", 123, 
+    $/^\[runtime error\]\nShell Exit: terminated by exit 123\n.+/)
 
-$expect("$(ds --trace-exit -e exit 12 2>&1)", 12, 'Shell Exit: terminated by exit 12')
+$expect("$(ds --trace-exit -e exit 12 2>&1)", 12, '[runtime error]
+Shell Exit: terminated by exit 12')
