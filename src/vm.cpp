@@ -2494,31 +2494,6 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
   return ret;
 }
 
-DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
-                       std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-  assert(handle.getParamSize() == args.first);
-
-  GUARD_RECURSION(state);
-
-  unsigned int actualParamSize =
-      prepareArguments(state.stack, std::move(recv), std::move(args)) + 1;
-
-  DSValue ret;
-  NativeCode code;
-  if (handle.isNative()) {
-    code = NativeCode(handle.getIndex());
-  }
-
-  if (handle.isNative() ? windStackFrame(state, actualParamSize, actualParamSize, code)
-                        : prepareMethodCall(state, handle.getIndex(), actualParamSize)) {
-    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
-  }
-  if (handle.getReturnType().isVoidType()) {
-    ret = DSValue(); // clear return value
-  }
-  return ret;
-}
-
 DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
                          std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
   GUARD_RECURSION(state);
@@ -2572,7 +2547,6 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   }
 
   // print error message
-  auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   if (kind == DS_ERROR_KIND_RUNTIME_ERROR || kind == DS_ERROR_KIND_ASSERTION_ERROR ||
       hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
     std::string header = "[runtime error";
@@ -2585,7 +2559,6 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
     typeAs<ErrorObject>(except).printStackTrace(state);
     fflush(stderr);
   }
-  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
 
   if (dsError != nullptr) {
     *dsError = {.kind = kind,

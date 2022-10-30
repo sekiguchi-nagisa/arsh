@@ -664,17 +664,6 @@ public:
   static DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate);
 
   /**
-   * call method.
-   * @param handle
-   * @param recv
-   * @param args
-   * @return
-   * return value of method (if no return value, return null).
-   */
-  static DSValue callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
-                            std::pair<unsigned int, std::array<DSValue, 3>> &&args);
-
-  /**
    *
    * @param funcObj
    * @param args
