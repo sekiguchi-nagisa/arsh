@@ -563,7 +563,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
 
 std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) {
   if (!node->getType().isVoidType() && !node->getType().isNothingType()) {
-    auto castNode = newTypedCastNode(std::move(node), this->typePool.get(TYPE::Void));
+    auto castNode = TypeOpNode::newTypedCastNode(std::move(node), this->typePool.get(TYPE::Void));
     castNode->setOpKind(TypeOpNode::PRINT);
     node = std::move(castNode);
   }
@@ -772,6 +772,40 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   }
 }
 
+void TypeChecker::resolveSmartCast(const Node &condNode) {
+  if (!isa<TypeOpNode>(condNode)) {
+    return;
+  }
+  auto &typeOpNode = cast<TypeOpNode>(condNode);
+  if (!isa<VarNode>(typeOpNode.getExprNode())) {
+    return;
+  }
+  auto &varNode = cast<VarNode>(typeOpNode.getExprNode());
+  if (!varNode.getHandle()) {
+    return;
+  }
+
+  const DSType *targetType = nullptr;
+  switch (typeOpNode.getOpKind()) {
+  case TypeOpNode::INSTANCEOF:
+    targetType = &typeOpNode.getTargetTypeNode()->getType();
+    break;
+  case TypeOpNode::CHECK_UNWRAP:
+    if (isa<OptionType>(varNode.getType())) {
+      targetType = &cast<OptionType>(varNode.getType()).getElementType();
+    }
+    break;
+  default:
+    break;
+  }
+  if (targetType) {
+    auto &handle = varNode.getHandle();
+    auto newHandle = HandlePtr::create(*targetType, handle->getIndex(), handle->getKind(),
+                                       handle->attr(), handle->getModId());
+    this->curScope->defineAlias(std::string(varNode.getVarName()), std::move(newHandle));
+  }
+}
+
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   if (node.getOp() == TokenKind::COND_AND || node.getOp() == TokenKind::COND_OR) {
     auto &booleanType = this->typePool.get(TYPE::Boolean);
@@ -780,6 +814,10 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       this->reportError<Unreachable>(*node.getRightNode());
     }
 
+    auto scope = this->intoBlock();
+    if (node.getOp() == TokenKind::COND_AND) {
+      this->resolveSmartCast(*node.getLeftNode());
+    }
     this->checkTypeWithCoercion(booleanType, node.refRightNode());
     node.setType(booleanType);
     return;
@@ -1336,7 +1374,12 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
 void TypeChecker::visitIfNode(IfNode &node) {
   this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
-  auto &thenType = this->checkTypeExactly(node.getThenNode());
+  {
+    auto scope = this->intoBlock();
+    this->resolveSmartCast(node.getCondNode());
+    this->checkTypeExactly(node.getThenNode());
+  }
+  auto &thenType = node.getThenNode().getType();
   auto &elseType = this->checkTypeExactly(node.getElseNode());
 
   if (thenType.isNothingType() && elseType.isNothingType()) {

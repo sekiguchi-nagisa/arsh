@@ -270,18 +270,9 @@ void AccessNode::dump(NodeDumper &dumper) const {
 // ##     TypeOpNode     ##
 // ########################
 
-std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
-                                             const DSType &type) {
-  assert(!targetNode->isUntyped());
-  auto castNode = std::make_unique<TypeOpNode>(std::move(targetNode), nullptr, TypeOpNode::NO_CAST);
-  castNode->setType(type);
-  return castNode;
-}
-
 void TypeOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(exprNode);
-  auto *targetTypeToken = this->getTargetTypeNode();
-  DUMP_PTR(targetTypeToken);
+  DUMP_PTR(targetTypeNode);
 
 #define EACH_ENUM(OP)                                                                              \
   OP(NO_CAST)                                                                                      \
@@ -654,38 +645,10 @@ void LoopNode::dump(NodeDumper &dumper) const {
 // ##     IfNode     ##
 // ####################
 
-/**
- * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
- */
-static void resolveIfIsStatement(Node &condNode, BlockNode &blockNode) {
-  if (!isa<TypeOpNode>(condNode) || !cast<TypeOpNode>(condNode).isInstanceOfOp()) {
-    return;
-  }
-  auto &isNode = cast<TypeOpNode>(condNode);
-
-  if (!isa<VarNode>(isNode.getExprNode())) {
-    return;
-  }
-  auto &varNode = cast<VarNode>(isNode.getExprNode());
-
-  auto exprNode =
-      std::make_unique<VarNode>(Token{isNode.getPos(), 0}, std::string(varNode.getVarName()));
-  auto castNode = std::make_unique<TypeOpNode>(std::move(exprNode), *isNode.getTargetTypeNode(),
-                                               TypeOpNode::NO_CAST);
-  NameInfo nameInfo({isNode.getPos(), 0}, varNode.getVarName());
-  auto declNode = std::make_unique<VarDeclNode>(isNode.getPos(), std::move(nameInfo),
-                                                std::move(castNode), VarDeclNode::LET);
-  blockNode.insertNodeToFirst(std::move(declNode));
-}
-
 IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
                std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode)
     : WithRtti({startPos, 0}), condNode(std::move(condNode)), thenNode(std::move(thenNode)),
       elseNode(std::move(elseNode)) {
-
-  if (isa<BlockNode>(*this->thenNode)) {
-    resolveIfIsStatement(*this->condNode, cast<BlockNode>(*this->thenNode));
-  }
   this->updateToken(this->thenNode->getToken());
   if (this->elseNode != nullptr) {
     this->updateToken(this->elseNode->getToken());

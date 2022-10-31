@@ -55,8 +55,8 @@ assert $o! == "world"
 
 $o = new String!()
 $o = "34"
-assert $o && $o! == "34"
-
+assert $o && $o == "34"  # auto-unwrap && right
+assert ($o ? $o.size() : 0) == 2
 
 # collection with option value
 assert [23 as Int!] as String == '[23]'

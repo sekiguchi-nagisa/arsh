@@ -30,7 +30,12 @@ try {
 }
 
 
+## smart cast
 var q = 2345 as Any
 if($q is Int) {
     assert($q == 2345)
 }
+
+assert ($q is Int ? $q : 0) == 2345
+
+assert $q is Int && $q.abs() == 2345

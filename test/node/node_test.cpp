@@ -153,7 +153,7 @@ nodes:
           type: "String"
           kind: "STRING"
           value: "hello"
-    targetTypeToken: null
+    targetTypeNode: null
     opKind: "TO_VOID"
 )"},
 
@@ -682,7 +682,7 @@ nodes:
                 type: "Int"
                 kind: "Int"
                 intValue: 34
-          targetTypeToken: null
+          targetTypeNode: null
           opKind: "TO_VOID"
       - nodeKind: Arm
         token:
@@ -711,7 +711,7 @@ nodes:
                 type: "Int"
                 kind: "Int"
                 intValue: 34
-          targetTypeToken: null
+          targetTypeNode: null
           opKind: "TO_VOID"
     caseKind: "MAP"
 )EOF"},
@@ -955,7 +955,7 @@ nodes:
       redirCount: 0
       needFork: true
       handle: null
-    targetTypeToken: null
+    targetTypeNode: null
     opKind: "TO_VOID"
 )"},
 
@@ -1097,7 +1097,7 @@ nodes:
         needFork: true
         handle: null
       baseIndex: 0
-    targetTypeToken: null
+    targetTypeNode: null
     opKind: "TO_VOID"
 )"},
 

@@ -398,7 +398,7 @@ private:
   bool checkCoercion(const DSType &requiredType, const DSType &targetType);
 
   void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
-    targetNode = newTypedCastNode(std::move(targetNode), requiredType);
+    targetNode = TypeOpNode::newTypedCastNode(std::move(targetNode), requiredType);
     this->resolveCastOp(cast<TypeOpNode>(*targetNode));
   }
 
@@ -516,6 +516,8 @@ private:
    *
    */
   std::unique_ptr<Node> newPrintOpNode(std::unique_ptr<Node> &&node);
+
+  void resolveSmartCast(const Node &condNode);
 
   void checkTypeAsBreakContinue(JumpNode &node);
   void checkTypeAsReturn(JumpNode &node);

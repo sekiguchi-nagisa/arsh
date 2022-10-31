@@ -71,6 +71,26 @@
     - cannot define same name method as field
 - **Breaking Change**: overhaul exception handling
     - now only throw and catch derived types from ``Error`` type
+- **Breaking Change**: improve smart cast.
+    - also support option type auto-unwrap
+    - support the following context
+      ```
+      ## auto down cast
+      var e = -45 as Any
+      if $e {
+        assert $e.abs() == 45
+      }
+      assert ($e ? $e.abs() : 0) == 45
+      assert $e && $e.abs() == 45
+      
+      ## auto unwrap
+      var o = '34'.toInt()
+      if $o {
+        assert $o == 34
+      }
+      assert ($o ? $o : 0) == 34
+      assert $o && $o == 45
+      ```
 
 #### Builtin
 

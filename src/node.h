@@ -681,14 +681,10 @@ public:
 private:
   std::unique_ptr<Node> exprNode;
 
-  using LeftType = std::reference_wrapper<TypeNode>;
-
-  using RightType = std::unique_ptr<TypeNode>;
-
   /**
    * may be null
    */
-  Union<LeftType, RightType> targetTypeNode;
+  std::unique_ptr<TypeNode> targetTypeNode;
 
   OpKind opKind;
 
@@ -696,15 +692,24 @@ public:
   TypeOpNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<TypeNode> &&type, OpKind init)
       : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
         targetTypeNode(std::move(type)), opKind(init) {
-    if (get<RightType>(this->targetTypeNode)) {
-      this->updateToken(get<RightType>(this->targetTypeNode)->getToken());
+    if (this->targetTypeNode) {
+      this->updateToken(this->targetTypeNode->getToken());
     }
   }
 
-  TypeOpNode(std::unique_ptr<Node> &&exprNode, TypeNode &type, OpKind init)
-      : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
-        targetTypeNode(std::ref(type)), opKind(init) {
-    this->updateToken(type.getToken());
+  /**
+   * for implicit cast.
+   * @param targetNode
+   * @param type
+   * @return
+   */
+  static std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
+                                                      const DSType &type) {
+    assert(!targetNode->isUntyped());
+    auto castNode =
+        std::make_unique<TypeOpNode>(std::move(targetNode), nullptr, TypeOpNode::NO_CAST);
+    castNode->setType(type);
+    return castNode;
   }
 
   Node &getExprNode() const { return *this->exprNode; }
@@ -714,14 +719,7 @@ public:
    * @return
    * may be null
    */
-  TypeNode *getTargetTypeNode() const {
-    if (ydsh::is<LeftType>(this->targetTypeNode)) {
-      return &get<LeftType>(this->targetTypeNode).get();
-    } else {
-      assert(ydsh::is<RightType>(this->targetTypeNode));
-      return get<RightType>(this->targetTypeNode).get();
-    }
-  }
+  const std::unique_ptr<TypeNode> &getTargetTypeNode() const { return this->targetTypeNode; }
 
   void setOpKind(OpKind op) { this->opKind = op; }
 
@@ -737,16 +735,6 @@ public:
 
   void dump(NodeDumper &dumper) const override;
 };
-
-/**
- * for implicit cast.
- * @param targetNode
- * must be typed.
- * @param type
- * @return
- */
-std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
-                                             const DSType &type);
 
 class ArgsNode : public WithRtti<Node, NodeKind::Args> {
 private:

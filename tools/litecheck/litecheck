@@ -303,8 +303,8 @@ litecheck() {
 
     ## check bin
     if $bin {
-        $cmd = $bin!.realpath() ?? _usage "file not found: \`${$bin!}'"
-        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin!}'"
+        $cmd = $bin.realpath() ?? _usage "file not found: \`${$bin}'"
+        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin}'"
     }
 
     # read directive

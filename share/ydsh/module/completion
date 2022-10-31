@@ -197,8 +197,7 @@ function _comp_autoload(cmd : String) : String! {
     } with < $path
 
     if $target {
-        var t = $target!
-        eval compdef --cmd $cmd --comp-path $cmd --comp-target $t && return $cmd
+        eval compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
     }
     return new String!()
 }
