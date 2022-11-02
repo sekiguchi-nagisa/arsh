@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 9, $chars = 20, $errorKind = 'Required', $status = 1)
+
+var aaa = 34 as Any!
+var bbb = 'fjriaeo'.toInt()
+
+if $aaa is Int {
+    assert $aaa == 56
+} elif $bbb {
+    assert $bbb == $aaa
+}

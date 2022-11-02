@@ -656,6 +656,12 @@ IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
   if (this->elseNode == nullptr) {
     this->elseNode = std::make_unique<EmptyNode>(this->getToken());
   }
+  if (isa<BinaryOpNode>(*this->condNode)) {
+    auto &binary = cast<BinaryOpNode>(*this->condNode);
+    if (binary.getOp() == TokenKind::COND_AND) {
+      binary.setInheritScope(true);
+    }
+  }
 }
 
 void IfNode::dump(NodeDumper &dumper) const {

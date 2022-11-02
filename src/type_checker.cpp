@@ -808,17 +808,25 @@ void TypeChecker::resolveSmartCast(const Node &condNode) {
 
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   if (node.getOp() == TokenKind::COND_AND || node.getOp() == TokenKind::COND_OR) {
+    IntoBlock scope;
+    const bool smartCast = node.getOp() == TokenKind::COND_AND;
+    if (smartCast && !node.isInheritScope()) {
+      scope = this->intoBlock();
+    }
+
     auto &booleanType = this->typePool.get(TYPE::Boolean);
     this->checkTypeWithCoercion(booleanType, node.refLeftNode());
     if (node.getLeftNode()->getType().isNothingType()) {
       this->reportError<Unreachable>(*node.getRightNode());
     }
 
-    auto scope = this->intoBlock();
-    if (node.getOp() == TokenKind::COND_AND) {
+    if (smartCast) {
       this->resolveSmartCast(*node.getLeftNode());
     }
     this->checkTypeWithCoercion(booleanType, node.refRightNode());
+    if (smartCast && node.isInheritScope()) {
+      this->resolveSmartCast(*node.getRightNode());
+    }
     node.setType(booleanType);
     return;
   }
@@ -1373,9 +1381,9 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 }
 
 void TypeChecker::visitIfNode(IfNode &node) {
-  this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
   {
     auto scope = this->intoBlock();
+    this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
     this->resolveSmartCast(node.getCondNode());
     this->checkTypeExactly(node.getThenNode());
   }

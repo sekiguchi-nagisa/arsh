@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 7, $chars = 10, $errorKind = 'UndefinedMethod', $status = 1)
+
+var aaa = 34 as Any!
+var bbb = 'fjriaeo'.toInt()
+
+assert $aaa is Int && $bbb && ($aaa == $bbb) || 
+    $aaa.abs() == 34  # right-hand side is not unrap

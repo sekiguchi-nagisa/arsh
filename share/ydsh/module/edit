@@ -213,7 +213,7 @@ var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
 function _prompt(i : Int) : String {
     var value = $i == 1 ? $PS1 : $i == 2 ? $PS2 : ""
     if $i == 1 && $PROMPT_HOOK {
-        $value = $PROMPT_HOOK!($value)
+        $value = $PROMPT_HOOK($value)
     }
     return $PROMPT_RENDERER ? $PROMPT_RENDERER($value) : $value
 }

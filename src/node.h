@@ -1068,6 +1068,13 @@ private:
    */
   std::unique_ptr<Node> rightNode;
 
+  /**
+   * for smart cast
+   * if true, resolve smart cast in current scope
+   * if false, create new scope
+   */
+  bool inheritScope{false};
+
   TokenKind op;
 
   Token opToken;
@@ -1083,6 +1090,12 @@ public:
       : WithRtti(leftNode->getToken()), leftNode(std::move(leftNode)),
         rightNode(std::move(rightNode)), op(op), opToken(opToken) {
     this->updateToken(this->rightNode->getToken());
+    if (this->op == TokenKind::COND_AND && isa<BinaryOpNode>(*this->leftNode)) {
+      auto &binary = cast<BinaryOpNode>(*this->leftNode);
+      if (binary.getOp() == TokenKind::COND_AND) {
+        binary.setInheritScope(true);
+      }
+    }
   }
 
   /**
@@ -1102,6 +1115,10 @@ public:
   Node *getRightNode() const { return this->rightNode.get(); }
 
   std::unique_ptr<Node> &refRightNode() { return this->rightNode; }
+
+  void setInheritScope(bool set) { this->inheritScope = set; }
+
+  bool isInheritScope() const { return this->inheritScope; }
 
   TokenKind getOp() const { return this->op; }
 

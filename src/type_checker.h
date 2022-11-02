@@ -462,6 +462,16 @@ private:
     IntoBlock() = default;
     IntoBlock(ObserverPtr<NameScopePtr> ptr) : scopePtr(ptr) {}
 
+    IntoBlock(IntoBlock &&b) noexcept : scopePtr(b.scopePtr) { b.scopePtr = nullptr; }
+
+    IntoBlock &operator=(IntoBlock &&b) noexcept {
+      if (this != std::addressof(b)) {
+        this->~IntoBlock();
+        new (this) IntoBlock(std::move(b));
+      }
+      return *this;
+    }
+
     ~IntoBlock() {
       if (this->scopePtr) {
         *this->scopePtr = (*this->scopePtr)->exitScope();
