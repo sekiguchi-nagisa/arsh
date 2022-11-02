@@ -336,7 +336,58 @@ nodes:
       type:
       kind: "Int"
       intValue: 1
+    inheritScope: false
     op: "+"
+    optNode: null
+)"},
+    {DumpOp::untyped, R"($true && $false && $true)", 0, 0, R"(
+nodes:
+  - nodeKind: BinaryOp
+    token:
+      pos: 0
+      size: 24
+    type:
+    leftNode:
+      nodeKind: BinaryOp
+      token:
+        pos: 0
+        size: 15
+      type:
+      leftNode:
+        nodeKind: Var
+        token:
+          pos: 0
+          size: 5
+        type:
+        varName: "true"
+        handle: null
+        extraOp: "NONE"
+        extraValue: 0
+      rightNode:
+        nodeKind: Var
+        token:
+          pos: 9
+          size: 6
+        type:
+        varName: "false"
+        handle: null
+        extraOp: "NONE"
+        extraValue: 0
+      inheritScope: true
+      op: "&&"
+      optNode: null
+    rightNode:
+      nodeKind: Var
+      token:
+        pos: 19
+        size: 5
+      type:
+      varName: "true"
+      handle: null
+      extraOp: "NONE"
+      extraValue: 0
+    inheritScope: false
+    op: "&&"
     optNode: null
 )"},
 

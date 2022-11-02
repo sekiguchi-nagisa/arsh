@@ -380,6 +380,7 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
 void BinaryOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(leftNode);
   DUMP_PTR(rightNode);
+  DUMP(inheritScope);
   DUMP(op);
   DUMP_PTR(optNode);
 }
