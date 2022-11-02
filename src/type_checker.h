@@ -452,9 +452,26 @@ private:
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 
-  auto intoBlock() {
+  class IntoBlock {
+  private:
+    ObserverPtr<NameScopePtr> scopePtr;
+
+  public:
+    NON_COPYABLE(IntoBlock);
+
+    IntoBlock() = default;
+    IntoBlock(ObserverPtr<NameScopePtr> ptr) : scopePtr(ptr) {}
+
+    ~IntoBlock() {
+      if (this->scopePtr) {
+        *this->scopePtr = (*this->scopePtr)->exitScope();
+      }
+    }
+  };
+
+  IntoBlock intoBlock() {
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-    return finally([&] { this->curScope = this->curScope->exitScope(); });
+    return IntoBlock(makeObserver(this->curScope));
   }
 
   auto intoFunc(const DSType *returnType, FuncContext::Kind k = FuncContext::FUNC) {
