@@ -157,6 +157,12 @@ $assertArray(['show', 'source', 'ss', 'ssum'], $(complete ' typedef ANY : Error;
         return $this as String + $a
     }
     hoge() { new INT().s'))
+$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 && $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 ? $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any!; $aa = "ss".toFloat()
+    $aa && $aa is Int ? $aa.'))
+
 
 # type
 var types = [

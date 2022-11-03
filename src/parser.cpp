@@ -1490,12 +1490,25 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
     }
     case TokenKind::TERNARY: {
       this->consume(); // TERNARY
-      auto tleftNode = TRY(this->parse_expression(getPrecedence(TokenKind::TERNARY)));
-      TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
-      auto trightNode = TRY(this->parse_expression(getPrecedence(TokenKind::TERNARY)));
+      auto tleftNode = this->parse_expression(getPrecedence(TokenKind::TERNARY));
+      std::unique_ptr<Node> trightNode;
+      bool comp = false;
+      if (this->incompleteNode) {
+        comp = true;
+        tleftNode = std::move(this->incompleteNode);
+      } else if (this->hasError()) {
+        return nullptr;
+      } else {
+        TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
+        trightNode = TRY(this->parse_expression(getPrecedence(TokenKind::TERNARY)));
+      }
       unsigned int pos = node->getPos();
       node = std::make_unique<IfNode>(pos, std::move(node), std::move(tleftNode),
                                       std::move(trightNode));
+      if (comp) {
+        this->incompleteNode = std::move(node);
+        return nullptr;
+      }
       break;
     }
     case TokenKind::BACKGROUND:
@@ -1508,8 +1521,19 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
       Token token = this->curToken;
       TokenKind op = this->scan();
       unsigned int nextPrece = info.prece + (hasFlag(info.attr, OperatorAttr::RASSOC) ? 0 : 1);
-      auto rightNode = TRY(this->parse_expression(nextPrece));
+      auto rightNode = this->parse_expression(nextPrece);
+      bool comp = false;
+      if (this->incompleteNode) {
+        comp = true;
+        rightNode = std::move(this->incompleteNode);
+      } else if (this->hasError()) {
+        return nullptr;
+      }
       node = createBinaryNode(std::move(node), op, token, std::move(rightNode));
+      if (comp) {
+        this->incompleteNode = std::move(node);
+        return nullptr;
+      }
       break;
     }
     }
