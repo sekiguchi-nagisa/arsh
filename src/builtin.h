@@ -1895,11 +1895,13 @@ YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
 // ##     Error     ##
 // ###################
 
-//!bind: function $OP_INIT($this : Error, $message : String) : Error
+//!bind: function $OP_INIT($this : Error, $message : String, $status : Option<Int>) : Error
 YDSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), 1)));
+  auto &v = LOCAL(2);
+  int64_t status = v.isInvalid() ? 1 : v.asInt();
+  RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), status)));
 }
 
 //!bind: function message($this : Error) : String
@@ -1919,6 +1921,13 @@ YDSH_METHOD error_show(RuntimeContext &ctx) {
 YDSH_METHOD error_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_name);
   RET(typeAs<ErrorObject>(LOCAL(0)).getName());
+}
+
+//!bind: function status($this : Error) : Int
+YDSH_METHOD error_status(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(error_status);
+  auto status = typeAs<ErrorObject>(LOCAL(0)).getStatus();
+  RET(DSValue::createInt(status));
 }
 
 //!bind: function lineno($this : Error) : Int

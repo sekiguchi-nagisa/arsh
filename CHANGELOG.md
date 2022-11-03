@@ -102,6 +102,9 @@
       ```
       shctl set TRACE_ON_EXIT Null-Glob
       ```
+- ``Error`` type objects maintain exit status
+    - now specify exit status to constructor
+    - add ``Error#status`` method for get exit status
 
 #### API
 

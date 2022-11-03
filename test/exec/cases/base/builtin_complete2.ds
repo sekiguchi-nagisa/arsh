@@ -151,7 +151,7 @@ $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { retur
 $assertArray(['abs', 'toFloat'], $(complete 'function f($a: Int) { $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.'))
-$assertArray(['show', 'source', 'ss', 'ssum'], $(complete ' typedef ANY : Error; typedef INT : ANY
+$assertArray(['show', 'source', 'ss', 'ssum', 'status'], $(complete ' typedef ANY : Error; typedef INT : ANY
     function ss() : String for ANY { return "$this"; }  # also complete super type method
     function ssum($a : Int) : String for INT { 
         return $this as String + $a

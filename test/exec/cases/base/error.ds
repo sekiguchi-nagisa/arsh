@@ -11,29 +11,30 @@ assert($e.name() == "Error")
 $e.show()
 assert $e.lineno() == 4
 assert $e.source() == $SCRIPT_NAME
+assert $e.status() == 1
 
 # sub type
 
-$e = new ArithmeticError("")
+$e = new ArithmeticError("", 123)
 assert($e is ArithmeticError)
 assert($e is Error)
-assert($e.name() == "ArithmeticError")
-assert $e.lineno() == 17
+assert($e.name() == "ArithmeticError"); assert $e.status() == 123
+assert $e.lineno() == 18
 
-$e = new OutOfRangeError("")
+$e = new OutOfRangeError("", -9999)
 assert($e is OutOfRangeError)
 assert($e is Error)
-assert($e.name() == "OutOfRangeError")
-assert $e.lineno() == 23
+assert($e.name() == "OutOfRangeError"); assert $e.status() == -9999
+assert $e.lineno() == 24
 
 $e = new KeyNotFoundError("")
 assert($e is KeyNotFoundError)
 assert($e is Error)
 assert($e.name() == "KeyNotFoundError")
-assert $e.lineno() == 29
+assert $e.lineno() == 30
 
 $e = new TypeCastError("")
 assert($e is TypeCastError)
 assert($e is Error)
 assert($e.name() == "TypeCastError")
-assert $e.lineno() == 35
+assert $e.lineno() == 36

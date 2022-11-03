@@ -187,13 +187,15 @@ function %OP_ITER() : Reader for UnixFD
 
 ## Error type
 ```
-function %OP_INIT($message : String) : Error for Error
+function %OP_INIT($message : String, $status : Option<Int>) : Error for Error
 
 function message() : String for Error
 
 function show() : Void for Error
 
 function name() : String for Error
+
+function status() : Int for Error
 
 function lineno() : Int for Error
 
