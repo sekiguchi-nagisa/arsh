@@ -62,6 +62,11 @@ if $o {
 }
 assert $o && $o == 'hello' && $o.size() > 0
 
+{
+  var o = 34 as Any!
+  assert $o && $o is Int && $o.abs() == 34
+}
+
 # collection with option value
 assert [23 as Int!] as String == '[23]'
 var ex = 34 as Any

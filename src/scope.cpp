@@ -98,11 +98,12 @@ NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &typ
   return this->addNewHandle(std::move(name), type, k, attr);
 }
 
-NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle) {
+NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &handle,
+                                          bool overwrite) {
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
   }
-  return this->addNewAliasHandle(std::move(name), handle);
+  return this->addNewAliasHandle(std::move(name), handle, overwrite);
 }
 
 NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
@@ -390,6 +391,14 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
     if (hasFlag(op, NameRegisterOp::IGNORE_CONFLICT) && pair.first->second.first == handle &&
         handle->isMethod()) {
       return Ok(std::move(handle));
+    }
+    if (hasFlag(op, NameRegisterOp::AS_ALIAS) && hasFlag(op, NameRegisterOp::OVERWRITE)) {
+      auto &orgHandle = pair.first->second.first;
+      if (orgHandle->getIndex() == handle->getIndex() && orgHandle->attr() == handle->attr() &&
+          orgHandle->getModId() == handle->getModId()) {
+        pair.first->second.first = handle;
+        return Ok(std::move(handle));
+      }
     }
     return Err(NameRegisterError::DEFINED);
   }
