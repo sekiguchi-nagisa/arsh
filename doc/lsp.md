@@ -8,7 +8,7 @@
 | ``textDocument/documentHighlight``   | ✔️         |
 | ``textDocument/documentLink``        | ✔️         |
 | ``textDocument/hover``               | ✔️         |
-| ``textDocument/documentSymbol``      | ❌          |
+| ``textDocument/documentSymbol``      | ✔️         |
 | ``textDocument/semanticTokens/full`` | ✔️         |
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
@@ -28,6 +28,8 @@
 | variable (global import)              | ✔️             | ✔️             | ✔️                 |
 | variable (inlined import)             | ✔️             | ✔️             | ✔️                 |
 | variable (named import)               | ✔️             | ✔️             | ✔️                 |
+| variable (positional parameter)       | -              | -              | ❌ (show code)      |
+| variable (smart cast)                 | ✔️             | ✔️             | ❌                  |
 | builtin variable                      | -              | -              | ✔️                 |
 | builtin constant                      | -              | -              | ✔️ (show value)    |
 | function                              | ✔️             | ✔️             | ✔️                 |
