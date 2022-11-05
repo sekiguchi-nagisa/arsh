@@ -2313,7 +2313,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
   if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
     node.setType(this->typePool.get(TYPE::Void));
 
-    if (!this->isTopLevel()) { // only available toplevel scope
+    if (!node.isAnonymousCmd() && !this->isTopLevel()) { // only available toplevel scope
       this->reportError<OutsideToplevel>(node, "user-defined command definition");
       return;
     }
@@ -2323,7 +2323,9 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     }
 
     // register command name
-    if (auto handle = this->addUdcEntry(node)) {
+    if (node.isAnonymousCmd()) {
+      node.setType(this->typePool.get(TYPE::Command));
+    } else if (auto handle = this->addUdcEntry(node)) {
       node.setHandle(std::move(handle));
     }
   }
@@ -2335,21 +2337,26 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       returnType =
           &cast<FunctionType>(this->typePool.get(node.getHandle()->getTypeId())).getReturnType();
     }
-    {
-      auto func = this->intoFunc(returnType); // pseudo return type
-      // register dummy parameter (for propagating command attr)
-      this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-      // register dummy parameter (for closing file descriptor)
-      this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
+    auto func = this->intoFunc(returnType); // pseudo return type
+    // register dummy parameter (for propagating command attr)
+    this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-      // register special characters (@, 0)
-      this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
-      this->addEntry(node, "0", this->typePool.get(TYPE::String), HandleAttr::READ_ONLY);
+    // register dummy parameter (for closing file descriptor)
+    this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
 
-      // check type command body
-      this->checkTypeWithCurrentScope(node.getBlockNode());
-      node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+    // register special characters (@, 0)
+    this->addEntry(node, "@", this->typePool.get(TYPE::StringArray), HandleAttr::READ_ONLY);
+    this->addEntry(node, "0", this->typePool.get(TYPE::String), HandleAttr::READ_ONLY);
+
+    // check type command body
+    this->checkTypeWithCurrentScope(node.getBlockNode());
+    node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
+
+    // collect captured variables
+    for (auto &e : this->curScope->parent->getCaptures()) {
+      assert(node.isAnonymousCmd());
+      node.addCapture(e);
     }
 
     // insert return node if not found

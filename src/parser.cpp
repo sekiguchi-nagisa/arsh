@@ -1688,12 +1688,12 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     return this->parse_procSubstitution();
   case TokenKind::AT_PAREN:
     return this->parse_cmdArgArray();
-  case TokenKind::LP: { // group or tuple
+  case TokenKind::LP: { // group, tuple or anonymous command
     auto ctx = this->inSkippableNLCtx();
     Token openToken = this->expect(TokenKind::LP); // always success
     unsigned int count = 0;
     std::vector<std::unique_ptr<Node>> nodes;
-    do {
+    while (CUR_KIND() != TokenKind::RP) {
       nodes.push_back(TRY(this->parse_expression()));
       if (CUR_KIND() == TokenKind::COMMA) {
         this->consume(); // COMMA
@@ -1701,9 +1701,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
       } else if (CUR_KIND() != TokenKind::RP) {
         E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
       }
-    } while (CUR_KIND() != TokenKind::RP);
+    }
     Token closeToken = TRY(this->expect(TokenKind::RP));
-    return createTupleOrGroup(openToken, std::move(nodes), closeToken, count);
+    if (nodes.empty()) { // anonymous command
+      auto blockNode = TRY(this->parse_block());
+      return std::make_unique<UserDefinedCmdNode>(openToken.pos, NameInfo({0, 0}, ""), nullptr,
+                                                  std::move(blockNode));
+    } else {
+      return createTupleOrGroup(openToken, std::move(nodes), closeToken, count);
+    }
   }
   case TokenKind::LB: { // array or map
     auto ctx = this->inSkippableNLCtx();

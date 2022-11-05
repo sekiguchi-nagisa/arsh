@@ -2261,6 +2261,11 @@ private:
   std::unique_ptr<TypeNode> returnTypeNode; // may be null
   std::unique_ptr<BlockNode> blockNode;
 
+  /**
+   * captured variables for anonymous command
+   */
+  std::vector<HandlePtr> captures;
+
 public:
   UserDefinedCmdNode(unsigned int startPos, NameInfo &&commandName,
                      std::unique_ptr<TypeNode> &&returnTypeNode,
@@ -2276,6 +2281,8 @@ public:
 
   const std::string &getCmdName() const { return this->cmdName.getName(); }
 
+  bool isAnonymousCmd() const { return this->getCmdName().empty(); }
+
   void setHandle(HandlePtr &&hd) { this->handle = std::move(hd); }
 
   const HandlePtr &getHandle() const { return this->handle; }
@@ -2287,6 +2294,10 @@ public:
   void setMaxVarNum(unsigned int num) { this->maxVarNum = num; }
 
   unsigned int getMaxVarNum() const { return this->maxVarNum; }
+
+  void addCapture(HandlePtr hd) { this->captures.push_back(std::move(hd)); }
+
+  const auto &getCaptures() const { return this->captures; }
 
   void dump(NodeDumper &dumper) const override;
 };

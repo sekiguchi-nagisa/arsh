@@ -1,0 +1,22 @@
+
+## anonymous command
+
+function g(s : Int) : Int {
+    return $s
+}
+
+var cc1 = ()
+  {
+    return $g($#)
+  }
+
+var cc2 = {
+    var v = "echo"
+    () 
+    {
+        eval $v $@
+    }
+}
+
+assert $cc1 is Command
+assert $cc2 is Command

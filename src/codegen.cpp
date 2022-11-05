@@ -1578,10 +1578,25 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!code) {
     this->reportError<TooLargeUdc>(node, node.getCmdName().c_str());
   }
-  auto func = DSValue::create<FuncObject>(this->typePool.get(TYPE::Void), std::move(code));
+  auto func = DSValue::create<FuncObject>(node.getType(), std::move(code));
 
   this->emitLdcIns(func);
-  this->emit2byteIns(OpCode::STORE_GLOBAL, node.getHandle()->getIndex());
+  if (!node.getCaptures().empty()) {
+    assert(node.isAnonymousCmd());
+    for (auto &e : node.getCaptures()) {
+      if (e->has(HandleAttr::UPVAR)) {
+        this->emit1byteIns(OpCode::LOAD_RAW_UPVAR, e->getIndex());
+      } else {
+        this->emit1byteIns(OpCode::LOAD_LOCAL, e->getIndex());
+      }
+    }
+    assert(node.getCaptures().size() <= UINT8_MAX);
+    this->emitNewClosureIns(node.getCaptures().size());
+  }
+  if (!node.isAnonymousCmd()) {
+    assert(node.getHandle()->has(HandleAttr::GLOBAL));
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getHandle()->getIndex());
+  }
 }
 
 void ByteCodeGenerator::visitFuncListNode(FuncListNode &node) {
