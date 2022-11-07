@@ -286,6 +286,7 @@ public:
     MODULE,       // module subcommand
     BUILTIN_S,    // builtin command written by vm api (ex. command, eval, exec)
     BUILTIN,      // builtin command
+    CMD_OBJ,      // command object
     EXTERNAL,     // external command
     FALLBACK,     // for CMD_CALLBACK
     INVALID,      // invalid command name (contains null character)
@@ -299,6 +300,7 @@ private:
     const DSCode *udc_;
     const ModType *modType_;
     builtin_command_t builtinCmd_;
+    DSObject *cmdObj_;
     const char *filePath_;
   };
 
@@ -332,6 +334,14 @@ public:
     cmd.kind_ = CmdKind::BUILTIN_S;
     cmd.belongModTypeId_ = 0;
     cmd.udc_ = &code;
+    return cmd;
+  }
+
+  static ResolvedCmd fromCmdObj(DSObject *obj) {
+    ResolvedCmd cmd; // NOLINT
+    cmd.kind_ = CmdKind::CMD_OBJ;
+    cmd.belongModTypeId_ = 0;
+    cmd.cmdObj_ = obj;
     return cmd;
   }
 
@@ -376,6 +386,8 @@ public:
   const ModType &modType() const { return *this->modType_; }
 
   builtin_command_t builtinCmd() const { return this->builtinCmd_; }
+
+  DSObject *cmdObj() const { return this->cmdObj_; }
 
   const char *filePath() const { return this->filePath_; }
 };
@@ -425,6 +437,7 @@ enum class CmdCallAttr : unsigned int {
   SET_VAR = 1u << 0u,
   NEED_FORK = 1u << 1u, // for external command
   RAISE = 1u << 2u,
+  CLOSURE = 1u << 3u, // for command object call
 };
 
 template <>

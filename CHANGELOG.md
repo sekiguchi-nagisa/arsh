@@ -26,6 +26,15 @@
       }
       ```
     - ``even`` can refer backward defined functions that are defined immediately after it
+- add anonymous user-defined command
+    - anonymous user-defined command object is ``Command`` type
+    - call command via ``Command#call`` method
+      ```
+      var cmd = (){
+        echo $0: $@
+      }
+      $cmd.call(['name', 'arg1', 'arg2'])
+      ```
 
 #### Misc
 

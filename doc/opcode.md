@@ -86,6 +86,7 @@
 | CALL_UDC          | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command                                       |
 | CALL_UDC_SILENT   | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command without status check                  |
 | CALL_CMD_COMMON   |                                | argv redir -> value                          | call command (user-defined, builtin, external)                  |
+| CALL_CMD_OBJ      |                                | obj argv redir -> value                      | call command object                                             |
 | BUILTIN_CMD       |                                | -> value                                     | call builtin command command                                    |
 | BUILTIN_EVAL      |                                | -> value                                     | call builtin eval command                                       |
 | BUILTIN_EXEC      |                                | -> value / [terminate]                       | call builtin exec command                                       |

@@ -295,6 +295,11 @@ function %OP_NEXT() : String for Reader
 function %OP_HAS_NEXT() : Boolean for Reader
 ```
 
+## Command type
+```
+function call($argv : Array<String>) : Boolean for Command
+```
+
 ## Array type
 ```
 function %OP_GET($index : Int) : T0 for Array<T0>

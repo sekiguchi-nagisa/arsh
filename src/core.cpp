@@ -588,6 +588,7 @@ std::string resolveFullCommandName(const DSState &state, StringRef name, const M
   }
   case ResolvedCmd::BUILTIN_S:
   case ResolvedCmd::BUILTIN:
+  case ResolvedCmd::CMD_OBJ:
     return name.toString();
   case ResolvedCmd::EXTERNAL:
     if (cmd.filePath() != nullptr && isExecutable(cmd.filePath())) {

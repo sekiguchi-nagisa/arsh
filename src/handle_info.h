@@ -36,7 +36,8 @@ namespace ydsh {
   OP(Signal)                                                                                       \
   OP(Signals)                                                                                      \
   OP(Module)                                                                                       \
-  OP(Reader)
+  OP(Reader)                                                                                       \
+  OP(Command)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \

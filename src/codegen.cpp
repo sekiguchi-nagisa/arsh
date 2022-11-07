@@ -134,8 +134,14 @@ void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
    */
   unsigned int actualParamSize = handle.getParamSize() + (handle.isConstructor() ? 0 : 1);
   if (handle.isNative()) {
-    this->emitNativeCallIns(actualParamSize, handle.getIndex(),
-                            !handle.getReturnType().isVoidType());
+    if (handle.getRecvTypeId() == static_cast<unsigned int>(TYPE::Command) &&
+        StringRef("call") == nativeFuncInfoTable()[handle.getIndex()].funcName) {
+      this->emit0byteIns(OpCode::PUSH_NULL);
+      this->emit0byteIns(OpCode::CALL_CMD_OBJ);
+    } else {
+      this->emitNativeCallIns(actualParamSize, handle.getIndex(),
+                              !handle.getReturnType().isVoidType());
+    }
   } else {
     this->emitValIns(OpCode::CALL_METHOD, actualParamSize, 0);
     this->curBuilder().append16(handle.getIndex());

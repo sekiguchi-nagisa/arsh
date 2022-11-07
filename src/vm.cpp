@@ -230,7 +230,8 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
   state.stack.push(std::move(redirConfig));
   state.stack.push(std::move(argvObj));
 
-  if (!windStackFrame(state, UDC_PARAM_N, UDC_PARAM_N, code)) {
+  const unsigned int stacktopOffset = UDC_PARAM_N + (hasFlag(attr, CmdCallAttr::CLOSURE) ? 1 : 0);
+  if (!windStackFrame(state, stacktopOffset, UDC_PARAM_N, code)) {
     return false;
   }
 
@@ -858,13 +859,12 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   }
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
-  case ResolvedCmd::BUILTIN_S: {
+  case ResolvedCmd::BUILTIN_S:
     if (cmd.kind() == ResolvedCmd::USER_DEFINED) {
       setFlag(attr, CmdCallAttr::SET_VAR);
     }
     return prepareUserDefinedCommandCall(state, cmd.udc(), std::move(argvObj),
                                          std::move(redirConfig), attr);
-  }
   case ResolvedCmd::BUILTIN: {
     int status = cmd.builtinCmd()(state, array);
     flushStdFD();
@@ -881,6 +881,20 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   }
   case ResolvedCmd::MODULE:
     return prepareSubCommand(state, cmd.modType(), std::move(argvObj), std::move(redirConfig));
+  case ResolvedCmd::CMD_OBJ: {
+    auto *obj = cmd.cmdObj();
+    const DSCode *code = nullptr;
+    if (isa<FuncObject>(obj)) {
+      code = &cast<FuncObject>(obj)->getCode();
+    } else {
+      assert(isa<ClosureObject>(obj));
+      code = &cast<ClosureObject>(obj)->getFuncObj().getCode();
+    }
+    setFlag(attr, CmdCallAttr::SET_VAR | CmdCallAttr::CLOSURE);
+    state.stack.push(DSValue(obj));
+    return prepareUserDefinedCommandCall(state, *code, std::move(argvObj), std::move(redirConfig),
+                                         attr);
+  }
   case ResolvedCmd::EXTERNAL: {
     // create argv
     const unsigned int size = array.getValues().size();
@@ -1015,6 +1029,8 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         fputc('\n', stdout);
         continue;
       }
+      case ResolvedCmd::CMD_OBJ:
+        break; // FIXME:
       case ResolvedCmd::EXTERNAL: {
         const char *path = cmd.filePath();
         if (path != nullptr && isExecutable(path)) {
@@ -2200,6 +2216,17 @@ bool VM::mainLoop(DSState &state) {
 
         TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
                         CmdCallAttr::NEED_FORK));
+        vmnext;
+      }
+      vmcase(CALL_CMD_OBJ) {
+        auto redir = state.stack.pop();
+        auto argv = state.stack.pop();
+        auto obj = state.stack.pop();
+        auto cmd = ResolvedCmd::fromCmdObj(obj.get());
+        if (auto &argvObj = typeAs<ArrayObject>(argv); argvObj.size() == 0) {
+          argvObj.refValues().push_back(DSValue::createStr()); // add dummy
+        }
+        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         vmnext;
       }
       vmcase(BUILTIN_CMD) {

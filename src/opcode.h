@@ -114,6 +114,7 @@ namespace ydsh {
   OP(CALL_UDC, 2, -1)                                                                              \
   OP(CALL_UDC_SILENT, 2, -1)                                                                       \
   OP(CALL_CMD_COMMON, 0, -1)                                                                       \
+  OP(CALL_CMD_OBJ, 0, -2)                                                                          \
   OP(BUILTIN_CMD, 0, 1)                                                                            \
   OP(BUILTIN_EVAL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \

@@ -1,15 +1,18 @@
 
 ## anonymous command
 
-function g(s : Int) : Int {
-    return $s
+var cc1 = ()
+{
+  echo $0: $@
 }
 
-var cc1 = ()
-  {
-    return $g($#)
-  }
+assert $cc1 is Command
+assert "$($cc1.call(@()))" == ":"
+assert $? == 0
+assert "$($cc1.call(@(aaa bbb ccc)))" == "aaa: bbb ccc"
+assert $? == 0
 
+## closure
 var cc2 = {
     var v = "echo"
     () 
@@ -17,6 +20,5 @@ var cc2 = {
         eval $v $@
     }
 }
-
-assert $cc1 is Command
 assert $cc2 is Command
+assert "$($cc2.call(@(hoge hello world)))" == "hello world"

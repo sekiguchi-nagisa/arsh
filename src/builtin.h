@@ -2034,6 +2034,17 @@ YDSH_METHOD reader_hasNext(RuntimeContext &ctx) {
   RET_BOOL(reader.nextLine());
 }
 
+// #####################
+// ##     Command     ##
+// #####################
+
+//!bind: function call($this : Command, $argv : Array<String>) : Boolean
+YDSH_METHOD cmd_call(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(cmd_call);
+  (void)ctx;
+  RET_VOID; // dummy
+}
+
 // #################
 // ##     Job     ##
 // #################
