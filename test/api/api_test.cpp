@@ -242,20 +242,20 @@ TEST_F(APITest, lineNum1) {
 }
 
 TEST_F(APITest, lineNum2) {
-  DSError e;
+  auto e = newError();
   auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
-  DSState_loadAndEval(this->state, fileName1.c_str(), &e);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  DSState_loadAndEval(this->state, fileName1.c_str(), e.get());
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
   ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
-  DSError_release(&e);
+  e = newError();
 
   fileName1 = this->createTempFile("targe2.ds", "45/'de'");
-  DSState_loadAndEval(this->state, fileName1.c_str(), &e);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  ASSERT_EQ(1, e.lineNum);
-  ASSERT_EQ(4, e.chars);
+  DSState_loadAndEval(this->state, fileName1.c_str(), e.get());
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(1, e->lineNum);
+  ASSERT_EQ(4, e->chars);
   ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
-  DSError_release(&e);
+  e = newError();
 }
 
 TEST_F(APITest, lineNum3) {
@@ -266,42 +266,42 @@ var a = 34
 echoechodwe \
     $a
 )";
-  DSError e;
-  int s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  auto e = newError();
+  int s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(127, s);
-  ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e.kind);
-  ASSERT_EQ(5, e.lineNum);
-  ASSERT_EQ(0, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e->kind);
+  ASSERT_EQ(5, e->lineNum);
+  ASSERT_EQ(0, e->chars);
+  e = newError();
 }
 
 TEST_F(APITest, shellName) {
-  DSError e;
+  auto e = newError();
   const char *src = "assert $0 == 'ydsh'";
-  int s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  int s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   DSState_setShellName(this->state, "12345");
   src = "assert $0 == '12345'";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   DSState_setShellName(this->state, nullptr); // do nothing
   src = "assert $0 == '12345'";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   DSState_setShellName(nullptr, "ddd"); // do nothing
 }
 
 TEST_F(APITest, arg) {
-  DSError e;
+  auto e = newError();
   const char *init = R"(
     assert $@.size() == 0
     assert $1.empty()
@@ -314,12 +314,12 @@ TEST_F(APITest, arg) {
     assert $8.empty()
     assert $9.empty()
 )";
-  int s = DSState_eval(this->state, "(string)", init, strlen(init), &e);
+  int s = DSState_eval(this->state, "(string)", init, strlen(init), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  ASSERT_EQ(0, e.chars);
-  ASSERT_EQ(0, e.lineNum);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(0, e->chars);
+  ASSERT_EQ(0, e->lineNum);
+  e = newError();
 
   // set arguments
   DSState_setArguments(nullptr, nullptr); // do nothing
@@ -337,19 +337,19 @@ TEST_F(APITest, arg) {
     assert $8.empty()
     assert $9.empty()
 )";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  ASSERT_EQ(0, e.chars);
-  ASSERT_EQ(0, e.lineNum);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(0, e->chars);
+  ASSERT_EQ(0, e->lineNum);
+  e = newError();
 
   // clear
   DSState_setArguments(this->state, nullptr);
-  s = DSState_eval(this->state, "(string)", init, strlen(init), &e);
+  s = DSState_eval(this->state, "(string)", init, strlen(init), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   // set arguments
   DSState_setArguments(
@@ -369,12 +369,12 @@ TEST_F(APITest, arg) {
     assert $@[9] == '100'
     assert $@[10] == 'hey'
 )";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  ASSERT_EQ(0, e.chars);
-  ASSERT_EQ(0, e.lineNum);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(0, e->chars);
+  ASSERT_EQ(0, e->lineNum);
+  e = newError();
 }
 
 TEST_F(APITest, dump) {
@@ -1045,49 +1045,49 @@ TEST_F(APITest, pid) {
   src += std::to_string(pid);
   src += ")";
 
-  DSError e;
-  int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), &e);
-  auto kind = e.kind;
-  DSError_release(&e);
+  auto e = newError();
+  int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  auto kind = e->kind;
+  e = newError();
   ASSERT_EQ(0, s);
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind);
 }
 
 TEST_F(APITest, load1) {
-  DSError e;
-  int r = DSState_loadAndEval(this->state, "hogehuga", &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, "hogehuga", e.get());
   int errorNum = errno;
   ASSERT_EQ(1, r);
   ASSERT_EQ(ENOENT, errorNum);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
 
-  DSError_release(&e);
+  e = newError();
 }
 
 TEST_F(APITest, load2) {
-  DSError e;
-  int r = DSState_loadAndEval(this->state, ".", &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, ".", e.get());
   int errorNum = errno;
   ASSERT_EQ(1, r);
   ASSERT_EQ(EISDIR, errorNum);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
 
-  DSError_release(&e);
+  e = newError();
 }
 
 TEST_F(APITest, load3) {
   auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
-  DSError e;
-  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
-  r = DSState_loadAndEval(this->state, modName.c_str(), &e); // file is already loaded
+  r = DSState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 }
 
 TEST_F(APITest, load4) {
@@ -1096,26 +1096,26 @@ TEST_F(APITest, load4) {
   std::string line = "source ";
   line += modName;
 
-  DSError e;
-  int r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
+  auto e = newError();
+  int r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
-  r = DSState_loadAndEval(this->state, modName.c_str(), &e); // file is already loaded
+  r = DSState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 }
 
 TEST_F(APITest, load5) {
   auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
-  DSError e;
-  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   // use loaded module
   std::string line = format(R"(
@@ -1125,21 +1125,21 @@ assert $m.mod_load_success
 )",
                             modName.c_str());
 
-  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
+  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 }
 
 TEST_F(APITest, load6) {
   auto modName = this->createTempFile("mod.ds", "var aaa = 34; \nexit $aaa");
 
-  DSError e;
-  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(34, r);
-  ASSERT_EQ(DS_ERROR_KIND_EXIT, e.kind);
-  ASSERT_EQ(2, e.lineNum);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_EXIT, e->kind);
+  ASSERT_EQ(2, e->lineNum);
+  e = newError();
 
   // use loaded module
   std::string line = format(R"(
@@ -1148,13 +1148,13 @@ echo hello
 )",
                             modName.c_str());
 
-  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
+  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  ASSERT_STREQ("Unreachable", e.name);
-  ASSERT_EQ(3, e.lineNum);
-  ASSERT_EQ(1, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_STREQ("Unreachable", e->name);
+  ASSERT_EQ(3, e->lineNum);
+  ASSERT_EQ(1, e->chars);
+  e = newError();
 }
 
 TEST_F(APITest, cmdfallback) {
@@ -1167,11 +1167,11 @@ TEST_F(APITest, cmdfallback) {
   };
 )");
 
-  DSError e;
-  int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
+  auto e = newError();
+  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   const char *argv[] = {"jfirejfoaei", nullptr};
   r = DSState_exec(this->state, (char **)argv);
@@ -1299,14 +1299,14 @@ TEST_F(APITest, module2) {
       this->expect(ret, 1, WaitStatus::EXITED, "",
                    "ydsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
 
-  DSError e;
-  int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, &e);
+  auto e = newError();
+  int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
-  ASSERT_STREQ(strerror(ENOENT), e.name);
-  ASSERT_EQ(0, e.lineNum);
-  ASSERT_EQ(0, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_STREQ(strerror(ENOENT), e->name);
+  ASSERT_EQ(0, e->lineNum);
+  ASSERT_EQ(0, e->chars);
+  e = newError();
 
   ret = invoke([&] {
     int ret = DSState_loadModule(this->state, "fhjreuhfurie", DS_MOD_IGNORE_ENOENT, nullptr);
@@ -1328,15 +1328,15 @@ TEST_F(APITest, module3) {
 
 TEST_F(APITest, module4) {
   auto fileName = this->createTempFile("target.ds", "source  hoghreua");
-  DSError e;
-  int r =
-      DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+  auto e = newError();
+  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT,
+                             e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  ASSERT_STREQ("NotFoundMod", e.name);
-  ASSERT_EQ(1, e.lineNum);
-  ASSERT_EQ(9, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_STREQ("NotFoundMod", e->name);
+  ASSERT_EQ(1, e->lineNum);
+  ASSERT_EQ(9, e->chars);
+  e = newError();
 
   // check error message
   auto ret = invoke([&] {
@@ -1351,14 +1351,14 @@ TEST_F(APITest, module4) {
 }
 
 TEST_F(APITest, module5) {
-  DSError e;
-  int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", DS_MOD_FULLPATH, &e);
+  auto e = newError();
+  int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", DS_MOD_FULLPATH, e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
-  ASSERT_STREQ(strerror(ENOENT), e.name);
-  ASSERT_EQ(0, e.lineNum);
-  ASSERT_EQ(0, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_STREQ(strerror(ENOENT), e->name);
+  ASSERT_EQ(0, e->lineNum);
+  ASSERT_EQ(0, e->chars);
+  e = newError();
 
   // check error message
   auto ret = invoke([&] {
@@ -1390,19 +1390,19 @@ TEST_F(APITest, module6) {
 
 TEST_F(APITest, module7) {
   auto fileName = this->createTempFile("mod1", "var AAA = 34");
-  DSError e;
-  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, &e);
+  auto e = newError();
+  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   fileName = this->createTempFile("mod2", "var AAA = $false");
-  r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, &e);
+  r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(1, e.lineNum);
-  ASSERT_EQ(1, e.chars);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(1, e->lineNum);
+  ASSERT_EQ(1, e->chars);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  e = newError();
 }
 
 TEST_F(APITest, moduleLimit) {
@@ -1428,30 +1428,30 @@ source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, r
 )",
                               dir, dir, dir, dir, dir, dir, dir, dir, dir);
 
-  DSError e;
-  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
+  auto e = newError();
+  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   source = format("source %s/mod_32765", dir);
-  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
+  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  ASSERT_STREQ("ModLimit", e.name);
-  ASSERT_EQ(11, e.lineNum);
-  ASSERT_EQ(8, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_STREQ("ModLimit", e->name);
+  ASSERT_EQ(11, e->lineNum);
+  ASSERT_EQ(8, e->chars);
+  e = newError();
 
   // load module directly
   std::string src = dir;
   src += "/mod_32770";
 
-  r = DSState_loadAndEval(this->state, src.c_str(), &e);
+  r = DSState_loadAndEval(this->state, src.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
-  ASSERT_STREQ(strerror(EPERM), e.name);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_STREQ(strerror(EPERM), e->name);
+  e = newError();
 }
 
 TEST_F(APITest, globalLimit) {
@@ -1478,20 +1478,20 @@ source %s/mod_{24572..28666}
 )",
                               dir, dir, dir, dir, dir, dir, dir);
 
-  DSError e;
-  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
+  auto e = newError();
+  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  e = newError();
 
   source = format("source %s/mod_{28667..32760}", dir);
-  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), &e);
+  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-  ASSERT_STREQ("GlobalLimit", e.name);
-  ASSERT_EQ(9, e.lineNum);
-  ASSERT_EQ(8, e.chars);
-  DSError_release(&e);
+  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_STREQ("GlobalLimit", e->name);
+  ASSERT_EQ(9, e->lineNum);
+  ASSERT_EQ(8, e->chars);
+  e = newError();
 }
 
 struct Executor {
