@@ -634,6 +634,9 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
                                           node.isMethod() ? &node.getRecvTypeNode()->getType()
                                                           : node.getResolvedType());
     for (auto &paramNode : node.getParamNodes()) {
+      if (paramNode->getExprNode()->isUntyped()) {
+        continue;
+      }
       this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
                               node.getToken());
     }
@@ -647,7 +650,7 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
 
 void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const FuncVisitOp op) {
   if (hasFlag(op, FuncVisitOp::VISIT_NAME)) {
-    if (!this->isTopLevel()) {
+    if (!this->isTopLevel() && !node.isAnonymousCmd()) {
       return;
     }
     if (node.getHandle()) {
