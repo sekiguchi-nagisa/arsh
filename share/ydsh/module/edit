@@ -104,9 +104,9 @@ function _load(p : String!) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? return;
-    cat $path | for $line in $STDIN {
+    for $line in $STDIN {
         $_add($line, $true)
-    }
+    } with < $path
     $PIPESTATUS.clear()
 }
 
