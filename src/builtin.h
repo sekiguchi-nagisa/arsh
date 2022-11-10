@@ -1345,10 +1345,10 @@ YDSH_METHOD module_fullname(RuntimeContext &ctx) {
 
   CHECK_MOD_LAYOUT(LOCAL(0));
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  auto ref = LOCAL(1).asStrRef();
+  auto &cmdName = LOCAL(1);
   assert(type.isModType());
   auto &modType = cast<ModType>(type);
-  auto path = resolveFullCommandName(ctx, ref, modType);
+  auto path = resolveFullCommandName(ctx, cmdName, modType);
   if (path.empty()) {
     RET(DSValue::createInvalid());
   } else {

@@ -571,9 +571,11 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   }
 }
 
-std::string resolveFullCommandName(const DSState &state, StringRef name, const ModType &modType) {
+std::string resolveFullCommandName(const DSState &state, const DSValue &name,
+                                   const ModType &modType) {
   CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
   auto cmd = resolver(state, name, &modType);
+  const auto ref = name.asStrRef();
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::MODULE: {
@@ -583,13 +585,13 @@ std::string resolveFullCommandName(const DSState &state, StringRef name, const M
     assert(type.isModType());
     std::string fullname = type.getNameRef().toString();
     fullname += '\0';
-    fullname += name.data();
+    fullname += ref.data();
     return fullname;
   }
   case ResolvedCmd::BUILTIN_S:
   case ResolvedCmd::BUILTIN:
   case ResolvedCmd::CMD_OBJ:
-    return name.toString();
+    return ref.toString();
   case ResolvedCmd::EXTERNAL:
     if (cmd.filePath() != nullptr && isExecutable(cmd.filePath())) {
       return cmd.filePath();

@@ -35,6 +35,11 @@
       }
       $cmd.call(['name', 'arg1', 'arg2'])
       ```
+- introduce dynamic registered user-defined commands
+    - before lookup external command, lookup ``Command`` object from builtin ``DYNA_UDCS`` variable
+        - builtin ``command`` command checks existance of dynamic registered commands, but does not call theme (
+          builtin ``eval`` command can call these commands)
+        - ``Module#_fullname`` method also supports theme
 
 #### Misc
 

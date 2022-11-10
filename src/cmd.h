@@ -45,7 +45,7 @@ struct GetOptState : public opt::GetOptState {
  */
 using builtin_command_t = int (*)(DSState &state, ArrayObject &argvObj);
 
-builtin_command_t lookupBuiltinCommand(const char *commandName);
+builtin_command_t lookupBuiltinCommand(StringRef commandName);
 
 // common function for field splitting
 inline bool isSpace(char ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }

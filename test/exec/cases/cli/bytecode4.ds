@@ -9,7 +9,7 @@ DSCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
-  number of global variable: 41
+  number of global variable: 42
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD
@@ -41,7 +41,7 @@ DSCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
-  number of global variable: 41
+  number of global variable: 42
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD

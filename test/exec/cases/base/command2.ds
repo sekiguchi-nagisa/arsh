@@ -22,3 +22,80 @@ var cc2 = {
 }
 assert $cc2 is Command
 assert "$($cc2.call(@(hoge hello world)))" == "hello world"
+
+## dynamic register command
+assert !command -v AAA
+assert !command -v BBB
+assert !$MODULE._fullname('AAA')
+assert !$MODULE._fullname('BBB')
+
+$DYNA_UDCS['AAA'] = $cc1
+$DYNA_UDCS['BBB'] = $cc1
+
+assert command -v AAA
+assert "$(command -v AAA)" == 'AAA'
+assert "$(command -V AAA)" == 'AAA is a dynamic registered command'
+assert $MODULE._fullname('AAA')! == 'AAA'
+
+assert command -v BBB
+assert "$(command -v BBB)" == 'BBB'
+assert "$(command -V BBB)" == 'BBB is a dynamic registered command'
+assert $MODULE._fullname('BBB')! == 'BBB'
+
+assert "$(AAA 1 2 3)" == 'AAA: 1 2 3'
+assert "$(BBB 3 2 1)" == 'BBB: 3 2 1'
+
+var ex = 34 as Any
+try {
+  command AAA  ### `command` does not call dynamic registered command
+} catch $e {
+  $ex = $e
+}
+assert $ex is SystemError
+
+assert "$(eval BBB a b c)" == 'BBB: a b c'
+
+
+## dynamic register command with closure
+function ff(name : String) : () -> Int {
+  var count = 0
+  $DYNA_UDCS[$name] = (){
+    echo 'count='$count $0: $@
+  }
+  return function() => {
+    $count++
+    return $count
+  }
+}
+
+var inc = $ff('ZZZ')
+assert "$(ZZZ abc)" == 'count=0 ZZZ: abc'
+assert $inc() == 1
+assert "$(ZZZ abc)" == 'count=1 ZZZ: abc'
+assert "$(ZZZ abc)" == 'count=1 ZZZ: abc'
+assert $inc() == 2
+assert $inc() == 3
+assert "$(ZZZ abc)" == 'count=3 ZZZ: abc'
+
+## lookup order
+### override external command
+assert "$(command -V sh)" =~ $/sh is \//
+$DYNA_UDCS['sh'] = (){}
+assert "$(command -V sh)" == 'sh is a dynamic registered command'
+$DYNA_UDCS.clear()
+assert "$(command -V sh)" =~ $/sh is \//
+
+### does not override builtin commands
+assert "$(command -V command)" == 'command is a shell builtin command'
+$DYNA_UDCS['command'] = (){}
+assert "$(command -V command)" == 'command is a shell builtin command'
+
+assert "$(command -V test)" == 'test is a shell builtin command'
+$DYNA_UDCS['test'] = (){}
+assert "$(command -V test)" == 'test is a shell builtin command'
+
+### does not override user-defined command
+udc1() {}
+assert "$(command -V udc1)" == 'udc1 is an user-defined command'
+$DYNA_UDCS['udc1'] = (){}
+assert "$(command -V udc1)" == 'udc1 is an user-defined command'

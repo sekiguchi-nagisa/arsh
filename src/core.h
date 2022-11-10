@@ -169,11 +169,13 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
  * resolve fully qualified command name
  * @param state
  * @param name
+ * must be String
  * @param modType
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const DSState &state, StringRef name, const ModType &modType);
+std::string resolveFullCommandName(const DSState &state, const DSValue &name,
+                                   const ModType &modType);
 
 /**
  *

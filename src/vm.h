@@ -398,13 +398,15 @@ public:
     FROM_UDC = 1u << 0u,
     FROM_BUILTIN = 1u << 1u,
     FROM_EXTERNAL = 1u << 2u,
-    FROM_FALLBACK = (1u << 3u) | FROM_EXTERNAL,
-    USE_FQN = (1u << 4u) | FROM_UDC,
+    FROM_DYNA_UDC = 1u << 3u,
+    FROM_FALLBACK = (1u << 4u) | FROM_EXTERNAL,
+    FROM_FQN_UDC = (1u << 5u) | FROM_UDC,
 
-    NO_FALLBACK = FROM_UDC | FROM_BUILTIN | FROM_EXTERNAL,
+    NO_FALLBACK = FROM_UDC | FROM_BUILTIN | FROM_DYNA_UDC | FROM_EXTERNAL,
     NO_UDC = FROM_BUILTIN | FROM_EXTERNAL | FROM_FALLBACK,
-    FROM_DEFAULT = FROM_UDC | NO_UDC,
-    FROM_DEFAULT_WITH_FQN = FROM_DEFAULT | USE_FQN,
+    NO_STATIC_UDC = NO_UDC | FROM_DYNA_UDC,
+    FROM_DEFAULT = NO_STATIC_UDC | FROM_UDC,
+    FROM_DEFAULT_WITH_FQN = FROM_DEFAULT | FROM_FQN_UDC,
   };
 
 private:
@@ -422,11 +424,12 @@ public:
    *
    * @param state
    * @param cmdName
+   * must be String
    * @param modType
    * if specified USE_FQN, always ignore
    * @return
    */
-  ResolvedCmd operator()(const DSState &state, StringRef cmdName,
+  ResolvedCmd operator()(const DSState &state, const DSValue &cmdName,
                          const ModType *modType = nullptr) const;
 };
 

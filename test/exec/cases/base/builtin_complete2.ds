@@ -9,7 +9,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 {
     var gvars = [
         '#', '$', '0', '?', '@',
-        'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
+        'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME', 'DYNA_UDCS',
         'EDIT_HOOK', 'EUID', 'FALSE', 'False', 'IFS', 'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME',
          'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',

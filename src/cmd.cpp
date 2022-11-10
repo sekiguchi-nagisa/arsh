@@ -93,7 +93,7 @@ static auto initBuiltinMap() {
 /**
  * return null, if not found builtin command.
  */
-builtin_command_t lookupBuiltinCommand(const char *commandName) {
+builtin_command_t lookupBuiltinCommand(StringRef commandName) {
   static auto builtinMap = initBuiltinMap();
 
   auto iter = builtinMap.find(commandName);

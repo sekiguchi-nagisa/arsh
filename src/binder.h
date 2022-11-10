@@ -104,6 +104,9 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bind("reply", *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::String)).take());
 
+  binder.bind("DYNA_UDCS",
+              *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Command)).take());
+
   /**
    * dummy object for module
    */

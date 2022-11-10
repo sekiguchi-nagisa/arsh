@@ -35,6 +35,7 @@ enum class BuiltinVarOffset : unsigned int {
   SCRIPT_DIR,  // SCRIPT_DIR
   REPLY,       // REPLY (for read command)
   REPLY_VAR,   // reply (fo read command)
+  DYNA_UDCS,   // DYNA_UDCS (for dynamic registered command)
   MODULE,      // MODULE
   RANDOM,      // RANDOM
   SECONDS,     // SECONDS
