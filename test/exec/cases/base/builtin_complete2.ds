@@ -194,6 +194,9 @@ $assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/yds
 $assertArray(['APIError', "BoolArray", "FloatArray", 'Interval', "StrArray"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; 23 is mod."))
 $assertArray(["Dist"], $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; 23 is mod.Interval."))
+$assertArray(['AAA0', 'AAA1'], $(complete '
+    typedef AAA1 = [String]
+    typedef AAA0(param : AA'))
 
 # subcommand
 $assertArray(["compdef", 'startwith'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP "))

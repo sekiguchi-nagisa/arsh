@@ -787,7 +787,18 @@ std::unique_ptr<Node> Parser::parse_typedef() {
         if (CUR_KIND() == TokenKind::PARAM_NAME) {
           auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
           TRY(this->expect(TokenKind::COLON, false));
-          auto type = TRY(this->parse_typeName());
+          auto type = this->parse_typeName();
+          if (this->incompleteNode) {
+            Token token = this->incompleteNode->getToken();
+            auto typeofNode =
+                std::make_unique<TypeOfNode>(token.pos, std::move(this->incompleteNode), token);
+            node->addParamNode(std::move(param), std::move(typeofNode));
+            node->setFuncBody(std::make_unique<EmptyNode>(token));
+            this->incompleteNode = std::move(node);
+            return nullptr;
+          } else if (this->hasError()) {
+            return nullptr;
+          }
           node->addParamNode(std::move(param), std::move(type));
         } else {
           E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
