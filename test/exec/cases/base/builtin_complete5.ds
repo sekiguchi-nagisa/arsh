@@ -111,13 +111,18 @@ assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String,
               "source ../_module4test/inli") \
             <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
 
+## options
+assert "$({ complete -q ';'; assert !$COMPREPLY.empty(); })".empty();
+assert complete -s 'var';
+assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var '
+
 ## invalid
 assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
 assert "$(complete -A hgorahe 2>&1)" == "ydsh: complete: hgorahe: invalid action
-complete: complete [-A action] [-m descriptor] line"
+complete: complete [-A action] [-m descriptor] [-qs] line"
 assert !complete -A fjairfaj
 assert $? == 2
 

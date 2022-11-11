@@ -1000,9 +1000,11 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
   static auto actionMap = initCompActions();
 
   CodeCompOp compOp{};
+  bool show = true;
+  bool inserSpace = false;
   StringRef moduleDesc;
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":A:m:")) != -1;) {
+  for (int opt; (opt = optState(argvObj, ":A:m:qs")) != -1;) {
     switch (opt) {
     case 'A': {
       auto iter = actionMap.find(optState.optArg);
@@ -1015,6 +1017,12 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     }
     case 'm':
       moduleDesc = optState.optArg;
+      break;
+    case 'q':
+      show = false;
+      break;
+    case 's':
+      inserSpace = true;
       break;
     case ':':
       ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
@@ -1035,10 +1043,21 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     }
     return 1;
   }
-  auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
-  for (const auto &e : ret.getValues()) {
-    fputs(e.asCStr(), stdout);
-    fputc('\n', stdout);
+  if (inserSpace && !state.compShouldNoSpace) {
+    auto &values = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY)).refValues();
+    if (values.size() == 1) {
+      auto ref = values[0].asStrRef();
+      auto v = ref.toString();
+      v += " ";
+      values[0] = DSValue::createStr(std::move(v));
+    }
+  }
+  if (show) {
+    auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
+    for (const auto &e : ret.getValues()) {
+      fputs(e.asCStr(), stdout);
+      fputc('\n', stdout);
+    }
   }
   return 0;
 }
