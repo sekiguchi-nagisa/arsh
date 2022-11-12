@@ -49,6 +49,8 @@
 - add some options to builtin ``complete`` command
     - ``-q``: does not completion candidates (but still set to ``COMPREPLY``)
     - ``-s``: apppend space to completion candidate when number of candidates is 1
+- add ``LineEdtior`` type for line editing
+    - ``LineEditor#read``: entry point of line editing
 
 #### Misc
 

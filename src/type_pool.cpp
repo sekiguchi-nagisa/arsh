@@ -66,6 +66,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::UnixFD, "FD", false, TYPE::Any, info_UnixFDType());
   this->initBuiltinType(TYPE::Reader, "Reader%", false, TYPE::Any, info_ReaderType());
   this->initBuiltinType(TYPE::Command, "Command", false, TYPE::Any, info_CommandType());
+  this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
 
   // initialize type template
   std::vector<const DSType *> elements = {&this->get(TYPE::Any)};

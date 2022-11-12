@@ -64,6 +64,7 @@ enum class TYPE : unsigned int {
   UnixFD, // for Unix file descriptor
   Reader,
   Command,
+  LineEditor,
   StringArray, // for command argument
 
   ArithmeticError,

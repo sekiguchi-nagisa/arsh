@@ -22,8 +22,16 @@
 namespace ydsh {
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
+private:
+  int inFd;
+  int outFd;
+
 public:
-  ~LineEditorObject() = default;
+  LineEditorObject();
+
+  ~LineEditorObject();
+
+  char *readline(const char *prompt); // pseudo entry point
 };
 
 } // namespace ydsh

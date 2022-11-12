@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "line_editor.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "misc/word.hpp"
@@ -2043,6 +2044,28 @@ YDSH_METHOD cmd_call(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cmd_call);
   (void)ctx;
   RET_VOID; // dummy
+}
+
+// ########################
+// ##     LineEditor     ##
+// ########################
+
+//!bind: function $OP_INIT($this : LineEditor) : LineEditor
+YDSH_METHOD edit_init(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_init);
+  auto ret = DSValue::create<LineEditorObject>();
+  (void)ctx;
+  RET(ret);
+}
+
+//!bind: function read($this : LineEditor) : Option<String>
+YDSH_METHOD edit_read(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_read);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  char *line = editor.readline("> ");
+  auto ret = line != nullptr ? DSValue::createStr(line) : DSValue::createInvalid();
+  free(line);
+  RET(ret);
 }
 
 // #################

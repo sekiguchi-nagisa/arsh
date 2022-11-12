@@ -168,7 +168,7 @@ $assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any!; $aa = "ss".toF
 var types = [
     'Any', 'ArithmeticError', "Array", 'Bool', 'Boolean', 'Command', 'Error', 'ExecError', "FD", 'Float',
     'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 
-    "Map", 'Module', 'Nothing', 'Option',
+    'LineEditor', "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex',  'RegexMatchError', 'RegexSyntaxError', 'Signal', 'Signals',
     'StackOverflowError', 'String', 'SystemError', 'Tuple', 'TypeCastError',
     'UnixFD', 'UnwrappingError', 'Void'
