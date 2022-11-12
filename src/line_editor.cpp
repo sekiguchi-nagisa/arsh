@@ -173,18 +173,17 @@ static linenoiseHighlightCallback *highlightCallback = nullptr;
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;            /* Terminal stdin file descriptor. */
-  int ofd;            /* Terminal stdout file descriptor. */
-  char *buf;          /* Edited line buffer. */
-  size_t buflen;      /* Edited line buffer size. */
-  const char *prompt; /* Prompt to display. */
-  size_t plen;        /* Prompt length. */
-  size_t pos;         /* Current cursor position. */
-  size_t oldcolpos;   /* Previous refresh cursor column position. */
-  size_t len;         /* Current edited line length. */
-  size_t cols;        /* Number of columns in terminal. */
-  size_t maxrows;     /* Maximum num of rows used so far (multiline mode) */
-  int history_index;  /* The history index we are currently editing. */
+  int ifd;                /* Terminal stdin file descriptor. */
+  int ofd;                /* Terminal stdout file descriptor. */
+  char *buf;              /* Edited line buffer. */
+  size_t buflen;          /* Edited line buffer size. */
+  ydsh::StringRef prompt; /* Prompt to display. */
+  size_t pos;             /* Current cursor position. */
+  size_t oldcolpos;       /* Previous refresh cursor column position. */
+  size_t len;             /* Current edited line length. */
+  size_t cols;            /* Number of columns in terminal. */
+  size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
+  int history_index;      /* The history index we are currently editing. */
   ydsh::CharWidthProperties ps;
 };
 
@@ -516,8 +515,7 @@ static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)
 #endif
 
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const char *prompt,
-                                  size_t plen);
+static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt);
 
 static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
                               linenoiseCompletions *lc) {
@@ -526,8 +524,7 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   // compute maximum length of candidate
   size_t maxSize = 0;
   for (size_t index = 0; index < lc->len; index++) {
-    size_t s = strlen(lc->cvec[index]);
-    s = promptTextColumnLen(ps, lc->cvec[index], s);
+    size_t s = promptTextColumnLen(ps, lc->cvec[index]);
     if (s > maxSize) {
       maxSize = s;
     }
@@ -892,14 +889,13 @@ static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
 
 /* Get column length of prompt text
  */
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const char *prompt,
-                                  size_t plen) {
+static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
   char buf[LINENOISE_MAX_LINE];
   size_t buf_len = 0;
   size_t off = 0;
-  while (off < plen) {
+  while (off < prompt.size()) {
     size_t len;
-    if (isAnsiEscape(prompt + off, plen - off, &len)) {
+    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
       off += len;
       continue;
     }
@@ -914,7 +910,7 @@ static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const cha
  * cursor position, and number of columns of the terminal. */
 static void refreshMultiLine(struct linenoiseState *l) {
   char seq[64];
-  size_t pcollen = promptTextColumnLen(l->ps, l->prompt, strlen(l->prompt));
+  size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
   int colpos = columnPosForMultiLine(l->ps, l->buf, l->len, l->len, l->cols, pcollen);
   int colpos2;                                             /* cursor column position. */
   int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
@@ -951,7 +947,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
   abAppend(&ab, seq, strlen(seq));
 
   /* Write the prompt and the current buffer content */
-  abAppend(&ab, l->prompt, strlen(l->prompt));
+  abAppend(&ab, l->prompt.data(), l->prompt.size());
   size_t ret_len;
   const char *ret = doHighlight(l->buf, l->len, &ret_len);
   abAppend(&ab, ret, ret_len);
@@ -1134,13 +1130,12 @@ static int preparePrompt(struct linenoiseState *l) {
   /**
    * adjust prompt
    */
-  const char *ptr = strrchr(l->prompt, '\n');
+  const char *ptr = strrchr(l->prompt.data(), '\n');
   if (ptr) {
-    if (write(l->ofd, l->prompt, ptr - l->prompt + 1) == -1) {
+    if (write(l->ofd, l->prompt.data(), ptr - l->prompt.data() + 1) == -1) {
       return -1;
     }
     l->prompt = ptr + 1;
-    l->plen = strlen(l->prompt);
   }
   return 0;
 }
@@ -1283,7 +1278,6 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
   l.buf = buf;
   l.buflen = buflen;
   l.prompt = prompt;
-  l.plen = strlen(prompt);
   l.oldcolpos = l.pos = 0;
   l.len = 0;
   l.cols = getColumns(this->inFd, this->outFd);
@@ -1299,7 +1293,7 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
   doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_INIT);
 
   preparePrompt(&l);
-  if (write(l.ofd, l.prompt, l.plen) == -1)
+  if (write(l.ofd, l.prompt.data(), l.prompt.size()) == -1)
     return -1;
   while (true) {
     int c;
