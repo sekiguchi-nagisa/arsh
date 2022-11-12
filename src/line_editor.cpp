@@ -808,7 +808,8 @@ static void checkProperty(struct linenoiseState *l) {
     if (write(l->ofd, r, strlen(r)) == -1) {
       return;
     }
-    l->ps.setProperty(e.first, pos);
+    assert(pos > 0);
+    l->ps.setProperty(e.first, pos - 1);
   }
 }
 

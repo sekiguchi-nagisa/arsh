@@ -53,18 +53,18 @@ const CharWidthPropertyList &getCharWidthPropertyList();
 struct CharWidthProperties {
   bool fullWidth{false};
   unsigned char flagSeqWidth{4};
-  bool zwjSeqFallback{true};
+  bool zwjSeqFallback{false};
 
-  void setProperty(CharWidthProperty p, std::size_t pos) {
+  void setProperty(CharWidthProperty p, std::size_t len) {
     switch (p) {
     case CharWidthProperty::EAW:
-      this->fullWidth = pos - 1 == 2;
+      this->fullWidth = len == 2;
       break;
     case CharWidthProperty::EMOJI_FLAG_SEQ:
-      this->flagSeqWidth = pos - 1;
+      this->flagSeqWidth = len;
       break;
     case CharWidthProperty::EMOJI_ZWJ_SEQ:
-      this->zwjSeqFallback = pos - 1 > 2;
+      this->zwjSeqFallback = len > 2;
       break;
     }
   }
