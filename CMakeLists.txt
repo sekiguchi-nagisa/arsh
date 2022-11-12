@@ -253,6 +253,7 @@ set(YDSH_SRC
         src/sysconfig.cpp
         src/brace.cpp
         src/line_editor.cpp
+        src/encoding.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

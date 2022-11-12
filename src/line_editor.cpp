@@ -119,6 +119,9 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "encoding.h"
+#include "misc/unicode.hpp"
+
 // ++++++++++ copied from linenoise.h +++++++++++++++
 
 #define LINENOISE_COMPLETION_ATTR_INTR ((unsigned int)(1 << 0))
@@ -132,24 +135,10 @@ typedef struct linenoiseCompletions {
 
 typedef void(linenoiseCompletionCallback)(const char *, size_t, linenoiseCompletions *);
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
-void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
 char *linenoise(const char *prompt);
 void linenoiseClearScreen(int fd);
-void linenoiseSetMultiLine(int ml);
 // void linenoisePrintKeyCodes(void);
-
-typedef size_t(linenoisePrevCharLen)(const char *buf, size_t buf_len, size_t pos, size_t *col_len);
-typedef size_t(linenoiseNextCharLen)(const char *buf, size_t buf_len, size_t pos, size_t *col_len);
-typedef size_t(linenoiseReadCode)(int fd, char *buf, size_t buf_len, int *c);
-typedef size_t(linenoisePrevWordLen)(const char *buf, size_t buf_len, size_t pos, size_t *col_len);
-typedef size_t(linenoiseNextWordLen)(const char *buf, size_t buf_len, size_t pos, size_t *col_len);
-
-void linenoiseSetEncodingFunctions(linenoisePrevCharLen *prevCharLenFunc,
-                                   linenoiseNextCharLen *nextCharLenFunc,
-                                   linenoiseReadCode *readCodeFunc,
-                                   linenoisePrevWordLen *prevWordLenFunc,
-                                   linenoiseNextWordLen *nextWordLenFunc);
 
 typedef enum {
   LINENOISE_HISTORY_OP_NEXT,
@@ -162,11 +151,6 @@ typedef enum {
 typedef const char *(linenoiseHistoryCallback)(const char *buf, int *history_index, historyOp op);
 
 void linenoiseSetHistoryCallback(linenoiseHistoryCallback *callback);
-
-typedef int(linenoisePropertyCheckCallback)(const char *str, size_t pos);
-
-void linenoiseSetPropertyCheckCallback(linenoisePropertyCheckCallback *callback,
-                                       const char *const strs[], size_t strc);
 
 typedef const char *(linenoiseHighlightCallback)(const char *buf, size_t buf_len, size_t *ret_len);
 
@@ -184,12 +168,8 @@ static linenoiseCompletionCallback *completionCallback = nullptr;
 static struct termios orig_termios; /* In order to restore at exit.*/
 static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
 static int mlmode = 0;              /* Multi line mode. Default is single line. */
-// static int atexit_registered = 0;   /* Register atexit just 1 time. */
-static linenoiseHistoryCallback *historyCallback = nullptr;
 
-static const char *const *propertyStrs = nullptr;
-static size_t propertyStrc = 0;
-static linenoisePropertyCheckCallback *propertyCheckCallback = nullptr;
+static linenoiseHistoryCallback *historyCallback = nullptr;
 static linenoiseHighlightCallback *highlightCallback = nullptr;
 
 /* The linenoiseState structure represents the state during line editing.
@@ -208,6 +188,7 @@ struct linenoiseState {
   size_t cols;        /* Number of columns in terminal. */
   size_t maxrows;     /* Maximum num of rows used so far (multiline mode) */
   int history_index;  /* The history index we are currently editing. */
+  ydsh::CharWidthProperties ps;
 };
 
 enum KEY_ACTION {
@@ -258,62 +239,83 @@ FILE *lndebug_fp = nullptr;
 /* ========================== Encoding functions ============================= */
 
 /* Get byte length and column length of the previous character */
-static size_t defaultPrevCharLen(const char *buf, size_t buf_len, size_t pos, size_t *col_len) {
-  UNUSED(buf);
-  UNUSED(buf_len);
-  UNUSED(pos);
-  if (col_len != nullptr)
-    *col_len = 1;
-  return 1;
+static size_t prevCharLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t, size_t pos,
+                          size_t *col_len) {
+  ydsh::StringRef ref(buf, pos);
+  auto ret = ydsh::getCharLen(ref, ydsh::CharLenOp::PREV_CHAR, ps);
+  if (col_len) {
+    *col_len = ret.colSize;
+  }
+  return ret.byteSize;
 }
 
 /* Get byte length and column length of the next character */
-static size_t defaultNextCharLen(const char *buf, size_t buf_len, size_t pos, size_t *col_len) {
-  UNUSED(buf);
-  UNUSED(buf_len);
-  UNUSED(pos);
-  if (col_len != nullptr)
-    *col_len = 1;
-  return 1;
+static size_t nextCharLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
+                          size_t pos, size_t *col_len) {
+  ydsh::StringRef ref(buf + pos, buf_len - pos);
+  auto ret = ydsh::getCharLen(ref, ydsh::CharLenOp::NEXT_CHAR, ps);
+  if (col_len) {
+    *col_len = ret.colSize;
+  }
+  return ret.byteSize;
 }
 
 /* Read bytes of the next character */
-static size_t defaultReadCode(int fd, char *buf, size_t buf_len, int *c) {
-  if (buf_len < 1)
+static size_t readCode(int fd, char *buf, size_t bufSize, int *c) {
+  if (bufSize < 1) {
     return -1;
-  int nread = read(fd, &buf[0], 1);
-  if (nread == 1)
-    *c = buf[0];
-  return nread;
+  }
+
+  ssize_t readSize = read(fd, &buf[0], 1);
+  if (readSize <= 0) {
+    return readSize;
+  }
+
+  unsigned int byteSize = ydsh::UnicodeUtil::utf8ByteSize(buf[0]);
+  if (byteSize < 1 || byteSize > 4) {
+    return -1;
+  }
+
+  if (byteSize > 1) {
+    if (bufSize < byteSize) {
+      return -1;
+    }
+    readSize = read(fd, &buf[1], byteSize - 1);
+    if (readSize <= 0) {
+      return readSize;
+    }
+  }
+  return ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, *c);
 }
 
-/* Set default encoding functions */
-static linenoisePrevCharLen *prevCharLen = defaultPrevCharLen;
-static linenoiseNextCharLen *nextCharLen = defaultNextCharLen;
-static linenoiseReadCode *readCode = defaultReadCode;
-static linenoisePrevWordLen *prevWordLen = nullptr;
-static linenoiseNextWordLen *nextWordLen = nullptr;
+static size_t prevWordLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t, size_t pos,
+                          size_t *col_len) {
+  ydsh::StringRef ref(buf, pos);
+  auto ret = ydsh::getWordLen(ref, ydsh::WordLenOp::PREV_WORD, ps);
+  if (col_len) {
+    *col_len = ret.colSize;
+  }
+  return ret.byteSize;
+}
 
-/* Set used defined encoding functions */
-void linenoiseSetEncodingFunctions(linenoisePrevCharLen *prevCharLenFunc,
-                                   linenoiseNextCharLen *nextCharLenFunc,
-                                   linenoiseReadCode *readCodeFunc,
-                                   linenoisePrevWordLen *prevWordLenFunc,
-                                   linenoiseNextWordLen *nextWordLenFunc) {
-  prevCharLen = prevCharLenFunc;
-  nextCharLen = nextCharLenFunc;
-  readCode = readCodeFunc;
-  prevWordLen = prevWordLenFunc;
-  nextWordLen = nextWordLenFunc;
+static size_t nextWordLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
+                          size_t pos, size_t *col_len) {
+  ydsh::StringRef ref(buf + pos, buf_len - pos);
+  auto ret = ydsh::getWordLen(ref, ydsh::WordLenOp::NEXT_WORD, ps);
+  if (col_len) {
+    *col_len = ret.colSize;
+  }
+  return ret.byteSize;
 }
 
 /* Get column length from begining of buffer to current byte position */
-static size_t columnPos(const char *buf, size_t buf_len, size_t pos) {
+static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
+                        size_t pos) {
   size_t ret = 0;
   size_t off = 0;
   while (off < pos) {
     size_t col_len;
-    size_t len = nextCharLen(buf, buf_len, off, &col_len);
+    size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
     off += len;
     ret += col_len;
   }
@@ -321,15 +323,15 @@ static size_t columnPos(const char *buf, size_t buf_len, size_t pos) {
 }
 
 /* Get column length from begining of buffer to current byte position for multiline mode*/
-static size_t columnPosForMultiLine(const char *buf, size_t buf_len, size_t pos, size_t cols,
-                                    size_t ini_pos) {
+static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const char *buf,
+                                    size_t buf_len, size_t pos, size_t cols, size_t ini_pos) {
   size_t ret = 0;
   size_t colwid = ini_pos;
 
   size_t off = 0;
   while (off < buf_len) {
     size_t col_len;
-    size_t len = nextCharLen(buf, buf_len, off, &col_len);
+    size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
 
     int dif = (int)(colwid + col_len) - (int)cols;
     if (dif > 0) {
@@ -353,7 +355,7 @@ static size_t columnPosForMultiLine(const char *buf, size_t buf_len, size_t pos,
 /* ======================= Low level terminal handling ====================== */
 
 /* Set if to use or not the multi line mode. */
-void linenoiseSetMultiLine(int ml) { mlmode = ml; }
+static void linenoiseSetMultiLine(int ml) { mlmode = ml; }
 
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
@@ -375,10 +377,6 @@ static int enableRawMode(int fd) {
 
   if (!isatty(fd))
     goto fatal;
-  //  if (!atexit_registered) {
-  //    atexit(linenoiseAtExit);
-  //    atexit_registered = 1;
-  //  }
   if (tcgetattr(fd, &orig_termios) == -1)
     goto fatal;
 
@@ -454,7 +452,7 @@ static int getColumns(int ifd, int ofd) {
     /* ioctl() failed. Try to query the terminal itself. */
     int start, cols;
 
-    /* Get the initial position so we can restore it later. */
+    /* Get the initial position, so we can restore it later. */
     start = getCursorPosition(ifd, ofd);
     if (start == -1)
       goto failed;
@@ -524,9 +522,11 @@ static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)
 #endif
 
-static size_t promptTextColumnLen(const char *prompt, size_t plen);
+static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const char *prompt,
+                                  size_t plen);
 
-static void showAllCandidates(int fd, size_t cols, linenoiseCompletions *lc) {
+static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
+                              linenoiseCompletions *lc) {
   auto *sizeTable = (unsigned int *)malloc(sizeof(unsigned int) * lc->len);
 
   // compute maximum length of candidate
@@ -534,7 +534,7 @@ static void showAllCandidates(int fd, size_t cols, linenoiseCompletions *lc) {
   size_t index;
   for (index = 0; index < lc->len; index++) {
     size_t s = strlen(lc->cvec[index]);
-    s = promptTextColumnLen(lc->cvec[index], s);
+    s = promptTextColumnLen(ps, lc->cvec[index], s);
     if (s > maxSize) {
       maxSize = s;
     }
@@ -700,7 +700,7 @@ static void kickCompletionCallback(int fd, const char *buf, size_t pos, linenois
   enableRawMode(fd);
 }
 
-/* This is an helper function for linenoiseEdit() and is called when the
+/* This is a helper function for linenoiseEdit() and is called when the
  * user types the <tab> key in order to complete the string currently in the
  * input.
  *
@@ -765,7 +765,7 @@ static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *co
 
     if (show) {
       updateColumns(ls);
-      showAllCandidates(ls->ofd, ls->cols, &lc);
+      showAllCandidates(ls->ps, ls->ofd, ls->cols, &lc);
     }
     refreshLine(ls);
 
@@ -804,41 +804,9 @@ END:
 /* Register a callback function to be called for tab-completion. */
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *fn) { completionCallback = fn; }
 
-/* This function is used by the callback function registered by the user
- * in order to add completion options given the input string when the
- * user typed <tab>. See the example.c source code for a very easy to
- * understand example. */
-void linenoiseAddCompletion(linenoiseCompletions *lc, const char *str) {
-  size_t len = strlen(str);
-  char *copy, **cvec;
-
-  copy = (char *)malloc(len + 1);
-  if (copy == nullptr)
-    return;
-  memcpy(copy, str, len + 1);
-  cvec = (char **)realloc(lc->cvec, sizeof(char *) * (lc->len + 1));
-  if (cvec == nullptr) {
-    free(copy);
-    return;
-  }
-  lc->cvec = cvec;
-  lc->cvec[lc->len++] = copy;
-}
-
-void linenoiseSetPropertyCheckCallback(linenoisePropertyCheckCallback *callback,
-                                       const char *const strs[], size_t strc) {
-  propertyStrs = strs;
-  propertyStrc = strc;
-  propertyCheckCallback = callback;
-}
-
 static void checkProperty(struct linenoiseState *l) {
-  if (!propertyStrs || propertyStrc == 0 || !propertyCheckCallback) {
-    return;
-  }
-
-  for (size_t i = 0; i < propertyStrc; i++) {
-    const char *str = propertyStrs[i];
+  for (auto &e : ydsh::getCharWidthPropertyList()) {
+    const char *str = e.second;
     if (write(l->ofd, str, strlen(str)) == -1) {
       return;
     }
@@ -850,10 +818,7 @@ static void checkProperty(struct linenoiseState *l) {
     if (write(l->ofd, r, strlen(r)) == -1) {
       return;
     }
-
-    if (!propertyCheckCallback || propertyCheckCallback(str, pos) != 0) {
-      return;
-    }
+    l->ps.setProperty(e.first, pos);
   }
 }
 
@@ -875,7 +840,7 @@ static const char *doHighlight(const char *buf, size_t buf_len, size_t *ret_len)
 
 /* =========================== Line editing ================================= */
 
-/* We define a very simple "append buffer" structure, that is an heap
+/* We define a very simple "append buffer" structure, that is a heap
  * allocated string where we can append to. This is useful in order to
  * write all the escape sequences in a buffer and flush them to the standard
  * output in a single call, to avoid flickering effects. */
@@ -934,7 +899,8 @@ static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
 
 /* Get column length of prompt text
  */
-static size_t promptTextColumnLen(const char *prompt, size_t plen) {
+static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const char *prompt,
+                                  size_t plen) {
   char buf[LINENOISE_MAX_LINE];
   size_t buf_len = 0;
   size_t off = 0;
@@ -946,7 +912,7 @@ static size_t promptTextColumnLen(const char *prompt, size_t plen) {
     }
     buf[buf_len++] = prompt[off++];
   }
-  return columnPos(buf, buf_len, buf_len);
+  return columnPos(ps, buf, buf_len, buf_len);
 }
 
 /* Single line low level line refresh.
@@ -955,21 +921,21 @@ static size_t promptTextColumnLen(const char *prompt, size_t plen) {
  * cursor position, and number of columns of the terminal. */
 static void refreshSingleLine(struct linenoiseState *l) {
   char seq[64];
-  size_t pcollen = promptTextColumnLen(l->prompt, strlen(l->prompt));
+  size_t pcollen = promptTextColumnLen(l->ps, l->prompt, strlen(l->prompt));
   int fd = l->ofd;
   char *buf = l->buf;
   size_t len = l->len;
   size_t pos = l->pos;
   struct abuf ab;
 
-  while ((pcollen + columnPos(buf, len, pos)) >= l->cols) {
-    int chlen = nextCharLen(buf, len, 0, nullptr);
+  while ((pcollen + columnPos(l->ps, buf, len, pos)) >= l->cols) {
+    int chlen = nextCharLen(l->ps, buf, len, 0, nullptr);
     buf += chlen;
     len -= chlen;
     pos -= chlen;
   }
-  while (pcollen + columnPos(buf, len, len) > l->cols) {
-    len -= prevCharLen(buf, len, len, nullptr);
+  while (pcollen + columnPos(l->ps, buf, len, len) > l->cols) {
+    len -= prevCharLen(l->ps, buf, len, len, nullptr);
   }
 
   abInit(&ab);
@@ -983,7 +949,7 @@ static void refreshSingleLine(struct linenoiseState *l) {
   snprintf(seq, 64, "\x1b[0K");
   abAppend(&ab, seq, strlen(seq));
   /* Move cursor to original position. */
-  snprintf(seq, 64, "\r\x1b[%dC", (int)(columnPos(buf, len, pos) + pcollen));
+  snprintf(seq, 64, "\r\x1b[%dC", (int)(columnPos(l->ps, buf, len, pos) + pcollen));
   abAppend(&ab, seq, strlen(seq));
   if (write(fd, ab.b, ab.len) == -1) {
   } /* Can't recover from write error. */
@@ -996,8 +962,8 @@ static void refreshSingleLine(struct linenoiseState *l) {
  * cursor position, and number of columns of the terminal. */
 static void refreshMultiLine(struct linenoiseState *l) {
   char seq[64];
-  size_t pcollen = promptTextColumnLen(l->prompt, strlen(l->prompt));
-  int colpos = columnPosForMultiLine(l->buf, l->len, l->len, l->cols, pcollen);
+  size_t pcollen = promptTextColumnLen(l->ps, l->prompt, strlen(l->prompt));
+  int colpos = columnPosForMultiLine(l->ps, l->buf, l->len, l->len, l->cols, pcollen);
   int colpos2;                                             /* cursor column position. */
   int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
   int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols; /* cursor relative row. */
@@ -1039,7 +1005,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
   abAppend(&ab, ret, ret_len);
 
   /* Get column length to cursor position */
-  colpos2 = columnPosForMultiLine(l->buf, l->len, l->pos, l->cols, pcollen);
+  colpos2 = columnPosForMultiLine(l->ps, l->buf, l->len, l->pos, l->cols, pcollen);
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
@@ -1102,7 +1068,8 @@ int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
       l->len += clen;
       ;
       l->buf[l->len] = '\0';
-      if ((!mlmode && promptTextColumnLen(l->prompt, l->plen) + columnPos(l->buf, l->len, l->len) <
+      if ((!mlmode && promptTextColumnLen(l->ps, l->prompt, l->plen) +
+                              columnPos(l->ps, l->buf, l->len, l->len) <
                           l->cols) /* || mlmode */) {
         /* Avoid a full update of the line in the
          * trivial case. */
@@ -1126,7 +1093,7 @@ int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
 /* Move cursor on the left. */
 void linenoiseEditMoveLeft(struct linenoiseState *l) {
   if (l->pos > 0) {
-    l->pos -= prevCharLen(l->buf, l->len, l->pos, nullptr);
+    l->pos -= prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
   }
 }
@@ -1134,7 +1101,7 @@ void linenoiseEditMoveLeft(struct linenoiseState *l) {
 /* Move cursor on the right. */
 void linenoiseEditMoveRight(struct linenoiseState *l) {
   if (l->pos != l->len) {
-    l->pos += nextCharLen(l->buf, l->len, l->pos, nullptr);
+    l->pos += nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
   }
 }
@@ -1156,15 +1123,15 @@ void linenoiseEditMoveEnd(struct linenoiseState *l) {
 }
 
 void linenoiseEditMoveLeftWord(struct linenoiseState *l) {
-  if (l->pos > 0 && prevWordLen) {
-    l->pos -= prevWordLen(l->buf, l->len, l->pos, nullptr);
+  if (l->pos > 0) {
+    l->pos -= prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
   }
 }
 
 void linenoiseEditMoveRightWord(struct linenoiseState *l) {
-  if (l->pos != l->len && nextWordLen) {
-    l->pos += nextWordLen(l->buf, l->len, l->pos, nullptr);
+  if (l->pos != l->len) {
+    l->pos += nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
   }
 }
@@ -1243,7 +1210,7 @@ static int preparePrompt(struct linenoiseState *l) {
  * position. Basically this is what happens with the "Delete" keyboard key. */
 void linenoiseEditDelete(struct linenoiseState *l) {
   if (l->len > 0 && l->pos < l->len) {
-    int chlen = nextCharLen(l->buf, l->len, l->pos, nullptr);
+    int chlen = nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + chlen, l->len - l->pos - chlen);
     l->len -= chlen;
     l->buf[l->len] = '\0';
@@ -1254,7 +1221,7 @@ void linenoiseEditDelete(struct linenoiseState *l) {
 /* Backspace implementation. */
 void linenoiseEditBackspace(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
-    int chlen = prevCharLen(l->buf, l->len, l->pos, nullptr);
+    int chlen = prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos - chlen, l->buf + l->pos, l->len - l->pos);
     l->pos -= chlen;
     l->len -= chlen;
@@ -1266,14 +1233,14 @@ void linenoiseEditBackspace(struct linenoiseState *l) {
 /* Delete the previosu word, maintaining the cursor at the start of the
  * current word. */
 void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
-  if (prevWordLen && l->pos > 0 && l->len > 0) {
-    int wordLen = prevWordLen(l->buf, l->len, l->pos, nullptr);
+  if (l->pos > 0 && l->len > 0) {
+    int wordLen = prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos - wordLen, l->buf + l->pos, l->len - l->pos);
     l->pos -= wordLen;
     l->len -= wordLen;
     l->buf[l->len] = '\0';
     refreshLine(l);
-  } else {
+  } else { // FIXME: split ascii word op
     size_t old_pos = l->pos;
     size_t diff;
 
@@ -1289,8 +1256,8 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
 }
 
 void linenoiseEditDeleteNextWord(struct linenoiseState *l) {
-  if (nextWordLen && l->len > 0 && l->pos < l->len) {
-    int wordLen = nextWordLen(l->buf, l->len, l->pos, nullptr);
+  if (l->len > 0 && l->pos < l->len) {
+    int wordLen = nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + wordLen, l->len - l->pos - wordLen);
     l->len -= wordLen;
     l->buf[l->len] = '\0';
@@ -1347,7 +1314,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
       return l.len;
 
     /* Only autocomplete when the callback is set. It returns < 0 when
-     * there was an error reading from fd. Otherwise it will return the
+     * there was an error reading from fd. Otherwise, it will return the
      * character that should be handled next. */
     if (c == 9 && completionCallback != nullptr) {
       nread = completeLine(&l, cbuf, sizeof(cbuf), &c);
