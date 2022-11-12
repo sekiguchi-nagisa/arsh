@@ -32,6 +32,16 @@ public:
   ~LineEditorObject();
 
   char *readline(const char *prompt); // pseudo entry point
+
+private:
+  /**
+   * actual line edit function
+   * @param buf
+   * @param buflen
+   * @param prompt
+   * @return
+   */
+  int editInRawMode(char *buf, size_t buflen, const char *prompt);
 };
 
 } // namespace ydsh

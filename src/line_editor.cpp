@@ -136,9 +136,7 @@ typedef struct linenoiseCompletions {
 typedef void(linenoiseCompletionCallback)(const char *, size_t, linenoiseCompletions *);
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
 
-char *linenoise(const char *prompt);
 void linenoiseClearScreen(int fd);
-// void linenoisePrintKeyCodes(void);
 
 typedef enum {
   LINENOISE_HISTORY_OP_NEXT,
@@ -167,7 +165,6 @@ static linenoiseCompletionCallback *completionCallback = nullptr;
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
-static int mlmode = 0;              /* Multi line mode. Default is single line. */
 
 static linenoiseHistoryCallback *historyCallback = nullptr;
 static linenoiseHighlightCallback *highlightCallback = nullptr;
@@ -354,9 +351,6 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const c
 
 /* ======================= Low level terminal handling ====================== */
 
-/* Set if to use or not the multi line mode. */
-static void linenoiseSetMultiLine(int ml) { mlmode = ml; }
-
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
 static int isUnsupportedTerm() {
@@ -531,8 +525,7 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
 
   // compute maximum length of candidate
   size_t maxSize = 0;
-  size_t index;
-  for (index = 0; index < lc->len; index++) {
+  for (size_t index = 0; index < lc->len; index++) {
     size_t s = strlen(lc->cvec[index]);
     s = promptTextColumnLen(ps, lc->cvec[index], s);
     if (s > maxSize) {
@@ -564,7 +557,7 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   // show candidates
   int r = write(fd, "\r\n", strlen("\r\n"));
   UNUSED(r);
-  for (index = 0; index < rawSize; index++) {
+  for (size_t index = 0; index < rawSize; index++) {
     size_t cadidateIndex = 0;
     size_t j = 0;
     while (true) {
@@ -915,47 +908,6 @@ static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, const cha
   return columnPos(ps, buf, buf_len, buf_len);
 }
 
-/* Single line low level line refresh.
- *
- * Rewrite the currently edited line accordingly to the buffer content,
- * cursor position, and number of columns of the terminal. */
-static void refreshSingleLine(struct linenoiseState *l) {
-  char seq[64];
-  size_t pcollen = promptTextColumnLen(l->ps, l->prompt, strlen(l->prompt));
-  int fd = l->ofd;
-  char *buf = l->buf;
-  size_t len = l->len;
-  size_t pos = l->pos;
-  struct abuf ab;
-
-  while ((pcollen + columnPos(l->ps, buf, len, pos)) >= l->cols) {
-    int chlen = nextCharLen(l->ps, buf, len, 0, nullptr);
-    buf += chlen;
-    len -= chlen;
-    pos -= chlen;
-  }
-  while (pcollen + columnPos(l->ps, buf, len, len) > l->cols) {
-    len -= prevCharLen(l->ps, buf, len, len, nullptr);
-  }
-
-  abInit(&ab);
-  /* Cursor to left edge */
-  snprintf(seq, 64, "\r");
-  abAppend(&ab, seq, strlen(seq));
-  /* Write the prompt and the current buffer content */
-  abAppend(&ab, l->prompt, strlen(l->prompt));
-  abAppend(&ab, buf, len);
-  /* Erase to right */
-  snprintf(seq, 64, "\x1b[0K");
-  abAppend(&ab, seq, strlen(seq));
-  /* Move cursor to original position. */
-  snprintf(seq, 64, "\r\x1b[%dC", (int)(columnPos(l->ps, buf, len, pos) + pcollen));
-  abAppend(&ab, seq, strlen(seq));
-  if (write(fd, ab.b, ab.len) == -1) {
-  } /* Can't recover from write error. */
-  abFree(&ab);
-}
-
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -1051,10 +1003,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
  * refreshMultiLine() according to the selected mode. */
 static void refreshLine(struct linenoiseState *l) {
   updateColumns(l);
-  if (mlmode)
-    refreshMultiLine(l);
-  else
-    refreshSingleLine(l);
+  refreshMultiLine(l);
 }
 
 /* Insert the character 'c' at cursor current position.
@@ -1066,18 +1015,8 @@ int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
       memcpy(&l->buf[l->pos], cbuf, clen);
       l->pos += clen;
       l->len += clen;
-      ;
       l->buf[l->len] = '\0';
-      if ((!mlmode && promptTextColumnLen(l->ps, l->prompt, l->plen) +
-                              columnPos(l->ps, l->buf, l->len, l->len) <
-                          l->cols) /* || mlmode */) {
-        /* Avoid a full update of the line in the
-         * trivial case. */
-        if (write(l->ofd, cbuf, clen) == -1)
-          return -1;
-      } else {
-        refreshLine(l);
-      }
+      refreshLine(l);
     } else {
       memmove(l->buf + l->pos + clen, l->buf + l->pos, l->len - l->pos);
       memcpy(&l->buf[l->pos], cbuf, clen);
@@ -1265,6 +1204,67 @@ void linenoiseEditDeleteNextWord(struct linenoiseState *l) {
   }
 }
 
+/* This function is called when linenoise() is called with the standard
+ * input file descriptor not attached to a TTY. So for example when the
+ * program using linenoise is called in pipe or with a file redirected
+ * to its standard input. In this case, we want to be able to return the
+ * line regardless of its length (by default we are limited to 4k). */
+static char *linenoiseNoTTY(int inFd) {
+  char *line = nullptr;
+  size_t len = 0, maxlen = 0;
+
+  while (true) {
+    if (len == maxlen) {
+      if (maxlen == 0)
+        maxlen = 16;
+      maxlen *= 2;
+      char *oldval = line;
+      line = (char *)realloc(line, maxlen);
+      if (line == nullptr) {
+        if (oldval)
+          free(oldval);
+        return nullptr;
+      }
+    }
+    signed char c;
+    if (read(inFd, &c, 1) <= 0) {
+      c = EOF;
+    }
+    if (c == EOF || c == '\n') {
+      if (c == EOF && len == 0) {
+        free(line);
+        return nullptr;
+      } else {
+        line[len] = '\0';
+        return line;
+      }
+    } else {
+      line[len] = c;
+      len++;
+    }
+  }
+}
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#include "line_editor.h"
+
+namespace ydsh {
+
+// ##############################
+// ##     LineEditorObject     ##
+// ##############################
+
+LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
+  this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+  this->outFd = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
+}
+
+LineEditorObject::~LineEditorObject() {
+  close(this->inFd);
+  close(this->outFd);
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -1273,21 +1273,20 @@ void linenoiseEditDeleteNextWord(struct linenoiseState *l) {
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
-                         const char *prompt) {
+int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt) {
   struct linenoiseState l;
 
   /* Populate the linenoise state that we pass to functions implementing
    * specific editing functionalities. */
-  l.ifd = stdin_fd;
-  l.ofd = stdout_fd;
+  l.ifd = this->inFd;
+  l.ofd = this->outFd;
   l.buf = buf;
   l.buflen = buflen;
   l.prompt = prompt;
   l.plen = strlen(prompt);
   l.oldcolpos = l.pos = 0;
   l.len = 0;
-  l.cols = getColumns(stdin_fd, stdout_fd);
+  l.cols = getColumns(this->inFd, this->outFd);
   l.maxrows = 0;
   l.history_index = 0;
 
@@ -1297,7 +1296,6 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
 
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
-  //    linenoiseHistoryAdd("");
   doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_INIT);
 
   preparePrompt(&l);
@@ -1306,10 +1304,9 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
   while (true) {
     int c;
     char cbuf[32]; // large enough for any encoding?
-    int nread;
     char seq[3];
 
-    nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
+    int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
     if (nread <= 0)
       return l.len;
 
@@ -1331,8 +1328,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
                 //            history_len--;
                 //            free(history[history_len]);
       doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
-      if (mlmode)
-        linenoiseEditMoveEnd(&l);
+      linenoiseEditMoveEnd(&l);
       return (int)l.len;
     case CTRL_C: /* ctrl-c */
       errno = EAGAIN;
@@ -1484,118 +1480,6 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen,
   return l.len;
 }
 
-#if 0
-/* This special mode is used by linenoise in order to print scan codes
- * on screen for debugging / development purposes. It is implemented
- * by the linenoise_example program using the --keycodes option. */
-void linenoisePrintKeyCodes(void) {
-    char quit[4];
-
-    printf("Linenoise key codes debugging mode.\n"
-            "Press keys to see scan codes. Type 'quit' at any time to exit.\n");
-    if (enableRawMode(STDIN_FILENO) == -1) return;
-    memset(quit,' ',4);
-    while(1) {
-        char c;
-        int nread;
-
-        nread = read(STDIN_FILENO,&c,1);
-        if (nread <= 0) continue;
-        memmove(quit,quit+1,sizeof(quit)-1); /* shift string to left. */
-        quit[sizeof(quit)-1] = c; /* Insert current char on the right. */
-        if (memcmp(quit,"quit",sizeof(quit)) == 0) break;
-
-        printf("'%c' %02x (%d) (type quit to exit)\n",
-            isprint((int)c) ? c : '?', (int)c, (int)c);
-        printf("\r"); /* Go left edge manually, we are in raw mode. */
-        fflush(stdout);
-    }
-    disableRawMode(STDIN_FILENO);
-}
-#endif
-
-/* This function calls the line editing function linenoiseEdit() using
- * the STDIN file descriptor set in raw mode. */
-static int linenoiseRaw(int inFd, int outFd, char *buf, size_t buflen, const char *prompt) {
-  int count;
-
-  if (buflen == 0) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  if (enableRawMode(inFd) == -1)
-    return -1;
-  count = linenoiseEdit(inFd, outFd, buf, buflen, prompt);
-  disableRawMode(inFd);
-  int r = write(outFd, "\n", 1);
-  UNUSED(r);
-  return count;
-}
-
-/* This function is called when linenoise() is called with the standard
- * input file descriptor not attached to a TTY. So for example when the
- * program using linenoise is called in pipe or with a file redirected
- * to its standard input. In this case, we want to be able to return the
- * line regardless of its length (by default we are limited to 4k). */
-static char *linenoiseNoTTY(int inFd) {
-  char *line = nullptr;
-  size_t len = 0, maxlen = 0;
-
-  while (true) {
-    if (len == maxlen) {
-      if (maxlen == 0)
-        maxlen = 16;
-      maxlen *= 2;
-      char *oldval = line;
-      line = (char *)realloc(line, maxlen);
-      if (line == nullptr) {
-        if (oldval)
-          free(oldval);
-        return nullptr;
-      }
-    }
-    signed char c;
-    if (read(inFd, &c, 1) <= 0) {
-      c = EOF;
-    }
-    if (c == EOF || c == '\n') {
-      if (c == EOF && len == 0) {
-        free(line);
-        return nullptr;
-      } else {
-        line[len] = '\0';
-        return line;
-      }
-    } else {
-      line[len] = c;
-      len++;
-    }
-  }
-}
-
-// +++++++++++++++++++++++++++++++++++++++++++++++++++
-
-#include "line_editor.h"
-
-namespace ydsh {
-
-// ##############################
-// ##     LineEditorObject     ##
-// ##############################
-
-LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
-  this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
-  this->outFd = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
-
-  linenoiseSetMultiLine(1);
-}
-
-LineEditorObject::~LineEditorObject() {
-  close(this->inFd);
-  close(this->outFd);
-}
-
 /* The high level function that is the main API of the linenoise library.
  * This function checks if the terminal has basic capabilities, just checking
  * for a blacklist of stupid terminals, and later either calls the line
@@ -1603,15 +1487,12 @@ LineEditorObject::~LineEditorObject() {
  * something even in the most desperate of the conditions. */
 char *LineEditorObject::readline(const char *prompt) {
   char buf[LINENOISE_MAX_LINE];
-  int count;
 
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
      * limit to the line size, so we call a function to handle that. */
     return linenoiseNoTTY(this->inFd);
   } else if (isUnsupportedTerm()) {
-    size_t len;
-
     int r = write(this->outFd, prompt, strlen(prompt));
     UNUSED(r);
     fsync(this->outFd);
@@ -1619,16 +1500,23 @@ char *LineEditorObject::readline(const char *prompt) {
     if ((rlen = read(this->inFd, buf, LINENOISE_MAX_LINE)) <= 0)
       return nullptr;
     buf[rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1] = '\0';
-    len = rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1;
+    size_t len = rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1;
     while (len && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
       len--;
       buf[len] = '\0';
     }
     return strdup(buf);
   } else {
-    count = linenoiseRaw(this->inFd, this->outFd, buf, LINENOISE_MAX_LINE, prompt);
-    if (count == -1)
+    if (enableRawMode(this->inFd)) {
       return nullptr;
+    }
+    int count = this->editInRawMode(buf, LINENOISE_MAX_LINE, prompt);
+    disableRawMode(this->inFd);
+    int r = write(this->outFd, "\n", 1);
+    UNUSED(r);
+    if (count == -1) {
+      return nullptr;
+    }
     return strdup(buf);
   }
 }
