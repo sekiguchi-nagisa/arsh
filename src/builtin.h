@@ -1214,9 +1214,9 @@ YDSH_METHOD signal_trap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_trap);
   int sigNum = LOCAL(0).asSig();
   auto value = LOCAL(1);
-  ObjPtr<FuncObject> handler;
+  ObjPtr<DSObject> handler;
   if (!value.isInvalid()) {
-    handler = toObjPtr<FuncObject>(value);
+    handler = value.toPtr();
   }
   auto old = installSignalHandler(ctx, sigNum, std::move(handler));
   assert(old);

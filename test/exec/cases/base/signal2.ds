@@ -20,3 +20,19 @@ assert $raised == 1
 
 $raise("sigterm")
 assert $raised == 2
+
+
+## closure
+function ff() : () -> Int {
+    var count = 0;
+    $SIGINT.trap(function(s) => {
+        $count++
+    })
+    return function() => $count
+}
+
+var counter = $ff()
+assert $counter() == 0
+
+$raise('int')
+assert $counter() == 1

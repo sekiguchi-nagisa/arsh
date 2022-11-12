@@ -108,9 +108,9 @@ static struct sigaction newSigaction(int sigNum) {
   return action;
 }
 
-static ObjPtr<FuncObject> installUnblock(DSState &st, int sigNum, ObjPtr<FuncObject> handler) {
-  auto DFL_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_DFL));
-  auto IGN_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_IGN));
+static ObjPtr<DSObject> installUnblock(DSState &st, int sigNum, ObjPtr<DSObject> handler) {
+  auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
+  auto IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN).toPtr();
 
   // save old handler
   auto oldHandler = st.sigVector.lookup(sigNum);
@@ -144,7 +144,7 @@ static ObjPtr<FuncObject> installUnblock(DSState &st, int sigNum, ObjPtr<FuncObj
   return oldHandler;
 }
 
-ObjPtr<FuncObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<FuncObject> handler) {
+ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> handler) {
   SignalGuard guard;
   return installUnblock(st, sigNum, std::move(handler));
 }
@@ -152,8 +152,8 @@ ObjPtr<FuncObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<FuncObje
 void setJobControlSignalSetting(DSState &st, bool set) {
   SignalGuard guard;
 
-  auto DFL_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_DFL));
-  auto IGN_handler = toObjPtr<FuncObject>(getBuiltinGlobal(st, VAR_SIG_IGN));
+  auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
+  auto IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN).toPtr();
 
   auto handle = set ? IGN_handler : DFL_handler;
   if (set) {
@@ -479,14 +479,14 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
 // ##########################
 
 struct SigEntryComp {
-  using Entry = std::pair<int, ObjPtr<FuncObject>>;
+  using Entry = std::pair<int, ObjPtr<DSObject>>;
 
   bool operator()(const Entry &x, int y) const { return x.first < y; }
 
   bool operator()(int x, const Entry &y) const { return x < y.first; }
 };
 
-void SignalVector::insertOrUpdate(int sigNum, ObjPtr<FuncObject> value) {
+void SignalVector::insertOrUpdate(int sigNum, ObjPtr<DSObject> value) {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
     if (value) {
@@ -499,7 +499,7 @@ void SignalVector::insertOrUpdate(int sigNum, ObjPtr<FuncObject> value) {
   }
 }
 
-ObjPtr<FuncObject> SignalVector::lookup(int sigNum) const {
+ObjPtr<DSObject> SignalVector::lookup(int sigNum) const {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
     return iter->second;

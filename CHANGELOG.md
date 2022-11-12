@@ -141,6 +141,7 @@
     - allow redundant prefix 0
 - crash indexing of source statements that have glob/brace expansion
 - fix module symbol synchronization of ``DSState_loadModule`` api
+- crash ``Signal#trap`` method when pass closure
 
 ## [0.27.1] - 2022-09-30
 

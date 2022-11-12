@@ -416,6 +416,10 @@ public:
     return this->obj.value;
   }
 
+  ObjPtr<DSObject> toPtr() const {
+    return ObjPtr<DSObject>(this->get());
+  }
+
   bool operator==(const DSValue &v) const noexcept { return this->equals(v); }
 
   bool operator!=(const DSValue &v) const noexcept { return !this->equals(v); }

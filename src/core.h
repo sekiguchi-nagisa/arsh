@@ -70,7 +70,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
  * @return
  * old signal handler
  */
-ObjPtr<FuncObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<FuncObject> handler);
+ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> handler);
 
 /**
  * if set is true, ignore some signals.
@@ -119,7 +119,7 @@ private:
   /**
    * pair.second must be FuncObject
    */
-  std::vector<std::pair<int, ObjPtr<FuncObject>>> data;
+  std::vector<std::pair<int, ObjPtr<DSObject>>> data;
 
 public:
   SignalVector() = default;
@@ -131,7 +131,7 @@ public:
    * @param value
    * may be null
    */
-  void insertOrUpdate(int sigNum, ObjPtr<FuncObject> value);
+  void insertOrUpdate(int sigNum, ObjPtr<DSObject> value);
 
   /**
    *
@@ -139,7 +139,7 @@ public:
    * @return
    * if not found, return null obj.
    */
-  ObjPtr<FuncObject> lookup(int sigNum) const;
+  ObjPtr<DSObject> lookup(int sigNum) const;
 
   const auto &getData() const { return this->data; };
 

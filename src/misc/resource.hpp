@@ -71,15 +71,13 @@ public:
 
   IntrusivePtr(const IntrusivePtr &v) noexcept : IntrusivePtr(v.ptr) {}
 
-  IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
+  IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.release()) {}
 
   template <typename U>
   IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) {} // NOLINT
 
   template <typename U>
-  IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { // NOLINT
-    v.reset();
-  }
+  IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.release()) {} // NOLINT
 
   ~IntrusivePtr() { P::decrease(this->ptr); }
 
@@ -97,6 +95,12 @@ public:
   void reset() noexcept {
     IntrusivePtr tmp;
     this->swap(tmp);
+  }
+
+  T *release() noexcept {
+    auto *p = this->ptr;
+    this->ptr = nullptr;
+    return p;
   }
 
   void swap(IntrusivePtr &o) noexcept { std::swap(this->ptr, o.ptr); }
