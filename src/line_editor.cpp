@@ -126,8 +126,6 @@
 
 // ++++++++++ copied from linenoise.h +++++++++++++++
 
-void linenoiseClearScreen(int fd);
-
 typedef enum {
   LINENOISE_HISTORY_OP_NEXT,
   LINENOISE_HISTORY_OP_PREV,
@@ -200,7 +198,7 @@ enum KEY_ACTION {
   BACKSPACE = 127 /* Backspace */
 };
 
-int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
+static int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
 static void refreshLine(struct linenoiseState *l);
 
 /* Debugging macro. */
@@ -466,7 +464,7 @@ failed:
 static void updateColumns(struct linenoiseState *ls) { ls->cols = getColumns(ls->ifd, ls->ofd); }
 
 /* Clear the screen. Used to handle ctrl+l */
-void linenoiseClearScreen(int fd) {
+static void linenoiseClearScreen(int fd) {
   if (write(fd, "\x1b[H\x1b[2J", 7) <= 0) {
     /* nothing to do, just to avoid warning. */
   }
@@ -959,7 +957,7 @@ static void refreshLine(struct linenoiseState *l) {
 /* Insert the character 'c' at cursor current position.
  *
  * On error writing to the terminal -1 is returned, otherwise 0. */
-int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
+static int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
   if (l->len + clen <= l->buflen) {
     if (l->len == l->pos) {
       memcpy(&l->buf[l->pos], cbuf, clen);
@@ -980,7 +978,7 @@ int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
 }
 
 /* Move cursor on the left. */
-void linenoiseEditMoveLeft(struct linenoiseState *l) {
+static void linenoiseEditMoveLeft(struct linenoiseState *l) {
   if (l->pos > 0) {
     l->pos -= prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
@@ -988,7 +986,7 @@ void linenoiseEditMoveLeft(struct linenoiseState *l) {
 }
 
 /* Move cursor on the right. */
-void linenoiseEditMoveRight(struct linenoiseState *l) {
+static void linenoiseEditMoveRight(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos += nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
@@ -996,7 +994,7 @@ void linenoiseEditMoveRight(struct linenoiseState *l) {
 }
 
 /* Move cursor to the start of the line. */
-void linenoiseEditMoveHome(struct linenoiseState *l) {
+static void linenoiseEditMoveHome(struct linenoiseState *l) {
   if (l->pos != 0) {
     l->pos = 0;
     refreshLine(l);
@@ -1004,21 +1002,21 @@ void linenoiseEditMoveHome(struct linenoiseState *l) {
 }
 
 /* Move cursor to the end of the line. */
-void linenoiseEditMoveEnd(struct linenoiseState *l) {
+static void linenoiseEditMoveEnd(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos = l->len;
     refreshLine(l);
   }
 }
 
-void linenoiseEditMoveLeftWord(struct linenoiseState *l) {
+static void linenoiseEditMoveLeftWord(struct linenoiseState *l) {
   if (l->pos > 0) {
     l->pos -= prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
   }
 }
 
-void linenoiseEditMoveRightWord(struct linenoiseState *l) {
+static void linenoiseEditMoveRightWord(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos += nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     refreshLine(l);
