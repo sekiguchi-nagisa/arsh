@@ -295,8 +295,7 @@ static size_t nextWordLen(const ydsh::CharWidthProperties &ps, const char *buf, 
 static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
                         size_t pos) {
   size_t ret = 0;
-  size_t off = 0;
-  while (off < pos) {
+  for (size_t off = 0; off < pos;) {
     size_t col_len;
     size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
     off += len;
@@ -305,14 +304,13 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, si
   return ret;
 }
 
-/* Get column length from begining of buffer to current byte position for multiline mode*/
+/* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const char *buf,
                                     size_t buf_len, size_t pos, size_t cols, size_t ini_pos) {
   size_t ret = 0;
   size_t colwid = ini_pos;
 
-  size_t off = 0;
-  while (off < buf_len) {
+  for (size_t off = 0; off < buf_len;) {
     size_t col_len;
     size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
 
@@ -341,11 +339,9 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const c
  * not able to understand basic escape sequences. */
 static int isUnsupportedTerm() {
   char *term = getenv("TERM");
-  int j;
-
   if (term == nullptr)
     return 0;
-  for (j = 0; unsupported_term[j]; j++)
+  for (int j = 0; unsupported_term[j]; j++)
     if (!strcasecmp(term, unsupported_term[j]))
       return 1;
   return 0;
@@ -534,22 +530,21 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   int r = write(fd, "\r\n", strlen("\r\n"));
   UNUSED(r);
   for (size_t index = 0; index < rawSize; index++) {
-    size_t cadidateIndex = 0;
     size_t j = 0;
     while (true) {
-      cadidateIndex = j * rawSize + index;
-      if (cadidateIndex >= len) {
+      size_t candidateIndex = j * rawSize + index;
+      if (candidateIndex >= len) {
         break;
       }
 
       // print candidate
-      auto c = candidates.getValues()[cadidateIndex].asStrRef();
+      auto c = candidates.getValues()[candidateIndex].asStrRef();
       r = write(fd, c.data(), c.size());
       UNUSED(r);
 
       // print spaces
       unsigned int s;
-      for (s = 0; s < maxSize - sizeTable[cadidateIndex]; s++) {
+      for (s = 0; s < maxSize - sizeTable[candidateIndex]; s++) {
         r = write(fd, " ", 1);
         UNUSED(r);
       }
