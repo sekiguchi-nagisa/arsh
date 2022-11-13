@@ -836,28 +836,23 @@ static const char *doHighlight(const char *buf, size_t buf_len, size_t *ret_len)
  * write all the escape sequences in a buffer and flush them to the standard
  * output in a single call, to avoid flickering effects. */
 struct abuf {
-  char *b;
-  int len;
-};
+  char *b{nullptr};
+  int len{0};
 
-static void abInit(struct abuf *ab) {
-  ab->b = nullptr;
-  ab->len = 0;
-}
+  ~abuf() { free(this->b); }
 
-static void abAppend(struct abuf *ab, const char *s, int len) {
-  char *buf = nullptr;
-  if (ab->len + len > 0) {
-    buf = (char *)realloc(ab->b, ab->len + len);
+  void append(const char *s, int slen) {
+    char *buf = nullptr;
+    if (this->len + slen > 0) {
+      buf = (char *)realloc(this->b, this->len + slen);
+    }
+    if (buf == nullptr)
+      return;
+    memcpy(buf + this->len, s, slen);
+    this->b = buf;
+    this->len += slen;
   }
-  if (buf == nullptr)
-    return;
-  memcpy(buf + ab->len, s, len);
-  ab->b = buf;
-  ab->len += len;
-}
-
-static void abFree(struct abuf *ab) { free(ab->b); }
+};
 
 /* Check if text is an ANSI escape sequence
  */
@@ -928,30 +923,29 @@ static void refreshMultiLine(struct linenoiseState *l) {
 
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
-  abInit(&ab);
   if (old_rows - rpos > 0) {
     lndebug("go down %d", old_rows - rpos);
     snprintf(seq, 64, "\x1b[%dB", old_rows - rpos);
-    abAppend(&ab, seq, strlen(seq));
+    ab.append(seq, strlen(seq));
   }
 
   /* Now for every row clear it, go up. */
   for (j = 0; j < old_rows - 1; j++) {
     lndebug("clear+up");
     snprintf(seq, 64, "\r\x1b[0K\x1b[1A");
-    abAppend(&ab, seq, strlen(seq));
+    ab.append(seq, strlen(seq));
   }
 
   /* Clean the top line. */
   lndebug("clear");
   snprintf(seq, 64, "\r\x1b[0K");
-  abAppend(&ab, seq, strlen(seq));
+  ab.append(seq, strlen(seq));
 
   /* Write the prompt and the current buffer content */
-  abAppend(&ab, l->prompt.data(), l->prompt.size());
+  ab.append(l->prompt.data(), l->prompt.size());
   size_t ret_len;
   const char *ret = doHighlight(l->buf, l->len, &ret_len);
-  abAppend(&ab, ret, ret_len);
+  ab.append(ret, ret_len);
 
   /* Get column length to cursor position */
   colpos2 = columnPosForMultiLine(l->ps, l->buf, l->len, l->pos, l->cols, pcollen);
@@ -960,9 +954,9 @@ static void refreshMultiLine(struct linenoiseState *l) {
    * emit a newline and move the prompt to the first column. */
   if (l->pos && l->pos == l->len && (colpos2 + pcollen) % l->cols == 0) {
     lndebug("<newline>");
-    abAppend(&ab, "\n", 1);
+    ab.append("\n", 1);
     snprintf(seq, 64, "\r");
-    abAppend(&ab, seq, strlen(seq));
+    ab.append(seq, strlen(seq));
     rows++;
     if (rows > (int)l->maxrows)
       l->maxrows = rows;
@@ -976,7 +970,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
   if (rows - rpos2 > 0) {
     lndebug("go-up %d", rows - rpos2);
     snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
-    abAppend(&ab, seq, strlen(seq));
+    ab.append(seq, strlen(seq));
   }
 
   /* Set column. */
@@ -986,14 +980,13 @@ static void refreshMultiLine(struct linenoiseState *l) {
     snprintf(seq, 64, "\r\x1b[%dC", col);
   else
     snprintf(seq, 64, "\r");
-  abAppend(&ab, seq, strlen(seq));
+  ab.append(seq, strlen(seq));
 
   lndebug("\n");
   l->oldcolpos = colpos2;
 
   if (write(fd, ab.b, ab.len) == -1) {
   } /* Can't recover from write error. */
-  abFree(&ab);
 }
 
 /* Calls the two low level functions refreshSingleLine() or
