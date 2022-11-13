@@ -416,9 +416,7 @@ public:
     return this->obj.value;
   }
 
-  ObjPtr<DSObject> toPtr() const {
-    return ObjPtr<DSObject>(this->get());
-  }
+  ObjPtr<DSObject> toPtr() const { return ObjPtr<DSObject>(this->get()); }
 
   bool operator==(const DSValue &v) const noexcept { return this->equals(v); }
 
@@ -1266,6 +1264,14 @@ struct ObjectConstructor<ClosureObject, Arg...> {
     return ClosureObject::create(std::forward<Arg>(arg)...);
   }
 };
+
+using CallArgs = std::pair<unsigned int, std::array<DSValue, 3>>;
+
+template <typename... T>
+inline CallArgs makeArgs(T &&...arg) {
+  static_assert(sizeof...(arg) <= 3, "too long");
+  return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
+}
 
 class BoxObject : public ObjectWithRtti<ObjectKind::Box> {
 private:

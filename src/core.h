@@ -146,12 +146,6 @@ public:
   void clear() { this->data.clear(); }
 };
 
-template <typename... T>
-inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T &&...arg) {
-  static_assert(sizeof...(arg) <= 3, "too long");
-  return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
-}
-
 /**
  * compile string as function
  * @param state

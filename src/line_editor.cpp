@@ -120,21 +120,11 @@
 #include <unistd.h>
 
 #include "encoding.h"
+#include "line_editor.h"
 #include "misc/unicode.hpp"
+#include "vm.h"
 
 // ++++++++++ copied from linenoise.h +++++++++++++++
-
-#define LINENOISE_COMPLETION_ATTR_INTR ((unsigned int)(1 << 0))
-#define LINENOISE_COMPLETION_ATTR_NOSP ((unsigned int)(1 << 1))
-
-typedef struct linenoiseCompletions {
-  size_t attr;
-  size_t len;
-  char **cvec;
-} linenoiseCompletions;
-
-typedef void(linenoiseCompletionCallback)(const char *, size_t, linenoiseCompletions *);
-void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
 
 void linenoiseClearScreen(int fd);
 
@@ -161,7 +151,6 @@ void linenoiseSetHighlightCallback(linenoiseHighlightCallback *callback);
 #define LINENOISE_MAX_LINE 4096
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
-static linenoiseCompletionCallback *completionCallback = nullptr;
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
@@ -493,15 +482,6 @@ static void linenoiseBeep(int fd) {
 
 /* ============================== Completion ================================ */
 
-/* Free a list of completion option populated by linenoiseAddCompletion(). */
-static void freeCompletions(linenoiseCompletions *lc) {
-  size_t i;
-  for (i = 0; i < lc->len; i++)
-    free(lc->cvec[i]);
-  if (lc->cvec != nullptr)
-    free(lc->cvec);
-}
-
 #if 0
 static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)                                                                        \
@@ -518,13 +498,14 @@ static FILE *logfp = nullptr;
 static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt);
 
 static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
-                              linenoiseCompletions *lc) {
-  auto *sizeTable = (unsigned int *)malloc(sizeof(unsigned int) * lc->len);
+                              const ydsh::ArrayObject &candidates) {
+  const auto len = candidates.size();
+  auto *sizeTable = (unsigned int *)malloc(sizeof(unsigned int) * len);
 
   // compute maximum length of candidate
   size_t maxSize = 0;
-  for (size_t index = 0; index < lc->len; index++) {
-    size_t s = promptTextColumnLen(ps, lc->cvec[index]);
+  for (size_t index = 0; index < len; index++) {
+    size_t s = promptTextColumnLen(ps, candidates.getValues()[index].asCStr());
     if (s > maxSize) {
       maxSize = s;
     }
@@ -540,9 +521,9 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
 
   // compute raw size
   size_t rawSize;
-  for (rawSize = 1; rawSize < lc->len; rawSize++) {
-    size_t a = lc->len / rawSize;
-    size_t b = lc->len % rawSize;
+  for (rawSize = 1; rawSize < len; rawSize++) {
+    size_t a = len / rawSize;
+    size_t b = len % rawSize;
     size_t c = b == 0 ? 0 : 1;
     if (a + c <= columCount) {
       break;
@@ -559,13 +540,13 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
     size_t j = 0;
     while (true) {
       cadidateIndex = j * rawSize + index;
-      if (cadidateIndex >= lc->len) {
+      if (cadidateIndex >= len) {
         break;
       }
 
       // print candidate
-      const char *c = lc->cvec[cadidateIndex];
-      r = write(fd, c, strlen(c));
+      auto c = candidates.getValues()[cadidateIndex].asStrRef();
+      r = write(fd, c.data(), c.size());
       UNUSED(r);
 
       // print spaces
@@ -584,24 +565,25 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   free(sizeTable);
 }
 
-static char *computeCommonPrefix(const linenoiseCompletions *lc, size_t *len) {
-  if (lc->len == 0) {
+static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *len) {
+  if (candidates.size() == 0) {
     *len = 0;
     return nullptr;
   }
-  if (lc->len == 1) {
-    *len = strlen(lc->cvec[0]);
-    return strdup(lc->cvec[0]);
+  if (candidates.size() == 1) {
+    auto ref = candidates.getValues()[0].asStrRef();
+    *len = ref.size();
+    return strdup(ref.data());
   }
 
   size_t prefixSize;
   for (prefixSize = 0;; prefixSize++) {
     int stop = 0;
-    const char ch = lc->cvec[0][prefixSize];
+    const char ch = candidates.getValues()[0].asCStr()[prefixSize];
     size_t i;
-    for (i = 0; i < lc->len; i++) {
-      const char *str = lc->cvec[i];
-      if (str[0] == '\0' || prefixSize >= strlen(str) || ch != str[prefixSize]) {
+    for (i = 0; i < candidates.size(); i++) {
+      auto str = candidates.getValues()[i].asStrRef();
+      if (str[0] == '\0' || prefixSize >= str.size() || ch != str.data()[prefixSize]) {
         stop = 1;
         break;
       }
@@ -618,7 +600,7 @@ static char *computeCommonPrefix(const linenoiseCompletions *lc, size_t *len) {
   }
 
   char *prefix = (char *)malloc(sizeof(char) * (prefixSize + 1));
-  memcpy(prefix, lc->cvec[0], sizeof(char) * prefixSize);
+  memcpy(prefix, candidates.getValues()[0].asCStr(), sizeof(char) * prefixSize);
   prefix[prefixSize] = '\0';
   *len = prefixSize;
   return prefix;
@@ -627,9 +609,10 @@ static char *computeCommonPrefix(const linenoiseCompletions *lc, size_t *len) {
 /**
  * return token start cursor.
  */
-static size_t insertEstimatedSuffix(struct linenoiseState *ls, const linenoiseCompletions *lc) {
+static size_t insertEstimatedSuffix(struct linenoiseState *ls,
+                                    const ydsh::ArrayObject &candidates) {
   size_t len;
-  char *prefix = computeCommonPrefix(lc, &len);
+  char *prefix = computeCommonPrefix(candidates, &len);
   if (prefix == nullptr) {
     return ls->pos;
   }
@@ -670,7 +653,7 @@ static size_t insertEstimatedSuffix(struct linenoiseState *ls, const linenoiseCo
     memcpy(inserting, prefix + (len - suffixSize), suffixSize);
     linenoiseEditInsert(ls, inserting, suffixSize);
     free(inserting);
-  } else if (lc->len == 1) { // if candidate does not match previous token, insert it.
+  } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
     linenoiseEditInsert(ls, prefix, len);
   }
 
@@ -680,41 +663,21 @@ static size_t insertEstimatedSuffix(struct linenoiseState *ls, const linenoiseCo
   return matched ? offset : ls->pos;
 }
 
-static void kickCompletionCallback(int fd, const char *buf, size_t pos, linenoiseCompletions *lc) {
-  if (!completionCallback) {
-    return;
-  }
-
-  disableRawMode(fd);
-  completionCallback(buf, pos, lc);
-  enableRawMode(fd);
-}
-
 /* This is a helper function for linenoiseEdit() and is called when the
  * user types the <tab> key in order to complete the string currently in the
  * input.
  *
  * The state of the editing is encapsulated into the pointed linenoiseState
  * structure as described in the structure definition. */
-static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *code) {
-  linenoiseCompletions lc = {0, 0, nullptr};
+static int insertCompletionCandidates(const ydsh::ArrayObject &candidates,
+                                      struct linenoiseState *ls, char *cbuf, int clen, int *code) {
   int nread = 0;
   int c = 0;
-
-  kickCompletionCallback(ls->ifd, ls->buf, ls->pos, &lc);
-  int offset = insertEstimatedSuffix(ls, &lc);
-  if (lc.attr & LINENOISE_COMPLETION_ATTR_INTR) {
-    c = CTRL_C;
-    nread = -1;
-    goto END;
-  }
-  if (lc.len == 0) {
+  int offset = insertEstimatedSuffix(ls, candidates);
+  if (const auto len = candidates.size(); len == 0) {
     linenoiseBeep(ls->ofd);
-  } else if (lc.len == 1) {
-    if (lc.attr & LINENOISE_COMPLETION_ATTR_NOSP) {
-      goto END;
-    }
-    linenoiseEditInsert(ls, " ", 1);
+  } else if (len == 1) {
+    goto END;
   } else {
     nread = readCode(ls->ifd, cbuf, clen, &c);
     if (nread <= 0) {
@@ -726,9 +689,9 @@ static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *co
     }
 
     int show = 1;
-    if (lc.len >= 100) {
+    if (len >= 100) {
       char msg[256];
-      snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", lc.len);
+      snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
       int r = write(ls->ofd, msg, strlen(msg));
       UNUSED(r);
 
@@ -755,7 +718,7 @@ static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *co
 
     if (show) {
       updateColumns(ls);
-      showAllCandidates(ls->ps, ls->ofd, ls->cols, &lc);
+      showAllCandidates(ls->ps, ls->ofd, ls->cols, candidates);
     }
     refreshLine(ls);
 
@@ -771,13 +734,14 @@ static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *co
         goto END;
       }
 
-      int written = snprintf(ls->buf + offset, ls->buflen - offset, "%s", lc.cvec[rotateIndex]);
+      int written = snprintf(ls->buf + offset, ls->buflen - offset, "%s",
+                             candidates.getValues()[rotateIndex].asCStr());
       if (written >= 0) {
         ls->len = ls->pos = offset + written;
       }
       refreshLine(ls);
 
-      if (rotateIndex == lc.len - 1) {
+      if (rotateIndex == len - 1) {
         rotateIndex = 0;
         continue;
       }
@@ -786,13 +750,9 @@ static int completeLine(struct linenoiseState *ls, char *cbuf, int clen, int *co
   }
 
 END:
-  freeCompletions(&lc);
   *code = c;
   return nread; /* Return last read character length*/
 }
-
-/* Register a callback function to be called for tab-completion. */
-void linenoiseSetCompletionCallback(linenoiseCompletionCallback *fn) { completionCallback = fn; }
 
 static void checkProperty(struct linenoiseState *l) {
   for (auto &e : ydsh::getCharWidthPropertyList()) {
@@ -1236,8 +1196,6 @@ static char *linenoiseNoTTY(int inFd) {
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#include "line_editor.h"
-
 namespace ydsh {
 
 // ##############################
@@ -1262,7 +1220,7 @@ LineEditorObject::~LineEditorObject() {
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt) {
+int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt) {
   struct linenoiseState l;
 
   /* Populate the linenoise state that we pass to functions implementing
@@ -1301,8 +1259,19 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
     /* Only autocomplete when the callback is set. It returns < 0 when
      * there was an error reading from fd. Otherwise, it will return the
      * character that should be handled next. */
-    if (c == 9 && completionCallback != nullptr) {
-      nread = completeLine(&l, cbuf, sizeof(cbuf), &c);
+    if (c == TAB) {
+      if (!this->hasCompletionCallback()) {
+        continue;
+      }
+      StringRef line(l.buf, l.pos);
+      auto comps = this->kickCompletionCallback(state, line);
+      if (comps) {
+        nread = insertCompletionCandidates(*comps, &l, cbuf, sizeof(cbuf), &c);
+      } else {
+        c = CTRL_C;
+        nread = -1;
+      }
+
       /* Return on errors */
       if (c < 0)
         return l.len;
@@ -1313,8 +1282,6 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
 
     switch (c) {
     case ENTER: /* enter */
-                //            history_len--;
-                //            free(history[history_len]);
       doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
       linenoiseEditMoveEnd(&l);
       return (int)l.len;
@@ -1322,7 +1289,7 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
       errno = EAGAIN;
       return -1;
     case BACKSPACE: /* backspace */
-    case 8:         /* ctrl-h */
+    case CTRL_H:    /* ctrl-h */
       linenoiseEditBackspace(&l);
       break;
     case CTRL_D: /* ctrl-d, remove char at right of cursor, or if the
@@ -1473,7 +1440,7 @@ int LineEditorObject::editInRawMode(char *buf, size_t buflen, const char *prompt
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-char *LineEditorObject::readline(const char *prompt) {
+char *LineEditorObject::readline(DSState &state, const char *prompt) {
   char buf[LINENOISE_MAX_LINE];
 
   if (!isatty(this->inFd)) {
@@ -1498,7 +1465,7 @@ char *LineEditorObject::readline(const char *prompt) {
     if (enableRawMode(this->inFd)) {
       return nullptr;
     }
-    int count = this->editInRawMode(buf, LINENOISE_MAX_LINE, prompt);
+    int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
     disableRawMode(this->inFd);
     int r = write(this->outFd, "\n", 1);
     UNUSED(r);
@@ -1507,6 +1474,39 @@ char *LineEditorObject::readline(const char *prompt) {
     }
     return strdup(buf);
   }
+}
+
+DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback,
+                                       CallArgs &&callArgs) const {
+  auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
+
+  disableRawMode(this->inFd);
+  auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
+  enableRawMode(this->inFd);
+
+  // restore state
+  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
+  state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
+
+  return ret;
+}
+
+ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, StringRef line) const {
+  assert(this->hasCompletionCallback());
+
+  const auto *modType = getCurRuntimeModule(state);
+  if (!modType) {
+    modType = cast<ModType>(state.typePool.getModTypeById(1).asOk());
+  }
+  auto mod = state.getGlobal(modType->getIndex());
+  auto args = makeArgs(std::move(mod), DSValue::createStr(line));
+  DSValue callback = this->completionCallback;
+  auto ret = this->kickCallback(state, std::move(callback), std::move(args));
+  if (state.hasError()) {
+    return nullptr;
+  }
+  return toObjPtr<ArrayObject>(ret);
 }
 
 } // namespace ydsh

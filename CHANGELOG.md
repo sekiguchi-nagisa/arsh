@@ -51,6 +51,7 @@
     - ``-s``: apppend space to completion candidate when number of candidates is 1
 - add ``LineEdtior`` type for line editing
     - ``LineEditor#read``: entry point of line editing
+    - ``LineEditor#setCompleter``: specify completion callback
 
 #### Misc
 

@@ -2062,10 +2062,22 @@ YDSH_METHOD edit_init(RuntimeContext &ctx) {
 YDSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  char *line = editor.readline("> ");
+  char *line = editor.readline(ctx, "> ");
   auto ret = line != nullptr ? DSValue::createStr(line) : DSValue::createInvalid();
   free(line);
   RET(ret);
+}
+
+//!bind: function setCompleter($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void
+YDSH_METHOD edit_comp(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_comp);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  ObjPtr<DSObject> comp;
+  if (!LOCAL(1).isInvalid()) {
+    comp = LOCAL(1).toPtr();
+  }
+  editor.setCompletionCallback(std::move(comp));
+  RET_VOID;
 }
 
 // #################

@@ -2484,8 +2484,7 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
   return s == EvalRet::SUCCESS;
 }
 
-unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
-                                  std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+unsigned int VM::prepareArguments(VMState &state, DSValue &&recv, CallArgs &&args) {
   state.clearThrownObject();
 
   // push arguments
@@ -2539,8 +2538,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
   return ret;
 }
 
-DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
-                         std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+DSValue VM::callFunction(DSState &state, DSValue &&funcObj, CallArgs &&args) {
   GUARD_RECURSION(state);
 
   auto &type = state.typePool.get(funcObj.getTypeID());

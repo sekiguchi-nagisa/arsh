@@ -686,8 +686,7 @@ public:
    * @return
    * return value of method (if no return value, return null).
    */
-  static DSValue callFunction(DSState &state, DSValue &&funcObj,
-                              std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+  static DSValue callFunction(DSState &state, DSValue &&funcObj, CallArgs &&args);
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.
