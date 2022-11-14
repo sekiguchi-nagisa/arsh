@@ -1162,7 +1162,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
      * there was an error reading from fd. Otherwise, it will return the
      * character that should be handled next. */
     if (c == TAB) {
-      if (!this->hasCompletionCallback()) {
+      if (!this->completionCallback) {
         continue;
       }
       nread = this->completeLine(state, &l, cbuf, sizeof(cbuf), &c);
@@ -1335,14 +1335,28 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-char *LineEditorObject::readline(DSState &state, const char *prompt) {
+char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   char buf[LINENOISE_MAX_LINE];
 
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
      * limit to the line size, so we call a function to handle that. */
     return linenoiseNoTTY(this->inFd);
-  } else if (isUnsupportedTerm()) {
+  }
+
+  // prepare prompt
+  DSValue promptVal;
+  if (this->promptCallback) {
+    auto args = makeArgs(DSValue::createStr(promptRef));
+    DSValue callback = this->promptCallback;
+    promptVal = this->kickCallback(state, std::move(callback), std::move(args));
+  }
+  if (promptVal.hasStrRef()) {
+    promptRef = promptVal.asStrRef();
+  }
+  const char *prompt = promptRef.data(); // force truncate characters after null
+
+  if (isUnsupportedTerm()) {
     int r = write(this->outFd, prompt, strlen(prompt));
     UNUSED(r);
     fsync(this->outFd);
@@ -1463,8 +1477,7 @@ END:
   return nread; /* Return last read character length*/
 }
 
-DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback,
-                                       CallArgs &&callArgs) const {
+DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
@@ -1479,8 +1492,8 @@ DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback,
   return ret;
 }
 
-ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, StringRef line) const {
-  assert(this->hasCompletionCallback());
+ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, StringRef line) {
+  assert(this->completionCallback);
 
   const auto *modType = getCurRuntimeModule(state);
   if (!modType) {

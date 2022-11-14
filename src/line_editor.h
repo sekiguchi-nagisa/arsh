@@ -29,6 +29,12 @@ private:
   int outFd;
 
   /**
+   * must be `(String) -> String` type
+   * may be null
+   */
+  ObjPtr<DSObject> promptCallback;
+
+  /**
    * must be `(Module, String) -> [String]` type
    * may be null
    */
@@ -39,9 +45,9 @@ public:
 
   ~LineEditorObject();
 
-  char *readline(DSState &state, const char *prompt); // pseudo entry point
+  char *readline(DSState &state, StringRef promptRef); // pseudo entry point
 
-  bool hasCompletionCallback() const { return static_cast<bool>(this->completionCallback); }
+  void setPromptCallback(ObjPtr<DSObject> callback) { this->promptCallback = std::move(callback); }
 
   void setCompletionCallback(ObjPtr<DSObject> callback) {
     this->completionCallback = std::move(callback);
@@ -59,9 +65,9 @@ private:
 
   int completeLine(DSState &state, struct linenoiseState *ls, char *cbuf, int clen, int *code);
 
-  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) const;
+  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
-  ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line) const;
+  ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 };
 
 } // namespace ydsh

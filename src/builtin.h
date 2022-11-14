@@ -2058,11 +2058,12 @@ YDSH_METHOD edit_init(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function read($this : LineEditor) : Option<String>
+//!bind: function read($this : LineEditor, $p : Option<String>) : Option<String>
 YDSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  char *line = editor.readline(ctx, "> ");
+  auto &p = LOCAL(1);
+  char *line = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef());
   auto ret = line != nullptr ? DSValue::createStr(line) : DSValue::createInvalid();
   free(line);
   RET(ret);
@@ -2072,11 +2073,23 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
 YDSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  ObjPtr<DSObject> comp;
+  ObjPtr<DSObject> callback;
   if (!LOCAL(1).isInvalid()) {
-    comp = LOCAL(1).toPtr();
+    callback = LOCAL(1).toPtr();
   }
-  editor.setCompletionCallback(std::move(comp));
+  editor.setCompletionCallback(std::move(callback));
+  RET_VOID;
+}
+
+//!bind: function setPrompt($this : LineEditor, $prompt : Option<Func<String,[String]>>) : Void
+YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_prompt);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  ObjPtr<DSObject> callback;
+  if (!LOCAL(1).isInvalid()) {
+    callback = LOCAL(1).toPtr();
+  }
+  editor.setPromptCallback(std::move(callback));
   RET_VOID;
 }
 
