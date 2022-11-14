@@ -19,6 +19,8 @@
 
 #include "object.h"
 
+struct linenoiseState;
+
 namespace ydsh {
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
@@ -54,6 +56,8 @@ private:
    * @return
    */
   int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
+
+  int completeLine(DSState &state, struct linenoiseState *ls, char *cbuf, int clen, int *code);
 
   DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) const;
 

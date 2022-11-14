@@ -656,97 +656,6 @@ static size_t insertEstimatedSuffix(struct linenoiseState *ls,
   return matched ? offset : ls->pos;
 }
 
-/* This is a helper function for linenoiseEdit() and is called when the
- * user types the <tab> key in order to complete the string currently in the
- * input.
- *
- * The state of the editing is encapsulated into the pointed linenoiseState
- * structure as described in the structure definition. */
-static int insertCompletionCandidates(const ydsh::ArrayObject &candidates,
-                                      struct linenoiseState *ls, char *cbuf, int clen, int *code) {
-  int nread = 0;
-  int c = 0;
-  int offset = insertEstimatedSuffix(ls, candidates);
-  if (const auto len = candidates.size(); len == 0) {
-    linenoiseBeep(ls->ofd);
-  } else if (len == 1) {
-    goto END;
-  } else {
-    nread = readCode(ls->ifd, cbuf, clen, &c);
-    if (nread <= 0) {
-      c = -1;
-      goto END;
-    }
-    if (c != TAB) {
-      goto END;
-    }
-
-    int show = 1;
-    if (len >= 100) {
-      char msg[256];
-      snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
-      int r = write(ls->ofd, msg, strlen(msg));
-      UNUSED(r);
-
-      while (true) {
-        nread = readCode(ls->ifd, cbuf, clen, &c);
-        if (nread <= 0) {
-          c = -1;
-          goto END;
-        }
-        if (c == 'y') {
-          break;
-        } else if (c == 'n') {
-          r = write(ls->ofd, "\r\n", strlen("\r\n"));
-          UNUSED(r);
-          show = 0;
-          break;
-        } else if (c == CTRL_C) {
-          goto END;
-        } else {
-          linenoiseBeep(ls->ofd);
-        }
-      }
-    }
-
-    if (show) {
-      updateColumns(ls);
-      showAllCandidates(ls->ps, ls->ofd, ls->cols, candidates);
-    }
-    refreshLine(ls);
-
-    // rotate candidates
-    size_t rotateIndex = 0;
-    while (true) {
-      nread = readCode(ls->ifd, cbuf, clen, &c);
-      if (nread <= 0) {
-        c = -1;
-        goto END;
-      }
-      if (c != TAB) {
-        goto END;
-      }
-
-      int written = snprintf(ls->buf + offset, ls->buflen - offset, "%s",
-                             candidates.getValues()[rotateIndex].asCStr());
-      if (written >= 0) {
-        ls->len = ls->pos = offset + written;
-      }
-      refreshLine(ls);
-
-      if (rotateIndex == len - 1) {
-        rotateIndex = 0;
-        continue;
-      }
-      rotateIndex++;
-    }
-  }
-
-END:
-  *code = c;
-  return nread; /* Return last read character length*/
-}
-
 static void checkProperty(struct linenoiseState *l) {
   for (auto &e : ydsh::getCharWidthPropertyList()) {
     const char *str = e.second;
@@ -1256,14 +1165,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       if (!this->hasCompletionCallback()) {
         continue;
       }
-      StringRef line(l.buf, l.pos);
-      auto comps = this->kickCompletionCallback(state, line);
-      if (comps) {
-        nread = insertCompletionCandidates(*comps, &l, cbuf, sizeof(cbuf), &c);
-      } else {
-        c = CTRL_C;
-        nread = -1;
-      }
+      nread = this->completeLine(state, &l, cbuf, sizeof(cbuf), &c);
 
       /* Return on errors */
       if (c < 0)
@@ -1467,6 +1369,98 @@ char *LineEditorObject::readline(DSState &state, const char *prompt) {
     }
     return strdup(buf);
   }
+}
+
+int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbuf, int clen,
+                                   int *code) {
+  StringRef line(ls->buf, ls->pos);
+  auto candidates = this->kickCompletionCallback(state, line);
+  if (!candidates) {
+    *code = CTRL_C;
+    return -1;
+  }
+
+  int nread = 0;
+  int c = 0;
+  int offset = insertEstimatedSuffix(ls, *candidates);
+  if (const auto len = candidates->size(); len == 0) {
+    linenoiseBeep(ls->ofd);
+  } else if (len == 1) {
+    goto END;
+  } else {
+    nread = readCode(ls->ifd, cbuf, clen, &c);
+    if (nread <= 0) {
+      c = -1;
+      goto END;
+    }
+    if (c != TAB) {
+      goto END;
+    }
+
+    int show = 1;
+    if (len >= 100) {
+      char msg[256];
+      snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
+      int r = write(ls->ofd, msg, strlen(msg));
+      UNUSED(r);
+
+      while (true) {
+        nread = readCode(ls->ifd, cbuf, clen, &c);
+        if (nread <= 0) {
+          c = -1;
+          goto END;
+        }
+        if (c == 'y') {
+          break;
+        } else if (c == 'n') {
+          r = write(ls->ofd, "\r\n", strlen("\r\n"));
+          UNUSED(r);
+          show = 0;
+          break;
+        } else if (c == CTRL_C) {
+          goto END;
+        } else {
+          linenoiseBeep(ls->ofd);
+        }
+      }
+    }
+
+    if (show) {
+      updateColumns(ls);
+      showAllCandidates(ls->ps, ls->ofd, ls->cols, *candidates);
+    }
+    refreshLine(ls);
+
+    // rotate candidates
+    size_t rotateIndex = 0;
+    while (true) {
+      nread = readCode(ls->ifd, cbuf, clen, &c);
+      if (nread <= 0) {
+        c = -1;
+        goto END;
+      }
+      if (c != TAB) {
+        goto END;
+      }
+
+      int written = snprintf(ls->buf + offset, ls->buflen - offset, "%s",
+                             candidates->getValues()[rotateIndex].asCStr());
+      if (written >= 0) {
+        ls->len = ls->pos = offset + written;
+      }
+      refreshLine(ls);
+
+      if (rotateIndex == len - 1) {
+        rotateIndex = 0;
+        continue;
+      }
+      rotateIndex++;
+    }
+  }
+
+END:
+  *code = c;
+  return nread; /* Return last read character length*/
 }
 
 DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback,
