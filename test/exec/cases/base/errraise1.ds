@@ -354,4 +354,23 @@ try {
 assert $ex is Int   # no error
 assert $? == 1
 
+## time
+$ex = 34
+try {
+    time true
+} catch e { $ex = $e; }
+assert $ex is Int # no error
+
+$ex = 34
+try {
+    time false
+} catch e { $ex = $e; }
+$assertStatus(1, $ex, 366)
+
+$ex = 34
+try {
+    !time false
+} catch e { $ex = $e; }
+assert $ex is Int # no error
+
 true
