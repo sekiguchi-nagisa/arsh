@@ -117,6 +117,8 @@
       assert ($o ? $o : 0) == 34
       assert $o && $o == 45
       ```
+- **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by default
+    - if check SIGPIPE failure, set ``failsigpipe`` option
 
 #### Builtin
 

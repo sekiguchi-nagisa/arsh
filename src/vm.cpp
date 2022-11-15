@@ -380,10 +380,15 @@ bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, c
       return false;
     }
     if (forkKind == ForkKind::PIPE_FAIL && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-      unsigned int index = 0;
-      for (; index < entry->getProcSize(); index++) {
-        int s = entry->getProcs()[index].exitStatus();
+      for (unsigned int index = 0; index < entry->getProcSize(); index++) {
+        auto &proc = entry->getProcs()[index];
+        int s = proc.exitStatus();
         if (s != 0) {
+          if (index < entry->getProcSize() - 1 && proc.signaled() && proc.asSigNum() == SIGPIPE) {
+            if (!hasFlag(state.runtimeOption, RuntimeOption::FAIL_SIGPIPE)) {
+              continue;
+            }
+          }
           std::string message = "pipeline has non-zero status: `";
           message += std::to_string(s);
           message += "' at ";

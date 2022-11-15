@@ -39,11 +39,12 @@ namespace ydsh {
   OP(DOTGLOB, (1u << 1u), "dotglob")                                                               \
   OP(ERR_RAISE, (1u << 2u), "errraise")                                                            \
   OP(FASTGLOB, (1u << 3u), "fastglob")                                                             \
-  OP(HUP_EXIT, (1u << 4u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 5u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 6u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 7u), "traceonexit")                                                        \
-  OP(XTRACE, (1u << 8u), "xtrace")
+  OP(FAIL_SIGPIPE, (1u << 4u), "failsigpipe")                                                      \
+  OP(HUP_EXIT, (1u << 5u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 6u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 7u), "nullglob")                                                             \
+  OP(TRACE_EXIT, (1u << 8u), "traceonexit")                                                        \
+  OP(XTRACE, (1u << 9u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {

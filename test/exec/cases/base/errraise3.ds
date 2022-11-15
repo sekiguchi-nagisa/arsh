@@ -1,0 +1,48 @@
+
+
+yes | head > /dev/null
+assert $? == 0
+assert $PIPESTATUS[0] == 128 + $SIGPIPE.value()
+assert $PIPESTATUS[1] == 0
+
+shctl set errraise
+
+## ignore SIGPIPE failure
+var ex = 34 as Any
+try {
+    yes | head > /dev/null
+    assert $? == 0
+    ## `yes` command killed by SIGPIPE, but by default, ignore SIGPIPE failure
+    assert $PIPESTATUS[0] == 128 + $SIGPIPE.value()
+    assert $PIPESTATUS[1] == 0
+} catch e {
+    $ex = $e
+}
+assert $ex is Int
+
+## exit with same status as SIGPIPE, but does not SIGPIPE failure
+$ex = 34
+try {
+    exit ${128 + $SIGPIPE.value()} | head > /dev/null
+    assert false
+    assert $? == 0
+    assert $PIPESTATUS[0] == 128 + $SIGPIPE.value()
+    assert $PIPESTATUS[1] == 0
+} catch e {
+    $ex = $e  # raise by `exit ${128 + $SIGPIPE.value()}` (not SIGPIPE failure)
+}
+assert $ex is ExecError
+
+## does not ignore SIGPIPE failure
+shctl set FAIL_SIGPIPE
+$ex = 34
+try {
+    yes | head > /dev/null
+    assert false
+    assert $? == 0
+    assert $PIPESTATUS[0] == 128 + $SIGPIPE.value()
+    assert $PIPESTATUS[1] == 0
+} catch e {
+    $ex = $e  # raise by `yes`
+}
+assert $ex is ExecError
