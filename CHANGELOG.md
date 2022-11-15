@@ -47,11 +47,12 @@
     - now specify exit status to constructor
     - add ``Error#status`` method for get exit status
 - add some options to builtin ``complete`` command
-    - ``-q``: does not completion candidates (but still set to ``COMPREPLY``)
+    - ``-q``: does not show completion candidates (but still set to ``COMPREPLY``)
     - ``-s``: apppend space to completion candidate when number of candidates is 1
 - add ``LineEdtior`` type for line editing
     - ``LineEditor#read``: entry point of line editing
     - ``LineEditor#setCompleter``: specify completion callback
+    - ``LineEditor#setPrompt``: speccify prompt callback
 
 #### Misc
 
@@ -72,7 +73,7 @@
     - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and ``Module#_scriptName``
     - in interctive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
         - run-time ``SCRIPT_DIR`` always indicates latest compile-time ``SCRIPT_DIR``
-- **Breaking Change**: now does not ignore null string in command arguments
+- **Breaking Change**: now does not ignore empty string in command arguments
   ```
   var a = ''
   echo $a a          # output is ' a'
@@ -99,15 +100,15 @@
     - now only throw and catch derived types from ``Error`` type
 - **Breaking Change**: improve smart cast.
     - also support option type auto-unwrap
-    - support the following context
+    - supported like the following context
       ```
       ## auto down cast
       var e = -45 as Any
-      if $e {
+      if $e is Int {
         assert $e.abs() == 45
       }
-      assert ($e ? $e.abs() : 0) == 45
-      assert $e && $e.abs() == 45
+      assert ($e is Int ? $e.abs() : 0) == 45
+      assert $e is Int && $e.abs() == 45
       
       ## auto unwrap
       var o = '34'.toInt()
@@ -126,7 +127,7 @@
     - now pass caller module context to fallback handler
 - **Breaking Change**: only allow decimal integer in ``test`` command like bash
 - improve runtime option recognition
-    - now allow upper case letter, _, - like the follow
+    - now allow upper case, snake case, kebab case
       ```
       shctl set TRACE_ON_EXIT Null-Glob
       ```
@@ -145,6 +146,7 @@
 - crash indexing of source statements that have glob/brace expansion
 - fix module symbol synchronization of ``DSState_loadModule`` api
 - crash ``Signal#trap`` method when pass closure
+- type name completion in constructor parameter
 
 ## [0.27.1] - 2022-09-30
 
