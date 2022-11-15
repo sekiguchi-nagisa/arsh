@@ -1902,6 +1902,10 @@ YDSH_METHOD error_init(RuntimeContext &ctx) {
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto &v = LOCAL(2);
   int64_t status = v.isInvalid() ? 1 : v.asInt();
+  if (status == 0) {
+    raiseError(ctx, TYPE::InvalidOperationError, "Error constructor only allow non-zero status");
+    RET_ERROR;
+  }
   RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), status)));
 }
 
