@@ -1284,11 +1284,15 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 // ##     Module     ##
 // ####################
 
+static void raiseInvalidOperationError(DSState &st, std::string &&m) {
+  raiseError(st, TYPE::InvalidOperationError, std::move(m));
+}
+
 static bool checkModLayout(DSState &state, const DSValue &value) {
   if (value.isObject() && isa<FuncObject>(value.get())) {
     return true;
   }
-  raiseError(state, TYPE::InvalidOperationError, "cannot call method on temporary module object");
+  raiseInvalidOperationError(state, "cannot call method on temporary module object");
   return false;
 }
 
@@ -1322,8 +1326,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_func);
 
   if (!ctx.tempModScope.empty()) {
-    raiseError(ctx, TYPE::InvalidOperationError,
-               "cannot call method within user-defined completer");
+    raiseInvalidOperationError(ctx, "cannot call method within user-defined completer");
     RET_ERROR;
   }
   assert(LOCAL(0).isObject());
@@ -1740,8 +1743,7 @@ YDSH_METHOD array_hasNext(RuntimeContext &ctx) {
 // #################
 
 static void raiseIterInvalid(DSState &st) {
-  std::string msg = "cannot modify map object during iteration";
-  raiseError(st, TYPE::InvalidOperationError, std::move(msg));
+  raiseInvalidOperationError(st, "cannot modify map object during iteration");
 }
 
 #define CHECK_ITER_INVALIDATION(obj)                                                               \
@@ -1903,7 +1905,7 @@ YDSH_METHOD error_init(RuntimeContext &ctx) {
   auto &v = LOCAL(2);
   int64_t status = v.isInvalid() ? 1 : v.asInt();
   if (status == 0) {
-    raiseError(ctx, TYPE::InvalidOperationError, "Error constructor only allow non-zero status");
+    raiseInvalidOperationError(ctx, "Error constructor only allow non-zero status");
     RET_ERROR;
   }
   RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), status)));
@@ -2054,6 +2056,14 @@ YDSH_METHOD cmd_call(RuntimeContext &ctx) {
 // ##     LineEditor     ##
 // ########################
 
+#define CHECK_EDITOR_LOCK(edtior)                                                                  \
+  do {                                                                                             \
+    if (editor.locked()) {                                                                         \
+      raiseInvalidOperationError(ctx, "cannot modify LineEditor object during line editing");      \
+      RET_ERROR;                                                                                   \
+    }                                                                                              \
+  } while (false)
+
 //!bind: function $OP_INIT($this : LineEditor) : LineEditor
 YDSH_METHOD edit_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_init);
@@ -2066,6 +2076,7 @@ YDSH_METHOD edit_init(RuntimeContext &ctx) {
 YDSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
   char *line = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef());
   auto ret = line != nullptr ? DSValue::createStr(line) : DSValue::createInvalid();
@@ -2077,6 +2088,7 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
 YDSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
   ObjPtr<DSObject> callback;
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();
@@ -2089,6 +2101,7 @@ YDSH_METHOD edit_comp(RuntimeContext &ctx) {
 YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_prompt);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
   ObjPtr<DSObject> callback;
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();

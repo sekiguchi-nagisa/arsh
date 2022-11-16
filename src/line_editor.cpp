@@ -1344,12 +1344,18 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     return linenoiseNoTTY(this->inFd);
   }
 
+  this->lock = true;
+  auto cleanup = finally([&] { this->lock = false; });
+
   // prepare prompt
   DSValue promptVal;
   if (this->promptCallback) {
     auto args = makeArgs(DSValue::createStr(promptRef));
     DSValue callback = this->promptCallback;
     promptVal = this->kickCallback(state, std::move(callback), std::move(args));
+    if (state.hasError()) {
+      return nullptr;
+    }
   }
   if (promptVal.hasStrRef()) {
     promptRef = promptVal.asStrRef();

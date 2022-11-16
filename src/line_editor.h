@@ -28,6 +28,8 @@ private:
   int inFd;
   int outFd;
 
+  bool lock{false};
+
   /**
    * must be `(String) -> String` type
    * may be null
@@ -46,6 +48,8 @@ public:
   ~LineEditorObject();
 
   char *readline(DSState &state, StringRef promptRef); // pseudo entry point
+
+  bool locked() const { return this->lock; }
 
   void setPromptCallback(ObjPtr<DSObject> callback) { this->promptCallback = std::move(callback); }
 
