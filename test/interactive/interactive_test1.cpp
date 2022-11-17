@@ -301,6 +301,37 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditor) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  const char *text = "var e = new LineEditor(); $e.setPrompt(function(p)=>{"
+                     "  $e.setCompleter(function(m, s) => $s.split(''));"
+                     "  $p; "
+                     "})";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+  text = "var ex = 34 as Any;"
+         "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+         "assert $ex is InvalidOperationError";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+
+  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+         "  $e.read()!; })";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+  text = "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+         "assert $ex is InvalidOperationError";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+
+  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+         "  $e.setPrompt(function(pp)=> $pp);"
+         "  $p; })";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+  text = "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+         "assert $ex is InvalidOperationError";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
