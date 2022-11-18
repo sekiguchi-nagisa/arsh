@@ -154,7 +154,6 @@ static struct termios orig_termios; /* In order to restore at exit.*/
 static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
 
 static linenoiseHistoryCallback *historyCallback = nullptr;
-static linenoiseHighlightCallback *highlightCallback = nullptr;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -197,9 +196,6 @@ enum KEY_ACTION {
   ESC = 27,       /* Escape */
   BACKSPACE = 127 /* Backspace */
 };
-
-static int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
-static void refreshLine(struct linenoiseState *l);
 
 /* Debugging macro. */
 #if 0
@@ -599,63 +595,6 @@ static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *le
   return prefix;
 }
 
-/**
- * return token start cursor.
- */
-static size_t insertEstimatedSuffix(struct linenoiseState *ls,
-                                    const ydsh::ArrayObject &candidates) {
-  size_t len;
-  char *prefix = computeCommonPrefix(candidates, &len);
-  if (prefix == nullptr) {
-    return ls->pos;
-  }
-
-  logprintf("#prefix: %s\n", prefix);
-  logprintf("pos: %ld\n", ls->pos);
-
-  // compute suffix
-  const char oldCh = ls->buf[ls->pos];
-  ls->buf[ls->pos] = '\0';
-  int matched = 0;
-
-  size_t offset = 0;
-  if (ls->pos > 0) {
-    for (offset = ls->pos - 1;; offset--) {
-      const char *curStr = ls->buf + offset;
-      logprintf("curStr: %s\n", curStr);
-      const char *ptr = strstr(prefix, curStr);
-      if (ptr == nullptr) {
-        offset++;
-        break;
-      }
-      if (ptr == prefix) {
-        matched = 1;
-      }
-
-      if (offset == 0) {
-        break;
-      }
-    }
-  }
-
-  logprintf("offset: %ld\n", offset);
-  if (matched) {
-    size_t suffixSize = len - (ls->pos - offset);
-    logprintf("suffix size: %ld\n", suffixSize);
-    char *inserting = (char *)malloc(sizeof(char) * suffixSize);
-    memcpy(inserting, prefix + (len - suffixSize), suffixSize);
-    linenoiseEditInsert(ls, inserting, suffixSize);
-    free(inserting);
-  } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    linenoiseEditInsert(ls, prefix, len);
-  }
-
-  ls->buf[ls->pos] = oldCh;
-  free(prefix);
-
-  return matched ? offset : ls->pos;
-}
-
 static void checkProperty(struct linenoiseState *l) {
   for (auto &e : ydsh::getCharWidthPropertyList()) {
     const char *str = e.second;
@@ -672,22 +611,6 @@ static void checkProperty(struct linenoiseState *l) {
     }
     assert(pos > 0);
     l->ps.setProperty(e.first, pos - 1);
-  }
-}
-
-void linenoiseSetHighlightCallback(linenoiseHighlightCallback *callback) {
-  highlightCallback = callback;
-}
-
-static const char *doHighlight(const char *buf, size_t buf_len, size_t *ret_len) {
-  if (highlightCallback) {
-    return highlightCallback(buf, buf_len, ret_len);
-  } else {
-    /**
-     * if callback is not set, return itself
-     */
-    *ret_len = buf_len;
-    return buf;
   }
 }
 
@@ -762,175 +685,62 @@ static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::Str
   return columnPos(ps, buf, buf_len, buf_len);
 }
 
-/* Multi line low level line refresh.
- *
- * Rewrite the currently edited line accordingly to the buffer content,
- * cursor position, and number of columns of the terminal. */
-static void refreshMultiLine(struct linenoiseState *l) {
-  char seq[64];
-  size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
-  int colpos = columnPosForMultiLine(l->ps, l->buf, l->len, l->len, l->cols, pcollen);
-  int colpos2;                                             /* cursor column position. */
-  int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
-  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols; /* cursor relative row. */
-  int rpos2;                                               /* rpos after refresh. */
-  int col;                                                 /* colum position, zero-based. */
-  int old_rows = l->maxrows;
-  int fd = l->ofd, j;
-  struct abuf ab;
-
-  /* Update maxrows if needed. */
-  if (rows > (int)l->maxrows)
-    l->maxrows = rows;
-
-  /* First step: clear all the lines used before. To do so start by
-   * going to the last row. */
-  if (old_rows - rpos > 0) {
-    lndebug("go down %d", old_rows - rpos);
-    snprintf(seq, 64, "\x1b[%dB", old_rows - rpos);
-    ab.append(seq, strlen(seq));
-  }
-
-  /* Now for every row clear it, go up. */
-  for (j = 0; j < old_rows - 1; j++) {
-    lndebug("clear+up");
-    snprintf(seq, 64, "\r\x1b[0K\x1b[1A");
-    ab.append(seq, strlen(seq));
-  }
-
-  /* Clean the top line. */
-  lndebug("clear");
-  snprintf(seq, 64, "\r\x1b[0K");
-  ab.append(seq, strlen(seq));
-
-  /* Write the prompt and the current buffer content */
-  ab.append(l->prompt.data(), l->prompt.size());
-  size_t ret_len;
-  const char *ret = doHighlight(l->buf, l->len, &ret_len);
-  ab.append(ret, ret_len);
-
-  /* Get column length to cursor position */
-  colpos2 = columnPosForMultiLine(l->ps, l->buf, l->len, l->pos, l->cols, pcollen);
-
-  /* If we are at the very end of the screen with our prompt, we need to
-   * emit a newline and move the prompt to the first column. */
-  if (l->pos && l->pos == l->len && (colpos2 + pcollen) % l->cols == 0) {
-    lndebug("<newline>");
-    ab.append("\n", 1);
-    snprintf(seq, 64, "\r");
-    ab.append(seq, strlen(seq));
-    rows++;
-    if (rows > (int)l->maxrows)
-      l->maxrows = rows;
-  }
-
-  /* Move cursor to right position. */
-  rpos2 = (pcollen + colpos2 + l->cols) / l->cols; /* current cursor relative row. */
-  lndebug("rpos2 %d", rpos2);
-
-  /* Go up till we reach the expected positon. */
-  if (rows - rpos2 > 0) {
-    lndebug("go-up %d", rows - rpos2);
-    snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
-    ab.append(seq, strlen(seq));
-  }
-
-  /* Set column. */
-  col = (pcollen + colpos2) % l->cols;
-  lndebug("set col %d", 1 + col);
-  if (col)
-    snprintf(seq, 64, "\r\x1b[%dC", col);
-  else
-    snprintf(seq, 64, "\r");
-  ab.append(seq, strlen(seq));
-
-  lndebug("\n");
-  l->oldcolpos = colpos2;
-
-  if (write(fd, ab.b, ab.len) == -1) {
-  } /* Can't recover from write error. */
-}
-
-/* Calls the two low level functions refreshSingleLine() or
- * refreshMultiLine() according to the selected mode. */
-static void refreshLine(struct linenoiseState *l) {
-  updateColumns(l);
-  refreshMultiLine(l);
-}
-
-/* Insert the character 'c' at cursor current position.
- *
- * On error writing to the terminal -1 is returned, otherwise 0. */
-static int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
-  if (l->len + clen <= l->buflen) {
-    if (l->len == l->pos) {
-      memcpy(&l->buf[l->pos], cbuf, clen);
-      l->pos += clen;
-      l->len += clen;
-      l->buf[l->len] = '\0';
-      refreshLine(l);
-    } else {
-      memmove(l->buf + l->pos + clen, l->buf + l->pos, l->len - l->pos);
-      memcpy(&l->buf[l->pos], cbuf, clen);
-      l->pos += clen;
-      l->len += clen;
-      l->buf[l->len] = '\0';
-      refreshLine(l);
-    }
-  }
-  return 0;
-}
-
 /* Move cursor on the left. */
-static void linenoiseEditMoveLeft(struct linenoiseState *l) {
+static bool linenoiseEditMoveLeft(struct linenoiseState *l) {
   if (l->pos > 0) {
     l->pos -= prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* Move cursor on the right. */
-static void linenoiseEditMoveRight(struct linenoiseState *l) {
+static bool linenoiseEditMoveRight(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos += nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* Move cursor to the start of the line. */
-static void linenoiseEditMoveHome(struct linenoiseState *l) {
+static bool linenoiseEditMoveHome(struct linenoiseState *l) {
   if (l->pos != 0) {
     l->pos = 0;
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* Move cursor to the end of the line. */
-static void linenoiseEditMoveEnd(struct linenoiseState *l) {
+static bool linenoiseEditMoveEnd(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos = l->len;
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
-static void linenoiseEditMoveLeftWord(struct linenoiseState *l) {
+static bool linenoiseEditMoveLeftWord(struct linenoiseState *l) {
   if (l->pos > 0) {
     l->pos -= prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
-static void linenoiseEditMoveRightWord(struct linenoiseState *l) {
+static bool linenoiseEditMoveRightWord(struct linenoiseState *l) {
   if (l->pos != l->len) {
     l->pos += nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 void linenoiseSetHistoryCallback(linenoiseHistoryCallback *callback) { historyCallback = callback; }
 
 static const char *kickHistoryCallback(int fd, const char *buf, int *history_index, historyOp op) {
-  if (!highlightCallback) {
+  if (!historyCallback) {
     return nullptr;
   }
 
@@ -944,7 +754,7 @@ static const char *kickHistoryCallback(int fd, const char *buf, int *history_ind
  * entry as specified by 'dir'. */
 #define LINENOISE_HISTORY_NEXT 0
 #define LINENOISE_HISTORY_PREV 1
-void linenoiseEditHistoryNext(struct linenoiseState *l, int dir) {
+static bool linenoiseEditHistoryNext(struct linenoiseState *l, int dir) {
   historyOp op =
       dir == LINENOISE_HISTORY_NEXT ? LINENOISE_HISTORY_OP_NEXT : LINENOISE_HISTORY_OP_PREV;
   const char *ret = kickHistoryCallback(l->ifd, l->buf, &l->history_index, op);
@@ -952,19 +762,21 @@ void linenoiseEditHistoryNext(struct linenoiseState *l, int dir) {
     strncpy(l->buf, ret, l->buflen);
     l->buf[l->buflen - 1] = '\0';
     l->len = l->pos = strlen(l->buf);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
-static void linenoiseSearchHistory(struct linenoiseState *l) {
+static bool linenoiseSearchHistory(struct linenoiseState *l) {
   const char *ret =
       kickHistoryCallback(l->ifd, l->buf, &l->history_index, LINENOISE_HISTORY_OP_SEARCH);
   if (ret && *ret != '\0') {
     strncpy(l->buf, ret, l->buflen);
     l->buf[l->buflen - 1] = '\0';
     l->len = l->pos = strlen(l->buf);
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 static void doHistoryOp(int fd, historyOp op) { kickHistoryCallback(fd, nullptr, nullptr, op); }
@@ -998,38 +810,39 @@ static int preparePrompt(struct linenoiseState *l) {
 
 /* Delete the character at the right of the cursor without altering the cursor
  * position. Basically this is what happens with the "Delete" keyboard key. */
-void linenoiseEditDelete(struct linenoiseState *l) {
+static bool linenoiseEditDelete(struct linenoiseState *l) {
   if (l->len > 0 && l->pos < l->len) {
     int chlen = nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + chlen, l->len - l->pos - chlen);
     l->len -= chlen;
     l->buf[l->len] = '\0';
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* Backspace implementation. */
-void linenoiseEditBackspace(struct linenoiseState *l) {
+static bool linenoiseEditBackspace(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
     int chlen = prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos - chlen, l->buf + l->pos, l->len - l->pos);
     l->pos -= chlen;
     l->len -= chlen;
     l->buf[l->len] = '\0';
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* Delete the previosu word, maintaining the cursor at the start of the
  * current word. */
-void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
+static bool linenoiseEditDeletePrevWord(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
     int wordLen = prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos - wordLen, l->buf + l->pos, l->len - l->pos);
     l->pos -= wordLen;
     l->len -= wordLen;
     l->buf[l->len] = '\0';
-    refreshLine(l);
   } else { // FIXME: split ascii word op
     size_t old_pos = l->pos;
     size_t diff;
@@ -1041,18 +854,19 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     diff = old_pos - l->pos;
     memmove(l->buf + l->pos, l->buf + old_pos, l->len - old_pos + 1);
     l->len -= diff;
-    refreshLine(l);
   }
+  return true;
 }
 
-void linenoiseEditDeleteNextWord(struct linenoiseState *l) {
+static bool linenoiseEditDeleteNextWord(struct linenoiseState *l) {
   if (l->len > 0 && l->pos < l->len) {
     int wordLen = nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + wordLen, l->len - l->pos - wordLen);
     l->len -= wordLen;
     l->buf[l->len] = '\0';
-    refreshLine(l);
+    return true;
   }
+  return false;
 }
 
 /* This function is called when linenoise() is called with the standard
@@ -1112,6 +926,118 @@ LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
 LineEditorObject::~LineEditorObject() {
   close(this->inFd);
   close(this->outFd);
+}
+
+/* Multi line low level line refresh.
+ *
+ * Rewrite the currently edited line accordingly to the buffer content,
+ * cursor position, and number of columns of the terminal. */
+void LineEditorObject::refreshLine(DSState &, struct linenoiseState *l) {
+  updateColumns(l);
+
+  char seq[64];
+  size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
+  int colpos = columnPosForMultiLine(l->ps, l->buf, l->len, l->len, l->cols, pcollen);
+  int colpos2;                                             /* cursor column position. */
+  int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
+  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols; /* cursor relative row. */
+  int rpos2;                                               /* rpos after refresh. */
+  int col;                                                 /* colum position, zero-based. */
+  int old_rows = l->maxrows;
+  int fd = l->ofd, j;
+  struct abuf ab;
+
+  /* Update maxrows if needed. */
+  if (rows > (int)l->maxrows)
+    l->maxrows = rows;
+
+  /* First step: clear all the lines used before. To do so start by
+   * going to the last row. */
+  if (old_rows - rpos > 0) {
+    lndebug("go down %d", old_rows - rpos);
+    snprintf(seq, 64, "\x1b[%dB", old_rows - rpos);
+    ab.append(seq, strlen(seq));
+  }
+
+  /* Now for every row clear it, go up. */
+  for (j = 0; j < old_rows - 1; j++) {
+    lndebug("clear+up");
+    snprintf(seq, 64, "\r\x1b[0K\x1b[1A");
+    ab.append(seq, strlen(seq));
+  }
+
+  /* Clean the top line. */
+  lndebug("clear");
+  snprintf(seq, 64, "\r\x1b[0K");
+  ab.append(seq, strlen(seq));
+
+  /* Write the prompt and the current buffer content */
+  ab.append(l->prompt.data(), l->prompt.size());
+  ab.append(l->buf, l->len);
+
+  /* Get column length to cursor position */
+  colpos2 = columnPosForMultiLine(l->ps, l->buf, l->len, l->pos, l->cols, pcollen);
+
+  /* If we are at the very end of the screen with our prompt, we need to
+   * emit a newline and move the prompt to the first column. */
+  if (l->pos && l->pos == l->len && (colpos2 + pcollen) % l->cols == 0) {
+    lndebug("<newline>");
+    ab.append("\n", 1);
+    snprintf(seq, 64, "\r");
+    ab.append(seq, strlen(seq));
+    rows++;
+    if (rows > (int)l->maxrows)
+      l->maxrows = rows;
+  }
+
+  /* Move cursor to right position. */
+  rpos2 = (pcollen + colpos2 + l->cols) / l->cols; /* current cursor relative row. */
+  lndebug("rpos2 %d", rpos2);
+
+  /* Go up till we reach the expected positon. */
+  if (rows - rpos2 > 0) {
+    lndebug("go-up %d", rows - rpos2);
+    snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
+    ab.append(seq, strlen(seq));
+  }
+
+  /* Set column. */
+  col = (pcollen + colpos2) % l->cols;
+  lndebug("set col %d", 1 + col);
+  if (col)
+    snprintf(seq, 64, "\r\x1b[%dC", col);
+  else
+    snprintf(seq, 64, "\r");
+  ab.append(seq, strlen(seq));
+
+  lndebug("\n");
+  l->oldcolpos = colpos2;
+
+  if (write(fd, ab.b, ab.len) == -1) {
+  } /* Can't recover from write error. */
+}
+
+/* Insert the character 'c' at cursor current position.
+ *
+ * On error writing to the terminal -1 is returned, otherwise 0. */
+int LineEditorObject::linenoiseEditInsert(DSState &state, struct linenoiseState *l,
+                                          const char *cbuf, int clen) {
+  if (l->len + clen <= l->buflen) {
+    if (l->len == l->pos) {
+      memcpy(&l->buf[l->pos], cbuf, clen);
+      l->pos += clen;
+      l->len += clen;
+      l->buf[l->len] = '\0';
+    } else {
+      memmove(l->buf + l->pos + clen, l->buf + l->pos, l->len - l->pos);
+      memcpy(&l->buf[l->pos], cbuf, clen);
+      l->pos += clen;
+      l->len += clen;
+      l->buf[l->len] = '\0';
+    }
+    this->refreshLine(state, l);
+  }
+  return 0;
 }
 
 /* This function is the core of the line editing capability of linenoise.
@@ -1178,19 +1104,25 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     switch (c) {
     case ENTER: /* enter */
       doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
-      linenoiseEditMoveEnd(&l);
+      if (linenoiseEditMoveEnd(&l)) {
+        this->refreshLine(state, &l);
+      }
       return (int)l.len;
     case CTRL_C: /* ctrl-c */
       errno = EAGAIN;
       return -1;
     case BACKSPACE: /* backspace */
     case CTRL_H:    /* ctrl-h */
-      linenoiseEditBackspace(&l);
+      if (linenoiseEditBackspace(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_D: /* ctrl-d, remove char at right of cursor, or if the
                 line is empty, act as end-of-file. */
       if (l.len > 0) {
-        linenoiseEditDelete(&l);
+        if (linenoiseEditDelete(&l)) {
+          this->refreshLine(state, &l);
+        }
       } else {
         doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
         return -1;
@@ -1203,23 +1135,33 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         buf[l.pos] = aux;
         if (l.pos != l.len - 1)
           l.pos++;
-        refreshLine(&l);
+        this->refreshLine(state, &l);
       }
       break;
     case CTRL_B: /* ctrl-b */
-      linenoiseEditMoveLeft(&l);
+      if (linenoiseEditMoveLeft(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_F: /* ctrl-f */
-      linenoiseEditMoveRight(&l);
+      if (linenoiseEditMoveRight(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_P: /* ctrl-p */
-      linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV);
+      if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_N: /* ctrl-n */
-      linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
+      if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_R: /* ctrl-r */
-      linenoiseSearchHistory(&l);
+      if (linenoiseSearchHistory(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case ESC: /* escape sequence */
       /* Read the next two bytes representing the escape sequence.
@@ -1230,13 +1172,19 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       if (seq[0] != '[' && seq[0] != 'O') { // ESC ? sequence
         switch (seq[0]) {
         case 'f':
-          linenoiseEditMoveRightWord(&l);
+          if (linenoiseEditMoveRightWord(&l)) {
+            this->refreshLine(state, &l);
+          }
           break;
         case 'b':
-          linenoiseEditMoveLeftWord(&l);
+          if (linenoiseEditMoveLeftWord(&l)) {
+            this->refreshLine(state, &l);
+          }
           break;
         case 'd':
-          linenoiseEditDeleteNextWord(&l);
+          if (linenoiseEditDeleteNextWord(&l)) {
+            this->refreshLine(state, &l);
+          }
           break;
         }
       } else {
@@ -1251,35 +1199,53 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
             if (seq[2] == '~') {
               switch (seq[1]) {
               case '1': /* Home */
-                linenoiseEditMoveHome(&l);
+                if (linenoiseEditMoveHome(&l)) {
+                  this->refreshLine(state, &l);
+                }
                 break;
               case '3': /* Delete key. */
-                linenoiseEditDelete(&l);
+                if (linenoiseEditDelete(&l)) {
+                  this->refreshLine(state, &l);
+                }
                 break;
               case '4': /* End */
-                linenoiseEditMoveEnd(&l);
+                if (linenoiseEditMoveEnd(&l)) {
+                  this->refreshLine(state, &l);
+                }
                 break;
               }
             }
           } else {
             switch (seq[1]) {
             case 'A': /* Up */
-              linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV);
+              if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV)) {
+                this->refreshLine(state, &l);
+              }
               break;
             case 'B': /* Down */
-              linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
+              if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT)) {
+                this->refreshLine(state, &l);
+              }
               break;
             case 'C': /* Right */
-              linenoiseEditMoveRight(&l);
+              if (linenoiseEditMoveRight(&l)) {
+                this->refreshLine(state, &l);
+              }
               break;
             case 'D': /* Left */
-              linenoiseEditMoveLeft(&l);
+              if (linenoiseEditMoveLeft(&l)) {
+                this->refreshLine(state, &l);
+              }
               break;
             case 'H': /* Home */
-              linenoiseEditMoveHome(&l);
+              if (linenoiseEditMoveHome(&l)) {
+                this->refreshLine(state, &l);
+              }
               break;
             case 'F': /* End*/
-              linenoiseEditMoveEnd(&l);
+              if (linenoiseEditMoveEnd(&l)) {
+                this->refreshLine(state, &l);
+              }
               break;
             }
           }
@@ -1289,41 +1255,51 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         else if (seq[0] == 'O') {
           switch (seq[1]) {
           case 'H': /* Home */
-            linenoiseEditMoveHome(&l);
+            if (linenoiseEditMoveHome(&l)) {
+              this->refreshLine(state, &l);
+            }
             break;
           case 'F': /* End*/
-            linenoiseEditMoveEnd(&l);
+            if (linenoiseEditMoveEnd(&l)) {
+              this->refreshLine(state, &l);
+            }
             break;
           }
         }
       }
       break;
     default:
-      if (linenoiseEditInsert(&l, cbuf, nread))
+      if (this->linenoiseEditInsert(state, &l, cbuf, nread))
         return -1;
       break;
     case CTRL_U: /* Ctrl+u, delete the whole line. */
       buf[0] = '\0';
       l.pos = l.len = 0;
-      refreshLine(&l);
+      this->refreshLine(state, &l);
       break;
     case CTRL_K: /* Ctrl+k, delete from current to end of line. */
       buf[l.pos] = '\0';
       l.len = l.pos;
-      refreshLine(&l);
+      this->refreshLine(state, &l);
       break;
     case CTRL_A: /* Ctrl+a, go to the start of the line */
-      linenoiseEditMoveHome(&l);
+      if (linenoiseEditMoveHome(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_E: /* ctrl+e, go to the end of the line */
-      linenoiseEditMoveEnd(&l);
+      if (linenoiseEditMoveEnd(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     case CTRL_L: /* ctrl+l, clear screen */
       linenoiseClearScreen(l.ofd);
-      refreshLine(&l);
+      this->refreshLine(state, &l);
       break;
     case CTRL_W: /* ctrl+w, delete previous word */
-      linenoiseEditDeletePrevWord(&l);
+      if (linenoiseEditDeletePrevWord(&l)) {
+        this->refreshLine(state, &l);
+      }
       break;
     }
   }
@@ -1391,6 +1367,66 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   }
 }
 
+/**
+ * @param ls
+ * @param candidates
+ * @return
+ * return token start cursor
+ */
+size_t LineEditorObject::insertEstimatedSuffix(DSState &state, struct linenoiseState *ls,
+                                               const ArrayObject &candidates) {
+  size_t len;
+  char *prefix = computeCommonPrefix(candidates, &len);
+  if (prefix == nullptr) {
+    return ls->pos;
+  }
+
+  logprintf("#prefix: %s\n", prefix);
+  logprintf("pos: %ld\n", ls->pos);
+
+  // compute suffix
+  const char oldCh = ls->buf[ls->pos];
+  ls->buf[ls->pos] = '\0';
+  int matched = 0;
+
+  size_t offset = 0;
+  if (ls->pos > 0) {
+    for (offset = ls->pos - 1;; offset--) {
+      const char *curStr = ls->buf + offset;
+      logprintf("curStr: %s\n", curStr);
+      const char *ptr = strstr(prefix, curStr);
+      if (ptr == nullptr) {
+        offset++;
+        break;
+      }
+      if (ptr == prefix) {
+        matched = 1;
+      }
+
+      if (offset == 0) {
+        break;
+      }
+    }
+  }
+
+  logprintf("offset: %ld\n", offset);
+  if (matched) {
+    size_t suffixSize = len - (ls->pos - offset);
+    logprintf("suffix size: %ld\n", suffixSize);
+    char *inserting = (char *)malloc(sizeof(char) * suffixSize);
+    memcpy(inserting, prefix + (len - suffixSize), suffixSize);
+    this->linenoiseEditInsert(state, ls, inserting, suffixSize);
+    free(inserting);
+  } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
+    this->linenoiseEditInsert(state, ls, prefix, len);
+  }
+
+  ls->buf[ls->pos] = oldCh;
+  free(prefix);
+
+  return matched ? offset : ls->pos;
+}
+
 int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbuf, int clen,
                                    int *code) {
   StringRef line(ls->buf, ls->pos);
@@ -1402,7 +1438,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
 
   int nread = 0;
   int c = 0;
-  int offset = insertEstimatedSuffix(ls, *candidates);
+  int offset = this->insertEstimatedSuffix(state, ls, *candidates);
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls->ofd);
   } else if (len == 1) {
@@ -1449,7 +1485,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       updateColumns(ls);
       showAllCandidates(ls->ps, ls->ofd, ls->cols, *candidates);
     }
-    refreshLine(ls);
+    this->refreshLine(state, ls);
 
     // rotate candidates
     size_t rotateIndex = 0;
@@ -1468,7 +1504,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       if (written >= 0) {
         ls->len = ls->pos = offset + written;
       }
-      refreshLine(ls);
+      this->refreshLine(state, ls);
 
       if (rotateIndex == len - 1) {
         rotateIndex = 0;

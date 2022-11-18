@@ -42,6 +42,12 @@ private:
    */
   ObjPtr<DSObject> completionCallback;
 
+  /**
+   * must be `(String) -> String` type
+   * may be null
+   */
+  ObjPtr<DSObject> highlightCallback;
+
 public:
   LineEditorObject();
 
@@ -57,7 +63,22 @@ public:
     this->completionCallback = std::move(callback);
   }
 
+  void setHighlightCallback(ObjPtr<DSObject> callback) {
+    this->highlightCallback = std::move(callback);
+  }
+
 private:
+  void refreshLine(DSState &state, struct linenoiseState *l);
+
+  /**
+   * Insert the character 'c' at cursor current position.
+   * @param l
+   * @param cbuf
+   * @param clen
+   * @return
+   */
+  int linenoiseEditInsert(DSState &state, struct linenoiseState *l, const char *cbuf, int clen);
+
   /**
    * actual line edit function
    * @param buf
@@ -68,6 +89,9 @@ private:
   int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
 
   int completeLine(DSState &state, struct linenoiseState *ls, char *cbuf, int clen, int *code);
+
+  size_t insertEstimatedSuffix(DSState &state, struct linenoiseState *ls,
+                               const ArrayObject &candidates);
 
   DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
