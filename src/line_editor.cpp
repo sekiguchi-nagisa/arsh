@@ -130,9 +130,6 @@
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
-static struct termios orig_termios; /* In order to restore at exit.*/
-static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
-
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
@@ -318,48 +315,6 @@ static int isUnsupportedTerm() {
     if (!strcasecmp(term, unsupported_term[j]))
       return 1;
   return 0;
-}
-
-/* Raw mode: 1960 magic shit. */
-static int enableRawMode(int fd) {
-  struct termios raw;
-
-  if (!isatty(fd))
-    goto fatal;
-  if (tcgetattr(fd, &orig_termios) == -1)
-    goto fatal;
-
-  raw = orig_termios; /* modify the original mode */
-  /* input modes: no break, no CR to NL, no parity check, no strip char
-   */
-  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
-  /* output modes - disable post processing */
-  //    raw.c_oflag &= ~(OPOST);
-  /* control modes - set 8 bit chars */
-  raw.c_cflag |= (CS8);
-  /* local modes - choing off, canonical off, no extended functions,
-   * no signal chars (^Z,^C) */
-  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-  /* control chars - set return condition: min number of bytes and timer.
-   * We want read to return every single byte, without timeout. */
-  raw.c_cc[VMIN] = 1;
-  raw.c_cc[VTIME] = 0; /* 1 byte, no timer */
-
-  /* put terminal in raw mode after flushing */
-  if (tcsetattr(fd, TCSAFLUSH, &raw) < 0)
-    goto fatal;
-  rawmode = 1;
-  return 0;
-
-fatal:
-  errno = ENOTTY;
-  return -1;
-}
-
-static void disableRawMode(int fd) {
-  /* Don't even check the return value as it's too late. */
-  if (rawmode && tcsetattr(fd, TCSAFLUSH, &orig_termios) != -1)
-    rawmode = 0;
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
@@ -859,6 +814,48 @@ LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
 LineEditorObject::~LineEditorObject() {
   close(this->inFd);
   close(this->outFd);
+}
+
+/* Raw mode: 1960 magic shit. */
+int LineEditorObject::enableRawMode(int fd) {
+  struct termios raw;
+
+  if (!isatty(fd))
+    goto fatal;
+  if (tcgetattr(fd, &this->orgTermios) == -1)
+    goto fatal;
+
+  raw = this->orgTermios; /* modify the original mode */
+  /* input modes: no break, no CR to NL, no parity check, no strip char
+   */
+  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
+  /* output modes - disable post processing */
+  //    raw.c_oflag &= ~(OPOST);
+  /* control modes - set 8 bit chars */
+  raw.c_cflag |= (CS8);
+  /* local modes - choing off, canonical off, no extended functions,
+   * no signal chars (^Z,^C) */
+  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+  /* control chars - set return condition: min number of bytes and timer.
+   * We want read to return every single byte, without timeout. */
+  raw.c_cc[VMIN] = 1;
+  raw.c_cc[VTIME] = 0; /* 1 byte, no timer */
+
+  /* put terminal in raw mode after flushing */
+  if (tcsetattr(fd, TCSAFLUSH, &raw) < 0)
+    goto fatal;
+  this->rawMode = true;
+  return 0;
+
+fatal:
+  errno = ENOTTY;
+  return -1;
+}
+
+void LineEditorObject::disableRawMode(int fd) {
+  /* Don't even check the return value as it's too late. */
+  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1)
+    this->rawMode = false;
 }
 
 /* Multi line low level line refresh.
