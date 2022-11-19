@@ -23,6 +23,13 @@ struct linenoiseState;
 
 namespace ydsh {
 
+#define EACH_EDIT_HIST_OP(OP)                                                                      \
+  OP(INIT, "init")                                                                                 \
+  OP(DEINIT, "deinit") /* take extra arg (final buffer content) */                                 \
+  OP(PREV, "prev")     /* take extra arg (current buffer content) */                               \
+  OP(NEXT, "next")     /* take extra arg (current buffer content) */                               \
+  OP(SEARCH, "search") /* take extra arg (current buffer content) */
+
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int inFd;
@@ -48,6 +55,18 @@ private:
    */
   ObjPtr<DSObject> highlightCallback;
 
+  /**
+   * must be `(String, String) -> String!` type
+   * may be null
+   */
+  ObjPtr<DSObject> historyCallback;
+
+  enum class HistOp {
+#define GEN_ENUM(E, S) E,
+    EACH_EDIT_HIST_OP(GEN_ENUM)
+#undef GEN_ENUM
+  };
+
 public:
   LineEditorObject();
 
@@ -65,6 +84,10 @@ public:
 
   void setHighlightCallback(ObjPtr<DSObject> callback) {
     this->highlightCallback = std::move(callback);
+  }
+
+  void setHistoryCallback(ObjPtr<DSObject> callback) {
+    this->historyCallback = std::move(callback);
   }
 
 private:
@@ -96,6 +119,16 @@ private:
   DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
+
+  /**
+   *
+   * @param state
+   * @param op
+   * @param l
+   * @return
+   * if update buffer content, return true
+   */
+  bool kickHistoryCallback(DSState &state, HistOp op, struct linenoiseState *l);
 };
 
 } // namespace ydsh

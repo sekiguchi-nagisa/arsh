@@ -80,7 +80,7 @@
  *
  * DSR (Device Status Report)
  *    Sequence: ESC [ 6 n
- *    Effect: reports the current cusor position as ESC [ n ; m R
+ *    Effect: reports the current cursor position as ESC [ n ; m R
  *            where n is the row and m is the column
  *
  * When multi line mode is enabled, we also use an additional escape
@@ -124,26 +124,6 @@
 #include "misc/unicode.hpp"
 #include "vm.h"
 
-// ++++++++++ copied from linenoise.h +++++++++++++++
-
-typedef enum {
-  LINENOISE_HISTORY_OP_NEXT,
-  LINENOISE_HISTORY_OP_PREV,
-  LINENOISE_HISTORY_OP_DELETE,
-  LINENOISE_HISTORY_OP_INIT,
-  LINENOISE_HISTORY_OP_SEARCH,
-} historyOp;
-
-typedef const char *(linenoiseHistoryCallback)(const char *buf, int *history_index, historyOp op);
-
-void linenoiseSetHistoryCallback(linenoiseHistoryCallback *callback);
-
-typedef const char *(linenoiseHighlightCallback)(const char *buf, size_t buf_len, size_t *ret_len);
-
-void linenoiseSetHighlightCallback(linenoiseHighlightCallback *callback);
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++
-
 // ++++++++++ copied from linenoise.c ++++++++++++++
 
 #define LINENOISE_MAX_LINE 4096
@@ -152,8 +132,6 @@ static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 static int rawmode = 0;             /* For atexit() function to check if restore is needed*/
-
-static linenoiseHistoryCallback *historyCallback = nullptr;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -169,7 +147,6 @@ struct linenoiseState {
   size_t len;             /* Current edited line length. */
   size_t cols;            /* Number of columns in terminal. */
   size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
-  int history_index;      /* The history index we are currently editing. */
   ydsh::CharWidthProperties ps;
 };
 
@@ -287,7 +264,7 @@ static size_t nextWordLen(const ydsh::CharWidthProperties &ps, const char *buf, 
   return ret.byteSize;
 }
 
-/* Get column length from begining of buffer to current byte position */
+/* Get column length from beginning of buffer to current byte position */
 static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
                         size_t pos) {
   size_t ret = 0;
@@ -737,50 +714,6 @@ static bool linenoiseEditMoveRightWord(struct linenoiseState *l) {
   return false;
 }
 
-void linenoiseSetHistoryCallback(linenoiseHistoryCallback *callback) { historyCallback = callback; }
-
-static const char *kickHistoryCallback(int fd, const char *buf, int *history_index, historyOp op) {
-  if (!historyCallback) {
-    return nullptr;
-  }
-
-  disableRawMode(fd);
-  const char *ret = historyCallback(buf, history_index, op);
-  enableRawMode(fd);
-  return ret;
-}
-
-/* Substitute the currently edited line with the next or previous history
- * entry as specified by 'dir'. */
-#define LINENOISE_HISTORY_NEXT 0
-#define LINENOISE_HISTORY_PREV 1
-static bool linenoiseEditHistoryNext(struct linenoiseState *l, int dir) {
-  historyOp op =
-      dir == LINENOISE_HISTORY_NEXT ? LINENOISE_HISTORY_OP_NEXT : LINENOISE_HISTORY_OP_PREV;
-  const char *ret = kickHistoryCallback(l->ifd, l->buf, &l->history_index, op);
-  if (ret) {
-    strncpy(l->buf, ret, l->buflen);
-    l->buf[l->buflen - 1] = '\0';
-    l->len = l->pos = strlen(l->buf);
-    return true;
-  }
-  return false;
-}
-
-static bool linenoiseSearchHistory(struct linenoiseState *l) {
-  const char *ret =
-      kickHistoryCallback(l->ifd, l->buf, &l->history_index, LINENOISE_HISTORY_OP_SEARCH);
-  if (ret && *ret != '\0') {
-    strncpy(l->buf, ret, l->buflen);
-    l->buf[l->buflen - 1] = '\0';
-    l->len = l->pos = strlen(l->buf);
-    return true;
-  }
-  return false;
-}
-
-static void doHistoryOp(int fd, historyOp op) { kickHistoryCallback(fd, nullptr, nullptr, op); }
-
 /**
  * if current cursor is not head of line. write % symbol like zsh
  * @param l
@@ -834,7 +767,7 @@ static bool linenoiseEditBackspace(struct linenoiseState *l) {
   return false;
 }
 
-/* Delete the previosu word, maintaining the cursor at the start of the
+/* Delete the previous word, maintaining the cursor at the start of the
  * current word. */
 static bool linenoiseEditDeletePrevWord(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
@@ -1062,7 +995,6 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   l.len = 0;
   l.cols = getColumns(this->inFd, this->outFd);
   l.maxrows = 0;
-  l.history_index = 0;
 
   /* Buffer starts empty. */
   l.buf[0] = '\0';
@@ -1070,7 +1002,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
 
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
-  doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_INIT);
+  this->kickHistoryCallback(state, HistOp::INIT, &l); // FIXME: may be removed
 
   preparePrompt(&l);
   if (write(l.ofd, l.prompt.data(), l.prompt.size()) == -1)
@@ -1103,10 +1035,10 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
 
     switch (c) {
     case ENTER: /* enter */
-      doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
       if (linenoiseEditMoveEnd(&l)) {
         this->refreshLine(state, &l);
       }
+      this->kickHistoryCallback(state, HistOp::DEINIT, &l);
       return (int)l.len;
     case CTRL_C: /* ctrl-c */
       errno = EAGAIN;
@@ -1124,7 +1056,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           this->refreshLine(state, &l);
         }
       } else {
-        doHistoryOp(l.ifd, LINENOISE_HISTORY_OP_DELETE);
+        errno = 0;
         return -1;
       }
       break;
@@ -1149,17 +1081,17 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     case CTRL_P: /* ctrl-p */
-      if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV)) {
+      if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
         this->refreshLine(state, &l);
       }
       break;
     case CTRL_N: /* ctrl-n */
-      if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT)) {
+      if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
         this->refreshLine(state, &l);
       }
       break;
     case CTRL_R: /* ctrl-r */
-      if (linenoiseSearchHistory(&l)) {
+      if (this->kickHistoryCallback(state, HistOp::SEARCH, &l)) {
         this->refreshLine(state, &l);
       }
       break;
@@ -1218,12 +1150,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           } else {
             switch (seq[1]) {
             case 'A': /* Up */
-              if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV)) {
+              if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
                 this->refreshLine(state, &l);
               }
               break;
             case 'B': /* Down */
-              if (linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT)) {
+              if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
                 this->refreshLine(state, &l);
               }
               break;
@@ -1361,6 +1293,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     int r = write(this->outFd, "\n", 1);
     UNUSED(r);
     if (count == -1) {
+      this->kickHistoryCallback(state, HistOp::DEINIT, nullptr);
       return nullptr;
     }
     return strdup(buf);
@@ -1549,6 +1482,48 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
     return nullptr;
   }
   return toObjPtr<ArrayObject>(ret);
+}
+
+bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::HistOp op,
+                                           struct linenoiseState *l) {
+  if (!this->historyCallback) {
+    return false; // do nothing
+  }
+
+  const char *table[] = {
+#define GEN_STR(E, S) S,
+      EACH_EDIT_HIST_OP(GEN_STR)
+#undef GEN_STR
+  };
+
+  const char *opStr = table[static_cast<unsigned int>(op)];
+  StringRef line = op != HistOp::INIT && l != nullptr ? l->buf : "";
+  auto ret = this->kickCallback(state, this->historyCallback,
+                                makeArgs(DSValue::createStr(opStr), DSValue::createStr(line)));
+  if (state.hasError()) {
+    return false;
+  }
+
+  // post process
+  switch (op) {
+  case HistOp::INIT:
+  case HistOp::DEINIT:
+    break;
+  case HistOp::PREV:
+  case HistOp::NEXT:
+  case HistOp::SEARCH:
+    if (!ret.hasStrRef()) {
+      break;
+    }
+    if (const char *retStr = ret.asCStr(); op != HistOp::SEARCH || *retStr != '\0') {
+      strncpy(l->buf, retStr, l->buflen);
+      l->buf[l->buflen - 1] = '\0';
+      l->len = l->pos = strlen(l->buf);
+      return true;
+    }
+    break;
+  }
+  return false;
 }
 
 } // namespace ydsh

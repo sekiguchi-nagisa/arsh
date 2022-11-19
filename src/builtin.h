@@ -2110,6 +2110,19 @@ YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
   RET_VOID;
 }
 
+//!bind: function setHistory($this : LineEditor, $hist : Option<Func<Option<String>,[String,String]>>) : Void
+YDSH_METHOD edit_hist(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_hist);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
+  ObjPtr<DSObject> callback;
+  if (!LOCAL(1).isInvalid()) {
+    callback = LOCAL(1).toPtr();
+  }
+  editor.setHistoryCallback(std::move(callback));
+  RET_VOID;
+}
+
 // #################
 // ##     Job     ##
 // #################

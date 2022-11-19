@@ -1,0 +1,81 @@
+#!/usr/bin/env ydsh
+
+# general history op
+
+# maintains old history entry
+# after deinit, revert modified history entry
+typedef _OrigHistEntries() {
+    let _orig : [Int: String] # (history entry index, origial content)
+}
+
+function save(index : Int, buf : [String]) for _OrigHistEntries {
+    if !$this._orig.get($index) && $index < $buf.size() {
+        var org = $buf[$index]
+        $this._orig[$index] = $org
+    }
+}
+
+function revertAll(buf : [String]) for _OrigHistEntries {
+    for i, c in $this._orig {
+        if $i < $buf.size() {
+            $buf[$i] = $c
+        }
+    }
+    $this._orig.clear()
+}
+
+# set history callback to specified LineEditor instance
+function initHistoryOp(editor : LineEditor, buf : [String], 
+                       deinit : ((String, [String]) -> Void)!, searcher : ((String, [String]) -> String)!) {
+    var histIndex = 0  # currently editing history index
+    let orgs : _OrigHistEntries
+    $editor.setHistory(function(op, line) => {
+        case $op {
+            "init" => {
+                $histIndex = 0
+                $orgs._orig.clear()
+                $buf.add("") # reserve empty entry for typing buffer content
+            }
+            "deinit" => {
+                $histIndex = 0
+                if !$buf.empty() { $buf.pop(); }
+                $orgs.revertAll($buf)
+                if $deinit {
+                    $deinit($line, $buf)
+                } elif !$line.empty() {
+                    $buf.add($line)
+                }
+            }
+            "prev"| "next" => {
+                # save current buffer content to current histry entry
+                var bufIndex = $buf.size() - 1 - $histIndex
+                $orgs.save($bufIndex, $buf)
+                $buf[$bufIndex] = $line
+
+                # update historyIndex and get next/prev entry
+                $histIndex += $op == "prev" ? 1 : -1
+                if $histIndex < 0 {
+                    $histIndex = 0
+                    return new String!()
+                }
+                if $histIndex >= $buf.size() {
+                    $histIndex = $buf.size() - 1
+                    return new String!()
+                }
+                $bufIndex = $buf.size() - 1 - $histIndex
+                return $buf[$bufIndex]
+            }
+            "search" => return ($searcher ?? $_default_search)($line, $buf)
+        }
+        $line
+    })
+}
+
+function _default_search(q : String, buf : [String]) : String {
+    command -v fzf &> /dev/null || return ""
+    var arg = ['-q', $q]
+    if $q.empty() { $arg.clear(); }
+    return "$(for $e in $buf {
+        echo $e
+    } | sort | uniq | fzf --inline-info $arg)"
+}
