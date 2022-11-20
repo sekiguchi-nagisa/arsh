@@ -64,6 +64,7 @@ inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsign
 
 // shell builtin
 constexpr const char *VAR_EIDT_HOOK = "EDIT_HOOK";
+constexpr const char *VAR_LINE_EDIT = "LINE_EDIT";
 constexpr const char *VAR_CMD_FALLBACK = "CMD_FALLBACK";
 constexpr const char *VAR_DEF_SIGINT = "_DEF_SIGINT";
 
