@@ -1282,11 +1282,11 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    if (enableRawMode(this->inFd)) {
+    if (this->enableRawMode(this->inFd)) {
       return nullptr;
     }
     int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
-    disableRawMode(this->inFd);
+    this->disableRawMode(this->inFd);
     int r = write(this->outFd, "\n", 1);
     UNUSED(r);
     if (count == -1) {
@@ -1453,9 +1453,14 @@ DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallA
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
-  disableRawMode(this->inFd);
+  const bool restoreTTY = this->rawMode;
+  if (restoreTTY) {
+    this->disableRawMode(this->inFd);
+  }
   auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
-  enableRawMode(this->inFd);
+  if (restoreTTY) {
+    this->enableRawMode(this->inFd);
+  }
 
   // restore state
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
