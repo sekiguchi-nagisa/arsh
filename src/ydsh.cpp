@@ -21,6 +21,7 @@
 
 #include "binder.h"
 #include "compiler.h"
+#include "line_editor.h"
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
@@ -789,6 +790,12 @@ static int getWordLen(DSLineEditOp op, DSLineEdit &edit) {
     edit.out2 += graphemeWidth(edit, ret);
   }
   return 0;
+}
+
+char *DSState_readLine(DSState *st) {
+  GUARD_NULL(st, nullptr);
+  auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
+  return editor.readline(*st, defaultPrompt(1));
 }
 
 void DSState_showNotification(DSState *st) {

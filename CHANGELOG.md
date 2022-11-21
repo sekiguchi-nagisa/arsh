@@ -53,6 +53,12 @@
     - ``LineEditor#read``: entry point of line editing
     - ``LineEditor#setCompleter``: specify completion callback
     - ``LineEditor#setPrompt``: speccify prompt callback
+- add builtin ``LINE_EDIT`` variable for repl api
+
+#### API
+
+- add ``DSState_readLine`` api for line editing
+    - control line editing behavior via ``LINE_EDIT`` builtin variable
 
 #### Misc
 

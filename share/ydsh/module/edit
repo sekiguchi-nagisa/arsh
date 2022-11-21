@@ -4,6 +4,8 @@
 
 source $SCRIPT_DIR/path
 
+source $SCRIPT_DIR/history
+
 var HISTFILE = "$DATA_HOME/ydsh_history"
 var HISTSIZE = 1000
 var HISTFILESIZE = 1000
@@ -81,7 +83,7 @@ function _add(s : String, p : Boolean) {
         $s.contains($'\n') && return
     }
 
-    if $HISTORY.size() == $HISTSIZE {
+    while($HISTORY.size() >= $HISTSIZE) {
         $HISTORY.shift()
     }
     $HISTORY.add($s)
@@ -270,3 +272,25 @@ function _editHook(op : Int, index : Int, text : String) : Any {
 }
 
 $EDIT_HOOK = $_editHook
+
+
+# for LINE_EDIT variable setting
+$LINE_EDIT.setPrompt(function(p) => {
+    if $PROMPT_HOOK {
+        $p = $PROMPT_HOOK($p)
+    }
+    if $PROMPT_RENDERER {
+        $p = $PROMPT_RENDERER($p)
+    }
+    $p
+})
+
+$initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
+    $_add($line, $true)
+})
+
+$LINE_EDIT.setCompleter(function(m, s) => {
+    complete -m $m -q -s -- $s
+    $COMPREPLY
+})
+

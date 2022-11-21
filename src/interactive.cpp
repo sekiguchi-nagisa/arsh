@@ -343,7 +343,51 @@ static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {
   return {kind, ret};
 }
 
+int exec_interactive2(DSState *st, const std::string &rcfile) {
+  state = st;
+
+  unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
+  DSState_setOption(st, option);
+
+  auto ret = loadRC(rcfile);
+  if (ret.first != DS_ERROR_KIND_SUCCESS) {
+    return ret.second;
+  }
+
+  loadHistory();
+  int status = 0;
+  while (true) {
+    DSState_showNotification(st);
+
+    errno = 0;
+    char *line = DSState_readLine(st);
+    if (line == nullptr) {
+      if (errno == EAGAIN) {
+        continue;
+      }
+      if (DSState_mode(st) != DS_EXEC_MODE_NORMAL) {
+        break;
+      }
+      line = strdup("exit");
+    }
+    DSError e; // NOLINT
+    status = DSState_eval(st, nullptr, line, strlen(line), &e);
+    auto kind = e.kind;
+    DSError_release(&e);
+    free(line);
+    if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+      break;
+    }
+  }
+  saveHistory();
+  return status;
+}
+
 int exec_interactive(DSState *dsState, const std::string &rcfile) {
+  if (getenv("YDSH_NEW_REPL")) {
+    return exec_interactive2(dsState, rcfile);
+  }
+
   state = dsState;
 
   *linenoiseInputFD() = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);

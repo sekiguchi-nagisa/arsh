@@ -469,6 +469,19 @@ static inline unsigned char DSLineEdit_getFlagSeqWidth(const DSLineEdit *edit) {
   return (unsigned char)(edit->flags >> 8u);
 }
 
+/**
+ * read lines from stdin
+ * also provide line edit capability
+ * customize line edit behavior via `LINE_EDIT` global variable
+ * @param st
+ * must not be null
+ * @return
+ * if has error or reach end of stream, return null
+ * if cancelled, return null and set EAGAIN
+ * otherwise null terminated string (call free() after use result)
+ */
+DS_PUBLIC_API(char *) DSState_readLine(DSState *st); // FIXME: report internal error ?
+
 /* for job termination notification */
 DS_PUBLIC_API(void) DSState_showNotification(DSState *st);
 
