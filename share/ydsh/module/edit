@@ -286,11 +286,15 @@ $LINE_EDIT.setPrompt(function(p) => {
 })
 
 $initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
+    $_sync()
     $_add($line, $true)
 })
 
-$LINE_EDIT.setCompleter(function(m, s) => {
+$LINE_EDIT.setCompletion(function(m, s) => {
     complete -m $m -q -s -- $s
     $COMPREPLY
 })
 
+$LINE_EDIT.setHighlight(function(l) => {
+    $HIGHLIGHTER ? $HIGHLIGHTER($l) : $l
+})

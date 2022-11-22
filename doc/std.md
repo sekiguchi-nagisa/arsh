@@ -306,11 +306,13 @@ function %OP_INIT() : LineEditor for LineEditor
 
 function read($p : Option<String>) : Option<String> for LineEditor
 
-function setCompleter($comp : Option<Func<Array<String>,[Module,String]>>) : Void for LineEditor
+function setCompletion($comp : Option<Func<Array<String>,[Module,String]>>) : Void for LineEditor
 
 function setPrompt($prompt : Option<Func<String,[String]>>) : Void for LineEditor
 
 function setHistory($hist : Option<Func<Option<String>,[String,String]>>) : Void for LineEditor
+
+function setHighlight($highlight : Option<Func<String,[String]>>) : Void for LineEditor
 ```
 
 ## Array type

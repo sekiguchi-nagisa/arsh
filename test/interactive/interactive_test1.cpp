@@ -110,6 +110,8 @@ TEST_F(InteractiveTest, tab1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
   this->send("$F\t");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+F"));
   this->send("\t");
@@ -124,6 +126,8 @@ TEST_F(InteractiveTest, tab2) {
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
   this->send("$RC\t");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+RC_VAR"));
   this->send("\r");
@@ -307,7 +311,7 @@ TEST_F(InteractiveTest, lineEditor) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   const char *text = "var e = new LineEditor(); $e.setPrompt(function(p)=>{"
-                     "  $e.setCompleter(function(m, s) => $s.split(''));"
+                     "  $e.setCompletion(function(m, s) => $s.split(''));"
                      "  $p; "
                      "})";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));

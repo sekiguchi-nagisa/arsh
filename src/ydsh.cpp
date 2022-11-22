@@ -794,6 +794,7 @@ static int getWordLen(DSLineEditOp op, DSLineEdit &edit) {
 
 char *DSState_readLine(DSState *st) {
   GUARD_NULL(st, nullptr);
+  st->getCallStack().clearThrownObject();
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   return editor.readline(*st, defaultPrompt(1));
 }

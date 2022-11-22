@@ -2084,7 +2084,7 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function setCompleter($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void
+//!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void
 YDSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
@@ -2120,6 +2120,19 @@ YDSH_METHOD edit_hist(RuntimeContext &ctx) {
     callback = LOCAL(1).toPtr();
   }
   editor.setHistoryCallback(std::move(callback));
+  RET_VOID;
+}
+
+//!bind: function setHighlight($this : LineEditor, $highlight : Option<Func<String,[String]>>) : Void
+YDSH_METHOD edit_highlight(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_highlight);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
+  ObjPtr<DSObject> callback;
+  if (!LOCAL(1).isInvalid()) {
+    callback = LOCAL(1).toPtr();
+  }
+  editor.setHighlightCallback(std::move(callback));
   RET_VOID;
 }
 
