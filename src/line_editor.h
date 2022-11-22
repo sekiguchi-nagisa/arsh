@@ -39,10 +39,6 @@ private:
 
   bool lock{false};
 
-  bool rawMode{false};
-
-  termios orgTermios{};
-
   /**
    * must be `(String) -> String` type
    * may be null
@@ -97,10 +93,6 @@ public:
   }
 
 private:
-  int enableRawMode(int fd);
-
-  void disableRawMode(int fd);
-
   [[nodiscard]] bool refreshLine(DSState &state, struct linenoiseState *l);
 
   /**

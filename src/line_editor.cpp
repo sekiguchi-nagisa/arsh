@@ -816,16 +816,21 @@ LineEditorObject::~LineEditorObject() {
   close(this->outFd);
 }
 
+struct TermSetting {
+  termios org{};
+  bool rawMode{false};
+};
+
 /* Raw mode: 1960 magic shit. */
-int LineEditorObject::enableRawMode(int fd) {
+static int enableRawMode(int fd, TermSetting &setting) {
   struct termios raw;
 
   if (!isatty(fd))
     goto fatal;
-  if (tcgetattr(fd, &this->orgTermios) == -1)
+  if (tcgetattr(fd, &setting.org) == -1)
     goto fatal;
 
-  raw = this->orgTermios; /* modify the original mode */
+  raw = setting.org; /* modify the original mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
@@ -844,7 +849,7 @@ int LineEditorObject::enableRawMode(int fd) {
   /* put terminal in raw mode after flushing */
   if (tcsetattr(fd, TCSAFLUSH, &raw) < 0)
     goto fatal;
-  this->rawMode = true;
+  setting.rawMode = true;
   return 0;
 
 fatal:
@@ -852,10 +857,10 @@ fatal:
   return -1;
 }
 
-void LineEditorObject::disableRawMode(int fd) {
+static void disableRawMode(int fd, TermSetting &setting) {
   /* Don't even check the return value as it's too late. */
-  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1)
-    this->rawMode = false;
+  if (setting.rawMode && tcsetattr(fd, TCSAFLUSH, &setting.org) != -1)
+    setting.rawMode = false;
 }
 
 /* Multi line low level line refresh.
@@ -1328,11 +1333,12 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    if (this->enableRawMode(this->inFd)) {
+    TermSetting termSetting;
+    if (enableRawMode(this->inFd, termSetting)) {
       return nullptr;
     }
     int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
-    this->disableRawMode(this->inFd);
+    disableRawMode(this->inFd, termSetting);
     int r = write(this->outFd, "\n", 1);
     UNUSED(r);
     if (count == -1) {
@@ -1513,14 +1519,7 @@ DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallA
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
-  const bool restoreTTY = this->rawMode;
-  if (restoreTTY) {
-    this->disableRawMode(this->inFd);
-  }
   auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
-  if (restoreTTY) {
-    this->enableRawMode(this->inFd);
-  }
 
   // restore state
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
