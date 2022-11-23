@@ -172,7 +172,7 @@ public:
    */
   bool closeOnExec(bool set) {
     if (this->fd < 0) {
-      errno = EBADFD;
+      errno = EBADF;
       return false;
     }
     if (this->fd > STDERR_FILENO) {
