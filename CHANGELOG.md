@@ -139,6 +139,7 @@
     - now pass caller module context to fallback handler
 - **Breaking Change**: only allow decimal integer in ``test`` command like bash
 - **Breaking Change**: FD objects that are created from constructor does not have close-on-exec flag
+- **Breaking Change**: remove ``EDIT_HOOK`` builtin variable
 - improve runtime option recognition
     - now allow upper case, snake case, kebab case
       ```

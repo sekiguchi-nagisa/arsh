@@ -10,8 +10,8 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     var gvars = [
         '#', '$', '0', '?', '@',
         'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME', 'DYNA_UDCS',
-        'EDIT_HOOK', 'EUID', 'FALSE', 'False', 'IFS', 'LINE_EDIT', 'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME',
-         'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
+        'EUID', 'FALSE', 'False', 'IFS', 'LINE_EDIT', 'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME',
+        'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
         'SIGABRT', 'SIGALRM', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP',
         'SIGILL', 'SIGINT', 'SIGKILL', 'SIGPIPE', 'SIGQUIT', 'SIGSEGV',

@@ -20,9 +20,6 @@ var TERM_HOOK : ((Int, Any) => Void)!
 # completer hook definition
 var COMP_HOOK : Func<[String], [Module, [String], Int]>!
 
-# line edit op hook definition.
-var EDIT_HOOK : Func<Any, [Int, Int, String]>!
-
 # line editor instance for repl
 let LINE_EDIT : LineEditor
 

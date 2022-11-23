@@ -10,11 +10,11 @@ DSCode: top level
   code size: 11
   max stack depth: 2
   number of local variable: 0
-  number of global variable: 45
+  number of global variable: 44
 Code:
    0: LOAD_CONST  2
    2: DUP
-   3: STORE_GLOBAL  43
+   3: STORE_GLOBAL  42
    6: CALL_FUNC  0
    8: POP
    9: PUSH_INVALID
@@ -32,10 +32,10 @@ DSCode: top level
   code size: 7
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 45
+  number of global variable: 44
 Code:
   0: LOAD_CONST  2
-  2: STORE_GLOBAL  44
+  2: STORE_GLOBAL  43
   5: PUSH_INVALID
   6: RETURN
 Constant Pool:
