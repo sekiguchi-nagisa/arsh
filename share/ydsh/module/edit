@@ -89,6 +89,46 @@ function _add(s : String, p : Boolean) {
     $HISTORY.add($s)
 }
 
+function _add_and_save(s : String) {
+    $HISTSIZE == 0 && return;
+    $s.empty() && return;
+    if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
+
+    if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
+    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    $s.contains($'\n') && return
+
+    while($HISTORY.size() >= $HISTSIZE) {
+        $HISTORY.shift()
+    }
+    $HISTORY.add($s)
+
+    # save new entry
+    $HISTFILESIZE == 0 && return
+    let limit = 4096
+    if $HISTFILESIZE > $limit {
+        $HISTFILESIZE = $limit
+    }
+    var histFile = new FD($HISTFILE)
+    $histFile.lock()
+    var count = "$(wc -l $HISTFILE)".split(" ")[0].toInt()
+    if $count && $count < $HISTFILESIZE {
+        echo $s >> $HISTFILE
+    } else {
+        var lines : [String]
+        for line in $histFile {
+            $lines.add($line)
+        }
+        $lines.add($s)
+        while($lines.size() >= $HISTFILESIZE) {
+            $lines.shift()
+        }
+        for line in $lines {
+            echo $line
+        } with > $HISTFILE
+    }
+}
+
 function _default_search(q : String) : String {
     command -v fzf &> /dev/null || return ""
     var arg = ['-q', $q]
@@ -251,7 +291,7 @@ function _editHook(op : Int, index : Int, text : String) : Any {
         5 => $_add("", $false)
 
         # DS_EDIT_HIST_ADD
-        6 => $_add($text, $true)
+        6 => $_add_and_save($text)
 
         # DS_EDIT_HIST_LOAD
         7 => $_load($text)
@@ -287,7 +327,7 @@ $LINE_EDIT.setPrompt(function(p) => {
 
 $initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
     $_sync()
-    $_add($line, $true)
+    $_add_and_save($line)
 })
 
 $LINE_EDIT.setCompletion(function(m, s) => {

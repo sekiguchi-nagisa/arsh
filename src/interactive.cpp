@@ -427,6 +427,6 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
       break;
     }
   }
-  saveHistory();
+  //  saveHistory();
   return status;
 }

@@ -142,6 +142,10 @@
       shctl set TRACE_ON_EXIT Null-Glob
       ```
 
+#### Module
+
+- save currently added history entry immediately
+
 #### API
 
 - **Breaking Change**: remove ``DSState_setExitStatus``
