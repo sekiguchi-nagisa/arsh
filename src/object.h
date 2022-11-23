@@ -29,7 +29,7 @@
 #include "constant.h"
 #include "lexer.h"
 #include "misc/buffer.hpp"
-#include "misc/fatal.h"
+#include "misc/files.h"
 #include "misc/grapheme.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
@@ -147,7 +147,6 @@ using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
 class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
 private:
   int fd;
-  int passingCount{0};
 
 public:
   explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
@@ -168,8 +167,19 @@ public:
    * @param set
    * if true, try to set close-on-exec
    * if false, try to unset close-on-exec
+   * @return
+   * if internal file descriptor is invalid, return false
    */
-  void closeOnExec(bool set);
+  bool closeOnExec(bool set) {
+    if (this->fd < 0) {
+      errno = EBADFD;
+      return false;
+    }
+    if (this->fd > STDERR_FILENO) {
+      return setCloseOnExec(this->fd, set);
+    }
+    return true;
+  }
 
   int getValue() const { return this->fd; }
 };

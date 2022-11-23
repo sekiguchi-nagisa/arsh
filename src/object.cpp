@@ -18,7 +18,6 @@
 
 #include "core.h"
 #include "line_editor.h"
-#include "misc/files.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "redir.h"
@@ -412,21 +411,6 @@ UnixFdObject::~UnixFdObject() {
   }
 }
 
-void UnixFdObject::closeOnExec(bool set) {
-  if (this->fd <= STDERR_FILENO) {
-    return;
-  }
-  if (set) {
-    if (--this->passingCount == 0) {
-      setCloseOnExec(this->fd, true);
-    }
-  } else {
-    if (this->passingCount++ == 0) {
-      setCloseOnExec(this->fd, false);
-    }
-  }
-}
-
 // #########################
 // ##     RegexObject     ##
 // #########################
@@ -616,13 +600,26 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
   if (arg.isObject()) {
     switch (arg.get()->getKind()) {
     case ObjectKind::UnixFd: {
+      /**
+       * when pass fd object to command arguments,
+       * unset close-on-exec and add pseudo redirection entry
+       */
       if (!this->redir) {
         this->redir = DSValue::create<RedirObject>();
+      }
+
+      if (arg.get()->getRefcount() > 1) {
+        if (int newFd = dup(typeAs<UnixFdObject>(arg).getValue()); newFd > -1) {
+          arg = DSValue::create<UnixFdObject>(newFd);
+        }
       }
       auto strObj = DSValue::createStr(arg.toString());
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
-        typeAs<UnixFdObject>(arg).closeOnExec(false);
+        if (!typeAs<UnixFdObject>(arg).closeOnExec(false)) {
+          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
+          return false;
+        }
         typeAs<RedirObject>(this->redir).addEntry(std::move(arg), RedirOp::NOP, -1);
       }
       return r;

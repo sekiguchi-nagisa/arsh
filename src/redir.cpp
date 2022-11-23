@@ -40,21 +40,10 @@ PipelineObject::~PipelineObject() {
   this->state.jobTable.waitForAny();
 }
 
-static bool isPassingFD(const RedirObject::Entry &entry) {
-  return entry.op == RedirOp::NOP && entry.value.isObject() && isa<UnixFdObject>(entry.value.get());
-}
-
 RedirObject::~RedirObject() {
   this->restoreFDs();
   for (int fd : this->oldFds) {
     close(fd);
-  }
-
-  // set close-on-exec flag to fds
-  for (auto &e : this->entries) {
-    if (isPassingFD(e) && e.value.get()->getRefcount() > 1) {
-      typeAs<UnixFdObject>(e.value).closeOnExec(true);
-    }
   }
 }
 

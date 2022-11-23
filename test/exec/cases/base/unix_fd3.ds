@@ -20,3 +20,18 @@ ff() {
 }
 
 ff $fd
+
+# pass invalid fd
+$fd.close()
+
+var ex = 34 as Any
+try {
+    ff $fd
+    assert false
+} catch e {
+    $ex = $e
+}
+assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/failed to pass FD object to command arguments/
+
+true
