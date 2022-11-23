@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 #include <ydsh/ydsh.h>
 
@@ -46,8 +47,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     break;
   }
   case FuzzPolicy::COMPLETE: {
-    const char *buf = (const char *)data;
-    DSState_complete(state, buf, size);
+    std::string buf((const char *)data, size);
+    const char *argv[] = {
+        "complete",
+        "-q",
+        "--",
+        buf.c_str(),
+    };
+    DSState_exec(state, (char **)argv);
     break;
   }
   }
