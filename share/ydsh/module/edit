@@ -264,12 +264,6 @@ function _prompt(i : Int) : String {
     return $PROMPT_RENDERER ? $PROMPT_RENDERER($value) : $value
 }
 
-var HIGHLIGHTER : ((String) -> String)!
-
-function _highlight(line : String) : String {
-    return $HIGHLIGHTER ? $HIGHLIGHTER($line) : $line
-}
-
 # entry point for line editing op
 
 function _editHook(op : Int, index : Int, text : String) : Any {
@@ -341,6 +335,4 @@ $LINE_EDIT.setCompletion(function(m, s) => {
     $COMPREPLY
 })
 
-$LINE_EDIT.setHighlight(function(l) => {
-    $HIGHLIGHTER ? $HIGHLIGHTER($l) : $l
-})
+$LINE_EDIT.setHighlight(function(l) => "$(dscolorize <<< $l)")
