@@ -1291,8 +1291,6 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
 char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
-  char buf[LINENOISE_MAX_LINE];
-
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
      * limit to the line size, so we call a function to handle that. */
@@ -1317,7 +1315,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     promptRef = promptVal.asStrRef();
   }
   const char *prompt = promptRef.data(); // force truncate characters after null
-
+  char buf[LINENOISE_MAX_LINE];
   if (isUnsupportedTerm()) {
     int r = write(this->outFd, prompt, strlen(prompt));
     UNUSED(r);

@@ -17,8 +17,6 @@
 #ifndef YDSH_LINE_EDITOR_H
 #define YDSH_LINE_EDITOR_H
 
-#include <termios.h>
-
 #include "object.h"
 
 struct linenoiseState;
