@@ -302,9 +302,6 @@ function _editHook(op : Int, index : Int, text : String) : Any {
 
         # DS_EDIT_PROMPT
         10 => return $_prompt($index);
-
-        # DS_EDIT_HIGHLIGHT
-        11 => return $_highlight($text)
     }
     return $text
 }
