@@ -100,22 +100,6 @@ public:
 
   const ObjPtr<UnixFdObject> emptyFDObj;
 
-  /**
-   * maintains latest result of EDIT_HOOK
-   */
-  DSValue editOpReply;
-
-  /**
-   * maintain latest rendered prompt
-   */
-  DSValue prompt;
-
-  /**
-   * for completion
-   * if true, should not insert space after completion
-   */
-  bool compShouldNoSpace{false};
-
   bool isInteractive{false};
 
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT};

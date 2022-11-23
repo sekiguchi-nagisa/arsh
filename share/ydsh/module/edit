@@ -2,8 +2,6 @@
 
 # for history manipulation
 
-source $SCRIPT_DIR/path
-
 source $SCRIPT_DIR/history
 
 var HISTFILE = "$DATA_HOME/ydsh_history"
@@ -72,16 +70,14 @@ function _show(argv : [String]) : Int {
     return 0
 }
 
-function _add(s : String, p : Boolean) {
+function _add(s : String) {
     $HISTSIZE == 0 && return;
     if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
 
-    if $p {
-        $s.empty() && return;
-        if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
-        if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
-        $s.contains($'\n') && return
-    }
+    $s.empty() && return;
+    if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
+    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    $s.contains($'\n') && return
 
     while($HISTORY.size() >= $HISTSIZE) {
         $HISTORY.shift()
@@ -133,25 +129,12 @@ function _add_and_save(s : String) {
     }
 }
 
-function _default_search(q : String) : String {
-    command -v fzf &> /dev/null || return ""
-    var arg = ['-q', $q]
-    if $q.empty() { $arg.clear(); }
-    return "$(for $e in $HISTORY {
-        echo $e
-    } | sort | uniq | fzf --inline-info $arg)"
-}
-
-function _search(q : String) : String {
-    return ($HISTSEARCH ?? $_default_search)($q)
-}
-
 function _load(p : String!) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? return;
     for $line in $STDIN {
-        $_add($line, $true)
+        $_add($line)
     } with < $path
     $PIPESTATUS.clear()
 }
@@ -210,7 +193,7 @@ history() {
                 if !$line.empty() { $line += " "; }
                 $line += $@[$i]
             }
-            $_add($line, $true)
+            $_add($line)
             return 0;
         }
         '-r' | '-w' => {
@@ -256,66 +239,11 @@ source $SCRIPT_DIR/prompt
 
 var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
 
-function _prompt(i : Int) : String {
-    var value = $i == 1 ? $PS1 : $i == 2 ? $PS2 : ""
-    if $i == 1 && $PROMPT_HOOK {
-        $value = $PROMPT_HOOK($value)
-    }
-    return $PROMPT_RENDERER ? $PROMPT_RENDERER($value) : $value
-}
-
-# entry point for line editing op
-
-function _editHook(op : Int, index : Int, text : String) : Any {
-    $_sync()
-
-    case $op {
-        # DS_EDIT_HIST_SIZE
-        0 => return $HISTORY.size();
-
-        # DS_EDIT_HIST_GET
-        1 => return $HISTORY[$index];
-
-        # DS_EDIT_HIST_SET
-        2 => if !$text.contains($'\n') { $HISTORY[$index] = $text; }
-
-        # DS_EDIT_HIST_DEL
-        3 => $HISTORY.remove($index)
-
-        # DS_EDIT_HIST_CLEAR
-        4 => $HISTORY.clear()
-
-        # DS_EDIT_HIST_INIT
-        5 => $_add("", $false)
-
-        # DS_EDIT_HIST_ADD
-        6 => $_add_and_save($text)
-
-        # DS_EDIT_HIST_LOAD
-        7 => $_load($text)
-
-        # DS_EDIT_HIST_SAVE
-        8 => $_save($text)
-
-        # DS_EDIT_HIST_SEARCH
-        9 => return $_search($text)
-
-        # DS_EDIT_PROMPT
-        10 => return $_prompt($index);
-    }
-    return $text
-}
-
-$EDIT_HOOK = $_editHook
-
-
 # for LINE_EDIT variable setting
 $_load()
 
 $LINE_EDIT.setPrompt(function(p) => {
-    if $PROMPT_HOOK {
-        $p = $PROMPT_HOOK($p)
-    }
+    $p = $PROMPT_HOOK ? $PROMPT_HOOK($PS1) : $PS1
     if $PROMPT_RENDERER {
         $p = $PROMPT_RENDERER($p)
     }

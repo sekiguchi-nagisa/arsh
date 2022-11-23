@@ -408,7 +408,7 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
 
 static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   if (obj.size() != 1) {
-    return true; // do nothing
+    return false; // do nothing
   }
 
   StringRef first = obj.getValues()[0].asStrRef();
@@ -443,7 +443,8 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   return true;
 }
 
-int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const CodeCompOp option) {
+int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool insertSpace,
+                     const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
   if (!resolvedMod) {
     errno = EINVAL;
@@ -469,7 +470,13 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, const Cod
   } else {
     size_t size = reply.size();
     assert(size <= ArrayObject::MAX_SIZE);
-    st.compShouldNoSpace = !needSpace(reply, candidateKind);
+    if (insertSpace && needSpace(reply, candidateKind)) {
+      assert(size == 1);
+      auto ref = reply.getValues()[0].asStrRef();
+      auto v = ref.toString();
+      v += " ";
+      reply.refValues()[0] = DSValue::createStr(std::move(v));
+    }
     return static_cast<int>(size);
   }
 }

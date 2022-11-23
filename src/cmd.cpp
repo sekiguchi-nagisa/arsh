@@ -1037,20 +1037,11 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  if (doCodeCompletion(state, moduleDesc, line, compOp) < 0) {
+  if (doCodeCompletion(state, moduleDesc, line, inserSpace, compOp) < 0) {
     if (errno == EINVAL) {
       ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
     }
     return 1;
-  }
-  if (inserSpace && !state.compShouldNoSpace) {
-    auto &values = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY)).refValues();
-    if (values.size() == 1) {
-      auto ref = values[0].asStrRef();
-      auto v = ref.toString();
-      v += " ";
-      values[0] = DSValue::createStr(std::move(v));
-    }
   }
   if (show) {
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));

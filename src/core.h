@@ -106,13 +106,15 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
  * @param modDesc
  * module descriptor for specifying completion context
  * @param source
+ * @param insertSpace
  * @param option
  * @return
  * if specify invalid module descriptor, return -1 and set EINVAL
  * if interrupted, return -1 and set EINTR
  * return size of completion result. (equivalent to size of $COMPREPLY)
  */
-int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, CodeCompOp option = {});
+int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool insertSpace,
+                     CodeCompOp option = {});
 
 class SignalVector {
 private:

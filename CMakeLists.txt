@@ -131,26 +131,6 @@ if (USE_PCRE)
 endif ()
 
 
-#+++++++++++++++++++++++#
-#     get linenoise     #
-#+++++++++++++++ +++++++#
-
-if (CMAKE_VERSION VERSION_LESS 3.2)
-    set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
-else ()
-    set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
-endif ()
-
-download_project(
-        PROJ linenoise
-        GIT_REPOSITORY https://github.com/sekiguchi-nagisa/linenoise.git
-        GIT_TAG f6a2e7d2ca8adf8818b4bbffa723d46b4797cf08
-        GIT_PROGRESS 1
-        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
-)
-include_directories(${linenoise_SOURCE_DIR})
-
-
 #+++++++++++++++++++++++++++#
 #     generate config.h     #
 #+++++++++++++++++++++++++++#
@@ -308,10 +288,7 @@ endif ()
 #     ydsh     #
 #==============#
 
-add_executable(${BIN_NAME}
-        src/main.cpp
-        src/interactive.cpp
-        ${linenoise_SOURCE_DIR}/linenoise.c)
+add_executable(${BIN_NAME} src/main.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_LIB})
 
 install(TARGETS ${BIN_NAME} ${YDSH_LIB}

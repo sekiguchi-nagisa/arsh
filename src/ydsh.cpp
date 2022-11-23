@@ -25,7 +25,6 @@
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
-#include "misc/word.hpp"
 #include "vm.h"
 #include <embed.h>
 #include <ydsh/ydsh.h>
@@ -550,253 +549,25 @@ const char *DSState_initExecutablePath(DSState *st) {
   return nullptr;
 }
 
-int DSState_complete(DSState *st, const char *data, unsigned int size) {
-  if (st == nullptr || data == nullptr) {
-    errno = EINVAL;
-    return -1;
-  }
-  StringRef ref(data, size);
-  return doCodeCompletion(*st, "", ref);
-}
-
-int DSState_getCompletion(const DSState *st, unsigned int index, DSCompletion *comp) {
-  if (st == nullptr || comp == nullptr) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
-  if (unsigned int size = compreply.getValues().size(); index < size) {
-    StringRef ref = compreply.getValues()[index].asStrRef();
-    comp->value = ref.data();
-    comp->size = ref.size();
-    comp->attr = 0;
-    if (size == 1 && st->compShouldNoSpace) {
-      setFlag(comp->attr, DS_COMP_ATTR_NOSPACE);
-    }
-    return 0;
-  }
-  errno = EINVAL;
-  return -1;
-}
-
+static const char *defaultPrompt() {
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
 
-static const char *defaultPrompt(int n) {
-  switch (n) {
-  case 1:
-    if (getuid()) {
-      return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
-    } else {
-      return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "# ";
-    }
-  case 2:
-    return "> ";
-  default:
-    return "";
+  if (getuid()) {
+    return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
+  } else {
+    return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "# ";
   }
-}
 
 #undef XSTR
 #undef STR
-
-static bool callEditHook(DSState &st, DSLineEditOp op, const DSLineEdit &edit) {
-  auto func = getBuiltinGlobal(st, VAR_EIDT_HOOK);
-  if (func.isInvalid()) {
-    return false;
-  }
-  StringRef data = "";
-  if (edit.data) {
-    if (op == DSLineEditOp::DS_EDIT_HIGHLIGHT) {
-      data = StringRef(edit.data, edit.index);
-    } else {
-      data = edit.data;
-    }
-  }
-  auto args =
-      makeArgs(DSValue::createInt(op), DSValue::createInt(edit.index), DSValue::createStr(data));
-  auto oldStatus = st.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  auto oldIFS = st.getGlobal(BuiltinVarOffset::IFS);
-  st.setGlobal(BuiltinVarOffset::IFS, DSValue::createStr(VAL_DEFAULT_IFS)); // set to default
-  auto ret = VM::callFunction(st, std::move(func), std::move(args));
-  st.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
-  st.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
-  if (st.hasError()) {
-    return false;
-  }
-  st.editOpReply = std::move(ret);
-  return true;
-}
-
-static int getCharLen(DSLineEditOp op, DSLineEdit &edit);
-
-static int getWordLen(DSLineEditOp op, DSLineEdit &edit);
-
-int DSState_lineEdit(DSState *st, DSLineEditOp op, DSLineEdit *edit) {
-  errno = EINVAL;
-  if (st == nullptr || edit == nullptr) {
-    return -1;
-  }
-
-#define EACH_DS_LINE_EDIT_OP(OP)                                                                   \
-  OP(DS_EDIT_HIST_SIZE)                                                                            \
-  OP(DS_EDIT_HIST_GET)                                                                             \
-  OP(DS_EDIT_HIST_SET)                                                                             \
-  OP(DS_EDIT_HIST_DEL)                                                                             \
-  OP(DS_EDIT_HIST_CLEAR)                                                                           \
-  OP(DS_EDIT_HIST_INIT)                                                                            \
-  OP(DS_EDIT_HIST_ADD)                                                                             \
-  OP(DS_EDIT_HIST_LOAD)                                                                            \
-  OP(DS_EDIT_HIST_SAVE)                                                                            \
-  OP(DS_EDIT_HIST_SEARCH)                                                                          \
-  OP(DS_EDIT_PROMPT)                                                                               \
-  OP(DS_EDIT_HIGHLIGHT)                                                                            \
-  OP(DS_EDIT_NEXT_CHAR_LEN)                                                                        \
-  OP(DS_EDIT_PREV_CHAR_LEN)                                                                        \
-  OP(DS_EDIT_NEXT_WORD_LEN)                                                                        \
-  OP(DS_EDIT_PREV_WORD_LEN)
-
-  GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, -1);
-#undef EACH_DS_LINE_EDIT_OP
-
-  // for char/word len op
-  switch (op) {
-  case DS_EDIT_NEXT_CHAR_LEN:
-  case DS_EDIT_PREV_CHAR_LEN:
-    return getCharLen(op, *edit);
-  case DS_EDIT_NEXT_WORD_LEN:
-  case DS_EDIT_PREV_WORD_LEN:
-    return getWordLen(op, *edit);
-  default:
-    break;
-  }
-
-  if (!callEditHook(*st, op, *edit)) {
-    if (op == DS_EDIT_PROMPT) {
-      edit->data = defaultPrompt(edit->index);
-      edit->out = strlen(edit->data);
-      return 0;
-    } else if (op == DS_EDIT_HIGHLIGHT) {
-      edit->out = edit->index;
-      return 0;
-    }
-    errno = EINVAL;
-    return -1;
-  }
-
-  auto &type = st->typePool.get(st->editOpReply.getTypeID());
-  switch (op) {
-  case DS_EDIT_HIST_SIZE:
-    if (type.is(TYPE::Int)) {
-      auto ret = st->editOpReply.asInt();
-      unsigned int size = ret <= 0 ? 0 : static_cast<unsigned int>(ret);
-      edit->out = size;
-      return 0;
-    }
-    break;
-  case DS_EDIT_HIST_GET:
-  case DS_EDIT_HIST_SEARCH:
-  case DS_EDIT_PROMPT:
-  case DS_EDIT_HIGHLIGHT:
-    if (type.is(TYPE::String)) {
-      StringRef ref;
-      if (op == DS_EDIT_PROMPT) {
-        st->prompt = st->editOpReply;
-        ref = st->prompt.asStrRef();
-      } else {
-        ref = st->editOpReply.asStrRef();
-      }
-      edit->data = ref.data();
-      edit->out = ref.size();
-      return 0;
-    }
-    break;
-  default:
-    break;
-  }
-  errno = EINVAL;
-  return -1;
-}
-
-static unsigned int graphemeWidth(const DSLineEdit &edit, const GraphemeScanner::Result &ret) {
-  const auto eaw =
-      DSLineEdit_isFullWidth(&edit) ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
-  unsigned int width = 0;
-  unsigned int flagSeqCount = 0;
-  for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    int w = UnicodeUtil::width(ret.codePoints[i], eaw);
-    if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
-      flagSeqCount++;
-    }
-    if (w > 0) {
-      width += w;
-    }
-  }
-  if (flagSeqCount == 2) {
-    return DSLineEdit_getFlagSeqWidth(&edit);
-  }
-  if (width > 2 && DSLineEdit_isZWJFallback(&edit)) {
-    return width;
-  }
-  return width < 2 ? 1 : 2;
-}
-
-static int getCharLen(DSLineEditOp op, DSLineEdit &edit) {
-  assert(op == DS_EDIT_NEXT_CHAR_LEN || op == DS_EDIT_PREV_CHAR_LEN);
-
-  if (!edit.data) {
-    errno = EINVAL;
-    return -1;
-  }
-  StringRef ref(edit.data, edit.index);
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
-  while (scanner.hasNext()) {
-    scanner.next(ret);
-    if (op == DS_EDIT_NEXT_CHAR_LEN) {
-      break;
-    }
-  }
-  edit.out = ret.ref.size();
-  edit.out2 = 0;
-  if (ret.codePointCount > 0) {
-    edit.out2 = graphemeWidth(edit, ret);
-  }
-  return 0;
-}
-
-static int getWordLen(DSLineEditOp op, DSLineEdit &edit) {
-  assert(op == DS_EDIT_NEXT_WORD_LEN || op == DS_EDIT_PREV_WORD_LEN);
-
-  if (!edit.data) {
-    errno = EINVAL;
-    return -1;
-  }
-  StringRef ref(edit.data, edit.index);
-  Utf8WordStream stream(ref.begin(), ref.end());
-  Utf8WordScanner scanner(stream);
-  while (scanner.hasNext()) {
-    ref = scanner.next();
-    if (op == DS_EDIT_NEXT_WORD_LEN) {
-      break;
-    }
-  }
-  edit.out = ref.size();
-  edit.out2 = 0;
-  for (GraphemeScanner graphemeScanner(ref); graphemeScanner.hasNext();) {
-    GraphemeScanner::Result ret;
-    graphemeScanner.next(ret);
-    edit.out2 += graphemeWidth(edit, ret);
-  }
-  return 0;
 }
 
 char *DSState_readLine(DSState *st) {
   GUARD_NULL(st, nullptr);
   st->getCallStack().clearThrownObject();
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
-  return editor.readline(*st, defaultPrompt(1));
+  return editor.readline(*st, defaultPrompt());
 }
 
 void DSState_showNotification(DSState *st) {

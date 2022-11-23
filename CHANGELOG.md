@@ -151,7 +151,11 @@
 
 #### API
 
-- **Breaking Change**: remove ``DSState_setExitStatus``
+- **Breaking Change**: remove the following api
+    - ``DSState_setExitStatus``
+    - ``DSState_complete``
+    - ``DSState_getCompletion``
+    - ``DSState_lineEdit``
 
 ### Fixed
 

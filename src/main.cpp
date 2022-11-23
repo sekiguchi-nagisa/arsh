@@ -34,8 +34,6 @@ static auto createState(Arg &&...arg) {
   return DSStateHandle(DSState_createWithMode(std::forward<Arg>(arg)...));
 }
 
-int exec_interactive(DSState *dsState, const std::string &rcfile);
-
 static const char *statusLogPath = nullptr;
 
 static std::string escape(const char *str) {
@@ -140,6 +138,59 @@ static std::string getRCFilePath(const DSState *state, const char *path) {
     value += "/ydshrc";
   }
   return value;
+}
+
+static std::pair<DSErrorKind, int> loadRC(DSState *state, const char *rcfile) {
+  std::string path = getRCFilePath(state, rcfile);
+  if (path.empty()) { // for --norc option
+    return {DS_ERROR_KIND_SUCCESS, 0};
+  }
+
+  DSError e{};
+  int ret = DSState_loadModule(state, path.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+  auto kind = e.kind;
+  DSError_release(&e);
+
+  // reset line num
+  DSState_setLineNum(state, 1);
+
+  return {kind, ret};
+}
+
+static int exec_interactive(DSState *state, const char *rcpath) {
+  unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
+  DSState_setOption(state, option);
+
+  auto ret = loadRC(state, rcpath);
+  if (ret.first != DS_ERROR_KIND_SUCCESS) {
+    return ret.second;
+  }
+
+  int status = 0;
+  while (true) {
+    DSState_showNotification(state);
+
+    errno = 0;
+    char *line = DSState_readLine(state);
+    if (line == nullptr) {
+      if (errno == EAGAIN) {
+        continue;
+      }
+      if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
+        break;
+      }
+      line = strdup("exit");
+    }
+    DSError e; // NOLINT
+    status = DSState_eval(state, nullptr, line, strlen(line), &e);
+    auto kind = e.kind;
+    DSError_release(&e);
+    free(line);
+    if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+      break;
+    }
+  }
+  return status;
 }
 
 int main(int argc, char **argv) {
@@ -283,8 +334,7 @@ INIT:
       if (!quiet) {
         fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
       }
-      std::string path = getRCFilePath(state.get(), rcfile);
-      return exec_interactive(state.get(), path);
+      return exec_interactive(state.get(), rcfile);
     }
   }
   case InvocationKind::FROM_STRING: {
