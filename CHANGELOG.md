@@ -54,6 +54,10 @@
     - ``LineEditor#setCompleter``: specify completion callback
     - ``LineEditor#setPrompt``: speccify prompt callback
 - add builtin ``LINE_EDIT`` variable for repl api
+- add some methods to ``FD`` type
+    - ``value``: get internal file descriptor number
+    - ``lock``: place exclusive lock
+    - ``unlock``: remove existing lock
 
 #### API
 

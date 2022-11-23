@@ -1,0 +1,25 @@
+#$test($ignored = 'cygwin|darwin', $out= $'parent1\nparent2\nparent3\nchild1\nchild2\nchild3\n')
+
+var this = new FD($SCRIPT_NAME)
+
+$this.lock()
+
+var j : Job!
+if $# == 0 {  # parent
+    $j = eval $YDSH_BIN $SCRIPT_NAME child process &
+    echo parent1
+    sleep 0.05
+    echo parent2
+    echo parent3
+} else {  # child
+    echo child1
+    echo child2
+    sleep 0.05
+    echo child3
+
+    exit 167
+}
+
+$this.unlock()
+
+assert $j && $j.wait() == 167

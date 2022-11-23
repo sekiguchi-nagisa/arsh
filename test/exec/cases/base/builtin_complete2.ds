@@ -146,7 +146,7 @@ $assertArray(['abs', "toFloat"], $(complete '
     } elif $a is Int {
         var b = 45.0
         $b * $a.'))
-$assertArray(['close', 'dup'], { complete '$STDIN.' > /dev/null; $COMPREPLY; })
+$assertArray(['abs', 'toFloat'], { complete '$$.' > /dev/null; $COMPREPLY; })
 $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
 $assertArray(['abs', 'toFloat'], $(complete 'function f($a: Int) { $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))

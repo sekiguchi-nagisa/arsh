@@ -18,6 +18,7 @@
 #define YDSH_BUILTIN_H
 
 #include <fcntl.h>
+#include <sys/file.h>
 
 #include <algorithm>
 #include <cmath>
@@ -2000,6 +2001,35 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     RET_ERROR;
   }
   RET(DSValue::create<UnixFdObject>(newfd));
+}
+
+//!bind: function value($this : UnixFD) : Int
+YDSH_METHOD fd_value(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_value);
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  RET(DSValue::createInt(fd));
+}
+
+//!bind: function lock($this : UnixFD) : Void
+YDSH_METHOD fd_lock(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_lock);
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  if (flock(fd, LOCK_EX) == -1) {
+    raiseSystemError(ctx, errno, "lock failed");
+    RET_ERROR;
+  }
+  RET_VOID;
+}
+
+//!bind: function unlock($this : UnixFD) : Void
+YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_unlock);
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  if (flock(fd, LOCK_UN) == -1) {
+    raiseSystemError(ctx, errno, "unlock failed");
+    RET_ERROR;
+  }
+  RET_VOID;
 }
 
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean

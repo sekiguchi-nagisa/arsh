@@ -9,6 +9,10 @@ assert $STDOUT as String == "/dev/fd/1"
 assert $STDERR as String == '/dev/fd/2'
 
 ## method
+assert $STDIN.value() == 0
+assert $STDOUT.value() == 1
+assert $STDERR.value() == 2
+
 var fd = $STDIN.dup()
 assert $fd as String  != "/dev/fd/0"
 assert $fd
@@ -30,6 +34,22 @@ assert $ex is SystemError
 $ex = 34
 try {
     $fd.close()
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+$ex = 34
+try {
+    $fd.lock()
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+$ex = 34
+try {
+    $fd.unlock()
 } catch $e {
     $ex = $e
 }

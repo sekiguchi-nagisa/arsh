@@ -178,6 +178,12 @@ function close() : Void for UnixFD
 
 function dup() : UnixFD for UnixFD
 
+function value() : Int for UnixFD
+
+function lock() : Void for UnixFD
+
+function unlock() : Void for UnixFD
+
 function %OP_BOOL() : Boolean for UnixFD
 
 function %OP_NOT() : Boolean for UnixFD
