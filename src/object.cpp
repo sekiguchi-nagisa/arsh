@@ -611,15 +611,15 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       if (arg.get()->getRefcount() > 1) {
         if (int newFd = dup(typeAs<UnixFdObject>(arg).getValue()); newFd > -1) {
           arg = DSValue::create<UnixFdObject>(newFd);
+        } else {
+          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
+          return false;
         }
       }
       auto strObj = DSValue::createStr(arg.toString());
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
-        if (!typeAs<UnixFdObject>(arg).closeOnExec(false)) {
-          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
-          return false;
-        }
+        typeAs<UnixFdObject>(arg).closeOnExec(false);
         typeAs<RedirObject>(this->redir).addEntry(std::move(arg), RedirOp::NOP, -1);
       }
       return r;
