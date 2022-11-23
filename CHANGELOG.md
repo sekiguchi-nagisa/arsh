@@ -50,9 +50,11 @@
     - ``-q``: does not show completion candidates (but still set to ``COMPREPLY``)
     - ``-s``: apppend space to completion candidate when number of candidates is 1
 - add ``LineEdtior`` type for line editing
-    - ``LineEditor#read``: entry point of line editing
-    - ``LineEditor#setCompleter``: specify completion callback
-    - ``LineEditor#setPrompt``: speccify prompt callback
+    - ``read``: entry point of line editing
+    - ``setCompletion``: specify completion callback
+    - ``setPrompt``: specify prompt callback
+    - ``setHistory``: specify history callback
+    - ``setHighlight``: specify syntax highlight callback
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
     - ``value``: get internal file descriptor number
