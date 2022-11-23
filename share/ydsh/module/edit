@@ -117,22 +117,17 @@ function _add_and_save(s : String) {
         }
         var histFile = new FD($HISTFILE);
         $histFile.lock()
-        var count = "$(wc -l $HISTFILE)".split(" ")[0].toInt()
-        if $count && $count < $HISTFILESIZE {
-            echo $s >> $HISTFILE
-        } else {
-            var lines : [String]
-            for line in $histFile {
-                $lines.add($line)
-            }
-            $lines.add($s)
-            while($lines.size() >= $HISTFILESIZE) {
-                $lines.shift()
-            }
-            for line in $lines {
-                echo $line
-            } with > $HISTFILE
+        var lines : [String]
+        for line in $histFile {
+            $lines.add($line)
         }
+        $lines.add($s)
+        while($lines.size() >= $HISTFILESIZE) {
+            $lines.shift()
+        }
+        for line in $lines {
+            echo $line
+        } with > $HISTFILE
     } catch e {
         return # ignore io error
     }
