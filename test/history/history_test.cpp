@@ -153,76 +153,76 @@ TEST_F(HistoryTest, add) {
   ASSERT_STREQ("ccc", this->getHistory(1));
 }
 
-TEST_F(HistoryTest, set) {
-  this->setHistSize(10);
-  this->addHistory("aaa");
-  this->addHistory("bbb");
+// TEST_F(HistoryTest, set) {
+//   this->setHistSize(10);
+//   this->addHistory("aaa");
+//   this->addHistory("bbb");
+//
+//   ASSERT_EQ(2u, this->historySize());
+//
+//   this->setHistory(1, "ccc");
+//   ASSERT_STREQ("ccc", this->getHistory(1));
+//
+//   this->setHistory(3, "ccc"); // do nothing, if out of range
+//   ASSERT_EQ(2u, this->historySize());
+//   ASSERT_EQ(nullptr, this->getHistory(3));
+//
+//   this->setHistory(1000, "ccc"); // do nothing, if out of range
+//   ASSERT_EQ(2u, this->historySize());
+//
+//   this->setHistory(0, "eeee\nwwww"); // do nothing, if contains newlines
+//   ASSERT_STREQ("aaa", this->getHistory(0));
+// }
 
-  ASSERT_EQ(2u, this->historySize());
-
-  this->setHistory(1, "ccc");
-  ASSERT_STREQ("ccc", this->getHistory(1));
-
-  this->setHistory(3, "ccc"); // do nothing, if out of range
-  ASSERT_EQ(2u, this->historySize());
-  ASSERT_EQ(nullptr, this->getHistory(3));
-
-  this->setHistory(1000, "ccc"); // do nothing, if out of range
-  ASSERT_EQ(2u, this->historySize());
-
-  this->setHistory(0, "eeee\nwwww"); // do nothing, if contains newlines
-  ASSERT_STREQ("aaa", this->getHistory(0));
-}
-
-TEST_F(HistoryTest, remove) {
-  this->setHistSize(10);
-  this->addHistory("aaa");
-  this->addHistory("bbb");
-  this->addHistory("ccc");
-  this->addHistory("ddd");
-  this->addHistory("eee");
-
-  this->delHistory(2);
-  ASSERT_EQ(4u, this->historySize());
-  ASSERT_STREQ("aaa", this->getHistory(0));
-  ASSERT_STREQ("bbb", this->getHistory(1));
-  ASSERT_STREQ("ddd", this->getHistory(2));
-  ASSERT_STREQ("eee", this->getHistory(3));
-
-  this->delHistory(3);
-  ASSERT_EQ(3u, this->historySize());
-  ASSERT_STREQ("aaa", this->getHistory(0));
-  ASSERT_STREQ("bbb", this->getHistory(1));
-  ASSERT_STREQ("ddd", this->getHistory(2));
-
-  // do nothing, if out of range
-  this->delHistory(6);
-  ASSERT_EQ(3u, this->historySize());
-  ASSERT_STREQ("aaa", this->getHistory(0));
-  ASSERT_STREQ("bbb", this->getHistory(1));
-  ASSERT_STREQ("ddd", this->getHistory(2));
-
-  // do nothing, if out of range
-  this->delHistory(600);
-  ASSERT_EQ(3u, this->historySize());
-  ASSERT_STREQ("aaa", this->getHistory(0));
-  ASSERT_STREQ("bbb", this->getHistory(1));
-  ASSERT_STREQ("ddd", this->getHistory(2));
-}
-
-TEST_F(HistoryTest, clear) {
-  this->setHistSize(10);
-  this->addHistory("aaa");
-  this->addHistory("bbb");
-  this->addHistory("ccc");
-  this->addHistory("ddd");
-  this->addHistory("eee");
-
-  ASSERT_EQ(5u, this->historySize());
-
-  this->clearHistory();
-  ASSERT_EQ(0u, this->historySize());
-}
+// TEST_F(HistoryTest, remove) {
+//   this->setHistSize(10);
+//   this->addHistory("aaa");
+//   this->addHistory("bbb");
+//   this->addHistory("ccc");
+//   this->addHistory("ddd");
+//   this->addHistory("eee");
+//
+//   this->delHistory(2);
+//   ASSERT_EQ(4u, this->historySize());
+//   ASSERT_STREQ("aaa", this->getHistory(0));
+//   ASSERT_STREQ("bbb", this->getHistory(1));
+//   ASSERT_STREQ("ddd", this->getHistory(2));
+//   ASSERT_STREQ("eee", this->getHistory(3));
+//
+//   this->delHistory(3);
+//   ASSERT_EQ(3u, this->historySize());
+//   ASSERT_STREQ("aaa", this->getHistory(0));
+//   ASSERT_STREQ("bbb", this->getHistory(1));
+//   ASSERT_STREQ("ddd", this->getHistory(2));
+//
+//   // do nothing, if out of range
+//   this->delHistory(6);
+//   ASSERT_EQ(3u, this->historySize());
+//   ASSERT_STREQ("aaa", this->getHistory(0));
+//   ASSERT_STREQ("bbb", this->getHistory(1));
+//   ASSERT_STREQ("ddd", this->getHistory(2));
+//
+//   // do nothing, if out of range
+//   this->delHistory(600);
+//   ASSERT_EQ(3u, this->historySize());
+//   ASSERT_STREQ("aaa", this->getHistory(0));
+//   ASSERT_STREQ("bbb", this->getHistory(1));
+//   ASSERT_STREQ("ddd", this->getHistory(2));
+// }
+//
+// TEST_F(HistoryTest, clear) {
+//   this->setHistSize(10);
+//   this->addHistory("aaa");
+//   this->addHistory("bbb");
+//   this->addHistory("ccc");
+//   this->addHistory("ddd");
+//   this->addHistory("eee");
+//
+//   ASSERT_EQ(5u, this->historySize());
+//
+//   this->clearHistory();
+//   ASSERT_EQ(0u, this->historySize());
+// }
 
 TEST_F(HistoryTest, resize) {
   this->setHistSize(10);

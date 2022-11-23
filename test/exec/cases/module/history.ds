@@ -1,5 +1,7 @@
 
 source ../../../../share/ydsh/module/edit
+$HISTORY.clear()
+
 
 # default value
 assert $HISTFILE == "$DATA_HOME/ydsh_history"

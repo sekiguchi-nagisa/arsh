@@ -109,23 +109,32 @@ function _add_and_save(s : String) {
     if $HISTFILESIZE > $limit {
         $HISTFILESIZE = $limit
     }
-    var histFile = new FD($HISTFILE)
-    $histFile.lock()
-    var count = "$(wc -l $HISTFILE)".split(" ")[0].toInt()
-    if $count && $count < $HISTFILESIZE {
-        echo $s >> $HISTFILE
-    } else {
-        var lines : [String]
-        for line in $histFile {
-            $lines.add($line)
+    $HISTFILE.empty() && return
+    try {
+        if !(test -e $HISTFILE) {
+            touch $HISTFILE 2> /dev/null &&
+            chmod g-rw,o-rw $HISTFILE
         }
-        $lines.add($s)
-        while($lines.size() >= $HISTFILESIZE) {
-            $lines.shift()
+        var histFile = new FD($HISTFILE);
+        $histFile.lock()
+        var count = "$(wc -l $HISTFILE)".split(" ")[0].toInt()
+        if $count && $count < $HISTFILESIZE {
+            echo $s >> $HISTFILE
+        } else {
+            var lines : [String]
+            for line in $histFile {
+                $lines.add($line)
+            }
+            $lines.add($s)
+            while($lines.size() >= $HISTFILESIZE) {
+                $lines.shift()
+            }
+            for line in $lines {
+                echo $line
+            } with > $HISTFILE
         }
-        for line in $lines {
-            echo $line
-        } with > $HISTFILE
+    } catch e {
+        return # ignore io error
     }
 }
 
@@ -315,6 +324,8 @@ $EDIT_HOOK = $_editHook
 
 
 # for LINE_EDIT variable setting
+$_load()
+
 $LINE_EDIT.setPrompt(function(p) => {
     if $PROMPT_HOOK {
         $p = $PROMPT_HOOK($p)

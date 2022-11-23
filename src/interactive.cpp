@@ -66,16 +66,6 @@ static void addHistory(const char *line) {
   DSState_lineEdit(state, DS_EDIT_HIST_ADD, &edit);
 }
 
-static void loadHistory() {
-  DSLineEdit edit{};
-  DSState_lineEdit(state, DS_EDIT_HIST_LOAD, &edit);
-}
-
-static void saveHistory() {
-  DSLineEdit edit{};
-  DSState_lineEdit(state, DS_EDIT_HIST_SAVE, &edit);
-}
-
 static const char *prompt(unsigned int n) {
   DSLineEdit edit{};
   edit.index = n;
@@ -354,7 +344,6 @@ int exec_interactive2(DSState *st, const std::string &rcfile) {
     return ret.second;
   }
 
-  loadHistory();
   int status = 0;
   while (true) {
     DSState_showNotification(st);
@@ -379,12 +368,11 @@ int exec_interactive2(DSState *st, const std::string &rcfile) {
       break;
     }
   }
-  saveHistory();
   return status;
 }
 
 int exec_interactive(DSState *dsState, const std::string &rcfile) {
-  if (getenv("YDSH_NEW_REPL")) {
+  if (!getenv("YDSH_OLD_REPL")) {
     return exec_interactive2(dsState, rcfile);
   }
 
@@ -415,8 +403,6 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
     return ret.second;
   }
 
-  loadHistory();
-
   int status = 0;
   for (std::string line; readLine(line);) {
     DSError e; // NOLINT
@@ -427,6 +413,5 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
       break;
     }
   }
-  //  saveHistory();
   return status;
 }
