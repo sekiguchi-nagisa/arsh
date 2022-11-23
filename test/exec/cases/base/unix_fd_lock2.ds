@@ -1,0 +1,16 @@
+#$test($ignored = 'cygwin|darwin')
+
+assert command -V flock > /dev/null
+
+var this = new FD($SCRIPT_NAME)
+
+flock -n ${$this.value()} || {
+    echo already running
+    exit 188
+}
+
+var out = "$(eval $YDSH_BIN $SCRIPT_NAME 2>&1)"
+assert $? == 188
+assert $out == 'already running'
+
+true

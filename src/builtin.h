@@ -1965,7 +1965,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
   errno = EINVAL;
   if (!ref.hasNullChar()) {
     errno = 0;
-    int fd = open(ref.data(), O_CREAT | O_RDWR | O_CLOEXEC, 0666);
+    int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
     if (fd != -1) {
       RET(DSValue::create<UnixFdObject>(fd));
     }

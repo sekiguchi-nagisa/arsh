@@ -1,4 +1,4 @@
-#$test($ignored = 'cygwin|darwin', $out= $'parent1\nparent2\nparent3\nchild1\nchild2\nchild3\n')
+#$test($out= $'parent1\nparent2\nparent3\nchild1\nchild2\nchild3\n')
 
 var this = new FD($SCRIPT_NAME)
 

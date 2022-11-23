@@ -136,6 +136,7 @@
 - **Breaking Change**: change interface of ``CMD_FALLBACK``
     - now pass caller module context to fallback handler
 - **Breaking Change**: only allow decimal integer in ``test`` command like bash
+- **Breaking Change**: FD objects that are created from constructor does not have close-on-exec flag
 - improve runtime option recognition
     - now allow upper case, snake case, kebab case
       ```
