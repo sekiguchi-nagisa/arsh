@@ -40,6 +40,7 @@
         - builtin ``command`` command checks existance of dynamic registered commands, but does not call theme (
           builtin ``eval`` command can call these commands)
         - ``Module#_fullname`` method also supports theme
+    - also complete dynamic registered command names
 
 #### Builtin
 

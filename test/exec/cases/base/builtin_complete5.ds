@@ -80,6 +80,12 @@ var udc = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod']
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
 assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
 assert "$(complete -A udc 'e')".empty()
+assert "$(complete -A dyna 'zz')".empty()
+assert {complete -q -A cmd -- 'zzzzzzzzzaaaaaa'; $COMPREPLY; }.empty()
+$DYNA_UDCS["zzzzzzzzzaaaaaa"] = (){}
+$DYNA_UDCS["zzzzzzzzzaaaaaa@@@"] = (){}
+assert diff <(complete -A cmd -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
+assert diff <(complete -A dyna -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
 
 assert diff <(complete -A command -A stmt_kw) <(complete ';')
 assert diff <(complete -A command -A stmt_kw l) <(complete 'l')

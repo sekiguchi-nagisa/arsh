@@ -33,23 +33,24 @@ enum class CodeCompOp : unsigned int {
   EXEC = 1u << 2u,      /* complete executable file names (including directory) */
   TILDE = 1u << 3u,     /* perform tilde expansion before completions */
   EXTERNAL = 1u << 4u,  /* complete external command names */
-  BUILTIN = 1u << 5u,   /* complete builtin command names */
-  UDC = 1u << 6u,       /* complete user-defined command names */
-  VAR = 1u << 7u,       /* complete global variable names (not start with $) */
-  ENV = 1u << 8u,       /* complete environmental variable names */
-  SIGNAL = 1u << 9u,    /* complete signal names (not start with SIG) */
-  USER = 1u << 10u,     /* complete usernames */
-  GROUP = 1u << 11u,    /* complete group names */
-  MODULE = 1u << 12u,   /* complete module path */
-  STMT_KW = 1u << 13u,  /* complete statement keyword */
-  EXPR_KW = 1u << 14u,  /* complete expr keyword */
-  NO_IDENT = 1u << 15u, /* ignore completion candidates starting with identifier */
-  EXPECT = 1u << 16u,   /* complete expected token */
-  MEMBER = 1u << 17u,   /* complete member (field/method) */
-  TYPE = 1u << 18u,     /* complete type name */
-  CMD_ARG = 1u << 19u,  /* for command argument */
-  HOOK = 1u << 20u,     /* for user-defined completion hook */
-  COMMAND = EXTERNAL | BUILTIN | UDC,
+  DYNA_UDC = 1u << 5u,  /* complete dynamically registered command names */
+  BUILTIN = 1u << 6u,   /* complete builtin command names */
+  UDC = 1u << 7u,       /* complete user-defined command names */
+  VAR = 1u << 8u,       /* complete global variable names (not start with $) */
+  ENV = 1u << 9u,       /* complete environmental variable names */
+  SIGNAL = 1u << 10u,   /* complete signal names (not start with SIG) */
+  USER = 1u << 11u,     /* complete usernames */
+  GROUP = 1u << 12u,    /* complete group names */
+  MODULE = 1u << 13u,   /* complete module path */
+  STMT_KW = 1u << 14u,  /* complete statement keyword */
+  EXPR_KW = 1u << 15u,  /* complete expr keyword */
+  NO_IDENT = 1u << 16u, /* ignore completion candidates starting with identifier */
+  EXPECT = 1u << 17u,   /* complete expected token */
+  MEMBER = 1u << 18u,   /* complete member (field/method) */
+  TYPE = 1u << 19u,     /* complete type name */
+  CMD_ARG = 1u << 20u,  /* for command argument */
+  HOOK = 1u << 21u,     /* for user-defined completion hook */
+  COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 
 template <>
@@ -112,9 +113,13 @@ using UserDefinedComp =
     std::function<int(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
                       CompCandidateConsumer &consumer)>;
 
+using DynaUdcComp = std::function<void(const std::string &word, CompCandidateConsumer &consumer)>;
+
 class CodeCompletionHandler {
 private:
   UserDefinedComp userDefinedComp;
+
+  DynaUdcComp dynaUdcComp;
 
   const SysConfig &config;
 
@@ -245,6 +250,8 @@ public:
 
   void setUserDefinedComp(const UserDefinedComp &comp) { this->userDefinedComp = comp; }
 
+  void setDynaUdcComp(const DynaUdcComp &comp) { this->dynaUdcComp = comp; }
+
   void setCancel(ObserverPtr<CompCancel> c) { this->cancel = c; }
 
   /**
@@ -267,6 +274,7 @@ private:
   TypePool &pool;
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
+  DynaUdcComp dynaUdcComp;
   ObserverPtr<CompCancel> cancel;
 
 public:
@@ -276,6 +284,8 @@ public:
         logicalWorkingDir(workDir) {}
 
   void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
+
+  void setDynaUdcComp(DynaUdcComp &&comp) { this->dynaUdcComp = std::move(comp); }
 
   void setCancel(CompCancel &c) { this->cancel = makeObserver(c); }
 

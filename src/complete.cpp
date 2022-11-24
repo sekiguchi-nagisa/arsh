@@ -615,6 +615,9 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
       hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
     TRY(completeCmdName(*this->scope, this->compWord, this->compOp, consumer, this->cancel));
   }
+  if (hasFlag(this->compOp, CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
+    this->dynaUdcComp(this->compWord, consumer);
+  }
   if (hasFlag(this->compOp, CodeCompOp::USER)) {
     completeUserName(this->compWord, consumer);
   }
@@ -727,6 +730,7 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
   CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, std::move(scope),
                                 scriptDir);
   handler.setUserDefinedComp(this->userDefinedComp);
+  handler.setDynaUdcComp(this->dynaUdcComp);
   handler.setCancel(this->cancel);
   if (this->provider) {
     // prepare

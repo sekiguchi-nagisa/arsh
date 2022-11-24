@@ -988,11 +988,11 @@ static StrRefMap<CodeCompOp> initCompActions() {
       {"tilde", CodeCompOp::TILDE},     {"command", CodeCompOp::COMMAND},
       {"cmd", CodeCompOp::COMMAND},     {"external", CodeCompOp::EXTERNAL},
       {"builtin", CodeCompOp::BUILTIN}, {"udc", CodeCompOp::UDC},
-      {"variable", CodeCompOp::VAR},    {"var", CodeCompOp::VAR},
-      {"env", CodeCompOp::ENV},         {"signal", CodeCompOp::SIGNAL},
-      {"user", CodeCompOp::USER},       {"group", CodeCompOp::GROUP},
-      {"stmt_kw", CodeCompOp::STMT_KW}, {"expr_kw", CodeCompOp::EXPR_KW},
-      {"type", CodeCompOp::TYPE},
+      {"dyna", CodeCompOp::DYNA_UDC},   {"variable", CodeCompOp::VAR},
+      {"var", CodeCompOp::VAR},         {"env", CodeCompOp::ENV},
+      {"signal", CodeCompOp::SIGNAL},   {"user", CodeCompOp::USER},
+      {"group", CodeCompOp::GROUP},     {"stmt_kw", CodeCompOp::STMT_KW},
+      {"expr_kw", CodeCompOp::EXPR_KW}, {"type", CodeCompOp::TYPE},
   };
 }
 

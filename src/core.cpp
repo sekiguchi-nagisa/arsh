@@ -397,6 +397,15 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
                                                       CompCandidateConsumer &consumer) {
     return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
   });
+  codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
+    auto &dynaUdcs = typeAs<MapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));
+    for (auto &e : dynaUdcs.getValueMap()) {
+      auto name = e.first.asStrRef();
+      if (name.startsWith(word)) {
+        consumer(name, CompCandidateKind::COMMAND_NAME);
+      }
+    }
+  });
   DefaultCompCancel cancel;
   codeCompleter.setCancel(cancel);
 
