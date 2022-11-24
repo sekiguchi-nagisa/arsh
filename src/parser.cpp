@@ -1831,9 +1831,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         if (this->inStmtCompCtx) {
           setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::STMT);
         }
-        if (isInfixKeyword(this->consumedKind) && !this->hasSpace()) {
-          setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::NO_IDENT);
-        }
         this->ccHandler->addCmdOrKeywordRequest(this->lexer->toCmdArg(this->curToken), op);
       }
     }

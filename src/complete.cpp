@@ -136,9 +136,6 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
       continue;
     }
     StringRef value = toString(e);
-    if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(value[0])) {
-      continue;
-    }
     if (isKeyword(value) && value.startsWith(prefix)) {
       consumer(value, CompCandidateKind::KEYWORD);
     }
@@ -190,14 +187,11 @@ static void completeGroupName(const std::string &prefix, CompCandidateConsumer &
 }
 
 static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
-                        CompCandidateConsumer &consumer, bool ignoreIdent) {
+                        CompCandidateConsumer &consumer) {
   scope.walk([&](StringRef udc, const Handle &) {
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix)) {
-        if (ignoreIdent && isIDStart(udc[0])) {
-          return true;
-        }
         consumer(udc, CompCandidateKind::COMMAND_NAME);
       }
     }
@@ -238,7 +232,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
                             ObserverPtr<CompCancel> cancel) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
-    completeUDC(scope, cmdPrefix, consumer, hasFlag(option, CodeCompOp::NO_IDENT));
+    completeUDC(scope, cmdPrefix, consumer);
   }
 
   // complete builtin command
@@ -247,9 +241,6 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     auto *cmdList = getBuiltinCmdDescList();
     for (unsigned int i = 0; i < bsize; i++) {
       StringRef builtin = cmdList[i].name;
-      if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(builtin[0])) {
-        continue;
-      }
       if (builtin.startsWith(cmdPrefix)) {
         consumer(builtin, CompCandidateKind::COMMAND_NAME);
       }
@@ -274,9 +265,6 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         }
 
         StringRef cmd = entry->d_name;
-        if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(cmd[0])) {
-          continue;
-        }
         if (cmd.startsWith(cmdPrefix)) {
           std::string fullPath = path;
           if (fullPath.back() != '/') {
@@ -692,9 +680,6 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
   // add keyword request
   setFlag(this->compOp,
           hasFlag(cmdOrKwOp, CMD_OR_KW_OP::STMT) ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
-  if (hasFlag(cmdOrKwOp, CMD_OR_KW_OP::NO_IDENT)) {
-    setFlag(this->compOp, CodeCompOp::NO_IDENT);
-  }
 }
 
 static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
