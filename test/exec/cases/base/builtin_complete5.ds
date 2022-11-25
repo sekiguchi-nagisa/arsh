@@ -122,6 +122,28 @@ assert "$({ complete -q ';'; assert !$COMPREPLY.empty(); })".empty();
 assert complete -s 'var';
 assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var '
 
+## -s option
+### variable
+assert diff <(complete -s '$OSTYP') <(echo 'OSTYPE')
+assert diff <(complete -s '"$OSTYP') <(echo 'OSTYPE')
+assert diff <(complete -s 'echo $OSTY') <(echo 'OSTYPE ')
+### env
+assert diff <(complete -s 'importenv SHLVL') <(echo 'SHLVL ')
+### member
+assert diff <(complete -s '1234.ab') <(echo 'abs')
+assert diff <(complete -s '(34,)._0') <(echo '_0')
+### type
+assert diff <(complete -s '1234 as Stri') <(echo 'String')
+### keyword
+assert diff <(complete -s 'whil') <(echo 'while ')
+assert diff <(complete -s 'for aaa i') <(echo 'in ')
+### file name
+assert diff <(complete -s '/bi') <(echo 'bin/')
+assert diff <(complete -s 'echo /bi') <(echo 'bin/')
+assert diff <(complete -s '~roo') <(echo '~root/')
+assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+
+
 ## invalid
 assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"
 assert !complete -A
