@@ -816,21 +816,16 @@ LineEditorObject::~LineEditorObject() {
   close(this->outFd);
 }
 
-struct TermSetting {
-  termios org{};
-  bool rawMode{false};
-};
-
 /* Raw mode: 1960 magic shit. */
-static int enableRawMode(int fd, TermSetting &setting) {
+int LineEditorObject::enableRawMode(int fd) {
   struct termios raw;
 
   if (!isatty(fd))
     goto fatal;
-  if (tcgetattr(fd, &setting.org) == -1)
+  if (tcgetattr(fd, &this->orgTermios) == -1)
     goto fatal;
 
-  raw = setting.org; /* modify the original mode */
+  raw = this->orgTermios; /* modify the original mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
@@ -849,7 +844,7 @@ static int enableRawMode(int fd, TermSetting &setting) {
   /* put terminal in raw mode after flushing */
   if (tcsetattr(fd, TCSAFLUSH, &raw) < 0)
     goto fatal;
-  setting.rawMode = true;
+  this->rawMode = true;
   return 0;
 
 fatal:
@@ -857,10 +852,10 @@ fatal:
   return -1;
 }
 
-static void disableRawMode(int fd, TermSetting &setting) {
+void LineEditorObject::disableRawMode(int fd) {
   /* Don't even check the return value as it's too late. */
-  if (setting.rawMode && tcsetattr(fd, TCSAFLUSH, &setting.org) != -1)
-    setting.rawMode = false;
+  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1)
+    this->rawMode = false;
 }
 
 /* Multi line low level line refresh.
@@ -910,7 +905,7 @@ bool LineEditorObject::refreshLine(DSState &state, struct linenoiseState *l) {
   ab.append(l->prompt.data(), l->prompt.size());
   if (this->highlightCallback) {
     auto ret = this->kickCallback(state, this->highlightCallback,
-                                  makeArgs(DSValue::createStr(StringRef(l->buf, l->len))));
+                                  makeArgs(DSValue::createStr(StringRef(l->buf, l->len))), false);
     if (state.hasError()) {
       return false;
     }
@@ -1331,12 +1326,11 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    TermSetting termSetting;
-    if (enableRawMode(this->inFd, termSetting)) {
+    if (this->enableRawMode(this->inFd)) {
       return nullptr;
     }
     int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
-    disableRawMode(this->inFd, termSetting);
+    this->disableRawMode(this->inFd);
     int r = write(this->outFd, "\n", 1);
     UNUSED(r);
     if (count == -1) {
@@ -1512,12 +1506,20 @@ END:
   return nread; /* Return last read character length*/
 }
 
-DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
+DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs,
+                                       bool restoreTTY) {
   int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
+  restoreTTY = restoreTTY && this->rawMode;
+  if (restoreTTY) {
+    this->disableRawMode(this->inFd);
+  }
   auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
+  if (restoreTTY) {
+    this->enableRawMode(this->inFd);
+  }
 
   // restore state
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));

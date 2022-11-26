@@ -17,6 +17,8 @@
 #ifndef YDSH_LINE_EDITOR_H
 #define YDSH_LINE_EDITOR_H
 
+#include <termios.h>
+
 #include "object.h"
 
 struct linenoiseState;
@@ -36,6 +38,10 @@ private:
   int outFd;
 
   bool lock{false};
+
+  bool rawMode{false};
+
+  termios orgTermios{};
 
   /**
    * must be `(String) -> String` type
@@ -91,6 +97,10 @@ public:
   }
 
 private:
+  int enableRawMode(int fd);
+
+  void disableRawMode(int fd);
+
   [[nodiscard]] bool refreshLine(DSState &state, struct linenoiseState *l);
 
   /**
@@ -116,7 +126,8 @@ private:
   size_t insertEstimatedSuffix(DSState &state, struct linenoiseState *ls,
                                const ArrayObject &candidates);
 
-  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
+  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs,
+                       bool restoreTTY = true);
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 
