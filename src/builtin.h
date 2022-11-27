@@ -2153,16 +2153,13 @@ YDSH_METHOD edit_hist(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function setHighlight($this : LineEditor, $highlight : Option<Func<String,[String]>>) : Void
-YDSH_METHOD edit_highlight(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(edit_highlight);
+//!bind: function setColor($this : LineEditor, $setting : String) : Void
+YDSH_METHOD edit_color(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_color);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
-  ObjPtr<DSObject> callback;
-  if (!LOCAL(1).isInvalid()) {
-    callback = LOCAL(1).toPtr();
-  }
-  editor.setHighlightCallback(std::move(callback));
+  auto setting = LOCAL(1).asStrRef();
+  editor.setColor(setting);
   RET_VOID;
 }
 

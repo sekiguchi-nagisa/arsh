@@ -862,7 +862,7 @@ void LineEditorObject::disableRawMode(int fd) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-bool LineEditorObject::refreshLine(DSState &state, struct linenoiseState *l) {
+bool LineEditorObject::refreshLine(struct linenoiseState *l) {
   updateColumns(l);
 
   char seq[64];
@@ -903,14 +903,16 @@ bool LineEditorObject::refreshLine(DSState &state, struct linenoiseState *l) {
 
   /* Write the prompt and the current buffer content */
   ab.append(l->prompt.data(), l->prompt.size());
-  if (this->highlightCallback) {
-    auto ret = this->kickCallback(state, this->highlightCallback,
-                                  makeArgs(DSValue::createStr(StringRef(l->buf, l->len))), false);
-    if (state.hasError()) {
-      return false;
+  if (this->highlight && !this->escapeSeqMap.getValues().empty()) {
+    std::string line(l->buf, l->len);
+    line += '\n';
+    BuiltinHighlighter highlighter(this->escapeSeqMap, line);
+    highlighter.doHighlight();
+    line = std::move(highlighter).take();
+    if (!line.empty() && line.back() == '\n') {
+      line.pop_back();
     }
-    const char *line = ret.asCStr(); // ignore null character
-    ab.append(line, strlen(line));
+    ab.append(line.c_str(), line.size());
   } else {
     ab.append(l->buf, l->len);
   }
@@ -962,8 +964,7 @@ bool LineEditorObject::refreshLine(DSState &state, struct linenoiseState *l) {
 /* Insert the character 'c' at cursor current position.
  *
  * On error writing to the terminal -1 is returned, otherwise 0. */
-int LineEditorObject::linenoiseEditInsert(DSState &state, struct linenoiseState *l,
-                                          const char *cbuf, int clen) {
+int LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
   if (l->len + clen <= l->buflen) {
     if (l->len == l->pos) {
       memcpy(&l->buf[l->pos], cbuf, clen);
@@ -977,7 +978,7 @@ int LineEditorObject::linenoiseEditInsert(DSState &state, struct linenoiseState 
       l->len += clen;
       l->buf[l->len] = '\0';
     }
-    if (!this->refreshLine(state, l)) {
+    if (!this->refreshLine(l)) {
       return -1;
     }
   }
@@ -1059,7 +1060,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     switch (c) {
     case ENTER: /* enter */
       if (linenoiseEditMoveEnd(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       this->kickHistoryCallback(state, HistOp::DEINIT, &l);
       if (state.hasError()) {
@@ -1073,14 +1074,14 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     case BACKSPACE: /* backspace */
     case CTRL_H:    /* ctrl-h */
       if (linenoiseEditBackspace(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_D: /* ctrl-d, remove char at right of cursor, or if the
                 line is empty, act as end-of-file. */
       if (l.len > 0) {
         if (linenoiseEditDelete(&l)) {
-          TRY(this->refreshLine(state, &l));
+          TRY(this->refreshLine(&l));
         }
       } else {
         errno = 0;
@@ -1094,22 +1095,22 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         buf[l.pos] = aux;
         if (l.pos != l.len - 1)
           l.pos++;
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_B: /* ctrl-b */
       if (linenoiseEditMoveLeft(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_F: /* ctrl-f */
       if (linenoiseEditMoveRight(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_P: /* ctrl-p */
       if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       } else if (state.hasError()) {
         errno = EAGAIN;
         return -1;
@@ -1117,7 +1118,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_N: /* ctrl-n */
       if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       } else if (state.hasError()) {
         errno = EAGAIN;
         return -1;
@@ -1125,7 +1126,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_R: /* ctrl-r */
       if (this->kickHistoryCallback(state, HistOp::SEARCH, &l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       } else if (state.hasError()) {
         errno = EAGAIN;
         return -1;
@@ -1141,17 +1142,17 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         switch (seq[0]) {
         case 'f':
           if (linenoiseEditMoveRightWord(&l)) {
-            TRY(this->refreshLine(state, &l));
+            TRY(this->refreshLine(&l));
           }
           break;
         case 'b':
           if (linenoiseEditMoveLeftWord(&l)) {
-            TRY(this->refreshLine(state, &l));
+            TRY(this->refreshLine(&l));
           }
           break;
         case 'd':
           if (linenoiseEditDeleteNextWord(&l)) {
-            TRY(this->refreshLine(state, &l));
+            TRY(this->refreshLine(&l));
           }
           break;
         }
@@ -1168,17 +1169,17 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               switch (seq[1]) {
               case '1': /* Home */
                 if (linenoiseEditMoveHome(&l)) {
-                  TRY(this->refreshLine(state, &l));
+                  TRY(this->refreshLine(&l));
                 }
                 break;
               case '3': /* Delete key. */
                 if (linenoiseEditDelete(&l)) {
-                  TRY(this->refreshLine(state, &l));
+                  TRY(this->refreshLine(&l));
                 }
                 break;
               case '4': /* End */
                 if (linenoiseEditMoveEnd(&l)) {
-                  TRY(this->refreshLine(state, &l));
+                  TRY(this->refreshLine(&l));
                 }
                 break;
               }
@@ -1187,7 +1188,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
             switch (seq[1]) {
             case 'A': /* Up */
               if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               } else if (state.hasError()) {
                 errno = EAGAIN;
                 return -1;
@@ -1195,7 +1196,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               break;
             case 'B': /* Down */
               if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               } else if (state.hasError()) {
                 errno = EAGAIN;
                 return -1;
@@ -1203,22 +1204,22 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               break;
             case 'C': /* Right */
               if (linenoiseEditMoveRight(&l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               }
               break;
             case 'D': /* Left */
               if (linenoiseEditMoveLeft(&l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               }
               break;
             case 'H': /* Home */
               if (linenoiseEditMoveHome(&l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               }
               break;
             case 'F': /* End*/
               if (linenoiseEditMoveEnd(&l)) {
-                TRY(this->refreshLine(state, &l));
+                TRY(this->refreshLine(&l));
               }
               break;
             }
@@ -1230,12 +1231,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           switch (seq[1]) {
           case 'H': /* Home */
             if (linenoiseEditMoveHome(&l)) {
-              TRY(this->refreshLine(state, &l));
+              TRY(this->refreshLine(&l));
             }
             break;
           case 'F': /* End*/
             if (linenoiseEditMoveEnd(&l)) {
-              TRY(this->refreshLine(state, &l));
+              TRY(this->refreshLine(&l));
             }
             break;
           }
@@ -1243,36 +1244,36 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     default:
-      if (this->linenoiseEditInsert(state, &l, cbuf, nread))
+      if (this->linenoiseEditInsert(&l, cbuf, nread))
         return -1;
       break;
     case CTRL_U: /* Ctrl+u, delete the whole line. */
       buf[0] = '\0';
       l.pos = l.len = 0;
-      TRY(this->refreshLine(state, &l));
+      TRY(this->refreshLine(&l));
       break;
     case CTRL_K: /* Ctrl+k, delete from current to end of line. */
       buf[l.pos] = '\0';
       l.len = l.pos;
-      TRY(this->refreshLine(state, &l));
+      TRY(this->refreshLine(&l));
       break;
     case CTRL_A: /* Ctrl+a, go to the start of the line */
       if (linenoiseEditMoveHome(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_E: /* ctrl+e, go to the end of the line */
       if (linenoiseEditMoveEnd(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     case CTRL_L: /* ctrl+l, clear screen */
       linenoiseClearScreen(l.ofd);
-      TRY(this->refreshLine(state, &l));
+      TRY(this->refreshLine(&l));
       break;
     case CTRL_W: /* ctrl+w, delete previous word */
       if (linenoiseEditDeletePrevWord(&l)) {
-        TRY(this->refreshLine(state, &l));
+        TRY(this->refreshLine(&l));
       }
       break;
     }
@@ -1350,7 +1351,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
  * @return
  * return token start cursor
  */
-size_t LineEditorObject::insertEstimatedSuffix(DSState &state, struct linenoiseState *ls,
+size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
                                                const ArrayObject &candidates) {
   size_t len;
   char *prefix = computeCommonPrefix(candidates, &len);
@@ -1392,10 +1393,10 @@ size_t LineEditorObject::insertEstimatedSuffix(DSState &state, struct linenoiseS
     logprintf("suffix size: %ld\n", suffixSize);
     char *inserting = (char *)malloc(sizeof(char) * suffixSize);
     memcpy(inserting, prefix + (len - suffixSize), suffixSize);
-    this->linenoiseEditInsert(state, ls, inserting, suffixSize);
+    this->linenoiseEditInsert(ls, inserting, suffixSize);
     free(inserting);
   } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    this->linenoiseEditInsert(state, ls, prefix, len);
+    this->linenoiseEditInsert(ls, prefix, len);
   }
 
   ls->buf[ls->pos] = oldCh;
@@ -1415,7 +1416,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
 
   int nread = 0;
   int c = 0;
-  int offset = this->insertEstimatedSuffix(state, ls, *candidates);
+  int offset = this->insertEstimatedSuffix(ls, *candidates);
   if (state.hasError()) {
     *code = CTRL_C;
     return -1;
@@ -1466,7 +1467,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       updateColumns(ls);
       showAllCandidates(ls->ps, ls->ofd, ls->cols, *candidates);
     }
-    if (!this->refreshLine(state, ls)) {
+    if (!this->refreshLine(ls)) {
       *code = CTRL_C;
       return -1;
     }
@@ -1488,7 +1489,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       if (written >= 0) {
         ls->len = ls->pos = offset + written;
       }
-      if (!this->refreshLine(state, ls)) {
+      if (!this->refreshLine(ls)) {
         *code = CTRL_C;
         return -1;
       }
@@ -1506,13 +1507,12 @@ END:
   return nread; /* Return last read character length*/
 }
 
-DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs,
-                                       bool restoreTTY) {
+DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
   int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
-  restoreTTY = restoreTTY && this->rawMode;
+  bool restoreTTY = this->rawMode;
   if (restoreTTY) {
     this->disableRawMode(this->inFd);
   }

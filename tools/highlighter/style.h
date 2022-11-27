@@ -23,7 +23,7 @@
 
 #include <misc/num_util.hpp>
 
-#include "emitter.h"
+#include <highlighter_base.h>
 
 namespace ydsh::highlighter {
 

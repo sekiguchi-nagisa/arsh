@@ -38,6 +38,8 @@ void Formatter::initialize(StringRef newSource) {
   this->curSrcPos = 0;
 }
 
+std::string Formatter::dump() { return ""; }
+
 void Formatter::drawTrivia(StringRef ref) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = ref.find('\\', pos);
@@ -187,28 +189,7 @@ const std::string &ANSIFormatter::toEscapeSeq(HighlightTokenClass tokenClass) {
 
 void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
   const auto *escapeSeq = tokenClass ? &this->toEscapeSeq(*tokenClass) : nullptr;
-
-  // split by newline
-  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
-    auto r = ref.find('\n', pos);
-    auto line = ref.slice(pos, r);
-    pos = r != StringRef::npos ? r + 1 : r;
-
-    if (!line.empty()) {
-      if (escapeSeq) {
-        this->output << *escapeSeq;
-        this->write(line);
-        if (!escapeSeq->empty()) {
-          this->output << "\033[0m";
-        }
-      } else {
-        this->write(line);
-      }
-    }
-    if (r != StringRef::npos) {
-      this->output << '\n';
-    }
-  }
+  this->writeWithEscapeSeq(ref, escapeSeq ? *escapeSeq : "");
 }
 
 void ANSIFormatter::finalize() {
@@ -218,6 +199,26 @@ void ANSIFormatter::finalize() {
     this->curSrcPos = this->source.size();
   }
   this->output.flush();
+}
+
+std::string ANSIFormatter::dump() {
+  // fill escape sequence cache
+  for (auto &e : getHighlightTokenEntries()) {
+    this->toEscapeSeq(e.first);
+  }
+  std::string value;
+  for (auto &e : this->escapeSeqCache) {
+    unsigned int index = static_cast<unsigned int>(e.first);
+    assert(index < getHighlightTokenEntries().size());
+    const char *name = getHighlightTokenEntries()[index].second;
+    if (!value.empty()) {
+      value += " ";
+    }
+    value += name;
+    value += "=";
+    value += e.second;
+  }
+  return value;
 }
 
 // ###########################

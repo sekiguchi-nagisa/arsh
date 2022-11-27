@@ -55,7 +55,7 @@
     - ``setCompletion``: specify completion callback
     - ``setPrompt``: specify prompt callback
     - ``setHistory``: specify history callback
-    - ``setHighlight``: specify syntax highlight callback
+    - ``setColor``: specify syntax highlight color theme
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
     - ``value``: get internal file descriptor number

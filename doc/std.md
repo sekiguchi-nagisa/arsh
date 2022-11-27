@@ -318,7 +318,7 @@ function setPrompt($prompt : Option<Func<String,[String]>>) : Void for LineEdito
 
 function setHistory($hist : Option<Func<Option<String>,[String,String]>>) : Void for LineEditor
 
-function setHighlight($highlight : Option<Func<String,[String]>>) : Void for LineEditor
+function setColor($setting : String) : Void for LineEditor
 ```
 
 ## Array type

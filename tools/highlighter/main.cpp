@@ -36,7 +36,8 @@ using namespace ydsh::highlighter;
   OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
      "emit line number starts with ARG (for html formatter)")                                      \
   OP(HTML_LINENO_TABLE, "--html-lineno-table", opt::NO_ARG,                                        \
-     "emit line number as table (for html formatter)")
+     "emit line number as table (for html formatter)")                                             \
+  OP(DUMP, "--dump", opt::NO_ARG, "dump ansi color code of theme")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -45,7 +46,8 @@ enum class OptionSet : unsigned int {
 };
 
 void usage(std::ostream &stream, char **argv) {
-  stream << "usage: " << argv[0] << " [option ...] [source file]" << std::endl;
+  stream << "usage: " << argv[0] << " [option ...] [source file] or " << argv[0]
+         << " --dump [option ...]" << std::endl;
 }
 
 Optional<std::string> readAll(const char *sourceName) {
@@ -69,7 +71,7 @@ Optional<std::string> readAll(const char *sourceName) {
   return buf;
 }
 
-int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output) {
+int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output, bool dump) {
   auto ret = factory.create(output);
   if (!ret) {
     std::cerr << ret.asErr() << std::endl;
@@ -77,6 +79,12 @@ int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &ou
   }
   auto formatter = std::move(ret).take();
   assert(formatter);
+
+  if (dump) {
+    auto value = formatter->dump();
+    output << value << std::endl;
+    return 0;
+  }
 
   auto content = readAll(sourceName);
   if (!content.hasValue()) {
@@ -152,6 +160,7 @@ int main(int argc, char **argv) {
 
   const char *outputFileName = "/dev/stdout";
   bool listing = false;
+  bool dump = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
   while ((result = parser(begin, end))) {
@@ -181,9 +190,12 @@ int main(int argc, char **argv) {
     case OptionSet::HTML_LINENO_TABLE:
       factory.setHTMLTable(true);
       break;
+    case OptionSet::DUMP:
+      dump = true;
+      break;
     }
   }
-  if (result.error() != opt::END) {
+  if (result.error() != opt::END && !dump) {
     std::cerr << result.formatError() << std::endl;
     parser.printOption(std::cerr);
     return 1;
@@ -204,5 +216,5 @@ int main(int argc, char **argv) {
     std::cerr << "cannot open file: " << outputFileName << std::endl;
     return 1;
   }
-  return colorize(factory, sourceName, output);
+  return colorize(factory, sourceName, output, dump);
 }

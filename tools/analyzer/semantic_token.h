@@ -17,13 +17,10 @@
 #ifndef YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
 #define YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
 
-#include "../highlighter/emitter.h"
-
 #include "source.h"
+#include <highlighter_base.h>
 
 namespace ydsh::lsp {
-
-using namespace ydsh::highlighter;
 
 class SemanticTokenEncoder {
 private:

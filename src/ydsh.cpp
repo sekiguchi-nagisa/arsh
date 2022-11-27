@@ -567,6 +567,7 @@ char *DSState_readLine(DSState *st) {
   GUARD_NULL(st, nullptr);
   st->getCallStack().clearThrownObject();
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
+  editor.enableHighlight();
   return editor.readline(*st, defaultPrompt());
 }
 

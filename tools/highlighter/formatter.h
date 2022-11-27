@@ -37,7 +37,16 @@ public:
 
   virtual void initialize(StringRef newSource);
 
-  virtual void finalize() = 0; // write internal buffer to output
+  /**
+   * write internal buffer to output
+   */
+  virtual void finalize() = 0;
+
+  /**
+   * dump internal formatter setting
+   * @return
+   */
+  virtual std::string dump();
 
 protected:
   void write(StringRef ref) { this->output.write(ref.data(), ref.size()); }
@@ -77,8 +86,10 @@ public:
   [[nodiscard]] unsigned char findClosest(Color color) const;
 };
 
-class ANSIFormatter : public Formatter {
+class ANSIFormatter : public Formatter, public ANSIFormatOp<ANSIFormatter> {
 private:
+  friend struct ANSIFormatOp;
+
   const TermColorCap colorCap;
 
   const IndexedColorPalette256 colorPalette256;
@@ -105,12 +116,14 @@ public:
       : Formatter(style, output), colorCap(cap) {}
 
   void finalize() override;
+
+  std::string dump() override;
 };
 
 enum class HTMLFormatOp : unsigned int {
   FULL = 1u << 0u,   // generate self-contained html (set background color)
   LINENO = 1u << 1u, // emit line number
-  TABLE = 1u << 2u,  // emit as table (always conbine LINENO option)
+  TABLE = 1u << 2u,  // emit as table (always combine LINENO option)
 };
 
 class HTMLFormatter : public Formatter {

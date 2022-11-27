@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "emitter.h"
+#include "highlighter_base.h"
 
-namespace ydsh::highlighter {
+namespace ydsh {
 
 HighlightTokenClass toTokenClass(TokenKind kind) {
   switch (kind) {
@@ -110,6 +110,15 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   return HighlightTokenClass::NONE;
 }
 
+const HighlightTokenEntries &getHighlightTokenEntries() {
+  static constexpr HighlightTokenEntries entries = {{
+#define GEN_TABLE(E, S) {HighlightTokenClass::E, S},
+      EACH_HIGHLIGHT_TOKEN_CLASS(GEN_TABLE)
+#undef GEN_TABLE
+  }};
+  return entries;
+}
+
 void TokenEmitter::operator()(Token token) {
   assert(this->source[token.pos] == '#');
   this->emit(HighlightTokenClass::COMMENT, token);
@@ -158,4 +167,4 @@ void tokenizeAndEmit(TokenEmitter &emitter) {
   }
 }
 
-} // namespace ydsh::highlighter
+} // namespace ydsh

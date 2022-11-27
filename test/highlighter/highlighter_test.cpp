@@ -561,8 +561,9 @@ Formatters:
 }
 
 TEST_F(ColorizeTest, help) {
-  auto out = format(R"(usage: %s [option ...] [source file]
+  auto out = format(R"(usage: %s [option ...] [source file] or %s --dump [option ...]
 Options:
+    --dump                 dump ansi color code of theme
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)
@@ -572,7 +573,7 @@ Options:
     -o arg                 specify output file (default is stdout)
     -s arg                 specify highlighter color style (default is `darcula' style)
 )",
-                    HIGHLIGHTER_PATH);
+                    HIGHLIGHTER_PATH, HIGHLIGHTER_PATH);
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-h"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, out));
 }
@@ -580,6 +581,7 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
+    --dump                 dump ansi color code of theme
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)
@@ -596,6 +598,7 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(need argument: -o
 Options:
+    --dump                 dump ansi color code of theme
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)

@@ -19,6 +19,7 @@
 
 #include <termios.h>
 
+#include "highlighter.h"
 #include "object.h"
 
 struct linenoiseState;
@@ -41,6 +42,10 @@ private:
 
   bool rawMode{false};
 
+  bool highlight{false};
+
+  ANSIEscapeSeqMap escapeSeqMap;
+
   termios orgTermios{};
 
   /**
@@ -54,12 +59,6 @@ private:
    * may be null
    */
   ObjPtr<DSObject> completionCallback;
-
-  /**
-   * must be `(String) -> String` type
-   * may be null
-   */
-  ObjPtr<DSObject> highlightCallback;
 
   /**
    * must be `(String, String) -> String!` type
@@ -88,20 +87,22 @@ public:
     this->completionCallback = std::move(callback);
   }
 
-  void setHighlightCallback(ObjPtr<DSObject> callback) {
-    this->highlightCallback = std::move(callback);
-  }
-
   void setHistoryCallback(ObjPtr<DSObject> callback) {
     this->historyCallback = std::move(callback);
   }
+
+  void setColor(StringRef colorSetting) {
+    this->escapeSeqMap = ANSIEscapeSeqMap::fromString(colorSetting);
+  }
+
+  void enableHighlight() { this->highlight = true; }
 
 private:
   int enableRawMode(int fd);
 
   void disableRawMode(int fd);
 
-  [[nodiscard]] bool refreshLine(DSState &state, struct linenoiseState *l);
+  [[nodiscard]] bool refreshLine(struct linenoiseState *l);
 
   /**
    * Insert the character 'c' at cursor current position.
@@ -110,7 +111,7 @@ private:
    * @param clen
    * @return
    */
-  int linenoiseEditInsert(DSState &state, struct linenoiseState *l, const char *cbuf, int clen);
+  int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
 
   /**
    * actual line edit function
@@ -123,11 +124,9 @@ private:
 
   int completeLine(DSState &state, struct linenoiseState *ls, char *cbuf, int clen, int *code);
 
-  size_t insertEstimatedSuffix(DSState &state, struct linenoiseState *ls,
-                               const ArrayObject &candidates);
+  size_t insertEstimatedSuffix(struct linenoiseState *ls, const ArrayObject &candidates);
 
-  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs,
-                       bool restoreTTY = true);
+  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 

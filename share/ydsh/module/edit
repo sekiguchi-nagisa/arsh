@@ -260,4 +260,6 @@ $LINE_EDIT.setCompletion(function(m, s) => {
     $COMPREPLY
 })
 
-$LINE_EDIT.setHighlight(function(l) => "$(dscolorize <<< $l)")
+if(command -v dscolorize &> /dev/null) {
+    $LINE_EDIT.setColor("$(dscolorize --dump)")
+}
