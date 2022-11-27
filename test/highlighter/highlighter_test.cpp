@@ -563,7 +563,6 @@ Formatters:
 TEST_F(ColorizeTest, help) {
   auto out = format(R"(usage: %s [option ...] [source file]
 Options:
-    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)
@@ -581,7 +580,6 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
-    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)
@@ -598,7 +596,6 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(need argument: -o
 Options:
-    --daemon               run as daemon (always read from stdin)
     --html-full            generate self-contained html (for html formatter)
     --html-lineno[=arg]    emit line number starts with ARG (for html formatter)
     --html-lineno-table    emit line number as table (for html formatter)

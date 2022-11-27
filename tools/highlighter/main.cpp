@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#include <poll.h>
-#include <unistd.h>
-
 #include <fstream>
 #include <iostream>
 
@@ -39,8 +36,7 @@ using namespace ydsh::highlighter;
   OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
      "emit line number starts with ARG (for html formatter)")                                      \
   OP(HTML_LINENO_TABLE, "--html-lineno-table", opt::NO_ARG,                                        \
-     "emit line number as table (for html formatter)")                                             \
-  OP(DAEMON, "--daemon", opt::NO_ARG, "run as daemon (always read from stdin)")
+     "emit line number as table (for html formatter)")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -73,42 +69,7 @@ Optional<std::string> readAll(const char *sourceName) {
   return buf;
 }
 
-[[noreturn]] void runReadLoop(Formatter &formatter) {
-  struct pollfd pollfds[1]{};
-  pollfds[0].fd = STDIN_FILENO;
-  pollfds[0].events = POLLIN;
-
-  while (true) {
-    if (int ret = poll(pollfds, 1, -1); ret <= 0) {
-      fprintf(stderr, "%s\n", strerror(errno));
-      break;
-    }
-
-    if (pollfds[0].revents & POLLIN) {
-      ByteBuffer buf;
-      do {
-        char data[1024];
-        ssize_t readSize = read(STDIN_FILENO, data, std::size(data));
-        if (readSize > 0) {
-          buf.append(data, readSize);
-        } else {
-          break;
-        }
-
-        if (poll(pollfds, 1, 0) < 0) {
-          break;
-        }
-      } while (pollfds[0].revents & POLLIN);
-      buf.append("\n\0", 2);
-      formatter.initialize(buf.data());
-      tokenizeAndEmit(formatter);
-      formatter.finalize();
-    }
-  }
-  std::exit(1);
-}
-
-int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output, bool daemon) {
+int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output) {
   auto ret = factory.create(output);
   if (!ret) {
     std::cerr << ret.asErr() << std::endl;
@@ -116,10 +77,6 @@ int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &ou
   }
   auto formatter = std::move(ret).take();
   assert(formatter);
-
-  if (daemon) {
-    runReadLoop(*formatter);
-  }
 
   auto content = readAll(sourceName);
   if (!content.hasValue()) {
@@ -195,7 +152,6 @@ int main(int argc, char **argv) {
 
   const char *outputFileName = "/dev/stdout";
   bool listing = false;
-  bool daemon = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
   while ((result = parser(begin, end))) {
@@ -225,9 +181,6 @@ int main(int argc, char **argv) {
     case OptionSet::HTML_LINENO_TABLE:
       factory.setHTMLTable(true);
       break;
-    case OptionSet::DAEMON:
-      daemon = true;
-      break;
     }
   }
   if (result.error() != opt::END) {
@@ -242,7 +195,7 @@ int main(int argc, char **argv) {
   }
 
   const char *sourceName = "/dev/stdin";
-  if (begin != end && !daemon) {
+  if (begin != end) {
     sourceName = *begin;
   }
 
@@ -251,5 +204,5 @@ int main(int argc, char **argv) {
     std::cerr << "cannot open file: " << outputFileName << std::endl;
     return 1;
   }
-  return colorize(factory, sourceName, output, daemon);
+  return colorize(factory, sourceName, output);
 }

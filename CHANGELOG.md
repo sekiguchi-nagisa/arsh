@@ -159,6 +159,10 @@
     - ``DSState_getCompletion``
     - ``DSState_lineEdit``
 
+#### Misc
+
+- **Breaking Change**: remove daemon mode in ``dscolorize``
+
 ### Fixed
 
 - broken error check of glob in ``source!`` statement
