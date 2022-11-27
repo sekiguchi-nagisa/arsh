@@ -313,7 +313,8 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, lineEditor) {
+// test recursive api call
+TEST_F(InteractiveTest, lineEditor1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -342,6 +343,33 @@ TEST_F(InteractiveTest, lineEditor) {
   text = "try { $e.read(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+// test prompt
+TEST_F(InteractiveTest, lineEditor2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var e = new LineEditor()"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p)=> '%' + $p)"));
+  this->sendLine("$e.read('> ')");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$e.read('> ')\n%> "));
+  this->sendLine("1234");
+  ASSERT_NO_FATAL_FAILURE(this->expect("%> 1234\n: String! = 1234\n" + PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p) => $p[100])"));
+  const char *err = R"([runtime error]
+OutOfRangeError: size is 2, but index is 100
+    from (stdin):4 'function ()'
+    from (stdin):5 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.read()", "", err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
 int main(int argc, char **argv) {
