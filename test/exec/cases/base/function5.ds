@@ -1,0 +1,35 @@
+
+# function equality
+
+function f() {}
+
+function g() : Int { return 45; }
+var h = function() => 34
+
+assert $f == $f
+assert $f != $g  # subtype
+assert $g != $h
+
+## anoymous function with capture
+function get(i : Int) : (Int) -> Int {
+    return function(a) => {
+        $a + $i
+    }
+}
+
+var c1 = $get(1)
+var c2 = $get(1)
+var c3 = $get(2)
+
+assert $c1 != $c2  # closures are always indicate different address
+assert $c1 != $c3
+assert $c3 != $c2
+
+## anoymous function without capture
+function get2() : (Int) -> Int {
+    return function(a) => $a * $a
+}
+
+var d1 = $get2()
+var d2 = $get2()
+assert $d1 == $d2

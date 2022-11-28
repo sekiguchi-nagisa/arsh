@@ -1,7 +1,7 @@
 #$test($result = 'type', $errorKind = 'Required', $lineNum = 7, $chars = 14, $status = 1)
 
-function f() : Bool { return false;}
+function f() {  }
 
 function g() : Int { return 45; }
 
-assert $f == $g
+assert $g != $f

@@ -146,6 +146,8 @@
       ```
       shctl set TRACE_ON_EXIT Null-Glob
       ```
+- **Breaking Change**: change typechecking of equality operator of Func type
+    - now allow subtype expression in right hand-side
 
 #### Module
 
