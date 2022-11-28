@@ -802,7 +802,7 @@ void TypeChecker::resolveSmartCast(const Node &condNode) {
     auto &handle = varNode.getHandle();
     auto newHandle = HandlePtr::create(*targetType, handle->getIndex(), handle->getKind(),
                                        handle->attr(), handle->getModId());
-    this->curScope->defineAlias(std::string(varNode.getVarName()), std::move(newHandle), true);
+    this->curScope->defineAlias(std::string(varNode.getVarName()), newHandle, true);
   }
 }
 

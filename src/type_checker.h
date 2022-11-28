@@ -460,7 +460,7 @@ private:
     NON_COPYABLE(IntoBlock);
 
     IntoBlock() = default;
-    IntoBlock(ObserverPtr<NameScopePtr> ptr) : scopePtr(ptr) {}
+    explicit IntoBlock(ObserverPtr<NameScopePtr> ptr) : scopePtr(ptr) {}
 
     IntoBlock(IntoBlock &&b) noexcept : scopePtr(b.scopePtr) { b.scopePtr = nullptr; }
 
