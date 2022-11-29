@@ -1405,10 +1405,6 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
   int nread = 0;
   int c = 0;
   int offset = this->insertEstimatedSuffix(ls, *candidates);
-  if (state.hasError()) {
-    *code = CTRL_C;
-    return -1;
-  }
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls->ofd);
   } else if (len == 1) {
