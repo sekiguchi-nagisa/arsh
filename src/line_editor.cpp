@@ -964,8 +964,8 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
 
 /* Insert the character 'c' at cursor current position.
  *
- * On error writing to the terminal -1 is returned, otherwise 0. */
-int LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
+ * On error writing to the terminal false is returned, otherwise true. */
+bool LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
   if (l->len + clen <= l->buflen) {
     if (l->len == l->pos) {
       memcpy(&l->buf[l->pos], cbuf, clen);
@@ -980,8 +980,9 @@ int LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char *
       l->buf[l->len] = '\0';
     }
     this->refreshLine(l);
+    return true;
   }
-  return 0;
+  return false;
 }
 
 /* This function is the core of the line editing capability of linenoise.
@@ -1235,8 +1236,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     default:
-      if (this->linenoiseEditInsert(&l, cbuf, nread))
+      if (!this->linenoiseEditInsert(&l, cbuf, nread)) {
         return -1;
+      }
       break;
     case CTRL_U: /* Ctrl+u, delete the whole line. */
       buf[0] = '\0';
@@ -1357,7 +1359,7 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
   // compute suffix
   const char oldCh = ls->buf[ls->pos];
   ls->buf[ls->pos] = '\0';
-  int matched = 0;
+  bool matched = false;
 
   size_t offset = 0;
   if (ls->pos > 0) {
@@ -1370,7 +1372,7 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
         break;
       }
       if (ptr == prefix) {
-        matched = 1;
+        matched = true;
       }
 
       if (offset == 0) {
@@ -1380,6 +1382,7 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
   }
 
   logprintf("offset: %ld\n", offset);
+  ls->buf[ls->pos] = oldCh;
   if (matched) {
     size_t suffixSize = len - (ls->pos - offset);
     logprintf("suffix size: %ld\n", suffixSize);
@@ -1390,11 +1393,18 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
   } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
     this->linenoiseEditInsert(ls, prefix, len);
   }
-
-  ls->buf[ls->pos] = oldCh;
   free(prefix);
 
   return matched ? offset : ls->pos;
+}
+
+static void reverInsert(struct linenoiseState *l, size_t len) {
+  if (len > 0) {
+    memmove(l->buf + l->pos - len, l->buf + l->pos, l->len - l->pos);
+    l->pos -= len;
+    l->len -= len;
+    l->buf[l->len] = '\0';
+  }
 }
 
 int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbuf, int clen,
@@ -1408,7 +1418,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
 
   int nread = 0;
   int c = 0;
-  int offset = this->insertEstimatedSuffix(ls, *candidates);
+  const int offset = this->insertEstimatedSuffix(ls, *candidates);
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls->ofd);
   } else if (len == 1) {
@@ -1423,7 +1433,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       goto END;
     }
 
-    int show = 1;
+    bool show = true;
     if (len >= 100) {
       char msg[256];
       snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
@@ -1441,7 +1451,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
         } else if (c == 'n') {
           r = write(ls->ofd, "\r\n", strlen("\r\n"));
           UNUSED(r);
-          show = 0;
+          show = false;
           break;
         } else if (c == CTRL_C) {
           goto END;
@@ -1459,6 +1469,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
 
     // rotate candidates
     size_t rotateIndex = 0;
+    size_t prevCanLen = 0;
     while (true) {
       nread = readCode(ls->ifd, cbuf, clen, &c);
       if (nread <= 0) {
@@ -1469,12 +1480,13 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
         goto END;
       }
 
-      int written = snprintf(ls->buf + offset, ls->buflen - offset, "%s",
-                             candidates->getValues()[rotateIndex].asCStr());
-      if (written >= 0) {
-        ls->len = ls->pos = offset + written;
+      reverInsert(ls, prevCanLen);
+      const char *can = candidates->getValues()[rotateIndex].asCStr();
+      size_t prefixLen = ls->pos - offset;
+      prevCanLen = strlen(can) - prefixLen;
+      if (!this->linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+        break; // FIXME:
       }
-      this->refreshLine(ls);
 
       if (rotateIndex == len - 1) {
         rotateIndex = 0;

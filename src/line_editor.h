@@ -112,8 +112,9 @@ private:
    * @param cbuf
    * @param clen
    * @return
+   * if insertion failed (reach buffer limit), return false
    */
-  int linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
+  bool linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
 
   /**
    * actual line edit function

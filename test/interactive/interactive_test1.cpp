@@ -372,6 +372,37 @@ OutOfRangeError: size is 2, but index is 100
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+// test completion
+TEST_F(InteractiveTest, lineEditor3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // insert single candidtaes
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true'])"));
+  this->send("()" LEFT "$t\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
+
+  // rotate candidates
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true', 'tee'])"));
+  this->send("()" LEFT "$t\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($t)"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+true  tee.+"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
+  this->send("\t\r");
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
