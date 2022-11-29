@@ -28,7 +28,7 @@ namespace ydsh {
   OP(COMMENT, "comment")                                                                           \
   OP(KEYWORD, "keyword")                                                                           \
   OP(OPERATOR, "operator")                                                                         \
-  OP(NUMBER, "member")                                                                             \
+  OP(NUMBER, "number")                                                                             \
   OP(REGEX, "regex")                                                                               \
   OP(STRING, "string")                                                                             \
   OP(COMMAND, "command")                                                                           \
