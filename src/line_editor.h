@@ -46,6 +46,8 @@ private:
 
   ANSIEscapeSeqMap escapeSeqMap;
 
+  std::string highlightCache;
+
   termios orgTermios{};
 
   /**
@@ -102,7 +104,7 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState *l);
+  void refreshLine(struct linenoiseState *l, bool doHightlight = true);
 
   /**
    * Insert the character 'c' at cursor current position.

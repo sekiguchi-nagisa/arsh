@@ -862,7 +862,7 @@ void LineEditorObject::disableRawMode(int fd) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-void LineEditorObject::refreshLine(struct linenoiseState *l) {
+void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) {
   updateColumns(l);
 
   char seq[64];
@@ -904,15 +904,18 @@ void LineEditorObject::refreshLine(struct linenoiseState *l) {
   /* Write the prompt and the current buffer content */
   ab.append(l->prompt.data(), l->prompt.size());
   if (this->highlight && !this->escapeSeqMap.getValues().empty()) {
-    std::string line(l->buf, l->len);
-    line += '\n';
-    BuiltinHighlighter highlighter(this->escapeSeqMap, line);
-    highlighter.doHighlight();
-    line = std::move(highlighter).take();
-    if (!line.empty() && line.back() == '\n') {
-      line.pop_back();
+    if (doHightlight || this->highlightCache.empty()) {
+      std::string line(l->buf, l->len);
+      line += '\n';
+      BuiltinHighlighter highlighter(this->escapeSeqMap, line);
+      highlighter.doHighlight();
+      line = std::move(highlighter).take();
+      if (!line.empty() && line.back() == '\n') {
+        line.pop_back();
+      }
+      this->highlightCache = std::move(line);
     }
-    ab.append(line.c_str(), line.size());
+    ab.append(this->highlightCache.c_str(), this->highlightCache.size());
   } else {
     ab.append(l->buf, l->len);
   }
@@ -1048,7 +1051,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     switch (c) {
     case ENTER: /* enter */
       if (linenoiseEditMoveEnd(&l)) {
-        this->refreshLine(&l);
+        this->refreshLine(&l, false);
       }
       this->kickHistoryCallback(state, HistOp::DEINIT, &l);
       if (state.hasError()) {
@@ -1088,12 +1091,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_B: /* ctrl-b */
       if (linenoiseEditMoveLeft(&l)) {
-        this->refreshLine(&l);
+        this->refreshLine(&l, false);
       }
       break;
     case CTRL_F: /* ctrl-f */
       if (linenoiseEditMoveRight(&l)) {
-        this->refreshLine(&l);
+        this->refreshLine(&l, false);
       }
       break;
     case CTRL_P: /* ctrl-p */
@@ -1130,12 +1133,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         switch (seq[0]) {
         case 'f':
           if (linenoiseEditMoveRightWord(&l)) {
-            this->refreshLine(&l);
+            this->refreshLine(&l, false);
           }
           break;
         case 'b':
           if (linenoiseEditMoveLeftWord(&l)) {
-            this->refreshLine(&l);
+            this->refreshLine(&l, false);
           }
           break;
         case 'd':
@@ -1157,7 +1160,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               switch (seq[1]) {
               case '1': /* Home */
                 if (linenoiseEditMoveHome(&l)) {
-                  this->refreshLine(&l);
+                  this->refreshLine(&l, false);
                 }
                 break;
               case '3': /* Delete key. */
@@ -1167,7 +1170,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
                 break;
               case '4': /* End */
                 if (linenoiseEditMoveEnd(&l)) {
-                  this->refreshLine(&l);
+                  this->refreshLine(&l, false);
                 }
                 break;
               }
@@ -1192,22 +1195,22 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               break;
             case 'C': /* Right */
               if (linenoiseEditMoveRight(&l)) {
-                this->refreshLine(&l);
+                this->refreshLine(&l, false);
               }
               break;
             case 'D': /* Left */
               if (linenoiseEditMoveLeft(&l)) {
-                this->refreshLine(&l);
+                this->refreshLine(&l, false);
               }
               break;
             case 'H': /* Home */
               if (linenoiseEditMoveHome(&l)) {
-                this->refreshLine(&l);
+                this->refreshLine(&l, false);
               }
               break;
             case 'F': /* End*/
               if (linenoiseEditMoveEnd(&l)) {
-                this->refreshLine(&l);
+                this->refreshLine(&l, false);
               }
               break;
             }
@@ -1219,12 +1222,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           switch (seq[1]) {
           case 'H': /* Home */
             if (linenoiseEditMoveHome(&l)) {
-              this->refreshLine(&l);
+              this->refreshLine(&l, false);
             }
             break;
           case 'F': /* End*/
             if (linenoiseEditMoveEnd(&l)) {
-              this->refreshLine(&l);
+              this->refreshLine(&l, false);
             }
             break;
           }
@@ -1247,12 +1250,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_A: /* Ctrl+a, go to the start of the line */
       if (linenoiseEditMoveHome(&l)) {
-        this->refreshLine(&l);
+        this->refreshLine(&l, false);
       }
       break;
     case CTRL_E: /* ctrl+e, go to the end of the line */
       if (linenoiseEditMoveEnd(&l)) {
-        this->refreshLine(&l);
+        this->refreshLine(&l, false);
       }
       break;
     case CTRL_L: /* ctrl+l, clear screen */
@@ -1282,6 +1285,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   }
 
   this->lock = true;
+  this->highlightCache.clear();
   auto cleanup = finally([&] { this->lock = false; });
 
   // prepare prompt
