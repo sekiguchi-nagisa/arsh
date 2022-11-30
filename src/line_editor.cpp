@@ -493,7 +493,7 @@ static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *le
   }
   if (candidates.size() == 1) {
     auto ref = candidates.getValues()[0].asStrRef();
-    *len = ref.size();
+    *len = strlen(ref.data());
     return strdup(ref.data());
   }
 
