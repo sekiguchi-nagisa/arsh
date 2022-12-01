@@ -2844,16 +2844,21 @@ void TypeChecker::visitErrorNode(ErrorNode &node) { node.setType(this->typePool.
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
-static bool mayBeCmd(const Node &node) {
-  if (isa<CmdNode>(node)) {
+static bool isCmdLike(const Node &node) {
+  switch (node.getNodeKind()) {
+  case NodeKind::Cmd:
     return true;
+  case NodeKind::Pipeline:
+    return cast<PipelineNode>(node).getNodes().back()->is(NodeKind::Cmd);
+  case NodeKind::PrefixAssign: {
+    auto &prefixAssignNode = cast<PrefixAssignNode>(node);
+    return prefixAssignNode.getExprNode() && isCmdLike(*prefixAssignNode.getExprNode());
   }
-  if (isa<PipelineNode>(node)) {
-    if (cast<PipelineNode>(node).getNodes().back()->is(NodeKind::Cmd)) {
-      return true;
-    }
+  case NodeKind::Time:
+    return isCmdLike(cast<TimeNode>(node).getExprNode());
+  default:
+    return false;
   }
-  return false;
 }
 
 std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
@@ -2869,7 +2874,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   if (prevType != nullptr && prevType->isNothingType()) {
     this->reportError<Unreachable>(*node);
   }
-  if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
+  if (this->toplevelPrinting && this->curScope->inRootModule() && !isCmdLike(*node)) {
     this->checkTypeExactly(*node);
     node = this->newPrintOpNode(std::move(node));
   } else {

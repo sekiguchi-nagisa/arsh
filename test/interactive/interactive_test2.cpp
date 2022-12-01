@@ -317,6 +317,7 @@ TEST_F(InteractiveTest, printStackTop) {
       this->withTimeout(300, [&] { this->sendLineAndExpect("34|$false", ": Bool = false"); }));
   ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->sendLineAndExpect("34|true"); }));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("AAA=34 true"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
