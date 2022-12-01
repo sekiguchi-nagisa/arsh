@@ -294,8 +294,9 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const c
       colwid += col_len;
     }
 
-    if (off >= pos)
+    if (off >= pos) {
       break;
+    }
     off += len;
     ret += col_len;
   }
@@ -309,11 +310,14 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const c
  * not able to understand basic escape sequences. */
 static int isUnsupportedTerm() {
   char *term = getenv("TERM");
-  if (term == nullptr)
+  if (term == nullptr) {
     return 0;
-  for (int j = 0; unsupported_term[j]; j++)
-    if (!strcasecmp(term, unsupported_term[j]))
+  }
+  for (int j = 0; unsupported_term[j]; j++) {
+    if (!strcasecmp(term, unsupported_term[j])) {
       return 1;
+    }
+  }
   return 0;
 }
 
@@ -323,27 +327,31 @@ static int isUnsupportedTerm() {
 static int getCursorPosition(int ifd, int ofd) {
   char buf[32];
   int cols, rows;
-  unsigned int i = 0;
 
   /* Report cursor location */
-  if (write(ofd, "\x1b[6n", 4) != 4)
+  if (write(ofd, "\x1b[6n", 4) != 4) {
     return -1;
+  }
 
   /* Read the response: ESC [ rows ; cols R */
-  while (i < sizeof(buf) - 1) {
-    if (read(ifd, buf + i, 1) != 1)
+  unsigned int i = 0;
+  for (; i < sizeof(buf) - 1; i++) {
+    if (read(ifd, buf + i, 1) != 1) {
       break;
-    if (buf[i] == 'R')
+    }
+    if (buf[i] == 'R') {
       break;
-    i++;
+    }
   }
   buf[i] = '\0';
 
   /* Parse it. */
-  if (buf[0] != ESC || buf[1] != '[')
+  if (buf[0] != ESC || buf[1] != '[') {
     return -1;
-  if (sscanf(buf + 2, "%d;%d", &rows, &cols) != 2)
+  }
+  if (sscanf(buf + 2, "%d;%d", &rows, &cols) != 2) {
     return -1;
+  }
   return cols;
 }
 
@@ -358,15 +366,18 @@ static int getColumns(int ifd, int ofd) {
 
     /* Get the initial position, so we can restore it later. */
     start = getCursorPosition(ifd, ofd);
-    if (start == -1)
+    if (start == -1) {
       goto failed;
+    }
 
     /* Go to right margin and get position. */
-    if (write(ofd, "\x1b[999C", 6) != 6)
+    if (write(ofd, "\x1b[999C", 6) != 6) {
       goto failed;
+    }
     cols = getCursorPosition(ifd, ofd);
-    if (cols == -1)
+    if (cols == -1) {
       goto failed;
+    }
 
     /* Restore position. */
     if (cols > start) {
@@ -458,8 +469,7 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   int r = write(fd, "\r\n", strlen("\r\n"));
   UNUSED(r);
   for (size_t index = 0; index < rawSize; index++) {
-    size_t j = 0;
-    while (true) {
+    for (size_t j = 0;; j++) {
       size_t candidateIndex = j * rawSize + index;
       if (candidateIndex >= len) {
         break;
@@ -471,13 +481,10 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
       UNUSED(r);
 
       // print spaces
-      unsigned int s;
-      for (s = 0; s < maxSize - sizeTable[candidateIndex]; s++) {
+      for (unsigned int s = 0; s < maxSize - sizeTable[candidateIndex]; s++) {
         r = write(fd, " ", 1);
         UNUSED(r);
       }
-
-      j++;
     }
     r = write(fd, "\r\n", strlen("\r\n"));
     UNUSED(r);
@@ -499,13 +506,12 @@ static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *le
 
   size_t prefixSize;
   for (prefixSize = 0;; prefixSize++) {
-    int stop = 0;
+    bool stop = false;
     const char ch = candidates.getValues()[0].asCStr()[prefixSize];
-    size_t i;
-    for (i = 0; i < candidates.size(); i++) {
+    for (size_t i = 1; i < candidates.size(); i++) {
       auto str = candidates.getValues()[i].asStrRef();
       if (str[0] == '\0' || prefixSize >= str.size() || ch != str.data()[prefixSize]) {
-        stop = 1;
+        stop = true;
         break;
       }
     }
@@ -563,8 +569,9 @@ struct abuf {
     if (this->len + slen > 0) {
       buf = (char *)realloc(this->b, this->len + slen);
     }
-    if (buf == nullptr)
+    if (buf == nullptr) {
       return;
+    }
     memcpy(buf + this->len, s, slen);
     this->b = buf;
     this->len += slen;
@@ -605,8 +612,7 @@ static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
 static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
   char buf[LINENOISE_MAX_LINE];
   size_t buf_len = 0;
-  size_t off = 0;
-  while (off < prompt.size()) {
+  for (size_t off = 0; off < prompt.size();) {
     size_t len;
     if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
       off += len;
@@ -735,10 +741,12 @@ static bool linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     size_t old_pos = l->pos;
     size_t diff;
 
-    while (l->pos > 0 && l->buf[l->pos - 1] == ' ')
+    while (l->pos > 0 && l->buf[l->pos - 1] == ' ') {
       l->pos--;
-    while (l->pos > 0 && l->buf[l->pos - 1] != ' ')
+    }
+    while (l->pos > 0 && l->buf[l->pos - 1] != ' ') {
       l->pos--;
+    }
     diff = old_pos - l->pos;
     memmove(l->buf + l->pos, l->buf + old_pos, l->len - old_pos + 1);
     l->len -= diff;
@@ -768,14 +776,16 @@ static char *linenoiseNoTTY(int inFd) {
 
   while (true) {
     if (len == maxlen) {
-      if (maxlen == 0)
+      if (maxlen == 0) {
         maxlen = 16;
+      }
       maxlen *= 2;
       char *oldval = line;
       line = (char *)realloc(line, maxlen);
       if (line == nullptr) {
-        if (oldval)
+        if (oldval) {
           free(oldval);
+        }
         return nullptr;
       }
     }
@@ -820,10 +830,12 @@ LineEditorObject::~LineEditorObject() {
 int LineEditorObject::enableRawMode(int fd) {
   struct termios raw;
 
-  if (!isatty(fd))
+  if (!isatty(fd)) {
     goto fatal;
-  if (tcgetattr(fd, &this->orgTermios) == -1)
+  }
+  if (tcgetattr(fd, &this->orgTermios) == -1) {
     goto fatal;
+  }
 
   raw = this->orgTermios; /* modify the original mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
@@ -842,8 +854,9 @@ int LineEditorObject::enableRawMode(int fd) {
   raw.c_cc[VTIME] = 0; /* 1 byte, no timer */
 
   /* put terminal in raw mode after flushing */
-  if (tcsetattr(fd, TCSAFLUSH, &raw) < 0)
+  if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) {
     goto fatal;
+  }
   this->rawMode = true;
   return 0;
 
@@ -854,8 +867,9 @@ fatal:
 
 void LineEditorObject::disableRawMode(int fd) {
   /* Don't even check the return value as it's too late. */
-  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1)
+  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
     this->rawMode = false;
+  }
 }
 
 /* Multi line low level line refresh.
@@ -874,12 +888,13 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   int rpos2;                                               /* rpos after refresh. */
   int col;                                                 /* colum position, zero-based. */
   int old_rows = l->maxrows;
-  int fd = l->ofd, j;
+  int fd = l->ofd;
   struct abuf ab;
 
   /* Update maxrows if needed. */
-  if (rows > (int)l->maxrows)
+  if (rows > (int)l->maxrows) {
     l->maxrows = rows;
+  }
 
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
@@ -890,7 +905,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   }
 
   /* Now for every row clear it, go up. */
-  for (j = 0; j < old_rows - 1; j++) {
+  for (int j = 0; j < old_rows - 1; j++) {
     lndebug("clear+up");
     snprintf(seq, 64, "\r\x1b[0K\x1b[1A");
     ab.append(seq, strlen(seq));
@@ -931,8 +946,9 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
     snprintf(seq, 64, "\r");
     ab.append(seq, strlen(seq));
     rows++;
-    if (rows > (int)l->maxrows)
+    if (rows > (int)l->maxrows) {
       l->maxrows = rows;
+    }
   }
 
   /* Move cursor to right position. */
@@ -949,10 +965,11 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   /* Set column. */
   col = (pcollen + colpos2) % l->cols;
   lndebug("set col %d", 1 + col);
-  if (col)
+  if (col) {
     snprintf(seq, 64, "\r\x1b[%dC", col);
-  else
+  } else {
     snprintf(seq, 64, "\r");
+  }
   ab.append(seq, strlen(seq));
 
   lndebug("\n");
@@ -1021,16 +1038,18 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   }
 
   preparePrompt(&l);
-  if (write(l.ofd, l.prompt.data(), l.prompt.size()) == -1)
+  if (write(l.ofd, l.prompt.data(), l.prompt.size()) == -1) {
     return -1;
+  }
   while (true) {
     int c;
     char cbuf[32]; // large enough for any encoding?
     char seq[3];
 
     int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
-    if (nread <= 0)
+    if (nread <= 0) {
       return l.len;
+    }
 
     /* Only autocomplete when the callback is set. It returns < 0 when
      * there was an error reading from fd. Otherwise, it will return the
@@ -1042,11 +1061,13 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       nread = this->completeLine(state, &l, cbuf, sizeof(cbuf), &c);
 
       /* Return on errors */
-      if (c < 0)
+      if (c < 0) {
         return l.len;
+      }
       /* Read next character when 0 */
-      if (c == 0)
+      if (c == 0) {
         continue;
+      }
     }
 
     switch (c) {
@@ -1085,8 +1106,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         int aux = buf[l.pos - 1];
         buf[l.pos - 1] = buf[l.pos];
         buf[l.pos] = aux;
-        if (l.pos != l.len - 1)
+        if (l.pos != l.len - 1) {
           l.pos++;
+        }
         this->refreshLine(&l);
       }
       break;
@@ -1128,8 +1150,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       /* Read the next two bytes representing the escape sequence.
        * Use two calls to handle slow terminals returning the two
        * chars at different times. */
-      if (read(l.ifd, seq, 1) == -1)
+      if (read(l.ifd, seq, 1) == -1) {
         break;
+      }
       if (seq[0] != '[' && seq[0] != 'O') { // ESC ? sequence
         switch (seq[0]) {
         case 'f':
@@ -1149,14 +1172,16 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           break;
         }
       } else {
-        if (read(l.ifd, seq + 1, 1) == -1)
+        if (read(l.ifd, seq + 1, 1) == -1) {
           break;
+        }
         /* ESC [ sequences. */
         if (seq[0] == '[') {
           if (seq[1] >= '0' && seq[1] <= '9') {
             /* Extended escape, read additional byte. */
-            if (read(l.ifd, seq + 2, 1) == -1)
+            if (read(l.ifd, seq + 2, 1) == -1) {
               break;
+            }
             if (seq[2] == '~') {
               switch (seq[1]) {
               case '1': /* Home */
@@ -1311,8 +1336,9 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     UNUSED(r);
     fsync(this->outFd);
     int rlen;
-    if ((rlen = read(this->inFd, buf, LINENOISE_MAX_LINE)) <= 0)
+    if ((rlen = read(this->inFd, buf, LINENOISE_MAX_LINE)) <= 0) {
       return nullptr;
+    }
     buf[rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1] = '\0';
     size_t len = rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1;
     while (len && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
