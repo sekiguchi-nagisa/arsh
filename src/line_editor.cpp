@@ -145,6 +145,8 @@ struct linenoiseState {
   size_t cols;            /* Number of columns in terminal. */
   size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
   ydsh::CharWidthProperties ps;
+
+  ydsh::StringRef lineRef() const { return ydsh::StringRef(this->buf, this->len); }
 };
 
 enum KEY_ACTION {
@@ -192,9 +194,9 @@ FILE *lndebug_fp = nullptr;
 /* ========================== Encoding functions ============================= */
 
 /* Get byte length and column length of the previous character */
-static size_t prevCharLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t, size_t pos,
+static size_t prevCharLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
                           size_t *col_len) {
-  ydsh::StringRef ref(buf, pos);
+  auto ref = bufRef.substr(0, pos);
   auto ret = ydsh::getCharLen(ref, ydsh::CharLenOp::PREV_CHAR, ps);
   if (col_len) {
     *col_len = ret.colSize;
@@ -203,9 +205,10 @@ static size_t prevCharLen(const ydsh::CharWidthProperties &ps, const char *buf, 
 }
 
 /* Get byte length and column length of the next character */
-static size_t nextCharLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
-                          size_t pos, size_t *col_len) {
-  ydsh::StringRef ref(buf + pos, buf_len - pos);
+static size_t nextCharLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
+                          size_t *col_len) {
+  //  ydsh::StringRef ref(buf + pos, buf_len - pos);
+  auto ref = bufRef.substr(pos);
   auto ret = ydsh::getCharLen(ref, ydsh::CharLenOp::NEXT_CHAR, ps);
   if (col_len) {
     *col_len = ret.colSize;
@@ -241,9 +244,9 @@ static size_t readCode(int fd, char *buf, size_t bufSize, int *c) {
   return ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, *c);
 }
 
-static size_t prevWordLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t, size_t pos,
+static size_t prevWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
                           size_t *col_len) {
-  ydsh::StringRef ref(buf, pos);
+  auto ref = bufRef.substr(0, pos);
   auto ret = ydsh::getWordLen(ref, ydsh::WordLenOp::PREV_WORD, ps);
   if (col_len) {
     *col_len = ret.colSize;
@@ -251,9 +254,9 @@ static size_t prevWordLen(const ydsh::CharWidthProperties &ps, const char *buf, 
   return ret.byteSize;
 }
 
-static size_t nextWordLen(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
-                          size_t pos, size_t *col_len) {
-  ydsh::StringRef ref(buf + pos, buf_len - pos);
+static size_t nextWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
+                          size_t *col_len) {
+  auto ref = bufRef.substr(pos);
   auto ret = ydsh::getWordLen(ref, ydsh::WordLenOp::NEXT_WORD, ps);
   if (col_len) {
     *col_len = ret.colSize;
@@ -262,12 +265,11 @@ static size_t nextWordLen(const ydsh::CharWidthProperties &ps, const char *buf, 
 }
 
 /* Get column length from beginning of buffer to current byte position */
-static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, size_t buf_len,
-                        size_t pos) {
+static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos) {
   size_t ret = 0;
   for (size_t off = 0; off < pos;) {
     size_t col_len;
-    size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
+    size_t len = nextCharLen(ps, bufRef, off, &col_len);
     off += len;
     ret += col_len;
   }
@@ -275,14 +277,14 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, const char *buf, si
 }
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
-static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const char *buf,
-                                    size_t buf_len, size_t pos, size_t cols, size_t ini_pos) {
+static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
+                                    size_t pos, size_t cols, size_t ini_pos) {
   size_t ret = 0;
   size_t colwid = ini_pos;
 
-  for (size_t off = 0; off < buf_len;) {
+  for (size_t off = 0; off < bufRef.size();) {
     size_t col_len;
-    size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
+    size_t len = nextCharLen(ps, bufRef, off, &col_len);
 
     int dif = (int)(colwid + col_len) - (int)cols;
     if (dif > 0) { // adjust pos for fullwidth character
@@ -620,13 +622,13 @@ static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::Str
     }
     buf[buf_len++] = prompt[off++];
   }
-  return columnPos(ps, buf, buf_len, buf_len);
+  return columnPos(ps, ydsh::StringRef(buf, buf_len), buf_len);
 }
 
 /* Move cursor on the left. */
 static bool linenoiseEditMoveLeft(struct linenoiseState *l) {
   if (l->pos > 0) {
-    l->pos -= prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    l->pos -= prevCharLen(l->ps, l->lineRef(), l->pos, nullptr);
     return true;
   }
   return false;
@@ -635,7 +637,7 @@ static bool linenoiseEditMoveLeft(struct linenoiseState *l) {
 /* Move cursor on the right. */
 static bool linenoiseEditMoveRight(struct linenoiseState *l) {
   if (l->pos != l->len) {
-    l->pos += nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    l->pos += nextCharLen(l->ps, l->lineRef(), l->pos, nullptr);
     return true;
   }
   return false;
@@ -661,7 +663,7 @@ static bool linenoiseEditMoveEnd(struct linenoiseState *l) {
 
 static bool linenoiseEditMoveLeftWord(struct linenoiseState *l) {
   if (l->pos > 0) {
-    l->pos -= prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    l->pos -= prevWordLen(l->ps, l->lineRef(), l->pos, nullptr);
     return true;
   }
   return false;
@@ -669,7 +671,7 @@ static bool linenoiseEditMoveLeftWord(struct linenoiseState *l) {
 
 static bool linenoiseEditMoveRightWord(struct linenoiseState *l) {
   if (l->pos != l->len) {
-    l->pos += nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    l->pos += nextWordLen(l->ps, l->lineRef(), l->pos, nullptr);
     return true;
   }
   return false;
@@ -706,7 +708,7 @@ static int preparePrompt(struct linenoiseState *l) {
  * position. Basically this is what happens with the "Delete" keyboard key. */
 static bool linenoiseEditDelete(struct linenoiseState *l) {
   if (l->len > 0 && l->pos < l->len) {
-    int chlen = nextCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    int chlen = nextCharLen(l->ps, l->lineRef(), l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + chlen, l->len - l->pos - chlen);
     l->len -= chlen;
     l->buf[l->len] = '\0';
@@ -718,7 +720,7 @@ static bool linenoiseEditDelete(struct linenoiseState *l) {
 /* Backspace implementation. */
 static bool linenoiseEditBackspace(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
-    int chlen = prevCharLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    int chlen = prevCharLen(l->ps, l->lineRef(), l->pos, nullptr);
     memmove(l->buf + l->pos - chlen, l->buf + l->pos, l->len - l->pos);
     l->pos -= chlen;
     l->len -= chlen;
@@ -732,7 +734,7 @@ static bool linenoiseEditBackspace(struct linenoiseState *l) {
  * current word. */
 static bool linenoiseEditDeletePrevWord(struct linenoiseState *l) {
   if (l->pos > 0 && l->len > 0) {
-    int wordLen = prevWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    int wordLen = prevWordLen(l->ps, l->lineRef(), l->pos, nullptr);
     memmove(l->buf + l->pos - wordLen, l->buf + l->pos, l->len - l->pos);
     l->pos -= wordLen;
     l->len -= wordLen;
@@ -756,7 +758,7 @@ static bool linenoiseEditDeletePrevWord(struct linenoiseState *l) {
 
 static bool linenoiseEditDeleteNextWord(struct linenoiseState *l) {
   if (l->len > 0 && l->pos < l->len) {
-    int wordLen = nextWordLen(l->ps, l->buf, l->len, l->pos, nullptr);
+    int wordLen = nextWordLen(l->ps, l->lineRef(), l->pos, nullptr);
     memmove(l->buf + l->pos, l->buf + l->pos + wordLen, l->len - l->pos - wordLen);
     l->len -= wordLen;
     l->buf[l->len] = '\0';
@@ -881,7 +883,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
 
   char seq[64];
   size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
-  int colpos = columnPosForMultiLine(l->ps, l->buf, l->len, l->len, l->cols, pcollen);
+  int colpos = columnPosForMultiLine(l->ps, l->lineRef(), l->len, l->cols, pcollen);
   int colpos2;                                             /* cursor column position. */
   int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
   int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols; /* cursor relative row. */
@@ -936,7 +938,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   }
 
   /* Get column length to cursor position */
-  colpos2 = columnPosForMultiLine(l->ps, l->buf, l->len, l->pos, l->cols, pcollen);
+  colpos2 = columnPosForMultiLine(l->ps, l->lineRef(), l->pos, l->cols, pcollen);
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
