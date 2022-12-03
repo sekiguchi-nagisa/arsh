@@ -277,6 +277,51 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef buf
   return ret;
 }
 
+/* Check if text is an ANSI escape sequence
+ */
+static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
+  if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
+    size_t off = 2;
+    while (off < buf_len) {
+      switch (buf[off++]) {
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'J':
+      case 'K':
+      case 'S':
+      case 'T':
+      case 'f':
+      case 'm':
+        *len = off;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/* Get column length of prompt text
+ */
+static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
+  char buf[LINENOISE_MAX_LINE];
+  size_t buf_len = 0;
+  for (size_t off = 0; off < prompt.size();) {
+    size_t len;
+    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
+      off += len;
+      continue;
+    }
+    buf[buf_len++] = prompt[off++];
+  }
+  return columnPos(ps, ydsh::StringRef(buf, buf_len), buf_len);
+}
+
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
                                     const size_t pos, size_t cols, size_t iniPos) {
@@ -428,8 +473,6 @@ static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)
 #endif
 
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt);
-
 static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
                               const ydsh::ArrayObject &candidates) {
   const auto len = candidates.size();
@@ -577,51 +620,6 @@ struct abuf {
     this->len += slen;
   }
 };
-
-/* Check if text is an ANSI escape sequence
- */
-static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
-  if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
-    size_t off = 2;
-    while (off < buf_len) {
-      switch (buf[off++]) {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'F':
-      case 'G':
-      case 'H':
-      case 'J':
-      case 'K':
-      case 'S':
-      case 'T':
-      case 'f':
-      case 'm':
-        *len = off;
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-
-/* Get column length of prompt text
- */
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
-  char buf[LINENOISE_MAX_LINE];
-  size_t buf_len = 0;
-  for (size_t off = 0; off < prompt.size();) {
-    size_t len;
-    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
-      off += len;
-      continue;
-    }
-    buf[buf_len++] = prompt[off++];
-  }
-  return columnPos(ps, ydsh::StringRef(buf, buf_len), buf_len);
-}
 
 /* Move cursor on the left. */
 static bool linenoiseEditMoveLeft(struct linenoiseState *l) {
@@ -872,6 +870,58 @@ void LineEditorObject::disableRawMode(int fd) {
   }
 }
 
+static size_t promptTextColumnLenForMultiline(const CharWidthProperties &ps, StringRef prompt,
+                                              size_t cols) {
+  char buf[LINENOISE_MAX_LINE];
+  size_t bufLen = 0;
+  for (size_t off = 0; off < prompt.size();) {
+    size_t len;
+    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
+      off += len;
+      continue;
+    }
+    buf[bufLen++] = prompt[off++];
+  }
+  return columnPosForMultiLine(ps, StringRef(buf, bufLen), bufLen, cols, 0);
+}
+
+static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
+                                                 const StringRef prompt, const size_t cols) {
+  size_t col = 0;
+  size_t row = 0;
+
+  for (StringRef::size_type pos = 0;;) {
+    auto retPos = prompt.find('\n', pos);
+    auto subPrompt = prompt.slice(pos, retPos);
+
+    auto colLen = promptTextColumnLenForMultiline(ps, subPrompt, cols);
+    col = colLen % cols;
+    row += colLen / cols;
+
+    if (retPos == StringRef::npos) {
+      break;
+    } else {
+      row++;
+      pos = retPos + 1;
+    }
+  }
+  return {col, row};
+}
+
+static void appendPrompt(abuf &buf, StringRef prompt) {
+  for (StringRef::size_type pos = 0;;) {
+    auto retPos = prompt.find('\n', pos);
+    auto sub = prompt.slice(pos, retPos);
+    buf.append(sub.data(), sub.size());
+    if (retPos == StringRef::npos) {
+      break;
+    } else {
+      buf.append("\n\r", 2);
+      pos = retPos + 1;
+    }
+  }
+}
+
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -880,13 +930,11 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   updateColumns(l);
 
   char seq[64];
-  size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
+  const auto [pcollen, prow] = getPromptColRow(l->ps, l->prompt, l->cols);
   int colpos = columnPosForMultiLine(l->ps, l->lineRef(), l->len, l->cols, pcollen);
-  int colpos2;                                             /* cursor column position. */
-  int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
-  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols; /* cursor relative row. */
-  int rpos2;                                               /* rpos after refresh. */
-  int col;                                                 /* colum position, zero-based. */
+  int rows = (pcollen + colpos + l->cols - 1) / l->cols + prow; /* rows used by current buf. */
+  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols;      /* cursor relative row. */
+  int col;                                                      /* colum position, zero-based. */
   int old_rows = l->maxrows;
   int fd = l->ofd;
   struct abuf ab;
@@ -917,7 +965,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   ab.append(seq, strlen(seq));
 
   /* Write the prompt and the current buffer content */
-  ab.append(l->prompt.data(), l->prompt.size());
+  appendPrompt(ab, l->prompt);
   if (this->highlight && !this->escapeSeqMap.getValues().empty()) {
     if (doHightlight || this->highlightCache.empty()) {
       std::string line(l->buf, l->len);
@@ -936,7 +984,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   }
 
   /* Get column length to cursor position */
-  colpos2 = columnPosForMultiLine(l->ps, l->lineRef(), l->pos, l->cols, pcollen);
+  int colpos2 = columnPosForMultiLine(l->ps, l->lineRef(), l->pos, l->cols, pcollen);
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
@@ -951,8 +999,8 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
     }
   }
 
-  /* Move cursor to right position. */
-  rpos2 = (pcollen + colpos2 + l->cols) / l->cols; /* current cursor relative row. */
+  /* Move cursor to right row position. */
+  int rpos2 = (pcollen + colpos2 + l->cols) / l->cols + prow; /* current cursor relative row. */
   lndebug("rpos2 %d", rpos2);
 
   /* Go up till we reach the expected positon. */
