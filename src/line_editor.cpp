@@ -932,9 +932,8 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   char seq[64];
   const auto [pcollen, prow] = getPromptColRow(l->ps, l->prompt, l->cols);
   int colpos = columnPosForMultiLine(l->ps, l->lineRef(), l->len, l->cols, pcollen);
-  int rows = (pcollen + colpos + l->cols - 1) / l->cols + prow; /* rows used by current buf. */
-  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols;      /* cursor relative row. */
-  int col;                                                      /* colum position, zero-based. */
+  int rows = (pcollen + colpos + l->cols - 1) / l->cols + prow;   /* rows used by current buf. */
+  int rpos = (pcollen + l->oldcolpos + l->cols) / l->cols + prow; /* cursor relative row. */
   int old_rows = l->maxrows;
   int fd = l->ofd;
   struct abuf ab;
@@ -1010,8 +1009,8 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
     ab.append(seq, strlen(seq));
   }
 
-  /* Set column. */
-  col = (pcollen + colpos2) % l->cols;
+  /* Set column position, zero-based. */
+  int col = (pcollen + colpos2) % l->cols;
   lndebug("set col %d", 1 + col);
   if (col) {
     snprintf(seq, 64, "\r\x1b[%dC", col);
