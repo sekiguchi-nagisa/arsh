@@ -104,7 +104,7 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState *l, bool doHightlight = true);
+  void refreshLine(struct linenoiseState *l, bool doHighlight = true);
 
   /**
    * Insert the character 'c' at cursor current position.

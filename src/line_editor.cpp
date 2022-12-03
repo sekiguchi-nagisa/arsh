@@ -684,19 +684,7 @@ static int preparePrompt(struct linenoiseState *l) {
       return -1;
     }
   }
-
   checkProperty(l);
-
-  /**
-   * adjust prompt
-   */
-  const char *ptr = strrchr(l->prompt.data(), '\n');
-  if (ptr) {
-    if (write(l->ofd, l->prompt.data(), ptr - l->prompt.data() + 1) == -1) {
-      return -1;
-    }
-    l->prompt = ptr + 1;
-  }
   return 0;
 }
 
@@ -916,7 +904,7 @@ static void appendPrompt(abuf &buf, StringRef prompt) {
     if (retPos == StringRef::npos) {
       break;
     } else {
-      buf.append("\n\r", 2);
+      buf.append("\r\n", 2);
       pos = retPos + 1;
     }
   }
@@ -926,7 +914,7 @@ static void appendPrompt(abuf &buf, StringRef prompt) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) {
+void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHighlight) {
   updateColumns(l);
 
   char seq[64];
@@ -966,7 +954,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   /* Write the prompt and the current buffer content */
   appendPrompt(ab, l->prompt);
   if (this->highlight && !this->escapeSeqMap.getValues().empty()) {
-    if (doHightlight || this->highlightCache.empty()) {
+    if (doHighlight || this->highlightCache.empty()) {
       std::string line(l->buf, l->len);
       line += '\n';
       BuiltinHighlighter highlighter(this->escapeSeqMap, line);
@@ -1085,9 +1073,8 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   }
 
   preparePrompt(&l);
-  if (write(l.ofd, l.prompt.data(), l.prompt.size()) == -1) {
-    return -1;
-  }
+  this->refreshLine(&l);
+
   while (true) {
     int c;
     char cbuf[32]; // large enough for any encoding?
