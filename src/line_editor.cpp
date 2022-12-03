@@ -285,8 +285,8 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, const c
     size_t len = nextCharLen(ps, buf, buf_len, off, &col_len);
 
     int dif = (int)(colwid + col_len) - (int)cols;
-    if (dif > 0) {
-      ret += dif;
+    if (dif > 0) { // adjust pos for fullwidth character
+      ret += (int)cols - (int)colwid;
       colwid = col_len;
     } else if (dif == 0) {
       colwid = 0;
