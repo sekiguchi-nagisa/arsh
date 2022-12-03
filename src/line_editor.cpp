@@ -264,6 +264,35 @@ static size_t nextWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef b
   return ret.byteSize;
 }
 
+/* Check if text is an ANSI escape sequence
+ */
+static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
+  if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
+    size_t off = 2;
+    while (off < buf_len) {
+      switch (buf[off++]) {
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'J':
+      case 'K':
+      case 'S':
+      case 'T':
+      case 'f':
+      case 'm':
+        *len = off;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /* Get column length from beginning of buffer to current byte position */
 static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
                         const size_t pos) {
@@ -275,6 +304,23 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef buf
     ret += col_len;
   }
   return ret;
+}
+
+/* Get column length of prompt text
+ */
+static size_t columnPosSkipANSI(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
+                                const size_t pos) {
+  char newBuf[LINENOISE_MAX_LINE];
+  size_t newBufLen = 0;
+  for (size_t off = 0; off < bufRef.size();) {
+    size_t len;
+    if (isAnsiEscape(bufRef.data() + off, bufRef.size() - off, &len)) {
+      off += len;
+      continue;
+    }
+    newBuf[newBufLen++] = bufRef[off++];
+  }
+  return columnPos(ps, ydsh::StringRef(newBuf, newBufLen), pos);
 }
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
@@ -428,8 +474,6 @@ static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)
 #endif
 
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt);
-
 static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
                               const ydsh::ArrayObject &candidates) {
   const auto len = candidates.size();
@@ -438,7 +482,8 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   // compute maximum length of candidate
   size_t maxSize = 0;
   for (size_t index = 0; index < len; index++) {
-    size_t s = promptTextColumnLen(ps, candidates.getValues()[index].asCStr());
+    StringRef ref = candidates.getValues()[index].asCStr(); // truncate characters after null
+    size_t s = columnPosSkipANSI(ps, ref, ref.size());
     if (s > maxSize) {
       maxSize = s;
     }
@@ -577,51 +622,6 @@ struct abuf {
     this->len += slen;
   }
 };
-
-/* Check if text is an ANSI escape sequence
- */
-static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
-  if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
-    size_t off = 2;
-    while (off < buf_len) {
-      switch (buf[off++]) {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'F':
-      case 'G':
-      case 'H':
-      case 'J':
-      case 'K':
-      case 'S':
-      case 'T':
-      case 'f':
-      case 'm':
-        *len = off;
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-
-/* Get column length of prompt text
- */
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
-  char buf[LINENOISE_MAX_LINE];
-  size_t buf_len = 0;
-  for (size_t off = 0; off < prompt.size();) {
-    size_t len;
-    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
-      off += len;
-      continue;
-    }
-    buf[buf_len++] = prompt[off++];
-  }
-  return columnPos(ps, ydsh::StringRef(buf, buf_len), buf_len);
-}
 
 /* Move cursor on the left. */
 static bool linenoiseEditMoveLeft(struct linenoiseState *l) {
@@ -880,7 +880,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHightlight) 
   updateColumns(l);
 
   char seq[64];
-  size_t pcollen = promptTextColumnLen(l->ps, l->prompt);
+  size_t pcollen = columnPosSkipANSI(l->ps, l->prompt, l->prompt.size());
   int colpos = columnPosForMultiLine(l->ps, l->lineRef(), l->len, l->cols, pcollen);
   int colpos2;                                             /* cursor column position. */
   int rows = (pcollen + colpos + l->cols - 1) / l->cols;   /* rows used by current buf. */
