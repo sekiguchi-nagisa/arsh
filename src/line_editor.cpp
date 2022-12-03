@@ -265,8 +265,7 @@ static size_t nextWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef b
 }
 
 /* Get column length from beginning of buffer to current byte position */
-static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
-                        const size_t pos) {
+static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos) {
   size_t ret = 0;
   for (size_t off = 0; off < pos;) {
     size_t col_len;
@@ -279,28 +278,31 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef buf
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
-                                    const size_t pos, size_t cols, size_t iniPos) {
-  assert(pos <= bufRef.size());
-
+                                    size_t pos, size_t cols, size_t ini_pos) {
   size_t ret = 0;
-  size_t colWidth = iniPos;
-  for (size_t off = 0; off < pos;) {
-    size_t colLen;
-    size_t len = nextCharLen(ps, bufRef, off, &colLen);
+  size_t colwid = ini_pos;
 
-    int dif = (int)(colWidth + colLen) - (int)cols;
+  for (size_t off = 0; off < bufRef.size();) {
+    size_t col_len;
+    size_t len = nextCharLen(ps, bufRef, off, &col_len);
+
+    int dif = (int)(colwid + col_len) - (int)cols;
     if (dif > 0) { // adjust pos for fullwidth character
-      ret += (int)cols - (int)colWidth;
-      colWidth = colLen;
+      ret += (int)cols - (int)colwid;
+      colwid = col_len;
     } else if (dif == 0) {
-      colWidth = 0;
+      colwid = 0;
     } else {
-      colWidth += colLen;
+      colwid += col_len;
     }
 
+    if (off >= pos) {
+      break;
+    }
     off += len;
-    ret += colLen;
+    ret += col_len;
   }
+
   return ret;
 }
 
