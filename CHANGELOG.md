@@ -139,7 +139,7 @@
 - **Breaking Change**: change interface of ``CMD_FALLBACK``
     - now pass caller module context to fallback handler
 - **Breaking Change**: only allow decimal integer in ``test`` command like bash
-- **Breaking Change**: FD objects that are created from constructor does not have close-on-exec flag
+- **Breaking Change**: FD type constructor does not set close-on-exec flag
 - **Breaking Change**: remove ``EDIT_HOOK`` builtin variable
 - improve runtime option recognition
     - now allow upper case, snake case, kebab case
@@ -177,7 +177,7 @@
 - crash ``Signal#trap`` method when pass closure
 - type name completion in constructor parameter
 - broken lexing of dollar single quoted string literal
-- escape sequence handling of renderPormpt function in prompt module
+- escape sequence handling of renderPrompt function in prompt module
 
 ## [0.27.1] - 2022-09-30
 
