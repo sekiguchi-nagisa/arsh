@@ -2,12 +2,23 @@
 
 source $SCRIPT_DIR/path
 
+function _escape(s : String) : String {
+    var ret = ""
+    for ch in $s {
+        if $ch == '\' {
+            $ret += '\'
+        }
+        $ret += $ch
+    }
+    return $ret
+}
+
 let _cache = [
     'c' : '\\c',
-    'h' : "$(uname -n)".split(".")[0],
-    'H' : "$(uname -n)",
-    's' : $basename($0),
-    'u' : $user,
+    'h' : $_escape("$(uname -n)").split(".")[0],
+    'H' : $_escape("$(uname -n)"),
+    's' : $_escape($basename($0)),
+    'u' : $_escape($user),
     'v' : $YDSH_VERSION.slice(0, $YDSH_VERSION.lastIndexOf('.')),
     'V' : $YDSH_VERSION,
     '$' : $UID == 0 ? '#' : '$',
@@ -35,9 +46,9 @@ function renderPrompt(p : String) : String {
             }
             'w' => {
                 if $PWD.startsWith($home) {
-                    $ch = "~" + $PWD.slice($home.size())
+                    $ch = "~" + $_escape($PWD.slice($home.size()))
                 } else {
-                    $ch = $PWD
+                    $ch = $_escape($PWD)
                 }
             }
             'W' => {
@@ -45,16 +56,17 @@ function renderPrompt(p : String) : String {
                 if $home == $PWD {
                     $ch = "~"
                 } else {
-                    $ch = $basename($PWD)
+                    $ch = $_escape($basename($PWD))
                 }
             }
             '[' | ']' => continue;
+            '\' => { $ret += '\'; }
             else => $ch = $_cache.get($k) ?? { $i--; $ch; }
             }
         }
         $ret += $ch
     }
-    return "$(echo -en $ret)"
+    return "$(echo -en "$ret@")".slice(0, -1)
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {

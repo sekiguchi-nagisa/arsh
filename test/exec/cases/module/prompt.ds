@@ -13,64 +13,64 @@ function dirname($s : String) : String {
 }
 
 
-# invalid
-ps_intrp() {
-    echo ${$renderPrompt($1)}
-}
-
 # interpret
-assert "$(ps_intrp 'hello\!!')" == "hello\!!"
-assert "$(ps_intrp 'hello\cworld')" == "hello\cworld"
-assert("$(ps_intrp '\H')" == "$(uname -n)")
-assert("$(ps_intrp '\h')" == "$(uname -n)".split('.')[0])
-assert("$(ps_intrp '\n')" == "$(echo -e '\n')")
-assert("$(ps_intrp '\r')" == "$(echo -e '\r')")
-assert("$(ps_intrp '\s')" == "$(basename $0)")
-assert("$(ps_intrp '\u')" == "$(whoami)")
+assert $renderPrompt('hello\!!') == "hello\!!"
+assert $renderPrompt('hello\cworld') == "hello\cworld"
+assert $renderPrompt('\H') == "$(uname -n)"
+assert $renderPrompt('\\H') == '\H'
+assert $renderPrompt('\h') == "$(uname -n)".split('.')[0]
+assert $renderPrompt('\n') == $'\n'
+assert $renderPrompt('\\n') == '\n'
+assert $renderPrompt('\\\n') == $'\\\n'
+assert $renderPrompt('\r') == "$(echo -e '\r')"
+assert $renderPrompt('\s') == "$(basename $0)"
+assert $renderPrompt('\u') == "$(whoami)"
 import-env USER
 let OLD_USER = $USER
 $USER=""
-assert("$(ps_intrp '\u')" == "$(whoami)")
+assert($renderPrompt('\u') == "$(whoami)")
 $USER = $OLD_USER
 
 import-env PWD : "$(pwd)"
-assert("$(ps_intrp '\w')" == $dirname($PWD))
+assert($renderPrompt('\w') == $dirname($PWD))
+assert $renderPrompt('\\w') == '\w'
 
 $PWD = '/'
-assert("$(ps_intrp '\w')" == "/")
-assert("$(ps_intrp '\W')" == "/")
+assert($renderPrompt('\w') == "/")
+assert($renderPrompt('\W') == "/")
+assert($renderPrompt('\\W') == "\W")
 unsetenv PWD
 cd ~
-assert("$(ps_intrp '\w')" == "~")
-assert("$(ps_intrp '\W')" == "~")
+assert($renderPrompt('\w') == "~")
+assert($renderPrompt('\W') == "~")
 cd ~
-assert("$(ps_intrp '\w')" == "~")
-assert("$(ps_intrp '\W')" == "~")
+assert($renderPrompt('\w') == "~")
+assert($renderPrompt('\W') == "~")
 
-assert("$(ps_intrp '\0101\066')" == "A6")    # octal number
-assert("$(ps_intrp '\x09\x7E')" == $'\t~')   # hex number
-assert("$(ps_intrp '\x9\x7e')" == $'\t~')    # hex number
-assert("$(ps_intrp '\xX')" == '\xX')         # invalid hex number
+assert($renderPrompt('\0101\066') == "A6")    # octal number
+assert($renderPrompt('\x09\x7E') == $'\t~')   # hex number
+assert($renderPrompt('\x9\x7e') == $'\t~')    # hex number
+assert($renderPrompt('\xX') == '\xX')         # invalid hex number
 
-let V = "$(ps_intrp '\V')"
-let v = "$(ps_intrp '\v')"
+let V = $renderPrompt('\V')
+let v = $renderPrompt('\v')
 assert($V.startsWith($v))
 assert($V.startsWith($v + "."))
 
-var u = "$(ps_intrp '\$')"
+var u = $renderPrompt('\$')
 if("$(id -u)" == "$(id -u root)") { # root
     assert($u == '#')
 } else {    # non-root
     assert($u == '$')
 }
 
-assert("$(ps_intrp '\\')" == "$(echo -e '\\')")
-ps_intrp '\a'   # bell
-assert("$(ps_intrp 'hoge')" == "hoge")
-assert("$(ps_intrp '\|')" == "\|")    # meaningless backslash
+assert($renderPrompt('\\') == '\')
+assert $renderPrompt( '\a') == $'\a'   # bell
+assert($renderPrompt('hoge') == "hoge")
+assert($renderPrompt('\|') == "\|")    # meaningless backslash
 
 # escape sequence
-var e = "$(ps_intrp '\[\e[32m\]')"
+var e = $renderPrompt('\[\e[32m\]')
 assert($e.size() == 5)
 assert($e[0] == $'\033')
 assert($e[1] == '[')
