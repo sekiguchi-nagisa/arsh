@@ -176,6 +176,7 @@
 - fix module symbol synchronization of ``DSState_loadModule`` api
 - crash ``Signal#trap`` method when pass closure
 - type name completion in constructor parameter
+- broken lexing of dollar single quoted string literal
 
 ## [0.27.1] - 2022-09-30
 

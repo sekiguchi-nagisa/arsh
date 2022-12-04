@@ -118,7 +118,7 @@ TokenKind Lexer::nextToken(Token &token) {
     FLOAT_SUFFIX =  [eE] [+-]? DIGITS;
     FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
-    SQUOTE_CHAR = '\\' ['] | [^'\000];
+    SQUOTE_CHAR = '\\' [^\000] | [^\\'\000];
     DQUOTE_CHAR = "\\" [^\000] | [^$\\"`\000];
     VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
     SPECIAL_NAMES = ([@#?$] | [0-9]+);

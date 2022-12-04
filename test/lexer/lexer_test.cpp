@@ -585,10 +585,10 @@ TEST_F(LexerTest_Lv1, estring_literal4) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-TEST_F(LexerTest_Lv1, estring_literal5) {
+TEST_F(LexerTest_Lv1, invalid_estring_literal) {
   const char *text = "$'\\'";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::STRING_LITERAL, "$'\\'", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "$"));
 }
 
 // invalid string literal
