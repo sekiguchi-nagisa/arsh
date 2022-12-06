@@ -4,7 +4,9 @@ source $SCRIPT_DIR/path
 
 function _escape(s : String) : String {
     var ret = ""
-    for ch in $s {
+    let size = $s.size()
+    for(var i = 0; $i < $size; $i++) {
+        var ch = $s[$i]
         if $ch == '\' {
             $ret += '\'
         }
