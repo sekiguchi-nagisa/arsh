@@ -4,21 +4,15 @@
 
 source $SCRIPT_DIR/path
 
-function _empty(ctx : Module, words : [String], cursor : Int) : [String] {
-    return new [String]()
-}
-
-typedef Completer = typeof($_empty)
+typedef Completer = typeof($COMP_HOOK!)
 
 let _compMap : [String : Completer]
 
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String] {
-    if !(command -v $words[0] 2>&1 > /dev/null) {
-        return new [String]()
-    }
+    command -v $words[0] 2>&1 > /dev/null || return new [String]()
     var cmd = $basename($words[0])
     $words[0] = $cmd
-    var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? $_empty
+    var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => new [String]()
     return $comp($ctx, $words, $cursor)
 }
 
@@ -128,7 +122,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                     $args.add("-A")
                     $args.add($a)
                 }
-                complete &> /dev/null -m $ctx $args $prefix;
+                complete -q -m $ctx $args $prefix;
                 $COMPREPLY
             }
             else => break

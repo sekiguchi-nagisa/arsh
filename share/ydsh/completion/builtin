@@ -9,7 +9,7 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : [String] {
             'exec' => ['-A', 'external']
             else => ['-A', 'command']
         }
-        complete &> /dev/null -m $ctx $actions ${$t.size() == 1 ? "" : $t.peek()}
+        complete -q -m $ctx $actions ${$t.size() == 1 ? "" : $t.peek()}
         return $COMPREPLY
     } else {
         $t.shift()

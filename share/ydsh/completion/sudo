@@ -19,7 +19,7 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : [String] {
         return ['-A', '-b', '-E', '-H', '-n', '-P', '-S']
     }
     importenv PATH : ""
-    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete &> /dev/null -A external ${$c < $t.size() ? $t.peek() : ""}
+    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q -A external ${$c < $t.size() ? $t.peek() : ""}
     return $COMPREPLY
 }
 
