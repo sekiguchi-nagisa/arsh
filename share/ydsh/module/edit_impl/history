@@ -1,0 +1,238 @@
+#!/usr/bin/env ydsh
+
+# for history manipulation
+
+source $MODULE_DIR/history
+
+var HISTFILE = "$DATA_HOME/ydsh_history"
+var HISTSIZE = 1000
+var HISTFILESIZE = 1000
+var HISTIGNORE = $/^history/ as Regex!
+var HISTSEARCH : Func<String,[String]>!
+let HISTORY : [String]
+
+# create DATA_HOME
+test -e $DATA_HOME || mkdir -p $DATA_HOME || true
+
+function _sync() {
+    let limit = 4096
+    if $HISTSIZE > $limit {
+        $HISTSIZE = $limit
+    }
+    for(; $HISTORY.size() > $HISTSIZE; $HISTORY.pop()) {}
+}
+
+function _error(s : String) {
+    echo 1>&2 history: $s
+}
+
+function _usage(fd : UnixFD, short : Boolean) : Int {
+    echo >& $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
+    $short && return 2;
+
+    echo >& $fd "Display or manipulate history list.
+    Options:
+        -c        clear the history list
+        -d offset delete the history entry at OFFSET
+        -h        show this help message
+        -s        append the Args to history as single entry
+
+        -r        read the history list from history file
+        -w        write the history list to history file"
+
+    return 2
+}
+
+function _show(argv : [String]) : Int {
+    let histSize = $HISTORY.size()
+    let size = $argv.size()
+    var offset = $histSize
+
+    if $size > 0 {
+        if $size > 1 {
+            $_error("too many arguments")
+            return 1
+        }
+
+        $offset = $argv[0].toInt() ?? {
+            $_error("${$argv[0]}: numeric argument required")
+            return 1
+        }
+
+        if $offset > $histSize {
+            $offset = $histSize
+        }
+    }
+
+    for(var i = $histSize - $offset; $i < $histSize; $i++) {
+        echo $HISTORY[$i]
+    }
+    return 0
+}
+
+function _add(s : String) {
+    $HISTSIZE == 0 && return;
+    if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
+
+    $s.empty() && return;
+    if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
+    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    $s.contains($'\n') && return
+
+    while($HISTORY.size() >= $HISTSIZE) {
+        $HISTORY.shift()
+    }
+    $HISTORY.add($s)
+}
+
+function _add_and_save(s : String) {
+    $HISTSIZE == 0 && return;
+    $s.empty() && return;
+    if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
+
+    if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
+    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    $s.contains($'\n') && return
+
+    while($HISTORY.size() >= $HISTSIZE) {
+        $HISTORY.shift()
+    }
+    $HISTORY.add($s)
+
+    # save new entry
+    $HISTFILESIZE == 0 && return
+    let limit = 4096
+    if $HISTFILESIZE > $limit {
+        $HISTFILESIZE = $limit
+    }
+    $HISTFILE.empty() && return
+    try {
+        if !(test -e $HISTFILE) {
+            touch $HISTFILE 2> /dev/null &&
+            chmod g-rw,o-rw $HISTFILE
+        }
+        var histFile = new FD($HISTFILE);
+        $histFile.lock()
+        var lines : [String]
+        for line in $histFile {
+            $lines.add($line)
+        }
+        $lines.add($s)
+        while($lines.size() >= $HISTFILESIZE) {
+            $lines.shift()
+        }
+        for line in $lines {
+            echo $line
+        } with > $HISTFILE
+    } catch e {
+        return # ignore io error
+    }
+}
+
+function _load(p : String!) {
+    $HISTSIZE == 0 && return;
+    if !$p || $p!.empty() { $p = $HISTFILE; }
+    let path = $p!.realpath() ?? return;
+    for $line in $STDIN {
+        $_add($line)
+    } with < $path
+    $PIPESTATUS.clear()
+}
+
+function _save(p : String!) {
+    let limit = 4096
+    if $HISTFILESIZE > $limit {
+        $HISTFILESIZE = $limit
+    }
+
+    if $HISTFILESIZE == 0 || $HISTORY.empty() {
+        return;
+    }
+
+    if !$p || $p!.empty() { $p = $HISTFILE; }
+    let path = $p!
+    let size = $HISTORY.size()
+    var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
+
+    $offset < $size || return
+
+    for(var i = $offset; $i < $size; $i++) {
+        echo $HISTORY[$i]
+    } with > $path
+    chmod g-rw,o-rw $path
+}
+
+history() {
+    $_sync()
+
+    if($# == 0 || $@[0][0] != '-') {
+        return $_show($@)
+    }
+
+    var op = ""
+    var fileName : String!
+    var deleteTarget = ""
+
+    for(var i = 0; $i < $#; $i++) {
+        let arg = $@[$i]
+        case $arg {
+        '-c' => { $HISTORY.clear(); return 0; }
+        '-d' => {
+            if $i + 1 < $# {
+                $i++
+                $deleteTarget = $@[$i]
+                continue
+            }
+            $_error("$arg: option requires argument")
+            return 2
+        }
+        '-h' => { $_usage($STDOUT, $false); return 0; }
+        '-s' => {
+            var line = ""
+            for($i++; $i < $#; $i++) {
+                if !$line.empty() { $line += " "; }
+                $line += $@[$i]
+            }
+            $_add($line)
+            return 0;
+        }
+        '-r' | '-w' => {
+            if !$op.empty() {
+                $_error("cannot use more than one of -rw")
+                return 1
+            }
+            $op = $arg
+            if $i + 1 < $# && $@[$i + 1][0] != "-" {
+                $i++;
+                $fileName = $@[$i]
+            }
+            continue
+        }
+        else => { $_error("$arg: invalid option"); return $_usage($STDERR, $true); }
+        }
+    }
+
+    if !$deleteTarget.empty() {
+        var offset = $deleteTarget.toInt()
+        if !$offset || $offset! < 1 || $offset! > $HISTORY.size() {
+            $_error("$deleteTarget: history offset out of range")
+            return 1
+        }
+        $HISTORY.remove($offset! - 1)
+        return 0
+    }
+
+    case $op {
+    '-r' => $_load($fileName)
+    '-w' => $_save($fileName)
+    }
+    return 0
+}
+
+$initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
+    $_sync()
+    $_add_and_save($line)
+})
+
+# load history from file
+$_load()

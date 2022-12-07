@@ -1,0 +1,19 @@
+#!/usr/bin/env ydsh
+
+# for prompt
+var PS1 = '\s-\v\$ '
+var PS2 = '> '
+
+var PROMPT_HOOK : ((String) -> String)!
+
+source $MODULE_DIR/prompt
+
+var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
+
+$LINE_EDIT.setPrompt(function(p) => {
+    $p = $PROMPT_HOOK ? $PROMPT_HOOK($PS1) : $PS1
+    if $PROMPT_RENDERER {
+        $p = $PROMPT_RENDERER($p)
+    }
+    $p
+})
