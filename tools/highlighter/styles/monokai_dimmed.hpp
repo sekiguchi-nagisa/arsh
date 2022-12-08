@@ -24,6 +24,7 @@ namespace ydsh::highlighter {
 DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   constexpr auto COMMENT = ValidRule("#9A9B99");
   constexpr auto KEYWORD = ValidRule("#9872A2");
+  constexpr auto OPERATOR = ValidRule("#676867");
   constexpr auto NUMBER = ValidRule("#6089B4");
   constexpr auto STRING = ValidRule("#9AA83A");
   constexpr auto VAR = ValidRule("#6089B4");
@@ -34,13 +35,13 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   constexpr auto BG = ValidRule("bg:#1E1E1E");
 
   return {
-      {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},
-      {HighlightTokenClass::OPERATOR, KEYWORD}, {HighlightTokenClass::NUMBER, NUMBER},
-      {HighlightTokenClass::REGEX, STRING},     {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::COMMAND, FUNC},     {HighlightTokenClass::COMMAND_ARG, PARAM},
-      {HighlightTokenClass::REDIRECT, PARAM},   {HighlightTokenClass::VARIABLE, VAR},
-      {HighlightTokenClass::TYPE, TYPE},        {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
-      {HighlightTokenClass::FOREGROUND_, TEXT}, {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
+      {HighlightTokenClass::OPERATOR, OPERATOR}, {HighlightTokenClass::NUMBER, NUMBER},
+      {HighlightTokenClass::REGEX, STRING},      {HighlightTokenClass::STRING, STRING},
+      {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::COMMAND_ARG, PARAM},
+      {HighlightTokenClass::REDIRECT, OPERATOR}, {HighlightTokenClass::VARIABLE, VAR},
+      {HighlightTokenClass::TYPE, TYPE},         {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
+      {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
   };
 }
 
