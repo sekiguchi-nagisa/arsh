@@ -66,7 +66,7 @@ void BuiltinHighlighter::writeTrivia(StringRef ref) {
 
     this->write(line, HighlightTokenClass::NONE);
     if (r != StringRef::npos) {
-      auto tokenClass = HighlightTokenClass::FOREGROUND_;
+      auto tokenClass = HighlightTokenClass::NONE;
       this->write(StringRef("\\"), tokenClass);
     }
   }
