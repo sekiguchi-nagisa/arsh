@@ -255,6 +255,11 @@ TEST_F(HighlightTest, style) {
   ASSERT_STREQ("monokai", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
+  style = styleMap.find("monokai_dimmed");
+  ASSERT_TRUE(style);
+  ASSERT_STREQ("monokai_dimmed", style->getName());
+  ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
+
   style = styleMap.find("colorful");
   ASSERT_TRUE(style);
   ASSERT_STREQ("colorful", style->getName());
@@ -544,6 +549,7 @@ TEST_F(ColorizeTest, list) {
 * darcula
 * github
 * monokai
+* monokai_dimmed
 * null
 
 Formatters:
