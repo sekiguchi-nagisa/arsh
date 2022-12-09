@@ -1057,20 +1057,22 @@ bool LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char 
  *
  * The function returns the length of the current buffer. */
 int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt) {
-  struct linenoiseState l;
-
   /* Populate the linenoise state that we pass to functions implementing
    * specific editing functionalities. */
-  l.ifd = this->inFd;
-  l.ofd = this->outFd;
-  l.buf = buf;
-  l.buflen = buflen;
-  l.prompt = prompt;
-  l.oldcolpos = l.pos = 0;
-  l.oldrow = 0;
-  l.len = 0;
-  l.cols = getColumns(this->inFd, this->outFd);
-  l.maxrows = 0;
+  struct linenoiseState l = {
+      .ifd = this->inFd,
+      .ofd = this->outFd,
+      .buf = buf,
+      .buflen = buflen,
+      .prompt = prompt,
+      .pos = 0,
+      .oldcolpos = 0,
+      .oldrow = 0,
+      .len = 0,
+      .cols = static_cast<size_t>(getColumns(this->inFd, this->outFd)),
+      .maxrows = 0,
+      .ps = {},
+  };
 
   /* Buffer starts empty. */
   l.buf[0] = '\0';
