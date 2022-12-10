@@ -12,5 +12,8 @@ $LINE_EDIT.setCompletion(function(m, s) => {
 })
 
 if(command -v dscolorize &> /dev/null) {
-    $LINE_EDIT.setColor("$(dscolorize --dump -s monokai_dimmed -f term256)")
+    var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2> /dev/null)"
+    if $? == 0 {
+        $LINE_EDIT.setColor($color)
+    }
 }
