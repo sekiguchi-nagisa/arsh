@@ -6,7 +6,7 @@ var PS2 = '> '
 
 var PROMPT_HOOK : ((String) -> String)!
 
-source $MODULE_DIR/prompt
+source $SCRIPT_DIR/../prompt
 
 var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
 

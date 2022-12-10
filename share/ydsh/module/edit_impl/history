@@ -2,7 +2,7 @@
 
 # for history manipulation
 
-source $MODULE_DIR/history
+source $SCRIPT_DIR/../history
 
 var HISTFILE = "$DATA_HOME/ydsh_history"
 var HISTSIZE = 1000
