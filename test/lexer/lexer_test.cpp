@@ -2085,7 +2085,7 @@ TEST_F(LexerTest_Lv1, LINE_END3) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-class DefaultCommentStore : public CommentStore {
+class DefaultCommentStore : public TriviaStore {
 private:
   std::vector<Token> tokens;
 
@@ -2099,7 +2099,7 @@ TEST_F(LexerTest_Lv1, COMMENT1) {
   const char *text = "#fhreuvrei o";
   this->initLexer(text);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
   ASSERT_EQ(1, commentStore.getTokens().size());
   ASSERT_EQ(text, this->lexer->toTokenText(commentStore.getTokens().back()));
@@ -2109,7 +2109,7 @@ TEST_F(LexerTest_Lv1, COMMENT2) {
   const char *text = "#ああ  あ";
   this->initLexer(text, yycEXPR);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
   ASSERT_EQ(1, commentStore.getTokens().size());
   ASSERT_EQ(text, this->lexer->toTokenText(commentStore.getTokens().back()));
@@ -2119,7 +2119,7 @@ TEST_F(LexerTest_Lv1, COMMENT3) {
   const char *text = "#hello  \t  ";
   this->initLexer(text, yycNAME);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
   ASSERT_EQ(1, commentStore.getTokens().size());
   ASSERT_EQ(text, this->lexer->toTokenText(commentStore.getTokens().back()));
@@ -2130,7 +2130,7 @@ TEST_F(LexerTest_Lv1, COMMENT4) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycTYPE);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
   ASSERT_EQ(1, commentStore.getTokens().size());
   ASSERT_EQ(text, this->lexer->toTokenText(commentStore.getTokens().back()));
@@ -2141,7 +2141,7 @@ TEST_F(LexerTest_Lv1, COMMENT5) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
   ASSERT_EQ(1, commentStore.getTokens().size());
   ASSERT_EQ(text, this->lexer->toTokenText(commentStore.getTokens().back()));
@@ -2151,7 +2151,7 @@ TEST_F(LexerTest_Lv1, COMMENT6) {
   const char *text = "echo #1234\n#abcd";
   this->initLexer(text);
   DefaultCommentStore commentStore;
-  this->lexer->setCommentStore(makeObserver(commentStore));
+  this->lexer->setTriviaStore(makeObserver(commentStore));
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::EOS, ""));
   ASSERT_EQ(2, commentStore.getTokens().size());
   ASSERT_EQ("#1234", this->lexer->toTokenText(commentStore.getTokens()[0]));

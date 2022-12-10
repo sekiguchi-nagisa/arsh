@@ -83,8 +83,8 @@ void BuiltinHighlighter::write(StringRef ref, HighlightTokenClass tokenClass) {
   this->writeWithEscapeSeq(ref, seq ? *seq : "");
 }
 
-void BuiltinHighlighter::doHighlight() {
-  tokenizeAndEmit(*this);
+bool BuiltinHighlighter::doHighlight() {
+  auto error = this->tokenizeAndEmit();
 
   // write each token
   unsigned int curPos = 0;
@@ -100,6 +100,20 @@ void BuiltinHighlighter::doHighlight() {
     auto remain = this->source.substr(curPos);
     this->writeTrivia(remain);
   }
+
+  // check line continuation
+  if (error) {
+    if (error->getTokenKind() == TokenKind::EOS) {
+      return false;
+    }
+  } else if (!this->tokens.empty() && this->tokens.back().first == HighlightTokenClass::NONE) {
+    auto token = this->tokens.back().second;
+    auto last = this->source.substr(token.pos, token.size);
+    if (last.size() == 2 && last == "\\\n") {
+      return false;
+    }
+  }
+  return true;
 }
 
 } // namespace ydsh

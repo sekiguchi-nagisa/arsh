@@ -124,6 +124,8 @@ public:
 
   const ParseErrorBase<T> &getError() const { return *this->error; }
 
+  std::unique_ptr<ParseErrorBase<T>> takeError() && { return std::move(this->error); }
+
   void clear() { this->error.reset(); }
 
 protected:

@@ -55,7 +55,7 @@ using HighlightTokenEntries =
 
 const HighlightTokenEntries &getHighlightTokenEntries();
 
-class TokenEmitter : public CommentStore, public TokenTracker {
+class TokenEmitter : public TriviaStore, public TokenTracker {
 protected:
   /**
    * must be end with newline
@@ -78,6 +78,12 @@ public:
    */
   void operator()(Token token) override;
 
+  /**
+   * common entry point of colorize source content
+   * @return
+   */
+  std::unique_ptr<ParseError> tokenizeAndEmit();
+
 private:
   /**
    * actual token emit function
@@ -86,12 +92,6 @@ private:
    */
   virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
 };
-
-/**
- * common entry point of colorize source content
- * @param emitter
- */
-void tokenizeAndEmit(TokenEmitter &emitter);
 
 template <typename T>
 struct ANSIFormatOp {

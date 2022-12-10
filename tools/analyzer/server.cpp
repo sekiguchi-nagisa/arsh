@@ -571,7 +571,7 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
     if (this->semanticHighlight == BinaryFlag::enabled) {
       auto &src = *resolved.asOk();
       SemanticTokenEmitter emitter(this->encoder, src);
-      tokenizeAndEmit(emitter);
+      emitter.tokenizeAndEmit();
       ret = std::move(emitter).take();
     }
     return ret;

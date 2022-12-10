@@ -44,6 +44,8 @@ private:
 
   bool highlight{false};
 
+  bool continueLine{false};
+
   ANSIEscapeSeqMap escapeSeqMap;
 
   std::string highlightCache;

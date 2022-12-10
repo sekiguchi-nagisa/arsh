@@ -48,9 +48,12 @@ public:
   }
 
   /**
-   * entry point
+   * entry point of syntax highlight
+   * @return
+   * if reach incomplete input (need more characters),
+   * return false
    */
-  void doHighlight();
+  bool doHighlight();
 
   std::string take() && { return std::move(this->buf); }
 

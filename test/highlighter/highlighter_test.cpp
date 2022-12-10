@@ -2,6 +2,7 @@
 
 #include "../test_common.h"
 #include "factory.h"
+#include <highlighter.h>
 
 #ifndef BIN_PATH
 #define "require BIN_PATH"
@@ -35,7 +36,7 @@ static auto lex(StringRef ref) {
     content += '\n';
   }
   TokenCollector collector(content);
-  tokenizeAndEmit(collector);
+  collector.tokenizeAndEmit();
   return std::move(collector).take();
 }
 
@@ -119,7 +120,7 @@ struct HighlightTest : public ::testing::Test {
     auto formatter = std::move(ret).take();
     ASSERT_TRUE(formatter);
     formatter->initialize(ref);
-    tokenizeAndEmit(*formatter);
+    formatter->tokenizeAndEmit();
     formatter->finalize();
   }
 };
@@ -673,6 +674,34 @@ TEST_F(ColorizeTest, cli2) {
 )EOF",
                        HIGHLIGHTER_PATH);
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
+}
+
+class BuiltinHighlightTest : public ExpectOutput {
+private:
+  ANSIEscapeSeqMap seqMap;
+
+public:
+  bool highlight(StringRef source) {
+    auto value = source.toString();
+    if (value.empty() || value.back() != '\n') {
+      value += '\n';
+    }
+    BuiltinHighlighter highlighter(this->seqMap, value);
+    return highlighter.doHighlight();
+  }
+};
+
+TEST_F(BuiltinHighlightTest, base) {
+  ASSERT_TRUE(this->highlight("echo"));
+  ASSERT_TRUE(this->highlight("{}}"));
+  ASSERT_TRUE(this->highlight("$OSTYPE ++"));
+  ASSERT_FALSE(this->highlight("{ echo hello"));
+  ASSERT_FALSE(this->highlight("$(23456"));
+  ASSERT_FALSE(this->highlight("23456."));
+  ASSERT_FALSE(this->highlight(R"("ehochll$OSTYPE )"));
+  ASSERT_FALSE(this->highlight("$OSTYPE + "));
+  ASSERT_FALSE(this->highlight("$OSTYPE \\"));
+  ASSERT_FALSE(this->highlight("echo hello  \\"));
 }
 
 int main(int argc, char **argv) {

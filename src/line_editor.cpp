@@ -965,7 +965,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHighlight) {
         std::string line = lineRef.toString();
         line += '\n';
         BuiltinHighlighter highlighter(this->escapeSeqMap, line);
-        highlighter.doHighlight();
+        this->continueLine = !highlighter.doHighlight();
         line = std::move(highlighter).take();
         if (!line.empty() && line.back() == '\n') {
           line.pop_back();
@@ -1120,15 +1120,22 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
 
     switch (c) {
     case ENTER: /* enter */
-      if (linenoiseEditMoveEnd(&l)) {
-        this->refreshLine(&l, false);
+      if (this->continueLine) {
+        if (!this->linenoiseEditInsert(&l, "\n", 1)) {
+          return -1;
+        }
+        break;
+      } else {
+        if (linenoiseEditMoveEnd(&l)) {
+          this->refreshLine(&l, false);
+        }
+        this->kickHistoryCallback(state, HistOp::DEINIT, &l);
+        if (state.hasError()) {
+          errno = EAGAIN;
+          return -1;
+        }
+        return (int)l.len;
       }
-      this->kickHistoryCallback(state, HistOp::DEINIT, &l);
-      if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
-      }
-      return (int)l.len;
     case CTRL_C: /* ctrl-c */
       errno = EAGAIN;
       return -1;
@@ -1365,6 +1372,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   }
 
   this->lock = true;
+  this->continueLine = false;
   this->highlightCache.clear();
   auto cleanup = finally([&] { this->lock = false; });
 

@@ -92,7 +92,7 @@ int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &ou
   }
 
   formatter->initialize(content.unwrap());
-  tokenizeAndEmit(*formatter);
+  formatter->tokenizeAndEmit();
   formatter->finalize();
   return 0;
 }

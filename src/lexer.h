@@ -51,8 +51,11 @@ struct SrcPos {
   unsigned int chars;
 };
 
-struct CommentStore {
-  virtual ~CommentStore() = default;
+/**
+ * for consume comment or \\n
+ */
+struct TriviaStore {
+  virtual ~TriviaStore() = default;
 
   virtual void operator()(Token token) = 0;
 };
@@ -84,7 +87,7 @@ private:
    */
   bool prevSpace{false};
 
-  ObserverPtr<CommentStore> commentStore;
+  ObserverPtr<TriviaStore> triviaStore;
 
 public:
   NON_COPYABLE(Lexer);
@@ -159,15 +162,15 @@ public:
 
   TokenKind getCompTokenKind() const { return this->compTokenKind; }
 
-  void setCommentStore(ObserverPtr<CommentStore> store) { this->commentStore = store; }
+  void setTriviaStore(ObserverPtr<TriviaStore> store) { this->triviaStore = store; }
 
-  void addComment(unsigned int startPos) {
-    if (this->commentStore) {
+  void addTrivia(unsigned int startPos) {
+    if (this->triviaStore) {
       Token token{
           .pos = startPos,
           .size = this->getPos() - startPos,
       };
-      this->commentStore(token);
+      this->triviaStore(token);
     }
   }
 

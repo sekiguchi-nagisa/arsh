@@ -120,8 +120,13 @@ const HighlightTokenEntries &getHighlightTokenEntries() {
 }
 
 void TokenEmitter::operator()(Token token) {
-  assert(this->source[token.pos] == '#');
-  this->emit(HighlightTokenClass::COMMENT, token);
+  assert(token.size > 0);
+  auto ref = this->source.substr(token.pos, token.size);
+  auto tokenClass = HighlightTokenClass::COMMENT;
+  if (ref[0] != '#') {
+    tokenClass = HighlightTokenClass::NONE;
+  }
+  this->emit(tokenClass, token);
 }
 
 void TokenEmitter::operator()(TokenKind kind, Token token) {
@@ -155,16 +160,20 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
   }
 }
 
-void tokenizeAndEmit(TokenEmitter &emitter) {
-  StringRef content = emitter.getSource();
+std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
+  StringRef content = this->getSource();
   assert(!content.empty() && content.back() == '\n');
   Lexer lexer("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
-  lexer.setCommentStore(makeObserver(emitter));
+  lexer.setTriviaStore(makeObserver(*this));
   Parser parser(lexer);
-  parser.setTracker(&emitter);
+  parser.setTracker(this);
   while (parser && !parser.hasError()) {
     parser();
   }
+  if (parser.hasError()) {
+    return std::move(parser).takeError();
+  }
+  return nullptr;
 }
 
 } // namespace ydsh

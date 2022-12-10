@@ -90,7 +90,7 @@
 
 #define YYGETCONDITION() this->getLexerMode().cond()
 
-#define STORE_COMMENT() this->addComment(startPos)
+#define STORE_COMMENT() this->addTrivia(startPos)
 
 namespace ydsh {
 
@@ -353,7 +353,7 @@ INIT:
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> [ \t]+
                              { FIND_SPACE(); }
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\r\n]
-                             { UPDATE_LN(); SKIP(); }
+                             { UPDATE_LN(); STORE_COMMENT(); SKIP(); }
 
 
     <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> "\000" { REACH_EOS();}
