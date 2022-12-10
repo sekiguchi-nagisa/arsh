@@ -24,13 +24,10 @@ jobs:
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
                 -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-                -DUSE_EXTRA_TEST=on
       - name: build
         run: |
           cd build
           ninja
-          sudo ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
@@ -55,13 +52,10 @@ jobs:
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
                 -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-                -DUSE_EXTRA_TEST=on
       - name: build
         run: |
           cd build
           ninja
-          sudo ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
@@ -86,13 +80,10 @@ jobs:
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
                 -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-                -DUSE_EXTRA_TEST=on
       - name: build
         run: |
           cd build
           ninja
-          sudo ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
@@ -119,14 +110,11 @@ jobs:
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=release \
                 -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-                -DUSE_EXTRA_TEST=on \
                 -DUSE_LTO=${{ matrix.option }}
       - name: build
         run: |
           cd build
           ninja
-          sudo ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
@@ -177,14 +165,11 @@ jobs:
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-14 \
-                -DUSE_EXTRA_TEST=on
+                -DCMAKE_CXX_COMPILER=clang++-14
       - name: build
         run: |
           cd build
           ninja
-          sudo ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
