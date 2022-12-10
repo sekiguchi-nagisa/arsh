@@ -11,9 +11,6 @@ var HISTIGNORE = $/^history/ as Regex!
 var HISTSEARCH : Func<String,[String]>!
 let HISTORY : [String]
 
-# create DATA_HOME
-test -e $DATA_HOME || mkdir -p $DATA_HOME || true
-
 function _sync() {
     let limit = 4096
     if $HISTSIZE > $limit {
@@ -234,5 +231,5 @@ $initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
     $_add_and_save($line)
 })
 
-# load history from file
-$_load()
+# create DATA_HOME
+test -e $DATA_HOME || mkdir -p $DATA_HOME || true

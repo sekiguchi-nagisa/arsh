@@ -6,6 +6,8 @@ source $SCRIPT_DIR/edit_impl/prompt inlined
 # load default history setting
 source $SCRIPT_DIR/edit_impl/history inlined
 
+history -r $HISTFILE  # manually load history
+
 $LINE_EDIT.setCompletion(function(m, s) => {
     complete -m $m -q -s -- $s
     $COMPREPLY
