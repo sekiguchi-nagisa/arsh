@@ -105,6 +105,11 @@ bool BuiltinHighlighter::doHighlight() {
   if (error) {
     if (error->getTokenKind() == TokenKind::EOS) {
       return false;
+    } else {
+      auto kind = error->getTokenKind();
+      if (isUnclosedToken(kind) && kind != TokenKind::UNCLOSED_REGEX_LITERAL) {
+        return false;
+      }
     }
   } else if (!this->tokens.empty() && this->tokens.back().first == HighlightTokenClass::NONE) {
     auto token = this->tokens.back().second;

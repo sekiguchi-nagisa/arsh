@@ -695,6 +695,7 @@ TEST_F(BuiltinHighlightTest, base) {
   ASSERT_TRUE(this->highlight("echo"));
   ASSERT_TRUE(this->highlight("{}}"));
   ASSERT_TRUE(this->highlight("$OSTYPE ++"));
+  ASSERT_TRUE(this->highlight("$/frefrear\\/fer"));
   ASSERT_FALSE(this->highlight("{ echo hello"));
   ASSERT_FALSE(this->highlight("$(23456"));
   ASSERT_FALSE(this->highlight("23456."));
@@ -702,6 +703,8 @@ TEST_F(BuiltinHighlightTest, base) {
   ASSERT_FALSE(this->highlight("$OSTYPE + "));
   ASSERT_FALSE(this->highlight("$OSTYPE \\"));
   ASSERT_FALSE(this->highlight("echo hello  \\"));
+  ASSERT_FALSE(this->highlight("echo hello 'frefera"));
+  ASSERT_FALSE(this->highlight("34 + $'frefera"));
 }
 
 int main(int argc, char **argv) {
