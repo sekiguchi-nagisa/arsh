@@ -179,6 +179,7 @@
 - type name completion in constructor parameter
 - broken lexing of dollar single quoted string literal
 - escape sequence handling of renderPrompt function in prompt module
+- skippable newline handling in some expressions
 
 ## [0.27.1] - 2022-09-30
 

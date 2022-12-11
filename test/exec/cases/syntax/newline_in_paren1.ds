@@ -24,6 +24,33 @@ assert (true
   &&
   true)
 
+function(a 
+:
+Int
+!
+)
+=>
+34
+
+typedef HOGE
+(
+  aa
+  :
+  Int
+  !
+) {
+  
+}
+
+34 is 
+ typeof
+ (
+  34
+  as
+  Int
+  !
+ )
+
 ## [ ]
 assert
   [

@@ -406,6 +406,7 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
 
   for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
+    auto ctx = this->inSkippableNLCtx();
     if (count > 0) {
       if (CUR_KIND() != TokenKind::COMMA) {
         E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
@@ -564,6 +565,8 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
   case TokenKind::TYPEOF: {
     Token token = this->expect(TokenKind::TYPEOF); // always success
     if (CUR_KIND() == TokenKind::PTYPE_OPEN) {
+      auto ctx = this->inSkippableNLCtx();
+
       this->expect(TokenKind::PTYPE_OPEN, false); // always success
       this->pushLexerMode(yycSTMT);
 
@@ -788,6 +791,8 @@ std::unique_ptr<Node> Parser::parse_typedef() {
     if (CUR_KIND() == TokenKind::LP) {
       TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
       for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
+        auto ctx = this->inSkippableNLCtx();
+
         if (count > 0) {
           if (CUR_KIND() != TokenKind::COMMA) {
             E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
@@ -2074,6 +2079,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
   switch (CUR_KIND()) {
   case TokenKind::APPLIED_NAME_WITH_BRACKET:
   case TokenKind::SPECIAL_NAME_WITH_BRACKET: { // $name[
+    auto ctx = this->inSkippableNLCtx();
     Token token = this->curToken;
     this->consume(); // always success
     auto varNode = this->newVarNode(token);
