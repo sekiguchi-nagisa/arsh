@@ -62,8 +62,11 @@
   TOKEN(INT_LITERAL, "<Int Literal>")                                                              \
   TOKEN(FLOAT_LITERAL, "<Float Literal>")                                                          \
   TOKEN(STRING_LITERAL, "<String Literal>")                                                        \
+  TOKEN(UNCLOSED_STRING_LITERAL, "string literal must be closed with '")                           \
   TOKEN(REGEX_LITERAL, "<Regex Literal>")                                                          \
+  TOKEN(UNCLOSED_REGEX_LITERAL, "regex literal must be closed with /")                             \
   TOKEN(BACKQUOTE_LITERAL, "<Backquote Literal>")                                                  \
+  TOKEN(UNCLOSED_BACKQUOTE_LITERAL, "backquote literal must be closed with `")                     \
   TOKEN(OPEN_DQUOTE, "\"")                                                                         \
   TOKEN(START_SUB_CMD, "$(")                                                                       \
   TOKEN(START_IN_SUB, ">(")                                                                        \
@@ -355,6 +358,17 @@ enum class TokenKind : unsigned int {
 inline bool isInvalidToken(TokenKind kind) { return kind == TokenKind::INVALID; }
 
 inline bool isEOSToken(TokenKind kind) { return kind == TokenKind::EOS; }
+
+inline bool isUnclosedToken(TokenKind kind) {
+  switch (kind) {
+  case TokenKind::UNCLOSED_STRING_LITERAL:
+  case TokenKind::UNCLOSED_BACKQUOTE_LITERAL:
+  case TokenKind::UNCLOSED_REGEX_LITERAL:
+    return true;
+  default:
+    return false;
+  }
+}
 
 const char *toString(TokenKind kind);
 

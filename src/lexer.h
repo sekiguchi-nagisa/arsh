@@ -175,6 +175,21 @@ public:
   }
 
   /**
+   * for unclosed token
+   * @param startPos
+   */
+  void shiftNewline(unsigned int startPos) {
+    Token token{
+        .pos = startPos,
+        .size = this->getPos() - startPos,
+    };
+    auto ref = this->toStrRef(token);
+    if (!ref.empty() && ref.back() == '\n') {
+      this->cursor--;
+    }
+  }
+
+  /**
    * lexer entry point.
    * write next token to token.
    * return the kind of next token.

@@ -588,14 +588,21 @@ TEST_F(LexerTest_Lv1, estring_literal4) {
 TEST_F(LexerTest_Lv1, invalid_estring_literal) {
   const char *text = "$'\\'";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "$"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::UNCLOSED_STRING_LITERAL, text, TokenKind::EOS, ""));
 }
 
 // invalid string literal
-TEST_F(LexerTest_Lv1, invalid_string_literal) {
+TEST_F(LexerTest_Lv1, invalid_string_literal1) {
   const char *text = "'\\''";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::STRING_LITERAL, "'\\'", TokenKind::INVALID, "'"));
+}
+
+TEST_F(LexerTest_Lv1, invalid_string_literal2) {
+  const char *text = "'12345\n\n";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::UNCLOSED_STRING_LITERAL, "'12345\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, string_expr1) {
@@ -686,7 +693,14 @@ TEST_F(LexerTest_Lv1, invalid_regex1) {
 TEST_F(LexerTest_Lv1, invalid_regex2) {
   const char *text = "$/ho\nge/";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "$"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::UNCLOSED_REGEX_LITERAL, "$/ho", TokenKind::COMMAND,
+                                 "ge/", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, invalid_regex3) {
+  const char *text = "$/hoge";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::UNCLOSED_REGEX_LITERAL, "$/hoge", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, subCmd1) {
@@ -814,6 +828,30 @@ TEST_F(LexerTest_Lv1, backquote4) {
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::BACKQUOTE_LITERAL,
                                  "`# this is\\`\n`", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+TEST_F(LexerTest_Lv1, invalid_backquote1) {
+  const char *text = "`frae";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::UNCLOSED_BACKQUOTE_LITERAL, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+TEST_F(LexerTest_Lv1, invalid_backquote2) {
+  const char *text = "\"`frae";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::OPEN_DQUOTE, "\"",
+                                 TokenKind::UNCLOSED_BACKQUOTE_LITERAL, "`frae",
+                                 TokenKind::STR_ELEMENT, "\n", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
+}
+
+TEST_F(LexerTest_Lv1, invalid_backquote3) {
+  const char *text = "echo `1234";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::UNCLOSED_BACKQUOTE_LITERAL,
+                                 "`1234", TokenKind::EOS, ""));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 

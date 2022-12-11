@@ -111,6 +111,41 @@ $a = 34 +
   // line marker (reach null character)
   msg = ".+:1:6: \\[syntax error\\] invalid token, expected `<NewLine>'\nhello\n     \n";
   ASSERT_NO_FATAL_FAILURE(this->expectRegex("hello\0world" | ds(), 1, "", msg));
+
+  // line marker (unclosed string literal)
+  msg = R"((string):1:1: [syntax error] string literal must be closed with '
+'12345
+^~~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "'12345"), 1, "", msg));
+
+  // line marker (unclosed backquote literal)
+  msg = R"((string):1:6: [syntax error] backquote literal must be closed with `
+echo `12345
+     ^~~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo `12345"), 1, "", msg));
+
+  // line marker (unclosed backquote literal)
+  msg = R"((string):1:4: [syntax error] backquote literal must be closed with `
+"23`12345
+   ^~~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "\"23`12345"), 1, "", msg));
+
+  // line marker (unclosed regex literal)
+  msg = R"((string):1:1: [syntax error] regex literal must be closed with /
+$/AAA
+^~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "$/AAA\n34/"), 1, "", msg));
+
+  // line marker (unclosed regex literal)
+  msg = R"((string):1:4: [syntax error] regex literal must be closed with /
+++ $/ss\/
+   ^~~~~~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "++ $/ss\\/"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker2) {

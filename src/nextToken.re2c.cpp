@@ -92,6 +92,8 @@
 
 #define STORE_COMMENT() this->addTrivia(startPos)
 
+#define SHIFT_NEWLINE() this->shiftNewline(startPos)
+
 namespace ydsh {
 
 TokenKind Lexer::nextToken(Token &token) {
@@ -123,11 +125,14 @@ TokenKind Lexer::nextToken(Token &token) {
     VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
     SPECIAL_NAMES = ([@#?$] | [0-9]+);
 
-    STRING_LITERAL = ['] [^'\000]* ['];
-    ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];
+    UNCLOSED_STRING_LITERAL = ['] [^'\000]* ;
+    STRING_LITERAL = UNCLOSED_STRING_LITERAL ['];
+    UNCLOSED_ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ;
+    ESTRING_LITERAL = UNCLOSED_ESTRING_LITERAL ['];
     APPLIED_NAME = "$" VAR_NAME;
     SPECIAL_NAME = "$" SPECIAL_NAMES;
-    BACKQUOTE_LITERAL = [`] ("\\" [^\000] | [^`\000])* [`];
+    UNCLOSED_BACKQUOTE_LITERAL = [`] ("\\" [^\000] | [^`\000])* ;
+    BACKQUOTE_LITERAL = UNCLOSED_BACKQUOTE_LITERAL [`];
 
     INNER_NAME = APPLIED_NAME | "${" VAR_NAME "}";
     INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
@@ -150,7 +155,8 @@ TokenKind Lexer::nextToken(Token &token) {
     BRACE_CHAR_SEQ = "{" CHAR_SEQ_BODY (".." SEQ_STEP )? "}";
 
     REGEX_CHAR = "\\/" | [^\r\n\000/];
-    REGEX = "$/" REGEX_CHAR* "/" [_a-z]*;
+    UNCLOSED_REGEX = "$/" REGEX_CHAR* ;
+    REGEX = UNCLOSED_REGEX "/" [_a-z]*;
 
     LINE_END = ";";
     NEW_LINE = [\r\n][ \t\r\n]*;
@@ -355,6 +361,14 @@ INIT:
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\r\n]
                              { UPDATE_LN(); STORE_COMMENT(); SKIP(); }
 
+    <STMT,CMD> UNCLOSED_STRING_LITERAL / "\000"
+                             { SHIFT_NEWLINE(); UPDATE_LN(); RET(UNCLOSED_STRING_LITERAL); }
+    <STMT,CMD> UNCLOSED_ESTRING_LITERAL / "\000"
+                             { SHIFT_NEWLINE(); UPDATE_LN(); RET(UNCLOSED_STRING_LITERAL); }
+    <STMT,DSTRING,CMD> UNCLOSED_BACKQUOTE_LITERAL / "\000"
+                             { SHIFT_NEWLINE(); UPDATE_LN(); RET(UNCLOSED_BACKQUOTE_LITERAL); }
+    <STMT> UNCLOSED_REGEX / [\r\n\000]
+                             { RET(UNCLOSED_REGEX_LITERAL); }
 
     <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> "\000" { REACH_EOS();}
     <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> *      { RET(INVALID); }

@@ -133,6 +133,7 @@
       ```
 - **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by default
     - if check SIGPIPE failure, set ``failsigpipe`` option
+- improve error message of unclosed string, backquote, regex literal
 
 #### Builtin
 

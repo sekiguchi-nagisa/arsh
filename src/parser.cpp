@@ -191,6 +191,10 @@ Token Parser::expect(TokenKind kind, bool fetchNext) {
   if (this->inCompletionPoint() && !this->ccHandler->hasCompRequest()) {
     this->ccHandler->addExpectedTokenRequest(this->lexer->toTokenText(this->curToken), kind);
   }
+  if (isUnclosedToken(this->curKind)) {
+    this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
+    return this->curToken;
+  }
   return parse_base_type::expect(kind, fetchNext);
 }
 
@@ -348,6 +352,10 @@ void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters
     this->ccHandler->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size,
                                               alters);
   }
+  if (isUnclosedToken(this->curKind)) {
+    this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
+    return;
+  }
   parse_base_type::reportNoViableAlterError(size, alters);
 }
 
@@ -364,6 +372,9 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
   std::string message;
   if (isInvalidToken(this->curKind)) {
     message += "invalid token, ";
+  } else if (isUnclosedToken(this->curKind)) {
+    this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
+    return;
   } else if (!isEOSToken(this->curKind)) {
     message += "mismatched token `";
     message += toString(this->curKind);
@@ -745,7 +756,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
       break;
     }
     if (!this->hasLineTerminator()) {
-      this->reportTokenMismatchedError(TokenKind::NEW_LINE);
+      this->expect(TokenKind::NEW_LINE);
     }
     break;
   }
