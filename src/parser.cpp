@@ -1395,8 +1395,9 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       this->tryCompleteFileNames(opt);
     }
-    E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE) ? ParseErrorKind::MOD_PATH
-                                                    : ParseErrorKind::CMD_ARG,
+    E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE)  ? ParseErrorKind::MOD_PATH
+               : hasFlag(opt, CmdArgParseOpt::REDIR) ? ParseErrorKind::REDIR
+                                                     : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
   }
 }

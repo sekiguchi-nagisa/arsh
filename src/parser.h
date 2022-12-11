@@ -55,6 +55,7 @@ class CodeCompletionHandler;
   OP(TYPE, "typename")                                                                             \
   OP(STMT, "statement")                                                                            \
   OP(CMD_ARG, "command argument")                                                                  \
+  OP(REDIR, "io redirection target")                                                               \
   OP(MOD_PATH, "module path")
 
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
