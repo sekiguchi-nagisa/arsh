@@ -111,11 +111,23 @@ bool BuiltinHighlighter::doHighlight() {
         return false;
       }
     }
-  } else if (!this->tokens.empty() && this->tokens.back().first == HighlightTokenClass::NONE) {
+  } else if (!this->tokens.empty()) {
     auto token = this->tokens.back().second;
     auto last = this->source.substr(token.pos, token.size);
-    if (last.size() == 2 && last == "\\\n") {
-      return false;
+    switch (this->tokens.back().first) {
+    case HighlightTokenClass::NONE:
+      if (last.size() == 2 && last == "\\\n") {
+        return false;
+      }
+      break;
+    case HighlightTokenClass::COMMAND:
+    case HighlightTokenClass::COMMAND_ARG:
+      if (last.endsWith("\\\n")) {
+        return false;
+      }
+      break;
+    default:
+      break;
     }
   }
   return true;
