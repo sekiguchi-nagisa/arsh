@@ -96,7 +96,9 @@ public:
   }
 
   void setColor(StringRef colorSetting) {
-    this->escapeSeqMap = ANSIEscapeSeqMap::fromString(colorSetting);
+    if (this->highlight) {
+      this->escapeSeqMap = ANSIEscapeSeqMap::fromString(colorSetting);
+    }
   }
 
   void enableHighlight() { this->highlight = true; }

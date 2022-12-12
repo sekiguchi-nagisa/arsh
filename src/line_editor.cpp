@@ -960,7 +960,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHighlight) {
   /* Write the prompt and the current buffer content */
   appendLines(ab, l->prompt, 0);
   if (StringRef lineRef = l->lineRef(); !lineRef.empty()) {
-    if (this->highlight && !this->escapeSeqMap.getValues().empty()) {
+    if (this->highlight) {
       if (doHighlight || this->highlightCache.empty()) {
         std::string line = lineRef.toString();
         line += '\n';
