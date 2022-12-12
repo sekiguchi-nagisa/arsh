@@ -89,7 +89,6 @@ function _add_and_save(s : String) {
 
     if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
     if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
-    $s.contains($'\n') && return
 
     while($HISTORY.size() >= $HISTSIZE) {
         $HISTORY.shift()
@@ -98,6 +97,7 @@ function _add_and_save(s : String) {
 
     # save new entry
     $HISTFILESIZE == 0 && return
+    $s.contains($'\n') && return
     let limit = 4096
     if $HISTFILESIZE > $limit {
         $HISTFILESIZE = $limit
@@ -154,6 +154,8 @@ function _save(p : String!) {
     $offset < $size || return
 
     for(var i = $offset; $i < $size; $i++) {
+        var line = $HISTORY[$i]
+        $line.contains($'\n') && continue
         echo $HISTORY[$i]
     } with > $path
     chmod g-rw,o-rw $path
