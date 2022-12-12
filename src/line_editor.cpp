@@ -1119,6 +1119,8 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     }
 
     switch (c) {
+    case KEY_NULL:
+      continue; // ignore null character
     case ENTER: /* enter */
       if (this->continueLine) {
         if (!this->linenoiseEditInsert(&l, "\n", 1)) {
