@@ -360,8 +360,12 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw
       return lineMarker;
     }
     if (code == '\t' || code == '\n') {
-      lineMarker += static_cast<char>(code);
-      continue;
+      if (token.size == 1) {
+        lineMarker += "^";
+      } else {
+        lineMarker += static_cast<char>(code);
+        continue;
+      }
     }
     int width = UnicodeUtil::width(code, charWidth);
     if (width == 1) {

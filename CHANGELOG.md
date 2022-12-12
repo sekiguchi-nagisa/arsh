@@ -133,6 +133,12 @@
       ```
 - **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by default
     - if check SIGPIPE failure, set ``failsigpipe`` option
+- **Breaking Change**: does skip newline after command except for skippable newline context
+  - now follwoing code is syntax error
+    ```
+    while true  # does not skip newline after command
+    { }
+    ```
 - improve the following error messages
     - unclosed string, backquote, regex literal
     - io redirection

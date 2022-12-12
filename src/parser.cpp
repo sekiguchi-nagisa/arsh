@@ -104,6 +104,7 @@ std::unique_ptr<Node> Parser::operator()() {
 
   if (this->singleExpr) {
     auto exprNode = TRY(this->parse_expression());
+    TRY(this->parse_statementEnd());
     TRY(this->expect(TokenKind::EOS));
     NameInfo nameInfo({exprNode->getPos(), 0}, "");
     auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo),
@@ -752,6 +753,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
   case TokenKind::RBC:
     break;
   case TokenKind::LINE_END:
+  case TokenKind::NEW_LINE:
     this->consume();
     break;
   default:
@@ -1139,8 +1141,7 @@ std::unique_ptr<Node> Parser::parse_command() {
   auto node = std::make_unique<CmdNode>(
       std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
-  for (bool next = true;
-       next && !this->hasLineTerminator() && (this->hasSpace() || this->hasNewline());) {
+  for (bool next = true; next && (this->hasSpace() || this->hasNewline());) {
     switch (CUR_KIND()) {
       // clang-format off
     EACH_LA_cmdArg_LP(GEN_LA_CASE)

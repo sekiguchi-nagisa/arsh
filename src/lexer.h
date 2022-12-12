@@ -189,6 +189,13 @@ public:
     }
   }
 
+  bool canEmitNewline() {
+    if (this->complete && this->cursor == this->limit) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * lexer entry point.
    * write next token to token.

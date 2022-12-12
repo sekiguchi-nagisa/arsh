@@ -146,6 +146,13 @@ $/AAA
    ^~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "++ $/ss\\/"), 1, "", msg));
+
+  // line marker (mismatch newlien)
+  msg =
+      "(string):1:8: [syntax error] mismatched token `<NewLine>', expected io redirection target\n"
+      "echo > \n"
+      "       ^\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo > \n\n"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker2) {

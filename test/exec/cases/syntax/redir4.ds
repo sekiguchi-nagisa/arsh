@@ -1,0 +1,5 @@
+
+#$test($result = 'parse', $lineNum = 4, $chars = 13, $errorKind = 'REDIR', $status = 1)
+
+echo hello >
+/dev/null

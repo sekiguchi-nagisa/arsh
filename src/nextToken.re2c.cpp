@@ -159,7 +159,8 @@ TokenKind Lexer::nextToken(Token &token) {
     REGEX = UNCLOSED_REGEX "/" [_a-z]*;
 
     LINE_END = ";";
-    NEW_LINE = [\r\n][ \t\r\n]*;
+    NEW_LINE = [\r\n];
+    NEW_LINES = [\r\n][ \t\r\n]*;
     COMMENT = "#" [^\r\n\000]*;
   */
 
@@ -328,7 +329,9 @@ INIT:
     <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 
-    <CMD> NEW_LINE           { if(!SKIPPABLE_NL()) { MODE(STMT); } UPDATE_LN(); FIND_NEW_LINE(); }
+    <CMD> NEW_LINE           { UPDATE_LN(); if(!SKIPPABLE_NL())
+                                            { MODE(STMT); if(this->canEmitNewline()) { RET(NEW_LINE); }}
+                                            FIND_NEW_LINE(); }
 
     <TYPE> "Func"            { RET_OR_COMP(FUNC); }
     <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
@@ -350,7 +353,7 @@ INIT:
     <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
 
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
-    <STMT,EXPR,NAME,TYPE,PARAM> NEW_LINE
+    <STMT,EXPR,NAME,TYPE,PARAM> NEW_LINES
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> COMMENT

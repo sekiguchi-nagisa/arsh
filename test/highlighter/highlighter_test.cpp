@@ -50,7 +50,7 @@ struct EmitterTest : public ::testing::Test {
 
 TEST_F(EmitterTest, case1) {
   auto ret = lex("echo hello$@[0] 001>&22 # this is a comment");
-  ASSERT_EQ(9, ret.size());
+  ASSERT_EQ(10, ret.size());
   compare(HighlightTokenClass::COMMAND, "echo", ret[0]);
   compare(HighlightTokenClass::COMMAND_ARG, "hello", ret[1]);
   compare(HighlightTokenClass::VARIABLE, "$@", ret[2]);
@@ -60,6 +60,7 @@ TEST_F(EmitterTest, case1) {
   compare(HighlightTokenClass::REDIRECT, "001>&", ret[6]);
   compare(HighlightTokenClass::COMMAND_ARG, "22", ret[7]);
   compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[8]);
+  compare(HighlightTokenClass::NONE, "\n", ret[9]);
 
   ret = lex("var a = 3.4");
   ASSERT_EQ(4, ret.size());
@@ -93,17 +94,19 @@ TEST_F(EmitterTest, case1) {
   compare(HighlightTokenClass::NONE, ")", ret[6]);
 
   ret = lex("coproc ls *");
-  ASSERT_EQ(3, ret.size());
+  ASSERT_EQ(4, ret.size());
   compare(HighlightTokenClass::KEYWORD, "coproc", ret[0]);
   compare(HighlightTokenClass::COMMAND, "ls", ret[1]);
   compare(HighlightTokenClass::COMMAND_ARG, "*", ret[2]);
+  compare(HighlightTokenClass::NONE, "\n", ret[3]);
 
   ret = lex("AAA=aa true");
-  ASSERT_EQ(4, ret.size());
+  ASSERT_EQ(5, ret.size());
   compare(HighlightTokenClass::NONE, "AAA", ret[0]);
   compare(HighlightTokenClass::OPERATOR, "=", ret[1]);
   compare(HighlightTokenClass::COMMAND_ARG, "aa", ret[2]);
   compare(HighlightTokenClass::COMMAND, "true", ret[3]);
+  compare(HighlightTokenClass::NONE, "\n", ret[4]);
 }
 
 TEST_F(EmitterTest, case2) {
