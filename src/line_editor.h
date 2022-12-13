@@ -109,16 +109,6 @@ private:
   void refreshLine(struct linenoiseState *l, bool doHighlight = true);
 
   /**
-   * Insert the character 'c' at cursor current position.
-   * @param l
-   * @param cbuf
-   * @param clen
-   * @return
-   * if insertion failed (reach buffer limit), return false
-   */
-  bool linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen);
-
-  /**
    * actual line edit function
    * @param buf
    * @param buflen

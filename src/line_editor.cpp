@@ -1028,7 +1028,7 @@ void LineEditorObject::refreshLine(struct linenoiseState *l, bool doHighlight) {
 /* Insert the character 'c' at cursor current position.
  *
  * On error writing to the terminal false is returned, otherwise true. */
-bool LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
+static bool linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int clen) {
   if (l->len + clen <= l->buflen) {
     if (l->len == l->pos) {
       memcpy(&l->buf[l->pos], cbuf, clen);
@@ -1122,7 +1122,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       continue; // ignore null character
     case ENTER: /* enter */
       if (this->continueLine) {
-        if (this->linenoiseEditInsert(&l, "\n", 1)) {
+        if (linenoiseEditInsert(&l, "\n", 1)) {
           this->refreshLine(&l);
           break;
         } else {
@@ -1229,7 +1229,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           }
           break;
         case ENTER:
-          if (this->linenoiseEditInsert(&l, "\n", 1)) {
+          if (linenoiseEditInsert(&l, "\n", 1)) {
             this->refreshLine(&l);
             break;
           } else {
@@ -1326,7 +1326,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     default:
-      if (this->linenoiseEditInsert(&l, cbuf, nread)) {
+      if (linenoiseEditInsert(&l, cbuf, nread)) {
         this->refreshLine(&l);
         break;
       } else {
@@ -1482,12 +1482,12 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
     logprintf("suffix size: %ld\n", suffixSize);
     char *inserting = (char *)malloc(sizeof(char) * suffixSize);
     memcpy(inserting, prefix + (len - suffixSize), suffixSize);
-    if (this->linenoiseEditInsert(ls, inserting, suffixSize)) {
+    if (linenoiseEditInsert(ls, inserting, suffixSize)) {
       this->refreshLine(ls);
     }
     free(inserting);
   } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    if (this->linenoiseEditInsert(ls, prefix, len)) {
+    if (linenoiseEditInsert(ls, prefix, len)) {
       this->refreshLine(ls);
     }
   }
@@ -1582,7 +1582,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       const char *can = candidates->getValues()[rotateIndex].asCStr();
       size_t prefixLen = ls->pos - offset;
       prevCanLen = strlen(can) - prefixLen;
-      if (this->linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+      if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
         this->refreshLine(ls);
       } else {
         break; // FIXME:
