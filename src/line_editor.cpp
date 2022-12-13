@@ -1042,7 +1042,6 @@ bool LineEditorObject::linenoiseEditInsert(struct linenoiseState *l, const char 
       l->len += clen;
       l->buf[l->len] = '\0';
     }
-    this->refreshLine(l);
     return true;
   }
   return false;
@@ -1123,10 +1122,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       continue; // ignore null character
     case ENTER: /* enter */
       if (this->continueLine) {
-        if (!this->linenoiseEditInsert(&l, "\n", 1)) {
+        if (this->linenoiseEditInsert(&l, "\n", 1)) {
+          this->refreshLine(&l);
+          break;
+        } else {
           return -1;
         }
-        break;
       } else {
         if (linenoiseEditMoveEnd(&l)) {
           this->refreshLine(&l, false);
@@ -1228,10 +1229,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           }
           break;
         case ENTER:
-          if (!this->linenoiseEditInsert(&l, "\n", 1)) {
+          if (this->linenoiseEditInsert(&l, "\n", 1)) {
+            this->refreshLine(&l);
+            break;
+          } else {
             return -1;
           }
-          break;
         }
       } else {
         if (read(l.ifd, seq + 1, 1) == -1) {
@@ -1323,10 +1326,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     default:
-      if (!this->linenoiseEditInsert(&l, cbuf, nread)) {
+      if (this->linenoiseEditInsert(&l, cbuf, nread)) {
+        this->refreshLine(&l);
+        break;
+      } else {
         return -1;
       }
-      break;
     case CTRL_U: /* Ctrl+u, delete the whole line. */
       buf[0] = '\0';
       l.pos = l.len = 0;
@@ -1477,10 +1482,14 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState *ls,
     logprintf("suffix size: %ld\n", suffixSize);
     char *inserting = (char *)malloc(sizeof(char) * suffixSize);
     memcpy(inserting, prefix + (len - suffixSize), suffixSize);
-    this->linenoiseEditInsert(ls, inserting, suffixSize);
+    if (this->linenoiseEditInsert(ls, inserting, suffixSize)) {
+      this->refreshLine(ls);
+    }
     free(inserting);
   } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    this->linenoiseEditInsert(ls, prefix, len);
+    if (this->linenoiseEditInsert(ls, prefix, len)) {
+      this->refreshLine(ls);
+    }
   }
   free(prefix);
 
@@ -1573,7 +1582,9 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
       const char *can = candidates->getValues()[rotateIndex].asCStr();
       size_t prefixLen = ls->pos - offset;
       prevCanLen = strlen(can) - prefixLen;
-      if (!this->linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+      if (this->linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+        this->refreshLine(ls);
+      } else {
         break; // FIXME:
       }
 
