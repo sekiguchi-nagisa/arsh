@@ -313,6 +313,23 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, bracketPaste) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send(ESC_("[200~1234") ESC_("[201~"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "1234\n: Int = 1234\n" + PROMPT));
+
+  // bracket paste with escape
+  this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "assert '2'.size() == 6\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 // test recursive api call
 TEST_F(InteractiveTest, lineEditor1) {
   this->invoke("--quiet", "--norc");

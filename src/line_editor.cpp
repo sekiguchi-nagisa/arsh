@@ -685,6 +685,15 @@ static int preparePrompt(struct linenoiseState *l) {
       return -1;
     }
   }
+
+  // enable bracket paste mode
+  {
+    const char *s = "\x1b[?2004h";
+    if (write(l->ofd, s, strlen(s)) == -1) {
+      return -1;
+    }
+  }
+
   checkProperty(l);
   return 0;
 }
@@ -1047,6 +1056,54 @@ static bool linenoiseEditInsert(struct linenoiseState *l, const char *cbuf, int 
   return false;
 }
 
+static bool insertBracketPaste(struct linenoiseState &l) {
+  while (true) {
+    int code;
+    char cbuf[32];
+    int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &code);
+    if (nread <= 0) {
+      return false;
+    }
+
+    switch (code) {
+    case KEY_NULL:
+      continue; // ignore null charecter
+    case ENTER:
+      if (!linenoiseEditInsert(&l, "\n", 1)) {  // insert \n instead of \r
+        return false;
+      }
+      continue;
+    case ESC: { // bracket stop \e[201~
+      char seq[6];
+      seq[0] = '\x1b';
+      const char expect[] = {'[', '2', '0', '1', '~'};
+      unsigned int count = 0;
+      for (; count < std::size(expect); count++) {
+        if (read(l.ifd, seq + count + 1, 1) == -1) {
+          return false;
+        }
+        if (seq[count + 1] != expect[count]) {
+          if (!linenoiseEditInsert(&l, seq, count + 2)) {
+            return false;
+          }
+          break;
+        }
+      }
+      if (count == std::size(expect)) {
+        return true; // end bracket paste mode
+      }
+      continue;
+    }
+    default:
+      if (!linenoiseEditInsert(&l, cbuf, nread)) {
+        return false;
+      }
+      continue;
+    }
+  }
+  return true;
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -1091,7 +1148,6 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   while (true) {
     int c;
     char cbuf[32]; // large enough for any encoding?
-    char seq[3];
 
     int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
     if (nread <= 0) {
@@ -1204,10 +1260,11 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         return -1;
       }
       break;
-    case ESC: /* escape sequence */
+    case ESC: { /* escape sequence */
       /* Read the next two bytes representing the escape sequence.
        * Use two calls to handle slow terminals returning the two
        * chars at different times. */
+      char seq[5];
       if (read(l.ifd, seq, 1) == -1) {
         break;
       }
@@ -1264,6 +1321,20 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
                   this->refreshLine(&l, false);
                 }
                 break;
+              }
+            } else if (seq[1] == '2' && seq[2] == '0') {
+              if (read(l.ifd, seq + 3, 1) == -1) {
+                break;
+              }
+              if (read(l.ifd, seq + 4, 1) == -1) {
+                break;
+              }
+              if (seq[3] == '0' && seq[4] == '~') { // start bracket paste \e[200~
+                if (insertBracketPaste(l)) {
+                  this->refreshLine(&l);
+                } else {
+                  return -1;
+                }
               }
             }
           } else {
@@ -1325,6 +1396,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
         }
       }
       break;
+    }
     default:
       if (linenoiseEditInsert(&l, cbuf, nread)) {
         this->refreshLine(&l);

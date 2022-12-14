@@ -106,6 +106,8 @@ INIT:
     "\x1b[0K"                               { this->clearLineFrom(); NEXT(); }
     "\x1b[2K"                               { this->clearLine(); NEXT(); }
     "\x1b[6n"                               { this->reportPos(); NEXT(); }
+    "\x1b[?2004h"                           { NEXT(); }
+    "\x1b[?2004l"                           { NEXT(); }
 
     [^]                                     { this->addCodePoint(start, cursor); NEXT(); }
     *                                       { RET(Result::INVALID); }
