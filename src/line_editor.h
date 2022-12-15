@@ -106,7 +106,7 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState *l, bool doHighlight = true);
+  void refreshLine(struct linenoiseState &l, bool doHighlight = true);
 
   /**
    * actual line edit function
@@ -117,9 +117,9 @@ private:
    */
   int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
 
-  int completeLine(DSState &state, struct linenoiseState *ls, char *cbuf, int clen, int *code);
+  int completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, int clen, int *code);
 
-  size_t insertEstimatedSuffix(struct linenoiseState *ls, const ArrayObject &candidates);
+  size_t insertEstimatedSuffix(struct linenoiseState &ls, const ArrayObject &candidates);
 
   DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
