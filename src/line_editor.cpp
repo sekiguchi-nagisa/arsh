@@ -1170,8 +1170,6 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     }
 
     switch (code) {
-    case KEY_NULL:
-      continue; // ignore null character
     case ENTER: /* enter */
       if (this->continueLine) {
         if (linenoiseEditInsert(l, "\n", 1)) {
@@ -1394,6 +1392,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     }
     default:
+      if (code <= 31) {
+        continue; // skip unhandled C0 control codes
+      }
       if (linenoiseEditInsert(l, cbuf, static_cast<size_t>(nread))) {
         this->refreshLine(l);
         break;
