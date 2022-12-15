@@ -108,14 +108,12 @@
  *
  */
 
-#include <cctype>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
