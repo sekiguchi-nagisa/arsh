@@ -452,7 +452,7 @@ static void linenoiseClearScreen(int fd) {
 /* Beep, used for completion when there is nothing to complete or when all
  * the choices were already shown. */
 static void linenoiseBeep(int fd) {
-  int r = write(fd, "\x07", strlen("\x07"));
+  ssize_t r = write(fd, "\x07", strlen("\x07"));
   UNUSED(r);
   fsync(fd);
 }
@@ -508,7 +508,7 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   logprintf("rawSize: %zu\n", rawSize);
 
   // show candidates
-  int r = write(fd, "\r\n", strlen("\r\n"));
+  ssize_t r = write(fd, "\r\n", strlen("\r\n"));
   UNUSED(r);
   for (size_t index = 0; index < rawSize; index++) {
     for (size_t j = 0;; j++) {
@@ -602,11 +602,11 @@ static void checkProperty(struct linenoiseState *l) {
  * output in a single call, to avoid flickering effects. */
 struct abuf {
   char *b{nullptr};
-  int len{0};
+  size_t len{0};
 
   ~abuf() { free(this->b); }
 
-  void append(const char *s, int slen) {
+  void append(const char *s, size_t slen) {
     char *buf = nullptr;
     if (this->len + slen > 0) {
       buf = (char *)realloc(this->b, this->len + slen);
@@ -1065,9 +1065,9 @@ static bool insertBracketPaste(struct linenoiseState &l) {
 
     switch (code) {
     case KEY_NULL:
-      continue; // ignore null charecter
+      continue; // ignore null character
     case ENTER:
-      if (!linenoiseEditInsert(&l, "\n", 1)) {  // insert \n instead of \r
+      if (!linenoiseEditInsert(&l, "\n", 1)) { // insert \n instead of \r
         return false;
       }
       continue;
@@ -1215,7 +1215,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_T: /* ctrl-t, swaps current character with previous. */
       if (l.pos > 0 && l.pos < l.len) {
-        int aux = buf[l.pos - 1];
+        char aux = buf[l.pos - 1];
         buf[l.pos - 1] = buf[l.pos];
         buf[l.pos] = aux;
         if (l.pos != l.len - 1) {
@@ -1470,11 +1470,11 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   const char *prompt = promptRef.data(); // force truncate characters after null
   char buf[LINENOISE_MAX_LINE];
   if (isUnsupportedTerm()) {
-    int r = write(this->outFd, prompt, strlen(prompt));
+    ssize_t r = write(this->outFd, prompt, strlen(prompt));
     UNUSED(r);
     fsync(this->outFd);
-    int rlen;
-    if ((rlen = read(this->inFd, buf, LINENOISE_MAX_LINE)) <= 0) {
+    ssize_t rlen = read(this->inFd, buf, LINENOISE_MAX_LINE);
+    if (rlen <= 0) {
       return nullptr;
     }
     buf[rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1] = '\0';
@@ -1490,7 +1490,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
     this->disableRawMode(this->inFd);
-    int r = write(this->outFd, "\n", 1);
+    ssize_t r = write(this->outFd, "\n", 1);
     UNUSED(r);
     if (count == -1) {
       this->kickHistoryCallback(state, HistOp::DEINIT, nullptr);
@@ -1605,7 +1605,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState *ls, char *cbu
     if (len >= 100) {
       char msg[256];
       snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
-      int r = write(ls->ofd, msg, strlen(msg));
+      ssize_t r = write(ls->ofd, msg, strlen(msg));
       UNUSED(r);
 
       while (true) {
