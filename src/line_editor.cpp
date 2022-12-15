@@ -401,7 +401,7 @@ static int getCursorPosition(int ifd, int ofd) {
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
 static int getColumns(int ifd, int ofd) {
-  struct winsize ws;  //NOLINT
+  struct winsize ws; // NOLINT
 
   if (ioctl(ofd, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
     /* ioctl() failed. Try to query the terminal itself. */
@@ -821,7 +821,7 @@ LineEditorObject::~LineEditorObject() {
 
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
-  struct termios raw; //NOLINT
+  struct termios raw; // NOLINT
 
   if (!isatty(fd)) {
     goto fatal;
@@ -1005,7 +1005,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
       (pcollen + colpos2 + l.cols) / l.cols + prow + row2; /* current cursor relative row. */
   lndebug("rpos2 %d", rpos2);
 
-  /* Go up till we reach the expected positon. */
+  /* Go up till we reach the expected position. */
   if (rows - rpos2 > 0) {
     lndebug("go-up %d", rows - rpos2);
     snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
@@ -1128,7 +1128,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
 
   /* Buffer starts empty. */
   l.buf[0] = '\0';
-  l.buflen--; /* Make sure there is always space for the nulterm */
+  l.buflen--; /* Make sure there is always space for the null-term */
 
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
