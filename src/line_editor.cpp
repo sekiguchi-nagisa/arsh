@@ -215,7 +215,7 @@ static size_t nextCharLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef b
 }
 
 /* Read bytes of the next character */
-static size_t readCode(int fd, char *buf, size_t bufSize, int *c) {
+static ssize_t readCode(int fd, char *buf, size_t bufSize, int *c) {
   if (bufSize < 1) {
     return -1;
   }
@@ -239,7 +239,7 @@ static size_t readCode(int fd, char *buf, size_t bufSize, int *c) {
       return readSize;
     }
   }
-  return ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, *c);
+  return static_cast<ssize_t>(ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, *c));
 }
 
 static size_t prevWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
@@ -699,7 +699,7 @@ static int preparePrompt(struct linenoiseState &l) {
  * position. Basically this is what happens with the "Delete" keyboard key. */
 static bool linenoiseEditDelete(struct linenoiseState &l) {
   if (l.len > 0 && l.pos < l.len) {
-    int chlen = nextCharLen(l.ps, l.lineRef(), l.pos, nullptr);
+    size_t chlen = nextCharLen(l.ps, l.lineRef(), l.pos, nullptr);
     memmove(l.buf + l.pos, l.buf + l.pos + chlen, l.len - l.pos - chlen);
     l.len -= chlen;
     l.buf[l.len] = '\0';
@@ -711,7 +711,7 @@ static bool linenoiseEditDelete(struct linenoiseState &l) {
 /* Backspace implementation. */
 static bool linenoiseEditBackspace(struct linenoiseState &l) {
   if (l.pos > 0 && l.len > 0) {
-    int chlen = prevCharLen(l.ps, l.lineRef(), l.pos, nullptr);
+    size_t chlen = prevCharLen(l.ps, l.lineRef(), l.pos, nullptr);
     memmove(l.buf + l.pos - chlen, l.buf + l.pos, l.len - l.pos);
     l.pos -= chlen;
     l.len -= chlen;
@@ -725,7 +725,7 @@ static bool linenoiseEditBackspace(struct linenoiseState &l) {
  * current word. */
 static bool linenoiseEditDeletePrevWord(struct linenoiseState &l) {
   if (l.pos > 0 && l.len > 0) {
-    int wordLen = prevWordLen(l.ps, l.lineRef(), l.pos, nullptr);
+    size_t wordLen = prevWordLen(l.ps, l.lineRef(), l.pos, nullptr);
     memmove(l.buf + l.pos - wordLen, l.buf + l.pos, l.len - l.pos);
     l.pos -= wordLen;
     l.len -= wordLen;
@@ -749,7 +749,7 @@ static bool linenoiseEditDeletePrevWord(struct linenoiseState &l) {
 
 static bool linenoiseEditDeleteNextWord(struct linenoiseState &l) {
   if (l.len > 0 && l.pos < l.len) {
-    int wordLen = nextWordLen(l.ps, l.lineRef(), l.pos, nullptr);
+    size_t wordLen = nextWordLen(l.ps, l.lineRef(), l.pos, nullptr);
     memmove(l.buf + l.pos, l.buf + l.pos + wordLen, l.len - l.pos - wordLen);
     l.len -= wordLen;
     l.buf[l.len] = '\0';
@@ -1033,7 +1033,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
 /* Insert the character 'c' at cursor current position.
  *
  * On error writing to the terminal false is returned, otherwise true. */
-static bool linenoiseEditInsert(struct linenoiseState &l, const char *cbuf, int clen) {
+static bool linenoiseEditInsert(struct linenoiseState &l, const char *cbuf, size_t clen) {
   if (l.len + clen <= l.buflen) {
     if (l.len == l.pos) {
       memcpy(&l.buf[l.pos], cbuf, clen);
@@ -1056,7 +1056,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
   while (true) {
     int code;
     char cbuf[32];
-    int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &code);
+    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), &code);
     if (nread <= 0) {
       return false;
     }
@@ -1091,7 +1091,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
       continue;
     }
     default:
-      if (!linenoiseEditInsert(l, cbuf, nread)) {
+      if (!linenoiseEditInsert(l, cbuf, static_cast<size_t>(nread))) {
         return false;
       }
       continue;
@@ -1145,9 +1145,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     int c;
     char cbuf[32]; // large enough for any encoding?
 
-    int nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
+    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
     if (nread <= 0) {
-      return l.len;
+      return static_cast<int>(l.len);
     }
 
     /* Only autocomplete when the callback is set. It returns < 0 when
@@ -1161,7 +1161,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
 
       /* Return on errors */
       if (c < 0) {
-        return l.len;
+        return static_cast<int>(l.len);
       }
       /* Read next character when 0 */
       if (c == 0) {
@@ -1189,7 +1189,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           errno = EAGAIN;
           return -1;
         }
-        return (int)l.len;
+        return static_cast<int>(l.len);
       }
     case CTRL_C: /* ctrl-c */
       errno = EAGAIN;
@@ -1394,7 +1394,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     }
     default:
-      if (linenoiseEditInsert(l, cbuf, nread)) {
+      if (linenoiseEditInsert(l, cbuf, static_cast<size_t>(nread))) {
         this->refreshLine(l);
         break;
       } else {
@@ -1431,7 +1431,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     }
   }
-  return l.len;
+  return static_cast<int>(l.len);
 }
 
 /* The high level function that is the main API of the linenoise library.
@@ -1573,7 +1573,7 @@ static void revertInsert(struct linenoiseState &l, size_t len) {
   }
 }
 
-int LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbuf, int clen,
+ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbuf, size_t clen,
                                    int *code) {
   StringRef line(ls.buf, ls.pos);
   auto candidates = this->kickCompletionCallback(state, line);
@@ -1582,9 +1582,9 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbu
     return -1;
   }
 
-  int nread = 0;
+  ssize_t nread = 0;
   int c = 0;
-  const int offset = this->insertEstimatedSuffix(ls, *candidates);
+  const size_t offset = this->insertEstimatedSuffix(ls, *candidates);
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls.ofd);
   } else if (len == 1) {
@@ -1648,6 +1648,7 @@ int LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbu
 
       revertInsert(ls, prevCanLen);
       const char *can = candidates->getValues()[rotateIndex].asCStr();
+      assert(offset <= ls.pos);
       size_t prefixLen = ls.pos - offset;
       prevCanLen = strlen(can) - prefixLen;
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {

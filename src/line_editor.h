@@ -117,7 +117,7 @@ private:
    */
   int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
 
-  int completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, int clen, int *code);
+  ssize_t completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, size_t clen, int *code);
 
   size_t insertEstimatedSuffix(struct linenoiseState &ls, const ArrayObject &candidates);
 
