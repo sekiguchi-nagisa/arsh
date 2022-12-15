@@ -215,7 +215,7 @@ static size_t nextCharLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef b
 }
 
 /* Read bytes of the next character */
-static ssize_t readCode(int fd, char *buf, size_t bufSize, int *c) {
+static ssize_t readCode(int fd, char *buf, size_t bufSize, int &code) {
   if (bufSize < 1) {
     return -1;
   }
@@ -239,7 +239,7 @@ static ssize_t readCode(int fd, char *buf, size_t bufSize, int *c) {
       return readSize;
     }
   }
-  return static_cast<ssize_t>(ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, *c));
+  return static_cast<ssize_t>(ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, code));
 }
 
 static size_t prevWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
@@ -401,7 +401,7 @@ static int getCursorPosition(int ifd, int ofd) {
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
 static int getColumns(int ifd, int ofd) {
-  struct winsize ws;
+  struct winsize ws;  //NOLINT
 
   if (ioctl(ofd, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
     /* ioctl() failed. Try to query the terminal itself. */
@@ -821,7 +821,7 @@ LineEditorObject::~LineEditorObject() {
 
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
-  struct termios raw;
+  struct termios raw; //NOLINT
 
   if (!isatty(fd)) {
     goto fatal;
@@ -1056,7 +1056,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
   while (true) {
     int code;
     char cbuf[32];
-    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), &code);
+    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), code);
     if (nread <= 0) {
       return false;
     }
@@ -1142,10 +1142,10 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   this->refreshLine(l);
 
   while (true) {
-    int c;
+    int code;
     char cbuf[32]; // large enough for any encoding?
 
-    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), &c);
+    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), code);
     if (nread <= 0) {
       return static_cast<int>(l.len);
     }
@@ -1153,23 +1153,23 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
     /* Only autocomplete when the callback is set. It returns < 0 when
      * there was an error reading from fd. Otherwise, it will return the
      * character that should be handled next. */
-    if (c == TAB) {
+    if (code == TAB) {
       if (!this->completionCallback) {
         continue;
       }
-      nread = this->completeLine(state, l, cbuf, sizeof(cbuf), &c);
+      nread = this->completeLine(state, l, cbuf, sizeof(cbuf), code);
 
       /* Return on errors */
-      if (c < 0) {
+      if (code < 0) {
         return static_cast<int>(l.len);
       }
       /* Read next character when 0 */
-      if (c == 0) {
+      if (code == 0) {
         continue;
       }
     }
 
-    switch (c) {
+    switch (code) {
     case KEY_NULL:
       continue; // ignore null character
     case ENTER: /* enter */
@@ -1574,11 +1574,11 @@ static void revertInsert(struct linenoiseState &l, size_t len) {
 }
 
 ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbuf, size_t clen,
-                                   int *code) {
+                                       int &code) {
   StringRef line(ls.buf, ls.pos);
   auto candidates = this->kickCompletionCallback(state, line);
   if (!candidates) {
-    *code = CTRL_C;
+    code = CTRL_C;
     return -1;
   }
 
@@ -1590,7 +1590,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
   } else if (len == 1) {
     goto END;
   } else {
-    nread = readCode(ls.ifd, cbuf, clen, &c);
+    nread = readCode(ls.ifd, cbuf, clen, c);
     if (nread <= 0) {
       c = -1;
       goto END;
@@ -1607,7 +1607,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
       UNUSED(r);
 
       while (true) {
-        nread = readCode(ls.ifd, cbuf, clen, &c);
+        nread = readCode(ls.ifd, cbuf, clen, c);
         if (nread <= 0) {
           c = -1;
           goto END;
@@ -1637,7 +1637,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
     size_t rotateIndex = 0;
     size_t prevCanLen = 0;
     while (true) {
-      nread = readCode(ls.ifd, cbuf, clen, &c);
+      nread = readCode(ls.ifd, cbuf, clen, c);
       if (nread <= 0) {
         c = -1;
         goto END;
@@ -1666,7 +1666,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
   }
 
 END:
-  *code = c;
+  code = c;
   return nread; /* Return last read character length*/
 }
 
