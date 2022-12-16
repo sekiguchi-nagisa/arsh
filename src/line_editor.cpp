@@ -178,10 +178,10 @@ FILE *lndebug_fp = nullptr;
 #define lndebug(...)                                                                               \
   do {                                                                                             \
     if (lndebug_fp == nullptr) {                                                                   \
-      lndebug_fp = fopen("/tmp/lndebug.txt", "a");                                                 \
-      fprintf(lndebug_fp, "[%d %d %d %d] rows: %d, rpos: %d, max: %d, oldmax: %d\n", (int)l.len,   \
-              (int)l.pos, (int)l.oldcolpos, (int)l.oldrow, rows, rpos, (int)l.maxrows, old_rows);  \
+      lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
+    fprintf(lndebug_fp, "\n[%d %d %d %d] rows: %d, rpos: %d, max: %d, oldmax: %d\n", (int)l.len,   \
+            (int)l.pos, (int)l.oldcolpos, (int)l.oldrow, rows, rpos, (int)l.maxrows, old_rows);    \
     fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
     fflush(lndebug_fp);                                                                            \
   } while (0)
@@ -866,7 +866,7 @@ void LineEditorObject::disableRawMode(int fd) {
 }
 
 static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, const StringRef line,
-                                              const size_t cols, bool skipAnsi,
+                                              const size_t cols, bool isPrompt,
                                               const size_t initPos) {
   size_t col = 0;
   size_t row = 0;
@@ -878,7 +878,7 @@ static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, con
     char buf[LINENOISE_MAX_LINE];
     size_t bufLen = 0;
     for (size_t off = 0; off < sub.size();) {
-      if (size_t len; skipAnsi && isAnsiEscape(sub.data() + off, sub.size() - off, &len)) {
+      if (size_t len; isPrompt && isAnsiEscape(sub.data() + off, sub.size() - off, &len)) {
         off += len;
         continue;
       }
@@ -886,12 +886,17 @@ static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, con
     }
 
     auto colLen = columnPosForMultiLine(ps, StringRef(buf, bufLen), bufLen, cols, initPos);
-    col = colLen % cols;
-    row += colLen / cols;
-
     if (retPos == StringRef::npos) {
+      if(isPrompt) {
+        col = colLen % cols;
+        row += colLen / cols;
+      } else {
+        col = colLen;
+      }
       break;
     } else {
+      col = colLen % cols;
+      row += (initPos + colLen) / cols;
       row++;
       pos = retPos + 1;
     }
@@ -937,6 +942,9 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   int rpos = (pcollen + l.oldcolpos + l.cols) / l.cols + prow + l.oldrow;
   int old_rows = l.maxrows;
   struct abuf ab;
+
+  lndebug("cols: %d, pcolloen: %d, prow: %d, colpos: %d, row: %d", (int)l.cols, (int)pcollen,
+          (int)prow, (int)colpos, (int)row);
 
   /* Update maxrows if needed. */
   if (rows > (int)l.maxrows) {
