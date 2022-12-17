@@ -37,7 +37,7 @@
       ```
 - introduce dynamic registered user-defined commands
     - before lookup external command, lookup ``Command`` object from builtin ``DYNA_UDCS`` variable
-        - builtin ``command`` command checks existance of dynamic registered commands, but does not call theme (
+        - builtin ``command`` command checks existence of dynamic registered commands, but does not call theme (
           builtin ``eval`` command can call these commands)
         - ``Module#_fullname`` method also supports theme
     - also complete dynamic registered command names
@@ -49,7 +49,7 @@
     - add ``Error#status`` method for get exit status
 - add some options to builtin ``complete`` command
     - ``-q``: does not show completion candidates (but still set to ``COMPREPLY``)
-    - ``-s``: apppend space to completion candidate when number of candidates is 1
+    - ``-s``: append space to completion candidate when number of candidates is 1
 - add ``LineEdtior`` type for line editing
     - ``read``: entry point of line editing
     - ``setCompletion``: specify completion callback
@@ -69,8 +69,11 @@
 
 #### Misc
 
-- add ``--html-lineno-table`` option to ``dscolorize``
-    - now generate line number as table
+- update ``dscolorize``
+    - add ``--html-lineno-table`` option
+        - now generate line number as table
+    - add ``--dump`` option
+        - dump color setting
 
 ### Changed
 
@@ -79,12 +82,12 @@
 - **Breaking Change**: change evaluation order of ``TERM_HOOK``
     - now only called from ``DSState_delete`` or subshell exit
     - in interactive mode, does not call ``TERM_HOOK`` in uncaught exception
-- **Breaking Change**: improve error checking of backquote literal
-    - now syntactically accept backquote literal, but always report semantic error
-    - now does not allow backquote characters without escape within double-quoted string literal
+- **Breaking Change**: improve error checking of back-quote literal
+    - now syntactically accept back-quote literal, but always report semantic error
+    - now does not allow back-quote characters without escape within double-quoted string literal
 - **Breaking Change**: change internal implementation of ``SCRIPT_DIR``, ``SCRIPT_NAME``
     - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and ``Module#_scriptName``
-    - in interctive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
+    - in interactive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
         - run-time ``SCRIPT_DIR`` always indicates latest compile-time ``SCRIPT_DIR``
 - **Breaking Change**: now does not ignore empty string in command arguments
   ```
@@ -133,14 +136,14 @@
       ```
 - **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by default
     - if check SIGPIPE failure, set ``failsigpipe`` option
-- **Breaking Change**: does skip newline after command except for skippable newline context
-  - now follwoing code is syntax error
-    ```
-    while true  # does not skip newline after command
-    { }
-    ```
+- **Breaking Change**: does not skip newline after command except for skippable newline context
+    - now following code is syntax error
+      ```
+      while true  # does not skip newline after command
+      { }
+      ```
 - improve the following error messages
-    - unclosed string, backquote, regex literal
+    - unclosed string, back-quote, regex literal
     - io redirection
 
 #### Builtin
