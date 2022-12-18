@@ -201,6 +201,8 @@
 - broken lexing of dollar single quoted string literal
 - escape sequence handling of renderPrompt function in prompt module
 - skippable newline handling in some expressions
+- SEVG of ``textDocument/documentSymbol``, ``textDocument/documentLink``
+- fix ``textDocument/publishDiagnostics`` emittion
 
 ## [0.27.1] - 2022-09-30
 

@@ -53,7 +53,7 @@ public:
                     bool supportVersion)
       : srcMan(std::move(srcMan)), callback(std::move(callback)), supportVersion(supportVersion) {}
 
-  ~DiagnosticEmitter() override = default;
+  ~DiagnosticEmitter() override;
 
   bool handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                         const ParseError &parseError) override;
@@ -127,12 +127,14 @@ private:
   ModuleArchives &archives;
   std::shared_ptr<CancelPoint> cancelPoint;
   std::vector<AnalyzerContextPtr> ctxs;
+  ObserverPtr<LoggerBase> logger;
 
 public:
   Analyzer(const SysConfig &config, SourceManager &src, ModuleArchives &archives,
-           std::shared_ptr<CancelPoint> cancelPoint = nullptr)
+           std::shared_ptr<CancelPoint> cancelPoint = nullptr,
+           ObserverPtr<LoggerBase> logger = nullptr)
       : ModuleLoaderBase(config), srcMan(src), archives(archives),
-        cancelPoint(std::move(cancelPoint)) {}
+        cancelPoint(std::move(cancelPoint)), logger(logger) {}
 
   ~Analyzer() override = default;
 

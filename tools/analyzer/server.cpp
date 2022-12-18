@@ -237,7 +237,8 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
   action.pass = makeObserver(passes);
 
   // rebuild
-  Analyzer analyzer(param.sysConfig, *param.ret.srcMan, param.ret.archives, param.cancelPoint);
+  Analyzer analyzer(param.sysConfig, *param.ret.srcMan, param.ret.archives, param.cancelPoint,
+                    makeObserver(param.logger.get()));
   for (auto &e : param.ret.modifiedSrcIds) {
     if (param.ret.archives.find(e)) {
       continue;
@@ -585,17 +586,18 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
   this->syncResult();
   if (auto resolved = this->resolveSource(params.textDocument)) {
     std::vector<DocumentLink> ret;
-    auto index = this->result.indexes.find(resolved.asOk()->getSrcId());
-    for (auto &e : index->getLinks()) {
-      auto range = toRange(*resolved.asOk(), e.first.getToken());
-      assert(range.hasValue());
-      auto src = this->result.srcMan->findById(e.first.getModId());
-      assert(src);
-      ret.push_back(DocumentLink{
-          .range = range.unwrap(),
-          .target = toURI(*this->result.srcMan, src->getPath()).toString(),
-          .tooltip = e.second,
-      });
+    if (auto index = this->result.indexes.find(resolved.asOk()->getSrcId())) {
+      for (auto &e : index->getLinks()) {
+        auto range = toRange(*resolved.asOk(), e.first.getToken());
+        assert(range.hasValue());
+        auto src = this->result.srcMan->findById(e.first.getModId());
+        assert(src);
+        ret.push_back(DocumentLink{
+            .range = range.unwrap(),
+            .target = toURI(*this->result.srcMan, src->getPath()).toString(),
+            .tooltip = e.second,
+        });
+      }
     }
     return ret;
   } else {
@@ -608,25 +610,26 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
   this->syncResult();
   if (auto resolved = this->resolveSource(params.textDocument)) {
     std::vector<DocumentSymbol> ret;
-    auto index = this->result.indexes.find(resolved.asOk()->getSrcId());
-    for (auto &decl : index->getDecls()) {
-      if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
-          !hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
-        continue;
-      }
+    if (auto index = this->result.indexes.find(resolved.asOk()->getSrcId())) {
+      for (auto &decl : index->getDecls()) {
+        if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
+            !hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
+          continue;
+        }
 
-      auto selectionRange = toRange(*resolved.asOk(), decl.getToken());
-      auto range = toRange(*resolved.asOk(), decl.getBody());
-      auto name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
-      assert(selectionRange.hasValue());
-      assert(range.hasValue());
-      ret.push_back(DocumentSymbol{
-          .name = std::move(name),
-          .detail = {}, // FIXME:
-          .kind = toSymbolKind(decl.getKind()),
-          .range = range.unwrap(),
-          .selectionRange = selectionRange.unwrap(),
-      });
+        auto selectionRange = toRange(*resolved.asOk(), decl.getToken());
+        auto range = toRange(*resolved.asOk(), decl.getBody());
+        auto name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
+        assert(selectionRange.hasValue());
+        assert(range.hasValue());
+        ret.push_back(DocumentSymbol{
+            .name = std::move(name),
+            .detail = {}, // FIXME:
+            .kind = toSymbolKind(decl.getKind()),
+            .range = range.unwrap(),
+            .selectionRange = selectionRange.unwrap(),
+        });
+      }
     }
     return ret;
   } else {

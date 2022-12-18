@@ -108,6 +108,14 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
 // ##     Analyzer     ##
 // ######################
 
+#define LOG(L, ...)                                                                                \
+  do {                                                                                             \
+    if (this->logger) {                                                                            \
+      auto &_logger = (*this->logger);                                                             \
+      _logger.enabled(L) && (_logger)(L, __VA_ARGS__);                                             \
+    }                                                                                              \
+  } while (false)
+
 std::unique_ptr<FrontEnd::Context>
 Analyzer::newContext(LexerPtr lexer, FrontEndOption option,
                      ObserverPtr<CodeCompletionHandler> ccHandler) {
@@ -120,6 +128,7 @@ const ModType &
 Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
+  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", archive->getModId(), archive->getVersion());
   auto *modType = loadFromArchive(this->current()->getPool(), *archive);
   assert(modType);
   return *modType;
@@ -170,6 +179,8 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
 const SysConfig &Analyzer::getSysConfig() const { return this->sysConfig; }
 
 const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
+  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", src.getSrcId(), src.getVersion(),
+      src.getPath().c_str());
   auto ptr = std::make_unique<AnalyzerContext>(this->sysConfig, src);
   this->ctxs.push_back(std::move(ptr));
   this->archives.reserve(src.getSrcId());
@@ -250,6 +261,12 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
 // ##     DiagnosticEmitter     ##
 // ###############################
 
+DiagnosticEmitter::~DiagnosticEmitter() {
+  while (!this->contexts.empty()) {
+    this->exitModule();
+  }
+}
+
 bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                          const ParseError &parseError) {
   auto *cur = this->findContext(ctx.back()->scope->modId);
@@ -295,6 +312,10 @@ bool DiagnosticEmitter::enterModule(unsigned short modId, int version) {
 }
 
 bool DiagnosticEmitter::exitModule() {
+  if (this->contexts.empty()) {
+    return false;
+  }
+
   if (this->callback) {
     PublishDiagnosticsParams params = {
         .uri = toURI(*this->srcMan, this->contexts.back().src->getPath()).toString(),

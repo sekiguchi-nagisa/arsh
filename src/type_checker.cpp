@@ -2745,7 +2745,8 @@ void TypeChecker::applyBraceExpansion(Token token,
 }
 
 void TypeChecker::resolvePathList(SourceListNode &node) {
-  if (node.getConstNodes().empty()) {
+  if (node.getConstNodes().empty() ||
+      node.getPathNode().getExpansionSize() > SYS_LIMIT_EXPANSION_FRAG_NUM) {
     return;
   }
   node.addConstNode(std::make_unique<EmptyNode>()); // sentinel
