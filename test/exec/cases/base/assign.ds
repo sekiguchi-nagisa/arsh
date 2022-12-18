@@ -108,7 +108,7 @@ $t3._0 ??= "/"
 assert $t3._0! == "/"
 $t3._0 = '~'.realpath()
 $t3._0 ??= 'hoge'
-assert $t3._0! == "$(echo ~)"
+assert $t3._0! == "hoge"
 
 
 # indexer

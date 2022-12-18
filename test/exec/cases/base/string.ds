@@ -356,9 +356,12 @@ assert ! '   3.14'.toFloat()
 assert ! '3.14  '.toFloat()
 assert ! "3.14e100000000000000000000000000".toFloat()
 
-
-assert "~".realpath()! == "$(echo ~)"
+# realpath
+assert !"".realpath()
+assert ! "~".realpath()
 assert ! "fhafjeoirwae54".realpath()
+assert ".".realpath()! == "$(pwd -P)"
+assert ! $'.\x00'.realpath()
 
 # string compare
 var b = "aaa"

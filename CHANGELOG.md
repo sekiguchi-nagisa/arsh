@@ -164,6 +164,9 @@
       ```
 - **Breaking Change**: change typechecking of equality operator of Func type
     - now allow subtype expression in right hand-side
+- **Breaking Change**: change ``String#realpath`` behavior
+    - now does not perform tilde expansion
+    - now does not access string having null characters
 
 #### Module
 

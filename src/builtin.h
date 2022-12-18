@@ -1016,13 +1016,13 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_realpath);
   auto ref = LOCAL(0).asStrRef();
-  std::string str = ref.toString();
-  expandTilde(str);
-  auto buf = getRealpath(str.c_str());
-  if (buf == nullptr) {
-    RET(DSValue::createInvalid());
+  if(!ref.hasNullChar()) {
+    auto buf = getRealpath(ref.data());
+    if(buf) {
+      RET(DSValue::createStr(buf.get()));
+    }
   }
-  RET(DSValue::createStr(buf.get()));
+  RET(DSValue::createInvalid());
 }
 
 //!bind: function lower($this : String) : String
