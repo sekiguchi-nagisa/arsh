@@ -1173,8 +1173,10 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   case RedirOp::NOP:
   case RedirOp::REDIR_IN:
   case RedirOp::REDIR_OUT:
+  case RedirOp::CLOBBER_OUT:
   case RedirOp::APPEND_OUT:
   case RedirOp::REDIR_OUT_ERR:
+  case RedirOp::CLOBBER_OUT_ERR:
   case RedirOp::APPEND_OUT_ERR:
   case RedirOp::HERE_STR:
     this->checkType(this->typePool.get(TYPE::String), argNode);

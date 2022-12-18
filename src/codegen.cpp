@@ -843,11 +843,11 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->visit(*argNode);
   }
 
+  this->emitSourcePos(node.getPos());
   if (node.hasRedir()) {
     this->emit0byteIns(OpCode::DO_REDIR);
   }
 
-  this->emitSourcePos(node.getPos());
   if (node.getHandle()) { // user-defined command
     OpCode ins = this->inStmtCtx() ? OpCode::CALL_UDC : OpCode::CALL_UDC_SILENT;
     this->emit2byteIns(ins, node.getHandle()->getIndex());
@@ -944,6 +944,7 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     for (auto &e : node.getRedirNodes()) {
       this->visit(*e);
     }
+    this->emitSourcePos(node.getPos());
     this->emit0byteIns(OpCode::DO_REDIR);
     this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
 

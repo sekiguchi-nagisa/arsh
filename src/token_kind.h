@@ -163,8 +163,10 @@
   /* redir op */                                                                                   \
   TOKEN(REDIR_IN, "<")                                                                             \
   TOKEN(REDIR_OUT, ">")                                                                            \
+  TOKEN(REDIR_OUT_CLOBBER, ">|")                                                                   \
   TOKEN(REDIR_APPEND, ">>")                                                                        \
   TOKEN(REDIR_OUT_ERR, "&>")                                                                       \
+  TOKEN(REDIR_OUT_ERR_CLOBBER, "&>|")                                                              \
   TOKEN(REDIR_APPEND_OUT_ERR, "&>>")                                                               \
   TOKEN(REDIR_DUP_IN, "<&")                                                                        \
   TOKEN(REDIR_DUP_OUT, ">&")                                                                       \
@@ -312,8 +314,10 @@
 #define EACH_LA_redir(OP)                                                                          \
   OP(REDIR_IN)                                                                                     \
   OP(REDIR_OUT)                                                                                    \
+  OP(REDIR_OUT_CLOBBER)                                                                            \
   OP(REDIR_APPEND)                                                                                 \
   OP(REDIR_OUT_ERR)                                                                                \
+  OP(REDIR_OUT_ERR_CLOBBER)                                                                        \
   OP(REDIR_APPEND_OUT_ERR)                                                                         \
   OP(REDIR_DUP_IN)                                                                                 \
   OP(REDIR_DUP_OUT)                                                                                \

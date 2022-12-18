@@ -1203,8 +1203,10 @@ static std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef 
 #define EACH_REDIR_OP_MAPPING(OP)                                                                  \
   OP(REDIR_IN, REDIR_IN, 0)                                                                        \
   OP(REDIR_OUT, REDIR_OUT, 1)                                                                      \
+  OP(REDIR_OUT_CLOBBER, CLOBBER_OUT, 1)                                                            \
   OP(REDIR_APPEND, APPEND_OUT, 1)                                                                  \
   OP(REDIR_OUT_ERR, REDIR_OUT_ERR, 1)                                                              \
+  OP(REDIR_OUT_ERR_CLOBBER, CLOBBER_OUT_ERR, 1)                                                    \
   OP(REDIR_APPEND_OUT_ERR, APPEND_OUT_ERR, 1)                                                      \
   OP(REDIR_DUP_IN, DUP_FD, 0)                                                                      \
   OP(REDIR_DUP_OUT, DUP_FD, 1)                                                                     \

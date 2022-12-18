@@ -41,6 +41,10 @@
           builtin ``eval`` command can call these commands)
         - ``Module#_fullname`` method also supports theme
     - also complete dynamic registered command names
+- add ``clobber`` runtime option
+    - enable by default
+    - if disabled, ``>`` and ``&>`` redirection failed if file exists
+    - also add ``>|`` and ``&>|`` redirection (always overwrite file even if clobber is disabled)
 
 #### Builtin
 

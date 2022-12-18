@@ -2,15 +2,16 @@
 # for option query/setting
 # show option setting
 assert shctl set
-assert shctl set | grep 'traceonexit.*  off'
-assert shctl set | grep 'monitor.*  off'
+assert shctl set | grep 'traceonexit *  off'
+assert shctl set | grep 'monitor *  off'
+assert shctl set | grep 'clobber *  on'
 shctl set | grep 'assert.*  on' || _exit
 
 # set
 assert shctl set traceonexit
-assert shctl set | grep 'traceonexit.*  on'
+assert shctl set | grep 'traceonexit *  on'
 assert shctl set TRAC-E_ON_Exit tracE_onexit
-assert shctl set | grep 'traceonexit.*  on'
+assert shctl set | grep 'traceonexit *  on'
 
 assert shctl set HUGA 2>&1 | grep 'ydsh: shctl: unrecognized runtime option: HUGA'
 shctl set HUGA
@@ -18,9 +19,9 @@ assert $? == 1
 
 # unset
 assert shctl unset traceonexit
-assert shctl set | grep 'traceonexit.*  off'
+assert shctl set | grep 'traceonexit *  off'
 assert shctl unset traceonexit traceonexit
-assert shctl set | grep 'traceonexit.*  off'
+assert shctl set | grep 'traceonexit *  off'
 
 assert shctl unset 2>&1 | grep "ydsh: shctl: \`unset' subcommand requires argument"
 shctl unset
@@ -56,10 +57,39 @@ assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 ## for `xtrace` option
 assert shctl set | grep 'xtrace.*  off'
 shctl set xtrace
-assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:59> echo hello"
+assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:60> echo hello"
 shctl unset xtrace
 assert "$(echo hello 2>&1 > /dev/null)" == ""
 
+## for `clobber` option
+assert shctl set | grep 'clobber *  on'
+var ex = 34 as Any
+try { echo hello > /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
+$ex = 34
+try { echo hello >| /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
+$ex = 34
+try { echo hello &> /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
+$ex = 34
+try { echo hello &>| /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
+
+shctl unset clobber
+assert shctl set | grep 'clobber *  off'
+$ex = 34
+try { echo hello > /dev/null; } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 34
+try { echo hello >| /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
+$ex = 34
+try { echo hello &> /dev/null; } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 34
+try { echo hello &>| /dev/null; } catch e { $ex = $e; }
+assert $ex is Int
 
 # dump/restore
 shctl set -d

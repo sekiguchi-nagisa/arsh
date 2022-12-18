@@ -90,7 +90,8 @@ static int doIOHere(const StringRef &value, int newFd) {
 
 enum class RedirOpenFlag {
   READ,
-  WRITE,
+  WRITE,   // if file exists, error
+  CLOBBER, // if file exists, trucate 0
   APPEND,
 };
 
@@ -110,10 +111,13 @@ static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int n
     flag = O_RDONLY;
     break;
   case RedirOpenFlag::WRITE:
+    flag = O_WRONLY | O_CREAT | O_EXCL;
+    break;
+  case RedirOpenFlag::CLOBBER:
     flag = O_WRONLY | O_CREAT | O_TRUNC;
     break;
   case RedirOpenFlag::APPEND:
-    flag = O_WRONLY | O_APPEND | O_CREAT;
+    flag = O_WRONLY | O_CREAT | O_APPEND;
     break;
   }
 
@@ -136,7 +140,8 @@ static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int n
 }
 
 void RedirObject::addEntry(DSValue &&value, RedirOp op, int newFd) {
-  if (op == RedirOp::REDIR_OUT_ERR || op == RedirOp::APPEND_OUT_ERR) {
+  if (op == RedirOp::REDIR_OUT_ERR || op == RedirOp::APPEND_OUT_ERR ||
+      op == RedirOp::CLOBBER_OUT_ERR) {
     this->backupFDSet |= 1u << 1u;
     this->backupFDSet |= 1u << 2u;
   } else if (newFd >= 0 && newFd <= 2) {
@@ -149,37 +154,41 @@ void RedirObject::addEntry(DSValue &&value, RedirOp op, int newFd) {
   });
 }
 
-static RedirOpenFlag resolveOpenFlag(RedirOp op) {
+static RedirOpenFlag resolveOpenFlag(RedirOp op, bool overwrite) {
   switch (op) {
   case RedirOp::REDIR_IN:
     return RedirOpenFlag::READ;
   case RedirOp::REDIR_OUT:
-    return RedirOpenFlag::WRITE;
-  case RedirOp::APPEND_OUT:
-    return RedirOpenFlag::APPEND;
   case RedirOp::REDIR_OUT_ERR:
-    return RedirOpenFlag::WRITE;
+    return overwrite ? RedirOpenFlag::CLOBBER : RedirOpenFlag::WRITE;
+  case RedirOp::APPEND_OUT:
   case RedirOp::APPEND_OUT_ERR:
     return RedirOpenFlag::APPEND;
   case RedirOp::NOP:
   case RedirOp::DUP_FD:
   case RedirOp::HERE_STR:
     break;
+  case RedirOp::CLOBBER_OUT:
+  case RedirOp::CLOBBER_OUT_ERR:
+    return RedirOpenFlag::CLOBBER;
   }
   return RedirOpenFlag::READ;
 }
 
-static int redirectImpl(const RedirObject::Entry &entry) {
+static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
   switch (entry.op) {
   case RedirOp::NOP:
     break;
   case RedirOp::REDIR_IN:
   case RedirOp::REDIR_OUT:
+  case RedirOp::CLOBBER_OUT:
   case RedirOp::APPEND_OUT:
-    return redirectToFile(entry.value, resolveOpenFlag(entry.op), entry.newFd);
+    return redirectToFile(entry.value, resolveOpenFlag(entry.op, overwrite), entry.newFd);
   case RedirOp::REDIR_OUT_ERR:
+  case RedirOp::CLOBBER_OUT_ERR:
   case RedirOp::APPEND_OUT_ERR:
-    if (int r = redirectToFile(entry.value, resolveOpenFlag(entry.op), STDOUT_FILENO); r != 0) {
+    if (int r = redirectToFile(entry.value, resolveOpenFlag(entry.op, overwrite), STDOUT_FILENO);
+        r != 0) {
       return r;
     }
     if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
@@ -202,7 +211,7 @@ static int redirectImpl(const RedirObject::Entry &entry) {
 bool RedirObject::redirect(DSState &state) {
   this->saveFDs();
   for (auto &entry : this->entries) {
-    int r = redirectImpl(entry);
+    int r = redirectImpl(entry, hasFlag(state.runtimeOption, RuntimeOption::CLOBBER));
     if (this->backupFDSet > 0 && r != 0) {
       std::string msg = REDIR_ERROR;
       if (entry.value) {

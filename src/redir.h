@@ -167,7 +167,7 @@ public:
   struct Entry {
     DSValue value;
     RedirOp op;
-    int newFd; // ignore it when op is REDIR_OUT_ERR or APPEND_OUT_ERR
+    int newFd; // ignore it when op is REDIR_OUT_ERR, APPEND_OUT_ERR or CLOBBER_OUT_ERR
   };
 
 private:

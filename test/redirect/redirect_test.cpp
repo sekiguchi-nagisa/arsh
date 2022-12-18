@@ -466,6 +466,50 @@ TEST_F(RedirectTest, merge) {
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 1> /dev/null | grep AAA"), 1));
 }
 
+TEST_F(RedirectTest, clobber) {
+  auto v = CL(R"(
+    echo hello > %s
+
+    shctl unset clobber
+    echo world1 >| %s
+    echo world2 > %s
+)",
+              this->getTargetName(), this->getTargetName(), this->getTargetName());
+  auto err = format(R"([runtime error]
+SystemError: io redirection failed: %s, caused by `%s'
+    from (string):6 '<toplevel>()'
+)", this->getTargetName(), strerror(EEXIST));
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 1, "", err));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("world1\n"));
+
+  v = CL(R"(
+    echo hello > %s
+
+    shctl unset clobber
+    __puts -1 world1 -2 !! &>| %s
+    __puts -1 world2 -2 !! &> %s
+)",
+              this->getTargetName(), this->getTargetName(), this->getTargetName());
+  err = format(R"([runtime error]
+SystemError: io redirection failed: %s, caused by `%s'
+    from (string):6 '<toplevel>()'
+)", this->getTargetName(), strerror(EEXIST));
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 1, "", err));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("world1\n!!\n"));
+
+  v = CL(R"(
+    echo hello > %s
+
+    shctl unset clobber
+    __puts -1 world1 -2 !! >> %s   # append existing file even if clobber is unset
+    __puts -1 world2 -2 !! &>> %s
+)",
+         this->getTargetName(), this->getTargetName(), this->getTargetName());
+  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0, "", "!!\n"));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("hello\nworld1\nworld2\n!!\n"));
+}
+
+
 TEST_F(RedirectTest, fd) {
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("var a = new UnixFD('%s'); echo -n 'hello ' >& $a;\n echo world 1>& $a",

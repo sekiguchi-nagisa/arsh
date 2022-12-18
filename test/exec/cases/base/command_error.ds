@@ -7,7 +7,7 @@ try {
     assert($false)
 } catch($e : Error) {   # not found file
     assert($e is SystemError)   # derived from errno
-    assert(echo ${$e.message()} | grep "io redirection error: $a, caused by")
+    assert(echo ${$e.message()} | grep "io redirection failed: $a, caused by")
 }
 
 
@@ -55,7 +55,7 @@ try {
     assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
-    assert(echo ${$e.message()} | grep "io redirection error: $a, caused by")
+    assert(echo ${$e.message()} | grep "io redirection failed: $a, caused by")
 }
 
 try {
@@ -63,7 +63,7 @@ try {
     assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
-    assert $e.message() == "io redirection error: if=~, caused by \`No such file or directory'"
+    assert $e.message() == "io redirection failed: if=~, caused by \`No such file or directory'"
 }
 
 var ex = 34 as Any
@@ -73,7 +73,7 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
-assert ($ex as SystemError).message() == "io redirection error: hello\x00world, caused by \`Invalid argument'"
+assert ($ex as SystemError).message() == "io redirection failed: hello\x00world, caused by \`Invalid argument'"
 
 
 # command fallback

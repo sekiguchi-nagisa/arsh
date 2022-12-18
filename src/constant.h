@@ -175,7 +175,7 @@ constexpr const char *VAL_DEFAULT_IFS = " \t\n";
 // =====  system error message prefix  =====
 
 constexpr const char *EXEC_ERROR = "execution error: ";
-constexpr const char *REDIR_ERROR = "io redirection error";
+constexpr const char *REDIR_ERROR = "io redirection failed";
 constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
 constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
 
@@ -313,14 +313,16 @@ constexpr const char *BUILD_ARCH =
     ;
 
 enum class RedirOp : unsigned char {
-  NOP,            // dummy
-  REDIR_IN,       // [n]< word
-  REDIR_OUT,      // [n]> word
-  APPEND_OUT,     // [n]>> word
-  REDIR_OUT_ERR,  // &> word
-  APPEND_OUT_ERR, // &>> word
-  DUP_FD,         // [n]<& N or [n]>& N
-  HERE_STR,       // [n]<<< word
+  NOP,             // dummy
+  REDIR_IN,        // [n]< word
+  REDIR_OUT,       // [n]> word
+  CLOBBER_OUT,     // [n]>| word
+  APPEND_OUT,      // [n]>> word
+  REDIR_OUT_ERR,   // &> word
+  CLOBBER_OUT_ERR, // &>| word
+  APPEND_OUT_ERR,  // &>> word
+  DUP_FD,          // [n]<& N or [n]>& N
+  HERE_STR,        // [n]<<< word
 };
 
 enum class ForkKind : unsigned char {
