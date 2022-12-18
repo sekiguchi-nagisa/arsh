@@ -90,6 +90,7 @@ DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
 DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, but always "
                           "matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
+DEFINE_TCError(TildeFail, "cannot expand tilde, no such user or directory: `%s'");
 DEFINE_TCError(Constant, "must be constant expression");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");

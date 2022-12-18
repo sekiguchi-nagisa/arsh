@@ -146,6 +146,9 @@
       while true  # does not skip newline after command
       { }
       ```
+- **Breaking Change**: now check tilde expansion failure
+    - check tilde expansion failure in runtiem/compile time (also within glob/brace expansion)
+    - now report runtime tilde expansion failure as ``TildeError``
 - improve the following error messages
     - unclosed string, back-quote, regex literal
     - io redirection

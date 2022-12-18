@@ -57,7 +57,7 @@ assert $aaa
 
 typedef Interval($a : Int, $b : Int) {
     defer {
-        echo $a ~~ $b
+        echo $a '~~' $b
     }
 
     var begin = $a

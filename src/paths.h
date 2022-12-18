@@ -91,8 +91,11 @@ std::string expandDots(const char *basePath, const char *path);
  * @param str
  * @param useHOME
  * if true, use `HOME' environmental variable for `~' expansion
+ * @return
+ * if perform tilde expansion, return true.
+ * otherwise, return false
  */
-void expandTilde(std::string &str, bool useHOME = false);
+bool expandTilde(std::string &str, bool useHOME = false);
 
 /**
  *

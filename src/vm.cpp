@@ -1285,6 +1285,12 @@ public:
   const DSValue *getIter() const { return this->cur; }
 };
 
+static void raiseTildeError(DSState &state, const std::string &path) {
+  std::string str = TILDE_ERROR;
+  str += path;
+  raiseError(state, TYPE::TildeError, std::move(str));
+}
+
 struct DSValueGlobMeta {
   static bool isAny(GlobIter iter) {
     auto &v = *iter.getIter();
@@ -1297,7 +1303,7 @@ struct DSValueGlobMeta {
            v.asExpandMeta().first == ExpandMeta::ZERO_OR_MORE;
   }
 
-  static void preExpand(std::string &path) { expandTilde(path, true); }
+  static bool preExpand(std::string &path) { return expandTilde(path, true); }
 };
 
 static void raiseGlobbingError(DSState &state, const DSValue *begin, const DSValue *end,
@@ -1353,17 +1359,23 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
       nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
   auto ret = matcher(appender);
-  if (ret == GlobMatchResult::MATCH ||
-      (ret == GlobMatchResult::NOMATCH && hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB))) {
-    argv.sortAsStrArray(oldSize);
-    return true;
-  } else if (ret == GlobMatchResult::CANCELED) {
+  switch (ret) {
+  case GlobMatchResult::MATCH:
+  case GlobMatchResult::NOMATCH:
+    if(ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+      argv.sortAsStrArray(oldSize);
+      return true;
+    } else {
+      raiseGlobbingError(state, begin, end, "no matches for glob pattern");
+      return false;
+    }
+  case GlobMatchResult::CANCELED:
     raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;
-  } else if (ret == GlobMatchResult::NOMATCH) {
-    raiseGlobbingError(state, begin, end, "no matches for glob pattern");
+  case GlobMatchResult::TILDE_FAIL:
+    raiseTildeError(state, matcher.getBase());
     return false;
-  } else {
+  default:
     assert(ret == GlobMatchResult::LIMIT && state.hasError());
     return false;
   }
@@ -1526,7 +1538,10 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         DSValue path = concatPath(state, vbegin, vend);
         if (tilde) {
           std::string str = path.asStrRef().toString();
-          expandTilde(str, true);
+          if (!expandTilde(str, true)) {
+            raiseTildeError(state, str);
+            return false;
+          }
           path = DSValue::createStr(std::move(str));
         }
         if (!path.asStrRef().empty()) { // skip empty string
@@ -2165,7 +2180,10 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(EXPAND_TILDE) {
         std::string str = state.stack.pop().asStrRef().toString();
-        expandTilde(str, true);
+        if (!expandTilde(str, true)) {
+          raiseTildeError(state, str);
+          vmerror;
+        }
         state.stack.push(DSValue::createStr(std::move(str)));
         vmnext;
       }

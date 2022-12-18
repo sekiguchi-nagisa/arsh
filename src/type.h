@@ -75,6 +75,7 @@ enum class TYPE : unsigned int {
   StackOverflowError,
   RegexSyntaxError,
   RegexMatchError,
+  TildeError,
   GlobbingError,
   UnwrappingError,
   IllegalAccessError,

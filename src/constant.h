@@ -178,6 +178,7 @@ constexpr const char *EXEC_ERROR = "execution error: ";
 constexpr const char *REDIR_ERROR = "io redirection failed";
 constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
 constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
+constexpr const char *TILDE_ERROR = "no such user or directory: ";
 
 // =====  error message  =====
 

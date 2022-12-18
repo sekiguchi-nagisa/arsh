@@ -18,6 +18,11 @@ $ex = 34
 try { echo *$'\x00'*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 
+# tilde expansion failed before glob
+$ex = 34
+try { echo ~fjrei/*; } catch e { $ex = $e; }
+assert ($ex as TildeError).message() =~ $/~fjrei/
+
 assert $(echo *).sort().join(" ") == $(sh -c 'echo *').sort().join(" ")
 assert $(echo ~/*).sort().join(" ") == $(sh -c 'echo ~/*').sort().join(" ")
 assert $(echo ./*).sort().join(" ") == $(sh -c 'echo ./*').sort().join(" ")

@@ -182,9 +182,9 @@ std::string expandDots(const char *basePath, const char *path) {
   return str;
 }
 
-void expandTilde(std::string &str, bool useHOME) {
+bool expandTilde(std::string &str, bool useHOME) {
   if (str.empty() || str.front() != '~') {
-    return;
+    return false;
   }
 
   const char *path = str.c_str();
@@ -239,7 +239,9 @@ void expandTilde(std::string &str, bool useHOME) {
   if (*path != '\0') {
     expanded += path;
   }
+  bool r = str != expanded;
   str = std::move(expanded);
+  return r;
 }
 
 CStrPtr getWorkingDir(const std::string &logicalWorkingDir, bool useLogical) {

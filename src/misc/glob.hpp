@@ -199,15 +199,16 @@ enum class GlobMatchResult {
   LIMIT,
   CANCELED,
   NEED_ABSOLUTE_BASE_DIR,
+  TILDE_FAIL,
 };
 
 template <typename Meta, typename Iter, typename Cancel>
 class GlobMatcher {
 private:
   /**
-   * may be null
+   * may be empty
    */
-  const char *base; // base dir of glob
+  std::string base; // base dir of glob
 
   const Iter begin;
   const Iter end;
@@ -220,18 +221,25 @@ private:
 
 public:
   GlobMatcher(const char *base, Iter begin, Iter end, Cancel &&cancel, GlobMatchOption option)
-      : base(base), begin(begin), end(end), option(option), cancel(std::move(cancel)) {}
+      : base(base ? base : ""), begin(begin), end(end), option(option), cancel(std::move(cancel)) {}
 
   unsigned int getMatchCount() const { return this->matchCount; }
+
+  const std::string &getBase() const { return this->base; }
 
   template <typename Appender>
   GlobMatchResult operator()(Appender &appender) {
     Iter iter = this->begin;
-    std::string baseDir = this->resolveBaseDir(iter);
-    if (hasFlag(this->option, GlobMatchOption::ABSOLUTE_BASE_DIR) && baseDir[0] != '/') {
+    std::string baseDir;
+    bool r = this->resolveBaseDir(iter, baseDir);
+    this->base = std::move(baseDir);
+    if (!r) {
+      return GlobMatchResult::TILDE_FAIL;
+    }
+    if (hasFlag(this->option, GlobMatchOption::ABSOLUTE_BASE_DIR) && this->base[0] != '/') {
       return GlobMatchResult::NEED_ABSOLUTE_BASE_DIR;
     }
-    return this->invoke(std::move(baseDir), iter, appender);
+    return this->invoke(std::string(this->base), iter, appender);
   }
 
   /**
@@ -289,12 +297,11 @@ private:
     return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
   }
 
-  std::string resolveBaseDir(Iter &iter) const {
+  bool resolveBaseDir(Iter &iter, std::string &baseDir) const {
     auto old = iter;
     auto latestSep = this->end;
 
     // resolve base dir
-    std::string baseDir;
     for (; iter != this->end; ++iter) {
       if (Meta::isZeroOrMore(iter) || Meta::isAny(iter)) {
         break;
@@ -316,17 +323,19 @@ private:
       for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
         ;
       if (hasFlag(option, GlobMatchOption::TILDE)) {
-        Meta::preExpand(baseDir);
+        if (!Meta::preExpand(baseDir)) {
+          return false;
+        }
       }
     }
 
-    if (this->base && *this->base == '/' && baseDir[0] != '/') {
+    if (!this->base.empty() && this->base[0] == '/' && baseDir[0] != '/') {
       std::string tmp = this->base;
       tmp += "/";
       tmp += baseDir;
       baseDir = tmp;
     }
-    return baseDir;
+    return true;
   }
 
   template <typename Appender>

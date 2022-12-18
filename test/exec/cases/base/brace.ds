@@ -62,6 +62,10 @@ assert $aa[1] == $'AAb\x00QQQ'
 ## tilde
 assert "$(echo ~{,+,-,root,/}/hoge)" == "$(echo ~/hoge ~+/hoge ~-/hoge ~root/hoge ~//hoge)"
 assert "$(echo ~ ~ ~~ ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
+var ex = 34 as Any
+try { echo {,a}{,~,}{,~}; } catch e { $ex = $e; }
+assert ($ex as TildeError).message() =~ $/~~/
+
 $aa = @({,~,})
 assert $aa.size() == 1
 assert $aa[0] == @(~)[0]
@@ -71,6 +75,10 @@ assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"
 assert "$(echo ./* ../*)" == "$(echo {./*,../*})"
 assert "$(echo */ */..)" == "$(echo */{,..})"
 
-var ex = 34 as Any
+$ex = 34
+try { echo ~hogessss/*; } catch e { $ex = $e; }
+assert ($ex as TildeError).message() =~ $/~hogesss/
+
+$ex = 34
 try { echo *{$'\x00',}; } catch $e { $ex = $e; }
 assert $ex is GlobbingError

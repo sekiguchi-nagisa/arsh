@@ -19,7 +19,7 @@ struct StrMetaChar {
 
   static bool isZeroOrMore(const char *iter) { return *iter == '*'; }
 
-  static void preExpand(std::string &) {}
+  static bool preExpand(std::string &) { return true; }
 };
 
 static WildMatchResult matchPatternRaw(const char *name, const char *p,
