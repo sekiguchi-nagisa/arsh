@@ -1561,12 +1561,34 @@ TEST_F(LexerTest_Lv1, redir3) {
                                  TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, illegal_redir) {
+TEST_F(LexerTest_Lv1, redir4) {
+  const char *text = "34with 2>| 222";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INT_LITERAL, "34", TokenKind::WITH, "with",
+                                 TokenKind::REDIR_OUT_CLOBBER, "2>|", TokenKind::CMD_ARG_PART,
+                                 "222", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, redir5) {
+  const char *text = "echo &>| 222";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::COMMAND, "echo", TokenKind::REDIR_OUT_ERR_CLOBBER,
+                                 "&>|", TokenKind::CMD_ARG_PART, "222", TokenKind::NEW_LINE, "\n",
+                                 TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, illegal_redir1) {
   const char *text = "hello00>>&";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "hello00", TokenKind::REDIR_APPEND, ">>",
                                  TokenKind::BACKGROUND, "&", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, illegal_redir3) {
+  const char *text = "34with2>hoge";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INT_LITERAL, "34", TokenKind::INVALID, "with2"));
 }
 
 /**
