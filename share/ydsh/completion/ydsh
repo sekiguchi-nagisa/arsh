@@ -29,7 +29,7 @@ compdef --cmd dscolorize --short h
 compdef --cmd dscolorize --short l
 compdef --cmd dscolorize --short o --arg-action file
 
-if (command -v dscolorize &> /dev/null) {
+if (command -v dscolorize &>> /dev/null) {
     var lines = IFS=$'\n' $(dscolorize -l)
     let size = $lines.size()
     var i = 0

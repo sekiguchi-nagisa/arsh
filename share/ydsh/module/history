@@ -72,7 +72,7 @@ function initHistoryOp(editor : LineEditor, buf : [String],
 }
 
 function _default_search(q : String, buf : [String]) : String {
-    command -v fzf &> /dev/null || return ""
+    command -v fzf &>> /dev/null || return ""
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
     return "$(for $e in $buf {

@@ -13,8 +13,8 @@ $LINE_EDIT.setCompletion(function(m, s) => {
     $COMPREPLY
 })
 
-if(command -v dscolorize &> /dev/null) {
-    var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2> /dev/null)"
+if(command -v dscolorize &>> /dev/null) {
+    var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
     if $? == 0 {
         $LINE_EDIT.setColor($color)
     }

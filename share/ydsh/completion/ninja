@@ -3,4 +3,4 @@
 source $SCRIPT_DIR/../module/completion
 
 
-compdef --cmd ninja --arg-cmd 'ninja -t targets all 2> /dev/null | cut -d: -f1'
+compdef --cmd ninja --arg-cmd 'ninja -t targets all 2>> /dev/null | cut -d: -f1'

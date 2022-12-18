@@ -105,7 +105,7 @@ function _add_and_save(s : String) {
     $HISTFILE.empty() && return
     try {
         if !(test -e $HISTFILE) {
-            touch $HISTFILE 2> /dev/null &&
+            touch $HISTFILE 2>> /dev/null &&
             chmod g-rw,o-rw $HISTFILE
         }
         var histFile = new FD($HISTFILE);
@@ -120,7 +120,7 @@ function _add_and_save(s : String) {
         }
         for line in $lines {
             echo $line
-        } with > $HISTFILE
+        } with >| $HISTFILE
     } catch e {
         return # ignore io error
     }
@@ -157,7 +157,7 @@ function _save(p : String!) {
         var line = $HISTORY[$i]
         $line.contains($'\n') && continue
         echo $HISTORY[$i]
-    } with > $path
+    } with >| $path
     chmod g-rw,o-rw $path
 }
 
