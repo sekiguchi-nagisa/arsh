@@ -1,5 +1,5 @@
 
-source ../../../../share/ydsh/module/edit
+source ../../../../share/ydsh/module/repl_impl/history
 $HISTORY.clear()
 
 

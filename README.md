@@ -53,13 +53,7 @@ $ make -j4
 $ sudo make install
 ```
 
-2. create rcfile (`ydshrc`)
-
-```sh
-$ ./ydsh ../tools/script/genrc.ds
-```
-
-3. run in interactive mode
+2. run in interactive mode
 
 ```sh
 $ ydsh

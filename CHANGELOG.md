@@ -174,6 +174,8 @@
 #### Module
 
 - save currently added history entry immediately
+- rename edit module with repl
+  - now import completion scripts
 
 #### API
 

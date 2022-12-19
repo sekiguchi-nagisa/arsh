@@ -131,7 +131,7 @@ struct APITest : public ExpectOutput {
 
 TEST_F(APITest, modFullpath) {
   DSError e;
-  int r = DSState_loadModule(this->state, "edit", DS_MOD_FULLPATH, &e); // not load 'edit'
+  int r = DSState_loadModule(this->state, "repl", DS_MOD_FULLPATH, &e); // not load 'repl'
   ASSERT_EQ(1, r);
   ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
   ASSERT_STREQ(strerror(ENOENT), e.name);
@@ -141,7 +141,7 @@ TEST_F(APITest, modFullpath) {
 
 TEST_F(APITest, mod) {
   DSError e;
-  int r = DSState_loadModule(this->state, "edit", 0, &e);
+  int r = DSState_loadModule(this->state, "repl", 0, &e);
   ASSERT_EQ(0, r);
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
   ASSERT_EQ(0, e.lineNum);

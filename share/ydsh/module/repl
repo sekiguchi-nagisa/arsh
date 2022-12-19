@@ -1,18 +1,29 @@
 #!/usr/bin/env ydsh
 
 # load default prompt setting
-source $SCRIPT_DIR/edit_impl/prompt inlined
+source $SCRIPT_DIR/repl_impl/prompt inlined
 
 # load default history setting
-source $SCRIPT_DIR/edit_impl/history inlined
+source $SCRIPT_DIR/repl_impl/history inlined
 
 history -r $HISTFILE  # manually load history
 
+# completion setting
 $LINE_EDIT.setCompletion(function(m, s) => {
     complete -m $m -q -s -- $s
     $COMPREPLY
 })
+source completion
+if $OSTYPE == "Darwin" && $MACHTYPE == "aarch64" {
+    $BASH_COMPLETION_PATH = "/opt/homebrew/share/bash-completion/bash_completion"
+}
+source $DATA_DIR/completion/*
 
+# ISDIR setting
+source cnf
+$ISDIR_HOOK = function($s : String) => cd $s && pwd
+
+# syntax highlight color setting
 if(command -v dscolorize &>> /dev/null) {
     var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
     if $? == 0 {
