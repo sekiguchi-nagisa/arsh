@@ -233,6 +233,3 @@ $initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
     $_sync()
     $_add_and_save($line)
 })
-
-# create DATA_HOME
-test -e $DATA_HOME || mkdir -p $DATA_HOME || true
