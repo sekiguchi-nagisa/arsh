@@ -1307,7 +1307,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       });
     } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
                !hasFlag(opt, CmdArgParseOpt::REDIR) &&
-               !this->lexer->startsWith(token, '~')) { // for `dd if=path' style argument
+               !this->lexer->startsWith(token, '~')) { // for 'dd if=path' style argument
       Token prefixToken = token;
       iteratePathList(*this->lexer, token, '=', [&](Token subToken, bool) {
         prefixToken = subToken;

@@ -1703,7 +1703,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         constNode = NumberNode::newBool(token, v != 0);
         break;
       case ConstEntry::Kind::SIG:
-        constNode = NumberNode::newSignal(token, v);
+        constNode = NumberNode::newSignal(token, static_cast<int>(v));
         break;
       }
       this->checkTypeAsExpr(*constNode);
@@ -2057,10 +2057,11 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
     if (typeOrError) {
       auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
       node.setResolvedType(funcType);
-      if (HandlePtr handle;
-          !node.isAnonymousFunc() &&
-          (handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY))) {
-        node.setHandle(std::move(handle));
+      if (!node.isAnonymousFunc()) {
+        auto handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY);
+        if (handle) {
+          node.setHandle(std::move(handle));
+        }
       }
     } else {
       this->reportError(node.getToken(), std::move(*typeOrError.asErr()));

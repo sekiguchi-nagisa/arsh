@@ -1001,7 +1001,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 
   CodeCompOp compOp{};
   bool show = true;
-  bool inserSpace = false;
+  bool insertSpace = false;
   StringRef moduleDesc;
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, ":A:m:qs")) != -1;) {
@@ -1022,7 +1022,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
       show = false;
       break;
     case 's':
-      inserSpace = true;
+      insertSpace = true;
       break;
     case ':':
       ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
@@ -1037,7 +1037,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  if (doCodeCompletion(state, moduleDesc, line, inserSpace, compOp) < 0) {
+  if (doCodeCompletion(state, moduleDesc, line, insertSpace, compOp) < 0) {
     if (errno == EINVAL) {
       ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
     }
