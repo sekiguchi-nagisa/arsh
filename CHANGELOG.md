@@ -175,7 +175,7 @@
 
 - save currently added history entry immediately
 - rename edit module with repl
-  - now import completion scripts
+    - now import completion scripts
 
 #### API
 
@@ -188,6 +188,7 @@
 #### Misc
 
 - **Breaking Change**: remove daemon mode in ``dscolorize``
+- auto-generate rcfile at startup
 
 ### Fixed
 
