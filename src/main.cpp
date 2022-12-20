@@ -127,15 +127,33 @@ enum class InvocationKind {
 
 static const char *version() { return DSState_version(nullptr); }
 
-static std::string getRCFilePath(const DSState *state, const char *path) {
+static std::string getRCFilePath(DSState *state, const char *path) {
   std::string value;
   if (path) {
     value = path;
   } else { // use default
     auto *ptr = DSState_config(state, DS_CONFIG_CONFIG_HOME);
     assert(ptr);
-    value += ptr;
+    value = ptr;
     value += "/ydshrc";
+
+    if (access(value.c_str(), F_OK) != 0) {
+      const char *argv[] = {
+          "mkdir",
+          "-p",
+          ptr,
+          nullptr,
+      };
+      DSState_exec(state, const_cast<char **>(argv));
+
+      if (FILE *fp = fopen(value.c_str(), "w")) {
+        fprintf(fp, "## default interactive mode setting\n"
+                    "## must install `repl` module before load this file\n"
+                    "source repl inlined\n"
+                    "## write addition interactive mode setting bellow\n");
+        fclose(fp);
+      }
+    }
   }
   return value;
 }
