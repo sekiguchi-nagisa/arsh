@@ -1,6 +1,6 @@
-#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 6, $chars = 5, $status = 1)
+#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 6, $chars = 6, $status = 1)
 
 typedef AAA : Error
 
 $true ||
-    function f() for AAA {}
+    (function f() for AAA {})

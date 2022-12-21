@@ -152,6 +152,7 @@
 - improve the following error messages
     - unclosed string, back-quote, regex literal
     - io redirection
+- improve error message and line number within parenthesis
 
 #### Builtin
 

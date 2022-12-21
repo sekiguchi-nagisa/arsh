@@ -97,17 +97,26 @@ struct NodeVisitor;
 class NodeDumper;
 
 class Node {
-protected:
+private:
   const NodeKind nodeKind;
 
+  /**
+   * maintains paren position `(` `)`
+   */
   Token token;
+
+  /**
+   * actual token
+   */
+  Token actual;
 
   /**
    * initial value is null.
    */
   const DSType *type{nullptr};
 
-  Node(NodeKind kind, Token token) : nodeKind(kind), token(token) {}
+protected:
+  Node(NodeKind kind, Token token) : nodeKind(kind), token(token), actual(token) {}
 
 public:
   NON_COPYABLE(Node);
@@ -120,9 +129,11 @@ public:
 
   Token getToken() const { return this->token; }
 
+  Token getActualToken() const { return this->actual; }
+
   unsigned int getPos() const { return this->token.pos; }
 
-  void setPos(unsigned int pos) { this->token.pos = pos; }
+  unsigned int getActualPos() const { return this->actual.pos; }
 
   unsigned int getSize() const { return this->token.size; }
 
@@ -130,7 +141,14 @@ public:
     if (t.endPos() > this->token.endPos()) {
       this->token.size = t.endPos() - this->token.pos;
     }
+    this->actual = this->token;
   }
+
+  void setParenPos(unsigned int openPos, Token closeToken) {
+    assert(openPos <= this->actual.pos);
+    assert(this->actual.endPos() <= closeToken.endPos());
+    this->token = {openPos, closeToken.endPos() - openPos};
+  };
 
   void setType(const DSType &t) { this->type = &t; }
 
@@ -382,7 +400,7 @@ public:
   void dump(NodeDumper &dumper) const override;
 
   std::unique_ptr<NumberNode> clone() const {
-    auto node = std::make_unique<NumberNode>(this->token, this->kind);
+    auto node = std::make_unique<NumberNode>(this->getActualToken(), this->kind);
     node->setType(this->getType());
     if (this->kind == Kind::Float) {
       node->floatValue = this->getFloatValue();
@@ -2455,7 +2473,7 @@ public:
 
   std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
     unsigned int index = this->curIndex - 1;
-    return std::make_unique<SourceNode>(this->token, this->pathNode, this->name, modType,
+    return std::make_unique<SourceNode>(this->getToken(), this->pathNode, this->name, modType,
                                         this->pathList[index], first, this->isInlined(), index);
   }
 

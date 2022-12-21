@@ -1,4 +1,4 @@
 
-#$test($result = 'type', $lineNum = 4, $chars = 34, $errorKind = 'InsideLoop', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 35, $errorKind = 'InsideLoop', $status = 1)
 
 for(var i = 34; $i < 23; { $i++; (continue) as Void; }) {}

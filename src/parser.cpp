@@ -513,8 +513,7 @@ createTupleOrBasicType(Token open, std::vector<std::unique_ptr<TypeNode>> &&type
                        unsigned int commaCount) {
   if (commaCount == 0) {
     auto type = std::move(types[0]);
-    type->setPos(open.pos);
-    type->updateToken(close);
+    type->setParenPos(open.pos, close);
     return type;
   }
   return std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(open, TYPE_TUPLE),
@@ -1660,8 +1659,7 @@ static std::unique_ptr<Node> createTupleOrGroup(Token open,
                                                 Token close, unsigned int commaCount) {
   if (commaCount == 0) {
     auto node = std::move(nodes[0]);
-    node->setPos(open.pos);
-    node->updateToken(close);
+    node->setParenPos(open.pos, close);
     return node;
   } else {
     return std::make_unique<TupleNode>(open.pos, std::move(nodes), close);

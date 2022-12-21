@@ -616,7 +616,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
 void TypeChecker::visitRegexNode(RegexNode &node) {
   std::string e;
   if (!node.buildRegex(e)) {
-    this->reportError<RegexSyntax>(node, e.c_str());
+    this->reportError<RegexSyntax>(node.getActualToken(), e.c_str());
   }
   node.setType(this->typePool.get(TYPE::Regex));
 }
@@ -722,7 +722,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
         node.setType(this->typePool.get(TYPE::String));
       }
     } else {
-      this->reportError<PosArgRange>(node, node.getVarName().c_str());
+      this->reportError<PosArgRange>(node.getActualToken(), node.getVarName().c_str());
     }
     break;
   }
@@ -991,7 +991,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   }
   if (node.getType().isNothingType() &&
       this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
-    this->reportError<InsideFinally>(node);
+    this->reportError<InsideFinally>(node.getActualToken());
   }
 }
 
@@ -1741,16 +1741,16 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
 
 void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
   if (this->funcCtx->loopLevel() == 0) {
-    this->reportError<InsideLoop>(node);
+    this->reportError<InsideLoop>(node.getActualToken());
     return;
   }
 
   if (this->funcCtx->finallyLevel() > this->funcCtx->loopLevel()) {
-    this->reportError<InsideFinally>(node);
+    this->reportError<InsideFinally>(node.getActualToken());
   }
 
   if (this->funcCtx->childLevel() > this->funcCtx->loopLevel()) {
-    this->reportError<InsideChild>(node);
+    this->reportError<InsideChild>(node.getActualToken());
   }
 
   if (this->funcCtx->tryCatchLevel() > this->funcCtx->loopLevel()) {
@@ -1768,15 +1768,15 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
 
 void TypeChecker::checkTypeAsReturn(JumpNode &node) {
   if (this->funcCtx->finallyLevel() > 0) {
-    this->reportError<InsideFinally>(node);
+    this->reportError<InsideFinally>(node.getActualToken());
   }
 
   if (this->funcCtx->childLevel() > 0) {
-    this->reportError<InsideChild>(node);
+    this->reportError<InsideChild>(node.getActualToken());
   }
 
   if (!this->funcCtx->withinFunc()) {
-    this->reportError<InsideFunc>(node);
+    this->reportError<InsideFunc>(node.getActualToken());
     return;
   }
 
@@ -1800,7 +1800,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     break;
   case JumpNode::THROW:
     if (this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
-      this->reportError<InsideFinally>(node);
+      this->reportError<InsideFinally>(node.getActualToken());
     }
     this->checkType(this->typePool.get(TYPE::Error), node.getExprNode());
     break;
@@ -2249,11 +2249,11 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
       } else {
         message = "named function definition";
       }
-      this->reportError<OutsideToplevel>(node, message);
+      this->reportError<OutsideToplevel>(node.getActualToken(), message);
       return;
     }
     if (this->funcCtx->depth == SYS_LIMIT_FUNC_DEPTH) {
-      this->reportError<FuncDepthLimit>(node);
+      this->reportError<FuncDepthLimit>(node.getActualToken());
       return;
     }
 
@@ -2317,7 +2317,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     node.setType(this->typePool.get(TYPE::Void));
 
     if (!node.isAnonymousCmd() && !this->isTopLevel()) { // only available toplevel scope
-      this->reportError<OutsideToplevel>(node, "user-defined command definition");
+      this->reportError<OutsideToplevel>(node.getActualToken(), "user-defined command definition");
       return;
     }
 

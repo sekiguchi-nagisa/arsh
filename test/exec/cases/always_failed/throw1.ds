@@ -1,3 +1,5 @@
-#$test($result = 'throw', $lineNum = 3, $errorKind = 'Error', $status = 1)
+#$test($result = 'throw', $lineNum = 4, $errorKind = 'Error', $status = 1)
 
-throw new Error("hello")
+throw (
+    new Error("hello")
+)

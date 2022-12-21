@@ -318,7 +318,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
   }
 
   // generate pipeline
-  this->emitSourcePos(node.getPos());
+  this->emitSourcePos(node.getActualPos());
   this->emitLdcIns(toPipelineDesc(*this->curBuilder().lexer, node));
   this->emitPipelineIns(labels, lastPipe, forkKind);
 
@@ -513,7 +513,7 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
-  this->emitSourcePos(node.getPos());
+  this->emitSourcePos(node.getActualPos());
   if (node.getHandle()->is(HandleKind::ENV)) {
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
@@ -633,26 +633,26 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     break;
   }
   case TypeOpNode::TO_STRING:
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emitToString();
     break;
   case TypeOpNode::TO_BOOL: {
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     auto *handle = this->typePool.lookupMethod(node.getExprNode().getType(), OP_BOOL);
     assert(handle != nullptr);
     this->emitMethodCallIns(*handle);
     break;
   }
   case TypeOpNode::CHECK_CAST:
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emitTypeIns(OpCode::CHECK_CAST, node.getType());
     break;
   case TypeOpNode::CHECK_UNWRAP:
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emit0byteIns(OpCode::CHECK_UNWRAP);
     break;
   case TypeOpNode::PRINT: {
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     auto &exprType = node.getExprNode().getType();
     if (exprType.isOptionType()) {
       auto &elementType = cast<OptionType>(exprType).getElementType();
@@ -784,12 +784,12 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
   } else if (node.isMethodCall()) {
     this->visit(node.getRecvNode());
     this->visit(node.getArgsNode());
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(*node.getHandle());
   } else {
     this->visit(node.getExprNode());
     this->visit(node.getArgsNode());
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     const unsigned int paramSize = node.getArgsNode().getNodes().size();
     this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
   }
@@ -816,7 +816,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     this->visit(node.getArgsNode());
 
     // call constructor
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(handle);
     break;
   }
@@ -843,7 +843,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->visit(*argNode);
   }
 
-  this->emitSourcePos(node.getPos());
+  this->emitSourcePos(node.getActualPos());
   if (node.hasRedir()) {
     this->emit0byteIns(OpCode::DO_REDIR);
   }
@@ -944,7 +944,7 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     for (auto &e : node.getRedirNodes()) {
       this->visit(*e);
     }
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emit0byteIns(OpCode::DO_REDIR);
     this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
 
@@ -974,7 +974,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
-    this->emitSourcePos(node.getPos());
+    this->emitSourcePos(node.getActualPos());
     this->emitLdcIns(toForkDesc(*this->curBuilder().lexer, node));
     this->emitForkIns(node.getOpKind(), mergeLabel);
     this->markLabel(beginLabel);

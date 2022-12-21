@@ -1,5 +1,5 @@
 
-#$test($result = 'type', $lineNum = 10, $chars = 13, $errorKind = 'InsideFinally', $status = 1)
+#$test($result = 'type', $lineNum = 10, $chars = 15, $errorKind = 'InsideFinally', $status = 1)
 
 raise() : Nothing {
     throw new Error("$@")
@@ -7,7 +7,7 @@ raise() : Nothing {
 
 defer {
     var v = 34 | (throw new SystemError('23')) | raise 2
-    true && throw 34
+    true && ( throw 34)
 }
 
 true
