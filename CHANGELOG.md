@@ -178,6 +178,8 @@
 - save currently added history entry immediately
 - rename edit module with repl
     - now import completion scripts
+- re-implement bash completion wrapper in completion module
+    - no longer need foreign completion wrapper
 
 #### API
 
