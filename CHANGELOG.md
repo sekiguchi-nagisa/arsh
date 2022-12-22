@@ -60,6 +60,7 @@
     - ``setPrompt``: specify prompt callback
     - ``setHistory``: specify history callback
     - ``setColor``: specify syntax highlight color theme
+    - also support multi-line editing
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
     - ``value``: get internal file descriptor number
