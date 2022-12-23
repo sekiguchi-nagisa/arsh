@@ -727,7 +727,8 @@ static void revertInsert(struct linenoiseState &l, size_t len) {
   }
 }
 
-static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = false) {
+static std::pair<unsigned int, unsigned int> findLineInterval(const struct linenoiseState &l,
+                                                              bool wholeLine) {
   unsigned int newPos = 0;
   unsigned int delLen = l.len;
   if (l.newlinePos.empty()) { // single-line
@@ -746,6 +747,11 @@ static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = fal
       delLen = (wholeLine ? l.len : l.pos) - newPos;
     }
   }
+  return {newPos, delLen};
+}
+
+static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = false) {
+  auto [newPos, delLen] = findLineInterval(l, wholeLine);
   l.pos = newPos + delLen;
   revertInsert(l, delLen);
 }
@@ -1818,7 +1824,15 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
   };
 
   const char *opStr = table[static_cast<unsigned int>(op)];
-  StringRef line = op != HistOp::INIT && l != nullptr ? l->buf : "";
+  StringRef line = op != HistOp::INIT && l != nullptr ? l->lineRef() : "";
+  if (op == HistOp::SEARCH) {
+    assert(l);
+    if (!l->newlinePos.empty()) { // multi-line
+      auto [pos, len] = findLineInterval(*l, true);
+      line = line.substr(pos, len);
+    }
+  }
+
   auto ret = this->kickCallback(state, this->historyCallback,
                                 makeArgs(DSValue::createStr(opStr), DSValue::createStr(line)));
   if (state.hasError()) {
@@ -1837,10 +1851,12 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
       break;
     }
     if (const char *retStr = ret.asCStr(); op != HistOp::SEARCH || *retStr != '\0') {
-      strncpy(l->buf, retStr, l->buflen);
-      l->buf[l->buflen - 1] = '\0';
-      l->len = l->pos = strlen(l->buf);
-      return true;
+      if (op == HistOp::SEARCH) {
+        linenoiseEditDeleteTo(*l, true);
+      } else {
+        l->len = l->pos = 0;
+      }
+      return linenoiseEditInsert(*l, retStr, strlen(retStr));
     }
     break;
   }
