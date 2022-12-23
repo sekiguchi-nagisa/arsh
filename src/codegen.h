@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "cgerror.h"
+#include "lexer.h"
 #include "misc/emitter.hpp"
 #include "node.h"
 #include "object.h"
@@ -317,7 +318,7 @@ private:
   void emitLdcIns(DSValue &&value);
 
   void emitInt(int64_t v) {
-    if(v >= 0 && v <= UINT8_MAX) {
+    if (v >= 0 && v <= UINT8_MAX) {
       this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(v));
     } else {
       this->emitLdcIns(DSValue::createInt(v));

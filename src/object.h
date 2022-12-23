@@ -27,7 +27,6 @@
 #include <tuple>
 
 #include "constant.h"
-#include "lexer.h"
 #include "misc/buffer.hpp"
 #include "misc/files.h"
 #include "misc/grapheme.hpp"

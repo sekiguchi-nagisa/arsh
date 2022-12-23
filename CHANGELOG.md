@@ -61,6 +61,7 @@
     - ``setHistory``: specify history callback
     - ``setColor``: specify syntax highlight color theme
     - also support multi-line editing
+    - CTRL-U, CTRL-K, CTRL-A, CTRL-E are multi-line aware
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
     - ``value``: get internal file descriptor number

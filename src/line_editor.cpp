@@ -119,6 +119,7 @@
 
 #include "encoding.h"
 #include "line_editor.h"
+#include "misc/buffer.hpp"
 #include "misc/unicode.hpp"
 #include "vm.h"
 
@@ -127,6 +128,8 @@
 #define LINENOISE_MAX_LINE 4096
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
+
+using NewlinePos = ydsh::FlexBuffer<unsigned int>;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -144,6 +147,7 @@ struct linenoiseState {
   size_t cols;            /* Number of columns in terminal. */
   size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
   ydsh::CharWidthProperties ps;
+  NewlinePos newlinePos; // maintains newline pos
 
   ydsh::StringRef lineRef() const { return ydsh::StringRef(this->buf, this->len); }
 };
@@ -619,6 +623,27 @@ struct abuf {
   }
 };
 
+static void fillNewlinePos(NewlinePos &newlinePos, StringRef ref) {
+  newlinePos.clear();
+  for (StringRef::size_type pos = 0;;) {
+    auto retPos = ref.find('\n', pos);
+    if (retPos != StringRef::npos) {
+      newlinePos.push_back(retPos);
+      pos = retPos + 1;
+    } else {
+      break;
+    }
+  }
+}
+
+static unsigned int findCurIndex(const NewlinePos &newlinePos, unsigned int pos) {
+  auto iter = std::lower_bound(newlinePos.begin(), newlinePos.end(), pos);
+  if (iter == newlinePos.end()) {
+    return newlinePos.size();
+  }
+  return iter - newlinePos.begin();
+}
+
 /* Move cursor on the left. */
 static bool linenoiseEditMoveLeft(struct linenoiseState &l) {
   if (l.pos > 0) {
@@ -639,8 +664,19 @@ static bool linenoiseEditMoveRight(struct linenoiseState &l) {
 
 /* Move cursor to the start of the line. */
 static bool linenoiseEditMoveHome(struct linenoiseState &l) {
-  if (l.pos != 0) {
-    l.pos = 0;
+  unsigned int newPos = 0;
+  if (l.newlinePos.empty()) { // single-line
+    newPos = 0;
+  } else { // multi-line
+    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    if (index == 0) {
+      newPos = 0;
+    } else {
+      newPos = l.newlinePos[index - 1] + 1;
+    }
+  }
+  if (l.pos != newPos) {
+    l.pos = newPos;
     return true;
   }
   return false;
@@ -648,8 +684,19 @@ static bool linenoiseEditMoveHome(struct linenoiseState &l) {
 
 /* Move cursor to the end of the line. */
 static bool linenoiseEditMoveEnd(struct linenoiseState &l) {
-  if (l.pos != l.len) {
-    l.pos = l.len;
+  unsigned int newPos = 0;
+  if (l.newlinePos.empty()) { // single-line
+    newPos = l.len;
+  } else { // multi-line
+    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    if (index == l.newlinePos.size()) {
+      newPos = l.len;
+    } else {
+      newPos = l.newlinePos[index];
+    }
+  }
+  if (l.pos != newPos) {
+    l.pos = newPos;
     return true;
   }
   return false;
@@ -669,6 +716,56 @@ static bool linenoiseEditMoveRightWord(struct linenoiseState &l) {
     return true;
   }
   return false;
+}
+
+static void revertInsert(struct linenoiseState &l, size_t len) {
+  if (len > 0) {
+    memmove(l.buf + l.pos - len, l.buf + l.pos, l.len - l.pos);
+    l.pos -= len;
+    l.len -= len;
+    l.buf[l.len] = '\0';
+  }
+}
+
+static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = false) {
+  unsigned int newPos = 0;
+  unsigned int delLen = l.len;
+  if (l.newlinePos.empty()) { // single-line
+    newPos = 0;
+    delLen = (wholeLine ? l.len : l.pos);
+  } else { // multi-line
+    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    if (index == 0) {
+      newPos = 0;
+      delLen = wholeLine ? l.newlinePos[index] : l.pos;
+    } else if (index < l.newlinePos.size()) {
+      newPos = l.newlinePos[index - 1] + 1;
+      delLen = (wholeLine ? l.newlinePos[index] : l.pos) - newPos;
+    } else {
+      newPos = l.newlinePos[index - 1] + 1;
+      delLen = (wholeLine ? l.len : l.pos) - newPos;
+    }
+  }
+  l.pos = newPos + delLen;
+  revertInsert(l, delLen);
+}
+
+static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
+  if (l.newlinePos.empty()) { // single-line
+    l.buf[l.pos] = '\0';
+    l.len = l.pos;
+  } else { // multi-line
+    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    unsigned int newPos = 0;
+    if (index == l.newlinePos.size()) {
+      newPos = l.len;
+    } else {
+      newPos = l.newlinePos[index];
+    }
+    unsigned int delLen = newPos - l.pos;
+    l.pos = newPos;
+    revertInsert(l, delLen);
+  }
 }
 
 /**
@@ -887,7 +984,7 @@ static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, con
 
     auto colLen = columnPosForMultiLine(ps, StringRef(buf, bufLen), bufLen, cols, initPos);
     if (retPos == StringRef::npos) {
-      if(isPrompt) {
+      if (isPrompt) {
         col = colLen % cols;
         row += colLen / cols;
       } else {
@@ -909,10 +1006,10 @@ static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
   return getColRowLen(ps, prompt, cols, true, 0);
 }
 
-static void appendLines(abuf &buf, StringRef prompt, size_t initCols) {
+static void appendLines(abuf &buf, const StringRef ref, size_t initCols) {
   for (StringRef::size_type pos = 0;;) {
-    auto retPos = prompt.find('\n', pos);
-    auto sub = prompt.slice(pos, retPos);
+    const auto retPos = ref.find('\n', pos);
+    auto sub = ref.slice(pos, retPos);
     buf.append(sub.data(), sub.size());
     if (retPos != StringRef::npos) {
       buf.append("\r\n", 2);
@@ -988,6 +1085,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
       }
       lineRef = this->highlightCache;
     }
+    fillNewlinePos(l.newlinePos, l.lineRef());
     appendLines(ab, lineRef, pcollen);
   }
 
@@ -1132,6 +1230,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       .cols = static_cast<size_t>(getColumns(this->inFd, this->outFd)),
       .maxrows = 0,
       .ps = {},
+      .newlinePos = {},
   };
 
   /* Buffer starts empty. */
@@ -1409,14 +1508,12 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       } else {
         return -1;
       }
-    case CTRL_U: /* Ctrl+u, delete the whole line. */
-      buf[0] = '\0';
-      l.pos = l.len = 0;
+    case CTRL_U: /* Ctrl+u, delete the whole line or delete to current. */
+      linenoiseEditDeleteTo(l);
       this->refreshLine(l);
       break;
     case CTRL_K: /* Ctrl+k, delete from current to end of line. */
-      buf[l.pos] = '\0';
-      l.len = l.pos;
+      linenoiseEditDeleteFrom(l);
       this->refreshLine(l);
       break;
     case CTRL_A: /* Ctrl+a, go to the start of the line */
@@ -1571,15 +1668,6 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
   free(prefix);
 
   return matched ? offset : ls.pos;
-}
-
-static void revertInsert(struct linenoiseState &l, size_t len) {
-  if (len > 0) {
-    memmove(l.buf + l.pos - len, l.buf + l.pos, l.len - l.pos);
-    l.pos -= len;
-    l.len -= len;
-    l.buf[l.len] = '\0';
-  }
 }
 
 ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbuf, size_t clen,
