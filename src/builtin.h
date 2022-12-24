@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "chars.h"
 #include "line_editor.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
@@ -578,12 +579,7 @@ YDSH_METHOD string_empty(RuntimeContext &ctx) {
 //!bind: function count($this : String) : Int
 YDSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
-  GraphemeScanner scanner(LOCAL(0).asStrRef());
-  GraphemeScanner::Result ret;
-  size_t count = 0;
-  while (scanner.next(ret)) {
-    count++;
-  }
+  size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeScanner::Result &) {});
   assert(count <= StringObject::MAX_SIZE);
   RET(DSValue::createInt(count));
 }
@@ -592,13 +588,11 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
 YDSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
   auto ref = LOCAL(0).asStrRef();
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
-  while (scanner.next(ret)) {
-    array.append(DSValue::createStr(ret));
-  }
+
+  iterateGrapheme(
+      ref, [&array](const GraphemeScanner::Result &ret) { array.append(DSValue::createStr(ret)); });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
 }
@@ -636,9 +630,6 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_width);
   auto ref = LOCAL(0).asStrRef();
   auto &v = LOCAL(1);
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
-  int64_t value = 0;
 
   // resolve east-asian width option
   auto n = v.isInvalid() ? 0 : v.asInt();
@@ -647,18 +638,17 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
              : UnicodeUtil::isCJKLocale() ? UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH
                                           : UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
 
-  while (scanner.next(ret)) {
-    int width = 0;
-    for (unsigned int i = 0; i < ret.codePointCount; i++) {
-      auto codePoint = ret.codePoints[i];
-      codePoint = codePoint < 0 ? UnicodeUtil::REPLACEMENT_CHAR_CODE : codePoint;
-      int w = UnicodeUtil::width(codePoint, eaw);
-      if (w > 0) {
-        width += w;
-      }
-    }
-    value += (width <= 2 ? width : 2);
-  }
+  CharWidthProperties ps = {
+      .eaw = eaw,
+      .flagSeqWidth = 2,
+      .zwjSeqFallback = false,
+      .replaceInvalid = true,
+  };
+  int64_t value = 0;
+  iterateGrapheme(ref, [&value, &ps](const GraphemeScanner::Result &ret) {
+    value += getGraphemeWidth(ps, ret);
+  });
+
   RET(DSValue::createInt(value));
 }
 
@@ -1016,9 +1006,9 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_realpath);
   auto ref = LOCAL(0).asStrRef();
-  if(!ref.hasNullChar()) {
+  if (!ref.hasNullChar()) {
     auto buf = getRealpath(ref.data());
-    if(buf) {
+    if (buf) {
       RET(DSValue::createStr(buf.get()));
     }
   }

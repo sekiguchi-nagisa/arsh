@@ -117,7 +117,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "encoding.h"
+#include "chars.h"
 #include "line_editor.h"
 #include "misc/buffer.hpp"
 #include "misc/unicode.hpp"

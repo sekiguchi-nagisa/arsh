@@ -2,7 +2,7 @@
 
 #include "../test_common.h"
 
-#include <encoding.h>
+#include <chars.h>
 
 using namespace ydsh;
 

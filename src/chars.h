@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ENCODING_H
-#define YDSH_ENCODING_H
+#ifndef YDSH_CHARS_H
+#define YDSH_CHARS_H
 
 #include <array>
+#include <functional>
 
-#include "misc/string_ref.hpp"
+#include "misc/detect.hpp"
+#include "misc/grapheme.hpp"
 
 namespace ydsh {
 
-// for unicode-aware character length counting
+// high level api for unicode-aware character op
 
 #define EACH_CHAR_WIDTH_PROPERY(OP)                                                                \
   OP(EAW, "○")                                                                                     \
@@ -51,14 +53,15 @@ using CharWidthPropertyList =
 const CharWidthPropertyList &getCharWidthPropertyList();
 
 struct CharWidthProperties {
-  bool fullWidth{false};
+  UnicodeUtil::AmbiguousCharWidth eaw{UnicodeUtil::HALF_WIDTH};
   unsigned char flagSeqWidth{4};
   bool zwjSeqFallback{false};
+  bool replaceInvalid{false};
 
   void setProperty(CharWidthProperty p, std::size_t len) {
     switch (p) {
     case CharWidthProperty::EAW:
-      this->fullWidth = len == 2;
+      this->eaw = len == 2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
       break;
     case CharWidthProperty::EMOJI_FLAG_SEQ:
       this->flagSeqWidth = len;
@@ -69,6 +72,45 @@ struct CharWidthProperties {
     }
   }
 };
+
+/**
+ * get width of a grapheme cluster
+ * @param ps
+ * @param ret
+ * @return
+ */
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret);
+
+/**
+ * iterate grapheme cluster
+ * @param ref
+ * @param limit
+ * if number of grapheme clusters reach limit, break iteration
+ * @param consumer
+ * callback for scanned grapheme
+ * @return
+ * total number of scanned grapheme clusters
+ */
+
+template <typename Consumer>
+static constexpr bool graphme_consumer_requirement_v =
+    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
+
+template <typename Func, enable_when<graphme_consumer_requirement_v<Func>> = nullptr>
+size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  size_t count = 0;
+  for (; count < limit && scanner.next(ret); count++) {
+    consumer(ret);
+  }
+  return count;
+}
+
+template <typename Func, enable_when<graphme_consumer_requirement_v<Func>> = nullptr>
+size_t iterateGrapheme(StringRef ref, Func consumer) {
+  return iterateGraphemeUntil(ref, static_cast<size_t>(-1), std::move(consumer));
+}
 
 enum class CharLenOp {
   NEXT_CHAR,
@@ -91,4 +133,4 @@ ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps)
 
 } // namespace ydsh
 
-#endif // YDSH_ENCODING_H
+#endif // YDSH_CHARS_H

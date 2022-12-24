@@ -132,7 +132,7 @@ struct UnicodeUtil {
   /**
    * for east asian ambiguous character.
    */
-  enum AmbiguousCharWidth {
+  enum AmbiguousCharWidth : unsigned char {
     HALF_WIDTH,
     FULL_WIDTH,
   };

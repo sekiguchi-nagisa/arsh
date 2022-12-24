@@ -233,7 +233,7 @@ set(YDSH_SRC
         src/sysconfig.cpp
         src/brace.cpp
         src/line_editor.cpp
-        src/encoding.cpp
+        src/chars.cpp
         src/highlighter_base.cpp
         src/highlighter.cpp
         ${lexer_src}

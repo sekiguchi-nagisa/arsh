@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-#include "encoding.h"
-#include "misc/grapheme.hpp"
+#include "chars.h"
 #include "misc/word.hpp"
 
 namespace ydsh {
@@ -29,16 +28,17 @@ const CharWidthPropertyList &getCharWidthPropertyList() {
   return table;
 }
 
-static unsigned int graphemeWidth(const CharWidthProperties &ps,
-                                  const GraphemeScanner::Result &ret) {
-  const auto eaw = ps.fullWidth ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret) {
   unsigned int width = 0;
   unsigned int flagSeqCount = 0;
   for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    int w = UnicodeUtil::width(ret.codePoints[i], eaw);
-    if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
+    auto codePoint = ret.codePoints[i];
+    if (ps.replaceInvalid && codePoint < 0) {
+      codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
+    } else if (ret.breakProperties[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
       flagSeqCount++;
     }
+    int w = UnicodeUtil::width(codePoint, ps.eaw);
     if (w > 0) {
       width += w;
     }
@@ -49,25 +49,19 @@ static unsigned int graphemeWidth(const CharWidthProperties &ps,
   if (width > 2 && ps.zwjSeqFallback) {
     return width;
   }
-  return width < 2 ? 1 : 2;
+  return width < 2 ? width : 2;
 }
 
 ColumnLen getCharLen(StringRef ref, CharLenOp op, const CharWidthProperties &ps) {
-  GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
-  while (scanner.hasNext()) {
-    scanner.next(ret);
-    if (op == CharLenOp::NEXT_CHAR) {
-      break;
-    }
-  }
-
+  iterateGraphemeUntil(ref, op == CharLenOp::NEXT_CHAR ? 1 : static_cast<size_t>(-1),
+                       [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
   ColumnLen len = {
       .byteSize = static_cast<unsigned int>(ret.ref.size()),
       .colSize = 0,
   };
   if (ret.codePointCount > 0) {
-    len.colSize = graphemeWidth(ps, ret);
+    len.colSize = getGraphemeWidth(ps, ret);
   }
   return len;
 }
@@ -88,7 +82,7 @@ ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps)
   for (GraphemeScanner graphemeScanner(ref); graphemeScanner.hasNext();) {
     GraphemeScanner::Result ret;
     graphemeScanner.next(ret);
-    len.colSize += graphemeWidth(ps, ret);
+    len.colSize += getGraphemeWidth(ps, ret);
   }
   return len;
 }
