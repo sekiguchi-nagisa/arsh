@@ -1907,6 +1907,47 @@ bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct l
     l.rotating = true;
     return this->kickHistoryCallback(state, op, &l);
   } else if (op == HistOp::PREV || op == HistOp::NEXT) { // move cursor up/down
+    // resolve dest line
+    const auto oldPos = l.pos;
+    if (op == HistOp::PREV) { // up
+      linenoiseEditMoveHome(l);
+      if (l.pos == 0) {
+        l.pos = oldPos;
+        return false;
+      }
+      l.pos--;
+    } else { // down
+      linenoiseEditMoveEnd(l);
+      if (l.pos == l.len) {
+        l.pos = oldPos;
+        return false;
+      }
+      l.pos++;
+    }
+    StringRef dest;
+    {
+      auto [pos, len] = findLineInterval(l, true);
+      dest = StringRef(l.buf + pos, len);
+      l.pos = oldPos;
+    }
+
+    // resolve line to current position
+    size_t count = 0;
+    {
+      auto [pos, len] = findLineInterval(l, false);
+      auto line = StringRef(l.buf + pos, len);
+      count = iterateGrapheme(line, [](const GraphemeScanner::Result &) {});
+    }
+
+    GraphemeScanner::Result ret;
+    size_t retCount = iterateGraphemeUntil(
+        dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
+    if (retCount) {
+      l.pos = ret.ref.end() - l.buf;
+    } else {
+      l.pos = dest.begin() - l.buf;
+    }
+    return true;
   }
   return false;
 }
