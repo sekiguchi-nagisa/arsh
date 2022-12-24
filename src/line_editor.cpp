@@ -1187,7 +1187,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
       const char expect[] = {'[', '2', '0', '1', '~'};
       unsigned int count = 0;
       for (; count < std::size(expect); count++) {
-        if (read(l.ifd, seq + count + 1, 1) == -1) {
+        if (read(l.ifd, seq + count + 1, 1) <= 0) {
           return false;
         }
         if (seq[count + 1] != expect[count]) {
@@ -1360,7 +1360,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     case CTRL_R: /* ctrl-r */
-      if (this->kickHistoryCallback(state, HistOp::SEARCH, &l)) {
+      if (this->kickHistoryCallback(state, HistOp::SEARCH, &l, true)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
         errno = EAGAIN;
@@ -1441,6 +1441,30 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
                   this->refreshLine(l);
                 } else {
                   return -1;
+                }
+              }
+            } else if (seq[1] == '1' && seq[2] == ';') {
+              if (read(l.ifd, seq + 3, 1) == -1) {
+                break;
+              }
+              if (read(l.ifd, seq + 4, 1) == -1) {
+                break;
+              }
+              if (seq[3] == '3') {
+                if (seq[4] == 'A') { /* atl-Up */
+                  if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
+                    this->refreshLine(l);
+                  } else if (state.hasError()) {
+                    errno = EAGAIN;
+                    return -1;
+                  }
+                } else if (seq[4] == 'B') { /* alt-Down */
+                  if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
+                    this->refreshLine(l);
+                  } else if (state.hasError()) {
+                    errno = EAGAIN;
+                    return -1;
+                  }
                 }
               }
             }
@@ -1812,7 +1836,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
 }
 
 bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::HistOp op,
-                                           struct linenoiseState *l) {
+                                           struct linenoiseState *l, bool multiline) {
   if (!this->historyCallback) {
     return false; // do nothing
   }
@@ -1823,14 +1847,21 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
 #undef GEN_STR
   };
 
+  multiline = multiline && !l->newlinePos.empty();
   const char *opStr = table[static_cast<unsigned int>(op)];
   StringRef line = op != HistOp::INIT && l != nullptr ? l->lineRef() : "";
-  if (op == HistOp::SEARCH) {
+  switch (op) {
+  case HistOp::PREV:
+  case HistOp::NEXT:
+  case HistOp::SEARCH:
     assert(l);
-    if (!l->newlinePos.empty()) { // multi-line
+    if (multiline) {
       auto [pos, len] = findLineInterval(*l, true);
       line = line.substr(pos, len);
     }
+    break;
+  default:
+    break;
   }
 
   auto ret = this->kickCallback(state, this->historyCallback,
@@ -1851,7 +1882,7 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
       break;
     }
     if (const char *retStr = ret.asCStr(); op != HistOp::SEARCH || *retStr != '\0') {
-      if (op == HistOp::SEARCH) {
+      if (multiline) {
         linenoiseEditDeleteTo(*l, true);
       } else {
         l->len = l->pos = 0;

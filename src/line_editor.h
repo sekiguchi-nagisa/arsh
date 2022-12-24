@@ -117,7 +117,8 @@ private:
    */
   int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
 
-  ssize_t completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, size_t clen, int &code);
+  ssize_t completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, size_t clen,
+                       int &code);
 
   size_t insertEstimatedSuffix(struct linenoiseState &ls, const ArrayObject &candidates);
 
@@ -130,10 +131,12 @@ private:
    * @param state
    * @param op
    * @param l
+   * @param multiline
    * @return
    * if update buffer content, return true
    */
-  bool kickHistoryCallback(DSState &state, HistOp op, struct linenoiseState *l);
+  bool kickHistoryCallback(DSState &state, HistOp op, struct linenoiseState *l,
+                           bool multiline = false);
 };
 
 } // namespace ydsh
