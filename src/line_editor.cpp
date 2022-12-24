@@ -148,8 +148,11 @@ struct linenoiseState {
   size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
   ydsh::CharWidthProperties ps;
   NewlinePos newlinePos; // maintains newline pos
+  bool rotating;
 
   ydsh::StringRef lineRef() const { return ydsh::StringRef(this->buf, this->len); }
+
+  bool isSingleline() const { return this->newlinePos.empty(); }
 };
 
 enum KEY_ACTION {
@@ -665,7 +668,7 @@ static bool linenoiseEditMoveRight(struct linenoiseState &l) {
 /* Move cursor to the start of the line. */
 static bool linenoiseEditMoveHome(struct linenoiseState &l) {
   unsigned int newPos = 0;
-  if (l.newlinePos.empty()) { // single-line
+  if (l.isSingleline()) { // single-line
     newPos = 0;
   } else { // multi-line
     unsigned int index = findCurIndex(l.newlinePos, l.pos);
@@ -685,7 +688,7 @@ static bool linenoiseEditMoveHome(struct linenoiseState &l) {
 /* Move cursor to the end of the line. */
 static bool linenoiseEditMoveEnd(struct linenoiseState &l) {
   unsigned int newPos = 0;
-  if (l.newlinePos.empty()) { // single-line
+  if (l.isSingleline()) { // single-line
     newPos = l.len;
   } else { // multi-line
     unsigned int index = findCurIndex(l.newlinePos, l.pos);
@@ -729,25 +732,25 @@ static void revertInsert(struct linenoiseState &l, size_t len) {
 
 static std::pair<unsigned int, unsigned int> findLineInterval(const struct linenoiseState &l,
                                                               bool wholeLine) {
-  unsigned int newPos = 0;
-  unsigned int delLen = l.len;
-  if (l.newlinePos.empty()) { // single-line
-    newPos = 0;
-    delLen = (wholeLine ? l.len : l.pos);
+  unsigned int pos = 0;
+  unsigned int len = l.len;
+  if (l.isSingleline()) { // single-line
+    pos = 0;
+    len = (wholeLine ? l.len : l.pos);
   } else { // multi-line
     unsigned int index = findCurIndex(l.newlinePos, l.pos);
     if (index == 0) {
-      newPos = 0;
-      delLen = wholeLine ? l.newlinePos[index] : l.pos;
+      pos = 0;
+      len = wholeLine ? l.newlinePos[index] : l.pos;
     } else if (index < l.newlinePos.size()) {
-      newPos = l.newlinePos[index - 1] + 1;
-      delLen = (wholeLine ? l.newlinePos[index] : l.pos) - newPos;
+      pos = l.newlinePos[index - 1] + 1;
+      len = (wholeLine ? l.newlinePos[index] : l.pos) - pos;
     } else {
-      newPos = l.newlinePos[index - 1] + 1;
-      delLen = (wholeLine ? l.len : l.pos) - newPos;
+      pos = l.newlinePos[index - 1] + 1;
+      len = (wholeLine ? l.len : l.pos) - pos;
     }
   }
-  return {newPos, delLen};
+  return {pos, len};
 }
 
 static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = false) {
@@ -757,7 +760,7 @@ static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = fal
 }
 
 static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
-  if (l.newlinePos.empty()) { // single-line
+  if (l.isSingleline()) { // single-line
     l.buf[l.pos] = '\0';
     l.len = l.pos;
   } else { // multi-line
@@ -1237,6 +1240,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       .maxrows = 0,
       .ps = {},
       .newlinePos = {},
+      .rotating = false,
   };
 
   /* Buffer starts empty. */
@@ -1257,6 +1261,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   while (true) {
     int code;
     char cbuf[32]; // large enough for any encoding?
+
+    const bool prevRotating = l.rotating;
+    l.rotating = false;
 
     ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), code);
     if (nread <= 0) {
@@ -1344,7 +1351,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     case CTRL_P: /* ctrl-p */
-      if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
+      if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
         errno = EAGAIN;
@@ -1352,7 +1359,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       }
       break;
     case CTRL_N: /* ctrl-n */
-      if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
+      if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
         errno = EAGAIN;
@@ -1471,7 +1478,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           } else {
             switch (seq[1]) {
             case 'A': /* Up */
-              if (this->kickHistoryCallback(state, HistOp::PREV, &l)) {
+              if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
                 this->refreshLine(l);
               } else if (state.hasError()) {
                 errno = EAGAIN;
@@ -1479,7 +1486,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
               }
               break;
             case 'B': /* Down */
-              if (this->kickHistoryCallback(state, HistOp::NEXT, &l)) {
+              if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
                 this->refreshLine(l);
               } else if (state.hasError()) {
                 errno = EAGAIN;
@@ -1847,7 +1854,7 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
 #undef GEN_STR
   };
 
-  multiline = multiline && !l->newlinePos.empty();
+  multiline = multiline && !l->isSingleline();
   const char *opStr = table[static_cast<unsigned int>(op)];
   StringRef line = op != HistOp::INIT && l != nullptr ? l->lineRef() : "";
   switch (op) {
@@ -1890,6 +1897,16 @@ bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::His
       return linenoiseEditInsert(*l, retStr, strlen(retStr));
     }
     break;
+  }
+  return false;
+}
+
+bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct linenoiseState &l,
+                                             bool continueRotate) {
+  if (l.isSingleline() || continueRotate) {
+    l.rotating = true;
+    return this->kickHistoryCallback(state, op, &l);
+  } else if (op == HistOp::PREV || op == HistOp::NEXT) { // move cursor up/down
   }
   return false;
 }

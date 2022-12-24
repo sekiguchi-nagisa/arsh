@@ -137,6 +137,18 @@ private:
    */
   bool kickHistoryCallback(DSState &state, HistOp op, struct linenoiseState *l,
                            bool multiline = false);
+
+  /**
+   * rotate history with whole buffer content or multi-line aware cursor up/down
+   * @param state
+   * @param op
+   * @param l
+   * @param continueRotate
+   * @return
+   * if update buffer content, return true
+   */
+  bool rotateHistoryOrUpDown(DSState &state, HistOp op, struct linenoiseState &l,
+                             bool continueRotate);
 };
 
 } // namespace ydsh
