@@ -109,13 +109,16 @@ private:
   void refreshLine(struct linenoiseState &l, bool doHighlight = true);
 
   /**
-   * actual line edit function
+   * entry point of actual line edit function
+   * @param state
    * @param buf
    * @param buflen
    * @param prompt
    * @return
    */
-  int editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt);
+  int editLine(DSState &state, char *buf, size_t buflen, const char *prompt);
+
+  int editInRawMode(DSState &state, struct linenoiseState &l);
 
   ssize_t completeLine(DSState &state, struct linenoiseState &ls, char *cbuf, size_t clen,
                        int &code);

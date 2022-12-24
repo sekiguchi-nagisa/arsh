@@ -1223,7 +1223,11 @@ static bool insertBracketPaste(struct linenoiseState &l) {
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, const char *prompt) {
+int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, const char *prompt) {
+  if (this->enableRawMode(this->inFd)) {
+    return -1;
+  }
+
   /* Populate the linenoise state that we pass to functions implementing
    * specific editing functionalities. */
   struct linenoiseState l = {
@@ -1247,6 +1251,29 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
   l.buf[0] = '\0';
   l.buflen--; /* Make sure there is always space for the null-term */
 
+  const int count = this->editInRawMode(state, l);
+  const int errNum = errno;
+  if (count == -1 && errNum == EAGAIN) {
+    l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
+    if (linenoiseEditMoveEnd(l)) {
+      this->refreshLine(l, false);
+    }
+  }
+  this->disableRawMode(this->inFd);
+  ssize_t r = write(this->outFd, "\n", 1);
+  UNUSED(r);
+
+  errno = errNum;
+  if (count == -1) {
+    this->kickHistoryCallback(state, HistOp::DEINIT, nullptr);
+    if (state.hasError()) {
+      errno = EAGAIN;
+    }
+  }
+  return count;
+}
+
+int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
   this->kickHistoryCallback(state, HistOp::INIT, &l);
@@ -1299,6 +1326,7 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
           return -1;
         }
       } else {
+        l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
         if (linenoiseEditMoveEnd(l)) {
           this->refreshLine(l, false);
         }
@@ -1331,9 +1359,9 @@ int LineEditorObject::editInRawMode(DSState &state, char *buf, size_t buflen, co
       break;
     case CTRL_T: /* ctrl-t, swaps current character with previous. */
       if (l.pos > 0 && l.pos < l.len) {
-        char aux = buf[l.pos - 1];
-        buf[l.pos - 1] = buf[l.pos];
-        buf[l.pos] = aux;
+        char aux = l.buf[l.pos - 1];
+        l.buf[l.pos - 1] = l.buf[l.pos];
+        l.buf[l.pos] = aux;
         if (l.pos != l.len - 1) {
           l.pos++;
         }
@@ -1626,18 +1654,8 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    if (this->enableRawMode(this->inFd)) {
-      return nullptr;
-    }
-    int count = this->editInRawMode(state, buf, LINENOISE_MAX_LINE, prompt);
-    this->disableRawMode(this->inFd);
-    ssize_t r = write(this->outFd, "\n", 1);
-    UNUSED(r);
+    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, prompt);
     if (count == -1) {
-      this->kickHistoryCallback(state, HistOp::DEINIT, nullptr);
-      if (state.hasError()) {
-        errno = EAGAIN;
-      }
       return nullptr;
     }
     return strdup(buf);
