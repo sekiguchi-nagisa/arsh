@@ -62,6 +62,7 @@
     - ``setColor``: specify syntax highlight color theme
     - also support multi-line editing
     - CTRL-U, CTRL-K, CTRL-A, CTRL-E, CTRL-R are multi-line aware
+    - CTRL-T is grapheme-aware
     - suport ALT-Up, ALT-Down for multiline-aware history rotating
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type

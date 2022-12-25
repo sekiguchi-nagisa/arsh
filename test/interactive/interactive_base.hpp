@@ -22,7 +22,11 @@ using namespace ydsh;
 #define CTRL_B "\x02"
 #define CTRL_C "\x03"
 #define CTRL_D "\x04"
+#define CTRL_E "\x05"
 #define CTRL_F "\x06"
+#define CTRL_H "\x08"
+#define CTRL_T "\x14"
+#define CTRL_U "\x15"
 #define CTRL_W "\x17"
 #define CTRL_Z "\x1A"
 

@@ -777,30 +777,6 @@ static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
   }
 }
 
-/**
- * if current cursor is not head of line. write % symbol like zsh
- * @param l
- */
-static int preparePrompt(struct linenoiseState &l) {
-  if (getCursorPosition(l.ifd, l.ofd) > 1) {
-    const char *s = "\x1b[7m%\x1b[0m\r\n";
-    if (write(l.ofd, s, strlen(s)) == -1) {
-      return -1;
-    }
-  }
-
-  // enable bracket paste mode
-  {
-    const char *s = "\x1b[?2004h";
-    if (write(l.ofd, s, strlen(s)) == -1) {
-      return -1;
-    }
-  }
-
-  checkProperty(l);
-  return 0;
-}
-
 /* Delete the character at the right of the cursor without altering the cursor
  * position. Basically this is what happens with the "Delete" keyboard key. */
 static bool linenoiseEditDelete(struct linenoiseState &l) {
@@ -815,9 +791,12 @@ static bool linenoiseEditDelete(struct linenoiseState &l) {
 }
 
 /* Backspace implementation. */
-static bool linenoiseEditBackspace(struct linenoiseState &l) {
+static bool linenoiseEditBackspace(struct linenoiseState &l, std::string *cutBuf = nullptr) {
   if (l.pos > 0 && l.len > 0) {
     size_t chlen = prevCharLen(l.ps, l.lineRef(), l.pos, nullptr);
+    if (cutBuf) {
+      *cutBuf = std::string(l.buf + l.pos - chlen, chlen);
+    }
     memmove(l.buf + l.pos - chlen, l.buf + l.pos, l.len - l.pos);
     l.pos -= chlen;
     l.len -= chlen;
@@ -862,6 +841,39 @@ static bool linenoiseEditDeleteNextWord(struct linenoiseState &l) {
     return true;
   }
   return false;
+}
+
+/* Insert the character 'c' at cursor current position.
+ *
+ * On error writing to the terminal false is returned, otherwise true. */
+static bool linenoiseEditInsert(struct linenoiseState &l, const char *cbuf, size_t clen) {
+  if (l.len + clen <= l.buflen) {
+    if (l.len == l.pos) {
+      memcpy(&l.buf[l.pos], cbuf, clen);
+      l.pos += clen;
+      l.len += clen;
+      l.buf[l.len] = '\0';
+    } else {
+      memmove(l.buf + l.pos + clen, l.buf + l.pos, l.len - l.pos);
+      memcpy(&l.buf[l.pos], cbuf, clen);
+      l.pos += clen;
+      l.len += clen;
+      l.buf[l.len] = '\0';
+    }
+    return true;
+  }
+  return false;
+}
+
+static bool linenoiseEditSwapChars(struct linenoiseState &l) {
+  if (l.pos == 0) { //  does not swap
+    return false;
+  } else if (l.pos == l.len) {
+    linenoiseEditMoveLeft(l);
+  }
+  std::string cutStr;
+  return linenoiseEditBackspace(l, &cutStr) && linenoiseEditMoveRight(l) &&
+         linenoiseEditInsert(l, cutStr.c_str(), cutStr.size());
 }
 
 /* This function is called when linenoise() is called with the standard
@@ -969,6 +981,30 @@ void LineEditorObject::disableRawMode(int fd) {
   if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
     this->rawMode = false;
   }
+}
+
+/**
+ * if current cursor is not head of line. write % symbol like zsh
+ * @param l
+ */
+static int preparePrompt(struct linenoiseState &l) {
+  if (getCursorPosition(l.ifd, l.ofd) > 1) {
+    const char *s = "\x1b[7m%\x1b[0m\r\n";
+    if (write(l.ofd, s, strlen(s)) == -1) {
+      return -1;
+    }
+  }
+
+  // enable bracket paste mode
+  {
+    const char *s = "\x1b[?2004h";
+    if (write(l.ofd, s, strlen(s)) == -1) {
+      return -1;
+    }
+  }
+
+  checkProperty(l);
+  return 0;
 }
 
 static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, const StringRef line,
@@ -1143,28 +1179,6 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
 
   if (write(l.ofd, ab.b, ab.len) == -1) {
   } /* Can't recover from write error. */
-}
-
-/* Insert the character 'c' at cursor current position.
- *
- * On error writing to the terminal false is returned, otherwise true. */
-static bool linenoiseEditInsert(struct linenoiseState &l, const char *cbuf, size_t clen) {
-  if (l.len + clen <= l.buflen) {
-    if (l.len == l.pos) {
-      memcpy(&l.buf[l.pos], cbuf, clen);
-      l.pos += clen;
-      l.len += clen;
-      l.buf[l.len] = '\0';
-    } else {
-      memmove(l.buf + l.pos + clen, l.buf + l.pos, l.len - l.pos);
-      memcpy(&l.buf[l.pos], cbuf, clen);
-      l.pos += clen;
-      l.len += clen;
-      l.buf[l.len] = '\0';
-    }
-    return true;
-  }
-  return false;
 }
 
 static bool insertBracketPaste(struct linenoiseState &l) {
@@ -1358,13 +1372,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
       }
       break;
     case CTRL_T: /* ctrl-t, swaps current character with previous. */
-      if (l.pos > 0 && l.pos < l.len) {
-        char aux = l.buf[l.pos - 1];
-        l.buf[l.pos - 1] = l.buf[l.pos];
-        l.buf[l.pos] = aux;
-        if (l.pos != l.len - 1) {
-          l.pos++;
-        }
+      if (linenoiseEditSwapChars(l)) {
         this->refreshLine(l);
       }
       break;

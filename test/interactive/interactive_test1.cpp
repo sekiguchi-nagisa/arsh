@@ -167,6 +167,18 @@ TEST_F(InteractiveTest, edit2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, edit3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send("23" CTRL_U "'あいう" CTRL_H "え" CTRL_A CTRL_T RIGHT RIGHT CTRL_T CTRL_T CTRL_T
+             "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'いあえ'\n: String = いあえ\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 // TEST_F(InteractiveTest, edit2) {
 //     this->invoke("--quiet", "--norc");
 //
