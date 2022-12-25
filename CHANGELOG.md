@@ -151,7 +151,7 @@
       { }
       ```
 - **Breaking Change**: now check tilde expansion failure
-    - check tilde expansion failure in runtiem/compile time (also within glob/brace expansion)
+    - check tilde expansion failure in runtime/compile time (also within glob/brace expansion)
     - now report runtime tilde expansion failure as ``TildeError``
 - improve the following error messages
     - unclosed string, back-quote, regex literal
@@ -165,16 +165,16 @@
 - **Breaking Change**: only allow decimal integer in ``test`` command like bash
 - **Breaking Change**: FD type constructor does not set close-on-exec flag
 - **Breaking Change**: remove ``EDIT_HOOK`` builtin variable
+- **Breaking Change**: change typechecking of equality operator of Func type
+    - now allow subtype expression in right hand-side
+- **Breaking Change**: change ``String#realpath`` behavior
+    - now does not perform tilde expansion
+    - now does not accept string having null characters
 - improve runtime option recognition
     - now allow upper case, snake case, kebab case
       ```
       shctl set TRACE_ON_EXIT Null-Glob
       ```
-- **Breaking Change**: change typechecking of equality operator of Func type
-    - now allow subtype expression in right hand-side
-- **Breaking Change**: change ``String#realpath`` behavior
-    - now does not perform tilde expansion
-    - now does not access string having null characters
 
 #### Module
 
