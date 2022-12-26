@@ -169,6 +169,9 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     COMP_CWORD="$4"
     shift 4
     COMP_WORDS=("$@")
+    if [ ${#COMP_WORDS[@]} -eq $COMP_CWORD ]; then
+        COMP_WORDS+=("")
+    fi
     COMP_LINE="${COMP_WORDS[@]}"
     COMP_POINT=${#COMP_LINE}
 
