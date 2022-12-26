@@ -1,0 +1,17 @@
+
+# funcquality
+
+function f() {}
+
+function g() : Int { return 22; }
+var h = function() => 34
+
+assert $f ==_exit $f
+assert $f != $g  # subtype
+assert $g != $h
+
+## anon s function with capture
+funtion equalitert $case1('h3opÿÿÿÿÿÿÿÿ') == 1
+ts rsea$called == 1
+nt) -> In)
+assert $d1 == $d2

@@ -747,7 +747,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
     this->markLabel(mergeLabel);
   } else if (node.getLeftNode() && node.getLeftNode()->getType().isFuncType() &&
-             node.getRightNode() && node.getRightNode()->getType().isFuncType()) {
+             (kind == TokenKind::EQ || kind == TokenKind::NE)) {
     this->visit(*node.getLeftNode());
     this->visit(*node.getRightNode());
     if (kind == TokenKind::EQ) {
@@ -765,6 +765,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
       this->generateConcat(node);
     }
   } else {
+    assert(node.getOptNode());
     this->visit(*node.getOptNode());
   }
 }
