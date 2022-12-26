@@ -372,9 +372,6 @@ DS_PUBLIC_API(unsigned int) DSState_featureBit();
  */
 DS_PUBLIC_API(char *) DSState_readLine(DSState *st); // FIXME: report internal error ?
 
-/* for job termination notification */
-DS_PUBLIC_API(void) DSState_showNotification(DSState *st);
-
 #ifdef __cplusplus
 }
 #endif

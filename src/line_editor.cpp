@@ -1619,6 +1619,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
 char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
+  errno = 0;
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
      * limit to the line size, so we call a function to handle that. */

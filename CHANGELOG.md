@@ -191,6 +191,7 @@
     - ``DSState_complete``
     - ``DSState_getCompletion``
     - ``DSState_lineEdit``
+    - ``DSState_showNotification``
 
 #### Misc
 

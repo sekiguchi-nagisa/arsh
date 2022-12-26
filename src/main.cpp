@@ -186,9 +186,6 @@ static int exec_interactive(DSState *state, const char *rcpath) {
 
   int status = 0;
   while (true) {
-    DSState_showNotification(state);
-
-    errno = 0;
     char *line = DSState_readLine(state);
     if (line == nullptr) {
       if (errno == EAGAIN) {

@@ -566,13 +566,8 @@ static const char *defaultPrompt() {
 char *DSState_readLine(DSState *st) {
   GUARD_NULL(st, nullptr);
   st->getCallStack().clearThrownObject();
+  st->notifyCallback.showAndClear();
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();
   return editor.readline(*st, defaultPrompt());
-}
-
-void DSState_showNotification(DSState *st) {
-  if (st) {
-    st->notifyCallback.showAndClear();
-  }
 }
