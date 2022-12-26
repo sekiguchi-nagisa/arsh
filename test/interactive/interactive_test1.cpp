@@ -175,6 +175,9 @@ TEST_F(InteractiveTest, edit3) {
              "'\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'いあえ'\n: String = いあえ\n" + PROMPT));
 
+  this->send("あい" LEFT CTRL_D "いぇお" CTRL_A CTRL_K "@@@" LEFT LEFT CTRL_E CTRL_U "12\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -208,7 +211,7 @@ TEST_F(InteractiveTest, history1) {
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
-  this->send(UP);
+  this->send(CTRL_P); // UP
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
   this->send(DOWN);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
@@ -243,9 +246,9 @@ TEST_F(InteractiveTest, history2) {
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
-  this->send(UP);
+  this->send(CTRL_P); // UP
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
-  this->send(DOWN);
+  this->send(CTRL_N); // DOWN
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
   this->send(DOWN);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
