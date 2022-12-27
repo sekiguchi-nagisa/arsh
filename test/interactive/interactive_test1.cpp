@@ -363,14 +363,14 @@ TEST_F(InteractiveTest, lineEditor1) {
                      "})";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
   text = "var ex = 34 as Any;"
-         "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+         "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
   text = "$ex = 34; $e.setPrompt(function(p)=>{"
-         "  $e.read()!; })";
+         "  $e.readLine()!; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
-  text = "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+  text = "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
@@ -378,7 +378,7 @@ TEST_F(InteractiveTest, lineEditor1) {
          "  $e.setPrompt(function(pp)=> $pp);"
          "  $p; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
-  text = "try { $e.read(); assert false; } catch e { $ex = $e; }; "
+  text = "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
@@ -393,8 +393,8 @@ TEST_F(InteractiveTest, lineEditor2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var e = new LineEditor()"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p)=> '%' + $p)"));
-  this->sendLine("$e.read('> ')");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$e.read('> ')\n%> "));
+  this->sendLine("$e.readLine('> ')");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$e.readLine('> ')\n%> "));
   this->sendLine("1234");
   ASSERT_NO_FATAL_FAILURE(this->expect("%> 1234\n: String! = 1234\n" + PROMPT));
 
@@ -404,7 +404,7 @@ OutOfRangeError: size is 2, but index is 100
     from (stdin):4 'function ()'
     from (stdin):5 '<toplevel>()'
 )";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.read()", "", err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.readLine()", "", err));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));

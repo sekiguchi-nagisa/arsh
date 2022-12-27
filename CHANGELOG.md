@@ -55,7 +55,7 @@
     - ``-q``: does not show completion candidates (but still set to ``COMPREPLY``)
     - ``-s``: append space to completion candidate when number of candidates is 1
 - add ``LineEdtior`` type for line editing
-    - ``read``: entry point of line editing
+    - ``readLine``: entry point of line editing
     - ``setCompletion``: specify completion callback
     - ``setPrompt``: specify prompt callback
     - ``setHistory``: specify history callback

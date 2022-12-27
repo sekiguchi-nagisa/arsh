@@ -310,7 +310,7 @@ function call($argv : Array<String>) : Boolean for Command
 ```
 function %OP_INIT() : LineEditor for LineEditor
 
-function read($p : Option<String>) : Option<String> for LineEditor
+function readLine($p : Option<String>) : Option<String> for LineEditor
 
 function setCompletion($comp : Option<Func<Array<String>,[Module,String]>>) : Void for LineEditor
 

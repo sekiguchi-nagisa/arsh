@@ -2,6 +2,6 @@
 ## read from pipe
 var line = echo 'hello world!!' | {
     var e = new LineEditor()
-    $e.read()
+    $e.readLine()
 }
 assert $line! == 'hello world!!'

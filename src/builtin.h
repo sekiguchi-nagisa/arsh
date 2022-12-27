@@ -2092,7 +2092,7 @@ YDSH_METHOD edit_init(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function read($this : LineEditor, $p : Option<String>) : Option<String>
+//!bind: function readLine($this : LineEditor, $p : Option<String>) : Option<String>
 YDSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
