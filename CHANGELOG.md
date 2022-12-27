@@ -64,6 +64,7 @@
     - CTRL-U, CTRL-K, CTRL-A, CTRL-E, CTRL-R are multi-line aware
     - CTRL-T is grapheme-aware
     - suport ALT-Up, ALT-Down for multiline-aware history rotating
+    - support ALT-Left, ALT-Right for alternative of home/end key
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
     - ``value``: get internal file descriptor number

@@ -1494,20 +1494,35 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
                 break;
               }
               if (seq[3] == '3') {
-                if (seq[4] == 'A') { /* atl-Up */
+                switch (seq[4]) {
+                case 'A': /* ALT-Up */
                   if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
                     this->refreshLine(l);
                   } else if (state.hasError()) {
                     errno = EAGAIN;
                     return -1;
                   }
-                } else if (seq[4] == 'B') { /* alt-Down */
+                  break;
+                case 'B': /* ALT-Down */
                   if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
                     this->refreshLine(l);
                   } else if (state.hasError()) {
                     errno = EAGAIN;
                     return -1;
                   }
+                  break;
+                case 'C': /* ALT-Right */
+                  if (linenoiseEditMoveEnd(l)) {
+                    this->refreshLine(l, false);
+                  }
+                  break;
+                case 'D': /* ALT-Left */
+                  if (linenoiseEditMoveHome(l)) {
+                    this->refreshLine(l, false);
+                  }
+                  break;
+                default:
+                  break;
                 }
               }
             }
