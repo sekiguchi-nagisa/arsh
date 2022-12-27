@@ -178,6 +178,10 @@ TEST_F(InteractiveTest, edit3) {
   this->send("あい" LEFT CTRL_D "いぇお" CTRL_A CTRL_K "@@@" LEFT LEFT CTRL_E CTRL_U "12\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
 
+  this->send("@" HOME "1" END "あ" ESC_("OH") "2" ESC_("OF") "い" ESC_("[1~") "'" ESC_(
+      "[4~") "○" LEFT ESC_("[3~") "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'21@あい'\n: String = 21@あい\n" + PROMPT));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -238,6 +242,8 @@ TEST_F(InteractiveTest, history2) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var c = \"$(" HIGHLIGHTER_PATH " --dump)\""));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setColor($c)"));
   this->withTimeout(400, [&] {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
@@ -285,7 +291,7 @@ TEST_F(InteractiveTest, history3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
-  this->send(UP);
+  this->send(ESC_("[1;3A")); // ALT-UP
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "1"));
@@ -317,7 +323,7 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
   this->send("4");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "24"));
-  this->send(DOWN);
+  this->send(ESC_("[1;3B")); // DOWN
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "24"));

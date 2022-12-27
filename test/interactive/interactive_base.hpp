@@ -39,6 +39,8 @@ using namespace ydsh;
 #define DOWN "\x1b[B"
 #define RIGHT "\x1b[C"
 #define LEFT "\x1b[D"
+#define HOME "\x1b[H"
+#define END "\x1b[F"
 
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
