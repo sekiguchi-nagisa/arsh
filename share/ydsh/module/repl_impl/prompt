@@ -1,12 +1,11 @@
 #!/usr/bin/env ydsh
 
 # for prompt
-var PS1 = '\s-\v\$ '
-var PS2 = '> '
+var PS1 = '\u@\h:\W> '
 
 var PROMPT_HOOK : ((String) -> String)!
 
-source $SCRIPT_DIR/../prompt
+source $SCRIPT_DIR/../prompt inlined
 
 var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
 
