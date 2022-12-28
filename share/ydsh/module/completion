@@ -161,7 +161,6 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
 function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
     test -f $file || return new [String]()
-    test -f $BASH_COMPLETION_PATH || return new [String]()
     if !(test -f $BASH_COMPLETION_PATH) {
         $BASH_COMPLETION_PATH = 
             for path in $_bash_completion_paths {
