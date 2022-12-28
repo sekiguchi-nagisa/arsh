@@ -149,6 +149,12 @@ function findBashCompScript(name : String) : String! {
     return new String!()
 }
 
+let _bash_completion_paths = [
+    "/usr/share/bash-completion/bash_completion",
+    "/usr/local/share/bash-completion/bash_completion",
+    "/opt/homebrew/share/bash-completion/bash_completion",
+]
+
 var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 
 # Conceptually based on git-completion.tcsh 
@@ -156,6 +162,12 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
     test -f $file || return new [String]()
     test -f $BASH_COMPLETION_PATH || return new [String]()
+    if !(test -f $BASH_COMPLETION_PATH) {
+        $BASH_COMPLETION_PATH = 
+            for path in $_bash_completion_paths {
+                test -f $path && break $path
+            } ?? return new [String]()
+    }
 
     let script = '
     complete() { true; }   # ignore `complete` function

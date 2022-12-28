@@ -15,14 +15,10 @@ $LINE_EDIT.setCompletion(function(m, s) => {
     complete -m $m -q -s -- $s
     $COMPREPLY
 })
-source completion
-if $OSTYPE == "Darwin" && $MACHTYPE == "aarch64" {
-    $BASH_COMPLETION_PATH = "/opt/homebrew/share/bash-completion/bash_completion"
-}
 source $DATA_DIR/completion/*
 
 # ISDIR setting
-source cnf
+source cnf inlined
 $ISDIR_HOOK = function($s : String) => cd $s && pwd
 
 # syntax highlight color setting
