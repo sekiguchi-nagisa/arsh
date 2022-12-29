@@ -1,6 +1,8 @@
 CHECK on line 9,
-3c3
-< abde
----
-> abcde
+@@ -1,4 +1,4 @@
+ 12345
+ ABCDE
+-abde
++abcde
+ @@@@@
 stdout is mismatched

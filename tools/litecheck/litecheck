@@ -179,6 +179,31 @@ function _match_chunk_re(checks : [Directive], output : [String]) : Bool {
     return $true
 }
 
+# diff wrapper
+var _diff_opts = ['diff', '-u']
+
+# offset is base line number (1~)
+function _diff(offset : Int, expect : String, actual : String) : (String, Bool) {
+    assert $offset > 0
+
+    $? = 0
+    var o = "$(command $_diff_opts 2>&1 <(cat <<< $expect) <(cat <<< $actual))"
+    var s = $? == 0
+
+    if $s {
+        return ($o, $s)
+    }
+
+    var out : [String]
+    for line in $o.split($'\n') {
+        if $line.startsWith('--- ') || $line.startsWith('+++ ') {
+            continue    # skip first and second line
+        }
+        $out.add($line)
+    }
+    return ($out.join($'\n'), $s)
+}
+
 function _match_chunk(checks : [Directive], output : [String]) : Bool {
     $checks[0].line is Regex && return $_match_chunk_re($checks, $output)
 
@@ -189,14 +214,13 @@ function _match_chunk(checks : [Directive], output : [String]) : Bool {
         }
         $eout += $c.line
     }
-    $? = 0
-    var o = "$(diff 2>&1 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')}))"
-    var r = $? == 0
-    if !$r {
+
+    var r = $_diff($checks[0].ln, $eout, $output.join($'\n'))
+    if !$r._1 {
         echo 1>&2 ${$checks[0].type} on line ${$checks[0].ln},
-        echo 1>&2 $o
+        echo 1>&2 ${r._0}
     }
-    return $r
+    return $r._1
 }
 
 function _skip_until(c : Any, output : [String], index : Int) : Int {
@@ -234,6 +258,13 @@ function _check_output(checks : [Directive], output : [String]) : Bool {
 }
 
 function _run_and_check(map : [String : [Directive]]) : Int {
+    # resolve diff command
+    if (command -v busybox &>> /dev/null) {
+        $_diff_opts = ["busybox", "diff"]
+    } else {
+        $_diff_opts = ["diff", "-u"]
+    }
+
     var run = case $map[$RUN].size() {
         0 => $MODULE._func("eval $self")
         else => {

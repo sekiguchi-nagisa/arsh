@@ -1,7 +1,6 @@
 CHECKERR on line 4,
-1c1,2
-< @@@@@
----
-> 12345
-> ACBD
+@@ -1 +1,2 @@
+-@@@@@
++12345
++ACBD
 stderr is mismatched
