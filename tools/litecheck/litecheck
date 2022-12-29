@@ -33,7 +33,7 @@ function _error(ln : Int, m : String) : Nothing {
 }
 
 function _lines(path : String) : [String] {
-    return IFS="" "$(cat $path)".split($'\n')
+    return "$(cat $path)".split($'\n')
 }
 
 ##############################
@@ -190,7 +190,7 @@ function _match_chunk(checks : [Directive], output : [String]) : Bool {
         $eout += $c.line
     }
     $? = 0
-    var o = IFS="" "$(diff 2>&1 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')}))"
+    var o = "$(diff 2>&1 <(cat <<< $eout) <(cat <<< ${$output.join($'\n')}))"
     var r = $? == 0
     if !$r {
         echo 1>&2 ${$checks[0].type} on line ${$checks[0].ln},
