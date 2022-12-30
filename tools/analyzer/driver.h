@@ -43,7 +43,7 @@ struct Driver {
 
 Result<std::unique_ptr<Driver>, std::string> createDriver(const DriverOptions &options);
 
-int run(const DriverOptions &options, char **const argv, Driver &driver);
+int run(const DriverOptions &options, char **argv, Driver &driver);
 
 } // namespace ydsh::lsp
 

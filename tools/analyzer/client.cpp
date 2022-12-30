@@ -78,8 +78,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     JSONSerializer serializer;
     serializer(params);
 
-    requests.emplace_back(
-        ClientRequest(rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0));
+    requests.emplace_back(rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0);
   }
 
   // send 'textDocument/didOpen' notification
@@ -103,15 +102,15 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     JSONSerializer serializer;
     serializer(params);
 
-    requests.emplace_back(ClientRequest(
-        rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), 200));
+    requests.emplace_back(
+        rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), 200);
   }
 
   // send 'shutdown' request
-  requests.emplace_back(ClientRequest(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10));
+  requests.emplace_back(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10);
 
   // send 'exit' notification
-  requests.emplace_back(ClientRequest(rpc::Request("exit", JSON()).toJSON(), 10));
+  requests.emplace_back(rpc::Request("exit", JSON()).toJSON(), 10);
 
   return ClientInput{.req = std::move(requests)};
 }
@@ -204,8 +203,7 @@ void Client::run(const ClientInput &input) {
       std::string v = req.request.serialize(2);
       this->transport.getLogger()(LogLevel::DEBUG, "%s", v.c_str());
     }
-    bool r = this->send(req.request);
-    if (!r) {
+    if (!this->send(req.request)) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
     }
     if (req.msec > 0) {
@@ -214,9 +212,7 @@ void Client::run(const ClientInput &input) {
     int timeout = index == size - 1 ? 500 : 50;
     while (waitReply(this->transport.getInputFd(), timeout)) {
       auto ret = this->recv();
-      if (!ret.hasValue()) {
-        continue;
-      }
+      assert(ret.hasValue());
       if (this->replyCallback) {
         if (!this->replyCallback(std::move(ret))) {
           return;

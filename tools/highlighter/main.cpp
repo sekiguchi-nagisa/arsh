@@ -127,7 +127,7 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
   // formatter
   std::unordered_map<FormatterType, std::vector<StringRef>> values;
   for (auto &e : factory.getSupportedFormats()) {
-    values[e.second].push_back(e.first);
+    values[e.second].emplace_back(e.first);
   }
   output << "Formatters:" << std::endl;
   for (unsigned int i = 0; i < values.size(); i++) {

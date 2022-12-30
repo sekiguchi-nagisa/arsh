@@ -110,7 +110,7 @@ WaitStatus ProcHandle::wait(WaitOp op) {
   return this->status_;
 }
 
-static bool readData(int index, int fd, const ProcHandle::ReadCallback &readCallback) {
+static bool readData(unsigned int index, int fd, const ProcHandle::ReadCallback &readCallback) {
   char buf[1024];
   unsigned int bufSize = std::size(buf);
   ssize_t readSize;
