@@ -184,7 +184,11 @@ static bool waitReply(int fd, int timeout) {
       }
       break;
     }
-    if (pollfd[0].revents & POLLIN) {
+    const auto revents = pollfd[0].revents;
+    if (revents & POLLERR || revents & POLLHUP || revents & POLLNVAL) {
+      return false;
+    }
+    if (revents & POLLIN) {
       return true;
     }
     break;
