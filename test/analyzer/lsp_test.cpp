@@ -96,7 +96,8 @@ TEST(LSPTest, Location) {
 }
 
 static void writeAndSeekToHead(int fd, const std::string &line) {
-  write(fd, line.c_str(), line.size());
+  ssize_t s = write(fd, line.c_str(), line.size());
+  (void)s;
   fsync(fd);
   lseek(fd, 0L, SEEK_SET);
 }
