@@ -21,9 +21,14 @@
 #include <regex>
 #include <thread>
 
+#include <misc/files.h>
 #include <misc/num_util.hpp>
 
+#include "../tools/process/process.h"
+#include "../tools/uri/uri.h"
+
 #include "client.h"
+#include "lsp.h"
 
 namespace ydsh::lsp {
 
@@ -59,13 +64,69 @@ static std::pair<unsigned int, bool> parseNum(const std::string &line) {
   return {0, false};
 }
 
-Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::string &fileName) {
+static ClientInput loadWholeFile(const std::string &fileName, std::istream &input) {
+  std::vector<ClientRequest> requests;
+
+  int64_t id = 0;
+
+  // send 'initialize' request
+  {
+    InitializeParams params;
+    params.processId = getpid();
+    params.rootUri = "file:///test";
+
+    JSONSerializer serializer;
+    serializer(params);
+
+    requests.emplace_back(
+        ClientRequest(rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0));
+  }
+
+  // send 'textDocument/didOpen' notification
+  {
+    std::string content;
+    for (std::string line; getline(input, line);) {
+      content += line;
+      content += '\n';
+    }
+
+    DidOpenTextDocumentParams params;
+    std::string value = getRealpath(fileName.c_str()).get();
+    auto uri = uri::URI::fromPath("file", std::move(value)).toString();
+    params.textDocument = TextDocumentItem{
+        .uri = std::move(uri),
+        .languageId = "ydsh",
+        .version = 1,
+        .text = std::move(content),
+    };
+
+    JSONSerializer serializer;
+    serializer(params);
+
+    requests.emplace_back(ClientRequest(
+        rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), 200));
+  }
+
+  // send 'shutdown' request
+  requests.emplace_back(ClientRequest(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10));
+
+  // send 'exit' notification
+  requests.emplace_back(ClientRequest(rpc::Request("exit", JSON()).toJSON(), 10));
+
+  return ClientInput{.req = std::move(requests)};
+}
+
+Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open) {
   std::ifstream input(fileName);
   if (!input) {
     std::string error = "cannot read: ";
     error += fileName;
     return Err(std::move(error));
   }
+  if (open) {
+    return Ok(loadWholeFile(fileName, input));
+  }
+
   std::vector<ClientRequest> requests;
   std::string content;
   unsigned int lineNum = 0;
@@ -103,7 +164,7 @@ Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::strin
     }
     requests.emplace_back(std::move(ret).take(), 0);
   }
-  return Ok(std::move(requests));
+  return Ok(ClientInput{.req = std::move(requests)});
 }
 
 // ####################
@@ -132,10 +193,14 @@ static bool waitReply(FILE *fp, int timeout) {
   return false;
 }
 
-void Client::run(const std::vector<ClientRequest> &requests) {
-  const unsigned int size = requests.size();
+void Client::run(const ClientInput &input) {
+  const unsigned int size = input.req.size();
   for (unsigned int index = 0; index < size; index++) {
-    auto &req = requests[index];
+    auto &req = input.req[index];
+    if (this->transport.getLogger().enabled(LogLevel::DEBUG)) {
+      std::string v = req.request.serialize(2);
+      this->transport.getLogger()(LogLevel::DEBUG, "%s", v.c_str());
+    }
     bool r = this->send(req.request);
     if (!r) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
@@ -147,7 +212,7 @@ void Client::run(const std::vector<ClientRequest> &requests) {
     while (waitReply(this->transport.getInput().get(), timeout)) {
       auto ret = this->recv();
       if (!ret.hasValue()) {
-        return;
+        continue;
       }
       if (this->replyCallback) {
         if (!this->replyCallback(std::move(ret))) {
@@ -188,6 +253,48 @@ rpc::Message Client::recv() {
     remainSize -= recvSize;
   }
   return rpc::MessageParser(this->transport.getLogger(), std::move(buf))();
+}
+
+// ####################################
+// ##     TestClientServerDriver     ##
+// ####################################
+
+int TestClientServerDriver::run(const DriverOptions &options,
+                                std::function<int(const DriverOptions &)> &&func) {
+  using namespace process;
+  IOConfig ioConfig;
+  ioConfig.in = IOConfig::PIPE;
+  ioConfig.out = IOConfig::PIPE;
+  auto proc = ProcBuilder::spawn(ioConfig, [&func, &options] { return func(options); });
+
+  ClientLogger logger;
+  logger.setSeverity(this->level);
+  logger(LogLevel::INFO, "run lsp test client");
+  Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
+                createFilePtr(fdopen, proc.in(), "w"));
+  client.setReplyCallback([](rpc::Message &&msg) -> bool {
+    if (is<rpc::Error>(msg)) {
+      auto &error = get<rpc::Error>(msg);
+      prettyprint(error.toJSON());
+    } else if (is<rpc::Request>(msg)) {
+      auto &req = get<rpc::Request>(msg);
+      prettyprint(req.toJSON());
+    } else if (is<rpc::Response>(msg)) {
+      auto &res = get<rpc::Response>(msg);
+      prettyprint(res.toJSON());
+    } else {
+      fatal("broken\n");
+    }
+    return true;
+  });
+  client.run(this->requests);
+  proc.waitWithTimeout(100);
+  if (proc) {
+    logger(LogLevel::INFO, "kill lsp server");
+    proc.kill(SIGKILL);
+  }
+  auto ret = proc.wait();
+  return ret.toShellStatus();
 }
 
 } // namespace ydsh::lsp

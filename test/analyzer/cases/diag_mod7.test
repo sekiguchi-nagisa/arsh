@@ -37,6 +37,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: Unreachable",
 #    CHECK:         "message": "unreachable code",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

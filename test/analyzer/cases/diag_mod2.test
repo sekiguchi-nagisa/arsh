@@ -19,6 +19,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: NotOpenMod",
 #    CHECK:         "message": "cannot read module: `/', by `Is a directory'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

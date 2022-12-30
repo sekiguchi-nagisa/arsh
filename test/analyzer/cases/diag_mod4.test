@@ -26,6 +26,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: ConflictSymbol",
 # CHECK_RE:         "message": "at global import, detect symbol conflict: `Interval' in `.*mod1.ds'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

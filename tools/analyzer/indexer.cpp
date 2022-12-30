@@ -496,8 +496,10 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
   auto &type = node.getExprNode() ? node.getExprNode()->getType()
                                   : this->builder().getPool().get(TYPE::String);
   if (this->builder().curScope().isConstructor()) {
-    this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(), node.getNameInfo(),
-                                  type, fromVarDeclKind(node.getKind()), node.getToken());
+    if (auto *resolved = this->builder().curScope().getResolvedType()) {
+      this->builder().addMemberDecl(*resolved, node.getNameInfo(), type,
+                                    fromVarDeclKind(node.getKind()), node.getToken());
+    }
   } else {
     this->builder().addDecl(node.getNameInfo(), type, node.getToken(),
                             fromVarDeclKind(node.getKind()));

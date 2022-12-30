@@ -1989,6 +1989,7 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
+      leftNode.setType(this->typePool.getUnresolvedType());
       if (auto handle = this->addEnvEntry(leftNode.getToken(), leftNode.getVarName(), false)) {
         leftNode.setHandle(handle);
         leftNode.setType(rightType);

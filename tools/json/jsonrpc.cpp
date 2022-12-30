@@ -57,7 +57,7 @@ Message MessageParser::operator()() {
     return Error(ErrorCode::ParseError, "Parse error", this->formatError());
   }
 
-  LOG(LogLevel::DEBUG, "server to client:\n%s", ret.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "received message:\n%s", ret.serialize(2).c_str());
   Union<Request, Response> value;
   JSONDeserializer deserializer(std::move(ret));
   deserializer(value);

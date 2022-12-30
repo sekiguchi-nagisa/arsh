@@ -18,6 +18,7 @@
 #define YDSH_TOOLS_PROCESS_PROCESS_H
 
 #include <termios.h>
+#include <unistd.h>
 
 #include <csignal>
 #include <functional>

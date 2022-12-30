@@ -62,6 +62,7 @@ void LSPServer::run() {
   while (this->transport.available()) {
     auto s = this->transport.dispatch(*this, this->timeout);
     if (s == Transport::Status::TIMEOUT) {
+      LOG(LogLevel::INFO, "tryRebuild with timeout...");
       this->tryRebuild();
     }
   }
@@ -223,6 +224,8 @@ struct AnalyzerParam {
 };
 
 static AnalyzerResult doRebuild(AnalyzerParam &&param) {
+  param.logger.get()(LogLevel::INFO, "rebuild started");
+
   // prepare
   {
     auto tmp(param.ret.modifiedSrcIds);
@@ -272,6 +275,7 @@ static AnalyzerResult doRebuild(AnalyzerParam &&param) {
     param.ret.modifiedSrcIds.clear();
     param.ret.closingSrcIds.clear();
   }
+  param.logger.get()(LogLevel::INFO, "rebuild finished");
   return std::move(param.ret);
 }
 
@@ -280,8 +284,6 @@ bool LSPServer::tryRebuild() {
     this->timeout = -1;
     return false;
   }
-
-  LOG(LogLevel::INFO, "tryRebuild...");
 
   if (this->cancelPoint) {
     this->cancelPoint->cancel();
@@ -342,6 +344,7 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
 }
 
 void LSPServer::syncResult() {
+  LOG(LogLevel::INFO, "tryRebuild...");
   this->tryRebuild();
   if (this->futureResult.valid()) {
     this->result = this->futureResult.get(); // override current result

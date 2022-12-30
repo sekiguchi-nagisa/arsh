@@ -37,9 +37,13 @@ ssize_t LSPTransport::send(unsigned int size, const char *data) {
   if (size == 0 || data == nullptr) {
     return 0;
   }
-  fprintf(this->output.get(), "%s%d\r\n\r\n%s", HEADER_LENGTH, size, data);
-  fflush(this->output.get());
-  return size; // FIXME: error checking.
+  if (fprintf(this->output.get(), "%s%d\r\n\r\n%s", HEADER_LENGTH, size, data) < 0) {
+    return -1;
+  }
+  if (fflush(this->output.get()) != 0) {
+    return -1;
+  }
+  return size;
 }
 
 static bool isContentLength(const std::string &line) {
@@ -123,6 +127,7 @@ bool LSPTransport::poll(int timeout) {
   pollfd[0].fd = fileno(this->input.get());
   pollfd[0].events = POLLIN;
   while (true) {
+    LOG(LogLevel::DEBUG, "poll: %d", timeout);
     int ret = ::poll(pollfd, 1, timeout);
     if (ret == 0) {
       return false;

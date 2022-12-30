@@ -74,8 +74,8 @@ struct Request {
    * @param method
    * @param params
    */
-  Request(JSON &&id, std::string method, JSON &&params)
-      : id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
+  Request(JSON &&id, const std::string &method, JSON &&params)
+      : id(std::move(id)), method(method), params(std::move(params)) {}
 
   Request(const std::string &method, JSON &&params) : Request(JSON(), method, std::move(params)) {}
 

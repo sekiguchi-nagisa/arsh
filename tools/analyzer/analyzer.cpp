@@ -275,9 +275,12 @@ bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<Front
   if (!range.hasValue()) {
     return false;
   }
+  std::string code = "syntax error: ";
+  code += parseError.getErrorKind();
   cur->diagnostics.push_back(Diagnostic{
       .range = range.unwrap(),
       .severity = DiagnosticSeverity::Error,
+      .code = std::move(code),
       .message = parseError.getMessage(),
       .relatedInformation = {},
   });
@@ -295,9 +298,12 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   if (!range.hasValue()) {
     return false;
   }
+  std::string code = "semantic error: ";
+  code += checkError.getKind();
   cur->diagnostics.push_back(Diagnostic{
       .range = range.unwrap(),
       .severity = DiagnosticSeverity::Error, // FIXME: support warning ?
+      .code = std::move(code),
       .message = checkError.getMessage(),
       .relatedInformation = {},
   });

@@ -19,6 +19,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: NotFoundMod",
 #    CHECK:         "message": "module not found: `@@$@@'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

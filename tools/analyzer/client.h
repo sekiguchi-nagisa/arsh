@@ -17,6 +17,7 @@
 #ifndef YDSH_TOOLS_ANALYZER_CLIENT_H
 #define YDSH_TOOLS_ANALYZER_CLIENT_H
 
+#include "driver.h"
 #include "transport.h"
 
 namespace ydsh::lsp {
@@ -30,7 +31,11 @@ struct ClientRequest {
   ClientRequest(JSON &&j, unsigned int n) : request(std::move(j)), msec(n) {}
 };
 
-Result<std::vector<ClientRequest>, std::string> loadInputScript(const std::string &fileName);
+struct ClientInput {
+  std::vector<ClientRequest> req;
+};
+
+Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open = false);
 
 struct ClientLogger : public LoggerBase {
   ClientLogger() : LoggerBase("YDSHD_CLIENT") {}
@@ -49,12 +54,31 @@ public:
     this->replyCallback = func;
   }
 
-  void run(const std::vector<ClientRequest> &requests);
+  void run(const ClientInput &input);
 
 private:
   bool send(const JSON &json);
 
   rpc::Message recv();
+};
+
+class TestClientServerDriver : public Driver {
+private:
+  LogLevel level;
+  ClientInput requests;
+
+public:
+  TestClientServerDriver(LogLevel level, ClientInput &&requests)
+      : level(level), requests(std::move(requests)) {}
+
+  int run(const DriverOptions &options, std::function<int(const DriverOptions &)> &&func) override;
+
+private:
+  static void prettyprint(const JSON &json) {
+    std::string value = json.serialize(2);
+    fputs(value.c_str(), stdout);
+    fflush(stdout);
+  }
 };
 
 } // namespace ydsh::lsp

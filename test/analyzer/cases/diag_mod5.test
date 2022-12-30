@@ -22,6 +22,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: Required",
 #    CHECK:         "message": "require `Int' type, but is `Bool' type",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
@@ -44,6 +45,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "semantic error: ErrorMod",
 # CHECK_RE:         "message": "syntax or semantic errors occurred in `.*mod2.ds'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

@@ -107,8 +107,7 @@ struct DiagnosticRelatedInformation {
 struct Diagnostic {
   Range range;
   Optional<DiagnosticSeverity> severity; // optional
-  //    std::string code; // string | number, //FIXME: currently not supported.
-  //    std::string source;                   //FIXME: currently not supported.
+  std::string code;
   std::string message;
   Optional<std::vector<DiagnosticRelatedInformation>> relatedInformation; // optional
 
@@ -116,6 +115,7 @@ struct Diagnostic {
   void jsonify(T &t) {
     JSONIFY(range);
     JSONIFY(severity);
+    JSONIFY(code);
     JSONIFY(message);
     JSONIFY(relatedInformation);
   }

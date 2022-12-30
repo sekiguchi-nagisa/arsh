@@ -19,6 +19,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
+#    CHECK:         "code": "syntax error: NoViableAlter",
 #    CHECK:         "message": "expected `=', `:'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {

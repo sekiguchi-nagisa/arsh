@@ -8,6 +8,7 @@
 #    CHECKERR:     --language-server      enable language server features (default)
 # CHECKERR_RE:     --log arg              specify log level \(debug, info, warning, error, fatal\)\. default is `.+'
 #    CHECKERR:     --test arg             run in test mode
+#    CHECKERR:     --test-open arg        run in test mode (explicitly open specified file)
 
 # STATUS: 1
 
