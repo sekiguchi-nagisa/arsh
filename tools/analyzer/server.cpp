@@ -59,11 +59,13 @@ void LSPServer::bindAll() {
 }
 
 void LSPServer::run() {
-  while (this->transport.available()) {
+  while (true) {
     auto s = this->transport.dispatch(*this, this->timeout);
     if (s == Transport::Status::TIMEOUT) {
       LOG(LogLevel::INFO, "tryRebuild with timeout...");
       this->tryRebuild();
+    } else if (s == Transport::Status::ERROR) {
+      break;
     }
   }
   LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");

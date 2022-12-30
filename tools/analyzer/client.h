@@ -47,8 +47,7 @@ private:
   std::function<bool(rpc::Message &&)> replyCallback;
 
 public:
-  Client(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
-      : transport(logger, std::move(in), std::move(out)) {}
+  Client(LoggerBase &logger, int inFd, int outFd) : transport(logger, inFd, outFd) {}
 
   void setReplyCallback(const std::function<bool(rpc::Message &&)> &func) {
     this->replyCallback = func;

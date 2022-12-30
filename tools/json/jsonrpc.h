@@ -243,8 +243,6 @@ public:
    */
   virtual ssize_t recv(unsigned int size, char *data) = 0;
 
-  virtual bool available() const = 0;
-
   /**
    *
    * @param timeout

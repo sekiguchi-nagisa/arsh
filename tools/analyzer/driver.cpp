@@ -70,7 +70,7 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
     logger.setSeverity(options.level);
     logger.setAppender(FilePtr(stderr));
     showInfo(argv, logger);
-    LSPServer server(logger, FilePtr(stdin), FilePtr(stdout), options.debounceTime);
+    LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), options.debounceTime);
     if (options.testInput) {
       server.setTestWorkDir(getBaseDir(options.testInput));
     }

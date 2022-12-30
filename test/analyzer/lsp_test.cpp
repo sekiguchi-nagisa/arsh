@@ -95,10 +95,10 @@ TEST(LSPTest, Location) {
   ASSERT_EQ(line, toJSON(location).serialize());
 }
 
-static void writeAndSeekToHead(const FilePtr &file, const std::string &line) {
-  writeAll(file, line);
-  fflush(file.get());
-  fseek(file.get(), 0L, SEEK_SET);
+static void writeAndSeekToHead(int fd, const std::string &line) {
+  write(fd, line.c_str(), line.size());
+  fsync(fd);
+  lseek(fd, 0L, SEEK_SET);
 }
 
 static std::string readAfterSeekHead(const FilePtr &file) {
@@ -119,18 +119,18 @@ struct TransportTest : public ::testing::Test {
   LSPLogger logger;
   LSPTransport transport;
 
-  TransportTest() : transport(this->logger, createFilePtr(tmpfile), createFilePtr(tmpfile)) {
+  TransportTest()
+      : transport(this->logger, dup(fileno(createFilePtr(tmpfile).get())),
+                  dup(fileno(createFilePtr(tmpfile).get()))) {
     this->logger.setSeverity(LogLevel::INFO);
     this->logger.setAppender(createFilePtr(tmpfile));
   }
 
   void setInput(const std::string &str) const {
-    writeAndSeekToHead(this->transport.getInput(), str);
+    writeAndSeekToHead(this->transport.getInputFd(), str);
   }
 
   std::string readLog() const { return readAfterSeekHead(this->logger.getAppender()); }
-
-  std::string readOutput() const { return readAfterSeekHead(this->transport.getOutput()); }
 };
 
 TEST_F(TransportTest, case1) {
@@ -203,12 +203,6 @@ TEST_F(TransportTest, case8) {
 }
 
 TEST_F(TransportTest, case9) {
-  std::string str = "helllo";
-  ASSERT_EQ(str.size(), this->transport.send(str.size(), str.c_str()));
-  ASSERT_EQ("Content-Length: 6\r\n\r\nhelllo", this->readOutput());
-}
-
-TEST_F(TransportTest, case10) {
   this->setInput("Content-Length: 0\r\n\r\n");
   ASSERT_EQ(0, this->transport.recvSize());
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+Content-Length: 0.+"));
@@ -230,15 +224,14 @@ struct ServerTest : public InteractiveBase {
       LSPLogger logger;
       logger.setSeverity(LogLevel::INFO);
       logger.setAppender(std::move(this->logFile));
-      LSPServer server(logger, FilePtr(stdin), FilePtr(stdout), 100);
+      LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), 100);
       server.run();
       return 1;
     });
 
-    auto clIn = createFilePtr(fdopen, this->handle.out(), "r");
-    auto clOut = createFilePtr(fdopen, this->handle.in(), "w");
-    this->client =
-        std::make_unique<LSPTransport>(this->clLogger, std::move(clIn), std::move(clOut));
+    auto clIn = dup(this->handle.out());
+    auto clOut = dup(this->handle.in());
+    this->client = std::make_unique<LSPTransport>(this->clLogger, clIn, clOut);
   }
 
   void call(const char *methodName, JSON &&params) {
@@ -445,8 +438,7 @@ TEST(ClientTest, run) {
   });
 
   ClientLogger logger;
-  Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
-                createFilePtr(fdopen, proc.in(), "w"));
+  Client client(logger, dup(proc.out()), dup(proc.in()));
   rpc::Message ret;
   client.setReplyCallback([&ret](rpc::Message &&msg) -> bool {
     ret = std::move(msg);

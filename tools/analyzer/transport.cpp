@@ -33,6 +33,21 @@ static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
 // ##     LSPTransport     ##
 // ##########################
 
+LSPTransport::LSPTransport(LoggerBase &logger, int inFd, int outFd) : rpc::Transport(logger) {
+  if (inFd < 0) {
+    fatal_perror("broken input");
+  }
+  this->inputFd = inFd;
+
+  auto file = createFilePtr(fdopen, outFd, "w");
+  if (!file) {
+    fatal_perror("broken output");
+  }
+  this->output = std::move(file);
+}
+
+LSPTransport::~LSPTransport() { close(this->inputFd); }
+
 ssize_t LSPTransport::send(unsigned int size, const char *data) {
   if (size == 0 || data == nullptr) {
     return 0;
@@ -61,13 +76,13 @@ static int parseContentLength(const std::string &line) {
   return -1;
 }
 
-static bool readLine(FILE *fp, std::string &header) {
+static bool readLine(int fd, std::string &header) {
   while (true) {
     char ch;
     errno = 0;
-    if (fread(&ch, 1, 1, fp) != 1) {
-      if (ferror(fp) && (errno == EINTR || errno == EAGAIN)) {
-        clearerr(fp);
+    ssize_t readSize = read(fd, &ch, 1);
+    if (readSize <= 0) {
+      if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
         continue;
       }
       return false;
@@ -89,7 +104,7 @@ ssize_t LSPTransport::recvSize() {
   int size = 0;
   while (true) {
     std::string header;
-    if (!readLine(this->input.get(), header)) {
+    if (!readLine(this->inputFd, header)) {
       LOG(LogLevel::ERROR, "invalid header: `%s', size: %zu", header.c_str(), header.size());
       return -1;
     }
@@ -115,16 +130,12 @@ ssize_t LSPTransport::recvSize() {
 }
 
 ssize_t LSPTransport::recv(unsigned int size, char *data) {
-  return fread(data, sizeof(char), size, this->input.get());
-}
-
-bool LSPTransport::available() const {
-  return !feof(this->input.get()) && !ferror(this->input.get());
+  return read(this->inputFd, data, size);
 }
 
 bool LSPTransport::poll(int timeout) {
   struct pollfd pollfd[1]{};
-  pollfd[0].fd = fileno(this->input.get());
+  pollfd[0].fd = this->inputFd;
   pollfd[0].events = POLLIN;
   while (true) {
     LOG(LogLevel::DEBUG, "poll: %d", timeout);

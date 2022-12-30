@@ -92,10 +92,9 @@ private:
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
 
 public:
-  LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out, int time)
-      : Handler(logger), encoder(SemanticTokensLegend::create()),
-        transport(logger, std::move(in), std::move(out)), result(std::make_shared<SourceManager>()),
-        defaultDebounceTime(time) {
+  LSPServer(LoggerBase &logger, int inFd, int outFd, int time)
+      : Handler(logger), encoder(SemanticTokensLegend::create()), transport(logger, inFd, outFd),
+        result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
     this->bindAll();
   }
 

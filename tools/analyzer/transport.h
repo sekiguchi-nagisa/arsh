@@ -25,16 +25,15 @@ using namespace json;
 
 class LSPTransport : public rpc::Transport {
 private:
-  FilePtr input;
+  int inputFd;
   FilePtr output;
 
 public:
-  LSPTransport(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
-      : rpc::Transport(logger), input(std::move(in)), output(std::move(out)) {}
+  LSPTransport(LoggerBase &logger, int inFd, int outFd);
 
-  ~LSPTransport() override = default;
+  ~LSPTransport() override;
 
-  const FilePtr &getInput() const { return this->input; }
+  int getInputFd() const { return this->inputFd; }
 
   const FilePtr &getOutput() const { return this->output; }
 
@@ -43,8 +42,6 @@ public:
   ssize_t recvSize() override;
 
   ssize_t recv(unsigned int size, char *data) override;
-
-  bool available() const override;
 
   bool poll(int timeout) override;
 };

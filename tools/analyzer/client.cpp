@@ -171,8 +171,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
 // ##     Client     ##
 // ####################
 
-static bool waitReply(FILE *fp, int timeout) {
-  int fd = fileno(fp);
+static bool waitReply(int fd, int timeout) {
   while (true) {
     struct pollfd pollfd[1]{};
     pollfd[0].fd = fd;
@@ -209,7 +208,7 @@ void Client::run(const ClientInput &input) {
       std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
     }
     int timeout = index == size - 1 ? 500 : 50;
-    while (waitReply(this->transport.getInput().get(), timeout)) {
+    while (waitReply(this->transport.getInputFd(), timeout)) {
       auto ret = this->recv();
       if (!ret.hasValue()) {
         continue;
@@ -232,9 +231,6 @@ bool Client::send(const JSON &json) {
 rpc::Message Client::recv() {
   ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
-    if (!this->transport.available()) {
-      return {};
-    }
     std::string error = "may be broken or empty message";
     return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
   }
@@ -270,8 +266,7 @@ int TestClientServerDriver::run(const DriverOptions &options,
   ClientLogger logger;
   logger.setSeverity(this->level);
   logger(LogLevel::INFO, "run lsp test client");
-  Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
-                createFilePtr(fdopen, proc.in(), "w"));
+  Client client(logger, dup(proc.out()), dup(proc.in()));
   client.setReplyCallback([](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg)) {
       auto &error = get<rpc::Error>(msg);
