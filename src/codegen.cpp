@@ -1102,10 +1102,8 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     this->markLabel(initLabel);
     if (node.getCondNode() != nullptr) {
       this->visit(*node.getCondNode());
-    } else {
-      this->emit0byteIns(OpCode::PUSH_TRUE);
+      this->emitBranchIns(breakLabel);
     }
-    this->emitBranchIns(breakLabel);
 
     this->markLabel(startLabel);
     this->emit0byteIns(OpCode::STACK_GUARD);
