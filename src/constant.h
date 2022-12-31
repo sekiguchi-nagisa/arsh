@@ -141,7 +141,6 @@ constexpr const char *OP_SET = DEFINE_INDEX_OP_NAME("[]=");
 // iterator (for-in)
 constexpr const char *OP_ITER = "%iter";
 constexpr const char *OP_NEXT = "%next";
-constexpr const char *OP_HAS_NEXT = "%has_nex";
 
 constexpr const char *OP_BOOL = "%bool"; // for boolean cast
 

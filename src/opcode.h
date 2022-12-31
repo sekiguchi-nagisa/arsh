@@ -77,7 +77,8 @@ namespace ydsh {
   OP(APPEND, 0, -1)                                                                                \
   OP(APPEND_ARRAY, 0, -1)                                                                          \
   OP(APPEND_MAP, 0, -2)                                                                            \
-  OP(MAP_NEXT, 0, 1)                                                                               \
+  OP(ITER_HAS_NEXT, 2, 0)                                                                          \
+  OP(MAP_ITER_NEXT, 2, 1)                                                                          \
   OP(NEW, 3, 1)                                                                                    \
   OP(INIT_FIELDS, 2, 0)                                                                            \
   OP(CALL_FUNC, 1, 0)                                                                              \

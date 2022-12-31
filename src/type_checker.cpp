@@ -391,11 +391,12 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
     this->reportError<UndefinedBinary>(node.getNameToken(), methodName,
                                        node.getRecvNode().getType().getName());
     break;
-  case ApplyNode::ITER:
+  case ApplyNode::NEW_ITER:
     this->reportError<NotIterable>(node.getRecvNode(), node.getRecvNode().getType().getName());
     break;
-  case ApplyNode::MAP_NEXT_KEY:
-  case ApplyNode::MAP_NEXT_VALUE:
+  case ApplyNode::ITER_NEXT:
+  case ApplyNode::MAP_ITER_NEXT_KEY:
+  case ApplyNode::MAP_ITER_NEXT_VALUE:
     break; // normally unreachable
   }
 }
@@ -881,16 +882,16 @@ void TypeChecker::visitArgsNode(ArgsNode &node) { node.setType(this->typePool.ge
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
   switch (node.getAttr()) {
-  case ApplyNode::MAP_NEXT_KEY:
-  case ApplyNode::MAP_NEXT_VALUE: {
+  case ApplyNode::MAP_ITER_NEXT_KEY:
+  case ApplyNode::MAP_ITER_NEXT_VALUE: {
     assert(isa<AccessNode>(node.getExprNode()));
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     accessNode.setType(this->typePool.get(TYPE::Any));
     auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
     if (recvType.isMapType()) {
       auto &mapType = cast<MapType>(recvType);
-      node.setType(node.getAttr() == ApplyNode::MAP_NEXT_KEY ? mapType.getKeyType()
-                                                             : mapType.getValueType());
+      node.setType(node.getAttr() == ApplyNode::MAP_ITER_NEXT_KEY ? mapType.getKeyType()
+                                                                  : mapType.getValueType());
     } else {
       this->reportError<Required>(accessNode.getRecvNode(), TYPE_MAP, recvType.getName());
     }

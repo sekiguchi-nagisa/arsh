@@ -234,8 +234,6 @@ function status($index : Int) : Option<Int> for Job
 ## StringIter type
 ```
 function %OP_NEXT() : String for StringIter
-
-function %OP_HAS_NEXT() : Boolean for StringIter
 ```
 
 ## Regex type
@@ -297,8 +295,6 @@ function _fullname($name : String) : Option<String> for Module
 ## Reader type
 ```
 function %OP_NEXT() : String for Reader
-
-function %OP_HAS_NEXT() : Boolean for Reader
 ```
 
 ## Command type
@@ -376,8 +372,6 @@ function clear() : Void for Array<T0>
 function %OP_ITER() : Array<T0> for Array<T0>
 
 function %OP_NEXT() : T0 for Array<T0>
-
-function %OP_HAS_NEXT() : Boolean for Array<T0>
 ```
 
 ## Map type
@@ -409,7 +403,5 @@ function clear() : Void for Map<T0,T1>
 function %OP_ITER() : Map<T0,T1> for Map<T0,T1>
 
 function %OP_NEXT() : Tuple<T0,T1> for Map<T0,T1>
-
-function %OP_HAS_NEXT() : Boolean for Map<T0,T1>
 ```
 

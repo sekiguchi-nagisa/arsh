@@ -1362,7 +1362,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   switch (ret) {
   case GlobMatchResult::MATCH:
   case GlobMatchResult::NOMATCH:
-    if(ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+    if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
       argv.sortAsStrArray(oldSize);
       return true;
     } else {
@@ -1971,11 +1971,28 @@ bool VM::mainLoop(DSState &state) {
         typeAs<MapObject>(state.stack.peek()).set(std::move(key), std::move(value));
         vmnext;
       }
-      vmcase(MAP_NEXT) {
+      vmcase(ITER_HAS_NEXT) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
+        if (state.stack.peek()) { // not empty
+          state.stack.pc() += 2;
+        } else {
+          state.stack.clearOperandsUntilGuard();
+          state.stack.pc() += offset - 1;
+        }
+        vmnext;
+      }
+      vmcase(MAP_ITER_NEXT) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
         auto mapIter = state.stack.pop();
-        auto [k, v] = typeAs<MapIterObject>(mapIter).nextUnpack();
-        state.stack.push(std::move(v));
-        state.stack.push(std::move(k));
+        if (typeAs<MapIterObject>(mapIter).hasNext()) {
+          auto [k, v] = typeAs<MapIterObject>(mapIter).nextUnpack();
+          state.stack.push(std::move(v));
+          state.stack.push(std::move(k));
+          state.stack.pc() += 2;
+        } else {
+          state.stack.clearOperandsUntilGuard();
+          state.stack.pc() += offset - 1;
+        }
         vmnext;
       }
       vmcase(NEW) {

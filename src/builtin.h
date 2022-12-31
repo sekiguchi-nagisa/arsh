@@ -1042,20 +1042,16 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(stringIter_next);
   auto &iter = typeAs<BaseObject>(LOCAL(0));
   auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
-  GraphemeScanner::Result ret;
-  bool r = scanner.next(ret);
-  (void)r;
-  assert(r);
-  iter[1] = asDSValue(scanner);
-  RET(DSValue::createStr(ret));
-}
-
-//!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
-YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(stringIter_hasNext);
-  auto &obj = typeAs<BaseObject>(LOCAL(0));
-  auto scanner = asGraphemeScanner(obj[0].asStrRef(), obj[1].asNumList());
-  RET_BOOL(scanner.hasNext());
+  if (scanner.hasNext()) {
+    GraphemeScanner::Result ret;
+    bool r = scanner.next(ret);
+    (void)r;
+    assert(r);
+    iter[1] = asDSValue(scanner);
+    RET(DSValue::createStr(ret));
+  } else {
+    RET_VOID;
+  }
 }
 
 // ###################
@@ -1713,20 +1709,13 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(iterObj[0]);
   assert(iterObj[1].asInt() > -1);
   size_t index = iterObj[1].asInt();
-  assert(index < obj.size());
-  auto value = obj.getValues()[index++];
-  iterObj[1] = DSValue::createInt(index);
-  RET(value);
-}
-
-//!bind: function $OP_HAS_NEXT($this : Array<T0>) : Boolean
-YDSH_METHOD array_hasNext(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(array_hasNext);
-  auto &iterObj = typeAs<BaseObject>(LOCAL(0));
-  auto &obj = typeAs<ArrayObject>(iterObj[0]);
-  assert(iterObj[1].asInt() > -1);
-  size_t index = iterObj[1].asInt();
-  RET_BOOL(index < obj.size());
+  if (index < obj.size()) {
+    auto value = obj.getValues()[index++];
+    iterObj[1] = DSValue::createInt(index);
+    RET(value);
+  } else {
+    RET_VOID;
+  }
 }
 
 // #################
@@ -1875,14 +1864,11 @@ YDSH_METHOD map_iter(RuntimeContext &ctx) {
 YDSH_METHOD map_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_next);
   auto &obj = typeAs<MapIterObject>(LOCAL(0));
-  assert(obj.hasNext());
-  RET(obj.next(ctx.typePool));
-}
-
-//!bind: function $OP_HAS_NEXT($this : Map<T0, T1>) : Boolean
-YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(map_hasNext);
-  RET_BOOL(typeAs<MapIterObject>(LOCAL(0)).hasNext());
+  if (obj.hasNext()) {
+    RET(obj.next(ctx.typePool));
+  } else {
+    RET_VOID;
+  }
 }
 
 // ###################
@@ -2051,14 +2037,11 @@ YDSH_METHOD fd_iter(RuntimeContext &ctx) {
 YDSH_METHOD reader_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(reader_next);
   auto &reader = typeAs<ReaderObject>(LOCAL(0));
-  RET(reader.takeLine());
-}
-
-//!bind: function $OP_HAS_NEXT($this : Reader) : Boolean
-YDSH_METHOD reader_hasNext(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(reader_hasNext);
-  auto &reader = typeAs<ReaderObject>(LOCAL(0));
-  RET_BOOL(reader.nextLine());
+  if (reader.nextLine()) {
+    RET(reader.takeLine());
+  } else {
+    RET_VOID;
+  }
 }
 
 // #####################

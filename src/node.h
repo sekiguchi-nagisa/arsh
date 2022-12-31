@@ -791,9 +791,10 @@ public:
     INDEX,
     UNARY,
     BINARY,
-    ITER,
-    MAP_NEXT_KEY,
-    MAP_NEXT_VALUE,
+    NEW_ITER,
+    ITER_NEXT,
+    MAP_ITER_NEXT_KEY,
+    MAP_ITER_NEXT_VALUE,
   };
 
 private:
@@ -861,19 +862,25 @@ public:
 
   static std::unique_ptr<ApplyNode> newIter(std::unique_ptr<Node> &&recvNode) {
     auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_ITER));
-    node->setAttr(ITER);
+    node->setAttr(NEW_ITER);
     return node;
   }
 
-  static std::unique_ptr<ApplyNode> newMapNextKey(std::unique_ptr<Node> &&recvNode) {
-    auto node = newIter(std::move(recvNode));
-    node->setAttr(MAP_NEXT_KEY);
+  static std::unique_ptr<ApplyNode> newIterNext(std::unique_ptr<Node> &&recvNode) {
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_NEXT));
+    node->setAttr(ITER_NEXT);
     return node;
   }
 
-  static std::unique_ptr<ApplyNode> newMapNextValue(std::unique_ptr<Node> &&recvNode) {
+  static std::unique_ptr<ApplyNode> newMapIterNextKey(std::unique_ptr<Node> &&recvNode) {
     auto node = newIter(std::move(recvNode));
-    node->setAttr(MAP_NEXT_VALUE);
+    node->setAttr(MAP_ITER_NEXT_KEY);
+    return node;
+  }
+
+  static std::unique_ptr<ApplyNode> newMapIterNextValue(std::unique_ptr<Node> &&recvNode) {
+    auto node = newIter(std::move(recvNode));
+    node->setAttr(MAP_ITER_NEXT_VALUE);
     return node;
   }
 

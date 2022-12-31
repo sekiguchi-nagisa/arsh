@@ -777,16 +777,19 @@ void ByteCodeGenerator::visitArgsNode(ArgsNode &node) {
 }
 
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
-  if (node.getAttr() == ApplyNode::MAP_NEXT_KEY) {
+  if (node.getAttr() == ApplyNode::MAP_ITER_NEXT_KEY) {
     this->visit(node.getRecvNode());
-    this->emit0byteIns(OpCode::MAP_NEXT);
-  } else if (node.getAttr() == ApplyNode::MAP_NEXT_VALUE) {
+    this->emitBranchIns(OpCode::MAP_ITER_NEXT, this->peekLoopLabels().breakLabel);
+  } else if (node.getAttr() == ApplyNode::MAP_ITER_NEXT_VALUE) {
     // do nothing
   } else if (node.isMethodCall()) {
     this->visit(node.getRecvNode());
     this->visit(node.getArgsNode());
     this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(*node.getHandle());
+    if (node.getAttr() == ApplyNode::ITER_NEXT) {
+      this->emitBranchIns(OpCode::ITER_HAS_NEXT, this->peekLoopLabels().breakLabel);
+    }
   } else {
     this->visit(node.getExprNode());
     this->visit(node.getArgsNode());

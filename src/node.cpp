@@ -329,9 +329,10 @@ void ApplyNode::dump(NodeDumper &dumper) const {
   OP(INDEX)                                                                                        \
   OP(UNARY)                                                                                        \
   OP(BINARY)                                                                                       \
-  OP(ITER)                                                                                         \
-  OP(MAP_NEXT_KEY)                                                                                 \
-  OP(MAP_NEXT_VALUE)
+  OP(NEW_ITER)                                                                                     \
+  OP(ITER_NEXT)                                                                                    \
+  OP(MAP_ITER_NEXT_KEY)                                                                            \
+  OP(MAP_ITER_NEXT_VALUE)
 
   DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
@@ -993,15 +994,11 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&keyN
       std::make_unique<VarDeclNode>(startPos, NameInfo(dummy, std::string(reset_var_name)),
                                     std::move(call_iter), VarDeclNode::LET);
 
-  // create for-cond
-  auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
-  auto call_hasNext = ApplyNode::newMethodCall(std::move(reset_var), std::string(OP_HAS_NEXT));
-
   // create for-in init
   if (valueName) { // for k, v in <expr>
     // value
-    reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
-    auto call_next = ApplyNode::newMapNextValue(std::move(reset_var));
+    auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
+    auto call_next = ApplyNode::newMapIterNextValue(std::move(reset_var));
     unsigned int pos = valueName.getToken().pos;
     auto init_var = std::make_unique<VarDeclNode>(pos, std::move(valueName), std::move(call_next),
                                                   VarDeclNode::VAR);
@@ -1009,14 +1006,14 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&keyN
 
     // key
     reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
-    call_next = ApplyNode::newMapNextKey(std::move(reset_var));
+    call_next = ApplyNode::newMapIterNextKey(std::move(reset_var));
     pos = keyName.getToken().pos;
     init_var = std::make_unique<VarDeclNode>(pos, std::move(keyName), std::move(call_next),
                                              VarDeclNode::VAR);
     blockNode->insertNodeToFirst(std::move(init_var));
   } else { // for v in <expr>
-    reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
-    auto call_next = ApplyNode::newMethodCall(std::move(reset_var), std::string(OP_NEXT));
+    auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
+    auto call_next = ApplyNode::newIterNext(std::move(reset_var));
     unsigned int pos = keyName.getToken().pos;
     auto init_var = std::make_unique<VarDeclNode>(pos, std::move(keyName), std::move(call_next),
                                                   VarDeclNode::VAR);
@@ -1024,8 +1021,8 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&keyN
     // insert init to block
     blockNode->insertNodeToFirst(std::move(init_var));
   }
-  return std::make_unique<LoopNode>(startPos, std::move(reset_varDecl), std::move(call_hasNext),
-                                    nullptr, std::move(blockNode));
+  return std::make_unique<LoopNode>(startPos, std::move(reset_varDecl), nullptr, nullptr,
+                                    std::move(blockNode));
 }
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token,
