@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.28.0] - 2022-12-31
 
 ### Added
 
@@ -63,7 +63,7 @@
     - also support multi-line editing
     - CTRL-U, CTRL-K, CTRL-A, CTRL-E, CTRL-R are multi-line aware
     - CTRL-T is grapheme-aware
-    - suport ALT-Up, ALT-Down for multiline-aware history rotating
+    - support ALT-Up, ALT-Down for multiline-aware history rotating
     - support ALT-Left, ALT-Right for alternative of home/end key
 - add builtin ``LINE_EDIT`` variable for repl api
 - add some methods to ``FD`` type
@@ -214,7 +214,7 @@
 - escape sequence handling of renderPrompt function in prompt module
 - skippable newline handling in some expressions
 - SEVG of ``textDocument/documentSymbol``, ``textDocument/documentLink``
-- fix ``textDocument/publishDiagnostics`` emittion
+- fix ``textDocument/publishDiagnostics`` emission
 
 ## [0.27.1] - 2022-09-30
 
