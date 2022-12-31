@@ -447,8 +447,8 @@ TEST(ClientTest, run) {
   });
   client.run(req.asOk());
   auto s = proc.wait();
-  ASSERT_TRUE(is<rpc::Response>(ret));
   ASSERT_EQ(0, s.toShellStatus());
+  ASSERT_TRUE(is<rpc::Response>(ret));
   auto &res = get<rpc::Response>(ret);
   ASSERT_EQ(1, res.id.asLong());
   ASSERT_TRUE(res);
