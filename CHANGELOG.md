@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### Builtin
+
+- check array size modification during ``Array#sortWith`` method
+    - now throw ``InvalidOperation`` error
+
 ## [0.28.0] - 2022-12-31
 
 ### Added

@@ -637,10 +637,16 @@ static bool merge(DSState &state, ArrayObject &arrayObj, DSValueBase *buf, const
   size_t k = 0;
 
   while (i < mid && j < right) {
+    const size_t oldSize = arrayObj.size();
     auto &x = arrayObj.getValues()[i];
     auto &y = arrayObj.getValues()[j];
     bool ret = !compare(state, y, x, compFunc);
     if (state.hasError()) {
+      return false;
+    }
+    if (oldSize != arrayObj.size()) {
+      raiseError(state, TYPE::InvalidOperationError,
+                 "array size has been changed during sortWith method");
       return false;
     }
     if (ret) {
