@@ -8,7 +8,7 @@ This file is distributed under BSD-2-Clause license.
 This is derived from [linenoise](https://github.com/antirez/linenoise)
 
 ```
-Copyright (C) 2022 Nagisa Sekiguchi <s dot nagisa dot xyz at gmail dot com>
+Copyright (C) 2022-2023 Nagisa Sekiguchi <s dot nagisa dot xyz at gmail dot com>
 Copyright (c) 2010-2014, Salvatore Sanfilippo <antirez at gmail dot com>
 Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>
 
