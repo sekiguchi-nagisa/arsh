@@ -62,11 +62,7 @@ class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
   using parse_base_type = ydsh::ParserBase<TokenKind, Lexer, TokenTracker>;
 
-#ifdef __SANITIZE_ADDRESS__
-  static constexpr unsigned int MAX_NESTING_DEPTH = 2500;
-#else
-  static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
-#endif
+  static constexpr unsigned int MAX_NESTING_DEPTH = 1024;
 
   enum class ParseErrorKind {
 #define GEN_ENUM(E, S) E,
