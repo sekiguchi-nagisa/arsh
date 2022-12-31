@@ -474,7 +474,7 @@ const char *DSState_version(DSVersion *version) {
   return "ydsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
-const char *DSState_copyright() { return "Copyright (C) 2015-2022 Nagisa Sekiguchi"; }
+const char *DSState_copyright() { return "Copyright (C) 2015-2023 Nagisa Sekiguchi"; }
 
 static constexpr unsigned int featureBit() {
   unsigned int featureBit = 0;
