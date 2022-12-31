@@ -242,9 +242,9 @@ TEST_F(InteractiveTest, history2) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var c = \"$(" HIGHLIGHTER_PATH " --dump)\""));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setColor($c)"));
   this->withTimeout(400, [&] {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var c = \"$(" HIGHLIGHTER_PATH " --dump)\""));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setColor($c)"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
