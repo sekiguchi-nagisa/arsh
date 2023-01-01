@@ -86,12 +86,13 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     except[i] = this->catchBuilders[i].toEntry();
   }
   except[exceptEntrySize] = {
-      .type = nullptr,
+      .typeId = static_cast<unsigned int>(TYPE::Unresolved_),
       .begin = 0,
       .end = 0,
       .dest = 0,
       .localOffset = 0,
       .localSize = 0,
+      .guardLevel = 0,
   }; // sentinel
 
   return CompiledCode(this->lexer->getSourceName(), this->modId, name, code, constPool, entries,
@@ -237,12 +238,14 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
 }
 
 void ByteCodeGenerator::catchException(const Label &begin, const Label &end, const DSType &type,
-                                       unsigned short localOffset, unsigned short localSize) {
+                                       unsigned short localOffset, unsigned short localSize,
+                                       unsigned int level) {
   if (begin->getIndex() == end->getIndex()) {
     return;
   }
   const unsigned int index = this->currentCodeOffset();
-  this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
+  this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize,
+                                                level);
 }
 
 void ByteCodeGenerator::enterMultiFinally(unsigned int depth, unsigned int localOffset,
@@ -335,7 +338,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
     this->visit(*node.getNodes()[i], CmdCallCtx::STMT);
   }
   this->markLabel(end);
-  this->catchException(begin, end, this->typePool.get(TYPE::ProcGuard_));
+  this->guardChildProc(begin, end, this->typePool.get(TYPE::ProcGuard_));
   this->emit0byteIns(OpCode::HALT);
 
   this->markLabel(labels.back());
@@ -985,7 +988,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->visit(node.getExprNode(), CmdCallCtx::STMT);
     this->markLabel(endLabel);
 
-    this->catchException(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
+    this->guardChildProc(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
     this->emit0byteIns(OpCode::HALT);
     this->markLabel(mergeLabel);
   }
@@ -1061,7 +1064,7 @@ void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
   auto &e = this->tryFinallyLabels().back();
   this->markLabel(e.finallyLabel);
   this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Root_), e.localOffset,
-                       e.localSize);
+                       e.localSize, this->tryFinallyLabels().size());
   if (node.getDropLocalSize()) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());
   }
@@ -1359,7 +1362,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
   // generate try block
   this->markLabel(beginLabel);
-  this->emit0byteIns(OpCode::TRY_GUARD);
+  this->emitTryGuard(this->tryFinallyLabels().size());
   this->visit(node.getExprNode(), CmdCallCtx::AUTO);
   this->markLabel(endLabel);
   if (!node.getExprNode().getType().isNothingType()) {
@@ -1382,7 +1385,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     auto &catchType = innerNode->getTypeNode().getType();
     this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(),
-                         blockNode.getVarSize());
+                         blockNode.getVarSize(), this->tryFinallyLabels().size());
     this->visit(*catchNode, CmdCallCtx::AUTO);
     if (!catchNode->getType().isNothingType()) {
       if (hasFinally) {
@@ -1885,10 +1888,11 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
   }
 
   fputs("Exception Table:\n", this->fp);
-  for (unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
+  for (unsigned int i = 0; c.getExceptionEntries()[i]; i++) {
     const auto &e = c.getExceptionEntries()[i];
-    fprintf(this->fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n", e.begin,
-            e.end, e.type->getName(), e.dest, e.localOffset, e.localSize);
+    auto &type = this->typePool.get(e.typeId);
+    fprintf(this->fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d, level: %d\n",
+            e.begin, e.end, type.getName(), e.dest, e.localOffset, e.localSize, e.guardLevel);
   }
 
   fputc('\n', this->fp);

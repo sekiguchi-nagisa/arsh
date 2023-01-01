@@ -212,7 +212,7 @@ enum class DSValueKind : unsigned char {
   OBJECT,      // not null
   NUMBER,      // uint64_t
   NUM_LIST,    // [uint32_t uint32_t, uint32_t]
-  STACK_GUARD, // uint64_t
+  STACK_GUARD, // [uint32_t uint32_t, uint32_t]
   DUMMY,       // DSType(uint32_t), uint32_t, uint32_t
   EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
   INVALID,
@@ -465,9 +465,9 @@ public:
   using uint32_3 = const uint32_t (&)[3];
   uint32_3 asNumList() const { return this->u32s.values; }
 
-  StackGuardType asStackGuard() const {
+  std::pair<StackGuardType, unsigned int> asStackGuard() const {
     assert(this->kind() == DSValueKind::STACK_GUARD);
-    return static_cast<StackGuardType>(this->u64.value);
+    return {static_cast<StackGuardType>(this->u32s.values[0]), this->u32s.values[1]};
   }
 
   unsigned int asTypeId() const {
@@ -566,10 +566,12 @@ public:
 
   static DSValue createNum(unsigned int v) { return DSValue(static_cast<uint64_t>(v)); }
 
-  static DSValue createStackGuard(StackGuardType t) {
+  static DSValue createStackGuard(StackGuardType t, unsigned int level = 0) {
     DSValue ret;
-    ret.u64.kind = DSValueKind::STACK_GUARD;
-    ret.u64.value = static_cast<uint64_t>(t);
+    ret.u32s.kind = DSValueKind::STACK_GUARD;
+    ret.u32s.values[0] = static_cast<uint32_t>(t);
+    ret.u32s.values[1] = level;
+    ret.u32s.values[2] = 0;
     return ret;
   }
 
@@ -1127,16 +1129,22 @@ struct LineNumEntry {
 
 struct ExceptionEntry {
   /**
-   * if null, indicate sentinel
+   * if Unresolved, indicate sentinel
    */
-  const DSType *type;
+  unsigned int typeId;
 
   unsigned int begin; // inclusive
   unsigned int end;   // exclusive
   unsigned int dest;  // catch block address
 
-  unsigned short localOffset;
-  unsigned short localSize;
+  // for try block unwind
+  unsigned short localOffset; // local variable offset of try block
+  unsigned short localSize;   // local variable size of try block
+  unsigned int guardLevel;    // level of try block guard
+
+  explicit operator bool() const {
+    return this->typeId != static_cast<unsigned int>(TYPE::Unresolved_);
+  }
 };
 
 class CompiledCode : public DSCode {

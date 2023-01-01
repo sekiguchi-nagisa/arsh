@@ -1,3 +1,4 @@
+# test try-catch stack guard
 
 # no except
 assert "45" == try {
@@ -17,4 +18,27 @@ assert 34 == try {
     } catch ex {
         34
     }
+}
+
+# nested try-catch
+assert "aaa" == try {
+    34
+    try {
+        "aaaaa"[34]
+    } catch e : ArithmeticError {
+        "bbb"
+    }
+} catch e : OutOfRangeError {
+    "aaa"
+}
+
+assert 12 == try {
+    34
+    try {
+        12
+    } catch e : ArithmeticError {
+        "bbb".size()
+    }
+} catch e : OutOfRangeError {
+    "aaa".size()
 }
