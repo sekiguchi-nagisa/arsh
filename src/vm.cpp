@@ -2118,7 +2118,19 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(TRY_GUARD) {
-        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY));
+        unsigned int level = read32(GET_CODE(state), state.stack.pc());
+        state.stack.pc() += 4;
+        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, level));
+        vmnext;
+      }
+      vmcase(TRY_GUARD0) {
+        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, 1));
+        vmnext;
+      }
+      vmcase(TRY_GUARD1) {
+        unsigned int level = read8(GET_CODE(state), state.stack.pc());
+        state.stack.pc() += 1;
+        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, level));
         vmnext;
       }
       vmcase(THROW) {
@@ -2433,11 +2445,12 @@ bool VM::handleException(DSState &state) {
       const unsigned int occurredPC = state.stack.pc() - 1;
       const DSType &occurredType = state.typePool.get(state.stack.getThrownObject().getTypeID());
 
-      for (unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
+      for (unsigned int i = 0; cc->getExceptionEntries()[i]; i++) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
+        auto &entryType = state.typePool.get(entry.typeId);
         if (occurredPC >= entry.begin && occurredPC < entry.end &&
-            entry.type->isSameOrBaseTypeOf(occurredType)) {
-          if (entry.type->is(TYPE::ProcGuard_)) {
+            entryType.isSameOrBaseTypeOf(occurredType)) {
+          if (entryType.is(TYPE::ProcGuard_)) {
             /**
              * when exception entry indicate exception guard of sub-shell,
              * immediately break interpreter
@@ -2446,9 +2459,9 @@ bool VM::handleException(DSState &state) {
             return false;
           }
           state.stack.pc() = entry.dest;
-          state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
+          state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
-          if (entry.type->is(TYPE::Root_)) { // finally block
+          if (entryType.is(TYPE::Root_)) { // finally block
             state.stack.saveThrownObject();
             state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
           } else { // catch block

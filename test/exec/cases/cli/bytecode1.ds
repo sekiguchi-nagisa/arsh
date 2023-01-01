@@ -36,7 +36,7 @@ DSCode: top level
 Code:
    0: LOAD_CONST  2
    2: STORE_GLOBAL  42
-   5: TRY_GUARD
+   5: TRY_GUARD0
    6: LOAD_GLOBAL  42
    9: PUSH_INT  1
   11: CALL_FUNC  1
@@ -55,7 +55,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  6
 Exception Table:
-  begin: 5, end: 23, type: pseudo top%%, dest: 23, offset: 0, size: 0
+  begin: 5, end: 23, type: pseudo top%%, dest: 23, offset: 0, size: 0, level: 1
 
 DSCode: function f
   code size: 7
@@ -150,7 +150,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:
-  begin: 11, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
+  begin: 11, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0, level: 0"
 
 $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 
@@ -190,7 +190,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  2
 Exception Table:
-  begin: 20, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0"
+  begin: 20, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0, level: 0"
 
 $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
 

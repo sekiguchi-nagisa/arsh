@@ -133,10 +133,16 @@ public:
     this->operands[this->frame.stackTopIndex].swap(this->operands[this->frame.stackTopIndex - 1]);
   }
 
-  void clearOperandsUntilGuard(StackGuardType t) {
+  void clearOperandsUntilGuard(StackGuardType t, unsigned int level = 0) {
     while (this->frame.stackTopIndex > this->frame.stackBottomIndex) {
       auto &top = this->operands[this->frame.stackTopIndex];
-      bool stop = top.kind() == DSValueKind::STACK_GUARD && top.asStackGuard() == t;
+      bool stop = false;
+      if (top.kind() == DSValueKind::STACK_GUARD) {
+        auto [k, l] = top.asStackGuard();
+        if (k == t && (l == level || level == 0)) {
+          stop = true;
+        }
+      }
       this->popNoReturn();
       if (stop) {
         break;

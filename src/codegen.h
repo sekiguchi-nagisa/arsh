@@ -40,13 +40,14 @@ private:
   unsigned int address{0}; // start index of catch block.
   unsigned short localOffset{0};
   unsigned short localSize{0};
+  unsigned int guardLevel{0};
 
 public:
   CatchBuilder() = default;
   CatchBuilder(Label begin, Label end, const DSType &type, unsigned int address,
-               unsigned short localOffset, unsigned short localSize)
+               unsigned short localOffset, unsigned short localSize, unsigned int level)
       : begin(std::move(begin)), end(std::move(end)), type(&type), address(address),
-        localOffset(localOffset), localSize(localSize) {}
+        localOffset(localOffset), localSize(localSize), guardLevel(level) {}
 
   ~CatchBuilder() = default;
 
@@ -58,12 +59,13 @@ public:
     assert(this->type != nullptr);
 
     return ExceptionEntry{
-        .type = this->type,
+        .typeId = this->type->typeId(),
         .begin = this->begin->getIndex(),
         .end = this->end->getIndex(),
         .dest = this->address,
         .localOffset = this->localOffset,
         .localSize = this->localSize,
+        .guardLevel = this->guardLevel,
     };
   }
 };
@@ -389,6 +391,16 @@ private:
    */
   void emitSourcePos(unsigned int pos);
 
+  void emitTryGuard(unsigned int level) {
+    if (level == 1) {
+      this->emit0byteIns(OpCode::TRY_GUARD0);
+    } else if (level <= UINT8_MAX) {
+      this->emit1byteIns(OpCode::TRY_GUARD1, static_cast<unsigned char>(level));
+    } else {
+      this->emit4byteIns(OpCode::TRY_GUARD, level);
+    }
+  }
+
   /**
    * generate catch-block
    * if begin == end (try-block is empty), omit catch block
@@ -404,9 +416,15 @@ private:
    * try block local variable offset (for stack unwinding)
    * @param localSize
    * try block local variable size (for stack unwinding)
+   * @param level
+   * try block guard level
    */
   void catchException(const Label &begin, const Label &end, const DSType &type,
-                      unsigned short localOffset = 0, unsigned short localSize = 0);
+                      unsigned short localOffset, unsigned short localSize, unsigned int level);
+
+  void guardChildProc(const Label &begin, const Label &end, const DSType &type) {
+    this->catchException(begin, end, type, 0, 0, 0);
+  }
 
   void enterFinally(const Label &label) { this->emitJumpIns(label, OpCode::ENTER_FINALLY); }
 
