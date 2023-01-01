@@ -62,9 +62,12 @@
 | BRANCH            | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset              |
 | BRANCH_NOT        | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset          | 
 | GOTO              | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index                          |
-| JUMP_LOOP         | 4: byte1 ~ byte4               | [unwind to loop guard]                       | unwind stack top to guard before go to instruction              |
-| JUMP_LOOP_V       | 4: byte1 ~ byte4               | [unwind to loop guard]                       | save and restore stack top during unwinding                     |
+| JUMP_LOOP         | 4: byte1 ~ byte4               | [unwind until loop guard]                    | unwind stack top to guard before go to instruction              |
+| JUMP_LOOP_V       | 4: byte1 ~ byte4               | [unwind until loop guard]                    | save and restore stack top during unwinding                     |
 | LOOP_GUARD        |                                | -> value                                     | push guard value onto the stack                                 |
+| JUMP_TRY          | 4: byte1 ~ byte4               | [unwind until try guard]                     | unwind stack top to guard before go to instruction              |
+| JUMP_TRY_V        | 4: byte1 ~ byte4               | [unwind until try guard]                     | save and restore stack top during unwinding                     |
+| TRY_GUARD         |                                | -> value                                     | push guard value onto the stack                                 |
 | THROW             |                                | value -> [empty]                             | throw exception                                                 |
 | ENTER_FINALLY     | 4: byte1 ~ byte4               | -> status addr                               | save current pc and go to instruction                           |
 | EXIT_FINALLY      |                                | status addr ->                               | pop stack top and go to instruction                             |

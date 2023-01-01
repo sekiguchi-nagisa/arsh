@@ -133,12 +133,6 @@ public:
     this->operands[this->frame.stackTopIndex].swap(this->operands[this->frame.stackTopIndex - 1]);
   }
 
-  void clearOperands() {
-    while (this->frame.stackTopIndex > this->frame.stackBottomIndex) {
-      this->popNoReturn();
-    }
-  }
-
   void clearOperandsUntilGuard(StackGuardType t) {
     while (this->frame.stackTopIndex > this->frame.stackBottomIndex) {
       auto &top = this->operands[this->frame.stackTopIndex];

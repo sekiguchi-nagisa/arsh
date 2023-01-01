@@ -93,6 +93,9 @@ namespace ydsh {
   OP(JUMP_LOOP, 4, 0)                                                                              \
   OP(JUMP_LOOP_V, 4, 0)                                                                            \
   OP(LOOP_GUARD, 0, 1)                                                                             \
+  OP(JUMP_TRY, 4, 0)                                                                               \
+  OP(JUMP_TRY_V, 4, 0)                                                                             \
+  OP(TRY_GUARD, 0, 1)                                                                              \
   OP(THROW, 0, -1)                                                                                 \
   OP(ENTER_FINALLY, 4, 2)                                                                          \
   OP(EXIT_FINALLY, 0, -2)                                                                          \

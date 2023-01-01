@@ -1,0 +1,20 @@
+
+# no except
+assert "45" == try {
+    "45"
+} catch e {
+    $e.message()
+}
+
+# catch
+assert 34 == try {
+    34 / 0
+} catch e {
+    $e
+    65
+    try {
+        34 + throw $e
+    } catch ex {
+        34
+    }
+}

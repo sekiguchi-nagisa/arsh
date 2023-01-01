@@ -2,6 +2,10 @@
 
 ## [0.28.1] - 2012-xx-xx
 
+### Fixed
+
+- broken stack in try expression
+
 ## [0.28.0] - 2022-12-31
 
 ### Added

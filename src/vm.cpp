@@ -2103,6 +2103,24 @@ bool VM::mainLoop(DSState &state) {
         state.stack.push(DSValue::createStackGuard(StackGuardType::LOOP));
         vmnext;
       }
+      vmcase(JUMP_TRY) {
+        unsigned int index = read32(GET_CODE(state), state.stack.pc());
+        state.stack.pc() = index;
+        state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
+        vmnext;
+      }
+      vmcase(JUMP_TRY_V) {
+        unsigned int index = read32(GET_CODE(state), state.stack.pc());
+        state.stack.pc() = index;
+        auto v = state.stack.pop();
+        state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
+        state.stack.push(std::move(v));
+        vmnext;
+      }
+      vmcase(TRY_GUARD) {
+        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY));
+        vmnext;
+      }
       vmcase(THROW) {
         auto obj = state.stack.pop();
         state.throwObject(std::move(obj));
@@ -2428,7 +2446,7 @@ bool VM::handleException(DSState &state) {
             return false;
           }
           state.stack.pc() = entry.dest;
-          state.stack.clearOperands();
+          state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entry.type->is(TYPE::Root_)) { // finally block
             state.stack.saveThrownObject();
