@@ -139,12 +139,15 @@ public:
     }
   }
 
-  void clearOperandsUntilGuard() {
-    while (this->frame.stackTopIndex > this->frame.stackBottomIndex &&
-           this->operands[this->frame.stackTopIndex].kind() != DSValueKind::NUMBER) {
+  void clearOperandsUntilGuard(StackGuardType t) {
+    while (this->frame.stackTopIndex > this->frame.stackBottomIndex) {
+      auto &top = this->operands[this->frame.stackTopIndex];
+      bool stop = top.kind() == DSValueKind::STACK_GUARD && top.asStackGuard() == t;
       this->popNoReturn();
+      if (stop) {
+        break;
+      }
     }
-    this->popNoReturn(); // pop guard value
   }
 
   void reclaimLocals(unsigned char offset, unsigned char size) {

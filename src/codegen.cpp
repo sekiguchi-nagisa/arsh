@@ -204,7 +204,7 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
 }
 
 void ByteCodeGenerator::emitJumpIns(const Label &label, OpCode op) {
-  assert(op == OpCode::GOTO || op == OpCode::GOTO_UNWIND || op == OpCode::GOTO_UNWIND_V ||
+  assert(op == OpCode::GOTO || op == OpCode::JUMP_LOOP || op == OpCode::JUMP_LOOP_V ||
          op == OpCode::ENTER_FINALLY);
   const unsigned int index = this->currentCodeOffset();
   this->emit4byteIns(op, 0);
@@ -1109,7 +1109,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     }
 
     this->markLabel(startLabel);
-    this->emit0byteIns(OpCode::STACK_GUARD);
+    this->emit0byteIns(OpCode::LOOP_GUARD);
     this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
     this->markLabel(breakLabel);
@@ -1285,13 +1285,13 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
 
   if (node.getOpKind() == JumpNode::BREAK) {
     if (node.getExprNode().getType().isVoidType()) {
-      this->emitJumpIns(this->peekLoopLabels().breakLabel, OpCode::GOTO_UNWIND);
+      this->emitJumpIns(this->peekLoopLabels().breakLabel, OpCode::JUMP_LOOP);
     } else {
-      this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel, OpCode::GOTO_UNWIND_V);
+      this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel, OpCode::JUMP_LOOP_V);
     }
   } else {
     assert(node.getExprNode().getType().isVoidType());
-    this->emitJumpIns(this->peekLoopLabels().continueLabel, OpCode::GOTO_UNWIND);
+    this->emitJumpIns(this->peekLoopLabels().continueLabel, OpCode::JUMP_LOOP);
   }
 }
 

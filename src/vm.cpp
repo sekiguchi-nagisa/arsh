@@ -1976,7 +1976,7 @@ bool VM::mainLoop(DSState &state) {
         if (state.stack.peek()) { // not empty
           state.stack.pc() += 2;
         } else {
-          state.stack.clearOperandsUntilGuard();
+          state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
           state.stack.pc() += offset - 1;
         }
         vmnext;
@@ -1990,7 +1990,7 @@ bool VM::mainLoop(DSState &state) {
           state.stack.push(std::move(k));
           state.stack.pc() += 2;
         } else {
-          state.stack.clearOperandsUntilGuard();
+          state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
           state.stack.pc() += offset - 1;
         }
         vmnext;
@@ -2102,23 +2102,22 @@ bool VM::mainLoop(DSState &state) {
         state.stack.pc() = index;
         vmnext;
       }
-      vmcase(GOTO_UNWIND) {
+      vmcase(JUMP_LOOP) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
-        state.stack.clearOperandsUntilGuard();
+        state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
         vmnext;
       }
-      vmcase(GOTO_UNWIND_V) {
+      vmcase(JUMP_LOOP_V) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
         auto v = state.stack.pop();
-        state.stack.clearOperandsUntilGuard();
+        state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
         state.stack.push(std::move(v));
         vmnext;
       }
-      vmcase(STACK_GUARD) {
-        unsigned int index = state.stack.getFrame().stackTopIndex;
-        state.stack.push(DSValue::createNum(index));
+      vmcase(LOOP_GUARD) {
+        state.stack.push(DSValue::createStackGuard(StackGuardType::LOOP));
         vmnext;
       }
       vmcase(THROW) {
