@@ -202,11 +202,16 @@ public:
   void append(StringRef v) { this->value += v; }
 };
 
+enum class StackGuardType : unsigned int {
+  LOOP,
+};
+
 enum class DSValueKind : unsigned char {
   EMPTY,
   OBJECT,      // not null
   NUMBER,      // uint64_t
   NUM_LIST,    // [uint32_t uint32_t, uint32_t]
+  STACK_GUARD, // uint64_t
   DUMMY,       // DSType(uint32_t), uint32_t, uint32_t
   EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
   INVALID,
@@ -459,6 +464,11 @@ public:
   using uint32_3 = const uint32_t (&)[3];
   uint32_3 asNumList() const { return this->u32s.values; }
 
+  StackGuardType asStackGuard() const {
+    assert(this->kind() == DSValueKind::STACK_GUARD);
+    return static_cast<StackGuardType>(this->u64.value);
+  }
+
   unsigned int asTypeId() const {
     assert(this->kind() == DSValueKind::DUMMY);
     return this->u32s.values[0];
@@ -555,6 +565,13 @@ public:
 
   static DSValue createNum(unsigned int v) { return DSValue(static_cast<uint64_t>(v)); }
 
+  static DSValue createStackGuard(StackGuardType t) {
+    DSValue ret;
+    ret.u64.kind = DSValueKind::STACK_GUARD;
+    ret.u64.value = static_cast<uint64_t>(t);
+    return ret;
+  }
+
   static DSValue createDummy(const DSType &type, unsigned int v1 = 0, unsigned int v2 = 0) {
     DSValue ret;
     ret.u32s.kind = DSValueKind::DUMMY;
@@ -623,7 +640,7 @@ public:
 
   /**
    * create String from grapheme cluster.
-   * if has invalid code points, replace theme with 'unicode replacementment char'
+   * if has invalid code points, replace theme with 'unicode replacement char'
    * @param ret
    * @return
    */
