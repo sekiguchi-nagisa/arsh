@@ -205,7 +205,7 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
 
 void ByteCodeGenerator::emitJumpIns(const Label &label, OpCode op) {
   assert(op == OpCode::GOTO || op == OpCode::JUMP_LOOP || op == OpCode::JUMP_LOOP_V ||
-         op == OpCode::ENTER_FINALLY);
+         op == OpCode::JUMP_TRY || op == OpCode::JUMP_TRY_V || op == OpCode::ENTER_FINALLY);
   const unsigned int index = this->currentCodeOffset();
   this->emit4byteIns(op, 0);
   this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
@@ -1359,13 +1359,15 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
   // generate try block
   this->markLabel(beginLabel);
+  this->emit0byteIns(OpCode::TRY_GUARD);
   this->visit(node.getExprNode(), CmdCallCtx::AUTO);
   this->markLabel(endLabel);
   if (!node.getExprNode().getType().isNothingType()) {
     if (hasFinally) {
       this->enterFinally(finallyLabel);
     }
-    this->emitJumpIns(mergeLabel);
+    this->emitJumpIns(mergeLabel, node.getExprNode().getType().isVoidType() ? OpCode::JUMP_TRY
+                                                                            : OpCode::JUMP_TRY_V);
   }
 
   // generate catch

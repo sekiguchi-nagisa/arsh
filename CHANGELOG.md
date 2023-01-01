@@ -9,6 +9,10 @@
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 
+### Fixed
+
+- broken stack in try expression
+
 ## [0.28.0] - 2022-12-31
 
 ### Added

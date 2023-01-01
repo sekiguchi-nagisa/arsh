@@ -204,6 +204,7 @@ public:
 
 enum class StackGuardType : unsigned int {
   LOOP,
+  TRY,
 };
 
 enum class DSValueKind : unsigned char {
