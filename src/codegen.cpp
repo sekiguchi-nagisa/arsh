@@ -1032,6 +1032,9 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
         });
         deferNodes.push_back(cast<DeferNode>(e.get()));
         this->markLabel(this->tryFinallyLabels().back().beginLabel);
+        if (deferCount == 1) {
+          this->emitTryGuard(this->tryFinallyLabels().size());
+        }
       } else {
         auto callCtx = i == size - 1 ? CmdCallCtx::AUTO : CmdCallCtx::STMT;
         this->visit(*e, callCtx);
@@ -1041,7 +1044,8 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     auto mergeLabel = makeLabel();
     if (deferCount && !node.getNodes().back()->getType().isNothingType()) {
       this->enterMultiFinally(deferCount);
-      this->emitJumpIns(mergeLabel);
+      this->emitJumpIns(mergeLabel,
+                        node.getType().isVoidType() ? OpCode::JUMP_TRY : OpCode::JUMP_TRY_V);
     }
 
     for (unsigned int i = 0; i < deferCount; i++) {
@@ -1651,6 +1655,7 @@ bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
     });
     this->toplevelDeferNodes().emplace_back(cast<DeferNode>(node.release()));
     this->markLabel(this->tryFinallyLabels().back().beginLabel);
+    this->emitTryGuard(this->tryFinallyLabels().size());
   } else {
     this->visit(*node, CmdCallCtx::STMT);
   }

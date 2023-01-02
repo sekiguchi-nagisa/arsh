@@ -6,39 +6,40 @@ source $SCRIPT_DIR/expect.ds
 var out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 37
-  max stack depth: 5
+  code size: 38
+  max stack depth: 6
   number of local variable: 1
   number of global variable: 42
 Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  0
-   4: ENTER_FINALLY  14
-   9: GOTO  32
-  14: LOAD_CONST  2
-  16: NEW_CMD
-  17: NEW_REDIR
-  18: LOAD_LOCAL  0
-  20: CALL_BUILTIN2  1  %str
-  23: ADD_CMD_ARG
-  24: LOAD_CONST  3
-  26: ADD_REDIR_OP1  2
-  28: DO_REDIR
-  29: CALL_CMD
-  30: POP
-  31: EXIT_FINALLY
-  32: RECLAIM_LOCAL  0  1
-  35: PUSH_INVALID
-  36: RETURN
+   4: TRY_GUARD0
+   5: ENTER_FINALLY  15
+  10: JUMP_TRY  33
+  15: LOAD_CONST  2
+  17: NEW_CMD
+  18: NEW_REDIR
+  19: LOAD_LOCAL  0
+  21: CALL_BUILTIN2  1  %str
+  24: ADD_CMD_ARG
+  25: LOAD_CONST  3
+  27: ADD_REDIR_OP1  2
+  29: DO_REDIR
+  30: CALL_CMD
+  31: POP
+  32: EXIT_FINALLY
+  33: RECLAIM_LOCAL  0  1
+  36: PUSH_INVALID
+  37: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
   2: String echo
   3: String /dev/null
 Line Number Table:
-  lineNum: 1, address: 18
+  lineNum: 1, address: 19
 Exception Table:
-  begin: 4, end: 14, type: pseudo top%%, dest: 14, offset: 0, size: 0, level: 1"
+  begin: 4, end: 15, type: pseudo top%%, dest: 15, offset: 0, size: 0, level: 1"
 
 # last defer statement is simplified to block statement
 $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; }')", 0, $out)
@@ -47,31 +48,32 @@ $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; }')"
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 29
-  max stack depth: 4
+  code size: 30
+  max stack depth: 5
   number of local variable: 1
   number of global variable: 42
 Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  0
-   4: LOAD_CONST  2
-   6: NEW_CMD
-   7: PUSH_NULL
-   8: CALL_CMD
-   9: LOAD_CONST  3
-  11: NEW_CMD
-  12: NEW_REDIR
-  13: LOAD_LOCAL  0
-  15: CALL_BUILTIN2  1  %str
-  18: ADD_CMD_ARG
-  19: LOAD_CONST  4
-  21: ADD_REDIR_OP1  2
-  23: DO_REDIR
-  24: CALL_CMD
-  25: POP
-  26: EXIT_FINALLY
-  27: PUSH_INVALID
-  28: RETURN
+   4: TRY_GUARD0
+   5: LOAD_CONST  2
+   7: NEW_CMD
+   8: PUSH_NULL
+   9: CALL_CMD
+  10: LOAD_CONST  3
+  12: NEW_CMD
+  13: NEW_REDIR
+  14: LOAD_LOCAL  0
+  16: CALL_BUILTIN2  1  %str
+  19: ADD_CMD_ARG
+  20: LOAD_CONST  4
+  22: ADD_REDIR_OP1  2
+  24: DO_REDIR
+  25: CALL_CMD
+  26: POP
+  27: EXIT_FINALLY
+  28: PUSH_INVALID
+  29: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -79,9 +81,9 @@ Constant Pool:
   3: String echo
   4: String /dev/null
 Line Number Table:
-  lineNum: 1, address:  8
+  lineNum: 1, address:  9
 Exception Table:
-  begin: 4, end: 9, type: pseudo top%%, dest: 9, offset: 0, size: 0, level: 1"
+  begin: 4, end: 10, type: pseudo top%%, dest: 10, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; exit; }')", 0, $out)
 
@@ -112,34 +114,35 @@ Line Number Table:
 Exception Table:
 
 DSCode: command f
-  code size: 41
-  max stack depth: 4
+  code size: 42
+  max stack depth: 5
   number of local variable: 6
 Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  4
-   4: PUSH_INT  99
-   6: STORE_LOCAL  5
-   8: LOAD_LOCAL  5
-  10: STORE_LOCAL  4
-  12: LOAD_GLOBAL  15
-  15: ENTER_FINALLY  21
-  20: RETURN_UDC
-  21: RECLAIM_LOCAL  5  1
-  24: ASSERT_ENABLED  16
-  27: LOAD_LOCAL  4
-  29: PUSH_INT  99
-  31: CALL_BUILTIN2  2  %b_==
-  34: BRANCH_NOT  6
-  37: LOAD_CONST  0
-  39: ASSERT_FAIL
-  40: EXIT_FINALLY
+   4: TRY_GUARD0
+   5: PUSH_INT  99
+   7: STORE_LOCAL  5
+   9: LOAD_LOCAL  5
+  11: STORE_LOCAL  4
+  13: LOAD_GLOBAL  15
+  16: ENTER_FINALLY  22
+  21: RETURN_UDC
+  22: RECLAIM_LOCAL  5  1
+  25: ASSERT_ENABLED  16
+  28: LOAD_LOCAL  4
+  30: PUSH_INT  99
+  32: CALL_BUILTIN2  2  %b_==
+  35: BRANCH_NOT  6
+  38: LOAD_CONST  0
+  40: ASSERT_FAIL
+  41: EXIT_FINALLY
 Constant Pool:
   0: String \`\$a == 99'
 Line Number Table:
-  lineNum: 1, address:  8
+  lineNum: 1, address:  9
 Exception Table:
-  begin: 4, end: 21, type: pseudo top%%, dest: 21, offset: 0, size: 0, level: 1"
+  begin: 4, end: 22, type: pseudo top%%, dest: 22, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c 'f() { var a = 23; defer { assert $a == 99; }; var b = 99;$a = $b; }; f')", 0, $out)
 
@@ -164,23 +167,24 @@ Line Number Table:
 Exception Table:
 
 DSCode: function AAA
-  code size: 22
-  max stack depth: 3
+  code size: 23
+  max stack depth: 4
   number of local variable: 2
 Code:
    0: LOAD_LOCAL  0
    2: STORE_LOCAL  1
-   4: NEW  %mod1.AAA
-   8: INIT_FIELDS  1  1
-  11: ENTER_FINALLY  17
-  16: RETURN
-  17: PUSH_INT  34
-  19: STORE_LOCAL  0
-  21: EXIT_FINALLY
+   4: TRY_GUARD0
+   5: NEW  %mod1.AAA
+   9: INIT_FIELDS  1  1
+  12: ENTER_FINALLY  18
+  17: RETURN
+  18: PUSH_INT  34
+  20: STORE_LOCAL  0
+  22: EXIT_FINALLY
 Constant Pool:
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:
-  begin: 4, end: 17, type: pseudo top%%, dest: 17, offset: 0, size: 0, level: 1"
+  begin: 4, end: 18, type: pseudo top%%, dest: 18, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c 'typedef AAA($a : Int) { var v = $a; defer { $a = 34; } }')", 0, $out)
