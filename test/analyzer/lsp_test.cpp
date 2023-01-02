@@ -433,12 +433,14 @@ TEST(ClientTest, run) {
       content += res;
       fwrite(content.c_str(), sizeof(char), content.size(), stdout);
       fflush(stdout);
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
       return 0;
     }
     return 1;
   });
 
   ClientLogger logger;
+  logger.setSeverity(LogLevel::DEBUG);
   Client client(logger, dup(proc.out()), dup(proc.in()));
   rpc::Message ret;
   client.setReplyCallback([&ret](rpc::Message &&msg) -> bool {
