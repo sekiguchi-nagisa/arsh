@@ -1325,7 +1325,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
   if (ret) {
     RET(DSValue(ret.asOk()));
   } else {
-    ctx.throwObject(DSValue(ret.asErr()));
+    ctx.throwObject(std::move(ret).takeError());
     RET_ERROR;
   }
 }

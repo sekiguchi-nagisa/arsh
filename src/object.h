@@ -1019,23 +1019,31 @@ public:
 
   int64_t getStatus() const { return this->status; }
 
+  enum class PrintOp {
+    DEFAULT,  // only print stack trace
+    UNCAUGHT, // show uncaught exception message header
+    IGNORED,  // show ignored exception message header
+  };
+
   /**
    * print stack trace to stderr
+   * @param ctx
+   * @param op
    */
-  void printStackTrace(DSState &ctx);
+  void printStackTrace(DSState &ctx, PrintOp op = PrintOp::DEFAULT);
 
   const std::vector<StackTraceElement> &getStackTrace() const { return this->stackTrace; }
 
   /**
    * create new Error_Object and create stack trace
    */
-  static DSValue newError(const DSState &state, const DSType &type, const DSValue &message,
-                          int64_t status) {
+  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type,
+                                      const DSValue &message, int64_t status) {
     return newError(state, type, DSValue(message), status);
   }
 
-  static DSValue newError(const DSState &state, const DSType &type, DSValue &&message,
-                          int64_t status);
+  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type, DSValue &&message,
+                                      int64_t status);
 };
 
 enum class CodeKind : unsigned char {

@@ -664,13 +664,34 @@ bool ErrorObject::opStr(StrBuilder &builder) const {
          builder.add(": ") && builder.add(ref);
 }
 
-void ErrorObject::printStackTrace(DSState &state) {
+void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
   StrBuilder builder(state);
   bool r = this->opStr(builder);
   (void)r;
   assert(r);
 
   // print header
+  switch (op) {
+  case PrintOp::DEFAULT:
+    break;
+  case PrintOp::UNCAUGHT: {
+    std::string header = "[runtime error";
+    if (state.subshellLevel) {
+      header += " at subshell=";
+      header += std::to_string(state.subshellLevel);
+    }
+    header += "]\n";
+    fputs(header.c_str(), stderr);
+    break;
+  }
+  case PrintOp::IGNORED: {
+    std::string header = "[warning]\n";
+    header += "the following exception within finally/defer block is ignored\n";
+    fputs(header.c_str(), stderr);
+    break;
+  }
+  }
+
   fprintf(stderr, "%s\n", std::move(builder).take().asCStr());
 
   // print stack trace
@@ -678,18 +699,22 @@ void ErrorObject::printStackTrace(DSState &state) {
     fprintf(stderr, "    from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
             s.getCallerName().c_str());
   }
+  if (op == PrintOp::IGNORED) {
+    fputs("\n", stderr);
+  }
+  fflush(stderr);
 }
 
-DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message,
-                              int64_t status) {
+ObjPtr<ErrorObject> ErrorObject::newError(const DSState &state, const DSType &type,
+                                          DSValue &&message, int64_t status) {
   std::vector<StackTraceElement> traces;
   state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {
     traces.push_back(std::move(e));
     return true;
   });
   auto name = DSValue::createStr(type.getName());
-  return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), status,
-                                      std::move(traces));
+  return toObjPtr<ErrorObject>(DSValue::create<ErrorObject>(
+      type, std::move(message), std::move(name), status, std::move(traces)));
 }
 
 // ##########################

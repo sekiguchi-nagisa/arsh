@@ -90,12 +90,12 @@ private:
   /**
    * for exception handling
    */
-  DSValue thrown;
+  ObjPtr<ErrorObject> thrown;
 
   /**
    * for finally
    */
-  DSValue savedThrown;
+  ObjPtr<ErrorObject> savedThrown;
 
 public:
   VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
@@ -159,16 +159,18 @@ public:
   }
 
   // for exception handling
-  const DSValue &getThrownObject() const { return this->thrown; }
+  const auto &getThrownObject() const { return this->thrown; }
 
-  void setThrownObject(DSValue &&obj) {
+  bool setThrownObject(ObjPtr<ErrorObject> &&obj) {
     if (!this->restoreThrownObject()) {
       this->thrown = std::move(obj);
+      return true;
     }
+    return false;
   }
 
-  DSValue takeThrownObject() {
-    DSValue tmp;
+  ObjPtr<ErrorObject> takeThrownObject() {
+    ObjPtr<ErrorObject> tmp;
     std::swap(tmp, this->thrown);
     return tmp;
   }

@@ -193,7 +193,12 @@ public:
    * @param afterStatus
    * set exit status to it
    */
-  void throwObject(DSValue &&except) { this->stack.setThrownObject(std::move(except)); }
+  void throwObject(ObjPtr<ErrorObject> &&except) {
+    auto tmp = except;
+    if (!this->stack.setThrownObject(std::move(except))) {
+      tmp->printStackTrace(*this, ErrorObject::PrintOp::IGNORED);
+    }
+  }
 
   // variable manipulation
   void setGlobal(unsigned int index, const DSValue &obj) { this->setGlobal(index, DSValue(obj)); }

@@ -2152,7 +2152,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(THROW) {
         auto obj = state.stack.pop();
-        state.throwObject(std::move(obj));
+        state.throwObject(toObjPtr<ErrorObject>(std::move(obj)));
         vmerror;
       }
       vmcase(ENTER_FINALLY) {
@@ -2460,7 +2460,7 @@ bool VM::handleException(DSState &state) {
 
       // search exception entry
       const unsigned int occurredPC = state.stack.pc() - 1;
-      const DSType &occurredType = state.typePool.get(state.stack.getThrownObject().getTypeID());
+      const DSType &occurredType = state.typePool.get(state.stack.getThrownObject()->getTypeID());
 
       for (unsigned int i = 0; cc->getExceptionEntries()[i]; i++) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
@@ -2631,7 +2631,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   }
 
   auto except = state.stack.takeThrownObject();
-  auto &errorType = state.typePool.get(except.getTypeID());
+  auto &errorType = state.typePool.get(except->getTypeID());
   DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
   if (errorType.is(TYPE::ShellExit_)) {
     kind = DS_ERROR_KIND_EXIT;
@@ -2662,15 +2662,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   // print error message
   if (kind == DS_ERROR_KIND_RUNTIME_ERROR || kind == DS_ERROR_KIND_ASSERTION_ERROR ||
       hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
-    std::string header = "[runtime error";
-    if (state.subshellLevel) {
-      header += " at subshell=";
-      header += std::to_string(state.subshellLevel);
-    }
-    header += "]\n";
-    fputs(header.c_str(), stderr);
-    typeAs<ErrorObject>(except).printStackTrace(state);
-    fflush(stderr);
+    typeAs<ErrorObject>(except).printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
   }
 
   if (dsError != nullptr) {
@@ -2694,7 +2686,7 @@ bool VM::callTermHook(DSState &state) {
 
   int termKind = TERM_ON_EXIT;
   if (except) {
-    auto &type = state.typePool.get(except.getTypeID());
+    auto &type = state.typePool.get(except->getTypeID());
     if (type.is(TYPE::AssertFail_)) {
       termKind = TERM_ON_ASSERT;
     } else if (!type.is(TYPE::ShellExit_)) {
