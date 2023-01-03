@@ -1,0 +1,8 @@
+() { var a = 64
+   return return $a
+}
+
+fa $a
+}
+
+fai|
