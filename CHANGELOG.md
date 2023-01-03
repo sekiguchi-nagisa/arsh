@@ -4,6 +4,10 @@
 
 ### Changed
 
+#### Core
+
+- show stack trace of ignored exceptions within finally/defer block
+
 #### Builtin
 
 - check array size modification during ``Array#sortWith`` method

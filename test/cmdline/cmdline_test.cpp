@@ -266,6 +266,36 @@ TEST_F(CmdlineTest, marker4) {
   }
 }
 
+TEST_F(CmdlineTest, except) {
+  const char *msg = R"([warning]
+the following exception within finally/defer block is ignored
+SystemError: execution error: hoge: command not found
+    from (string):7 '<toplevel>()'
+
+[warning]
+the following exception within finally/defer block is ignored
+Shell Exit: terminated by exit 34
+    from (string):3 '<toplevel>()'
+
+[runtime error]
+Assertion Error: `$false'
+    from (string):10 '<toplevel>()'
+)";
+
+  const char *script = R"(
+defer {
+  eval exit 34
+}
+
+defer {
+  hoge
+}
+
+assert $false
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", script), 1, "", msg));
+}
+
 TEST_F(CmdlineTest, version) {
   std::string msg = "^ydsh, version ";
   msg += X_INFO_VERSION;
