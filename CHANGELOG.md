@@ -18,6 +18,7 @@
 - bugfix code generation of try-finally/defer
     - fix broken stack unwind in try expression
     - now maintain try block level
+- bugfix code generation of case expression with option type expression
 
 ## [0.28.0] - 2022-12-31
 
