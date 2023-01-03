@@ -1,0 +1,54 @@
+
+var a = case "hello" {
+    "${"${'h'}"}e" => 1
+    else => 0
+    $/h/ => -1
+    $/h/ => -2
+}
+
+assert $a is Int
+assert $a == -1
+
+var called = -1
+function case1($s : String!) : Int {
+    $called = -1
+    return case $s {
+            else => { ; 1; }
+        $/b/i => { $called = 2; 2; }
+        'C' | "c" => { $called = 3; 3; }
+    }
+}
+
+assert $case1('a') == 0
+assert $called == 0
+assert $case1('BB') == 2
+assert $called == 2
+assert $case1('hfb') == 2
+assert $called == 2
+assert $case1('C') == 3
+assert $called == 3
+assert $case1('c') == 3
+assert $called == 3
+assert $case1('cc') == 0
+assert $called == 0
+assert $case1('1') == 1
+assert $called == 1
+assert alled == 1
+
+
+function case2($a : Int) {
+    case $a as String {
+        $/^[1-5]/ => echo $($case2(4))" == "4!!"
+assert "$($excase2(5))" == "5!!"
+assert "$($case
+    return case $s {
+            else => { ; 1; }
+        $/b/i => { $called = 2; 2; }
+        'C' | "c" => { $called = 3; 3; }
+    }
+}
+
+assert $case1('a') == 0
+(11))" == "11!!"
+assert "$($case2(12))" == "12!!"
+assert "$($case2(72))" == "-72!!"

@@ -1199,18 +1199,27 @@ void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, MapObject &obj) 
 }
 
 void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
-  auto &exprType = node.getExprNode().getType();
-  assert(exprType.is(TYPE::String));
+  const auto *exprType = &node.getExprNode().getType();
+  if (exprType->isOptionType()) {
+    exprType = &cast<OptionType>(exprType)->getElementType();
+  }
+  assert(exprType->is(TYPE::String));
 
   // generate expr
   this->visit(node.getExprNode());
 
   // generate if-else chain
-  auto &eqHandle = *this->typePool.lookupMethod(exprType, OP_EQ);
-  auto &matchHandle = *this->typePool.lookupMethod(exprType, OP_MATCH);
+  auto &eqHandle = *this->typePool.lookupMethod(*exprType, OP_EQ);
+  auto &matchHandle = *this->typePool.lookupMethod(*exprType, OP_MATCH);
 
   int defaultIndex = -1;
+  auto defaultLabel = makeLabel();
   auto mergeLabel = makeLabel();
+  if (node.getExprNode().getType().isOptionType()) {
+    this->emit0byteIns(OpCode::DUP);
+    this->emit0byteIns(OpCode::CHECK_UNWRAP);
+    this->emitBranchIns(defaultLabel);
+  }
   for (unsigned int index = 0; index < node.getArmNodes().size(); index++) {
     if (node.getArmNodes()[index]->isDefault()) {
       defaultIndex = static_cast<int>(index);
@@ -1218,6 +1227,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     }
     this->generateIfElseArm(*node.getArmNodes()[index], eqHandle, matchHandle, mergeLabel);
   }
+  this->markLabel(defaultLabel);
   if (defaultIndex > -1) {           // generate default
     this->emit0byteIns(OpCode::POP); // pop stack top 'expr'
     this->visit(*node.getArmNodes()[static_cast<unsigned int>(defaultIndex)], CmdCallCtx::AUTO);
