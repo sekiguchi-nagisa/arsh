@@ -27,6 +27,11 @@ for $d in $(ls $mod) {
     cp $mod/$d $dir/mod_$d
 }
 
+echo copy scripts from $mod/repl_impl
+for $d in $(ls $mod/repl_impl) {
+    cp $mod/repl_impl/$d $dir/mod_repl_impl_$d
+}
+
 # copy from completion dir
 let comp = "$SCRIPT_DIR/../share/ydsh/completion".realpath()!
 echo copy scripts from $comp
