@@ -1336,7 +1336,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     this->enterMultiFinally(this->tryFinallyLabels().size());
 
     if (this->inUDC()) {
-      assert(node.getExprNode().getType().is(TYPE::Int));
+      assert(this->typePool.get(TYPE::Int).isSameOrBaseTypeOf(node.getExprNode().getType()));
       this->emit0byteIns(OpCode::RETURN_UDC);
     } else {
       if (node.getExprNode().getType().isVoidType()) {
