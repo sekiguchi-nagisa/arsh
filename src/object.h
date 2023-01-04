@@ -1092,13 +1092,6 @@ public:
     this->size = 0;
   }
 
-  explicit NativeCode(unsigned int index) noexcept : NativeCode() {
-    this->value[0] = static_cast<char>(OpCode::CALL_BUILTIN);
-    this->value[1] = index;
-    this->value[2] = static_cast<char>(OpCode::RETURN);
-    this->setCode();
-  }
-
   explicit NativeCode(const ArrayType &value) noexcept : NativeCode() {
     this->value = value;
     this->setCode();

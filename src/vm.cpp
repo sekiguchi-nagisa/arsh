@@ -2029,14 +2029,6 @@ bool VM::mainLoop(DSState &state) {
         TRY(prepareMethodCall(state, index, paramSize));
         vmnext;
       }
-      vmcase(CALL_BUILTIN) {
-        unsigned int index = read8(GET_CODE(state), state.stack.pc());
-        state.stack.pc()++;
-        DSValue returnValue = nativeFuncPtrTable()[index](state);
-        TRY(!state.hasError());
-        state.stack.push(std::move(returnValue));
-        vmnext;
-      }
       vmcase(CALL_BUILTIN2) {
         unsigned int paramSize = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
