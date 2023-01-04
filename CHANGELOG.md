@@ -13,6 +13,8 @@
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 
+## [0.28.1] - 2023-01-04
+
 ### Fixed
 
 - bugfix code generation of try-finally/defer
