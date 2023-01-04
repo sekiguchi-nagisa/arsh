@@ -1755,7 +1755,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(PUSH_SIG) {
         unsigned int value = read8(GET_CODE(state), state.stack.pc());
         state.stack.pc()++;
-        state.stack.push(DSValue::createSig(value));
+        state.stack.push(DSValue::createSig(static_cast<int>(value)));
         vmnext;
       }
       vmcase(PUSH_INT) {
@@ -1772,7 +1772,7 @@ bool VM::mainLoop(DSState &state) {
         char data[3];
         unsigned int size = op == OpCode::PUSH_STR1 ? 1 : op == OpCode::PUSH_STR2 ? 2 : 3;
         for (unsigned int i = 0; i < size; i++) {
-          data[i] = read8(GET_CODE(state), state.stack.pc());
+          data[i] = static_cast<char>(read8(GET_CODE(state), state.stack.pc()));
           state.stack.pc()++;
         }
         state.stack.push(DSValue::createStr(StringRef(data, size)));
@@ -2144,7 +2144,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(THROW) {
         auto obj = state.stack.pop();
-        state.throwObject(toObjPtr<ErrorObject>(std::move(obj)));
+        state.throwObject(toObjPtr<ErrorObject>(obj));
         vmerror;
       }
       vmcase(ENTER_FINALLY) {
@@ -2687,8 +2687,8 @@ bool VM::callTermHook(DSState &state) {
   }
 
   auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  auto args = makeArgs(DSValue::createInt(termKind),
-                       termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus);
+  auto args =
+      makeArgs(DSValue::createInt(termKind), termKind == TERM_ON_ERR ? except : oldExitStatus);
 
   setFlag(DSState::eventDesc, VMEvent::MASK);
   VM::callFunction(state, std::move(funcObj), std::move(args)); // ignore exception
