@@ -4,7 +4,7 @@ if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
 endif ()
 
-project(ydsh VERSION 0.28.0)
+project(ydsh VERSION 0.28.1)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
