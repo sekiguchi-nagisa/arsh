@@ -1808,7 +1808,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         } else if (code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_EXPANDING ||
                    code == OpCode::INIT_FIELDS || code == OpCode::PUSH_META) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
-        } else if (code == OpCode::CALL_BUILTIN2) {
+        } else if (code == OpCode::CALL_BUILTIN) {
           unsigned int paramSize = read8(c.getCode(), i + 1);
           const char *name = nativeFuncInfoTable()[read8(c.getCode(), i + 2)].funcName;
           fprintf(this->fp, "  %d  %s", paramSize, name);

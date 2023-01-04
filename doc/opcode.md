@@ -55,7 +55,7 @@
 | INIT_FIELDS       | 2: offset size                 | value -> value                               | init object fields                                              |
 | CALL_FUNC         | 1: param                       | func param1 ~ paramN -> result               | apply function object                                           |
 | CALL_METHOD       | 3: param byte1 byte2           | recv param1 ~ paramN -> result               | call method                                                     |
-| CALL_BUILTIN2     | 2: param index                 | param1 ~ paramN -> result                    | call builtin function                                           |
+| CALL_BUILTIN      | 2: param index                 | param1 ~ paramN -> result                    | call builtin function                                           |
 | RETURN            |                                | value -> [empty]                             | return value from callable                                      |
 | RETURN_UDC        |                                | value -> [empty]                             | return from user-defined command                                |
 | RETURN_SIG        |                                | [no change]                                  | return from signal handler                                      |

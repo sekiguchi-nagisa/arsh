@@ -263,7 +263,7 @@ private:
    * rest operands size
    */
   void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
-    assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_BUILTIN2 ||
+    assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_BUILTIN ||
            op == OpCode::ADD_EXPANDING || op == OpCode::NEW_CLOSURE);
     this->curBuilder().append8(static_cast<unsigned char>(op));
     this->curBuilder().append8(paramSize);
@@ -281,7 +281,7 @@ private:
 
   void emitNativeCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
     assert(index <= UINT8_MAX);
-    this->emitValIns(OpCode::CALL_BUILTIN2, paramSize, -1);
+    this->emitValIns(OpCode::CALL_BUILTIN, paramSize, -1);
     this->curBuilder().append8(index);
     if (!hasRet) {
       this->emit0byteIns(OpCode::POP);
