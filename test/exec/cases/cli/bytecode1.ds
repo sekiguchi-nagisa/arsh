@@ -12,7 +12,7 @@ Code:
    0: PUSH_INT  34
    2: STORE_GLOBAL  42
    5: PUSH_INT  34
-   7: CALL_BUILTIN2  1  %str
+   7: CALL_BUILTIN  1  %str
   10: POP
   11: PUSH_INVALID
   12: RETURN
@@ -87,11 +87,11 @@ Code:
    4: GOTO  18
    9: LOAD_LOCAL  0
   11: PUSH_INT  1
-  13: CALL_BUILTIN2  2  %b_+
+  13: CALL_BUILTIN  2  %b_+
   16: STORE_LOCAL  0
   18: LOAD_LOCAL  0
   20: PUSH_INT  2
-  22: CALL_BUILTIN2  2  %b_<
+  22: CALL_BUILTIN  2  %b_<
   25: BRANCH  16
   28: LOOP_GUARD
   29: PUSH_INT  34
@@ -165,7 +165,7 @@ DSCode: top level
 Code:
    0: LOAD_CONST  2
    2: LOAD_GLOBAL  20
-   5: CALL_BUILTIN2  1  %interp
+   5: CALL_BUILTIN  1  %interp
    8: LOOKUP_HASH
    9: GOTO  35
   14: LOAD_CONST  3
@@ -260,8 +260,8 @@ Code:
    2: NEW_CMD
    3: PUSH_NULL
    4: LOAD_GLOBAL  16
-   7: CALL_BUILTIN2  1  size
-  10: CALL_BUILTIN2  1  %str
+   7: CALL_BUILTIN  1  size
+  10: CALL_BUILTIN  1  %str
   13: ADD_CMD_ARG
   14: LOAD_GLOBAL  18
   17: ADD_CMD_ARG
