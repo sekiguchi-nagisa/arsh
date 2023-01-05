@@ -230,8 +230,8 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
   state.stack.push(std::move(redirConfig));
   state.stack.push(std::move(argvObj));
 
-  const unsigned int stacktopOffset = UDC_PARAM_N + (hasFlag(attr, CmdCallAttr::CLOSURE) ? 1 : 0);
-  if (!windStackFrame(state, stacktopOffset, UDC_PARAM_N, code)) {
+  const unsigned int stackTopOffset = UDC_PARAM_N + (hasFlag(attr, CmdCallAttr::CLOSURE) ? 1 : 0);
+  if (!windStackFrame(state, stackTopOffset, UDC_PARAM_N, code)) {
     return false;
   }
 
@@ -1203,7 +1203,7 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
       ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
       pipeset.setupChildStdout();
     }
-    pipeset.closeAll(); // FIXME: check error and force exit (not propagete error due to uncaught)
+    pipeset.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
     closeAllPipe(pipeSize, pipefds);
 
     // set pc to next instruction
@@ -1639,9 +1639,9 @@ bool VM::checkVMEvent(DSState &state) {
     int sigNum = DSState::popPendingSignal();
     if (sigNum == SIGCHLD) {
       state.jobTable.waitForAny();
-    } else if (DSValue handler; (handler = state.sigVector.lookup(sigNum)) != nullptr) {
+    } else if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
       setFlag(DSState::eventDesc, VMEvent::MASK);
-      if (!kickSignalHandler(state, sigNum, std::move(handler))) {
+      if (!kickSignalHandler(state, sigNum, handler)) {
         unsetFlag(DSState::eventDesc, VMEvent::MASK);
         return false;
       }

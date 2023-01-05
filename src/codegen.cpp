@@ -904,8 +904,8 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
   if (int newFd = node.getNewFd(); newFd >= 0 && newFd <= 2) {
-    if (int targeFd = node.getTargetFd(); targeFd >= 0 && targeFd <= 2) {
-      unsigned int index = toIndex(BuiltinVarOffset::STDIN) + targeFd;
+    if (int targetFd = node.getTargetFd(); targetFd >= 0 && targetFd <= 2) {
+      unsigned int index = toIndex(BuiltinVarOffset::STDIN) + targetFd;
       this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
     } else {
       this->generateCmdArg(node.getTargetNode());

@@ -91,7 +91,7 @@ static int doIOHere(const StringRef &value, int newFd) {
 enum class RedirOpenFlag {
   READ,
   WRITE,   // if file exists, error
-  CLOBBER, // if file exists, trucate 0
+  CLOBBER, // if file exists, truncate 0
   APPEND,
 };
 

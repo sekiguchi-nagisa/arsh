@@ -125,7 +125,9 @@
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
 
-#define LINENOISE_MAX_LINE 4096
+enum {
+  LINENOISE_MAX_LINE = 4096,
+};
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
