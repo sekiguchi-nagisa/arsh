@@ -50,13 +50,27 @@ assert shctl backtrace
 
 # info
 assert $reply.empty()
-assert shctl info | grep regex | grep PCRE2
-assert shctl info | grep version | grep $YDSH_VERSION
-assert shctl info | grep compiler
+assert shctl info | grep %regex | grep PCRE2
+assert shctl info | grep YDSH_VERSION | grep $YDSH_VERSION
+assert shctl info | grep %compiler
+assert shctl info | grep MACHTYPE | grep $MACHTYPE
+assert shctl info | grep OSTYPE | grep $OSTYPE
+assert shctl info | grep CONFIG_HOME | grep $CONFIG_HOME
+assert shctl info | grep MODULE_HOME | grep $MODULE_HOME
+assert shctl info | grep DATA_HOME | grep $DATA_HOME
+assert shctl info | grep MODULE_DIR | grep $MODULE_DIR
+assert shctl info | grep DATA_DIR | grep $DATA_DIR
 $? = 0
 assert shctl info
 assert !$reply.empty()
-assert !$reply['regex'].empty()
-assert $reply['regex'] =~ $/PCRE2 \d+\.\d+/
-assert $reply['version'] == $YDSH_VERSION
-assert !$reply['compiler'].empty()
+assert !$reply['%regex'].empty()
+assert $reply['%regex'] =~ $/PCRE2 \d+\.\d+/
+assert $reply['YDSH_VERSION'] == $YDSH_VERSION
+assert !$reply['%compiler'].empty()
+assert $reply["MACHTYPE"] == $MACHTYPE
+assert $reply["OSTYPE"] == $OSTYPE
+assert $reply["CONFIG_HOME"] == $CONFIG_HOME
+assert $reply["MODULE_HOME"] == $MODULE_HOME
+assert $reply["DATA_HOME"] == $DATA_HOME
+assert $reply["MODULE_DIR"] == $MODULE_DIR
+assert $reply["DATA_DIR"] == $DATA_DIR

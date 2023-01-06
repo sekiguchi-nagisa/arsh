@@ -2040,27 +2040,24 @@ static int showInfo(DSState &state) {
   auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   mapObj.clear();
 
-  const struct {
-    const char *key;
-    const char *actualKey;
-  } table[] = {
-      {"regex", SysConfig::REGEX},
-      {"version", SysConfig::VERSION},
-      {"compiler", SysConfig::COMPILER},
+  const char *table[] = {
+#define GEN_STR(E, S) S,
+      EACH_SYSCONFIG(GEN_STR)
+#undef GEN_STR
   };
 
   unsigned int maxKeyLen = 0;
-  for (auto &k : table) {
-    unsigned int len = strlen(k.key);
+  for (auto &e : table) {
+    unsigned int len = strlen(e);
     if (len > maxKeyLen) {
       maxKeyLen = len;
     }
   }
 
   for (auto &e : table) {
-    auto *ptr = state.sysConfig.lookup(e.actualKey);
+    auto *ptr = state.sysConfig.lookup(e);
     assert(ptr);
-    setAndPrintConf(mapObj, maxKeyLen, e.key, *ptr);
+    setAndPrintConf(mapObj, maxKeyLen, e, *ptr);
   }
   return 0;
 }

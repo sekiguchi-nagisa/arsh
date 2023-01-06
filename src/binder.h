@@ -222,48 +222,10 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bind(VAR_YDSH_BIN, "");
 
-  // builtin constant
-
-  /**
-   * for version detection
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::VERSION);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::OSTYPE);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::MACHTYPE);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::CONFIG_HOME);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::DATA_HOME);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::DATA_DIR);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::MODULE_HOME);
-
-  /**
-   * must be String_Object
-   */
-  binder.bindSysConst(config, SysConfig::MODULE_DIR);
+  // builtin system constant
+#define GEN_BIND(E, S) binder.bindSysConst(config, SysConfig::E);
+  EACH_SYSCONFIG_EXPORTED(GEN_BIND)
+#undef GEN_BIND
 
   // define small constants
   /**

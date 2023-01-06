@@ -21,23 +21,33 @@
 
 namespace ydsh {
 
+#define EACH_SYSCONFIG_UNEXPORTED(OP)                                                              \
+  OP(COMPILER, "%compiler")                                                                        \
+  OP(REGEX, "%regex")
+
+#define EACH_SYSCONFIG_EXPORTED(OP)                                                                \
+  OP(VERSION, "YDSH_VERSION")                                                                      \
+  OP(OSTYPE, "OSTYPE")                                                                             \
+  OP(MACHTYPE, "MACHTYPE")                                                                         \
+  OP(CONFIG_HOME, "CONFIG_HOME")                                                                   \
+  OP(DATA_HOME, "DATA_HOME")                                                                       \
+  OP(MODULE_HOME, "MODULE_HOME")                                                                   \
+  OP(DATA_DIR, "DATA_DIR")                                                                         \
+  OP(MODULE_DIR, "MODULE_DIR")
+
+#define EACH_SYSCONFIG(OP)                                                                         \
+  EACH_SYSCONFIG_UNEXPORTED(OP)                                                                    \
+  EACH_SYSCONFIG_EXPORTED(OP)
+
 /**
  * runtime system configuration constants
  */
 class SysConfig {
 public:
-  static constexpr const char *COMPILER = "%compiler";
-  static constexpr const char *REGEX = "%regex";
-
-  static constexpr const char *VERSION = "YDSH_VERSION";
-  static constexpr const char *OSTYPE = "OSTYPE";
-  static constexpr const char *MACHTYPE = "MACHTYPE";
-
-  static constexpr const char *CONFIG_HOME = "CONFIG_HOME";
-  static constexpr const char *DATA_HOME = "DATA_HOME";
-  static constexpr const char *MODULE_HOME = "MODULE_HOME";
-  static constexpr const char *DATA_DIR = "DATA_DIR";
-  static constexpr const char *MODULE_DIR = "MODULE_DIR";
+#define GEN_CONST(E, S) static constexpr const char *E = S;
+  EACH_SYSCONFIG_UNEXPORTED(GEN_CONST)
+  EACH_SYSCONFIG_EXPORTED(GEN_CONST)
+#undef GEN_CONST
 
 private:
   StrRefMap<std::string> values;

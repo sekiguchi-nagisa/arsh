@@ -12,6 +12,7 @@
 
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
+- builtin ``shctl info`` subcommand show more system constant information
 
 ### Fixed
 

@@ -438,25 +438,13 @@ int DSState_exec(DSState *st, char *const *argv) {
 const char *DSState_config(const DSState *st, DSConfig config) {
   GUARD_NULL(st, nullptr);
 
-#define EACH_DS_CONFIG(OP)                                                                         \
-  OP(COMPILER)                                                                                     \
-  OP(REGEX)                                                                                        \
-  OP(VERSION)                                                                                      \
-  OP(OSTYPE)                                                                                       \
-  OP(MACHTYPE)                                                                                     \
-  OP(CONFIG_HOME)                                                                                  \
-  OP(DATA_HOME)                                                                                    \
-  OP(MODULE_HOME)                                                                                  \
-  OP(DATA_DIR)                                                                                     \
-  OP(MODULE_DIR)
-
   const char *key = nullptr;
   switch (config) {
-#define GEN_CASE2(E)                                                                               \
+#define GEN_CASE2(E, S)                                                                            \
   case DS_CONFIG_##E:                                                                              \
     key = SysConfig::E;                                                                            \
     break;
-    EACH_DS_CONFIG(GEN_CASE2)
+    EACH_SYSCONFIG(GEN_CASE2)
 #undef GEN_CASE2
   }
   if (auto *value = st->sysConfig.lookup(key)) {
