@@ -63,8 +63,8 @@ struct Position {
 };
 
 struct Range {
-  Position start;
-  Position end;
+  Position start; // inclusive
+  Position end;   // exclusive
 
   template <typename T>
   void jsonify(T &t) {

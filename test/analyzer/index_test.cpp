@@ -195,9 +195,7 @@ try { $false; } catch($e) {
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 2, .character = 3}}, {{modId, "(1:22~1:24)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 4}}, {{modId, "(1:22~1:24)"}}));
-  ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 5}}, std::vector<Loc>()));
+      Request{.modId = modId, .position = {.line = 2, .character = 4}}, std::vector<Loc>()));
 
   // reference
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -234,7 +232,7 @@ function assertArray(
                      {{modId, "(6:10~6:12)"},    // itself
                       {modId, "(6:26~6:28)"}})); // echo $a
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 12}},
+      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 10}},
                      {{modId, "(7:10~7:12)"},    // itself
                       {modId, "(7:26~7:28)"}})); // echo $a
 }
@@ -249,6 +247,39 @@ TEST_F(IndexTest, scope3) {
       this->findRefs(Request{.modId = modId, .position = {.line = 0, .character = 0}},
                      {{modId, "(0:0~0:1)"},    // itself
                       {modId, "(0:5~0:7)"}})); // $A
+}
+
+TEST_F(IndexTest, scope4) {
+  unsigned short modId;
+  const char *content = "A=23 B=99 echo $A$B";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 0, .character = 15}},
+                     {{modId, "(0:0~0:1)"}})); // A=23
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 0, .character = 16}},
+                     {{modId, "(0:0~0:1)"}})); // A=23
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 0, .character = 17}},
+                     {{modId, "(0:5~0:6)"}})); // B=99
+  ASSERT_NO_FATAL_FAILURE(
+      this->findDecl(Request{.modId = modId, .position = {.line = 0, .character = 18}},
+                     {{modId, "(0:5~0:6)"}})); // B=99
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 0, .character = 19}}, std::vector<Loc>()));
+
+  // reference
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 0, .character = 0}},
+                     {{modId, "(0:0~0:1)"},      // itself
+                      {modId, "(0:15~0:17)"}})); // $A
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 0, .character = 5}},
+                     {{modId, "(0:5~0:6)"},      // itself
+                      {modId, "(0:17~0:19)"}})); // $B
 }
 
 TEST_F(IndexTest, func1) {
@@ -366,13 +397,13 @@ new FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{2, "(5:8~5:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 6, .character = 7}}, {{2, "(7:8~7:11)"}}));
+      Request{.modId = modId, .position = {.line = 6, .character = 6}}, {{2, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 6, .character = 8}}, {{2, "(7:24~7:27)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 7, .character = 7}}, {{2, "(7:8~7:11)"}}));
+      Request{.modId = modId, .position = {.line = 7, .character = 6}}, {{2, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 7, .character = 13}}, {{2, "(8:9~8:12)"}}));
+      Request{.modId = modId, .position = {.line = 7, .character = 12}}, {{2, "(8:9~8:12)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
@@ -386,7 +417,7 @@ new FFF().HHH()
                       {2, "(4:8~4:12)"},    // $BBB()
                       {1, "(2:7~2:11)"}})); // $AAA + $BBB()
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = 2, .position = {.line = 4, .character = 3}},
+      this->findRefs(Request{.modId = 2, .position = {.line = 4, .character = 2}},
                      {{2, "(4:0~4:3)"},    // itself
                       {2, "(5:21~5:24)"},  // typeof(CCC)
                       {1, "(3:0~3:3)"}})); // CCC
@@ -395,7 +426,7 @@ new FFF().HHH()
                      {{2, "(5:8~5:11)"},   // itself
                       {1, "(4:5~4:8)"}})); // new [DDD]()
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = 2, .position = {.line = 7, .character = 11}},
+      this->findRefs(Request{.modId = 2, .position = {.line = 7, .character = 10}},
                      {{2, "(7:8~7:11)"},   // itself
                       {2, "(8:19~8:22)"},  // function HHH() for FFF {}
                       {1, "(6:4~6:7)"},    // new FFF.GGG('34')
@@ -441,9 +472,9 @@ new mod.FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{modId, "(1:3~1:6)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{2, "(2:4~2:7)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 7}}, {{2, "(2:4~2:7)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 19}}, {{2, "(3:9~3:12)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 18}}, {{2, "(3:9~3:12)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 3, .character = 23}}, {{2, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -455,11 +486,11 @@ new mod.FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 7, .character = 10}}, {{2, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 7, .character = 17}}, {{2, "(8:9~8:12)"}}));
+      Request{.modId = modId, .position = {.line = 7, .character = 16}}, {{2, "(8:9~8:12)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 6}},
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 5}},
                      {{modId, "(1:3~1:6)"}, // itself
                       {modId, "(2:0~2:4)"},
                       {modId, "(2:11~2:15)"},
@@ -476,7 +507,7 @@ new mod.FFF().HHH()
                                                                       {2, "(4:8~4:12)"},
                                                                       {1, "(2:16~2:19)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = 2, .position = {.line = 4, .character = 3}}, {{2, "(4:0~4:3)"}, // itself
+      Request{.modId = 2, .position = {.line = 4, .character = 2}}, {{2, "(4:0~4:3)"}, // itself
                                                                      {2, "(5:21~5:24)"},
                                                                      {1, "(3:21~3:24)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -493,7 +524,7 @@ new mod.FFF().HHH()
                                                                       {1, "(6:14~6:19)"}}));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = 2, .position = {.line = 8, .character = 12}},
+      this->findRefs(Request{.modId = 2, .position = {.line = 8, .character = 11}},
                      {{2, "(8:9~8:12)"},     // itself
                       {1, "(7:14~7:17)"}})); // new mod.FFF().HHH()
 }
@@ -536,9 +567,9 @@ new mod.FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 7}}, {{modId, "(1:3~1:6)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{3, "(2:4~2:7)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 7}}, {{3, "(2:4~2:7)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 19}}, {{3, "(3:9~3:12)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 18}}, {{3, "(3:9~3:12)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 3, .character = 5}}, {{3, "(4:0~4:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -550,11 +581,11 @@ new mod.FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 7, .character = 10}}, {{3, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 7, .character = 17}}, {{3, "(8:9~8:12)"}}));
+      Request{.modId = modId, .position = {.line = 7, .character = 16}}, {{3, "(8:9~8:12)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 6}},
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 5}},
                      {{modId, "(1:3~1:6)"}, // itself
                       {modId, "(2:0~2:4)"},
                       {modId, "(2:11~2:15)"},
@@ -571,7 +602,7 @@ new mod.FFF().HHH()
                                                                       {3, "(4:8~4:12)"},
                                                                       {1, "(2:16~2:19)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = 3, .position = {.line = 4, .character = 3}}, {{3, "(4:0~4:3)"}, // itself
+      Request{.modId = 3, .position = {.line = 4, .character = 2}}, {{3, "(4:0~4:3)"}, // itself
                                                                      {3, "(5:21~5:24)"},
                                                                      {1, "(3:4~3:7)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -588,7 +619,7 @@ new mod.FFF().HHH()
                                                                       {1, "(6:14~6:19)"}}));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = 3, .position = {.line = 8, .character = 12}},
+      this->findRefs(Request{.modId = 3, .position = {.line = 8, .character = 11}},
                      {{3, "(8:9~8:12)"},     // itself
                       {1, "(7:14~7:17)"}})); // new mod.FFF().HHH()
 }
@@ -641,7 +672,7 @@ new FFF().HHH()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 7, .character = 6}}, {{3, "(7:8~7:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 7, .character = 13}}, {{3, "(8:9~8:12)"}}));
+      Request{.modId = modId, .position = {.line = 7, .character = 12}}, {{3, "(8:9~8:12)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -653,7 +684,7 @@ new FFF().HHH()
                                                                       {3, "(4:8~4:12)"},
                                                                       {1, "(2:7~2:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = 3, .position = {.line = 4, .character = 3}}, {{3, "(4:0~4:3)"}, // itself
+      Request{.modId = 3, .position = {.line = 4, .character = 2}}, {{3, "(4:0~4:3)"}, // itself
                                                                      {3, "(5:21~5:24)"},
                                                                      {1, "(3:0~3:3)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -670,7 +701,7 @@ new FFF().HHH()
                                                                       {1, "(6:10~6:15)"}}));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = 3, .position = {.line = 8, .character = 12}},
+      this->findRefs(Request{.modId = 3, .position = {.line = 8, .character = 11}},
                      {{3, "(8:9~8:12)"},     // itself
                       {1, "(7:10~7:13)"}})); // new FFF().HHH()
 }
@@ -714,10 +745,10 @@ TEST_F(IndexTest, udtype) {
       this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 27}}, // APIError
                      {{modId, "(1:12~1:20)"}}));
   ASSERT_NO_FATAL_FAILURE(
-      this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 19}}, // AAA
+      this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 18}}, // AAA
                      {{modId, "(2:12~2:15)"}}));
   ASSERT_NO_FATAL_FAILURE(
-      this->findDecl(Request{.modId = modId, .position = {.line = 3, .character = 20}}, // $e
+      this->findDecl(Request{.modId = modId, .position = {.line = 3, .character = 19}}, // $e
                      {{modId, "(2:16~2:18)"}}));
   ASSERT_NO_FATAL_FAILURE(
       this->findDecl(Request{.modId = modId, .position = {.line = 8, .character = 10}}, // AAA.HOME
@@ -730,12 +761,12 @@ TEST_F(IndexTest, udtype) {
                       {modId, "(2:21~2:29)"},    // $e : APIError
                       {modId, "(6:24~6:32)"}})); // new APIError
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 18}}, // $e
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 17}}, // $e
                      {{modId, "(2:16~2:18)"},                                           // itself
                       {modId, "(3:18~3:20)"}})); // let error = $e
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = modId,
-              .position = {.line = 2, .character = 15}}, // typedef AAA($e : APIError)
+              .position = {.line = 2, .character = 14}}, // typedef AAA($e : APIError)
       {{modId, "(2:12~2:15)"},                           // itself
        {modId, "(6:16~6:19)"}}));                        // var a = new AAA(new APIError("hello"))
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -758,7 +789,7 @@ TEST_F(IndexTest, udtypeRec) {
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 3, .character = 50}}, // new AAA!()
+      Request{.modId = modId, .position = {.line = 3, .character = 49}}, // new AAA!()
       {{modId, "(1:12~1:15)"}}));                                        // typedef AAA($n : AAA!)
   ASSERT_NO_FATAL_FAILURE(
       this->findDecl(Request{.modId = modId, .position = {.line = 5, .character = 23}}, // AAA.Next
@@ -852,17 +883,17 @@ TEST_F(IndexTest, methodOverride) {
               .position = {.line = 4, .character = 26}}, // (new INT() as ANY).print()
       {{modId, "(1:13~1:18)"}}));                        // function print() for ANY {}
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 5, .character = 19}}, // new STR().print()
+      Request{.modId = modId, .position = {.line = 5, .character = 18}}, // new STR().print()
       {{modId, "(1:13~1:18)"}})); // function print() for INT {}
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 1, .character = 18}}, // function print() for ANY
+      Request{.modId = modId, .position = {.line = 1, .character = 17}}, // function print() for ANY
       {{modId, "(1:13~1:18)"},                                           // itself
        {modId, "(4:23~4:28)"},    // (new INT() as ANY).print()
        {modId, "(5:14~5:19)"}})); // new STR().print()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 2, .character = 18}}, // function print() for INT
+      Request{.modId = modId, .position = {.line = 2, .character = 17}}, // function print() for INT
       {{modId, "(2:13~2:18)"},                                           // itself
        {modId, "(3:14~3:19)"}}));                                        // new INT().print()
 }
@@ -888,11 +919,11 @@ TEST_F(IndexTest, upvar) {
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 13}}, {{modId, "(1:8~1:13)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 6, .character = 14}}, {{modId, "(5:12~5:17)"}}));
+      Request{.modId = modId, .position = {.line = 6, .character = 13}}, {{modId, "(5:12~5:17)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 8, .character = 12}}, {{modId, "(1:8~1:13)"}}));
+      Request{.modId = modId, .position = {.line = 8, .character = 11}}, {{modId, "(1:8~1:13)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 10, .character = 10}}, {{modId, "(1:8~1:13)"}}));
+      Request{.modId = modId, .position = {.line = 10, .character = 9}}, {{modId, "(1:8~1:13)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
@@ -923,9 +954,9 @@ TEST_F(IndexTest, backrefFunc) {
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:11~1:14)"}}));
+      Request{.modId = modId, .position = {.line = 1, .character = 13}}, {{modId, "(1:11~1:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 8}}, {{modId, "(4:11~4:14)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 7}}, {{modId, "(4:11~4:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 12}}, {{modId, "(4:11~4:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -933,7 +964,7 @@ TEST_F(IndexTest, backrefFunc) {
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // function AAA()
+      Request{.modId = modId, .position = {.line = 1, .character = 13}}, // function AAA()
       {{modId, "(1:11~1:14)"},                                           // itself
        {modId, "(5:4~5:8)"}}));
 
@@ -958,9 +989,9 @@ TEST_F(IndexTest, backrefMethod) {
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:11~1:14)"}}));
+      Request{.modId = modId, .position = {.line = 1, .character = 13}}, {{modId, "(1:11~1:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 2, .character = 13}}, {{modId, "(4:11~4:14)"}}));
+      Request{.modId = modId, .position = {.line = 2, .character = 12}}, {{modId, "(4:11~4:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 12}}, {{modId, "(4:11~4:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -968,7 +999,7 @@ TEST_F(IndexTest, backrefMethod) {
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // function AAA()
+      Request{.modId = modId, .position = {.line = 1, .character = 13}}, // function AAA()
       {{modId, "(1:11~1:14)"},                                           // itself
        {modId, "(5:10~5:13)"}}));
 
@@ -1000,11 +1031,11 @@ TEST_F(IndexTest, backrefUDC) {
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 5, .character = 3}}, {{modId, "(5:2~5:5)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 6, .character = 7}}, {{modId, "(1:2~1:5)"}}));
+      Request{.modId = modId, .position = {.line = 6, .character = 6}}, {{modId, "(1:2~1:5)"}}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 5}}, // AAA()
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 4}}, // AAA()
                      {{modId, "(1:2~1:5)"},                                            // itself
                       {modId, "(6:4~6:7)"}}));
 

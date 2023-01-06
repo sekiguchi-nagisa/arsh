@@ -179,7 +179,9 @@ public:
   Token getBody() const { return this->body; }
 
   struct Compare {
-    bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
+    bool operator()(const DeclSymbol &x, unsigned int y) const {
+      return x.getToken().endPos() - 1 < y;
+    }
 
     bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
   };
@@ -259,7 +261,7 @@ public:
   unsigned int getDeclPos() const { return this->declPos; }
 
   struct Compare {
-    bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
+    bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() - 1 < y; }
 
     bool operator()(unsigned int x, const Symbol &y) const { return x < y.getToken().pos; }
   };
@@ -274,7 +276,8 @@ public:
 
   struct Compare {
     bool operator()(const ForeignDecl &x, const SymbolRequest &y) const {
-      return x.getModId() < y.modId || (!(y.modId < x.getModId()) && x.getToken().endPos() < y.pos);
+      return x.getModId() < y.modId ||
+             (!(y.modId < x.getModId()) && x.getToken().endPos() - 1 < y.pos);
     }
 
     bool operator()(const SymbolRequest &x, const ForeignDecl &y) const {

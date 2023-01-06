@@ -13,6 +13,10 @@
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 
+### Fixed
+
+- symbol range of ``textDocument/hover``, ``textDocument/definition``
+
 ## [0.28.1] - 2023-01-04
 
 ### Fixed
