@@ -72,7 +72,7 @@ function renderPrompt(p : String) : String {
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
-    echo >& $fd usage: prompt [-h] [--help] [+prompt]
+    echo >& $fd usage: prompt [-h] [--help] [prompt]
     if $short { return 2; }
 
     echo >& $fd "Prompt Escape Sequence:
@@ -103,14 +103,20 @@ function _usage(fd : UnixFD, short : Boolean) : Int  {
 }
 
 prompt() {
-    if $# == 0 { return 0; }
-
-    case $1 {
-    '-h' | '--help' => return $_usage($STDOUT, $false); 
-    else => {
-        if $1.startsWith('+') { echo $renderPrompt($1.slice(1)); return 0; }
-        echo >& $STDERR prompt: $1: invalid option;
-        return $_usage($STDERR, $true);
+    while($# > 0) {
+        case $1 {
+            '-h' | '--help' => return $_usage($STDOUT, $false); 
+            '--' => { $@.shift(); break; }
+            else => {
+                if $1.startsWith('-') {
+                    echo >& $STDERR prompt: $1: invalid option;
+                    return $_usage($STDERR, $true);
+                }
+                break
+            }
+        }
     }
-    }
+    $1 :- return 0
+    echo $renderPrompt($1)
+    return 0
 }
