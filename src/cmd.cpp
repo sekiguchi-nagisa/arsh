@@ -377,10 +377,10 @@ END:
   return 0;
 }
 
-static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
+static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, unsigned int index) {
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
-  if (argvObj.getValues().size() > 1) {
-    auto value = argvObj.getValues()[1].asStrRef();
+  if (index < argvObj.size() && index > 0) {
+    auto value = argvObj.getValues()[index].asStrRef();
     auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
     if (pair.second) {
       ret = pair.first;
@@ -390,7 +390,18 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
 }
 
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
-  int ret = parseExitStatus(state, argvObj);
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      goto END;
+    }
+  }
+
+END:
+  int ret = parseExitStatus(state, argvObj, optState.index);
   if (argvObj.getValues()[0].asStrRef() == "_exit") {
     exit(ret);
   } else {

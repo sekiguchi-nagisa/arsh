@@ -1,5 +1,37 @@
 #$test($result = 'EXIT', $lineNum = 5)
 
+## exit command options
 assert(help exit | grep 'exit: exit \[n]')
 
+assert exit -h | grep 'exit: exit \[n]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert exit --help | grep 'exit: exit \[n]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert "$(exit -1 2>&1)".empty()
+assert $? == 255
+
+$? = 123
+assert "$(exit -s 2>&1)".empty()
+assert $? == 123
+
+## _exit command options
+assert(help _exit | grep '_exit: _exit \[n]')
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert(_exit -h | grep '_exit: _exit \[n]')
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert(_exit --help | grep '_exit: _exit \[n]')
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert "$(_exit -1 2>&1)".empty()
+assert $? == 255
+
+$? = 133
+assert "$(_exit -q 2>&1)".empty()
+assert $? == 133
+
+$? = 0
 exit
