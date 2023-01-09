@@ -1514,12 +1514,12 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
                   }
                   break;
                 case 'C': /* ALT-Right */
-                  if (linenoiseEditMoveEnd(l)) {
+                  if (linenoiseEditMoveRightWord(l)) {
                     this->refreshLine(l, false);
                   }
                   break;
                 case 'D': /* ALT-Left */
-                  if (linenoiseEditMoveHome(l)) {
+                  if (linenoiseEditMoveLeftWord(l)) {
                     this->refreshLine(l, false);
                   }
                   break;

@@ -178,9 +178,13 @@ TEST_F(InteractiveTest, edit3) {
   this->send("あい" LEFT CTRL_D "いぇお" CTRL_A CTRL_K "@@@" LEFT LEFT CTRL_E CTRL_U "12\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
 
-  this->send("@" HOME "1" END "あ" ESC_("OH") "2" ESC_("OF") "い" ESC_("[1~") "3" ESC_(
-      "[1;3C") "う" ESC_("[1;3D") "'" ESC_("[4~") "○" LEFT ESC_("[3~") "'\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'321@あいう'\n: String = 321@あいう\n" + PROMPT));
+  this->send("@" HOME "1" END "あ" ESC_("OH") "2" ESC_("OF") "い" ESC_("[1~") "'" ESC_(
+      "[4~") "○" LEFT ESC_("[3~") "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'21@あい'\n: String = 21@あい\n" + PROMPT));
+
+  // [1;3C [1;3D
+  this->send("'home'" ESC_("[1;3D") ESC_("[1;3D") "/" ESC_("[1;3C") "/user" ESC_("[1;3C") "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'/home/user'\n: String = /home/user\n" + PROMPT));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

@@ -11,6 +11,8 @@
 
 #### Builtin
 
+- **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with ``backward-word``
+  and ``forward-word``
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 - builtin ``shctl info`` subcommand show more system constant information
