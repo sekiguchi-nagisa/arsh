@@ -256,6 +256,60 @@ TEST(GetOptTest, opt) {
   ASSERT_EQ(begin, end);
 }
 
+TEST(GetOptTest, help) {
+  const char *argv[] = {
+      "-ab",
+      "--help",
+      "-c",
+      "--help1",
+  };
+  const char *optStr = "abch";
+  opt::GetOptState optState;
+  auto begin = std::begin(argv);
+  auto end = std::end(argv);
+
+  int opt = optState(begin, end, optStr);
+  ASSERT_EQ('a', opt);
+  ASSERT_EQ("b", optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ(0, optState.optOpt);
+
+  opt = optState(begin, end, optStr);
+  ASSERT_EQ('b', opt);
+  ASSERT_EQ(nullptr, optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ(0, optState.optOpt);
+
+  // normally long options are unrecognized
+  opt = optState(begin, end, optStr);
+  ASSERT_EQ('?', opt);
+  ASSERT_EQ("-help", optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ('-', optState.optOpt);
+
+  // if remapHelp is true, remap --help to -h
+  optState.reset();
+  optState.remapHelp = true;
+  opt = optState(begin, end, optStr);
+  ASSERT_EQ('h', opt);
+  ASSERT_EQ(nullptr, optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ(0, optState.optOpt);
+
+  opt = optState(begin, end, optStr);
+  ASSERT_EQ('c', opt);
+  ASSERT_EQ(nullptr, optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ(0, optState.optOpt);
+
+  // long options are still unrecognized except for --help
+  opt = optState(begin, end, optStr);
+  ASSERT_EQ('?', opt);
+  ASSERT_EQ("-help1", optState.nextChar);
+  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ('-', optState.optOpt);
+}
+
 TEST(GetOptTest, invalid) {
   const char *argv[] = {
       "-:",

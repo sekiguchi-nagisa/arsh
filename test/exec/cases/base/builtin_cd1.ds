@@ -53,4 +53,9 @@ assert("$(cd -)" == $OLDPWD)
 }
 
 
-assert(help cd | grep 'cd: cd \[-LP] \[dir]')
+assert(help cd | grep 'cd: cd \[-LP] \[dir]$')
+assert(cd  -Lh | grep 'cd: cd \[-LP] \[dir]$')
+assert(cd  -Lh | grep 'Changing the current directory to DIR')
+assert(cd  -L --help | grep 'cd: cd \[-LP] \[dir]$')
+assert(cd  --help | grep 'Changing the current directory to DIR')
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

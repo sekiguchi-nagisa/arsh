@@ -128,14 +128,6 @@ int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
   return ret;
 }
 
-static void printAllUsage(FILE *fp) {
-  unsigned int size = getBuiltinCmdSize();
-  auto *cmdList = getBuiltinCmdDescList();
-  for (unsigned int i = 0; i < size; i++) {
-    fprintf(fp, "%s %s\n", cmdList[i].name, cmdList[i].usage);
-  }
-}
-
 /**
  * if not found command, return false.
  */
@@ -156,38 +148,13 @@ static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   return matched;
 }
 
-static int builtin_help(DSState &, ArrayObject &argvObj) {
-  const unsigned int size = argvObj.getValues().size();
-
-  if (size == 1) {
-    printAllUsage(stdout);
-    return 0;
-  }
-  bool isShortHelp = false;
-  bool foundValidCommand = false;
-  for (unsigned int i = 1; i < size; i++) {
-    auto arg = argvObj.getValues()[i].asStrRef();
-    if (arg == "-s" && size == 2) {
-      printAllUsage(stdout);
-      foundValidCommand = true;
-    } else if (arg == "-s" && i == 1) {
-      isShortHelp = true;
-    } else {
-      if (printUsage(stdout, arg, isShortHelp)) {
-        foundValidCommand = true;
-      }
-    }
-  }
-  if (!foundValidCommand) {
-    ERROR(argvObj, "no help topics match `%s'.  Try `help help'.",
-          argvObj.getValues()[size - 1].asCStr());
-    return 1;
-  }
-  return 0;
-}
-
 static int showUsage(const ArrayObject &obj) {
   printUsage(stderr, obj.getValues()[0].asStrRef());
+  return 2;
+}
+
+static int showHelp(const ArrayObject &obj) {
+  printUsage(stdout, obj.getValues()[0].asStrRef(), false);
   return 2;
 }
 
@@ -201,10 +168,54 @@ static int invalidOptionError(const ArrayObject &obj, const char *opt) {
   return showUsage(obj);
 }
 
+static void printAllUsage(FILE *fp) {
+  unsigned int size = getBuiltinCmdSize();
+  auto *cmdList = getBuiltinCmdDescList();
+  for (unsigned int i = 0; i < size; i++) {
+    fprintf(fp, "%s %s\n", cmdList[i].name, cmdList[i].usage);
+  }
+}
+
+static int builtin_help(DSState &, ArrayObject &argvObj) {
+  GetOptState optState;
+  bool shortHelp = false;
+  for (int opt; (opt = optState(argvObj, "sh")) != -1;) {
+    switch (opt) {
+    case 's':
+      shortHelp = true;
+      break;
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  const unsigned int size = argvObj.size();
+  unsigned int index = optState.index;
+  if (index == size) {
+    printAllUsage(stdout);
+    return 0;
+  }
+  unsigned int count = 0;
+  for (; index < size; index++) {
+    auto arg = argvObj.getValues()[index].asStrRef();
+    if (printUsage(stdout, arg, shortHelp)) {
+      count++;
+    }
+  }
+  if (count == 0) {
+    ERROR(argvObj, "no help topics match `%s'.  Try `help help'.",
+          argvObj.getValues()[size - 1].asCStr());
+    return 1;
+  }
+  return 0;
+}
+
 static int builtin_cd(DSState &state, ArrayObject &argvObj) {
   GetOptState optState;
   bool useLogical = true;
-  for (int opt; (opt = optState(argvObj, "PL")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "PLh")) != -1;) {
     switch (opt) {
     case 'P':
       useLogical = false;
@@ -212,6 +223,8 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
     case 'L':
       useLogical = true;
       break;
+    case 'h':
+      return showHelp(argvObj);
     default:
       return invalidOptionError(argvObj, optState);
     }
@@ -252,12 +265,22 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
 }
 
 static int builtin_check_env(DSState &, ArrayObject &argvObj) {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+  unsigned int index = optState.index;
   const unsigned int size = argvObj.getValues().size();
-  if (size == 1) {
+  if (index == size) {
     return showUsage(argvObj);
   }
-  for (unsigned int i = 1; i < size; i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
+  for (; index < size; index++) {
+    auto ref = argvObj.getValues()[index].asStrRef();
     if (ref.hasNullChar()) {
       return 1;
     }
@@ -389,7 +412,17 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
 /**
  * for stdin redirection test
  */
-static int builtin_gets(DSState &, ArrayObject &) {
+static int builtin_gets(DSState &, ArrayObject &argvObj) {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
   char buf[256];
   ssize_t readSize = 0;
   while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
@@ -404,7 +437,7 @@ static int builtin_gets(DSState &, ArrayObject &) {
  */
 static int builtin_puts(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "1:2:")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "1:2:h")) != -1;) {
     switch (opt) {
     case '1':
       fwrite(optState.optArg.data(), sizeof(char), optState.optArg.size(), stdout);
@@ -416,8 +449,10 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
       fputc('\n', stderr);
       fflush(stderr);
       break;
+    case 'h':
+      return showHelp(argvObj);
     default:
-      return 1;
+      return invalidOptionError(argvObj, optState);
     }
   }
   return 0;
@@ -1913,7 +1948,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 
   bool dump = false;
   bool restore = false;
-  GetOptState optState(2);
+  GetOptState optState(2, false);
   if (set) {
     switch (optState(argvObj, ":dr:")) {
     case 'd':

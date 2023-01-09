@@ -265,7 +265,7 @@ Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
   return Result<T>::unrecog(haystack);
 }
 
-// getopt like command line option parser
+// getopts like command line option parser
 struct GetOptState {
   /**
    * currently processed argument.
@@ -282,10 +282,16 @@ struct GetOptState {
    */
   int optOpt{0};
 
+  /**
+   * for `--help` option recognition
+   */
+  bool remapHelp{false};
+
   void reset() {
     this->nextChar = nullptr;
     this->optArg = nullptr;
     this->optOpt = 0;
+    this->remapHelp = false;
   }
 
   /**
@@ -327,6 +333,9 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     this->nextChar = nullptr;
     ++begin;
     return -1;
+  }
+  if (arg == "--help" && this->remapHelp) {
+    arg = "-h";
   }
 
   if (this->nextChar.empty()) {

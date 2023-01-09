@@ -4,6 +4,15 @@ assert(checkenv HOME)
 checkenv HFUIR
 assert($? != 0)
 
+# invalid option
+checkenv -s 
+assert $? == 2
+assert checkenv -s 2>&1 | grep 'ydsh: checkenv: -s: invalid option'
+
+# ignore option
+checkenv -- -s
+assert $? == 1
+
 # empty env
 export-env AAAA = ""
 checkenv AAAA
@@ -20,6 +29,10 @@ checkenv HOME PATH $'HOME\000'
 assert $? == 1
 
 assert(help checkenv | grep '^checkenv: checkenv variable ...$')
+assert(checkenv -h | grep '^checkenv: checkenv variable ...$')
+assert(checkenv --help | grep '^checkenv: checkenv variable ...$')
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+assert "$(checkenv -h)" == "$(help checkenv)"
 checkenv
 assert $? == 2
 assert(checkenv 2>&1 | grep '^checkenv: checkenv variable ...$')

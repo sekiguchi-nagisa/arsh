@@ -34,7 +34,9 @@ struct GetOptState : public opt::GetOptState {
    */
   unsigned int index;
 
-  explicit GetOptState(unsigned int index = 1) : index(index) {}
+  GetOptState() : GetOptState(1, false) { this->remapHelp = true; }
+
+  GetOptState(unsigned int index, bool remapHelp) : index(index) { this->remapHelp = remapHelp; }
 
   int operator()(const ArrayObject &obj, const char *optStr);
 };
