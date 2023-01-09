@@ -10,7 +10,8 @@ TEST_F(InteractiveTest, arg) {
   this->invoke("--quiet", "--norc", "-s", "hello", "world");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $0 == 'ydsh'; assert $1 == 'hello';"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      format("assert $0 == '%s'; assert $1 == 'hello';", BIN_PATH).c_str()));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $@.size() == 2; assert $# == 2;"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $2 == 'world'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait(

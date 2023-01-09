@@ -1,13 +1,13 @@
 
 source $SCRIPT_DIR/expect.ds
 
-$expect("$(echo -n 'assert $0 == "ydsh"' | ds 2>&1)", 0, "")
+$expect("$(echo -n 'assert $0 == "$YDSH_BIN"' | ds 2>&1)", 0, "")
 
 $expect("$(echo -n '\' | ds 2>&1)", 0, "")
 
 # with arguments
 var cmd = '
-assert $0 == "ydsh"
+assert $0 == "$YDSH_BIN"
 assert $1 == "hoge"
 assert $2 == "123"
 '

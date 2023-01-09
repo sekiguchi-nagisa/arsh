@@ -341,6 +341,7 @@ INIT:
     return apply(DSState_loadAndEval, state, scriptName);
   }
   case InvocationKind::FROM_STDIN: {
+    DSState_setShellName(state.get(), argv[0]);
     DSState_setArguments(state.get(), shellArgs);
 
     if (isatty(STDIN_FILENO) == 0 && !forceInteractive) { // pipe line mode
@@ -353,8 +354,9 @@ INIT:
     }
   }
   case InvocationKind::FROM_STRING: {
-    DSState_setShellName(state.get(), shellArgs[0]);
-    DSState_setArguments(state.get(), shellArgs[0] == nullptr ? nullptr : shellArgs + 1);
+    const char *shellName = shellArgs[0];
+    DSState_setShellName(state.get(), shellName != nullptr ? shellName : argv[0]);
+    DSState_setArguments(state.get(), shellName == nullptr ? nullptr : shellArgs + 1);
     return apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
   }
   case InvocationKind::BUILTIN:

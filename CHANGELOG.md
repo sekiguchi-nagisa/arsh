@@ -6,6 +6,7 @@
 
 #### Core
 
+- **Breaking Change**: in interactive mode or ``-c`` mode without shell-name, toplevel ``$0`` indicates ``argv[0]``
 - show stack trace of ignored exceptions within finally/defer block
 
 #### Builtin
