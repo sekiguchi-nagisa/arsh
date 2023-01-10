@@ -964,6 +964,8 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   return true; // normally unreachable, but need to suppress gcc warning.
 }
 
+int showHelp(const ArrayObject &obj);
+
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
 bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
@@ -979,7 +981,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
   unsigned char showDesc = 0;
 
   GetOptState optState;
-  for (int opt; (opt = optState(arrayObj, "pvV")) != -1;) {
+  for (int opt; (opt = optState(arrayObj, "pvVh")) != -1;) {
     switch (opt) {
     case 'p':
       useDefaultPath = true;
@@ -990,6 +992,9 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
     case 'V':
       showDesc = 2;
       break;
+    case 'h':
+      pushExitStatus(state, showHelp(arrayObj));
+      return true;
     default:
       int s = invalidOptionError(arrayObj, optState);
       pushExitStatus(state, s);
@@ -1101,7 +1106,7 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     typeAs<RedirObject>(redir).ignoreBackup();
   }
 
-  for (int opt; (opt = optState(argvObj, "ca:")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "hca:")) != -1;) {
     switch (opt) {
     case 'c':
       clearEnv = true;
@@ -1109,6 +1114,9 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     case 'a':
       progName = optState.optArg;
       break;
+    case 'h':
+      pushExitStatus(state, showHelp(argvObj));
+      return;
     default:
       int s = invalidOptionError(argvObj, optState);
       pushExitStatus(state, s);

@@ -89,3 +89,15 @@ assert($? != 0)
 # invalid
 assert(command -i 2>&1 | grep '^ydsh: command: -i: invalid option$')
 assert(command) # do nothing, but success
+
+# help
+assert help command | grep '^command: command \[-pVv] command \[arg ...]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert command -h | grep '^command: command \[-pVv] command \[arg ...]'
+assert command -h | grep 'Execute COMMAND with ARGs excepting user defined command.'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert command --help | grep '^command: command \[-pVv] command \[arg ...]'
+assert command --help | grep 'Execute COMMAND with ARGs excepting user defined command.'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

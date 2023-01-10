@@ -10,11 +10,11 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `bg`                | ❌           |
 | `cd`                | ✔️          |
 | `checkenv`          | ✔️          |
-| `command`           | ❌           |
+| `command`           | ✔️          |
 | `complete`          | ❌           |
 | `echo`              | -           |
 | `eval`              | -           |
-| `exec`              | ❌           |
+| `exec`              | ✔️          |
 | `exit`              | ✔️          |
 | `false`             | -           |
 | `fg`                | ❌           |

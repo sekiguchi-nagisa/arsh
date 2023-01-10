@@ -153,7 +153,7 @@ static int showUsage(const ArrayObject &obj) {
   return 2;
 }
 
-static int showHelp(const ArrayObject &obj) {
+int showHelp(const ArrayObject &obj) {
   printUsage(stdout, obj.getValues()[0].asStrRef(), false);
   return 2;
 }

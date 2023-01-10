@@ -1,4 +1,4 @@
-#$test($result = 'EXIT', $lineNum = 5)
+#$test($result = 'EXIT', $lineNum = 37)
 
 ## exit command options
 assert(help exit | grep 'exit: exit \[n]')
