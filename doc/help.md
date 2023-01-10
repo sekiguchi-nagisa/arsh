@@ -7,7 +7,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `__gets`            | ✔️          |
 | `__puts`            | ✔️          |
 | `_exit`             | ✔️          |
-| `bg`                | ❌           |
+| `bg`                | ✔️          |
 | `cd`                | ✔️          |
 | `checkenv`          | ✔️          |
 | `command`           | ✔️          |
@@ -17,7 +17,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `exec`              | ✔️          |
 | `exit`              | ✔️          |
 | `false`             | -           |
-| `fg`                | ❌           |
+| `fg`                | ✔️          |
 | `hash`              | ❌           |
 | `help`              | ✔️          |
 | `jobs`              | ✔️          |

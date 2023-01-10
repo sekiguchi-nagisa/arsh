@@ -1335,15 +1335,25 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     return 1;
   }
 
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
   bool fg = argvObj.getValues()[0].asStrRef() == "fg";
-  unsigned int size = argvObj.getValues().size();
-  assert(size > 0);
+  const unsigned int size = argvObj.getValues().size();
+  unsigned int index = optState.index;
   Job job;
   StringRef arg = "current";
-  if (size == 1) {
+  if (index == size) {
     job = state.jobTable.syncAndGetCurPrevJobs().cur;
   } else {
-    arg = argvObj.getValues()[1].asStrRef();
+    arg = argvObj.getValues()[index].asStrRef();
     job = tryToGetJob(state.jobTable, arg, false);
   }
 
@@ -1384,7 +1394,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   }
 
   // process remain arguments
-  for (unsigned int i = 2; i < size; i++) {
+  for (unsigned int i = index + 1; i < size; i++) {
     arg = argvObj.getValues()[i].asStrRef();
     job = tryToGetJob(state.jobTable, arg, false);
     if (job) {
