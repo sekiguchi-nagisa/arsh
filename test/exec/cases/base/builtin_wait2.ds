@@ -1,8 +1,23 @@
 
+## invalid option
 wait -g
 assert $? == 2
 assert "$(wait -q 2>&1)" == $'ydsh: wait: -q: invalid option\nwait: wait [-n] [id ...]'
 
+## help
+assert help wait | grep '^wait: wait \[-n] \[id ...]'
+assert help wait | grep 'Wait for termination of processes or jobs.'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert wait -h| grep '^wait: wait \[-n] \[id ...]'
+assert wait   -h  | grep 'Wait for termination of processes or jobs.'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert wait --help| grep '^wait: wait \[-n] \[id ...]'
+assert wait   --help  | grep 'Wait for termination of processes or jobs.'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+## -n option
 var j1 = { sleep 0.5; exit 12; } &
 var j2 = { sleep 1;   exit 34; } &
 var j3 = { sleep 1.5; exit 56; } &

@@ -98,3 +98,13 @@ assert { kill %hoge; $?; } == 1
 $j = for(;;) { true; } &
 assert { kill -9 $j; $?; } == 0
 assert $j.wait() == 128 + $SIGKILL.value()
+
+# help
+assert help kill | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert kill -h | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert kill --help | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
