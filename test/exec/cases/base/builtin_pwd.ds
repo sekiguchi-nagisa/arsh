@@ -22,3 +22,9 @@ assert(pwd --- 2>&1 | grep 'ydsh: pwd: --: invalid option')
 # help
 help pwd | grep "pwd: pwd \[-LP]"
 assert($? == 0)
+
+assert pwd -h | grep "pwd: pwd \[-LP]"
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert pwd --help | grep "pwd: pwd \[-LP]"
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

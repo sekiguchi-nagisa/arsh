@@ -39,5 +39,14 @@ ydsh: read: -q: invalid option
 read: read [-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]\
 "
 
+# help
+assert help read | grep '^read: read \[-r] \[-p prompt] \[-f field separator] \[-u fd] \[-t timeout] \[name ...]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert read -h| grep '^read: read \[-r] \[-p prompt] \[-f field separator] \[-u fd] \[-t timeout] \[name ...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert read --help| grep '^read: read \[-r] \[-p prompt] \[-f field separator] \[-u fd] \[-t timeout] \[name ...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 true

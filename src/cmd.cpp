@@ -473,7 +473,7 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   bool useLogical = true;
 
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "LP")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "LPh")) != -1;) {
     switch (opt) {
     case 'L':
       useLogical = true;
@@ -481,6 +481,8 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     case 'P':
       useLogical = false;
       break;
+    case 'h':
+      return showHelp(argvObj);
     default:
       return invalidOptionError(argvObj, optState);
     }
@@ -821,7 +823,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) { // FIXME: timeou
   int timeout = -1;
 
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":rp:f:su:t:")) != -1;) {
+  for (int opt; (opt = optState(argvObj, ":rp:f:su:t:h")) != -1;) {
     switch (opt) {
     case 'p':
       prompt = optState.optArg;
@@ -859,6 +861,8 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) { // FIXME: timeou
       ERROR(argvObj, "%s: invalid timeout specification", toPrintable(optState.optArg).c_str());
       return 1;
     }
+    case 'h':
+      return showHelp(argvObj);
     case ':':
       ERROR(argvObj, "-%c: option require argument", optState.optOpt);
       return 2;
@@ -1050,7 +1054,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
   bool insertSpace = false;
   StringRef moduleDesc;
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":A:m:qs")) != -1;) {
+  for (int opt; (opt = optState(argvObj, ":A:m:qsh")) != -1;) {
     switch (opt) {
     case 'A': {
       auto iter = actionMap.find(optState.optArg);
@@ -1070,6 +1074,8 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     case 's':
       insertSpace = true;
       break;
+    case 'h':
+      return showHelp(argvObj);
     case ':':
       ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;
