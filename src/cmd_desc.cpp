@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <sys/resource.h> // for ulimit macros
+
 #include <string>
 
 #include "cmd_desc.h"
