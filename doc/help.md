@@ -11,7 +11,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `cd`                | ✔️          |
 | `checkenv`          | ✔️          |
 | `command`           | ✔️          |
-| `complete`          | ❌           |
+| `complete`          | ✔️          |
 | `echo`              | -           |
 | `eval`              | -           |
 | `exec`              | ✔️          |
@@ -22,13 +22,13 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `help`              | ✔️          |
 | `jobs`              | ❌           |
 | `kill`              | ❌           |
-| `pwd`               | ❌           |
-| `read`              | ❌           |
+| `pwd`               | ✔️          |
+| `read`              | ✔️          |
 | `setenv`            | ❌           |
 | `shctl`             | ❌           |
 | `test`              | -           |
 | `true`              | -           |
-| `ulimit`            | ❌           |
-| `umask`             | ❌           |
+| `ulimit`            | ✔️          |
+| `umask`             | ✔️          |
 | `unsetenv`          | ❌           |
 | `wait`              | ❌           |

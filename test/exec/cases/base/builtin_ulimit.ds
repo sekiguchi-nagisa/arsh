@@ -13,6 +13,15 @@ assert "$(ulimit -X 2>&1)" == $expect
 assert !ulimit -X
 assert $? == 2
 
+# help
+assert help ulimit | grep '^ulimit: ulimit \[-H | -S] \[-a | - \[value]]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert ulimit -h| grep '^ulimit: ulimit \[-H | -S] \[-a | - \[value]]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert ulimit --help | grep '^ulimit: ulimit \[-H | -S] \[-a | - \[value]]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # print resources
 var opts = new [String]()

@@ -10,6 +10,16 @@ assert $? == 2
 $assertEQ("ydsh: umask: -y: invalid option
 umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
 
+# help
+assert help umask | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert umask -h | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert umask --help | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
 # print mask
 $assertEQ("$(sh -c 'umask')", "$(umask)")
 $assertEQ("$(sh -c 'umask -S')", "$(umask -S)")

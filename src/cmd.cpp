@@ -1550,7 +1550,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
   bool showAll = false;
 
   GetOptState optState;
-  const char *optStr = "HSa"
+  const char *optStr = "HSah"
 #define DEF(O, R, S, N, D) O
 #include "ulimit-def.in"
 #undef DEF
@@ -1570,6 +1570,8 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
     case 'a':
       showAll = true;
       break;
+    case 'h':
+      return showHelp(argvObj);
     case '?':
       return invalidOptionError(argvObj, optState);
     default:
@@ -1789,7 +1791,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
   auto op = PrintMaskOp::ONLY_PRINT;
 
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "pS")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "pSh")) != -1;) {
     switch (opt) {
     case 'p':
       setFlag(op, PrintMaskOp::REUSE);
@@ -1797,6 +1799,8 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     case 'S':
       setFlag(op, PrintMaskOp::SYMBOLIC);
       break;
+    case 'h':
+      return showHelp(argvObj);
     default:
       return invalidOptionError(argvObj, optState);
     }
