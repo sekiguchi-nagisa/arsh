@@ -1243,7 +1243,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
   }
 
   GetOptState optState;
-  const int opt = optState(argvObj, ":ls:");
+  const int opt = optState(argvObj, ":ls:h");
   switch (opt) {
   case 'l':
     listing = true;
@@ -1261,6 +1261,8 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
     }
     break;
   }
+  case 'h':
+    return showHelp(argvObj);
   case ':':
     ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
     return 1;
@@ -2148,10 +2150,14 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
 static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   bool breakNext = false;
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "n")) != -1;) {
-    if (opt == 'n') {
+  for (int opt; (opt = optState(argvObj, "nh")) != -1;) {
+    switch (opt) {
+    case 'n':
       breakNext = true;
-    } else {
+      break;
+    case 'h':
+      return showHelp(argvObj);
+    default:
       return invalidOptionError(argvObj, optState);
     }
   }
@@ -2265,7 +2271,7 @@ static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
   auto output = JobsOutput::DEFAULT;
 
   GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "lprs")) != -1;) {
+  for (int opt; (opt = optState(argvObj, "lprsh")) != -1;) {
     switch (opt) {
     case 'l':
       output = JobsOutput::VERBOSE;
@@ -2279,6 +2285,8 @@ static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
     case 's':
       target = JobsTarget::STOPPED;
       break;
+    case 'h':
+      return showHelp(argvObj);
     default:
       return invalidOptionError(argvObj, optState);
     }

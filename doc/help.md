@@ -20,8 +20,8 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `fg`                | ❌           |
 | `hash`              | ❌           |
 | `help`              | ✔️          |
-| `jobs`              | ❌           |
-| `kill`              | ❌           |
+| `jobs`              | ✔️          |
+| `kill`              | ✔️          |
 | `pwd`               | ✔️          |
 | `read`              | ✔️          |
 | `setenv`            | ❌           |
@@ -31,4 +31,4 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `ulimit`            | ✔️          |
 | `umask`             | ✔️          |
 | `unsetenv`          | ❌           |
-| `wait`              | ❌           |
+| `wait`              | ✔️          |

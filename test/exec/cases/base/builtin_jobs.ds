@@ -83,5 +83,15 @@ $out = IFS=$'\n' $(jobs -l $j)
 assert $out.size() == 1
 assert $out[0] == "[1] - ${$j.pid(0)!} Stopped  {\n    while(true 1) {}\n}"
 
+# help
+assert help jobs | grep '^jobs: jobs \[-lprs] \[jobspec ...]'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert jobs -h| grep '^jobs: jobs \[-lprs] \[jobspec ...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert jobs --help | grep '^jobs: jobs \[-lprs] \[jobspec ...]'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
 true
 
