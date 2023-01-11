@@ -18,7 +18,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `exit`              | ✔️          |
 | `false`             | -           |
 | `fg`                | ✔️          |
-| `hash`              | ❌           |
+| `hash`              | ✔️          |
 | `help`              | ✔️          |
 | `jobs`              | ✔️          |
 | `kill`              | ✔️          |

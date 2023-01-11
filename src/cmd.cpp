@@ -163,11 +163,6 @@ int invalidOptionError(const ArrayObject &obj, const GetOptState &s) {
   return showUsage(obj);
 }
 
-static int invalidOptionError(const ArrayObject &obj, const char *opt) {
-  ERROR(obj, "%s: invalid option", opt);
-  return showUsage(obj);
-}
-
 static void printAllUsage(FILE *fp) {
   unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();
@@ -984,24 +979,23 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) { // FIXME: timeou
 static int builtin_hash(DSState &state, ArrayObject &argvObj) {
   bool remove = false;
 
-  // check option
-  const unsigned int argc = argvObj.getValues().size();
-  unsigned int index = 1;
-  for (; index < argc; index++) {
-    auto arg = argvObj.getValues()[index].asStrRef();
-    if (arg[0] != '-') {
-      break;
-    }
-    if (arg == "-r") {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "rh")) != -1;) {
+    switch (opt) {
+    case 'r':
       remove = true;
-    } else {
-      return invalidOptionError(argvObj, toPrintable(arg).c_str());
+      break;
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
     }
   }
 
-  const bool hasNames = index < argc;
-  if (hasNames) {
-    for (; index < argc; index++) {
+  const unsigned int size = argvObj.size();
+  unsigned int index = optState.index;
+  if (index < size) {
+    for (; index < size; index++) {
       auto ref = argvObj.getValues()[index].asStrRef();
       const char *name = ref.data();
       bool hasNul = ref.hasNullChar();
