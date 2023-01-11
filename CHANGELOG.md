@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Builtin
+
+- ``LineEditor`` support alt-arrow key (for mac)
+    - ``^[^[[A``, ``^[^[[B``, ``^[^[[C``, ``^[^[[D``
+
 ### Changed
 
 #### Core

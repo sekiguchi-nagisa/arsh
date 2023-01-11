@@ -182,8 +182,8 @@ TEST_F(InteractiveTest, edit3) {
       "[4~") "○" LEFT ESC_("[3~") "'\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'21@あい'\n: String = 21@あい\n" + PROMPT));
 
-  // [1;3C [1;3D
-  this->send("'home'" ESC_("[1;3D") ESC_("[1;3D") "/" ESC_("[1;3C") "/user" ESC_("[1;3C") "\r");
+  // alt-left, alt-right ^[[1;3C ^[[1;3D ^[^[[C ^[^[[D
+  this->send("'home'" ESC_("[1;3D") ESC_("\x1b[D") "/" ESC_("[1;3C") "/user" ESC_("\x1b[C") "\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'/home/user'\n: String = /home/user\n" + PROMPT));
 
   this->send(CTRL_D);
@@ -260,7 +260,7 @@ TEST_F(InteractiveTest, history2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
   this->send(CTRL_N); // DOWN
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
-  this->send(DOWN);
+  this->send(ESC_("\x1b[B")); // ALT-DOWN
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
@@ -293,7 +293,7 @@ TEST_F(InteractiveTest, history3) {
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));
-  this->send(UP);
+  this->send(ESC_("\x1b[A")); // ALT-UP
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
   this->send(ESC_("[1;3A")); // ALT-UP
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "2"));

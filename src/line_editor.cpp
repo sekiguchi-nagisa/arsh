@@ -1420,7 +1420,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
       if (read(l.ifd, seq, 1) == -1) {
         break;
       }
-      if (seq[0] != '[' && seq[0] != 'O') { // ESC ? sequence
+      if (seq[0] != '[' && seq[0] != 'O' && seq[0] != ESC) { // ESC ? sequence
         switch (seq[0]) {
         case 'f':
           if (linenoiseEditMoveRightWord(l)) {
@@ -1583,6 +1583,44 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
               this->refreshLine(l, false);
             }
             break;
+          }
+        }
+        /* ESC ESC [ ? sequence */
+        else if (seq[0] == ESC) {
+          if (seq[1] == '[') {
+            if (read(l.ifd, seq + 2, 1) == -1) {
+              break;
+            }
+            switch (seq[2]) {
+            case 'A': /* ALT-Up (for mac) */
+              if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
+                this->refreshLine(l);
+              } else if (state.hasError()) {
+                errno = EAGAIN;
+                return -1;
+              }
+              break;
+            case 'B': /* ALT-Down (for mac)  */
+              if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
+                this->refreshLine(l);
+              } else if (state.hasError()) {
+                errno = EAGAIN;
+                return -1;
+              }
+              break;
+            case 'C': /* ALT-Right (for mac)  */
+              if (linenoiseEditMoveRightWord(l)) {
+                this->refreshLine(l, false);
+              }
+              break;
+            case 'D': /* ALT-Left (for mac)  */
+              if (linenoiseEditMoveLeftWord(l)) {
+                this->refreshLine(l, false);
+              }
+              break;
+            default:
+              break;
+            }
           }
         }
       }
