@@ -1,6 +1,24 @@
 #$test($status = 0)
 
 # set env
+## invalid option
+assert setenv -d 2>&1 | grep '^ydsh: setenv: -d: invalid option'
+assert $PIPESTATUS[0] == 2
+
+## help
+assert help setenv | grep '^setenv: setenv \[name=env ...]'
+assert help setenv | grep 'Set environmental variables'
+assert $PIPESTATUS[0] == 0
+
+assert setenv -h| grep '^setenv: setenv \[name=env ...]'
+assert setenv -h| grep 'Set environmental variables'
+assert $PIPESTATUS[0] == 2
+
+assert setenv --help| grep '^setenv: setenv \[name=env ...]'
+assert setenv --help| grep 'Set environmental variables'
+assert $PIPESTATUS[0] == 2
+
+
 assert setenv > /dev/null
 assert "$(setenv | grep -v '^_=')" == "$(env | grep -v '^_=')"
 setenv AAA=aaa BBB=bbb
@@ -22,13 +40,30 @@ assert "$(setenv CCC 2>&1)" == "ydsh: setenv: CCC: Invalid argument"
 assert "$(setenv =CCC 2>&1)" == "ydsh: setenv: =CCC: Invalid argument"
 
 # unset env
+## invalid option
+assert unsetenv -o 2>&1 | grep '^ydsh: unsetenv: -o: invalid option'
+assert $PIPESTATUS[0] == 2
+
+## help
+assert help unsetenv | grep '^unsetenv: unsetenv \[name ...]'
+assert help unsetenv | grep 'Unset environmental variables'
+assert $PIPESTATUS[0] == 0
+
+assert unsetenv  -h | grep '^unsetenv: unsetenv \[name ...]'
+assert unsetenv -h| grep 'Unset environmental variables'
+assert $PIPESTATUS[0] == 2
+
+assert unsetenv  --help | grep '^unsetenv: unsetenv \[name ...]'
+assert unsetenv --help| grep 'Unset environmental variables'
+assert $PIPESTATUS[0] == 2
+
 assert unsetenv
 unsetenv H=
 assert $? == 1
 assert "$(unsetenv =CCC 2>&1)" == "ydsh: unsetenv: =CCC: Invalid argument"
 
 $? = 0
-unsetenv $'HOME\x00'
+unsetenv -- $'HOME\x00'
 assert $? == 1
 
 import-env AAA

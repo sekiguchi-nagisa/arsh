@@ -1100,7 +1100,19 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 }
 
 static int builtin_setenv(DSState &, ArrayObject &argvObj) {
-  if (argvObj.size() == 1) {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  const unsigned int size = argvObj.size();
+  unsigned int index = optState.index;
+  if (index == size) {
     for (unsigned int i = 0; environ[i] != nullptr; i++) {
       const char *e = environ[i];
       fprintf(stdout, "%s\n", e);
@@ -1108,9 +1120,8 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
     return 0;
   }
 
-  auto end = argvObj.getValues().end();
-  for (auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-    auto kv = iter->asStrRef();
+  for (; index < size; index++) {
+    auto kv = argvObj.getValues()[index].asStrRef();
     auto pos = kv.hasNullChar() ? StringRef::npos : kv.find("=");
     errno = EINVAL;
     if (pos != StringRef::npos && pos != 0) {
@@ -1127,9 +1138,19 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 }
 
 static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
-  auto end = argvObj.getValues().end();
-  for (auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-    auto envName = iter->asStrRef();
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  const unsigned int size = argvObj.size();
+  for (unsigned int index = optState.index; index < size; index++) {
+    auto envName = argvObj.getValues()[index].asStrRef();
     if (unsetenv(envName.hasNullChar() ? "" : envName.data()) != 0) {
       PERROR(argvObj, "%s", toPrintable(envName).c_str());
       return 1;

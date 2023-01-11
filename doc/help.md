@@ -24,11 +24,11 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `kill`              | ✔️          |
 | `pwd`               | ✔️          |
 | `read`              | ✔️          |
-| `setenv`            | ❌           |
+| `setenv`            | ✔️          |
 | `shctl`             | ❌           |
 | `test`              | -           |
 | `true`              | -           |
 | `ulimit`            | ✔️          |
 | `umask`             | ✔️          |
-| `unsetenv`          | ❌           |
+| `unsetenv`          | ✔️          |
 | `wait`              | ✔️          |
