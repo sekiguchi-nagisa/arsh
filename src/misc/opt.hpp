@@ -287,11 +287,14 @@ struct GetOptState {
    */
   bool remapHelp{false};
 
+  bool foundLongOption{false};
+
   void reset() {
     this->nextChar = nullptr;
     this->optArg = nullptr;
     this->optOpt = 0;
     this->remapHelp = false;
+    this->foundLongOption = false;
   }
 
   /**
@@ -329,13 +332,19 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     return -1;
   }
 
-  if (arg == "--") {
-    this->nextChar = nullptr;
-    ++begin;
-    return -1;
-  }
-  if (arg == "--help" && this->remapHelp) {
-    arg = "-h";
+  if (arg.startsWith("--")) {
+    if (arg.size() == 2) {
+      this->nextChar = nullptr;
+      ++begin;
+      return -1;
+    } else if (arg == "--help" && this->remapHelp) {
+      arg = "-h";
+    } else {
+      this->nextChar = arg;
+      this->optOpt = '-';
+      this->foundLongOption = true;
+      return '?';
+    }
   }
 
   if (this->nextChar.empty()) {

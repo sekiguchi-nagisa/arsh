@@ -283,9 +283,10 @@ TEST(GetOptTest, help) {
   // normally long options are unrecognized
   opt = optState(begin, end, optStr);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("-help", optState.nextChar);
+  ASSERT_EQ("--help", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ('-', optState.optOpt);
+  ASSERT_TRUE(optState.foundLongOption);
 
   // if remapHelp is true, remap --help to -h
   optState.reset();
@@ -295,6 +296,7 @@ TEST(GetOptTest, help) {
   ASSERT_EQ(nullptr, optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ(0, optState.optOpt);
+  ASSERT_FALSE(optState.foundLongOption);
 
   opt = optState(begin, end, optStr);
   ASSERT_EQ('c', opt);
@@ -305,9 +307,10 @@ TEST(GetOptTest, help) {
   // long options are still unrecognized except for --help
   opt = optState(begin, end, optStr);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("-help1", optState.nextChar);
+  ASSERT_EQ("--help1", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ('-', optState.optOpt);
+  ASSERT_TRUE(optState.foundLongOption);
 }
 
 TEST(GetOptTest, invalid) {

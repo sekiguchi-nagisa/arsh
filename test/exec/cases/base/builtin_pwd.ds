@@ -17,7 +17,8 @@ pwd # error
 assert($? != 0)
 
 # invalid option
-assert(pwd --- 2>&1 | grep 'ydsh: pwd: --: invalid option')
+assert(pwd --- 2>&1 | grep 'ydsh: pwd: ---: invalid option')
+assert(pwd --we 2>&1 | grep 'ydsh: pwd: --we: invalid option')
 
 # help
 help pwd | grep "pwd: pwd \[-LP]"

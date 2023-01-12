@@ -17,6 +17,11 @@ assert(help -s help | grep 'help: help \[-s] \[pattern ...]')
 help -s help | grep 'Display helpful information about builtin commands.'
 assert($? != 0)
 
+# invalid option
+assert help --we 2>&1 | grep '^ydsh: help: --we: invalid option'
+assert help --we 2>&1 | grep 'help: help \[-s] \[pattern ...]'
+assert $PIPESTATUS[0] == 2
+
 # error
 help fheurb
 assert($? == 1)

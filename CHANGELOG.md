@@ -20,6 +20,8 @@
 
 - **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with ``backward-word``
   and ``forward-word``
+- **Breaking Change**: now builtin commands support `-h`/`--help` options
+    - except for `:`, `echo`, `eval`, `false`, `true`
 - check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 - builtin ``shctl info`` subcommand show more system constant information

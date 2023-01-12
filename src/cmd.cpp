@@ -159,7 +159,11 @@ int showHelp(const ArrayObject &obj) {
 }
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s) {
-  ERROR(obj, "-%c: invalid option", s.optOpt);
+  if (s.foundLongOption) {
+    ERROR(obj, "%s: invalid option", toPrintable(s.nextChar).c_str());
+  } else {
+    ERROR(obj, "-%c: invalid option", s.optOpt);
+  }
   return showUsage(obj);
 }
 
