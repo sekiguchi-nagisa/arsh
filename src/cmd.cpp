@@ -1982,9 +1982,10 @@ static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef 
   return 0;
 }
 
-static int setOption(DSState &state, const ArrayObject &argvObj, const bool set) {
+static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned int offset,
+                     const bool set) {
   const unsigned int size = argvObj.size();
-  if (size == 2) {
+  if (offset == size) {
     if (set) {
       showOptions(state);
       return 0;
@@ -2032,7 +2033,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 
   // set/unset option
   bool foundMonitor = false;
-  for (unsigned int i = 2; i < size; i++) {
+  for (unsigned int i = offset; i < size; i++) {
     auto name = argvObj.getValues()[i].asStrRef();
     auto option = recognizeRuntimeOption(name);
     if (empty(option)) {
@@ -2052,9 +2053,9 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
   return 0;
 }
 
-static int showModule(const DSState &state, const ArrayObject &argvObj) {
+static int showModule(const DSState &state, const ArrayObject &argvObj, const unsigned int offset) {
   const unsigned int size = argvObj.size();
-  if (size == 2) {
+  if (offset == size) {
     for (auto &e : state.modLoader) {
       fprintf(stdout, "%s\n", e.first.get());
     }
@@ -2064,7 +2065,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj) {
   FakeModuleLoader loader(state.sysConfig);
   auto cwd = getCWD();
   int lastStatus = 0;
-  for (unsigned int i = 2; i < size; i++) {
+  for (unsigned int i = offset; i < size; i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
     if (ref.hasNullChar()) {
       ERROR(argvObj, "contains null characters: %s", toPrintable(ref).c_str());
@@ -2146,8 +2147,18 @@ static int showInfo(DSState &state) {
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
-  if (argvObj.size() > 1) {
-    auto ref = argvObj.getValues()[1].asStrRef();
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    switch (opt) {
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  if (unsigned int index = optState.index; index < argvObj.size()) {
+    auto ref = argvObj.getValues()[index].asStrRef();
     if (ref == "backtrace") {
       return printBacktrace(state.getCallStack());
     } else if (ref == "is-sourced") {
@@ -2157,11 +2168,11 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     } else if (ref == "function") {
       return printFuncName(state.getCallStack());
     } else if (ref == "set") {
-      return setOption(state, argvObj, true);
+      return setOption(state, argvObj, index + 1, true);
     } else if (ref == "unset") {
-      return setOption(state, argvObj, false);
+      return setOption(state, argvObj, index + 1, false);
     } else if (ref == "module") {
-      return showModule(state, argvObj);
+      return showModule(state, argvObj, index + 1);
     } else if (ref == "info") {
       return showInfo(state);
     } else {

@@ -74,3 +74,21 @@ assert $reply["MODULE_HOME"] == $MODULE_HOME
 assert $reply["DATA_HOME"] == $DATA_HOME
 assert $reply["MODULE_DIR"] == $MODULE_DIR
 assert $reply["DATA_DIR"] == $DATA_DIR
+
+# invalid optiopn
+assert shctl -s 2>&1 | grep '^ydsh: shctl: -s: invalid option'
+assert shctl -s 2>&1 | grep 'shctl: shctl \[subcommand]'
+assert $PIPESTATUS[0] == 2
+
+# help
+assert help shctl | grep '^shctl: shctl \[subcommand]'
+assert help shctl | grep ' Query and set runtime information'
+assert $PIPESTATUS[0] == 0
+
+assert shctl -h| grep '^shctl: shctl \[subcommand]'
+assert shctl -h| grep ' Query and set runtime information'
+assert $PIPESTATUS[0] == 2
+
+assert shctl --help| grep '^shctl: shctl \[subcommand]'
+assert shctl --help| grep ' Query and set runtime information'
+assert $PIPESTATUS[0] == 2

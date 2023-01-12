@@ -25,7 +25,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `pwd`               | ✔️          |
 | `read`              | ✔️          |
 | `setenv`            | ✔️          |
-| `shctl`             | ❌           |
+| `shctl`             | ✔️          |
 | `test`              | -           |
 | `true`              | -           |
 | `ulimit`            | ✔️          |
