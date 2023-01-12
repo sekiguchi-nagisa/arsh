@@ -29,6 +29,7 @@
 ### Fixed
 
 - symbol range of ``textDocument/hover``, ``textDocument/definition``
+- broken help message of builtin ulimit command
 
 ## [0.28.1] - 2023-01-04
 
