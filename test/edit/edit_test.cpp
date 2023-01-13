@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "gtest/gtest.h"
 
 #include "../test_common.h"
@@ -210,6 +212,107 @@ TEST(EncodingTest, wordLen2) {
   ret = getWordLen(line, WordLenOp::PREV_WORD, ps); //
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
+}
+
+struct Pipe {
+  int fds[2];
+
+  Pipe() {
+    if (pipe(this->fds) < 0) {
+      fatal_perror("pipe creation failed\n");
+    }
+  }
+
+  ~Pipe() {
+    for (auto &f : this->fds) {
+      close(f);
+    }
+  }
+
+  ssize_t write(StringRef ref) { return ::write(this->getWritePipe(), ref.data(), ref.size()); }
+
+  int getReadPipe() const { return this->fds[0]; }
+
+  int getWritePipe() const { return this->fds[1]; }
+};
+
+TEST(KeyCodeReaderTest, base) {
+  Pipe pipe;
+  pipe.write("1あ2\t\r");
+  KeyCodeReader reader(pipe.getReadPipe());
+  ASSERT_TRUE(reader.empty());
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("1", reader.get());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ("あ", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("2", reader.get());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("\t", reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("\r", reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+}
+
+#define ESC_(s) "\x1b" s
+
+TEST(KeyCodeReaderTest, escapeSeq) {
+  Pipe pipe;
+  pipe.write(ESC_("fあ") ESC_("OF") ESC_("[A") ESC_("[1~") ESC_("[200~1") ESC_("[1;3D")
+                 ESC_("\x1b[A"));
+  KeyCodeReader reader(pipe.getReadPipe());
+  ASSERT_TRUE(reader.empty());
+
+  ASSERT_EQ(2, reader.fetch());
+  ASSERT_EQ(ESC_("f"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ("あ", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+  ASSERT_FALSE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ(ESC_("OF"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ(ESC_("[A"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(4, reader.fetch());
+  ASSERT_EQ(ESC_("[1~"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(6, reader.fetch());
+  ASSERT_EQ(ESC_("[200~"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("1", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+  ASSERT_FALSE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(6, reader.fetch());
+  ASSERT_EQ(ESC_("[1;3D"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(4, reader.fetch());
+  ASSERT_EQ(ESC_("\x1b[A"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
 }
 
 int main(int argc, char **argv) {
