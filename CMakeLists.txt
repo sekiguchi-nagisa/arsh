@@ -236,6 +236,7 @@ set(YDSH_SRC
         src/chars.cpp
         src/highlighter_base.cpp
         src/highlighter.cpp
+        src/keycode.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

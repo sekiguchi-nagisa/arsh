@@ -114,13 +114,11 @@
 #include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <termios.h>
 #include <unistd.h>
 
 #include "chars.h"
 #include "line_editor.h"
 #include "misc/buffer.hpp"
-#include "misc/unicode.hpp"
 #include "vm.h"
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
@@ -158,27 +156,9 @@ struct linenoiseState {
 };
 
 enum KEY_ACTION {
-  KEY_NULL = 0,   /* NULL */
-  CTRL_A = 1,     /* Ctrl+a */
-  CTRL_B = 2,     /* Ctrl-b */
-  CTRL_C = 3,     /* Ctrl-c */
-  CTRL_D = 4,     /* Ctrl-d */
-  CTRL_E = 5,     /* Ctrl-e */
-  CTRL_F = 6,     /* Ctrl-f */
-  CTRL_H = 8,     /* Ctrl-h */
-  TAB = 9,        /* Tab */
-  CTRL_K = 11,    /* Ctrl+k */
-  CTRL_L = 12,    /* Ctrl+l */
-  ENTER = 13,     /* Enter */
-  CTRL_N = 14,    /* Ctrl-n */
-  CTRL_P = 16,    /* Ctrl-p */
-  CTRL_Q = 17,    /* Ctrl-q */
-  CTRL_R = 18,    /* Ctrl-r */
-  CTRL_T = 20,    /* Ctrl-t */
-  CTRL_U = 21,    /* Ctrl+u */
-  CTRL_W = 23,    /* Ctrl+w */
-  ESC = 27,       /* Escape */
-  BACKSPACE = 127 /* Backspace */
+  KEY_NULL = 0, /* NULL */
+  ENTER = 13,   /* Enter */
+  ESC = 27,     /* Escape */
 };
 
 /* Debugging macro. */
@@ -221,34 +201,6 @@ static size_t nextCharLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef b
     *col_len = ret.colSize;
   }
   return ret.byteSize;
-}
-
-/* Read bytes of the next character */
-static ssize_t readCode(int fd, char *buf, size_t bufSize, int &code) {
-  if (bufSize < 1) {
-    return -1;
-  }
-
-  ssize_t readSize = read(fd, &buf[0], 1);
-  if (readSize <= 0) {
-    return readSize;
-  }
-
-  unsigned int byteSize = ydsh::UnicodeUtil::utf8ByteSize(buf[0]);
-  if (byteSize < 1 || byteSize > 4) {
-    return -1;
-  }
-
-  if (byteSize > 1) {
-    if (bufSize < byteSize) {
-      return -1;
-    }
-    readSize = read(fd, &buf[1], byteSize - 1);
-    if (readSize <= 0) {
-      return readSize;
-    }
-  }
-  return static_cast<ssize_t>(ydsh::UnicodeUtil::utf8ToCodePoint(buf, bufSize, code));
 }
 
 static size_t prevWordLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef, size_t pos,
@@ -929,89 +881,14 @@ namespace ydsh {
 // ##     LineEditorObject     ##
 // ##############################
 
-#define CTRL_A_ "\x01"
-#define CTRL_B_ "\x02"
-#define CTRL_C_ "\x03"
-#define CTRL_D_ "\x04"
-#define CTRL_E_ "\x05"
-#define CTRL_F_ "\x06"
-#define CTRL_H_ "\x08"
-#define CTRL_I_ "\x09"
-#define TAB_ CTRL_I_
-#define CTRL_J_ "\x0A"
-#define CTRL_K_ "\x0B"
-#define CTRL_L_ "\x0C"
-#define CTRL_M_ "\x0D"
-#define ENTER_ CTRL_M_
-#define CTRL_N_ "\x0E"
-#define CTRL_P_ "\x10"
-#define CTRL_R_ "\x12"
-#define CTRL_T_ "\x14"
-#define CTRL_U_ "\x15"
-#define CTRL_W_ "\x17"
-#define ESC_ "\x1b"
-#define BACKSPACE_ "\x7F"
-
 LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
   this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   this->outFd = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
-  this->resetKeybind();
 }
 
 LineEditorObject::~LineEditorObject() {
   close(this->inFd);
   close(this->outFd);
-}
-
-void LineEditorObject::resetKeybind() {
-  this->actionMap.clear();
-
-  // control character
-  this->actionMap.emplace(ENTER_, EditAction::ACCEPT);
-  this->actionMap.emplace(CTRL_J_, EditAction::ACCEPT);
-  this->actionMap.emplace(CTRL_C_, EditAction::CANCEL);
-  this->actionMap.emplace(TAB_, EditAction::COMPLETE);
-  this->actionMap.emplace(CTRL_H_, EditAction::BACKWARD_DELETE_CHAR);
-  this->actionMap.emplace(BACKSPACE_, EditAction::BACKWARD_DELETE_CHAR);
-  this->actionMap.emplace(CTRL_D_, EditAction::DELETE_OR_EXIT);
-  this->actionMap.emplace(CTRL_T_, EditAction::TRANSPOSE_CHAR);
-  this->actionMap.emplace(CTRL_B_, EditAction::BACKWARD_CHAR);
-  this->actionMap.emplace(CTRL_F_, EditAction::FORWARD_CHAR);
-  this->actionMap.emplace(CTRL_P_, EditAction::UP_OR_HISTORY);
-  this->actionMap.emplace(CTRL_N_, EditAction::DOWN_OR_HISTORY);
-  this->actionMap.emplace(CTRL_R_, EditAction::SEARCH_HISTORY);
-  this->actionMap.emplace(CTRL_U_, EditAction::BACKWORD_KILL_LINE);
-  this->actionMap.emplace(CTRL_K_, EditAction::KILL_LINE);
-  this->actionMap.emplace(CTRL_A_, EditAction::BEGINNING_OF_LINE);
-  this->actionMap.emplace(CTRL_E_, EditAction::END_OF_LINE);
-  this->actionMap.emplace(CTRL_L_, EditAction::CLEAR_SCREEN);
-  this->actionMap.emplace(CTRL_W_, EditAction::BACKWARD_KILL_WORD);
-
-  // escape sequence
-  this->actionMap.emplace(ESC_ "b", EditAction::BACKWARD_WORD);
-  this->actionMap.emplace(ESC_ "f", EditAction::FORWARD_WORD);
-  this->actionMap.emplace(ESC_ "d", EditAction::KILL_WORD);
-  this->actionMap.emplace(ESC_ ENTER_, EditAction::NEWLINE);
-  this->actionMap.emplace(ESC_ "[1~", EditAction::BEGINNING_OF_LINE);
-  this->actionMap.emplace(ESC_ "[4~", EditAction::END_OF_LINE); // for putty
-  this->actionMap.emplace(ESC_ "[3~", EditAction::DELETE_CHAR); // for putty
-  this->actionMap.emplace(ESC_ "[200~", EditAction::BRACKET_PASTE);
-  this->actionMap.emplace(ESC_ "[1;3A", EditAction::PREV_HISTORY);
-  this->actionMap.emplace(ESC_ "[1;3B", EditAction::NEXT_HISTORY);
-  this->actionMap.emplace(ESC_ "[1;3D", EditAction::BACKWARD_WORD);
-  this->actionMap.emplace(ESC_ "[1;3C", EditAction::FORWARD_WORD);
-  this->actionMap.emplace(ESC_ "[A", EditAction::UP_OR_HISTORY);
-  this->actionMap.emplace(ESC_ "[B", EditAction::DOWN_OR_HISTORY);
-  this->actionMap.emplace(ESC_ "[D", EditAction::BACKWARD_CHAR);
-  this->actionMap.emplace(ESC_ "[C", EditAction::FORWARD_CHAR);
-  this->actionMap.emplace(ESC_ "[H", EditAction::BEGINNING_OF_LINE);
-  this->actionMap.emplace(ESC_ "[F", EditAction::END_OF_LINE);
-  this->actionMap.emplace(ESC_ "OH", EditAction::BEGINNING_OF_LINE);
-  this->actionMap.emplace(ESC_ "OF", EditAction::END_OF_LINE);
-  this->actionMap.emplace(ESC_ ESC_ "[A", EditAction::PREV_HISTORY);  // for mac
-  this->actionMap.emplace(ESC_ ESC_ "[B", EditAction::NEXT_HISTORY);  // for mac
-  this->actionMap.emplace(ESC_ ESC_ "[D", EditAction::BACKWARD_WORD); // for mac
-  this->actionMap.emplace(ESC_ ESC_ "[C", EditAction::FORWARD_WORD);  // for mac
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -1260,14 +1137,11 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
 
 static bool insertBracketPaste(struct linenoiseState &l) {
   while (true) {
-    int code;
-    char cbuf[32];
-    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), code);
-    if (nread <= 0) {
+    char buf;
+    if (read(l.ifd, &buf, 1) <= 0) {
       return false;
     }
-
-    switch (code) {
+    switch (buf) {
     case KEY_NULL:
       continue; // ignore null character
     case ENTER:
@@ -1297,7 +1171,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
       continue;
     }
     default:
-      if (!linenoiseEditInsert(l, cbuf, static_cast<size_t>(nread))) {
+      if (!linenoiseEditInsert(l, &buf, 1)) {
         return false;
       }
       continue;
@@ -1397,12 +1271,12 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
     }
 
     // dispatch edit action
-    auto iter = this->actionMap.find(reader.get());
-    if (iter == this->actionMap.end()) {
+    auto *action = this->keybind.findAction(reader.get());
+    if (!action) {
       continue; // skip unbound key action
     }
 
-    switch (iter->second) {
+    switch (*action) {
     case EditAction::ACCEPT:
       if (this->continueLine) {
         if (linenoiseEditInsert(l, "\n", 1)) {
@@ -1718,7 +1592,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     if (reader.fetch() <= 0) {
       return CompStatus::ERROR;
     }
-    if (reader.get() == TAB_) {
+    if (reader.get() == KeyBinding::TAB) {
       reader.clear();
     } else {
       return CompStatus::OK;
@@ -1743,7 +1617,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
           UNUSED(r);
           show = false;
           break;
-        } else if (code == CTRL_C_) {
+        } else if (code == KeyBinding::CTRL_C) {
           return CompStatus::CANCEL;
         } else {
           linenoiseBeep(ls.ofd);
@@ -1764,7 +1638,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       if (reader.fetch() <= 0) {
         return CompStatus::ERROR;
       }
-      if (reader.get() == TAB_) {
+      if (reader.get() == KeyBinding::TAB) {
         reader.clear();
       } else {
         return CompStatus::OK;

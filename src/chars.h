@@ -131,44 +131,6 @@ enum class WordLenOp {
 
 ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps);
 
-inline bool isControlChar(int ch) { return (ch >= 0 && ch <= 31) || ch == 127; }
-
-inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
-
-class KeyCodeReader {
-private:
-  int fd{-1};
-  std::string keycode; // single utf8 character or escape sequence
-
-public:
-  explicit KeyCodeReader(int fd) : fd(fd) {}
-
-  bool empty() const { return this->keycode.empty(); }
-
-  const std::string &get() const { return this->keycode; }
-
-  std::string take() {
-    std::string tmp;
-    std::swap(tmp, this->keycode);
-    return tmp;
-  }
-
-  void clear() { this->keycode.clear(); }
-
-  bool hasControlChar() const { return !this->empty() && isControlChar(this->keycode[0]); }
-
-  bool hasEscapeSeq() const { return !this->empty() && isEscapeChar(this->keycode[0]); }
-
-  /**
-   * fetch code
-   * @return
-   * size of read
-   * if read failed, return -1
-   * //FIXME: read timeout
-   */
-  ssize_t fetch();
-};
-
 } // namespace ydsh
 
 #endif // YDSH_CHARS_H

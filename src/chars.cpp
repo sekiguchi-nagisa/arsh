@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
-
 #include "chars.h"
 #include "misc/word.hpp"
 
@@ -87,82 +85,6 @@ ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps)
     len.colSize += getGraphemeWidth(ps, ret);
   }
   return len;
-}
-
-// ###########################
-// ##     KeyCodeReader     ##
-// ###########################
-
-static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
-  ssize_t readSize = read(fd, &buf[0], 1);
-  if (readSize <= 0) {
-    return readSize;
-  }
-  unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
-  if (byteSize < 1 || byteSize > 4) {
-    return -1;
-  } else if (byteSize > 1) {
-    readSize = read(fd, &buf[1], byteSize - 1);
-    if (readSize <= 0) {
-      return readSize;
-    }
-  }
-  return static_cast<ssize_t>(UnicodeUtil::utf8ToCodePoint(buf, std::size(buf), code));
-}
-
-#define READ_BYTE(b, bs)                                                                           \
-  do {                                                                                             \
-    if (read(this->fd, b + bs, 1) <= 0) {                                                          \
-      goto END;                                                                                    \
-    } else {                                                                                       \
-      seqSize++;                                                                                   \
-    }                                                                                              \
-  } while (false)
-
-ssize_t KeyCodeReader::fetch() {
-  constexpr const char ESC = '\x1b';
-  char buf[8];
-  int code;
-  ssize_t readSize = readCodePoint(this->fd, buf, code);
-  if (readSize <= 0) {
-    return readSize;
-  }
-  assert(readSize > 0 && readSize < 5);
-  this->keycode.assign(buf, static_cast<size_t>(readSize));
-  if (isEscapeChar(code)) {
-    assert(readSize == 1);
-    char seq[8];
-    unsigned int seqSize = 0;
-    READ_BYTE(seq, seqSize);
-    if (seq[0] != '[' && seq[0] != 'O' && seq[0] != ESC) { // ESC ? sequence
-      goto END;
-    }
-
-    READ_BYTE(seq, seqSize);
-    if (seq[0] == '[') {                    // ESC [ sequence
-      if (seq[1] >= '0' && seq[1] <= '9') { // ESC [ n x
-        READ_BYTE(seq, seqSize);
-        if ((seq[1] == '2' && seq[2] == '0') ||
-            (seq[1] == '1' && seq[2] == ';')) { // ESC [200~ or ESC [1;3A
-          READ_BYTE(seq, seqSize);
-          READ_BYTE(seq, seqSize);
-          goto END;
-        }
-      } else { // ESC [ x
-        goto END;
-      }
-    } else if (seq[0] == 'O') { // ESC O sequence
-      goto END;
-    } else if (seq[0] == ESC) {
-      if (seq[1] == '[') { // ESC ESC [ ? sequence
-        READ_BYTE(seq, seqSize);
-        goto END;
-      }
-    }
-  END:
-    this->keycode.append(seq, seqSize);
-  }
-  return static_cast<ssize_t>(this->keycode.size());
 }
 
 } // namespace ydsh

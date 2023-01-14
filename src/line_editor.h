@@ -20,38 +20,12 @@
 #include <termios.h>
 
 #include "highlighter.h"
+#include "keycode.h"
 #include "object.h"
 
 struct linenoiseState;
 
 namespace ydsh {
-
-#define EACH_EDIT_ACTION(OP)                                                                       \
-  OP(ACCEPT, "accept")                             /* ENTER / CTRL-M / CTRL-J */                   \
-  OP(CANCEL, "cancel")                             /* CTRL-C */                                    \
-  OP(COMPLETE, "complete")                         /* TAB / CTRL-I */                              \
-  OP(BACKWARD_DELETE_CHAR, "backward-delete-char") /* CTRL-H / BACKSPACE */                        \
-  OP(DELETE_CHAR, "delete-char")                   /* DELETE */                                    \
-  OP(DELETE_OR_EXIT, "delete-or-exit")             /* CTRL-D */                                    \
-  OP(TRANSPOSE_CHAR, "transpose-char")             /* CTRL-T */                                    \
-  OP(BACKWARD_CHAR, "backward-char")               /* CTRL-B / LEFT */                             \
-  OP(FORWARD_CHAR, "forward-char")                 /* CTRL-F / RIGHT */                            \
-  OP(PREV_HISTORY, "prev-history")                 /* ALT-UP */                                    \
-  OP(NEXT_HISTORY, "next-history")                 /* ALT-DOWN */                                  \
-  OP(UP_OR_HISTORY, "up-or-history")               /* CTRL-P / UP */                               \
-  OP(DOWN_OR_HISTORY, "down-or-history")           /* CTRL-N / DOWN */                             \
-  OP(SEARCH_HISTORY, "search-history")             /* CTRL-R */                                    \
-  OP(BACKWORD_KILL_LINE, "backward-kill-line")     /* CTRL-U */                                    \
-  OP(KILL_LINE, "kill-line")                       /* CTRL-K */                                    \
-  OP(BEGINNING_OF_LINE, "beginning-of-line")       /* CTRL-A / HOME */                             \
-  OP(END_OF_LINE, "end-of-line")                   /* CTRL-E / EMD */                              \
-  OP(CLEAR_SCREEN, "clear-screen")                 /* CTRL-L */                                    \
-  OP(BACKWARD_KILL_WORD, "backward-kill-word")     /* CTRL-W */                                    \
-  OP(KILL_WORD, "kill-word")                       /* ALT-D */                                     \
-  OP(BACKWARD_WORD, "backward-word")               /* ALT-B / ALT-LEFT */                          \
-  OP(FORWARD_WORD, "forward-word")                 /* ALT-F / ALT-RIGHT */                         \
-  OP(NEWLINE, "newline")                           /* ALT-ENTER */                                 \
-  OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */
 
 #define EACH_EDIT_HIST_OP(OP)                                                                      \
   OP(INIT, "init")                                                                                 \
@@ -59,14 +33,6 @@ namespace ydsh {
   OP(PREV, "prev")     /* take extra arg (current buffer content) */                               \
   OP(NEXT, "next")     /* take extra arg (current buffer content) */                               \
   OP(SEARCH, "search") /* take extra arg (current buffer content) */
-
-enum class EditAction : unsigned char {
-#define GEN_ENUM(E, S) E,
-  EACH_EDIT_ACTION(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-class KeyCodeReader;
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
@@ -87,7 +53,7 @@ private:
 
   termios orgTermios{};
 
-  std::unordered_map<std::string, EditAction> actionMap;
+  KeyBinding keybind;
 
   /**
    * must be `(String) -> String` type
@@ -139,8 +105,6 @@ public:
   void enableHighlight() { this->highlight = true; }
 
 private:
-  void resetKeybind();
-
   int enableRawMode(int fd);
 
   void disableRawMode(int fd);

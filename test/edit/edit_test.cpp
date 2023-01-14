@@ -5,6 +5,7 @@
 #include "../test_common.h"
 
 #include <chars.h>
+#include <keycode.h>
 
 using namespace ydsh;
 
