@@ -147,6 +147,12 @@ public:
 
   const std::string &get() const { return this->keycode; }
 
+  std::string take() {
+    std::string tmp;
+    std::swap(tmp, this->keycode);
+    return tmp;
+  }
+
   void clear() { this->keycode.clear(); }
 
   bool hasControlChar() const { return !this->empty() && isControlChar(this->keycode[0]); }

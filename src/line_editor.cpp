@@ -929,14 +929,89 @@ namespace ydsh {
 // ##     LineEditorObject     ##
 // ##############################
 
+#define CTRL_A_ "\x01"
+#define CTRL_B_ "\x02"
+#define CTRL_C_ "\x03"
+#define CTRL_D_ "\x04"
+#define CTRL_E_ "\x05"
+#define CTRL_F_ "\x06"
+#define CTRL_H_ "\x08"
+#define CTRL_I_ "\x09"
+#define TAB_ CTRL_I_
+#define CTRL_J_ "\x0A"
+#define CTRL_K_ "\x0B"
+#define CTRL_L_ "\x0C"
+#define CTRL_M_ "\x0D"
+#define ENTER_ CTRL_M_
+#define CTRL_N_ "\x0E"
+#define CTRL_P_ "\x10"
+#define CTRL_R_ "\x12"
+#define CTRL_T_ "\x14"
+#define CTRL_U_ "\x15"
+#define CTRL_W_ "\x17"
+#define ESC_ "\x1b"
+#define BACKSPACE_ "\x7F"
+
 LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
   this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   this->outFd = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
+  this->resetKeybind();
 }
 
 LineEditorObject::~LineEditorObject() {
   close(this->inFd);
   close(this->outFd);
+}
+
+void LineEditorObject::resetKeybind() {
+  this->actionMap.clear();
+
+  // control character
+  this->actionMap.emplace(ENTER_, EditAction::ACCEPT);
+  this->actionMap.emplace(CTRL_J_, EditAction::ACCEPT);
+  this->actionMap.emplace(CTRL_C_, EditAction::CANCEL);
+  this->actionMap.emplace(TAB_, EditAction::COMPLETE);
+  this->actionMap.emplace(CTRL_H_, EditAction::BACKWARD_DELETE_CHAR);
+  this->actionMap.emplace(BACKSPACE_, EditAction::BACKWARD_DELETE_CHAR);
+  this->actionMap.emplace(CTRL_D_, EditAction::DELETE_OR_EXIT);
+  this->actionMap.emplace(CTRL_T_, EditAction::TRANSPOSE_CHAR);
+  this->actionMap.emplace(CTRL_B_, EditAction::BACKWARD_CHAR);
+  this->actionMap.emplace(CTRL_F_, EditAction::FORWARD_CHAR);
+  this->actionMap.emplace(CTRL_P_, EditAction::UP_OR_HISTORY);
+  this->actionMap.emplace(CTRL_N_, EditAction::DOWN_OR_HISTORY);
+  this->actionMap.emplace(CTRL_R_, EditAction::SEARCH_HISTORY);
+  this->actionMap.emplace(CTRL_U_, EditAction::BACKWORD_KILL_LINE);
+  this->actionMap.emplace(CTRL_K_, EditAction::KILL_LINE);
+  this->actionMap.emplace(CTRL_A_, EditAction::BEGINNING_OF_LINE);
+  this->actionMap.emplace(CTRL_E_, EditAction::END_OF_LINE);
+  this->actionMap.emplace(CTRL_L_, EditAction::CLEAR_SCREEN);
+  this->actionMap.emplace(CTRL_W_, EditAction::BACKWARD_KILL_WORD);
+
+  // escape sequence
+  this->actionMap.emplace(ESC_ "b", EditAction::BACKWARD_WORD);
+  this->actionMap.emplace(ESC_ "f", EditAction::FORWARD_WORD);
+  this->actionMap.emplace(ESC_ "d", EditAction::KILL_WORD);
+  this->actionMap.emplace(ESC_ ENTER_, EditAction::NEWLINE);
+  this->actionMap.emplace(ESC_ "[1~", EditAction::BEGINNING_OF_LINE);
+  this->actionMap.emplace(ESC_ "[4~", EditAction::END_OF_LINE); // for putty
+  this->actionMap.emplace(ESC_ "[3~", EditAction::DELETE_CHAR); // for putty
+  this->actionMap.emplace(ESC_ "[200~", EditAction::BRACKET_PASTE);
+  this->actionMap.emplace(ESC_ "[1;3A", EditAction::PREV_HISTORY);
+  this->actionMap.emplace(ESC_ "[1;3B", EditAction::NEXT_HISTORY);
+  this->actionMap.emplace(ESC_ "[1;3D", EditAction::BACKWARD_WORD);
+  this->actionMap.emplace(ESC_ "[1;3C", EditAction::FORWARD_WORD);
+  this->actionMap.emplace(ESC_ "[A", EditAction::UP_OR_HISTORY);
+  this->actionMap.emplace(ESC_ "[B", EditAction::DOWN_OR_HISTORY);
+  this->actionMap.emplace(ESC_ "[D", EditAction::BACKWARD_CHAR);
+  this->actionMap.emplace(ESC_ "[C", EditAction::FORWARD_CHAR);
+  this->actionMap.emplace(ESC_ "[H", EditAction::BEGINNING_OF_LINE);
+  this->actionMap.emplace(ESC_ "[F", EditAction::END_OF_LINE);
+  this->actionMap.emplace(ESC_ "OH", EditAction::BEGINNING_OF_LINE);
+  this->actionMap.emplace(ESC_ "OF", EditAction::END_OF_LINE);
+  this->actionMap.emplace(ESC_ ESC_ "[A", EditAction::PREV_HISTORY);  // for mac
+  this->actionMap.emplace(ESC_ ESC_ "[B", EditAction::NEXT_HISTORY);  // for mac
+  this->actionMap.emplace(ESC_ ESC_ "[D", EditAction::BACKWARD_WORD); // for mac
+  this->actionMap.emplace(ESC_ ESC_ "[C", EditAction::FORWARD_WORD);  // for mac
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -1301,43 +1376,37 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   preparePrompt(l);
   this->refreshLine(l);
 
+  KeyCodeReader reader(l.ifd);
   while (true) {
-    int code;
-    char cbuf[32]; // large enough for any encoding?
-
-    const bool prevRotating = l.rotating;
-    l.rotating = false;
-
-    ssize_t nread = readCode(l.ifd, cbuf, sizeof(cbuf), code);
-    if (nread <= 0) {
+    if (reader.fetch() <= 0) {
       return static_cast<int>(l.len);
     }
 
-    /* Only autocomplete when the callback is set. It returns < 0 when
-     * there was an error reading from fd. Otherwise, it will return the
-     * character that should be handled next. */
-    if (code == TAB) {
-      if (!this->completionCallback) {
-        continue;
-      }
-      nread = this->completeLine(state, l, cbuf, sizeof(cbuf), code);
+  NO_FETCH:
+    const bool prevRotating = l.rotating;
+    l.rotating = false;
 
-      /* Return on errors */
-      if (code < 0) {
-        return static_cast<int>(l.len);
-      }
-      /* Read next character when 0 */
-      if (code == 0) {
+    if (!reader.hasControlChar()) {
+      auto &buf = reader.get();
+      if (linenoiseEditInsert(l, buf.c_str(), buf.size())) {
+        this->refreshLine(l);
         continue;
+      } else {
+        return -1;
       }
     }
 
-    switch (code) {
-    case ENTER: /* enter */
+    // dispatch edit action
+    auto iter = this->actionMap.find(reader.get());
+    if (iter == this->actionMap.end()) {
+      continue; // skip unbound key action
+    }
+
+    switch (iter->second) {
+    case EditAction::ACCEPT:
       if (this->continueLine) {
         if (linenoiseEditInsert(l, "\n", 1)) {
           this->refreshLine(l);
-          break;
         } else {
           return -1;
         }
@@ -1353,17 +1422,36 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         }
         return static_cast<int>(l.len);
       }
-    case CTRL_C: /* ctrl-c */
+      break;
+    case EditAction::CANCEL:
       errno = EAGAIN;
       return -1;
-    case BACKSPACE: /* backspace */
-    case CTRL_H:    /* ctrl-h */
+    case EditAction::COMPLETE:
+      if (this->completionCallback) {
+        auto s = this->completeLine(state, l, reader);
+        if (s == CompStatus::ERROR) {
+          return static_cast<int>(l.len);
+        } else if (s == CompStatus::CANCEL) {
+          errno = EAGAIN;
+          return -1;
+        }
+        if (!reader.empty()) {
+          goto NO_FETCH;
+        }
+      }
+      break;
+    case EditAction::BACKWARD_DELETE_CHAR:
       if (linenoiseEditBackspace(l)) {
         this->refreshLine(l);
       }
       break;
-    case CTRL_D: /* ctrl-d, remove char at right of cursor, or if the
-                line is empty, act as end-of-file. */
+    case EditAction::DELETE_CHAR:
+      if (linenoiseEditDelete(l)) {
+        this->refreshLine(l);
+      }
+      break;
+    case EditAction::DELETE_OR_EXIT: /* remove char at right of cursor, or if the line is empty, act
+                                        as end-of-file. */
       if (l.len > 0) {
         if (linenoiseEditDelete(l)) {
           this->refreshLine(l);
@@ -1373,22 +1461,38 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case CTRL_T: /* ctrl-t, swaps current character with previous. */
+    case EditAction::TRANSPOSE_CHAR: /* swaps current character with previous */
       if (linenoiseEditSwapChars(l)) {
         this->refreshLine(l);
       }
       break;
-    case CTRL_B: /* ctrl-b */
+    case EditAction::BACKWARD_CHAR:
       if (linenoiseEditMoveLeft(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case CTRL_F: /* ctrl-f */
+    case EditAction::FORWARD_CHAR:
       if (linenoiseEditMoveRight(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case CTRL_P: /* ctrl-p */
+    case EditAction::PREV_HISTORY:
+      if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
+        this->refreshLine(l);
+      } else if (state.hasError()) {
+        errno = EAGAIN;
+        return -1;
+      }
+      break;
+    case EditAction::NEXT_HISTORY:
+      if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
+        this->refreshLine(l);
+      } else if (state.hasError()) {
+        errno = EAGAIN;
+        return -1;
+      }
+      break;
+    case EditAction::UP_OR_HISTORY:
       if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1396,7 +1500,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case CTRL_N: /* ctrl-n */
+    case EditAction::DOWN_OR_HISTORY:
       if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1404,7 +1508,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case CTRL_R: /* ctrl-r */
+    case EditAction::SEARCH_HISTORY:
       if (this->kickHistoryCallback(state, HistOp::SEARCH, &l, true)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1412,255 +1516,60 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case ESC: { /* escape sequence */
-      /* Read the next two bytes representing the escape sequence.
-       * Use two calls to handle slow terminals returning the two
-       * chars at different times. */
-      char seq[5];
-      if (read(l.ifd, seq, 1) == -1) {
-        break;
-      }
-      if (seq[0] != '[' && seq[0] != 'O' && seq[0] != ESC) { // ESC ? sequence
-        switch (seq[0]) {
-        case 'f':
-          if (linenoiseEditMoveRightWord(l)) {
-            this->refreshLine(l, false);
-          }
-          break;
-        case 'b':
-          if (linenoiseEditMoveLeftWord(l)) {
-            this->refreshLine(l, false);
-          }
-          break;
-        case 'd':
-          if (linenoiseEditDeleteNextWord(l)) {
-            this->refreshLine(l);
-          }
-          break;
-        case ENTER:
-          if (linenoiseEditInsert(l, "\n", 1)) {
-            this->refreshLine(l);
-            break;
-          } else {
-            return -1;
-          }
-        }
-      } else {
-        if (read(l.ifd, seq + 1, 1) == -1) {
-          break;
-        }
-        /* ESC [ sequences. */
-        if (seq[0] == '[') {
-          if (seq[1] >= '0' && seq[1] <= '9') {
-            /* Extended escape, read additional byte. */
-            if (read(l.ifd, seq + 2, 1) == -1) {
-              break;
-            }
-            if (seq[2] == '~') {
-              switch (seq[1]) {
-              case '1': /* Home */
-                if (linenoiseEditMoveHome(l)) {
-                  this->refreshLine(l, false);
-                }
-                break;
-              case '3': /* Delete key. */
-                if (linenoiseEditDelete(l)) {
-                  this->refreshLine(l);
-                }
-                break;
-              case '4': /* End */
-                if (linenoiseEditMoveEnd(l)) {
-                  this->refreshLine(l, false);
-                }
-                break;
-              }
-            } else if (seq[1] == '2' && seq[2] == '0') {
-              if (read(l.ifd, seq + 3, 1) == -1) {
-                break;
-              }
-              if (read(l.ifd, seq + 4, 1) == -1) {
-                break;
-              }
-              if (seq[3] == '0' && seq[4] == '~') { // start bracket paste \e[200~
-                if (insertBracketPaste(l)) {
-                  this->refreshLine(l);
-                } else {
-                  return -1;
-                }
-              }
-            } else if (seq[1] == '1' && seq[2] == ';') {
-              if (read(l.ifd, seq + 3, 1) == -1) {
-                break;
-              }
-              if (read(l.ifd, seq + 4, 1) == -1) {
-                break;
-              }
-              if (seq[3] == '3') {
-                switch (seq[4]) {
-                case 'A': /* ALT-Up */
-                  if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
-                    this->refreshLine(l);
-                  } else if (state.hasError()) {
-                    errno = EAGAIN;
-                    return -1;
-                  }
-                  break;
-                case 'B': /* ALT-Down */
-                  if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
-                    this->refreshLine(l);
-                  } else if (state.hasError()) {
-                    errno = EAGAIN;
-                    return -1;
-                  }
-                  break;
-                case 'C': /* ALT-Right */
-                  if (linenoiseEditMoveRightWord(l)) {
-                    this->refreshLine(l, false);
-                  }
-                  break;
-                case 'D': /* ALT-Left */
-                  if (linenoiseEditMoveLeftWord(l)) {
-                    this->refreshLine(l, false);
-                  }
-                  break;
-                default:
-                  break;
-                }
-              }
-            }
-          } else {
-            switch (seq[1]) {
-            case 'A': /* Up */
-              if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
-                this->refreshLine(l);
-              } else if (state.hasError()) {
-                errno = EAGAIN;
-                return -1;
-              }
-              break;
-            case 'B': /* Down */
-              if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
-                this->refreshLine(l);
-              } else if (state.hasError()) {
-                errno = EAGAIN;
-                return -1;
-              }
-              break;
-            case 'C': /* Right */
-              if (linenoiseEditMoveRight(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            case 'D': /* Left */
-              if (linenoiseEditMoveLeft(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            case 'H': /* Home */
-              if (linenoiseEditMoveHome(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            case 'F': /* End*/
-              if (linenoiseEditMoveEnd(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            }
-          }
-        }
-
-        /* ESC O sequences. */
-        else if (seq[0] == 'O') {
-          switch (seq[1]) {
-          case 'H': /* Home */
-            if (linenoiseEditMoveHome(l)) {
-              this->refreshLine(l, false);
-            }
-            break;
-          case 'F': /* End*/
-            if (linenoiseEditMoveEnd(l)) {
-              this->refreshLine(l, false);
-            }
-            break;
-          }
-        }
-        /* ESC ESC [ ? sequence */
-        else if (seq[0] == ESC) {
-          if (seq[1] == '[') {
-            if (read(l.ifd, seq + 2, 1) == -1) {
-              break;
-            }
-            switch (seq[2]) {
-            case 'A': /* ALT-Up (for mac) */
-              if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
-                this->refreshLine(l);
-              } else if (state.hasError()) {
-                errno = EAGAIN;
-                return -1;
-              }
-              break;
-            case 'B': /* ALT-Down (for mac)  */
-              if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
-                this->refreshLine(l);
-              } else if (state.hasError()) {
-                errno = EAGAIN;
-                return -1;
-              }
-              break;
-            case 'C': /* ALT-Right (for mac)  */
-              if (linenoiseEditMoveRightWord(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            case 'D': /* ALT-Left (for mac)  */
-              if (linenoiseEditMoveLeftWord(l)) {
-                this->refreshLine(l, false);
-              }
-              break;
-            default:
-              break;
-            }
-          }
-        }
-      }
-      break;
-    }
-    default:
-      if (code <= 31) {
-        continue; // skip unhandled C0 control codes
-      }
-      if (linenoiseEditInsert(l, cbuf, static_cast<size_t>(nread))) {
-        this->refreshLine(l);
-        break;
-      } else {
-        return -1;
-      }
-    case CTRL_U: /* Ctrl+u, delete the whole line or delete to current. */
+    case EditAction::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
       linenoiseEditDeleteTo(l);
       this->refreshLine(l);
       break;
-    case CTRL_K: /* Ctrl+k, delete from current to end of line. */
+    case EditAction::KILL_LINE: /* delete from current to end of line */
       linenoiseEditDeleteFrom(l);
       this->refreshLine(l);
       break;
-    case CTRL_A: /* Ctrl+a, go to the start of the line */
+    case EditAction::BEGINNING_OF_LINE: /* go to the start of the line */
       if (linenoiseEditMoveHome(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case CTRL_E: /* ctrl+e, go to the end of the line */
+    case EditAction::END_OF_LINE: /* go to the end of the line */
       if (linenoiseEditMoveEnd(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case CTRL_L: /* ctrl+l, clear screen */
+    case EditAction::CLEAR_SCREEN:
       linenoiseClearScreen(l.ofd);
       this->refreshLine(l);
       break;
-    case CTRL_W: /* ctrl+w, delete previous word */
+    case EditAction::BACKWARD_KILL_WORD:
       if (linenoiseEditDeletePrevWord(l)) {
         this->refreshLine(l);
+      }
+      break;
+    case EditAction::KILL_WORD:
+      if (linenoiseEditDeleteNextWord(l)) {
+        this->refreshLine(l);
+      }
+      break;
+    case EditAction::BACKWARD_WORD:
+      if (linenoiseEditMoveLeftWord(l)) {
+        this->refreshLine(l, false);
+      }
+      break;
+    case EditAction::FORWARD_WORD:
+      if (linenoiseEditMoveRightWord(l)) {
+        this->refreshLine(l, false);
+      }
+      break;
+    case EditAction::NEWLINE:
+      if (linenoiseEditInsert(l, "\n", 1)) {
+        this->refreshLine(l);
+      } else {
+        return -1;
+      }
+      break;
+    case EditAction::BRACKET_PASTE:
+      if (insertBracketPaste(l)) {
+        this->refreshLine(l);
+      } else {
+        return -1;
       }
       break;
     }
@@ -1789,30 +1698,30 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
   return matched ? offset : ls.pos;
 }
 
-ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char *cbuf, size_t clen,
-                                       int &code) {
+LineEditorObject::CompStatus
+LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
+  reader.clear();
+
   StringRef line(ls.buf, ls.pos);
   auto candidates = this->kickCompletionCallback(state, line);
   if (!candidates) {
-    code = CTRL_C;
-    return -1;
+    return CompStatus::CANCEL;
   }
 
-  ssize_t nread = 0;
-  int c = 0;
   const size_t offset = this->insertEstimatedSuffix(ls, *candidates);
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls.ofd);
+    return CompStatus::OK;
   } else if (len == 1) {
-    goto END;
+    return CompStatus::OK;
   } else {
-    nread = readCode(ls.ifd, cbuf, clen, c);
-    if (nread <= 0) {
-      c = -1;
-      goto END;
+    if (reader.fetch() <= 0) {
+      return CompStatus::ERROR;
     }
-    if (c != TAB) {
-      goto END;
+    if (reader.get() == TAB_) {
+      reader.clear();
+    } else {
+      return CompStatus::OK;
     }
 
     bool show = true;
@@ -1823,20 +1732,19 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
       UNUSED(r);
 
       while (true) {
-        nread = readCode(ls.ifd, cbuf, clen, c);
-        if (nread <= 0) {
-          c = -1;
-          goto END;
+        if (reader.fetch() <= 0) {
+          return CompStatus::ERROR;
         }
-        if (c == 'y') {
+        auto code = reader.take();
+        if (code == "y") {
           break;
-        } else if (c == 'n') {
+        } else if (code == "n") {
           r = write(ls.ofd, "\r\n", strlen("\r\n"));
           UNUSED(r);
           show = false;
           break;
-        } else if (c == CTRL_C) {
-          goto END;
+        } else if (code == CTRL_C_) {
+          return CompStatus::CANCEL;
         } else {
           linenoiseBeep(ls.ofd);
         }
@@ -1853,13 +1761,13 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
     size_t rotateIndex = 0;
     size_t prevCanLen = 0;
     while (true) {
-      nread = readCode(ls.ifd, cbuf, clen, c);
-      if (nread <= 0) {
-        c = -1;
-        goto END;
+      if (reader.fetch() <= 0) {
+        return CompStatus::ERROR;
       }
-      if (c != TAB) {
-        goto END;
+      if (reader.get() == TAB_) {
+        reader.clear();
+      } else {
+        return CompStatus::OK;
       }
 
       revertInsert(ls, prevCanLen);
@@ -1870,7 +1778,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
         this->refreshLine(ls);
       } else {
-        break; // FIXME:
+        return CompStatus::CANCEL; // FIXME: report error ?
       }
 
       if (rotateIndex == len - 1) {
@@ -1880,10 +1788,7 @@ ssize_t LineEditorObject::completeLine(DSState &state, linenoiseState &ls, char 
       rotateIndex++;
     }
   }
-
-END:
-  code = c;
-  return nread; /* Return last read character length*/
+  return CompStatus::OK;
 }
 
 DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
