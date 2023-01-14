@@ -265,22 +265,6 @@ static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
   return 0;
 }
 
-/* Get column length of prompt text
- */
-static size_t promptTextColumnLen(const ydsh::CharWidthProperties &ps, ydsh::StringRef prompt) {
-  char buf[LINENOISE_MAX_LINE];
-  size_t buf_len = 0;
-  for (size_t off = 0; off < prompt.size();) {
-    size_t len;
-    if (isAnsiEscape(prompt.data() + off, prompt.size() - off, &len)) {
-      off += len;
-      continue;
-    }
-    buf[buf_len++] = prompt[off++];
-  }
-  return columnPos(ps, ydsh::StringRef(buf, buf_len), buf_len);
-}
-
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
                                     const size_t pos, size_t cols, size_t iniPos) {
@@ -440,7 +424,8 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   // compute maximum length of candidate
   size_t maxSize = 0;
   for (size_t index = 0; index < len; index++) {
-    size_t s = promptTextColumnLen(ps, candidates.getValues()[index].asCStr());
+    StringRef can = candidates.getValues()[index].asCStr(); // truncate characters after null
+    size_t s = columnPos(ps, can, can.size());
     if (s > maxSize) {
       maxSize = s;
     }
