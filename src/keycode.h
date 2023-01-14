@@ -93,7 +93,7 @@ enum class EditAction : unsigned char {
 #undef GEN_ENUM
 };
 
-class KeyBinding {
+class KeyBindings {
 public:
   static constexpr const char *CTRL_C = "\x03";
   static constexpr const char *TAB = "\x09";
@@ -105,7 +105,7 @@ private:
   std::unordered_map<std::string, EditAction> values;
 
 public:
-  KeyBinding();
+  KeyBindings();
 
   const EditAction *findAction(const std::string &keycode);
 };

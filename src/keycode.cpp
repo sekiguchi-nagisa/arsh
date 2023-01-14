@@ -99,9 +99,9 @@ ssize_t KeyCodeReader::fetch() {
   return static_cast<ssize_t>(this->keycode.size());
 }
 
-// #######################
-// ##     KeyBinding    ##
-// #######################
+// ########################
+// ##     KeyBindings    ##
+// ########################
 
 #define CTRL_A_ "\x01"
 #define CTRL_B_ "\x02"
@@ -126,7 +126,7 @@ ssize_t KeyCodeReader::fetch() {
 #define ESC_ "\x1b"
 #define BACKSPACE_ "\x7F"
 
-KeyBinding::KeyBinding() {
+KeyBindings::KeyBindings() {
   // control character
   this->values.emplace(ENTER_, EditAction::ACCEPT);
   this->values.emplace(CTRL_J_, EditAction::ACCEPT);
@@ -175,7 +175,7 @@ KeyBinding::KeyBinding() {
   this->values.emplace(ESC_ ESC_ "[C", EditAction::FORWARD_WORD);  // for mac
 }
 
-const EditAction *KeyBinding::findAction(const std::string &keycode) {
+const EditAction *KeyBindings::findAction(const std::string &keycode) {
   auto iter = this->values.find(keycode);
   if (iter != this->values.end()) {
     return &iter->second;

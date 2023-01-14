@@ -53,7 +53,7 @@ private:
 
   termios orgTermios{};
 
-  KeyBinding keybind;
+  KeyBindings keybind;
 
   /**
    * must be `(String) -> String` type

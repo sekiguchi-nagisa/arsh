@@ -1577,7 +1577,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     if (reader.fetch() <= 0) {
       return CompStatus::ERROR;
     }
-    if (reader.get() == KeyBinding::TAB) {
+    if (reader.get() == KeyBindings::TAB) {
       reader.clear();
     } else {
       return CompStatus::OK;
@@ -1602,7 +1602,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
           UNUSED(r);
           show = false;
           break;
-        } else if (code == KeyBinding::CTRL_C) {
+        } else if (code == KeyBindings::CTRL_C) {
           return CompStatus::CANCEL;
         } else {
           linenoiseBeep(ls.ofd);
@@ -1623,7 +1623,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       if (reader.fetch() <= 0) {
         return CompStatus::ERROR;
       }
-      if (reader.get() == KeyBinding::TAB) {
+      if (reader.get() == KeyBindings::TAB) {
         reader.clear();
       } else {
         return CompStatus::OK;
