@@ -137,7 +137,11 @@ struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto result = litecheck(GetParam()).exec();
     ASSERT_EQ(WaitStatus::EXITED, result.kind);
-    ASSERT_EQ(0, result.value);
+    if (result.value == 125) {
+      printf("  [skip] %s\n", GetParam().c_str());
+    } else {
+      ASSERT_EQ(0, result.value);
+    }
   }
 };
 

@@ -140,8 +140,10 @@ assert diff <(complete -s 'for aaa i') <(echo 'in ')
 ### file name
 assert diff <(complete -s '/bi') <(echo 'bin/')
 assert diff <(complete -s 'echo /bi') <(echo 'bin/')
-assert diff <(complete -s '~roo') <(echo '~root/')
-assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+if $OSTYPE !~ $/cygwin/i {
+    assert diff <(complete -s '~roo') <(echo '~root/')
+    assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+}
 
 
 ## invalid
