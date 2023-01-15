@@ -190,6 +190,20 @@ TEST_F(InteractiveTest, edit3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, edit4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send(ESC_("q") "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[q', 'backward-word')"));
+  this->send("'/user" ESC_("q") "home/" ESC_("[F") "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'/home/user'\n: String = /home/user\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 // TEST_F(InteractiveTest, edit2) {
 //     this->invoke("--quiet", "--norc");
 //
