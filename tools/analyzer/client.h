@@ -55,6 +55,8 @@ public:
 
   void run(const ClientInput &input);
 
+  static bool isBrokenOrEmpty(const rpc::Error &error);
+
 private:
   bool send(const JSON &json);
 

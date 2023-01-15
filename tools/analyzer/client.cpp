@@ -230,6 +230,10 @@ bool Client::send(const JSON &json) {
 
 static constexpr const char *ERROR_BROKEN_OR_EMPTY = "may be broken or empty message";
 
+bool Client::isBrokenOrEmpty(const rpc::Error &error) {
+  return error.code == rpc::ErrorCode::InternalError && error.message == ERROR_BROKEN_OR_EMPTY;
+}
+
 rpc::Message Client::recv() {
   ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
@@ -272,7 +276,7 @@ int TestClientServerDriver::run(const DriverOptions &options,
   client.setReplyCallback([&logger](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg)) {
       auto &error = get<rpc::Error>(msg);
-      if (error.code == rpc::ErrorCode::InternalError && error.message == ERROR_BROKEN_OR_EMPTY) {
+      if (Client::isBrokenOrEmpty(error)) {
         logger(LogLevel::INFO, "%s", error.toString().c_str());
         return false;
       }

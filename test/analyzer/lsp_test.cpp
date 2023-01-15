@@ -444,6 +444,9 @@ TEST(ClientTest, run) {
   Client client(logger, dup(proc.out()), dup(proc.in()));
   rpc::Message ret;
   client.setReplyCallback([&ret](rpc::Message &&msg) -> bool {
+    if (is<rpc::Error>(msg) && Client::isBrokenOrEmpty(get<rpc::Error>(msg))) {
+      return false;
+    }
     ret = std::move(msg);
     return true;
   });
