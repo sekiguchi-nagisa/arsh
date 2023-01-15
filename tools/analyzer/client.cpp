@@ -228,10 +228,12 @@ bool Client::send(const JSON &json) {
   return writeSize > -1 && static_cast<size_t>(writeSize) >= value.size();
 }
 
+static constexpr const char *ERROR_BROKEN_OR_EMPTY = "may be broken or empty message";
+
 rpc::Message Client::recv() {
   ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
-    std::string error = "may be broken or empty message";
+    std::string error = ERROR_BROKEN_OR_EMPTY;
     return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
   }
 
@@ -267,9 +269,13 @@ int TestClientServerDriver::run(const DriverOptions &options,
   logger.setSeverity(this->level);
   logger(LogLevel::INFO, "run lsp test client");
   Client client(logger, dup(proc.out()), dup(proc.in()));
-  client.setReplyCallback([](rpc::Message &&msg) -> bool {
+  client.setReplyCallback([&logger](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg)) {
       auto &error = get<rpc::Error>(msg);
+      if (error.code == rpc::ErrorCode::InternalError && error.message == ERROR_BROKEN_OR_EMPTY) {
+        logger(LogLevel::INFO, "%s", error.toString().c_str());
+        return false;
+      }
       prettyprint(error.toJSON());
     } else if (is<rpc::Request>(msg)) {
       auto &req = get<rpc::Request>(msg);
