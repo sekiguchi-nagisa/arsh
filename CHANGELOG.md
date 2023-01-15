@@ -6,8 +6,13 @@
 
 #### Builtin
 
-- ``LineEditor`` support alt-arrow key (for mac)
-    - ``^[^[[A``, ``^[^[[B``, ``^[^[[C``, ``^[^[[D``
+- various ``LineEditor`` improvements
+    - support alt-arrow key (for mac)
+        - ``^[^[[A``, ``^[^[[B``, ``^[^[[C``, ``^[^[[D``
+    - add the following keybinding methods
+        - ``bind``: change keybinding
+        - ``bindings``: get read-only snapshot of current keybindings
+            - modification of the result does not affect actual keybindings
 
 ### Changed
 

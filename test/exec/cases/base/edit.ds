@@ -5,3 +5,75 @@ var line = echo 'hello world!!' | {
     $e.readLine()
 }
 assert $line! == 'hello world!!'
+
+# key bind api
+## get default keybindings
+var editor = new LineEditor()
+var bindings = $editor.bindings()  # get read-only view of current keybindings (modification of view does not affect actual keybindings)
+assert $bindings is [String : String]
+
+assert $bindings["^I"] == "complete"
+assert $bindings["^E"] == "end-of-line"
+assert $bindings["^?"] == "backward-delete-char"
+assert $bindings["^[[D"] == "backward-char"
+assert !$bindings.get("^[12") 
+
+## change keybind
+var ex = 34 as Any
+try { $editor.bind("", "complete"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "keycode must start with control character: \`'"
+
+$ex = 34
+try { $editor.bind("A", "complete"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "keycode must start with control character: \`A'"
+
+$ex = 34
+try { $editor.bind("^Aあ", "complete"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "keycode must be ascii characters: \`^Aあ'"
+
+$ex = 34
+try { $editor.bind("^A", "hogehogehuga"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "undefined edit action: \`hogehogehuga'"
+
+$ex = 34
+try { $editor.bind("^[[200~", "complete"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "cannot change binding of bracket start code \`^[[200~'"
+
+$ex = 34
+try { $editor.bind("^[D", "bracket-paste"); } catch e { $ex = $e;}
+assert $ex is InvalidOperationError && $ex.message() == "cannot bind to \`bracket-paste'"
+
+$ex = 34
+try { $editor.bind("^[[D", "complete"); } catch e { $ex = $e;}
+assert ! ($ex is InvalidOperationError)  # change binding
+assert $bindings["^[[D"] == "backward-char"  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["^[[D"] == "complete"
+
+$ex = 34
+try { $editor.bind("^[12", "beginning-of-line"); } catch e { $ex = $e;}
+assert ! ($ex is InvalidOperationError)  # add binding
+assert !$bindings.get("^[12")  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["^[12"] == "beginning-of-line"
+
+## remove bind
+$ex = 34
+try { $editor.bind("^[[D", ""); } catch e { $ex = $e;}  # if action is empty string, remove keybind
+assert ! ($ex is InvalidOperationError)  # change bindings
+assert ! $editor.bindings().get("^[[D")
+
+## re-add
+$ex = 34
+try { $editor.bind("^[[D", "end-of-line"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
+assert ! ($ex is InvalidOperationError)  # change bindings
+assert $editor.bindings()["^[[D"] == "end-of-line"
+
+## limit
+$ex = 45
+try {
+    for(var i = 0; $i < 10000; $i++) {
+        $editor.bind("^[$i", "accept")
+    }
+} catch e : Error {
+    $ex = $e
+}
+assert $ex is InvalidOperationError && $ex.message() == "number of key bindings reaches limit (up to 255)"

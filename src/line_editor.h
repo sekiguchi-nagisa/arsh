@@ -53,7 +53,7 @@ private:
 
   termios orgTermios{};
 
-  KeyBindings keybind;
+  KeyBindings keyBindings;
 
   /**
    * must be `(String) -> String` type
@@ -103,6 +103,18 @@ public:
   }
 
   void enableHighlight() { this->highlight = true; }
+
+  /**
+   *
+   * @param state
+   * @param key
+   * @param name
+   * @return
+   * if error, return false
+   */
+  bool addKeyBind(DSState &state, StringRef key, StringRef name);
+
+  const auto &getKeyBindings() const { return this->keyBindings; }
 
 private:
   int enableRawMode(int fd);

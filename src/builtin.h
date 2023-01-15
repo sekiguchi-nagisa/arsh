@@ -2136,6 +2136,32 @@ YDSH_METHOD edit_color(RuntimeContext &ctx) {
   RET_VOID;
 }
 
+//!bind: function bind($this : LineEditor, $key : String, $action : String) : Void
+YDSH_METHOD edit_bind(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_bind);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
+  auto key = LOCAL(1).asStrRef();
+  auto action = LOCAL(2).asStrRef();
+  editor.addKeyBind(ctx, key, action);
+  RET_VOID;
+}
+
+//!bind: function bindings($this : LineEditor) : Map<String,String>
+YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_bindings);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  auto &stringType = ctx.typePool.get(TYPE::String);
+  auto ret = ctx.typePool.createMapType(stringType, stringType);
+  assert(ret);
+  auto &mapType = cast<MapType>(*ret.asOk());
+  auto value = DSValue::create<MapObject>(mapType);
+  editor.getKeyBindings().fillBindings([&value](StringRef key, StringRef action) {
+    typeAs<MapObject>(value).set(DSValue::createStr(key), DSValue::createStr(action));
+  });
+  RET(value);
+}
+
 // #################
 // ##     Job     ##
 // #################

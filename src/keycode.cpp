@@ -18,6 +18,7 @@
 
 #include <cassert>
 
+#include "constant.h"
 #include "keycode.h"
 #include "misc/unicode.hpp"
 
@@ -46,7 +47,7 @@ static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
 
 #define READ_BYTE(b, bs)                                                                           \
   do {                                                                                             \
-    if (read(this->fd, b + bs, 1) <= 0) {                                                          \
+    if (read(this->fd, (b) + (bs), 1) <= 0) {                                                      \
       goto END;                                                                                    \
     } else {                                                                                       \
       seqSize++;                                                                                   \
@@ -102,6 +103,41 @@ ssize_t KeyCodeReader::fetch() {
 // ########################
 // ##     KeyBindings    ##
 // ########################
+
+static bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
+
+std::string KeyBindings::parseCaret(StringRef caret) {
+  std::string value;
+  auto size = caret.size();
+  for (StringRef::size_type i = 0; i < size; i++) {
+    char ch = caret[i];
+    if (ch == '^' && i + 1 < size && isCaretTarget(caret[i + 1])) {
+      i++;
+      unsigned int v = static_cast<unsigned char>(caret[i]);
+      v ^= 64;
+      assert(isControlChar(static_cast<int>(v)));
+      ch = static_cast<char>(static_cast<int>(v));
+    }
+    value += ch;
+  }
+  return value;
+}
+
+std::string KeyBindings::toCaret(StringRef value) {
+  std::string ret;
+  for (char ch : value) {
+    if (isControlChar(ch)) {
+      unsigned int v = static_cast<unsigned char>(ch);
+      v ^= 64;
+      assert(isCaretTarget(static_cast<int>(v)));
+      ret += "^";
+      ret += static_cast<char>(static_cast<int>(v));
+    } else {
+      ret += ch;
+    }
+  }
+  return ret;
+}
 
 #define CTRL_A_ "\x01"
 #define CTRL_B_ "\x02"
@@ -181,6 +217,66 @@ const EditAction *KeyBindings::findAction(const std::string &keycode) {
     return &iter->second;
   }
   return nullptr;
+}
+
+const char *toString(EditAction action) {
+  const char *table[] = {
+#define GEN_TABLE(E, S) S,
+      EACH_EDIT_ACTION(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return table[static_cast<unsigned int>(action)];
+}
+
+static StrRefMap<EditAction> initActionNameMap() {
+  StrRefMap<EditAction> actions = {
+#define GEN_ENTRY(E, S) {S, EditAction::E},
+      EACH_EDIT_ACTION(GEN_ENTRY)
+#undef GEN_ENTRY
+  };
+  return actions;
+}
+
+KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) {
+  static auto actionMap = initActionNameMap();
+
+  auto key = parseCaret(caret);
+  if (key.empty() || !isControlChar(key[0])) {
+    return AddStatus::INVALID_START_CHAR;
+  }
+  if (key == BRACKET_START) {
+    return AddStatus::FORBIT_BRACKET_START_CODE;
+  }
+  for (auto &e : caret) {
+    if (!isascii(e)) {
+      return AddStatus::INVALID_ASCII;
+    }
+  }
+
+  if (name.empty()) {
+    this->values.erase(key);
+  } else {
+    auto action = EditAction::ACCEPT;
+    if (auto iter = actionMap.find(name); iter != actionMap.end()) {
+      action = iter->second;
+    } else {
+      return AddStatus::UNDEF;
+    }
+
+    if (action == EditAction::BRACKET_PASTE) {
+      return AddStatus::FORBTT_BRACKET_ACTION;
+    }
+
+    if (auto iter = this->values.find(key); iter != this->values.end()) {
+      iter->second = action; // overwrite previous bind
+    } else {
+      if (this->values.size() == SYS_LIMIT_KEY_BINDING_MAX) {
+        return AddStatus::LIMIT;
+      }
+      this->values.emplace(key, action);
+    }
+  }
+  return AddStatus::OK;
 }
 
 } // namespace ydsh

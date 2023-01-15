@@ -1256,7 +1256,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
     }
 
     // dispatch edit action
-    auto *action = this->keybind.findAction(reader.get());
+    auto *action = this->keyBindings.findAction(reader.get());
     if (!action) {
       continue; // skip unbound key action
     }
@@ -1796,6 +1796,50 @@ bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct l
     return true;
   }
   return false;
+}
+
+bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
+  auto s = this->keyBindings.addBinding(key, name);
+  std::string message;
+  switch (s) {
+  case KeyBindings::AddStatus::OK:
+    break;
+  case KeyBindings::AddStatus::UNDEF:
+    message = "undefined edit action: `";
+    message += toPrintable(name);
+    message += "'";
+    break;
+  case KeyBindings::AddStatus::FORBIT_BRACKET_START_CODE:
+    message = "cannot change binding of bracket start code `";
+    message += KeyBindings::toCaret(KeyBindings::BRACKET_START);
+    message += "'";
+    break;
+  case KeyBindings::AddStatus::FORBTT_BRACKET_ACTION:
+    message = "cannot bind to `";
+    message += toString(EditAction::BRACKET_PASTE);
+    message += "'";
+    break;
+  case KeyBindings::AddStatus::INVALID_START_CHAR:
+    message = "keycode must start with control character: `";
+    message += toPrintable(key);
+    message += "'";
+    break;
+  case KeyBindings::AddStatus::INVALID_ASCII:
+    message = "keycode must be ascii characters: `";
+    message += toPrintable(key);
+    message += "'";
+    break;
+  case KeyBindings::AddStatus::LIMIT:
+    message = "number of key bindings reaches limit (up to ";
+    message += std::to_string(SYS_LIMIT_KEY_BINDING_MAX);
+    message += ")";
+    break;
+  }
+  if (!message.empty()) {
+    raiseError(state, TYPE::InvalidOperationError, std::move(message));
+    return false;
+  }
+  return true;
 }
 
 } // namespace ydsh

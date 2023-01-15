@@ -17,8 +17,12 @@
 #ifndef YDSH_KEYCODE_H
 #define YDSH_KEYCODE_H
 
-#include <string>
+#include <functional>
 #include <unordered_map>
+#include <vector>
+
+#include "misc/detect.hpp"
+#include "misc/string_ref.hpp"
 
 namespace ydsh {
 
@@ -93,10 +97,13 @@ enum class EditAction : unsigned char {
 #undef GEN_ENUM
 };
 
+const char *toString(EditAction action);
+
 class KeyBindings {
 public:
   static constexpr const char *CTRL_C = "\x03";
   static constexpr const char *TAB = "\x09";
+  static constexpr const char *BRACKET_START = "\x1b[200~";
 
 private:
   /**
@@ -105,9 +112,53 @@ private:
   std::unordered_map<std::string, EditAction> values;
 
 public:
+  /**
+   * parse caret notation
+   * @param caret
+   * @return
+   * if invalid caret notation, return empty string
+   */
+  static std::string parseCaret(StringRef caret);
+
+  static std::string toCaret(StringRef value);
+
   KeyBindings();
 
   const EditAction *findAction(const std::string &keycode);
+
+  enum class AddStatus {
+    OK,
+    UNDEF,
+    FORBIT_BRACKET_START_CODE,
+    FORBTT_BRACKET_ACTION,
+    INVALID_START_CHAR,
+    INVALID_ASCII,
+    LIMIT,
+  };
+
+  /**
+   *
+   * @param caret
+   * may be caret notation
+   * @param name
+   * must be action name or empty
+   * if name is empty, clear binding
+   * @return
+   */
+  AddStatus addBinding(StringRef caret, StringRef name);
+
+  template <typename Func>
+  static constexpr bool binding_consumer_requirement_v =
+      std::is_same_v<void, std::invoke_result_t<Func, StringRef, StringRef>>;
+
+  template <typename Func, enable_when<binding_consumer_requirement_v<Func>> = nullptr>
+  void fillBindings(Func func) const {
+    for (auto &e : this->values) {
+      auto caret = toCaret(e.first);
+      const char *action = toString(e.second);
+      func(caret, action);
+    }
+  }
 };
 
 } // namespace ydsh

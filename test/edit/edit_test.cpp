@@ -316,6 +316,64 @@ TEST(KeyCodeReaderTest, escapeSeq) {
   ASSERT_TRUE(reader.hasEscapeSeq());
 }
 
+struct KeyBindingTest : public ::testing::Test {
+  static void checkCaret(StringRef caret, StringRef value) {
+    auto v = KeyBindings::parseCaret(caret);
+    ASSERT_EQ(value, v);
+    ASSERT_EQ(caret, KeyBindings::toCaret(v));
+  }
+};
+
+TEST_F(KeyBindingTest, caret1) {
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^@", StringRef("\0", 1)));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^A", "\x01"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^B", "\x02"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^C", "\x03"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^D", "\x04"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^E", "\x05"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^F", "\x06"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^G", "\x07"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^H", "\x08"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^I", "\x09"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^J", "\x0A"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^K", "\x0B"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^L", "\x0C"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^M", "\x0D"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^N", "\x0E"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^O", "\x0F"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^P", "\x10"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Q", "\x11"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^R", "\x12"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^S", "\x13"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^T", "\x14"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^U", "\x15"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^V", "\x16"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^W", "\x17"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^X", "\x18"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Y", "\x19"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Z", "\x1A"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[", "\x1B"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^\\", "\x1C"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^]", "\x1D"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^^", "\x1E"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^_", "\x1F"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^?", "\x7F"));
+}
+
+TEST_F(KeyBindingTest, caret2) {
+  ASSERT_NO_FATAL_FAILURE(checkCaret("", ""));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("\xFF", "\xFF"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[^[A^", "\x1B\x1B"
+                                               "A^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^1", "^1"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^", "^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^^^", "\x1E^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("12", "12"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[^M", "\x1b\r"));
+  ASSERT_EQ("\x1b\r", KeyBindings::parseCaret("^[\r"));
+  ASSERT_EQ("^[^M", KeyBindings::toCaret("\x1b\r"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
