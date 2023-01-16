@@ -43,21 +43,23 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_echo(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
-static int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
 static int builtin_help(DSState &state, ArrayObject &argvObj);
-static int builtin_jobs(DSState &state, ArrayObject &argvObj);
-static int builtin_kill(DSState &state, ArrayObject &argvObj);
 static int builtin_pwd(DSState &state, ArrayObject &argvObj);
 static int builtin_read(DSState &state, ArrayObject &argvObj);
 static int builtin_setenv(DSState &state, ArrayObject &argvObj);
-static int builtin_shctl(DSState &state, ArrayObject &argvObj);
 static int builtin_test(DSState &state, ArrayObject &argvObj);
 static int builtin_true(DSState &state, ArrayObject &argvObj);
 static int builtin_ulimit(DSState &state, ArrayObject &argvObj);
 static int builtin_umask(DSState &state, ArrayObject &argvObj);
 static int builtin_unsetenv(DSState &state, ArrayObject &argvObj);
-static int builtin_wait(DSState &state, ArrayObject &argvObj);
+
+int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
+int builtin_jobs(DSState &state, ArrayObject &argvObj);
+int builtin_kill(DSState &state, ArrayObject &argvObj);
+int builtin_wait(DSState &state, ArrayObject &argvObj);
+
+int builtin_shctl(DSState &state, ArrayObject &argvObj);
 
 static auto initBuiltinMap() {
   return StrRefMap<builtin_command_t>{
@@ -148,7 +150,7 @@ static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   return matched;
 }
 
-static int showUsage(const ArrayObject &obj) {
+int showUsage(const ArrayObject &obj) {
   printUsage(stderr, obj.getValues()[0].asStrRef());
   return 2;
 }
@@ -266,10 +268,9 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
 static int builtin_check_env(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
@@ -391,10 +392,9 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       goto END;
     }
   }
@@ -425,10 +425,9 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
 static int builtin_gets(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
@@ -608,15 +607,11 @@ static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
   }
 }
 
-static std::pair<int, bool> toInt32(StringRef str) {
-  return convertToDecimal<int32_t>(str.begin(), str.end());
-}
-
 static int parseFD(StringRef value) {
   if (value.startsWith("/dev/fd/")) {
     value.removePrefix(strlen("/dev/fd/"));
   }
-  auto ret = toInt32(value);
+  auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
   if (!ret.second || ret.first < 0) {
     return -1;
   }
@@ -1106,10 +1101,9 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 static int builtin_setenv(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
@@ -1144,10 +1138,9 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
@@ -1161,271 +1154,6 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     }
   }
   return 0;
-}
-
-static int toSigNum(StringRef str) {
-  if (!str.empty() && isDecimal(*str.data())) {
-    auto pair = toInt32(str);
-    if (!pair.second) {
-      return -1;
-    }
-    auto sigList = getUniqueSignalList();
-    return std::binary_search(sigList.begin(), sigList.end(), pair.first) ? pair.first : -1;
-  }
-  return getSignalNum(str);
-}
-
-static bool printNumOrName(StringRef str) {
-  if (!str.empty() && isDecimal(*str.data())) {
-    auto pair = toInt32(str);
-    if (!pair.second) {
-      return false;
-    }
-    const char *name = getSignalName(pair.first);
-    if (name == nullptr) {
-      return false;
-    }
-    printf("%s\n", name);
-  } else {
-    int sigNum = getSignalNum(str);
-    if (sigNum < 0) {
-      return false;
-    }
-    printf("%d\n", sigNum);
-  }
-  fflush(stdout);
-  return true;
-}
-
-using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
-
-static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
-                                bool allowNoChild) {
-  bool isJob = arg.startsWith("%");
-  auto pair = toInt32(isJob ? arg.substr(1) : arg);
-  if (!pair.second) {
-    ERROR(argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
-    return ProcOrJob();
-  }
-  int id = pair.first;
-
-  if (isJob) {
-    if (id > 0) {
-      auto job = jobTable.find(static_cast<unsigned int>(id));
-      if (job) {
-        return ProcOrJob(std::move(job));
-      }
-    }
-    ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
-    return ProcOrJob();
-  } else {
-    if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
-      return ProcOrJob(e);
-    } else if (allowNoChild) {
-      return ProcOrJob(id);
-    } else {
-      ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
-      return ProcOrJob();
-    }
-  }
-}
-
-static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
-                          int sigNum) {
-  auto target = parseProcOrJob(jobTable, argvObj, arg, true);
-  if (!target.hasValue()) {
-    return false;
-  }
-  if (is<pid_t>(target) || is<const ProcTable::Entry *>(target)) {
-    pid_t pid =
-        is<pid_t>(target) ? get<pid_t>(target) : get<const ProcTable::Entry *>(target)->pid();
-    if (kill(pid, sigNum) < 0) {
-      PERROR(argvObj, "%s", toPrintable(arg).c_str());
-      return false;
-    }
-  } else if (is<Job>(target)) {
-    get<Job>(target)->send(sigNum);
-  } else {
-    return false;
-  }
-  return true;
-}
-
-// -s sig (pid | jobspec ...)
-// -l
-static int builtin_kill(DSState &state, ArrayObject &argvObj) {
-  int sigNum = SIGTERM;
-  bool listing = false;
-
-  if (argvObj.getValues().size() == 1) {
-    return showUsage(argvObj);
-  }
-
-  GetOptState optState;
-  const int opt = optState(argvObj, ":ls:h");
-  switch (opt) {
-  case 'l':
-    listing = true;
-    break;
-  case 's':
-  case '?': {
-    StringRef sigStr = optState.optArg;
-    if (opt == '?') { // skip prefix '-', ex. -9
-      sigStr = argvObj.getValues()[optState.index++].asStrRef().substr(1);
-    }
-    sigNum = toSigNum(sigStr);
-    if (sigNum == -1) {
-      ERROR(argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
-      return 1;
-    }
-    break;
-  }
-  case 'h':
-    return showHelp(argvObj);
-  case ':':
-    ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
-    return 1;
-  default:
-    break;
-  }
-
-  auto begin = argvObj.getValues().begin() + optState.index;
-  const auto end = argvObj.getValues().end();
-
-  if (begin == end) {
-    if (listing) {
-      auto sigList = getUniqueSignalList();
-      unsigned int size = sigList.size();
-      for (unsigned int i = 0; i < size; i++) {
-        printf("%2d) SIG%s", sigList[i], getSignalName(sigList[i]));
-        if (i % 5 == 4 || i == size - 1) {
-          fputc('\n', stdout);
-        } else {
-          fputc('\t', stdout);
-        }
-      }
-      return 0;
-    }
-    return showUsage(argvObj);
-  }
-
-  unsigned int count = 0;
-  for (; begin != end; ++begin) {
-    auto arg = begin->asStrRef();
-    if (listing) {
-      if (!printNumOrName(arg)) {
-        count++;
-        ERROR(argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
-      }
-    } else {
-      if (killProcOrJob(state.jobTable, argvObj, arg, sigNum)) {
-        count++;
-      }
-    }
-  }
-
-  state.jobTable.waitForAny(); // update killed process state
-  if (listing && count > 0) {
-    return 1;
-  }
-  if (!listing && count == 0) {
-    return 1;
-  }
-  return 0;
-}
-
-static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
-  if (name.startsWith("%")) {
-    name.removePrefix(1);
-  } else if (needPrefix) {
-    return nullptr;
-  }
-  Job job;
-  auto pair = toInt32(name);
-  if (pair.second && pair.first > -1) {
-    job = table.find(pair.first);
-  }
-  return job;
-}
-
-static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
-  if (!state.isJobControl()) {
-    ERROR(argvObj, "no job control in this shell");
-    return 1;
-  }
-
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  bool fg = argvObj.getValues()[0].asStrRef() == "fg";
-  const unsigned int size = argvObj.getValues().size();
-  unsigned int index = optState.index;
-  Job job;
-  StringRef arg = "current";
-  if (index == size) {
-    job = state.jobTable.syncAndGetCurPrevJobs().cur;
-  } else {
-    arg = argvObj.getValues()[index].asStrRef();
-    job = tryToGetJob(state.jobTable, arg, false);
-  }
-
-  int ret = 0;
-  if (job) {
-    auto fmt = JobInfoFormat::DESC;
-    if (fg) {
-      beForeground(job->getValidPid(0));
-    } else {
-      setFlag(fmt, JobInfoFormat::JOB_ID);
-    }
-    job->showInfo(stdout, fmt);
-    job->send(SIGCONT);
-    state.jobTable.waitForAny();
-  } else {
-    ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
-    ret = 1;
-    if (fg) {
-      return ret;
-    }
-  }
-
-  if (fg) {
-    int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED, true); // FIXME: check root shell
-    int errNum = errno;
-    if (job->isRunning()) {
-      state.jobTable.setCurrentJob(job);
-      job->showInfo();
-    } else if (job->isTerminated()) {
-      job->lastProc().showSignal();
-    }
-    state.tryToBeForeground();
-    if (errNum != 0) {
-      errno = errNum;
-      PERROR(argvObj, "wait failed");
-    }
-    return s;
-  }
-
-  // process remain arguments
-  for (unsigned int i = index + 1; i < size; i++) {
-    arg = argvObj.getValues()[i].asStrRef();
-    job = tryToGetJob(state.jobTable, arg, false);
-    if (job) {
-      job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
-      job->send(SIGCONT);
-    } else {
-      ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
-      ret = 1;
-    }
-  }
-  state.jobTable.waitForAny();
-  return ret;
 }
 
 // for ulimit command
@@ -1868,491 +1596,6 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
   }
   printMask(mask, op);
   return 0;
-}
-
-static int printBacktrace(const VMState &state) {
-  state.fillStackTrace([](StackTraceElement &&s) {
-    fprintf(stdout, "from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
-            s.getCallerName().c_str());
-    return true;
-  });
-  return 0;
-}
-
-static int printFuncName(const VMState &state) {
-  auto *code = state.getFrame().code;
-  const char *name = nullptr;
-  if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
-    name = cast<CompiledCode>(code)->getName();
-  }
-  fprintf(stdout, "%s\n", name != nullptr ? name : "<toplevel>");
-  return name != nullptr ? 0 : 1;
-}
-
-static constexpr struct {
-  RuntimeOption option;
-  const char *name;
-} runtimeOptions[] = {
-#define GEN_OPT(E, V, N) {RuntimeOption::E, N},
-    EACH_RUNTIME_OPTION(GEN_OPT)
-#undef GEN_OPT
-};
-
-static RuntimeOption recognizeRuntimeOption(StringRef name) {
-  // normalize option name (remove _ -, lower-case)
-  std::string optName;
-  for (char ch : name) {
-    if (ch >= 'a' && ch <= 'z') {
-      optName += ch;
-    } else if (ch >= 'A' && ch <= 'Z') {
-      optName += static_cast<char>(ch - 'A' + 'a');
-    } else if (ch == '_' || ch == '-') {
-      continue;
-    } else {
-      return RuntimeOption{};
-    }
-  }
-
-  for (auto &e : runtimeOptions) {
-    if (optName == e.name) {
-      return e.option;
-    }
-  }
-  return RuntimeOption{};
-}
-
-static unsigned int computeMaxOptionNameSize() {
-  unsigned int maxSize = 0;
-  for (auto &e : runtimeOptions) {
-    unsigned int size = strlen(e.name) + 2;
-    if (size > maxSize) {
-      maxSize = size;
-    }
-  }
-  return maxSize;
-}
-
-static void printRuntimeOpt(const char *name, unsigned int size, bool set) {
-  std::string value = name;
-  value.append(size - strlen(name), ' ');
-  value += (set ? "on" : "off");
-  value += "\n";
-  fputs(value.c_str(), stdout);
-}
-
-static void showOptions(const DSState &state) {
-  const unsigned int maxNameSize = computeMaxOptionNameSize();
-  for (auto &e : runtimeOptions) {
-    printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
-  }
-}
-
-static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef restoreStr) {
-  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
-    auto r = restoreStr.find(' ', pos);
-    auto sub = restoreStr.slice(pos, r);
-    pos = r != StringRef::npos ? r + 1 : r;
-
-    if (sub.empty()) {
-      continue;
-    }
-
-    bool set = true;
-    if (sub.endsWith("=on")) {
-      sub.removeSuffix(3);
-    } else if (sub.endsWith("=off")) {
-      set = false;
-      sub.removeSuffix(4);
-    } else {
-      ERROR(argvObj, "invalid option format: %s", toPrintable(sub).c_str());
-      return 1;
-    }
-    const auto option = recognizeRuntimeOption(sub);
-    if (empty(option)) {
-      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(sub).c_str());
-      return 1;
-    }
-
-    // set or unset
-    if (option == RuntimeOption::MONITOR) {
-      setJobControlSignalSetting(state, set);
-    }
-    if (set) {
-      setFlag(state.runtimeOption, option);
-    } else {
-      unsetFlag(state.runtimeOption, option);
-    }
-  }
-  return 0;
-}
-
-static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned int offset,
-                     const bool set) {
-  const unsigned int size = argvObj.size();
-  if (offset == size) {
-    if (set) {
-      showOptions(state);
-      return 0;
-    } else {
-      ERROR(argvObj, "`unset' subcommand requires argument");
-      return 2;
-    }
-  }
-
-  bool dump = false;
-  bool restore = false;
-  GetOptState optState(2, false);
-  if (set) {
-    switch (optState(argvObj, ":dr:")) {
-    case 'd':
-      dump = true;
-      break;
-    case 'r':
-      restore = true;
-      break;
-    case '?':
-      return invalidOptionError(argvObj, optState);
-    case ':':
-      ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
-      return 1;
-    default:
-      break;
-    }
-  }
-
-  if (dump) {
-    std::string value;
-    for (auto &e : runtimeOptions) {
-      value += e.name;
-      value += "=";
-      value += hasFlag(state.runtimeOption, e.option) ? "on" : "off";
-      value += " ";
-    }
-    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
-    return 0;
-  }
-  if (restore) {
-    return restoreOptions(state, argvObj, optState.optArg);
-  }
-
-  // set/unset option
-  bool foundMonitor = false;
-  for (unsigned int i = offset; i < size; i++) {
-    auto name = argvObj.getValues()[i].asStrRef();
-    auto option = recognizeRuntimeOption(name);
-    if (empty(option)) {
-      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(name).c_str());
-      return 1;
-    }
-    if (option == RuntimeOption::MONITOR && !foundMonitor) {
-      foundMonitor = true;
-      setJobControlSignalSetting(state, set);
-    }
-    if (set) {
-      setFlag(state.runtimeOption, option);
-    } else {
-      unsetFlag(state.runtimeOption, option);
-    }
-  }
-  return 0;
-}
-
-static int showModule(const DSState &state, const ArrayObject &argvObj, const unsigned int offset) {
-  const unsigned int size = argvObj.size();
-  if (offset == size) {
-    for (auto &e : state.modLoader) {
-      fprintf(stdout, "%s\n", e.first.get());
-    }
-    return 0;
-  }
-
-  FakeModuleLoader loader(state.sysConfig);
-  auto cwd = getCWD();
-  int lastStatus = 0;
-  for (unsigned int i = offset; i < size; i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
-    if (ref.hasNullChar()) {
-      ERROR(argvObj, "contains null characters: %s", toPrintable(ref).c_str());
-      lastStatus = 1;
-      continue;
-    }
-
-    FilePtr file;
-    auto ret = loader.load(cwd.get(), ref.data(), file, ModLoadOption::IGNORE_NON_REG_FILE);
-    if (is<const char *>(ret)) {
-      const char *path = get<const char *>(ret);
-      fprintf(stdout, "%s\n", path);
-      fflush(stdout); // due to preserve output order
-      lastStatus = 0;
-    } else {
-      assert(is<ModLoadingError>(ret));
-      auto &e = get<ModLoadingError>(ret);
-      assert(e.getErrNo() > 0); // always return valid errno
-      errno = e.getErrNo();
-      PERROR(argvObj, "%s", ref.data());
-      lastStatus = 1;
-    }
-  }
-  return lastStatus;
-}
-
-static int isSourced(const VMState &st) {
-  if (st.getFrame().code->is(CodeKind::NATIVE)) {
-    return 1;
-  }
-
-  auto *top = cast<CompiledCode>(st.getFrame().code);
-  auto *bottom = top;
-  st.walkFrames([&](const ControlFrame &frame) {
-    auto *c = frame.code;
-    if (!c->is(CodeKind::NATIVE)) {
-      bottom = cast<CompiledCode>(c);
-    }
-    return true;
-  });
-  return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
-}
-
-static void setAndPrintConf(MapObject &mapObj, unsigned int maxKeyLen, StringRef key,
-                            const std::string &value) {
-  std::string out = key.toString();
-  out.append(4 + maxKeyLen - out.size(), ' ');
-  out += value;
-  out += '\n';
-  fputs(out.c_str(), stdout);
-
-  mapObj.set(DSValue::createStr(key), DSValue::createStr(value));
-}
-
-static int showInfo(DSState &state) {
-  auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-  mapObj.clear();
-
-  const char *table[] = {
-#define GEN_STR(E, S) S,
-      EACH_SYSCONFIG(GEN_STR)
-#undef GEN_STR
-  };
-
-  unsigned int maxKeyLen = 0;
-  for (auto &e : table) {
-    unsigned int len = strlen(e);
-    if (len > maxKeyLen) {
-      maxKeyLen = len;
-    }
-  }
-
-  for (auto &e : table) {
-    auto *ptr = state.sysConfig.lookup(e);
-    assert(ptr);
-    setAndPrintConf(mapObj, maxKeyLen, e, *ptr);
-  }
-  return 0;
-}
-
-static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  if (unsigned int index = optState.index; index < argvObj.size()) {
-    auto ref = argvObj.getValues()[index].asStrRef();
-    if (ref == "backtrace") {
-      return printBacktrace(state.getCallStack());
-    } else if (ref == "is-sourced") {
-      return isSourced(state.getCallStack());
-    } else if (ref == "is-interactive") {
-      return state.isInteractive ? 0 : 1;
-    } else if (ref == "function") {
-      return printFuncName(state.getCallStack());
-    } else if (ref == "set") {
-      return setOption(state, argvObj, index + 1, true);
-    } else if (ref == "unset") {
-      return setOption(state, argvObj, index + 1, false);
-    } else if (ref == "module") {
-      return showModule(state, argvObj, index + 1);
-    } else if (ref == "info") {
-      return showInfo(state);
-    } else {
-      ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
-      return 2;
-    }
-  }
-  return 0;
-}
-
-static int builtin_wait(DSState &state, ArrayObject &argvObj) {
-  bool breakNext = false;
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "nh")) != -1;) {
-    switch (opt) {
-    case 'n':
-      breakNext = true;
-      break;
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-  auto cleanup = finally([&] { state.jobTable.waitForAny(); });
-
-  std::vector<std::pair<Job, int>> targets;
-  if (optState.index == argvObj.size()) {
-    for (auto &j : state.jobTable) {
-      if (j->isDisowned()) {
-        continue;
-      }
-      targets.emplace_back(j, -1);
-    }
-  }
-  for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
-    auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
-    Job job;
-    int offset = -1;
-    if (is<Job>(target)) {
-      job = std::move(get<Job>(target));
-    } else if (is<const ProcTable::Entry *>(target)) {
-      auto *e = get<const ProcTable::Entry *>(target);
-      job = state.jobTable.find(e->jobId());
-      assert(job);
-      offset = e->procOffset();
-    } else {
-      return 127;
-    }
-    targets.emplace_back(std::move(job), offset);
-  }
-
-  // wait jobs
-  int lastStatus = 0;
-  if (breakNext) {
-    do {
-      for (auto &target : targets) {
-        if (!target.first->isRunning()) {
-          return target.first->exitStatus();
-        }
-      }
-    } while ((lastStatus = state.jobTable.waitForJob(nullptr, op)) > -1);
-  } else {
-    for (auto &target : targets) {
-      lastStatus = state.jobTable.waitForJob(target.first, op);
-      if (lastStatus < 0) {
-        break;
-      }
-      if (target.second != -1 &&
-          !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
-        lastStatus = target.first->getProcs()[target.second].exitStatus();
-      }
-    }
-  }
-  return lastStatus;
-}
-
-enum class JobsTarget {
-  ALL,
-  RUNNING,
-  STOPPED,
-};
-
-enum class JobsOutput {
-  DEFAULT,
-  PID_ONLY,
-  VERBOSE,
-};
-
-static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, JobsOutput output,
-                        const Job &job) {
-  if (job->isDisowned()) {
-    return; // always ignore disowned jobs
-  }
-  switch (target) {
-  case JobsTarget::ALL:
-    break;
-  case JobsTarget::RUNNING:
-    if (!job->getProcs()[0].is(Proc::State::RUNNING)) {
-      return;
-    }
-    break;
-  case JobsTarget::STOPPED:
-    if (!job->getProcs()[0].is(Proc::State::STOPPED)) {
-      return;
-    }
-    break;
-  }
-
-  JobInfoFormat fmt{};
-  switch (output) {
-  case JobsOutput::PID_ONLY:
-    fmt = JobInfoFormat::PID;
-    break;
-  case JobsOutput::DEFAULT:
-  case JobsOutput::VERBOSE:
-    fmt = JobInfoFormat::JOB_ID | JobInfoFormat::STATE | JobInfoFormat::DESC;
-    setFlag(fmt, entry.getJobType(job));
-    if (output == JobsOutput::VERBOSE) {
-      setFlag(fmt, JobInfoFormat::PID | JobInfoFormat::VERBOSE);
-    }
-    break;
-  }
-  job->showInfo(stdout, fmt);
-}
-
-static int builtin_jobs(DSState &state, ArrayObject &argvObj) {
-  auto target = JobsTarget::ALL;
-  auto output = JobsOutput::DEFAULT;
-
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "lprsh")) != -1;) {
-    switch (opt) {
-    case 'l':
-      output = JobsOutput::VERBOSE;
-      break;
-    case 'p':
-      output = JobsOutput::PID_ONLY;
-      break;
-    case 'r':
-      target = JobsTarget::RUNNING;
-      break;
-    case 's':
-      target = JobsTarget::STOPPED;
-      break;
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  auto &entry = state.jobTable.syncAndGetCurPrevJobs();
-  if (optState.index == argvObj.size()) { // show all jobs
-    for (auto &job : state.jobTable) {
-      showJobInfo(entry, target, output, job);
-    }
-    return 0;
-  }
-
-  // show specified jobs
-  bool hasError = false;
-  for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
-    auto job = tryToGetJob(state.jobTable, ref, true);
-    if (!job) {
-      ERROR(argvObj, "%s: no such job", toPrintable(ref).c_str());
-      hasError = true;
-      continue;
-    }
-    showJobInfo(entry, target, output, job);
-  }
-  return hasError ? 1 : 0;
 }
 
 } // namespace ydsh

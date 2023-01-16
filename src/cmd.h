@@ -41,6 +41,12 @@ struct GetOptState : public opt::GetOptState {
   int operator()(const ArrayObject &obj, const char *optStr);
 };
 
+int showUsage(const ArrayObject &obj);
+
+int showHelp(const ArrayObject &obj);
+
+int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
+
 /**
  * return exit status.
  * argvObj must be Array_Object

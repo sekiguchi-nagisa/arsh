@@ -964,10 +964,6 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   return true; // normally unreachable, but need to suppress gcc warning.
 }
 
-int showHelp(const ArrayObject &obj);
-
-int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
-
 bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
   auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
