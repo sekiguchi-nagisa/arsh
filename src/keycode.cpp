@@ -228,8 +228,8 @@ const char *toString(EditAction action) {
   return table[static_cast<unsigned int>(action)];
 }
 
-static StrRefMap<EditAction> initActionNameMap() {
-  StrRefMap<EditAction> actions = {
+const StrRefMap<EditAction> &KeyBindings::getBuiltinActionMap() {
+  static StrRefMap<EditAction> actions = {
 #define GEN_ENTRY(E, S) {S, EditAction::E},
       EACH_EDIT_ACTION(GEN_ENTRY)
 #undef GEN_ENTRY
@@ -238,8 +238,6 @@ static StrRefMap<EditAction> initActionNameMap() {
 }
 
 KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) {
-  static auto actionMap = initActionNameMap();
-
   auto key = parseCaret(caret);
   if (key.empty() || !isControlChar(key[0])) {
     return AddStatus::INVALID_START_CHAR;
@@ -253,6 +251,7 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     }
   }
 
+  auto &actionMap = getBuiltinActionMap();
   if (name.empty()) {
     this->values.erase(key);
   } else {

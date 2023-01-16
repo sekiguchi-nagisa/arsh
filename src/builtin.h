@@ -2162,6 +2162,18 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
   RET(value);
 }
 
+//!bind: function actions($this : LineEditor) : Array<String>
+YDSH_METHOD edit_action(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_action);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  editor.getKeyBindings().fillActions([&value](StringRef action) {
+    typeAs<ArrayObject>(value).append(DSValue::createStr(action));
+  });
+  typeAs<ArrayObject>(value).sortAsStrArray();
+  RET(value);
+}
+
 // #################
 // ##     Job     ##
 // #################

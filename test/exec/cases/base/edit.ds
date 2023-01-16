@@ -77,3 +77,8 @@ try {
     $ex = $e
 }
 assert $ex is InvalidOperationError && $ex.message() == "number of key bindings reaches limit (up to 255)"
+
+# actions
+assert $editor.actions() is [String]
+assert $editor.actions()[0] == 'accept'
+assert $editor.actions()[1] == 'backward-char'

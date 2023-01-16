@@ -112,6 +112,8 @@ private:
   std::unordered_map<std::string, EditAction> values;
 
 public:
+  static const StrRefMap<EditAction> &getBuiltinActionMap();
+
   /**
    * parse caret notation
    * @param caret
@@ -157,6 +159,17 @@ public:
       auto caret = toCaret(e.first);
       const char *action = toString(e.second);
       func(caret, action);
+    }
+  }
+
+  template <typename Func>
+  static constexpr bool action_consumer_requirement_v =
+      std::is_same_v<void, std::invoke_result_t<Func, StringRef>>;
+
+  template <typename Func, enable_when<action_consumer_requirement_v<Func>> = nullptr>
+  void fillActions(Func func) const {
+    for (auto &e : getBuiltinActionMap()) {
+      func(e.first);
     }
   }
 };

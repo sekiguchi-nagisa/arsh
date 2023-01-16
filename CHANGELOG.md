@@ -13,6 +13,7 @@
         - ``bind``: change keybinding
         - ``bindings``: get read-only snapshot of current keybindings
             - modification of the result does not affect actual keybindings
+        - ``actions``: get read-only snapshot of current edit actions
 
 ### Changed
 

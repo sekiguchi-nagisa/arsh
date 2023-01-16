@@ -319,6 +319,8 @@ function setColor($setting : String) : Void for LineEditor
 function bind($key : String, $action : String) : Void for LineEditor
 
 function bindings() : Map<String,String> for LineEditor
+
+function actions() : Array<String> for LineEditor
 ```
 
 ## Array type
