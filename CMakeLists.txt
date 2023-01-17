@@ -223,6 +223,7 @@ set(YDSH_SRC
         src/lexer.cpp
         src/parser.cpp
         src/type_checker.cpp
+        src/type_checker_cmd.cpp
         src/frontend.cpp
         src/signals.cpp
         src/regex_wrapper.cpp
