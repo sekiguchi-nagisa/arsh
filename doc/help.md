@@ -12,6 +12,7 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`-
 | `checkenv`          | ✔️          |
 | `command`           | ✔️          |
 | `complete`          | ✔️          |
+| `disown`            | ✔️          |
 | `echo`              | -           |
 | `eval`              | -           |
 | `exec`              | ✔️          |
