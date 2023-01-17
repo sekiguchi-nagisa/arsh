@@ -58,6 +58,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
 int builtin_jobs(DSState &state, ArrayObject &argvObj);
 int builtin_kill(DSState &state, ArrayObject &argvObj);
 int builtin_wait(DSState &state, ArrayObject &argvObj);
+int builtin_disown(DSState &state, ArrayObject &argvObj);
 
 int builtin_shctl(DSState &state, ArrayObject &argvObj);
 
@@ -71,6 +72,7 @@ static auto initBuiltinMap() {
       {"cd", builtin_cd},
       {"checkenv", builtin_check_env},
       {"complete", builtin_complete},
+      {"disown", builtin_disown},
       {"echo", builtin_echo},
       {"exit", builtin_exit},
       {"false", builtin_false},

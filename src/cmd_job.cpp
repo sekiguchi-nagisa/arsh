@@ -459,4 +459,35 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
   return hasError ? 1 : 0;
 }
 
+int builtin_disown(DSState &state, ArrayObject &argvObj) {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "lprsh")) != -1;) {
+    if (opt == 'h') {
+      return showHelp(argvObj);
+    } else {
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  if (optState.index == argvObj.size()) {
+    auto job = state.jobTable.syncAndGetCurPrevJobs().cur;
+    if (!job) {
+      ERROR(argvObj, "current: no such job");
+      return 1;
+    }
+    job->disown();
+    return 0;
+  }
+  for (unsigned int i = optState.index; i < argvObj.size(); i++) {
+    auto ref = argvObj.getValues()[i].asStrRef();
+    auto job = tryToGetJob(state.jobTable, ref, true);
+    if (!job) {
+      ERROR(argvObj, "%s: no such job", toPrintable(ref).c_str());
+      return 1;
+    }
+    job->disown();
+  }
+  return 0;
+}
+
 } // namespace ydsh

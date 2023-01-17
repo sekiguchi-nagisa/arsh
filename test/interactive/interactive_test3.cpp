@@ -328,6 +328,46 @@ TEST_F(InteractiveTest, wait4) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
+TEST_F(InteractiveTest, disown1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("disown", "", "ydsh: disown: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j1 = while(true 1){} &"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j2 = while(true 2){} &"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("disown hoge %1", "", "ydsh: disown: hoge: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] - Running  while(true 1){}\n"
+                                                          "[2] + Running  while(true 2){}"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown %1 %2; assert $? == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("disown %1", "", "ydsh: disown: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("wait $j1; assert $? == 127", "", "ydsh: wait: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$j1.raise($SIGKILL); $j1.wait()", ": Int = 137"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$j2.raise($SIGTERM); $j2.wait()", ": Int = 143"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
+}
+
+TEST_F(InteractiveTest, disown2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("disown", "", "ydsh: disown: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j1 = while(true 1){} &"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] + Running  while(true 1){}"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown; assert $? == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$j1.raise($SIGTERM); $j1.wait()", ": Int = 143"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

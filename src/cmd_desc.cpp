@@ -81,6 +81,7 @@ static BuiltinCmdDesc table[] = {
      "        group      complete group names\n"
      "        stmt_kw    complete statement keywords\n"
      "        expr_kw    complete expression keywords"},
+    {"disown", "[jobspec ...]", "    Remove specified jobs from job table."},
     {"echo", "[-neE] [arg ...]",
      "    Print argument to standard output and print new line.\n"
      "    Options:\n"
