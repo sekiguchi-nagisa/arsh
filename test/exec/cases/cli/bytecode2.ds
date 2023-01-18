@@ -9,7 +9,7 @@ DSCode: top level
   code size: 38
   max stack depth: 6
   number of local variable: 1
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  0
@@ -51,7 +51,7 @@ DSCode: top level
   code size: 30
   max stack depth: 5
   number of local variable: 1
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: PUSH_INT  23
    2: STORE_LOCAL  0
@@ -94,14 +94,14 @@ DSCode: top level
   code size: 15
   max stack depth: 2
   number of local variable: 0
-  number of global variable: 43
+  number of global variable: 44
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  42
+   2: STORE_GLOBAL  43
    5: PUSH_STR1  \`f'
    7: NEW_CMD
    8: PUSH_NULL
-   9: CALL_UDC  42
+   9: CALL_UDC  43
   12: POP
   13: PUSH_INVALID
   14: RETURN
@@ -125,7 +125,7 @@ Code:
    7: STORE_LOCAL  5
    9: LOAD_LOCAL  5
   11: STORE_LOCAL  4
-  13: LOAD_GLOBAL  15
+  13: LOAD_GLOBAL  16
   16: ENTER_FINALLY  22
   21: RETURN_UDC
   22: RECLAIM_LOCAL  5  1
@@ -153,10 +153,10 @@ DSCode: top level
   code size: 7
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 43
+  number of global variable: 44
 Code:
   0: LOAD_CONST  2
-  2: STORE_GLOBAL  42
+  2: STORE_GLOBAL  43
   5: PUSH_INVALID
   6: RETURN
 Constant Pool:

@@ -136,6 +136,11 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("COMPREPLY", pool.get(TYPE::StringArray));
 
   /**
+   * maintain directory stack
+   */
+  binder.bind("DIRSTACK", pool.get(TYPE::StringArray));
+
+  /**
    * must be UnixFD_Object
    */
   binder.bind("STDIN", stdin);

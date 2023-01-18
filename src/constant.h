@@ -41,6 +41,7 @@ enum class BuiltinVarOffset : unsigned int {
   SECONDS,     // SECONDS
   IFS,         // IFS
   COMPREPLY,   // COMPREPLY
+  DIRSTACK,    // DIRSTACK (for directory stack
   STDIN,       // STDIN
   STDOUT,      // STDOUT
   STDERR,      // STDERR

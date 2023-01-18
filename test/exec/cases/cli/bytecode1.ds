@@ -7,10 +7,10 @@ DSCode: top level
   code size: 13
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 43
+  number of global variable: 44
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  42
+   2: STORE_GLOBAL  43
    5: PUSH_INT  34
    7: CALL_BUILTIN  1  %str
   10: POP
@@ -32,12 +32,12 @@ DSCode: top level
   code size: 30
   max stack depth: 5
   number of local variable: 0
-  number of global variable: 43
+  number of global variable: 44
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  42
+   2: STORE_GLOBAL  43
    5: TRY_GUARD0
-   6: LOAD_GLOBAL  42
+   6: LOAD_GLOBAL  43
    9: PUSH_INT  1
   11: CALL_FUNC  1
   13: ENTER_FINALLY  23
@@ -80,7 +80,7 @@ DSCode: top level
   code size: 46
   max stack depth: 2
   number of local variable: 2
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: PUSH_INT  0
    2: STORE_LOCAL  0
@@ -118,7 +118,7 @@ DSCode: top level
   code size: 32
   max stack depth: 5
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_ASYNC 6 3  8  17  26
@@ -161,10 +161,10 @@ DSCode: top level
   code size: 37
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: LOAD_CONST  2
-   2: LOAD_GLOBAL  20
+   2: LOAD_GLOBAL  21
    5: CALL_BUILTIN  1  %interp
    8: LOOKUP_HASH
    9: GOTO  35
@@ -201,7 +201,7 @@ DSCode: top level
   code size: 19
   max stack depth: 1
   number of local variable: 1
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_LP 2  6  7
@@ -229,7 +229,7 @@ DSCode: top level
   code size: 10
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
   0: LOAD_CONST  2
   2: FORK  6  5
@@ -254,22 +254,22 @@ DSCode: top level
   code size: 36
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD
    3: PUSH_NULL
-   4: LOAD_GLOBAL  16
+   4: LOAD_GLOBAL  17
    7: CALL_BUILTIN  1  size
   10: CALL_BUILTIN  1  %str
   13: ADD_CMD_ARG
-  14: LOAD_GLOBAL  18
+  14: LOAD_GLOBAL  19
   17: ADD_CMD_ARG
-  18: LOAD_GLOBAL  16
+  18: LOAD_GLOBAL  17
   21: PUSH_INT  1
   23: GET_POS_ARG
   24: ADD_CMD_ARG
-  25: LOAD_GLOBAL  16
+  25: LOAD_GLOBAL  17
   28: LOAD_CONST  3
   30: GET_POS_ARG
   31: ADD_CMD_ARG
