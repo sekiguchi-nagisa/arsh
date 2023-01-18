@@ -59,5 +59,6 @@ if (command -v dscolorize &>> /dev/null) {
         compdef --cmd dscolorize --short f --arg-list "$list"
     }
 }
+$PIPESTATUS.clear()
 
 true
