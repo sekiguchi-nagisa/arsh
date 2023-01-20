@@ -29,7 +29,7 @@
   and ``forward-word``
 - **Breaking Change**: now builtin commands support `-h`/`--help` options
     - except for `:`, `echo`, `eval`, `false`, `true`
-- check array size modification during ``Array#sortWith`` method
+- **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 - builtin ``shctl info`` subcommand show more system constant information
 
@@ -37,7 +37,7 @@
 
 - symbol range of ``textDocument/hover``, ``textDocument/definition``
 - broken help message of builtin ulimit command
-- invalid insertion position of completion candiate prefix
+- invalid insertion position of completion candidate prefix
 
 ## [0.28.1] - 2023-01-04
 
