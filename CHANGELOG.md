@@ -37,6 +37,7 @@
 
 - symbol range of ``textDocument/hover``, ``textDocument/definition``
 - broken help message of builtin ulimit command
+- invalid insertion position of completion candiate prefix
 
 ## [0.28.1] - 2023-01-04
 

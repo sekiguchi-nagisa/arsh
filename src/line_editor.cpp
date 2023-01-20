@@ -1500,32 +1500,21 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
   logprintf("pos: %ld\n", ls.pos);
 
   // compute suffix
-  const char oldCh = ls.buf[ls.pos];
-  ls.buf[ls.pos] = '\0';
   bool matched = false;
-
   size_t offset = 0;
   if (ls.pos > 0) {
-    for (offset = ls.pos - 1;; offset--) {
-      const char *curStr = ls.buf + offset;
-      logprintf("curStr: %s\n", curStr);
-      const char *ptr = strstr(prefix, curStr);
-      if (ptr == nullptr) {
-        offset++;
-        break;
-      }
-      if (ptr == prefix) {
+    StringRef prefixRef = prefix;
+    for (offset = ls.pos - std::min(ls.pos, prefixRef.size()); offset < ls.pos; offset++) {
+      StringRef suffix(ls.buf + offset, ls.pos - offset);
+      logprintf("curSuffix: %s\n", suffix.toString().c_str());
+      if (auto retPos = prefixRef.find(suffix); retPos == 0) {
         matched = true;
-      }
-
-      if (offset == 0) {
         break;
       }
     }
   }
 
   logprintf("offset: %ld\n", offset);
-  ls.buf[ls.pos] = oldCh;
   if (matched) {
     size_t suffixSize = len - (ls.pos - offset);
     logprintf("suffix size: %ld\n", suffixSize);
