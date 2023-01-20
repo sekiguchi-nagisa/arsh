@@ -480,15 +480,12 @@ static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_
   free(sizeTable);
 }
 
-static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *len) {
+static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
   if (candidates.size() == 0) {
-    *len = 0;
     return nullptr;
   }
   if (candidates.size() == 1) {
-    auto ref = candidates.getValues()[0].asStrRef();
-    *len = strlen(ref.data());
-    return strdup(ref.data());
+    return candidates.getValues()[0].asCStr(); // truncate chracters after null
   }
 
   size_t prefixSize;
@@ -509,15 +506,9 @@ static char *computeCommonPrefix(const ydsh::ArrayObject &candidates, size_t *le
   }
 
   if (prefixSize == 0) {
-    *len = 0;
     return nullptr;
   }
-
-  char *prefix = (char *)malloc(sizeof(char) * (prefixSize + 1));
-  memcpy(prefix, candidates.getValues()[0].asCStr(), sizeof(char) * prefixSize);
-  prefix[prefixSize] = '\0';
-  *len = prefixSize;
-  return prefix;
+  return {candidates.getValues()[0].asCStr(), prefixSize};
 }
 
 static void checkProperty(struct linenoiseState &l) {
@@ -1490,24 +1481,22 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
  */
 size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
                                                const ArrayObject &candidates) {
-  size_t len;
-  char *prefix = computeCommonPrefix(candidates, &len);
-  if (prefix == nullptr) {
+  const auto prefix = getCommonPrefix(candidates);
+  if (prefix.empty()) {
     return ls.pos;
   }
 
-  logprintf("#prefix: %s\n", prefix);
+  logprintf("#prefix: %s\n", prefix.toString().c_str());
   logprintf("pos: %ld\n", ls.pos);
 
   // compute suffix
   bool matched = false;
   size_t offset = 0;
   if (ls.pos > 0) {
-    StringRef prefixRef = prefix;
-    for (offset = ls.pos - std::min(ls.pos, prefixRef.size()); offset < ls.pos; offset++) {
+    for (offset = ls.pos - std::min(ls.pos, prefix.size()); offset < ls.pos; offset++) {
       StringRef suffix(ls.buf + offset, ls.pos - offset);
       logprintf("curSuffix: %s\n", suffix.toString().c_str());
-      if (auto retPos = prefixRef.find(suffix); retPos == 0) {
+      if (auto retPos = prefix.find(suffix); retPos == 0) {
         matched = true;
         break;
       }
@@ -1516,21 +1505,17 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
 
   logprintf("offset: %ld\n", offset);
   if (matched) {
-    size_t suffixSize = len - (ls.pos - offset);
-    logprintf("suffix size: %ld\n", suffixSize);
-    char *inserting = (char *)malloc(sizeof(char) * suffixSize);
-    memcpy(inserting, prefix + (len - suffixSize), suffixSize);
-    if (linenoiseEditInsert(ls, inserting, suffixSize)) {
+    size_t insertingSize = prefix.size() - (ls.pos - offset);
+    StringRef inserting(prefix.data() + (prefix.size() - insertingSize), insertingSize);
+    logprintf("inserting: %s\n", inserting.toString().c_str());
+    if (linenoiseEditInsert(ls, inserting.data(), inserting.size())) {
       this->refreshLine(ls);
     }
-    free(inserting);
   } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    if (linenoiseEditInsert(ls, prefix, len)) {
+    if (linenoiseEditInsert(ls, prefix.data(), prefix.size())) {
       this->refreshLine(ls);
     }
   }
-  free(prefix);
-
   return matched ? offset : ls.pos;
 }
 
