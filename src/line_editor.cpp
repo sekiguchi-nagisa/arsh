@@ -150,7 +150,7 @@ struct linenoiseState {
   NewlinePos newlinePos; // maintains newline pos
   bool rotating;
 
-  ydsh::StringRef lineRef() const { return ydsh::StringRef(this->buf, this->len); }
+  ydsh::StringRef lineRef() const { return {this->buf, this->len}; }
 
   bool isSingleline() const { return this->newlinePos.empty(); }
 };
@@ -238,7 +238,7 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef buf
 
 /* Check if text is an ANSI escape sequence
  */
-static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
+static bool isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
   if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
     size_t off = 2;
     while (off < buf_len) {
@@ -258,11 +258,11 @@ static int isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
       case 'f':
       case 'm':
         *len = off;
-        return 1;
+        return true;
       }
     }
   }
-  return 0;
+  return false;
 }
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
@@ -296,17 +296,17 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::S
 
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
-static int isUnsupportedTerm() {
+static bool isUnsupportedTerm() {
   char *term = getenv("TERM");
   if (term == nullptr) {
-    return 0;
+    return false;
   }
   for (int j = 0; unsupported_term[j]; j++) {
     if (!strcasecmp(term, unsupported_term[j])) {
-      return 1;
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
