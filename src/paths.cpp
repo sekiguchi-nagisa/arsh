@@ -246,7 +246,12 @@ bool expandTilde(std::string &str, bool useHOME) {
 
 CStrPtr getWorkingDir(const std::string &logicalWorkingDir, bool useLogical) {
   if (useLogical) {
-    if (!S_ISDIR(getStMode(logicalWorkingDir.c_str()))) {
+    auto mode = getStMode(logicalWorkingDir.c_str());
+    if (!mode) {
+      return nullptr;
+    }
+    if (!S_ISDIR(mode)) {
+      errno = ENOTDIR;
       return nullptr;
     }
     return CStrPtr(strdup(logicalWorkingDir.c_str()));

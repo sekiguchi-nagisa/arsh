@@ -1,0 +1,54 @@
+
+# popd
+## help
+assert help popd | grep -E '^popd: popd \[\+N | -N]'
+assert help popd | grep 'Remove an entry from directory stack and change current directory'
+assert $PIPESTATUS[0] == 0
+
+assert popd -h | grep -E '^popd: popd \[\+N | -N]'
+assert popd -h | grep 'Remove an entry from directory stack and change current directory'
+assert $PIPESTATUS[0] == 2
+
+assert popd --help | grep -E '^popd: popd \[\+N | -N]'
+assert popd --help | grep 'Remove an entry from directory stack and change current directory'
+assert $PIPESTATUS[0] == 2
+
+## invalid option
+assert popd -r 2>&1 | grep '^ydsh: popd: -r: invalid option'
+assert popd -r 2>&1 | grep -E '^popd: popd \[\+N | -N]'
+assert $PIPESTATUS[0] == 2
+
+## invalid
+assert popd -999999999999999999999 2>&1 | grep '^ydsh: popd: -999999999999999999999: invalid number'
+assert $PIPESTATUS[0] == 1
+
+assert popd +999999999999999999999 2>&1 | grep '^ydsh: popd: +999999999999999999999: invalid number'
+assert $PIPESTATUS[0] == 1
+
+assert popd -10 2>&1 | grep '^ydsh: popd: -10: directory stack index out of range (up to 0)'
+assert $PIPESTATUS[0] == 1
+
+assert popd +10 2>&1 | grep '^ydsh: popd: +10: directory stack index out of range (up to 0)'
+assert $PIPESTATUS[0] == 1
+
+assert popd 2>&1 | grep '^ydsh: popd: directory stack empty'
+assert $PIPESTATUS[0] == 1
+
+$DIRSTACK.add("/fjreifreiareafr")
+assert popd 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+assert popd +0 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+assert popd -1 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+## truncate DIRSTACK
+$DIRSTACK.clear()
+for(var i = 0; $i < 1000; $i++) {
+    $DIRSTACK.push("/")
+}
+assert $DIRSTACK.size() == 1000
+assert popd +0
+assert $DIRSTACK.size() == 254

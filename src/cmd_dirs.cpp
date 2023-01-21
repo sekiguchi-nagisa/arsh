@@ -164,9 +164,10 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
       return invalidOptionError(argvObj, optState);
     }
   }
+
   auto cwd = state.getWorkingDir();
   if (!cwd) {
-    ERROR(argvObj, "cannot resolve current working dir");
+    PERROR(argvObj, "cannot resolve current working dir");
     return 1;
   }
   printDirstack(dirstack, cwd.get(), dirOp);
@@ -204,8 +205,8 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
         return 1;
       }
       if (pair.first > dirstack.size()) {
-        ERROR(argvObj, "%s: directory stack index of range (up to %zu)", toPrintable(dest).c_str(),
-              dirstack.size());
+        ERROR(argvObj, "%s: directory stack index out of range (up to %zu)",
+              toPrintable(dest).c_str(), dirstack.size());
         return 1;
       }
       if (dest[0] == '-') {
@@ -219,12 +220,12 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   if (argvObj.getValues()[0].asStrRef() == "pushd") {
     auto cwd = state.getWorkingDir();
     if (!cwd) {
-      ERROR(argvObj, "cannot resolve current working dir");
+      PERROR(argvObj, "cannot resolve current working dir");
       return 1;
     }
     if (!rotate) {
       if (optState.index < argvObj.size()) { // if specify DIR, push current and change to DIR
-        if (dirstack.size() + 1 == SYS_LIMIT_DIRSTACK_SIZE) {
+        if (dirstack.size() + 1 > SYS_LIMIT_DIRSTACK_SIZE) {
           ERROR(argvObj, "directory stack size reaches limit (up to %zu)", SYS_LIMIT_DIRSTACK_SIZE);
           return 1;
         }
@@ -264,7 +265,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
       return 1;
     }
     if (rotate && rotateIndex < dirstack.size()) {
-      dirstack.refValues().erase(dirstack.refValues().begin() + rotateIndex);
+      dirstack.refValues().erase(dirstack.refValues().begin() + static_cast<ssize_t>(rotateIndex));
     } else {
       dest = dirstack.getValues().back().asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {

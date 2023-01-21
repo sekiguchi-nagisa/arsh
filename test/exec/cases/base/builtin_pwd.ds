@@ -9,12 +9,11 @@ assert($PWD == "$(pwd)")
 # error (not found)
 let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
 
-
 assert(cd $tmp_dir)
 assert(rm -rf $tmp_dir)
 
-pwd # error
-assert($? != 0)
+assert pwd 2>&1 | grep '^ydsh: pwd: \.: No such file or directory'
+assert $PIPESTATUS[0] == 1
 
 # invalid option
 assert(pwd --- 2>&1 | grep 'ydsh: pwd: ---: invalid option')

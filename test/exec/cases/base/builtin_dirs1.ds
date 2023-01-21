@@ -1,0 +1,67 @@
+
+# pushd
+## help
+assert help pushd | grep -E '^pushd: pushd \[\+N | -N | dir]'
+assert help pushd | grep -E 'Change the current directory and push the old current directory onto the stack'
+assert $PIPESTATUS[0] == 0
+
+assert pushd -h | grep -E '^pushd: pushd \[\+N | -N | dir]'
+assert pushd -h | grep -E 'Change the current directory and push the old current directory onto the stack'
+assert $PIPESTATUS[0] == 2
+
+assert pushd --help | grep -E '^pushd: pushd \[\+N | -N | dir]'
+assert pushd --help | grep -E 'Change the current directory and push the old current directory onto the stack'
+assert $PIPESTATUS[0] == 2
+
+## invalid option
+assert pushd -q 2>&1 | grep '^ydsh: pushd: -q: invalid option'
+assert pushd -q 2>&1 | grep -E 'pushd: pushd \[\+N | -N | dir]'
+assert $PIPESTATUS[0] == 2
+
+## invalid
+assert pushd 2>&1 | grep '^ydsh: pushd: no other directory$'
+assert $PIPESTATUS[0] == 1
+
+assert pushd -999999999999999999999 2>&1 | grep '^ydsh: pushd: -999999999999999999999: invalid number'
+assert $PIPESTATUS[0] == 1
+
+assert pushd +999999999999999999999 2>&1 | grep '^ydsh: pushd: +999999999999999999999: invalid number'
+assert $PIPESTATUS[0] == 1
+
+assert pushd -10 2>&1 | grep '^ydsh: pushd: -10: directory stack index out of range (up to 0)'
+assert $PIPESTATUS[0] == 1
+
+assert pushd +10 2>&1 | grep '^ydsh: pushd: +10: directory stack index out of range (up to 0)'
+assert $PIPESTATUS[0] == 1
+
+$DIRSTACK.add("/fjreifreiareafr")
+assert pushd -0 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+assert pushd +1 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+assert pushd 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert $PIPESTATUS[0] == 1
+
+## truncate DIRSTACK
+$DIRSTACK.clear()
+for(var i = 0; $i < 1000; $i++) {
+    $DIRSTACK.push("/")
+}
+assert $DIRSTACK.size() == 1000
+assert pushd +0
+assert $DIRSTACK.size() == 255
+
+## limit
+assert "$(pushd 2>&1 /home)" == "ydsh: pushd: directory stack size reaches limit (up to 255)"
+
+## invalid cwd
+$DIRSTACK.clear()
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+assert cd $tmp_dir && rm -rf $tmp_dir
+assert pushd / 2>&1 | 
+    grep '^ydsh: pushd: cannot resolve current working dir: No such file or directory'
+assert $PIPESTATUS[0] == 1
+
+true

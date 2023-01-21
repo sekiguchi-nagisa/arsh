@@ -1,0 +1,97 @@
+
+# dirs
+## help
+assert help dirs | grep -E '^dirs: dirs \[-clpv]'
+assert help dirs | grep 'Display directory stack'
+assert $PIPESTATUS[0] == 0
+
+assert dirs -h| grep -E '^dirs: dirs \[-clpv]'
+assert dirs -h| grep 'Display directory stack'
+assert $PIPESTATUS[0] == 2
+
+assert dirs --help| grep -E '^dirs: dirs \[-clpv]'
+assert dirs --help| grep 'Display directory stack'
+assert $PIPESTATUS[0] == 2
+
+## invalid option
+assert dirs -u 2>&1 | grep '^ydsh: dirs: -u: invalid option'
+assert dirs -u 2>&1 | grep -E '^dirs: dirs \[-clpv]'
+assert $PIPESTATUS[0] == 2
+
+## truncate DIRSTACK
+$DIRSTACK.clear()
+for(var i = 0; $i < 1000; $i++) {
+    $DIRSTACK.push("/")
+}
+assert $DIRSTACK.size() == 1000
+assert dirs > /dev/null
+assert $DIRSTACK.size() == 255
+
+assert dirs -c
+assert $DIRSTACK.empty()
+
+## invalid cwd
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+assert cd $tmp_dir && rm -rf $tmp_dir
+assert dirs 2>&1 | 
+    grep '^ydsh: dirs: cannot resolve current working dir: No such file or directory'
+assert $PIPESTATUS[0] == 1
+
+# pushd
+cd ~/
+assert "$(pushd -0)" == "~"
+assert "$(pushd +0)" == "~"
+assert "$(dirs)" == "~"
+assert ! @(~)[0].startsWith("~")
+assert "$(dirs -l)" == @(~)[0]
+assert "$(dirs -v)" == "0  ${@(~)[0]}"
+
+assert pushd /
+assert "$(dirs)" == "/ ~"
+assert "$(dirs -l)" == "/ ${@(~)[0]}"
+assert "$(dirs -lp)" == "/
+${@(~)[0]}"
+assert "$(pwd)" == '/'
+assert "$(pushd /)" == "/ / ~"
+
+assert pushd  # swap dir
+assert "$(pushd +0)" == "~ /"
+assert "$(dirs)" == "~ /"
+
+assert pushd /home
+assert "$(pwd)" == '/home'
+assert "$(pushd +0)" == "/home ~ /"
+assert "$(dirs -v)" == "0  /home
+1  ${@(~)[0]}
+2  /"
+
+## pushd rotate
+assert "$(pushd +0)" == "/home ~ /"
+assert pushd +0
+assert "$(dirs)" == "/home ~ /"
+assert "$(pwd)" == '/home'
+
+assert "$(pushd -2)" == "/home ~ /"
+assert pushd -2
+assert "$(dirs)" == '/home ~ /'
+assert "$(pwd)" == '/home'
+
+assert "$(pushd +1)" == "~ / /home"
+assert pushd +1
+assert "$(dirs)" == '~ / /home'
+assert "$(pwd)" == @(~)[0]
+
+assert "$(pushd -0)" == "/home ~ /"
+assert pushd -0
+assert "$(dirs)" == '/home ~ /'
+assert "$(pwd)" == "/home"
+
+# popd
+assert "$(popd)" == "~ /"
+assert popd +0
+assert "$(dirs)" == '~ /'
+assert "$(pwd)" == @(~)[0]
+assert "$(popd -0)" == '~'
+assert popd -0
+assert "$(dirs)" == "~"
+assert "$(pwd)" == @(~)[0]
