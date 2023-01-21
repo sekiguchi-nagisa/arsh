@@ -164,6 +164,8 @@ private:
   }
 
 public:
+  void reset() { this->ctxs.clear(); }
+
   ModuleArchivePtr analyze(const Source &src, AnalyzerAction &action);
 
   std::vector<CompletionItem> complete(const Source &src, CmdCompKind ckind, bool cmdArgComp);

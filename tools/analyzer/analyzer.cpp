@@ -205,6 +205,8 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
 }
 
 ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
+  this->reset();
+
   // prepare
   this->addNew(src);
   FrontEnd frontEnd(*this, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
@@ -426,6 +428,8 @@ static std::string toDirName(const std::string &fullPath) {
 
 std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ckind,
                                                bool cmdArgComp) {
+  this->reset();
+
   CompletionItemCollector collector;
   std::string workDir = toDirName(src.getPath());
   auto &ptr = this->addNew(src);

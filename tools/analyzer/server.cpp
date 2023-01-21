@@ -62,8 +62,10 @@ void LSPServer::run() {
   while (true) {
     auto s = this->transport.dispatch(*this, this->timeout);
     if (s == Transport::Status::TIMEOUT) {
-      LOG(LogLevel::INFO, "tryRebuild with timeout...");
-      this->tryRebuild();
+      LOG(LogLevel::INFO, "tryRebuild due to timeout...");
+      if (!this->tryRebuild()) {
+        LOG(LogLevel::INFO, "rebuild is not performed");
+      }
     } else if (s == Transport::Status::ERROR) {
       break;
     }
@@ -217,68 +219,82 @@ DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager>
           this->diagVersionSupport};
 }
 
-struct AnalyzerParam {
+struct AnalyzerTask {
   std::reference_wrapper<const SysConfig> sysConfig;
   std::reference_wrapper<LoggerBase> logger;
   std::shared_ptr<CancelPoint> cancelPoint;
   AnalyzerResult ret;
   DiagnosticEmitter emitter;
+
+  AnalyzerResult doRebuild();
 };
 
-static AnalyzerResult doRebuild(AnalyzerParam &&param) {
-  param.logger.get()(LogLevel::INFO, "rebuild started");
+AnalyzerResult AnalyzerTask::doRebuild() {
+  LOG(LogLevel::INFO, "rebuild started");
 
   // prepare
   {
-    auto tmp(param.ret.modifiedSrcIds);
-    param.ret.archives.revert(std::move(tmp));
+    auto tmp(this->ret.modifiedSrcIds);
+    this->ret.archives.revert(std::move(tmp));
   }
 
   AnalyzerAction action;
-  SymbolIndexer indexer(param.sysConfig, param.ret.indexes);
+  SymbolIndexer indexer(this->sysConfig, this->ret.indexes);
   MultipleNodePass passes;
   passes.add(makeObserver(indexer));
-  action.emitter.reset(&param.emitter);
+  action.emitter.reset(&this->emitter);
   action.pass = makeObserver(passes);
 
   // rebuild
-  Analyzer analyzer(param.sysConfig, *param.ret.srcMan, param.ret.archives, param.cancelPoint,
-                    makeObserver(param.logger.get()));
-  for (auto &e : param.ret.modifiedSrcIds) {
-    if (param.ret.archives.find(e)) {
+  Analyzer analyzer(this->sysConfig, *this->ret.srcMan, this->ret.archives, this->cancelPoint,
+                    makeObserver(this->logger.get()));
+  for (auto &e : this->ret.modifiedSrcIds) {
+    if (this->ret.archives.find(e)) {
       continue;
     }
-    auto src = param.ret.srcMan->findById(e);
+    auto src = this->ret.srcMan->findById(e);
     assert(src);
-    if (!analyzer.analyze(*src, action)) {
+    LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s", src->getSrcId(),
+        src->getVersion(), src->getPath().c_str());
+    auto r = analyzer.analyze(*src, action);
+    LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
+        src->getSrcId(), src->getVersion(), src->getPath().c_str());
+    if (!r) {
       break;
     }
   }
 
-  while (!param.cancelPoint->isCanceled()) {
-    auto targetId = param.ret.archives.getFirstRevertedModId();
+  while (!this->cancelPoint->isCanceled()) {
+    auto targetId = this->ret.archives.getFirstRevertedModId();
     if (!targetId.hasValue()) {
       break;
     }
-    auto src = param.ret.srcMan->findById(targetId.unwrap());
+    auto src = this->ret.srcMan->findById(targetId.unwrap());
     assert(src);
-    analyzer.analyze(*src, action);
+    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s", src->getSrcId(),
+        src->getVersion(), src->getPath().c_str());
+    auto r = analyzer.analyze(*src, action);
+    LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
+        src->getSrcId(), src->getVersion(), src->getPath().c_str());
+    if (!r) {
+      break;
+    }
   }
 
-  if (!param.cancelPoint->isCanceled()) {
+  if (!this->cancelPoint->isCanceled()) {
     // close
-    for (auto &id : param.ret.closingSrcIds) {
-      if (param.ret.archives.removeIfUnused(id)) {
-        auto src = param.ret.srcMan->findById(id);
-        param.logger.get()(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
-        param.ret.indexes.remove(id);
+    for (auto &id : this->ret.closingSrcIds) {
+      if (this->ret.archives.removeIfUnused(id)) {
+        auto src = this->ret.srcMan->findById(id);
+        LOG(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
+        this->ret.indexes.remove(id);
       }
     }
-    param.ret.modifiedSrcIds.clear();
-    param.ret.closingSrcIds.clear();
+    this->ret.modifiedSrcIds.clear();
+    this->ret.closingSrcIds.clear();
   }
-  param.logger.get()(LogLevel::INFO, "rebuild finished");
-  return std::move(param.ret);
+  LOG(LogLevel::INFO, "rebuild finished");
+  return std::move(this->ret);
 }
 
 bool LSPServer::tryRebuild() {
@@ -315,13 +331,13 @@ bool LSPServer::tryRebuild() {
     this->result.srcMan = std::move(tmp.srcMan);
   }
 
-  AnalyzerParam param = ({
+  AnalyzerTask param = ({
     this->cancelPoint = std::make_shared<CancelPoint>();
     auto ret = this->result.deepCopy();
     this->result.modifiedSrcIds.clear();
     this->result.closingSrcIds.clear();
     DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
-    AnalyzerParam{
+    AnalyzerTask{
         .sysConfig = std::ref(this->sysConfig),
         .logger = this->logger,
         .cancelPoint = this->cancelPoint,
@@ -330,7 +346,7 @@ bool LSPServer::tryRebuild() {
     };
   });
   this->futureResult =
-      this->worker.addTask([p = std::move(param)]() mutable { return doRebuild(std::move(p)); });
+      this->worker.addTask([p = std::move(param)]() mutable { return p.doRebuild(); });
   return true;
 }
 
@@ -347,7 +363,9 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
 
 void LSPServer::syncResult() {
   LOG(LogLevel::INFO, "tryRebuild...");
-  this->tryRebuild();
+  if (!this->tryRebuild()) {
+    LOG(LogLevel::INFO, "rebuild is not performed");
+  }
   if (this->futureResult.valid()) {
     this->result = this->futureResult.get(); // override current result
   }
