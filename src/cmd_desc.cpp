@@ -81,6 +81,13 @@ static BuiltinCmdDesc table[] = {
      "        group      complete group names\n"
      "        stmt_kw    complete statement keywords\n"
      "        expr_kw    complete expression keywords"},
+    {"dirs", "[-clpv]",
+     "    Display directory stack.\n"
+     "    Options:\n"
+     "      -c    clear all entries of directory stack\n"
+     "      -l    print directory entry without prefix ~\n"
+     "      -p    print directory entry one per line\n"
+     "      -v    print directory with verbose information"},
     {"disown", "[jobspec ...]", "    Remove specified jobs from job table."},
     {"echo", "[-neE] [arg ...]",
      "    Print argument to standard output and print new line.\n"
@@ -140,6 +147,18 @@ static BuiltinCmdDesc table[] = {
      "    Options:\n"
      "        -s sig    send a signal.  SIG is a signal name or signal number\n"
      "        -l        list the signal names"},
+    {"popd", "[+N | -N]",
+     "    Remove an entry from directory stack and change current directory to\n"
+     "    the stack top directory.\n"
+     "    Arguments:\n"
+     "      +N    remove the Nth entry from the left\n"
+     "      -N    remove the Nth entry from the right"},
+    {"pushd", "[+N | -N | dir]",
+     "    Change the current directory and push the old current directory onto the stack.\n"
+     "    Arguments:\n"
+     "      +N     rotate the directory stack so that the Nth entry from left is stack top\n"
+     "      -N     rotate the directory stack so that the Nth entry from right is stack top\n"
+     "      dir    push DIR onto the stack"},
     {"pwd", "[-LP]",
      "    Print the current working directory(absolute path).\n"
      "    If -L specified, print logical working directory.\n"

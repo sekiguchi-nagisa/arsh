@@ -267,6 +267,10 @@ public:
   const VMState &getCallStack() const { return this->stack; }
 
   VMState &getCallStack() { return this->stack; }
+
+  auto getWorkingDir(bool useLogical = true) const {
+    return ydsh::getWorkingDir(this->logicalWorkingDir, useLogical);
+  }
 };
 
 namespace ydsh {

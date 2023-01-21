@@ -18,6 +18,7 @@
 #define YDSH_PATHS_H
 
 #include "misc/flag_util.hpp"
+#include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {

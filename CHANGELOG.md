@@ -15,6 +15,11 @@
             - modification of the result does not affect actual keybindings
         - ``actions``: get read-only snapshot of current edit actions
 - add builtin ``disown`` command
+- add directory stack related builtin commands
+    - ``dirs``: show directory stack entries
+    - ``pushd``: change current directory and save old onto the directory stack
+    - ``popd``: remove an entry from directory stack
+    - also add ``DIRSTACK`` global variable
 
 ### Changed
 

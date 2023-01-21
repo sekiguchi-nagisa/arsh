@@ -37,7 +37,6 @@ namespace ydsh {
 // builtin command definition
 static int builtin_gets(DSState &state, ArrayObject &argvObj);
 static int builtin_puts(DSState &state, ArrayObject &argvObj);
-static int builtin_cd(DSState &state, ArrayObject &argvObj);
 static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_echo(DSState &state, ArrayObject &argvObj);
@@ -62,6 +61,10 @@ int builtin_disown(DSState &state, ArrayObject &argvObj);
 
 int builtin_shctl(DSState &state, ArrayObject &argvObj);
 
+int builtin_cd(DSState &state, ArrayObject &argvObj);
+int builtin_dirs(DSState &state, ArrayObject &argvObj);
+int builtin_pushd_popd(DSState &state, ArrayObject &argvObj);
+
 static auto initBuiltinMap() {
   return StrRefMap<builtin_command_t>{
       {":", builtin_true},
@@ -72,6 +75,7 @@ static auto initBuiltinMap() {
       {"cd", builtin_cd},
       {"checkenv", builtin_check_env},
       {"complete", builtin_complete},
+      {"dirs", builtin_dirs},
       {"disown", builtin_disown},
       {"echo", builtin_echo},
       {"exit", builtin_exit},
@@ -81,6 +85,8 @@ static auto initBuiltinMap() {
       {"help", builtin_help},
       {"jobs", builtin_jobs},
       {"kill", builtin_kill},
+      {"popd", builtin_pushd_popd},
+      {"pushd", builtin_pushd_popd},
       {"pwd", builtin_pwd},
       {"read", builtin_read},
       {"setenv", builtin_setenv},
@@ -210,58 +216,6 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
   if (count == 0) {
     ERROR(argvObj, "no help topics match `%s'.  Try `help help'.",
           argvObj.getValues()[size - 1].asCStr());
-    return 1;
-  }
-  return 0;
-}
-
-static int builtin_cd(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  bool useLogical = true;
-  for (int opt; (opt = optState(argvObj, "PLh")) != -1;) {
-    switch (opt) {
-    case 'P':
-      useLogical = false;
-      break;
-    case 'L':
-      useLogical = true;
-      break;
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  unsigned int index = optState.index;
-  StringRef dest;
-  bool useOldpwd = false;
-  if (index < argvObj.getValues().size()) {
-    dest = argvObj.getValues()[index].asStrRef();
-    if (dest == "-") {
-      const char *v = getenv(ENV_OLDPWD);
-      if (v == nullptr) {
-        ERROR(argvObj, "OLDPWD not set");
-        return 1;
-      }
-      dest = v;
-      useOldpwd = true;
-    }
-  } else {
-    const char *v = getenv(ENV_HOME);
-    if (v == nullptr) {
-      ERROR(argvObj, "HOME not set");
-      return 1;
-    }
-    dest = v;
-  }
-
-  if (useOldpwd) {
-    printf("%s\n", toPrintable(dest).c_str());
-  }
-
-  if (!changeWorkingDir(state.logicalWorkingDir, dest, useLogical)) {
-    PERROR(argvObj, "%s", toPrintable(dest).c_str());
     return 1;
   }
   return 0;
@@ -488,7 +442,7 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     }
   }
 
-  auto workdir = getWorkingDir(state.logicalWorkingDir, useLogical);
+  auto workdir = state.getWorkingDir(useLogical);
   if (!workdir) {
     PERROR(argvObj, ".");
     return 1;
