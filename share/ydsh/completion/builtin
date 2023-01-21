@@ -19,7 +19,7 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : [String] {
 
 _extract_sub() {
     for $line in $STDIN {
-        var matched = $/^        ([-a-z]+) +.+/.match($line)
+        var matched = $/^      ([-a-z]+) +.+/.match($line)
         if !$matched.empty() {
             echo ${$matched[1]!}
         }
@@ -65,6 +65,6 @@ compdef --cmd cd --short P --arg-action dir
 compdef --cmd pwd --short L
 compdef --cmd pwd --short P
 compdef --cmd complete --short A \
-        --arg-cmd "help complete | grep '^        \w' | sed 's/^        //g' | cut -d ' ' -f 1"
+        --arg-cmd "help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1"
 compdef --cmd kill --short s --arg-action signal
 compdef --cmd kill --short l

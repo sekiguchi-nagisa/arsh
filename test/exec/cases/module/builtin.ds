@@ -22,7 +22,7 @@ assert diff <(complete 'unsetenv H') <(complete -A env H)
 # shctl
 _extract_sub() {
     while(read -f $'\n') {
-        var matched = $/^        ([-a-z]+) +.+/.match($REPLY)
+        var matched = $/^      ([-a-z]+) +.+/.match($REPLY)
         if !$matched.empty() {
             echo ${$matched[1]!}
         }
@@ -34,3 +34,7 @@ assert diff <(complete 'shctl i') <(echo info && echo is-interactive && echo is-
 
 # cd
 assert diff <(complete 'cd /') <(complete -A dir '/')
+
+# complete -A
+assert diff <(complete 'complete -A ') \
+            <(help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1 | sort)
