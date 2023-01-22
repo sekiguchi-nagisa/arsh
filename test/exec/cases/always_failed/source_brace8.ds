@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 20, $errorKind = 'BraceUnopened', $status = 1)
+
+source {hoge1211@,}}/

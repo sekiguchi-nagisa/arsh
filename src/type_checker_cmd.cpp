@@ -50,19 +50,9 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   }
 }
 
-static bool isBraceOpen(const Node &node) {
-  return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::BRACE_OPEN;
-}
-
-static void enableTilde(Node &node) {
-  if (isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::BRACE_TILDE) {
-    cast<WildCardNode>(node).setExpand(true);
-  }
-}
-
-static void resolveBraceExpansion(CmdArgNode &node) {
-  unsigned int depth = 0;
-  FlexBuffer<unsigned int> stack;
+void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
+  // check balance of brace expansion
+  std::vector<std::pair<unsigned int, unsigned int>> stack;
   auto &segmentNodes = node.refSegmentNodes();
   const unsigned int size = segmentNodes.size();
   for (unsigned int i = 0; i < size; i++) {
@@ -71,35 +61,24 @@ static void resolveBraceExpansion(CmdArgNode &node) {
       auto &wild = cast<WildCardNode>(e);
       switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
-        depth++;
-        stack.push_back(i);
-        break;
-      case ExpandMeta::BRACE_SEP:
-        if (depth) {
-          stack.push_back(i);
-        }
+        stack.emplace_back(i, 0);
         break;
       case ExpandMeta::BRACE_CLOSE:
-        if (depth) {
-          depth--;
-          unsigned int oldSize = stack.size();
-          while (!isBraceOpen(*segmentNodes[stack.back()])) {
-            auto pos = stack.back();
-            cast<WildCardNode>(*segmentNodes[pos]).setExpand(true);
-            enableTilde(*segmentNodes[pos + 1]);
-            stack.pop_back();
-          }
-          if (stack.size() < oldSize) { // {AAA,}
+        if (stack.empty()) {
+          this->reportError<BraceUnopened>(wild);
+        } else {
+          if (stack.back().second) {
+            cast<WildCardNode>(*segmentNodes[stack.back().first]).setExpand(true);
             wild.setExpand(true);
             node.setBraceExpansion(true);
-            auto pos = stack.back();
-            cast<WildCardNode>(*segmentNodes[pos]).setExpand(true);
-            enableTilde(*segmentNodes[pos + 1]);
           }
           stack.pop_back();
-          if (wild.isExpand() && i + 1 < size) {
-            enableTilde(*segmentNodes[i + 1]);
-          }
+        }
+        break;
+      case ExpandMeta::BRACE_SEP:
+        if (!stack.empty()) {
+          wild.setExpand(true);
+          stack.back().second++;
         }
         break;
       case ExpandMeta::BRACE_SEQ_OPEN:
@@ -111,36 +90,50 @@ static void resolveBraceExpansion(CmdArgNode &node) {
       }
     }
   }
+  for (; !stack.empty(); stack.pop_back()) {
+    this->reportError<BraceUnclosed>(*segmentNodes[stack.back().first]);
+  }
 
-  // add brace id
+  // add brace id and check tilde expansion
   stack.clear();
   unsigned int braceId = 0;
-  for (auto &e : segmentNodes) {
+  for (unsigned int i = 0; i < size; i++) {
+    auto &e = segmentNodes[i];
     if (isExpandingWildCard(*e)) {
       auto &wild = cast<WildCardNode>(*e);
       switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
       case ExpandMeta::BRACE_SEQ_OPEN:
-        stack.push_back(braceId++);
-        wild.setBraceId(stack.back());
+        stack.emplace_back(braceId++, 0);
+        wild.setBraceId(stack.back().first);
         break;
       case ExpandMeta::BRACE_SEP:
-        wild.setBraceId(stack.back());
+        wild.setBraceId(stack.back().first);
         break;
       case ExpandMeta::BRACE_CLOSE:
       case ExpandMeta::BRACE_SEQ_CLOSE:
-        wild.setBraceId(stack.back());
+        wild.setBraceId(stack.back().first);
         stack.pop_back();
         break;
       default:
         break;
+      }
+    } else if (isa<WildCardNode>(*e)) {
+      auto &wild = cast<WildCardNode>(*e);
+      if (wild.meta == ExpandMeta::BRACE_TILDE) {
+        if (stack.empty()) {
+          assert(i + 1 < size && isa<StringNode>(*segmentNodes[i + 1]));
+          cast<StringNode>(*segmentNodes[i + 1]).unsetTilde();
+        } else {
+          wild.setExpand(true);
+        }
       }
     }
   }
 }
 
 void TypeChecker::checkExpansion(CmdArgNode &node) {
-  resolveBraceExpansion(node);
+  this->checkBraceExpansion(node);
 
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;

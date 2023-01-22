@@ -91,6 +91,8 @@ DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module 
                           "matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
 DEFINE_TCError(TildeFail, "cannot expand tilde, no such user or directory: `%s'");
+DEFINE_TCError(BraceUnopened, "unopened brace expansion, require `{' before `}'");
+DEFINE_TCError(BraceUnclosed, "unclosed brace expansion, require `}' after `{'");
 DEFINE_TCError(Constant, "must be constant expression");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");

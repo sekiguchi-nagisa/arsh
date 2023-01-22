@@ -440,6 +440,8 @@ public:
 
   bool isTilde() const { return this->getKind() == TILDE; }
 
+  void unsetTilde() { this->kind = STRING; }
+
   void dump(NodeDumper &dumper) const override;
 
   std::string takeValue() { return std::move(this->value); }

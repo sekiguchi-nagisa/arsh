@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 9, $errorKind = 'BraceUnopened', $status = 1)
+
+echo {,}}

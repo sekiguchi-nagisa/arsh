@@ -8,9 +8,9 @@ assert "$(echo a b c)" == "$(echo {a,b,c})"
 assert "$(echo a b)" == "$(echo {a,b,})"
 assert "$(echo b c)" == "$(echo {,b,c})"
 assert "$(echo a c)" == "$(echo {a,,c})"
-assert "$(echo a,c} b,c})" == "$(echo {a,b},c})"
+assert "$(echo a,c\} b,c\})" == "$(echo {a,b},c\})"
 var sep = "{,}"
-assert "$(echo 1a2 1\{,}2 1b2)" == "$(echo 1{a,$sep,b}2)"
+assert "$(echo 1a2 1\{,\}2 1b2)" == "$(echo 1{a,$sep,b}2)"
 assert @({,}).empty()
 
 ## sequence
@@ -69,6 +69,10 @@ assert ($ex as TildeError).message() =~ $/~~/
 $aa = @({,~,})
 assert $aa.size() == 1
 assert $aa[0] == @(~)[0]
+
+$aa = @({~/})
+assert $aa.size() == 1
+assert $aa[0] == '{~/}'  # unexpand tilde
 
 ## glob
 assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"

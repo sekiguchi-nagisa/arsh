@@ -674,6 +674,8 @@ private:
    */
   void resolvePathList(SourceListNode &node);
 
+  void checkBraceExpansion(CmdArgNode &node);
+
   void checkExpansion(CmdArgNode &node);
 
   // visitor api

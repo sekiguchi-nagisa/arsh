@@ -1,4 +1,4 @@
 
 #$test($result = 'type', $lineNum = 4, $chars =8, $errorKind = 'TildeFail', $status = 1)
 
-source ~{hoge1211@,}}/
+source ~{hoge1211@,}/
