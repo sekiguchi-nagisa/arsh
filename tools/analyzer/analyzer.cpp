@@ -227,10 +227,6 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
       return nullptr;
     }
     auto ret = frontEnd();
-    if (!ret) {
-      this->unwind(); // FIXME: future may be removed
-      break;
-    }
     switch (ret.kind) {
     case FrontEndResult::IN_MODULE:
       action.pass &&action.pass->consume(ret.node);
@@ -247,7 +243,7 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
       action.pass &&action.pass->exitModule(ret.node);
       break;
     case FrontEndResult::FAILED:
-      break;
+      fatal("unreachable\n");
     }
   }
   frontEnd.teardownASTDump();
