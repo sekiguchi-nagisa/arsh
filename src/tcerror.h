@@ -64,6 +64,9 @@ struct TCError {};
     static constexpr const char *value = fmt;                                                      \
   }
 
+DEFINE_TCError(IllegalStrEscape, "illegal escape sequence: `%s'");
+DEFINE_TCError(OutOfRangeInt, "out of range int literal");
+DEFINE_TCError(OutOfRangeFloat, "out of range float literal");
 DEFINE_TCError(InsideLoop, "only available inside loop statement");
 DEFINE_TCError(UnfoundReturn, "not found return statement");
 DEFINE_TCError(Unreachable, "unreachable code");
@@ -93,6 +96,9 @@ DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolut
 DEFINE_TCError(TildeFail, "cannot expand tilde, no such user or directory: `%s'");
 DEFINE_TCError(BraceUnopened, "unopened brace expansion, require `{' before `}'");
 DEFINE_TCError(BraceUnclosed, "unclosed brace expansion, require `}' after `{'");
+DEFINE_TCError(BraceOutOfRange, "out of range brace expansion number: `%s', must be int64");
+DEFINE_TCError(BraceOutOfRangeStep, "out of range brace expansion increment number: `%s', "
+                                    "must be int64_min +1 to int64_max");
 DEFINE_TCError(Constant, "must be constant expression");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");

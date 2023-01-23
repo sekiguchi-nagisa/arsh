@@ -80,7 +80,7 @@ public:
             FrontEndOption option, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
         : lexer(std::move(lexer)),
           parser(*this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
-          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), this->lexer.get()),
+          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
           scope(std::move(scope)) {
       this->checker.setCodeCompletionHandler(ccHandler);
     }

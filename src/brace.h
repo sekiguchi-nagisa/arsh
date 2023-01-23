@@ -24,18 +24,22 @@ namespace ydsh {
 // for sequence style brace expansion
 
 struct BraceRange {
-  int64_t begin; // inclusive
-  int64_t end;   // inclusive
-  int64_t step;
-  unsigned int digits; // if 0, no-padding
+  int64_t begin{0}; // inclusive
+  int64_t end{0};   // inclusive
+  int64_t step{0};
+  unsigned int digits{0}; // if 0, no-padding
   enum class Kind : unsigned int {
     CHAR,
     INT,
 
+    // uninitialized
+    UNINIT_CHAR,
+    UNINIT_INT,
+
     // for error
     OUT_OF_RANGE,
     OUT_OF_RANGE_STEP,
-  } kind;
+  } kind{Kind::UNINIT_CHAR};
 };
 
 /**

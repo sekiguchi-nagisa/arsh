@@ -1410,32 +1410,11 @@ bool Parser::parse_braceSeq(CmdArgNode &argNode) {
   const TokenKind kind = this->scan();
   const Token seqToken = token.slice(1, token.size - 1); // skip '{' '}'
 
-  std::string error;
-  auto range =
-      toBraceRange(this->lexer->toStrRef(seqToken), kind == TokenKind::BRACE_CHAR_SEQ, error);
-  switch (range.kind) {
-  case BraceRange::Kind::CHAR:
-  case BraceRange::Kind::INT:
-    break;
-  case BraceRange::Kind::OUT_OF_RANGE: {
-    std::string message = "out of range number: ";
-    message += error;
-    message += ", must be int64";
-    reportTokenFormatError(kind, token, std::move(message));
-    return false;
-  }
-  case BraceRange::Kind::OUT_OF_RANGE_STEP: {
-    std::string message = "out of range increment number: ";
-    message += error;
-    message += ", must be int64_min +1 to int64_max";
-    reportTokenFormatError(kind, token, std::move(message));
-    return false;
-  }
-  }
-
   argNode.addSegmentNode(
       std::make_unique<WildCardNode>(token.slice(0, 1), ExpandMeta::BRACE_SEQ_OPEN));
-  auto node = std::make_unique<BraceSeqNode>(seqToken, range);
+  auto node = std::make_unique<BraceSeqNode>(seqToken, kind == TokenKind::BRACE_CHAR_SEQ
+                                                           ? BraceRange::Kind::UNINIT_CHAR
+                                                           : BraceRange::Kind::UNINIT_INT);
   argNode.addSegmentNode(std::move(node));
   argNode.addSegmentNode(
       std::make_unique<WildCardNode>(token.sliceFrom(token.size - 1), ExpandMeta::BRACE_SEQ_CLOSE));
@@ -1683,21 +1662,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   }
   case TokenKind::INT_LITERAL: {
     Token token = TRY(this->expect(TokenKind::INT_LITERAL));
-    auto [value, status] = this->lexer->toInt64(token);
-    if (!status) {
-      this->reportTokenFormatError(TokenKind::INT_LITERAL, token, "out of range int literal");
-      return nullptr;
-    }
-    return NumberNode::newInt(token, value);
+    return NumberNode::newInt(token);
   }
   case TokenKind::FLOAT_LITERAL: {
     Token token = TRY(this->expect(TokenKind::FLOAT_LITERAL));
-    auto [value, status] = this->lexer->toDouble(token);
-    if (!status) {
-      this->reportTokenFormatError(TokenKind::FLOAT_LITERAL, token, "out of range float literal");
-      return nullptr;
-    }
-    return NumberNode::newFloat(token, value);
+    return NumberNode::newFloat(token);
   }
   case TokenKind::STRING_LITERAL:
     return this->parse_stringLiteral();
@@ -1915,15 +1884,7 @@ std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
 std::unique_ptr<Node> Parser::parse_stringLiteral() {
   assert(CUR_KIND() == TokenKind::STRING_LITERAL);
   Token token = this->expect(TokenKind::STRING_LITERAL); // always success
-  std::string str;
-  bool s = this->lexer->singleToString(token, str);
-  if (!s) {
-    std::string message = "illegal escape sequence: ";
-    message += str;
-    reportTokenFormatError(TokenKind::STRING_LITERAL, token, std::move(message));
-    return nullptr;
-  }
-  return std::make_unique<StringNode>(token, std::move(str));
+  return std::make_unique<StringNode>(token);
 }
 
 std::unique_ptr<Node> Parser::parse_regexLiteral() {
@@ -2143,7 +2104,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
       std::string envName;
       auto nameToken = token.slice(0, token.size - 1);
       if (!this->lexer->toEnvName(nameToken, envName)) {
-        reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
+        this->reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
         return nullptr;
       }
       std::make_unique<VarNode>(nameToken, std::move(envName));

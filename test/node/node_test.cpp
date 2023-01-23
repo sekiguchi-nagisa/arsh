@@ -129,7 +129,8 @@ nodes:
       size: 1
     type:
     kind: "Int"
-    intValue: 1
+    init: false
+    intValue: 0
 )"},
 
     {DumpOp::typed, R"("hello")", 0, 0, R"(
@@ -152,6 +153,7 @@ nodes:
             size: 5
           type: "String"
           kind: "STRING"
+          init: true
           value: "hello"
     targetTypeNode: null
     opKind: "TO_VOID"
@@ -188,7 +190,8 @@ nodes:
               size: 7
             type:
             kind: "STRING"
-            value: "false"
+            init: false
+            value: ""
           kind: "VAR"
           handle: null
       baseIndex: 0
@@ -246,7 +249,8 @@ nodes:
               size: 1
             type:
             kind: "Int"
-            intValue: 1
+            init: false
+            intValue: 0
         baseIndex: 0
         varSize: 0
         maxVarSize: 0
@@ -293,7 +297,8 @@ nodes:
           size: 5
         type:
         kind: "STRING"
-        value: "hey"
+        init: false
+        value: ""
       nameInfo:
         token:
           pos: 6
@@ -327,7 +332,8 @@ nodes:
         size: 2
       type:
       kind: "Int"
-      intValue: 34
+      init: false
+      intValue: 0
     rightNode:
       nodeKind: Number
       token:
@@ -335,7 +341,8 @@ nodes:
         size: 1
       type:
       kind: "Int"
-      intValue: 1
+      init: false
+      intValue: 0
     inheritScope: false
     op: "+"
     optNode: null
@@ -549,6 +556,7 @@ nodes:
                       size: 2
                     type:
                     kind: "STRING"
+                    init: true
                     value: "ls"
                   argNodes:
                     - nodeKind: Redir
@@ -574,6 +582,7 @@ nodes:
                               size: 2
                             type:
                             kind: "STRING"
+                            init: true
                             value: "34"
                       targetFd: -1
                   redirCount: 1
@@ -592,7 +601,8 @@ nodes:
                     size: 2
                   type:
                   kind: "Int"
-                  intValue: 34
+                  init: false
+                  intValue: 0
                 redirNodes:
                   - nodeKind: Redir
                     token:
@@ -624,7 +634,8 @@ nodes:
                               size: 4
                             type:
                             kind: "Float"
-                            floatValue: 34.100000
+                            init: false
+                            floatValue: 0.000000
                           handle: null
                     targetFd: -1
                 baseIndex: 0
@@ -655,6 +666,7 @@ nodes:
         size: 39
       type:
       kind: "STRING"
+      init: true
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
 
@@ -704,6 +716,7 @@ nodes:
               size: 7
             type: "Signal"
             kind: "Signal"
+            init: true
             intValue: 2
         this->actionNode:
           nodeKind: TypeOp
@@ -724,6 +737,7 @@ nodes:
                   size: 2
                 type: "Int"
                 kind: "Int"
+                init: true
                 intValue: 34
             valueNodes:
               - nodeKind: Number
@@ -732,6 +746,7 @@ nodes:
                   size: 2
                 type: "Int"
                 kind: "Int"
+                init: true
                 intValue: 34
           targetTypeNode: null
           opKind: "TO_VOID"
@@ -761,6 +776,7 @@ nodes:
                   size: 2
                 type: "Int"
                 kind: "Int"
+                init: true
                 intValue: 34
           targetTypeNode: null
           opKind: "TO_VOID"
@@ -959,6 +975,7 @@ nodes:
                 size: 4
               type:
               kind: "STRING"
+              init: true
               value: "1234"
         attributeSet: ""
     exprNode: null
@@ -985,6 +1002,7 @@ nodes:
           size: 4
         type: "String"
         kind: "STRING"
+        init: true
         value: "echo"
       argNodes:
         - nodeKind: CmdArg
@@ -1142,6 +1160,7 @@ nodes:
             size: 4
           type: "String"
           kind: "STRING"
+          init: true
           value: "echo"
         argNodes:
         redirCount: 0

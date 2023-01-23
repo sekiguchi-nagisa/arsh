@@ -1,0 +1,3 @@
+#$test($result = 'type', $lineNum = 3, $chars = 9, $errorKind = 'OutOfRangeFloat', $status = 1)
+
+var a = 12.0e+10000000000000000000000000000000000000000000000000

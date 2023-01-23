@@ -141,7 +141,7 @@ void TypeOfNode::dump(NodeDumper &dumper) const {
 
 void NumberNode::dump(NodeDumper &dumper) const {
   DUMP_ENUM(kind, EACH_NUMBER_NODE_KIND);
-
+  DUMP(init);
   switch (this->kind) {
   case Int:
   case Signal:
@@ -168,6 +168,7 @@ void StringNode::dump(NodeDumper &dumper) const {
 
 #undef EACH_ENUM
 
+  DUMP(init);
   DUMP(value);
 }
 
@@ -466,6 +467,8 @@ void BraceSeqNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(BraceRange::Kind::INT)                                                                        \
   OP(BraceRange::Kind::CHAR)                                                                       \
+  OP(BraceRange::Kind::UNINIT_INT)                                                                 \
+  OP(BraceRange::Kind::UNINIT_CHAR)                                                                \
   OP(BraceRange::Kind::OUT_OF_RANGE)                                                               \
   OP(BraceRange::Kind::OUT_OF_RANGE_STEP)
 

@@ -29,6 +29,7 @@ nodes:
             size: ${len}
           type:
           kind: \"STRING\"
+          init: true
           value: \"$mod\"
     constNodes:
     name: null
@@ -103,7 +104,8 @@ nodes:
               size: 2
             type:
             kind: \"Int\"
-            intValue: 10
+            init: false
+            intValue: 0
           rightNode:
             nodeKind: Var
             token:
@@ -153,6 +155,7 @@ nodes:
             size: ${len}
           type: \"String\"
           kind: \"STRING\"
+          init: true
           value: \"$mod\"
     constNodes:
       - nodeKind: String
@@ -161,6 +164,7 @@ nodes:
           size: ${len}
         type: \"String\"
         kind: \"STRING\"
+        init: true
         value: \"$mod\"
       - nodeKind: Empty
         token:
@@ -277,6 +281,7 @@ nodes:
                     size: 2
                   type: \"Int\"
                   kind: \"Int\"
+                  init: true
                   intValue: 10
                 nameInfo:
                   token:

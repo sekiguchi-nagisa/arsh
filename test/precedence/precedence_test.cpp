@@ -46,10 +46,11 @@ static std::vector<std::string> tokenize(const char *str) {
 
 class PrettyPrinter : public BaseVisitor {
 private:
+  const Lexer &lexer;
   std::vector<std::string> out;
 
 public:
-  PrettyPrinter() = default;
+  explicit PrettyPrinter(const Lexer &lexer) : lexer(lexer) {}
   ~PrettyPrinter() override = default;
 
   std::vector<std::string> operator()(Node &node) {
@@ -68,7 +69,7 @@ public:
   void visitDefault(Node &) override { fatal("unsupported\n"); }
 
   void visitNumberNode(NumberNode &node) override {
-    this->append(std::to_string(node.getIntValue()));
+    this->append(this->lexer.toTokenText(node.getActualToken()));
   }
 
   void visitTypeOpNode(TypeOpNode &node) override {
@@ -203,7 +204,7 @@ public:
     auto rootNode = parser();
     ASSERT_FALSE(parser.hasError());
 
-    std::vector<std::string> actualTokens = PrettyPrinter()(*rootNode);
+    std::vector<std::string> actualTokens = PrettyPrinter(lexer)(*rootNode);
     std::vector<std::string> expectedTokens = tokenize(expected);
 
     this->equalsTokens(expectedTokens, actualTokens);

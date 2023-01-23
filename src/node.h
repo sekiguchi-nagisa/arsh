@@ -348,6 +348,7 @@ public:
   } kind;
 
 private:
+  bool init;
   union {
     int64_t intValue;
     double floatValue;
@@ -359,7 +360,7 @@ public:
    * @param token
    * @param kind
    */
-  NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), intValue(0) {}
+  NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), init(true), intValue(0) {}
 
   static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
     auto node = std::make_unique<NumberNode>(token, Int);
@@ -367,9 +368,21 @@ public:
     return node;
   }
 
+  static std::unique_ptr<NumberNode> newInt(Token token) {
+    auto node = std::make_unique<NumberNode>(token, Int);
+    node->init = false;
+    return node;
+  }
+
   static std::unique_ptr<NumberNode> newFloat(Token token, double value) {
     auto node = std::make_unique<NumberNode>(token, Float);
     node->floatValue = value;
+    return node;
+  }
+
+  static std::unique_ptr<NumberNode> newFloat(Token token) {
+    auto node = std::make_unique<NumberNode>(token, Float);
+    node->init = false;
     return node;
   }
 
@@ -397,6 +410,18 @@ public:
 
   double getFloatValue() const { return this->floatValue; }
 
+  bool isInit() const { return this->init; }
+
+  void setIntValue(int64_t v) {
+    this->init = true;
+    this->intValue = v;
+  }
+
+  void setFloatValue(double v) {
+    this->init = true;
+    this->floatValue = v;
+  }
+
   void dump(NodeDumper &dumper) const override;
 
   std::unique_ptr<NumberNode> clone() const {
@@ -422,6 +447,7 @@ public:
 private:
   std::string value;
   StringKind kind;
+  bool init;
 
 public:
   /**
@@ -429,8 +455,10 @@ public:
    */
   explicit StringNode(std::string &&value) : StringNode({0, 0}, std::move(value)) {}
 
+  explicit StringNode(Token token) : WithRtti(token), kind(STRING), init(false) {}
+
   StringNode(Token token, std::string &&value, StringKind kind = STRING)
-      : WithRtti(token), value(std::move(value)), kind(kind) {}
+      : WithRtti(token), value(std::move(value)), kind(kind), init(true) {}
 
   ~StringNode() override = default;
 
@@ -443,6 +471,13 @@ public:
   void unsetTilde() { this->kind = STRING; }
 
   void dump(NodeDumper &dumper) const override;
+
+  bool isInit() const { return this->init; }
+
+  void setValue(std::string &&v) {
+    this->init = true;
+    this->value = std::move(v);
+  }
 
   std::string takeValue() { return std::move(this->value); }
 };
@@ -1299,7 +1334,9 @@ private:
   BraceRange range;
 
 public:
-  BraceSeqNode(Token token, const BraceRange &range) : WithRtti(token), range(range) {}
+  BraceSeqNode(Token token, BraceRange::Kind k) : WithRtti(token) { this->range.kind = k; }
+
+  void setRange(BraceRange &&r) { this->range = std::move(r); }
 
   const auto &getRange() const { return this->range; }
 

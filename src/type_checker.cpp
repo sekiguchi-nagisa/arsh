@@ -584,9 +584,25 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
 void TypeChecker::visitNumberNode(NumberNode &node) {
   switch (node.kind) {
   case NumberNode::Int:
+    if (!node.isInit()) {
+      auto [value, status] = this->lexer.toInt64(node.getActualToken());
+      if (status) {
+        node.setIntValue(value);
+      } else {
+        this->reportError<OutOfRangeInt>(node.getActualToken());
+      }
+    }
     node.setType(this->typePool.get(TYPE::Int));
     break;
   case NumberNode::Float:
+    if (!node.isInit()) {
+      auto [value, status] = this->lexer.toDouble(node.getActualToken());
+      if (status) {
+        node.setFloatValue(value);
+      } else {
+        this->reportError<OutOfRangeFloat>(node.getActualToken());
+      }
+    }
     node.setType(this->typePool.get(TYPE::Float));
     break;
   case NumberNode::Signal:
@@ -599,8 +615,22 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
 }
 
 void TypeChecker::visitStringNode(StringNode &node) {
-  if (node.getKind() == StringNode::BACKQUOTE) {
+  switch (node.getKind()) {
+  case StringNode::STRING:
+    if (!node.isInit()) {
+      std::string value;
+      if (this->lexer.singleToString(node.getActualToken(), value)) {
+        node.setValue(std::move(value));
+      } else {
+        this->reportError<IllegalStrEscape>(node.getActualToken(), value.c_str());
+      }
+    }
+    break;
+  case StringNode::TILDE:
+    break;
+  case StringNode::BACKQUOTE:
     this->reportError<NoBackquote>(node);
+    break;
   }
   node.setType(this->typePool.get(TYPE::String));
 }
@@ -1354,7 +1384,9 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   }
   case NodeKind::BraceSeq: {
     auto &seqNode = cast<BraceSeqNode>(node);
-    auto constNode = std::make_unique<BraceSeqNode>(seqNode.getToken(), seqNode.getRange());
+    auto constNode = std::make_unique<BraceSeqNode>(seqNode.getToken(), seqNode.getRange().kind);
+    auto range = seqNode.getRange();
+    constNode->setRange(std::move(range));
     constNode->setType(seqNode.getType());
     return constNode;
   }
@@ -1404,7 +1436,6 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     break;
   }
   case NodeKind::Var: {
-    assert(this->lexer);
     auto &varNode = cast<VarNode>(node);
     Token token = varNode.getToken();
     std::string value;
@@ -1413,9 +1444,9 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     }
     if (varNode.getHandle()->is(HandleKind::MOD_CONST)) {
       if (varNode.getVarName() == CVAR_SCRIPT_NAME) {
-        value = this->lexer->getSourceName();
+        value = this->lexer.getSourceName();
       } else if (varNode.getVarName() == CVAR_SCRIPT_DIR) {
-        value = this->lexer->getScriptDir();
+        value = this->lexer.getScriptDir();
       } else {
         break;
       }
@@ -2146,7 +2177,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   switch (node.getKind()) {
   case CodeCompNode::VAR:
   case CodeCompNode::VAR_IN_CMD_ARG:
-    this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()),
+    this->ccHandler->addVarNameRequest(this->lexer.toName(node.getTypingToken()),
                                        node.getKind() == CodeCompNode::VAR_IN_CMD_ARG,
                                        this->curScope);
     break;
@@ -2156,7 +2187,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     if (recvType.isRecordType() && !cast<RecordType>(recvType).isFinalized()) {
       break; // ignore non-finalized record type
     }
-    this->ccHandler->addMemberRequest(recvType, this->lexer->toTokenText(node.getTypingToken()));
+    this->ccHandler->addMemberRequest(recvType, this->lexer.toTokenText(node.getTypingToken()));
     break;
   }
   case CodeCompNode::TYPE: {
@@ -2164,7 +2195,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     if (node.getExprNode()) {
       recvType = &this->checkTypeExactly(*node.getExprNode());
     }
-    this->ccHandler->addTypeNameRequest(this->lexer->toName(node.getTypingToken()), recvType,
+    this->ccHandler->addTypeNameRequest(this->lexer.toName(node.getTypingToken()), recvType,
                                         this->curScope);
     break;
   }

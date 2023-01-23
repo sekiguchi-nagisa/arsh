@@ -250,6 +250,27 @@ void TypeChecker::visitWildCardNode(WildCardNode &node) {
 }
 
 void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
+  auto kind = node.getRange().kind;
+  if (kind == BraceRange::Kind::UNINIT_CHAR || kind == BraceRange::Kind::UNINIT_INT) {
+    std::string error;
+    auto range = toBraceRange(this->lexer.toStrRef(node.getActualToken()),
+                              kind == BraceRange::Kind::UNINIT_CHAR, error);
+    switch (range.kind) {
+    case BraceRange::Kind::CHAR:
+    case BraceRange::Kind::INT:
+      node.setRange(std::move(range));
+      break;
+    case BraceRange::Kind::UNINIT_CHAR:
+    case BraceRange::Kind::UNINIT_INT:
+      break; // unrechable
+    case BraceRange::Kind::OUT_OF_RANGE:
+      this->reportError<BraceOutOfRange>(node.getActualToken(), error.c_str());
+      break;
+    case BraceRange::Kind::OUT_OF_RANGE_STEP:
+      this->reportError<BraceOutOfRangeStep>(node.getActualToken(), error.c_str());
+      break;
+    }
+  }
   node.setType(this->typePool.get(TYPE::String));
 }
 

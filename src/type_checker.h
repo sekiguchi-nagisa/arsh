@@ -281,7 +281,7 @@ protected:
 
   std::unique_ptr<FuncContext> funcCtx;
 
-  ObserverPtr<const Lexer> lexer;
+  const Lexer &lexer;
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
@@ -290,7 +290,7 @@ protected:
   std::vector<TypeCheckError> errors;
 
 public:
-  TypeChecker(const SysConfig &config, TypePool &pool, bool toplevelPrinting, const Lexer *lex)
+  TypeChecker(const SysConfig &config, TypePool &pool, bool toplevelPrinting, const Lexer &lex)
       : config(config), typePool(pool), toplevelPrinting(toplevelPrinting),
         funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
 

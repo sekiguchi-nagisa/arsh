@@ -29,6 +29,7 @@ nodes:
             size: ${len}
           type:
           kind: \"STRING\"
+          init: true
           value: \"$mod\"
     constNodes:
     name: null

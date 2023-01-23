@@ -100,10 +100,11 @@ public:
   ModuleLoader loader;
   NameScopePtr scope;
   TypePool pool;
+  Lexer lex;
   TypeChecker checker;
 
 public:
-  TypeTest() : loader(this->sysConfig), checker(this->sysConfig, this->pool, false, nullptr) {
+  TypeTest() : loader(this->sysConfig), checker(this->sysConfig, this->pool, false, this->lex) {
     this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 

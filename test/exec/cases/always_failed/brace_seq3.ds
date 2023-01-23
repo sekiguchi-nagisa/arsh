@@ -1,4 +1,4 @@
 
-#$test($result = 'parse', $lineNum = 4, $chars = 6, $errorKind = 'TokenFormat', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 7, $errorKind = 'BraceOutOfRangeStep', $status = 1)
 
 echo {-9223372036854775808..9223372036854775807..9223372036854775808}
