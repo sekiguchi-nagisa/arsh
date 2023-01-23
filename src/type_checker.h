@@ -663,7 +663,7 @@ private:
   bool applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
                  SourceListNode::path_iterator begin, SourceListNode::path_iterator end, GlobOp op);
 
-  void applyBraceExpansion(Token token, std::vector<std::shared_ptr<const std::string>> &results,
+  bool applyBraceExpansion(Token token, std::vector<std::shared_ptr<const std::string>> &results,
                            SourceListNode::path_iterator begin, SourceListNode::path_iterator end,
                            GlobOp op);
 

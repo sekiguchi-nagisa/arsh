@@ -496,7 +496,7 @@ static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_i
   return false;
 }
 
-void TypeChecker::applyBraceExpansion(Token token,
+bool TypeChecker::applyBraceExpansion(Token token,
                                       std::vector<std::shared_ptr<const std::string>> &results,
                                       const SourceListNode::path_iterator begin,
                                       const SourceListNode::path_iterator end, const GlobOp op) {
@@ -595,20 +595,20 @@ void TypeChecker::applyBraceExpansion(Token token,
 
       if (needGlob(vbegin, vend)) {
         if (!this->applyGlob(token, results, vbegin, vend, newOp)) {
-          return;
+          return false;
         }
       } else {
         auto path = concat(vbegin, vend);
         if (hasFlag(newOp, GlobOp::TILDE)) {
           if (!expandTilde(path, true)) {
             this->reportError<TildeFail>(token, path.c_str());
-            return;
+            return false;
           }
         }
         if (!path.empty()) {
           if (!appendPath(results, std::move(path))) {
             this->reportError<ExpandRetLimit>(token);
-            return;
+            return false;
           }
         }
       }
@@ -639,6 +639,7 @@ void TypeChecker::applyBraceExpansion(Token token,
       }
     }
   }
+  return true;
 }
 
 void TypeChecker::resolvePathList(SourceListNode &node) {
@@ -657,6 +658,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     if (pathNode.isTilde()) {
       if (!expandTilde(path, true)) {
         this->reportError<TildeFail>(pathNode, path.c_str());
+        return;
       }
     }
     results.push_back(std::make_shared<const std::string>(std::move(path)));
@@ -669,10 +671,14 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
       setFlag(op, GlobOp::OPTIONAL);
     }
 
+    bool status;
     if (pathNode.isBraceExpansion()) {
-      this->applyBraceExpansion(pathNode.getToken(), results, begin, end, op);
+      status = this->applyBraceExpansion(pathNode.getToken(), results, begin, end, op);
     } else {
-      this->applyGlob(pathNode.getToken(), results, begin, end, op);
+      status = this->applyGlob(pathNode.getToken(), results, begin, end, op);
+    }
+    if (!status) {
+      return;
     }
   }
   node.setPathList(std::move(results));
