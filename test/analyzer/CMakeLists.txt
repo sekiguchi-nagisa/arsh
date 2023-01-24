@@ -54,3 +54,43 @@ add_executable(${TEST_NAME}
         )
 target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static highlighter test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
+
+
+#====================#
+#     open_test1     #
+#====================#
+
+set(TEST_NAME open_test1)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        open_test1.cpp
+        )
+add_dependencies(${TEST_NAME} ${BIN_NAME} ydshd)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+#====================#
+#     open_test2     #
+#====================#
+
+set(TEST_NAME open_test2)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        open_test2.cpp
+        )
+add_dependencies(${TEST_NAME} ${BIN_NAME} ydshd)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+#====================#
+#     open_test3     #
+#====================#
+
+set(TEST_NAME open_test3)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        open_test3.cpp
+        )
+add_dependencies(${TEST_NAME} ${BIN_NAME} ydshd)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
+add_test(${TEST_NAME} ${TEST_NAME})

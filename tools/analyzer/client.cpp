@@ -92,6 +92,21 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     DidOpenTextDocumentParams params;
     std::string value = getRealpath(fileName.c_str()).get();
     auto uri = uri::URI::fromPath("file", std::move(value)).toString();
+    unsigned int waitTime = 10;
+
+    const char *largeFileNames[] = {
+        "/codegen_fail1.ds",
+        "/codegen_fail2.ds",
+        "/codegen_fail3.ds",
+        "/codegen_fail4.ds",
+    };
+    for (auto &e : largeFileNames) {
+      if (StringRef(uri).endsWith(e)) {
+        waitTime = 2000;
+        break;
+      }
+    }
+
     params.textDocument = TextDocumentItem{
         .uri = std::move(uri),
         .languageId = "ydsh",
@@ -103,7 +118,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     serializer(params);
 
     requests.emplace_back(
-        rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), 200);
+        rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), waitTime);
   }
 
   // send 'shutdown' request
@@ -209,7 +224,7 @@ void Client::run(const ClientInput &input) {
     if (req.msec > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
     }
-    int timeout = index == size - 1 ? 500 : 50;
+    int timeout = index == size - 1 ? 200 : 50;
     while (waitReply(this->transport.getInputFd(), timeout)) {
       auto ret = this->recv();
       assert(ret.hasValue());
