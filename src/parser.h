@@ -98,6 +98,12 @@ public:
 
   bool hasError() const { return ParserBase::hasError() && !this->remain; }
 
+  void forceTerminate() { // FIXME: temporal api, must be implement proper error recovery
+    this->clear();
+    this->curKind = TokenKind::EOS;
+    this->remain = false;
+  }
+
 protected:
   /**
    * change lexer mode and refetch.

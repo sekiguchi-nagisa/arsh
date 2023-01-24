@@ -50,6 +50,11 @@ std::unique_ptr<Node> FrontEnd::tryToParse() {
     if (this->parser().hasError()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
       this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
+      if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+        auto token = this->parser().getError().getErrorToken();
+        this->parser().forceTerminate();
+        node = std::make_unique<ErrorNode>(token);
+      }
     } else if (this->uastDumper) {
       this->uastDumper(*node);
     }
