@@ -197,6 +197,10 @@ world" == "$(echo hello && echo world)")  # and-list
 "$(exit 23)"
 assert($? == 23) # after substitution, update exit status
 
+var ex = 34 as Any
+try { assert "$(yes)".size() == 0; } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+
 
 # right handle side expression
 var r = echo hello
@@ -248,7 +252,7 @@ assert "\\=$HOME" == "$(echo \\=~)"
 assert($HOME + "/" == "$(echo ~/)")
 assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert "if=$HOME/AAA=~" == "$(echo if=~/AAA=~)"
-var ex = 43 as Any
+$ex = 43 as Any
 try { echo ~g; } catch e { $ex = $e; }
 assert $ex is TildeError
 assert ($ex as TildeError).message() =~ $/~g/
