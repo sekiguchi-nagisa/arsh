@@ -59,7 +59,7 @@ Optional<std::string> readAll(const char *sourceName) {
     return {};
   }
 
-  if (!readAll(file, buf)) {
+  if (!readAll(file, buf, INT32_MAX)) {
     std::cerr << "cannot read file: " << sourceName << ", by `" << strerror(errno) << "'"
               << std::endl;
     return {};

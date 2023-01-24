@@ -182,13 +182,19 @@ inline FilePtr createFilePtr(Func func, Arg &&...arg) {
 }
 
 template <typename Buf>
-bool readAll(FILE *fp, Buf &buf) {
+bool readAll(FILE *fp, Buf &buf, size_t readLimit) {
+  size_t totalSize = 0;
   while (true) {
-    char data[128];
+    char data[256];
     clearerr(fp);
     errno = 0;
-    unsigned int size = fread(data, sizeof(char), std::size(data), fp);
+    size_t size = fread(data, sizeof(char), std::size(data), fp);
     if (size > 0) {
+      if (size > readLimit || totalSize > readLimit - size) {
+        errno = EFBIG;
+        return false;
+      }
+      totalSize += size;
       buf.append(data, size);
     } else if (errno) {
       if (errno == EINTR) {
@@ -203,8 +209,8 @@ bool readAll(FILE *fp, Buf &buf) {
 }
 
 template <typename Buf>
-inline bool readAll(const FilePtr &filePtr, Buf &buf) {
-  return readAll(filePtr.get(), buf);
+inline bool readAll(const FilePtr &filePtr, Buf &buf, size_t readLimit = SIZE_MAX) {
+  return readAll(filePtr.get(), buf, readLimit);
 }
 
 inline bool writeAll(const FilePtr &filePtr, const std::string &str) {

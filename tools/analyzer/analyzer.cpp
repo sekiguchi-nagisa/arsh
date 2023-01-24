@@ -149,7 +149,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     return get<ModLoadingError>(ret);
   } else if (is<const char *>(ret)) {
     std::string content;
-    if (!readAll(filePtr, content)) {
+    if (!readAll(filePtr, content, INT32_MAX)) {
       return ModLoadingError(errno);
     }
     const char *fullPath = get<const char *>(ret);

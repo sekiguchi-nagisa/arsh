@@ -255,7 +255,7 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     }
 
     ByteBuffer buf;
-    if (!readAll(filePtr, buf)) {
+    if (!readAll(filePtr, buf, INT32_MAX)) {
       return ModLoadingError(errno);
     }
     const char *fullPath = get<const char *>(ret);

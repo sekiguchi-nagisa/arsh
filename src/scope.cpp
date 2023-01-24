@@ -453,7 +453,7 @@ static int checkFileType(const struct stat &st, ModLoadOption option) {
   if (S_ISDIR(st.st_mode)) {
     return EISDIR;
   } else if (S_ISREG(st.st_mode)) {
-    if (st.st_size > static_cast<off_t>(static_cast<uint32_t>(-1) >> 2)) {
+    if (st.st_size > static_cast<off_t>(SYS_LIMIT_INPUT_SIZE)) {
       return EFBIG;
     }
   } else if (hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE)) {

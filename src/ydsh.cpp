@@ -354,22 +354,6 @@ static CompileOption getCompileOption(const DSState &st) {
   return option;
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size,
-                 DSError *e) {
-  GUARD_NULL(st, -1);
-  GUARD_NULL(data, -1);
-
-  const auto compileOption = getCompileOption(*st);
-  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
-  auto discardPoint = moduleProvider.getCurrentDiscardPoint();
-  auto lexer = LexerPtr::create(sourceName == nullptr ? "(stdin)" : sourceName,
-                                ByteBuffer(data, data + size), getCWD());
-  lexer->setLineNumOffset(st->lineNum);
-  st->lineNum = 0;
-  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
-  return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
-}
-
 static void reportFileError(const char *sourceName, int errNum, DSError *e) {
   fprintf(stderr, "ydsh: cannot load file: %s, by `%s'\n", sourceName, strerror(errNum));
   if (e) {
@@ -380,6 +364,29 @@ static void reportFileError(const char *sourceName, int errNum, DSError *e) {
           .name = strdup(strerror(errNum))};
   }
   errno = errNum;
+}
+
+int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size,
+                 DSError *e) {
+  GUARD_NULL(st, -1);
+  GUARD_NULL(data, -1);
+
+  if (!sourceName) {
+    sourceName = "(stdin)";
+  }
+  if (size > SYS_LIMIT_INPUT_SIZE) {
+    reportFileError(sourceName, EFBIG, e);
+    return 1;
+  }
+
+  const auto compileOption = getCompileOption(*st);
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  auto discardPoint = moduleProvider.getCurrentDiscardPoint();
+  auto lexer = LexerPtr::create(sourceName, ByteBuffer(data, data + size), getCWD());
+  lexer->setLineNumOffset(st->lineNum);
+  st->lineNum = 0;
+  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
+  return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
