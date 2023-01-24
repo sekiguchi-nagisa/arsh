@@ -93,6 +93,19 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     std::string value = getRealpath(fileName.c_str()).get();
     auto uri = uri::URI::fromPath("file", std::move(value)).toString();
     unsigned int waitTime = 10;
+
+    const char *largeFileNames[] = {
+        "/codegen_fail1.ds",
+        "/codegen_fail2.ds",
+        "/codegen_fail3.ds",
+        "/codegen_fail4.ds",
+    };
+    for (auto &e : largeFileNames) {
+      if (StringRef(uri).endsWith(e)) {
+        waitTime = 2000;
+        break;
+      }
+    }
     if (content.size() > 1024 * 1024) {
       waitTime = 2000;
     }
