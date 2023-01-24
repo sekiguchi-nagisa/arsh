@@ -2503,6 +2503,10 @@ public:
 
   void setInlined(bool s) { this->inlined = s; }
 
+  bool isExpansion() const {
+    return this->getPathNode().getExpansionSize() > 0 && !this->getNameInfoPtr();
+  }
+
   unsigned int getCurIndex() const { return this->curIndex; }
 
   void setCurIndex(unsigned int index) { this->curIndex = index; }

@@ -653,7 +653,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   auto end = node.getConstNodes().cend() - 1;
 
   std::vector<std::shared_ptr<const std::string>> results;
-  if (pathNode.getExpansionSize() == 0) {
+  if (!node.isExpansion()) {
     std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
       if (!expandTilde(path, true)) {
@@ -691,8 +691,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     return;
   }
   this->checkTypeExactly(node.getPathNode());
-  bool isGlob = node.getPathNode().getExpansionSize() > 0 && !node.getNameInfoPtr();
-  auto &exprType = this->typePool.get(isGlob ? TYPE::StringArray : TYPE::String);
+  auto &exprType = this->typePool.get(node.isExpansion() ? TYPE::StringArray : TYPE::String);
   this->checkType(exprType, node.getPathNode());
 
   std::unique_ptr<CmdArgNode> constPathNode;
