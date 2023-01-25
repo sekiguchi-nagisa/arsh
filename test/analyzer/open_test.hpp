@@ -16,9 +16,23 @@ using namespace ydsh;
 
 struct OpenTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
+    const char *largeFiles[] = {
+        "/codegen_fail1.ds", "/codegen_fail2.ds", "/codegen_fail3.ds", "/codegen_fail4.ds",
+        "/source_brace4.ds", "/source_glob3.ds",  "/source_glob4.ds",
+    };
+    unsigned int waitTime = 10;
+    for (auto &e : largeFiles) {
+      if (StringRef(GetParam()).endsWith(e)) {
+        waitTime = 2000;
+        break;
+      }
+    }
+
     auto file = createFilePtr(fopen, "/dev/null", "w");
     auto result = ProcBuilder{ANALYZER_PATH, "--test-open"}
                       .addArg(GetParam())
+                      .addArg("--wait-time")
+                      .addArg(std::to_string(waitTime))
                       .setOut(fileno(file.get()))
                       .exec();
     ASSERT_EQ(WaitStatus::EXITED, result.kind);

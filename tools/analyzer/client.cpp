@@ -64,7 +64,8 @@ static std::pair<unsigned int, bool> parseNum(const std::string &line) {
   return {0, false};
 }
 
-static ClientInput loadWholeFile(const std::string &fileName, std::istream &input) {
+static ClientInput loadWholeFile(const std::string &fileName, std::istream &input,
+                                 unsigned int waitTime) {
   std::vector<ClientRequest> requests;
 
   int64_t id = 0;
@@ -92,21 +93,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     DidOpenTextDocumentParams params;
     std::string value = getRealpath(fileName.c_str()).get();
     auto uri = uri::URI::fromPath("file", std::move(value)).toString();
-    unsigned int waitTime = 10;
-
-    const char *largeFileNames[] = {
-        "/codegen_fail1.ds",
-        "/codegen_fail2.ds",
-        "/codegen_fail3.ds",
-        "/codegen_fail4.ds",
-    };
-    for (auto &e : largeFileNames) {
-      if (StringRef(uri).endsWith(e)) {
-        waitTime = 2000;
-        break;
-      }
-    }
-    if (content.size() > 1024 * 1024) {
+    if (content.size() > 1024 * 1024 && waitTime < 2000) {
       waitTime = 2000;
     }
 
@@ -133,7 +120,8 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
   return ClientInput{.req = std::move(requests)};
 }
 
-Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open) {
+Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open,
+                                                 unsigned int waitTime) {
   std::ifstream input(fileName);
   if (!input) {
     std::string error = "cannot read: ";
@@ -141,7 +129,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
     return Err(std::move(error));
   }
   if (open) {
-    return Ok(loadWholeFile(fileName, input));
+    return Ok(loadWholeFile(fileName, input, waitTime));
   }
 
   std::vector<ClientRequest> requests;

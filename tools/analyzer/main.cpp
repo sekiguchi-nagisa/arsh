@@ -33,7 +33,9 @@ using namespace lsp;
   OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
      "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME))                     \
   OP(TEST, "--test", opt::HAS_ARG, "run in test mode")                                             \
-  OP(TEST_OPEN, "--test-open", opt::HAS_ARG, "run in test mode (explicitly open specified file)")
+  OP(TEST_OPEN, "--test-open", opt::HAS_ARG, "run in test mode (explicitly open specified file)")  \
+  OP(WAIT_TIME, "--wait-time", opt::HAS_ARG,                                                       \
+     "specify wait time (ms) for test-open mode, default is 10")
 
 enum class OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -62,6 +64,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
   auto begin = argv + (argc > 0 ? 1 : 0);
   auto end = argv + argc;
   const char *debounceTime = nullptr;
+  const char *waitTime = nullptr;
   opt::Result<OptionKind> result;
   DriverOptions options;
   while ((result = optParser(begin, end))) {
@@ -86,6 +89,9 @@ static DriverOptions parseOptions(int argc, char **argv) {
     case OptionKind::DEBOUNCE_TIME:
       debounceTime = result.arg();
       break;
+    case OptionKind::WAIT_TIME:
+      waitTime = result.arg();
+      break;
     }
   }
   if (result.error() != opt::END) {
@@ -100,6 +106,14 @@ static DriverOptions parseOptions(int argc, char **argv) {
       exit(1);
     }
     options.debounceTime = pair.first;
+  }
+  if (waitTime) {
+    auto pair = convertToDecimal<unsigned int>(waitTime);
+    if (!pair.second) {
+      fprintf(stderr, "require valid number (0~): %s\n", waitTime);
+      exit(1);
+    }
+    options.waitTime = pair.first;
   }
   return options;
 }

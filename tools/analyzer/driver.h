@@ -29,6 +29,7 @@ namespace ydsh::lsp {
 struct DriverOptions {
   LogLevel level{LogLevel::WARNING};
   int debounceTime{DEFAULT_DEBOUNCE_TIME};
+  unsigned int waitTime{10};
   bool lsp{true};
   bool open{false};
   const char *testInput{nullptr};

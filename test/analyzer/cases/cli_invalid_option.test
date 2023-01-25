@@ -9,6 +9,7 @@
 # CHECKERR_RE:     --log arg              specify log level \(debug, info, warning, error, fatal\)\. default is `.+'
 #    CHECKERR:     --test arg             run in test mode
 #    CHECKERR:     --test-open arg        run in test mode (explicitly open specified file)
+#    CHECKERR:     --wait-time arg        specify wait time (ms) for test-open mode, default is 10
 
 # STATUS: 1
 

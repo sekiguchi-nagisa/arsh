@@ -35,7 +35,8 @@ struct ClientInput {
   std::vector<ClientRequest> req;
 };
 
-Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open = false);
+Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open = false,
+                                                 unsigned int waitTime = 10);
 
 struct ClientLogger : public LoggerBase {
   ClientLogger() : LoggerBase("YDSHD_CLIENT") {}

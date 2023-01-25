@@ -8,6 +8,7 @@
 # CHECK_RE:     --log arg              specify log level \(debug, info, warning, error, fatal\)\. default is `.+'
 #    CHECK:     --test arg             run in test mode
 #    CHECK:     --test-open arg        run in test mode (explicitly open specified file)
+#    CHECK:     --wait-time arg        specify wait time (ms) for test-open mode, default is 10
 
 # STATUS: 0
 
