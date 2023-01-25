@@ -30,7 +30,7 @@ struct SimpleDriver : public Driver {
 
 Result<std::unique_ptr<Driver>, std::string> createDriver(const DriverOptions &options) {
   if (options.testInput) {
-    auto input = loadInputScript(options.testInput, options.open);
+    auto input = loadInputScript(options.testInput, options.open, options.waitTime);
     if (!input) {
       return Err(std::move(input).takeError());
     }
