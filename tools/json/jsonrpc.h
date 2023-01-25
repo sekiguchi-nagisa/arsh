@@ -223,7 +223,7 @@ public:
    * @return
    * sent data size
    */
-  virtual ssize_t send(unsigned int size, const char *data) = 0;
+  virtual ssize_t send(size_t size, const char *data) = 0;
 
   /**
    * read header and get total size of json text
@@ -241,7 +241,7 @@ public:
    * @return
    * received size
    */
-  virtual ssize_t recv(unsigned int size, char *data) = 0;
+  virtual ssize_t recv(size_t size, char *data) = 0;
 
   /**
    *

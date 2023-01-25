@@ -222,7 +222,7 @@ void Client::run(const ClientInput &input) {
       this->transport.getLogger()(LogLevel::DEBUG, "%s", v.c_str());
     }
     if (!this->send(req.request)) {
-      this->transport.getLogger()(LogLevel::FATAL, "request sending failed");
+      this->transport.getLogger()(LogLevel::FATAL, "request sending failed: `%s'", strerror(errno));
     }
     if (req.msec > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
@@ -242,6 +242,7 @@ void Client::run(const ClientInput &input) {
 
 bool Client::send(const JSON &json) {
   auto value = json.serialize();
+  errno = 0;
   auto writeSize = this->transport.send(value.size(), value.c_str());
   return writeSize > -1 && static_cast<size_t>(writeSize) >= value.size();
 }

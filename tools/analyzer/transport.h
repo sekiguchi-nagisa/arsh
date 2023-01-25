@@ -37,11 +37,11 @@ public:
 
   const FilePtr &getOutput() const { return this->output; }
 
-  ssize_t send(unsigned int size, const char *data) override;
+  ssize_t send(size_t size, const char *data) override;
 
   ssize_t recvSize() override;
 
-  ssize_t recv(unsigned int size, char *data) override;
+  ssize_t recv(size_t size, char *data) override;
 
   bool poll(int timeout) override;
 };

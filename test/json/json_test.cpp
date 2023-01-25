@@ -918,12 +918,12 @@ struct StringTransport : public rpc::Transport {
   explicit StringTransport(std::string &&text)
       : rpc::Transport(SingleNullLogger::instance()), inStr(std::move(text)) {}
 
-  ssize_t send(unsigned int size, const char *data) override {
+  ssize_t send(size_t size, const char *data) override {
     this->outStr.append(data, size);
     return size;
   }
 
-  ssize_t recv(unsigned int size, char *data) override {
+  ssize_t recv(size_t size, char *data) override {
     unsigned int count = 0;
     for (; this->cursor < this->inStr.size() && count < size; this->cursor++) {
       data[count] = this->inStr[this->cursor];

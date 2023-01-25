@@ -16,6 +16,7 @@
 
 #include <poll.h>
 
+#include <constant.h>
 #include <misc/num_util.hpp>
 
 #include "transport.h"
@@ -48,11 +49,25 @@ LSPTransport::LSPTransport(LoggerBase &logger, int inFd, int outFd) : rpc::Trans
 
 LSPTransport::~LSPTransport() { close(this->inputFd); }
 
-ssize_t LSPTransport::send(unsigned int size, const char *data) {
+ssize_t LSPTransport::send(size_t size, const char *data) {
   if (size == 0 || data == nullptr) {
     return 0;
   }
-  if (fprintf(this->output.get(), "%s%d\r\n\r\n%s", HEADER_LENGTH, size, data) < 0) {
+
+  if (size > SYS_LIMIT_INPUT_SIZE) {
+    errno = ENOMEM;
+    return -1;
+  }
+
+  std::string buf;
+  buf.reserve(size + 64);
+  buf += HEADER_LENGTH;
+  buf += std::to_string(size);
+  buf += "\r\n\r\n";
+  buf.append(data, size);
+  size_t bufSize = buf.size();
+  size_t writeSize = fwrite(buf.c_str(), sizeof(char), buf.size(), this->output.get());
+  if (writeSize < bufSize) {
     return -1;
   }
   if (fflush(this->output.get()) != 0) {
@@ -129,9 +144,7 @@ ssize_t LSPTransport::recvSize() {
   return size;
 }
 
-ssize_t LSPTransport::recv(unsigned int size, char *data) {
-  return read(this->inputFd, data, size);
-}
+ssize_t LSPTransport::recv(size_t size, char *data) { return read(this->inputFd, data, size); }
 
 bool LSPTransport::poll(int timeout) {
   struct pollfd pollfd[1]{};
