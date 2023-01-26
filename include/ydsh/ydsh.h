@@ -240,7 +240,7 @@ DS_PUBLIC_API(void) DSError_release(DSError *e);
  * if st or data is null, return -1 and not set error
  */
 DS_PUBLIC_API(int)
-DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
+DSState_eval(DSState *st, const char *sourceName, const char *data, size_t size, DSError *e);
 
 /* for module loading option */
 /**

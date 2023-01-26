@@ -366,8 +366,7 @@ static void reportFileError(const char *sourceName, int errNum, DSError *e) {
   errno = errNum;
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size,
-                 DSError *e) {
+int DSState_eval(DSState *st, const char *sourceName, const char *data, size_t size, DSError *e) {
   GUARD_NULL(st, -1);
   GUARD_NULL(data, -1);
 
