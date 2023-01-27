@@ -12,3 +12,6 @@ assert $1 == "hoge"
 assert $2 == "123"
 '
 $expect("$(echo -n $cmd | ds -s hoge 123 2>&1)", 0, "")
+
+## large input
+$expectRegex("$(yes | ds 2>&1)", 1, $/ydsh: cannot load file: \/.+, by \`File too large'/)

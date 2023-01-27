@@ -353,6 +353,17 @@ TEST_F(APITest, arg) {
   e = newError();
 }
 
+TEST_F(APITest, size) {
+  auto e = newError();
+  int s = DSState_eval(this->state, "(string)", "echo hello", UINT32_MAX, e.get());
+  ASSERT_EQ(1, s);
+  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(0, e->chars);
+  ASSERT_EQ(0, e->lineNum);
+  ASSERT_STREQ("(string)", e->fileName);
+  ASSERT_STREQ(strerror(EFBIG), e->name);
+}
+
 TEST_F(APITest, dump) {
   int s = DSState_setDumpTarget(this->state, DS_DUMP_KIND_AST, "./fjreijfreoai/jfraeijfriea/53452");
   ASSERT_EQ(-1, s);

@@ -4,3 +4,6 @@ source $SCRIPT_DIR/expect.ds
 $expect("$(eval $YDSH_BIN <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
 
 $expect("$(ds <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
+
+## large file
+$expectRegex("$(ds <(yes) 2>&1)", 1, $/ydsh: cannot load file: \/.+, by \`File too large'/)
