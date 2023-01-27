@@ -220,7 +220,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     }
 
     std::string str = TRY(this->checkedCast<StringNode>(node))->getValue();
-    expandTilde(str);
+    expandTilde(str, false, nullptr);
     char *buf = realpath(str.c_str(), nullptr);
     if (buf == nullptr) {
       std::string message = "invalid file name: ";

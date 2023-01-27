@@ -182,9 +182,9 @@ std::string expandDots(const char *basePath, const char *path) {
   return str;
 }
 
-bool expandTilde(std::string &str, bool useHOME) {
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProvider *provider) {
   if (str.empty() || str.front() != '~') {
-    return false;
+    return TildeExpandStatus::NO_TILDE;
   }
 
   const char *path = str.c_str();
@@ -203,8 +203,12 @@ bool expandTilde(std::string &str, bool useHOME) {
     }
     if (value) {
       expanded = value;
+    } else {
+      return TildeExpandStatus::NO_USER;
     }
   } else if (expanded == "~+") {
+    (void)provider;
+
     /**
      * if PWD indicates valid dir, use PWD.
      * if PWD is invalid, use cwd
@@ -218,6 +222,8 @@ bool expandTilde(std::string &str, bool useHOME) {
       } else {
         expanded = cwd.get();
       }
+    } else {
+      return TildeExpandStatus::INVALID_NUM; // FIXME:
     }
   } else if (expanded == "~-") {
     /**
@@ -227,11 +233,15 @@ bool expandTilde(std::string &str, bool useHOME) {
     const char *oldpwd = getenv(ENV_OLDPWD);
     if (oldpwd && *oldpwd == '/' && S_ISDIR(getStMode(oldpwd))) {
       expanded = oldpwd;
+    } else {
+      return TildeExpandStatus::INVALID_NUM; // FIXME:
     }
-  } else {
+  } else { // expand user
     struct passwd *pw = getpwnam(expanded.c_str() + 1);
     if (pw != nullptr) {
       expanded = pw->pw_dir;
+    } else {
+      return TildeExpandStatus::NO_USER;
     }
   }
 
@@ -239,9 +249,8 @@ bool expandTilde(std::string &str, bool useHOME) {
   if (*path != '\0') {
     expanded += path;
   }
-  bool r = str != expanded;
   str = std::move(expanded);
-  return r;
+  return TildeExpandStatus::OK;
 }
 
 CStrPtr getWorkingDir(const std::string &logicalWorkingDir, bool useLogical) {

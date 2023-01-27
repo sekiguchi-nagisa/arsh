@@ -227,11 +227,16 @@ public:
 
   const std::string &getBase() const { return this->base; }
 
-  template <typename Appender>
-  GlobMatchResult operator()(Appender &appender) {
+  template <typename T>
+  static constexpr bool tilde_expander_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<T, std::string &>>;
+
+  template <typename TildeExpander, typename Appender,
+            enable_when<tilde_expander_requirement_v<TildeExpander>> = nullptr>
+  GlobMatchResult operator()(TildeExpander expander, Appender &appender) {
     Iter iter = this->begin;
     std::string baseDir;
-    bool r = this->resolveBaseDir(iter, baseDir);
+    bool r = this->resolveBaseDir(std::move(expander), iter, baseDir);
     this->base = std::move(baseDir);
     if (!r) {
       return GlobMatchResult::TILDE_FAIL;
@@ -297,7 +302,9 @@ private:
     return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
   }
 
-  bool resolveBaseDir(Iter &iter, std::string &baseDir) const {
+  template <typename TildeExpander,
+            enable_when<tilde_expander_requirement_v<TildeExpander>> = nullptr>
+  bool resolveBaseDir(TildeExpander expander, Iter &iter, std::string &baseDir) const {
     auto old = iter;
     auto latestSep = this->end;
 
@@ -322,8 +329,8 @@ private:
       ++iter;
       for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
         ;
-      if (hasFlag(option, GlobMatchOption::TILDE)) {
-        if (!Meta::preExpand(baseDir)) {
+      if (hasFlag(this->option, GlobMatchOption::TILDE)) {
+        if (!expander(baseDir)) {
           return false;
         }
       }

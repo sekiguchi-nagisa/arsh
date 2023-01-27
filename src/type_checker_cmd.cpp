@@ -388,8 +388,6 @@ struct SourceGlobMeta {
     auto &node = **iter.getIter();
     return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ZERO_OR_MORE;
   }
-
-  static bool preExpand(std::string &path) { return expandTilde(path, true); }
 };
 
 static std::string concat(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
@@ -450,7 +448,10 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
   }
   auto matcher = createGlobMatcher<SourceGlobMeta>(
       nullptr, SourceGlobIter(begin), SourceGlobIter(end), [] { return false; }, option);
-  auto ret = matcher(appender);
+  auto expander = [](std::string &path) {
+    return expandTilde(path, true, nullptr) == TildeExpandStatus::OK;
+  };
+  auto ret = matcher(std::move(expander), appender);
   if (ret == GlobMatchResult::MATCH ||
       (ret == GlobMatchResult::NOMATCH && hasFlag(op, GlobOp::OPTIONAL))) {
     std::sort(results.begin() + oldSize, results.end(),
@@ -600,7 +601,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
       } else {
         auto path = concat(vbegin, vend);
         if (hasFlag(newOp, GlobOp::TILDE)) {
-          if (!expandTilde(path, true)) {
+          if (expandTilde(path, true, nullptr) != TildeExpandStatus::OK) {
             this->reportError<TildeFail>(token, path.c_str());
             return false;
           }
@@ -656,7 +657,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   if (!node.isExpansion()) {
     std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
-      if (!expandTilde(path, true)) {
+      if (expandTilde(path, true, nullptr) != TildeExpandStatus::OK) {
         this->reportError<TildeFail>(pathNode, path.c_str());
         return;
       }

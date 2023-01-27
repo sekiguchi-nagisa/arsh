@@ -18,8 +18,6 @@ struct StrMetaChar {
   static bool isAny(const char *iter) { return *iter == '?'; }
 
   static bool isZeroOrMore(const char *iter) { return *iter == '*'; }
-
-  static bool preExpand(std::string &) { return true; }
 };
 
 static WildMatchResult matchPatternRaw(const char *name, const char *p,
@@ -74,7 +72,7 @@ public:
     Appender appender(this->ret);
     auto matcher = createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern),
                                                   CancelPoint(), option);
-    matcher(appender);
+    matcher([](std::string &) { return true; }, appender);
     return matcher.getMatchCount();
   }
 };

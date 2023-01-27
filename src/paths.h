@@ -87,16 +87,41 @@ struct allow_enum_bitop<FilePathCache::SearchOp> : std::true_type {};
  */
 std::string expandDots(const char *basePath, const char *path);
 
+struct DirStackProvider {
+  virtual ~DirStackProvider() = default;
+
+  virtual size_t size() const = 0;
+
+  /**
+   *
+   * @param index
+   * @return
+   * if index out of range, return empty string
+   */
+  virtual StringRef get(size_t index) const = 0;
+};
+
+enum class TildeExpandStatus {
+  OK,
+  NO_TILDE,      // not start with tilde
+  NO_USER,       // not found corresponding user
+  NO_DIR_STACK,  // dir stack is not provided
+  INVALID_NUM,   // invalid number format
+  OUT_OF_RANGE,  // out of range index
+  NULL_OR_EMPTY, // has null character or empty
+};
+
 /**
  *
  * @param str
  * @param useHOME
  * if true, use `HOME' environmental variable for `~' expansion
+ * @param provider
+ * may be null
  * @return
- * if perform tilde expansion, return true.
- * otherwise, return false
+ * if tilde expansion succeed, return OK
  */
-bool expandTilde(std::string &str, bool useHOME = false);
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProvider *provider);
 
 /**
  *

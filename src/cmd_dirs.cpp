@@ -98,7 +98,7 @@ static bool printDirstack(const ArrayObject &dirstack, const char *cwd, const Pr
   std::string home;
   if (!hasFlag(dirOp, PrintDirOp::FULL_PATH)) {
     home = "~";
-    if (!expandTilde(home)) {
+    if (expandTilde(home, true, nullptr) != TildeExpandStatus::OK) {
       return false;
     }
   }

@@ -315,7 +315,7 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
   } else if (s != StringRef::npos) {
     targetDir = prefix.substr(0, s).toString();
     if (hasFlag(op, CodeCompOp::TILDE)) {
-      expandTilde(targetDir, true);
+      expandTilde(targetDir, true, nullptr);
     }
     targetDir = expandDots(baseDir, targetDir.c_str());
   } else {
