@@ -1289,24 +1289,68 @@ public:
   const DSValue *getIter() const { return this->cur; }
 };
 
-static void raiseTildeError(DSState &state, const std::string &path) {
-  std::string str = TILDE_ERROR;
-  str += path;
+static const char *toMessagePrefix(TildeExpandStatus status) {
+  switch (status) {
+  case TildeExpandStatus::OK:
+  case TildeExpandStatus::NO_TILDE:
+    break;
+  case TildeExpandStatus::NO_USER:
+    return "no such user: ";
+  case TildeExpandStatus::NO_DIR_STACK:
+    break;
+  case TildeExpandStatus::UNDEF_OR_EMPTY:
+    return "undefined or empty: ";
+  case TildeExpandStatus::INVALID_NUM:
+    return "invalid number format: ";
+  case TildeExpandStatus::OUT_OF_RANGE:
+    return "directory stack index out of range, up to directory stack limit ";
+  case TildeExpandStatus::HAS_NULL:
+    return "expanded path contains null characters: ";
+  }
+  assert(false);
+  return "";
+}
+
+static void raiseTildeError(DSState &state, const DirStackProvider &provider,
+                            const std::string &path, TildeExpandStatus status) {
+  assert(status != TildeExpandStatus::OK);
+  StringRef ref = path;
+  if (auto pos = ref.find("/"); pos != StringRef::npos) {
+    ref = ref.substr(0, pos);
+  }
+  std::string str = toMessagePrefix(status);
+  if (status == TildeExpandStatus::OUT_OF_RANGE) {
+    str += "(";
+    str += std::to_string(provider.size());
+    str += "): ";
+  }
+  str += ref;
   raiseError(state, TYPE::TildeError, std::move(str));
 }
 
 class DefaultDirStackProvider : public DirStackProvider {
 private:
-  const ArrayObject &obj;
+  const DSState &state;
+  CStrPtr cwd;
+
+  const ArrayObject &dirStack() const {
+    return typeAs<ArrayObject>(this->state.getGlobal(BuiltinVarOffset::DIRSTACK));
+  }
 
 public:
-  explicit DefaultDirStackProvider(ArrayObject &obj) : obj(obj) {}
+  explicit DefaultDirStackProvider(const DSState &state) : state(state) {}
 
-  size_t size() const override { return this->obj.size(); }
+  size_t size() const override {
+    return std::min(this->dirStack().size(), SYS_LIMIT_DIRSTACK_SIZE);
+  }
 
-  StringRef get(size_t index) const override {
-    if (index < this->obj.size()) {
-      return this->obj.getValues()[index].asStrRef();
+  StringRef get(size_t index) override {
+    size_t size = this->size();
+    if (index < size) {
+      return this->dirStack().getValues()[index].asStrRef();
+    } else if (index == size) {
+      this->cwd = this->state.getWorkingDir();
+      return this->cwd.get();
     }
     return "";
   }
@@ -1377,8 +1421,11 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   }
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
       nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
-  auto expander = [](std::string &path) {
-    return expandTilde(path, true, nullptr) == TildeExpandStatus::OK;
+  DefaultDirStackProvider provider(state);
+  TildeExpandStatus tildeExpandStatus{};
+  auto expander = [&provider, &tildeExpandStatus](std::string &path) {
+    tildeExpandStatus = expandTilde(path, true, &provider);
+    return tildeExpandStatus == TildeExpandStatus::OK;
   };
   auto ret = matcher(std::move(expander), appender);
   switch (ret) {
@@ -1395,7 +1442,8 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
     raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;
   case GlobMatchResult::TILDE_FAIL:
-    raiseTildeError(state, matcher.getBase());
+    assert(tildeExpandStatus != TildeExpandStatus::OK);
+    raiseTildeError(state, provider, matcher.getBase(), tildeExpandStatus);
     return false;
   default:
     assert(ret == GlobMatchResult::LIMIT && state.hasError());
@@ -1559,11 +1607,10 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
       } else {
         DSValue path = concatPath(state, vbegin, vend);
         if (tilde) {
-          DefaultDirStackProvider dirStackProvider(
-              typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK)));
+          DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
-          if (expandTilde(str, true, &dirStackProvider) != TildeExpandStatus::OK) {
-            raiseTildeError(state, str);
+          if (auto s = expandTilde(str, true, &dirStackProvider); s != TildeExpandStatus::OK) {
+            raiseTildeError(state, dirStackProvider, str, s);
             return false;
           }
           path = DSValue::createStr(std::move(str));
@@ -2242,10 +2289,9 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(EXPAND_TILDE) {
         std::string str = state.stack.pop().asStrRef().toString();
-        DefaultDirStackProvider dirStackProvider(
-            typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK)));
-        if (expandTilde(str, true, &dirStackProvider) != TildeExpandStatus::OK) {
-          raiseTildeError(state, str);
+        DefaultDirStackProvider dirStackProvider(state);
+        if (auto s = expandTilde(str, true, &dirStackProvider); s != TildeExpandStatus::OK) {
+          raiseTildeError(state, dirStackProvider, str, s);
           vmerror;
         }
         state.stack.push(DSValue::createStr(std::move(str)));

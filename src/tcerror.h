@@ -93,7 +93,9 @@ DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
 DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, but always "
                           "matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
-DEFINE_TCError(TildeFail, "cannot expand tilde, no such user or directory: `%s'");
+DEFINE_TCError(TildeFail, "cannot expand tilde, no such user: `%s'");
+DEFINE_TCError(TildeNoDirStack, "in source statement, `~+', `~+N', `~N' style "
+                                "tilde expansions are not performed: `%s'");
 DEFINE_TCError(BraceUnopened, "unopened brace expansion, require `{' before `}'");
 DEFINE_TCError(BraceUnclosed, "unclosed brace expansion, require `}' after `{'");
 DEFINE_TCError(BraceOutOfRange, "out of range brace expansion number: `%s', must be int64");

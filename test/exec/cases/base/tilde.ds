@@ -1,0 +1,196 @@
+# tilde expansion
+
+var ex = 334 as Any
+
+## expand to HOME
+import-env HOME
+assert($HOME == "$(echo ~)")
+assert "if=$HOME" == "$(echo if=~)"
+assert "if\\=$HOME" == "$(echo if\\=~)"
+assert "\\=$HOME" == "$(echo \\=~)"
+assert($HOME + "/" == "$(echo ~/)")
+assert($HOME + "/hoge" == "$(echo ~/hoge)")
+assert "if=$HOME/AAA=~" == "$(echo if=~/AAA=~)"
+$ex = 43 as Any
+try { echo ~g; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~g/
+assert($HOME + "/h" == "$(echo ~/'h')")
+var home = $HOME
+$HOME = "hellohome!@!"
+var homev = "$(echo ~)"
+assert($HOME == $homev)
+assert "hellohome!@!" == $homev
+unsetenv HOME
+assert $home == "$(echo ~)"
+$HOME = $home
+
+## expand to PWD
+import-env PWD : "$(pwd)"
+assert($PWD == "$(echo ~+)") : "$PWD, $(pwd), $(echo ~+)"
+assert($PWD + "/" == "$(echo ~'+/')")
+assert($PWD + "/huge" == "$(echo ~+/huge)")
+assert($PWD + "/huge" == "$(echo ~+/"huge")")
+$ex = 34
+try { echo ~+e; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~\+e/
+$ex = 34
+try { echo ~'+e'; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~\+e/
+
+let pwd = $PWD
+$PWD='.'
+assert $pwd != "$(echo ~+)"
+assert "$(echo ~+)" == "."
+
+$PWD='frieja'
+assert ! test -e $PWD
+assert $pwd != "$(echo ~+)"
+assert "$(echo ~+)" == "frieja"  # expand even if PWD indicates invalid path
+
+$PWD='/'
+assert $pwd != "$(echo ~+)"
+assert "$(echo ~+)" == "/"
+
+$PWD = ""
+$ex = 34
+try { echo ~+; } catch e { $ex = $e; }  # if PWD is empty, raise error
+assert $ex is TildeError && $ex.message() == "undefined or empty: ~+"
+
+unsetenv PWD
+$ex = 34
+try { echo ~+/hoge; } catch e { $ex = $e; }  # if PWD is unset, raise error
+assert $ex is TildeError && $ex.message() == "undefined or empty: ~+"
+
+## expand to OLDPWD
+import-env OLDPWD : "$(pwd)"
+assert($OLDPWD == "$(echo ~-)")
+assert($OLDPWD + "/" == "$(echo ~-/)")
+assert($OLDPWD + "/we" == "$(echo ~-/we)")
+assert($OLDPWD + "/false" == "$(echo ~-/$false)")
+
+$ex = 34
+try { echo ~-yfr; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~-yfr/
+$ex = 34
+try { echo ~-$true; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~-true/
+
+let oldpwd = $OLDPWD
+$OLDPWD = 'hgiraheo'
+assert "$(echo ~-)" == "hgiraheo"  # expand even if OLDPWD indicates invalid path
+
+$OLDPWD = '.'
+assert "$(echo ~-)" == "."
+
+$OLDPWD = ""
+$ex = 34
+try { echo ~-; } catch e { $ex = $e; }  # if OLDPWD is empty, raise error
+assert $ex is TildeError && $ex.message() =~ $/~-/
+
+unsetenv OLDPWD
+$ex = 34
+try { echo ~-; } catch e { $ex = $e; }  # if OLDPWD is unset, raise error
+assert $ex is TildeError && $ex.message() =~ $/~-/
+
+$OLDPWD = $oldpwd
+
+## expand to PWD in removed cwd
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+assert !$tmp_dir.empty()
+cd $tmp_dir
+assert $tmp_dir == "$(echo ~+)"
+rm -rf $tmp_dir
+$ex = 34
+try { assert @(~+)[0] == "$tmp_dir"; } catch e { $ex = $e; }  # expand even if PWD is removed dir
+assert $ex is Int
+
+cd $pwd
+
+## expand to user home
+if ! $OSTYPE.startsWith("CYGWIN") {
+    assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
+}
+
+## expand dirstack
+cd ~
+assert "$(echo ~+)" == "$(echo ~-0)"
+assert "$(echo ~-0)" == "$(echo ~+0)"
+assert "$(echo ~+0)" == "$(echo ~0)"
+pushd /
+pushd /home
+assert $DIRSTACK.size() == 2
+assert "$(echo ~-0)" == $DIRSTACK[0]
+assert "$(echo ~-01)" == $DIRSTACK[1]
+assert "$(echo ~-2)" == "$(pwd)"
+
+assert "$(echo ~+0000000)" == "$(pwd)"
+assert "$(echo ~+1)" == $DIRSTACK[1]
+assert "$(echo ~+2)" == $DIRSTACK[0]
+
+assert "$(echo ~0)" == "$(pwd)"
+assert "$(echo ~000000001)" == $DIRSTACK[1]
+assert "$(echo ~2)" == $DIRSTACK[0]
+
+## expand dirstack error
+$ex = 34
+try { assert echo ~1999999999999999999999999999999999/hoge/gheur; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() == "invalid number format: ~1999999999999999999999999999999999"
+
+$ex = 34
+try { assert echo ~1fherufhaer//hoge/gheur; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() == "invalid number format: ~1fherufhaer"
+
+$ex = 34
+try { assert echo ~+5; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() == 
+"directory stack index out of range, up to directory stack limit (2): ~+5"
+
+$ex = 34
+try { assert echo ~000015; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() == 
+"directory stack index out of range, up to directory stack limit (2): ~000015"
+
+$ex = 34
+try { assert echo ~-0000150; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() == 
+"directory stack index out of range, up to directory stack limit (2): ~-0000150"
+
+$DIRSTACK[0] = ''
+$DIRSTACK[1] = $'jfeir\x00QQQ'
+$ex = 34
+try { assert echo ~-1; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() ==  "expanded path contains null characters: ~-1"
+
+$ex = 34
+try { assert echo ~+00002; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() ==  "undefined or empty: ~+00002"
+
+$DIRSTACK.clear()
+for(var i = 0; $i < 1000; $i++) {
+    $DIRSTACK.push("dir_$i")
+}
+assert $DIRSTACK.size() == 1000
+$ex = 34
+try { assert echo ~800; } catch e { $ex = $e;}
+assert $ex is TildeError && $ex.message() ==  
+    "directory stack index out of range, up to directory stack limit (255): ~800"
+
+
+## no expand
+assert "$(echo :~)" == ':~'
+assert "$(echo \\:~)" == '\:~'
+assert "if=~" == "$(echo if\=~)"
+assert "if=\~" == "$(echo if=\\~)"
+$ex = 34
+try { echo ~\if=~; } catch e { $ex = $e; }
+assert $ex is TildeError
+assert ($ex as TildeError).message() =~ $/~if=~/
+
+assert "if=~" == "$(echo ${34}if=~)"
+assert "=~" == "$(echo \=~)"
+assert "=~" == "$(echo =~)"

@@ -18,6 +18,7 @@
 
 #include "constant.h"
 #include "misc/files.h"
+#include "misc/num_util.hpp"
 #include "paths.h"
 
 namespace ydsh {
@@ -182,7 +183,7 @@ std::string expandDots(const char *basePath, const char *path) {
   return str;
 }
 
-TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProvider *provider) {
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider) {
   if (str.empty() || str.front() != '~') {
     return TildeExpandStatus::NO_TILDE;
   }
@@ -192,9 +193,11 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProv
   for (; *path != '/' && *path != '\0'; path++) {
     expanded += *path;
   }
+  StringRef prefix = expanded;
+  prefix.removePrefix(1);
 
   // expand tilde
-  if (expanded.size() == 1) {
+  if (prefix.empty()) { // ~
     const char *value = useHOME ? getenv(ENV_HOME) : nullptr;
     if (!value) { // use HOME, but HOME is not set, fallback to getpwuid(getuid())
       if (struct passwd *pw = getpwuid(getuid())) {
@@ -206,39 +209,57 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProv
     } else {
       return TildeExpandStatus::NO_USER;
     }
-  } else if (expanded == "~+") {
-    (void)provider;
-
-    /**
-     * if PWD indicates valid dir, use PWD.
-     * if PWD is invalid, use cwd
-     * if cwd is removed, not expand
-     */
-    auto cwd = getCWD();
-    if (cwd) {
-      const char *pwd = getenv(ENV_PWD);
-      if (pwd && *pwd == '/' && isSameFile(pwd, cwd.get())) {
-        expanded = pwd;
-      } else {
-        expanded = cwd.get();
-      }
-    } else {
-      return TildeExpandStatus::INVALID_NUM; // FIXME:
+  } else if (const char ch = prefix[0]; ch == '+' || ch == '-' || isDecimal(ch)) {
+    if (!provider) {
+      return TildeExpandStatus::NO_DIR_STACK;
     }
-  } else if (expanded == "~-") {
-    /**
-     * if OLDPWD indicates valid dir, use OLDPWD
-     * if OLDPWD is invalid, not expand
-     */
-    const char *oldpwd = getenv(ENV_OLDPWD);
-    if (oldpwd && *oldpwd == '/' && S_ISDIR(getStMode(oldpwd))) {
-      expanded = oldpwd;
-    } else {
-      return TildeExpandStatus::INVALID_NUM; // FIXME:
+
+    if (prefix == "+") { // ~+
+      /**
+       * if env undef or empty, return error
+       * otherwise use env value even if value indicates invalid path
+       */
+      if (const char *value = getenv(ENV_PWD); value && *value) {
+        expanded = value;
+      } else {
+        return TildeExpandStatus::UNDEF_OR_EMPTY;
+      }
+    } else if (prefix == "-") { // ~-
+      /**
+       * if env undef or empty, return error
+       * otherwise use env value even if value indicates invalid path
+       */
+      if (const char *value = getenv(ENV_OLDPWD); value && *value) {
+        expanded = value;
+      } else {
+        return TildeExpandStatus::UNDEF_OR_EMPTY;
+      }
+    } else { // ~+N, ~-N, ~N
+      StringRef num = prefix;
+      if (ch == '+' || ch == '-') { // skip
+        num.removePrefix(1);
+      }
+      assert(!num.empty() && isDecimal(num[0]));
+      auto pair = convertToDecimal<uint64_t>(num.begin(), num.end());
+      if (!pair.second) {
+        return TildeExpandStatus::INVALID_NUM;
+      }
+      const size_t size = provider->size();
+      if (pair.first > size) {
+        return TildeExpandStatus::OUT_OF_RANGE;
+      }
+      const size_t index =
+          ch == '-' ? static_cast<size_t>(pair.first) : size - static_cast<size_t>(pair.first);
+      auto ret = provider->get(index);
+      if (ret.empty()) {
+        return TildeExpandStatus::UNDEF_OR_EMPTY;
+      } else if (ret.hasNullChar()) {
+        return TildeExpandStatus::HAS_NULL;
+      }
+      expanded.assign(ret.data(), ret.size());
     }
   } else { // expand user
-    struct passwd *pw = getpwnam(expanded.c_str() + 1);
-    if (pw != nullptr) {
+    if (struct passwd *pw = getpwnam(expanded.c_str() + 1); pw) {
       expanded = pw->pw_dir;
     } else {
       return TildeExpandStatus::NO_USER;
@@ -249,7 +270,7 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProv
   if (*path != '\0') {
     expanded += path;
   }
-  str = std::move(expanded);
+  std::swap(str, expanded);
   return TildeExpandStatus::OK;
 }
 

@@ -430,6 +430,36 @@ static bool appendPath(std::vector<std::shared_ptr<const std::string>> &results,
   return true;
 }
 
+void TypeChecker::reportTildeExpansionError(Token token, const std::string &path,
+                                            TildeExpandStatus status) {
+  assert(status != TildeExpandStatus::OK);
+
+  StringRef ref = path;
+  if (auto pos = ref.find("/"); pos != StringRef::npos) {
+    assert(pos > 0);
+    ref = ref.substr(0, pos);
+  }
+  auto value = ref.toString();
+
+  switch (status) {
+  case TildeExpandStatus::OK:
+  case TildeExpandStatus::NO_TILDE:
+    break;
+  case TildeExpandStatus::NO_USER:
+    this->reportError<TildeFail>(token, value.c_str());
+    return;
+  case TildeExpandStatus::NO_DIR_STACK:
+    this->reportError<TildeNoDirStack>(token, value.c_str());
+    return;
+  case TildeExpandStatus::UNDEF_OR_EMPTY:
+  case TildeExpandStatus::INVALID_NUM:
+  case TildeExpandStatus::OUT_OF_RANGE:
+  case TildeExpandStatus::HAS_NULL:
+    break;
+  }
+  assert(false);
+}
+
 bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
@@ -448,8 +478,10 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
   }
   auto matcher = createGlobMatcher<SourceGlobMeta>(
       nullptr, SourceGlobIter(begin), SourceGlobIter(end), [] { return false; }, option);
-  auto expander = [](std::string &path) {
-    return expandTilde(path, true, nullptr) == TildeExpandStatus::OK;
+  TildeExpandStatus tildeExpandStatus{};
+  auto expander = [&tildeExpandStatus](std::string &path) {
+    tildeExpandStatus = expandTilde(path, true, nullptr);
+    return tildeExpandStatus == TildeExpandStatus::OK;
   };
   auto ret = matcher(std::move(expander), appender);
   if (ret == GlobMatchResult::MATCH ||
@@ -465,7 +497,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     } else if (ret == GlobMatchResult::NEED_ABSOLUTE_BASE_DIR) {
       this->reportError<NoRelativeGlob>(token, path.c_str());
     } else if (ret == GlobMatchResult::TILDE_FAIL) {
-      this->reportError<TildeFail>(token, matcher.getBase().c_str());
+      assert(tildeExpandStatus != TildeExpandStatus::OK);
+      this->reportTildeExpansionError(token, matcher.getBase(), tildeExpandStatus);
     } else {
       assert(ret == GlobMatchResult::LIMIT);
       this->reportError<ExpandRetLimit>(token);
@@ -601,8 +634,8 @@ bool TypeChecker::applyBraceExpansion(Token token,
       } else {
         auto path = concat(vbegin, vend);
         if (hasFlag(newOp, GlobOp::TILDE)) {
-          if (expandTilde(path, true, nullptr) != TildeExpandStatus::OK) {
-            this->reportError<TildeFail>(token, path.c_str());
+          if (auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
+            this->reportTildeExpansionError(token, path, s);
             return false;
           }
         }
@@ -657,8 +690,8 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   if (!node.isExpansion()) {
     std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
-      if (expandTilde(path, true, nullptr) != TildeExpandStatus::OK) {
-        this->reportError<TildeFail>(pathNode, path.c_str());
+      if (auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
+        this->reportTildeExpansionError(pathNode.getToken(), path, s);
         return;
       }
     }

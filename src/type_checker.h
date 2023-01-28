@@ -265,6 +265,8 @@ public:
 
 class CodeCompletionHandler;
 
+enum class TildeExpandStatus;
+
 class TypeChecker : protected NodeVisitor {
 protected:
   const SysConfig &config;
@@ -513,6 +515,8 @@ private:
   }
 
   void reportMethodLookupError(ApplyNode::Attr attr, const AccessNode &node);
+
+  void reportTildeExpansionError(Token token, const std::string &path, TildeExpandStatus status);
 
   // for apply node type checking
   /**

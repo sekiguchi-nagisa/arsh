@@ -98,17 +98,18 @@ struct DirStackProvider {
    * @return
    * if index out of range, return empty string
    */
-  virtual StringRef get(size_t index) const = 0;
+  virtual StringRef get(size_t index) = 0;
 };
 
 enum class TildeExpandStatus {
   OK,
-  NO_TILDE,      // not start with tilde
-  NO_USER,       // not found corresponding user
-  NO_DIR_STACK,  // dir stack is not provided
-  INVALID_NUM,   // invalid number format
-  OUT_OF_RANGE,  // out of range index
-  NULL_OR_EMPTY, // has null character or empty
+  NO_TILDE,       // not start with tilde
+  NO_USER,        // not found corresponding user
+  NO_DIR_STACK,   // dir stack is not provided
+  UNDEF_OR_EMPTY, // undefined env or empty
+  INVALID_NUM,    // invalid number format
+  OUT_OF_RANGE,   // out of range index
+  HAS_NULL,
 };
 
 /**
@@ -121,7 +122,7 @@ enum class TildeExpandStatus {
  * @return
  * if tilde expansion succeed, return OK
  */
-TildeExpandStatus expandTilde(std::string &str, bool useHOME, const DirStackProvider *provider);
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider);
 
 /**
  *

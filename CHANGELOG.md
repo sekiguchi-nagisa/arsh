@@ -28,6 +28,11 @@
 - **Breaking Change**: in interactive mode or ``-c`` mode without shell-name, toplevel ``$0`` indicates ``argv[0]``
 - **Breaking Change**: unbalanced brace expansions are semantic error
 - **Breaking Change**: change token format error with semantic error
+- **Breaking Change**: overhaul runtime/compile-time tilde expansion
+    - in source statement `~+`, `~-` style expansions are not performed
+    - support `~+N`, `~-N`, `~N` style expansions
+        - internally use ``DIRSTACK`` variable
+    - now `~+`, `~-` expansions do not check path existence
 - show stack trace of ignored exceptions within finally/defer block
 
 #### Builtin
