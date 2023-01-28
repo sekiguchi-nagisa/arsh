@@ -43,7 +43,7 @@
 ### Fixed
 
 - symbol range of ``textDocument/hover``, ``textDocument/definition``
-- broken help message of builtin ulimit command
+- broken help message of builtin `ulimit` command
 - invalid insertion position of completion candidate prefix
 - broken analyzer state when reuse analyzer instance
 
@@ -269,7 +269,7 @@
 - broken lexing of dollar single quoted string literal
 - escape sequence handling of renderPrompt function in prompt module
 - skippable newline handling in some expressions
-- SEVG of ``textDocument/documentSymbol``, ``textDocument/documentLink``
+- SEGV of ``textDocument/documentSymbol``, ``textDocument/documentLink``
 - fix ``textDocument/publishDiagnostics`` emission
 
 ## [0.27.1] - 2022-09-30
@@ -876,7 +876,7 @@
     - ``String#charAt`` get grapheme cluster at specified position
     - iterate grapheme cluster in string
 - **Breaking Change**: after call ``Job#wait``, not close internal fds
-- propagate intrenal error as exception from regex method
+- propagate internal error as exception from regex method
     - ``left =~ right``, ``left !~ right``
     - ``Regex#match``, ``Regex#replace``
 - use stable sort in ``Array#sortWith`` method
@@ -934,7 +934,7 @@
 - improve parser error message
     - remove meaningless error message when reach end of string
     - quote expected tokens
-    - replace some no viable alternative error messages with more ituitive ones
+    - replace some no viable alternative error messages with more intuitive ones
     - show number of characters in error line
     - constructor lookup error message
 - escape unprintable character when show command error message
@@ -967,7 +967,7 @@
 
 ### Fixed
 
-- bugfix ``Regex#replace`` method when replce with empty string
+- bugfix ``Regex#replace`` method when replace with empty string
 - segv when call uninitialized user-defined command in interactive mode
 
 ## [0.20.0] - 2020-12-31
@@ -979,7 +979,7 @@
 - allow function call in command arguments
     - ex. ``echo $func(34, "hey")``
 - module/scope aware type alias
-    - at named module import, implicity define module type alias
+    - at named module import, implicitly define module type alias
       ```
       source path as Path
       assert $Path is Path
@@ -1087,7 +1087,7 @@
 
 - remove ``cmd`` from test case for cygwin
 - escape characters in env name completer
-- escape handling in completer when charcter has already escaped
+- escape handling in completer when character has already escaped
 
 ## [0.19.0] - 2020-09-20
 
@@ -1150,7 +1150,7 @@
 
 #### Core
 
-- **Breaking Change**: perform regex syntax checking in typechecker. now regex syntax error is semantic error
+- **Breaking Change**: perform regex syntax checking in type-checker. now regex syntax error is semantic error
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
 - **Breaking Change**: change install directory structure
@@ -1173,7 +1173,7 @@
 
 - ``completion``
     - when command is not found, does not kick corresponding completer
-    - add ``compdef`` command for defining completer by decralative way
+    - add ``compdef`` command for defining completer by declarative way
 
 #### API
 
@@ -1197,7 +1197,7 @@
 #### Builtin
 
 - fix executable file checking in ``command -v`` option
-    - always ignore directoy
+    - always ignore directory
 - segv in ``is-sourced`` sub-command of ``shctl``
 
 #### API
@@ -1346,7 +1346,7 @@
 #### Builtin
 
 - add ``shctl`` command for runtime query/setting
-- ``setenv`` command showes all environmental variables when has no args
+- ``setenv`` command shows all environmental variables when has no args
 
 #### Interactive
 
@@ -1360,7 +1360,7 @@
 - drop support ``Int64``, ``Long`` type
 - drop support Int64 literal suffixed with ``l L``
 - change ``-n``option behavior to the same as ``--compile-only`` option
-- rename builtin *_env familly
+- rename builtin *_env family
     - ``check_env`` to ``checkenv``
     - ``set_env`` to ``setenv``
     - ``unset_env`` to ``unsetenv``
@@ -1387,26 +1387,26 @@
 - support type constraints for builtin method by 'where' keyword
 - introduce abbreviated type notation of Func type
 - allow last comma in multi element tuple literal
-- add 'CMD_FALLBACK' for command-not-found handling
+- add `CMD_FALLBACK` for command-not-found handling
 
 #### Builtin
 
-- remove 'ps_intrp' command
+- remove `ps_intrp` command
 - overhaul String#slice, String#to, String#from, Array#slice, Array#to, Array#from methods
     - allow start index equivalent to size
 - disallow String#sort method when type parameter is not Value type
 
 #### API
 
-- merge 'DSState_prompt' with 'DSState_lineEditOp'
-- drop 'varName' paramter from 'DSState_loadModule'
+- merge `DSState_prompt` with `DSState_lineEditOp`
+- drop `varName` parameter from `DSState_loadModule`
 
 #### Module
 
 - rename 'history' module with 'edit' module
 - move prompt rendering function into 'prompt' module
     - add 'renderPrompt' function for bash style prompt rendering
-    - add 'prompt' command for replacement of 'ps_intrp'
+    - add 'prompt' command for replacement of `ps_intrp`
 - add 'path' module
     - 'dirname'
     - 'basename'
@@ -1431,12 +1431,12 @@
 
 #### Misc
 
-- now install experimental 'ydshd' by default
+- now install experimental `ydshd` by default
 - experimental support Linux AArch64
 
 ### Fixed
 
-- history saving when HISTFILESIZE is less than HISTSIZE
+- history saving when `HISTFILESIZE` is less than `HISTSIZE`
 - ignore module loading error when specify DS_MOD_IGNORE_ENOENT
 - SEGV in String#join method
 - not allow null characters in regex literal
@@ -1447,10 +1447,10 @@
 
 #### Core
 
-- add builtin 'CONFIG_DIR' variable for indicating system config directory
-- add builtin 'PIPESTATUS' variable for indicating the latest status of pipeline
-- add builtin 'COMP_HOOK' variable for user-defined completer
-- add builtin 'EDIT_HOOK' variable for user-defined line editing function
+- add builtin `CONFIG_DIR` variable for indicating system config directory
+- add builtin `PIPESTATUS` variable for indicating the latest status of pipeline
+- add builtin `COMP_HOOK` variable for user-defined completer
+- add builtin `EDIT_HOOK` variable for user-defined line editing function
     - support CTRL-R for history search
 - drop support Byte, Int16, Uint16 type
 - change integer literal syntax
@@ -1465,14 +1465,14 @@
 - complete module name from module loading path
 - correctly handle tilde expansion of file name completion
 - support user-defined completer
-- set completion result to 'COMPREPLY' variable
+- set completion result to `COMPREPLY` variable
 - complete keyword
 - complete space when previous token is typing
 
 #### Builtin
 
-- add 'copy' method to Array type
-- add 'copy' method to Map type
+- add `copy` method to Array type
+- add `copy` method to Map type
 - add builtin umask command
 - allow negative number index in some Array type method
 - test command correctly handle null character
@@ -1529,7 +1529,7 @@
     - expose history buffer to HISTORY variable
     - move some history related variables into module
     - user-defined history command
-    - add HISTIGNORE
+    - add `HISTIGNORE`
 
 #### Builtin
 
@@ -1547,10 +1547,10 @@
 
 - '$?' is writable
 - remove history related variable
-    - HISTSIZE
-    - HISTFILE
-    - HISTFILESIZE
-    - HISTCMD
+    - `HISTSIZE`
+    - `HISTFILE`
+    - `HISTFILESIZE`
+    - `HISTCMD`
 - remove builtin history command
 - no longer clear termination handlers after call _defaultHook
 
@@ -1598,7 +1598,7 @@
 
 - improve error handling of script/module loading
 
-#### Completor
+#### Completer
 
 - improve file name completion in 'with', 'source' keyword
 - complete environmental variable names
@@ -1710,8 +1710,8 @@
 - introduce config dir
     - ${CMAKE_INSTALL_PREFIX}/etc/ydsh
     - ~/.ydsh
-- introduce libydsh
-- atexit module
+- introduce `libydsh`
+- `atexit` module
     - now set multiple termination handler
 - improve assertion messages of interactive test cases
 
@@ -1741,7 +1741,7 @@
 - replace git submodule with cmake-external project
     - google test
     - re2c
-- no longer need libxml2, libdbus
+- no longer need `libxml2`, `libdbus`
 
 ### Fixed
 
@@ -1829,11 +1829,11 @@
 
 - throw exception when access environmental variable (after unset_env)
 - prompt string interpretation behavior
-- not import OLDPWD/PWD by default
+- not import `OLDPWD`/`PWD` by default
 - allow void cast
 - public api
 - type alias syntax (now use alias keyword)
-- forbit redefinition of builtin exec command
+- forbid redefinition of builtin exec command
 - user-defined/builtin commands in last pipe are executed in parent shell (due to unified pipeline)
 - operator precedence of throw expression
 - temporary disable history save when terminated by exit or assert
@@ -1944,11 +1944,11 @@
 - improve null character handling of string api
 - update google test to 1.8
 - support the following builtin variable
-    - RANDOM
-    - SECONDS
-    - HISTCMD, HISTFILE, HISTSIZE, HISTFILESIZE
-    - MACHTYPE
-    - UID, EUID, PID, PPID
+    - `RANDOM`
+    - `SECONDS`
+    - `HISTCMD`, `HISTFILE`, `HISTSIZE`, `HISTFILESIZE`
+    - `MACHTYPE`
+    - `UID`, `EUID`, `PID`, `PPID`
 - improve error line number
 - reactivate waitSignal method
 
@@ -1958,13 +1958,13 @@
 - remove __ADD__ method from string
 - backslash handling in double-quoted string
 - drop support ternary expression
-- drop support print exprression
+- drop support print expression
 
 ### Fixed
 
 - string self assignment
 - builtin cd command
-- completor
+- completer
 - undefined behavior of illegal iterator usage
 - line marker of EOS token
 
@@ -1995,13 +1995,13 @@
 ### Added
 
 - improve semantic error message (now show error line marker)
-- replace editline to linenoise
-- add some built-in variable (OSTYPE, YDSH_VERSION, REPLY, reply, IFS)
+- replace `editline` to `linenoise`
+- add some built-in variable (`OSTYPE`, `YDSH_VERSION`, `REPLY`, `reply`, `IFS`)
 - support positional parameter ($1, $2, ... $9, $#)
-- add special character '$$'  (for indicating parent process pid)
+- add special character `$$`  (for indicating parent process pid)
 - add built-in test command
 - add built-in read command (only support basic feature)
-- specifying a separator of internal field splitting (use IFS)
+- specifying a separator of internal field splitting (use `IFS`)
 - escaped string literal supports octal or hex number
 - cache full path of command name (also support hash command)
 - support basic input completion
@@ -2043,7 +2043,7 @@
 - import-env/export-env(default value or exception raising)
 - string literal definition
 - map literal syntax
-- remove backquote literal
+- remove back-quote literal
 - float zero-division behavior
 
 ### Fixed
