@@ -239,7 +239,6 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *
       if (ch == '+' || ch == '-') { // skip
         num.removePrefix(1);
       }
-      assert(!num.empty() && isDecimal(num[0]));
       auto pair = convertToDecimal<uint64_t>(num.begin(), num.end());
       if (!pair.second) {
         return TildeExpandStatus::INVALID_NUM;
