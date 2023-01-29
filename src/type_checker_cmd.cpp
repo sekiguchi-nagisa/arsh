@@ -90,8 +90,14 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
       }
     }
   }
+  unsigned int errorCount = 0;
   for (; !stack.empty(); stack.pop_back()) {
+    errorCount++;
     this->reportError<BraceUnclosed>(*segmentNodes[stack.back().first]);
+  }
+
+  if (errorCount) {
+    return;
   }
 
   // add brace id and check tilde expansion
