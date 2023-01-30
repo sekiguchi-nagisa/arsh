@@ -305,7 +305,7 @@ END:
         case EscapeSeqResult::OK_BYTE: {
           auto b = static_cast<unsigned int>(ret.codePoint);
           char buf[1];
-          buf[0] = static_cast<unsigned char>(b);
+          buf[0] = static_cast<char>(static_cast<unsigned char>(b));
           fwrite(buf, sizeof(char), 1, stdout);
           iter += ret.consumedSize;
           continue;

@@ -679,7 +679,7 @@ struct ArrayIndex {
 static ArrayIndex resolveIndex(int64_t index, size_t size, bool allowSize) {
   assert(ArrayObject::MAX_SIZE == StringObject::MAX_SIZE);
   assert(size <= ArrayObject::MAX_SIZE);
-  index += (index < 0 ? size : 0);
+  index += static_cast<int64_t>(index < 0 ? size : 0);
   bool s = (index > -1 && static_cast<size_t>(index) < size) ||
            (allowSize && static_cast<size_t>(index) == size);
   return {static_cast<size_t>(index), s};

@@ -416,7 +416,7 @@ static void completeVarName(const NameScope &scope, const std::string &prefix, b
       cur = cur->parent.get();
       assert(cur);
     }
-    cur->getMaxGlobalVarIndex() * 10;
+    static_cast<int>(cur->getMaxGlobalVarIndex() * 10);
   });
 
   unsigned int funcScopeDepth = 0;
@@ -429,7 +429,7 @@ static void completeVarName(const NameScope &scope, const std::string &prefix, b
       }
 
       if (varName.startsWith(prefix) && isVarName(varName)) {
-        int priority = handle.getIndex();
+        int priority = static_cast<int>(handle.getIndex());
         if (!handle.has(HandleAttr::GLOBAL)) {
           priority += offset;
         }

@@ -68,7 +68,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair.second) {
     ERROR(argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
-    return ProcOrJob();
+    return {};
   }
   int id = pair.first;
 
@@ -76,19 +76,19 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
     if (id > 0) {
       auto job = jobTable.find(static_cast<unsigned int>(id));
       if (job) {
-        return ProcOrJob(std::move(job));
+        return {std::move(job)};
       }
     }
     ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
-    return ProcOrJob();
+    return {};
   } else {
     if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
-      return ProcOrJob(e);
+      return {e};
     } else if (allowNoChild) {
-      return ProcOrJob(id);
+      return {id};
     } else {
       ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
-      return ProcOrJob();
+      return {};
     }
   }
 }
@@ -219,10 +219,9 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
 
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "h")) != -1;) {
-    switch (opt) {
-    case 'h':
+    if (opt == 'h') {
       return showHelp(argvObj);
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
