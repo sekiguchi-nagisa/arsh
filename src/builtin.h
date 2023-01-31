@@ -2162,9 +2162,20 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function actions($this : LineEditor) : Array<String>
+//!bind: function action($this : LineEditor, $name : String, $type : String, $action : Func<Option<String>,[String]>) : Void
 YDSH_METHOD edit_action(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_action);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  auto name = LOCAL(1).asStrRef();
+  auto type = LOCAL(2).asStrRef();
+  auto callback = LOCAL(3).toPtr();
+  editor.defineCustomAction(ctx, name, type, std::move(callback));
+  RET_VOID;
+}
+
+//!bind: function actions($this : LineEditor) : Array<String>
+YDSH_METHOD edit_actions(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_actions);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   editor.getKeyBindings().fillActions([&value](StringRef action) {

@@ -73,6 +73,12 @@ private:
    */
   ObjPtr<DSObject> historyCallback;
 
+  /**
+   * for custom actions
+   * must be `(String) -> String!' type
+   */
+  std::vector<ObjPtr<DSObject>> customCallbacks;
+
   enum class HistOp {
 #define GEN_ENUM(E, S) E,
     EACH_EDIT_HIST_OP(GEN_ENUM)
@@ -114,6 +120,9 @@ public:
    */
   bool addKeyBind(DSState &state, StringRef key, StringRef name);
 
+  bool defineCustomAction(DSState &state, StringRef name, StringRef type,
+                          ObjPtr<DSObject> callback);
+
   const auto &getKeyBindings() const { return this->keyBindings; }
 
 private:
@@ -122,6 +131,8 @@ private:
   void disableRawMode(int fd);
 
   void refreshLine(struct linenoiseState &l, bool doHighlight = true);
+
+  int accept(DSState &state, struct linenoiseState &l);
 
   /**
    * entry point of actual line edit function
@@ -172,6 +183,18 @@ private:
    */
   bool rotateHistoryOrUpDown(DSState &state, HistOp op, struct linenoiseState &l,
                              bool continueRotate);
+
+  /**
+   *
+   * @param state
+   * @param l
+   * @param type
+   * @param index
+   * @return
+   * if has error or insertion failed, return false
+   */
+  bool kickCustomCallback(DSState &state, struct linenoiseState &l, CustomActionType type,
+                          unsigned int index);
 };
 
 } // namespace ydsh

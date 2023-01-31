@@ -320,6 +320,8 @@ function bind($key : String, $action : String) : Void for LineEditor
 
 function bindings() : Map<String,String> for LineEditor
 
+function action($name : String, $type : String, $action : Func<Option<String>,[String]>) : Void for LineEditor
+
 function actions() : Array<String> for LineEditor
 ```
 

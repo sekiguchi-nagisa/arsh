@@ -100,6 +100,27 @@ ssize_t KeyCodeReader::fetch() {
   return static_cast<ssize_t>(this->keycode.size());
 }
 
+// #############################
+// ##     CustomActionMap     ##
+// #############################
+
+const std::pair<CStrPtr, EditAction> *CustomActionMap::find(StringRef ref) const {
+  if (auto iter = this->indexes.find(ref); iter != this->indexes.end()) {
+    return &this->entries[iter->second];
+  }
+  return nullptr;
+}
+
+const std::pair<CStrPtr, EditAction> *CustomActionMap::add(StringRef name, CustomActionType type) {
+  auto index = static_cast<unsigned int>(this->entries.size());
+  auto entry = std::make_pair(CStrPtr(strdup(name.data())), EditAction(type, index));
+  if (auto pair = this->indexes.emplace(entry.first.get(), index); pair.second) {
+    this->entries.push_back(std::move(entry));
+    return &this->entries.back();
+  }
+  return nullptr;
+}
+
 // ########################
 // ##     KeyBindings    ##
 // ########################
@@ -164,51 +185,51 @@ std::string KeyBindings::toCaret(StringRef value) {
 
 KeyBindings::KeyBindings() {
   // control character
-  this->values.emplace(ENTER_, EditAction::ACCEPT);
-  this->values.emplace(CTRL_J_, EditAction::ACCEPT);
-  this->values.emplace(CTRL_C_, EditAction::CANCEL);
-  this->values.emplace(TAB_, EditAction::COMPLETE);
-  this->values.emplace(CTRL_H_, EditAction::BACKWARD_DELETE_CHAR);
-  this->values.emplace(BACKSPACE_, EditAction::BACKWARD_DELETE_CHAR);
-  this->values.emplace(CTRL_D_, EditAction::DELETE_OR_EXIT);
-  this->values.emplace(CTRL_T_, EditAction::TRANSPOSE_CHAR);
-  this->values.emplace(CTRL_B_, EditAction::BACKWARD_CHAR);
-  this->values.emplace(CTRL_F_, EditAction::FORWARD_CHAR);
-  this->values.emplace(CTRL_P_, EditAction::UP_OR_HISTORY);
-  this->values.emplace(CTRL_N_, EditAction::DOWN_OR_HISTORY);
-  this->values.emplace(CTRL_R_, EditAction::SEARCH_HISTORY);
-  this->values.emplace(CTRL_U_, EditAction::BACKWORD_KILL_LINE);
-  this->values.emplace(CTRL_K_, EditAction::KILL_LINE);
-  this->values.emplace(CTRL_A_, EditAction::BEGINNING_OF_LINE);
-  this->values.emplace(CTRL_E_, EditAction::END_OF_LINE);
-  this->values.emplace(CTRL_L_, EditAction::CLEAR_SCREEN);
-  this->values.emplace(CTRL_W_, EditAction::BACKWARD_KILL_WORD);
+  this->values.emplace(ENTER_, EditActionType::ACCEPT);
+  this->values.emplace(CTRL_J_, EditActionType::ACCEPT);
+  this->values.emplace(CTRL_C_, EditActionType::CANCEL);
+  this->values.emplace(TAB_, EditActionType::COMPLETE);
+  this->values.emplace(CTRL_H_, EditActionType::BACKWARD_DELETE_CHAR);
+  this->values.emplace(BACKSPACE_, EditActionType::BACKWARD_DELETE_CHAR);
+  this->values.emplace(CTRL_D_, EditActionType::DELETE_OR_EXIT);
+  this->values.emplace(CTRL_T_, EditActionType::TRANSPOSE_CHAR);
+  this->values.emplace(CTRL_B_, EditActionType::BACKWARD_CHAR);
+  this->values.emplace(CTRL_F_, EditActionType::FORWARD_CHAR);
+  this->values.emplace(CTRL_P_, EditActionType::UP_OR_HISTORY);
+  this->values.emplace(CTRL_N_, EditActionType::DOWN_OR_HISTORY);
+  this->values.emplace(CTRL_R_, EditActionType::SEARCH_HISTORY);
+  this->values.emplace(CTRL_U_, EditActionType::BACKWORD_KILL_LINE);
+  this->values.emplace(CTRL_K_, EditActionType::KILL_LINE);
+  this->values.emplace(CTRL_A_, EditActionType::BEGINNING_OF_LINE);
+  this->values.emplace(CTRL_E_, EditActionType::END_OF_LINE);
+  this->values.emplace(CTRL_L_, EditActionType::CLEAR_SCREEN);
+  this->values.emplace(CTRL_W_, EditActionType::BACKWARD_KILL_WORD);
 
   // escape sequence
-  this->values.emplace(ESC_ "b", EditAction::BACKWARD_WORD);
-  this->values.emplace(ESC_ "f", EditAction::FORWARD_WORD);
-  this->values.emplace(ESC_ "d", EditAction::KILL_WORD);
-  this->values.emplace(ESC_ ENTER_, EditAction::NEWLINE);
-  this->values.emplace(ESC_ "[1~", EditAction::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "[4~", EditAction::END_OF_LINE); // for putty
-  this->values.emplace(ESC_ "[3~", EditAction::DELETE_CHAR); // for putty
-  this->values.emplace(ESC_ "[200~", EditAction::BRACKET_PASTE);
-  this->values.emplace(ESC_ "[1;3A", EditAction::PREV_HISTORY);
-  this->values.emplace(ESC_ "[1;3B", EditAction::NEXT_HISTORY);
-  this->values.emplace(ESC_ "[1;3D", EditAction::BACKWARD_WORD);
-  this->values.emplace(ESC_ "[1;3C", EditAction::FORWARD_WORD);
-  this->values.emplace(ESC_ "[A", EditAction::UP_OR_HISTORY);
-  this->values.emplace(ESC_ "[B", EditAction::DOWN_OR_HISTORY);
-  this->values.emplace(ESC_ "[D", EditAction::BACKWARD_CHAR);
-  this->values.emplace(ESC_ "[C", EditAction::FORWARD_CHAR);
-  this->values.emplace(ESC_ "[H", EditAction::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "[F", EditAction::END_OF_LINE);
-  this->values.emplace(ESC_ "OH", EditAction::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "OF", EditAction::END_OF_LINE);
-  this->values.emplace(ESC_ ESC_ "[A", EditAction::PREV_HISTORY);  // for mac
-  this->values.emplace(ESC_ ESC_ "[B", EditAction::NEXT_HISTORY);  // for mac
-  this->values.emplace(ESC_ ESC_ "[D", EditAction::BACKWARD_WORD); // for mac
-  this->values.emplace(ESC_ ESC_ "[C", EditAction::FORWARD_WORD);  // for mac
+  this->values.emplace(ESC_ "b", EditActionType::BACKWARD_WORD);
+  this->values.emplace(ESC_ "f", EditActionType::FORWARD_WORD);
+  this->values.emplace(ESC_ "d", EditActionType::KILL_WORD);
+  this->values.emplace(ESC_ ENTER_, EditActionType::NEWLINE);
+  this->values.emplace(ESC_ "[1~", EditActionType::BEGINNING_OF_LINE);
+  this->values.emplace(ESC_ "[4~", EditActionType::END_OF_LINE); // for putty
+  this->values.emplace(ESC_ "[3~", EditActionType::DELETE_CHAR); // for putty
+  this->values.emplace(ESC_ "[200~", EditActionType::BRACKET_PASTE);
+  this->values.emplace(ESC_ "[1;3A", EditActionType::PREV_HISTORY);
+  this->values.emplace(ESC_ "[1;3B", EditActionType::NEXT_HISTORY);
+  this->values.emplace(ESC_ "[1;3D", EditActionType::BACKWARD_WORD);
+  this->values.emplace(ESC_ "[1;3C", EditActionType::FORWARD_WORD);
+  this->values.emplace(ESC_ "[A", EditActionType::UP_OR_HISTORY);
+  this->values.emplace(ESC_ "[B", EditActionType::DOWN_OR_HISTORY);
+  this->values.emplace(ESC_ "[D", EditActionType::BACKWARD_CHAR);
+  this->values.emplace(ESC_ "[C", EditActionType::FORWARD_CHAR);
+  this->values.emplace(ESC_ "[H", EditActionType::BEGINNING_OF_LINE);
+  this->values.emplace(ESC_ "[F", EditActionType::END_OF_LINE);
+  this->values.emplace(ESC_ "OH", EditActionType::BEGINNING_OF_LINE);
+  this->values.emplace(ESC_ "OF", EditActionType::END_OF_LINE);
+  this->values.emplace(ESC_ ESC_ "[A", EditActionType::PREV_HISTORY);  // for mac
+  this->values.emplace(ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY);  // for mac
+  this->values.emplace(ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD); // for mac
+  this->values.emplace(ESC_ ESC_ "[C", EditActionType::FORWARD_WORD);  // for mac
 }
 
 const EditAction *KeyBindings::findAction(const std::string &keycode) {
@@ -219,22 +240,31 @@ const EditAction *KeyBindings::findAction(const std::string &keycode) {
   return nullptr;
 }
 
-const char *toString(EditAction action) {
+const char *toString(EditActionType action) {
   const char *table[] = {
 #define GEN_TABLE(E, S) S,
-      EACH_EDIT_ACTION(GEN_TABLE)
+      EACH_EDIT_ACTION_TYPE(GEN_TABLE)
 #undef GEN_TABLE
   };
   return table[static_cast<unsigned int>(action)];
 }
 
-const StrRefMap<EditAction> &KeyBindings::getBuiltinActionMap() {
-  static StrRefMap<EditAction> actions = {
-#define GEN_ENTRY(E, S) {S, EditAction::E},
-      EACH_EDIT_ACTION(GEN_ENTRY)
+const StrRefMap<EditActionType> &KeyBindings::getEditActionTypes() {
+  static StrRefMap<EditActionType> actions = {
+#define GEN_ENTRY(E, S) {S, EditActionType::E},
+      EACH_EDIT_ACTION_TYPE(GEN_ENTRY)
 #undef GEN_ENTRY
   };
   return actions;
+}
+
+const StrRefMap<CustomActionType> &KeyBindings::getCustomActionTypes() {
+  static StrRefMap<CustomActionType> types = {
+#define GEN_ENTRY(E, S) {S, CustomActionType::E},
+      EACH_CUSTOM_ACTION_TYPE(GEN_ENTRY)
+#undef GEN_ENTRY
+  };
+  return types;
 }
 
 KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) {
@@ -251,18 +281,20 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     }
   }
 
-  auto &actionMap = getBuiltinActionMap();
+  auto &actionMap = getEditActionTypes();
   if (name.empty()) {
     this->values.erase(key);
   } else {
-    auto action = EditAction::ACCEPT;
+    EditAction action = EditActionType::ACCEPT;
     if (auto iter = actionMap.find(name); iter != actionMap.end()) {
       action = iter->second;
+    } else if (auto *e = this->customActions.find(name); e) {
+      action = e->second;
     } else {
       return AddStatus::UNDEF;
     }
 
-    if (action == EditAction::BRACKET_PASTE) {
+    if (action.type == EditActionType::BRACKET_PASTE) {
       return AddStatus::FORBTT_BRACKET_ACTION;
     }
 
@@ -276,6 +308,42 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     }
   }
   return AddStatus::OK;
+}
+
+Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(StringRef name,
+                                                                               StringRef type) {
+  // check action name format
+  for (auto &e : name) {
+    if (std::isalnum(e) || e == '-' || e == '_') {
+      continue;
+    } else {
+      return Err(DefineError::INVALID_NAME);
+    }
+  }
+
+  // check action type
+  CustomActionType customActionType;
+  if (auto iter = getCustomActionTypes().find(type); iter != getCustomActionTypes().end()) {
+    customActionType = iter->second;
+  } else {
+    return Err(DefineError::INVALID_TYPE);
+  }
+
+  // check already defined action name
+  if (auto iter = getEditActionTypes().find(name); iter != getEditActionTypes().end()) {
+    return Err(DefineError::DEFINED);
+  }
+
+  if (this->customActions.find(name)) {
+    return Err(DefineError::DEFINED);
+  }
+  if (this->customActions.size() == SYS_LIMIT_CUSTOM_ACTION_MAX) {
+    return Err(DefineError::LIMIT);
+  }
+
+  auto *ret = this->customActions.add(name, customActionType);
+  assert(ret);
+  return Ok(ret->second.customActionIndex);
 }
 
 } // namespace ydsh

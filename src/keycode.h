@@ -22,6 +22,8 @@
 #include <vector>
 
 #include "misc/detect.hpp"
+#include "misc/resource.hpp"
+#include "misc/result.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
@@ -64,7 +66,7 @@ public:
   ssize_t fetch();
 };
 
-#define EACH_EDIT_ACTION(OP)                                                                       \
+#define EACH_EDIT_ACTION_TYPE(OP)                                                                  \
   OP(ACCEPT, "accept")                             /* ENTER / CTRL-M / CTRL-J */                   \
   OP(CANCEL, "cancel")                             /* CTRL-C */                                    \
   OP(COMPLETE, "complete")                         /* TAB / CTRL-I */                              \
@@ -89,15 +91,58 @@ public:
   OP(BACKWARD_WORD, "backward-word")               /* ALT-B / ALT-LEFT */                          \
   OP(FORWARD_WORD, "forward-word")                 /* ALT-F / ALT-RIGHT */                         \
   OP(NEWLINE, "newline")                           /* ALT-ENTER */                                 \
-  OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */
+  OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */                                 \
+  OP(CUSTOM, "%custom")                            /* for custom action */
 
-enum class EditAction : unsigned char {
+enum class EditActionType : unsigned char {
 #define GEN_ENUM(E, S) E,
-  EACH_EDIT_ACTION(GEN_ENUM)
+  EACH_EDIT_ACTION_TYPE(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-const char *toString(EditAction action);
+#define EACH_CUSTOM_ACTION_TYPE(OP)                                                                \
+  OP(REPLACE_WHOLE, "replace-whole")                                                               \
+  OP(REPLACE_WHOLE_ACCEPT, "replace-whole-accept")                                                 \
+  OP(REPLACE_LINE, "replace-line")                                                                 \
+  OP(INSERT, "insert")
+
+enum class CustomActionType : unsigned char {
+#define GEN_ENUM(E, S) E,
+  EACH_CUSTOM_ACTION_TYPE(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(EditActionType action);
+
+struct EditAction {
+  EditActionType type;
+
+  CustomActionType customActionType; // for custom action
+  unsigned int customActionIndex;    // for custom action
+
+  EditAction(EditActionType type) // NOLINT
+      : type(type), customActionType{}, customActionIndex(0) {}
+
+  EditAction(CustomActionType type, unsigned int index)
+      : type(EditActionType::CUSTOM), customActionType(type), customActionIndex(index) {}
+};
+
+class CustomActionMap {
+private:
+  StrRefMap<unsigned int> indexes;
+  std::vector<std::pair<CStrPtr, EditAction>> entries;
+
+public:
+  const auto &getEntries() const { return this->entries; }
+
+  size_t size() const { return this->entries.size(); }
+
+  const std::pair<CStrPtr, EditAction> *find(StringRef ref) const;
+
+  const auto &operator[](size_t index) const { return this->entries[index]; }
+
+  const std::pair<CStrPtr, EditAction> *add(StringRef name, CustomActionType type);
+};
 
 class KeyBindings {
 public:
@@ -111,8 +156,15 @@ private:
    */
   std::unordered_map<std::string, EditAction> values;
 
+  /**
+   * custom action name to action properties mapping
+   */
+  CustomActionMap customActions;
+
 public:
-  static const StrRefMap<EditAction> &getBuiltinActionMap();
+  static const StrRefMap<EditActionType> &getEditActionTypes();
+
+  static const StrRefMap<CustomActionType> &getCustomActionTypes();
 
   /**
    * parse caret notation
@@ -149,6 +201,15 @@ public:
    */
   AddStatus addBinding(StringRef caret, StringRef name);
 
+  enum class DefineError {
+    INVALID_NAME,
+    INVALID_TYPE,
+    DEFINED,
+    LIMIT,
+  };
+
+  Result<unsigned int, DefineError> defineCustomAction(StringRef name, StringRef type);
+
   template <typename Func>
   static constexpr bool binding_consumer_requirement_v =
       std::is_same_v<void, std::invoke_result_t<Func, StringRef, StringRef>>;
@@ -157,7 +218,10 @@ public:
   void fillBindings(Func func) const {
     for (auto &e : this->values) {
       auto caret = toCaret(e.first);
-      const char *action = toString(e.second);
+      const char *action = toString(e.second.type);
+      if (e.second.type == EditActionType::CUSTOM) {
+        action = this->customActions[e.second.customActionIndex].first.get();
+      }
       func(caret, action);
     }
   }
@@ -168,8 +232,14 @@ public:
 
   template <typename Func, enable_when<action_consumer_requirement_v<Func>> = nullptr>
   void fillActions(Func func) const {
-    for (auto &e : getBuiltinActionMap()) {
+    for (auto &e : getEditActionTypes()) {
+      if (e.second == EditActionType::CUSTOM) {
+        continue;
+      }
       func(e.first);
+    }
+    for (auto &e : this->customActions.getEntries()) {
+      func(e.first.get());
     }
   }
 };

@@ -425,6 +425,7 @@ constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_JOB_DESC_LEN = 96;
 constexpr size_t SYS_LIMIT_ARRAY_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_KEY_BINDING_MAX = UINT8_MAX;
+constexpr size_t SYS_LIMIT_CUSTOM_ACTION_MAX = UINT8_MAX;
 constexpr size_t SYS_LIMIT_DIRSTACK_SIZE = UINT8_MAX;
 constexpr size_t SYS_LIMIT_INPUT_SIZE = INT32_MAX;
 

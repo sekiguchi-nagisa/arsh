@@ -1144,6 +1144,19 @@ static bool insertBracketPaste(struct linenoiseState &l) {
   return true;
 }
 
+int LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
+  l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
+  if (linenoiseEditMoveEnd(l)) {
+    this->refreshLine(l, false);
+  }
+  this->kickHistoryCallback(state, HistOp::DEINIT, &l);
+  if (state.hasError()) {
+    errno = EAGAIN;
+    return -1;
+  }
+  return static_cast<int>(l.len);
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -1240,8 +1253,8 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
       continue; // skip unbound key action
     }
 
-    switch (*action) {
-    case EditAction::ACCEPT:
+    switch (action->type) {
+    case EditActionType::ACCEPT:
       if (this->continueLine) {
         if (linenoiseEditInsert(l, "\n", 1)) {
           this->refreshLine(l);
@@ -1249,22 +1262,13 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
           return -1;
         }
       } else {
-        l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
-        if (linenoiseEditMoveEnd(l)) {
-          this->refreshLine(l, false);
-        }
-        this->kickHistoryCallback(state, HistOp::DEINIT, &l);
-        if (state.hasError()) {
-          errno = EAGAIN;
-          return -1;
-        }
-        return static_cast<int>(l.len);
+        return this->accept(state, l);
       }
       break;
-    case EditAction::CANCEL:
+    case EditActionType::CANCEL:
       errno = EAGAIN;
       return -1;
-    case EditAction::COMPLETE:
+    case EditActionType::COMPLETE:
       if (this->completionCallback) {
         auto s = this->completeLine(state, l, reader);
         if (s == CompStatus::ERROR) {
@@ -1278,18 +1282,18 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         }
       }
       break;
-    case EditAction::BACKWARD_DELETE_CHAR:
+    case EditActionType::BACKWARD_DELETE_CHAR:
       if (linenoiseEditBackspace(l)) {
         this->refreshLine(l);
       }
       break;
-    case EditAction::DELETE_CHAR:
+    case EditActionType::DELETE_CHAR:
       if (linenoiseEditDelete(l)) {
         this->refreshLine(l);
       }
       break;
-    case EditAction::DELETE_OR_EXIT: /* remove char at right of cursor, or if the line is empty, act
-                                        as end-of-file. */
+    case EditActionType::DELETE_OR_EXIT: /* remove char at right of cursor, or if the line is empty,
+                                        act as end-of-file. */
       if (l.len > 0) {
         if (linenoiseEditDelete(l)) {
           this->refreshLine(l);
@@ -1299,22 +1303,22 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::TRANSPOSE_CHAR: /* swaps current character with previous */
+    case EditActionType::TRANSPOSE_CHAR: /* swaps current character with previous */
       if (linenoiseEditSwapChars(l)) {
         this->refreshLine(l);
       }
       break;
-    case EditAction::BACKWARD_CHAR:
+    case EditActionType::BACKWARD_CHAR:
       if (linenoiseEditMoveLeft(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::FORWARD_CHAR:
+    case EditActionType::FORWARD_CHAR:
       if (linenoiseEditMoveRight(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::PREV_HISTORY:
+    case EditActionType::PREV_HISTORY:
       if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1322,7 +1326,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::NEXT_HISTORY:
+    case EditActionType::NEXT_HISTORY:
       if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1330,7 +1334,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::UP_OR_HISTORY:
+    case EditActionType::UP_OR_HISTORY:
       if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1338,7 +1342,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::DOWN_OR_HISTORY:
+    case EditActionType::DOWN_OR_HISTORY:
       if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1346,7 +1350,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::SEARCH_HISTORY:
+    case EditActionType::SEARCH_HISTORY:
       if (this->kickHistoryCallback(state, HistOp::SEARCH, &l, true)) {
         this->refreshLine(l);
       } else if (state.hasError()) {
@@ -1354,59 +1358,72 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditAction::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
+    case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
       linenoiseEditDeleteTo(l);
       this->refreshLine(l);
       break;
-    case EditAction::KILL_LINE: /* delete from current to end of line */
+    case EditActionType::KILL_LINE: /* delete from current to end of line */
       linenoiseEditDeleteFrom(l);
       this->refreshLine(l);
       break;
-    case EditAction::BEGINNING_OF_LINE: /* go to the start of the line */
+    case EditActionType::BEGINNING_OF_LINE: /* go to the start of the line */
       if (linenoiseEditMoveHome(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::END_OF_LINE: /* go to the end of the line */
+    case EditActionType::END_OF_LINE: /* go to the end of the line */
       if (linenoiseEditMoveEnd(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::CLEAR_SCREEN:
+    case EditActionType::CLEAR_SCREEN:
       linenoiseClearScreen(l.ofd);
       this->refreshLine(l);
       break;
-    case EditAction::BACKWARD_KILL_WORD:
+    case EditActionType::BACKWARD_KILL_WORD:
       if (linenoiseEditDeletePrevWord(l)) {
         this->refreshLine(l);
       }
       break;
-    case EditAction::KILL_WORD:
+    case EditActionType::KILL_WORD:
       if (linenoiseEditDeleteNextWord(l)) {
         this->refreshLine(l);
       }
       break;
-    case EditAction::BACKWARD_WORD:
+    case EditActionType::BACKWARD_WORD:
       if (linenoiseEditMoveLeftWord(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::FORWARD_WORD:
+    case EditActionType::FORWARD_WORD:
       if (linenoiseEditMoveRightWord(l)) {
         this->refreshLine(l, false);
       }
       break;
-    case EditAction::NEWLINE:
+    case EditActionType::NEWLINE:
       if (linenoiseEditInsert(l, "\n", 1)) {
         this->refreshLine(l);
       } else {
         return -1;
       }
       break;
-    case EditAction::BRACKET_PASTE:
+    case EditActionType::BRACKET_PASTE:
       if (insertBracketPaste(l)) {
         this->refreshLine(l);
       } else {
+        return -1;
+      }
+      break;
+    case EditActionType::CUSTOM:
+      if (this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex)) {
+        this->refreshLine(l);
+        if (action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
+          return this->accept(state, l);
+        }
+      } else {
+        if (state.hasError()) {
+          errno = EAGAIN;
+        }
         return -1;
       }
       break;
@@ -1760,6 +1777,48 @@ bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct l
   return false;
 }
 
+bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState &l,
+                                          CustomActionType type, unsigned int index) {
+  StringRef line;
+  switch (type) {
+  case CustomActionType::REPLACE_WHOLE:
+  case CustomActionType::REPLACE_WHOLE_ACCEPT:
+    line = l.lineRef();
+    break;
+  case CustomActionType::REPLACE_LINE: {
+    auto [pos, len] = findLineInterval(l, true);
+    line = l.lineRef();
+    line = line.substr(pos, len);
+    break;
+  }
+  case CustomActionType::INSERT:
+    break;
+  }
+
+  auto ret =
+      this->kickCallback(state, this->customCallbacks[index], makeArgs(DSValue::createStr(line)));
+  if (state.hasError()) {
+    return false;
+  }
+  if (ret.isInvalid()) {
+    return true;
+  }
+  assert(ret.hasStrRef());
+  switch (type) {
+  case CustomActionType::REPLACE_WHOLE:
+  case CustomActionType::REPLACE_WHOLE_ACCEPT:
+    l.len = l.pos = 0;
+    break;
+  case CustomActionType::REPLACE_LINE:
+    linenoiseEditDeleteTo(l, true);
+    break;
+  case CustomActionType::INSERT:
+    break;
+  }
+  const char *ptr = ret.asCStr();
+  return linenoiseEditInsert(l, ptr, strlen(ptr));
+}
+
 bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
   auto s = this->keyBindings.addBinding(key, name);
   std::string message;
@@ -1778,7 +1837,7 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
     break;
   case KeyBindings::AddStatus::FORBTT_BRACKET_ACTION:
     message = "cannot bind to `";
-    message += toString(EditAction::BRACKET_PASTE);
+    message += toString(EditActionType::BRACKET_PASTE);
     message += "'";
     break;
   case KeyBindings::AddStatus::INVALID_START_CHAR:
@@ -1802,6 +1861,43 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
     return false;
   }
   return true;
+}
+
+bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, StringRef type,
+                                          ObjPtr<DSObject> callback) {
+  auto s = this->keyBindings.defineCustomAction(name, type);
+  if (s) {
+    unsigned int index = s.asOk();
+    assert(this->customCallbacks.size() == index);
+    this->customCallbacks.push_back(std::move(callback));
+    return true;
+  }
+
+  std::string message;
+  switch (s.asErr()) {
+  case KeyBindings::DefineError::INVALID_NAME:
+    message += "invalid action name, must [a-zA-Z_-]: `";
+    message += toPrintable(name);
+    message += "'";
+    break;
+  case KeyBindings::DefineError::INVALID_TYPE:
+    message += "unsupported custom action type: `";
+    message += toPrintable(type);
+    message += "'";
+    break;
+  case KeyBindings::DefineError::DEFINED:
+    message += "already defined action: '";
+    message += name;
+    message += "'";
+    break;
+  case KeyBindings::DefineError::LIMIT:
+    message += "number of custom actions reaches limit (up to ";
+    message += std::to_string(SYS_LIMIT_CUSTOM_ACTION_MAX);
+    message += ")";
+    break;
+  }
+  raiseError(state, TYPE::InvalidOperationError, std::move(message));
+  return false;
 }
 
 } // namespace ydsh
