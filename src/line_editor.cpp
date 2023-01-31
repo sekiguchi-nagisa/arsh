@@ -1867,8 +1867,7 @@ bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, String
                                           ObjPtr<DSObject> callback) {
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
-    unsigned int index = s.asOk();
-    assert(this->customCallbacks.size() == index);
+    assert(this->customCallbacks.size() == s.asOk());
     this->customCallbacks.push_back(std::move(callback));
     return true;
   }
