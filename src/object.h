@@ -358,7 +358,7 @@ private:
    * for small string construction
    */
   DSValue(const char *data, unsigned int size) noexcept {
-    assert(data ? size >= 0 : size == 0);
+    assert(data || size == 0);
     assert(size <= smallStrSize(DSValueKind::SSTR14));
     this->str.kind = toSmallStrKind(size);
     memcpy(this->str.value, data, size);
