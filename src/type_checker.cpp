@@ -1404,6 +1404,10 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       TRY(isa<NumberNode>(*constNode));
       int64_t value = cast<NumberNode>(*constNode).getIntValue();
       if (op == TokenKind::MINUS) {
+        if (value == INT64_MIN) {
+          this->reportError<NegativeIntMin>(node);
+          return nullptr;
+        }
         value = -value;
       } else if (op == TokenKind::NOT) {
         uint64_t v = ~static_cast<uint64_t>(value);

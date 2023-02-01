@@ -102,6 +102,7 @@ DEFINE_TCError(BraceOutOfRange, "out of range brace expansion number: `%s', must
 DEFINE_TCError(BraceOutOfRangeStep, "out of range brace expansion increment number: `%s', "
                                     "must be int64_min +1 to int64_max");
 DEFINE_TCError(Constant, "must be constant expression");
+DEFINE_TCError(NegativeIntMin, "nagative value of INT_MIN is not allowed");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");
 DEFINE_TCError(NeedDefault, "the case expression needs default pattern");

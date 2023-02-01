@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 6, $errorKind = 'NegativeIntMin', $chars = 3, $status = 1)
+
+case $@.size() {
+  +0x8000000000000000 => echo hello1
+  -0x8000000000000000 => echo hello2
+  else => true
+}

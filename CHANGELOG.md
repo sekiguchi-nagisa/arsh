@@ -44,6 +44,7 @@
     - except for `:`, `echo`, `eval`, `false`, `true`
 - **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
+- **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
 - builtin ``shctl info`` subcommand show more system constant information
 
 ### Fixed
