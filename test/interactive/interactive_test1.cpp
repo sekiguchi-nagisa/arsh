@@ -203,7 +203,7 @@ TEST_F(InteractiveTest, edit3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, edit4) {
+TEST_F(InteractiveTest, keybind) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -212,6 +212,49 @@ TEST_F(InteractiveTest, edit4) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[q', 'backward-word')"));
   this->send("'/user" ESC_("q") "home/" ESC_("[F") "'\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'/home/user'\n: String = /home/user\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, customAction) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // replace-whole
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                                                  "function(s) => $s.chars().reverse().join(''))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action1')"));
+  this->send("echo" CTRL_V);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ohce"));
+  this->send("'" CTRL_A "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
+
+  // replace-whole-accept
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.action('action2', 'replace-whole-accept', "
+                              "function(s) => $s.chars().reverse().join(''))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action2')"));
+  this->send("'echo'" CTRL_V);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
+
+  // replace-line //FIXME: multi-line mode
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action3', 'replace-line', "
+                                                  "function(s) => $s.chars().reverse().join(''))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^X', 'action3')"));
+  this->send("echo" CTRL_X);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ohce"));
+  this->send("'" CTRL_A "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
+
+  // insert
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.action('action4', 'insert', function(s) => '/home/home')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^Y', 'action4')"));
+  this->send("echo " CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /home/home"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "/home/home"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

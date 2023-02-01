@@ -1792,6 +1792,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     break;
   }
   case CustomActionType::INSERT:
+    line = "";
     break;
   }
 
@@ -1885,7 +1886,7 @@ bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, String
     message += "'";
     break;
   case KeyBindings::DefineError::DEFINED:
-    message += "already defined action: '";
+    message += "already defined action: `";
     message += name;
     message += "'";
     break;

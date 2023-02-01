@@ -30,7 +30,10 @@ using namespace ydsh;
 #define CTRL_P "\x10"
 #define CTRL_T "\x14"
 #define CTRL_U "\x15"
+#define CTRL_V "\x16"
 #define CTRL_W "\x17"
+#define CTRL_X "\x18"
+#define CTRL_Y "\x19"
 #define CTRL_Z "\x1A"
 
 #define ESC_(E) "\x1b" E

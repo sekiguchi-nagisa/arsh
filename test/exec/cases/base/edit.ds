@@ -82,3 +82,41 @@ assert $ex is InvalidOperationError && $ex.message() == "number of key bindings 
 assert $editor.actions() is [String]
 assert $editor.actions()[0] == 'accept'
 assert $editor.actions()[1] == 'backward-char'
+
+# custom action
+## define
+assert ! $editor.actions().contains('action1')
+$editor.action('action1', 'replace-whole', function(s) => $s)
+assert $editor.actions().contains('action1')
+
+## re-define
+$ex = 34
+try { $editor.action('action1', 'replace-whole-accept', function(s)=> $s);  }
+catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "already defined action: \`action1'"
+
+## invalid
+$ex = 34
+try { $editor.action('%%%%fe', 'replace-whole-accept', function(s)=> $s);  }
+catch e { $ex = $e; }
+assert $ex is InvalidOperationError && 
+    $ex.message() == "invalid action name, must [a-zA-Z_-]: \`%%%%fe'"
+
+$ex = 34
+try { $editor.action('who', 'replace-whole-accept1', function(s)=> $s);  }
+catch e { $ex = $e; }
+assert $ex is InvalidOperationError && 
+    $ex.message() == "unsupported custom action type: \`replace-whole-accept1'"
+
+## limit
+$ex = 34
+try {
+    for(var i = 0; $i < 1000; $i++) {
+        $editor.action("action_$i", 'replace-line', function(s) => $s)
+    }
+} catch e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError && 
+    $ex.message() == "number of custom actions reaches limit (up to 255)"

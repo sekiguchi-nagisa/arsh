@@ -13,6 +13,7 @@
         - ``bind``: change keybinding
         - ``bindings``: get read-only snapshot of current keybindings
             - modification of the result does not affect actual keybindings
+        - ``action``: define custom key action
         - ``actions``: get read-only snapshot of current edit actions
 - add builtin ``disown`` command
 - add directory stack related builtin commands
