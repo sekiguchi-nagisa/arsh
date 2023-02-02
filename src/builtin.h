@@ -2166,6 +2166,7 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
 YDSH_METHOD edit_action(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_action);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
   auto name = LOCAL(1).asStrRef();
   auto type = LOCAL(2).asStrRef();
   auto callback = LOCAL(3).toPtr();

@@ -85,9 +85,14 @@ assert $editor.actions()[1] == 'backward-char'
 
 # custom action
 ## define
+$editor.bind('^[1', '')
+$editor.bind('^[2', '')
 assert ! $editor.actions().contains('action1')
 $editor.action('action1', 'replace-whole', function(s) => $s)
 assert $editor.actions().contains('action1')
+assert !$editor.bindings().get('^Y')
+$editor.bind('^Y', 'action1')
+assert $editor.bindings()['^Y'] == 'action1'
 
 ## re-define
 $ex = 34
@@ -95,6 +100,12 @@ try { $editor.action('action1', 'replace-whole-accept', function(s)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == "already defined action: \`action1'"
+
+$ex = 34
+try { $editor.action('backward-char', 'replace-whole-accept', function(s)=> $s);  }
+catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == "already defined action: \`backward-char'"
 
 ## invalid
 $ex = 34
