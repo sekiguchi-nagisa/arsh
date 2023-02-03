@@ -511,12 +511,30 @@ static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
   return {candidates.getValues()[0].asCStr(), prefixSize};
 }
 
-static void checkProperty(struct linenoiseState &l) {
-  for (auto &e : ydsh::getCharWidthPropertyList()) {
-    if (e.first != CharWidthProperty::EAW && getenv("TMUX")) {
-      continue; // workaround for tmux
-    }
+/**
+ * workaround for screen/tmux
+ * @return
+ */
+static bool underMultiplexer() {
+  StringRef env = getenv("TERM");
+  if(env.contains("screen")) {
+    return true;
+  }
+  if(getenv("TMUX")) {
+    return true;
+  }
+  return false;
+}
 
+static void checkProperty(struct linenoiseState &l) {
+  if (underMultiplexer()) {
+    /**
+     * if run under terminal mutiplexer (screen/tmux), disabale character width checking
+     */
+    return;
+  }
+
+  for (auto &e : ydsh::getCharWidthPropertyList()) {
     const char *str = e.second;
     if (write(l.ofd, str, strlen(str)) == -1) {
       return;
