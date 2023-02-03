@@ -53,6 +53,8 @@
 - broken help message of builtin `ulimit` command
 - invalid insertion position of completion candidate prefix
 - broken analyzer state when reuse analyzer instance
+- add workaround for running under screen/tmux
+    - disable character width detection
 
 ## [0.28.1] - 2023-01-04
 

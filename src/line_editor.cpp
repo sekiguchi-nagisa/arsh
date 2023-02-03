@@ -517,10 +517,10 @@ static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
  */
 static bool underMultiplexer() {
   StringRef env = getenv("TERM");
-  if(env.contains("screen")) {
+  if (env.contains("screen")) {
     return true;
   }
-  if(getenv("TMUX")) {
+  if (getenv("TMUX")) {
     return true;
   }
   return false;
@@ -529,7 +529,7 @@ static bool underMultiplexer() {
 static void checkProperty(struct linenoiseState &l) {
   if (underMultiplexer()) {
     /**
-     * if run under terminal mutiplexer (screen/tmux), disabale character width checking
+     * if run under terminal multiplexer (screen/tmux), disabale character width checking
      */
     return;
   }
