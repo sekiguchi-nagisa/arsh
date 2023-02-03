@@ -513,6 +513,10 @@ static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
 
 static void checkProperty(struct linenoiseState &l) {
   for (auto &e : ydsh::getCharWidthPropertyList()) {
+    if (e.first != CharWidthProperty::EAW && getenv("TMUX")) {
+      continue; // workaround for tmux
+    }
+
     const char *str = e.second;
     if (write(l.ofd, str, strlen(str)) == -1) {
       return;
