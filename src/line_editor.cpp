@@ -1249,7 +1249,6 @@ public:
 
   void truncateUntilLimit() {
     static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
-    static_assert(SYS_LIMIT_HIST_SIZE < std::numeric_limits<ssize_t>::max());
     if (this->history->size() >= SYS_LIMIT_HIST_SIZE) {
       auto &values = this->history->refValues();
       values.erase(values.begin(),
