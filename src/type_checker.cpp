@@ -256,7 +256,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
     return true;
   }
 
-  if (requiredType.is(TYPE::Boolean)) {
+  if (requiredType.is(TYPE::Bool)) {
     if (targetType.isOptionType()) {
       return true;
     }
@@ -539,7 +539,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
   }
 
   if (exprType.isOptionType()) {
-    if (targetType.is(TYPE::Boolean)) {
+    if (targetType.is(TYPE::Bool)) {
       node.setOpKind(TypeOpNode::CHECK_UNWRAP);
       return;
     }
@@ -548,7 +548,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
       node.setOpKind(TypeOpNode::TO_STRING);
       return;
     }
-    if (targetType.is(TYPE::Boolean) && this->typePool.lookupMethod(exprType, OP_BOOL) != nullptr) {
+    if (targetType.is(TYPE::Bool) && this->typePool.lookupMethod(exprType, OP_BOOL) != nullptr) {
       node.setOpKind(TypeOpNode::TO_BOOL);
       return;
     }
@@ -609,7 +609,7 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
     node.setType(this->typePool.get(TYPE::Signal));
     break;
   case NumberNode::Bool:
-    node.setType(this->typePool.get(TYPE::Boolean)); // normally unreachable
+    node.setType(this->typePool.get(TYPE::Bool)); // normally unreachable
     break;
   }
 }
@@ -780,7 +780,7 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
     } else {
       node.setOpKind(TypeOpNode::ALWAYS_FALSE);
     }
-    node.setType(this->typePool.get(TYPE::Boolean));
+    node.setType(this->typePool.get(TYPE::Bool));
   }
 }
 
@@ -794,7 +794,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     }
   } else {
     if (exprType.isOptionType()) {
-      this->resolveCoercion(this->typePool.get(TYPE::Boolean), node.refExprNode());
+      this->resolveCoercion(this->typePool.get(TYPE::Bool), node.refExprNode());
     }
     auto &applyNode = node.createApplyNode();
     node.setType(this->checkTypeAsExpr(applyNode));
@@ -843,7 +843,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
       scope = this->intoBlock();
     }
 
-    auto &booleanType = this->typePool.get(TYPE::Boolean);
+    auto &booleanType = this->typePool.get(TYPE::Bool);
     this->checkTypeWithCoercion(booleanType, node.refLeftNode());
     if (node.getLeftNode()->getType().isNothingType()) {
       this->reportError<Unreachable>(*node.getRightNode());
@@ -886,7 +886,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   // check referential equality of func object
   if (leftType.isFuncType() && (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
     this->checkType(leftType, *node.getRightNode());
-    node.setType(this->typePool.get(TYPE::Boolean));
+    node.setType(this->typePool.get(TYPE::Bool));
     return;
   }
 
@@ -979,8 +979,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   } else {
     if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
         !this->typePool.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
-        !this->typePool.get(TYPE::UnixFD)
-             .isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
+        !this->typePool.get(TYPE::FD).isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
       if (exprType.isArrayType() || exprType.isMapType() || exprType.isTupleType() ||
           exprType.isRecordType() || exprType.is(TYPE::Any)) {
         node.setType(this->typePool.get(TYPE::StringArray));
@@ -1036,7 +1035,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
     break;
   case ForkKind::IN_PIPE:
   case ForkKind::OUT_PIPE:
-    type = &this->typePool.get(TYPE::UnixFD);
+    type = &this->typePool.get(TYPE::FD);
     break;
   case ForkKind::JOB:
   case ForkKind::COPROC:
@@ -1050,7 +1049,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
 }
 
 void TypeChecker::visitAssertNode(AssertNode &node) {
-  this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
+  this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
   this->checkType(this->typePool.get(TYPE::String), node.getMessageNode());
   node.setType(this->typePool.get(TYPE::Void));
 }
@@ -1116,7 +1115,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refInitNode());
 
     if (node.getCondNode() != nullptr) {
-      this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
+      this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
     }
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refIterNode());
 
@@ -1149,7 +1148,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 void TypeChecker::visitIfNode(IfNode &node) {
   {
     auto scope = this->intoBlock();
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
+    this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
     this->resolveSmartCast(node.getCondNode());
     this->checkTypeExactly(node.getThenNode());
   }

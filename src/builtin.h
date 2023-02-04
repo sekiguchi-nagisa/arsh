@@ -186,7 +186,7 @@ YDSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
 
 //   =====  equality  =====
 
-//!bind: function $OP_EQ($this : Int, $target : Int) : Boolean
+//!bind: function $OP_EQ($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_eq);
   auto left = LOCAL(0).asInt();
@@ -194,7 +194,7 @@ YDSH_METHOD int_2_int_eq(RuntimeContext &ctx) {
   RET_BOOL(left == right);
 }
 
-//!bind: function $OP_NE($this : Int, $target : Int) : Boolean
+//!bind: function $OP_NE($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_ne);
   auto left = LOCAL(0).asInt();
@@ -204,7 +204,7 @@ YDSH_METHOD int_2_int_ne(RuntimeContext &ctx) {
 
 //   =====  relational  =====
 
-//!bind: function $OP_LT($this : Int, $target : Int) : Boolean
+//!bind: function $OP_LT($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_lt);
   auto left = LOCAL(0).asInt();
@@ -212,7 +212,7 @@ YDSH_METHOD int_2_int_lt(RuntimeContext &ctx) {
   RET_BOOL(left < right);
 }
 
-//!bind: function $OP_GT($this : Int, $target : Int) : Boolean
+//!bind: function $OP_GT($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_gt);
   auto left = LOCAL(0).asInt();
@@ -220,7 +220,7 @@ YDSH_METHOD int_2_int_gt(RuntimeContext &ctx) {
   RET_BOOL(left > right);
 }
 
-//!bind: function $OP_LE($this : Int, $target : Int) : Boolean
+//!bind: function $OP_LE($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_le);
   auto left = LOCAL(0).asInt();
@@ -228,7 +228,7 @@ YDSH_METHOD int_2_int_le(RuntimeContext &ctx) {
   RET_BOOL(left <= right);
 }
 
-//!bind: function $OP_GE($this : Int, $target : Int) : Boolean
+//!bind: function $OP_GE($this : Int, $target : Int) : Bool
 YDSH_METHOD int_2_int_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_ge);
   auto left = LOCAL(0).asInt();
@@ -338,7 +338,7 @@ YDSH_METHOD float_2_float_div(RuntimeContext &ctx) {
 
 //   =====  equality  =====
 
-//!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
+//!bind: function $OP_EQ($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_eq);
   double left = LOCAL(0).asFloat();
@@ -346,7 +346,7 @@ YDSH_METHOD float_2_float_eq(RuntimeContext &ctx) {
   RET_BOOL(left == right);
 }
 
-//!bind: function $OP_NE($this : Float, $target : Float) : Boolean
+//!bind: function $OP_NE($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_ne);
   double left = LOCAL(0).asFloat();
@@ -356,7 +356,7 @@ YDSH_METHOD float_2_float_ne(RuntimeContext &ctx) {
 
 //   =====  relational  =====
 
-//!bind: function $OP_LT($this : Float, $target : Float) : Boolean
+//!bind: function $OP_LT($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_lt);
   double left = LOCAL(0).asFloat();
@@ -364,7 +364,7 @@ YDSH_METHOD float_2_float_lt(RuntimeContext &ctx) {
   RET_BOOL(left < right);
 }
 
-//!bind: function $OP_GT($this : Float, $target : Float) : Boolean
+//!bind: function $OP_GT($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_gt);
   double left = LOCAL(0).asFloat();
@@ -372,7 +372,7 @@ YDSH_METHOD float_2_float_gt(RuntimeContext &ctx) {
   RET_BOOL(left > right);
 }
 
-//!bind: function $OP_LE($this : Float, $target : Float) : Boolean
+//!bind: function $OP_LE($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_le);
   double left = LOCAL(0).asFloat();
@@ -380,7 +380,7 @@ YDSH_METHOD float_2_float_le(RuntimeContext &ctx) {
   RET_BOOL(left <= right);
 }
 
-//!bind: function $OP_GE($this : Float, $target : Float) : Boolean
+//!bind: function $OP_GE($this : Float, $target : Float) : Bool
 YDSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_ge);
   double left = LOCAL(0).asFloat();
@@ -390,28 +390,28 @@ YDSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
 
 // =====  additional float op  ======
 
-//!bind: function isNaN($this : Float): Boolean
+//!bind: function isNaN($this : Float): Bool
 YDSH_METHOD float_isNaN(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isNaN);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isnan(value));
 }
 
-//!bind: function isInf($this : Float): Boolean
+//!bind: function isInf($this : Float): Bool
 YDSH_METHOD float_isInf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isInf);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isinf(value));
 }
 
-//!bind: function isFinite($this : Float): Boolean
+//!bind: function isFinite($this : Float): Bool
 YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isFinite);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isfinite(value));
 }
 
-//!bind: function isNormal($this : Float) : Boolean
+//!bind: function isNormal($this : Float) : Bool
 YDSH_METHOD float_isNormal(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isNormal);
   double value = LOCAL(0).asFloat();
@@ -487,23 +487,23 @@ YDSH_METHOD float_compare(RuntimeContext &ctx) {
   RET(DSValue::createInt(ret));
 }
 
-// #####################
-// ##     Boolean     ##
-// #####################
+// ##################
+// ##     Bool     ##
+// ##################
 
-//!bind: function $OP_NOT($this : Boolean) : Boolean
+//!bind: function $OP_NOT($this : Bool) : Bool
 YDSH_METHOD boolean_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_not);
   RET_BOOL(!LOCAL(0).asBool());
 }
 
-//!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
+//!bind: function $OP_EQ($this : Bool, $target : Bool) : Bool
 YDSH_METHOD boolean_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_eq);
   RET_BOOL(LOCAL(0).asBool() == LOCAL(1).asBool());
 }
 
-//!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
+//!bind: function $OP_NE($this : Bool, $target : Bool) : Bool
 YDSH_METHOD boolean_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_ne);
   RET_BOOL(LOCAL(0).asBool() != LOCAL(1).asBool());
@@ -513,7 +513,7 @@ YDSH_METHOD boolean_ne(RuntimeContext &ctx) {
 // ##     String     ##
 // ####################
 
-//!bind: function $OP_EQ($this : String, $target : String) : Boolean
+//!bind: function $OP_EQ($this : String, $target : String) : Bool
 YDSH_METHOD string_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_eq);
   auto left = LOCAL(0).asStrRef();
@@ -521,7 +521,7 @@ YDSH_METHOD string_eq(RuntimeContext &ctx) {
   RET_BOOL(left == right);
 }
 
-//!bind: function $OP_NE($this : String, $target : String) : Boolean
+//!bind: function $OP_NE($this : String, $target : String) : Bool
 YDSH_METHOD string_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_ne);
   auto left = LOCAL(0).asStrRef();
@@ -529,7 +529,7 @@ YDSH_METHOD string_ne(RuntimeContext &ctx) {
   RET_BOOL(left != right);
 }
 
-//!bind: function $OP_LT($this : String, $target : String) : Boolean
+//!bind: function $OP_LT($this : String, $target : String) : Bool
 YDSH_METHOD string_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_lt);
   auto left = LOCAL(0).asStrRef();
@@ -537,7 +537,7 @@ YDSH_METHOD string_lt(RuntimeContext &ctx) {
   RET_BOOL(left < right);
 }
 
-//!bind: function $OP_GT($this : String, $target : String) : Boolean
+//!bind: function $OP_GT($this : String, $target : String) : Bool
 YDSH_METHOD string_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_gt);
   auto left = LOCAL(0).asStrRef();
@@ -545,7 +545,7 @@ YDSH_METHOD string_gt(RuntimeContext &ctx) {
   RET_BOOL(left > right);
 }
 
-//!bind: function $OP_LE($this : String, $target : String) : Boolean
+//!bind: function $OP_LE($this : String, $target : String) : Bool
 YDSH_METHOD string_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_le);
   auto left = LOCAL(0).asStrRef();
@@ -553,7 +553,7 @@ YDSH_METHOD string_le(RuntimeContext &ctx) {
   RET_BOOL(left <= right);
 }
 
-//!bind: function $OP_GE($this : String, $target : String) : Boolean
+//!bind: function $OP_GE($this : String, $target : String) : Bool
 YDSH_METHOD string_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_ge);
   auto left = LOCAL(0).asStrRef();
@@ -569,7 +569,7 @@ YDSH_METHOD string_size(RuntimeContext &ctx) {
   RET(DSValue::createInt(size));
 }
 
-//!bind: function empty($this : String) : Boolean
+//!bind: function empty($this : String) : Bool
 YDSH_METHOD string_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_empty);
   bool empty = LOCAL(0).asStrRef().empty();
@@ -790,7 +790,7 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
   RET(slice(ref, start, stop));
 }
 
-//!bind: function startsWith($this : String, $target : String) : Boolean
+//!bind: function startsWith($this : String, $target : String) : Bool
 YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_startsWith);
   auto left = LOCAL(0).asStrRef();
@@ -798,7 +798,7 @@ YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
   RET_BOOL(left.startsWith(right));
 }
 
-//!bind: function endsWith($this : String, $target : String) : Boolean
+//!bind: function endsWith($this : String, $target : String) : Bool
 YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_endsWith);
   auto left = LOCAL(0).asStrRef();
@@ -830,7 +830,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
   RET(DSValue::createInt(static_cast<int64_t>(actual)));
 }
 
-//!bind: function contains($this : String, $target : String) : Boolean
+//!bind: function contains($this : String, $target : String) : Bool
 YDSH_METHOD string_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_contains);
   auto left = LOCAL(0).asStrRef();
@@ -984,7 +984,7 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
+//!bind: function $OP_MATCH($this : String, $re : Regex) : Bool
 YDSH_METHOD string_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_match);
   auto str = LOCAL(0).asStrRef();
@@ -993,7 +993,7 @@ YDSH_METHOD string_match(RuntimeContext &ctx) {
   RET_BOOL(r);
 }
 
-//!bind: function $OP_UNMATCH($this : String, $re : Regex) : Boolean
+//!bind: function $OP_UNMATCH($this : String, $re : Regex) : Bool
 YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_unmatch);
   auto str = LOCAL(0).asStrRef();
@@ -1074,7 +1074,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function isCaseless($this : Regex) : Boolean
+//!bind: function isCaseless($this : Regex) : Bool
 YDSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isCaseless);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1082,7 +1082,7 @@ YDSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   RET_BOOL(hasFlag(flag, PCRECompileFlag::CASELESS));
 }
 
-//!bind: function isMultiLine($this : Regex) : Boolean
+//!bind: function isMultiLine($this : Regex) : Bool
 YDSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isMultiLine);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1090,7 +1090,7 @@ YDSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
   RET_BOOL(hasFlag(flag, PCRECompileFlag::MULTILINE));
 }
 
-//!bind: function isDotAll($this : Regex) : Boolean
+//!bind: function isDotAll($this : Regex) : Bool
 YDSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isDotAll);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1098,7 +1098,7 @@ YDSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   RET_BOOL(hasFlag(flag, PCRECompileFlag::DOTALL));
 }
 
-//!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
+//!bind: function $OP_MATCH($this : Regex, $target : String) : Bool
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1107,7 +1107,7 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
   RET_BOOL(r);
 }
 
-//!bind: function $OP_UNMATCH($this : Regex, $target : String) : Boolean
+//!bind: function $OP_UNMATCH($this : Regex, $target : String) : Bool
 YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_unmatch);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1210,13 +1210,13 @@ YDSH_METHOD signal_trap(RuntimeContext &ctx) {
   RET(old);
 }
 
-//!bind: function $OP_EQ($this : Signal, $target : Signal) : Boolean
+//!bind: function $OP_EQ($this : Signal, $target : Signal) : Bool
 YDSH_METHOD signal_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_eq);
   RET_BOOL(LOCAL(0).asSig() == LOCAL(1).asSig());
 }
 
-//!bind: function $OP_NE($this : Signal, $target : Signal) : Boolean
+//!bind: function $OP_NE($this : Signal, $target : Signal) : Bool
 YDSH_METHOD signal_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_ne);
   RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
@@ -1548,7 +1548,7 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Array<T0>
+//!bind: function sortWith($this : Array<T0>, $comp : Func<Bool, [T0, T0]>) : Array<T0>
 YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1642,7 +1642,7 @@ YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   RET(DSValue::createInt(index));
 }
 
-//!bind: function contains($this : Array<T0>, $target : T0) : Boolean where T0 : Value_
+//!bind: function contains($this : Array<T0>, $target : T0) : Bool where T0 : Value_
 YDSH_METHOD array_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_contains);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1667,7 +1667,7 @@ YDSH_METHOD array_size(RuntimeContext &ctx) {
   RET(DSValue::createInt(size));
 }
 
-//!bind: function empty($this : Array<T0>) : Boolean
+//!bind: function empty($this : Array<T0>) : Bool
 YDSH_METHOD array_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_empty);
   bool empty = typeAs<ArrayObject>(LOCAL(0)).getValues().empty();
@@ -1783,7 +1783,7 @@ YDSH_METHOD map_size(RuntimeContext &ctx) {
   RET(DSValue::createInt(value));
 }
 
-//!bind: function empty($this : Map<T0, T1>) : Boolean
+//!bind: function empty($this : Map<T0, T1>) : Bool
 YDSH_METHOD map_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_empty);
   auto &obj = typeAs<MapObject>(LOCAL(0));
@@ -1799,7 +1799,7 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
   RET(iter != obj.getValueMap().end() ? iter->second : DSValue::createInvalid());
 }
 
-//!bind: function remove($this : Map<T0, T1>, $key : T0) : Boolean
+//!bind: function remove($this : Map<T0, T1>, $key : T0) : Bool
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_remove);
   auto &obj = typeAs<MapObject>(LOCAL(0));
@@ -1930,11 +1930,11 @@ YDSH_METHOD error_source(RuntimeContext &ctx) {
   RET(DSValue::createStr(source));
 }
 
-// ####################
-// ##     UnixFD     ##
-// ####################
+// ################
+// ##     FD     ##
+// ################
 
-//!bind: function $OP_INIT($this : UnixFD, $path : String) : UnixFD
+//!bind: function $OP_INIT($this : FD, $path : String) : FD
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_init);
   auto ref = LOCAL(1).asStrRef();
@@ -1953,7 +1953,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function close($this : UnixFD) : Void
+//!bind: function close($this : FD) : Void
 YDSH_METHOD fd_close(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_close);
   auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
@@ -1966,7 +1966,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function dup($this : UnixFD) : UnixFD
+//!bind: function dup($this : FD) : FD
 YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
@@ -1979,14 +1979,14 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   RET(DSValue::create<UnixFdObject>(newfd));
 }
 
-//!bind: function value($this : UnixFD) : Int
+//!bind: function value($this : FD) : Int
 YDSH_METHOD fd_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_value);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
   RET(DSValue::createInt(fd));
 }
 
-//!bind: function lock($this : UnixFD) : Void
+//!bind: function lock($this : FD) : Void
 YDSH_METHOD fd_lock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_lock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
@@ -1997,7 +1997,7 @@ YDSH_METHOD fd_lock(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function unlock($this : UnixFD) : Void
+//!bind: function unlock($this : FD) : Void
 YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_unlock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
@@ -2008,21 +2008,21 @@ YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function $OP_BOOL($this : UnixFD) : Boolean
+//!bind: function $OP_BOOL($this : FD) : Bool
 YDSH_METHOD fd_bool(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_bool);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
   RET_BOOL(fd != -1);
 }
 
-//!bind: function $OP_NOT($this : UnixFD) : Boolean
+//!bind: function $OP_NOT($this : FD) : Bool
 YDSH_METHOD fd_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_not);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
   RET_BOOL(fd == -1);
 }
 
-//!bind: function $OP_ITER($this : UnixFD) : Reader
+//!bind: function $OP_ITER($this : FD) : Reader
 YDSH_METHOD fd_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_iter);
   auto &v = LOCAL(0);
@@ -2048,7 +2048,7 @@ YDSH_METHOD reader_next(RuntimeContext &ctx) {
 // ##     Command     ##
 // #####################
 
-//!bind: function call($this : Command, $argv : Array<String>) : Boolean
+//!bind: function call($this : Command, $argv : Array<String>) : Bool
 YDSH_METHOD cmd_call(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cmd_call);
   (void)ctx;
@@ -2190,21 +2190,21 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
 // ##     Job     ##
 // #################
 
-//!bind: function in($this : Job) : UnixFD
+//!bind: function in($this : Job) : FD
 YDSH_METHOD job_in(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_in);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   RET(obj.getInObj());
 }
 
-//!bind: function out($this : Job) : UnixFD
+//!bind: function out($this : Job) : FD
 YDSH_METHOD job_out(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_out);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   RET(obj.getOutObj());
 }
 
-//!bind: function $OP_GET($this : Job, $index : Int) : UnixFD
+//!bind: function $OP_GET($this : Job, $index : Int) : FD
 YDSH_METHOD job_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_get);
   auto &obj = typeAs<JobObject>(LOCAL(0));
@@ -2220,7 +2220,7 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function poll($this : Job) : Boolean
+//!bind: function poll($this : Job) : Bool
 YDSH_METHOD job_poll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_poll);
   auto job = toObjPtr<JobObject>(LOCAL(0));

@@ -148,7 +148,7 @@ private:
   int fd;
 
 public:
-  explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
+  explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::FD), fd(fd) {}
   ~UnixFdObject();
 
   int tryToClose(bool forceClose) {

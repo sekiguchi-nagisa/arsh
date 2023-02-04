@@ -155,7 +155,7 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
     typeId = TYPE::Int;
     break;
   case ConstEntry::BOOL:
-    typeId = TYPE::Boolean;
+    typeId = TYPE::Bool;
     break;
   case ConstEntry::SIG:
     typeId = TYPE::Signal;

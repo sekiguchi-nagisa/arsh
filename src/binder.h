@@ -73,7 +73,7 @@ private:
 
   const auto &toType(const std::string &) const { return this->pool.get(TYPE::String); }
 
-  const auto &toType(FILE *) const { return this->pool.get(TYPE::UnixFD); }
+  const auto &toType(FILE *) const { return this->pool.get(TYPE::FD); }
 };
 
 template <typename Consumer>

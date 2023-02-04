@@ -330,8 +330,7 @@ TEST_F(ArchiveTest, map) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("bbb", type1, HandleKind::TYPE_ALIAS));
 
   //
-  ret1 =
-      this->pool().createMapType(this->pool().get(TYPE::String), this->pool().get(TYPE::Boolean));
+  ret1 = this->pool().createMapType(this->pool().get(TYPE::String), this->pool().get(TYPE::Bool));
   ASSERT_TRUE(ret1);
   ret1 = this->pool().createMapType(this->pool().get(TYPE::Float), *ret1.asOk());
   ASSERT_TRUE(ret1);
@@ -497,7 +496,7 @@ TEST_F(ArchiveTest, mod4) {
   {
     auto &modType3 = this->loadMod(false, [&](AnalyzerContext &ctx1) {
       auto &modType4 = this->loadModAt(ctx1, true, [](AnalyzerContext &ctx2) {
-        auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Boolean));
+        auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Bool));
         ASSERT_TRUE(ret);
         ctx2.getScope()->defineTypeAlias(ctx2.getPool(), "BoolArray", *ret.asOk());
         ASSERT_NO_FATAL_FAILURE(

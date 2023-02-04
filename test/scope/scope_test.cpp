@@ -445,10 +445,10 @@ TEST_F(ScopeTest, block) { // for top level block
   block1 = block1->enterScope(NameScope::BLOCK);
   ASSERT_EQ(2, block1->getBaseIndex());
 
-  ret = block1->defineHandle("DDD", this->pool.get(TYPE::UnixFD), HandleAttr::READ_ONLY);
+  ret = block1->defineHandle("DDD", this->pool.get(TYPE::FD), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
-          .type = TYPE::UnixFD,
+          .type = TYPE::FD,
           .index = 2,
           .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
@@ -532,10 +532,10 @@ TEST_F(ScopeTest, func) {
       handle.asOk()));
 
   // define local
-  ret = block0->defineHandle("GGG", this->pool.get(TYPE::Boolean), HandleAttr::READ_ONLY);
+  ret = block0->defineHandle("GGG", this->pool.get(TYPE::Bool), HandleAttr::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
-          .type = TYPE::Boolean,
+          .type = TYPE::Bool,
           .index = 0,
           .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,
@@ -545,7 +545,7 @@ TEST_F(ScopeTest, func) {
   handle = block0->lookup("GGG");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
-          .type = TYPE::Boolean,
+          .type = TYPE::Bool,
           .index = 0,
           .kind = HandleKind::VAR,
           .attr = HandleAttr::READ_ONLY,

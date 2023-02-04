@@ -50,7 +50,7 @@ enum class TYPE : unsigned int {
 
   Int,
   Float,
-  Boolean,
+  Bool,
   String,
 
   Regex,
@@ -61,7 +61,7 @@ enum class TYPE : unsigned int {
   Func,
   Module,
   StringIter,
-  UnixFD, // for Unix file descriptor
+  FD, // for Unix file descriptor
   Reader,
   Command,
   LineEditor,

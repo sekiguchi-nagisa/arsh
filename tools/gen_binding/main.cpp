@@ -62,7 +62,7 @@ class ErrorReporter {
 private:
   std::string fileName;
 
-  unsigned lineNum{};
+  unsigned int lineNum{0};
 
   /**
    * currently processing line
@@ -389,15 +389,43 @@ public:
   static std::unique_ptr<ReifiedTypeToken> newReifiedTypeToken(const std::string &name);
 
   void toString(std::string &str) override {
-    this->typeTemp->toString(str);
-    str += '<';
-    for (unsigned int i = 0; i < this->elements.size(); i++) {
-      if (i > 0) {
-        str += ',';
+    if (this->typeTemp->isType(HandleInfo::Array)) {
+      assert(this->elements.size() == 1);
+      str += "[";
+      this->elements[0]->toString(str);
+      str += "]";
+    } else if (this->typeTemp->isType(HandleInfo::Map)) {
+      assert(this->elements.size() == 2);
+      str += "[";
+      this->elements[0]->toString(str);
+      str += " : ";
+      this->elements[1]->toString(str);
+      str += "]";
+    } else if (this->typeTemp->isType(HandleInfo::Tuple)) {
+      str += "(";
+      for (unsigned int i = 0; i < this->elements.size(); i++) {
+        if (i > 0) {
+          str += ", ";
+        }
+        this->elements[i]->toString(str);
       }
-      this->elements[i]->toString(str);
+      str += ")";
+    } else if (this->typeTemp->isType(HandleInfo::Option)) {
+      assert(this->elements.size() == 1);
+      bool isFuncType = this->elements[0]->isType(HandleInfo::Func);
+      if (isFuncType) {
+        str += "(";
+      }
+      this->elements[0]->toString(str);
+      if (isFuncType) {
+        str += ")";
+      }
+      str += "!";
+    } else {
+      std::string tmp;
+      this->typeTemp->toString(tmp);
+      fatal("unsupported reified type: %s\n", tmp.c_str());
     }
-    str += '>';
   }
 };
 
@@ -462,20 +490,15 @@ public:
   bool isType(HandleInfo info) override { return this->typeTemp->isType(info); }
 
   void toString(std::string &str) override {
-    this->typeTemp->toString(str);
-    str += '<';
-    this->returnType->toString(str);
-    if (!this->paramTypes.empty()) {
-      str += ",[";
-      for (unsigned int i = 0; i < this->paramTypes.size(); i++) {
-        if (i > 0) {
-          str += ',';
-        }
-        this->paramTypes[i]->toString(str);
+    str += "(";
+    for (unsigned int i = 0; i < this->paramTypes.size(); i++) {
+      if (i > 0) {
+        str += ", ";
       }
-      str += "]";
+      this->paramTypes[i]->toString(str);
     }
-    str += '>';
+    str += ") -> ";
+    this->returnType->toString(str);
   }
 };
 
@@ -642,7 +665,6 @@ public:
       if (i > 0) {
         str += ", ";
       }
-      str += "$";
       str += this->paramNames[i].first;
       str += " : ";
       str += this->paramTypes[i]->toString();

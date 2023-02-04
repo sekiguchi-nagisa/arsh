@@ -29,7 +29,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   if (node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
     node.setType(this->typePool.get(TYPE::Nothing));
   } else {
-    node.setType(this->typePool.get(TYPE::Boolean));
+    node.setType(this->typePool.get(TYPE::Bool));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto ret = this->curScope->lookup(cmdName)) {
       auto handle = std::move(ret).take();
@@ -165,7 +165,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   for (auto &exprNode : node.getSegmentNodes()) {
     this->checkTypeAsExpr(*exprNode);
     assert(exprNode->getType().is(TYPE::String) || exprNode->getType().is(TYPE::StringArray) ||
-           exprNode->getType().is(TYPE::UnixFD) || exprNode->getType().isNothingType() ||
+           exprNode->getType().is(TYPE::FD) || exprNode->getType().isNothingType() ||
            exprNode->getType().isUnresolved());
   }
   this->checkExpansion(node);
@@ -174,7 +174,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   if (node.getSegmentNodes().size() > 1) {
     for (auto &exprNode : node.getSegmentNodes()) {
       auto *exprType = &exprNode->getType();
-      if (exprType->is(TYPE::StringArray) || exprType->is(TYPE::UnixFD)) {
+      if (exprType->is(TYPE::StringArray) || exprType->is(TYPE::FD)) {
         if (isa<EmbedNode>(*exprNode)) {
           exprType = &cast<EmbedNode>(*exprNode).getExprNode().getType();
         }
@@ -237,7 +237,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     break;
   case RedirOp::DUP_FD: {
     auto &type = this->checkTypeExactly(argNode);
-    if (!type.is(TYPE::UnixFD)) {
+    if (!type.is(TYPE::FD)) {
       auto pair = toNumericCmdArg(argNode);
       if (pair.second && pair.first >= 0 && pair.first <= 2) {
         node.setTargetFd(pair.first);
@@ -302,7 +302,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
   } else {
     auto child = this->funcCtx->intoChild();
     this->checkTypeExactly(*node.getNodes()[size - 1]);
-    node.setType(this->typePool.get(TYPE::Boolean));
+    node.setType(this->typePool.get(TYPE::Bool));
   }
 }
 

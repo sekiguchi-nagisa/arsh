@@ -26,9 +26,9 @@ namespace ydsh {
   OP(Value_)                                                                                       \
   OP(Int)                                                                                          \
   OP(Float)                                                                                        \
-  OP(Boolean)                                                                                      \
+  OP(Bool)                                                                                         \
   OP(String)                                                                                       \
-  OP(UnixFD)                                                                                       \
+  OP(FD)                                                                                           \
   OP(Error)                                                                                        \
   OP(Job)                                                                                          \
   OP(StringIter)                                                                                   \

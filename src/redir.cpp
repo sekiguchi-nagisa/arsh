@@ -221,7 +221,7 @@ bool RedirObject::redirect(DSState &state) {
             msg += ": ";
             msg += toPrintable(ref);
           }
-        } else if (entry.value.hasType(TYPE::UnixFD)) { // FIXME:
+        } else if (entry.value.hasType(TYPE::FD)) { // FIXME:
           msg += ": ";
           msg += std::to_string(typeAs<UnixFdObject>(entry.value).getValue());
         }

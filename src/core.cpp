@@ -626,7 +626,7 @@ static bool compare(DSState &state, const DSValue &x, const DSValue &y, const DS
   if (state.hasError()) {
     return false;
   }
-  assert(ret.hasType(TYPE::Boolean));
+  assert(ret.hasType(TYPE::Bool));
   return ret.asBool();
 }
 

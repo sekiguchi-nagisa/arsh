@@ -14,33 +14,33 @@ function %OP_MINUS() : Int for Int
 
 function %OP_NOT() : Int for Int
 
-function %OP_ADD($target : Int) : Int for Int
+function %OP_ADD(target : Int) : Int for Int
 
-function %OP_SUB($target : Int) : Int for Int
+function %OP_SUB(target : Int) : Int for Int
 
-function %OP_MUL($target : Int) : Int for Int
+function %OP_MUL(target : Int) : Int for Int
 
-function %OP_DIV($target : Int) : Int for Int
+function %OP_DIV(target : Int) : Int for Int
 
-function %OP_MOD($target : Int) : Int for Int
+function %OP_MOD(target : Int) : Int for Int
 
-function %OP_EQ($target : Int) : Boolean for Int
+function %OP_EQ(target : Int) : Bool for Int
 
-function %OP_NE($target : Int) : Boolean for Int
+function %OP_NE(target : Int) : Bool for Int
 
-function %OP_LT($target : Int) : Boolean for Int
+function %OP_LT(target : Int) : Bool for Int
 
-function %OP_GT($target : Int) : Boolean for Int
+function %OP_GT(target : Int) : Bool for Int
 
-function %OP_LE($target : Int) : Boolean for Int
+function %OP_LE(target : Int) : Bool for Int
 
-function %OP_GE($target : Int) : Boolean for Int
+function %OP_GE(target : Int) : Bool for Int
 
-function %OP_AND($target : Int) : Int for Int
+function %OP_AND(target : Int) : Int for Int
 
-function %OP_OR($target : Int) : Int for Int
+function %OP_OR(target : Int) : Int for Int
 
-function %OP_XOR($target : Int) : Int for Int
+function %OP_XOR(target : Int) : Int for Int
 
 function abs() : Int for Int
 
@@ -53,33 +53,33 @@ function %OP_PLUS() : Float for Float
 
 function %OP_MINUS() : Float for Float
 
-function %OP_ADD($target : Float) : Float for Float
+function %OP_ADD(target : Float) : Float for Float
 
-function %OP_SUB($target : Float) : Float for Float
+function %OP_SUB(target : Float) : Float for Float
 
-function %OP_MUL($target : Float) : Float for Float
+function %OP_MUL(target : Float) : Float for Float
 
-function %OP_DIV($target : Float) : Float for Float
+function %OP_DIV(target : Float) : Float for Float
 
-function %OP_EQ($target : Float) : Boolean for Float
+function %OP_EQ(target : Float) : Bool for Float
 
-function %OP_NE($target : Float) : Boolean for Float
+function %OP_NE(target : Float) : Bool for Float
 
-function %OP_LT($target : Float) : Boolean for Float
+function %OP_LT(target : Float) : Bool for Float
 
-function %OP_GT($target : Float) : Boolean for Float
+function %OP_GT(target : Float) : Bool for Float
 
-function %OP_LE($target : Float) : Boolean for Float
+function %OP_LE(target : Float) : Bool for Float
 
-function %OP_GE($target : Float) : Boolean for Float
+function %OP_GE(target : Float) : Bool for Float
 
-function isNaN() : Boolean for Float
+function isNaN() : Bool for Float
 
-function isInf() : Boolean for Float
+function isInf() : Bool for Float
 
-function isFinite() : Boolean for Float
+function isFinite() : Bool for Float
 
-function isNormal() : Boolean for Float
+function isNormal() : Bool for Float
 
 function round() : Float for Float
 
@@ -93,107 +93,107 @@ function abs() : Float for Float
 
 function %OP_TO_INT() : Int for Float
 
-function compare($target : Float) : Int for Float
+function compare(target : Float) : Int for Float
 ```
 
-## Boolean type
+## Bool type
 ```
-function %OP_NOT() : Boolean for Boolean
+function %OP_NOT() : Bool for Bool
 
-function %OP_EQ($target : Boolean) : Boolean for Boolean
+function %OP_EQ(target : Bool) : Bool for Bool
 
-function %OP_NE($target : Boolean) : Boolean for Boolean
+function %OP_NE(target : Bool) : Bool for Bool
 ```
 
 ## String type
 ```
-function %OP_EQ($target : String) : Boolean for String
+function %OP_EQ(target : String) : Bool for String
 
-function %OP_NE($target : String) : Boolean for String
+function %OP_NE(target : String) : Bool for String
 
-function %OP_LT($target : String) : Boolean for String
+function %OP_LT(target : String) : Bool for String
 
-function %OP_GT($target : String) : Boolean for String
+function %OP_GT(target : String) : Bool for String
 
-function %OP_LE($target : String) : Boolean for String
+function %OP_LE(target : String) : Bool for String
 
-function %OP_GE($target : String) : Boolean for String
+function %OP_GE(target : String) : Bool for String
 
 function size() : Int for String
 
-function empty() : Boolean for String
+function empty() : Bool for String
 
 function count() : Int for String
 
-function chars() : Array<String> for String
+function chars() : [String] for String
 
-function words() : Array<String> for String
+function words() : [String] for String
 
-function width($eaw : Option<Int>) : Int for String
+function width(eaw : Int!) : Int for String
 
-function %OP_GET($index : Int) : String for String
+function %OP_GET(index : Int) : String for String
 
-function charAt($index : Int) : String for String
+function charAt(index : Int) : String for String
 
-function slice($start : Int, $stop : Option<Int>) : String for String
+function slice(start : Int, stop : Int!) : String for String
 
-function startsWith($target : String) : Boolean for String
+function startsWith(target : String) : Bool for String
 
-function endsWith($target : String) : Boolean for String
+function endsWith(target : String) : Bool for String
 
-function indexOf($target : String, $index : Option<Int>) : Int for String
+function indexOf(target : String, index : Int!) : Int for String
 
-function lastIndexOf($target : String) : Int for String
+function lastIndexOf(target : String) : Int for String
 
-function contains($target : String) : Boolean for String
+function contains(target : String) : Bool for String
 
-function split($delim : String) : Array<String> for String
+function split(delim : String) : [String] for String
 
-function replace($target : String, $rep : String) : String for String
+function replace(target : String, rep : String) : String for String
 
-function sanitize($repl : Option<String>) : String for String
+function sanitize(repl : String!) : String for String
 
-function toInt($radix : Option<Int>) : Option<Int> for String
+function toInt(radix : Int!) : Int! for String
 
-function toFloat() : Option<Float> for String
+function toFloat() : Float! for String
 
 function %OP_ITER() : StringIter for String
 
-function %OP_MATCH($re : Regex) : Boolean for String
+function %OP_MATCH(re : Regex) : Bool for String
 
-function %OP_UNMATCH($re : Regex) : Boolean for String
+function %OP_UNMATCH(re : Regex) : Bool for String
 
-function realpath() : Option<String> for String
+function realpath() : String! for String
 
 function lower() : String for String
 
 function upper() : String for String
 ```
 
-## UnixFD type
+## FD type
 ```
-function %OP_INIT($path : String) : UnixFD for UnixFD
+function %OP_INIT(path : String) : FD for FD
 
-function close() : Void for UnixFD
+function close() : Void for FD
 
-function dup() : UnixFD for UnixFD
+function dup() : FD for FD
 
-function value() : Int for UnixFD
+function value() : Int for FD
 
-function lock() : Void for UnixFD
+function lock() : Void for FD
 
-function unlock() : Void for UnixFD
+function unlock() : Void for FD
 
-function %OP_BOOL() : Boolean for UnixFD
+function %OP_BOOL() : Bool for FD
 
-function %OP_NOT() : Boolean for UnixFD
+function %OP_NOT() : Bool for FD
 
-function %OP_ITER() : Reader for UnixFD
+function %OP_ITER() : Reader for FD
 ```
 
 ## Error type
 ```
-function %OP_INIT($message : String, $status : Option<Int>) : Error for Error
+function %OP_INIT(message : String, status : Int!) : Error for Error
 
 function message() : String for Error
 
@@ -210,25 +210,25 @@ function source() : String for Error
 
 ## Job type
 ```
-function in() : UnixFD for Job
+function in() : FD for Job
 
-function out() : UnixFD for Job
+function out() : FD for Job
 
-function %OP_GET($index : Int) : UnixFD for Job
+function %OP_GET(index : Int) : FD for Job
 
-function poll() : Boolean for Job
+function poll() : Bool for Job
 
 function wait() : Int for Job
 
-function raise($s : Signal) : Void for Job
+function raise(s : Signal) : Void for Job
 
 function detach() : Void for Job
 
 function size() : Int for Job
 
-function pid($index : Int) : Option<Int> for Job
+function pid(index : Int) : Int! for Job
 
-function status($index : Int) : Option<Int> for Job
+function status(index : Int) : Int! for Job
 ```
 
 ## StringIter type
@@ -238,21 +238,21 @@ function %OP_NEXT() : String for StringIter
 
 ## Regex type
 ```
-function %OP_INIT($str : String, $flag : Option<String>) : Regex for Regex
+function %OP_INIT(str : String, flag : String!) : Regex for Regex
 
-function isCaseless() : Boolean for Regex
+function isCaseless() : Bool for Regex
 
-function isMultiLine() : Boolean for Regex
+function isMultiLine() : Bool for Regex
 
-function isDotAll() : Boolean for Regex
+function isDotAll() : Bool for Regex
 
-function %OP_MATCH($target : String) : Boolean for Regex
+function %OP_MATCH(target : String) : Bool for Regex
 
-function %OP_UNMATCH($target : String) : Boolean for Regex
+function %OP_UNMATCH(target : String) : Bool for Regex
 
-function match($target : String) : Array<Option<String>> for Regex
+function match(target : String) : [String!] for Regex
 
-function replace($target : String, $repl : String) : String for Regex
+function replace(target : String, repl : String) : String for Regex
 ```
 
 ## Signal type
@@ -263,22 +263,22 @@ function value() : Int for Signal
 
 function message() : String for Signal
 
-function kill($pid : Int) : Void for Signal
+function kill(pid : Int) : Void for Signal
 
-function trap($handler : Option<Func<Void,[Signal]>>) : Func<Void,[Signal]> for Signal
+function trap(handler : ((Signal) -> Void)!) : (Signal) -> Void for Signal
 
-function %OP_EQ($target : Signal) : Boolean for Signal
+function %OP_EQ(target : Signal) : Bool for Signal
 
-function %OP_NE($target : Signal) : Boolean for Signal
+function %OP_NE(target : Signal) : Bool for Signal
 ```
 
 ## Signals type
 ```
-function %OP_GET($key : String) : Signal for Signals
+function %OP_GET(key : String) : Signal for Signals
 
-function get($key : String) : Option<Signal> for Signals
+function get(key : String) : Signal! for Signals
 
-function list() : Array<Signal> for Signals
+function list() : [Signal] for Signals
 ```
 
 ## Module type
@@ -287,9 +287,9 @@ function _scriptName() : String for Module
 
 function _scriptDir() : String for Module
 
-function _func($expr : String) : Func<Option<Any>> for Module
+function _func(expr : String) : () -> Any! for Module
 
-function _fullname($name : String) : Option<String> for Module
+function _fullname(name : String) : String! for Module
 ```
 
 ## Reader type
@@ -299,117 +299,117 @@ function %OP_NEXT() : String for Reader
 
 ## Command type
 ```
-function call($argv : Array<String>) : Boolean for Command
+function call(argv : [String]) : Bool for Command
 ```
 
 ## LineEditor type
 ```
 function %OP_INIT() : LineEditor for LineEditor
 
-function readLine($p : Option<String>) : Option<String> for LineEditor
+function readLine(p : String!) : String! for LineEditor
 
-function setCompletion($comp : Option<Func<Array<String>,[Module,String]>>) : Void for LineEditor
+function setCompletion(comp : ((Module, String) -> [String])!) : Void for LineEditor
 
-function setPrompt($prompt : Option<Func<String,[String]>>) : Void for LineEditor
+function setPrompt(prompt : ((String) -> String)!) : Void for LineEditor
 
-function setHistory($hist : Option<Func<Option<String>,[String,String]>>) : Void for LineEditor
+function setHistory(hist : ((String, String) -> String!)!) : Void for LineEditor
 
-function setColor($setting : String) : Void for LineEditor
+function setColor(setting : String) : Void for LineEditor
 
-function bind($key : String, $action : String) : Void for LineEditor
+function bind(key : String, action : String) : Void for LineEditor
 
-function bindings() : Map<String,String> for LineEditor
+function bindings() : [String : String] for LineEditor
 
-function action($name : String, $type : String, $action : Func<Option<String>,[String,Option<Array<String>>]>) : Void for LineEditor
+function action(name : String, type : String, action : (String, [String]!) -> String!) : Void for LineEditor
 
-function actions() : Array<String> for LineEditor
+function actions() : [String] for LineEditor
 ```
 
 ## Array type
 ```
-function %OP_GET($index : Int) : T0 for Array<T0>
+function %OP_GET(index : Int) : T0 for [T0]
 
-function get($index : Int) : Option<T0> for Array<T0>
+function get(index : Int) : T0! for [T0]
 
-function %OP_SET($index : Int, $value : T0) : Void for Array<T0>
+function %OP_SET(index : Int, value : T0) : Void for [T0]
 
-function remove($index : Int) : T0 for Array<T0>
+function remove(index : Int) : T0 for [T0]
 
-function peek() : T0 for Array<T0>
+function peek() : T0 for [T0]
 
-function push($value : T0) : Void for Array<T0>
+function push(value : T0) : Void for [T0]
 
-function pop() : T0 for Array<T0>
+function pop() : T0 for [T0]
 
-function shift() : T0 for Array<T0>
+function shift() : T0 for [T0]
 
-function unshift($value : T0) : Void for Array<T0>
+function unshift(value : T0) : Void for [T0]
 
-function insert($index : Int, $value : T0) : Void for Array<T0>
+function insert(index : Int, value : T0) : Void for [T0]
 
-function add($value : T0) : Array<T0> for Array<T0>
+function add(value : T0) : [T0] for [T0]
 
-function addAll($value : Array<T0>) : Array<T0> for Array<T0>
+function addAll(value : [T0]) : [T0] for [T0]
 
-function swap($index : Int, $value : T0) : T0 for Array<T0>
+function swap(index : Int, value : T0) : T0 for [T0]
 
-function slice($from : Int, $to : Option<Int>) : Array<T0> for Array<T0>
+function slice(from : Int, to : Int!) : [T0] for [T0]
 
-function copy() : Array<T0> for Array<T0>
+function copy() : [T0] for [T0]
 
-function reverse() : Array<T0> for Array<T0>
+function reverse() : [T0] for [T0]
 
-function sort() : Array<T0> where T0 : Value_ for Array<T0>
+function sort() : [T0] where T0 : Value_ for [T0]
 
-function sortWith($comp : Func<Boolean,[T0,T0]>) : Array<T0> for Array<T0>
+function sortWith(comp : (T0, T0) -> Bool) : [T0] for [T0]
 
-function join($delim : Option<String>) : String for Array<T0>
+function join(delim : String!) : String for [T0]
 
-function indexOf($target : T0, $index : Option<Int>) : Int where T0 : Value_ for Array<T0>
+function indexOf(target : T0, index : Int!) : Int where T0 : Value_ for [T0]
 
-function lastIndexOf($target : T0) : Int where T0 : Value_ for Array<T0>
+function lastIndexOf(target : T0) : Int where T0 : Value_ for [T0]
 
-function contains($target : T0) : Boolean where T0 : Value_ for Array<T0>
+function contains(target : T0) : Bool where T0 : Value_ for [T0]
 
-function size() : Int for Array<T0>
+function size() : Int for [T0]
 
-function empty() : Boolean for Array<T0>
+function empty() : Bool for [T0]
 
-function clear() : Void for Array<T0>
+function clear() : Void for [T0]
 
-function %OP_ITER() : Array<T0> for Array<T0>
+function %OP_ITER() : [T0] for [T0]
 
-function %OP_NEXT() : T0 for Array<T0>
+function %OP_NEXT() : T0 for [T0]
 ```
 
 ## Map type
 ```
-function %OP_GET($key : T0) : T1 for Map<T0,T1>
+function %OP_GET(key : T0) : T1 for [T0 : T1]
 
-function %OP_SET($key : T0, $value : T1) : Void for Map<T0,T1>
+function %OP_SET(key : T0, value : T1) : Void for [T0 : T1]
 
-function put($key : T0, $value : T1) : Option<T1> for Map<T0,T1>
+function put(key : T0, value : T1) : T1! for [T0 : T1]
 
-function putIfAbsent($key : T0, $value : T1) : T1 for Map<T0,T1>
+function putIfAbsent(key : T0, value : T1) : T1 for [T0 : T1]
 
-function size() : Int for Map<T0,T1>
+function size() : Int for [T0 : T1]
 
-function empty() : Boolean for Map<T0,T1>
+function empty() : Bool for [T0 : T1]
 
-function get($key : T0) : Option<T1> for Map<T0,T1>
+function get(key : T0) : T1! for [T0 : T1]
 
-function remove($key : T0) : Boolean for Map<T0,T1>
+function remove(key : T0) : Bool for [T0 : T1]
 
-function swap($key : T0, $value : T1) : T1 for Map<T0,T1>
+function swap(key : T0, value : T1) : T1 for [T0 : T1]
 
-function addAll($value : Map<T0,T1>) : Map<T0,T1> for Map<T0,T1>
+function addAll(value : [T0 : T1]) : [T0 : T1] for [T0 : T1]
 
-function copy() : Map<T0,T1> for Map<T0,T1>
+function copy() : [T0 : T1] for [T0 : T1]
 
-function clear() : Void for Map<T0,T1>
+function clear() : Void for [T0 : T1]
 
-function %OP_ITER() : Map<T0,T1> for Map<T0,T1>
+function %OP_ITER() : [T0 : T1] for [T0 : T1]
 
-function %OP_NEXT() : Tuple<T0,T1> for Map<T0,T1>
+function %OP_NEXT() : (T0, T1) for [T0 : T1]
 ```
 

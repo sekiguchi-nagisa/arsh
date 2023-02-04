@@ -156,11 +156,11 @@ TEST_F(TypeTest, builtinName) {
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int", this->pool.get(TYPE::Int)));
 
-  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Bool", this->pool.get(TYPE::Boolean)));
+  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Bool", this->pool.get(TYPE::Bool)));
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Float", this->pool.get(TYPE::Float)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.get(TYPE::String)));
-  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("FD", this->pool.get(TYPE::UnixFD)));
+  ASSERT_NO_FATAL_FAILURE(this->assertTypeName("FD", this->pool.get(TYPE::FD)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("[String]", this->pool.get(TYPE::StringArray)));
   ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Error", this->pool.get(TYPE::Error)));
@@ -198,14 +198,14 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::Signals), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Boolean), this->pool.get(TYPE::Value_)));
+      this->assertSuperType(this->pool.get(TYPE::Bool), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::Value_)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::UnixFD), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->pool.get(TYPE::FD), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Any)));
@@ -259,8 +259,8 @@ TEST_F(TypeTest, typeToken) {
 TEST_F(TypeTest, api) {
   ASSERT_TRUE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->pool.get(TYPE::String)));
   ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->pool.get(TYPE::Void)));
-  ASSERT_TRUE(this->pool.get(TYPE::Boolean).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
-  ASSERT_FALSE(this->pool.get(TYPE::Nothing).isSameOrBaseTypeOf(this->pool.get(TYPE::Boolean)));
+  ASSERT_TRUE(this->pool.get(TYPE::Bool).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
+  ASSERT_FALSE(this->pool.get(TYPE::Nothing).isSameOrBaseTypeOf(this->pool.get(TYPE::Bool)));
   ASSERT_TRUE(this->pool.get(TYPE::Void).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
   ASSERT_TRUE(this->toType<Option_t<Int_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
   ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->toType<Option_t<Int_t>>()));

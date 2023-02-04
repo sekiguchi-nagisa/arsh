@@ -54,7 +54,7 @@ unsigned int DSValue::getTypeID() const {
   case DSValueKind::DUMMY:
     return this->asTypeId();
   case DSValueKind::BOOL:
-    return static_cast<unsigned int>(TYPE::Boolean);
+    return static_cast<unsigned int>(TYPE::Bool);
   case DSValueKind::SIG:
     return static_cast<unsigned int>(TYPE::Signal);
   case DSValueKind::INT:
