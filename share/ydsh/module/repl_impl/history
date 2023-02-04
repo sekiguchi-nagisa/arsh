@@ -2,8 +2,6 @@
 
 # for history manipulation
 
-source $SCRIPT_DIR/../history
-
 var HISTFILE = "$DATA_HOME/ydsh_history"
 var HISTSIZE = 1000
 var HISTFILESIZE = 1000
@@ -16,7 +14,7 @@ function _sync() {
     if $HISTSIZE > $limit {
         $HISTSIZE = $limit
     }
-    for(; $HISTORY.size() > $HISTSIZE; $HISTORY.pop()) {}
+    for(; $HISTORY.size() > $HISTSIZE; $HISTORY.shift()) {}
 }
 
 function _error(s : String) {
@@ -229,7 +227,8 @@ history() {
     return 0
 }
 
-$initHistoryOp($LINE_EDIT, $HISTORY, function(line, buf) => {
+$LINE_EDIT.setHistory($HISTORY)
+$LINE_EDIT.setHistSync(function(line, buf) => {
     $_sync()
     $_add_and_save($line)
 })

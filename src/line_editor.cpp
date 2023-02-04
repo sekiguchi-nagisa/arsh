@@ -1171,12 +1171,180 @@ int LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
   if (linenoiseEditMoveEnd(l)) {
     this->refreshLine(l, false);
   }
-  this->kickHistoryCallback(state, HistOp::DEINIT, &l);
+  this->kickHistSyncCallback(state, l);
   if (state.hasError()) {
     errno = EAGAIN;
     return -1;
   }
   return static_cast<int>(l.len);
+}
+
+enum class HistRotateOp {
+  PREV,
+  NEXT,
+};
+
+class HistRotate {
+private:
+  std::unordered_map<unsigned int, DSValue> oldEntries;
+  ObjPtr<ArrayObject> history;
+  int histIndex{0};
+
+public:
+  explicit HistRotate(ObjPtr<ArrayObject> history) : history(std::move(history)) {
+    if (this->history) {
+      this->truncateUntilLimit();
+      this->history->append(DSValue::createStr());
+    }
+  }
+
+  ~HistRotate() { this->revertAll(); }
+
+  void revertAll() {
+    if (this->history) {
+      if (this->history->size() > 0) {
+        this->history->refValues().pop_back();
+      }
+      this->truncateUntilLimit();
+      for (auto &e : this->oldEntries) { // revert modified entry
+        if (e.first < this->history->size()) {
+          this->history->refValues()[e.first] = std::move(e.second);
+        }
+      }
+      this->history = nullptr;
+    }
+  }
+
+  explicit operator bool() { return this->history && this->history->size() > 0; }
+
+  /**
+   * save current buffer and get next entry
+   * @param curLine
+   * @param next
+   */
+  bool rotate(StringRef &curBuf, HistRotateOp op) {
+    this->truncateUntilLimit();
+
+    // save current buffer content to current history entry
+    auto histSize = static_cast<ssize_t>(this->history->size());
+    ssize_t bufIndex = histSize - 1 - this->histIndex;
+    if (!this->save(bufIndex, curBuf)) {
+      this->histIndex = 0; // reset index
+      return false;
+    }
+
+    this->histIndex += op == HistRotateOp::PREV ? 1 : -1;
+    if (this->histIndex < 0) {
+      this->histIndex = 0;
+      return false;
+    } else if (this->histIndex >= histSize) {
+      this->histIndex = static_cast<int>(histSize) - 1;
+      return false;
+    } else {
+      bufIndex = histSize - 1 - this->histIndex;
+      curBuf = this->history->getValues()[bufIndex].asStrRef();
+      return true;
+    }
+  }
+
+  void truncateUntilLimit() {
+    static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
+    static_assert(SYS_LIMIT_HIST_SIZE < std::numeric_limits<ssize_t>::max());
+    if (this->history->size() >= SYS_LIMIT_HIST_SIZE) {
+      auto &values = this->history->refValues();
+      values.erase(values.begin(),
+                   values.begin() + static_cast<ssize_t>(values.size() - SYS_LIMIT_HIST_SIZE - 1));
+      assert(values.size() == SYS_LIMIT_HIST_SIZE - 1);
+    }
+  }
+
+private:
+  bool save(ssize_t index, StringRef curBuf) {
+    if (index < static_cast<ssize_t>(this->history->size()) && index > -1) {
+      auto actualIndex = static_cast<unsigned int>(index);
+      auto org = this->history->getValues()[actualIndex];
+      this->oldEntries.emplace(actualIndex, std::move(org));
+      this->history->refValues()[actualIndex] = DSValue::createStr(curBuf);
+      return true;
+    }
+    return false;
+  }
+};
+
+static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
+                          bool multiline) {
+  if (!histRotate) {
+    return false;
+  }
+  multiline = multiline && !l.isSingleline();
+
+  auto curBuf = l.lineRef();
+  if (multiline) {
+    auto [pos, len] = findLineInterval(l, true);
+    curBuf = curBuf.substr(pos, len);
+  }
+
+  if (!histRotate.rotate(curBuf, op)) {
+    return false;
+  }
+  if (multiline) {
+    linenoiseEditDeleteTo(l, true);
+  } else {
+    l.len = l.pos = 0;
+  }
+  const char *ptr = curBuf.data();
+  return linenoiseEditInsert(l, ptr, strlen(ptr));
+}
+
+static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
+                                  bool continueRotate) {
+  if (l.isSingleline() || continueRotate) {
+    l.rotating = true;
+    return rotateHistory(histRotate, l, op, false);
+  } else if (op == HistRotateOp::PREV || op == HistRotateOp::NEXT) { // move cursor up/down
+    // resolve dest line
+    const auto oldPos = l.pos;
+    if (op == HistRotateOp::PREV) { // up
+      linenoiseEditMoveHome(l);
+      if (l.pos == 0) {
+        l.pos = oldPos;
+        return false;
+      }
+      l.pos--;
+    } else { // down
+      linenoiseEditMoveEnd(l);
+      if (l.pos == l.len) {
+        l.pos = oldPos;
+        return false;
+      }
+      l.pos++;
+    }
+    StringRef dest;
+    {
+      auto [pos, len] = findLineInterval(l, true);
+      dest = StringRef(l.buf + pos, len);
+      l.pos = oldPos;
+    }
+
+    // resolve line to current position
+    size_t count = 0;
+    {
+      auto [pos, len] = findLineInterval(l, false);
+      auto line = StringRef(l.buf + pos, len);
+      count = iterateGrapheme(line, [](const GraphemeScanner::Result &) {});
+    }
+
+    GraphemeScanner::Result ret;
+    size_t retCount = iterateGraphemeUntil(
+        dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
+    if (retCount) {
+      l.pos = ret.ref.end() - l.buf;
+    } else {
+      l.pos = dest.begin() - l.buf;
+    }
+    return true;
+  }
+  return false;
 }
 
 /* This function is the core of the line editing capability of linenoise.
@@ -1226,25 +1394,13 @@ int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, const c
   this->disableRawMode(this->inFd);
   ssize_t r = write(this->outFd, "\n", 1);
   UNUSED(r);
-
-  errno = errNum;
-  if (count == -1) {
-    this->kickHistoryCallback(state, HistOp::DEINIT, nullptr);
-    if (state.hasError()) {
-      errno = EAGAIN;
-    }
-  }
   return count;
 }
 
 int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
-  this->kickHistoryCallback(state, HistOp::INIT, &l);
-  if (state.hasError()) {
-    errno = EAGAIN;
-    return -1;
-  }
+  HistRotate histRotate(this->history);
 
   preparePrompt(l);
   this->refreshLine(l);
@@ -1270,7 +1426,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
     }
 
     // dispatch edit action
-    auto *action = this->keyBindings.findAction(reader.get());
+    const auto *action = this->keyBindings.findAction(reader.get());
     if (!action) {
       continue; // skip unbound key action
     }
@@ -1284,6 +1440,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
           return -1;
         }
       } else {
+        histRotate.revertAll();
         return this->accept(state, l);
       }
       break;
@@ -1341,45 +1498,23 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
       }
       break;
     case EditActionType::PREV_HISTORY:
-      if (this->kickHistoryCallback(state, HistOp::PREV, &l, true)) {
+    case EditActionType::NEXT_HISTORY: {
+      auto op =
+          action->type == EditActionType::PREV_HISTORY ? HistRotateOp::PREV : HistRotateOp::NEXT;
+      if (rotateHistory(histRotate, l, op, true)) {
         this->refreshLine(l);
-      } else if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
       }
       break;
-    case EditActionType::NEXT_HISTORY:
-      if (this->kickHistoryCallback(state, HistOp::NEXT, &l, true)) {
-        this->refreshLine(l);
-      } else if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
-      }
-      break;
+    }
     case EditActionType::UP_OR_HISTORY:
-      if (this->rotateHistoryOrUpDown(state, HistOp::PREV, l, prevRotating)) {
+    case EditActionType::DOWN_OR_HISTORY: {
+      auto op =
+          action->type == EditActionType::UP_OR_HISTORY ? HistRotateOp::PREV : HistRotateOp::NEXT;
+      if (rotateHistoryOrUpDown(histRotate, l, op, prevRotating)) {
         this->refreshLine(l);
-      } else if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
       }
       break;
-    case EditActionType::DOWN_OR_HISTORY:
-      if (this->rotateHistoryOrUpDown(state, HistOp::NEXT, l, prevRotating)) {
-        this->refreshLine(l);
-      } else if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
-      }
-      break;
-    case EditActionType::SEARCH_HISTORY:
-      if (this->kickHistoryCallback(state, HistOp::SEARCH, &l, true)) {
-        this->refreshLine(l);
-      } else if (state.hasError()) {
-        errno = EAGAIN;
-        return -1;
-      }
-      break;
+    }
     case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
       linenoiseEditDeleteTo(l);
       this->refreshLine(l);
@@ -1440,6 +1575,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
       if (this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex)) {
         this->refreshLine(l);
         if (action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
+          histRotate.revertAll();
           return this->accept(state, l);
         }
       } else {
@@ -1689,114 +1825,17 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
   return toObjPtr<ArrayObject>(ret);
 }
 
-bool LineEditorObject::kickHistoryCallback(DSState &state, LineEditorObject::HistOp op,
-                                           struct linenoiseState *l, bool multiline) {
-  if (!this->historyCallback) {
-    return false; // do nothing
-  }
-
-  const char *table[] = {
-#define GEN_STR(E, S) S,
-      EACH_EDIT_HIST_OP(GEN_STR)
-#undef GEN_STR
-  };
-
-  multiline = multiline && !l->isSingleline();
-  const char *opStr = table[static_cast<unsigned int>(op)];
-  StringRef line = op != HistOp::INIT && l != nullptr ? l->lineRef() : "";
-  switch (op) {
-  case HistOp::PREV:
-  case HistOp::NEXT:
-  case HistOp::SEARCH:
-    assert(l);
-    if (multiline) {
-      auto [pos, len] = findLineInterval(*l, true);
-      line = line.substr(pos, len);
-    }
-    break;
-  default:
-    break;
-  }
-
-  auto ret = this->kickCallback(state, this->historyCallback,
-                                makeArgs(DSValue::createStr(opStr), DSValue::createStr(line)));
-  if (state.hasError()) {
+bool LineEditorObject::kickHistSyncCallback(DSState &state, struct linenoiseState &l) {
+  if (!this->history) {
     return false;
   }
-
-  // post process
-  switch (op) {
-  case HistOp::INIT:
-  case HistOp::DEINIT:
-    break;
-  case HistOp::PREV:
-  case HistOp::NEXT:
-  case HistOp::SEARCH:
-    if (!ret.hasStrRef()) {
-      break;
-    }
-    if (const char *retStr = ret.asCStr(); op != HistOp::SEARCH || *retStr != '\0') {
-      if (multiline) {
-        linenoiseEditDeleteTo(*l, true);
-      } else {
-        l->len = l->pos = 0;
-      }
-      return linenoiseEditInsert(*l, retStr, strlen(retStr));
-    }
-    break;
+  if (this->histSyncCallback) {
+    this->kickCallback(state, this->histSyncCallback,
+                       makeArgs(DSValue::createStr(l.lineRef()), this->history));
+    return !state.hasError();
+  } else {
+    return this->history->append(state, DSValue::createStr(l.lineRef()));
   }
-  return false;
-}
-
-bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct linenoiseState &l,
-                                             bool continueRotate) {
-  if (l.isSingleline() || continueRotate) {
-    l.rotating = true;
-    return this->kickHistoryCallback(state, op, &l);
-  } else if (op == HistOp::PREV || op == HistOp::NEXT) { // move cursor up/down
-    // resolve dest line
-    const auto oldPos = l.pos;
-    if (op == HistOp::PREV) { // up
-      linenoiseEditMoveHome(l);
-      if (l.pos == 0) {
-        l.pos = oldPos;
-        return false;
-      }
-      l.pos--;
-    } else { // down
-      linenoiseEditMoveEnd(l);
-      if (l.pos == l.len) {
-        l.pos = oldPos;
-        return false;
-      }
-      l.pos++;
-    }
-    StringRef dest;
-    {
-      auto [pos, len] = findLineInterval(l, true);
-      dest = StringRef(l.buf + pos, len);
-      l.pos = oldPos;
-    }
-
-    // resolve line to current position
-    size_t count = 0;
-    {
-      auto [pos, len] = findLineInterval(l, false);
-      auto line = StringRef(l.buf + pos, len);
-      count = iterateGrapheme(line, [](const GraphemeScanner::Result &) {});
-    }
-
-    GraphemeScanner::Result ret;
-    size_t retCount = iterateGraphemeUntil(
-        dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
-    if (retCount) {
-      l.pos = ret.ref.end() - l.buf;
-    } else {
-      l.pos = dest.begin() - l.buf;
-    }
-    return true;
-  }
-  return false;
 }
 
 bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState &l,

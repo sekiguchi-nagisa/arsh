@@ -312,7 +312,9 @@ function setCompletion(comp : ((Module, String) -> [String])!) : Void for LineEd
 
 function setPrompt(prompt : ((String) -> String)!) : Void for LineEditor
 
-function setHistory(hist : ((String, String) -> String!)!) : Void for LineEditor
+function setHistory(hist : [String]!) : Void for LineEditor
+
+function setHistSync(sync : ((String, [String]) -> Void)!) : Void for LineEditor
 
 function setColor(setting : String) : Void for LineEditor
 

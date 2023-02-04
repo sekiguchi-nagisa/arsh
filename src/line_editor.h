@@ -27,13 +27,6 @@ struct linenoiseState;
 
 namespace ydsh {
 
-#define EACH_EDIT_HIST_OP(OP)                                                                      \
-  OP(INIT, "init")                                                                                 \
-  OP(DEINIT, "deinit") /* take extra arg (final buffer content) */                                 \
-  OP(PREV, "prev")     /* take extra arg (current buffer content) */                               \
-  OP(NEXT, "next")     /* take extra arg (current buffer content) */                               \
-  OP(SEARCH, "search") /* take extra arg (current buffer content) */
-
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int inFd;
@@ -68,22 +61,22 @@ private:
   ObjPtr<DSObject> completionCallback;
 
   /**
-   * must be `(String, String) -> String!` type
+   * must be `[String]' type
    * may be null
    */
-  ObjPtr<DSObject> historyCallback;
+  ObjPtr<ArrayObject> history;
+
+  /**
+   * must be `(String, [String]) -> Void' type
+   * may be null
+   */
+  ObjPtr<DSObject> histSyncCallback;
 
   /**
    * for custom actions
    * must be `(String, [String]!) -> String!' type
    */
   std::vector<ObjPtr<DSObject>> customCallbacks;
-
-  enum class HistOp {
-#define GEN_ENUM(E, S) E,
-    EACH_EDIT_HIST_OP(GEN_ENUM)
-#undef GEN_ENUM
-  };
 
 public:
   LineEditorObject();
@@ -100,8 +93,10 @@ public:
     this->completionCallback = std::move(callback);
   }
 
-  void setHistoryCallback(ObjPtr<DSObject> callback) {
-    this->historyCallback = std::move(callback);
+  void setHistory(ObjPtr<ArrayObject> hist) { this->history = std::move(hist); }
+
+  void setHistSyncCallback(ObjPtr<DSObject> callback) {
+    this->histSyncCallback = std::move(callback);
   }
 
   void setColor(StringRef colorSetting) {
@@ -160,29 +155,7 @@ private:
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 
-  /**
-   *
-   * @param state
-   * @param op
-   * @param l
-   * @param multiline
-   * @return
-   * if update buffer content, return true
-   */
-  bool kickHistoryCallback(DSState &state, HistOp op, struct linenoiseState *l,
-                           bool multiline = false);
-
-  /**
-   * rotate history with whole buffer content or multi-line aware cursor up/down
-   * @param state
-   * @param op
-   * @param l
-   * @param continueRotate
-   * @return
-   * if update buffer content, return true
-   */
-  bool rotateHistoryOrUpDown(DSState &state, HistOp op, struct linenoiseState &l,
-                             bool continueRotate);
+  bool kickHistSyncCallback(DSState &state, struct linenoiseState &l);
 
   /**
    *

@@ -176,7 +176,6 @@ std::string KeyBindings::toCaret(StringRef value) {
 #define ENTER_ CTRL_M_
 #define CTRL_N_ "\x0E"
 #define CTRL_P_ "\x10"
-#define CTRL_R_ "\x12"
 #define CTRL_T_ "\x14"
 #define CTRL_U_ "\x15"
 #define CTRL_W_ "\x17"
@@ -197,7 +196,6 @@ KeyBindings::KeyBindings() {
   this->values.emplace(CTRL_F_, EditActionType::FORWARD_CHAR);
   this->values.emplace(CTRL_P_, EditActionType::UP_OR_HISTORY);
   this->values.emplace(CTRL_N_, EditActionType::DOWN_OR_HISTORY);
-  this->values.emplace(CTRL_R_, EditActionType::SEARCH_HISTORY);
   this->values.emplace(CTRL_U_, EditActionType::BACKWORD_KILL_LINE);
   this->values.emplace(CTRL_K_, EditActionType::KILL_LINE);
   this->values.emplace(CTRL_A_, EditActionType::BEGINNING_OF_LINE);
