@@ -102,7 +102,7 @@ DEFINE_TCError(BraceOutOfRange, "out of range brace expansion number: `%s', must
 DEFINE_TCError(BraceOutOfRangeStep, "out of range brace expansion increment number: `%s', "
                                     "must be int64_min +1 to int64_max");
 DEFINE_TCError(Constant, "must be constant expression");
-DEFINE_TCError(NegativeIntMin, "nagative value of INT_MIN is not allowed");
+DEFINE_TCError(NegativeIntMin, "negative value of INT_MIN is not allowed");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "require at least one pattern");
 DEFINE_TCError(NeedDefault, "the case expression needs default pattern");
@@ -131,7 +131,7 @@ DEFINE_TCError(ModLimit, "number of loaded modules reaches limit");
 DEFINE_TCError(Required, "require `%s' type, but is `%s' type");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
 DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type is not allowed");
-DEFINE_TCError(UnmatchParam, "not match parameter, require size is %d, but is %d");
+DEFINE_TCError(UnmatchParam, "not match number of parameters, require `%d', but is `%d'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");
 DEFINE_TCError(ConcatParam, "concatenation of `%s' type value is "
@@ -145,9 +145,10 @@ DEFINE_TCError(UncaptureField, "local function cannot access upper variables "
 DEFINE_TCError(ErrorMod, "syntax or semantic errors occurred in `%s'");
 DEFINE_TCError(NotInferParamNoFunc, "cannot infer parameter type, "
                                     "because current context does not require function type");
-DEFINE_TCError(NotInferParamUnmatch, "cannot infer parameter type, "
-                                     "because number of parameter is not match");
-DEFINE_TCError(NoBackquote, "backquote command substitution is not allowed. use $( ) instead");
+DEFINE_TCError(NotInferParamUnmatch,
+               "cannot infer parameter type, because number of "
+               "parameters is not match,\n`%s' type requires `%d' params, but is `%d'");
+DEFINE_TCError(NoBackquote, "back-quote command substitution is not allowed. use $( ) instead");
 DEFINE_TCError(PosArgRange, "positional argument is out-of-range (up to INT32_MAX): `%s'");
 DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only allow 0,1,2");
 DEFINE_TCError(NeedFd,

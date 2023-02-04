@@ -1999,7 +1999,8 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
         if (!funcType) {
           this->reportError<NotInferParamNoFunc>(*paramNode);
         } else {
-          this->reportError<NotInferParamUnmatch>(*paramNode);
+          this->reportError<NotInferParamUnmatch>(*paramNode, funcType->getName(),
+                                                  funcType->getParamSize(), paramSize);
         }
       }
       paramNode->setExprNode(std::move(exprNode));
