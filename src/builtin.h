@@ -2162,7 +2162,7 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function action($this : LineEditor, $name : String, $type : String, $action : Func<Option<String>,[String]>) : Void
+//!bind: function action($this : LineEditor, $name : String, $type : String, $action : Func<Option<String>,[String, Option<Array<String>>]>) : Void
 YDSH_METHOD edit_action(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_action);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));

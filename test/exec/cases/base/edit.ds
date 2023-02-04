@@ -88,7 +88,7 @@ assert $editor.actions()[1] == 'backward-char'
 $editor.bind('^[1', '')
 $editor.bind('^[2', '')
 assert ! $editor.actions().contains('action1')
-$editor.action('action1', 'replace-whole', function(s) => $s)
+$editor.action('action1', 'replace-whole', function(s, o) => $s)
 assert $editor.actions().contains('action1')
 assert !$editor.bindings().get('^Y')
 $editor.bind('^Y', 'action1')
@@ -96,26 +96,26 @@ assert $editor.bindings()['^Y'] == 'action1'
 
 ## re-define
 $ex = 34
-try { $editor.action('action1', 'replace-whole-accept', function(s)=> $s);  }
+try { $editor.action('action1', 'replace-whole-accept', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == "already defined action: \`action1'"
 
 $ex = 34
-try { $editor.action('backward-char', 'replace-whole-accept', function(s)=> $s);  }
+try { $editor.action('backward-char', 'replace-whole-accept', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == "already defined action: \`backward-char'"
 
 ## invalid
 $ex = 34
-try { $editor.action('%%%%fe', 'replace-whole-accept', function(s)=> $s);  }
+try { $editor.action('%%%%fe', 'replace-whole-accept', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError && 
     $ex.message() == "invalid action name, must [a-zA-Z_-]: \`%%%%fe'"
 
 $ex = 34
-try { $editor.action('who', 'replace-whole-accept1', function(s)=> $s);  }
+try { $editor.action('who', 'replace-whole-accept1', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError && 
     $ex.message() == "unsupported custom action type: \`replace-whole-accept1'"
@@ -124,7 +124,7 @@ assert $ex is InvalidOperationError &&
 $ex = 34
 try {
     for(var i = 0; $i < 1000; $i++) {
-        $editor.action("action_$i", 'replace-line', function(s) => $s)
+        $editor.action("action_$i", 'replace-line', function(s, o) => $s)
     }
 } catch e {
     $ex = $e

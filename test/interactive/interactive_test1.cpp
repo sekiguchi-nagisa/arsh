@@ -223,8 +223,9 @@ TEST_F(InteractiveTest, customAction) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // replace-whole
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
-                                                  "function(s) => $s.chars().reverse().join(''))"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                              "function(s, m) => $s.chars().reverse().join(''))"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action1')"));
   this->send("echo" CTRL_V);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ohce"));
@@ -234,14 +235,15 @@ TEST_F(InteractiveTest, customAction) {
   // replace-whole-accept
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$LINE_EDIT.action('action2', 'replace-whole-accept', "
-                              "function(s) => $s.chars().reverse().join(''))"));
+                              "function(s, m) => $s.chars().reverse().join(''))"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action2')"));
   this->send("'echo'" CTRL_V);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
 
   // replace-line //FIXME: multi-line mode
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action3', 'replace-line', "
-                                                  "function(s) => $s.chars().reverse().join(''))"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.action('action3', 'replace-line', "
+                              "function(s, m) => $s.chars().reverse().join(''))"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^X', 'action3')"));
   this->send("echo" CTRL_X);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ohce"));
@@ -250,7 +252,7 @@ TEST_F(InteractiveTest, customAction) {
 
   // insert
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.action('action4', 'insert', function(s) => '/home/home')"));
+      "$LINE_EDIT.action('action4', 'insert', function(s, m) => '/home/home')"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^Y', 'action4')"));
   this->send("echo " CTRL_Y);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /home/home"));

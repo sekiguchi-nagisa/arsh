@@ -75,7 +75,7 @@ private:
 
   /**
    * for custom actions
-   * must be `(String) -> String!' type
+   * must be `(String, [String]!) -> String!' type
    */
   std::vector<ObjPtr<DSObject>> customCallbacks;
 

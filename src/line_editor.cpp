@@ -1802,6 +1802,7 @@ bool LineEditorObject::rotateHistoryOrUpDown(DSState &state, HistOp op, struct l
 bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState &l,
                                           CustomActionType type, unsigned int index) {
   StringRef line;
+  auto optArg = DSValue::createInvalid();
   switch (type) {
   case CustomActionType::REPLACE_WHOLE:
   case CustomActionType::REPLACE_WHOLE_ACCEPT:
@@ -1818,8 +1819,8 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     break;
   }
 
-  auto ret =
-      this->kickCallback(state, this->customCallbacks[index], makeArgs(DSValue::createStr(line)));
+  auto ret = this->kickCallback(state, this->customCallbacks[index],
+                                makeArgs(DSValue::createStr(line), std::move(optArg)));
   if (state.hasError()) {
     return false;
   }
