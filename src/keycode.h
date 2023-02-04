@@ -103,7 +103,8 @@ enum class EditActionType : unsigned char {
   OP(REPLACE_WHOLE, "replace-whole")                                                               \
   OP(REPLACE_WHOLE_ACCEPT, "replace-whole-accept")                                                 \
   OP(REPLACE_LINE, "replace-line")                                                                 \
-  OP(INSERT, "insert")
+  OP(INSERT, "insert")                                                                             \
+  OP(HIST_SELCT, "hist-select")
 
 enum class CustomActionType : unsigned char {
 #define GEN_ENUM(E, S) E,

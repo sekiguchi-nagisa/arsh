@@ -217,7 +217,7 @@ TEST_F(InteractiveTest, keybind) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, customAction) {
+TEST_F(InteractiveTest, customAction1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -257,6 +257,28 @@ TEST_F(InteractiveTest, customAction) {
   this->send("echo " CTRL_Y);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo /home/home"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "/home/home"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, customAction2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // hist-select
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("var hist = ['echo AA', 'echo BB', 'echo CC', 'echo DD']"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory($hist)"));
+
+  const char *src =
+      "$LINE_EDIT.action('hist-search', 'hist-select', function(s,b) => $b![$s.size()])";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'hist-search')"));
+  this->send("rr" CTRL_R);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo CC"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "CC"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

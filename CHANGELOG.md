@@ -15,6 +15,7 @@
             - modification of the result does not affect actual keybindings
         - ``action``: define custom key action
         - ``actions``: get read-only snapshot of current edit actions
+        - ``setHistSync``: set callback that is called when adding current line to history
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries

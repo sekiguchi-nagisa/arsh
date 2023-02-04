@@ -1846,7 +1846,14 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   case CustomActionType::REPLACE_WHOLE_ACCEPT:
     line = l.lineRef();
     break;
-  case CustomActionType::REPLACE_LINE: {
+  case CustomActionType::REPLACE_LINE:
+  case CustomActionType::HIST_SELCT: {
+    if (type == CustomActionType::HIST_SELCT) {
+      if (!this->history) {
+        return false;
+      }
+      optArg = this->history;
+    }
     auto [pos, len] = findLineInterval(l, true);
     line = l.lineRef();
     line = line.substr(pos, len);
@@ -1872,6 +1879,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     l.len = l.pos = 0;
     break;
   case CustomActionType::REPLACE_LINE:
+  case CustomActionType::HIST_SELCT:
     linenoiseEditDeleteTo(l, true);
     break;
   case CustomActionType::INSERT:
