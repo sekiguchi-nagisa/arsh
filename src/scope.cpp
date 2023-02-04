@@ -208,14 +208,23 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
     const auto &handle = e.second;
     auto ret = this->addNewForeignHandle(name.toString(), handle);
     if (!ret) {
+      const char *suffix = "";
+      std::string message;
       if (isCmdFullName(name)) {
+        suffix = " command";
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       } else if (isTypeAliasFullName(name)) {
+        suffix = " type";
         name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
       } else if (isMethodFullName(name)) {
+        suffix = " method";
         name = trimMethodFullNameSuffix(name);
       }
-      return name.toString();
+      message += "`";
+      message += name;
+      message += "'";
+      message += suffix;
+      return message;
     }
   }
 

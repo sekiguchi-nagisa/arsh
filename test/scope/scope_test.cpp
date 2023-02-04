@@ -863,7 +863,7 @@ TEST_F(ScopeTest, conflict) {
 
   this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), HandleAttr{});
   auto ret = this->top->importForeignHandles(this->pool, modType, ImportedModKind::GLOBAL);
-  ASSERT_EQ("AAA", ret);
+  ASSERT_EQ("`AAA'", ret);
 
   auto handle = this->top->lookup("AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(

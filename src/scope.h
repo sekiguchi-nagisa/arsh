@@ -256,7 +256,7 @@ public:
    * @param type
    * @param k
    * @return
-   * if found name conflict, return conflicted name
+   * if found name conflict, return error message
    */
   std::string importForeignHandles(const TypePool &pool, const ModType &type, ImportedModKind k);
 

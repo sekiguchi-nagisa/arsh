@@ -20,7 +20,7 @@
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
 #    CHECK:         "code": "semantic error: CircularMod",
-# CHECK_RE:         "message": "circular module import:.+self_import.ds'",
+# CHECK_RE:         "message": "`.+self_import.ds' module recursively import itself",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
 #    CHECK:             "character": 21,

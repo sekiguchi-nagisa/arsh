@@ -1696,7 +1696,8 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         assert(isa<AccessNode>(leftNode));
         auto &accessNode = cast<AccessNode>(leftNode);
         this->reportError<ReadOnlyField>(accessNode.getNameToken(),
-                                         accessNode.getFieldName().c_str());
+                                         accessNode.getFieldName().c_str(),
+                                         accessNode.getRecvNode().getType().getName());
       }
     }
   } else {

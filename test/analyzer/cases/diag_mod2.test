@@ -20,7 +20,7 @@
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
 #    CHECK:         "code": "semantic error: NotOpenMod",
-#    CHECK:         "message": "cannot read module: `/', by `Is a directory'",
+#    CHECK:         "message": "cannot read module: `/', caused by `Is a directory'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
 #    CHECK:             "character": 8,

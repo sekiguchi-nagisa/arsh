@@ -157,7 +157,7 @@ $/AAA
 
 TEST_F(CmdlineTest, marker2) {
   const char *s = "$e";
-  const char *msg = R"((string):1:1: [semantic error] undefined symbol: `e'
+  const char *msg = R"((string):1:1: [semantic error] cannot access undefined symbol: `e'
 $e
 ^~
 )";
@@ -172,27 +172,27 @@ $e
 
   // index set
   s = "$SIG['a'] = 34";
-  msg = "(string):1:5: [semantic error] undefined method: `[]=' for `Signals' type\n"
+  msg = "(string):1:5: [semantic error] cannot call undefined method: `[]=' for `Signals' type\n"
         "$SIG['a'] = 34\n"
         "    ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
   // index get
   s = "23[0]";
-  msg = "(string):1:3: [semantic error] undefined method: `[]' for `Int' type\n"
+  msg = "(string):1:3: [semantic error] cannot call undefined method: `[]' for `Int' type\n"
         "23[0]\n"
         "  ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker3) {
-  const char *msg = R"((string):1:4: [semantic error] undefined symbol: `a'
+  const char *msg = R"((string):1:4: [semantic error] cannot access undefined symbol: `a'
 "${a.b}"
    ^
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
 
-  msg = R"((string):1:13: [semantic error] undefined field: `t' for `Bool' type
+  msg = R"((string):1:13: [semantic error] cannot access undefined field: `t' for `Bool' type
 echo ${true.t}
             ^
 )";
@@ -228,7 +228,8 @@ $a = true|(true|false)
 TEST_F(CmdlineTest, marker4) {
   // for east asian width
 
-  const char *msg = R"((string):1:10: [semantic error] undefined field: `d' for `String' type
+  const char *msg =
+      R"((string):1:10: [semantic error] cannot access undefined field: `d' for `String' type
 'まま○2'.d
          ^
 )";
@@ -236,7 +237,7 @@ TEST_F(CmdlineTest, marker4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
 
   if (setlocale(LC_CTYPE, "ja_JP.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
+    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
@@ -246,7 +247,7 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "zh_CN.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
+    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
@@ -256,7 +257,7 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "ko_KR.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] undefined field: `d' for `String' type
+    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
 'まま○2'.d
           ^
 )";
@@ -573,11 +574,11 @@ TEST_F(CmdlineTest2, import1) {
   auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
   chmod(fileName.c_str(), ~S_IRUSR);
 
-  std::string str =
-      format("(string):1:8: [semantic error] cannot read module: `%s', by `Permission denied'\n"
-             "source %s as mod\n"
-             "       %s\n",
-             fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+  std::string str = format(
+      "(string):1:8: [semantic error] cannot read module: `%s', caused by `Permission denied'\n"
+      "source %s as mod\n"
+      "       %s\n",
+      fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str));
 }
@@ -589,7 +590,7 @@ TEST_F(CmdlineTest2, import2) {
       this->createTempFile("target.ds", format("source %s/mod.ds as mod1", this->getTempDirName()));
 
   std::string str =
-      format("%s:1:8: [semantic error] circular module import: `%s'\n"
+      format("%s:1:8: [semantic error] `%s' module recursively import itself\n"
              "source %s as mod2\n"
              "       %s\n",
              modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
@@ -603,7 +604,7 @@ TEST_F(CmdlineTest2, import2) {
 
 TEST_F(CmdlineTest2, import3) {
   std::string str =
-      format("(string):1:9: [semantic error] cannot read module: `.', by `Is a directory'\n"
+      format("(string):1:9: [semantic error] cannot read module: `.', caused by `Is a directory'\n"
              "source  .\n"
              "        %s\n",
              makeLineMarker(".").c_str());
