@@ -1,0 +1,21 @@
+#!/usr/bin/env ydsh
+
+# for fzf key binding
+
+function fzf_search_list(q : String, list : [String]) : String {
+    command -v fzf &>> /dev/null || return ""
+    var arg = ['-q', $q]
+    if $q.empty() { $arg.clear(); }
+    return "$(for $e in $list {
+        echo $e
+    } | sort | uniq | fzf --inline-info $arg)"
+}
+
+# CTRL-R
+$LINE_EDIT.action('fzf-hist-search', 'hist-select', function(s, b) => {
+    var ret = $b ? $fzf_search_list($s, $b) : ""
+    $ret :- return new String!()
+})
+$LINE_EDIT.bind("^R", 'fzf-hist-search')
+
+# FIXME: CTRL-T (select path), ALT-C (cd selected directory)

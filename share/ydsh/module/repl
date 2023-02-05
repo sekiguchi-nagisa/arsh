@@ -28,3 +28,6 @@ if(command -v dscolorize &>> /dev/null) {
         $LINE_EDIT.setColor($color)
     }
 }
+
+# enable fzf integration
+source $SCRIPT_DIR/fzf

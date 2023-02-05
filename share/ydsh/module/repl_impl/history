@@ -232,15 +232,3 @@ $LINE_EDIT.setHistSync(function(line, buf) => {
     $_sync()
     $_add_and_save($line)
 })
-
-
-$LINE_EDIT.action("search-hist", "hist-select", function(q, list) => {
-    (command -v fzf &>> /dev/null || !$list) || return ""
-    var arg = ['-q', $q]
-    if $q.empty() { $arg.clear(); }
-    return "$(for $e in $list! {
-        echo $e
-    } | sort | uniq | fzf --inline-info $arg)"
-})
-
-$LINE_EDIT.bind("^R", 'search-hist')

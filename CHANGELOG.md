@@ -23,6 +23,11 @@
     - ``popd``: remove an entry from directory stack
     - also add ``DIRSTACK`` global variable
 
+#### Module
+
+- add ``fzf`` module for ``fzf`` integration
+    - now ``CTRL-R`` action (history seach) is defined as custom action in this module
+
 ### Changed
 
 #### Core
