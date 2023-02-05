@@ -311,6 +311,9 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
 Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(StringRef name,
                                                                                StringRef type) {
   // check action name format
+  if (name.empty()) {
+    return Err(DefineError::INVALID_NAME);
+  }
   for (auto &e : name) {
     if (std::isalnum(e) || e == '-' || e == '_') {
       continue;

@@ -115,6 +115,12 @@ assert $ex is InvalidOperationError &&
     $ex.message() == "invalid action name, must [a-zA-Z_-]: \`%%%%fe'"
 
 $ex = 34
+try { $editor.action('', 'replace-whole-accept', function(s, o)=> $s);  }
+catch e { $ex = $e; }
+assert $ex is InvalidOperationError && 
+    $ex.message() == "invalid action name, must [a-zA-Z_-]: \`'"
+
+$ex = 34
 try { $editor.action('who', 'replace-whole-accept1', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert $ex is InvalidOperationError && 
@@ -125,6 +131,8 @@ $ex = 34
 try {
     for(var i = 0; $i < 1000; $i++) {
         $editor.action("action_$i", 'replace-line', function(s, o) => $s)
+        $editor.action("action-$i", 'replace-line', function(s, o) => $s)
+        $editor.action("Action-$i", 'replace-line', function(s, o) => $s)
     }
 } catch e {
     $ex = $e
