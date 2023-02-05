@@ -741,23 +741,10 @@ static DSValue sliceImpl(const StringRef &ref, size_t begin, size_t end) {
   return DSValue::createStr(ref.slice(begin, end));
 }
 
-/**
- *
- * @tparam T
- * @param obj
- * @param startIndex
- * inclusive
- * @param stopIndex
- * exclusive
- * @return
- */
-template <typename T>
-static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
-  const int64_t size = ({
-    uint64_t s = obj.size();
-    assert(s <= INT64_MAX);
-    static_cast<int64_t>(s);
-  });
+static std::pair<uint64_t, uint64_t> resolveSliceRange(uint64_t objSize, int64_t startIndex,
+                                                       int64_t stopIndex) {
+  assert(objSize <= INT64_MAX);
+  const auto size = static_cast<int64_t>(objSize);
 
   // resolve actual index
   startIndex = (startIndex < 0 ? size : 0) + startIndex;
@@ -776,7 +763,23 @@ static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
   if (stopIndex < startIndex) {
     stopIndex = startIndex;
   }
-  return sliceImpl(obj, static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex));
+  return {static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex)};
+}
+
+/**
+ *
+ * @tparam T
+ * @param obj
+ * @param startIndex
+ * inclusive
+ * @param stopIndex
+ * exclusive
+ * @return
+ */
+template <typename T>
+static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
+  auto [start, stop] = resolveSliceRange(obj.size(), startIndex, stopIndex);
+  return sliceImpl(obj, start, stop);
 }
 
 //!bind: function slice($this : String, $start : Int, $stop : Option<Int>) : String
@@ -1399,6 +1402,22 @@ YDSH_METHOD array_remove(RuntimeContext &ctx) {
   auto v = obj.getValues()[ret.index];
   obj.refValues().erase(obj.refValues().begin() + ret.index);
   RET(v);
+}
+
+//!bind: function removeRange($this : Array<T0>, $from : Int, $to : Option<Int>) : Void
+YDSH_METHOD array_removeRange(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_removeRange);
+
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto from = LOCAL(1).asInt();
+  auto &v = LOCAL(2);
+  assert(obj.size() <= ArrayObject::MAX_SIZE);
+  auto to = v.isInvalid() ? static_cast<int64_t>(obj.size()) : v.asInt();
+  auto [start, stop] = resolveSliceRange(obj.size(), from, to);
+  auto &values = obj.refValues();
+  values.erase(values.begin() + static_cast<ssize_t>(start),
+               values.begin() + static_cast<ssize_t>(stop));
+  RET_VOID;
 }
 
 static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = true) {

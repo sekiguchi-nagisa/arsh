@@ -337,6 +337,8 @@ function %OP_SET(index : Int, value : T0) : Void for [T0]
 
 function remove(index : Int) : T0 for [T0]
 
+function removeRange(from : Int, to : Int!) : Void for [T0]
+
 function peek() : T0 for [T0]
 
 function push(value : T0) : Void for [T0]

@@ -22,6 +22,8 @@
     - ``pushd``: change current directory and save old onto the directory stack
     - ``popd``: remove an entry from directory stack
     - also add ``DIRSTACK`` global variable
+- add ``Array#removeRange`` method
+    - remove elements by specified range
 
 #### Module
 

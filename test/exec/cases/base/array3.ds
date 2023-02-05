@@ -40,3 +40,39 @@ assert ![45.0/0.0, 34.9, 3.000].contains(90.0/-0.0)
 assert [-34.4,0.0/0.0, 34.9, 3.000].contains(0.0/-0.0)
 assert ! new [Bool]().contains($true)
 assert ! new [Bool]().contains($false)
+
+# removeRange
+var aa = @({1..10})
+assert $aa.size() == 10
+assert $aa.join(" ") == '1 2 3 4 5 6 7 8 9 10'
+
+$aa.removeRange(1,1)  # no remove
+assert $aa.size() == 10
+assert $aa.join(" ") == '1 2 3 4 5 6 7 8 9 10'
+
+$aa.removeRange(1,3)
+assert $aa.size() == 8
+assert $aa.join(" ") == '1 4 5 6 7 8 9 10'
+
+$aa.removeRange(4,1)  # no remove
+assert $aa.size() == 8
+assert $aa.join(" ") == '1 4 5 6 7 8 9 10'
+
+$aa.removeRange(-2)
+assert $aa.size() == 6
+assert $aa.join(" ") == '1 4 5 6 7 8'
+
+$aa.removeRange(-2, -1)
+assert $aa.size() == 5
+assert $aa.join(" ") == '1 4 5 6 8'
+
+$aa.removeRange($aa.size())
+assert $aa.size() == 5
+assert $aa.join(" ") == '1 4 5 6 8'
+
+$aa.removeRange(99999)
+assert $aa.size() == 5
+assert $aa.join(" ") == '1 4 5 6 8'
+
+$aa.removeRange(-699)  # 0
+assert $aa.size() == 0
