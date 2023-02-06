@@ -268,14 +268,17 @@ TEST_F(InteractiveTest, customAction2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // hist-select
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("var hist = ['echo AA', 'echo BB', 'echo CC', 'echo DD']"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory($hist)"));
-
   const char *src =
       "$LINE_EDIT.action('hist-search', 'hist-select', function(s,b) => $b![$s.size()])";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'hist-search')"));
+  this->send("echo a" CTRL_R);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo a")); // no happend (history is empty)
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "a"));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("var hist = ['echo AA', 'echo BB', 'echo CC', 'echo DD']"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory($hist)"));
   this->send("rr" CTRL_R);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo CC"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "CC"));

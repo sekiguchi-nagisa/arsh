@@ -1577,10 +1577,8 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
           histRotate.revertAll();
           return this->accept(state, l);
         }
-      } else {
-        if (state.hasError()) {
-          errno = EAGAIN;
-        }
+      } else if (state.hasError()) {
+        errno = EAGAIN;
         return -1;
       }
       break;
@@ -1826,7 +1824,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
 
 bool LineEditorObject::kickHistSyncCallback(DSState &state, struct linenoiseState &l) {
   if (!this->history) {
-    return false;
+    return true;
   }
   if (this->histSyncCallback) {
     this->kickCallback(state, this->histSyncCallback,
@@ -1850,7 +1848,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   case CustomActionType::HIST_SELCT: {
     if (type == CustomActionType::HIST_SELCT) {
       if (!this->history) {
-        return false;
+        return true;
       }
       optArg = this->history;
     }
