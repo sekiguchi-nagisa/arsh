@@ -199,7 +199,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     var ret = IFS=$' \n' $(bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words)
     var size = $ret.size()
     for(var i = 0; $i < $size; $i++) {
-        if test -d $ret[$i] && $ret[$i][-1] != '/' {
+        if test -d $ret[$i] && $ret[$i][-1] != '/' && $ret[$i].contains('/') { # for directory
             $ret[$i] += '/'
         }
     }
