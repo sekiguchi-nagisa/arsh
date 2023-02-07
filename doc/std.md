@@ -168,6 +168,8 @@ function realpath() : String! for String
 function lower() : String for String
 
 function upper() : String for String
+
+function quote() : String for String
 ```
 
 ## FD type

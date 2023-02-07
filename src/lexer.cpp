@@ -18,6 +18,7 @@
 #include "constant.h"
 #include "misc/fatal.h"
 #include "misc/num_util.hpp"
+#include "misc/unicode.hpp"
 
 namespace ydsh {
 
@@ -471,6 +472,61 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
     }
     return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
   }
+}
+
+std::string quoteAsShellArg(StringRef ref) {
+  std::string ret;
+  auto begin = ref.begin();
+  for (const auto end = ref.end(); begin != end;) {
+    int codePoint = 0;
+    const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(begin, end, codePoint);
+    if (byteSize == 0) { // invalid utf-8 byte sequence
+      char d[32];
+      snprintf(d, std::size(d), "$'\\x%02x'", static_cast<unsigned char>(*begin));
+      ret += d;
+      begin++;
+    } else {
+      switch (codePoint) {
+      case ' ':
+      case ';':
+      case '\'':
+      case '"':
+      case '`':
+      case '\\':
+      case '|':
+      case '&':
+      case '<':
+      case '>':
+      case '(':
+      case ')':
+      case '$':
+      case '#':
+      case '~':
+      case '{':
+      case '}':
+      case '[':
+      case ']':
+      case '*':
+      case '?':
+      case '!':
+        assert(byteSize == 1);
+        ret += '\\';
+        ret.append(begin, byteSize);
+        break;
+      default:
+        if ((codePoint >= 0 && codePoint < 32) || codePoint == 127) {
+          char d[32];
+          snprintf(d, std::size(d), "$'\\x%02x'", codePoint);
+          ret += d;
+        } else {
+          ret.append(begin, byteSize);
+        }
+        break;
+      }
+      begin += byteSize;
+    }
+  }
+  return ret;
 }
 
 } // namespace ydsh

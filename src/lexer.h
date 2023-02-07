@@ -275,6 +275,14 @@ struct EscapeSeqResult {
  */
 EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
 
+/**
+ * quote string that can be reused in command argument.
+ * if contains unprintable characters or invalid utf8 sequence, convert to hex notation
+ * @param ref
+ * @return
+ */
+std::string quoteAsShellArg(StringRef ref);
+
 } // namespace ydsh
 
 #endif // YDSH_LEXER_H

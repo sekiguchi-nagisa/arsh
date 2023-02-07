@@ -1036,6 +1036,14 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
   RET(ret);
 }
 
+//!bind: function quote($this : String) : String
+YDSH_METHOD string_quote(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_quote);
+  auto ref = LOCAL(0).asStrRef();
+  auto ret = quoteAsShellArg(ref);
+  RET(DSValue::createStr(std::move(ret)));
+}
+
 // ########################
 // ##     StringIter     ##
 // ########################

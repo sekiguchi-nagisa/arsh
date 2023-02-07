@@ -1,0 +1,27 @@
+
+function evalArg(arg : String) : String {
+    var func = $MODULE._func("[ @($arg).join(' ') ]")
+    var ret = $func()! as [String]
+    return $ret[0]
+}
+
+function assertQuote(arg : String, quoted : String) {
+    var q = $arg.quote()
+    assert $q == $quoted : $q
+    var r = $evalArg($q)
+    assert $r == $arg : $r
+}
+
+$assertQuote("hello world ", 'hello\ world\ ')
+$assertQuote("あいう", 'あいう')
+$assertQuote("~", '\~')
+$assertQuote("PATH=~/", 'PATH=\~/')
+$assertQuote("/*", '/\*')
+$assertQuote("/?", '/\?')
+$assertQuote($'# they are pen & apple | \n\t"$(echo hello {1..2})" ;', 
+    '\#\ they\ are\ pen\ \&\ apple\ \|\ ' + "\$'\x0a'" + "\$'\x09'" + '\"\$\(echo\ hello\ \{1..2\}\)\"\ \;')
+$assertQuote("<?>'3'\\", '\<\?\>' + "\'3\'" + '\\')
+$assertQuote($'\xFE', "$'\\xfe'")
+$assertQuote('`echo hello`', '\`echo\ hello\`')
+$assertQuote('echo &!', 'echo\ \&\!')
+$assertQuote('[,]', '\[,\]')
