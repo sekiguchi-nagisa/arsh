@@ -25,10 +25,10 @@ function escape($s : String) : String {
     var c = 0
     var buf = ''
     for $ch in $s {
-        if $c == 0 && '[]+-0123456789'.indexOf($ch) != -1 {
+        if $c == 0 && '+-0123456789'.indexOf($ch) != -1 {
             $buf += '\'
         }
-        if $ch == ' ' {
+        if $ch == ' ' || $ch == '[' || $ch == ']'{
             $buf += '\'
         }
         $buf += $ch
@@ -39,7 +39,7 @@ function escape($s : String) : String {
 function escape2($s : String) : String {
     var buf = ''
     for $ch in $s {
-        if $ch == ' ' || $ch == '$' || $ch == '[' {
+        if $ch == ' ' || $ch == '$' || $ch == '[' || $ch == ']'{
             $buf += '\'
         }
         $buf += $ch
