@@ -314,7 +314,7 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
     return -1;
   }
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    consumer(e.asCStr(), CompCandidateKind::USER); // dummy kind for suppress quoting
+    consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG_NO_QUOTE);
   }
   return static_cast<int>(size);
 }
@@ -427,6 +427,7 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   case CompCandidateKind::COMMAND_NAME_PART:
   case CompCandidateKind::COMMAND_ARG:
   case CompCandidateKind::COMMAND_TILDE:
+  case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
     if (first.back() == '/') {
       return false;
     }

@@ -64,6 +64,7 @@ enum class CompCandidateKind {
   COMMAND_NAME_PART,
   COMMAND_ARG,
   COMMAND_TILDE,
+  COMMAND_ARG_NO_QUOTE,
   ENV,
   USER,
   GROUP,
