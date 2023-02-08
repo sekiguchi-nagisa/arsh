@@ -86,12 +86,6 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
     return $ret
 }
 
-startwith() {
-    for $line in $STDIN {
-        $line.startsWith($1) && echo $line
-    }
-}
-
 #
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
@@ -115,7 +109,15 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                 }
                 $r
             }
-            1 => IFS=$'\n' $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
+            1 => {
+                var ret : [String]
+                for line in <(eval $YDSH_BIN -c "$arg") {
+                    if $line.startsWith($prefix) {
+                        $ret.add($line)
+                    }
+                }
+                $ret
+            }
             2 => {
                 var args : [String]
                 for a in $arg.split("|") {

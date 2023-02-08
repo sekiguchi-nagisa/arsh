@@ -32,7 +32,13 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(help shctl | _extract_sub | startwith "$p")
+        var ret : [String]
+        for line in <(help shctl | _extract_sub) {
+            if $line.startsWith($p) {
+                $ret.add($line)
+            }
+        }
+        return $ret
     }
     assert $t.size() > 1
     case $t[1] {
@@ -41,7 +47,13 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(shctl set | cut -d ' ' -f 1 | startwith "$p")
+        var ret : [String]
+        for line in <(shctl set | cut -d ' ' -f 1) {
+            if $line.startsWith($p) {
+                $ret.add($line)
+            }
+        }
+        return $ret
     }
     else => return new [String]()
     }

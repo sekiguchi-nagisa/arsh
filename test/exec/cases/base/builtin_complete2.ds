@@ -200,9 +200,8 @@ $assertArray(['AAA0', 'AAA1'], $(complete '
     typedef AAA0(param : AA'))
 
 # subcommand
-$assertArray(["compdef", 'startwith'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP "))
+$assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP "))
 $assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP c"))
-$assertArray(["startwith"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP > /dev/null s"))
 assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/path as P; P ").empty()
 $assertArray(["say0", "say1", "say2"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
