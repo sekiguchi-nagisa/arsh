@@ -33,80 +33,23 @@ namespace ydsh {
 
 // for input completion
 
-static bool needEscape(int ch, CompCandidateKind kind) {
-  switch (ch) {
-  case ' ':
-  case ';':
-  case '\'':
-  case '"':
-  case '`':
-  case '|':
-  case '&':
-  case '<':
-  case '>':
-  case '(':
-  case ')':
-  case '$':
-  case '#':
-  case '~':
-    return true;
-  case '{':
-  case '}':
-    if (kind == CompCandidateKind::COMMAND_NAME || kind == CompCandidateKind::COMMAND_NAME_PART) {
-      return true;
-    }
-    break;
-  default:
-    if ((ch >= 0 && ch < 32) || ch == 127) {
-      return true;
-    }
-    break;
-  }
-  return false;
-}
-
-static std::string escape(StringRef ref, CompCandidateKind kind) {
-  std::string buf;
-  if (!mayBeEscaped(kind)) {
-    buf += ref;
-    return buf;
-  }
-
-  auto iter = ref.begin();
-  const auto end = ref.end();
-
-  if (kind == CompCandidateKind::COMMAND_NAME) {
-    char ch = *iter;
-    if (isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
-      buf += '\\';
-      buf += ch;
-      iter++;
-    }
-  }
-
-  while (iter != end) {
-    int ch = *(iter++); // for arm32/arm64
-    if (ch == '\\' && iter != end && needEscape(*iter, kind)) {
-      buf += '\\';
-      ch = *(iter++);
-    } else if (needEscape(ch, kind)) {
-      if ((ch >= 0 && ch < 32) || ch == 127) {
-        char d[32];
-        snprintf(d, std::size(d), "$'\\x%02x'", ch);
-        buf += d;
-        continue;
-      } else {
-        buf += '\\';
+void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind, int priority) {
+  assert(!ref.empty());
+  std::string value;
+  if (mayBeEscaped(kind)) {
+    if (kind == CompCandidateKind::COMMAND_NAME) {
+      char ch = ref[0];
+      if (isDecimal(ch) || ch == '+' || ch == '-') {
+        value += '\\';
+        value += ch;
+        ref.removePrefix(1);
       }
     }
-    buf += static_cast<char>(ch);
+    quoteAsShellArg(ref, value);
+  } else {
+    value += ref;
   }
-  return buf;
-}
-
-void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind, int priority) {
-  std::string estr = escape(ref, kind);
-  this->consume(std::move(estr), kind, priority);
+  this->consume(std::move(value), kind, priority);
 }
 
 // ###################################

@@ -314,7 +314,7 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
     return -1;
   }
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG);
+    consumer(e.asCStr(), CompCandidateKind::USER); // dummy kind for suppress quoting
   }
   return static_cast<int>(size);
 }

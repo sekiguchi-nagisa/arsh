@@ -474,8 +474,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
   }
 }
 
-std::string quoteAsShellArg(StringRef ref) {
-  std::string ret;
+void quoteAsShellArg(StringRef ref, std::string &out) {
   auto begin = ref.begin();
   for (const auto end = ref.end(); begin != end;) {
     int codePoint = 0;
@@ -483,7 +482,7 @@ std::string quoteAsShellArg(StringRef ref) {
     if (byteSize == 0) { // invalid utf-8 byte sequence
       char d[32];
       snprintf(d, std::size(d), "$'\\x%02x'", static_cast<unsigned char>(*begin));
-      ret += d;
+      out += d;
       begin++;
     } else {
       switch (codePoint) {
@@ -510,23 +509,22 @@ std::string quoteAsShellArg(StringRef ref) {
       case '?':
       case '!':
         assert(byteSize == 1);
-        ret += '\\';
-        ret.append(begin, byteSize);
+        out += '\\';
+        out.append(begin, byteSize);
         break;
       default:
         if ((codePoint >= 0 && codePoint < 32) || codePoint == 127) {
           char d[32];
           snprintf(d, std::size(d), "$'\\x%02x'", codePoint);
-          ret += d;
+          out += d;
         } else {
-          ret.append(begin, byteSize);
+          out.append(begin, byteSize);
         }
         break;
       }
       begin += byteSize;
     }
   }
-  return ret;
 }
 
 } // namespace ydsh

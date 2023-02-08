@@ -115,7 +115,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                 }
                 $r
             }
-            1 => $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
+            1 => IFS=$'\n' $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
             2 => {
                 var args : [String]
                 for a in $arg.split("|") {

@@ -279,9 +279,15 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
  * quote string that can be reused in command argument.
  * if contains unprintable characters or invalid utf8 sequence, convert to hex notation
  * @param ref
- * @return
+ * @param out
  */
-std::string quoteAsShellArg(StringRef ref);
+void quoteAsShellArg(StringRef ref, std::string &out);
+
+inline std::string quoteAsShellArg(StringRef ref) {
+  std::string ret;
+  quoteAsShellArg(ref, ret);
+  return ret;
+}
 
 } // namespace ydsh
 

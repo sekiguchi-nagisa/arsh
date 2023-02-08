@@ -39,7 +39,7 @@ function escape($s : String) : String {
 function escape2($s : String) : String {
     var buf = ''
     for $ch in $s {
-        if $ch == ' ' || $ch == '$' {
+        if $ch == ' ' || $ch == '$' || $ch == '[' {
             $buf += '\'
         }
         $buf += $ch

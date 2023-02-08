@@ -43,6 +43,9 @@
     - support `~+N`, `~-N`, `~N` style expansions
         - internally use ``DIRSTACK`` variable
     - now `~+`, `~-` expansions do not check path existence
+- **Breaking Change**: change user-defined completer behavior
+    - does not quote completion candidates that user-defined completer return
+        - now manually quote within user-defined completer if needed
 - show stack trace of ignored exceptions within finally/defer block
 - imporve some semantic error messages
 
