@@ -1,6 +1,6 @@
 # License
 
-All the files are distributed under Apache-2.0 license except the following.
+All the files are distributed under Apache-2.0 license except for the following.
 
 ## src/line_editor.cpp
 
