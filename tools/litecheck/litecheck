@@ -53,9 +53,9 @@ let STATUS = "STATUS"
 let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
 
-function _parse_num(v : String) : Int! {
+function _parse_num(v : String) : Int? {
     var m = $/^ *(0|[1-9][0-9]*) *$/.match($v)
-    var r : Int!
+    var r : Int?
     if !$m.empty() {
         $r = $m[1]!.toInt()
     }
@@ -310,8 +310,8 @@ function _run_and_check(map : [String : [Directive]]) : Int {
 # entry point
 litecheck() {
     # parse command line arguments
-    var bin : String!
-    var file : String!
+    var bin : String?
+    var file : String?
     for(var i = 0; $i < $#; $i++) {
         var arg = $@[$i]
         case $arg {

@@ -19,17 +19,17 @@ var msg = "[runtime error]
 UnwrappingError: invalid value
     from (stdin):1 '<toplevel>()'"
 
-$expect("$(echo -n 'var a = (9, new Int!()); $a' | repl 2>&1)", 1, $msg)
+$expect("$(echo -n 'var a = (9, new Int?()); $a' | repl 2>&1)", 1, $msg)
 
 
 # option type
-$expect("$(echo -n 'var a = $true as Option<Boolean>; $a' | repl 2>&1)", 0, ': Bool! = true')
+$expect("$(echo -n 'var a = $true as Option<Boolean>; $a' | repl 2>&1)", 0, ': Bool? = true')
 
-$expect("$(echo -n 'new Option<Bool>()' | repl 2>&1)", 0, ': Bool! = (invalid)')
+$expect("$(echo -n 'new Option<Bool>()' | repl 2>&1)", 0, ': Bool? = (invalid)')
 
-$expect("$(echo -n 'var a = $true as String as Option<String>; $a' | repl 2>&1)", 0, ': String! = true')
+$expect("$(echo -n 'var a = $true as String as Option<String>; $a' | repl 2>&1)", 0, ': String? = true')
 
-$expect("$(echo -n 'new Option<String>()' | repl 2>&1)", 0, ': String! = (invalid)')
+$expect("$(echo -n 'new Option<String>()' | repl 2>&1)", 0, ': String? = (invalid)')
 
 
 # escape

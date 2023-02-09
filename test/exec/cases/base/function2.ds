@@ -38,8 +38,8 @@ assert (function (i : Int) => {
 var a2 = function() : Void => 34
 assert $a2 is () -> Void
 
-var a3 = function (s : String) : String! => $s
-assert $a3 is (String) -> String!
+var a3 = function (s : String) : String? => $s
+assert $a3 is (String) -> String?
 assert $a3('hello')! == 'hello'
 
 var a4 = (function ($a : Int) : Any => $a)
@@ -55,7 +55,7 @@ assert $a4(333) as String == '<333>'
 assert ($a4 as (Int) -> String)(99) == '<99>'
 
 assert (function() -> 23) is () -> Int
-assert (function() -> 23) is () -> Int!
+assert (function() -> 23) is () -> Int?
 assert (function() -> 23) is () -> Any
 assert (function() -> 23) is () -> Void
 assert (function() => {}) is () => Void
@@ -63,7 +63,7 @@ assert ! (
     (function () -> {}) is () -> Any
 )
 assert ! (
-    (function () -> {}) is () -> Any!
+    (function () -> {}) is () -> Any?
 )
 
 $a4 = function($i : Int) -> throw new Error("$i")
@@ -86,7 +86,7 @@ assert $b0("a", new ArithmeticError("12345")) as String == "a=ArithmeticError:12
 let b1 = function($a : Any, $b : Error) : String => $a + ">>" + $b.name() + "%" + $b.message()
 assert $b1 is (Any, Error) -> String
 assert $b1 is (String, ArithmeticError) -> Any
-assert $b1 is (Float, OutOfRangeError) -> String!
+assert $b1 is (Float, OutOfRangeError) -> String?
 
 assert $b1(12, new SystemError("AAA")) == "12>>SystemError%AAA"
 
@@ -96,6 +96,6 @@ assert $b2("hello", new ArithmeticError("ABCD")) as String == "hello>>Arithmetic
 assert ($b2 as (Any, Error) -> String)("hello", new OutOfRangeError("@@")) == "hello>>OutOfRangeError%@@"
 
 assert (function($s : Any) : Any => $s) is (String) => Any
-assert (function($s : Any) : Any => $s) is (String) => Any!
-assert ! ((function($s : Any) : Any => $s) is (Any!) => Any)
+assert (function($s : Any) : Any => $s) is (String) => Any?
+assert ! ((function($s : Any) : Any => $s) is (Any?) => Any)
 assert ! ((function($s : String) : Any => $s) is (String) => String)

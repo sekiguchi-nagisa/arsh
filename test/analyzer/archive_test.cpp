@@ -297,7 +297,7 @@ TEST_F(ArchiveTest, base) {
 TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", HandleKind::ENV));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("c", "((Module, String, [String]) -> Void)!"));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("c", "((Module, String, [String]) -> Void)?"));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void"));
 }
 
@@ -368,7 +368,7 @@ TEST_F(ArchiveTest, option) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrappingError!", HandleKind::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrappingError?", HandleKind::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createOptionType(type1);

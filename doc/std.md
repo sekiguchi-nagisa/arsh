@@ -129,19 +129,19 @@ function chars() : [String] for String
 
 function words() : [String] for String
 
-function width(eaw : Int!) : Int for String
+function width(eaw : Int?) : Int for String
 
 function %OP_GET(index : Int) : String for String
 
 function charAt(index : Int) : String for String
 
-function slice(start : Int, stop : Int!) : String for String
+function slice(start : Int, stop : Int?) : String for String
 
 function startsWith(target : String) : Bool for String
 
 function endsWith(target : String) : Bool for String
 
-function indexOf(target : String, index : Int!) : Int for String
+function indexOf(target : String, index : Int?) : Int for String
 
 function lastIndexOf(target : String) : Int for String
 
@@ -151,11 +151,11 @@ function split(delim : String) : [String] for String
 
 function replace(target : String, rep : String) : String for String
 
-function sanitize(repl : String!) : String for String
+function sanitize(repl : String?) : String for String
 
-function toInt(radix : Int!) : Int! for String
+function toInt(radix : Int?) : Int? for String
 
-function toFloat() : Float! for String
+function toFloat() : Float? for String
 
 function %OP_ITER() : StringIter for String
 
@@ -163,7 +163,7 @@ function %OP_MATCH(re : Regex) : Bool for String
 
 function %OP_UNMATCH(re : Regex) : Bool for String
 
-function realpath() : String! for String
+function realpath() : String? for String
 
 function lower() : String for String
 
@@ -195,7 +195,7 @@ function %OP_ITER() : Reader for FD
 
 ## Error type
 ```
-function %OP_INIT(message : String, status : Int!) : Error for Error
+function %OP_INIT(message : String, status : Int?) : Error for Error
 
 function message() : String for Error
 
@@ -228,9 +228,9 @@ function detach() : Void for Job
 
 function size() : Int for Job
 
-function pid(index : Int) : Int! for Job
+function pid(index : Int) : Int? for Job
 
-function status(index : Int) : Int! for Job
+function status(index : Int) : Int? for Job
 ```
 
 ## StringIter type
@@ -240,7 +240,7 @@ function %OP_NEXT() : String for StringIter
 
 ## Regex type
 ```
-function %OP_INIT(str : String, flag : String!) : Regex for Regex
+function %OP_INIT(str : String, flag : String?) : Regex for Regex
 
 function isCaseless() : Bool for Regex
 
@@ -252,7 +252,7 @@ function %OP_MATCH(target : String) : Bool for Regex
 
 function %OP_UNMATCH(target : String) : Bool for Regex
 
-function match(target : String) : [String!] for Regex
+function match(target : String) : [String?] for Regex
 
 function replace(target : String, repl : String) : String for Regex
 ```
@@ -267,7 +267,7 @@ function message() : String for Signal
 
 function kill(pid : Int) : Void for Signal
 
-function trap(handler : ((Signal) -> Void)!) : (Signal) -> Void for Signal
+function trap(handler : ((Signal) -> Void)?) : (Signal) -> Void for Signal
 
 function %OP_EQ(target : Signal) : Bool for Signal
 
@@ -278,7 +278,7 @@ function %OP_NE(target : Signal) : Bool for Signal
 ```
 function %OP_GET(key : String) : Signal for Signals
 
-function get(key : String) : Signal! for Signals
+function get(key : String) : Signal? for Signals
 
 function list() : [Signal] for Signals
 ```
@@ -289,9 +289,9 @@ function _scriptName() : String for Module
 
 function _scriptDir() : String for Module
 
-function _func(expr : String) : () -> Any! for Module
+function _func(expr : String) : () -> Any? for Module
 
-function _fullname(name : String) : String! for Module
+function _fullname(name : String) : String? for Module
 ```
 
 ## Reader type
@@ -308,15 +308,15 @@ function call(argv : [String]) : Bool for Command
 ```
 function %OP_INIT() : LineEditor for LineEditor
 
-function readLine(p : String!) : String! for LineEditor
+function readLine(p : String?) : String? for LineEditor
 
-function setCompletion(comp : ((Module, String) -> [String])!) : Void for LineEditor
+function setCompletion(comp : ((Module, String) -> [String])?) : Void for LineEditor
 
-function setPrompt(prompt : ((String) -> String)!) : Void for LineEditor
+function setPrompt(prompt : ((String) -> String)?) : Void for LineEditor
 
-function setHistory(hist : [String]!) : Void for LineEditor
+function setHistory(hist : [String]?) : Void for LineEditor
 
-function setHistSync(sync : ((String, [String]) -> Void)!) : Void for LineEditor
+function setHistSync(sync : ((String, [String]) -> Void)?) : Void for LineEditor
 
 function setColor(setting : String) : Void for LineEditor
 
@@ -324,7 +324,7 @@ function bind(key : String, action : String) : Void for LineEditor
 
 function bindings() : [String : String] for LineEditor
 
-function action(name : String, type : String, action : (String, [String]!) -> String!) : Void for LineEditor
+function action(name : String, type : String, action : (String, [String]?) -> String?) : Void for LineEditor
 
 function actions() : [String] for LineEditor
 ```
@@ -333,13 +333,13 @@ function actions() : [String] for LineEditor
 ```
 function %OP_GET(index : Int) : T0 for [T0]
 
-function get(index : Int) : T0! for [T0]
+function get(index : Int) : T0? for [T0]
 
 function %OP_SET(index : Int, value : T0) : Void for [T0]
 
 function remove(index : Int) : T0 for [T0]
 
-function removeRange(from : Int, to : Int!) : Void for [T0]
+function removeRange(from : Int, to : Int?) : Void for [T0]
 
 function peek() : T0 for [T0]
 
@@ -359,7 +359,7 @@ function addAll(value : [T0]) : [T0] for [T0]
 
 function swap(index : Int, value : T0) : T0 for [T0]
 
-function slice(from : Int, to : Int!) : [T0] for [T0]
+function slice(from : Int, to : Int?) : [T0] for [T0]
 
 function copy() : [T0] for [T0]
 
@@ -369,9 +369,9 @@ function sort() : [T0] where T0 : Value_ for [T0]
 
 function sortWith(comp : (T0, T0) -> Bool) : [T0] for [T0]
 
-function join(delim : String!) : String for [T0]
+function join(delim : String?) : String for [T0]
 
-function indexOf(target : T0, index : Int!) : Int where T0 : Value_ for [T0]
+function indexOf(target : T0, index : Int?) : Int where T0 : Value_ for [T0]
 
 function lastIndexOf(target : T0) : Int where T0 : Value_ for [T0]
 
@@ -394,7 +394,7 @@ function %OP_GET(key : T0) : T1 for [T0 : T1]
 
 function %OP_SET(key : T0, value : T1) : Void for [T0 : T1]
 
-function put(key : T0, value : T1) : T1! for [T0 : T1]
+function put(key : T0, value : T1) : T1? for [T0 : T1]
 
 function putIfAbsent(key : T0, value : T1) : T1 for [T0 : T1]
 
@@ -402,7 +402,7 @@ function size() : Int for [T0 : T1]
 
 function empty() : Bool for [T0 : T1]
 
-function get(key : T0) : T1! for [T0 : T1]
+function get(key : T0) : T1? for [T0 : T1]
 
 function remove(key : T0) : Bool for [T0 : T1]
 

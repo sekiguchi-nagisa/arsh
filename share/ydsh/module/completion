@@ -9,7 +9,7 @@ function _default(words : [String], cursor : Int) : [String] {
     return $COMPREPLY
 }
 
-typedef Completer = (Module, [String], Int) -> [String]!
+typedef Completer = (Module, [String], Int) -> [String]?
 
 let _compMap : [String : Completer]
 
@@ -24,7 +24,7 @@ function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String] {
 }
 
 # if $cmd is empty string, treat as fallback handler
-function compAdd(cmd : String, comp : Completer) : Completer! {
+function compAdd(cmd : String, comp : Completer) : Completer? {
     $COMP_HOOK = $_defaultHook
     return $_compMap.put($cmd, $comp)
 }
@@ -57,7 +57,7 @@ function _require($opt : String, $msg : String) : Int {
     } with 1>&2
 }
 
-typedef _CompDef(o : String!, t : Int!, a : String!) {
+typedef _CompDef(o : String?, t : Int?, a : String?) {
     let option = $o ?? ""   # option (length 0: empty, 1: short, 2<=: long, other)
     let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
     let arg = $a ?? ""      # argument
@@ -97,7 +97,7 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String]! {
+function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String]? {
     for def in $deflist {
         $opt == case $def.option.size() {
             0 => ""
@@ -137,7 +137,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             else => break
         }
     }
-    return new [String]!()
+    return new [String]?()
 }
 
 let _bash_completion_dirs = [
@@ -150,12 +150,12 @@ let _bash_completion_dirs = [
     '/opt/homebrew/share/bash-completion/completions/',
 ]
 
-function findBashCompScript(name : String) : String! {
+function findBashCompScript(name : String) : String? {
     for dir in $_bash_completion_dirs {
         var path = $dir + $name
         test -f $path && return $path
     }
-    return new String!()
+    return new String?()
 }
 
 let _bash_completion_paths = [
@@ -168,13 +168,13 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 
 # Conceptually based on git-completion.tcsh 
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
-function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String]! {
-    test -f $file || return new [String]!()
+function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String]? {
+    test -f $file || return new [String]?()
     if !(test -f $BASH_COMPLETION_PATH) {
         $BASH_COMPLETION_PATH = 
             for path in $_bash_completion_paths {
                 test -f $path && break $path
-            } ?? return new [String]!()
+            } ?? return new [String]?()
     }
 
     let script = '
@@ -212,12 +212,12 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
             $ret[$i] += '/'
         }
     }
-    return $ret.empty() ? new [String]!() : $ret
+    return $ret.empty() ? new [String]?() : $ret
 }
 
 # for lazy loading bash completion script
-function _comp_autoload(cmd : String) : String! {
-    var path = $findBashCompScript($cmd) ?? return new String!()
+function _comp_autoload(cmd : String) : String? {
+    var path = $findBashCompScript($cmd) ?? return new String?()
 
     # find actual completion target
     var target = for line in $STDIN {
@@ -236,13 +236,13 @@ function _comp_autoload(cmd : String) : String! {
     if $target {
         eval compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
     }
-    return new String!()
+    return new String?()
 }
 
-function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]! {
+function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]? {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? {
-        $cmd = $_comp_autoload($cmd) ?? return new [String]!()
+        $cmd = $_comp_autoload($cmd) ?? return new [String]?()
         $_compdefMap[$cmd]
     }
     if $deflist[0].type == 3 {
@@ -284,10 +284,10 @@ compdef() {
     $@.empty() && return ($_usage() with 1>&2)
     $compAdd("", $_from_compdef)
 
-    var cmd : String!
-    var opt : String!
-    var arg : String!
-    var argType : Int!
+    var cmd : String?
+    var opt : String?
+    var arg : String?
+    var argType : Int?
 
     for(var i = 0; $i < $#; $i++) {
         var v = $@[$i]

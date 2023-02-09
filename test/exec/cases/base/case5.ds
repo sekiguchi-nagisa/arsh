@@ -1,5 +1,5 @@
 
-function f($s : String) : String! {
+function f($s : String) : String? {
     return case $s {
         $OSTYPE => { return "$OSTYPE-1"; }
         "$MACHTYPE" => { "$MACHTYPE-1"; }
@@ -11,7 +11,7 @@ function f($s : String) : String! {
         "$DATA_HOME" => { return "$DATA_HOME-12" }
         "${MODULE_HOME}" => { "$MODULE_HOME-17"; }
         $CONFIG_HOME => "${$CONFIG_HOME}-19"
-        else => { new String!(); }
+        else => { new String?(); }
     }
 }
 
@@ -28,12 +28,12 @@ assert $f($CONFIG_HOME)! == "${CONFIG_HOME}-19"
 assert !$f("hello")
 
 
-function ff($a : Int) : String! {
+function ff($a : Int) : String? {
     return case $a {
         $ON_ASSERT => return "ON_ASSERT"
         $ON_ERR => return "ON_ERR"
         $ON_EXIT => return "ON_EXIT"
-        else => return new String!()
+        else => return new String?()
     }
 }
 

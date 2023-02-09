@@ -3,11 +3,11 @@
 # for prompt
 var PS1 = '\u@\h:\W> '
 
-var PROMPT_HOOK : ((String) -> String)!
+var PROMPT_HOOK : ((String) -> String)?
 
 source $SCRIPT_DIR/../prompt inlined
 
-var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)!
+var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)?
 
 $LINE_EDIT.setPrompt(function(p) => {
     $p = $PROMPT_HOOK ? $PROMPT_HOOK($PS1) : $PS1

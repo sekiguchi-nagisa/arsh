@@ -36,7 +36,7 @@ assert new BigInt(3).factorial() == 6
 assert new BigInt(4).factorial() == 24
 
 # optional arg
-function ff(b : Int!, c : Bool!) : String for STR {
+function ff(b : Int?, c : Bool?) : String for STR {
     return $this.message() + ($b ?? 0) + ($c ?? $false)
 }
 

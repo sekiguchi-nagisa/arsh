@@ -2,9 +2,9 @@
 
 # for command-not-found handling
 
-var CNF_HOOK : ((String, [String]) -> Void)!
+var CNF_HOOK : ((String, [String]) -> Void)?
 
-var ISDIR_HOOK : ((String) -> Void)!
+var ISDIR_HOOK : ((String) -> Void)?
 
 
 function DEFAULT_CNF(m : Module, c : String, a : [String]) {

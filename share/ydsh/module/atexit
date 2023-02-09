@@ -10,7 +10,7 @@ function _defaultHook(s : Int, e : Any) {
     }
 }
 
-function atexit(h : typeof($TERM_HOOK!), s : Int!) {
+function atexit(h : typeof($TERM_HOOK!), s : Int?) {
     if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
         $_TERM_HOOKS.clear()
     }

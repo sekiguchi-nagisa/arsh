@@ -47,7 +47,7 @@ $bbb.ZZZ += "!!"
 assert { import-env ZZZ; $ZZZ; } == 'hello world!!'
 
 ## optional arg
-typedef BBB2(a : Int!) {
+typedef BBB2(a : Int?) {
     var value = ($a ?? 999)
 }
 var bbb2 = new BBB2(12)
@@ -59,7 +59,7 @@ assert $bbb2_2.value == 999
 ## recursive type
 typedef CCC($v : String, $d : String) {
     let _values = $v.split($d)
-    var _next : CCC!
+    var _next : CCC?
 }
 
 var ccc1 = new CCC("hello world !!", " ")
@@ -83,7 +83,7 @@ typedef DDD(
     for(var i = $c; $i < $n; $i++) {
         $data += $v
     }
-    let next = $c < $n ? new DDD($v, $c + 1, $n) : new DDD!()
+    let next = $c < $n ? new DDD($v, $c + 1, $n) : new DDD?()
 }
 
 var ddd = new DDD('@', 0, 4)
@@ -97,6 +97,6 @@ assert ! $ddd.next!.next!.next!.next!.next
 ## string representation
 assert (new Empty() as String) == "{}"
 assert (new AAA() as String) == "{a : 34, b : c}"
-var ex : Any!
+var ex : Any?
 try { assert !($ddd as String).empty(); } catch $e { $ex = $e; }
 assert $ex is UnwrappingError

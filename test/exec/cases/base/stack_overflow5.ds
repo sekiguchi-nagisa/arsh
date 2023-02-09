@@ -14,6 +14,6 @@ for (var i = 0; $i < 100; $i++) {
     $a.add($b)
 }
 
-var ex : Any!
+var ex : Any?
 try { $a.sortWith($comp); assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError

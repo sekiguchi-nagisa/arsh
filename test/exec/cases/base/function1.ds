@@ -53,11 +53,11 @@ assert($f($func, 12) == 24)
 
 # optional arg
 
-function max(a : Int, b : Int!) : Int {
+function max(a : Int, b : Int?) : Int {
    var r = ($b ?? return $a)
    return $a < $r ? $r : $a
 }
-assert $max is (Int, Int!) -> Int
+assert $max is (Int, Int?) -> Int
 assert $max(12) == 12
 assert $max(12, -1) == 12
 assert $max(12, 90) == 90

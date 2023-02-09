@@ -45,7 +45,7 @@ assert $in
 # null coalescing
 assert $opt(3) ?? "de" == "hello"
 assert $opt(-1) ?? "de" == "de"
-assert new Float!() ?? 34.0 == 34.0
+assert new Float?() ?? 34.0 == 34.0
 
 
 # assign
@@ -53,7 +53,7 @@ var o = $opt(45)
 $o = "world"
 assert $o! == "world"
 
-$o = new String!()
+$o = new String?()
 $o = "34"
 assert $o && $o == "34"  # auto-unwrap && right
 assert ($o ? $o.size() : 0) == 2
@@ -63,44 +63,44 @@ if $o {
 assert $o && $o == 'hello' && $o.size() > 0
 
 {
-  var o = 34 as Any!
+  var o = 34 as Any?
   assert $o && $o is Int && $o.abs() == 34
 }
 
 # collection with option value
-assert [23 as Int!] as String == '[23]'
+assert [23 as Int?] as String == '[23]'
 var ex = 34 as Any
-try { [34 : new Int!()] as String } catch $e { $ex = $e }
+try { [34 : new Int?()] as String } catch $e { $ex = $e }
 assert $ex is UnwrappingError
 $ex = 2
-try { (34, new Boolean!()) as String } catch $e { $ex = $e }
+try { (34, new Boolean?()) as String } catch $e { $ex = $e }
 assert $ex is UnwrappingError
 
-assert "${[3 as Int!]}" == '3'
+assert "${[3 as Int?]}" == '3'
 $ex = 0
-try { assert "${(2, $false, new Error!())}" == '2 false'; }  catch $e { $ex = $e}
+try { assert "${(2, $false, new Error?())}" == '2 false'; }  catch $e { $ex = $e}
 # assert $ex is UnwrappingError
 
-assert "$(echo ${[$false as Boolean!]})" == 'false'
+assert "$(echo ${[$false as Boolean?]})" == 'false'
 $ex = 34
-try { echo ${['s' : new Float!()]}; }  catch $e { $ex = $e }
+try { echo ${['s' : new Float?()]}; }  catch $e { $ex = $e }
 assert !($ex is UnwrappingError)
 $ex = 43
-try { echo ${(new Float!(),)}; } catch $e { $ex = $e }
+try { echo ${(new Float?(),)}; } catch $e { $ex = $e }
 assert !($ex is UnwrappingError)
 assert $ex as Int == 43
 
 # type
-assert !(new Int!() is Int)
-assert (23 as Int!) is Int
-assert new Int!() is Int!
-assert new Int!() is Any!
-assert new Any!() is Int!
+assert !(new Int?() is Int)
+assert (23 as Int?) is Int
+assert new Int?() is Int?
+assert new Int?() is Any?
+assert new Any?() is Int?
 
 # nested option
-var no = [34 as Int!].get(0)
-assert $no is Int!
-assert $no is Int!!
-assert $no is Option<Int!>!!
+var no = [34 as Int?].get(0)
+assert $no is Int?
+assert $no is Int??
+assert $no is Option<Int?>??
 assert $no! == 34
-assert ! ([new Int!!()].get(0))
+assert ! ([new Int??()].get(0))

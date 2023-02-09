@@ -1,6 +1,6 @@
 #$test($result = 'type', $lineNum = 7, $chars = 5, $errorKind = 'UnmatchParam', $status = 1)
 
-function str($a : Int, $b : Int, $c : Int!) : String {
+function str($a : Int, $b : Int, $c : Int?) : String {
     return ($a + $b) as String
 }
 

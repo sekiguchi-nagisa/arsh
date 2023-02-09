@@ -2,7 +2,7 @@
 # param type inference
 
 var FF = function(a : Int, b : String) => $a + $b
-var FF2 : typeof($FF)!
+var FF2 : typeof($FF)?
 
 ## inference in right-hand side
 $FF = function(a, b) => $a + "=" + $b
@@ -28,7 +28,7 @@ function kick(a : () -> Void, f : (ArithmeticError, String) -> Void) {
     }
 }
 
-var ret : (Error, String)!
+var ret : (Error, String)?
 
 $kick(function() => {
     45 / 0

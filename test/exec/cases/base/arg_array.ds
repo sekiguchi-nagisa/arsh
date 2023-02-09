@@ -105,7 +105,7 @@ assert $args[2] == ''
 assert $args[3] == 'a b'
 
 ## Map
-var m = [34 : 'a' as String!, 9999: new String!(), 45: 'b' as String!]
+var m = [34 : 'a' as String?, 9999: new String?(), 45: 'b' as String?]
 $args = @($m)
 assert $args.size() == 4
 $args.sort()
@@ -136,11 +136,11 @@ assert $args.size() == 2
 assert $args[0] == '4'
 assert $args[1] == '98'
 
-typedef List($a : String, $n : List!) {
+typedef List($a : String, $n : List?) {
     let value = $a
     let next = $n
 }
-var list = new List("a b", new List("cc", new List!()))
+var list = new List("a b", new List("cc", new List?()))
 $args = @( $list )
 assert $args.size() == 2
 assert $args[0] == 'a b'

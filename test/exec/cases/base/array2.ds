@@ -13,11 +13,11 @@ assert $a[2] == 3
 assert $a[3] == 2
 assert $a[4] == 1
 
-function rev2($x : Int!, $y : Int!) : Boolean {
+function rev2($x : Int?, $y : Int?) : Boolean {
     return $x! >= $y!
 }
 
-var b = [4 as Int!, new Int!(), -1 as Int!]
+var b = [4 as Int?, new Int?(), -1 as Int?]
 var ex = 2 as Any
 try { $b.sortWith($rev2); assert $false; } catch $e { $ex = $e; }
 assert $ex is UnwrappingError

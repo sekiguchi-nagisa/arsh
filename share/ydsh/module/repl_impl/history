@@ -5,8 +5,8 @@
 var HISTFILE = "$DATA_HOME/ydsh_history"
 var HISTSIZE = 1000
 var HISTFILESIZE = 1000
-var HISTIGNORE = $/^history/ as Regex!
-var HISTSEARCH : Func<String,[String]>!
+var HISTIGNORE = $/^history/ as Regex?
+var HISTSEARCH : Func<String,[String]>?
 let HISTORY : [String]
 
 function _sync() {
@@ -124,7 +124,7 @@ function _add_and_save(s : String) {
     }
 }
 
-function _load(p : String!) {
+function _load(p : String?) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? return;
@@ -134,7 +134,7 @@ function _load(p : String!) {
     $PIPESTATUS.clear()
 }
 
-function _save(p : String!) {
+function _save(p : String?) {
     let limit = 4096
     if $HISTFILESIZE > $limit {
         $HISTFILESIZE = $limit
@@ -168,7 +168,7 @@ history() {
     }
 
     var op = ""
-    var fileName : String!
+    var fileName : String?
     var deleteTarget = ""
 
     for(var i = 0; $i < $#; $i++) {

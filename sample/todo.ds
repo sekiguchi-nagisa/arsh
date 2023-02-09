@@ -14,7 +14,7 @@ function create_today() : String {
     return $name
 }
 
-function find_todo_at($a : Int) : String! {
+function find_todo_at($a : Int) : String? {
     var c = $a + 1
     var v = $(ls | grep '20[0-9][0-9][0-1][0-9][0-3][0-9].md' | sort -r | head -n $c)
     var i = $a as Int
@@ -23,10 +23,10 @@ function find_todo_at($a : Int) : String! {
         assert test -f $name
         return $name
     }
-    return new String!()
+    return new String?()
 }
 
-function find_todo($a : String) : String! {
+function find_todo($a : String) : String? {
     var path = $create_today()
 
     $a =~ $/^today$/i && { return $path; }
@@ -37,9 +37,9 @@ function find_todo($a : String) : String! {
     if $a =~ $/^[1-9][0-9]?/ { 
         var b = $a.toInt()!
         var v = $(ls | grep "$(date +'%Y%m')${$b < 10 ? '0' + $b : $b as String}")
-        return $v.size() == 1 ? $v[0] : new String!()
+        return $v.size() == 1 ? $v[0] : new String?()
     }
-    return (test -f $a) ? $a : new String!()
+    return (test -f $a) ? $a : new String?()
 }
 
 

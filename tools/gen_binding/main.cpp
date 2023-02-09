@@ -420,7 +420,7 @@ public:
       if (isFuncType) {
         str += ")";
       }
-      str += "!";
+      str += "?";
     } else {
       std::string tmp;
       this->typeTemp->toString(tmp);

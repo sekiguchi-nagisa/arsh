@@ -52,7 +52,7 @@ function eachEcho($list : [String]) {
 }
 
 __cmd() {
-    var type = new String!()
+    var type = new String?()
 
     echo cmd
     echo __cmd
@@ -139,7 +139,7 @@ $assertArray($(cmd /bin /usr/bin --expr), $comp('if $true {} elif ', '/bin:/usr/
 
 # complete file name
 __file() {
-    var type = $# > 1 && $2.startsWith('--') ? $@.pop() : new String!()
+    var type = $# > 1 && $2.startsWith('--') ? $@.pop() : new String?()
 
     let dir = $@[0]
     for $a in $(ls -A $dir) {

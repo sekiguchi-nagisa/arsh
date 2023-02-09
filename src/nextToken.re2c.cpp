@@ -332,8 +332,8 @@ INIT:
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 
     <CMD> NEW_LINE           { UPDATE_LN(); if(!SKIPPABLE_NL())
-                                            { MODE(STMT); if(this->canEmitNewline()) { RET(NEW_LINE); }}
-                                            FIND_NEW_LINE(); }
+                                            { MODE(STMT); if(this->canEmitNewline()) {
+    RET(NEW_LINE); }} FIND_NEW_LINE(); }
 
     <TYPE> "Func"            { RET_OR_COMP(FUNC); }
     <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
@@ -347,7 +347,7 @@ INIT:
     <TYPE> "("               { RET(PTYPE_OPEN); }
     <TYPE> ")"               { RET(PTYPE_CLOSE); }
     <TYPE> ":"               { RET(TYPE_MSEP); }
-    <TYPE> "!" / [^=~]       { RET(TYPE_OPT); }
+    <TYPE> "?"               { RET(TYPE_OPT); }
     <TYPE> ("=>" | "->")     { RET(TYPE_ARROW); }
 
     <PARAM> VAR_NAME         { MODE(EXPR); RET_OR_COMP(PARAM_NAME); }

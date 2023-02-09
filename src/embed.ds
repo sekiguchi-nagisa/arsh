@@ -15,15 +15,15 @@ function _DEF_SIGINT($s : Signal) {
 }
 
 # termination hook definition
-var TERM_HOOK : ((Int, Any) => Void)!
+var TERM_HOOK : ((Int, Any) => Void)?
 
 # completer hook definition
-var COMP_HOOK : Func<[String], [Module, [String], Int]>!
+var COMP_HOOK : Func<[String], [Module, [String], Int]>?
 
 # line editor instance for repl
 let LINE_EDIT : LineEditor
 
 # command fallback handler definition
-var CMD_FALLBACK : ((Module, String, [String]) -> Void)!
+var CMD_FALLBACK : ((Module, String, [String]) -> Void)?
 
 true

@@ -145,7 +145,7 @@ assert $? == 45
 
 $ex = 45
 try {
-    (if $false { $true as Bool!; } 
+    (if $false { $true as Bool?; } 
     else { fail 45; })
 } catch $e { $ex = $e; }
 $assertStatus(45, $ex, 149)

@@ -27,7 +27,7 @@ assert (true
 function(a 
 :
 Int
-!
+?
 )
 =>
 34
@@ -37,7 +37,7 @@ typedef HOGE
   aa
   :
   Int
-  !
+  ?
 ) {
   
 }
@@ -48,7 +48,7 @@ typedef HOGE
   34
   as
   Int
-  !
+  ?
  )
 
 ## [ ]

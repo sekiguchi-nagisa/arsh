@@ -4,16 +4,16 @@ var AAA = 'aaa'
 BBB() { echo BBB: $@; }
 
 var aaa = $MODULE._func('$AAA')
-assert $aaa is () -> Any!
+assert $aaa is () -> Any?
 assert $aaa()! as String == 'aaa'
 
 var bbb = $MODULE._func('BBB a b c')
-assert $bbb is () -> Any!
+assert $bbb is () -> Any?
 assert $bbb()! as Bool
 assert "$($bbb())" == 'BBB: a b c'
 
 var ccc = $MODULE._func('$bbb() as Void')
-assert $ccc is () -> Any!
+assert $ccc is () -> Any?
 assert ! $ccc()
 assert "$($ccc())" == 'BBB: a b c'
 

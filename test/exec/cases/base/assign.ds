@@ -143,7 +143,7 @@ $i2[0] := $getstr()
 assert $i2[0] == "check empty and assign"
 assert $icount == 4
 
-var i3 = [new Int!()]
+var i3 = [new Int?()]
 $i3[0] ??= 12
 assert $i3[0]! == 12
 $i3[0] ??= 100

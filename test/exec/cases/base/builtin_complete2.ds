@@ -161,8 +161,8 @@ $assertArray(['show', 'source', 'ss', 'ssum', 'status'], $(complete ' typedef AN
 $assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 && $aa.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 ? $aa.'))
-$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any!; $aa = "ss".toFloat()
-    $aa && $aa is Int ? $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any?; $aa = "ss".toFloat()
+    ($aa && $aa is Int) ? $aa.'))
 
 
 # type

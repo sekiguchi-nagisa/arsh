@@ -4,8 +4,8 @@ function scriptName() : typeof($@[0]) {
     return $0
 }
 
-function test($cond : typeof($true), $f : typeof($scriptName)) : String! {
-    return $cond == $TRUE ? $f() : new String!()
+function test($cond : typeof($true), $f : typeof($scriptName)) : String? {
+    return $cond == $TRUE ? $f() : new String?()
 }
 
 let path = $SCRIPT_DIR

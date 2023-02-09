@@ -1,5 +1,5 @@
 
-function f($s : Int!) : String {
+function f($s : Int?) : String {
     return case $s {
         0|1|2|!!3|4|5 => { return $s! as String; }
         6|7|(8)|9|10 -> { return (-$s!) as String; }
@@ -13,7 +13,7 @@ assert $f("8".toInt()) == "-8"
 assert $f("-1".toInt()) == "nothing"
 assert $f("hoge".toInt()) == "nothing"
 
-function ff(s : String!) : Int {
+function ff(s : String?) : Int {
     return case $s {
         'a' => 999
         $/\d/ => $s!.toInt()!
@@ -24,5 +24,5 @@ function ff(s : String!) : Int {
 assert $ff("23") == 23
 assert $ff('') == 0
 assert $ff('a') == 999
-assert $ff(new String!()) == 0
+assert $ff(new String?()) == 0
 

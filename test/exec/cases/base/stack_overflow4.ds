@@ -1,6 +1,6 @@
 #$test($status = 0)
 
-var ex : Any!
+var ex : Any?
 
 typedef Rec($a : String) {
     let value = $a
@@ -10,23 +10,23 @@ var rec = new Rec("hello record")
 $rec.next = $rec
 
 # to string
-$ex = new Any!()
+$ex = new Any?()
 try { $rec as String; assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError
 
 # to command argument
-$ex = new Any!()
+$ex = new Any?()
 try { echo $rec; assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError
 
-$ex = new Any!()
+$ex = new Any?()
 try { echo ${[$rec]}; assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError
 
 # string interpolation
-$ex = new Any!()
+$ex = new Any?()
 try { echo ${"$rec".chars()}; assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError
 
 # clear collection due to prevent memory leak
-$rec.next = new Rec!()
+$rec.next = new Rec?()

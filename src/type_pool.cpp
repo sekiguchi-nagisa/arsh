@@ -562,7 +562,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
     if (type->isFuncType()) {
       str += ")";
     }
-    str += "!";
+    str += "?";
     return str;
   }
 }

@@ -14,7 +14,7 @@ function fzf_search_list(q : String, list : [String]) : String {
 # CTRL-R
 $LINE_EDIT.action('fzf-hist-search', 'hist-select', function(s, b) => {
     var ret = $b ? $fzf_search_list($s, $b) : ""
-    $ret :- return new String!()
+    $ret :- return new String?()
 })
 $LINE_EDIT.bind("^R", 'fzf-hist-search')
 

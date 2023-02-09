@@ -778,9 +778,9 @@ TEST_F(IndexTest, udtype) {
 TEST_F(IndexTest, udtypeRec) {
   unsigned short modId;
   const char *content = R"E(
-    typedef AAA($n : AAA!) {
+    typedef AAA($n : AAA?) {
       let next = $n
-      typedef Next = Option<typeof(new AAA(new AAA!()))>
+      typedef Next = Option<typeof(new AAA(new AAA?()))>
     }
     new AAA(new AAA.Next()).next
 )E";
@@ -789,25 +789,25 @@ TEST_F(IndexTest, udtypeRec) {
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
-      Request{.modId = modId, .position = {.line = 3, .character = 49}}, // new AAA!()
-      {{modId, "(1:12~1:15)"}}));                                        // typedef AAA($n : AAA!)
+      Request{.modId = modId, .position = {.line = 3, .character = 49}}, // new AAA?()
+      {{modId, "(1:12~1:15)"}}));                                        // typedef AAA($n : AAA?)
   ASSERT_NO_FATAL_FAILURE(
       this->findDecl(Request{.modId = modId, .position = {.line = 5, .character = 23}}, // AAA.Next
                      {{modId, "(3:14~3:18)"}})); // typedef Next
 
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // typedef AAA($n : AAA!)
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, // typedef AAA($n : AAA?)
       {{modId, "(1:12~1:15)"},                                           // itself
-       {modId, "(1:21~1:24)"},                                           // $n : AAA!
-       {modId, "(3:39~3:42)"},                                           // new AAA(new AAA!())
-       {modId, "(3:47~3:50)"},                                           // new AAA!()
+       {modId, "(1:21~1:24)"},                                           // $n : AAA?
+       {modId, "(3:39~3:42)"},                                           // new AAA(new AAA?())
+       {modId, "(3:47~3:50)"},                                           // new AAA?()
        {modId, "(5:8~5:11)"},     //     new AAA(new AAA.Next()).next
        {modId, "(5:16~5:19)"}})); //     new AAA.Next()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = modId,
               .position = {.line = 3,
-                           .character = 17}}, // typedef Next = Option<typeof(new AAA(new AAA!()))>
+                           .character = 17}}, // typedef Next = Option<typeof(new AAA(new AAA?()))>
       {{modId, "(3:14~3:18)"},                // itself
        {modId, "(5:20~5:24)"}}));             //     new AAA(new AAA.Next()).next
 }
@@ -1163,18 +1163,18 @@ TEST_F(IndexTest, hover) {
       this->hover("typedef Interval { var begin = 34; }; var a = new Interval();\n$a",
                   Position{.line = 1, .character = 0}, "```ydsh\nvar a : Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
-                                      "Interval!(); }\nvar a = new Interval();",
+                                      "Interval?(); }\nvar a = new Interval();",
                                       Position{.line = 1, .character = 15}, R"(```ydsh
 typedef Interval(s : Int) {
     var n : Int
-    let value : Interval!
+    let value : Interval?
 }
 ```)"));
   ASSERT_NO_FATAL_FAILURE(this->hover(
-      "typedef Interval { var value = new Interval!(); }; var a = new Interval();\n$a.value",
-      Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval! for Interval\n```"));
+      "typedef Interval { var value = new Interval?(); }; var a = new Interval();\n$a.value",
+      Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval? for Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover(
-      "typedef Interval { var value = new Interval!(); }; var aaa = new [[Interval]]();\n$aaa",
+      "typedef Interval { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
       Position{.line = 1, .character = 2}, "```ydsh\nvar aaa : [[Interval]]\n```"));
 
   // user-defined method
@@ -1218,7 +1218,7 @@ TEST_F(IndexTest, hoverBuiltin) {
                                       "```ydsh\nfunction size() : Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice(p0 : Int, p1 : Int!) : String for String\n```"));
+                  "```ydsh\nfunction slice(p0 : Int, p1 : Int?) : String for String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {

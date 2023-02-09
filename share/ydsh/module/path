@@ -39,12 +39,12 @@ function dirname(s : String) : String {
     return $i == 0 ? "." : $s.slice(0, $i)
 }
 
-function tilde(s : String) : String! {
+function tilde(s : String) : String? {
     $s.startsWith('~') || return $s
 
     var b = $s.slice(1)
     var r = "$(echo ~$b 2>> /dev/null)"
-    return ($r.empty() || $r == $s) ? new String!() : $r
+    return ($r.empty() || $r == $s) ? new String?() : $r
 }
 
 let home = "$(echo ~)"

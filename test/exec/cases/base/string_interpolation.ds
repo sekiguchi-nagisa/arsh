@@ -49,10 +49,10 @@ assert "$STDIN" == $STDIN as String
 ## Array
 assert "${[12,34]}" == "12 34"
 assert "${[['a','b'],['c','d','e']]}" == "a b c d e"
-assert "${[34 as Int!, new Int!(), 89]}" == "34 89"
+assert "${[34 as Int?, new Int?(), 89]}" == "34 89"
 
 ## Map
-assert "${[23:34 as Int!, 900: new Int!()]}" == "23 34"
+assert "${[23:34 as Int?, 900: new Int?()]}" == "23 34"
 assert "${[12: 34,56:78]}".split(" ").sort().join(" ") == "12 34 56 78"
 
 ## Tuple
@@ -66,9 +66,9 @@ typedef AAA($a : Int, $b : String) {
 assert "${new AAA(-90, 'hey')}" == '-90 hey'
 assert "${new AAA(-90, '')}" == '-90 '
 
-typedef List($a : String, $n : List!) {
+typedef List($a : String, $n : List?) {
     let value = $a
     let next = $n
 }
-var list = new List("a b", new List("cc", new List!()))
+var list = new List("a b", new List("cc", new List?()))
 assert "$list" == 'a b cc'
