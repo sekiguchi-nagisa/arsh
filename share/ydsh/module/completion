@@ -4,16 +4,23 @@
 
 source $SCRIPT_DIR/path
 
-typedef Completer = typeof($COMP_HOOK!)
+function _default(words : [String], cursor : Int) : [String] {
+    complete -q -A file ${$cursor < $words.size() ? $words.peek() : ""}
+    return $COMPREPLY
+}
+
+typedef Completer = (Module, [String], Int) -> [String]!
 
 let _compMap : [String : Completer]
 
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String] {
-    command -v $words[0] &>> /dev/null || return new [String]()
-    var cmd = $basename($words[0])
-    $words[0] = $cmd
-    var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => new [String]()
-    return $comp($ctx, $words, $cursor)
+    if (command -v $words[0] &>> /dev/null) {
+        var cmd = $basename($words[0])
+        $words[0] = $cmd
+        var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => new [String]()
+        return $comp($ctx, $words, $cursor) ?? $_default($words, $cursor)
+    }
+    return $_default($words, $cursor)
 }
 
 # if $cmd is empty string, treat as fallback handler
@@ -90,7 +97,7 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String] {
+function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String]! {
     for def in $deflist {
         $opt == case $def.option.size() {
             0 => ""
@@ -130,7 +137,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             else => break
         }
     }
-    return new [String]()
+    return new [String]!()
 }
 
 let _bash_completion_dirs = [
@@ -161,13 +168,13 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 
 # Conceptually based on git-completion.tcsh 
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
-function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String] {
-    test -f $file || return new [String]()
+function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String]! {
+    test -f $file || return new [String]!()
     if !(test -f $BASH_COMPLETION_PATH) {
         $BASH_COMPLETION_PATH = 
             for path in $_bash_completion_paths {
                 test -f $path && break $path
-            } ?? return new [String]()
+            } ?? return new [String]!()
     }
 
     let script = '
@@ -205,7 +212,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
             $ret[$i] += '/'
         }
     }
-    return $ret
+    return $ret.empty() ? new [String]!() : $ret
 }
 
 # for lazy loading bash completion script
@@ -232,10 +239,10 @@ function _comp_autoload(cmd : String) : String! {
     return new String!()
 }
 
-function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String] {
+function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]! {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? {
-        $cmd = $_comp_autoload($cmd) ?? return new [String]()
+        $cmd = $_comp_autoload($cmd) ?? return new [String]!()
         $_compdefMap[$cmd]
     }
     if $deflist[0].type == 3 {
