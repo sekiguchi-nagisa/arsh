@@ -308,6 +308,10 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
     errno = EINTR;
     return -1;
   }
+  if (ret.isInvalid()) {
+    errno = EINVAL;
+    return -1;
+  }
   unsigned int size = typeAs<ArrayObject>(ret).size();
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
     consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG_NO_QUOTE);

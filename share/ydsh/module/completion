@@ -4,23 +4,18 @@
 
 source $SCRIPT_DIR/path
 
-function _default(words : [String], cursor : Int) : [String] {
-    complete -q -A file ${$cursor < $words.size() ? $words.peek() : ""}
-    return $COMPREPLY
-}
-
 typedef Completer = (Module, [String], Int) -> [String]?
 
 let _compMap : [String : Completer]
 
-function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String] {
+function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String]? {
     if (command -v $words[0] &>> /dev/null) {
         var cmd = $basename($words[0])
         $words[0] = $cmd
-        var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => new [String]()
-        return $comp($ctx, $words, $cursor) ?? $_default($words, $cursor)
+        var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => $none
+        return $comp($ctx, $words, $cursor)
     }
-    return $_default($words, $cursor)
+    return $none
 }
 
 # if $cmd is empty string, treat as fallback handler
@@ -341,6 +336,6 @@ compdef() {
     $deflist.add(new _CompDef($opt, $argType, $arg))
 }
 
-function compDelegate(ctx : Module, words : [String], cursor : Int) : [String] {
+function compDelegate(ctx : Module, words : [String], cursor : Int) : [String]? {
     return $_defaultHook($ctx, $words, $cursor)
 }

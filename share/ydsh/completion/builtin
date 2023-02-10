@@ -2,7 +2,7 @@
 
 source $SCRIPT_DIR/../module/completion
 
-function _cmd($ctx : Module, $t : [String], $c : Int) : [String] {
+function _cmd($ctx : Module, $t : [String], $c : Int) : [String]? {
     if $t.size() == 1 || $c == 1{
         var actions = case $t[0] {
             'command' => ['-A', 'builtin', '-A', 'external']

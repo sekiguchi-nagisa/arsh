@@ -2,7 +2,7 @@
 
 source $SCRIPT_DIR/../module/completion
 
-function _sudo($ctx : Module, $t : [String], $c : Int) : [String] {
+function _sudo($ctx : Module, $t : [String], $c : Int) : [String]? {
     for(var i = 1; $i < $t.size(); $i++) {
         var v = $t[$i]
         case $v {
