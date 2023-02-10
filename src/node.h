@@ -337,7 +337,8 @@ inline std::unique_ptr<TypeNode> newErrorTypeNode() {
   OP(Int)                                                                                          \
   OP(Float)                                                                                        \
   OP(Signal)                                                                                       \
-  OP(Bool)
+  OP(Bool)                                                                                         \
+  OP(None) /* for dummy value */
 
 class NumberNode : public WithRtti<Node, NodeKind::Number> {
 public:
@@ -401,6 +402,16 @@ public:
   static std::unique_ptr<NumberNode> newBool(Token token, bool value) {
     auto node = std::make_unique<NumberNode>(token, Bool);
     node->intValue = value ? 1 : 0;
+    return node;
+  }
+
+  /**
+   * for constant expression
+   * @param token
+   * @return
+   */
+  static std::unique_ptr<NumberNode> newNone(Token token) {
+    auto node = std::make_unique<NumberNode>(token, None);
     return node;
   }
 

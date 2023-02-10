@@ -111,3 +111,7 @@ var dummy = new Nothing?()
 assert $dummy is Nothing?
 $no = $dummy
 assert ! $no
+
+assert $NONE is Nothing?
+assert $None is Nothing?
+assert $none is Nothing?

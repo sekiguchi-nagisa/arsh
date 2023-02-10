@@ -383,6 +383,7 @@ struct ConstEntry {
     INT,
     BOOL,
     SIG,
+    NONE,
   };
 
   union {

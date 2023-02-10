@@ -11,7 +11,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         '#', '$', '0', '?', '@',
         'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
         'DIRSTACK', 'DYNA_UDCS', 'EUID', 'FALSE', 'False', 'IFS', 'LINE_EDIT', 'MACHTYPE', 
-        'MODULE', 'MODULE_DIR', 'MODULE_HOME',
+        'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None',
         'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
         'SIGABRT', 'SIGALRM', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP',
@@ -20,7 +20,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'SIG_DFL', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
         'TRUE', 'True', 'UID', 'YDSH_BIN', 'YDSH_VERSION',
-        'assertArray', 'false', 'reply', 'true', 'types',
+        'assertArray', 'false', 'none', 'reply', 'true', 'types',
     ]
 
     $assertArray($gvars, $(complete '$'))

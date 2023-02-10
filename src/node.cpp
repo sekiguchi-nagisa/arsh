@@ -146,6 +146,7 @@ void NumberNode::dump(NodeDumper &dumper) const {
   case Int:
   case Signal:
   case Bool:
+  case None:
     DUMP(intValue);
     break;
   case Float:

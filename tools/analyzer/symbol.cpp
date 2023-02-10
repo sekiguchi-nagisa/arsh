@@ -192,6 +192,9 @@ std::string toString(ConstEntry entry) {
     value += std::to_string(static_cast<unsigned int>(entry.data.v));
     value += ")";
     break;
+  case ConstEntry::NONE:
+    value += "new Nothing?()";
+    break;
   }
   return value;
 }

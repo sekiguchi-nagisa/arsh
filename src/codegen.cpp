@@ -476,6 +476,9 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
   case NumberNode::Bool: // normally unreachable
     this->emit0byteIns(node.getIntValue() ? OpCode::PUSH_TRUE : OpCode::PUSH_FALSE);
     break;
+  case NumberNode::None: // normally unreachable
+    this->emit0byteIns(OpCode::PUSH_INVALID);
+    break;
   }
 }
 
@@ -549,6 +552,9 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
       break;
     case ConstEntry::SIG:
       this->emit1byteIns(OpCode::PUSH_SIG, entry.data.v);
+      break;
+    case ConstEntry::NONE:
+      this->emit0byteIns(OpCode::PUSH_INVALID);
       break;
     }
   } else {

@@ -25,6 +25,8 @@
 - add ``Array#removeRange`` method
     - remove elements by specified range
 - add ``String#quote`` method for generate string that is used as command argument
+- add ``Nothing?`` type constants for invalid value of option type
+    - ``NONE``, ``None``, ``none``
 
 #### Module
 

@@ -606,10 +606,13 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
     node.setType(this->typePool.get(TYPE::Float));
     break;
   case NumberNode::Signal:
-    node.setType(this->typePool.get(TYPE::Signal));
+    node.setType(this->typePool.get(TYPE::Signal)); // for constant expression
     break;
   case NumberNode::Bool:
-    node.setType(this->typePool.get(TYPE::Bool)); // normally unreachable
+    node.setType(this->typePool.get(TYPE::Bool)); // for constant expression
+    break;
+  case NumberNode::None:
+    node.setType(this->typePool.get(TYPE::OptNothing)); // for constant expression
     break;
   }
 }
@@ -1433,7 +1436,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   }
   case NodeKind::Embed: {
     auto &embedNode = cast<EmbedNode>(node);
-    if (!embedNode.getHandle()) {
+    if (!embedNode.getHandle() && !embedNode.isUntyped() && embedNode.getType().is(TYPE::String)) {
       return this->evalConstant(embedNode.getExprNode());
     }
     break;
@@ -1472,6 +1475,9 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         break;
       case ConstEntry::Kind::SIG:
         constNode = NumberNode::newSignal(token, static_cast<int>(v));
+        break;
+      case ConstEntry::Kind::NONE:
+        constNode = NumberNode::newNone(token);
         break;
       }
       this->checkTypeAsExpr(*constNode);

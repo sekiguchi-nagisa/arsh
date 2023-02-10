@@ -66,6 +66,7 @@ enum class TYPE : unsigned int {
   Command,
   LineEditor,
   StringArray, // for command argument
+  OptNothing,  // for dummy invalid value
 
   ArithmeticError,
   OutOfRangeError,

@@ -137,7 +137,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             else => break
         }
     }
-    return new [String]?()
+    return $none
 }
 
 let _bash_completion_dirs = [
@@ -155,7 +155,7 @@ function findBashCompScript(name : String) : String? {
         var path = $dir + $name
         test -f $path && return $path
     }
-    return new String?()
+    return $none
 }
 
 let _bash_completion_paths = [
@@ -169,12 +169,12 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 # Conceptually based on git-completion.tcsh 
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
 function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String]? {
-    test -f $file || return new [String]?()
+    test -f $file || return $none
     if !(test -f $BASH_COMPLETION_PATH) {
         $BASH_COMPLETION_PATH = 
             for path in $_bash_completion_paths {
                 test -f $path && break $path
-            } ?? return new [String]?()
+            } ?? return $none
     }
 
     let script = '
@@ -212,12 +212,12 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
             $ret[$i] += '/'
         }
     }
-    return $ret.empty() ? new [String]?() : $ret
+    return $ret.empty() ? $none : $ret as [String]?
 }
 
 # for lazy loading bash completion script
 function _comp_autoload(cmd : String) : String? {
-    var path = $findBashCompScript($cmd) ?? return new String?()
+    var path = $findBashCompScript($cmd) ?? return $none
 
     # find actual completion target
     var target = for line in $STDIN {
@@ -236,13 +236,13 @@ function _comp_autoload(cmd : String) : String? {
     if $target {
         eval compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
     }
-    return new String?()
+    return $none
 }
 
 function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]? {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? {
-        $cmd = $_comp_autoload($cmd) ?? return new [String]?()
+        $cmd = $_comp_autoload($cmd) ?? return $none
         $_compdefMap[$cmd]
     }
     if $deflist[0].type == 3 {

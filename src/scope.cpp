@@ -160,6 +160,9 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
   case ConstEntry::SIG:
     typeId = TYPE::Signal;
     break;
+  case ConstEntry::NONE:
+    typeId = TYPE::OptNothing;
+    break;
   }
   auto handle = HandlePtr::create(static_cast<unsigned int>(typeId), entry.u32,
                                   HandleKind::SMALL_CONST, attr, this->modId);

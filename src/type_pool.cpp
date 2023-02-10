@@ -92,6 +92,13 @@ TypePool::TypePool() {
     assert(checked);
   }
 
+  // init optional nothing type (for dummy invalid value)
+  {
+    auto checked = this->createOptionType(this->get(TYPE::Nothing));
+    (void)checked;
+    assert(checked);
+  }
+
   // init some error type
   this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
   this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");

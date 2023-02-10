@@ -250,6 +250,13 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bindSmallConst("False", ConstEntry::Kind::BOOL, 0);
   binder.bindSmallConst("false", ConstEntry::Kind::BOOL, 0);
 
+  /**
+   * must be Nothing?
+   */
+  binder.bindSmallConst("NONE", ConstEntry::Kind::NONE, 0);
+  binder.bindSmallConst("None", ConstEntry::Kind::NONE, 0);
+  binder.bindSmallConst("none", ConstEntry::Kind::NONE, 0);
+
   // signal constants (POSIX.1-1990 standard)
   auto *signalPairs = getSignalList();
   for (unsigned int i = 0; signalPairs[i].name; i++) {
