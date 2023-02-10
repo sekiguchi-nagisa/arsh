@@ -51,6 +51,7 @@
     - now abbreviate as ``T?``
 - show stack trace of ignored exceptions within finally/defer block
 - imporve some semantic error messages
+- allow ``Nothing?`` type
 
 #### Builtin
 

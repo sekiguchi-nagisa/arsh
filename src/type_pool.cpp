@@ -230,7 +230,7 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
     RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName().c_str(), 1, size);
   }
   auto *elementType = elementTypes[0];
-  if (elementType->isVoidType() || elementType->isNothingType()) {
+  if (elementType->isVoidType()) {
     RAISE_TL_ERROR(InvalidElement, elementType->getName());
   } else if (elementType->isOptionType()) {
     return Ok(elementType);

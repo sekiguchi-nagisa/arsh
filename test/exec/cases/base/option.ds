@@ -104,3 +104,10 @@ assert $no is Int??
 assert $no is Option<Int?>??
 assert $no! == 34
 assert ! ([new Int??()].get(0))
+
+# Nothing option
+assert new Nothing?() is Int?
+var dummy = new Nothing?()
+assert $dummy is Nothing?
+$no = $dummy
+assert ! $no
