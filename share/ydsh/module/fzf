@@ -2,20 +2,66 @@
 
 # for fzf key binding
 
-function fzf_search_list(q : String, list : [String]) : String {
-    command -v fzf &>> /dev/null || return ""
+function _fzf_search_list(q : String, list : [String]?) : String? {
+    command -v fzf &>> /dev/null || return $none
+    $list || return $none
+
+    importenv FZF_DEFAULT_OPTS : ""
+    importenv FZF_CTRL_R_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $FZF_CTRL_R_OPTS +m"
+
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
-    return "$(for $e in $list {
+    var ret = "$(for e in $list! {
         echo $e
-    } | sort | uniq | fzf --inline-info $arg)"
+    } | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
+    return $ret.empty() ? $none : $ret as String?
+}
+
+function _fzf_select_files(q : String, list : [String]?) : String? {
+    command -v fzf &>> /dev/null || return $none
+
+    importenv FZF_DEFAULT_OPTS : ""
+    importenv FZF_CTRL_T_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS -m"
+
+    var ret = ""
+    find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
+        -prune \
+        -o -type f -print \
+        -o -type d -print \
+        -o -type l -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
+        for line in $STDIN {
+            $ret += $line.quote()
+            $ret += ' '
+        }
+    return $ret.empty() ? $none : $ret as String?
+}
+
+function _fzf_cd(q : String, list : [String]?) : String? {
+    command -v fzf &>> /dev/null || return $none
+
+    importenv FZF_DEFAULT_OPTS : ""
+    importenv FZF_ALT_C_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_ALT_C_OPTS +m"
+
+    var line = "$(find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
+        -prune \
+        -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt fzf)"
+    if $line.empty() {
+        return $none
+    }
+    return "command cd -- ${$line.quote()}"
 }
 
 # CTRL-R
-$LINE_EDIT.action('fzf-hist-search', 'hist-select', function(s, b) => {
-    var ret = $b ? $fzf_search_list($s, $b) : ""
-    $ret :- return new String?()
-})
+$LINE_EDIT.action('fzf-hist-search', 'hist-select', $_fzf_search_list)
 $LINE_EDIT.bind("^R", 'fzf-hist-search')
 
-# FIXME: CTRL-T (select path), ALT-C (cd selected directory)
+# CTRL-T
+$LINE_EDIT.action('fzf-select-files', 'insert', $_fzf_select_files)
+$LINE_EDIT.bind('^T', 'fzf-select-files')
+
+# ALT-C
+$LINE_EDIT.action('fzf-cd', 'replace-whole-accept', $_fzf_cd)
+$LINE_EDIT.bind('^[c', 'fzf-cd')

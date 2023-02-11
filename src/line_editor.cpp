@@ -1570,18 +1570,19 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
-    case EditActionType::CUSTOM:
-      if (this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex)) {
-        this->refreshLine(l);
-        if (action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
-          histRotate.revertAll();
-          return this->accept(state, l);
-        }
+    case EditActionType::CUSTOM: {
+      bool r =
+          this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex);
+      this->refreshLine(l); // always refresh line even if error
+      if (r && action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
+        histRotate.revertAll();
+        return this->accept(state, l);
       } else if (state.hasError()) {
         errno = EAGAIN;
         return -1;
       }
       break;
+    }
     }
   }
   return static_cast<int>(l.len);
@@ -1848,7 +1849,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   case CustomActionType::HIST_SELCT: {
     if (type == CustomActionType::HIST_SELCT) {
       if (!this->history) {
-        return true;
+        return false;
       }
       optArg = this->history;
     }
@@ -1868,7 +1869,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     return false;
   }
   if (ret.isInvalid()) {
-    return true;
+    return false;
   }
   assert(ret.hasStrRef());
   switch (type) {

@@ -32,6 +32,7 @@
 
 - add ``fzf`` module for ``fzf`` integration
     - now ``CTRL-R`` action (history search) is defined as custom action in this module
+    - also support ``CTRL-T``, ``ALT-C`` keybind
 
 ### Changed
 

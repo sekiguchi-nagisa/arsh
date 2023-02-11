@@ -164,7 +164,7 @@ private:
    * @param type
    * @param index
    * @return
-   * if has error or insertion failed, return false
+   * if has error or does not insert, return false
    */
   bool kickCustomCallback(DSState &state, struct linenoiseState &l, CustomActionType type,
                           unsigned int index);
