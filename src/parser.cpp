@@ -568,7 +568,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
       auto ctx = this->inSkippableNLCtx();
 
       this->expect(TokenKind::PTYPE_OPEN, false); // always success
-      this->pushLexerMode(yycSTMT);
+      this->pushLexerMode(LexerMode(yycSTMT, true));
 
       unsigned int startPos = token.pos;
       auto exprNode(TRY(this->parse_expression()));
@@ -985,7 +985,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
   if (CUR_KIND() == TokenKind::LP) { // for
     auto ctx = this->inSkippableNLCtx();
 
-    this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
+    this->expectAndChangeMode(TokenKind::LP, LexerMode(yycSTMT, true)); // always success
 
     auto initNode = TRY(this->parse_statementImpl());
     TRY(this->expect(TokenKind::LINE_END));

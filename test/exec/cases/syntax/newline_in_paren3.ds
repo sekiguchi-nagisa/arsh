@@ -1,0 +1,17 @@
+
+for 
+ (
+    false
+    ;
+
+      true
+      ;
+
+      fase
+ ) {
+    break
+ }
+
+ assert $true is typeof(
+   true
+ )

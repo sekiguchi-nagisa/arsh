@@ -76,6 +76,7 @@
 - broken analyzer state when reuse analyzer instance
 - add workaround for running under screen/tmux
     - disable character width detection
+- fix skippable newline handling in ``for``, ``typeof``
 
 ## [0.28.1] - 2023-01-04
 
