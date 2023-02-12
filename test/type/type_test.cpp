@@ -251,9 +251,9 @@ TEST_F(TypeTest, typeToken) {
       this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Func)));
+      this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<String_t, Int_t, Float_t>>(),
-                                                this->pool.get(TYPE::Func)));
+                                                this->pool.get(TYPE::Any)));
 }
 
 TEST_F(TypeTest, api) {

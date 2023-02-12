@@ -474,10 +474,10 @@ TEST_F(ScopeTest, block) { // for top level block
   ASSERT_EQ(0, block0->getCurLocalIndex());
   ASSERT_EQ(3, block0->getMaxLocalVarIndex());
 
-  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Func), HandleAttr{});
+  ret = block0->defineHandle("AAA", this->pool.get(TYPE::Any), HandleAttr{});
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
-          .type = TYPE::Func,
+          .type = TYPE::Any,
           .index = 0,
           .kind = HandleKind::VAR,
           .attr = HandleAttr{},

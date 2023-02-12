@@ -5,7 +5,6 @@ function func($x: Int) : Int {
 # type inheritance of function
 assert($func is Func<Int, [Int]>)
 assert($func is Any)
-assert($func is Func) # function base type
 
 # apply function object
 function call() {

@@ -123,8 +123,9 @@ private:
   // for reified type
   TypeTemplate arrayTemplate;
   TypeTemplate mapTemplate;
-  TypeTemplate tupleTemplate;
-  TypeTemplate optionTemplate;
+  TypeTemplate tupleTemplate;  // pseudo template
+  TypeTemplate optionTemplate; // pseudo template
+  TypeTemplate funcTemplate;   // pseudo template
 
   /**
    * for type template

@@ -81,7 +81,7 @@ DEFINE_TCError(InsideFinally, "no-return expressions (break, continue, return, t
 DEFINE_TCError(InsideChild, "some no-return expression (break, continue, return) "
                             "are not allowed inside sub-shell");
 DEFINE_TCError(OutsideToplevel, "%s is only available in top-level");
-DEFINE_TCError(NotCallable, "Func type object is not directly callable");
+DEFINE_TCError(NotCallable, "`%s' type expression is not callable, must be function type");
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");
 DEFINE_TCError(LocalLimit, "number of local variables reaches limit");

@@ -1007,6 +1007,7 @@ std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elem
 #define GEN_BIND(ENUM) binds.push_back(new TypeBind(HandleInfo::ENUM));
   EACH_HANDLE_INFO_TYPE(GEN_BIND)
   EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
+  EACH_HANDLE_INFO_FUNC_TYPE(GEN_BIND)
 #undef GEN_BIND
 
   for (const std::unique_ptr<Element> &element : elements) {

@@ -58,7 +58,6 @@ enum class TYPE : unsigned int {
   Signals,
   Error,
   Job,
-  Func,
   Module,
   StringIter,
   FD, // for Unix file descriptor

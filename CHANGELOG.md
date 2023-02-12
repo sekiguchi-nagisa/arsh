@@ -53,6 +53,7 @@
         - after call user-defined completer, does not complete file names if result is empty
 - **Breaking Change**: change abbreviate notation of ``Option`` type
     - now abbreviate as ``T?``
+- **Breaking Change**: remove ``Func`` type (base type of function type) due to unused
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

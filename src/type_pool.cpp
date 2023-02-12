@@ -60,7 +60,6 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
   this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());
   this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
-  this->initBuiltinType(TYPE::Func, "Func", false, TYPE::Any, info_Dummy());
   this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", false, TYPE::Any, info_FDType());
@@ -69,19 +68,16 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
 
   // initialize type template
-  std::vector<const DSType *> elements = {&this->get(TYPE::Any)};
-  this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());
+  this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, {&this->get(TYPE::Any)},
+                         info_ArrayType());
+  this->initTypeTemplate(this->mapTemplate, TYPE_MAP,
+                         {&this->get(TYPE::Value_), &this->get(TYPE::Any)}, info_MapType());
 
-  elements = {&this->get(TYPE::Value_), &this->get(TYPE::Any)};
-  this->initTypeTemplate(this->mapTemplate, TYPE_MAP, std::move(elements), info_MapType());
+  this->initTypeTemplate(this->tupleTemplate, TYPE_TUPLE, {}, info_TupleType());
 
-  elements = std::vector<const DSType *>();
-  this->initTypeTemplate(this->tupleTemplate, TYPE_TUPLE, std::move(elements),
-                         info_TupleType()); // pseudo template.
+  this->initTypeTemplate(this->optionTemplate, TYPE_OPTION, {}, info_OptionType());
 
-  elements = std::vector<const DSType *>();
-  this->initTypeTemplate(this->optionTemplate, TYPE_OPTION, std::move(elements),
-                         info_OptionType()); // pseudo template
+  this->initTypeTemplate(this->funcTemplate, TYPE_FUNC, {}, info_FuncType());
 
   // init string array type(for command argument)
   {
@@ -283,7 +279,7 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
   std::string typeName(toFunctionTypeName(returnType, paramTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    type = this->newType<FunctionType>(typeName, this->get(TYPE::Func), returnType,
+    type = this->newType<FunctionType>(typeName, this->get(TYPE::Any), returnType,
                                        std::move(paramTypes));
     assert(type);
   }

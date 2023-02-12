@@ -1,7 +1,0 @@
-#$test($result = 'type', $lineNum = 7, $chars = 5, $errorKind = 'UnmatchParam', $status = 1)
-
-function str($a : Int) : String {
-    return $a as String
-}
-
-$str(2, 3)
