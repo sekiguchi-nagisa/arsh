@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $errorKind = 'Required', $lineNum = 8, $chars = 8, $status = 1)
+
+function 
+  ()
+: \
+Int
+    => {}

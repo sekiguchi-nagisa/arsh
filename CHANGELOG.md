@@ -79,6 +79,7 @@
 - add workaround for running under screen/tmux
     - disable character width detection
 - fix skippable newline handling in ``for``, ``typeof``
+- fix error line marker of empty block anonymous functions
 
 ## [0.28.1] - 2023-01-04
 

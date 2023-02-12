@@ -1884,7 +1884,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
       std::unique_ptr<Node> lastNode;
       if (blockNode.getNodes().empty() || blockNode.getNodes().back()->getType().isVoidType() ||
           this->funcCtx->getVoidReturnCount() > 0) {
-        lastNode = std::make_unique<EmptyNode>();
+        lastNode = std::make_unique<EmptyNode>(blockNode.getToken());
         lastNode->setType(this->typePool.get(TYPE::Void));
       } else {
         lastNode = std::move(blockNode.refNodes().back());
@@ -1896,7 +1896,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
     }
   }
   if (!blockNode.getType().isNothingType()) {
-    this->reportError<UnfoundReturn>(blockNode);
+    this->reportError<UnfoundReturn>(node.getNameInfo().getToken(), node.getFuncName().c_str());
   }
 
   // resolve common return type
@@ -2144,7 +2144,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     if (node.getBlockNode().getNodes().empty() ||
         !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
       if (returnType->isNothingType()) {
-        this->reportError<UnfoundReturn>(node.getBlockNode());
+        this->reportError<UnfoundReturn>(node.getNameInfo().getToken(), node.getCmdName().c_str());
       } else {
         unsigned int lastPos = node.getBlockNode().getToken().endPos();
         auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");

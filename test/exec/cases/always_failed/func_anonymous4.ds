@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $errorKind = 'Required', $lineNum = 4, $chars = 25, $status = 1)
+
+function () : String => ({})

@@ -68,7 +68,7 @@ DEFINE_TCError(IllegalStrEscape, "illegal escape sequence: `%s'");
 DEFINE_TCError(OutOfRangeInt, "out of range Int literal, must be INT64");
 DEFINE_TCError(OutOfRangeFloat, "out of range Float literal, must be FP64");
 DEFINE_TCError(InsideLoop, "only available inside loop (for, while, do-while)");
-DEFINE_TCError(UnfoundReturn, "not found return expression");
+DEFINE_TCError(UnfoundReturn, "`%s' needs return expression");
 DEFINE_TCError(Unreachable, "unreachable code");
 DEFINE_TCError(InsideFunc, "only available inside function or user-defined command");
 DEFINE_TCError(NotNeedExpr, "not return `Void' type expression");
