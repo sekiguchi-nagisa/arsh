@@ -2,13 +2,13 @@
 
 # for fzf key binding
 
-function _fzf_search_list(q : String, list : [String]?) : String? {
+function _fzf_search_hist(q : String, list : [String]?) : String? {
     command -v fzf &>> /dev/null || return $none
     $list || return $none
 
     importenv FZF_DEFAULT_OPTS : ""
-    importenv FZF_CTRL_R_OPTS : ""
-    var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $FZF_CTRL_R_OPTS +m"
+    importenv FZF_SEARCH_HIST_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $FZF_SEARCH_HIST_OPTS +m"
 
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
@@ -22,8 +22,8 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
     command -v fzf &>> /dev/null || return $none
 
     importenv FZF_DEFAULT_OPTS : ""
-    importenv FZF_CTRL_T_OPTS : ""
-    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS -m"
+    importenv FZF_SELECT_FILES_OPTS : "--preview 'cat {}'"
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_SELECT_FILES_OPTS -m"
 
     var ret = ""
     find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
@@ -42,8 +42,8 @@ function _fzf_cd(q : String, list : [String]?) : String? {
     command -v fzf &>> /dev/null || return $none
 
     importenv FZF_DEFAULT_OPTS : ""
-    importenv FZF_ALT_C_OPTS : ""
-    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_ALT_C_OPTS +m"
+    importenv FZF_CD_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CD_OPTS +m"
 
     var line = "$(find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
@@ -55,8 +55,8 @@ function _fzf_cd(q : String, list : [String]?) : String? {
 }
 
 # CTRL-R
-$LINE_EDIT.action('fzf-hist-search', 'hist-select', $_fzf_search_list)
-$LINE_EDIT.bind("^R", 'fzf-hist-search')
+$LINE_EDIT.action('fzf-search-hist', 'hist-select', $_fzf_search_hist)
+$LINE_EDIT.bind("^R", 'fzf-search-hist')
 
 # CTRL-T
 $LINE_EDIT.action('fzf-select-files', 'insert', $_fzf_select_files)
