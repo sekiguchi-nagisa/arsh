@@ -57,6 +57,7 @@
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type
+- complete ``typeof`` keyword in type name completion
 
 #### Builtin
 

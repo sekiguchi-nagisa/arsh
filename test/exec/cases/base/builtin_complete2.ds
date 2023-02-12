@@ -172,7 +172,7 @@ var types = [
     'LineEditor', "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex',  'RegexMatchError', 'RegexSyntaxError', 'Signal', 'Signals',
     'StackOverflowError', 'String', 'SystemError',  'TildeError', 'Tuple', 'TypeCastError',
-    'UnixFD', 'UnwrappingError', 'Void'
+    'UnixFD', 'UnwrappingError', 'Void', 'typeof',
 ]
 
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))

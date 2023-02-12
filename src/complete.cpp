@@ -491,6 +491,11 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
       consumer(name, CompCandidateKind::TYPE);
     }
   }
+
+  // typeof
+  if (StringRef name = "typeof"; name.startsWith(word)) {
+    consumer(name, CompCandidateKind::TYPE);
+  }
 }
 
 static bool hasCmdArg(const CmdNode &node) {
