@@ -167,9 +167,7 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   lexer.setTriviaStore(makeObserver(*this));
   Parser parser(lexer);
   parser.setTracker(this);
-  while (parser && !parser.hasError()) {
-    parser();
-  }
+  parser();
   if (parser.hasError()) {
     return std::move(parser).takeError();
   }

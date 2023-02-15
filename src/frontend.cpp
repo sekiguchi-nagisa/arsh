@@ -43,19 +43,32 @@ FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, Fro
   this->curScope()->clearLocalSize();
 }
 
-std::unique_ptr<Node> FrontEnd::tryToParse() {
-  std::unique_ptr<Node> node;
-  if (this->parser()) {
-    node = this->parser()();
-    if (this->parser().hasError()) {
+bool FrontEnd::tryToParse() {
+  auto &ctx = this->contexts.back();
+  if (ctx->nodes.empty()) {
+    Parser parser(*ctx->lexer, hasFlag(ctx->option, FrontEndOption::SINGLE_EXPR), ctx->ccHandler);
+    ctx->nodes = parser();
+    assert(!ctx->nodes.empty());
+    if (parser.hasError()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
-      this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
+      this->listener &&this->listener->handleParseError(this->contexts, parser.getError());
       if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
-        auto token = this->parser().getError().getErrorToken();
-        this->parser().forceTerminate();
-        node = std::make_unique<ErrorNode>(token);
+        parser.forceTerminate();
+      } else {
+        return false;
       }
-    } else if (this->uastDumper) {
+    }
+  }
+  return true;
+}
+
+std::unique_ptr<Node> FrontEnd::takeNode() {
+  auto &ctx = this->contexts.back();
+  std::unique_ptr<Node> node;
+  if (auto &nodes = ctx->nodes; ctx->nodeIndex < nodes.size()) {
+    node = std::move(nodes[ctx->nodeIndex]);
+    ctx->nodeIndex++;
+    if (this->uastDumper) {
       this->uastDumper(*node);
     }
   }
@@ -97,10 +110,10 @@ FrontEndResult FrontEnd::operator()() {
 
     // parse
     if (!ret.node) {
-      ret.node = this->tryToParse();
-      if (this->parser().hasError()) {
+      if (!this->tryToParse()) {
         return FrontEndResult::failed();
       }
+      ret.node = this->takeNode();
     }
 
     if (!ret.node) { // when parse reach EOS

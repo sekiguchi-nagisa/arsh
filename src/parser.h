@@ -76,10 +76,6 @@ private:
 
   std::unique_ptr<Node> incompleteNode; // for code completion
 
-  std::unique_ptr<Node> remainNode;
-
-  bool remain{false};
-
   bool inStmtCompCtx{false};
 
   const bool singleExpr;
@@ -92,16 +88,15 @@ public:
 
   ~Parser() = default;
 
-  std::unique_ptr<Node> operator()();
+  std::vector<std::unique_ptr<Node>> operator()();
 
-  explicit operator bool() const { return this->remain || this->curKind != TokenKind::EOS; }
+  explicit operator bool() const { return this->curKind != TokenKind::EOS; }
 
-  bool hasError() const { return ParserBase::hasError() && !this->remain; }
+  bool hasError() const { return ParserBase::hasError(); }
 
   void forceTerminate() { // FIXME: temporal api, must be implement proper error recovery
     this->clear();
     this->curKind = TokenKind::EOS;
-    this->remain = false;
   }
 
 protected:

@@ -71,17 +71,19 @@ class FrontEnd {
 public:
   struct Context {
     LexerPtr lexer;
-    Parser parser;
     TypeChecker checker;
     NameScopePtr scope;
     std::unique_ptr<SourceListNode> srcListNode;
+    std::vector<std::unique_ptr<Node>> nodes;
+    ObserverPtr<CodeCompletionHandler> ccHandler;
+    unsigned int nodeIndex{0};
+    FrontEndOption option;
 
     Context(const SysConfig &config, TypePool &pool, LexerPtr lexer, NameScopePtr scope,
             FrontEndOption option, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
         : lexer(std::move(lexer)),
-          parser(*this->lexer, hasFlag(option, FrontEndOption::SINGLE_EXPR), ccHandler),
           checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
-          scope(std::move(scope)) {
+          scope(std::move(scope)), ccHandler(ccHandler), option(option) {
       this->checker.setCodeCompletionHandler(ccHandler);
     }
   };
@@ -164,7 +166,8 @@ public:
   }
 
   explicit operator bool() const {
-    return static_cast<bool>(this->parser()) || this->contexts.size() > 1 ||
+    auto &ctx = this->contexts.back();
+    return ctx->nodes.empty() || ctx->nodeIndex < ctx->nodes.size() || this->contexts.size() > 1 ||
            this->hasUnconsumedPath();
   }
 
@@ -175,10 +178,6 @@ public:
   void teardownASTDump();
 
 private:
-  Parser &parser() { return this->contexts.back()->parser; }
-
-  const Parser &parser() const { return this->contexts.back()->parser; }
-
   TypeChecker &checker() { return this->contexts.back()->checker; }
 
   /**
@@ -193,7 +192,18 @@ private:
 
   const NameScopePtr &curScope() const { return this->contexts.back()->scope; }
 
-  std::unique_ptr<Node> tryToParse();
+  /**
+   * @return
+   * if has error, return false
+   */
+  bool tryToParse();
+
+  /**
+   *
+   * @return
+   * if reach end, return null
+   */
+  std::unique_ptr<Node> takeNode();
 
   bool tryToCheckType(std::unique_ptr<Node> &node);
 

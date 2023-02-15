@@ -203,8 +203,9 @@ public:
     Parser parser(lexer);
     auto rootNode = parser();
     ASSERT_FALSE(parser.hasError());
+    ASSERT_EQ(1, rootNode.size());
 
-    std::vector<std::string> actualTokens = PrettyPrinter(lexer)(*rootNode);
+    std::vector<std::string> actualTokens = PrettyPrinter(lexer)(*rootNode.back());
     std::vector<std::string> expectedTokens = tokenize(expected);
 
     this->equalsTokens(expectedTokens, actualTokens);

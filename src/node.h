@@ -2385,9 +2385,16 @@ private:
   std::vector<std::unique_ptr<Node>> nodes;
 
 public:
-  explicit FuncListNode(std::vector<std::unique_ptr<Node>> &&nodes)
-      : WithRtti(nodes[0]->getToken()), nodes(std::move(nodes)) {
+  FuncListNode(std::unique_ptr<Node> &&first, std::unique_ptr<Node> &&second)
+      : WithRtti(first->getToken()) {
+    this->nodes.push_back(std::move(first));
+    this->nodes.push_back(std::move(second));
     this->updateToken(this->nodes.back()->getToken());
+  }
+
+  void addNode(std::unique_ptr<Node> &&node) {
+    this->updateToken(node->getToken());
+    this->nodes.push_back(std::move(node));
   }
 
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }

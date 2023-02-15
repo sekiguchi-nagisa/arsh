@@ -93,57 +93,67 @@ static bool isNamedFuncOrUdc(const std::unique_ptr<Node> &node) {
   return false;
 }
 
-std::unique_ptr<Node> Parser::operator()() {
-  if (this->remain) {
-    this->remain = false;
-    return std::move(this->remainNode);
-  }
-
+std::vector<std::unique_ptr<Node>> Parser::operator()() {
   this->skippableNewlines.clear();
   this->skippableNewlines.push_back(false);
 
+  std::vector<std::unique_ptr<Node>> nodes;
   if (this->singleExpr) {
-    auto exprNode = TRY(this->parse_expression());
-    TRY(this->parse_statementEnd());
-    TRY(this->expect(TokenKind::EOS));
-    NameInfo nameInfo({exprNode->getPos(), 0}, "");
-    auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo),
-                                                   FunctionNode::SINGLE_EXPR);
-    funcNode->setFuncBody(std::move(exprNode));
-    return funcNode;
-  } else {
-    auto node = this->parse_statement();
-    if (this->incompleteNode) {
-      this->clear(); // force ignore parse error
-      this->lexer->setComplete(false);
-      node = std::move(this->incompleteNode);
-    } else if (isNamedFuncOrUdc(node)) {
-      std::vector<std::unique_ptr<Node>> funcNodes;
-      while (this->curKind != TokenKind::EOS) {
-        this->remainNode = this->parse_statement();
-        this->remain = true;
-        if (this->incompleteNode) {
-          this->clear(); // force ignore parse error
-          this->lexer->setComplete(false);
-          this->remainNode = std::move(this->incompleteNode);
-          break;
-        } else if (isNamedFuncOrUdc(this->remainNode)) {
-          if (funcNodes.empty()) {
-            funcNodes.push_back(std::move(node));
-          }
-          funcNodes.push_back(std::move(this->remainNode));
-          this->remain = false;
-        } else {
-          break;
+    if (this->curKind != TokenKind::EOS) {
+      auto exprNode = this->parse_expression();
+      if (!this->hasError()) {
+        this->parse_statementEnd();
+        if (!this->hasError()) {
+          this->expect(TokenKind::EOS);
         }
       }
-
-      if (!funcNodes.empty()) {
-        node = std::make_unique<FuncListNode>(std::move(funcNodes));
+      if (this->hasError()) {
+        nodes.push_back(std::make_unique<ErrorNode>(this->getError().getErrorToken()));
+      } else {
+        NameInfo nameInfo({exprNode->getPos(), 0}, "");
+        auto funcNode = std::make_unique<FunctionNode>(exprNode->getPos(), std::move(nameInfo),
+                                                       FunctionNode::SINGLE_EXPR);
+        funcNode->setFuncBody(std::move(exprNode));
+        nodes.push_back(std::move(funcNode));
       }
     }
-    return node;
+  } else {
+    while (this->curKind != TokenKind::EOS) {
+      auto node = this->parse_statement();
+      bool stop = false;
+      if (this->incompleteNode) {
+        this->clear(); // force ignore parse error
+        this->lexer->setComplete(false);
+        node = std::move(this->incompleteNode);
+        stop = true;
+      } else if (this->hasError()) {
+        node = std::make_unique<ErrorNode>(this->getError().getErrorToken());
+        stop = true;
+      }
+
+      if (nodes.empty()) {
+        nodes.push_back(std::move(node));
+      } else if (isa<FuncListNode>(*nodes.back()) && isNamedFuncOrUdc(node)) {
+        cast<FuncListNode>(*nodes.back()).addNode(std::move(node));
+      } else if (isNamedFuncOrUdc(nodes.back()) && isNamedFuncOrUdc(node)) {
+        auto last = std::move(nodes.back());
+        nodes.pop_back();
+        auto funcList = std::make_unique<FuncListNode>(std::move(last), std::move(node));
+        nodes.push_back(std::move(funcList));
+      } else {
+        nodes.push_back(std::move(node));
+      }
+
+      if (stop) {
+        break;
+      }
+    }
   }
+
+  if (nodes.empty()) {
+    nodes.push_back(std::make_unique<EmptyNode>()); // dummy
+  }
+  return nodes;
 }
 
 void Parser::refetch(LexerMode mode) {
