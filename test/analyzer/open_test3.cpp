@@ -12,6 +12,9 @@ INSTANTIATE_TEST_SUITE_P(OpenTest3_module, OpenTest,
 INSTANTIATE_TEST_SUITE_P(OpenTest3_syntax, OpenTest,
                          ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR "/syntax")));
 
+INSTANTIATE_TEST_SUITE_P(OpenTest3_output, OpenTest,
+                         ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR "/output")));
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

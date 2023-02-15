@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+echo -n hello world && echo !!
+# CHECK: hello world!!
+
+echo 1>&2 hello world\?\?
+# CHECK_ERR: hello world??
+
+# STATUS: 0

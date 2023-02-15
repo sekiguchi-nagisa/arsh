@@ -20,6 +20,10 @@
 #error require BIN_PATH
 #endif
 
+#ifndef LITECHECK_PATH
+#error LITECHECK_PATH
+#endif
+
 using namespace ydsh;
 using namespace ydsh::directive;
 
@@ -58,9 +62,9 @@ protected:
 public:
   ExecTest() : INIT_TEMP_FILE_FACTORY(exec_test) { this->targetName = GetParam(); }
 
-  virtual const std::string &getSourceName() { return this->targetName; }
+  const std::string &getSourceName() { return this->targetName; }
 
-  virtual void doTest() {
+  void doTest() {
     // create directive
     Directive d;
     bool s = Directive::init(this->getSourceName().c_str(), d);
@@ -157,6 +161,18 @@ public:
     ret += std::to_string(kind);
     ret += ")";
     return ret;
+  }
+
+  void doTestWithLitecheck() {
+    const char *scriptName = this->getSourceName().c_str();
+    ProcBuilder builder = {BIN_PATH, LITECHECK_PATH, "-b", BIN_PATH, scriptName};
+    auto result = builder.exec();
+    ASSERT_EQ(WaitStatus::EXITED, result.kind);
+    if (result.value == 125) {
+      printf("  [skip] %s\n", scriptName);
+    } else {
+      ASSERT_EQ(0, result.value);
+    }
   }
 };
 
