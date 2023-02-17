@@ -39,13 +39,15 @@ int parse(const char *src, T &&...args) {
 }
 
 static inline std::vector<std::string> getSortedFileList(const char *dir,
-                                                         const char *ignored = nullptr) {
+                                                         std::vector<std::string> ignored = {}) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),
                            [ignored](const std::string &v) {
-                             if (ignored && StringRef(v).startsWith(ignored)) {
-                               return true;
+                             for (auto &i : ignored) {
+                               if (StringRef(v).startsWith(i)) {
+                                 return true;
+                               }
                              }
                              return !StringRef(v).endsWith(".ds");
                            }),

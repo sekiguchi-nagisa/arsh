@@ -6,8 +6,8 @@ TEST_P(ExecTest, baseTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest,
-                         ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR,
-                                                               EXEC_TEST_DIR "/base")));
+                         ::testing::ValuesIn(getSortedFileList(
+                             EXEC_TEST_DIR, {EXEC_TEST_DIR "/base", EXEC_TEST_DIR "/output"})));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
