@@ -289,6 +289,13 @@ inline std::string quoteAsShellArg(StringRef ref) {
   return ret;
 }
 
+/**
+ * convert to printable string
+ * @param ref
+ * @return
+ */
+std::string toPrintable(StringRef ref);
+
 } // namespace ydsh
 
 #endif // YDSH_LEXER_H
