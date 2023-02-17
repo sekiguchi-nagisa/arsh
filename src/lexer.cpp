@@ -297,14 +297,11 @@ std::string Lexer::toCmdArg(Token token) const {
   for (unsigned int i = 0; i < token.size; i++) {
     char ch = this->buf[token.pos + i];
     if (ch == '\\') {
-      char nextCh = this->buf[token.pos + ++i];
-      switch (nextCh) {
-      case '\n':
-      case '\r':
+      char next = this->buf[token.pos + ++i];
+      if (next == '\n') {
         continue;
-      default:
-        ch = nextCh;
-        break;
+      } else {
+        ch = next;
       }
     }
     str += ch;

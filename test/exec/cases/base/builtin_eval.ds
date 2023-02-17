@@ -32,4 +32,9 @@ $ex = 34
 try { eval $'Int\x00ls';  } catch $e { $ex = $e; }
 assert $ex is SystemError
 
+$ex = 34
+try { eval $'echo\rhoge';  } catch $e { $ex = $e; }
+assert $ex is SystemError
+assert ($ex as SystemError).message() == 'execution error: echo\x0dhoge: command not found'
+
 true

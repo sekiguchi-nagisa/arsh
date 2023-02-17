@@ -138,12 +138,12 @@ TokenKind Lexer::nextToken(Token &token) {
     INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
     INNER_FIELD = "${" VAR_NAME ("." VAR_NAME)+ "}";
 
-    CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;='"`|&<>(){}$#[\]!+\-0-9\000];
-    CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;='"`|&<>(){}$\000];
+    CMD_START_CHAR     = "\\" [^\n\000] | [^ \t\n\\;='"`|&<>(){}$#[\]!+\-0-9\000];
+    CMD_CHAR           = "\\" [^\000]     | [^ \t\n\\;='"`|&<>(){}$\000];
     CMD = CMD_START_CHAR CMD_CHAR*;
 
-    CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$?*{},#\000];
-    CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$?*{},\000];
+    CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;'"`|&<>()$?*{},#\000];
+    CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\n\\;'"`|&<>()$?*{},\000];
     CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
     ENV_ASSIGN = CMD "=";
@@ -154,14 +154,14 @@ TokenKind Lexer::nextToken(Token &token) {
     BRACE_INT_SEQ  = "{" INT_SEQ_BODY  (".." SEQ_STEP )? "}";
     BRACE_CHAR_SEQ = "{" CHAR_SEQ_BODY (".." SEQ_STEP )? "}";
 
-    REGEX_CHAR = "\\/" | [^\r\n\000/];
+    REGEX_CHAR = "\\/" | [^\n\000/];
     UNCLOSED_REGEX = "$/" REGEX_CHAR* ;
     REGEX = UNCLOSED_REGEX "/" [_a-z]*;
 
     LINE_END = ";";
-    NEW_LINE = [\r\n];
-    NEW_LINES = [\r\n][ \t\r\n]*;
-    COMMENT = "#" [^\r\n\000]*;
+    NEW_LINE = [\n];
+    NEW_LINES = [\n][ \t\n]*;
+    COMMENT = "#" [^\n\000]*;
   */
 
   bool foundNewLine = false;
@@ -363,7 +363,7 @@ INIT:
                                STORE_COMMENT(); SKIP(); }
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> [ \t]+
                              { FIND_SPACE(); }
-    <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\r\n]
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\n]
                              { UPDATE_LN(); STORE_COMMENT(); SKIP(); }
 
     <STMT,CMD> UNCLOSED_STRING_LITERAL / "\000"
@@ -372,7 +372,7 @@ INIT:
                              { SHIFT_NEWLINE(); UPDATE_LN(); RET(UNCLOSED_STRING_LITERAL); }
     <STMT,DSTRING,CMD> UNCLOSED_BACKQUOTE_LITERAL / "\000"
                              { SHIFT_NEWLINE(); UPDATE_LN(); RET(UNCLOSED_BACKQUOTE_LITERAL); }
-    <STMT> UNCLOSED_REGEX / [\r\n\000]
+    <STMT> UNCLOSED_REGEX / [\n\000]
                              { RET(UNCLOSED_REGEX_LITERAL); }
 
     <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> "\000" { REACH_EOS();}

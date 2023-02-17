@@ -54,6 +54,7 @@
 - **Breaking Change**: change abbreviate notation of ``Option`` type
     - now abbreviate as ``T?``
 - **Breaking Change**: remove ``Func`` type (base type of function type) due to unused
+- **Breaking Change**: does not skip carriage return character as newline
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

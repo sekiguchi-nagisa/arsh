@@ -1348,6 +1348,13 @@ TEST_F(LexerTest_Lv1, CMD13) {
       EXPECT(TokenKind::COMMAND, text, TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, CMD14) {
+  const char *text = "/usr/bin/\r";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::COMMAND, text, TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, CMD_ARG1) { // allow  '[' and ']'
   const char *text = "[[][";
   this->initLexer(text);
@@ -1448,10 +1455,10 @@ TEST_F(LexerTest_Lv1, CMD_ARG12) {
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG13) {
-  const char *text = "AA\\\n";
+  const char *text = "AA\r\\\n";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "AA\\\n", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "AA\r\\\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG14) {
@@ -2291,32 +2298,32 @@ TEST_F(LexerTest_Lv1, SPACE1) {
 }
 
 TEST_F(LexerTest_Lv1, SPACE2) {
-  const char *text = "   \n var \\\r\\\n";
+  const char *text = "   \n var \t\\\n";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::VAR, "var", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, SPACE3) {
-  const char *text = "\n  \n assert \\\r\\\n";
+  const char *text = "\n  \n assert \t\\\n";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ASSERT, "assert", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, SPACE4) {
-  const char *text = "\\\r\\\necho";
+  const char *text = "\t\\\necho";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(
       EXPECT(TokenKind::COMMAND, "echo", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, SPACE5) {
-  const char *text = "    \t   \n  \\\n\\\r ";
+  const char *text = "    \t   \n  \\\n ";
   this->initLexer(text, yycEXPR);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, SPACE6) {
-  const char *text = "     \t    \n  \\\n\\\r    \t";
+  const char *text = "     \t    \n  \\\n\t    \t";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycTYPE);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::EOS, ""));

@@ -697,7 +697,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
 
 static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
   std::string str = EXEC_ERROR;
-  str += cmdName;
+  str += toPrintable(cmdName);
   if (errnum == ENOENT) {
     str += ": command not found";
     raiseError(state, TYPE::SystemError, std::move(str), 127);
