@@ -205,7 +205,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
         }
-        if (test -e $line) {
+        if (test -e $line) {  # FIXME: more precise quote requirement checking
             $line = $line.quote()
         }
         $ret.add($line)

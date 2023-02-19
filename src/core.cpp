@@ -415,6 +415,19 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
   return ret;
 }
 
+static bool endsWithUnquoteSpace(StringRef ref) {
+  if (!ref.endsWith(" ")) {
+    return false;
+  }
+  ref.removeSuffix(1);
+  unsigned int count = 0;
+  while (ref.endsWith("\\")) {
+    count++;
+    ref.removeSuffix(1);
+  }
+  return count % 2 == 0;
+}
+
 static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   if (obj.size() != 1) {
     return false; // do nothing
@@ -430,6 +443,8 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
     if (first.back() == '/') {
       return false;
+    } else if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
+      return !endsWithUnquoteSpace(first);
     }
     break;
   case CompCandidateKind::ENV:

@@ -144,6 +144,28 @@ if $OSTYPE !~ $/cygwin/i {
     assert diff <(complete -s '~roo') <(echo '~root/')
     assert diff <(complete -s 'echo ~roo') <(echo '~root/')
 }
+### user-defined comp
+#### nospace
+$COMP_HOOK = function(m,s,c) => ['echo ']
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "echo "
+
+$COMP_HOOK = function(m,s,c) => ['echo \\ ']
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == 'echo \\ '
+
+#### space
+$COMP_HOOK = function(m,s,c) => ['echo\ ']
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == 'echo\  ' : $COMPREPLY[0]
+
+$COMP_HOOK = function(m,s,c) => ['echo\\\\\ ']
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == 'echo\\\\\  '
 
 
 ## invalid

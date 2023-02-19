@@ -50,7 +50,6 @@
     - now ``(Module, [String], Int) -> [String]?`` type
     - does not quote completion candidates that user-defined completer return
         - now manually quote within user-defined completer if needed
-        - after call user-defined completer, does not complete file names if result is empty
 - **Breaking Change**: change abbreviate notation of ``Option`` type
     - now abbreviate as ``T?``
 - **Breaking Change**: remove ``Func`` type (base type of function type) due to unused
