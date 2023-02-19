@@ -200,12 +200,15 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     done
     '
 
-    var ret = IFS=$' \n' $(bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words)
-    var size = $ret.size()
-    for(var i = 0; $i < $size; $i++) {
-        if test -d $ret[$i] && $ret[$i][-1] != '/' && $ret[$i].contains('/') { # for directory
-            $ret[$i] += '/'
+    var ret : [String]
+    bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words | for line in $STDIN {
+        if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
+            $line += '/'
         }
+        if (test -e $line) {
+            $line = $line.quote()
+        }
+        $ret.add($line)
     }
     return $ret.empty() ? $none : $ret as [String]?
 }
