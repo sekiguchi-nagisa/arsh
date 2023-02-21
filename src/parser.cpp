@@ -589,9 +589,6 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
 
       token = TRY(this->expect(TokenKind::RP));
 
-      if (this->hasNewline()) {
-        TRY(this->parse_hereDocBody());
-      }
       return std::make_unique<TypeOfNode>(startPos, std::move(exprNode), token);
     }
     return this->parse_basicOrReifiedType(token);
@@ -649,6 +646,9 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
   }
 
   if (enterTYPEMode) {
+    if (this->hasNewline()) {
+      TRY(this->parse_hereDocBody());
+    }
     this->popLexerMode();
   }
   return typeNode;
