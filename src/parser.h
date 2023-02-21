@@ -274,11 +274,11 @@ protected:
 
   /**
    *
-   * @param allowEOS
+   * @param onlyLineEnd
    * @return
    * always nullptr
    */
-  std::unique_ptr<Node> parse_statementEnd();
+  std::unique_ptr<Node> parse_statementEnd(bool onlyLineEnd = false);
 
   std::unique_ptr<Node> parse_typedef();
 

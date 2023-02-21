@@ -1,0 +1,26 @@
+# RUN: exec $cmd $self
+
+# CHECK: here1
+# CHECK: here2
+# CHECK: here4
+# CHECK: here3
+# CHECK: here2
+# CHECK: here4
+# CHECK: here3
+# STATUS: 0
+
+for(var i = ({ cat << EOF; 0});
+here1
+EOF
+
+$i < 2 && cat << EOF && $true;
+here2
+EOF
+
+{ cat << EOF; $i++;}
+here3
+EOF
+) { cat << EOF
+here4
+EOF
+}

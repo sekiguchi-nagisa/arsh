@@ -764,29 +764,35 @@ std::unique_ptr<Node> Parser::parse_statement() {
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_statementEnd() {
+std::unique_ptr<Node> Parser::parse_statementEnd(bool onlyLineEnd) {
   bool checkHere = false;
-  switch (CUR_KIND()) {
-  case TokenKind::EOS:
-  case TokenKind::RBC:
-    break;
-  case TokenKind::LINE_END:
-  case TokenKind::NEW_LINE:
-    this->consume();
+  if (onlyLineEnd) {
+    TRY(this->expect(TokenKind::LINE_END));
     checkHere = true;
-    break;
-  default:
-    if (this->consumedKind == TokenKind::BACKGROUND || this->consumedKind == TokenKind::DISOWN_BG) {
+  } else {
+    switch (CUR_KIND()) {
+    case TokenKind::EOS:
+    case TokenKind::RBC:
+      break;
+    case TokenKind::LINE_END:
+    case TokenKind::NEW_LINE:
+      this->consume();
+      checkHere = true;
+      break;
+    default:
+      if (this->consumedKind == TokenKind::BACKGROUND ||
+          this->consumedKind == TokenKind::DISOWN_BG) {
+        break;
+      }
+      if (this->hasLineTerminator()) {
+        if (this->hasNewline()) {
+          checkHere = true;
+        }
+      } else {
+        this->expect(TokenKind::NEW_LINE);
+      }
       break;
     }
-    if (this->hasLineTerminator()) {
-      if (this->hasNewline()) {
-        checkHere = true;
-      }
-    } else {
-      this->expect(TokenKind::NEW_LINE);
-    }
-    break;
   }
   if (checkHere) {
     TRY(this->parse_hereDocBody()); // FIXME: check hereDocNode.size() > 0
@@ -1015,10 +1021,10 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
     auto initNode = TRY(this->parse_statementImpl());
-    TRY(this->expect(TokenKind::LINE_END));
+    TRY(this->parse_statementEnd(true));
 
     auto condNode = TRY(this->parse_forCond());
-    TRY(this->expect(TokenKind::LINE_END));
+    TRY(this->parse_statementEnd(true));
 
     auto iterNode = TRY(this->parse_forIter());
 
