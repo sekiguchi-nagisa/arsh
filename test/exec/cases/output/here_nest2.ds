@@ -1,0 +1,14 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a pen22
+# CHECK: +++
+# CHECK: this is a pen11
+
+# STATUS: 0
+
+cat << EOF1 && echo +++ && echo $(cat << EOF2
+this is a pen11
+EOF2
+)
+this is a pen22
+EOF1

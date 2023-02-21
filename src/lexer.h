@@ -31,9 +31,11 @@ class LexerMode {
 private:
   LexerCond cond_;
   bool skipNL_;
+  unsigned short hereDepth_;
 
 public:
-  LexerMode(LexerCond cond, bool skipNL) : cond_(cond), skipNL_(skipNL) {}
+  LexerMode(LexerCond cond, bool skipNL, unsigned short hereDepth = 0)
+      : cond_(cond), skipNL_(skipNL), hereDepth_(hereDepth) {}
 
   LexerMode(LexerCond cond) : LexerMode(cond, false) {} // NOLINT
 
@@ -43,7 +45,13 @@ public:
 
   bool skipNL() const { return this->skipNL_; }
 
+  unsigned short hereDepth() const { return this->hereDepth_; }
+
   std::string toString() const;
+
+  bool isHereDoc() const {
+    return this->cond() == LexerCond::yycEXP_HERE || this->cond() == LexerCond::yycHERE;
+  }
 };
 
 struct SrcPos {
@@ -60,14 +68,53 @@ struct TriviaStore {
   virtual void operator()(Token token) = 0;
 };
 
+class HereDocState {
+public:
+  enum class Attr : unsigned int {
+    EXPAND = 1u << 0u,
+    IGNORE_TAB = 1u << 1u,
+  };
+
+  struct Entry {
+    Token token;
+    Attr attr;
+    unsigned int pos; // here doc position
+  };
+
+private:
+  std::vector<Entry> hereDocStarts;
+
+public:
+  /**
+   *
+   * @param token
+   * must be unquoted (quoed removed)
+   * @param attr
+   */
+  void add(Token token, Attr attr, unsigned int pos) {
+    this->hereDocStarts.push_back({token, attr, pos});
+  }
+
+  const auto &curHereDocState() const { return this->hereDocStarts[0]; }
+
+  void shift() { this->hereDocStarts.erase(this->hereDocStarts.begin()); }
+
+  explicit operator bool() const { return !this->hereDocStarts.empty(); }
+};
+
+template <>
+struct allow_enum_bitop<HereDocState::Attr> : std::true_type {};
+
 class Lexer : public ydsh::LexerBase, public RefCount<Lexer> {
 private:
-  static_assert(sizeof(LexerMode) == sizeof(uint16_t));
-  static_assert(std::is_trivially_copyable<LexerMode>::value);
+  static_assert(sizeof(LexerMode) == sizeof(unsigned int));
+  static_assert(std::is_trivially_copyable_v<LexerMode>);
 
   CStrPtr scriptDir;
 
   std::vector<LexerMode> modeStack;
+
+  std::vector<HereDocState> hereDocStates;
 
   LexerMode curMode{yycSTMT};
 
@@ -101,6 +148,7 @@ public:
     if (!this->scriptDir || *this->scriptDir == '\0') {
       this->scriptDir.reset(strdup("."));
     }
+    this->hereDocStates.emplace_back();
   }
 
   ~Lexer() = default;
@@ -133,10 +181,8 @@ public:
 
   void setLexerCond(LexerCond cond) {
     auto c = this->curMode;
-    this->setLexerMode(LexerMode(cond, c.skipNL()));
+    this->setLexerMode(LexerMode(cond, c.skipNL(), c.hereDepth()));
   }
-
-  void setLexerMode(LexerMode mode) { this->curMode = mode; }
 
   void pushLexerMode(LexerMode mode) {
     this->modeStack.push_back(this->curMode);
@@ -144,6 +190,9 @@ public:
   }
 
   void popLexerMode() {
+    if (this->curMode.hereDepth() == this->hereDocStates.size()) {
+      this->hereDocStates.pop_back();
+    }
     if (!this->modeStack.empty()) {
       this->curMode = this->modeStack.back();
       this->modeStack.pop_back();
@@ -158,11 +207,76 @@ public:
 
   bool inCompletionPoint() const { return this->complete && this->cursor + 1 == this->limit; }
 
-  void setCompTokenKind(TokenKind kind) { this->compTokenKind = kind; }
-
   TokenKind getCompTokenKind() const { return this->compTokenKind; }
 
   void setTriviaStore(ObserverPtr<TriviaStore> store) { this->triviaStore = store; }
+
+  void setHereDocStart(TokenKind hereOp, Token startToken, unsigned int redirPos);
+
+  const auto &getHereDocState() const { return this->hereDocStates.back().curHereDocState(); }
+
+  unsigned int hereDocStateDepth() const { return this->hereDocStates.size(); }
+
+  /**
+   * lexer entry point.
+   * write next token to token.
+   * return the kind of next token.
+   */
+  TokenKind nextToken(Token &token);
+
+  // token to value converting api.
+
+  /**
+   * convert single quote string literal token to string.
+   * if token is illegal format(ex. illegal escape sequence), return false.
+   */
+  bool singleToString(Token token, std::string &out) const;
+
+  /**
+   * convert escaped single quote string literal token to string.
+   * if token is illegal format(ex. illegal escape sequence), return false.
+   */
+  bool escapedSingleToString(Token token, std::string &out) const;
+
+  /**
+   * convert double quote string element token to string.
+   */
+  std::string doubleElementToString(Token token) const;
+
+  /**
+   * convert token to command argument
+   */
+  std::string toCmdArg(Token token) const;
+
+  std::string toHereDocBody(Token token, HereDocState::Attr attr) const;
+
+  /**
+   * convert token to name(remove '$' char)
+   * ex. $hoge, ${hoge}, hoge
+   */
+  std::string toName(Token token) const;
+
+  /**
+   * for int literal parsing.
+   * also parse bit representation (octal/hex notation) of number.
+   * unlike convertToNum api, accept out-of-range number such as 0xFFFFFFFFFFFFFFFF
+   * @param token
+   * @return
+   */
+  std::pair<int64_t, bool> toInt64(Token token) const;
+
+  std::pair<double, bool> toDouble(Token token) const;
+
+  bool toEnvName(Token token, std::string &out) const;
+
+private:
+  /**
+   * low level api. normally should not use it
+   * @param mode
+   */
+  void setLexerMode(LexerMode mode) { this->curMode = mode; }
+
+  void setCompTokenKind(TokenKind kind) { this->compTokenKind = kind; }
 
   void addTrivia(unsigned int startPos) {
     if (this->triviaStore) {
@@ -196,55 +310,26 @@ public:
     return true;
   }
 
-  /**
-   * lexer entry point.
-   * write next token to token.
-   * return the kind of next token.
-   */
-  TokenKind nextToken(Token &token);
-
-  // token to value converting api.
+  void tryEnterHereDocMode() {
+    if (this->hereDocStates.back()) {
+      auto attr = this->hereDocStates.back().curHereDocState().attr;
+      this->pushLexerMode(hasFlag(attr, HereDocState::Attr::EXPAND) ? yycEXP_HERE : yycHERE);
+    }
+  }
 
   /**
-   * convert single quote string literal token to string.
-   * if token is illegal format(ex. illegal escape sequence), return false.
-   */
-  bool singleToString(Token token, std::string &out) const;
-
-  /**
-   * convert escaped single quote string literal token to string.
-   * if token is illegal format(ex. illegal escape sequence), return false.
-   */
-  bool escapedSingleToString(Token token, std::string &out) const;
-
-  /**
-   * convert double quote string element token to string.
-   */
-  std::string doubleElementToString(Token token) const;
-
-  /**
-   * convert token to command argument
-   */
-  std::string toCmdArg(Token token) const;
-
-  /**
-   * convert token to name(remove '$' char)
-   * ex. $hoge, ${hoge}, hoge
-   */
-  std::string toName(Token token) const;
-
-  /**
-   * for int literal parsing.
-   * also parse bit representation (octal/hex notation) of number.
-   * unlike convertToNum api, accept out-of-range number such as 0xFFFFFFFFFFFFFFFF
-   * @param token
+   *
+   * @param startPos
    * @return
+   * if exit here doc (token is heredoc end), return true
    */
-  std::pair<int64_t, bool> toInt64(Token token) const;
+  bool tryExitHereDocMode(unsigned int startPos);
 
-  std::pair<double, bool> toDouble(Token token) const;
-
-  bool toEnvName(Token token, std::string &out) const;
+  void pushLexerModeWithHere(LexerCond cond) {
+    this->hereDocStates.emplace_back();
+    LexerMode newMode(cond, true, static_cast<unsigned short>(this->hereDocStates.size()));
+    this->pushLexerMode(newMode);
+  }
 };
 
 using LexerPtr = IntrusivePtr<Lexer>;

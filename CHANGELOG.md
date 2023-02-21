@@ -4,6 +4,10 @@
 
 ### Added
 
+#### Core
+
+- support here document (``<<``, ``<<-``)
+
 #### Builtin
 
 - various ``LineEditor`` improvements

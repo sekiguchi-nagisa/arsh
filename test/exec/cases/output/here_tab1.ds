@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+# CHECK: 	1234	false
+# CHECK:     frefref
+
+# STATUS: 0
+
+cat << EOF
+	1234	$false
+    frefref
+EOF

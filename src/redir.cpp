@@ -47,19 +47,21 @@ RedirObject::~RedirObject() {
   }
 }
 
-static int doIOHere(const StringRef &value, int newFd) {
+static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
   pipe_t pipe[1];
   initAllPipe(1, pipe);
 
   dup2(pipe[0][READ_PIPE], newFd);
 
-  if (value.size() + 1 <= PIPE_BUF) {
+  if (value.size() + (insertNewline ? 1 : 0) <= PIPE_BUF) {
     int errnum = 0;
     if (write(pipe[0][WRITE_PIPE], value.data(), sizeof(char) * value.size()) < 0) {
       errnum = errno;
     }
-    if (errnum == 0 && write(pipe[0][WRITE_PIPE], "\n", 1) < 0) {
-      errnum = errno;
+    if (insertNewline) { // for here str (insert newline)
+      if (errnum == 0 && write(pipe[0][WRITE_PIPE], "\n", 1) < 0) {
+        errnum = errno;
+      }
     }
     closeAllPipe(1, pipe);
     return errnum;
@@ -76,8 +78,10 @@ static int doIOHere(const StringRef &value, int newFd) {
         if (write(STDOUT_FILENO, value.data(), value.size()) < 0) {
           exit(1);
         }
-        if (write(STDOUT_FILENO, "\n", 1) < 0) {
-          exit(1);
+        if (insertNewline) { // for here str (insert newline)
+          if (write(STDOUT_FILENO, "\n", 1) < 0) {
+            exit(1);
+          }
         }
       }
       exit(0);
@@ -166,6 +170,7 @@ static RedirOpenFlag resolveOpenFlag(RedirOp op, bool overwrite) {
     return RedirOpenFlag::APPEND;
   case RedirOp::NOP:
   case RedirOp::DUP_FD:
+  case RedirOp::HERE_DOC:
   case RedirOp::HERE_STR:
     break;
   case RedirOp::CLOBBER_OUT:
@@ -202,8 +207,9 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
     }
     return 0;
   }
+  case RedirOp::HERE_DOC:
   case RedirOp::HERE_STR:
-    return doIOHere(entry.value.asStrRef(), entry.newFd);
+    return doIOHere(entry.value.asStrRef(), entry.newFd, entry.op == RedirOp::HERE_STR);
   }
   return 0;
 }

@@ -1,0 +1,11 @@
+#$test($result = 'parse', $lineNum = 11, $chars = 2, $errorKind = 'HERE_END', $status = 1)
+
+cat << EOF-1 && cat << EOF2_ && ecxec $true $false
+aaa
+!! $(caho end
+th elpful information about bui
+!! $(cat << 2EoF2
+
+)
+EOOF90
+)

@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: 1111
+# STATUS: 0
+
+{
+    echo 1111
+    assert $false is typeof(cat << EOF)
+echo this is a pen
+echo hello world !!
+EOF
+}

@@ -502,7 +502,10 @@ public:
 
   ~StringExprNode() override = default;
 
-  void addExprNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
+  void addExprNode(std::unique_ptr<Node> &&node) {
+    this->updateToken(node->getToken()); // for here-doc
+    this->nodes.push_back(std::move(node));
+  }
 
   const std::vector<std::unique_ptr<Node>> &getExprNodes() const { return this->nodes; }
 
@@ -1274,14 +1277,18 @@ public:
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
   std::string fdName;
-  int newFd{-1};
+  TokenKind opKind;
   RedirOp op;
-  std::unique_ptr<CmdArgNode> targetNode;
+  int newFd{-1};
   int targetFd{-1};
+  std::unique_ptr<CmdArgNode> targetNode;
 
 public:
-  RedirNode(Token opToken, std::string &&fdName, RedirOp op, std::unique_ptr<CmdArgNode> &&node)
-      : WithRtti(opToken), fdName(std::move(fdName)), op(op), targetNode(std::move(node)) {
+  RedirNode(TokenKind opKind, Token opToken, StringRef ref, std::unique_ptr<CmdArgNode> &&node)
+      : WithRtti(opToken), opKind(opKind), targetNode(std::move(node)) {
+    auto pair = resolveRedirOp(opKind, ref);
+    this->fdName = std::move(pair.first);
+    this->op = pair.second;
     this->updateToken(this->targetNode->getToken());
   }
 
@@ -1292,6 +1299,8 @@ public:
   void setNewFd(int fd) { this->newFd = fd; }
 
   int getNewFd() const { return this->newFd; }
+
+  TokenKind getOpKind() const { return this->opKind; }
 
   RedirOp getRedirOp() const { return this->op; }
 

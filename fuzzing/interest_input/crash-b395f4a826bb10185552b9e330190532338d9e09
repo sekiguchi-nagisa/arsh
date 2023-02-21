@@ -1,0 +1,457 @@
+
+(cat <<nv
+checkenv HOME PATH
+assert($?____________f _________________________________________________________________________ == 0)
+
+checkenv HOME PATH HDUWEGDFE
+assert($?- == 1)
+
+checkenv HOME PATH $'HOME\000'
+assert $? == 1
+
+assert(help checkenv | grep '^checkenv: checkenv variable ...$')
+assert(checkenv -h | grep '^checkenv: checkenv variable ...$')
+assert(checkenv --he
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (I1FS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))   (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+)
+
+assert '34' is typeof(
+        (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (I1FS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))   (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+)
+
+assert '34' is typeof(
+    (IFSlp | grep '^chec <<nv
+checkenv HOME PATH
+assert($? == 0)
+
+checkenv HOME PATH HDUWEGDFE
+assert($? == 1)
+
+checkenv HOME PATH $'HOME\000'
+assert $? == 1
+
+assert(help checkenv | grep '^checkenv: checkenv nv> checkenv variable .1.$')
+assert $PIPESTATUS[0] == 2 &&FE
+assert($? == 1)
+
+checkenv HOME PATH $'HOME\000'
+assert $ert "${0000000000000000=0000000000000}" =p '^checkenv: checkenv variable ...$')
+assert(checkenv --help | grep '^chec <<nv
+checkenv HOME PATH
+assert($? == 0)
+
+checkenv HOME PATH HDUWEGDFE
+assert($? == 1)
+
+checkeno HOME PATH $'HOME\000'
+assert $? == 1
+
+assert(help checv HOME PATH $'HOME\000'
+assert $? == 1
+
+assert(help checkenv | grep '^checkenv: checkenv variable ...$')
+assert(checkenv -h | grep '^checkenv: checkenv variable ...$')
+assert(checkenv --help | grep '^chec <<nv
+checkenv HOME PATH
+assert($? == 0)
+
+checkenv HOME PATH HDUWEGDFE
+assert($? == 1)
+asst)
+0000=0000000000000}" =p '^checkenv: checkenv variable ...$')
+assert(checkenv --help | grep '^chec <<nv
+checkenv HOME PATH
+assert($? == 0)
+
+checkenv HOME PA00000000000000=0000000000000}" == 'fjriae'
+asse=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (IFS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexe change)
+
+assert '34' is typeof(
+    (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (I1FS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))   (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+)
+
+assert '34' is typeof(
+        (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (I1FS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))   (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+)
+rt $000000000000000000000kenv
+assert
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23))  $? == 2
+a000$as String
+)
+
+assert '34' is typeof(
+    (IFS=23 "345535") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+
+assert '34' is typeofh
+    (IFS=23 $@[0]) as Stri
+assert '34' is typeof(
+    (IFS=23 $@[0]) as String
+)
+
+var FUNC = function($s : Int) => $s
+
+assert '34' is typeof(
+    (IFS=23 $FUNC(34)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (IFS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))    (IFS=23 <(23)) as String
+)
+
+assert '3S=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexe change)
+
+assert '34' is typeof(
+    (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+ 
+    (IFS=23 "345534") as String
+)
+
+assert '34' is typeof(
+    (IFS=23 $OSTYPE[34]) as String
+)
+# test prefix assign parsing (lexer state change)
+
+assert '34' is typeof(
+    (I1FS=23 $(23(IFS=23 $OSTYPE[34])(IFS=23 $(23(IFS=23 $OSTYPE[34]) as Strin))   (IFS=23 $(23)) as String
+)
+
+assert '34PIPE' is typeof(
+    (IFS=23 <(2STATUS[0] == 2 &&FE
+assert($? ==0000000| \
+    g"a pen
+i³3)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as    (IFS=23 $(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 <(23)) as String
+)
+
+assert '34' is typeof(
+    (IFS=23 >(23)) as String
+as 'mS apple
+EOFt)
+ring
+)

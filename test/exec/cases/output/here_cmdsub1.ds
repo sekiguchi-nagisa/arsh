@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a pend
+# STATUS: 0
+
+echo $(cat << EOF
+this is a pend
+EOF
+)

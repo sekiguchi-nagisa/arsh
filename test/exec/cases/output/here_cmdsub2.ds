@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+# CHECK: this is a pend
+# STATUS: 0
+
+echo $(cat << true)
+ echo this is a pend
+true

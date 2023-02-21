@@ -1,0 +1,14 @@
+
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+# CHECK: )
+# CHECK: this is a pen
+# STATUS: 0
+
+echo "$(cat << EOF
+
+)
+this is a pen
+EOF
+)"

@@ -1,0 +1,3 @@
+#$test($result = 'parse', $lineNum = 3, $chars = 8, $errorKind = 'InvalidHereStart', $status = 1)
+
+cat << 'EOF@2345'

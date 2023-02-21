@@ -702,6 +702,10 @@ TEST_F(BuiltinHighlightTest, base) {
   ASSERT_TRUE(this->highlight("echo >"));
   ASSERT_TRUE(this->highlight("{ echo >"));
   ASSERT_TRUE(this->highlight("if true"));
+  ASSERT_TRUE(this->highlight("cat <<< EOF"));
+  ASSERT_TRUE(this->highlight("cat << EOF\n"
+                              "this is a pen\n"
+                              "EOF"));
   ASSERT_FALSE(this->highlight("echo\\"));
   ASSERT_FALSE(this->highlight("echo AAA\\"));
   ASSERT_FALSE(this->highlight("if (true"));
@@ -715,6 +719,13 @@ TEST_F(BuiltinHighlightTest, base) {
   ASSERT_FALSE(this->highlight("echo hello  \\"));
   ASSERT_FALSE(this->highlight("echo hello 'frefera"));
   ASSERT_FALSE(this->highlight("34 + $'frefera"));
+  ASSERT_FALSE(this->highlight("cat << EOF"));
+  ASSERT_FALSE(this->highlight("cat 0<< 'EOF-_1d'"));
+  ASSERT_FALSE(this->highlight("cat <<- EOF"));
+  ASSERT_FALSE(this->highlight("cat << EOF\n"
+                               "this is a pen"));
+  ASSERT_FALSE(this->highlight("cat << EOF\n"
+                               "$OSTYPE"));
 }
 
 int main(int argc, char **argv) {

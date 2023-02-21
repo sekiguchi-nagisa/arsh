@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+# CHECK:    hello
+# STATUS: 0
+
+cat << 'EOF' | grep hello && $true
+    this is a pend
+   hello
+EOF

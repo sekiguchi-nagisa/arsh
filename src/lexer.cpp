@@ -140,6 +140,55 @@ TokenKind resolveAssignOp(TokenKind op) {
   }
 }
 
+std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref) {
+  unsigned int i = 0;
+  for (; i < ref.size(); i++) {
+    char ch = ref[i];
+    if (ch >= '0' && ch <= '9') {
+      continue;
+    } else {
+      break;
+    }
+  }
+  auto prefix = ref.slice(0, i);
+  RedirOp op = RedirOp::NOP;
+
+#define EACH_REDIR_OP_MAPPING(OP)                                                                  \
+  OP(REDIR_IN, REDIR_IN, 0)                                                                        \
+  OP(REDIR_OUT, REDIR_OUT, 1)                                                                      \
+  OP(REDIR_OUT_CLOBBER, CLOBBER_OUT, 1)                                                            \
+  OP(REDIR_APPEND, APPEND_OUT, 1)                                                                  \
+  OP(REDIR_OUT_ERR, REDIR_OUT_ERR, 1)                                                              \
+  OP(REDIR_OUT_ERR_CLOBBER, CLOBBER_OUT_ERR, 1)                                                    \
+  OP(REDIR_APPEND_OUT_ERR, APPEND_OUT_ERR, 1)                                                      \
+  OP(REDIR_DUP_IN, DUP_FD, 0)                                                                      \
+  OP(REDIR_DUP_OUT, DUP_FD, 1)                                                                     \
+  OP(REDIR_HERE_DOC, HERE_DOC, 0)                                                                  \
+  OP(REDIR_HERE_DOC_DASH, HERE_DOC, 0)                                                             \
+  OP(REDIR_HERE_STR, HERE_STR, 0)
+
+  switch (kind) {
+#define GEN_REDIR_CASE(K, O, D)                                                                    \
+  case TokenKind::K:                                                                               \
+    if (prefix.empty()) {                                                                          \
+      prefix = #D;                                                                                 \
+    }                                                                                              \
+    op = RedirOp::O;                                                                               \
+    break;
+
+    // clang-format off
+  EACH_REDIR_OP_MAPPING(GEN_REDIR_CASE)
+    // clang-format on
+
+#undef GEN_REDIR_CASE
+  default:
+    break;
+  }
+
+#undef EACH_REDIR_OP_MAPPING
+  return {prefix.toString(), op};
+}
+
 std::string LexerMode::toString() const {
   const char *mode = "(";
   switch (this->cond()) {
@@ -164,11 +213,18 @@ std::string LexerMode::toString() const {
   case yycPARAM:
     mode = "PARAM(";
     break;
+  case yycHERE:
+    mode = "HERE(";
+    break;
+  case yycEXP_HERE:
+    mode = "EXP_HERE(";
+    break;
   }
   std::string value = mode;
   if (this->skipNL()) {
-    value += "skipNL";
+    value += "skipNL, ";
   }
+  value += std::to_string(this->hereDepth());
   value += ")";
   return value;
 }
@@ -198,6 +254,45 @@ SrcPos Lexer::getSrcPos(Token token) const {
       .lineNum = lineNum,
       .chars = chars,
   };
+}
+
+void Lexer::setHereDocStart(TokenKind hereOp, Token startToken, unsigned int redirPos) {
+  assert(hereOp == TokenKind::REDIR_HERE_DOC || hereOp == TokenKind::REDIR_HERE_DOC_DASH);
+  HereDocState::Attr attr{};
+  if (hereOp == TokenKind::REDIR_HERE_DOC_DASH) {
+    setFlag(attr, HereDocState::Attr::IGNORE_TAB);
+  }
+  if (this->startsWith(startToken, '\'')) {
+    assert(startToken.size > 2);
+    startToken = startToken.slice(1, startToken.size - 1);
+  } else {
+    setFlag(attr, HereDocState::Attr::EXPAND);
+  }
+  assert(startToken.size > 0);
+  this->hereDocStates.back().add(startToken, attr, redirPos);
+}
+
+bool Lexer::tryExitHereDocMode(unsigned int startPos) {
+  assert(this->hereDocStates.back());
+
+  Token token = {
+      .pos = startPos,
+      .size = this->getPos() - startPos,
+  };
+  StringRef ref = this->toStrRef(token);
+  if (ref.endsWith("\n")) {
+    ref.removeSuffix(1);
+  } else {
+    return false;
+  }
+  StringRef start = this->toStrRef(this->hereDocStates.back().curHereDocState().token);
+  if (ref == start) { // exit heredoc
+    this->hereDocStates.back().shift();
+    this->popLexerMode();
+    this->tryEnterHereDocMode();
+    return true;
+  }
+  return false;
 }
 
 bool Lexer::singleToString(Token token, std::string &out) const {
@@ -307,6 +402,19 @@ std::string Lexer::toCmdArg(Token token) const {
     str += ch;
   }
   return str;
+}
+
+std::string Lexer::toHereDocBody(Token token, HereDocState::Attr attr) const {
+  if (hasFlag(attr, HereDocState::Attr::IGNORE_TAB)) {
+    while (token.size > 0 && this->startsWith(token, '\t')) {
+      token = token.sliceFrom(1);
+    }
+  }
+  if (hasFlag(attr, HereDocState::Attr::EXPAND)) {
+    return this->doubleElementToString(token);
+  } else {
+    return this->toTokenText(token);
+  }
 }
 
 std::string Lexer::toName(Token token) const {

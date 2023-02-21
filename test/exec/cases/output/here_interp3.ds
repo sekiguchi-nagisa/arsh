@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: false
+# CHECK: 40 hello
+# CHECK_RE: ^$
+# STATUS: 0
+
+cat << EOF
+${false}
+${34+6} $(echo hello)
+
+EOF

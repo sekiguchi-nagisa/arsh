@@ -67,6 +67,8 @@
 
 #define PUSH_MODE_SKIP_NL(m) this->pushLexerMode(LexerMode(yyc##m, true))
 
+#define PUSH_MODE_SKIP_NL_HERE(m) this->pushLexerModeWithHere(yyc##m)
+
 #define MODE(m) this->setLexerCond(yyc##m)
 
 /*
@@ -93,6 +95,26 @@
 #define STORE_COMMENT() this->addTrivia(startPos)
 
 #define SHIFT_NEWLINE() this->shiftNewline(startPos)
+
+#define RET_NEW_LINE()                                                                             \
+  do {                                                                                             \
+    if (this->canEmitNewline()) {                                                                  \
+      RET(NEW_LINE);                                                                               \
+    } else {                                                                                       \
+      FIND_NEW_LINE();                                                                             \
+    }                                                                                              \
+  } while (false)
+
+#define CHECK_HERE() this->tryEnterHereDocMode()
+
+#define RET_HERE_BODY(k)                                                                           \
+  do {                                                                                             \
+    if (this->tryExitHereDocMode(startPos)) {                                                      \
+      RET(HERE_END);                                                                               \
+    } else {                                                                                       \
+      RET(k);                                                                                      \
+    }                                                                                              \
+  } while (false)
 
 namespace ydsh {
 
@@ -122,6 +144,8 @@ TokenKind Lexer::nextToken(Token &token) {
 
     SQUOTE_CHAR = '\\' [^\000] | [^\\'\000];
     DQUOTE_CHAR = "\\" [^\000] | [^$\\"`\000];
+    HERE_CHAR = [^\n\000];
+    EXP_HERE_CHAR = "\\" [^\000] | [^$\\`\n\000];
     VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
     SPECIAL_NAMES = ([@#?$] | [0-9]+);
 
@@ -133,6 +157,8 @@ TokenKind Lexer::nextToken(Token &token) {
     SPECIAL_NAME = "$" SPECIAL_NAMES;
     UNCLOSED_BACKQUOTE_LITERAL = [`] ("\\" [^\000] | [^`\000])* ;
     BACKQUOTE_LITERAL = UNCLOSED_BACKQUOTE_LITERAL [`];
+    HERE_BODY = HERE_CHAR* [\n];
+    EXP_HERE_BODY = EXP_HERE_CHAR+ [\n]? | [\n];
 
     INNER_NAME = APPLIED_NAME | "${" VAR_NAME "}";
     INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
@@ -160,7 +186,6 @@ TokenKind Lexer::nextToken(Token &token) {
 
     LINE_END = ";";
     NEW_LINE = [\n];
-    NEW_LINES = [\n][ \t\n]*;
     COMMENT = "#" [^\n\000]*;
   */
 
@@ -215,7 +240,7 @@ INIT:
     <STMT> BACKQUOTE_LITERAL { UPDATE_LN(); MODE(EXPR); RET(BACKQUOTE_LITERAL); }
     <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
     <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-    <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
+    <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_SUB_CMD); }
     <STMT> ">("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <STMT> "<("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
     <STMT> "@("              { MODE(EXPR); PUSH_MODE_SKIP_NL(CMD); RET(AT_PAREN); }
@@ -289,17 +314,22 @@ INIT:
 
     <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
     <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
-    <DSTRING> "$"            { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
+    <DSTRING,EXP_HERE> "$"   { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
                                else { RET(STR_ELEMENT); } }
-    <DSTRING,CMD> INNER_NAME { RET_OR_COMP(APPLIED_NAME); }
-    <DSTRING,CMD> INNER_SPECIAL_NAME
+    <DSTRING,CMD,EXP_HERE> INNER_NAME
+                             { RET_OR_COMP(APPLIED_NAME); }
+    <DSTRING,CMD,EXP_HERE> INNER_SPECIAL_NAME
                              { RET(SPECIAL_NAME); }
-    <DSTRING,CMD> INNER_FIELD
+    <DSTRING,CMD,EXP_HERE> INNER_FIELD
                              { RET(APPLIED_NAME_WITH_FIELD); }
-    <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL(STMT); RET(START_INTERP); }
-    <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
-    <DSTRING,CMD> BACKQUOTE_LITERAL
+    <DSTRING,CMD,EXP_HERE> "${"
+                             { PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_INTERP); }
+    <DSTRING,CMD,EXP_HERE> "$("
+                             { PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_SUB_CMD); }
+    <DSTRING,CMD,EXP_HERE> BACKQUOTE_LITERAL
                              { UPDATE_LN(); RET(BACKQUOTE_LITERAL); }
+    <EXP_HERE> EXP_HERE_BODY { UPDATE_LN(); RET_HERE_BODY(STR_ELEMENT); }
+    <HERE> HERE_BODY         { UPDATE_LN(); RET_HERE_BODY(STR_ELEMENT); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
     <CMD> BRACE_CHAR_SEQ     { RET(BRACE_CHAR_SEQ); }
@@ -327,13 +357,14 @@ INIT:
     <CMD> [0-9]* "&>>"       { RET(REDIR_APPEND_OUT_ERR); }
     <CMD> [0-9]* "<&"        { RET(REDIR_DUP_IN); }
     <CMD> [0-9]* ">&"        { RET(REDIR_DUP_OUT); }
+    <CMD> [0-9]* "<<"        { RET(REDIR_HERE_DOC); }
+    <CMD> [0-9]* "<<-"       { RET(REDIR_HERE_DOC_DASH); }
     <CMD> [0-9]* "<<<"       { RET(REDIR_HERE_STR); }
     <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 
-    <CMD> NEW_LINE           { UPDATE_LN(); if(!SKIPPABLE_NL())
-                                            { MODE(STMT); if(this->canEmitNewline()) {
-    RET(NEW_LINE); }} FIND_NEW_LINE(); }
+    <CMD> NEW_LINE           { UPDATE_LN(); if(!SKIPPABLE_NL()) { MODE(STMT); CHECK_HERE();
+                               RET_NEW_LINE(); } else { CHECK_HERE(); FIND_NEW_LINE(); } }
 
     <TYPE> "Func"            { RET_OR_COMP(FUNC); }
     <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
@@ -355,7 +386,8 @@ INIT:
     <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
 
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
-    <STMT,EXPR,NAME,TYPE,PARAM> NEW_LINES
+    <STMT,EXPR,TYPE> NEW_LINE     { CHECK_HERE(); UPDATE_LN(); FIND_NEW_LINE(); }
+    <NAME,PARAM> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
     <STMT,EXPR,NAME,CMD,TYPE,PARAM> COMMENT
@@ -375,8 +407,8 @@ INIT:
     <STMT> UNCLOSED_REGEX / [\n\000]
                              { RET(UNCLOSED_REGEX_LITERAL); }
 
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> "\000" { REACH_EOS();}
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM> *      { RET(INVALID); }
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE> "\000" { REACH_EOS();}
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE> *      { RET(INVALID); }
   */
 
 END:

@@ -1,0 +1,27 @@
+# RUN: exec $cmd $self
+
+# CHECK: echo EOFF1
+# CHECK: echo EOFF2
+# CHECK_RE: ^$
+# CHECK: echo EOF1
+# CHECK: echo EOF2
+# CHECK: ++++
+# CHECK_RE: ^$
+# CHECK: jfifrie
+# CHECK_RE: ^$
+
+# STATUS: 0
+
+
+cat << EOF; echo ++++; cat << EOFF;
+echo EOFF1
+echo EOFF2
+
+echo EOF1
+echo EOF2
+EOF
+
+jfifrie
+
+EOFF
+

@@ -1,0 +1,13 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a\
+# CHECK:  pend
+
+# STATUS: 0
+
+cat << 'EOF'
+this is a\
+ pend
+EOF
+
+

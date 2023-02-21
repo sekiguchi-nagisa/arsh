@@ -1,0 +1,13 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is $(echo hello $false)
+# CHECK:  pend
+
+# STATUS: 0
+
+cat << 'EOF'
+this is $(echo hello $false)
+ pend
+EOF
+
+

@@ -1,0 +1,15 @@
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+# CHECK: this is a pen
+# CHECK: i'm apple
+
+# STATUS: 0
+
+(cat << 'EOF' | grep '.*' | \
+    grep '.*'
+
+this is a pen
+i'm apple
+EOF
+)

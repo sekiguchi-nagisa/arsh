@@ -1,0 +1,13 @@
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+# CHECK_RE: ^$
+# CHECK: a
+# STATUS: 0
+
+echo "$(cat << EOF
+
+
+a
+EOF
+)"

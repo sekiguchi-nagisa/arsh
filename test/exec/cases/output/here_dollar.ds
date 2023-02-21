@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+# CHECK: $
+# STATUS: 0
+
+cat << EOF
+$
+EOF
+

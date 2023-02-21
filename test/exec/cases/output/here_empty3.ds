@@ -1,0 +1,9 @@
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+# STATUS: 0
+
+(cat << EOF \
+
+EOF
+)

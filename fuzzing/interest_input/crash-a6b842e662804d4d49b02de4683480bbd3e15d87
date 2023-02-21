@@ -1,0 +1,30 @@
+# test SHLLV handling
+
+## unlike to bash, SHLVL is up to INT64_MAX (in bash 4.4, up to 999)
+
+## incre# RUN: exec $cmd $sel pen22
+# CHECK: +++
+# CHECK_RE: ^$
+
+# STATUS: 0
+
+cat 1 && echo +++US: 0
+
+cat << EOF1 && echo +++ && echo $(cat << EOF2)
+this is a pen11
+EOF2
+this is  << EOF1 && echo +++ && echo $*cat << EOF2)
+this is a   var _278=0; var _279=0; var _280=0;
+var _281=0; var _282=0; var _283=0; var _28& echo $*cat << EOF2)
+this is a pen11
+EOF2
+this is a pen22
+EOF1
+223373036854775807"
+
+## if SHLVL is greater than INT64_MAX, reset to 1
+assert "$(SHLVL=9223372036854775807 eval $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
+
+## if S ^SHLVL=)" == "SHLVL=1"  # out of range
+sre ast"$(SHLVL=hgiare eval $YDSH_BIN -e env | grep ^S$(SHLVL=-9223372036854775807 eval $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=-9223372036854775809 eval $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range

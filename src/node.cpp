@@ -436,6 +436,7 @@ void RedirNode::dump(NodeDumper &dumper) const {
   OP(RedirOp::CLOBBER_OUT_ERR)                                                                     \
   OP(RedirOp::APPEND_OUT_ERR)                                                                      \
   OP(RedirOp::DUP_FD)                                                                              \
+  OP(RedirOp::HERE_DOC)                                                                            \
   OP(RedirOp::HERE_STR)
 
   DUMP_ENUM(op, EACH_ENUM);

@@ -1,0 +1,5 @@
+#$test($result = 'parse', $lineNum = 5, $chars = 5, $errorKind = 'NoViableAlter', $status = 1)
+
+(cact << 'EOF' | grepl2t << 'EOF' | grepl2
+EOF
+EOF)

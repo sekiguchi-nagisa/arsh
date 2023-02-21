@@ -44,7 +44,6 @@ struct Token {
    */
   Token slice(unsigned int startIndex, unsigned int stopIndex) const {
     assert(startIndex <= stopIndex);
-    assert(startIndex < this->size);
     assert(stopIndex <= this->size);
 
     Token newToken{this->pos, this->size};

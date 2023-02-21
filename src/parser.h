@@ -28,11 +28,20 @@
 
 namespace ydsh {
 
+enum class ParserOption : unsigned char {
+  SINGLE_EXPR = 1u << 0u,
+  NEED_HERE_END = 1u << 1u, // for line continuation checking
+};
+
+template <>
+struct allow_enum_bitop<ParserOption> : std::true_type {};
+
 enum class CmdArgParseOpt : unsigned int {
   FIRST = 1u << 0u,
   MODULE = 1u << 1u,
   ASSIGN = 1u << 2u,
   REDIR = 1u << 3u,
+  HERE_START = 1u << 4u,
 };
 
 template <>
@@ -56,7 +65,8 @@ class CodeCompletionHandler;
   OP(STMT, "statement")                                                                            \
   OP(CMD_ARG, "command argument")                                                                  \
   OP(REDIR, "io redirection target")                                                               \
-  OP(MOD_PATH, "module path")
+  OP(MOD_PATH, "module path")                                                                      \
+  OP(HERE_END, "here doc end word")
 
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
@@ -71,6 +81,8 @@ private:
   };
 
   static constexpr const char *REDIR_NEED_SPACE = "RedirNeedSpace";
+  static constexpr const char *INVALID_HERE_START = "InvalidHereStart";
+  static constexpr const char *HERE_SATRT_NEED_SPACE = "HereStartNeedSpace";
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
@@ -78,12 +90,19 @@ private:
 
   bool inStmtCompCtx{false};
 
-  const bool singleExpr;
+  const ParserOption option;
 
   std::vector<bool> skippableNewlines; // if true, newline is skippable
 
+  std::vector<ObserverPtr<RedirNode>> hereDocNodes;
+
+  struct HereOp {
+    TokenKind kind;
+    unsigned int pos;
+  } hereOp{{}, 0};
+
 public:
-  explicit Parser(Lexer &lexer, bool singleExpr = false,
+  explicit Parser(Lexer &lexer, ParserOption option = {},
                   ObserverPtr<CodeCompletionHandler> handler = nullptr);
 
   ~Parser() = default;
@@ -91,8 +110,6 @@ public:
   std::vector<std::unique_ptr<Node>> operator()();
 
   explicit operator bool() const { return this->curKind != TokenKind::EOS; }
-
-  bool hasError() const { return ParserBase::hasError(); }
 
   void forceTerminate() { // FIXME: temporal api, must be implement proper error recovery
     this->clear();
@@ -103,7 +120,7 @@ protected:
   /**
    * change lexer mode and refetch.
    */
-  void refetch(LexerMode mode);
+  void refetch(LexerCond cond);
 
   void pushLexerMode(LexerMode mode) {
     this->lexer->pushLexerMode(mode);
@@ -122,7 +139,7 @@ protected:
   /**
    * after matching token, change lexer mode and fetchNext.
    */
-  Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
+  Token expectAndChangeMode(TokenKind kind, LexerCond cond, bool fetchNext = true);
 
   auto inSkippableNLCtx(bool skip = true) {
     this->skippableNewlines.push_back(skip);
@@ -134,6 +151,16 @@ protected:
   bool hasNewline() const { return this->lexer->isPrevNewLine(); }
 
   bool hasLineTerminator() const { return this->hasNewline() && !this->skippableNewlines.back(); }
+
+  bool inHereDocBody() const {
+    if (this->curKind == TokenKind::HERE_END) {
+      return true;
+    }
+    if (this->curKind == TokenKind::RP || this->curKind == TokenKind::RBC) {
+      return false;
+    }
+    return this->lexer->getLexerMode().isHereDoc();
+  }
 
   bool inCompletionPoint() const { return this->curKind == TokenKind::COMPLETION; }
 
@@ -197,12 +224,27 @@ protected:
 
   template <unsigned int N>
   void reportDetailedError(ParseErrorKind kind, const TokenKind (&alters)[N]) {
-    this->reportDetailedError(kind, N, alters);
+    this->reportDetailedError(kind, N, alters, nullptr);
   }
 
-  void reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters);
+  void reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
+                           const char *messageSuffix);
+
+  void reportHereDocStartError(TokenKind kind, Token token) {
+    this->createError(kind, token, INVALID_HERE_START,
+                      "heredoc start word must follow `[a-zA-Z0-9_-]+' or "
+                      "`['][a-zA-Z0-9_-]+[']' format");
+  }
 
   std::unique_ptr<Node> toAccessNode(Token token) const;
+
+  /**
+   * lookup here doc node specified by pos
+   * @param pos
+   * @return
+   * if not found, return hereDocNodes.size()
+   */
+  size_t findHereDocNodeIndex(unsigned int pos) const;
 
   // parser rule definition.
   std::unique_ptr<FunctionNode> parse_function(bool needBody = true);
@@ -262,6 +304,13 @@ protected:
 
   std::unique_ptr<RedirNode> parse_redirOption();
 
+  /**
+   *
+   * @return
+   * return always null
+   */
+  std::unique_ptr<Node> parse_hereDocBody();
+
   std::unique_ptr<CmdArgNode> parse_cmdArg(CmdArgParseOpt opt = {});
 
   /**
@@ -283,6 +332,8 @@ protected:
    */
   bool parse_braceSeq(CmdArgNode &argNode);
 
+  std::unique_ptr<Node> parse_expressionImpl(unsigned int basePrecedence);
+
   std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 
   std::unique_ptr<Node> parse_expression() {
@@ -301,7 +352,7 @@ protected:
 
   std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);
 
-  std::unique_ptr<Node> parse_stringLiteral();
+  std::unique_ptr<Node> parse_stringLiteral(bool asHereStart = false);
 
   std::unique_ptr<Node> parse_regexLiteral();
 

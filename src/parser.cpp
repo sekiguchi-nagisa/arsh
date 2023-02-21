@@ -68,8 +68,8 @@ namespace ydsh {
 // ##     Parser     ##
 // ####################
 
-Parser::Parser(Lexer &lexer, bool singleExpr, ObserverPtr<CodeCompletionHandler> handler)
-    : ccHandler(handler), singleExpr(singleExpr) {
+Parser::Parser(Lexer &lexer, ParserOption option, ObserverPtr<CodeCompletionHandler> handler)
+    : ccHandler(handler), option(option) {
   this->consumedKind = TokenKind::EOS;
   this->lexer = &lexer;
   if (this->ccHandler) {
@@ -98,7 +98,7 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
   this->skippableNewlines.push_back(false);
 
   std::vector<std::unique_ptr<Node>> nodes;
-  if (this->singleExpr) {
+  if (hasFlag(this->option, ParserOption::SINGLE_EXPR)) {
     if (this->curKind != TokenKind::EOS) {
       auto exprNode = this->parse_expression();
       if (!this->hasError()) {
@@ -156,9 +156,9 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
   return nodes;
 }
 
-void Parser::refetch(LexerMode mode) {
+void Parser::refetch(LexerCond cond) {
   this->lexer->setPos(START_POS());
-  this->lexer->setLexerMode(mode);
+  this->lexer->setLexerCond(cond);
   this->fetchNext();
 }
 
@@ -209,10 +209,10 @@ Token Parser::expect(TokenKind kind, bool fetchNext) {
   return parse_base_type::expect(kind, fetchNext);
 }
 
-Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
+Token Parser::expectAndChangeMode(TokenKind kind, LexerCond cond, bool fetchNext) {
   Token token = this->expect(kind, false);
   if (!this->hasError()) {
-    this->lexer->setLexerMode(mode);
+    this->lexer->setLexerCond(cond);
     if (fetchNext) {
       this->fetchNext();
     }
@@ -370,7 +370,8 @@ void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters
   parse_base_type::reportNoViableAlterError(size, alters);
 }
 
-void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters) {
+void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
+                                 const char *messageSuffix) {
   struct ERROR {
     const char *kind;
     const char *message;
@@ -393,6 +394,9 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
   }
   message += "expected ";
   message += e.message;
+  if (messageSuffix) {
+    message += messageSuffix;
+  }
 
   std::vector<TokenKind> expectedTokens(alters, alters + size);
   this->createError(this->curKind, this->curToken, e.kind, std::move(expectedTokens),
@@ -584,6 +588,10 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
       auto exprNode(TRY(this->parse_expression()));
 
       token = TRY(this->expect(TokenKind::RP));
+
+      if (this->hasNewline()) {
+        TRY(this->parse_hereDocBody());
+      }
       return std::make_unique<TypeOfNode>(startPos, std::move(exprNode), token);
     }
     return this->parse_basicOrReifiedType(token);
@@ -757,6 +765,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
 }
 
 std::unique_ptr<Node> Parser::parse_statementEnd() {
+  bool checkHere = false;
   switch (CUR_KIND()) {
   case TokenKind::EOS:
   case TokenKind::RBC:
@@ -764,15 +773,23 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
   case TokenKind::LINE_END:
   case TokenKind::NEW_LINE:
     this->consume();
+    checkHere = true;
     break;
   default:
     if (this->consumedKind == TokenKind::BACKGROUND || this->consumedKind == TokenKind::DISOWN_BG) {
       break;
     }
-    if (!this->hasLineTerminator()) {
+    if (this->hasLineTerminator()) {
+      if (this->hasNewline()) {
+        checkHere = true;
+      }
+    } else {
       this->expect(TokenKind::NEW_LINE);
     }
     break;
+  }
+  if (checkHere) {
+    TRY(this->parse_hereDocBody()); // FIXME: check hereDocNode.size() > 0
   }
   return nullptr;
 }
@@ -995,7 +1012,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
   if (CUR_KIND() == TokenKind::LP) { // for
     auto ctx = this->inSkippableNLCtx();
 
-    this->expectAndChangeMode(TokenKind::LP, LexerMode(yycSTMT, true)); // always success
+    this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
     auto initNode = TRY(this->parse_statementImpl());
     TRY(this->expect(TokenKind::LINE_END));
@@ -1196,53 +1213,6 @@ std::unique_ptr<Node> Parser::parse_command() {
   return node;
 }
 
-static std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref) {
-  unsigned int i = 0;
-  for (; i < ref.size(); i++) {
-    char ch = ref[i];
-    if (ch >= '0' && ch <= '9') {
-      continue;
-    } else {
-      break;
-    }
-  }
-  auto prefix = ref.slice(0, i);
-  RedirOp op = RedirOp::NOP;
-
-#define EACH_REDIR_OP_MAPPING(OP)                                                                  \
-  OP(REDIR_IN, REDIR_IN, 0)                                                                        \
-  OP(REDIR_OUT, REDIR_OUT, 1)                                                                      \
-  OP(REDIR_OUT_CLOBBER, CLOBBER_OUT, 1)                                                            \
-  OP(REDIR_APPEND, APPEND_OUT, 1)                                                                  \
-  OP(REDIR_OUT_ERR, REDIR_OUT_ERR, 1)                                                              \
-  OP(REDIR_OUT_ERR_CLOBBER, CLOBBER_OUT_ERR, 1)                                                    \
-  OP(REDIR_APPEND_OUT_ERR, APPEND_OUT_ERR, 1)                                                      \
-  OP(REDIR_DUP_IN, DUP_FD, 0)                                                                      \
-  OP(REDIR_DUP_OUT, DUP_FD, 1)                                                                     \
-  OP(REDIR_HERE_STR, HERE_STR, 0)
-
-  switch (kind) {
-#define GEN_REDIR_CASE(K, O, D)                                                                    \
-  case TokenKind::K:                                                                               \
-    if (prefix.empty()) {                                                                          \
-      prefix = #D;                                                                                 \
-    }                                                                                              \
-    op = RedirOp::O;                                                                               \
-    break;
-
-    // clang-format off
-  EACH_REDIR_OP_MAPPING(GEN_REDIR_CASE)
-    // clang-format on
-
-#undef GEN_REDIR_CASE
-  default:
-    break;
-  }
-
-#undef EACH_REDIR_OP_MAPPING
-  return {prefix.toString(), op};
-}
-
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
   GUARD_DEEP_NESTING(guard);
 
@@ -1253,14 +1223,143 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     {
       Token token = this->curToken;
       TokenKind kind = this->scan();
-      auto pair = resolveRedirOp(kind, this->lexer->toStrRef(token));
-      auto node = TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR));
-      return std::make_unique<RedirNode>(token, std::move(pair.first), pair.second,
-                                         std::move(node));
+      const bool hereDoc =
+          kind == TokenKind::REDIR_HERE_DOC || kind == TokenKind::REDIR_HERE_DOC_DASH;
+      auto parseOpt = CmdArgParseOpt::REDIR;
+      if (hereDoc) {
+        this->hereOp = {
+            .kind = kind,
+            .pos = token.pos,
+        };
+        setFlag(parseOpt, CmdArgParseOpt::HERE_START);
+      }
+      auto node = std::make_unique<RedirNode>(kind, token, this->lexer->toStrRef(token),
+                                              TRY(this->parse_cmdArg(parseOpt)));
+      if (hereDoc) {
+        auto &argNode = node->getTargetNode();
+        Token startToken = argNode.getToken();
+        argNode.refSegmentNodes().pop_back();
+        argNode.addSegmentNode(std::make_unique<StringExprNode>(startToken.endPos()));
+        this->hereDocNodes.push_back(makeObserver(*node));
+      }
+      return node;
     }
   default:
     E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
   }
+}
+
+size_t Parser::findHereDocNodeIndex(unsigned int pos) const {
+  struct Compare {
+    bool operator()(const ObserverPtr<RedirNode> &x, unsigned int y) const {
+      return x->getPos() < y;
+    }
+
+    bool operator()(unsigned int x, const ObserverPtr<RedirNode> &y) const {
+      return x < y->getPos();
+    }
+  };
+  auto iter =
+      std::lower_bound(this->hereDocNodes.begin(), this->hereDocNodes.end(), pos, Compare());
+  if (iter != this->hereDocNodes.end() && (*iter)->getPos() == pos) {
+    return static_cast<size_t>(iter - this->hereDocNodes.begin());
+  }
+  return static_cast<size_t>(this->hereDocNodes.size());
+}
+
+static bool shouldIgnoreTab(const StringExprNode &node) {
+  if (node.getExprNodes().empty()) {
+    return true; // first
+  }
+  auto &last = node.getExprNodes().back();
+  if (isa<StringNode>(*last)) {
+    auto &value = cast<StringNode>(*last).getValue();
+    if (!value.empty() && value.back() == '\n') { // after newline
+      return true;
+    }
+  }
+  return false;
+}
+
+std::unique_ptr<Node> Parser::parse_hereDocBody() {
+  GUARD_DEEP_NESTING(guard);
+
+  if (this->hereDocNodes.empty()) {
+    return nullptr;
+  }
+
+  while (this->inHereDocBody()) {
+    if (CUR_KIND() == TokenKind::HERE_END) { // already exit here doc mode
+      this->consume();
+      continue;
+    }
+
+    const unsigned int pos = this->lexer->getHereDocState().pos;
+    const auto attr = this->lexer->getHereDocState().attr;
+    auto index = this->findHereDocNodeIndex(pos);
+    assert(index < this->hereDocNodes.size());
+    auto *strExprNode = ({
+      auto &hereDocNode = this->hereDocNodes[index];
+      cast<StringExprNode>(hereDocNode->getTargetNode().getSegmentNodes()[0].get());
+    });
+    while (CUR_KIND() != TokenKind::HERE_END) {
+      switch (CUR_KIND()) {
+        // clang-format off
+      EACH_LA_interpolation(GEN_LA_CASE)
+        // clang-format on
+        {
+          auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
+          strExprNode->addExprNode(std::move(interp));
+          break;
+        }
+      case TokenKind::START_SUB_CMD: {
+        auto subNode = TRY(this->parse_cmdSubstitution(true));
+        strExprNode->addExprNode(std::move(subNode));
+        break;
+      }
+      case TokenKind::BACKQUOTE_LITERAL: {
+        auto subNode = TRY(this->parse_backquoteLiteral());
+        strExprNode->addExprNode(std::move(subNode));
+        break;
+      }
+      case TokenKind::STR_ELEMENT: {
+        Token token = this->curToken;
+        this->consume(); // always success
+        auto newAttr = attr;
+        if (hasFlag(newAttr, HereDocState::Attr::IGNORE_TAB) && !shouldIgnoreTab(*strExprNode)) {
+          unsetFlag(newAttr, HereDocState::Attr::IGNORE_TAB);
+        }
+        auto subNode = std::make_unique<StringNode>(
+            token, this->lexer->toHereDocBody(token, newAttr), StringNode::STRING);
+        strExprNode->addExprNode(std::move(subNode));
+        break;
+      }
+      case TokenKind::EOS:
+        if (hasFlag(this->option, ParserOption::NEED_HERE_END) ||
+            this->lexer->hereDocStateDepth() > 1) {
+          TokenKind kinds[] = {TokenKind::HERE_END};
+          std::string suffix = ": `";
+          suffix += this->lexer->toStrRef(this->lexer->getHereDocState().token);
+          suffix += "'";
+          this->reportDetailedError(ParseErrorKind::HERE_END, 1, kinds, suffix.c_str());
+        }
+        return nullptr; // here-doc reach end even if EOS
+      default:
+        if (hasFlag(attr, HereDocState::Attr::EXPAND)) {
+          if (this->inVarNameCompletionPoint()) {
+            this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
+          } else if (this->inCompletionPointAt(TokenKind::EOS)) {
+            TokenKind kinds[] = {EACH_LA_stringExpression(GEN_LA_ALTER)};
+            this->ccHandler->addExpectedTokenRequests(std::string(), kinds);
+          }
+        }
+        E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER)); // FIXME: completion in no-expand
+      }
+    }
+    TRY(this->expect(TokenKind::HERE_END));
+    this->hereDocNodes.erase(this->hereDocNodes.begin() + index);
+  }
+  return nullptr;
 }
 
 static bool lookahead_cmdArg_LP(TokenKind kind) {
@@ -1281,6 +1380,11 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   TRY(this->parse_cmdArgSeg(*node, opt | CmdArgParseOpt::FIRST));
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
+    if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+      this->createError(this->curKind, this->curToken, HERE_SATRT_NEED_SPACE,
+                        "require space after here doc start word");
+      return nullptr;
+    }
     TRY(this->parse_cmdArgSeg(*node, opt));
   }
   return node;
@@ -1297,13 +1401,46 @@ static bool isBrace(TokenKind kind) {
   }
 }
 
+static bool isHereDocStart(StringRef ref) {
+  if (ref.size() > 2 && ref[0] == '\'' && ref.back() == '\'') {
+    ref.removePrefix(1);
+    ref.removeSuffix(1);
+  }
+  unsigned int count = 0;
+  for (auto ch : ref) {
+    if (isalnum(ch) || ch == '-' || ch == '_') {
+      count++;
+    } else {
+      return false;
+    }
+  }
+  return count > 0;
+}
+
 std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
+  if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+    if (CUR_KIND() != TokenKind::CMD_ARG_PART && CUR_KIND() != TokenKind::STRING_LITERAL) {
+      this->reportHereDocStartError(this->curKind, this->curToken);
+      return nullptr;
+    }
+  }
+
   switch (CUR_KIND()) {
   case TokenKind::CMD_ARG_PART: {
+    Token token = this->curToken;
+    if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+      if (isHereDocStart(this->lexer->toStrRef(token))) {
+        this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
+      } else {
+        this->reportHereDocStartError(this->curKind, token);
+        return nullptr;
+      }
+      this->curKind = TokenKind::HERE_START;
+    }
     const auto prevKind = this->consumedKind;
-    Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
+    this->consume(); // always success
     if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
       iteratePathList(*this->lexer, token, ':', [&](Token subToken, bool) {
         auto kind = StringNode::STRING;
@@ -1388,7 +1525,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     return node;
   }
   case TokenKind::STRING_LITERAL:
-    return this->parse_stringLiteral();
+    return this->parse_stringLiteral(hasFlag(opt, CmdArgParseOpt::HERE_START));
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
@@ -1451,7 +1588,7 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
  * @param basePrecedence
  * @return
  */
-std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
+std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) {
   GUARD_DEEP_NESTING(guard);
 
   auto node = TRY(this->parse_unaryExpression());
@@ -1556,6 +1693,14 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
       break;
     }
     }
+  }
+  return node;
+}
+
+std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
+  auto node = TRY(this->parse_expressionImpl(basePrecedence));
+  if (this->hasNewline()) {
+    TRY(this->parse_hereDocBody());
   }
   return node;
 }
@@ -1891,9 +2036,20 @@ std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
   return this->newVarNode(token);
 }
 
-std::unique_ptr<Node> Parser::parse_stringLiteral() {
+std::unique_ptr<Node> Parser::parse_stringLiteral(bool asHereStart) {
   assert(CUR_KIND() == TokenKind::STRING_LITERAL);
-  Token token = this->expect(TokenKind::STRING_LITERAL); // always success
+
+  Token token = this->curToken;
+  if (asHereStart) {
+    if (isHereDocStart(this->lexer->toStrRef(token))) {
+      this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
+    } else {
+      this->reportHereDocStartError(this->curKind, token);
+      return nullptr;
+    }
+    this->curKind = TokenKind::HERE_START; // for syntax highlight
+  }
+  this->consume(); // always success
   return std::make_unique<StringNode>(token);
 }
 

@@ -1,0 +1,13 @@
+
+# RUN: exec $cmd $self
+
+# CHECK_RE: ^$
+
+# CHECK_ERR: cat: ''$'\n''frefa': No such file or directory
+# CHECK_ERR: cat: 1345: No such file or directory
+
+# STATUS: 1
+
+LANG=C cat << EOF '
+frefa' 1345
+EOF

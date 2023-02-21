@@ -93,9 +93,9 @@ public:
     this->lexer = LexerPtr::create("(string)", ByteBuffer(text, text + strlen(text)), nullptr);
   }
 
-  virtual void initLexer(const char *text, LexerMode mode) {
+  virtual void initLexer(const char *text, LexerCond cond) {
     this->initLexer(text);
-    this->lexer->setLexerMode(mode);
+    this->lexer->setLexerCond(cond);
   }
 
 private:
@@ -710,7 +710,7 @@ TEST_F(LexerTest_Lv1, subCmd1) {
   const char *text = "$(";
   this->initLexer(text);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true, 2}));
   this->lexer->popLexerMode();
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -720,7 +720,7 @@ TEST_F(LexerTest_Lv1, subCmd2) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycDSTRING);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true, 2}));
   this->lexer->popLexerMode();
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
@@ -730,7 +730,7 @@ TEST_F(LexerTest_Lv1, subCmd3) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true, 2}));
   this->lexer->popLexerMode();
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
@@ -740,7 +740,7 @@ TEST_F(LexerTest_Lv1, interp1) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_INTERP, text, TokenKind::EOS, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true, 2}));
   this->lexer->popLexerMode();
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
@@ -750,7 +750,7 @@ TEST_F(LexerTest_Lv1, interp2) {
   this->initLexer(text);
   this->lexer->pushLexerMode(yycDSTRING);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_INTERP, text, TokenKind::EOS, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true, 2}));
   this->lexer->popLexerMode();
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }

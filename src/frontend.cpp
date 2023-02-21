@@ -46,7 +46,11 @@ FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, Fro
 bool FrontEnd::tryToParse() {
   auto &ctx = this->contexts.back();
   if (ctx->nodes.empty()) {
-    Parser parser(*ctx->lexer, hasFlag(ctx->option, FrontEndOption::SINGLE_EXPR), ctx->ccHandler);
+    ParserOption parserOption{};
+    if (hasFlag(ctx->option, FrontEndOption::SINGLE_EXPR)) {
+      setFlag(parserOption, ParserOption::SINGLE_EXPR);
+    }
+    Parser parser(*ctx->lexer, parserOption, ctx->ccHandler);
     ctx->nodes = parser();
     assert(!ctx->nodes.empty());
     if (parser.hasError()) {

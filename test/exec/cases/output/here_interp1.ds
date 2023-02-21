@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: aaa
+# CHECK: true
+# CHECK: false
+# STATUS: 0
+
+cat << EOF
+aaa
+$TRUE
+$False
+EOF

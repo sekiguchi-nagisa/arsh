@@ -1,0 +1,17 @@
+# RUN: exec $cmd $self
+
+## only zsh
+
+# CHECK: this is a pen11
+# CHECK: EOF2
+# CHECK: this is a pen22
+# CHECK: +++
+# CHECK_RE: ^$
+
+# STATUS: 0
+
+cat << EOF1 && echo +++ && echo $(cat << EOF2)
+this is a pen11
+EOF2
+this is a pen22
+EOF1

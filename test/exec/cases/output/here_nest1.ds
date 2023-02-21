@@ -1,0 +1,20 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a pen
+# CHECK: !! inner here
+# CHECK_RE: ^$
+# CHECK: outer
+
+# STATUS: 0
+
+echo "$(cat << EOF1 && cat << EOF11
+this is a pen
+!! $(cat << EOF2
+inner here
+EOF2
+)
+EOF1
+
+outer
+EOF11
+)"

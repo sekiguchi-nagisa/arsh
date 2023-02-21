@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is EOF1
+# CHEKC_RE: ^$
+# CHECK: end
+
+# STATUS: 0
+
+cat << EOF1 && cat << EOF2 && echo end
+this is EOF1

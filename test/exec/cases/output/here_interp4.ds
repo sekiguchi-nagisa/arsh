@@ -1,0 +1,15 @@
+# RUN: exec $cmd $self
+
+# CHECK: aaaaa
+# CHECK_RE: ^$
+# CHECK: ssssss
+# STATUS: 0
+
+var b = 34
+
+{cat << EOF;#!/usr/bin/env ydsh
+aaaaa
+$(ls | grep "$(date +'%Y%m')${$b < 10 ? '0' + $b : $b as String}")
+ssssss
+EOF
+}

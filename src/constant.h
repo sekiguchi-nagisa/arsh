@@ -322,6 +322,7 @@ enum class RedirOp : unsigned char {
   CLOBBER_OUT_ERR, // &>| word
   APPEND_OUT_ERR,  // &>> word
   DUP_FD,          // [n]<& N or [n]>& N
+  HERE_DOC,        // [n]<< or [n]<<-
   HERE_STR,        // [n]<<< word
 };
 

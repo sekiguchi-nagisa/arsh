@@ -18,6 +18,7 @@
 #define YDSH_TOKEN_KIND_H
 
 #include "misc/flag_util.hpp"
+#include "misc/string_ref.hpp"
 
 #define EACH_TOKEN(TOKEN)                                                                          \
   TOKEN(INVALID, "<Invalid>")                                                                      \
@@ -170,7 +171,11 @@
   TOKEN(REDIR_APPEND_OUT_ERR, "&>>")                                                               \
   TOKEN(REDIR_DUP_IN, "<&")                                                                        \
   TOKEN(REDIR_DUP_OUT, ">&")                                                                       \
+  TOKEN(REDIR_HERE_DOC, "<<")                                                                      \
+  TOKEN(REDIR_HERE_DOC_DASH, "<<-")                                                                \
   TOKEN(REDIR_HERE_STR, "<<<")                                                                     \
+  TOKEN(HERE_START, "<Here Doc Start>")                                                            \
+  TOKEN(HERE_END, "<Hore Doc End>")                                                                \
   TOKEN(PIPE, "|")                                                                                 \
   TOKEN(BACKGROUND, "&")                                                                           \
   TOKEN(DISOWN_BG, "&!")                                                                           \
@@ -321,6 +326,8 @@
   OP(REDIR_APPEND_OUT_ERR)                                                                         \
   OP(REDIR_DUP_IN)                                                                                 \
   OP(REDIR_DUP_OUT)                                                                                \
+  OP(REDIR_HERE_DOC)                                                                               \
+  OP(REDIR_HERE_DOC_DASH)                                                                          \
   OP(REDIR_HERE_STR)
 
 #define EACH_LA_cmdArg(OP)                                                                         \
@@ -433,6 +440,10 @@ const char *resolveUnaryOpName(TokenKind op);
 const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
+
+enum class RedirOp : unsigned char;
+
+std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref);
 
 } // namespace ydsh
 

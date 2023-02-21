@@ -100,6 +100,8 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::OPEN_DQUOTE:
   case TokenKind::CLOSE_DQUOTE:
   case TokenKind::STR_ELEMENT:
+  case TokenKind::HERE_START:
+  case TokenKind::HERE_END:
     return HighlightTokenClass::STRING;
   case TokenKind::TYPE_NAME:
   case TokenKind::FUNC:
@@ -165,7 +167,7 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   assert(!content.empty() && content.back() == '\n');
   Lexer lexer("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
   lexer.setTriviaStore(makeObserver(*this));
-  Parser parser(lexer);
+  Parser parser(lexer, ParserOption::NEED_HERE_END);
   parser.setTracker(this);
   parser();
   if (parser.hasError()) {

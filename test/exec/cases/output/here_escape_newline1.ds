@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+# CHECK: AAA   BBB
+
+# STTAUS: 0
+
+cat << EOF
+AAA \
+  BBB
+EOF
+
