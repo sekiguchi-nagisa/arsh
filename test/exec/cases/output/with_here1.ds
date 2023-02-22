@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECK:  echo hello world!!
+# CHECK:  echo this is pen 99!!
+# STATUS: 0
+
+var aa = { 1234; cat; } with << EOF
+ echo hello world!!
+ echo this is pen ${11+88}!!
+EOF

@@ -1,0 +1,10 @@
+#$test($result = 'parse', $lineNum = 6, $chars = 1, $errorKind = 'TYPE', $status = 1)
+
+{
+    echo 1111
+    assert $false is [typeof(cat << EOF) :
+    Int ]
+echo this is a pen
+echo hello world !!
+EOF
+}

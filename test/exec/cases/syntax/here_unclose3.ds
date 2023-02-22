@@ -1,0 +1,8 @@
+#$test($result = 'parse', $lineNum = 8, $chars = 5, $errorKind = 'NoViableAlter', $status = 1)
+
+(cat << 'EOF' | grep '.*' | \
+    grep  '.*'
+
+this is a pen
+i'm apple
+EOF)

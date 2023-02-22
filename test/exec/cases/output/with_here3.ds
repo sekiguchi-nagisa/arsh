@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+# CHECK: this+ +is+ +a+ +pen
+# STATUS: 0
+
+var aa = "$((cat) with << 'EOF'
+this is a pen
+EOF
+)".words()
+
+echo ${$aa.join('+')}
