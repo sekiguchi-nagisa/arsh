@@ -789,13 +789,13 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool onlyLineEnd) {
           checkHere = true;
         }
       } else {
-        this->expect(TokenKind::NEW_LINE);
+        TRY(this->expect(TokenKind::NEW_LINE));
       }
       break;
     }
   }
   if (checkHere) {
-    TRY(this->parse_hereDocBody()); // FIXME: check hereDocNode.size() > 0
+    TRY(this->parse_hereDocBody());
   }
   return nullptr;
 }
