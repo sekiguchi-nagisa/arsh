@@ -77,7 +77,7 @@ public:
     this->visit(node.getExprNode());
     this->append(node.isCastOp() ? "as" : "is");
     auto &typeNode = node.getTargetTypeNode();
-    assert(typeNode->typeKind == TypeNode::Base);
+    assert(typeNode->typeKind() == TypeNode::Base);
     this->append(cast<BaseTypeNode>(*typeNode).getTokenText());
     this->close();
   }
