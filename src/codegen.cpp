@@ -388,7 +388,7 @@ static bool isBinaryStrConcat(const Node &node) {
 }
 
 void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
-  switch (node.nodeKind) {
+  switch (node.getNodeKind()) {
   case NodeKind::String:
     if (cast<StringNode>(node).getValue().empty() && fragment) {
       return;
@@ -460,7 +460,7 @@ void ByteCodeGenerator::visit(Node &node) { this->visit(node, CmdCallCtx::EXPR);
 void ByteCodeGenerator::visitTypeNode(TypeNode &) { fatal("unsupported\n"); }
 
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
-  switch (node.kind()) {
+  switch (node.kind) {
   case NumberNode::Int:
     this->emitInt(node.getIntValue());
     break;
@@ -926,10 +926,10 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 
 void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
   if (node.isExpand()) {
-    this->emit2byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta()),
+    this->emit2byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta),
                        static_cast<unsigned char>(node.getBraceId()));
   } else {
-    this->emitString(toString(node.meta()));
+    this->emitString(toString(node.meta));
   }
 }
 
@@ -1154,7 +1154,7 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
 }
 
 static DSValue newObject(Node &constNode) {
-  auto kind = constNode.nodeKind;
+  auto kind = constNode.getNodeKind();
   assert(kind == NodeKind::Number || kind == NodeKind::String);
   if (kind == NodeKind::Number) {
     if (constNode.getType().is(TYPE::Signal)) {

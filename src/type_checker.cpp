@@ -29,7 +29,7 @@ namespace ydsh {
 // #########################
 
 TypeOrError TypeChecker::toType(TypeNode &node) {
-  switch (node.typeKind()) {
+  switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
 
@@ -583,7 +583,7 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
 }
 
 void TypeChecker::visitNumberNode(NumberNode &node) {
-  switch (node.kind()) {
+  switch (node.kind) {
   case NumberNode::Int:
     if (!node.isInit()) {
       auto [value, status] = this->lexer.toInt64(node.getActualToken());
@@ -1179,7 +1179,7 @@ void TypeChecker::visitIfNode(IfNode &node) {
 }
 
 bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
-  if (constNode.nodeKind != NodeKind::Number) {
+  if (constNode.getNodeKind() != NodeKind::Number) {
     return false;
   }
   int64_t value = cast<const NumberNode>(constNode).getIntValue();
@@ -1188,7 +1188,7 @@ bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
 }
 
 bool TypeChecker::StrPatternMap::collect(const Node &constNode) {
-  if (constNode.nodeKind != NodeKind::String) {
+  if (constNode.getNodeKind() != NodeKind::String) {
     return false;
   }
   const char *str = cast<const StringNode>(constNode).getValue().c_str();
@@ -1198,7 +1198,7 @@ bool TypeChecker::StrPatternMap::collect(const Node &constNode) {
 
 bool TypeChecker::PatternCollector::collect(const Node &constNode) {
   if (!this->map) {
-    switch (constNode.nodeKind) {
+    switch (constNode.getNodeKind()) {
     case NodeKind::Number:
       this->map = std::make_unique<IntPatternMap>();
       break;
@@ -1352,7 +1352,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
   })
 
 std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
-  switch (node.nodeKind) {
+  switch (node.getNodeKind()) {
   case NodeKind::Number:
     return cast<NumberNode>(node).clone();
   case NodeKind::String: {
@@ -1373,14 +1373,14 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
   case NodeKind::WildCard: {
     auto &wildCardNode = cast<WildCardNode>(node);
     if (wildCardNode.isExpand()) {
-      auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta());
+      auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
       constNode->setExpand(wildCardNode.isExpand());
       constNode->setBraceId(wildCardNode.getBraceId());
       constNode->setType(wildCardNode.getType());
       return constNode;
     } else {
       auto constNode = std::make_unique<StringNode>(
-          wildCardNode.getToken(), toString(wildCardNode.meta()), StringNode::STRING);
+          wildCardNode.getToken(), toString(wildCardNode.meta), StringNode::STRING);
       constNode->setType(this->typePool.get(TYPE::String));
       return constNode;
     }
@@ -2220,7 +2220,7 @@ void TypeChecker::visitErrorNode(ErrorNode &node) { node.setType(this->typePool.
 void TypeChecker::visitEmptyNode(EmptyNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
 static bool isCmdLike(const Node &node) {
-  switch (node.nodeKind) {
+  switch (node.getNodeKind()) {
   case NodeKind::Cmd:
     return true;
   case NodeKind::Pipeline:

@@ -59,7 +59,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
     auto &e = *segmentNodes[i];
     if (isa<WildCardNode>(e)) {
       auto &wild = cast<WildCardNode>(e);
-      switch (wild.meta()) {
+      switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
         stack.emplace_back(i, 0);
         break;
@@ -107,7 +107,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
     auto &e = segmentNodes[i];
     if (isExpandingWildCard(*e)) {
       auto &wild = cast<WildCardNode>(*e);
-      switch (wild.meta()) {
+      switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
       case ExpandMeta::BRACE_SEQ_OPEN:
         stack.emplace_back(braceId++, 0);
@@ -126,7 +126,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
       }
     } else if (isa<WildCardNode>(*e)) {
       auto &wild = cast<WildCardNode>(*e);
-      if (wild.meta() == ExpandMeta::BRACE_TILDE) {
+      if (wild.meta == ExpandMeta::BRACE_TILDE) {
         if (stack.empty()) {
           assert(i + 1 < size && isa<StringNode>(*segmentNodes[i + 1]));
           cast<StringNode>(*segmentNodes[i + 1]).unsetTilde();
@@ -388,12 +388,12 @@ public:
 struct SourceGlobMeta {
   static bool isAny(SourceGlobIter iter) {
     auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta() == ExpandMeta::ANY;
+    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ANY;
   }
 
   static bool isZeroOrMore(SourceGlobIter iter) {
     auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta() == ExpandMeta::ZERO_OR_MORE;
+    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ZERO_OR_MORE;
   }
 };
 
@@ -405,7 +405,7 @@ static std::string concat(SourceListNode::path_iterator begin, SourceListNode::p
     if (isa<StringNode>(e)) {
       path += cast<StringNode>(e).getValue();
     } else {
-      path += toString(cast<WildCardNode>(e).meta());
+      path += toString(cast<WildCardNode>(e).meta);
     }
   }
   return path;
@@ -555,13 +555,13 @@ bool TypeChecker::applyBraceExpansion(Token token,
     auto &v = begin[i];
     if (isExpandingWildCard(*v)) {
       auto wild = cast<WildCardNode>(v);
-      switch (wild->meta()) {
+      switch (wild->meta) {
       case ExpandMeta::BRACE_OPEN: {
         // find close index
         unsigned int closeIndex = i + 1;
         for (int level = 1; closeIndex < size; closeIndex++) {
           if (isExpandingWildCard(*begin[closeIndex])) {
-            auto next = cast<WildCardNode>(begin[closeIndex])->meta();
+            auto next = cast<WildCardNode>(begin[closeIndex])->meta;
             if (next == ExpandMeta::BRACE_CLOSE) {
               if (--level == 0) {
                 break;
@@ -629,7 +629,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
       auto vend = vbegin + usedSize;
       auto newOp = op;
       if (!hasFlag(newOp, GlobOp::TILDE) && usedSize > 0 && isExpandingWildCard(**vbegin) &&
-          cast<WildCardNode>(*vbegin)->meta() == ExpandMeta::BRACE_TILDE) {
+          cast<WildCardNode>(*vbegin)->meta == ExpandMeta::BRACE_TILDE) {
         setFlag(newOp, GlobOp::TILDE);
         ++vbegin; // skip meta
       }
@@ -658,7 +658,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
         unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
         assert(isExpandingWildCard(*old));
-        auto meta = cast<WildCardNode>(*old).meta();
+        auto meta = cast<WildCardNode>(*old).meta;
         if (meta == ExpandMeta::BRACE_CLOSE) {
           stack.pop_back();
         } else if (meta == ExpandMeta::BRACE_SEQ_CLOSE) {

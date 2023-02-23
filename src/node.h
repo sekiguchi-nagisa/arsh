@@ -97,20 +97,9 @@ struct NodeVisitor;
 class NodeDumper;
 
 class Node {
-public:
+private:
   const NodeKind nodeKind;
 
-protected:
-  /**
-   * extra attribute for derived node class
-   */
-  unsigned char meta_u8{0};
-
-  unsigned short meta_u16{0};
-
-  unsigned int meta_u32{0};
-
-private:
   /**
    * maintains paren position `(` `)`
    */
@@ -133,6 +122,8 @@ public:
   NON_COPYABLE(Node);
 
   virtual ~Node() = default;
+
+  NodeKind getNodeKind() const { return this->nodeKind; }
 
   bool is(NodeKind kind) const { return this->nodeKind == kind; }
 
@@ -176,14 +167,12 @@ public:
 template <typename T, NodeKind K, enable_when<std::is_base_of<Node, T>::value> = nullptr>
 class WithRtti : public T {
 protected:
-  static_assert(sizeof(Node) == (8 + 24 + sizeof(uintptr_t)));
-
   explicit WithRtti(Token token) : T(K, token) {}
 
 public:
   static constexpr auto KIND = K;
 
-  static bool classof(const Node *node) { return node->nodeKind == K; }
+  static bool classof(const Node *node) { return node->getNodeKind() == K; }
 };
 
 // type definition
@@ -199,21 +188,17 @@ public:
  */
 class TypeNode : public WithRtti<Node, NodeKind::Type> {
 public:
-  enum Kind : unsigned int {
+  const enum Kind : unsigned char {
 #define GEN_ENUM(OP) OP,
     EACH_TYPE_NODE_KIND(GEN_ENUM)
 #undef GEN_ENUM
-  };
+  } typeKind;
 
 protected:
-  TypeNode(Kind typeKind, Token token) : WithRtti(token) {
-    this->meta_u32 = static_cast<unsigned int>(typeKind);
-  }
+  TypeNode(Kind typeKind, Token token) : WithRtti(token), typeKind(typeKind) {}
 
 public:
   ~TypeNode() override = default;
-
-  Kind typeKind() const { return static_cast<Kind>(this->meta_u32); }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -357,13 +342,14 @@ inline std::unique_ptr<TypeNode> newErrorTypeNode() {
 
 class NumberNode : public WithRtti<Node, NodeKind::Number> {
 public:
-  enum Kind : unsigned int {
+  const enum Kind : unsigned char {
 #define GEN_ENUM(OP) OP,
     EACH_NUMBER_NODE_KIND(GEN_ENUM)
 #undef GEN_ENUM
-  };
+  } kind;
 
 private:
+  bool init;
   union {
     int64_t intValue;
     double floatValue;
@@ -375,10 +361,7 @@ public:
    * @param token
    * @param kind
    */
-  NumberNode(Token token, Kind kind) : WithRtti(token), intValue(0) {
-    this->meta_u32 = static_cast<unsigned int>(kind);
-    this->setInit(true);
-  }
+  NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), init(true), intValue(0) {}
 
   static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
     auto node = std::make_unique<NumberNode>(token, Int);
@@ -388,7 +371,7 @@ public:
 
   static std::unique_ptr<NumberNode> newInt(Token token) {
     auto node = std::make_unique<NumberNode>(token, Int);
-    node->setInit(false);
+    node->init = false;
     return node;
   }
 
@@ -400,7 +383,7 @@ public:
 
   static std::unique_ptr<NumberNode> newFloat(Token token) {
     auto node = std::make_unique<NumberNode>(token, Float);
-    node->setInit(false);
+    node->init = false;
     return node;
   }
 
@@ -434,44 +417,39 @@ public:
 
   ~NumberNode() override = default;
 
-  Kind kind() const { return static_cast<Kind>(this->meta_u32); }
-
   int64_t getIntValue() const { return this->intValue; }
 
   double getFloatValue() const { return this->floatValue; }
 
-  bool isInit() const { return this->meta_u8; }
+  bool isInit() const { return this->init; }
 
   void setIntValue(int64_t v) {
-    this->setInit(true);
+    this->init = true;
     this->intValue = v;
   }
 
   void setFloatValue(double v) {
-    this->setInit(true);
+    this->init = true;
     this->floatValue = v;
   }
 
   void dump(NodeDumper &dumper) const override;
 
   std::unique_ptr<NumberNode> clone() const {
-    auto node = std::make_unique<NumberNode>(this->getActualToken(), this->kind());
+    auto node = std::make_unique<NumberNode>(this->getActualToken(), this->kind);
     node->setType(this->getType());
-    if (this->kind() == Kind::Float) {
+    if (this->kind == Kind::Float) {
       node->floatValue = this->getFloatValue();
     } else {
       node->intValue = this->getIntValue();
     }
     return node;
   }
-
-private:
-  void setInit(bool init) { this->meta_u8 = init ? 1 : 0; }
 };
 
 class StringNode : public WithRtti<Node, NodeKind::String> {
 public:
-  enum StringKind : unsigned int {
+  enum StringKind {
     STRING,
     TILDE,
     BACKQUOTE,
@@ -479,6 +457,8 @@ public:
 
 private:
   std::string value;
+  StringKind kind;
+  bool init;
 
 public:
   /**
@@ -486,42 +466,31 @@ public:
    */
   explicit StringNode(std::string &&value) : StringNode({0, 0}, std::move(value)) {}
 
-  explicit StringNode(Token token) : WithRtti(token) {
-    this->setInit(false);
-    this->setKind(STRING);
-  }
+  explicit StringNode(Token token) : WithRtti(token), kind(STRING), init(false) {}
 
   StringNode(Token token, std::string &&value, StringKind kind = STRING)
-      : WithRtti(token), value(std::move(value)) {
-    this->setInit(true);
-    this->setKind(kind);
-  }
+      : WithRtti(token), value(std::move(value)), kind(kind), init(true) {}
 
   ~StringNode() override = default;
 
   const std::string &getValue() const { return this->value; }
 
-  StringKind getKind() const { return static_cast<StringKind>(this->meta_u32); }
+  StringKind getKind() const { return this->kind; }
 
   bool isTilde() const { return this->getKind() == TILDE; }
 
-  void unsetTilde() { this->setKind(STRING); }
+  void unsetTilde() { this->kind = STRING; }
 
   void dump(NodeDumper &dumper) const override;
 
-  bool isInit() const { return this->meta_u8; }
+  bool isInit() const { return this->init; }
 
   void setValue(std::string &&v) {
-    this->setInit(true);
+    this->init = true;
     this->value = std::move(v);
   }
 
   std::string takeValue() { return std::move(this->value); }
-
-private:
-  void setKind(StringKind k) { this->meta_u32 = static_cast<unsigned int>(k); }
-
-  void setInit(bool init) { this->meta_u8 = init ? 1 : 0; }
 };
 
 class StringExprNode : public WithRtti<Node, NodeKind::StringExpr> {
@@ -672,7 +641,7 @@ protected:
 
 public:
   static bool classof(const Node *node) {
-    return node->nodeKind == NodeKind::Var || node->nodeKind == NodeKind::Access;
+    return node->getNodeKind() == NodeKind::Var || node->getNodeKind() == NodeKind::Access;
   }
 
   ~AssignableNode() override = default;
@@ -688,7 +657,7 @@ public:
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 public:
-  enum ExtraOp : unsigned char {
+  enum ExtraOp : unsigned int {
     NONE,
     ARGS_LEN,
     POSITIONAL_ARG,
@@ -696,6 +665,8 @@ public:
 
 private:
   std::string varName;
+  ExtraOp extraOp{NONE};
+  unsigned int extraValue{0}; // for POSITIONAL_ARG
 
 public:
   VarNode(Token token, std::string &&varName);
@@ -704,22 +675,18 @@ public:
 
   const std::string &getVarName() const { return this->varName; }
 
-  ExtraOp getExtraOp() const { return static_cast<ExtraOp>(this->meta_u8); }
+  ExtraOp getExtraOp() const { return this->extraOp; }
 
-  void setExtraValue(unsigned int v) { this->meta_u32 = v; }
+  void setExtraValue(unsigned int v) { this->extraValue = v; }
 
-  /**
-   * for POSITIONAL_ARG
-   * @return
-   */
-  unsigned int getExtraValue() const { return this->meta_u32; }
+  unsigned int getExtraValue() const { return this->extraValue; }
 
   void dump(NodeDumper &dumper) const override;
 };
 
 class AccessNode : public WithRtti<AssignableNode, NodeKind::Access> {
 public:
-  enum AdditionalOp : unsigned char {
+  enum AdditionalOp {
     NOP,
     DUP_RECV,
   };
@@ -727,12 +694,12 @@ public:
 private:
   std::unique_ptr<Node> recvNode;
   NameInfo nameInfo;
+  AdditionalOp additionalOp{NOP};
 
 public:
   AccessNode(std::unique_ptr<Node> &&recvNode, NameInfo &&nameInfo)
       : WithRtti(recvNode->getToken()), recvNode(std::move(recvNode)),
         nameInfo(std::move(nameInfo)) {
-    this->setAdditionalOp(NOP);
     this->updateToken(this->nameInfo.getToken());
   }
 
@@ -751,9 +718,9 @@ public:
 
   const NameInfo &getField() const { return this->nameInfo; }
 
-  void setAdditionalOp(AdditionalOp op) { this->meta_u8 = static_cast<unsigned char>(op); }
+  void setAdditionalOp(AdditionalOp op) { this->additionalOp = op; }
 
-  AdditionalOp getAdditionalOp() const { return static_cast<AdditionalOp>(this->meta_u8); }
+  AdditionalOp getAdditionalOp() const { return this->additionalOp; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -788,11 +755,12 @@ private:
    */
   std::unique_ptr<TypeNode> targetTypeNode;
 
+  OpKind opKind;
+
 public:
   TypeOpNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<TypeNode> &&type, OpKind init)
       : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
-        targetTypeNode(std::move(type)) {
-    this->setOpKind(init);
+        targetTypeNode(std::move(type)), opKind(init) {
     if (this->targetTypeNode) {
       this->updateToken(this->targetTypeNode->getToken());
     }
@@ -822,17 +790,16 @@ public:
    */
   const std::unique_ptr<TypeNode> &getTargetTypeNode() const { return this->targetTypeNode; }
 
-  void setOpKind(OpKind op) { this->meta_u8 = static_cast<unsigned char>(op); }
+  void setOpKind(OpKind op) { this->opKind = op; }
 
-  OpKind getOpKind() const { return static_cast<OpKind>(this->meta_u8); }
+  OpKind getOpKind() const { return this->opKind; }
 
   bool isCastOp() const {
-    return static_cast<unsigned char>(this->getOpKind()) <= static_cast<unsigned char>(PRINT);
+    return static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(PRINT);
   }
 
   bool isInstanceOfOp() const {
-    return static_cast<unsigned char>(this->getOpKind()) >=
-           static_cast<unsigned char>(ALWAYS_FALSE);
+    return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(ALWAYS_FALSE);
   }
 
   void dump(NodeDumper &dumper) const override;
@@ -864,13 +831,13 @@ public:
  */
 class ApplyNode : public WithRtti<Node, NodeKind::Apply> {
 public:
-  enum Kind : unsigned char {
+  enum Kind : unsigned int {
     UNRESOLVED,
     FUNC_CALL,
     METHOD_CALL,
   };
 
-  enum Attr : unsigned short {
+  enum Attr : unsigned int {
     DEFAULT,
     INDEX,
     UNARY,
@@ -890,13 +857,15 @@ private:
    */
   const MethodHandle *handle{nullptr};
 
+  Kind kind;
+
+  Attr attr{DEFAULT};
+
 public:
   ApplyNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<ArgsNode> &&argsNode,
             Kind kind = UNRESOLVED)
       : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
-        argsNode(std::move(argsNode)) {
-    this->setKind(kind);
-    this->setAttr(DEFAULT);
+        argsNode(std::move(argsNode)), kind(kind) {
     this->updateToken(this->argsNode->getToken());
   }
 
@@ -985,11 +954,11 @@ public:
     return cast<AccessNode>(*this->exprNode).getRecvNode();
   }
 
-  Kind getKind() const { return static_cast<Kind>(this->meta_u8); }
+  Kind getKind() const { return this->kind; }
 
-  void setKind(Kind k) { this->meta_u8 = static_cast<unsigned char>(k); }
+  void setKind(Kind k) { this->kind = k; }
 
-  Attr getAttr() const { return static_cast<Attr>(this->meta_u16); }
+  Attr getAttr() const { return this->attr; }
 
   bool isFuncCall() const { return this->getKind() == FUNC_CALL; }
 
@@ -1015,7 +984,7 @@ public:
   void dump(NodeDumper &dumper) const override;
 
 private:
-  void setAttr(Attr a) { this->meta_u16 = static_cast<unsigned short>(a); }
+  void setAttr(Attr a) { this->attr = a; }
 };
 
 /**
@@ -1067,31 +1036,30 @@ public:
  */
 class EmbedNode : public WithRtti<Node, NodeKind::Embed> {
 public:
-  enum Kind : unsigned char {
+  enum Kind {
     STR_EXPR,
     CMD_ARG,
   };
 
 private:
+  const Kind kind;
+
   std::unique_ptr<Node> exprNode;
 
   const MethodHandle *handle{nullptr}; // for method call
 
 public:
   EmbedNode(unsigned int startPos, Kind kind, std::unique_ptr<Node> &&exprNode, Token endToken)
-      : WithRtti({startPos, 1}), exprNode(std::move(exprNode)) {
-    this->setKind(kind);
+      : WithRtti({startPos, 1}), kind(kind), exprNode(std::move(exprNode)) {
     this->updateToken(endToken);
   }
 
   EmbedNode(Kind kind, std::unique_ptr<Node> &&exprNode)
-      : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)) {
-    this->setKind(kind);
-  }
+      : WithRtti(exprNode->getToken()), kind(kind), exprNode(std::move(exprNode)) {}
 
   ~EmbedNode() override = default;
 
-  Kind getKind() const { return static_cast<Kind>(this->meta_u8); }
+  Kind getKind() const { return this->kind; }
 
   Node &getExprNode() const { return *this->exprNode; }
 
@@ -1102,9 +1070,6 @@ public:
   const MethodHandle *getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
-
-private:
-  void setKind(Kind k) { this->meta_u8 = static_cast<unsigned char>(k); }
 };
 
 /**
@@ -1256,7 +1221,9 @@ public:
  */
 class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
-  std::vector<std::unique_ptr<Node>> segmentNodes; // at-least one element
+  unsigned int expansionSize{0};
+  bool braceExpansion{false};
+  std::vector<std::unique_ptr<Node>> segmentNodes; // atleast one element
 
 public:
   explicit CmdArgNode(Token token) : WithRtti(token) {}
@@ -1282,13 +1249,13 @@ public:
            cast<StringNode>(*this->segmentNodes[i]).isTilde();
   }
 
-  bool isBraceExpansion() const { return this->meta_u8; }
+  bool isBraceExpansion() const { return this->braceExpansion; }
 
-  void setBraceExpansion(bool set) { this->meta_u8 = set ? 1 : 0; }
+  void setBraceExpansion(bool set) { this->braceExpansion = set; }
 
-  unsigned int getExpansionSize() const { return this->meta_u32; }
+  unsigned int getExpansionSize() const { return this->expansionSize; }
 
-  void setExpansionSize(unsigned int size) { this->meta_u32 = size; }
+  void setExpansionSize(unsigned int size) { this->expansionSize = size; }
 };
 
 class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {
@@ -1310,16 +1277,18 @@ public:
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
   std::string fdName;
+  TokenKind opKind;
+  RedirOp op;
   int newFd{-1};
   int targetFd{-1};
   std::unique_ptr<CmdArgNode> targetNode;
 
 public:
   RedirNode(TokenKind opKind, Token opToken, StringRef ref, std::unique_ptr<CmdArgNode> &&node)
-      : WithRtti(opToken), targetNode(std::move(node)) {
+      : WithRtti(opToken), opKind(opKind), targetNode(std::move(node)) {
     auto pair = resolveRedirOp(opKind, ref);
     this->fdName = std::move(pair.first);
-    this->meta_u16 = static_cast<unsigned short>(pair.second);
+    this->op = pair.second;
     this->updateToken(this->targetNode->getToken());
   }
 
@@ -1331,7 +1300,9 @@ public:
 
   int getNewFd() const { return this->newFd; }
 
-  RedirOp getRedirOp() const { return static_cast<RedirOp>(this->meta_u16); }
+  TokenKind getOpKind() const { return this->opKind; }
+
+  RedirOp getRedirOp() const { return this->op; }
 
   CmdArgNode &getTargetNode() { return *this->targetNode; }
 
@@ -1344,21 +1315,20 @@ public:
 
 class WildCardNode : public WithRtti<Node, NodeKind::WildCard> {
 public:
-  WildCardNode(Token token, ExpandMeta p) : WithRtti(token) {
-    this->meta_u32 = static_cast<unsigned int>(p);
-    this->setExpand(true);
-  }
+  const ExpandMeta meta;
+  bool expand{true};
+  unsigned short braceId{0}; // up 85(255/3)
+
+  WildCardNode(Token token, ExpandMeta p) : WithRtti(token), meta(p) {}
 
   ~WildCardNode() override = default;
 
-  ExpandMeta meta() const { return static_cast<ExpandMeta>(this->meta_u32); }
+  bool isExpand() const { return this->expand; }
 
-  bool isExpand() const { return this->meta_u8; }
-
-  void setExpand(bool set) { this->meta_u8 = set ? 1 : 0; }
+  void setExpand(bool set) { this->expand = set; }
 
   bool isBraceMeta() const {
-    switch (this->meta()) {
+    switch (this->meta) {
     case ExpandMeta::BRACE_OPEN:
     case ExpandMeta::BRACE_CLOSE:
     case ExpandMeta::BRACE_SEP:
@@ -1368,13 +1338,9 @@ public:
     }
   }
 
-  /**
-   * up 85(255/3)
-   * @return
-   */
-  unsigned short getBraceId() const { return this->meta_u16; }
+  unsigned short getBraceId() const { return this->braceId; }
 
-  void setBraceId(unsigned short id) { this->meta_u16 = id; }
+  void setBraceId(unsigned short id) { this->braceId = id; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1406,13 +1372,15 @@ private:
    */
   std::vector<std::unique_ptr<Node>> argNodes;
 
+  unsigned int redirCount{0};
+
+  bool needFork{true};
+
   HandlePtr handle;
 
 public:
   explicit CmdNode(std::unique_ptr<StringNode> &&nameNode)
-      : WithRtti(nameNode->getToken()), nameNode(std::move(nameNode)) {
-    this->setNeedFork(true);
-  }
+      : WithRtti(nameNode->getToken()), nameNode(std::move(nameNode)) {}
 
   ~CmdNode() override = default;
 
@@ -1422,11 +1390,11 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getArgNodes() const { return this->argNodes; }
 
-  bool hasRedir() const { return this->redirCount() > 0; }
+  bool hasRedir() const { return this->redirCount > 0; }
 
-  void setNeedFork(bool in) { this->meta_u8 = in ? 1 : 0; }
+  void setNeedFork(bool in) { this->needFork = in; }
 
-  bool getNeedFork() const { return this->meta_u8; }
+  bool getNeedFork() const { return this->needFork; }
 
   void addRedirNode(std::unique_ptr<RedirNode> &&node);
 
@@ -1435,16 +1403,14 @@ public:
   const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
-
-private:
-  unsigned int redirCount() const { return this->meta_u32; }
-
-  void incRedirCount() { this->meta_u32++; }
 };
 
 class PipelineNode : public WithRtti<Node, NodeKind::Pipeline> {
 private:
   std::vector<std::unique_ptr<Node>> nodes;
+
+  unsigned int baseIndex{0}; // for indicating internal pipeline state index
+  bool inFork{false};
 
 public:
   PipelineNode(std::unique_ptr<Node> &&leftNode, std::unique_ptr<Node> &&rightNode)
@@ -1459,19 +1425,13 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
-  void setBaseIndex(unsigned int index) { this->meta_u32 = index; }
+  void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
-  /**
-   * for indicating internal pipeline state index
-   * @return
-   */
-  unsigned int getBaseIndex() const { return this->meta_u32; }
+  unsigned int getBaseIndex() const { return this->baseIndex; }
 
-  void setInFork(bool in) { this->meta_u8 = in ? 1 : 0; }
+  void setInFork(bool in) { this->inFork = in; }
 
-  bool getInFork() const { return this->meta_u8; }
-
-  bool isLastPipe() const { return !this->getInFork() && !isa<CmdNode>(*this->nodes.back()); }
+  bool isLastPipe() const { return !this->inFork && !isa<CmdNode>(*this->nodes.back()); }
 
   void dump(NodeDumper &dumper) const override;
 
@@ -1484,6 +1444,8 @@ private:
   std::unique_ptr<Node> exprNode;
 
   std::vector<std::unique_ptr<RedirNode>> redirNodes;
+
+  unsigned int baseIndex{0};
 
 public:
   WithNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<RedirNode> &&redirNode)
@@ -1502,9 +1464,9 @@ public:
 
   const std::vector<std::unique_ptr<RedirNode>> &getRedirNodes() const { return this->redirNodes; }
 
-  void setBaseIndex(unsigned int index) { this->meta_u32 = index; }
+  void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
-  unsigned int getBaseIndex() const { return this->meta_u32; }
+  unsigned int getBaseIndex() const { return this->baseIndex; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1514,6 +1476,8 @@ class TimeNode : public WithRtti<Node, NodeKind::Time> {
 private:
   std::unique_ptr<Node> exprNode;
 
+  unsigned int baseIndex{0};
+
 public:
   TimeNode(Token token, std::unique_ptr<Node> &&exprNode)
       : WithRtti(token), exprNode(std::move(exprNode)) {
@@ -1522,27 +1486,27 @@ public:
 
   Node &getExprNode() const { return *this->exprNode; }
 
-  void setBaseIndex(unsigned int index) { this->meta_u32 = index; }
+  void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
-  unsigned int getBaseIndex() const { return this->meta_u32; }
+  unsigned int getBaseIndex() const { return this->baseIndex; }
 
   void dump(NodeDumper &dumper) const override;
 };
 
 class ForkNode : public WithRtti<Node, NodeKind::Fork> {
 private:
+  ForkKind opKind;
   std::unique_ptr<Node> exprNode;
 
 public:
   ForkNode(Token token, ForkKind kind, std::unique_ptr<Node> &&exprNode, Token endToken)
-      : WithRtti(token), exprNode(std::move(exprNode)) {
+      : WithRtti(token), opKind(kind), exprNode(std::move(exprNode)) {
     this->updateToken(endToken);
     if (isa<CmdNode>(*this->exprNode)) {
       cast<CmdNode>(*this->exprNode).setNeedFork(false);
     } else if (isa<PipelineNode>(*this->exprNode)) {
       cast<PipelineNode>(*this->exprNode).setInFork(true);
     }
-    this->meta_u8 = static_cast<unsigned char>(kind);
   }
 
   static auto newCmdSubstitution(unsigned int pos, std::unique_ptr<Node> &&exprNode, Token token,
@@ -1570,12 +1534,12 @@ public:
 
   ~ForkNode() override = default;
 
-  ForkKind getOpKind() const { return static_cast<ForkKind>(this->meta_u8); }
+  ForkKind getOpKind() const { return this->opKind; }
 
   Node &getExprNode() const { return *this->exprNode; }
 
   bool isJob() const {
-    switch (this->getOpKind()) {
+    switch (this->opKind) {
     case ForkKind::JOB:
     case ForkKind::COPROC:
     case ForkKind::DISOWN:
@@ -1586,7 +1550,7 @@ public:
   }
 
   bool isCmdSub() const {
-    switch (this->getOpKind()) {
+    switch (this->opKind) {
     case ForkKind::STR:
     case ForkKind::ARRAY:
       return true;
@@ -1665,10 +1629,10 @@ public:
 
 class TypeDefNode : public WithRtti<Node, NodeKind::TypeDef> {
 public:
-  enum Kind : unsigned char {
+  const enum Kind : unsigned char {
     ALIAS,
     ERROR_DEF,
-  };
+  } kind;
 
 private:
   NameInfo nameInfo;
@@ -1676,9 +1640,8 @@ private:
 
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
               Kind kind)
-      : WithRtti({startPos, 1}), nameInfo(std::move(name)),
+      : WithRtti({startPos, 1}), kind(kind), nameInfo(std::move(name)),
         targetTypeNode(std::move(targetTypeNode)) {
-    this->meta_u8 = static_cast<unsigned char>(kind);
     this->updateToken(this->targetTypeNode->getToken());
   }
 
@@ -1701,7 +1664,7 @@ public:
 
   const std::string &getName() const { return this->nameInfo.getName(); }
 
-  Kind getDefKind() const { return static_cast<Kind>(this->meta_u8); }
+  Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
 
@@ -1711,6 +1674,11 @@ public:
 class DeferNode : public WithRtti<Node, NodeKind::Defer> {
 private:
   std::unique_ptr<BlockNode> blockNode;
+
+  /**
+   * in top-level, always 0
+   */
+  unsigned int dropLocalSize{0};
 
 public:
   DeferNode(unsigned int pos, std::unique_ptr<BlockNode> &&blockNode)
@@ -1722,13 +1690,9 @@ public:
 
   unsigned int getDropLocalOffset() const { return this->blockNode->getBaseIndex(); }
 
-  unsigned int getDropLocalSize() const { return this->meta_u32; }
+  unsigned int getDropLocalSize() const { return this->dropLocalSize; }
 
-  /**
-   * in top-level, always 0
-   * @param size
-   */
-  void setDropLocalSize(unsigned int size) { this->meta_u32 = size; }
+  void setDropLocalSize(unsigned int size) { this->dropLocalSize = size; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1748,6 +1712,8 @@ private:
   std::unique_ptr<Node> iterNode;
 
   std::unique_ptr<BlockNode> blockNode;
+
+  bool asDoWhile;
 
 public:
   /**
@@ -1783,7 +1749,7 @@ public:
 
   BlockNode &getBlockNode() const { return *this->blockNode; }
 
-  bool isDoWhile() const { return this->meta_u8; }
+  bool isDoWhile() const { return this->asDoWhile; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1865,7 +1831,7 @@ public:
 
 class CaseNode : public WithRtti<Node, NodeKind::Case> {
 public:
-  enum Kind : unsigned char {
+  enum Kind : unsigned int {
     MAP = 0,
     IF_ELSE = 1,
   };
@@ -1873,12 +1839,11 @@ public:
 private:
   std::unique_ptr<Node> exprNode;
   std::vector<std::unique_ptr<ArmNode>> armNodes;
+  Kind caseKind{MAP};
 
 public:
   CaseNode(unsigned int pos, std::unique_ptr<Node> &&exprNode)
-      : WithRtti({pos, 1}), exprNode(std::move(exprNode)) {
-    this->setCaseKind(MAP);
-  }
+      : WithRtti({pos, 1}), exprNode(std::move(exprNode)) {}
 
   Node &getExprNode() const { return *this->exprNode; }
 
@@ -1888,9 +1853,9 @@ public:
 
   const std::vector<std::unique_ptr<ArmNode>> &getArmNodes() const { return this->armNodes; }
 
-  void setCaseKind(Kind k) { this->meta_u8 = static_cast<unsigned char>(k); }
+  void setCaseKind(Kind k) { this->caseKind = k; }
 
-  Kind getCaseKind() const { return static_cast<Kind>(this->meta_u8); }
+  Kind getCaseKind() const { return this->caseKind; }
 
   bool hasDefault() const;
 
@@ -1977,6 +1942,9 @@ class CatchNode : public WithRtti<Node, NodeKind::Catch> {
 private:
   NameInfo exceptionName;
   std::unique_ptr<TypeNode> typeNode;
+
+  unsigned int varIndex{0};
+
   std::unique_ptr<BlockNode> blockNode;
 
 public:
@@ -1992,9 +1960,9 @@ public:
 
   TypeNode &getTypeNode() const { return *this->typeNode; }
 
-  void setAttribute(const Handle &handle) { this->meta_u32 = handle.getIndex(); }
+  void setAttribute(const Handle &handle) { this->varIndex = handle.getIndex(); }
 
-  unsigned int getVarIndex() const { return this->meta_u32; }
+  unsigned int getVarIndex() const { return this->varIndex; }
 
   BlockNode &getBlockNode() const { return *this->blockNode; }
 
@@ -2060,6 +2028,7 @@ public:
   };
 
 private:
+  const Kind kind;
   NameInfo varName;
 
   /**
@@ -2077,7 +2046,7 @@ public:
 
   const std::string &getVarName() const { return this->varName.getName(); }
 
-  Kind getKind() const { return static_cast<Kind>(this->meta_u8); }
+  Kind getKind() const { return this->kind; }
 
   void setHandle(HandlePtr ptr) { this->handle = std::move(ptr); }
 
@@ -2114,6 +2083,7 @@ private:
   std::unique_ptr<Node> leftNode;
 
   std::unique_ptr<Node> rightNode;
+  flag8_set_t attributeSet{0};
 
 public:
   static constexpr flag8_t SELF_ASSIGN = 1u << 0u;
@@ -2124,7 +2094,7 @@ public:
       : WithRtti(leftNode->getToken()), leftNode(std::move(leftNode)),
         rightNode(std::move(rightNode)) {
     if (selfAssign) {
-      setAttribute(SELF_ASSIGN);
+      setFlag(this->attributeSet, SELF_ASSIGN);
     }
     this->updateToken(this->rightNode->getToken());
   }
@@ -2135,13 +2105,11 @@ public:
 
   std::unique_ptr<Node> &refRightNode() { return this->rightNode; }
 
-  void setAttribute(flag8_t flag) { setFlag(this->meta_u8, flag); }
+  void setAttribute(flag8_t flag) { setFlag(this->attributeSet, flag); }
 
-  flag8_set_t attribute() const { return this->meta_u8; }
+  bool isSelfAssignment() const { return hasFlag(this->attributeSet, SELF_ASSIGN); }
 
-  bool isSelfAssignment() const { return hasFlag(this->attribute(), SELF_ASSIGN); }
-
-  bool isFieldAssign() const { return hasFlag(this->attribute(), FIELD_ASSIGN); }
+  bool isFieldAssign() const { return hasFlag(this->attributeSet, FIELD_ASSIGN); }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2212,6 +2180,8 @@ private:
    */
   std::unique_ptr<Node> exprNode;
 
+  unsigned int baseIndex{0};
+
 public:
   PrefixAssignNode(std::vector<std::unique_ptr<AssignNode>> &&declNodes,
                    std::unique_ptr<Node> &&exprNode)
@@ -2233,9 +2203,9 @@ public:
     return name;
   }
 
-  void setBaseIndex(unsigned int index) { this->meta_u32 = index; }
+  void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
-  unsigned int getBaseIndex() const { return this->meta_u32; }
+  unsigned int getBaseIndex() const { return this->baseIndex; }
 
   unsigned int getVarSize() const { return this->declNodes.size() + 1; }
 
@@ -2244,11 +2214,11 @@ public:
 
 class FunctionNode : public WithRtti<Node, NodeKind::Function> {
 public:
-  enum Kind : unsigned char {
+  const enum Kind : unsigned char {
     FUNC,
     SINGLE_EXPR,
     CONSTRUCTOR,
-  };
+  } kind;
 
 private:
   NameInfo funcName;
@@ -2289,13 +2259,9 @@ private:
 
 public:
   FunctionNode(unsigned int startPos, NameInfo &&funcName, Kind k = FUNC)
-      : WithRtti({startPos, 0}), funcName(std::move(funcName)) {
-    this->meta_u8 = static_cast<unsigned char>(k);
-  }
+      : WithRtti({startPos, 0}), kind(k), funcName(std::move(funcName)) {}
 
   ~FunctionNode() override = default;
-
-  Kind kind() const { return static_cast<Kind>(this->meta_u8); }
 
   const NameInfo &getNameInfo() const { return this->funcName; }
 
@@ -2359,15 +2325,13 @@ public:
     return this->funcName.getName().empty() && !this->isConstructor();
   }
 
-  bool isSingleExpr() const { return this->kind() == SINGLE_EXPR; }
+  bool isSingleExpr() const { return this->kind == SINGLE_EXPR; }
 
-  bool isConstructor() const { return this->kind() == CONSTRUCTOR; }
+  bool isConstructor() const { return this->kind == CONSTRUCTOR; }
 
-  bool isNamedFunc() const { return this->kind() == FUNC && !this->funcName.getName().empty(); }
+  bool isNamedFunc() const { return this->kind == FUNC && !this->funcName.getName().empty(); }
 
-  bool isMethod() const {
-    return this->kind() == FUNC && static_cast<bool>(this->getRecvTypeNode());
-  }
+  bool isMethod() const { return this->kind == FUNC && static_cast<bool>(this->getRecvTypeNode()); }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2377,6 +2341,7 @@ private:
   NameInfo cmdName;
 
   HandlePtr handle;
+  unsigned int maxVarNum{0};
   std::unique_ptr<TypeNode> returnTypeNode; // may be null
   std::unique_ptr<BlockNode> blockNode;
 
@@ -2410,13 +2375,9 @@ public:
 
   const std::unique_ptr<TypeNode> &getReturnTypeNode() const { return this->returnTypeNode; }
 
-  void setMaxVarNum(unsigned int num) { this->meta_u32 = num; }
+  void setMaxVarNum(unsigned int num) { this->maxVarNum = num; }
 
-  /**
-   * maximum number of local variables defined in this udc
-   * @return
-   */
-  unsigned int getMaxVarNum() const { return this->meta_u32; }
+  unsigned int getMaxVarNum() const { return this->maxVarNum; }
 
   void addCapture(HandlePtr hd) { this->captures.push_back(std::move(hd)); }
 
@@ -2471,8 +2432,16 @@ private:
    */
   std::shared_ptr<const std::string> pathName;
 
-  static constexpr unsigned char ATTR_FIRST_APPEAR = 1u << 0u;
-  static constexpr unsigned char ATTR_INLINED = 1u << 1u;
+  const bool firstAppear;
+
+  const bool inlined;
+
+  const unsigned short srcIndex;
+
+  /**
+   * maximum number of local variable in this module
+   */
+  unsigned int maxVarNum{0};
 
 public:
   SourceNode(Token token, std::shared_ptr<CmdArgNode> pathNode,
@@ -2480,15 +2449,8 @@ public:
              std::shared_ptr<const std::string> pathName, bool firstAppear, bool inlined,
              unsigned short srcIndex)
       : WithRtti(token), pathNode(std::move(pathNode)), name(std::move(name)), modType(modType),
-        pathName(std::move(pathName)) {
-    if (firstAppear) {
-      setFlag(this->meta_u8, ATTR_FIRST_APPEAR);
-    }
-    if (inlined) {
-      setFlag(this->meta_u8, ATTR_INLINED);
-    }
-    this->meta_u16 = srcIndex;
-  }
+        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined),
+        srcIndex(srcIndex) {}
 
   ~SourceNode() override = default;
 
@@ -2502,21 +2464,17 @@ public:
 
   const std::string &getPathName() const { return *this->pathName; }
 
-  bool isFirstAppear() const { return hasFlag(this->meta_u8, ATTR_FIRST_APPEAR); }
+  bool isFirstAppear() const { return this->firstAppear; }
 
-  bool isInlined() const { return hasFlag(this->meta_u8, ATTR_INLINED); }
+  bool isInlined() const { return this->inlined; }
 
   bool isUnreachable() const { return hasFlag(this->modType.getAttr(), ModAttr::UNREACHABLE); }
 
-  unsigned short getSrcIndex() const { return this->meta_u16; }
+  unsigned short getSrcIndex() const { return this->srcIndex; }
 
-  void setMaxVarNum(unsigned int v) { this->meta_u32 = v; }
+  void setMaxVarNum(unsigned int v) { this->maxVarNum = v; }
 
-  /**
-   *  maximum number of local variables defined in this module
-   * @return
-   */
-  unsigned int getMaxVarNum() const { return this->meta_u32; }
+  unsigned int getMaxVarNum() const { return this->maxVarNum; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2532,8 +2490,14 @@ private:
    */
   std::shared_ptr<const NameInfo> name;
 
-  static constexpr unsigned char ATTR_OPTIONAL = 1u << 0u;
-  static constexpr unsigned char ATTR_INLINED = 1u << 1u;
+  /**
+   * if true, ignore module not found error
+   */
+  const bool optional;
+
+  bool inlined{false};
+
+  unsigned int curIndex{0}; // index of currently evaluating source path
 
   std::vector<std::shared_ptr<const std::string>> pathList; // evaluated path list
 
@@ -2541,11 +2505,8 @@ public:
   using path_iterator = decltype(constNodes.cbegin());
 
   SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional)
-      : WithRtti({pos, 1}), pathNode(std::move(pathNode)) {
+      : WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
     this->updateToken(this->pathNode->getToken());
-    if (optional) {
-      setFlag(this->meta_u8, ATTR_OPTIONAL);
-    }
   }
 
   ~SourceListNode() override;
@@ -2563,33 +2524,19 @@ public:
 
   const auto &getNameInfoPtr() const { return this->name; }
 
-  /**
-   * if true, ignore module not found error
-   * @return
-   */
-  bool isOptional() const { return hasFlag(this->meta_u8, ATTR_OPTIONAL); }
+  bool isOptional() const { return this->optional; }
 
-  bool isInlined() const { return hasFlag(this->meta_u8, ATTR_INLINED); }
+  bool isInlined() const { return this->inlined; }
 
-  void setInlined(bool s) {
-    if (s) {
-      setFlag(this->meta_u8, ATTR_INLINED);
-    } else {
-      unsetFlag(this->meta_u8, ATTR_INLINED);
-    }
-  }
+  void setInlined(bool s) { this->inlined = s; }
 
   bool isExpansion() const {
     return this->getPathNode().getExpansionSize() > 0 && !this->getNameInfoPtr();
   }
 
-  /**
-   * index of currently evaluating source path
-   * @return
-   */
-  unsigned int getCurIndex() const { return this->meta_u32; }
+  unsigned int getCurIndex() const { return this->curIndex; }
 
-  void setCurIndex(unsigned int index) { this->meta_u32 = index; }
+  void setCurIndex(unsigned int index) { this->curIndex = index; }
 
   void setPathList(std::vector<std::shared_ptr<const std::string>> &&list) {
     this->pathList = std::move(list);
@@ -2599,10 +2546,10 @@ public:
     return this->pathList;
   }
 
-  bool hasUnconsumedPath() const { return this->getCurIndex() < this->pathList.size(); }
+  bool hasUnconsumedPath() const { return this->curIndex < this->pathList.size(); }
 
   std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
-    unsigned int index = this->getCurIndex() - 1;
+    unsigned int index = this->curIndex - 1;
     return std::make_unique<SourceNode>(this->getToken(), this->pathNode, this->name, modType,
                                         this->pathList[index], first, this->isInlined(), index);
   }
@@ -2621,18 +2568,17 @@ public:
 
 private:
   std::unique_ptr<Node> exprNode;
+  const Kind kind;
 
 public:
   CodeCompNode(Kind kind, std::unique_ptr<Node> &&exprNode, Token tok)
-      : WithRtti(tok), exprNode(std::move(exprNode)) {
-    this->meta_u32 = static_cast<unsigned int>(kind);
-  }
-
-  Kind getKind() const { return static_cast<Kind>(this->meta_u32); }
+      : WithRtti(tok), exprNode(std::move(exprNode)), kind(kind) {}
 
   const std::unique_ptr<Node> &getExprNode() const { return this->exprNode; }
 
   Token getTypingToken() const { return this->getToken(); }
+
+  Kind getKind() const { return this->kind; }
 
   void dump(NodeDumper &dumper) const override;
 };

@@ -370,7 +370,7 @@ bool DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
     std::string str = "require: ";
     str += table[static_cast<unsigned int>(kind)];
     str += "Node, but is: ";
-    str += table[static_cast<unsigned int>(node.nodeKind)];
+    str += table[static_cast<unsigned int>(node.getNodeKind())];
     str += "Node";
     this->createError(node, str);
     return false;
