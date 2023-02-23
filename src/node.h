@@ -176,7 +176,7 @@ public:
 template <typename T, NodeKind K, enable_when<std::is_base_of<Node, T>::value> = nullptr>
 class WithRtti : public T {
 protected:
-  static_assert(sizeof(Node) == (24 + sizeof(uintptr_t) * 2));
+  static_assert(sizeof(Node) == (8 + 24 + sizeof(uintptr_t)));
 
   explicit WithRtti(Token token) : T(K, token) {}
 
