@@ -84,7 +84,10 @@ void Node::accept(NodeVisitor &visitor) {
 // ##     TypeNode     ##
 // ######################
 
-void TypeNode::dump(NodeDumper &dumper) const { DUMP_ENUM(typeKind, EACH_TYPE_NODE_KIND); }
+void TypeNode::dump(NodeDumper &dumper) const {
+  auto typeKind = this->typeKind();
+  DUMP_ENUM(typeKind, EACH_TYPE_NODE_KIND);
+}
 
 // ##########################
 // ##     BaseTypeNode     ##
@@ -140,9 +143,11 @@ void TypeOfNode::dump(NodeDumper &dumper) const {
 // ########################
 
 void NumberNode::dump(NodeDumper &dumper) const {
+  const auto kind = this->kind();
+  const auto init = this->isInit();
   DUMP_ENUM(kind, EACH_NUMBER_NODE_KIND);
   DUMP(init);
-  switch (this->kind) {
+  switch (kind) {
   case Int:
   case Signal:
   case Bool:
@@ -165,10 +170,12 @@ void StringNode::dump(NodeDumper &dumper) const {
   OP(TILDE)                                                                                        \
   OP(BACKQUOTE)
 
+  auto kind = this->getKind();
   DUMP_ENUM(kind, EACH_ENUM);
 
 #undef EACH_ENUM
 
+  auto init = this->isInit();
   DUMP(init);
   DUMP(value);
 }
@@ -228,12 +235,14 @@ void TupleNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 VarNode::VarNode(ydsh::Token token, std::string &&varName)
     : WithRtti(token), varName(std::move(varName)) {
   assert(!this->varName.empty());
+  ExtraOp extraOp = NONE;
   char ch = this->varName[0];
   if (ch == '#') {
-    this->extraOp = ARGS_LEN;
+    extraOp = ARGS_LEN;
   } else if (isDecimal(ch)) {
-    this->extraOp = POSITIONAL_ARG;
+    extraOp = POSITIONAL_ARG;
   }
+  this->meta_u8 = static_cast<unsigned char>(extraOp);
 }
 
 void VarNode::dump(NodeDumper &dumper) const {
@@ -245,9 +254,11 @@ void VarNode::dump(NodeDumper &dumper) const {
   OP(ARGS_LEN)                                                                                     \
   OP(POSITIONAL_ARG)
 
+  auto extraOp = this->getExtraOp();
   DUMP_ENUM(extraOp, EACH_ENUM);
 #undef EACH_ENUM
 
+  auto extraValue = this->getExtraValue();
   DUMP(extraValue);
 }
 
@@ -264,6 +275,7 @@ void AccessNode::dump(NodeDumper &dumper) const {
   OP(NOP)                                                                                          \
   OP(DUP_RECV)
 
+  auto additionalOp = this->getAdditionalOp();
   DUMP_ENUM(additionalOp, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -289,6 +301,7 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
   OP(ALWAYS_TRUE)                                                                                  \
   OP(INSTANCEOF)
 
+  auto opKind = this->getOpKind();
   DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -323,6 +336,7 @@ void ApplyNode::dump(NodeDumper &dumper) const {
   OP(FUNC_CALL)                                                                                    \
   OP(METHOD_CALL)
 
+  auto kind = this->getKind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 
@@ -336,6 +350,7 @@ void ApplyNode::dump(NodeDumper &dumper) const {
   OP(MAP_ITER_NEXT_KEY)                                                                            \
   OP(MAP_ITER_NEXT_VALUE)
 
+  auto attr = this->getAttr();
   DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -359,6 +374,7 @@ void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
   OP(STR_EXPR)                                                                                     \
   OP(CMD_ARG)
 
+  auto kind = this->getKind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 
@@ -407,6 +423,8 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
 }
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
+  auto expansionSize = this->getExpansionSize();
+  auto braceExpansion = this->isBraceExpansion();
   DUMP(expansionSize);
   DUMP(braceExpansion);
   DUMP(segmentNodes);
@@ -439,6 +457,7 @@ void RedirNode::dump(NodeDumper &dumper) const {
   OP(RedirOp::HERE_DOC)                                                                            \
   OP(RedirOp::HERE_STR)
 
+  auto op = this->getRedirOp();
   DUMP_ENUM(op, EACH_ENUM);
 #undef EACH_ENUM
 
@@ -451,7 +470,9 @@ void RedirNode::dump(NodeDumper &dumper) const {
 // ##########################
 
 void WildCardNode::dump(NodeDumper &dumper) const {
-  dumper.dump("meta", toString(meta));
+  dumper.dump("meta", toString(this->meta()));
+  auto expand = this->isExpand();
+  auto braceId = this->getBraceId();
   DUMP(expand);
   DUMP(braceId);
 }
@@ -490,12 +511,15 @@ void CmdNode::addArgNode(std::unique_ptr<CmdArgNode> &&node) {
 void CmdNode::addRedirNode(std::unique_ptr<RedirNode> &&node) {
   this->updateToken(node->getToken());
   this->argNodes.push_back(std::move(node));
-  this->redirCount++;
+  this->incRedirCount();
 }
 
 void CmdNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(nameNode);
   DUMP(argNodes);
+
+  auto redirCount = this->redirCount();
+  auto needFork = this->getNeedFork();
   DUMP(redirCount);
   DUMP(needFork);
   DUMP_PTR(handle);
@@ -519,6 +543,9 @@ void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
 
 void PipelineNode::dump(NodeDumper &dumper) const {
   DUMP(nodes);
+
+  auto baseIndex = this->getBaseIndex();
+  auto inFork = this->getInFork();
   DUMP(baseIndex);
   DUMP(inFork);
 }
@@ -538,6 +565,8 @@ void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
 void WithNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(exprNode);
   DUMP(redirNodes);
+
+  auto baseIndex = this->getBaseIndex();
   DUMP(baseIndex);
 }
 
@@ -547,6 +576,8 @@ void WithNode::dump(NodeDumper &dumper) const {
 
 void TimeNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(exprNode);
+
+  auto baseIndex = this->getBaseIndex();
   DUMP(baseIndex);
 }
 
@@ -568,6 +599,7 @@ void ForkNode::dump(NodeDumper &dumper) const {
   OP(ForkKind::DISOWN)                                                                             \
   OP(ForkKind::COPROC)
 
+  auto opKind = this->getOpKind();
   DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -609,6 +641,7 @@ void TypeDefNode::dump(NodeDumper &dumper) const {
   OP(ALIAS)                                                                                        \
   OP(ERROR_DEF)
 
+  auto kind = this->getDefKind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -619,6 +652,8 @@ void TypeDefNode::dump(NodeDumper &dumper) const {
 
 void DeferNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(blockNode);
+
+  auto dropLocalSize = this->getDropLocalSize();
   DUMP(dropLocalSize);
 }
 
@@ -630,7 +665,7 @@ LoopNode::LoopNode(unsigned int startPos, std::unique_ptr<Node> &&initNode,
                    std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&iterNode,
                    std::unique_ptr<BlockNode> &&blockNode, bool asDoWhile)
     : WithRtti({startPos, 0}), initNode(std::move(initNode)), condNode(std::move(condNode)),
-      iterNode(std::move(iterNode)), blockNode(std::move(blockNode)), asDoWhile(asDoWhile) {
+      iterNode(std::move(iterNode)), blockNode(std::move(blockNode)) {
   if (this->initNode == nullptr) {
     this->initNode = std::make_unique<EmptyNode>();
   }
@@ -638,8 +673,8 @@ LoopNode::LoopNode(unsigned int startPos, std::unique_ptr<Node> &&initNode,
   if (this->iterNode == nullptr) {
     this->iterNode = std::make_unique<EmptyNode>();
   }
-
-  this->updateToken(this->asDoWhile ? this->condNode->getToken() : this->blockNode->getToken());
+  this->meta_u8 = asDoWhile ? 1 : 0;
+  this->updateToken(this->isDoWhile() ? this->condNode->getToken() : this->blockNode->getToken());
 }
 
 void LoopNode::dump(NodeDumper &dumper) const {
@@ -647,6 +682,8 @@ void LoopNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(condNode);
   DUMP_PTR(iterNode);
   DUMP_PTR(blockNode);
+
+  auto asDoWhile = this->isDoWhile();
   DUMP(asDoWhile);
 }
 
@@ -700,6 +737,7 @@ void CaseNode::dump(NodeDumper &dumper) const {
   OP(MAP)                                                                                          \
   OP(IF_ELSE)
 
+  auto caseKind = this->getCaseKind();
   DUMP_ENUM(caseKind, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -752,6 +790,8 @@ void CatchNode::dump(NodeDumper &dumper) const {
   DUMP(exceptionName);
   DUMP_PTR(typeNode);
   DUMP_PTR(blockNode);
+
+  auto varIndex = this->getVarIndex();
   DUMP(varIndex);
 }
 
@@ -771,12 +811,12 @@ void TryNode::dump(NodeDumper &dumper) const {
 
 VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
                          std::unique_ptr<Node> &&exprNode, Kind kind)
-    : WithRtti({startPos, 0}), kind(kind), varName(std::move(varName)),
-      exprNode(std::move(exprNode)) {
+    : WithRtti({startPos, 0}), varName(std::move(varName)), exprNode(std::move(exprNode)) {
   this->updateToken(this->varName.getToken());
   if (this->exprNode != nullptr) {
     this->updateToken(this->exprNode->getToken());
   }
+  this->meta_u8 = static_cast<unsigned char>(kind);
 }
 
 void VarDeclNode::dump(NodeDumper &dumper) const {
@@ -789,6 +829,7 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
   OP(IMPORT_ENV)                                                                                   \
   OP(EXPORT_ENV)
 
+  auto kind = this->getKind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 
@@ -807,6 +848,7 @@ void AssignNode::dump(NodeDumper &dumper) const {
   OP(SELF_ASSIGN)                                                                                  \
   OP(FIELD_ASSIGN)
 
+  auto attributeSet = this->attribute();
   DUMP_BITSET(attributeSet, EACH_FLAG);
 #undef EACH_FLAG
 }
@@ -862,6 +904,8 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
 void PrefixAssignNode::dump(NodeDumper &dumper) const {
   DUMP(declNodes);
   DUMP_PTR(exprNode);
+
+  auto baseIndex = this->getBaseIndex();
   DUMP(baseIndex);
 }
 
@@ -885,6 +929,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   OP(SINGLE_EXPR)                                                                                  \
   OP(CONSTRUCTOR)
 
+  auto kind = this->kind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 
@@ -907,6 +952,8 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(handle);
   DUMP_PTR(returnTypeNode);
   DUMP_PTR(blockNode);
+
+  auto maxVarNum = this->getMaxVarNum();
   DUMP(maxVarNum);
 }
 
@@ -924,8 +971,14 @@ void SourceNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(name);
   DUMP(modType);
   DUMP_PTR(pathName);
+
+  auto firstAppear = this->isFirstAppear();
+  auto inlined = this->isInlined();
   DUMP(firstAppear);
   DUMP(inlined);
+
+  auto srcIndex = this->getSrcIndex();
+  auto maxVarNum = this->getMaxVarNum();
   DUMP(srcIndex);
   DUMP(maxVarNum);
 }
@@ -944,6 +997,10 @@ void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
   DUMP(constNodes);
   DUMP_PTR(name);
+
+  auto optional = this->isOptional();
+  auto inlined = this->isInlined();
+  auto curIndex = this->getCurIndex();
   DUMP(optional);
   DUMP(inlined);
   DUMP(curIndex);
@@ -969,6 +1026,7 @@ void CodeCompNode::dump(NodeDumper &dumper) const {
   OP(MEMBER)                                                                                       \
   OP(TYPE)
 
+  auto kind = this->getKind();
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 }
@@ -1145,7 +1203,7 @@ static const char *toString(NodeKind kind) {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-  formatTo(this->buf(), "nodeKind: %s\n", toString(node.getNodeKind()));
+  formatTo(this->buf(), "nodeKind: %s\n", toString(node.nodeKind));
 
   if (inArray) {
     this->enterIndent();

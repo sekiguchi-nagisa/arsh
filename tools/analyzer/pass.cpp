@@ -28,7 +28,7 @@ bool NodePass::consume(const std::unique_ptr<Node> &node) {
 }
 
 void NodePass::visitTypeNode(TypeNode &node) {
-  switch (node.typeKind) {
+  switch (node.typeKind()) {
   case TypeNode::Base:
     this->visitBase(cast<BaseTypeNode>(node));
     break;
