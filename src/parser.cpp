@@ -1244,6 +1244,14 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
       if (hereDoc) {
         auto &argNode = node->getTargetNode();
         Token startToken = argNode.getToken();
+        {
+          StringRef ref = this->lexer->toStrRef(startToken);
+          if (ref[0] == '\'') {
+            ref.removePrefix(1);
+            ref.removeSuffix(1);
+          }
+          node->setHereStart(NameInfo(startToken, ref.toString()));
+        }
         argNode.refSegmentNodes().pop_back();
         argNode.addSegmentNode(std::make_unique<StringExprNode>(startToken.endPos()));
         this->hereDocNodes.push_back(makeObserver(*node));
@@ -1304,10 +1312,9 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
     const auto attr = this->lexer->getHereDocState().attr;
     auto index = this->findHereDocNodeIndex(pos);
     assert(index < this->hereDocNodes.size());
-    auto *strExprNode = ({
-      auto &hereDocNode = this->hereDocNodes[index];
-      cast<StringExprNode>(hereDocNode->getTargetNode().getSegmentNodes()[0].get());
-    });
+    auto hereDocNode = this->hereDocNodes[index];
+    auto *strExprNode =
+        ({ cast<StringExprNode>(hereDocNode->getTargetNode().getSegmentNodes()[0].get()); });
     while (CUR_KIND() != TokenKind::HERE_END) {
       switch (CUR_KIND()) {
         // clang-format off
@@ -1362,7 +1369,9 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
         E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER)); // FIXME: completion in no-expand
       }
     }
-    TRY(this->expect(TokenKind::HERE_END));
+    auto token = TRY(this->expect(TokenKind::HERE_END));
+    token.size--; // skip last newline
+    hereDocNode->setHereEnd(token);
     this->hereDocNodes.erase(this->hereDocNodes.begin() + index);
   }
   return nullptr;

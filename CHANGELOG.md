@@ -7,6 +7,8 @@
 #### Core
 
 - support here document (``<<``, ``<<-``)
+    - unlike bash/zsh, double-quoted strings are not allowed in here doc start word
+    - also support ``textDocument/definition``, ``textDocument/references``
 
 #### Builtin
 

@@ -74,6 +74,7 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
+  case DeclSymbol::Kind::HERE_START:
     value = name.toString();
     break;
   }
@@ -113,6 +114,7 @@ std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::MOD:
   case DeclSymbol::Kind::MOD_CONST:
+  case DeclSymbol::Kind::HERE_START:
     break;
   }
   return mangledName.toString();

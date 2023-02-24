@@ -277,6 +277,31 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
   }
 }
 
+void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
+  // insert here start
+  DeclSymbol::Name name = {
+      .token = start.getToken(),
+      .name = CStrPtr(strdup(start.getName().c_str())),
+  };
+  auto *decl = this->insertNewDecl(DeclSymbol::Kind::HERE_START, DeclSymbol::Attr{},
+                                   std::move(name), "", start.getToken(), DeclInsertOp::NONE);
+  if (!decl) {
+    return;
+  }
+  if (!this->insertNewSymbol(start.getToken(), decl)) {
+    return;
+  }
+
+  // insert here end
+  if (end.size > 0) {
+    if (auto *symbol = this->insertNewSymbol(end, decl)) {
+      auto symbolRef = SymbolRef::create(end, this->modId);
+      assert(symbolRef.hasValue());
+      decl->addRef(symbolRef.unwrap());
+    }
+  }
+}
+
 DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
@@ -310,6 +335,8 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
     }
     break;
   }
+  case DeclInsertOp::NONE:
+    break;
   }
 
   auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
@@ -430,6 +457,13 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
     }
   }
   this->visitEach(node.getArgNodes());
+}
+
+void SymbolIndexer::visitRedirNode(RedirNode &node) {
+  if (node.getHereStart()) {
+    this->builder().addHereDocStartEnd(node.getHereStart(), node.getHereEnd());
+  }
+  this->visit(node.getTargetNode());
 }
 
 void SymbolIndexer::visitBlockNode(BlockNode &node) {
@@ -631,7 +665,7 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
     NodePass::visit(node.getRecvTypeNode());
   }
 
-  if (hasFlag(op, FuncVisitOp::VISIR_BODY)) {
+  if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
     auto func = this->builder().intoScope(getScopeKind(node),
                                           node.isMethod() ? &node.getRecvTypeNode()->getType()
                                                           : node.getResolvedType());
@@ -647,7 +681,7 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
 }
 
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
-  this->visitFunctionImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIR_BODY);
+  this->visitFunctionImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIT_BODY);
 }
 
 void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const FuncVisitOp op) {
@@ -664,14 +698,14 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
     }
   }
 
-  if (hasFlag(op, FuncVisitOp::VISIR_BODY)) {
+  if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
     auto udc = this->builder().intoScope(ScopeKind::FUNC);
     this->visitBlockWithCurrentScope(node.getBlockNode());
   }
 }
 
 void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  this->visitUserDefinedCmdImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIR_BODY);
+  this->visitUserDefinedCmdImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIT_BODY);
 }
 
 void SymbolIndexer::visitFuncListNode(FuncListNode &node) {
@@ -687,9 +721,9 @@ void SymbolIndexer::visitFuncListNode(FuncListNode &node) {
   // register body
   for (auto &e : node.getNodes()) {
     if (isa<FunctionNode>(*e)) {
-      this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIR_BODY);
+      this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIT_BODY);
     } else if (isa<UserDefinedCmdNode>(*e)) {
-      this->visitUserDefinedCmdImpl(cast<UserDefinedCmdNode>(*e), FuncVisitOp::VISIR_BODY);
+      this->visitUserDefinedCmdImpl(cast<UserDefinedCmdNode>(*e), FuncVisitOp::VISIT_BODY);
     }
   }
 }

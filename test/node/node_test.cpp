@@ -505,7 +505,7 @@ nodes:
     resolvedType: null
 )"},
 
-    {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
+    {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"EOF(
 nodes:
   - nodeKind: Assert
     token:
@@ -585,6 +585,12 @@ nodes:
                             init: true
                             value: "34"
                       targetFd: -1
+                      hereStart:
+                        token:
+                          pos: 0
+                          size: 0
+                        name: ""
+                      hereEnd: "(pos = 0, size = 0)"
                   redirCount: 1
                   needFork: true
                   handle: null
@@ -638,6 +644,12 @@ nodes:
                             floatValue: 0.000000
                           handle: null
                     targetFd: -1
+                    hereStart:
+                      token:
+                        pos: 0
+                        size: 0
+                      name: ""
+                    hereEnd: "(pos = 0, size = 0)"
                 baseIndex: 0
             baseIndex: 0
             inFork: true
@@ -668,7 +680,7 @@ nodes:
       kind: "STRING"
       init: true
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
-)"},
+)EOF"},
 
     {DumpOp::typed, R"(case $SIGINT { $SIGINT => [34:34]; else => (34,)})", 0, 0, R"EOF(
 nodes:
@@ -1316,6 +1328,76 @@ nodes:
           attribute: "READ_ONLY | GLOBAL"
         resolvedType: "() -> Void"
 )"},
+    {DumpOp::typed, R"(cat <<- 'EOF'
+this is a pen
+EOF)",
+     0, 0, R"EOF(
+nodes:
+  - nodeKind: TypeOp
+    token:
+      pos: 0
+      size: 13
+    type: "Void"
+    exprNode:
+      nodeKind: Cmd
+      token:
+        pos: 0
+        size: 13
+      type: "Bool"
+      nameNode:
+        nodeKind: String
+        token:
+          pos: 0
+          size: 3
+        type: "String"
+        kind: "STRING"
+        init: true
+        value: "cat"
+      argNodes:
+        - nodeKind: Redir
+          token:
+            pos: 4
+            size: 9
+          type: "Any"
+          fdName: "0"
+          newFd: 0
+          op: "RedirOp::HERE_DOC"
+          targetNode:
+            nodeKind: CmdArg
+            token:
+              pos: 8
+              size: 6
+            type: "String"
+            expansionSize: 0
+            braceExpansion: false
+            segmentNodes:
+              - nodeKind: StringExpr
+                token:
+                  pos: 13
+                  size: 15
+                type: "String"
+                nodes:
+                  - nodeKind: String
+                    token:
+                      pos: 14
+                      size: 14
+                    type: "String"
+                    kind: "STRING"
+                    init: true
+                    value: "this is a pen\n"
+          targetFd: -1
+          hereStart:
+            token:
+              pos: 8
+              size: 5
+            name: "EOF"
+          hereEnd: "(pos = 28, size = 3)"
+      redirCount: 1
+      needFork: true
+      handle: null
+    targetTypeNode: null
+    opKind: "TO_VOID"
+)EOF"},
 };
 
 TEST_P(NodeDumpTest, base) { ASSERT_NO_FATAL_FAILURE(this->test()); }

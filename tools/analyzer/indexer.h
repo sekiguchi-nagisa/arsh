@@ -169,6 +169,8 @@ public:
     }
   }
 
+  void addHereDocStartEnd(const NameInfo &start, Token end);
+
 private:
   const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,
                           const Handle *handle) const;
@@ -177,6 +179,7 @@ private:
     NORMAL,
     BUILTIN,
     MEMBER,
+    NONE, // no scope check
   };
 
   const DeclSymbol *addDeclImpl(const DSType *recv, const NameInfo &info, DeclSymbol::Kind kind,
@@ -231,6 +234,7 @@ protected:
   void visitAccessNode(AccessNode &node) override;
   void visitApplyNode(ApplyNode &node) override;
   void visitCmdNode(CmdNode &node) override;
+  void visitRedirNode(RedirNode &node) override;
   void visitBlockNode(BlockNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
   void visitLoopNode(LoopNode &node) override;
@@ -249,7 +253,7 @@ private:
 
   enum class FuncVisitOp : unsigned int {
     VISIT_NAME = 1u << 0u,
-    VISIR_BODY = 1u << 1u,
+    VISIT_BODY = 1u << 1u,
   };
 
   void visitFunctionImpl(FunctionNode &node, FuncVisitOp op);

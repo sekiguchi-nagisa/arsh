@@ -1277,15 +1277,16 @@ public:
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
   std::string fdName;
-  TokenKind opKind;
   RedirOp op;
   int newFd{-1};
   int targetFd{-1};
   std::unique_ptr<CmdArgNode> targetNode;
+  NameInfo hereStart;
+  Token hereEnd;
 
 public:
   RedirNode(TokenKind opKind, Token opToken, StringRef ref, std::unique_ptr<CmdArgNode> &&node)
-      : WithRtti(opToken), opKind(opKind), targetNode(std::move(node)) {
+      : WithRtti(opToken), targetNode(std::move(node)), hereStart({0, 0}, "") {
     auto pair = resolveRedirOp(opKind, ref);
     this->fdName = std::move(pair.first);
     this->op = pair.second;
@@ -1300,8 +1301,6 @@ public:
 
   int getNewFd() const { return this->newFd; }
 
-  TokenKind getOpKind() const { return this->opKind; }
-
   RedirOp getRedirOp() const { return this->op; }
 
   CmdArgNode &getTargetNode() { return *this->targetNode; }
@@ -1309,6 +1308,14 @@ public:
   void setTargetFd(int fd) { this->targetFd = fd; }
 
   int getTargetFd() const { return this->targetFd; }
+
+  void setHereStart(NameInfo &&name) { this->hereStart = std::move(name); }
+
+  const NameInfo &getHereStart() const { return this->hereStart; }
+
+  void setHereEnd(Token token) { this->hereEnd = token; }
+
+  Token getHereEnd() { return this->hereEnd; }
 
   void dump(NodeDumper &dumper) const override;
 };

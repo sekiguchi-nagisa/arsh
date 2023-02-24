@@ -1045,6 +1045,37 @@ TEST_F(IndexTest, backrefUDC) {
                       {modId, "(2:4~2:7)"}}));
 }
 
+TEST_F(IndexTest, hereDoc) {
+  unsigned short modId;
+  const char *content = R"E(
+  cat << EOF & cat << 'EOF'
+this is a pen1
+EOF
+this is a pen2
+EOF
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 11}}, {{modId, "(1:9~1:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 26}}, {{modId, "(1:22~1:27)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 0}}, {{modId, "(1:9~1:12)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 2}}, {{modId, "(1:22~1:27)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 11}},
+                     {{modId, "(1:9~1:12)"}, {modId, "(3:0~3:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 25}},
+                     {{modId, "(1:22~1:27)"}, {modId, "(5:0~5:3)"}}));
+}
+
 TEST_F(IndexTest, invalidVar) {
   unsigned short modId;
   const char *content = R"(

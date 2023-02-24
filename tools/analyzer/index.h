@@ -125,6 +125,7 @@ public:
     TYPE_ALIAS,
     ERROR_TYPE_DEF,
     MOD, // for named import
+    HERE_START,
   };
 
   enum class Attr : unsigned char {

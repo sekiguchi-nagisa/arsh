@@ -444,6 +444,8 @@ void RedirNode::dump(NodeDumper &dumper) const {
 
   DUMP_PTR(targetNode);
   DUMP(targetFd);
+  DUMP(hereStart);
+  dumper.dump(NAME(hereEnd), this->hereEnd.str());
 }
 
 // ##########################

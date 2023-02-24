@@ -133,6 +133,10 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += name;
     break;
   }
+  case DeclSymbol::Kind::HERE_START: {
+    content += decl.getInfo();
+    break;
+  }
   }
 
   if (markup) {
@@ -173,6 +177,9 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
     break;
   case DeclSymbol::Kind::MOD:
     symbolKind = SymbolKind::Variable;
+    break;
+  case DeclSymbol::Kind::HERE_START:
+    symbolKind = SymbolKind::String;
     break;
   }
   return symbolKind;
