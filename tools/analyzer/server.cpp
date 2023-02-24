@@ -200,16 +200,12 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
     if (is<Hover>(ret)) {
       return;
     }
-    auto hover = generateHoverContent(*this->result.srcMan, src, value.decl,
-                                      this->markupKind == MarkupKind::Markdown);
-    if (hover.empty()) {
-      return;
-    }
     ret = Hover{
         .contents =
             MarkupContent{
                 .kind = this->markupKind,
-                .value = std::move(hover),
+                .value = generateHoverContent(*this->result.srcMan, src, value.decl,
+                                              this->markupKind == MarkupKind::Markdown),
             },
         .range = toRange(src, value.request.getToken()),
     };

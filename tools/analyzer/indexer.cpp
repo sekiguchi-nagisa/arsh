@@ -283,8 +283,9 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
       .token = start.getToken(),
       .name = CStrPtr(strdup(start.getName().c_str())),
   };
-  auto *decl = this->insertNewDecl(DeclSymbol::Kind::HERE_START, DeclSymbol::Attr{},
-                                   std::move(name), "", start.getToken(), DeclInsertOp::NONE);
+  auto *decl =
+      this->insertNewDecl(DeclSymbol::Kind::HERE_START, DeclSymbol::Attr{}, std::move(name),
+                          "here document start word", start.getToken(), DeclInsertOp::NONE);
   if (!decl) {
     return;
   }

@@ -53,4 +53,4 @@
 | source (variable)                     | ✔️             | ✔️             | ✔️                 |
 | source (type alias)                   | ✔️             | ✔️             | ✔️                 |
 | source (command)                      | ✔️             | ✔️             | ✔️                 |
-| here doc start/end                    | ✔️             | ✔️             | -                  |
+| here doc start/end                    | ✔️             | ✔️             | ✔️                 |

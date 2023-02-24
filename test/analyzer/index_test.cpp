@@ -1218,6 +1218,18 @@ typedef Interval(s : Int) {
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
                                       Position{.line = 1, .character = 8},
                                       "```ydsh\nlet this : String\n```"));
+
+  // here doc
+  ASSERT_NO_FATAL_FAILURE(this->hover(R"(cat << EOF
+this is a pennn""
+EOF)",
+                                      Position{.line = 0, .character = 9},
+                                      "```md\nhere document start word\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover(R"(cat << EOF
+this is a pennn""
+EOF)",
+                                      Position{.line = 2, .character = 1},
+                                      "```md\nhere document start word\n```"));
 }
 
 TEST_F(IndexTest, hoverBuiltin) {

@@ -134,6 +134,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     break;
   }
   case DeclSymbol::Kind::HERE_START: {
+    content = markup ? "```md\n" : "";
     content += decl.getInfo();
     break;
   }
