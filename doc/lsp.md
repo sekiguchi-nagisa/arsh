@@ -15,7 +15,7 @@
 | ``textDocument/rename``              | ❌          |
 
 
-## ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
+## Supported symbols of ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
 
 | **Symbol**                            | ``definition`` | ``references`` | ``hover``          |
 |---------------------------------------|----------------|----------------|--------------------|

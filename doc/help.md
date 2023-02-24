@@ -1,5 +1,5 @@
 # -h/--help option support for builtin commands
-builtin commands except for `:`, `echo`, `eval`, `false`, `true` support `-h`/`--help` options
+builtin commands except for `:`, `echo`, `eval`, `false`, `test`, `true` support `-h`/`--help` options
 
 | **builtin command** | **support** |
 |---------------------|-------------|
