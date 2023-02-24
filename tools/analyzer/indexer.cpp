@@ -293,12 +293,10 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
   }
 
   // insert here end
-  if (end.size > 0) {
-    if (auto *symbol = this->insertNewSymbol(end, decl)) {
-      auto symbolRef = SymbolRef::create(end, this->modId);
-      assert(symbolRef.hasValue());
-      decl->addRef(symbolRef.unwrap());
-    }
+  if (end.size > 0 && this->insertNewSymbol(end, decl)) {
+    auto symbolRef = SymbolRef::create(end, this->modId);
+    assert(symbolRef.hasValue());
+    decl->addRef(symbolRef.unwrap());
   }
 }
 
