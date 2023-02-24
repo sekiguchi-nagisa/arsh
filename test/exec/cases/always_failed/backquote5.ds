@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 8, $chars = 5, $errorKind = 'NoBackquote', $status = 1)
+
+cat << EOF
+    $(cat << 'EOF'
+this is a pen
+EOF
+    )
+    `ls -la`
+EOF

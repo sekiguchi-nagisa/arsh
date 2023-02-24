@@ -44,6 +44,8 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars2, $(complete '($P'))
     $assertArray($gvars2, $(complete '{$P'))
     $assertArray($gvars2, $(complete '$f($P'))
+    $assertArray($gvars, $(complete 'cat << EOF
+    $'))
 
     # scope
     var gvar3 = [

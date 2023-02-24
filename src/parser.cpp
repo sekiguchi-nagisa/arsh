@@ -1278,7 +1278,7 @@ size_t Parser::findHereDocNodeIndex(unsigned int pos) const {
   if (iter != this->hereDocNodes.end() && (*iter)->getPos() == pos) {
     return static_cast<size_t>(iter - this->hereDocNodes.begin());
   }
-  return static_cast<size_t>(this->hereDocNodes.size());
+  return static_cast<size_t>(this->hereDocNodes.size()); // normally unreachable
 }
 
 static bool shouldIgnoreTab(const StringExprNode &node) {
