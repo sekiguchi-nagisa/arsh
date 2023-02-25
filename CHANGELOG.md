@@ -38,7 +38,7 @@
 
 - add ``fzf`` module for ``fzf`` integration
     - now ``CTRL-R`` action (history search) is defined as custom action in this module
-    - also support ``CTRL-T``, ``ALT-C`` keybind
+    - also support ``CTRL-T``, ``ALT-C`` key-bind
 
 ### Changed
 
@@ -70,7 +70,7 @@
 - **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with ``backward-word``
   and ``forward-word``
 - **Breaking Change**: now builtin commands support `-h`/`--help` options
-    - except for `:`, `echo`, `eval`, `false`, `true`
+    - except for `:`, `echo`, `eval`, `false`, `test`, `true`
 - **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperation`` error
 - **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
@@ -85,7 +85,7 @@
 - add workaround for running under screen/tmux
     - disable character width detection
 - fix skippable newline handling in ``for``, ``typeof``
-- fix error line marker of empty block anonymous functions
+- fix error line marker of anonymous functions that has empty body
 
 ## [0.28.1] - 2023-01-04
 
