@@ -27,21 +27,21 @@ namespace ydsh {
 
 // high level api for unicode-aware character op
 
-#define EACH_CHAR_WIDTH_PROPERY(OP)                                                                \
+#define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
   OP(EAW, "○")                                                                                     \
   OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
   OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
 
 enum class CharWidthProperty {
 #define GEN_ENUM(E, S) E,
-  EACH_CHAR_WIDTH_PROPERY(GEN_ENUM)
+  EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 constexpr unsigned int getCharWidthPropertyLen() {
   constexpr const CharWidthProperty table[] = {
 #define GEN_ENUM(E, S) CharWidthProperty::E,
-      EACH_CHAR_WIDTH_PROPERY(GEN_ENUM)
+      EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
   };
   return std::size(table);
@@ -93,10 +93,10 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScann
  */
 
 template <typename Consumer>
-static constexpr bool graphme_consumer_requirement_v =
+static constexpr bool grapheme_consumer_requirement_v =
     std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
 
-template <typename Func, enable_when<graphme_consumer_requirement_v<Func>> = nullptr>
+template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
 size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
@@ -107,7 +107,7 @@ size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
   return count;
 }
 
-template <typename Func, enable_when<graphme_consumer_requirement_v<Func>> = nullptr>
+template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
 size_t iterateGrapheme(StringRef ref, Func consumer) {
   return iterateGraphemeUntil(ref, static_cast<size_t>(-1), std::move(consumer));
 }

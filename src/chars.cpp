@@ -22,7 +22,7 @@ namespace ydsh {
 const CharWidthPropertyList &getCharWidthPropertyList() {
   static CharWidthPropertyList table = {{
 #define GEN_ENUM(E, S) {CharWidthProperty::E, S},
-      EACH_CHAR_WIDTH_PROPERY(GEN_ENUM)
+      EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
   }};
   return table;
