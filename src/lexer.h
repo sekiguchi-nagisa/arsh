@@ -88,7 +88,7 @@ public:
   /**
    *
    * @param token
-   * must be unquoted (quoed removed)
+   * must be unquoted (quote removed)
    * @param attr
    */
   void add(Token token, Attr attr, unsigned int pos) {

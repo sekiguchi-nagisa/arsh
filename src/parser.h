@@ -82,7 +82,7 @@ private:
 
   static constexpr const char *REDIR_NEED_SPACE = "RedirNeedSpace";
   static constexpr const char *INVALID_HERE_START = "InvalidHereStart";
-  static constexpr const char *HERE_SATRT_NEED_SPACE = "HereStartNeedSpace";
+  static constexpr const char *HERE_START_NEED_SPACE = "HereStartNeedSpace";
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
@@ -110,11 +110,6 @@ public:
   std::vector<std::unique_ptr<Node>> operator()();
 
   explicit operator bool() const { return this->curKind != TokenKind::EOS; }
-
-  void forceTerminate() { // FIXME: temporal api, must be implement proper error recovery
-    this->clear();
-    this->curKind = TokenKind::EOS;
-  }
 
 protected:
   /**

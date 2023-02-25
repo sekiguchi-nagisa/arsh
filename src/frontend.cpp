@@ -56,9 +56,7 @@ bool FrontEnd::tryToParse() {
     if (parser.hasError()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
       this->listener &&this->listener->handleParseError(this->contexts, parser.getError());
-      if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
-        parser.forceTerminate();
-      } else {
+      if (!hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
         return false;
       }
     }

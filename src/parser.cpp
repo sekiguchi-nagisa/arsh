@@ -1396,7 +1396,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
     if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
-      this->createError(this->curKind, this->curToken, HERE_SATRT_NEED_SPACE,
+      this->createError(this->curKind, this->curToken, HERE_START_NEED_SPACE,
                         "require space after here doc start word");
       return nullptr;
     }
