@@ -152,7 +152,7 @@ struct linenoiseState {
 
   ydsh::StringRef lineRef() const { return {this->buf, this->len}; }
 
-  bool isSingleline() const { return this->newlinePos.empty(); }
+  bool isSingleLine() const { return this->newlinePos.empty(); }
 };
 
 enum KEY_ACTION {
@@ -485,7 +485,7 @@ static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
     return nullptr;
   }
   if (candidates.size() == 1) {
-    return candidates.getValues()[0].asCStr(); // truncate chracters after null
+    return candidates.getValues()[0].asCStr(); // truncate characters after null
   }
 
   size_t prefixSize;
@@ -529,7 +529,7 @@ static bool underMultiplexer() {
 static void checkProperty(struct linenoiseState &l) {
   if (underMultiplexer()) {
     /**
-     * if run under terminal multiplexer (screen/tmux), disabale character width checking
+     * if run under terminal multiplexer (screen/tmux), disable character width checking
      */
     return;
   }
@@ -553,30 +553,6 @@ static void checkProperty(struct linenoiseState &l) {
 }
 
 /* =========================== Line editing ================================= */
-
-/* We define a very simple "append buffer" structure, that is a heap
- * allocated string where we can append to. This is useful in order to
- * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
-struct abuf {
-  char *b{nullptr};
-  size_t len{0};
-
-  ~abuf() { free(this->b); }
-
-  void append(const char *s, size_t slen) {
-    char *buf = nullptr;
-    if (this->len + slen > 0) {
-      buf = (char *)realloc(this->b, this->len + slen);
-    }
-    if (buf == nullptr) {
-      return;
-    }
-    memcpy(buf + this->len, s, slen);
-    this->b = buf;
-    this->len += slen;
-  }
-};
 
 static void fillNewlinePos(NewlinePos &newlinePos, StringRef ref) {
   newlinePos.clear();
@@ -620,7 +596,7 @@ static bool linenoiseEditMoveRight(struct linenoiseState &l) {
 /* Move cursor to the start of the line. */
 static bool linenoiseEditMoveHome(struct linenoiseState &l) {
   unsigned int newPos = 0;
-  if (l.isSingleline()) { // single-line
+  if (l.isSingleLine()) { // single-line
     newPos = 0;
   } else { // multi-line
     unsigned int index = findCurIndex(l.newlinePos, l.pos);
@@ -640,7 +616,7 @@ static bool linenoiseEditMoveHome(struct linenoiseState &l) {
 /* Move cursor to the end of the line. */
 static bool linenoiseEditMoveEnd(struct linenoiseState &l) {
   unsigned int newPos = 0;
-  if (l.isSingleline()) { // single-line
+  if (l.isSingleLine()) { // single-line
     newPos = l.len;
   } else { // multi-line
     unsigned int index = findCurIndex(l.newlinePos, l.pos);
@@ -686,7 +662,7 @@ static std::pair<unsigned int, unsigned int> findLineInterval(const struct linen
                                                               bool wholeLine) {
   unsigned int pos = 0;
   unsigned int len = l.len;
-  if (l.isSingleline()) { // single-line
+  if (l.isSingleLine()) { // single-line
     pos = 0;
     len = (wholeLine ? l.len : l.pos);
   } else { // multi-line
@@ -712,7 +688,7 @@ static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = fal
 }
 
 static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
-  if (l.isSingleline()) { // single-line
+  if (l.isSingleLine()) { // single-line
     l.buf[l.pos] = '\0';
     l.len = l.pos;
   } else { // multi-line
@@ -991,7 +967,7 @@ static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
   return getColRowLen(ps, prompt, cols, true, 0);
 }
 
-static void appendLines(abuf &buf, const StringRef ref, size_t initCols) {
+static void appendLines(std::string &buf, const StringRef ref, size_t initCols) {
   for (StringRef::size_type pos = 0;;) {
     const auto retPos = ref.find('\n', pos);
     auto sub = ref.slice(pos, retPos);
@@ -999,7 +975,7 @@ static void appendLines(abuf &buf, const StringRef ref, size_t initCols) {
     if (retPos != StringRef::npos) {
       buf.append("\r\n", 2);
       for (size_t i = 0; i < initCols; i++) {
-        buf.append(" ", 1);
+        buf += ' ';
       }
       pos = retPos + 1;
     } else {
@@ -1023,7 +999,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   /* cursor relative row. */
   int rpos = (pcollen + l.oldcolpos + l.cols) / l.cols + prow + l.oldrow;
   int old_rows = l.maxrows;
-  struct abuf ab;
+  std::string ab;
 
   lndebug("cols: %d, pcolloen: %d, prow: %d, colpos: %d, row: %d", (int)l.cols, (int)pcollen,
           (int)prow, (int)colpos, (int)row);
@@ -1038,20 +1014,18 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   if (old_rows - rpos > 0) {
     lndebug("go down %d", old_rows - rpos);
     snprintf(seq, 64, "\x1b[%dB", old_rows - rpos);
-    ab.append(seq, strlen(seq));
+    ab += seq;
   }
 
   /* Now for every row clear it, go up. */
   for (int j = 0; j < old_rows - 1; j++) {
     lndebug("clear+up");
-    snprintf(seq, 64, "\r\x1b[0K\x1b[1A");
-    ab.append(seq, strlen(seq));
+    ab += "\r\x1b[0K\x1b[1A";
   }
 
   /* Clean the top line. */
   lndebug("clear");
-  snprintf(seq, 64, "\r\x1b[0K");
-  ab.append(seq, strlen(seq));
+  ab += "\r\x1b[0K";
 
   /* Write the prompt and the current buffer content */
   appendLines(ab, l.prompt, 0);
@@ -1082,9 +1056,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
    * emit a newline and move the prompt to the first column. */
   if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) { // FIXME: support multiline?
     lndebug("<newline>");
-    ab.append("\n", 1);
-    snprintf(seq, 64, "\r");
-    ab.append(seq, strlen(seq));
+    ab += "\n\r";
     rows++;
     if (rows > (int)l.maxrows) {
       l.maxrows = rows;
@@ -1100,7 +1072,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   if (rows - rpos2 > 0) {
     lndebug("go-up %d", rows - rpos2);
     snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
-    ab.append(seq, strlen(seq));
+    ab += seq;
   }
 
   /* Set column position, zero-based. */
@@ -1111,13 +1083,13 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   } else {
     snprintf(seq, 64, "\r");
   }
-  ab.append(seq, strlen(seq));
+  ab += seq;
 
   lndebug("\n");
   l.oldcolpos = colpos2;
   l.oldrow = row2;
 
-  if (write(l.ofd, ab.b, ab.len) == -1) {
+  if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
 }
 
@@ -1275,7 +1247,7 @@ static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, Hist
   if (!histRotate) {
     return false;
   }
-  multiline = multiline && !l.isSingleline();
+  multiline = multiline && !l.isSingleLine();
 
   auto curBuf = l.lineRef();
   if (multiline) {
@@ -1297,7 +1269,7 @@ static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, Hist
 
 static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
                                   bool continueRotate) {
-  if (l.isSingleline() || continueRotate) {
+  if (l.isSingleLine() || continueRotate) {
     l.rotating = true;
     return rotateHistory(histRotate, l, op, false);
   } else if (op == HistRotateOp::PREV || op == HistRotateOp::NEXT) { // move cursor up/down

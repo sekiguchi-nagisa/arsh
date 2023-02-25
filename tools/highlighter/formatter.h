@@ -86,10 +86,8 @@ public:
   [[nodiscard]] unsigned char findClosest(Color color) const;
 };
 
-class ANSIFormatter : public Formatter, public ANSIFormatOp<ANSIFormatter> {
+class ANSIFormatter : public Formatter {
 private:
-  friend struct ANSIFormatOp;
-
   const TermColorCap colorCap;
 
   const IndexedColorPalette256 colorPalette256;

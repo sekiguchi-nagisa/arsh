@@ -188,8 +188,25 @@ const std::string &ANSIFormatter::toEscapeSeq(HighlightTokenClass tokenClass) {
 }
 
 void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
-  const auto *escapeSeq = tokenClass ? &this->toEscapeSeq(*tokenClass) : nullptr;
-  this->writeWithEscapeSeq(ref, escapeSeq ? *escapeSeq : "");
+  const auto &escapeSeq = tokenClass ? this->toEscapeSeq(*tokenClass) : "";
+
+  // split by newline
+  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    auto r = ref.find('\n', pos);
+    auto line = ref.slice(pos, r);
+    pos = r != StringRef::npos ? r + 1 : r;
+
+    if (!line.empty()) {
+      this->write(escapeSeq);
+      this->write(line);
+      if (!escapeSeq.empty()) {
+        this->write("\033[0m");
+      }
+    }
+    if (r != StringRef::npos) {
+      this->write("\n");
+    }
+  }
 }
 
 void ANSIFormatter::finalize() {
