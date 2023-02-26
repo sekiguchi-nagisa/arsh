@@ -22,6 +22,8 @@
         - ``action``: define custom key action
         - ``actions``: get read-only snapshot of current edit actions
         - ``setHistSync``: set callback that is called when adding current line to history
+    - improve unsupported terminal detection
+        - check if current process belongs to foreground process group
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries

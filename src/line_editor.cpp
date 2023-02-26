@@ -296,7 +296,13 @@ static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::S
 
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
-static bool isUnsupportedTerm() {
+static bool isUnsupportedTerm(int fd) {
+  auto tcpgid = tcgetpgrp(fd);
+  auto pgid = getpgrp();
+  if (tcpgid == -1 || pgid == -1 || tcpgid != pgid) {
+    return true;
+  }
+
   char *term = getenv("TERM");
   if (term == nullptr) {
     return false;
@@ -1594,7 +1600,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   }
   const char *prompt = promptRef.data(); // force truncate characters after null
   char buf[LINENOISE_MAX_LINE];
-  if (isUnsupportedTerm()) {
+  if (isUnsupportedTerm(this->inFd)) {
     ssize_t r = write(this->outFd, prompt, strlen(prompt));
     UNUSED(r);
     fsync(this->outFd);
