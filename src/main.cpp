@@ -344,13 +344,13 @@ INIT:
     DSState_setShellName(state.get(), argv[0]);
     DSState_setArguments(state.get(), shellArgs);
 
-    if (isatty(STDIN_FILENO) == 0 && !forceInteractive) { // pipe line mode
-      return apply(DSState_loadAndEval, state, "/dev/stdin");
-    } else { // interactive mode
+    if (isatty(STDIN_FILENO) || forceInteractive) {
       if (!quiet) {
         fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
       }
       return exec_interactive(state.get(), rcfile);
+    } else {
+      return apply(DSState_loadAndEval, state, "/dev/stdin");
     }
   }
   case InvocationKind::FROM_STRING: {
