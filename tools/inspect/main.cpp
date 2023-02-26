@@ -71,7 +71,7 @@ static void showTCPGID(int fd, std::ostream &stream) {
   int errNum = errno;
   stream << format << name << " => " << pid << std::endl;
   stream << format << "errno"
-         << " => " << errNum << std::endl;
+         << " => " << errNum << ": " << strerror(errNum) << std::endl;
 }
 
 static void showPGroup(std::ostream &stream) {
