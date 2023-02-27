@@ -58,7 +58,7 @@ TEST_F(InteractiveTest, ctrlc2) {
 }
 
 TEST_F(InteractiveTest, ctrlc3) {
-  this->invoke("--quiet", "--norc");
+  this->invoke("--quiet", "--norc", "-i");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->sendLine("cat < /dev/zero > /dev/null");
@@ -538,6 +538,22 @@ TEST_F(InteractiveTest, lineEditor3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
   this->send("\t\r");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+// test tty
+TEST_F(InteractiveTest, lineEditor4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  const char *in = "var aa = new LineEditor().readLine('> ') with < /dev/null > /dev/null";
+  this->sendLine(in);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + in + "\n> "));
+  this->sendLine("1234"); // read from tty (even if stdin/out is redirected)
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$aa", ": String? = 1234"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

@@ -272,6 +272,29 @@ SystemError: command substitution failed, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
+TEST_F(InteractiveTest, cmdsub_interactive) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // launch new ydsh with force interactive
+  const char *line = "var aa = $(eval $YDSH_BIN -i --quiet --norc < /dev/null)";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
+
+  line = "echo hello world";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // exit shell
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$aa", ": [String] = [hello, world]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
 TEST_F(InteractiveTest, wait1) {
   this->invoke("--quiet", "--norc");
 

@@ -30,7 +30,7 @@ namespace ydsh {
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int inFd;
-  int outFd;
+  int outFd; // does not close it
 
   bool lock{false};
 

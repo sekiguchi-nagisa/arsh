@@ -1,11 +1,4 @@
 
-## read from pipe
-var line = echo 'hello world!!' | {
-    var e = new LineEditor()
-    $e.readLine()
-}
-assert $line! == 'hello world!!'
-
 # key bind api
 ## get default keybindings
 var editor = new LineEditor()

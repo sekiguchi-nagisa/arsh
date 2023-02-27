@@ -24,6 +24,7 @@
         - ``setHistSync``: set callback that is called when adding current line to history
     - improve unsupported terminal detection
         - check if current process belongs to foreground process group
+    - always use tty even if stdin/stdout is not tty
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries
@@ -62,6 +63,7 @@
     - now abbreviate as ``T?``
 - **Breaking Change**: remove ``Func`` type (base type of function type) due to unused
 - **Breaking Change**: does not skip carriage return character as newline
+- **Breaking Change**: when specify ``-i`` option, always use tty even if stdin is not tty
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

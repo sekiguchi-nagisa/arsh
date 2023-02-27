@@ -850,14 +850,16 @@ namespace ydsh {
 // ##############################
 
 LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
-  this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
-  this->outFd = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
+  if (int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
+    this->inFd = ttyFd;
+    this->outFd = this->inFd;
+  } else { // fallback
+    this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    this->outFd = STDOUT_FILENO;
+  }
 }
 
-LineEditorObject::~LineEditorObject() {
-  close(this->inFd);
-  close(this->outFd);
-}
+LineEditorObject::~LineEditorObject() { close(this->inFd); }
 
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
