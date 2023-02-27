@@ -557,11 +557,21 @@ static const char *defaultPrompt() {
 #undef STR
 }
 
-char *DSState_readLine(DSState *st) {
+char *DSState_readLine(DSState *st, DSError *e) {
   GUARD_NULL(st, nullptr);
   st->getCallStack().clearThrownObject();
   st->notifyCallback.showAndClear();
+  if (e) {
+    *e = initDSError();
+  }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();
-  return editor.readline(*st, defaultPrompt());
+  char *ret = editor.readline(*st, defaultPrompt());
+  if (st->hasError()) {
+    int old = errno;
+    VM::handleUncaughtException(*st, e);
+    st->getCallStack().clearThrownObject();
+    errno = old;
+  }
+  return ret;
 }

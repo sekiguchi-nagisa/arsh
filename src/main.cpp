@@ -186,19 +186,29 @@ static int exec_interactive(DSState *state, const char *rcpath) {
 
   int status = 0;
   while (true) {
-    char *line = DSState_readLine(state);
+    DSError e; // NOLINT
+    char *line = DSState_readLine(state, &e);
+    auto kind = e.kind;
+    DSError_release(&e);
+    if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+      status = DSState_exitStatus(state);
+      break;
+    }
     if (line == nullptr) {
       if (errno == EAGAIN) {
         continue;
+      } else if (errno != 0) {
+        fprintf(stderr, "[fatal] readLine failed, caused by `%s'\n", strerror(errno));
+        return 1;
       }
       if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
         break;
       }
       line = strdup("exit");
     }
-    DSError e; // NOLINT
+
     status = DSState_eval(state, nullptr, line, strlen(line), &e);
-    auto kind = e.kind;
+    kind = e.kind;
     DSError_release(&e);
     free(line);
     if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {

@@ -2109,9 +2109,18 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
   CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
   char *line = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef());
-  auto ret = line != nullptr ? DSValue::createStr(line) : DSValue::createInvalid();
-  free(line);
-  RET(ret);
+  if (line) {
+    auto ret = DSValue::createStr(line);
+    free(line);
+    RET(ret);
+  } else if (ctx.hasError()) {
+    RET_ERROR;
+  } else if (errno == EAGAIN || errno == 0) {
+    RET(DSValue::createInvalid());
+  } else {
+    raiseSystemError(ctx, errno, "readLine failed");
+    RET_ERROR;
+  }
 }
 
 //!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void

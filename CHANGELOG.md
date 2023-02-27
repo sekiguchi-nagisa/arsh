@@ -25,6 +25,7 @@
     - improve unsupported terminal detection
         - check if current process belongs to foreground process group
     - always use tty even if stdin/stdout is not tty
+    - improve internal I/O error reporting
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries
@@ -64,6 +65,7 @@
 - **Breaking Change**: remove ``Func`` type (base type of function type) due to unused
 - **Breaking Change**: does not skip carriage return character as newline
 - **Breaking Change**: when specify ``-i`` option, always use tty even if stdin is not tty
+- **Breaking Change**: now propagate exit/assertion error from readline callback
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type
@@ -79,6 +81,10 @@
     - now throw ``InvalidOperation`` error
 - **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
 - builtin ``shctl info`` subcommand show more system constant information
+
+#### API
+
+- **Breaking Change**: ``DSState_readLine`` api report internal error
 
 ### Fixed
 

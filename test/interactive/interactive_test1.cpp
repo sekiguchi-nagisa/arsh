@@ -287,6 +287,55 @@ TEST_F(InteractiveTest, customAction2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, customActionError1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                                                  "function(s, m) => exit 199)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action1')"));
+  this->send("echo" CTRL_V);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(199, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, customActionError2) {
+  this->invoke("--quiet", "--norc", "--trace-exit");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                                                  "function(s, m) => exit 199)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action1')"));
+  this->send("echo" CTRL_V);
+
+  const char *err = R"([runtime error]
+Shell Exit: terminated by exit 199
+    from (stdin):1 'function ()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n", err));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(199, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, customActionError3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                                                  "function(s, m) => { assert $false; 'hoge'; })"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^V', 'action1')"));
+  this->send("echo" CTRL_V);
+
+  const char *err = R"([runtime error]
+Assertion Error: `$false'
+    from (stdin):1 'function ()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n", err));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+}
+
 // TEST_F(InteractiveTest, edit2) {
 //     this->invoke("--quiet", "--norc");
 //
@@ -452,8 +501,33 @@ TEST_F(InteractiveTest, bracketPaste) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorBase) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // ctrl-d
+  const char *line = "var a = new LineEditor().readLine('> ')";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
+  this->send(CTRL_D); // no line
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": String? = (invalid)"));
+
+  // ctrl-c
+  line = "$a = new LineEditor().readLine('> ')";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
+  this->send(CTRL_C); // no line
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": String? = (invalid)"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 // test recursive api call
-TEST_F(InteractiveTest, lineEditor1) {
+TEST_F(InteractiveTest, lineEditorRec) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -488,7 +562,7 @@ TEST_F(InteractiveTest, lineEditor1) {
 }
 
 // test prompt
-TEST_F(InteractiveTest, lineEditor2) {
+TEST_F(InteractiveTest, lineEditorPrompt) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -512,7 +586,7 @@ OutOfRangeError: size is 2, but index is 100
 }
 
 // test completion
-TEST_F(InteractiveTest, lineEditor3) {
+TEST_F(InteractiveTest, lineEditorComp) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -543,7 +617,7 @@ TEST_F(InteractiveTest, lineEditor3) {
 }
 
 // test tty
-TEST_F(InteractiveTest, lineEditor4) {
+TEST_F(InteractiveTest, lineEditorTTY) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));

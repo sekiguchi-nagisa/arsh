@@ -640,16 +640,6 @@ private:
   static unsigned int prepareArguments(VMState &state, DSValue &&recv,
                                        std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
-  /**
-   * print uncaught exception information. (not clear thrown object)
-   * @param state
-   * @param dsError
-   * if not null, set error information
-   * @return
-   * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
-   */
-  static DSErrorKind handleUncaughtException(DSState &state, DSError *dsError);
-
 public:
   // entry point
   /**
@@ -683,6 +673,16 @@ public:
    * return value of method (if no return value, return null).
    */
   static DSValue callFunction(DSState &state, DSValue &&funcObj, CallArgs &&args);
+
+  /**
+   * print uncaught exception information. (not clear thrown object)
+   * @param state
+   * @param dsError
+   * if not null, set error information
+   * @return
+   * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
+   */
+  static DSErrorKind handleUncaughtException(DSState &state, DSError *dsError);
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.

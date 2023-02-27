@@ -365,12 +365,14 @@ DS_PUBLIC_API(unsigned int) DSState_featureBit();
  * customize line edit behavior via `LINE_EDIT` global variable
  * @param st
  * must not be null
+ * @param e
+ * may be null
  * @return
  * if has error or reach end of stream, return null
  * if cancelled, return null and set EAGAIN
  * otherwise null terminated string (call free() after use result)
  */
-DS_PUBLIC_API(char *) DSState_readLine(DSState *st); // FIXME: report internal error ?
+DS_PUBLIC_API(char *) DSState_readLine(DSState *st, DSError *e);
 
 #ifdef __cplusplus
 }
