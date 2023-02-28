@@ -67,6 +67,10 @@ $ex = 33
 try { 12/0 } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
+$ex = 34
+try { (-9223372036854775807-1)/-1 } catch e { $ex = $e; }
+assert $ex is ArithmeticError && $ex.message() == 'integer overflow'
+
 assert((99 % 33) is Int)
 assert(99 % 33 == 0)
 $ex = 5

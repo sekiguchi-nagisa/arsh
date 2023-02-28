@@ -167,6 +167,9 @@ YDSH_METHOD int_2_int_div(RuntimeContext &ctx) {
   if (right == 0) {
     raiseError(ctx, TYPE::ArithmeticError, "zero division");
     RET_ERROR;
+  } else if (left == INT64_MIN && right == -1) {
+    raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
+    RET_ERROR;
   }
   RET(DSValue::createInt(left / right));
 }
