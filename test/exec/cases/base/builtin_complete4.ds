@@ -30,12 +30,12 @@ $assertComp('echo :hoge', [':hoge', 'echo'])
 
 # escape
 function comp2($ctx : Module, $words : [String], $cursor : Int) : [String] {
-    return ['\23', '&h']
+    return ['\23', '&h', '']
 }
 
 $COMP_HOOK = $comp2
 
-$assertComp('echo ', ['&h', '\23'])
+$assertComp('echo ', ['&h', '\23'])  # ignore empty candidates
 
 # invalid
 $COMP_HOOK = function(m, w, c) => $none

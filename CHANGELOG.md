@@ -98,6 +98,8 @@
 - fix error line marker of anonymous functions that has empty body
 - floating point exception from integer division (-9223372036854775808 / -1)
     - now throw ``ArithmeticError``
+- crash when specified ``-A tilde`` option to builtin ``complete`` command
+- crash when completion candidates have empty string
 
 ## [0.28.1] - 2023-01-04
 

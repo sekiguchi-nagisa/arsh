@@ -34,7 +34,9 @@ namespace ydsh {
 // for input completion
 
 void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind, int priority) {
-  assert(!ref.empty());
+  if (ref.empty()) {
+    return;
+  }
   std::string value;
   if (mayBeEscaped(kind)) {
     if (kind == CompCandidateKind::COMMAND_NAME) {
@@ -230,7 +232,7 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
   const auto s = prefix.lastIndexOf("/");
 
   // complete tilde
-  if (hasFlag(op, CodeCompOp::TILDE) && prefix[0] == '~' && s == StringRef::npos) {
+  if (hasFlag(op, CodeCompOp::TILDE) && prefix.startsWith("~") && s == StringRef::npos) {
     setpwent();
     for (struct passwd *entry; (entry = getpwent()) != nullptr;) {
       StringRef pwname = entry->pw_name;
