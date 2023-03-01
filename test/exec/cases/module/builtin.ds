@@ -10,8 +10,14 @@ assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 
 # command/eval/exec
 assert diff <(complete 'command ') <(complete -A external -A builtin "")
+assert diff <(complete 'command /usr/bin/') <(complete -A exec '/usr/bin/')
+assert diff <(complete 'command ~/') <(complete -A exec -A tilde '~/')
 assert diff <(complete 'eval ') <(complete -A cmd)
+assert diff <(complete 'eval /usr/bin/') <(complete -A exec '/usr/bin/')
+assert diff <(complete 'eval ~/') <(complete -A exec -A tilde '~/')
 assert diff <(complete 'exec ') <(complete -A external "")
+assert diff <(complete 'exec /usr/bin/') <(complete -A exec "/usr/bin/")
+assert diff <(complete 'exec ~/') <(complete -A exec -A tilde '~/')
 
 # unsetenv
 setenv 'ZZZ(3.14)=12345'

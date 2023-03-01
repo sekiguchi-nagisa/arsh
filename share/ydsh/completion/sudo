@@ -18,8 +18,18 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : [String]? {
     if $c < $t.size() && $t.peek() == '-' {
         return ['-A', '-b', '-E', '-H', '-n', '-P', '-S']
     }
+
+    var opt = ['-A', 'external']
+    var prefix = $c < $t.size() ? $t.peek() : ""
+    if $prefix.contains('/') {
+        $opt.add('-A').add('exec')
+    }
+    if $prefix.startsWith('~') {
+        $opt.add('-A').add('tilde')
+    }
+
     importenv PATH : ""
-    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q -A external ${$c < $t.size() ? $t.peek() : ""}
+    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q $opt $prefix
     return $COMPREPLY
 }
 

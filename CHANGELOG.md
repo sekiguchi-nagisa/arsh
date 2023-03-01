@@ -100,6 +100,7 @@
     - now throw ``ArithmeticError``
 - crash when specified ``-A tilde`` option to builtin ``complete`` command
 - crash when completion candidates have empty string
+- complete executable file names in ``eval``, ``command``, ``exec``, ``sudo`` completion
 
 ## [0.28.1] - 2023-01-04
 
