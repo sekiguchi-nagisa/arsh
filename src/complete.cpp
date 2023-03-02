@@ -635,7 +635,7 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
 static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
   ByteBuffer buf(ref.begin(), ref.end());
   if (!buf.empty() && buf.back() == '\n') {
-    buf += '\n';
+    buf += '\n'; // explicitly append newline for command name completion
   }
   return LexerPtr::create(scriptName.c_str(), std::move(buf), CStrPtr(strdup(scriptDir.c_str())));
 }

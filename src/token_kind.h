@@ -316,6 +316,9 @@
   OP(STR_ELEMENT)                                                                                  \
   EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL) OP(CLOSE_DQUOTE)
 
+#define EACH_LA_hereExpand(OP)                                                                     \
+  OP(STR_ELEMENT) EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL)
+
 #define EACH_LA_redir(OP)                                                                          \
   OP(REDIR_IN)                                                                                     \
   OP(REDIR_OUT)                                                                                    \

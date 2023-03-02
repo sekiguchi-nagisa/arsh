@@ -1362,11 +1362,11 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
           if (this->inVarNameCompletionPoint()) {
             this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
           } else if (this->inCompletionPointAt(TokenKind::EOS)) {
-            TokenKind kinds[] = {EACH_LA_stringExpression(GEN_LA_ALTER)};
+            TokenKind kinds[] = {EACH_LA_hereExpand(GEN_LA_ALTER)};
             this->ccHandler->addExpectedTokenRequests(std::string(), kinds);
           }
         }
-        E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER)); // FIXME: completion in no-expand
+        E_ALTER(EACH_LA_hereExpand(GEN_LA_ALTER)); // FIXME: completion in no-expand
       }
     }
     auto token = TRY(this->expect(TokenKind::HERE_END));

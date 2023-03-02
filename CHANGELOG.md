@@ -8,7 +8,8 @@
 
 - support here document (``<<``, ``<<-``)
     - unlike bash/zsh, double-quoted strings are not allowed in here doc start word
-    - also support ``textDocument/definition``, ``textDocument/references``
+    - support ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
+    - also support completion
 
 #### Builtin
 

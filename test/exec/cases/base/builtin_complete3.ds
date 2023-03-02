@@ -42,6 +42,13 @@ $assertArray(['"', '$(', '${'], $(complete 'var a = "AAA'))
 $assertArray(['->'], $(complete 'var a : ()'))
 $assertArray(['=>'], $(complete 'function ()'))
 $assertArray(['=>'], $(complete 'case 234 { 34 '))
+$assertArray(['$(', '${'], $(complete '
+cat << EOF | grep dd
+'))
+$assertArray(['$(', '${'], $(complete '
+cat << EOF | grep dd
+this is a pen
+'))
 
 # complete keyword
 ## perform sort command with 'C' locale
@@ -147,3 +154,6 @@ assert $(complete 'do {} whileA').empty()
 assert $(complete 'for aaa').empty()
 assert $(complete 'for $aaa').empty()
 assert $(complete 'var a').empty()
+assert $(complete "cat << 'EOF'
+this is a pen
+").empty()
