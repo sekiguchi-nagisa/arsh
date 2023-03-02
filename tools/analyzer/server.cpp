@@ -546,12 +546,11 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   if (auto resolved = this->resolvePosition(params)) {
     auto &src = *resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
-    auto newSrc = src.copyAndUpdate(src.getVersion(), std::string(src.getContent().c_str(), pos));
     ModuleArchives copiedArchives = this->result.archives;
-    copiedArchives.revert({newSrc->getSrcId()});
+    copiedArchives.revert({src.getSrcId()});
     auto copiedSrcMan = this->result.srcMan->copy();
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
-    return analyzer.complete(*newSrc, this->cmdCompKind, this->cmdArgComp == BinaryFlag::enabled);
+    return analyzer.complete(src, pos, this->cmdCompKind, this->cmdArgComp == BinaryFlag::enabled);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

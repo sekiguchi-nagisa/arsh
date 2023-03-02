@@ -422,8 +422,8 @@ static std::string toDirName(const std::string &fullPath) {
   return ref.empty() ? "/" : ref.toString();
 }
 
-std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ckind,
-                                               bool cmdArgComp) {
+std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int offset,
+                                               CmdCompKind ckind, bool cmdArgComp) {
   this->reset();
 
   CompletionItemCollector collector;
@@ -446,7 +446,9 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, CmdCompKind ck
   if (!cmdArgComp) {
     setFlag(ignoredOp, CodeCompOp::HOOK);
   }
-  codeCompleter(ptr->getScope(), src.getPath(), src.getContent(), ignoredOp);
+  StringRef source = src.getContent();
+  source = source.substr(0, offset);
+  codeCompleter(ptr->getScope(), src.getPath(), source, ignoredOp);
   return std::move(collector).finalize();
 }
 

@@ -633,8 +633,11 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
 }
 
 static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
-  return LexerPtr::create(scriptName.c_str(), ByteBuffer(ref.begin(), ref.end()),
-                          CStrPtr(strdup(scriptDir.c_str())));
+  ByteBuffer buf(ref.begin(), ref.end());
+  if (!buf.empty() && buf.back() == '\n') {
+    buf += '\n';
+  }
+  return LexerPtr::create(scriptName.c_str(), std::move(buf), CStrPtr(strdup(scriptDir.c_str())));
 }
 
 static void consumeAllInput(FrontEnd &frontEnd) {
