@@ -2089,7 +2089,7 @@ YDSH_METHOD cmd_call(RuntimeContext &ctx) {
 // ##     LineEditor     ##
 // ########################
 
-#define CHECK_EDITOR_LOCK(edtior)                                                                  \
+#define CHECK_EDITOR_LOCK(editor)                                                                  \
   do {                                                                                             \
     if (editor.locked()) {                                                                         \
       raiseInvalidOperationError(ctx, "cannot modify LineEditor object during line editing");      \

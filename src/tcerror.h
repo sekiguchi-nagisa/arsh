@@ -89,7 +89,7 @@ DEFINE_TCError(GlobalLimit, "number of global variables reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
 DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in module path");
-DEFINE_TCError(NoGlobMatch, "glob pattern `%s' does not macth any files");
+DEFINE_TCError(NoGlobMatch, "glob pattern `%s' does not match any files");
 DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
 DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, but always "
                           "matches directory: `%s'");

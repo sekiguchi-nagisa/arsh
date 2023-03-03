@@ -315,7 +315,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
     unsigned int prefixLen = value.size();
     size_t pidLen = 0;
     size_t stateLen = 0;
-    std::vector<std::pair<std::string, std::string>> flagments;
+    std::vector<std::pair<std::string, std::string>> fragments;
     for (unsigned int i = 0; i < this->procSize; i++) {
       auto &proc = this->getProcs()[i];
       auto pid = std::to_string(proc.pid());
@@ -323,7 +323,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
       formatProcState(proc, state);
       pidLen = std::max(pidLen, pid.size());
       stateLen = std::max(stateLen, state.size());
-      flagments.emplace_back(std::move(pid), std::move(state));
+      fragments.emplace_back(std::move(pid), std::move(state));
     }
     auto descs = splitPipeline(this->desc.asStrRef());
     assert(descs.size() >= this->procSize);
@@ -332,11 +332,11 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
         value.append(prefixLen, ' ');
       }
       value += ' ';
-      auto &pid = flagments[i].first;
+      auto &pid = fragments[i].first;
       value += pid;
       value.append(pidLen - pid.size(), ' ');
       value += ' ';
-      auto &state = flagments[i].second;
+      auto &state = fragments[i].second;
       value += state;
       value.append(stateLen - state.size(), ' ');
       value += "  ";

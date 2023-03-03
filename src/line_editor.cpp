@@ -1879,12 +1879,12 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
     message += toPrintable(name);
     message += "'";
     break;
-  case KeyBindings::AddStatus::FORBIT_BRACKET_START_CODE:
+  case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
     message = "cannot change binding of bracket start code `";
     message += KeyBindings::toCaret(KeyBindings::BRACKET_START);
     message += "'";
     break;
-  case KeyBindings::AddStatus::FORBTT_BRACKET_ACTION:
+  case KeyBindings::AddStatus::FORBID_BRACKET_ACTION:
     message = "cannot bind to `";
     message += toString(EditActionType::BRACKET_PASTE);
     message += "'";

@@ -271,7 +271,7 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     return AddStatus::INVALID_START_CHAR;
   }
   if (key == BRACKET_START) {
-    return AddStatus::FORBIT_BRACKET_START_CODE;
+    return AddStatus::FORBID_BRACKET_START_CODE;
   }
   for (auto &e : caret) {
     if (!isascii(e)) {
@@ -293,7 +293,7 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     }
 
     if (action.type == EditActionType::BRACKET_PASTE) {
-      return AddStatus::FORBTT_BRACKET_ACTION;
+      return AddStatus::FORBID_BRACKET_ACTION;
     }
 
     if (auto iter = this->values.find(key); iter != this->values.end()) {

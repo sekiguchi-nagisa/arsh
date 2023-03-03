@@ -175,7 +175,7 @@
   TOKEN(REDIR_HERE_DOC_DASH, "<<-")                                                                \
   TOKEN(REDIR_HERE_STR, "<<<")                                                                     \
   TOKEN(HERE_START, "<Here Doc Start>")                                                            \
-  TOKEN(HERE_END, "<Hore Doc End>")                                                                \
+  TOKEN(HERE_END, "<Here Doc End>")                                                                \
   TOKEN(PIPE, "|")                                                                                 \
   TOKEN(BACKGROUND, "&")                                                                           \
   TOKEN(DISOWN_BG, "&!")                                                                           \

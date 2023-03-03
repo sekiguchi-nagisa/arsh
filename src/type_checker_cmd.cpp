@@ -269,7 +269,7 @@ void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
       break;
     case BraceRange::Kind::UNINIT_CHAR:
     case BraceRange::Kind::UNINIT_INT:
-      break; // unrechable
+      break; // unreachable
     case BraceRange::Kind::OUT_OF_RANGE:
       this->reportError<BraceOutOfRange>(node.getActualToken(), error.c_str());
       break;
