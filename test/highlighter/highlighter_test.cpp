@@ -2,7 +2,8 @@
 
 #include "../test_common.h"
 #include "factory.h"
-#include <highlighter.h>
+#include <chars.h>
+#include <line_renderer.h>
 
 #ifndef BIN_PATH
 #define "require BIN_PATH"
@@ -679,53 +680,97 @@ TEST_F(ColorizeTest, cli2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
 }
 
-class BuiltinHighlightTest : public ExpectOutput {
-private:
-  ANSIEscapeSeqMap seqMap;
-
+class LineRendererTest : public ExpectOutput {
 public:
-  bool highlight(StringRef source) {
-    auto value = source.toString();
-    if (value.empty() || value.back() != '\n') {
-      value += '\n';
-    }
-    BuiltinHighlighter highlighter(this->seqMap, value);
-    return highlighter.doHighlight();
+  bool isCompleteLine(StringRef source) {
+    CharWidthProperties ps;
+    std::string out;
+    LineRenderer renderer(ps, 0, out);
+    return renderer.renderScript(source);
+  }
+
+  std::string renderPrompt(StringRef source, size_t offset = 0) {
+    CharWidthProperties ps;
+    std::string out;
+    LineRenderer renderer(ps, offset, out);
+    renderer.renderLines(source);
+    return out;
+  }
+
+  std::string renderLines(StringRef source, size_t offset = 0) {
+    CharWidthProperties ps;
+    std::string out;
+    LineRenderer renderer(ps, offset, out);
+    renderer.renderLines(source);
+    return out;
+  }
+
+  std::string renderScript(StringRef source, size_t offset = 0,
+                           ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
+    CharWidthProperties ps;
+    std::string out;
+    LineRenderer renderer(ps, offset, out, seqMap);
+    renderer.renderScript(source);
+    return out;
   }
 };
 
-TEST_F(BuiltinHighlightTest, base) {
-  ASSERT_TRUE(this->highlight("echo"));
-  ASSERT_TRUE(this->highlight("{}}"));
-  ASSERT_TRUE(this->highlight("$OSTYPE ++"));
-  ASSERT_TRUE(this->highlight("$/frefrear\\/fer"));
-  ASSERT_TRUE(this->highlight("echo >"));
-  ASSERT_TRUE(this->highlight("{ echo >"));
-  ASSERT_TRUE(this->highlight("if true"));
-  ASSERT_TRUE(this->highlight("cat <<< EOF"));
-  ASSERT_TRUE(this->highlight("cat << EOF\n"
-                              "this is a pen\n"
-                              "EOF"));
-  ASSERT_FALSE(this->highlight("echo\\"));
-  ASSERT_FALSE(this->highlight("echo AAA\\"));
-  ASSERT_FALSE(this->highlight("if (true"));
-  ASSERT_FALSE(this->highlight("(echo >"));
-  ASSERT_FALSE(this->highlight("{ echo hello"));
-  ASSERT_FALSE(this->highlight("$(23456"));
-  ASSERT_FALSE(this->highlight("23456."));
-  ASSERT_FALSE(this->highlight(R"("ehochll$OSTYPE )"));
-  ASSERT_FALSE(this->highlight("$OSTYPE + "));
-  ASSERT_FALSE(this->highlight("$OSTYPE \\"));
-  ASSERT_FALSE(this->highlight("echo hello  \\"));
-  ASSERT_FALSE(this->highlight("echo hello 'frefera"));
-  ASSERT_FALSE(this->highlight("34 + $'frefera"));
-  ASSERT_FALSE(this->highlight("cat << EOF"));
-  ASSERT_FALSE(this->highlight("cat 0<< 'EOF-_1d'"));
-  ASSERT_FALSE(this->highlight("cat <<- EOF"));
-  ASSERT_FALSE(this->highlight("cat << EOF\n"
-                               "this is a pen"));
-  ASSERT_FALSE(this->highlight("cat << EOF\n"
-                               "$OSTYPE"));
+TEST_F(LineRendererTest, continuation) {
+  ASSERT_TRUE(this->isCompleteLine("echo"));
+  ASSERT_TRUE(this->isCompleteLine("{}}"));
+  ASSERT_TRUE(this->isCompleteLine("$OSTYPE ++"));
+  ASSERT_TRUE(this->isCompleteLine("$/frefrear\\/fer"));
+  ASSERT_TRUE(this->isCompleteLine("echo >"));
+  ASSERT_TRUE(this->isCompleteLine("{ echo >"));
+  ASSERT_TRUE(this->isCompleteLine("if true"));
+  ASSERT_TRUE(this->isCompleteLine("cat <<< EOF"));
+  ASSERT_TRUE(this->isCompleteLine("cat << EOF\n"
+                                   "this is a pen\n"
+                                   "EOF"));
+  ASSERT_FALSE(this->isCompleteLine("echo\\"));
+  ASSERT_FALSE(this->isCompleteLine("echo AAA\\"));
+  ASSERT_FALSE(this->isCompleteLine("if (true"));
+  ASSERT_FALSE(this->isCompleteLine("(echo >"));
+  ASSERT_FALSE(this->isCompleteLine("{ echo hello"));
+  ASSERT_FALSE(this->isCompleteLine("$(23456"));
+  ASSERT_FALSE(this->isCompleteLine("23456."));
+  ASSERT_FALSE(this->isCompleteLine(R"("ehochll$OSTYPE )"));
+  ASSERT_FALSE(this->isCompleteLine("$OSTYPE + "));
+  ASSERT_FALSE(this->isCompleteLine("$OSTYPE \\"));
+  ASSERT_FALSE(this->isCompleteLine("echo hello  \\"));
+  ASSERT_FALSE(this->isCompleteLine("echo hello 'frefera"));
+  ASSERT_FALSE(this->isCompleteLine("34 + $'frefera"));
+  ASSERT_FALSE(this->isCompleteLine("cat << EOF"));
+  ASSERT_FALSE(this->isCompleteLine("cat 0<< 'EOF-_1d'"));
+  ASSERT_FALSE(this->isCompleteLine("cat <<- EOF"));
+  ASSERT_FALSE(this->isCompleteLine("cat << EOF\n"
+                                    "this is a pen"));
+  ASSERT_FALSE(this->isCompleteLine("cat << EOF\n"
+                                    "$OSTYPE"));
+}
+
+TEST_F(LineRendererTest, lines) {
+  ASSERT_EQ("echo hello", this->renderLines("echo hello"));
+  ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", this->renderLines("echo \nhello\n\n", 2));
+}
+
+TEST_F(LineRendererTest, prompt) {
+  ASSERT_EQ("echo hello", this->renderPrompt("echo hello"));
+  ASSERT_EQ("echo \r\n   hello", this->renderPrompt("echo \nhello", 3));
+  ASSERT_EQ("\x1b[23mecho\x1b[0m \r\n   hello",
+            this->renderPrompt("\x1b[23mecho\x1b[0m \nhello", 3));
+}
+
+TEST_F(LineRendererTest, script) {
+  ANSIEscapeSeqMap seqMap({
+      {HighlightTokenClass::COMMAND, "\x1b[30m"},
+      {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+  });
+
+  ASSERT_EQ("echo hello \\", this->renderScript("echo hello \\"));
+  ASSERT_EQ("echo hello\r\n  ", this->renderScript("echo hello\n", 2));
+  ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40mhello\x1b[0m \\\r\n    \x1b[40m!!\x1b[0m",
+            this->renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
 }
 
 int main(int argc, char **argv) {

@@ -57,10 +57,8 @@ const HighlightTokenEntries &getHighlightTokenEntries();
 
 class TokenEmitter : public TriviaStore, public TokenTracker {
 protected:
-  /**
-   * must be end with newline
-   */
   StringRef source;
+  LexerPtr lexerPtr; // set after calll tokenizeAndEmit()
 
 public:
   explicit TokenEmitter(StringRef source) : source(source) {}
@@ -68,6 +66,8 @@ public:
   ~TokenEmitter() override = default;
 
   [[nodiscard]] StringRef getSource() const { return this->source; }
+
+  const LexerPtr &getLexerPtr() const { return this->lexerPtr; }
 
   void operator()(TokenKind kind, Token token) override;
 
@@ -91,29 +91,6 @@ private:
    * @param token
    */
   virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
-};
-
-template <typename T>
-struct ANSIFormatOp {
-  void writeWithEscapeSeq(StringRef ref, const std::string &escapeSeq) {
-    // split by newline
-    for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
-      auto r = ref.find('\n', pos);
-      auto line = ref.slice(pos, r);
-      pos = r != StringRef::npos ? r + 1 : r;
-
-      if (!line.empty()) {
-        static_cast<T *>(this)->write(escapeSeq);
-        static_cast<T *>(this)->write(line);
-        if (!escapeSeq.empty()) {
-          static_cast<T *>(this)->write("\033[0m");
-        }
-      }
-      if (r != StringRef::npos) {
-        static_cast<T *>(this)->write("\n");
-      }
-    }
-  }
 };
 
 } // namespace ydsh

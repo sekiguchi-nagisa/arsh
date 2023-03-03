@@ -239,7 +239,7 @@ set(YDSH_SRC
         src/line_editor.cpp
         src/chars.cpp
         src/highlighter_base.cpp
-        src/highlighter.cpp
+        src/line_renderer.cpp
         src/keycode.cpp
         ${lexer_src}
         ${bind_src}

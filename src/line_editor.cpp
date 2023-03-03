@@ -236,35 +236,6 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, ydsh::StringRef buf
   return ret;
 }
 
-/* Check if text is an ANSI escape sequence
- */
-static bool isAnsiEscape(const char *buf, size_t buf_len, size_t *len) {
-  if (buf_len > 2 && !memcmp("\033[", buf, 2)) {
-    size_t off = 2;
-    while (off < buf_len) {
-      switch (buf[off++]) {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'F':
-      case 'G':
-      case 'H':
-      case 'J':
-      case 'K':
-      case 'S':
-      case 'T':
-      case 'f':
-      case 'm':
-        *len = off;
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps, ydsh::StringRef bufRef,
                                     const size_t pos, size_t cols, size_t iniPos) {
@@ -944,9 +915,12 @@ static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, con
     char buf[LINENOISE_MAX_LINE];
     size_t bufLen = 0;
     for (size_t off = 0; off < sub.size();) {
-      if (size_t len; isPrompt && isAnsiEscape(sub.data() + off, sub.size() - off, &len)) {
-        off += len;
-        continue;
+      if (isPrompt) {
+        auto len = startsWithAnsiEscape(sub.substr(off));
+        if (len) {
+          off += len;
+          continue;
+        }
       }
       buf[bufLen++] = sub[off++];
     }
@@ -975,28 +949,11 @@ static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
   return getColRowLen(ps, prompt, cols, true, 0);
 }
 
-static void appendLines(std::string &buf, const StringRef ref, size_t initCols) {
-  for (StringRef::size_type pos = 0;;) {
-    const auto retPos = ref.find('\n', pos);
-    auto sub = ref.slice(pos, retPos);
-    buf.append(sub.data(), sub.size());
-    if (retPos != StringRef::npos) {
-      buf.append("\r\n", 2);
-      for (size_t i = 0; i < initCols; i++) {
-        buf += ' ';
-      }
-      pos = retPos + 1;
-    } else {
-      break;
-    }
-  }
-}
-
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
+void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint) {
   updateColumns(l);
 
   char seq[64];
@@ -1036,24 +993,20 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool doHighlight) {
   ab += "\r\x1b[0K";
 
   /* Write the prompt and the current buffer content */
-  appendLines(ab, l.prompt, 0);
-  if (StringRef lineRef = l.lineRef(); !lineRef.empty()) {
+  {
+    LineRenderer renderer(l.ps, 0, ab);
+    renderer.renderPrompt(l.prompt);
+  }
+  if (const StringRef lineRef = l.lineRef(); !lineRef.empty()) {
     if (this->highlight) {
-      if (doHighlight || this->highlightCache.empty()) {
-        std::string line = lineRef.toString();
-        line += '\n';
-        BuiltinHighlighter highlighter(this->escapeSeqMap, line);
-        this->continueLine = !highlighter.doHighlight();
-        line = std::move(highlighter).take();
-        if (!line.empty() && line.back() == '\n') {
-          line.pop_back();
-        }
-        this->highlightCache = std::move(line);
-      }
-      lineRef = this->highlightCache;
+      (void)repaint; // FIXME: cache previous rendered content
+      LineRenderer renderer(l.ps, pcollen, ab, makeObserver(this->escapeSeqMap));
+      this->continueLine = !renderer.renderScript(lineRef);
+    } else {
+      LineRenderer renderer(l.ps, pcollen, ab);
+      renderer.renderLines(l.lineRef());
     }
-    fillNewlinePos(l.newlinePos, l.lineRef());
-    appendLines(ab, lineRef, pcollen);
+    fillNewlinePos(l.newlinePos, lineRef);
   }
 
   /* Get column length to cursor position */
@@ -1583,7 +1536,6 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
 
   this->lock = true;
   this->continueLine = false;
-  this->highlightCache.clear();
   auto cleanup = finally([&] { this->lock = false; });
 
   // prepare prompt

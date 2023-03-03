@@ -131,6 +131,33 @@ enum class WordLenOp {
 
 ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps);
 
+inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
+  if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
+    for (StringRef::size_type i = 2; i < ref.size(); i++) {
+      switch (ref[i]) {
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'J':
+      case 'K':
+      case 'S':
+      case 'T':
+      case 'f':
+      case 'm':
+        return i + 1;
+      default:
+        break;
+      }
+    }
+  }
+  return 0;
+}
+
 } // namespace ydsh
 
 #endif // YDSH_CHARS_H

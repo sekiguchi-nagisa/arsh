@@ -164,10 +164,9 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
 
 std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   StringRef content = this->getSource();
-  assert(!content.empty() && content.back() == '\n');
-  Lexer lexer("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
-  lexer.setTriviaStore(makeObserver(*this));
-  Parser parser(lexer, ParserOption::NEED_HERE_END);
+  this->lexerPtr = LexerPtr::create("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
+  this->lexerPtr->setTriviaStore(makeObserver(*this));
+  Parser parser(*this->lexerPtr, ParserOption::NEED_HERE_END);
   parser.setTracker(this);
   parser();
   if (parser.hasError()) {

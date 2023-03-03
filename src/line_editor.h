@@ -19,8 +19,8 @@
 
 #include <termios.h>
 
-#include "highlighter.h"
 #include "keycode.h"
+#include "line_renderer.h"
 #include "object.h"
 
 struct linenoiseState;
@@ -41,8 +41,6 @@ private:
   bool continueLine{false};
 
   ANSIEscapeSeqMap escapeSeqMap;
-
-  std::string highlightCache;
 
   termios orgTermios{};
 
@@ -125,7 +123,7 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState &l, bool doHighlight = true);
+  void refreshLine(struct linenoiseState &l, bool repaint = true);
 
   int accept(DSState &state, struct linenoiseState &l);
 

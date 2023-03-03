@@ -317,6 +317,9 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
 
   p = GraphemeBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE); // placement char
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+
+  p = GraphemeBoundary::getBreakProperty(-1);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 }
 
 TEST_F(UnicodeTest, wordBreakProperty) {
