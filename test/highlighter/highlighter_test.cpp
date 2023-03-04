@@ -2,7 +2,6 @@
 
 #include "../test_common.h"
 #include "factory.h"
-#include <chars.h>
 #include <line_renderer.h>
 
 #ifndef BIN_PATH

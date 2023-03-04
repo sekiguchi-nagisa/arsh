@@ -116,7 +116,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "chars.h"
 #include "line_editor.h"
 #include "misc/buffer.hpp"
 #include "vm.h"

@@ -19,6 +19,7 @@
 
 #include <tuple>
 
+#include "detect.hpp"
 #include "string_ref.hpp"
 #include "unicode.hpp"
 
@@ -299,6 +300,37 @@ bool GraphemeScanner<Bool>::next(Result &result) {
 using GraphemeBoundary = detail::GraphemeBoundary<true>;
 
 using GraphemeScanner = detail::GraphemeScanner<true>;
+
+template <typename Consumer>
+static constexpr bool grapheme_consumer_requirement_v =
+    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
+
+/**
+ * iterate grapheme cluster
+ * @tparam Func
+ * @param ref
+ * @param limit
+ * if number of grapheme clusters reach limit, break iteration
+ * @param consumer
+ * callback for scanned grapheme
+ * @return
+ * total number of scanned grapheme clusters
+ */
+template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
+size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  size_t count = 0;
+  for (; count < limit && scanner.next(ret); count++) {
+    consumer(ret);
+  }
+  return count;
+}
+
+template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
+size_t iterateGrapheme(StringRef ref, Func consumer) {
+  return iterateGraphemeUntil(ref, static_cast<size_t>(-1), std::move(consumer));
+}
 
 END_MISC_LIB_NAMESPACE_DECL
 

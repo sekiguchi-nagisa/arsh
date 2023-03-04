@@ -237,7 +237,6 @@ set(YDSH_SRC
         src/sysconfig.cpp
         src/brace.cpp
         src/line_editor.cpp
-        src/chars.cpp
         src/highlighter_base.cpp
         src/line_renderer.cpp
         src/keycode.cpp

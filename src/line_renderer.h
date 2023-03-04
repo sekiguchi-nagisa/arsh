@@ -18,8 +18,111 @@
 #define YDSH_LINE_RENDERER_H
 
 #include "highlighter_base.h"
+#include "misc/grapheme.hpp"
 
 namespace ydsh {
+
+// high level api for unicode-aware character op
+
+#define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
+  OP(EAW, "○")                                                                                     \
+  OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
+  OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
+
+enum class CharWidthProperty {
+#define GEN_ENUM(E, S) E,
+  EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+constexpr unsigned int getCharWidthPropertyLen() {
+  constexpr const CharWidthProperty table[] = {
+#define GEN_ENUM(E, S) CharWidthProperty::E,
+      EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  return std::size(table);
+}
+
+using CharWidthPropertyList =
+    std::array<std::pair<CharWidthProperty, const char *>, getCharWidthPropertyLen()>;
+
+const CharWidthPropertyList &getCharWidthPropertyList();
+
+struct CharWidthProperties {
+  UnicodeUtil::AmbiguousCharWidth eaw{UnicodeUtil::HALF_WIDTH};
+  unsigned char flagSeqWidth{4};
+  bool zwjSeqFallback{false};
+  bool replaceInvalid{false};
+
+  void setProperty(CharWidthProperty p, std::size_t len) {
+    switch (p) {
+    case CharWidthProperty::EAW:
+      this->eaw = len == 2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
+      break;
+    case CharWidthProperty::EMOJI_FLAG_SEQ:
+      this->flagSeqWidth = len;
+      break;
+    case CharWidthProperty::EMOJI_ZWJ_SEQ:
+      this->zwjSeqFallback = len > 2;
+      break;
+    }
+  }
+};
+
+/**
+ * get width of a grapheme cluster
+ * @param ps
+ * @param ret
+ * @return
+ */
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret);
+
+enum class CharLenOp {
+  NEXT_CHAR,
+  PREV_CHAR,
+};
+
+struct ColumnLen {
+  unsigned int byteSize; // consumed bytes
+  unsigned int colSize;
+};
+
+ColumnLen getCharLen(StringRef ref, CharLenOp op, const CharWidthProperties &ps);
+
+enum class WordLenOp {
+  NEXT_WORD,
+  PREV_WORD,
+};
+
+ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps);
+
+inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
+  if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
+    for (StringRef::size_type i = 2; i < ref.size(); i++) {
+      switch (ref[i]) {
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'J':
+      case 'K':
+      case 'S':
+      case 'T':
+      case 'f':
+      case 'm':
+        return i + 1;
+      default:
+        break;
+      }
+    }
+  }
+  return 0;
+}
 
 class ANSIEscapeSeqMap {
 private:

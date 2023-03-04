@@ -26,7 +26,6 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "chars.h"
 #include "line_editor.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"

@@ -4,8 +4,8 @@
 
 #include "../test_common.h"
 
-#include <chars.h>
 #include <keycode.h>
+#include <line_renderer.h>
 
 using namespace ydsh;
 
