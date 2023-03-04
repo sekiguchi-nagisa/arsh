@@ -2,23 +2,26 @@
 
 # for command-not-found handling
 
-var CNF_HOOK : ((String, [String]) -> Void)?
+var CNF_HOOK : ((String, [String]) -> Bool)?
 
-var ISDIR_HOOK : ((String) -> Void)?
+var ISDIR_HOOK : ((String) -> Bool)?
 
 
-function DEFAULT_CNF(m : Module, c : String, a : [String]) {
+function DEFAULT_CNF(m : Module, a : [String]) : Bool {
+    var c = $a[0]
     if $c.indexOf('/') != -1 || $c == '.' || $c == '..' {
-        ($ISDIR_HOOK ?? 
+        return ($ISDIR_HOOK ?? 
             function(s) => { 
                 echo 1>&2 $s: is a directory; 
                 $? = 1; 
+                $false
             })($c)
     } else {
-        ($CNF_HOOK ?? 
+        return ($CNF_HOOK ?? 
             function(s, ss) => {
                 echo 1>&2 $s: command not found; 
                 $? = 1; 
+                $false
             })($c, $a)
     }
 }

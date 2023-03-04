@@ -24,6 +24,6 @@ var COMP_HOOK : Func<[String]?, [Module, [String], Int]>?
 let LINE_EDIT : LineEditor
 
 # command fallback handler definition
-var CMD_FALLBACK : ((Module, String, [String]) -> Void)?
+var CMD_FALLBACK : ((Module, [String]) -> Bool)?
 
 true

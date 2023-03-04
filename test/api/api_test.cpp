@@ -582,11 +582,12 @@ echo hello
 
 TEST_F(APITest, cmdfallback) {
   auto modName = this->createTempFile("mod.ds", R"(
-  $CMD_FALLBACK = function(m,c,a) => {
-    echo $m $c $a;
+  $CMD_FALLBACK = function(m,a) => {
+    echo $m $a;
     ($m as Any) as Module
     assert ($m as Any) is Module
     $? = 99;
+    $? == 0
   };
 )");
 

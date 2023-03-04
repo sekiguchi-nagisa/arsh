@@ -364,6 +364,17 @@ TEST_F(InteractiveTest, pipestatus) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, fallback) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$CMD_FALLBACK = function(m,s) => $false"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("{ fjeriferi; }", ": Bool = false"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, moduleError1) {
   this->invokeImpl({"--quiet", "--norc"}, true);
 

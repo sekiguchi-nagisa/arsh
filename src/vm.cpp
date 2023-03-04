@@ -941,14 +941,11 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     if (!modType) {
       modType = cast<ModType>(state.typePool.getModTypeById(1).asOk());
     }
-    auto cmdName = typeAs<ArrayObject>(argvObj).takeFirst();
-
-    state.stack.reserve(4);
+    state.stack.reserve(3);
     state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));
     state.stack.push(state.getGlobal(modType->getIndex()));
-    state.stack.push(std::move(cmdName));
     state.stack.push(argvObj);
-    return prepareFuncCall(state, 3);
+    return prepareFuncCall(state, 2);
   }
   case ResolvedCmd::INVALID:
     raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
