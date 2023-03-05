@@ -92,6 +92,7 @@ public:
   OP(BACKWARD_WORD, "backward-word")               /* ALT-B / ALT-LEFT */                          \
   OP(FORWARD_WORD, "forward-word")                 /* ALT-F / ALT-RIGHT */                         \
   OP(NEWLINE, "newline")                           /* ALT-ENTER */                                 \
+  OP(INSERT_KEYCODE, "insert-keycode")             /* CTRL-V */                                    \
   OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */                                 \
   OP(CUSTOM, "%custom")                            /* for custom action */
 

@@ -484,6 +484,22 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, insert) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send(CTRL_V CTRL_E);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "^E"));
+  this->send(CTRL_V CTRL_I);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "^E  "));
+  this->send("'" CTRL_A "var a = '\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = '^E '\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a.quote()", ": String = $'\\x05'$'\\x09'"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, bracketPaste) {
   this->invoke("--quiet", "--norc");
 

@@ -1476,6 +1476,16 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
         return -1;
       }
       break;
+    case EditActionType::INSERT_KEYCODE:
+      if (reader.fetch() > 0) {
+        auto &buf = reader.get();
+        if (linenoiseEditInsert(l, buf.c_str(), buf.size())) {
+          this->refreshLine(l);
+        } else {
+          return -1;
+        }
+      }
+      break;
     case EditActionType::BRACKET_PASTE:
       if (insertBracketPaste(l)) {
         this->refreshLine(l);

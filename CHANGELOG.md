@@ -16,6 +16,9 @@
 - various ``LineEditor`` improvements
     - support alt-arrow key (for mac)
         - ``^[^[[A``, ``^[^[[B``, ``^[^[[C``, ``^[^[[D``
+    - add ``insert-keycode`` action
+        - ``CTRL-V`` like bash/zsh
+    - quote unprintable characters / invalid utf8 bytes
     - add the following keybinding methods
         - ``bind``: change keybinding
         - ``bindings``: get read-only snapshot of current keybindings

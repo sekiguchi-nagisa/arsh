@@ -176,6 +176,7 @@ std::string KeyBindings::toCaret(StringRef value) {
 #define CTRL_P_ "\x10"
 #define CTRL_T_ "\x14"
 #define CTRL_U_ "\x15"
+#define CTRL_V_ "\x16"
 #define CTRL_W_ "\x17"
 #define ESC_ "\x1b"
 #define BACKSPACE_ "\x7F"
@@ -200,6 +201,7 @@ KeyBindings::KeyBindings() {
   this->values.emplace(CTRL_E_, EditActionType::END_OF_LINE);
   this->values.emplace(CTRL_L_, EditActionType::CLEAR_SCREEN);
   this->values.emplace(CTRL_W_, EditActionType::BACKWARD_KILL_WORD);
+  this->values.emplace(CTRL_V_, EditActionType::INSERT_KEYCODE);
 
   // escape sequence
   this->values.emplace(ESC_ "b", EditActionType::BACKWARD_WORD);
