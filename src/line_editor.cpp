@@ -1294,6 +1294,7 @@ int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, const c
   /* Buffer starts empty. */
   l.buf[0] = '\0';
   l.buflen--; /* Make sure there is always space for the null-term */
+  l.ps.replaceInvalid = true;
 
   const int count = this->editInRawMode(state, l);
   const int errNum = errno;
