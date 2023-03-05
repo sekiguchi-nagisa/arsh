@@ -182,52 +182,62 @@ std::string KeyBindings::toCaret(StringRef value) {
 #define BACKSPACE_ "\x7F"
 
 KeyBindings::KeyBindings() {
-  // control character
-  this->values.emplace(ENTER_, EditActionType::ACCEPT);
-  this->values.emplace(CTRL_J_, EditActionType::ACCEPT);
-  this->values.emplace(CTRL_C_, EditActionType::CANCEL);
-  this->values.emplace(TAB_, EditActionType::COMPLETE);
-  this->values.emplace(CTRL_H_, EditActionType::BACKWARD_DELETE_CHAR);
-  this->values.emplace(BACKSPACE_, EditActionType::BACKWARD_DELETE_CHAR);
-  this->values.emplace(CTRL_D_, EditActionType::DELETE_OR_EXIT);
-  this->values.emplace(CTRL_T_, EditActionType::TRANSPOSE_CHAR);
-  this->values.emplace(CTRL_B_, EditActionType::BACKWARD_CHAR);
-  this->values.emplace(CTRL_F_, EditActionType::FORWARD_CHAR);
-  this->values.emplace(CTRL_P_, EditActionType::UP_OR_HISTORY);
-  this->values.emplace(CTRL_N_, EditActionType::DOWN_OR_HISTORY);
-  this->values.emplace(CTRL_U_, EditActionType::BACKWORD_KILL_LINE);
-  this->values.emplace(CTRL_K_, EditActionType::KILL_LINE);
-  this->values.emplace(CTRL_A_, EditActionType::BEGINNING_OF_LINE);
-  this->values.emplace(CTRL_E_, EditActionType::END_OF_LINE);
-  this->values.emplace(CTRL_L_, EditActionType::CLEAR_SCREEN);
-  this->values.emplace(CTRL_W_, EditActionType::BACKWARD_KILL_WORD);
-  this->values.emplace(CTRL_V_, EditActionType::INSERT_KEYCODE);
+  constexpr struct {
+    const char *key;
+    EditActionType type;
+  } entries[] = {
+      // control character
+      {ENTER_, EditActionType::ACCEPT},
+      {CTRL_J_, EditActionType::ACCEPT},
+      {CTRL_C_, EditActionType::CANCEL},
+      {TAB_, EditActionType::COMPLETE},
+      {CTRL_H_, EditActionType::BACKWARD_DELETE_CHAR},
+      {BACKSPACE_, EditActionType::BACKWARD_DELETE_CHAR},
+      {CTRL_D_, EditActionType::DELETE_OR_EXIT},
+      {CTRL_T_, EditActionType::TRANSPOSE_CHAR},
+      {CTRL_B_, EditActionType::BACKWARD_CHAR},
+      {CTRL_F_, EditActionType::FORWARD_CHAR},
+      {CTRL_P_, EditActionType::UP_OR_HISTORY},
+      {CTRL_N_, EditActionType::DOWN_OR_HISTORY},
+      {CTRL_U_, EditActionType::BACKWORD_KILL_LINE},
+      {CTRL_K_, EditActionType::KILL_LINE},
+      {CTRL_A_, EditActionType::BEGINNING_OF_LINE},
+      {CTRL_E_, EditActionType::END_OF_LINE},
+      {CTRL_L_, EditActionType::CLEAR_SCREEN},
+      {CTRL_W_, EditActionType::BACKWARD_KILL_WORD},
+      {CTRL_V_, EditActionType::INSERT_KEYCODE},
 
-  // escape sequence
-  this->values.emplace(ESC_ "b", EditActionType::BACKWARD_WORD);
-  this->values.emplace(ESC_ "f", EditActionType::FORWARD_WORD);
-  this->values.emplace(ESC_ "d", EditActionType::KILL_WORD);
-  this->values.emplace(ESC_ ENTER_, EditActionType::NEWLINE);
-  this->values.emplace(ESC_ "[1~", EditActionType::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "[4~", EditActionType::END_OF_LINE); // for putty
-  this->values.emplace(ESC_ "[3~", EditActionType::DELETE_CHAR); // for putty
-  this->values.emplace(ESC_ "[200~", EditActionType::BRACKET_PASTE);
-  this->values.emplace(ESC_ "[1;3A", EditActionType::PREV_HISTORY);
-  this->values.emplace(ESC_ "[1;3B", EditActionType::NEXT_HISTORY);
-  this->values.emplace(ESC_ "[1;3D", EditActionType::BACKWARD_WORD);
-  this->values.emplace(ESC_ "[1;3C", EditActionType::FORWARD_WORD);
-  this->values.emplace(ESC_ "[A", EditActionType::UP_OR_HISTORY);
-  this->values.emplace(ESC_ "[B", EditActionType::DOWN_OR_HISTORY);
-  this->values.emplace(ESC_ "[D", EditActionType::BACKWARD_CHAR);
-  this->values.emplace(ESC_ "[C", EditActionType::FORWARD_CHAR);
-  this->values.emplace(ESC_ "[H", EditActionType::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "[F", EditActionType::END_OF_LINE);
-  this->values.emplace(ESC_ "OH", EditActionType::BEGINNING_OF_LINE);
-  this->values.emplace(ESC_ "OF", EditActionType::END_OF_LINE);
-  this->values.emplace(ESC_ ESC_ "[A", EditActionType::PREV_HISTORY);  // for mac
-  this->values.emplace(ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY);  // for mac
-  this->values.emplace(ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD); // for mac
-  this->values.emplace(ESC_ ESC_ "[C", EditActionType::FORWARD_WORD);  // for mac
+      // escape sequence
+      {ESC_ "b", EditActionType::BACKWARD_WORD},
+      {ESC_ "f", EditActionType::FORWARD_WORD},
+      {ESC_ "d", EditActionType::KILL_WORD},
+      {ESC_ ENTER_, EditActionType::NEWLINE},
+      {ESC_ "[1~", EditActionType::BEGINNING_OF_LINE},
+      {ESC_ "[4~", EditActionType::END_OF_LINE}, // for putty
+      {ESC_ "[3~", EditActionType::DELETE_CHAR}, // for putty
+      {ESC_ "[200~", EditActionType::BRACKET_PASTE},
+      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},
+      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},
+      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD},
+      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},
+      {ESC_ "[A", EditActionType::UP_OR_HISTORY},
+      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},
+      {ESC_ "[D", EditActionType::BACKWARD_CHAR},
+      {ESC_ "[C", EditActionType::FORWARD_CHAR},
+      {ESC_ "[H", EditActionType::BEGINNING_OF_LINE},
+      {ESC_ "[F", EditActionType::END_OF_LINE},
+      {ESC_ "OH", EditActionType::BEGINNING_OF_LINE},
+      {ESC_ "OF", EditActionType::END_OF_LINE},
+      {ESC_ ESC_ "[A", EditActionType::PREV_HISTORY},  // for mac
+      {ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY},  // for mac
+      {ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD}, // for mac
+      {ESC_ ESC_ "[C", EditActionType::FORWARD_WORD},  // for mac
+  };
+  for (auto &e : entries) {
+    auto pair = this->values.emplace(e.key, e.type);
+    (void)pair;
+    assert(pair.second);
+  }
 }
 
 const EditAction *KeyBindings::findAction(const std::string &keycode) {
