@@ -303,7 +303,8 @@ using GraphemeScanner = detail::GraphemeScanner<true>;
 
 template <typename Consumer>
 static constexpr bool grapheme_consumer_requirement_v =
-    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
+    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>> ||
+    std::is_same_v<bool, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
 
 /**
  * iterate grapheme cluster
@@ -322,7 +323,16 @@ size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
   GraphemeScanner::Result ret;
   size_t count = 0;
   for (; count < limit && scanner.next(ret); count++) {
-    consumer(ret);
+    constexpr auto v =
+        std::is_same_v<bool, std::invoke_result_t<Func, const GraphemeScanner::Result &>>;
+    if constexpr (v) {
+      if (!consumer(ret)) {
+        count++;
+        break;
+      }
+    } else {
+      consumer(ret);
+    }
   }
   return count;
 }

@@ -188,6 +188,10 @@ private:
 
   size_t totalColLen{0};
 
+  size_t lineNum{0};
+
+  size_t lineNumLimit{static_cast<size_t>(-1)};
+
   /**
    * append to existing content
    */
@@ -197,6 +201,8 @@ public:
   LineRenderer(const CharWidthProperties &ps, size_t initColLen, std::string &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
       : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), output(output) {}
+
+  void setLineNumLimit(size_t limit) { this->lineNumLimit = limit; }
 
   /**
    * render lines with color code (ansi escape sequence).
@@ -218,7 +224,14 @@ public:
 private:
   const std::string *findColorCode(HighlightTokenClass tokenClass) const;
 
-  void render(StringRef ref, HighlightTokenClass tokenClass);
+  /**
+   *
+   * @param ref
+   * @param tokenClass
+   * @return
+   * if reach lineNumLimit, return false
+   */
+  bool render(StringRef ref, HighlightTokenClass tokenClass);
 
   void renderControlChar(int codePoint);
 };

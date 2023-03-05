@@ -778,6 +778,50 @@ TEST_F(LineRendererTest, script) {
             renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
 }
 
+TEST_F(LineRendererTest, limit) {
+  CharWidthProperties ps;
+  std::string out;
+  StringRef line = "111\r\n\r222\n333\n444\n555\n666";
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(2);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("111^M\r\n^M222\r\n", out);
+
+  out.clear();
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(0); // no limit
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("111^M\r\n^M222\r\n333\r\n444\r\n555\r\n666", out);
+
+  out.clear();
+  line = "\x1b[40m111\n222\n33\x1b[40m3\n44\x1b[40m4\n555\n666";
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(3);
+    renderer.renderWithANSI(line);
+  }
+  ASSERT_EQ("\x1b[40m111\r\n222\r\n33\x1b[40m3\r\n", out);
+
+  out.clear();
+  line = "echo 111\necho 222\necho 333\necho 444";
+  {
+    ANSIEscapeSeqMap seqMap({
+        {HighlightTokenClass::COMMAND, "\x1b[30m"},
+        {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+    });
+    LineRenderer renderer(ps, 0, out, makeObserver(seqMap));
+    renderer.setLineNumLimit(2);
+    bool r = renderer.renderScript(line);
+    ASSERT_TRUE(r);
+  }
+  ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40m111\x1b[0m\r\n\x1b[30mecho\x1b[0m \x1b[40m222\x1b[0m\r\n",
+            out);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

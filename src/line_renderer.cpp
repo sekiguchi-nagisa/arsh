@@ -170,7 +170,9 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = prompt.find('\x1b', pos);
     auto sub = prompt.slice(pos, r);
-    this->renderLines(sub);
+    if (!this->render(sub, HighlightTokenClass::NONE)) {
+      return;
+    }
     if (r != StringRef::npos) {
       auto remain = prompt.substr(r);
       if (auto len = startsWithAnsiEscape(remain)) {
@@ -194,16 +196,23 @@ bool LineRenderer::renderScript(const StringRef source) {
   this->tokens = std::move(tokenEmitter).take();
 
   // render lines with highlight
+  bool next = true;
   unsigned int curPos = 0;
   for (auto &e : this->tokens) {
     Token token = e.second;
     assert(curPos <= token.pos);
-    this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE);
+    if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE)) {
+      next = false;
+      break;
+    }
     curPos = token.endPos();
-    this->render(source.substr(token.pos, token.size), e.first);
+    if (!this->render(source.substr(token.pos, token.size), e.first)) {
+      next = false;
+      break;
+    }
   }
   // render remain lines
-  if (curPos < source.size()) {
+  if (next && curPos < source.size()) {
     auto remain = source.substr(curPos);
     this->render(remain, HighlightTokenClass::NONE);
   }
@@ -261,11 +270,12 @@ static size_t getNewlineOffset(const GraphemeScanner::Result &grapheme) {
   return 0;
 }
 
-void LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
+bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   auto *colorCode = this->findColorCode(tokenClass);
   if (colorCode) {
     this->output += *colorCode;
   }
+  bool status = true;
   iterateGrapheme(ref, [&](const GraphemeScanner::Result &grapheme) {
     if (auto offset = getNewlineOffset(grapheme)) {
       if (offset == 2) { // \r\n
@@ -275,6 +285,10 @@ void LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         this->output += "\x1b[0m";
       }
       this->output += "\r\n";
+      if (++this->lineNum == this->lineNumLimit) {
+        status = false;
+        return false;
+      }
       this->output.append(this->initColLen, ' ');
       this->totalColLen = 0;
       if (colorCode) {
@@ -299,10 +313,12 @@ void LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       }
       this->totalColLen += getGraphemeWidth(this->ps, grapheme);
     }
+    return true;
   });
   if (colorCode) {
     this->output += "\x1b[0m";
   }
+  return status;
 }
 
 void LineRenderer::renderControlChar(int codePoint) {
