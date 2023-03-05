@@ -681,23 +681,23 @@ TEST_F(ColorizeTest, cli2) {
 
 class LineRendererTest : public ExpectOutput {
 public:
-  bool isCompleteLine(StringRef source) {
+  static bool isCompleteLine(StringRef source) {
     CharWidthProperties ps;
     std::string out;
     LineRenderer renderer(ps, 0, out);
     return renderer.renderScript(source);
   }
 
-  std::string renderPrompt(StringRef source, size_t offset = 0) {
+  static std::string renderPrompt(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
     std::string out;
     LineRenderer renderer(ps, offset, out);
-    renderer.renderPrompt(source);
+    renderer.renderWithANSI(source);
     return out;
   }
 
-  std::string renderLines(StringRef source, size_t offset = 0) {
+  static std::string renderLines(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
     std::string out;
@@ -706,8 +706,8 @@ public:
     return out;
   }
 
-  std::string renderScript(StringRef source, size_t offset = 0,
-                           ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
+  static std::string renderScript(StringRef source, size_t offset = 0,
+                                  ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
     std::string out;
@@ -718,43 +718,39 @@ public:
 };
 
 TEST_F(LineRendererTest, continuation) {
-  ASSERT_TRUE(this->isCompleteLine("echo"));
-  ASSERT_TRUE(this->isCompleteLine("{}}"));
-  ASSERT_TRUE(this->isCompleteLine("$OSTYPE ++"));
-  ASSERT_TRUE(this->isCompleteLine("$/frefrear\\/fer"));
-  ASSERT_TRUE(this->isCompleteLine("echo >"));
-  ASSERT_TRUE(this->isCompleteLine("{ echo >"));
-  ASSERT_TRUE(this->isCompleteLine("if true"));
-  ASSERT_TRUE(this->isCompleteLine("cat <<< EOF"));
-  ASSERT_TRUE(this->isCompleteLine("cat << EOF\n"
-                                   "this is a pen\n"
-                                   "EOF"));
-  ASSERT_FALSE(this->isCompleteLine("echo\\"));
-  ASSERT_FALSE(this->isCompleteLine("echo AAA\\"));
-  ASSERT_FALSE(this->isCompleteLine("if (true"));
-  ASSERT_FALSE(this->isCompleteLine("(echo >"));
-  ASSERT_FALSE(this->isCompleteLine("{ echo hello"));
-  ASSERT_FALSE(this->isCompleteLine("$(23456"));
-  ASSERT_FALSE(this->isCompleteLine("23456."));
-  ASSERT_FALSE(this->isCompleteLine(R"("ehochll$OSTYPE )"));
-  ASSERT_FALSE(this->isCompleteLine("$OSTYPE + "));
-  ASSERT_FALSE(this->isCompleteLine("$OSTYPE \\"));
-  ASSERT_FALSE(this->isCompleteLine("echo hello  \\"));
-  ASSERT_FALSE(this->isCompleteLine("echo hello 'frefera"));
-  ASSERT_FALSE(this->isCompleteLine("34 + $'frefera"));
-  ASSERT_FALSE(this->isCompleteLine("cat << EOF"));
-  ASSERT_FALSE(this->isCompleteLine("cat 0<< 'EOF-_1d'"));
-  ASSERT_FALSE(this->isCompleteLine("cat <<- EOF"));
-  ASSERT_FALSE(this->isCompleteLine("cat << EOF\n"
-                                    "this is a pen"));
-  ASSERT_FALSE(this->isCompleteLine("cat << EOF\n"
-                                    "$OSTYPE"));
+  ASSERT_TRUE(isCompleteLine("echo"));
+  ASSERT_TRUE(isCompleteLine("{}}"));
+  ASSERT_TRUE(isCompleteLine("$OSTYPE ++"));
+  ASSERT_TRUE(isCompleteLine("$/frefrear\\/fer"));
+  ASSERT_TRUE(isCompleteLine("echo >"));
+  ASSERT_TRUE(isCompleteLine("{ echo >"));
+  ASSERT_TRUE(isCompleteLine("if true"));
+  ASSERT_TRUE(isCompleteLine("cat <<< EOF"));
+  ASSERT_TRUE(isCompleteLine("cat << EOF\nthis is a pen\nEOF"));
+  ASSERT_FALSE(isCompleteLine("echo\\"));
+  ASSERT_FALSE(isCompleteLine("echo AAA\\"));
+  ASSERT_FALSE(isCompleteLine("if (true"));
+  ASSERT_FALSE(isCompleteLine("(echo >"));
+  ASSERT_FALSE(isCompleteLine("{ echo hello"));
+  ASSERT_FALSE(isCompleteLine("$(23456"));
+  ASSERT_FALSE(isCompleteLine("23456."));
+  ASSERT_FALSE(isCompleteLine(R"("ehochll$OSTYPE )"));
+  ASSERT_FALSE(isCompleteLine("$OSTYPE + "));
+  ASSERT_FALSE(isCompleteLine("$OSTYPE \\"));
+  ASSERT_FALSE(isCompleteLine("echo hello  \\"));
+  ASSERT_FALSE(isCompleteLine("echo hello 'frefera"));
+  ASSERT_FALSE(isCompleteLine("34 + $'frefera"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF"));
+  ASSERT_FALSE(isCompleteLine("cat 0<< 'EOF-_1d'"));
+  ASSERT_FALSE(isCompleteLine("cat <<- EOF"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF\nthis is a pen"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF\n$OSTYPE"));
 }
 
 TEST_F(LineRendererTest, lines) {
-  ASSERT_EQ("echo hello", this->renderLines("echo hello"));
-  ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", this->renderLines("echo \nhello\n\n", 2));
-  ASSERT_EQ("echo    1   ^H^G\r\n  @   ^[", this->renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
+  ASSERT_EQ("echo hello", renderLines("echo hello"));
+  ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", renderLines("echo \nhello\n\n", 2));
+  ASSERT_EQ("echo    1   ^H^G\r\n  @   ^[", renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
 
   std::string expect = "echo ";
   expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
@@ -764,10 +760,10 @@ TEST_F(LineRendererTest, lines) {
 }
 
 TEST_F(LineRendererTest, prompt) {
-  ASSERT_EQ("echo hello", this->renderPrompt("echo hello"));
-  ASSERT_EQ("echo \r\n   hello", this->renderPrompt("echo \nhello", 3));
+  ASSERT_EQ("echo hello", renderPrompt("echo hello"));
+  ASSERT_EQ("echo \r\n   hello", renderPrompt("echo \nhello", 3));
   ASSERT_EQ("\x1b[23mecho\x1b[0m ^[\r\n   hello",
-            this->renderPrompt("\x1b[23mecho\x1b[0m \x1b\nhello", 3));
+            renderPrompt("\x1b[23mecho\x1b[0m \x1b\nhello", 3));
 }
 
 TEST_F(LineRendererTest, script) {
@@ -776,10 +772,10 @@ TEST_F(LineRendererTest, script) {
       {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
   });
 
-  ASSERT_EQ("echo hello \\", this->renderScript("echo hello \\"));
-  ASSERT_EQ("echo hello\r\n  ", this->renderScript("echo hello\n", 2));
+  ASSERT_EQ("echo hello \\", renderScript("echo hello \\"));
+  ASSERT_EQ("echo hello\r\n  ", renderScript("echo hello\n", 2));
   ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40mhello\x1b[0m \\\r\n    \x1b[40m!!\x1b[0m",
-            this->renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
+            renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
 }
 
 int main(int argc, char **argv) {

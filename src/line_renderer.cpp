@@ -166,7 +166,7 @@ private:
   }
 };
 
-void LineRenderer::renderPrompt(const StringRef prompt) {
+void LineRenderer::renderWithANSI(StringRef prompt) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = prompt.find('\x1b', pos);
     auto sub = prompt.slice(pos, r);

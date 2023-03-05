@@ -199,11 +199,11 @@ public:
       : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), output(output) {}
 
   /**
-   * render prompt string.
-   * asci escape sequence is not quoted
+   * render lines with color code (ansi escape sequence).
+   * ansi escape sequences are not quoted
    * @param prompt
    */
-  void renderPrompt(StringRef prompt);
+  void renderWithANSI(StringRef prompt);
 
   /**
    * render script (perform syntax highlight, line continuation check)

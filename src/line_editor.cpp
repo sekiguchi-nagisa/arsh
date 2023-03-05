@@ -975,7 +975,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint) {
   /* Write the prompt and the current buffer content */
   {
     LineRenderer renderer(l.ps, 0, ab);
-    renderer.renderPrompt(l.prompt);
+    renderer.renderWithANSI(l.prompt);
   }
   if (const StringRef lineRef = l.lineRef(); !lineRef.empty()) {
     if (this->highlight) {
