@@ -690,14 +690,16 @@ public:
 
   std::string renderPrompt(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
+    ps.replaceInvalid = true;
     std::string out;
     LineRenderer renderer(ps, offset, out);
-    renderer.renderLines(source);
+    renderer.renderPrompt(source);
     return out;
   }
 
   std::string renderLines(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
+    ps.replaceInvalid = true;
     std::string out;
     LineRenderer renderer(ps, offset, out);
     renderer.renderLines(source);
@@ -707,6 +709,7 @@ public:
   std::string renderScript(StringRef source, size_t offset = 0,
                            ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
     CharWidthProperties ps;
+    ps.replaceInvalid = true;
     std::string out;
     LineRenderer renderer(ps, offset, out, seqMap);
     renderer.renderScript(source);
@@ -751,13 +754,20 @@ TEST_F(LineRendererTest, continuation) {
 TEST_F(LineRendererTest, lines) {
   ASSERT_EQ("echo hello", this->renderLines("echo hello"));
   ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", this->renderLines("echo \nhello\n\n", 2));
+  ASSERT_EQ("echo    1   ^H^G\r\n  @   ^[", this->renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
+
+  std::string expect = "echo ";
+  expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+  expect += "^M";
+  expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+  ASSERT_EQ(expect, this->renderLines("echo \xFF\r\xFF"));
 }
 
 TEST_F(LineRendererTest, prompt) {
   ASSERT_EQ("echo hello", this->renderPrompt("echo hello"));
   ASSERT_EQ("echo \r\n   hello", this->renderPrompt("echo \nhello", 3));
-  ASSERT_EQ("\x1b[23mecho\x1b[0m \r\n   hello",
-            this->renderPrompt("\x1b[23mecho\x1b[0m \nhello", 3));
+  ASSERT_EQ("\x1b[23mecho\x1b[0m ^[\r\n   hello",
+            this->renderPrompt("\x1b[23mecho\x1b[0m \x1b\nhello", 3));
 }
 
 TEST_F(LineRendererTest, script) {

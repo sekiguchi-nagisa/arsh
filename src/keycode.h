@@ -32,6 +32,8 @@ inline bool isControlChar(int ch) { return (ch >= 0 && ch <= 31) || ch == 127; }
 
 inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
 
+inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
+
 class KeyCodeReader {
 private:
   int fd{-1};

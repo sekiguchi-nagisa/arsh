@@ -15,6 +15,7 @@
  */
 
 #include "line_renderer.h"
+#include "keycode.h"
 #include "misc/word.hpp"
 
 namespace ydsh {
@@ -52,39 +53,65 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScann
   return width < 2 ? width : 2;
 }
 
-ColumnLen getCharLen(StringRef ref, CharLenOp op, const CharWidthProperties &ps) {
-  GraphemeScanner::Result ret;
-  iterateGraphemeUntil(ref, op == CharLenOp::NEXT_CHAR ? 1 : static_cast<size_t>(-1),
-                       [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
-  ColumnLen len = {
-      .byteSize = static_cast<unsigned int>(ret.ref.size()),
-      .colSize = 0,
-  };
-  if (ret.codePointCount > 0) {
-    len.colSize = getGraphemeWidth(ps, ret);
+static bool isControlChar(const GraphemeScanner::Result &grapheme) {
+  if (grapheme.codePointCount == 1 && isControlChar(grapheme.codePoints[0])) {
+    return true;
+  } else if (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
+             grapheme.codePoints[1] == '\n') {
+    return true;
   }
-  return len;
+  return false;
 }
 
-ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps) {
+ColumnLen ColumnCounter::getCharLen(StringRef ref, ColumnLenOp op) {
+  const auto limit = op == ColumnLenOp::NEXT ? 1 : static_cast<size_t>(-1);
+  unsigned int lastByteSize = 0;
+  unsigned int lastColsLen = 0;
+  iterateGraphemeUntil(ref, limit, [&](const GraphemeScanner::Result &grapheme) {
+    lastByteSize = static_cast<unsigned int>(grapheme.ref.size());
+    if (isControlChar(grapheme)) {
+      auto codePoint = grapheme.codePoints[0];
+      if (codePoint == '\t') { // max tab len is 4
+        lastColsLen = 4 - this->totalColLen % 4;
+      } else if (codePoint == '\n') {
+        lastColsLen = 0; // ignore newline
+      } else {
+        lastColsLen = 2; // caret notation, such as ^@
+      }
+    } else {
+      lastColsLen = getGraphemeWidth(this->ps, grapheme);
+    }
+    this->totalColLen += lastColsLen;
+  });
+  return ColumnLen{
+      .byteSize = lastByteSize,
+      .colSize = lastColsLen,
+  };
+}
+
+ColumnLen ColumnCounter::getWordLen(const StringRef ref, ColumnLenOp op) {
   Utf8WordStream stream(ref.begin(), ref.end());
   Utf8WordScanner scanner(stream);
+  unsigned int lastByteSize = 0;
+  unsigned int lastColLen = 0;
   while (scanner.hasNext()) {
-    ref = scanner.next();
-    if (op == WordLenOp::NEXT_WORD) {
+    const StringRef word = scanner.next();
+    lastByteSize = word.size();
+    lastColLen = 0;
+    for (StringRef::size_type offset = 0; offset < word.size();) {
+      auto sub = word.substr(offset);
+      auto ret = this->getCharLen(sub, ColumnLenOp::NEXT);
+      offset += ret.byteSize;
+      lastColLen += ret.colSize;
+    }
+    if (op == ColumnLenOp::NEXT) {
       break;
     }
   }
-  ColumnLen len = {
-      .byteSize = static_cast<unsigned int>(ref.size()),
-      .colSize = 0,
+  return ColumnLen{
+      .byteSize = lastByteSize,
+      .colSize = lastColLen,
   };
-  for (GraphemeScanner graphemeScanner(ref); graphemeScanner.hasNext();) {
-    GraphemeScanner::Result ret;
-    graphemeScanner.next(ret);
-    len.colSize += getGraphemeWidth(ps, ret);
-  }
-  return len;
 }
 
 // ##############################
@@ -150,7 +177,7 @@ void LineRenderer::renderPrompt(const StringRef prompt) {
         this->output += remain.substr(0, len);
         pos = r + len;
       } else {
-        this->renderLines(prompt.substr(r, 1)); // \x1b
+        this->renderControlChar('\x1b');
         pos = r + 1;
       }
     } else {
@@ -227,39 +254,70 @@ static size_t getNewlineOffset(const GraphemeScanner::Result &grapheme) {
   if (grapheme.codePointCount == 1 && grapheme.codePoints[0] == '\n') {
     return 1;
   }
-  if (grapheme.codePointCount == 2 && grapheme.codePoints[1] == '\n') {
+  if (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
+      grapheme.codePoints[1] == '\n') {
     return 2;
   }
   return 0;
 }
 
 void LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
-  (void)this->ps;
   auto *colorCode = this->findColorCode(tokenClass);
   if (colorCode) {
     this->output += *colorCode;
   }
   iterateGrapheme(ref, [&](const GraphemeScanner::Result &grapheme) {
     if (auto offset = getNewlineOffset(grapheme)) {
-      for (size_t i = 0; i < offset - 1; i++) {
-        char buf[4];
-        unsigned int len = UnicodeUtil::codePointToUtf8(grapheme.codePoints[i], buf);
-        this->output.append(buf, len); // FIXME: quote control chars
+      if (offset == 2) { // \r\n
+        this->renderControlChar('\r');
       }
       if (colorCode) {
         this->output += "\x1b[0m";
       }
       this->output += "\r\n";
-      this->output.append(this->initOffset, ' ');
+      this->output.append(this->initColLen, ' ');
+      this->totalColLen = 0;
       if (colorCode) {
         this->output += *colorCode;
       }
-    } else { // FIXME: quote control chars
-      this->output += grapheme.ref;
+    } else if (isControlChar(grapheme)) {
+      this->renderControlChar(grapheme.codePoints[0]);
+    } else {
+      if (grapheme.hasInvalid) {
+        for (unsigned int i = 0; i < grapheme.codePointCount; i++) {
+          auto codePoint = grapheme.codePoints[i];
+          if (codePoint == -1) {
+            this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+          } else {
+            char buf[8];
+            unsigned int bufSize = UnicodeUtil::codePointToUtf8(codePoint, buf);
+            this->output.append(buf, bufSize);
+          }
+        }
+      } else {
+        this->output += grapheme.ref;
+      }
+      this->totalColLen += getGraphemeWidth(this->ps, grapheme);
     }
   });
   if (colorCode) {
     this->output += "\x1b[0m";
+  }
+}
+
+void LineRenderer::renderControlChar(int codePoint) {
+  assert(isControlChar(codePoint));
+  if (codePoint == '\t') {
+    unsigned int colLen = 4 - this->totalColLen % 4;
+    this->output.append(colLen, ' ');
+    this->totalColLen += colLen;
+  } else if (codePoint != '\n') {
+    auto v = static_cast<unsigned int>(codePoint);
+    v ^= 64;
+    assert(isCaretTarget(static_cast<int>(v)));
+    this->output += "^";
+    this->output += static_cast<char>(static_cast<int>(v));
+    this->totalColLen += 2;
   }
 }
 

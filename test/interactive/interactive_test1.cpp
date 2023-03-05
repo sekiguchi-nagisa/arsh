@@ -495,7 +495,14 @@ TEST_F(InteractiveTest, bracketPaste) {
   // bracket paste with escape
   this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
   this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "assert '2'.size() == 6\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "assert '2^[[23m'.size() == 6\n" + PROMPT));
+
+  // edit
+  this->send(ESC_("[200~\t@\ta") ESC_("[201~"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "    @   a"));
+  this->send(CTRL_A "var a = '" RIGHT RIGHT RIGHT "b" CTRL_E "'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = '   @   ba'\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a.quote()", ": String = $'\\x09'@$'\\x09'ba"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

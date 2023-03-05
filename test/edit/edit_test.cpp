@@ -14,25 +14,25 @@ TEST(EncodingTest, charLen1) {
   CharWidthProperties ps;
   StringRef line = "あaう";
   ASSERT_EQ("あaう", line);
-  auto ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // あ
+  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // あ
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("aう", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // a
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // a
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("う", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // う
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // う
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // end
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // end
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }
@@ -42,25 +42,25 @@ TEST(EncodingTest, charLen2) {
   CharWidthProperties ps;
   StringRef line = "あaう";
   ASSERT_EQ("あaう", line);
-  auto ret = getCharLen(line, CharLenOp::PREV_CHAR, ps); // う
+  auto ret = getCharLen(line, ColumnLenOp::PREV, ps); // う
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("あa", line);
-  ret = getCharLen(line, CharLenOp::PREV_CHAR, ps); // a
+  ret = getCharLen(line, ColumnLenOp::PREV, ps); // a
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("あ", line);
-  ret = getCharLen(line, CharLenOp::PREV_CHAR, ps); // あ
+  ret = getCharLen(line, ColumnLenOp::PREV, ps); // あ
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("", line);
-  ret = getCharLen(line, CharLenOp::PREV_CHAR, ps); // start
+  ret = getCharLen(line, ColumnLenOp::PREV, ps); // start
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }
@@ -69,20 +69,20 @@ TEST(EncodingTest, charLen3) {
   // next char
   CharWidthProperties ps;
   StringRef line = "○a○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦";
-  auto ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // ○
+  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // ○
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // half width
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("a○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // a
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // a
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps.setProperty(CharWidthProperty::EAW, 2);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // ○
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // ○
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // full width
 
@@ -90,13 +90,13 @@ TEST(EncodingTest, charLen3) {
   ASSERT_EQ("🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 2);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // 🇦🇽
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // FLAG_SEQ width is 2
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // b
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // b
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
@@ -104,20 +104,20 @@ TEST(EncodingTest, charLen3) {
   ASSERT_EQ("🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 4);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // 🇦🇽
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(4, ret.colSize); // FLAG_SEQ width is 4
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // 💁🏾‍♀️
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 💁🏾‍♀️
   ASSERT_EQ(17, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // c
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // c
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
@@ -126,58 +126,130 @@ TEST(EncodingTest, charLen3) {
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_ZWJ_SEQ, 3);
   ps.setProperty(CharWidthProperty::EAW, 2);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); // 💁🏾‍♀️
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 💁🏾‍♀️
   ASSERT_EQ(17, ret.byteSize);
   ASSERT_EQ(6, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("🇦", line);
-  ret = getCharLen(line, CharLenOp::NEXT_CHAR, ps); //
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); //
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // regional indicator is half
+}
+
+TEST(EncodingTest, charLenControl) {
+  CharWidthProperties ps;
+  StringRef line = "\x1b\r\r\n\n";                    // control char
+  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \x1b
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(2, ret.colSize); // caret
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\r\r\n\n", line);
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \r
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(2, ret.colSize);
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\r\n\n", line);
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \r\n
+  ASSERT_EQ(2, ret.byteSize);
+  ASSERT_EQ(2, ret.colSize);
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\n", line);
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \n
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(0, ret.colSize);
+}
+
+TEST(EncodingTest, charTab) {
+  CharWidthProperties ps;
+  StringRef line = "\t\t\t\t";
+  auto ret = ColumnCounter(ps, 0).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(4, ret.colSize);
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\t\t\t", line);
+  ret = ColumnCounter(ps, 1).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(3, ret.colSize);
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\t\t", line);
+  ret = ColumnCounter(ps, 3).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(1, ret.colSize);
+
+  line.removePrefix(ret.byteSize);
+  ASSERT_EQ("\t", line);
+  ret = ColumnCounter(ps, 4).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(4, ret.colSize);
+}
+
+TEST(EncodingTest, charInvalid) {
+  CharWidthProperties ps;
+  StringRef line = "\xFF\xFA";
+  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(0, ret.colSize);
+
+  ps.replaceInvalid = true;
+  ps.eaw = UnicodeUtil::HALF_WIDTH;
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(1, ret.colSize);
+
+  ps.replaceInvalid = true;
+  ps.eaw = UnicodeUtil::FULL_WIDTH;
+  ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  ASSERT_EQ(1, ret.byteSize);
+  ASSERT_EQ(2, ret.colSize);
 }
 
 TEST(EncodingTest, worldLen1) {
   // next word
   CharWidthProperties ps;
   StringRef line = "/home/カタカナあい";
-  auto ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // /
+  auto ret = getWordLen(line, ColumnLenOp::NEXT, ps); // /
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("home/カタカナあい", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // home
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); // home
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(4, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("/カタカナあい", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // /
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); // /
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("カタカナあい", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // カタカナ
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); // カタカナ
   ASSERT_EQ(12, ret.byteSize);
   ASSERT_EQ(8, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("あい", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // あ
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); // あ
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("い", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); // い
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); // い
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("", line);
-  ret = getWordLen(line, WordLenOp::NEXT_WORD, ps); //
+  ret = getWordLen(line, ColumnLenOp::NEXT, ps); //
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }
@@ -186,31 +258,31 @@ TEST(EncodingTest, wordLen2) {
   // prev char
   CharWidthProperties ps;
   StringRef line = "3.14アアabcう";
-  auto ret = getWordLen(line, WordLenOp::PREV_WORD, ps); // う
+  auto ret = getWordLen(line, ColumnLenOp::PREV, ps); // う
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("3.14アアabc", line);
-  ret = getWordLen(line, WordLenOp::PREV_WORD, ps); // abc
+  ret = getWordLen(line, ColumnLenOp::PREV, ps); // abc
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(3, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("3.14アア", line);
-  ret = getWordLen(line, WordLenOp::PREV_WORD, ps); // アア
+  ret = getWordLen(line, ColumnLenOp::PREV, ps); // アア
   ASSERT_EQ(6, ret.byteSize);
   ASSERT_EQ(4, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("3.14", line);
-  ret = getWordLen(line, WordLenOp::PREV_WORD, ps); // 3.14
+  ret = getWordLen(line, ColumnLenOp::PREV, ps); // 3.14
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(4, ret.colSize);
 
   line.removeSuffix(ret.byteSize);
   ASSERT_EQ("", line);
-  ret = getWordLen(line, WordLenOp::PREV_WORD, ps); //
+  ret = getWordLen(line, ColumnLenOp::PREV, ps); //
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }

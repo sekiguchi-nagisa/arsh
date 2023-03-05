@@ -125,8 +125,6 @@ const std::pair<CStrPtr, EditAction> *CustomActionMap::add(StringRef name, Custo
 // ##     KeyBindings    ##
 // ########################
 
-static bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
-
 std::string KeyBindings::parseCaret(StringRef caret) {
   std::string value;
   auto size = caret.size();

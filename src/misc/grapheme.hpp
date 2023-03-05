@@ -262,7 +262,7 @@ bool GraphemeScanner<Bool>::next(Result &result) {
     result.codePointCount = 1;
     result.codePoints[0] =
         UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->prevPos, this->ref.end());
-    result.hasInvalid = result.codePoints[0] == -1;
+    result.hasInvalid = result.hasInvalid || result.codePoints[0] == -1;
   }
 
   while (this->curPos < this->ref.size()) {
@@ -272,7 +272,6 @@ bool GraphemeScanner<Bool>::next(Result &result) {
         UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->curPos, this->ref.end(), codePoint);
     if (consumedSize < 1) {
       consumedSize = 1;
-      result.hasInvalid = true;
     }
     auto breakProperty = GraphemeBoundary<Bool>::getBreakProperty(codePoint);
     assert(result.codePointCount < std::size(result.codePoints));
@@ -286,6 +285,7 @@ bool GraphemeScanner<Bool>::next(Result &result) {
     unsigned int index = result.codePointCount++;
     result.codePoints[index] = codePoint;
     result.breakProperties[index] = breakProperty;
+    result.hasInvalid = result.hasInvalid || codePoint == -1;
   }
   if (this->curPos == this->ref.size()) {
     size_t byteSize = this->curPos - this->prevPos;

@@ -78,9 +78,9 @@ struct CharWidthProperties {
  */
 unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret);
 
-enum class CharLenOp {
-  NEXT_CHAR,
-  PREV_CHAR,
+enum class ColumnLenOp {
+  NEXT,
+  PREV,
 };
 
 struct ColumnLen {
@@ -88,14 +88,43 @@ struct ColumnLen {
   unsigned int colSize;
 };
 
-ColumnLen getCharLen(StringRef ref, CharLenOp op, const CharWidthProperties &ps);
+class ColumnCounter {
+private:
+  const CharWidthProperties &ps;
+  size_t totalColLen; // for tab stop. if reach \n, reset to 0
 
-enum class WordLenOp {
-  NEXT_WORD,
-  PREV_WORD,
+public:
+  ColumnCounter(const CharWidthProperties &ps, size_t initColLen)
+      : ps(ps), totalColLen(initColLen) {}
+
+  size_t getTotalColLen() const { return this->totalColLen; }
+
+  ColumnLen getCharLen(StringRef ref, ColumnLenOp op);
+
+  ColumnLen getWordLen(StringRef ref, ColumnLenOp op);
 };
 
-ColumnLen getWordLen(StringRef ref, WordLenOp op, const CharWidthProperties &ps);
+/**
+ * get length of last consumed grapheme cluster
+ * @param ref
+ * @param op
+ * @param ps
+ * @return
+ */
+inline ColumnLen getCharLen(StringRef ref, ColumnLenOp op, const CharWidthProperties &ps) {
+  return ColumnCounter(ps, 0).getCharLen(ref, op);
+}
+
+/**
+ * get length of last consumed word
+ * @param ref
+ * @param op
+ * @param ps
+ * @return
+ */
+inline ColumnLen getWordLen(StringRef ref, ColumnLenOp op, const CharWidthProperties &ps) {
+  return ColumnCounter(ps, 0).getWordLen(ref, op);
+}
 
 inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
   if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
@@ -155,7 +184,9 @@ private:
 
   std::vector<std::pair<HighlightTokenClass, Token>> tokens; // for syntax highlight
 
-  const size_t initOffset;
+  const size_t initColLen;
+
+  size_t totalColLen{0};
 
   /**
    * append to existing content
@@ -163,9 +194,9 @@ private:
   std::string &output;
 
 public:
-  LineRenderer(const CharWidthProperties &ps, size_t initOffset, std::string &output,
+  LineRenderer(const CharWidthProperties &ps, size_t initColLen, std::string &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
-      : ps(ps), escapeSeqMap(escapeSeqMap), initOffset(initOffset), output(output) {}
+      : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), output(output) {}
 
   /**
    * render prompt string.
@@ -188,6 +219,8 @@ private:
   const std::string *findColorCode(HighlightTokenClass tokenClass) const;
 
   void render(StringRef ref, HighlightTokenClass tokenClass);
+
+  void renderControlChar(int codePoint);
 };
 
 } // namespace ydsh
