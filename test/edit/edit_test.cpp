@@ -446,6 +446,149 @@ TEST_F(KeyBindingTest, caret2) {
   ASSERT_EQ("^[^M", KeyBindings::toCaret("\x1b\r"));
 }
 
+class LineRendererTest : public ExpectOutput {
+public:
+  static bool isCompleteLine(StringRef source) {
+    CharWidthProperties ps;
+    std::string out;
+    LineRenderer renderer(ps, 0, out);
+    return renderer.renderScript(source);
+  }
+
+  static std::string renderPrompt(StringRef source, size_t offset = 0) {
+    CharWidthProperties ps;
+    ps.replaceInvalid = true;
+    std::string out;
+    LineRenderer renderer(ps, offset, out);
+    renderer.renderWithANSI(source);
+    return out;
+  }
+
+  static std::string renderLines(StringRef source, size_t offset = 0) {
+    CharWidthProperties ps;
+    ps.replaceInvalid = true;
+    std::string out;
+    LineRenderer renderer(ps, offset, out);
+    renderer.renderLines(source);
+    return out;
+  }
+
+  static std::string renderScript(StringRef source, size_t offset = 0,
+                                  ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
+    CharWidthProperties ps;
+    ps.replaceInvalid = true;
+    std::string out;
+    LineRenderer renderer(ps, offset, out, seqMap);
+    renderer.renderScript(source);
+    return out;
+  }
+};
+
+TEST_F(LineRendererTest, continuation) {
+  ASSERT_TRUE(isCompleteLine("echo"));
+  ASSERT_TRUE(isCompleteLine("{}}"));
+  ASSERT_TRUE(isCompleteLine("$OSTYPE ++"));
+  ASSERT_TRUE(isCompleteLine("$/frefrear\\/fer"));
+  ASSERT_TRUE(isCompleteLine("echo >"));
+  ASSERT_TRUE(isCompleteLine("{ echo >"));
+  ASSERT_TRUE(isCompleteLine("if true"));
+  ASSERT_TRUE(isCompleteLine("cat <<< EOF"));
+  ASSERT_TRUE(isCompleteLine("cat << EOF\nthis is a pen\nEOF"));
+  ASSERT_FALSE(isCompleteLine("echo\\"));
+  ASSERT_FALSE(isCompleteLine("echo AAA\\"));
+  ASSERT_FALSE(isCompleteLine("if (true"));
+  ASSERT_FALSE(isCompleteLine("(echo >"));
+  ASSERT_FALSE(isCompleteLine("{ echo hello"));
+  ASSERT_FALSE(isCompleteLine("$(23456"));
+  ASSERT_FALSE(isCompleteLine("23456."));
+  ASSERT_FALSE(isCompleteLine(R"("ehochll$OSTYPE )"));
+  ASSERT_FALSE(isCompleteLine("$OSTYPE + "));
+  ASSERT_FALSE(isCompleteLine("$OSTYPE \\"));
+  ASSERT_FALSE(isCompleteLine("echo hello  \\"));
+  ASSERT_FALSE(isCompleteLine("echo hello 'frefera"));
+  ASSERT_FALSE(isCompleteLine("34 + $'frefera"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF"));
+  ASSERT_FALSE(isCompleteLine("cat 0<< 'EOF-_1d'"));
+  ASSERT_FALSE(isCompleteLine("cat <<- EOF"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF\nthis is a pen"));
+  ASSERT_FALSE(isCompleteLine("cat << EOF\n$OSTYPE"));
+}
+
+TEST_F(LineRendererTest, lines) {
+  ASSERT_EQ("echo hello", renderLines("echo hello"));
+  ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", renderLines("echo \nhello\n\n", 2));
+  ASSERT_EQ("echo    1   ^H^G\r\n  @   ^[", renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
+
+  std::string expect = "echo ";
+  expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+  expect += "^M";
+  expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+  ASSERT_EQ(expect, this->renderLines("echo \xFF\r\xFF"));
+}
+
+TEST_F(LineRendererTest, prompt) {
+  ASSERT_EQ("echo hello", renderPrompt("echo hello"));
+  ASSERT_EQ("echo \r\n   hello", renderPrompt("echo \nhello", 3));
+  ASSERT_EQ("\x1b[23mecho\x1b[0m ^[\r\n   hello",
+            renderPrompt("\x1b[23mecho\x1b[0m \x1b\nhello", 3));
+}
+
+TEST_F(LineRendererTest, script) {
+  ANSIEscapeSeqMap seqMap({
+      {HighlightTokenClass::COMMAND, "\x1b[30m"},
+      {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+  });
+
+  ASSERT_EQ("echo hello \\", renderScript("echo hello \\"));
+  ASSERT_EQ("echo hello\r\n  ", renderScript("echo hello\n", 2));
+  ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40mhello\x1b[0m \\\r\n    \x1b[40m!!\x1b[0m",
+            renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
+}
+
+TEST_F(LineRendererTest, limit) {
+  CharWidthProperties ps;
+  std::string out;
+  StringRef line = "111\r\n\r222\n333\n444\n555\n666";
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(2);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("111^M\r\n^M222\r\n", out);
+
+  out.clear();
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(0); // no limit
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("111^M\r\n^M222\r\n333\r\n444\r\n555\r\n666", out);
+
+  out.clear();
+  line = "\x1b[40m111\n222\n33\x1b[40m3\n44\x1b[40m4\n555\n666";
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setLineNumLimit(3);
+    renderer.renderWithANSI(line);
+  }
+  ASSERT_EQ("\x1b[40m111\r\n222\r\n33\x1b[40m3\r\n", out);
+
+  out.clear();
+  line = "echo 111\necho 222\necho 333\necho 444";
+  {
+    ANSIEscapeSeqMap seqMap({
+        {HighlightTokenClass::COMMAND, "\x1b[30m"},
+        {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+    });
+    LineRenderer renderer(ps, 0, out, makeObserver(seqMap));
+    renderer.setLineNumLimit(2);
+    bool r = renderer.renderScript(line);
+    ASSERT_TRUE(r);
+  }
+  ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40m111\x1b[0m\r\n\x1b[30mecho\x1b[0m \x1b[40m222\x1b[0m\r\n",
+            out);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
