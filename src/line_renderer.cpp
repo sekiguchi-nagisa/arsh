@@ -284,13 +284,15 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       if (colorCode) {
         this->output += "\x1b[0m";
       }
-      this->output += "\r\n";
-      if (++this->lineNum == this->lineNumLimit) {
-        status = false;
-        return false;
+      if (this->lineNumLimit) {
+        this->output += "\r\n";
+        if (++this->lineNum >= this->lineNumLimit) {
+          status = false;
+          return false;
+        }
+        this->output.append(this->initColLen, ' ');
+        this->totalColLen = 0;
       }
-      this->output.append(this->initColLen, ' ');
-      this->totalColLen = 0;
       if (colorCode) {
         this->output += *colorCode;
       }

@@ -558,8 +558,7 @@ TEST_F(LineRendererTest, limit) {
 
   out.clear();
   {
-    LineRenderer renderer(ps, 0, out);
-    renderer.setLineNumLimit(0); // no limit
+    LineRenderer renderer(ps, 0, out); // no limit
     renderer.renderLines(line);
   }
   ASSERT_EQ("111^M\r\n^M222\r\n333\r\n444\r\n555\r\n666", out);
@@ -587,6 +586,15 @@ TEST_F(LineRendererTest, limit) {
   }
   ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40m111\x1b[0m\r\n\x1b[30mecho\x1b[0m \x1b[40m222\x1b[0m\r\n",
             out);
+
+  out.clear();
+  line = "echo 111\necho 222\necho 333\necho 444";
+  {
+    LineRenderer renderer(ps, 2, out);
+    renderer.setLineNumLimit(0);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("echo 111echo 222echo 333echo 444", out);
 }
 
 int main(int argc, char **argv) {

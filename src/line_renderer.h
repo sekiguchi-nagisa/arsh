@@ -190,6 +190,9 @@ private:
 
   size_t lineNum{0};
 
+  /**
+   * if 0, ignore newline characters and not increment lineNum
+   */
   size_t lineNumLimit{static_cast<size_t>(-1)};
 
   /**
