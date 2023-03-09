@@ -122,7 +122,7 @@ IndexedColorPalette256::IndexedColorPalette256() {
 unsigned char IndexedColorPalette256::findClosest(Color color) const {
   assert(color);
   unsigned int closest = 0;
-  double distance = DBL_MAX;
+  auto distance = std::numeric_limits<double>::max();
   for (unsigned int i = 0; i < this->values.size(); i++) {
     double v = this->values[i].distance(color);
     if (v < distance) {
@@ -225,7 +225,7 @@ std::string ANSIFormatter::dump() {
   }
   std::string value;
   for (auto &e : this->escapeSeqCache) {
-    unsigned int index = static_cast<unsigned int>(e.first);
+    auto index = static_cast<unsigned int>(e.first);
     assert(index < getHighlightTokenEntries().size());
     const char *name = getHighlightTokenEntries()[index].second;
     if (!value.empty()) {

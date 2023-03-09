@@ -49,7 +49,7 @@ public:
   virtual std::string dump();
 
 protected:
-  void write(StringRef ref) { this->output.write(ref.data(), ref.size()); }
+  void write(StringRef ref) { this->output.write(ref.data(), static_cast<ssize_t>(ref.size())); }
 
   void drawTrivia(StringRef ref);
 
