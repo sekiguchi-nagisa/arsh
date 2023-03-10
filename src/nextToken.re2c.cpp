@@ -221,7 +221,7 @@ INIT:
     <STMT> "new"             { MODE(EXPR); RET_OR_COMP(NEW); }
     <STMT> "return"          { RET_OR_COMP(RETURN); }
     <STMT> "source"          { MODE(CMD); RET_OR_COMP(SOURCE); }
-    <STMT> "source!"         { MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
+    <STMT> "source?"         { MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
     <STMT> "try"             { RET_OR_COMP(TRY); }
     <STMT> "throw"           { RET_OR_COMP(THROW); }
     <STMT> "time"            { RET_OR_COMP(TIME); }

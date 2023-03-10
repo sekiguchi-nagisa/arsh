@@ -53,7 +53,7 @@ let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
 
             'typedef', 'assert', 'defer',
             'exportenv', 'importenv',
-            'let', 'source', 'source!', 'var', ';']
+            'let', 'source', 'source?', 'var', ';']
 
 let expr = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',

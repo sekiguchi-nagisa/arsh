@@ -1,4 +1,4 @@
 
 #$test($result = 'parse', $lineNum = 4, $chars = 14, $errorKind = 'TokenMismatched', $status = 1)
 
-source! hoge as AAA
+source? hoge as AAA

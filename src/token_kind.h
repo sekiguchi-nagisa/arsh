@@ -48,7 +48,7 @@
   TOKEN(NEW, "new")                                                                                \
   TOKEN(RETURN, "return")                                                                          \
   TOKEN(SOURCE, "source")                                                                          \
-  TOKEN(SOURCE_OPT, "source!")                                                                     \
+  TOKEN(SOURCE_OPT, "source?")                                                                     \
   TOKEN(TRY, "try")                                                                                \
   TOKEN(THROW, "throw")                                                                            \
   TOKEN(TIME, "time")                                                                              \

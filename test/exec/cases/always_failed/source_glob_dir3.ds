@@ -1,4 +1,4 @@
 
 #$test($result = 'type', $lineNum = 4, $chars =9, $errorKind = 'NoGlobDir', $status = 1)
 
-source! /././*/..
+source? /././*/..

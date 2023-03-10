@@ -1,7 +1,7 @@
 
-source! $SCRIPT_DIR/../../_module4test/fjiejfriefre*
+source? $SCRIPT_DIR/../../_module4test/fjiejfriefre*
 
-source! ../../_module4test/nest.ds
+source? ../../_module4test/nest.ds
 
 source $SCRIPT_DIR/../../_module4test/ne*
 

@@ -88,7 +88,7 @@ __cmd() {
 
                             'assert', 'defer',
                            'exportenv', 'importenv',
-                           'let', 'source', 'source!', 'typedef',
+                           'let', 'source', 'source?', 'typedef',
                            'var', ';'])
     }
 }
@@ -248,20 +248,20 @@ var CWD = "$(pwd -P)"
 
 # complete module name from SCRIPT_DIR
 $assertArray($(files $MODULE_DIR $MODULE_HOME $SCRIPT_DIR), $(complete 'source '))
-$assertArray($(files $MODULE_DIR $MODULE_HOME $SCRIPT_DIR), $(complete 'source! '))
+$assertArray($(files $MODULE_DIR $MODULE_HOME $SCRIPT_DIR), $(complete 'source? '))
 
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source /bin/l'))
-$assertArray($(file '/bin' | grep '^l'), $(complete 'source! /bin/l'))
+$assertArray($(file '/bin' | grep '^l'), $(complete 'source? /bin/l'))
 $assertArray($(file ~), $(complete 'source ~/'))
-$assertArray($(file ~), $(complete 'source! ~/'))
+$assertArray($(file ~), $(complete 'source? ~/'))
 if !$OSTYPE.startsWith("CYGWIN") {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'source ~' | grep '~root')"
 }
 $assertArray(new [String](), $(complete 'source \~root'))
-$assertArray(new [String](), $(complete 'source! \~root'))
-$assertArray(new [String](), $(complete 'source! :'))
-$assertArray(new [String](), $(complete 'source! /:'))
-$assertArray(new [String](), $(complete 'source! if=/'))
-$assertArray(new [String](), $(complete 'source! if=~/'))
+$assertArray(new [String](), $(complete 'source? \~root'))
+$assertArray(new [String](), $(complete 'source? :'))
+$assertArray(new [String](), $(complete 'source? /:'))
+$assertArray(new [String](), $(complete 'source? if=/'))
+$assertArray(new [String](), $(complete 'source? if=~/'))
 
 true

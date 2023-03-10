@@ -71,6 +71,7 @@
 - **Breaking Change**: when specify ``-i`` option, always use tty even if stdin is not tty
 - **Breaking Change**: now propagate exit/assertion error from readline callback
 - **Breaking Change**: change ``CMD_FALLBACK`` interface with ``((Module, [String]) -> Bool)?``
+- **Breaking Change**: change optional module import syntax ``source?``
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

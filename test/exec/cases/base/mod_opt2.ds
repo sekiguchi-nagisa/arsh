@@ -1,7 +1,7 @@
 
-source! ../../_module4test/module1.ds
+source? ../../_module4test/module1.ds
 
-source! ../../_module4test/nest.ds
+source? ../../_module4test/nest.ds
 
 source ../../_module4test/nest.ds
 
