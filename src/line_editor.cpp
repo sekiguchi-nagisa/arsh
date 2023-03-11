@@ -812,6 +812,18 @@ LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
 
 LineEditorObject::~LineEditorObject() { close(this->inFd); }
 
+static void enableBracketPasteMode(int fd) {
+  const char *s = "\x1b[?2004h";
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
+static void disableBracketPasteMode(int fd) {
+  const char *s = "\x1b[?2004l";
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
   struct termios raw; // NOLINT
@@ -844,6 +856,7 @@ int LineEditorObject::enableRawMode(int fd) {
     goto fatal;
   }
   this->rawMode = true;
+  enableBracketPasteMode(fd);
   return 0;
 
 fatal:
@@ -852,6 +865,7 @@ fatal:
 }
 
 void LineEditorObject::disableRawMode(int fd) {
+  disableBracketPasteMode(fd);
   /* Don't even check the return value as it's too late. */
   if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
     this->rawMode = false;
@@ -869,15 +883,6 @@ static int preparePrompt(struct linenoiseState &l) {
       return -1;
     }
   }
-
-  // enable bracket paste mode
-  {
-    const char *s = "\x1b[?2004h";
-    if (write(l.ofd, s, strlen(s)) == -1) {
-      return -1;
-    }
-  }
-
   checkProperty(l);
   return 0;
 }

@@ -19,17 +19,19 @@
     - add ``insert-keycode`` action
         - ``CTRL-V`` like bash/zsh
     - quote unprintable characters / invalid utf8 bytes
-    - add the following keybinding methods
+    - support custom keybind/custom key action via the following keybinding methods
         - ``bind``: change keybinding
         - ``bindings``: get read-only snapshot of current keybindings
             - modification of the result does not affect actual keybindings
         - ``action``: define custom key action
         - ``actions``: get read-only snapshot of current edit actions
-        - ``setHistSync``: set callback that is called when adding current line to history
+    - add ``setHistSync`` method
+        - set callback that is called when adding current line to history
     - improve unsupported terminal detection
         - check if current process belongs to foreground process group
     - always use tty even if stdin/stdout is not tty
     - improve internal I/O error reporting
+    - disable bracketed paste mode when restore tty setting
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries
