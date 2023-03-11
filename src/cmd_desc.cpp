@@ -38,8 +38,7 @@ static BuiltinCmdDesc table[] = {
      "    Move jobs to the background.\n"
      "    JOB_SPEC is represented as [%]? [1-9][0-9].\n"
      "    If JOB_SPEC is not present, latest job is used."},
-    {"call", "[cmd [arg ...]]",
-     "    Call CMD with ARGs.\n"},
+    {"call", "[cmd [arg ...]]", "    Call CMD with ARGs."},
     {"cd", "[-LP] [dir]",
      "    Changing the current directory to DIR.  The Environment variable\n"
      "    HOME is the default DIR.  A null directory name is the same as\n"
