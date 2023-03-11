@@ -5,13 +5,13 @@ for a in @($SCRIPT_DIR/*) {
     $a =~ $/\.xml$/ && continue
     !test -f $a && continue
 
-    var r = eval $YDSH_BIN --compile-only $a
+    var r = call $YDSH_BIN --compile-only $a
     echo ${$r ? "[OK]" : "[NG]"} $a
 }
 
 ## check tools/scripts
 for ss in @($SCRIPT_DIR/../tools/scripts/*.ds) {
-    var r = eval $YDSH_BIN --compile-only $ss
+    var r = call $YDSH_BIN --compile-only $ss
     echo ${$r ? "[OK]" : "[NG]"} $ss
 }
 

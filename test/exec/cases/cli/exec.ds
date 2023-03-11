@@ -21,9 +21,9 @@ $expect("$(ds -e shctl backtrace 2>&1)", 0, "")  # not backtrace
 $expect("$(ds -e command hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 $expect("$(ds -e command exit 999 2>&1)", 231, $'')
 
-# eval
-$expect("$(ds -e eval hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
-$expect("$(ds -e eval exit 45 2>&1)", 45, $'')
+# call
+$expect("$(ds -e call hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
+$expect("$(ds -e call exit 45 2>&1)", 45, $'')
 
 # exit
 $expect("$(ds -e exit 34 2>&1)", 34, $'')

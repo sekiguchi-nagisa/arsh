@@ -63,6 +63,7 @@ assert($? == 1)
 hash -r
 assert("$(command -V env)" == "env is /usr/bin/env")                   # external
 assert("$(command -V cd)" == "cd is a shell builtin command")       # builtin
+assert "$(command -V call)" == "call is a shell builtin command"
 assert "$(command -V eval)" == "eval is a shell builtin command"
 assert "$(command -V exec)" == "exec is a shell builtin command"
 assert "$(command -V command)" == "command is a shell builtin command"

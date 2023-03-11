@@ -3,4 +3,4 @@
 
 false
 
-eval exit
+call exit

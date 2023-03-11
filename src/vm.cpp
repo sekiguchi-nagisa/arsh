@@ -659,7 +659,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
 
     static std::pair<const char *, NativeCode> sb[] = {
         {"command", initCode(OpCode::BUILTIN_CMD)},
-        {"eval", initCode(OpCode::BUILTIN_EVAL)},
+        {"call", initCode(OpCode::BUILTIN_CALL)},
         {"exec", initCode(OpCode::BUILTIN_EXEC)},
     };
     for (auto &e : sb) {
@@ -2387,7 +2387,7 @@ bool VM::mainLoop(DSState &state) {
         TRY(ret);
         vmnext;
       }
-      vmcase(BUILTIN_EVAL) {
+      vmcase(BUILTIN_CALL) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         auto attr = static_cast<CmdCallAttr>(v);
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);

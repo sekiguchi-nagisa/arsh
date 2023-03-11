@@ -23,7 +23,7 @@ assert "$(m call_cmd echo world)" == $'call echo\nworld'
 assert $? == 0
 
 source ../../_module4test/command.ds as call_cmd
-assert "$(eval call_cmd call_cmd echo world)" == $'call echo\nworld'
+assert "$(call call_cmd call_cmd echo world)" == $'call echo\nworld'
 assert $? == 0
 
 # not found due to sub-command is udc

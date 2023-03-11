@@ -13,7 +13,7 @@ test -x $BIN || {
     exit 1
 }
 
-if !(eval $BIN --feature | grep USE_LOGGING) {
+if !(call $BIN --feature | grep USE_LOGGING) {
     echo $BIN needs USE_LOGGING feature
     exit 1
 }

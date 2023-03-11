@@ -3,7 +3,7 @@
 source $SCRIPT_DIR/../module/completion
 
 ## ydsh completion
-eval $YDSH_BIN --help | grep '    -' | cut -d ' ' -f 5 | cut -d '[' -f 1 |
+call $YDSH_BIN --help | grep '    -' | cut -d ' ' -f 5 | cut -d '[' -f 1 |
 for $REPLY in $STDIN {
     var k = $REPLY.startsWith('--') ? "--long" : "--short"
     var o = $REPLY.startsWith('--') ? $REPLY.slice(2) : $REPLY.slice(1)

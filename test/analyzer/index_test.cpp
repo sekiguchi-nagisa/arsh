@@ -1120,8 +1120,8 @@ $b + $func(34)
 TEST_F(IndexTest, invalidUdc) {
   unsigned short modId;
   const char *content = R"(hoge() {}
-hoge() { eval echo hello; }  # already defined
-hoge eval 34
+hoge() { call echo hello; }  # already defined
+hoge call 34
 { f() {} }
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));

@@ -1,5 +1,5 @@
 
-# RUN: echo -e '\r' | eval $cmd --log hograe   # default is warning
+# RUN: echo -e '\r' | call $cmd --log hograe   # default is warning
 
 #    CHECKERR: start ydsh code analyzer with the following options
 # CHECKERR_RE:     .+/tools/analyzer/ydshd --log hograe

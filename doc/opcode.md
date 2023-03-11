@@ -93,7 +93,7 @@
 | CALL_CMD_COMMON   |                                | argv redir -> value                          | call command (user-defined, builtin, external)                  |
 | CALL_CMD_OBJ      |                                | obj argv redir -> value                      | call command object                                             |
 | BUILTIN_CMD       |                                | -> value                                     | call builtin command command                                    |
-| BUILTIN_EVAL      |                                | -> value                                     | call builtin eval command                                       |
+| BUILTIN_CALL      |                                | -> value                                     | call builtin call command                                       |
 | BUILTIN_EXEC      |                                | -> value / [terminate]                       | call builtin exec command                                       |
 | NEW_REDIR         |                                | -> value                                     | create new RedireConfig                                         |
 | ADD_REDIR_OP0     | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stdin)              |

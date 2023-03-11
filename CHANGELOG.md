@@ -72,6 +72,8 @@
 - **Breaking Change**: now propagate exit/assertion error from readline callback
 - **Breaking Change**: change ``CMD_FALLBACK`` interface with ``((Module, [String]) -> Bool)?``
 - **Breaking Change**: change optional module import syntax ``source?``
+- **Breaking Change**: rename builtin ``eval`` command with ``call``
+    - ``eval`` is still builtin command for future usage
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

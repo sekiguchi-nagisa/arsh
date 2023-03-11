@@ -6,7 +6,7 @@ $this.lock()
 
 var j : Job?
 if $# == 0 {  # parent
-    $j = eval $YDSH_BIN $SCRIPT_NAME child process &
+    $j = call $YDSH_BIN $SCRIPT_NAME child process &
     echo parent1
     sleep 0.05
     echo parent2

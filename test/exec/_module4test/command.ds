@@ -1,7 +1,7 @@
 call_cmd() {
     echo call $@[0]
 
-    eval \
+    call \
        command \
-          eval $@
+          call $@
 }

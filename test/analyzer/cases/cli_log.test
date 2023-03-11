@@ -1,5 +1,5 @@
 
-# RUN: echo -e '\r' | eval $cmd --log info
+# RUN: echo -e '\r' | call $cmd --log info
 
 #    CHECKERR: start ydsh code analyzer with the following options
 # CHECKERR_RE:     .+/tools/analyzer/ydshd --log info

@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self
+# RUN: call $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {

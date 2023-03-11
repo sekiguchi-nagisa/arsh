@@ -239,8 +239,8 @@ TEST_F(InteractiveTest, cmdsub_ctrlz2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // launch new ydsh (new process group)
-  this->sendLine("eval $YDSH_BIN --quiet --norc");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "eval $YDSH_BIN --quiet --norc\n" + PROMPT));
+  this->sendLine("call $YDSH_BIN --quiet --norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "call $YDSH_BIN --quiet --norc\n" + PROMPT));
 
   const char *line = "var a = $(while(true){})";
   this->sendLine(line);
@@ -278,7 +278,7 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // launch new ydsh with force interactive
-  const char *line = "var aa = $(eval $YDSH_BIN -i --quiet --norc < /dev/null)";
+  const char *line = "var aa = $(call $YDSH_BIN -i --quiet --norc < /dev/null)";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
 

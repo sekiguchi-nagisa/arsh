@@ -10,44 +10,44 @@ say!!() {
 var ret = $MODULE._fullname('say!!')!
 assert $ret == $'%mod2\x00say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(eval "$ret" 123)" == 'not say!! 123'
+assert "$(call "$ret" 123)" == 'not say!! 123'
 
 assert $f.say_() == $'%mod3\x00say!!'
 assert "$(command -V "${$f.say_()}")" =~ $/user-defined/
-assert "$(eval "${$f.say_()}" 000)" == 'say!! 000'
+assert "$(call "${$f.say_()}" 000)" == 'say!! 000'
 
 assert $f.say__() == $'%mod3\x00_say!!'
 assert "$(command -V ${$f.say__()})" =~ $/user-defined/
-assert "$(eval "${$f.say__()}" 000)" == '_say!! 000'
+assert "$(call "${$f.say__()}" 000)" == '_say!! 000'
 
 ## resolve from foreign module
 $ret = $f._fullname('say!!')!
 assert $ret == $'%mod3\x00say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(eval "$ret" 456)" == 'say!! 456'
+assert "$(call "$ret" 456)" == 'say!! 456'
 
 $ret = $f._fullname('_say!!')!
 assert $ret == $'%mod3\x00_say!!'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(eval "$ret" 456)" == '_say!! 456'
+assert "$(call "$ret" 456)" == '_say!! 456'
 
 assert $f.hey_() == $'%mod4\x00say0' : $f.hey_()
 assert "$(command -V "${$f.hey_()}")" =~ $/user-defined/
-assert "$(eval "${$f.hey_()}" 9)" == '_say!! 9'
+assert "$(call "${$f.hey_()}" 9)" == '_say!! 9'
 
 assert $f.hey__() == $'%mod4\x00_say0' : $f.hey__()
 assert "$(command -V "${$f.hey__()}")" =~ $/user-defined/
-assert "$(eval "${$f.hey_()}" 909)" == '_say!! 909'
+assert "$(call "${$f.hey_()}" 909)" == '_say!! 909'
 
 $ret = $f._fullname('m')!
 assert $ret == $'%mod3\x00m'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(eval "$ret" say0 456)" == '_say!! 456'
+assert "$(call "$ret" say0 456)" == '_say!! 456'
 
 $ret = $f._fullname('m')!
 assert $ret == $'%mod3\x00m'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(eval "$ret" _say0 456 2>&1)" == 'ydsh: %mod3: cannot resolve private subcommand: _say0'
+assert "$(call "$ret" _say0 456 2>&1)" == 'ydsh: %mod3: cannot resolve private subcommand: _say0'
 assert $? == 1
 
 # resolve builtin, external

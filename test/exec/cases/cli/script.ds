@@ -1,7 +1,7 @@
 
 source $SCRIPT_DIR/expect.ds
 
-$expect("$(eval $YDSH_BIN <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
+$expect("$(call $YDSH_BIN <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
 
 $expect("$(ds <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
 

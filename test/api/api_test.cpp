@@ -999,8 +999,8 @@ TEST_F(JobTest, pid1) { // enable job control
   ASSERT_EQ(pids[0].pid, pids[1].pgid);
   ASSERT_EQ(pids[0].pid, pids[2].pgid);
 
-  // command, eval
-  result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
+  // command, call
+  result = EXEC("command call %s --first | call command %s", PID_CHECK_PATH, PID_CHECK_PATH);
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
   pids = decompose(result.out);
   ASSERT_EQ(2u, pids.size());

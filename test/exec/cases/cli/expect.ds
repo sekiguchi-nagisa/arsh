@@ -6,7 +6,7 @@ let OLD_IFS = $IFS
 $IFS = ''
 
 ds() {
-    eval $YDSH_BIN $@
+    call $YDSH_BIN $@
 }
 
 assert test -x $YDSH_BIN

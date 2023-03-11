@@ -1,5 +1,5 @@
 
-# RUN: echo -e 'jfreo\r' | eval $cmd
+# RUN: echo -e 'jfreo\r' | call $cmd
 
 #    CHECKERR: start ydsh code analyzer with the following options
 # CHECKERR_RE:     .+/tools/analyzer/ydshd

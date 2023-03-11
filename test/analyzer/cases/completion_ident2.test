@@ -1,4 +1,4 @@
-# RUN: setenv ZZZ=123 && setenv ZZ@=123 && eval $cmd --test $self
+# RUN: setenv ZZZ=123 && setenv ZZ@=123 && call $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}

@@ -8,13 +8,13 @@ $PATH = "/usr/bin:/bin:"
 assert diff <(complete 'help ') <(help | cut -d ' ' -f 1)
 assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 
-# command/eval/exec
+# command/call/exec
 assert diff <(complete 'command ') <(complete -A external -A builtin "")
 assert diff <(complete 'command /usr/bin/') <(complete -A exec '/usr/bin/')
 assert diff <(complete 'command ~/') <(complete -A exec -A tilde '~/')
-assert diff <(complete 'eval ') <(complete -A cmd)
-assert diff <(complete 'eval /usr/bin/') <(complete -A exec '/usr/bin/')
-assert diff <(complete 'eval ~/') <(complete -A exec -A tilde '~/')
+assert diff <(complete 'call ') <(complete -A cmd)
+assert diff <(complete 'call /usr/bin/') <(complete -A exec '/usr/bin/')
+assert diff <(complete 'call ~/') <(complete -A exec -A tilde '~/')
 assert diff <(complete 'exec ') <(complete -A external "")
 assert diff <(complete 'exec /usr/bin/') <(complete -A exec "/usr/bin/")
 assert diff <(complete 'exec ~/') <(complete -A exec -A tilde '~/')

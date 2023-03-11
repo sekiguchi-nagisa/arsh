@@ -214,7 +214,7 @@ constexpr const char *MOD_HOLDER_SYMBOL_SUFFIX = "%m";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
-    "eval", "exit", "exec", "command", "_exit",
+    "eval", "exit", "exec", "call", "command", "_exit",
 };
 
 // ===== Object toString =====

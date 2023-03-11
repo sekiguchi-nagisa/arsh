@@ -1,5 +1,5 @@
 
-# RUN: eval $cmd --test $self --debounce-time hogehoga
+# RUN: call $cmd --test $self --debounce-time hogehoga
 
 # CHECKERR: require valid number (0~): hogehoga
 

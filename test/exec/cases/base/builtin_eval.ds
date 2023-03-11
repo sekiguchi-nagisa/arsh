@@ -1,40 +1,6 @@
-# eval builtin command
 
-eval checkenv HOME
-assert($? == 0)
+assert "$(eval 2>&1)" =~ $/currently does not support eval command/
 
-
-# eval external command
-
-assert(eval ls)
-assert(hash | grep "ls=")
-
-# eval user-defined command
-hoge() {
-
-    echo $@
-}
-
-assert(eval hoge a b)
-
-
-# do nothing
-eval
-assert $? == 0
-
-
-# eval command having null characters
-var ex = 34 as Any
-try { eval $'1234\x00ls';  } catch $e { $ex = $e; }
-assert $ex is SystemError
-
-$ex = 34
-try { eval $'Int\x00ls';  } catch $e { $ex = $e; }
-assert $ex is SystemError
-
-$ex = 34
-try { eval $'echo\rhoge';  } catch $e { $ex = $e; }
-assert $ex is SystemError
-assert ($ex as SystemError).message() == 'execution error: echo\x0dhoge: command not found'
+assert $? == 1
 
 true

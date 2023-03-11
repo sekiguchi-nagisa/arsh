@@ -1,5 +1,5 @@
 
-# RUN: eval $cmd --test hogehoghe
+# RUN: call $cmd --test hogehoghe
 
 # CHECKERR: cannot read: hogehoghe
 # STATUS: 1

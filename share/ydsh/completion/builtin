@@ -69,7 +69,7 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
 
 
 $compAdd("command", $_cmd)
-$compAdd("eval", $_cmd)
+$compAdd("call", $_cmd)
 $compAdd("exec", $_cmd)
 $compAdd('shctl', $_shctl)
 

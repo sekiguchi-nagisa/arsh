@@ -17,7 +17,7 @@ var cc2 = {
     var v = "echo"
     () 
     {
-        eval $v $@
+        call $v $@
     }
 }
 assert $cc2 is Command
@@ -53,7 +53,7 @@ try {
 }
 assert $ex is SystemError
 
-assert "$(eval BBB a b c)" == 'BBB: a b c'
+assert "$(call BBB a b c)" == 'BBB: a b c'
 
 
 ## dynamic register command with closure

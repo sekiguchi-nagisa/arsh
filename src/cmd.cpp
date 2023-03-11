@@ -40,6 +40,7 @@ static int builtin_puts(DSState &state, ArrayObject &argvObj);
 static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_echo(DSState &state, ArrayObject &argvObj);
+static int builtin_eval(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
@@ -78,6 +79,7 @@ static auto initBuiltinMap() {
       {"dirs", builtin_dirs},
       {"disown", builtin_disown},
       {"echo", builtin_echo},
+      {"eval", builtin_eval},
       {"exit", builtin_exit},
       {"false", builtin_false},
       {"fg", builtin_fg_bg},
@@ -331,6 +333,11 @@ END:
     fputc('\n', stdout);
   }
   return 0;
+}
+
+static int builtin_eval(DSState &, ArrayObject &argvObj) {
+  ERROR(argvObj, "currently does not support eval command");
+  return 1;
 }
 
 static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, unsigned int index) {

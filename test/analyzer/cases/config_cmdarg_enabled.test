@@ -1,4 +1,4 @@
-# RUN: eval $cmd --test $self --debounce-time 5
+# RUN: call $cmd --test $self --debounce-time 5
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}

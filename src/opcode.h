@@ -121,7 +121,7 @@ namespace ydsh {
   OP(CALL_CMD_COMMON, 0, -1)                                                                       \
   OP(CALL_CMD_OBJ, 0, -2)                                                                          \
   OP(BUILTIN_CMD, 0, 1)                                                                            \
-  OP(BUILTIN_EVAL, 0, 1)                                                                           \
+  OP(BUILTIN_CALL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \
   OP(NEW_REDIR, 0, 1)                                                                              \
   OP(ADD_REDIR_OP0, 1, -1)                                                                         \

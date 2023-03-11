@@ -285,7 +285,7 @@ Assertion Error: `$false'
 
   const char *script = R"(
 defer {
-  eval exit 34
+  call exit 34
 }
 
 defer {
@@ -417,7 +417,7 @@ TEST_F(CmdlineTest, signal) {
   str += " (core dumped)\n";
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
-        echo | eval $YDSH_BIN -c 'kill -s quit $$'
+        echo | call $YDSH_BIN -c 'kill -s quit $$'
         exit $?
 )");
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));

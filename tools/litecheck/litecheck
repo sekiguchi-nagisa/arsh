@@ -266,7 +266,7 @@ function _run_and_check(map : [String : [Directive]]) : Int {
     }
 
     var run = case $map[$RUN].size() {
-        0 => $MODULE._func("eval $self")
+        0 => $MODULE._func("call $self")
         else => {
             var dd = $map[$RUN][0]
             var d = $dd.line as String

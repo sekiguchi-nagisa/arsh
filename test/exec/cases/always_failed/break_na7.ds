@@ -1,7 +1,7 @@
 
 #$test($result = 'type', $lineNum = 7, $chars = 20, $errorKind = 'InsideChild', $status = 1)
 
-eval exit 4
+call exit 4
 
 for(;;) {
     $({echo helli; break; }); break;

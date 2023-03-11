@@ -1,5 +1,5 @@
 
-# RUN: eval $cmd --hoge
+# RUN: call $cmd --hoge
 
 #    CHECKERR: invalid option: --hoge
 #    CHECKERR: Options:

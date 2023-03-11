@@ -113,7 +113,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             }
             1 => {
                 var ret : [String]
-                for line in <(eval $YDSH_BIN -c "$arg") {
+                for line in <(call $YDSH_BIN -c "$arg") {
                     if $line.startsWith($prefix) {
                         $ret.add($line)
                     }
@@ -232,7 +232,7 @@ function _comp_autoload(cmd : String) : String? {
     } with < $path
 
     if $target {
-        eval compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
+        call compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
     }
     return $none
 }

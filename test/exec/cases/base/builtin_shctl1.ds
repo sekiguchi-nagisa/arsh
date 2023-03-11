@@ -12,7 +12,7 @@ shctl is-sourced
 assert $? == 1
 command shctl is-sourced
 assert $? == 1
-eval shctl is-sourced
+call shctl is-sourced
 assert $? == 1
 
 source ../../_module4test/sourced.ds as S

@@ -112,7 +112,7 @@ $ex = 34
 try {
     $({
         true
-        eval exit 88
+        call exit 88
         true
     }).size()
         assert $false

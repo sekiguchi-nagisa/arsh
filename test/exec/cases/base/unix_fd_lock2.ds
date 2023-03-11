@@ -9,7 +9,7 @@ flock -n ${$this.value()} || {
     exit 188
 }
 
-var out = "$(eval $YDSH_BIN $SCRIPT_NAME 2>&1)"
+var out = "$(call $YDSH_BIN $SCRIPT_NAME 2>&1)"
 assert $? == 188
 assert $out == 'already running'
 

@@ -1,4 +1,4 @@
-# RUN: PATH="/usr/bin:/bin" eval $cmd --test $self --debounce-time 5
+# RUN: PATH="/usr/bin:/bin" call $cmd --test $self --debounce-time 5
 # REQUIRE: $OSTYPE !~ $/cygwin/i
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
