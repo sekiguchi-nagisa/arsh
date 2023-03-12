@@ -182,6 +182,7 @@ std::string KeyBindings::toCaret(StringRef value) {
 #define BACKSPACE_ "\x7F"
 
 KeyBindings::KeyBindings() {
+  // define edit action
   constexpr struct {
     const char *key;
     EditActionType type;
@@ -238,11 +239,33 @@ KeyBindings::KeyBindings() {
     (void)pair;
     assert(pair.second);
   }
+
+  // define pager action
+  constexpr struct {
+    const char *key;
+    PagerAction action;
+  } pagers[] = {
+      {ENTER_, PagerAction::SELECT}, {CTRL_J_, PagerAction::SELECT}, {CTRL_C_, PagerAction::CANCEL},
+      {TAB_, PagerAction::NEXT},     {ESC_ "[Z", PagerAction::PREV}, // shift-tab
+  };
+  for (auto &e : pagers) {
+    auto pair = this->pagerValues.emplace(e.key, e.action);
+    (void)pair;
+    assert(pair.second);
+  }
 }
 
-const EditAction *KeyBindings::findAction(const std::string &keycode) {
+const EditAction *KeyBindings::findAction(const std::string &keycode) const {
   auto iter = this->values.find(keycode);
   if (iter != this->values.end()) {
+    return &iter->second;
+  }
+  return nullptr;
+}
+
+const PagerAction *KeyBindings::findPagerAction(const std::string &keycode) const {
+  auto iter = this->pagerValues.find(keycode);
+  if (iter != this->pagerValues.end()) {
     return &iter->second;
   }
   return nullptr;

@@ -147,6 +147,15 @@ public:
   const std::pair<CStrPtr, EditAction> *add(StringRef name, CustomActionType type);
 };
 
+enum class PagerAction : unsigned char {
+  SELECT,
+  CANCEL,
+  PREV,
+  NEXT,
+  LEFT,
+  RIGHT,
+};
+
 class KeyBindings {
 public:
   static constexpr const char *CTRL_C = "\x03";
@@ -163,6 +172,11 @@ private:
    * custom action name to action properties mapping
    */
   CustomActionMap customActions;
+
+  /**
+   * keycode to pager action mapping
+   */
+  std::unordered_map<std::string, PagerAction> pagerValues;
 
 public:
   static const StrRefMap<EditActionType> &getEditActionTypes();
@@ -181,7 +195,9 @@ public:
 
   KeyBindings();
 
-  const EditAction *findAction(const std::string &keycode);
+  const EditAction *findAction(const std::string &keycode) const;
+
+  const PagerAction *findPagerAction(const std::string &keycode) const;
 
   enum class AddStatus {
     OK,

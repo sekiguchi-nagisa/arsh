@@ -6,6 +6,8 @@
 
 #include <keycode.h>
 #include <line_renderer.h>
+#include <object.h>
+#include <type_pool.h>
 
 using namespace ydsh;
 
@@ -595,6 +597,320 @@ TEST_F(LineRendererTest, limit) {
     renderer.renderLines(line);
   }
   ASSERT_EQ("echo 111echo 222echo 333echo 444", out);
+}
+
+static void append(ArrayObject &) {}
+
+template <typename... T>
+static void append(ArrayObject &obj, const char *first, T &&...remain) {
+  obj.refValues().push_back(DSValue::createStr(first));
+  append(obj, std::forward<T>(remain)...);
+}
+
+class PagerTest : public ExpectOutput {
+protected:
+  TypePool pool;
+  CharWidthProperties ps;
+
+public:
+  PagerTest() { this->ps.replaceInvalid = true; }
+
+  template <typename... T>
+  ObjPtr<ArrayObject> create(T &&...args) const {
+    auto v = DSValue::create<ArrayObject>(this->pool.get(TYPE::StringArray));
+    auto &obj = typeAs<ArrayObject>(v);
+    append(obj, std::forward<T>(args)...);
+    return toObjPtr<ArrayObject>(v);
+  }
+};
+
+TEST_F(PagerTest, small1) { // less than pager length
+  auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
+  auto pager = ArrayPager::create(*array, this->ps);
+  pager.updateWinSize({.rows = 24, .cols = 10});
+  ASSERT_EQ(2, pager.getPanes());
+  ASSERT_TRUE(pager.getRows() < pager.getWinSize().rows);
+  ASSERT_TRUE(pager.getRows() > array->size() / 2);
+  ASSERT_EQ(0, pager.getCurRow());
+
+  const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
+  std::string out;
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // cursor up
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\nCCC \x1b[7mFFF \x1b[0m\r\n";
+  pager.moveCursorToForwad();
+  ASSERT_EQ(2, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // cursor up
+  out = "";
+  expect = "AAA DDD \r\nBBB \x1b[7mEEE \x1b[0m\r\nCCC FFF \r\n";
+  pager.moveCursorToForwad();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // cursor up+up
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0mFFF \r\n";
+  pager.moveCursorToForwad();
+  pager.moveCursorToForwad();
+  ASSERT_EQ(2, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // cursor down+down+down+down
+  out = "";
+  expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  ASSERT_EQ(0, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // cursor down
+  out = "";
+  expect = "AAA DDD \r\n\x1b[7mBBB \x1b[0mEEE \r\nCCC FFF \r\n";
+  pager.moveCursorToNext();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, small2) { // less than pager length
+  auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
+  auto pager = ArrayPager::create(*array, this->ps);
+  pager.updateWinSize({.rows = 24, .cols = 10});
+  ASSERT_EQ(2, pager.getPanes());
+
+  const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
+  std::string out;
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\nCCC \x1b[7mFFF \x1b[0m\r\n";
+  pager.moveCursorToLeft();
+  ASSERT_EQ(2, pager.getCurRow());
+  ASSERT_EQ(5, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0mFFF \r\n";
+  pager.moveCursorToLeft();
+  ASSERT_EQ(2, pager.getCurRow());
+  ASSERT_EQ(2, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left
+  out = "";
+  expect = "AAA DDD \r\nBBB \x1b[7mEEE \x1b[0m\r\nCCC FFF \r\n";
+  pager.moveCursorToLeft();
+  ASSERT_EQ(1, pager.getCurRow());
+  ASSERT_EQ(4, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0mFFF \r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(2, pager.getCurRow());
+  ASSERT_EQ(2, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "AAA DDD \r\nBBB EEE \r\nCCC \x1b[7mFFF \x1b[0m\r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(2, pager.getCurRow());
+  ASSERT_EQ(5, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(0, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, large1) { // larger than pager length
+  auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GG\t", "HHH");
+  auto pager = ArrayPager::create(*array, this->ps);
+  pager.updateWinSize({.rows = 5, .cols = 20});
+  ASSERT_EQ(2, pager.getPanes());
+  ASSERT_TRUE(pager.getRows() < array->size() / 2);
+  ASSERT_EQ(0, pager.getCurRow());
+
+  const char *expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n";
+  std::string out;
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // up
+  out = "";
+  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n";
+  pager.moveCursorToForwad();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // up
+  out = "";
+  expect = "CCC     \x1b[7mGG      \x1b[0m\r\nDDD     HHH     \r\n";
+  pager.moveCursorToForwad();
+  ASSERT_EQ(0, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // up
+  out = "";
+  expect = "BBB     \x1b[7mFFF     \x1b[0m\r\nCCC     GG      \r\n";
+  pager.moveCursorToForwad();
+  ASSERT_EQ(0, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // down
+  out = "";
+  expect = "BBB     FFF     \r\nCCC     \x1b[7mGG      \x1b[0m\r\n";
+  pager.moveCursorToNext();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // down
+  out = "";
+  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n";
+  pager.moveCursorToNext();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // down
+  out = "";
+  expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n";
+  pager.moveCursorToNext();
+  ASSERT_EQ(0, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // down+down+down
+  out = "";
+  expect = "CCC     GG      \r\n\x1b[7mDDD     \x1b[0mHHH     \r\n";
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // down
+  out = "";
+  expect = "AAA     \x1b[7mEEE     \x1b[0m\r\nBBB     FFF     \r\n";
+  pager.moveCursorToNext();
+  ASSERT_EQ(0, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, large2) { // larger than pager length
+  /**
+   * AAA EEE
+   * BBB FFF
+   * CCC GGG
+   * DDD HHH
+   */
+  auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GGG", "HHH");
+  auto pager = ArrayPager::create(*array, this->ps);
+  pager.updateWinSize({.rows = 5, .cols = 10});
+  ASSERT_EQ(2, pager.getPanes());
+
+  const char *expect = "\x1b[7mAAA \x1b[0mEEE \r\nBBB FFF \r\n";
+  std::string out;
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left
+  out = "";
+  expect = "CCC GGG \r\nDDD \x1b[7mHHH \x1b[0m\r\n";
+  pager.moveCursorToLeft();
+  ASSERT_EQ(1, pager.getCurRow());
+  ASSERT_EQ(7, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left+left+left
+  out = "";
+  expect = "\x1b[7mCCC \x1b[0mGGG \r\nDDD HHH \r\n";
+  pager.moveCursorToLeft();
+  pager.moveCursorToLeft();
+  pager.moveCursorToLeft();
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(2, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // left
+  out = "";
+  expect = "BBB \x1b[7mFFF \x1b[0m\r\nCCC GGG \r\n";
+  pager.moveCursorToLeft();
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(5, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "BBB FFF \r\n\x1b[7mCCC \x1b[0mGGG \r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(1, pager.getCurRow());
+  ASSERT_EQ(2, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "BBB FFF \r\nCCC \x1b[7mGGG \x1b[0m\r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(1, pager.getCurRow());
+  ASSERT_EQ(6, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right
+  out = "";
+  expect = "CCC GGG \r\n\x1b[7mDDD \x1b[0mHHH \r\n";
+  pager.moveCursorToRight();
+  ASSERT_EQ(1, pager.getCurRow());
+  ASSERT_EQ(3, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // right+right
+  out = "";
+  expect = "\x1b[7mAAA \x1b[0mEEE \r\nBBB FFF \r\n";
+  pager.moveCursorToRight();
+  pager.moveCursorToRight();
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(0, pager.getIndex());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
 }
 
 int main(int argc, char **argv) {

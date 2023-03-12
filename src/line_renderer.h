@@ -239,6 +239,185 @@ private:
   void renderControlChar(int codePoint);
 };
 
+class ArrayObject;
+class KeyCodeReader;
+class KeyBindings;
+
+/**
+ * for completion candidates paging
+ */
+class ArrayPager {
+public:
+  struct WindowSize {
+    unsigned int rows{24};
+    unsigned int cols{80};
+
+    bool operator==(WindowSize o) const { return this->rows == o.rows && this->cols == o.cols; }
+
+    bool operator!=(WindowSize o) const { return !(*this == o); }
+  };
+
+  struct ItemEntry {
+    unsigned int len;  // actual item columns size
+    unsigned int tabs; // number of extra tab characters
+
+    unsigned int itemLen() const { return this->len + (4 - this->len % 4) + this->tabs * 4; }
+  };
+
+  enum class Status : unsigned int {
+    OK,       // finish paging
+    CONTINUE, // continue paging
+    CANCEL,   // cancel paging
+  };
+
+private:
+  static constexpr unsigned int ROW_RATIO = 40;
+  static constexpr unsigned int MAX_PANE_NUM = 4;
+
+  const CharWidthProperties &ps;
+  const ArrayObject &obj; // must be [String]
+  WindowSize winSize;
+  const FlexBuffer<ItemEntry> items; // pre-computed item column size
+  const unsigned int maxLenIndex;    // index of item with longest len
+  unsigned int rows{0};              // pager row size (less than windows row size)
+  unsigned int panes{0};             // number of pager pane
+  unsigned int index{0};             // index of currently selected item
+  unsigned int curRow{0};            // row of currently selected item (related to rows)
+
+  ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
+             unsigned int maxIndex)
+      : ps(ps), obj(obj), items(std::move(items)), maxLenIndex(maxIndex) {}
+
+public:
+  static ArrayPager create(const ArrayObject &obj, const CharWidthProperties &ps);
+
+  /**
+   * update windows size.
+   * if windows size changed, recompute panes, rows
+   * @param size
+   */
+  void updateWinSize(WindowSize size);
+
+  WindowSize getWinSize() const { return this->winSize; }
+
+  unsigned int getIndex() const { return this->index; }
+
+  unsigned int getPanes() const { return this->panes; }
+
+  /**
+   * get max row size of pager
+   * @return
+   */
+  unsigned int getRows() const { return this->rows; }
+
+  unsigned int getCurRow() const { return this->curRow; }
+
+  /**
+   * get logical row size
+   * @return
+   */
+  unsigned int getLogicalRows() const {
+    return static_cast<unsigned int>(this->items.size() / this->panes) +
+           static_cast<unsigned int>(this->items.size() % this->panes);
+  }
+
+  /**
+   * get row size of actually rendered
+   * @return
+   */
+  unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
+
+  /**
+   * read key code and perform corresponding pager action
+   * @param reader
+   * @return
+   */
+  Status waitKeyCode(const KeyBindings &keyBindings, KeyCodeReader &reader);
+
+  /**
+   * actual rendering function
+   * @param out
+   * append rendering result to it
+   */
+  void render(std::string &out) const;
+
+  // for pager api
+  void moveCursorToForwad() {
+    if (this->index == 0) {
+      this->curRow = this->getActualRows() - 1;
+      this->index = this->items.size() - 1;
+    } else {
+      if (this->curRow == 0) {
+        if (this->index % this->getLogicalRows() > 0) {
+          this->curRow = 0;
+        } else {
+          this->curRow = this->getActualRows() - 1;
+        }
+      } else {
+        this->curRow--;
+      }
+      this->index--;
+    }
+  }
+
+  void moveCursorToNext() {
+    if (this->index == this->items.size() - 1) {
+      this->curRow = 0;
+      this->index = 0;
+    } else {
+      if (this->curRow == this->getActualRows() - 1) {
+        unsigned int logicalRows = this->getLogicalRows();
+        if (this->index % logicalRows == logicalRows - 1) {
+          this->curRow = 0;
+        } else {
+          this->curRow = this->getActualRows() - 1;
+        }
+      } else {
+        this->curRow++;
+      }
+      this->index++;
+    }
+  }
+
+  void moveCursorToLeft() {
+    if (this->index == 0) {
+      this->curRow = this->getActualRows() - 1;
+      this->index = this->items.size() - 1;
+    } else {
+      const auto logicalRows = this->getLogicalRows();
+      const auto curCols = this->index / logicalRows;
+      if (curCols == 0) {
+        if (this->curRow > 0) {
+          this->curRow--;
+        }
+        this->index--;
+        this->index += logicalRows * (this->getPanes() - 1);
+      } else {
+        this->index -= logicalRows;
+      }
+    }
+  }
+
+  void moveCursorToRight() {
+    if (this->index == this->items.size() - 1) {
+      this->curRow = 0;
+      this->index = 0;
+    } else {
+      const auto logicalRows = this->getLogicalRows();
+      const auto curCols = this->index / logicalRows;
+      if (curCols == this->getPanes() - 1) {
+        if (this->curRow < this->getActualRows() - 1) {
+          this->curRow++;
+        }
+        this->index++;
+        this->index -= logicalRows * (this->getPanes() - 1);
+      } else {
+        this->index += logicalRows;
+      }
+    }
+  }
+};
+
 } // namespace ydsh
 
 #endif // YDSH_LINE_RENDERER_H
