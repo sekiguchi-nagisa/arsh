@@ -221,11 +221,17 @@ static size_t columnPos(const ydsh::CharWidthProperties &ps, const ydsh::StringR
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps,
                                     const ydsh::StringRef bufRef, const size_t cols,
-                                    const size_t iniPos) {
+                                    const size_t iniPos, bool skipANSI) {
   size_t ret = 0;
   size_t colWidth = iniPos;
   ydsh::ColumnCounter counter(ps, 0);
   for (size_t off = 0; off < bufRef.size();) {
+    if (skipANSI) {
+      if (auto len = startsWithAnsiEscape(bufRef.substr(off))) {
+        off += len;
+        continue;
+      }
+    }
     auto [byteSize, colLen] = counter.getCharLen(bufRef.substr(off), ColumnLenOp::NEXT);
 
     int dif = (int)(colWidth + colLen) - (int)cols;
@@ -879,21 +885,7 @@ static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, con
   for (StringRef::size_type pos = 0;;) {
     auto retPos = line.find('\n', pos);
     auto sub = line.slice(pos, retPos);
-
-    char buf[LINENOISE_MAX_LINE];
-    size_t bufLen = 0;
-    for (size_t off = 0; off < sub.size();) {
-      if (isPrompt) {
-        auto len = startsWithAnsiEscape(sub.substr(off));
-        if (len) {
-          off += len;
-          continue;
-        }
-      }
-      buf[bufLen++] = sub[off++];
-    }
-
-    auto colLen = columnPosForMultiLine(ps, StringRef(buf, bufLen), cols, initPos);
+    auto colLen = columnPosForMultiLine(ps, sub, cols, initPos, isPrompt);
     if (retPos == StringRef::npos) {
       if (isPrompt) {
         col = colLen % cols;
@@ -1506,7 +1498,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
+char *LineEditorObject::readline(DSState &state, StringRef prompt) {
   errno = 0;
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
@@ -1521,7 +1513,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   // prepare prompt
   DSValue promptVal;
   if (this->promptCallback) {
-    auto args = makeArgs(DSValue::createStr(promptRef));
+    auto args = makeArgs(DSValue::createStr(prompt));
     DSValue callback = this->promptCallback;
     promptVal = this->kickCallback(state, std::move(callback), std::move(args));
     if (state.hasError()) {
@@ -1530,11 +1522,11 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
   }
   if (promptVal.hasStrRef()) {
-    promptRef = promptVal.asStrRef();
+    prompt = promptVal.asStrRef();
   }
   char buf[LINENOISE_MAX_LINE];
   if (isUnsupportedTerm(this->inFd)) {
-    ssize_t r = write(this->outFd, promptRef.data(), promptRef.size());
+    ssize_t r = write(this->outFd, prompt.data(), prompt.size());
     UNUSED(r);
     fsync(this->outFd);
     ssize_t rlen = read(this->inFd, buf, LINENOISE_MAX_LINE);
@@ -1549,7 +1541,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, promptRef);
+    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, prompt);
     if (count == -1) {
       return nullptr;
     }

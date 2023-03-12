@@ -81,7 +81,7 @@ public:
 
   ~LineEditorObject();
 
-  char *readline(DSState &state, StringRef promptRef); // pseudo entry point
+  char *readline(DSState &state, StringRef prompt); // pseudo entry point
 
   bool locked() const { return this->lock; }
 
