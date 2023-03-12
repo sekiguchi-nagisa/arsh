@@ -609,10 +609,11 @@ TEST_F(InteractiveTest, lineEditorPrompt) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var e = new LineEditor()"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p)=> '%' + $p)"));
-  this->sendLine("$e.readLine('> ')");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$e.readLine('> ')\n%> "));
+  const char *line = "$e.readLine($'>\\x00> ')";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n%>^@> "));
   this->sendLine("1234");
-  ASSERT_NO_FATAL_FAILURE(this->expect("%> 1234\n: String? = 1234\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->expect("%>^@> 1234\n: String? = 1234\n" + PROMPT));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p) => $p[100])"));
   const char *err = R"([runtime error]

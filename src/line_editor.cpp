@@ -1255,7 +1255,7 @@ static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState 
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, const char *prompt) {
+int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, StringRef prompt) {
   if (this->enableRawMode(this->inFd)) {
     return -1;
   }
@@ -1532,10 +1532,9 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
   if (promptVal.hasStrRef()) {
     promptRef = promptVal.asStrRef();
   }
-  const char *prompt = promptRef.data(); // force truncate characters after null
   char buf[LINENOISE_MAX_LINE];
   if (isUnsupportedTerm(this->inFd)) {
-    ssize_t r = write(this->outFd, prompt, strlen(prompt));
+    ssize_t r = write(this->outFd, promptRef.data(), promptRef.size());
     UNUSED(r);
     fsync(this->outFd);
     ssize_t rlen = read(this->inFd, buf, LINENOISE_MAX_LINE);
@@ -1550,7 +1549,7 @@ char *LineEditorObject::readline(DSState &state, StringRef promptRef) {
     }
     return strdup(buf);
   } else {
-    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, prompt);
+    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, promptRef);
     if (count == -1) {
       return nullptr;
     }

@@ -135,7 +135,7 @@ private:
    * @param prompt
    * @return
    */
-  int editLine(DSState &state, char *buf, size_t buflen, const char *prompt);
+  int editLine(DSState &state, char *buf, size_t buflen, StringRef prompt);
 
   int editInRawMode(DSState &state, struct linenoiseState &l);
 
