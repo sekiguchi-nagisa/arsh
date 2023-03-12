@@ -143,7 +143,8 @@ struct linenoiseState {
   size_t oldcolpos;       /* Previous refresh cursor column position. */
   size_t oldrow;          /* Previous refresh cursor row position. */
   size_t len;             /* Current edited line length. */
-  size_t cols;            /* Number of columns in terminal. */
+  unsigned int rows;      /* Number of rows in terminal. */
+  unsigned int cols;      /* Number of columns in terminal. */
   size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
   ydsh::CharWidthProperties ps;
   NewlinePos newlinePos; // maintains newline pos
@@ -300,48 +301,30 @@ static int getCursorPosition(int ifd, int ofd) {
   return cols;
 }
 
-/* Try to get the number of columns in the current terminal, or assume 80
- * if it fails. */
-static int getColumns(int ifd, int ofd) {
+struct WinSize {
+  unsigned int rows{24};
+  unsigned int cols{80};
+};
+
+static WinSize getWinSize(int fd) {
+  WinSize size;
   struct winsize ws; // NOLINT
-
-  if (ioctl(ofd, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-    /* ioctl() failed. Try to query the terminal itself. */
-    int start, cols;
-
-    /* Get the initial position, so we can restore it later. */
-    start = getCursorPosition(ifd, ofd);
-    if (start == -1) {
-      goto failed;
+  if (ioctl(fd, TIOCGWINSZ, &ws) == 0) {
+    if (ws.ws_row) {
+      size.rows = ws.ws_row;
     }
-
-    /* Go to right margin and get position. */
-    if (write(ofd, "\x1b[999C", 6) != 6) {
-      goto failed;
+    if (ws.ws_col) {
+      size.cols = ws.ws_col;
     }
-    cols = getCursorPosition(ifd, ofd);
-    if (cols == -1) {
-      goto failed;
-    }
-
-    /* Restore position. */
-    if (cols > start) {
-      char seq[32];
-      snprintf(seq, 32, "\x1b[%dD", cols - start);
-      if (write(ofd, seq, strlen(seq)) == -1) {
-        /* Can't recover... */
-      }
-    }
-    return cols;
-  } else {
-    return ws.ws_col;
   }
-
-failed:
-  return 80;
+  return size;
 }
 
-static void updateColumns(struct linenoiseState &ls) { ls.cols = getColumns(ls.ifd, ls.ofd); }
+static void updateWinSize(struct linenoiseState &ls) {
+  auto ret = getWinSize(ls.ifd);
+  ls.rows = ret.rows;
+  ls.cols = ret.cols;
+}
 
 /* Clear the screen. Used to handle ctrl+l */
 static void linenoiseClearScreen(int fd) {
@@ -939,7 +922,7 @@ static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint) {
-  updateColumns(l);
+  updateWinSize(l);
 
   char seq[64];
   const auto [pcollen, prow] = getPromptColRow(l.ps, l.prompt, l.cols);
@@ -1289,7 +1272,8 @@ int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, const c
       .oldcolpos = 0,
       .oldrow = 0,
       .len = 0,
-      .cols = static_cast<size_t>(getColumns(this->inFd, this->outFd)),
+      .rows = 24,
+      .cols = 80,
       .maxrows = 0,
       .ps = {},
       .newlinePos = {},
@@ -1674,7 +1658,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     }
 
     if (show) {
-      updateColumns(ls);
+      updateWinSize(ls);
       showAllCandidates(ls.ps, ls.ofd, ls.cols, *candidates);
     }
     this->refreshLine(ls);
