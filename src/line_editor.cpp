@@ -935,6 +935,16 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   lndebug("clear");
   ab += "\r\x1b[0K";
 
+  /* Get column length to cursor position */
+  const auto [colpos2, row2] = getColRowLen(ColRowLenParam{
+      .ps = l.ps,
+      .ref = l.lineRef().slice(0, l.pos),
+      .cols = l.cols,
+      .initPos = pcollen,
+      .isPrompt = false,
+      .endNewline = false,
+  });
+
   /* Write the prompt and the current buffer content */
   {
     LineRenderer renderer(l.ps, 0, ab);
@@ -963,16 +973,6 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       pager->render(ab);
     }
   }
-
-  /* Get column length to cursor position */
-  const auto [colpos2, row2] = getColRowLen(ColRowLenParam{
-      .ps = l.ps,
-      .ref = l.lineRef().slice(0, l.pos),
-      .cols = l.cols,
-      .initPos = pcollen,
-      .isPrompt = false,
-      .endNewline = false,
-  });
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
