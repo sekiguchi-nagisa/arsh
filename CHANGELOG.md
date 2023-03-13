@@ -33,6 +33,7 @@
     - improve internal I/O error reporting
     - disable bracketed paste mode when restore tty setting
     - allow prompt that has null characters
+    - add completion candidate pager
 - add builtin ``disown`` command
 - add directory stack related builtin commands
     - ``dirs``: show directory stack entries

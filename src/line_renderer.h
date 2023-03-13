@@ -318,7 +318,7 @@ public:
    */
   unsigned int getLogicalRows() const {
     return static_cast<unsigned int>(this->items.size() / this->panes) +
-           static_cast<unsigned int>(this->items.size() % this->panes);
+           (this->items.size() % this->panes == 0 ? 0 : 1);
   }
 
   /**

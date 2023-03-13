@@ -456,22 +456,17 @@ void ArrayPager::render(std::string &out) const {
    * ==>> startIndex=0
    */
   const unsigned int maxRowSize = this->getLogicalRows();
-  unsigned int startIndex = this->index;
-  while (startIndex >= maxRowSize) {
-    startIndex -= maxRowSize;
-  }
+  unsigned int startIndex = this->index % maxRowSize;
   assert(startIndex >= this->curRow);
   startIndex -= this->curRow;
   const unsigned int actualRows = this->getActualRows();
 
   LineRenderer renderer(this->ps, 0, out);
-  bool stop = false;
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setLineNumLimit(0);                     // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
       unsigned int actualIndex = startIndex + i + j * maxRowSize;
       if (actualIndex >= this->items.size()) {
-        stop = true;
         break;
       }
       if (actualIndex == this->index) {
@@ -485,9 +480,6 @@ void ArrayPager::render(std::string &out) const {
     }
     renderer.setLineNumLimit(static_cast<size_t>(-1)); // re-enable newlines
     renderer.renderLines("\n");
-    if (stop) {
-      break;
-    }
   }
 }
 

@@ -206,18 +206,6 @@ static size_t nextWordBytes(const linenoiseState &l) {
   return ret.byteSize;
 }
 
-/* Get column length from beginning of buffer to current byte position */
-static size_t columnPos(const ydsh::CharWidthProperties &ps, const ydsh::StringRef ref) {
-  size_t len = 0;
-  ColumnCounter counter(ps, 0);
-  for (size_t offset = 0; offset < ref.size();) {
-    auto ret = counter.getCharLen(ref.substr(offset), ColumnLenOp::NEXT);
-    offset += ret.byteSize;
-    len += ret.colSize;
-  }
-  return len;
-}
-
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
 static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps,
                                     const ydsh::StringRef bufRef, const size_t cols,
@@ -361,70 +349,6 @@ static FILE *logfp = nullptr;
 #else
 #define logprintf(fmt, ...)
 #endif
-
-static void showAllCandidates(const ydsh::CharWidthProperties &ps, int fd, size_t cols,
-                              const ydsh::ArrayObject &candidates) {
-  const auto len = candidates.size();
-  auto *sizeTable = (unsigned int *)malloc(sizeof(unsigned int) * len);
-
-  // compute maximum length of candidate
-  size_t maxSize = 0;
-  for (size_t index = 0; index < len; index++) {
-    StringRef can = candidates.getValues()[index].asCStr(); // truncate characters after null
-    size_t s = columnPos(ps, can);
-    if (s > maxSize) {
-      maxSize = s;
-    }
-    sizeTable[index] = s;
-  }
-
-  maxSize += 2;
-  const unsigned int columCount = cols / maxSize;
-
-  logprintf("cols: %lu\n", cols);
-  logprintf("maxSize: %lu\n", maxSize);
-  logprintf("columCount: %u\n", columCount);
-
-  // compute raw size
-  size_t rawSize;
-  for (rawSize = 1; rawSize < len; rawSize++) {
-    size_t a = len / rawSize;
-    size_t b = len % rawSize;
-    size_t c = b == 0 ? 0 : 1;
-    if (a + c <= columCount) {
-      break;
-    }
-  }
-
-  logprintf("rawSize: %zu\n", rawSize);
-
-  // show candidates
-  ssize_t r = write(fd, "\r\n", strlen("\r\n"));
-  UNUSED(r);
-  for (size_t index = 0; index < rawSize; index++) {
-    for (size_t j = 0;; j++) {
-      size_t candidateIndex = j * rawSize + index;
-      if (candidateIndex >= len) {
-        break;
-      }
-
-      // print candidate
-      auto c = candidates.getValues()[candidateIndex].asStrRef();
-      r = write(fd, c.data(), c.size());
-      UNUSED(r);
-
-      // print spaces
-      for (unsigned int s = 0; s < maxSize - sizeTable[candidateIndex]; s++) {
-        r = write(fd, " ", 1);
-        UNUSED(r);
-      }
-    }
-    r = write(fd, "\r\n", strlen("\r\n"));
-    UNUSED(r);
-  }
-
-  free(sizeTable);
-}
 
 static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
   if (candidates.size() == 0) {
@@ -604,6 +528,16 @@ static void revertInsert(struct linenoiseState &l, size_t len) {
   }
 }
 
+/**
+ * get interval (pos, len) of current line
+ * @param l
+ * @param wholeLine
+ * if true, get whole current line
+ * if false, get line until current pos
+ * @return
+ * [pos, len]
+ * start position of current line, length of current line
+ */
 static std::pair<unsigned int, unsigned int> findLineInterval(const struct linenoiseState &l,
                                                               bool wholeLine) {
   unsigned int pos = 0;
@@ -876,54 +810,103 @@ static int preparePrompt(struct linenoiseState &l) {
   return 0;
 }
 
-static std::pair<size_t, size_t> getColRowLen(const CharWidthProperties &ps, const StringRef line,
-                                              const size_t cols, bool isPrompt,
-                                              const size_t initPos) {
+struct ColRowLenParam {
+  const CharWidthProperties &ps;
+  StringRef ref;
+  size_t cols;
+  size_t initPos;
+  bool isPrompt;
+  bool endNewline;
+};
+
+static std::pair<size_t, size_t> getColRowLen(const ColRowLenParam &param) {
   size_t col = 0;
   size_t row = 0;
 
   for (StringRef::size_type pos = 0;;) {
-    auto retPos = line.find('\n', pos);
-    auto sub = line.slice(pos, retPos);
-    auto colLen = columnPosForMultiLine(ps, sub, cols, initPos, isPrompt);
-    if (retPos == StringRef::npos) {
-      if (isPrompt) {
-        col = colLen % cols;
-        row += colLen / cols;
+    const auto retPos = param.ref.find('\n', pos);
+    auto sub = param.ref.slice(pos, retPos);
+    auto colLen = columnPosForMultiLine(param.ps, sub, param.cols, param.initPos, param.isPrompt);
+    if (retPos != StringRef::npos || param.endNewline) {
+      col = colLen % param.cols;
+      row += (param.initPos + colLen) / param.cols;
+      row++;
+    } else {
+      if (param.isPrompt) {
+        col = colLen % param.cols;
+        row += colLen / param.cols;
       } else {
         col = colLen;
       }
-      break;
-    } else {
-      col = colLen % cols;
-      row += (initPos + colLen) / cols;
-      row++;
+    }
+    if (retPos != StringRef::npos) {
       pos = retPos + 1;
+    } else {
+      break;
     }
   }
   return {col, row};
 }
 
-static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps,
-                                                 const StringRef prompt, const size_t cols) {
-  return getColRowLen(ps, prompt, cols, true, 0);
+static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps, StringRef prompt,
+                                                 size_t cols) {
+  return getColRowLen(ColRowLenParam{
+      .ps = ps,
+      .ref = prompt,
+      .cols = cols,
+      .initPos = 0,
+      .isPrompt = true,
+      .endNewline = false,
+  });
+}
+
+static std::pair<size_t, size_t> getColRowLenWithPager(const struct linenoiseState &l,
+                                                       ObserverPtr<ArrayPager> pager,
+                                                       size_t pcolLen) {
+  StringRef lineRef = l.lineRef();
+  bool endNewline = false;
+  if (pager) {
+    auto [pos, len] = findLineInterval(l, true);
+    lineRef = StringRef(l.buf, pos + len);
+    if (!lineRef.endsWith("\n")) {
+      endNewline = true;
+    }
+  }
+  return getColRowLen(ColRowLenParam{
+      .ps = l.ps,
+      .ref = lineRef,
+      .cols = l.cols,
+      .initPos = pcolLen,
+      .isPrompt = false,
+      .endNewline = endNewline,
+  });
 }
 
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint) {
+void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
+                                   ObserverPtr<ArrayPager> pager) {
   updateWinSize(l);
+  if (pager) {
+    pager->updateWinSize({.rows = l.rows, .cols = l.cols});
+  }
+  if (repaint) {
+    fillNewlinePos(l.newlinePos, l.lineRef());
+  }
 
   char seq[64];
   const auto [pcollen, prow] = getPromptColRow(l.ps, l.prompt, l.cols);
-  const auto [colpos, row] = getColRowLen(l.ps, l.lineRef(), l.cols, false, pcollen);
+  const auto [colpos, row] = getColRowLenWithPager(l, pager, pcollen);
   /* rows used by current buf. */
   int rows = (pcollen + colpos + l.cols - 1) / l.cols + prow + row;
+  if (pager) {
+    rows += pager->getActualRows();
+  }
   /* cursor relative row. */
-  int rpos = (pcollen + l.oldcolpos + l.cols) / l.cols + prow + l.oldrow;
-  int old_rows = l.maxrows;
+  const int rpos = (pcollen + l.oldcolpos + l.cols) / l.cols + prow + l.oldrow;
+  const int old_rows = l.maxrows;
   std::string ab;
 
   lndebug("cols: %d, pcolloen: %d, prow: %d, colpos: %d, row: %d", (int)l.cols, (int)pcollen,
@@ -958,20 +941,38 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint) {
     renderer.renderWithANSI(l.prompt);
   }
   if (const StringRef lineRef = l.lineRef(); !lineRef.empty()) {
-    if (this->highlight) {
-      (void)repaint; // FIXME: cache previous rendered content
+    auto limit = static_cast<size_t>(-1);
+    if (pager && !l.isSingleLine()) { // resolve stop line num
+      auto index = findCurIndex(l.newlinePos, l.pos);
+      limit = index + 1;
+    }
+
+    if (this->highlight) { // FIXME: cache previous rendered content
       LineRenderer renderer(l.ps, pcollen, ab, makeObserver(this->escapeSeqMap));
+      renderer.setLineNumLimit(limit);
       this->continueLine = !renderer.renderScript(lineRef);
     } else {
       LineRenderer renderer(l.ps, pcollen, ab);
-      renderer.renderLines(l.lineRef());
+      renderer.setLineNumLimit(limit);
+      renderer.renderLines(lineRef);
     }
-    fillNewlinePos(l.newlinePos, lineRef);
+    if (pager) {
+      if (!ab.empty() && ab.back() != '\n') {
+        ab += "\r\n"; // force newline
+      }
+      pager->render(ab);
+    }
   }
 
   /* Get column length to cursor position */
-  const auto [colpos2, row2] =
-      getColRowLen(l.ps, l.lineRef().slice(0, l.pos), l.cols, false, pcollen);
+  const auto [colpos2, row2] = getColRowLen(ColRowLenParam{
+      .ps = l.ps,
+      .ref = l.lineRef().slice(0, l.pos),
+      .cols = l.cols,
+      .initPos = pcollen,
+      .isPrompt = false,
+      .endNewline = false,
+  });
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
@@ -1612,77 +1613,27 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
   } else if (len == 1) {
     return CompStatus::OK;
   } else {
-    if (reader.fetch() <= 0) {
-      return CompStatus::ERROR;
-    }
-    if (reader.get() == KeyBindings::TAB) {
-      reader.clear();
-    } else {
-      return CompStatus::OK;
-    }
-
-    bool show = true;
-    if (len >= 100) {
-      char msg[256];
-      snprintf(msg, 256, "\r\nDisplay all %zu possibilities? (y or n) ", len);
-      ssize_t r = write(ls.ofd, msg, strlen(msg));
-      UNUSED(r);
-
-      while (true) {
-        if (reader.fetch() <= 0) {
-          return CompStatus::ERROR;
-        }
-        auto code = reader.take();
-        if (code == "y") {
-          break;
-        } else if (code == "n") {
-          r = write(ls.ofd, "\r\n", strlen("\r\n"));
-          UNUSED(r);
-          show = false;
-          break;
-        } else if (code == KeyBindings::CTRL_C) {
-          return CompStatus::CANCEL;
-        } else {
-          linenoiseBeep(ls.ofd);
-        }
-      }
-    }
-
-    if (show) {
-      updateWinSize(ls);
-      showAllCandidates(ls.ps, ls.ofd, ls.cols, *candidates);
-    }
-    this->refreshLine(ls);
-
-    // rotate candidates
-    size_t rotateIndex = 0;
+    auto pager = ArrayPager::create(*candidates, ls.ps);
+    pager.updateWinSize({.rows = ls.rows, .cols = ls.cols});
     size_t prevCanLen = 0;
-    while (true) {
-      if (reader.fetch() <= 0) {
-        return CompStatus::ERROR;
-      }
-      if (reader.get() == KeyBindings::TAB) {
-        reader.clear();
-      } else {
-        return CompStatus::OK;
-      }
-
+    auto status = ArrayPager::Status::OK;
+    do {
       revertInsert(ls, prevCanLen);
-      const char *can = candidates->getValues()[rotateIndex].asCStr();
+      const char *can = candidates->getValues()[pager.getIndex()].asCStr();
       assert(offset <= ls.pos);
       size_t prefixLen = ls.pos - offset;
       prevCanLen = strlen(can) - prefixLen;
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
-        this->refreshLine(ls);
+        this->refreshLine(ls, true, makeObserver(pager));
       } else {
-        return CompStatus::CANCEL; // FIXME: report error ?
+        status = ArrayPager::Status::CANCEL;
+        break;
       }
-
-      if (rotateIndex == len - 1) {
-        rotateIndex = 0;
-        continue;
-      }
-      rotateIndex++;
+      status = pager.waitKeyCode(this->keyBindings, reader);
+    } while (status == ArrayPager::Status::CONTINUE);
+    this->refreshLine(ls); // clear pager
+    if (status == ArrayPager::Status::CANCEL) {
+      return CompStatus::CANCEL;
     }
   }
   return CompStatus::OK;

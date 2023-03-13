@@ -123,7 +123,8 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState &l, bool repaint = true);
+  void refreshLine(struct linenoiseState &l, bool repaint = true,
+                   ObserverPtr<ArrayPager> pager = nullptr);
 
   int accept(DSState &state, struct linenoiseState &l);
 
