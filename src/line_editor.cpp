@@ -827,11 +827,16 @@ static std::pair<size_t, size_t> getColRowLen(const ColRowLenParam &param) {
     const auto retPos = param.ref.find('\n', pos);
     auto sub = param.ref.slice(pos, retPos);
     auto colLen = columnPosForMultiLine(param.ps, sub, param.cols, param.initPos, param.isPrompt);
-    if (retPos != StringRef::npos || param.endNewline) {
+    if (retPos != StringRef::npos) {
       col = colLen % param.cols;
       row += (param.initPos + colLen) / param.cols;
       row++;
     } else {
+      if (param.endNewline) {
+        row += (param.initPos + colLen) / param.cols;
+        row++;
+        colLen = 0;
+      }
       if (param.isPrompt) {
         col = colLen % param.cols;
         row += colLen / param.cols;
@@ -978,7 +983,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
    * emit a newline and move the prompt to the first column. */
   if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) { // FIXME: support multiline?
     lndebug("<newline>");
-    ab += "\n\r";
+    ab += "\r\n";
     rows++;
     if (rows > (int)l.maxrows) {
       l.maxrows = rows;
