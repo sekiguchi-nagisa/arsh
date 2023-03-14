@@ -245,8 +245,28 @@ KeyBindings::KeyBindings() {
     const char *key;
     PagerAction action;
   } pagers[] = {
-      {ENTER_, PagerAction::SELECT}, {CTRL_J_, PagerAction::SELECT}, {CTRL_C_, PagerAction::CANCEL},
-      {TAB_, PagerAction::NEXT},     {ESC_ "[Z", PagerAction::PREV}, // shift-tab
+      {ENTER_, PagerAction::SELECT},
+      {CTRL_J_, PagerAction::SELECT},
+      {CTRL_C_, PagerAction::CANCEL},
+      {TAB_, PagerAction::NEXT},
+      {ESC_ "[Z", PagerAction::PREV}, // shift-tab
+      {CTRL_P_, PagerAction::PREV},
+      {CTRL_N_, PagerAction::NEXT},
+
+      {ESC_ "[1;3A", PagerAction::PREV},
+      {ESC_ "[1;3B", PagerAction::NEXT},
+      {ESC_ "[1;3D", PagerAction::LEFT},
+      {ESC_ "[1;3C", PagerAction::RIGHT},
+      {ESC_ "[A", PagerAction::PREV},
+      {ESC_ "[B", PagerAction::NEXT},
+      {ESC_ "[D", PagerAction::LEFT},
+      {ESC_ "[C", PagerAction::RIGHT},
+
+      // for mac
+      {ESC_ ESC_ "[A", PagerAction::PREV},
+      {ESC_ ESC_ "[B", PagerAction::NEXT},
+      {ESC_ ESC_ "[D", PagerAction::LEFT},
+      {ESC_ ESC_ "[C", PagerAction::RIGHT},
   };
   for (auto &e : pagers) {
     auto pair = this->pagerValues.emplace(e.key, e.action);
