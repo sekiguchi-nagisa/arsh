@@ -169,8 +169,11 @@ FILE *lndebug_fp = nullptr;
     if (lndebug_fp == nullptr) {                                                                   \
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
-    fprintf(lndebug_fp, "\n[%d %d %d %d] rows: %d, rpos: %d, max: %d, oldmax: %d\n", (int)l.len,   \
-            (int)l.pos, (int)l.oldcolpos, (int)l.oldrow, rows, rpos, (int)l.maxrows, old_rows);    \
+    fprintf(                                                                                       \
+        lndebug_fp,                                                                                \
+        "\n[len=%d, pos=%d, oldcolpos=%d, oldrow=%d] rows: %d, rpos: %d, max: %d, oldmax: %d\n",   \
+        (int)l.len, (int)l.pos, (int)l.oldcolpos, (int)l.oldrow, rows, rpos, (int)l.maxrows,       \
+        old_rows);                                                                                 \
     fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
     fflush(lndebug_fp);                                                                            \
   } while (0)
@@ -949,6 +952,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       .isPrompt = false,
       .endNewline = false,
   });
+  lndebug("cols=%u, colpos2: %u, row2: %u", l.cols, (unsigned int)colpos2, (unsigned int)row2);
 
   /* Write the prompt and the current buffer content */
   {
@@ -975,12 +979,15 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
-  if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) {
+  if (l.pos && (colpos2 + pcollen) % l.cols == 0) {
     lndebug("<newline>");
     ab += "\r\n";
-    if (pager) {
-      ab += "\r\n";
+    if (pager && l.pos == l.len) {
+      ab += "\r\n"; // only add if last is not newline
     } else {
+      if (l.pos != l.len) {
+        ab += "\r\n"; // add additonal newline in multiline mode
+      }
       rows++;
     }
     if (rows > (int)l.maxrows) {
