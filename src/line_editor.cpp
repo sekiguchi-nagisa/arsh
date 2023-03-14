@@ -1625,8 +1625,9 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     auto pager = ArrayPager::create(*candidates, ls.ps);
     pager.updateWinSize({.rows = ls.rows, .cols = ls.cols});
     size_t prevCanLen = 0;
-    auto status = ArrayPager::Status::OK;
-    do {
+    auto status = CompStatus::OK;
+    while (true) {
+      // render pager
       revertInsert(ls, prevCanLen);
       const char *can = candidates->getValues()[pager.getIndex()].asCStr();
       assert(offset <= ls.pos);
@@ -1635,15 +1636,49 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
-        status = ArrayPager::Status::CANCEL;
+        status = CompStatus::ERROR;
         break;
       }
-      status = pager.waitKeyCode(this->keyBindings, reader);
-    } while (status == ArrayPager::Status::CONTINUE);
-    this->refreshLine(ls); // clear pager
-    if (status == ArrayPager::Status::CANCEL) {
-      return CompStatus::CANCEL;
+
+      // read key code and update pager state
+      if (reader.fetch() <= 0) {
+        status = CompStatus::ERROR;
+        break;
+      }
+      if (!reader.hasControlChar()) {
+        status = CompStatus::OK;
+        break;
+      }
+      const auto *action = this->keyBindings.findPagerAction(reader.get());
+      if (!action) {
+        status = CompStatus::OK;
+        break;
+      }
+      reader.clear();
+      switch (*action) {
+      case PagerAction::SELECT:
+        status = CompStatus::OK;
+        break;
+      case PagerAction::CANCEL:
+        status = CompStatus::CANCEL;
+        break;
+      case PagerAction::PREV:
+        pager.moveCursorToForwad();
+        continue;
+      case PagerAction::NEXT:
+        pager.moveCursorToNext();
+        continue;
+      case PagerAction::LEFT:
+        pager.moveCursorToLeft();
+        continue;
+      case PagerAction::RIGHT:
+        pager.moveCursorToRight();
+        continue;
+      }
+      break;
     }
+    this->refreshLine(ls); // clear pager
+    return status;
   }
   return CompStatus::OK;
 }

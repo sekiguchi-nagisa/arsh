@@ -400,40 +400,6 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
 }
 
-ArrayPager::Status ArrayPager::waitKeyCode(const KeyBindings &keyBindings, KeyCodeReader &reader) {
-  if (reader.fetch() <= 0) {
-    return Status::CANCEL;
-  }
-
-  if (!reader.hasControlChar()) {
-    return Status::OK;
-  }
-  const auto *action = keyBindings.findPagerAction(reader.get());
-  if (!action) {
-    return Status::OK;
-  }
-  reader.clear();
-  switch (*action) {
-  case PagerAction::SELECT:
-    return Status::OK;
-  case PagerAction::CANCEL:
-    return Status::CANCEL;
-  case PagerAction::PREV:
-    this->moveCursorToForwad();
-    break;
-  case PagerAction::NEXT:
-    this->moveCursorToNext();
-    break;
-  case PagerAction::LEFT:
-    this->moveCursorToLeft();
-    break;
-  case PagerAction::RIGHT:
-    this->moveCursorToRight();
-    break;
-  }
-  return Status::CONTINUE;
-}
-
 static void renderItem(LineRenderer &renderer, StringRef ref, const ArrayPager::ItemEntry &e) {
   renderer.renderLines(ref);
   renderer.renderLines("\t");

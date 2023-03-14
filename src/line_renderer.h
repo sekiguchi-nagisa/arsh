@@ -240,8 +240,6 @@ private:
 };
 
 class ArrayObject;
-class KeyCodeReader;
-class KeyBindings;
 
 /**
  * for completion candidates paging
@@ -326,13 +324,6 @@ public:
    * @return
    */
   unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
-
-  /**
-   * read key code and perform corresponding pager action
-   * @param reader
-   * @return
-   */
-  Status waitKeyCode(const KeyBindings &keyBindings, KeyCodeReader &reader);
 
   /**
    * actual rendering function
