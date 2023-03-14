@@ -590,6 +590,23 @@ TEST_F(LineRendererTest, limit) {
             out);
 
   out.clear();
+  line = "\necho 222\necho 333\necho 444";
+  {
+    ANSIEscapeSeqMap seqMap({
+        {HighlightTokenClass::COMMAND, "\x1b[30m"},
+        {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+        {HighlightTokenClass::NONE, "\x1b[50m"},
+    });
+    LineRenderer renderer(ps, 0, out, makeObserver(seqMap));
+    renderer.setLineNumLimit(2);
+    bool r = renderer.renderScript(line);
+    ASSERT_TRUE(r);
+  }
+  ASSERT_EQ("\x1b[50m\x1b[0m\r\n\x1b[50m\x1b[0m\x1b[30mecho\x1b[0m\x1b[50m "
+            "\x1b[0m\x1b[40m222\x1b[0m\x1b[50m\x1b[0m\x1b[50m\x1b[0m\r\n",
+            out);
+
+  out.clear();
   line = "echo 111\necho 222\necho 333\necho 444";
   {
     LineRenderer renderer(ps, 2, out);

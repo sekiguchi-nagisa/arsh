@@ -318,7 +318,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
     }
     return true;
   });
-  if (colorCode) {
+  if (colorCode && status) {
     this->output += "\x1b[0m";
   }
   return status;
