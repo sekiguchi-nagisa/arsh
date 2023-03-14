@@ -431,16 +431,16 @@ void ArrayPager::render(std::string &out) const {
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setLineNumLimit(0);                     // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
-      unsigned int actualIndex = startIndex + i + j * maxRowSize;
+      const unsigned int actualIndex = startIndex + i + j * maxRowSize;
       if (actualIndex >= this->items.size()) {
         break;
       }
-      if (actualIndex == this->index) {
+      if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[7m");
       }
       auto ref = this->obj.getValues()[actualIndex].asStrRef();
       renderItem(renderer, ref, this->items[actualIndex]);
-      if (actualIndex == this->index) {
+      if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[0m");
       }
     }

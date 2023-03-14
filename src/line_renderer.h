@@ -262,12 +262,6 @@ public:
     unsigned int itemLen() const { return this->len + (4 - this->len % 4) + this->tabs * 4; }
   };
 
-  enum class Status : unsigned int {
-    OK,       // finish paging
-    CONTINUE, // continue paging
-    CANCEL,   // cancel paging
-  };
-
 private:
   static constexpr unsigned int ROW_RATIO = 40;
   static constexpr unsigned int MAX_PANE_NUM = 4;
@@ -281,6 +275,7 @@ private:
   unsigned int panes{0};             // number of pager pane
   unsigned int index{0};             // index of currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
+  bool showCursor{true};             // if true, rener cursor
 
   ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
              unsigned int maxIndex)
@@ -295,6 +290,8 @@ public:
    * @param size
    */
   void updateWinSize(WindowSize size);
+
+  void setShowCursor(bool set) { this->showCursor = set; }
 
   WindowSize getWinSize() const { return this->winSize; }
 

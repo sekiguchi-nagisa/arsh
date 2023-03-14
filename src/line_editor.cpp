@@ -1625,6 +1625,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     auto pager = ArrayPager::create(*candidates, ls.ps);
     pager.updateWinSize({.rows = ls.rows, .cols = ls.cols});
     size_t prevCanLen = 0;
+    bool first = true;
     auto status = CompStatus::OK;
     while (true) {
       // render pager
@@ -1634,6 +1635,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       size_t prefixLen = ls.pos - offset;
       prevCanLen = strlen(can) - prefixLen;
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+        pager.setShowCursor(!first);
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
         status = CompStatus::ERROR;
@@ -1646,6 +1648,15 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
         break;
       }
       if (!reader.hasControlChar()) {
+        status = CompStatus::OK;
+        break;
+      }
+      if (first) { // finish paging unless press complete action
+        first = false;
+        auto *action = this->keyBindings.findAction(reader.get());
+        if (action && action->type == EditActionType::COMPLETE) {
+          continue;
+        }
         status = CompStatus::OK;
         break;
       }
