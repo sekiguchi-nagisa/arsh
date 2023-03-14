@@ -971,23 +971,27 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       renderer.setLineNumLimit(limit);
       renderer.renderLines(lineRef);
     }
-    if (pager) {
-      if (!ab.empty() && ab.back() != '\n') {
-        ab += "\r\n"; // force newline
-      }
-      pager->render(ab);
-    }
   }
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
-  if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) { // FIXME: support multiline?
+  if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) {
     lndebug("<newline>");
     ab += "\r\n";
-    rows++;
+    if (pager) {
+      ab += "\r\n";
+    } else {
+      rows++;
+    }
     if (rows > (int)l.maxrows) {
       l.maxrows = rows;
     }
+  }
+  if (pager) {
+    if (!ab.empty() && ab.back() != '\n') {
+      ab += "\r\n"; // force newline
+    }
+    pager->render(ab);
   }
 
   /* Move cursor to right row position. */
