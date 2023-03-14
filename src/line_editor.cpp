@@ -1605,6 +1605,41 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
   return matched ? offset : ls.pos;
 }
 
+static LineEditorObject::CompStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
+                                                    KeyCodeReader &reader) {
+  // read key code and update pager state
+  if (reader.fetch() <= 0) {
+    return LineEditorObject::CompStatus::ERROR;
+  }
+  if (!reader.hasControlChar()) {
+    return LineEditorObject::CompStatus::OK;
+  }
+  const auto *action = bindings.findPagerAction(reader.get());
+  if (!action) {
+    return LineEditorObject::CompStatus::OK;
+  }
+  reader.clear();
+  switch (*action) {
+  case PagerAction::SELECT:
+    return LineEditorObject::CompStatus::OK;
+  case PagerAction::CANCEL:
+    return LineEditorObject::CompStatus::CANCEL;
+  case PagerAction::PREV:
+    pager.moveCursorToForwad();
+    break;
+  case PagerAction::NEXT:
+    pager.moveCursorToNext();
+    break;
+  case PagerAction::LEFT:
+    pager.moveCursorToLeft();
+    break;
+  case PagerAction::RIGHT:
+    pager.moveCursorToRight();
+    break;
+  }
+  return LineEditorObject::CompStatus::CONTINUE;
+}
+
 LineEditorObject::CompStatus
 LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
   reader.clear();
@@ -1622,12 +1657,35 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
   } else if (len == 1) {
     return CompStatus::OK;
   } else {
+    auto status = CompStatus::CONTINUE;
     auto pager = ArrayPager::create(*candidates, ls.ps);
     pager.updateWinSize({.rows = ls.rows, .cols = ls.cols});
-    size_t prevCanLen = 0;
-    bool first = true;
-    auto status = CompStatus::OK;
-    while (true) {
+
+    /**
+     * first, only show pager and wait next completion action.
+     * if next action is not completion action, break paging
+     */
+    pager.setShowCursor(false);
+    this->refreshLine(ls, true, makeObserver(pager));
+    if (reader.fetch() <= 0) {
+      status = CompStatus::ERROR;
+      goto END;
+    }
+    if (!reader.hasControlChar()) {
+      status = CompStatus::OK;
+      goto END;
+    }
+    if (auto *action = this->keyBindings.findAction(reader.get());
+        !action || action->type != EditActionType::COMPLETE) {
+      status = CompStatus::OK;
+      goto END;
+    }
+
+    /**
+     * paging completion candidates
+     */
+    pager.setShowCursor(true);
+    for (size_t prevCanLen = 0; status == CompStatus::CONTINUE;) {
       // render pager
       revertInsert(ls, prevCanLen);
       const char *can = candidates->getValues()[pager.getIndex()].asCStr();
@@ -1635,59 +1693,15 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       size_t prefixLen = ls.pos - offset;
       prevCanLen = strlen(can) - prefixLen;
       if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
-        pager.setShowCursor(!first);
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
         status = CompStatus::ERROR;
         break;
       }
-
-      // read key code and update pager state
-      if (reader.fetch() <= 0) {
-        status = CompStatus::ERROR;
-        break;
-      }
-      if (!reader.hasControlChar()) {
-        status = CompStatus::OK;
-        break;
-      }
-      if (first) { // finish paging unless press complete action
-        first = false;
-        auto *action = this->keyBindings.findAction(reader.get());
-        if (action && action->type == EditActionType::COMPLETE) {
-          continue;
-        }
-        status = CompStatus::OK;
-        break;
-      }
-      const auto *action = this->keyBindings.findPagerAction(reader.get());
-      if (!action) {
-        status = CompStatus::OK;
-        break;
-      }
-      reader.clear();
-      switch (*action) {
-      case PagerAction::SELECT:
-        status = CompStatus::OK;
-        break;
-      case PagerAction::CANCEL:
-        status = CompStatus::CANCEL;
-        break;
-      case PagerAction::PREV:
-        pager.moveCursorToForwad();
-        continue;
-      case PagerAction::NEXT:
-        pager.moveCursorToNext();
-        continue;
-      case PagerAction::LEFT:
-        pager.moveCursorToLeft();
-        continue;
-      case PagerAction::RIGHT:
-        pager.moveCursorToRight();
-        continue;
-      }
-      break;
+      status = waitPagerAction(pager, this->keyBindings, reader);
     }
+
+  END:
     this->refreshLine(ls); // clear pager
     return status;
   }

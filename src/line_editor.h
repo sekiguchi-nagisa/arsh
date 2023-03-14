@@ -118,6 +118,13 @@ public:
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 
+  enum class CompStatus {
+    OK,
+    ERROR,    // interval error during completion
+    CANCEL,   // cancel completion
+    CONTINUE, // continue completion candidates paging
+  };
+
 private:
   int enableRawMode(int fd);
 
@@ -139,12 +146,6 @@ private:
   int editLine(DSState &state, char *buf, size_t buflen, StringRef prompt);
 
   int editInRawMode(DSState &state, struct linenoiseState &l);
-
-  enum class CompStatus {
-    OK,
-    ERROR,
-    CANCEL,
-  };
 
   CompStatus completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 
