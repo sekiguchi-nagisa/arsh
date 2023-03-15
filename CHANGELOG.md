@@ -110,7 +110,7 @@
 - add workaround for running under screen/tmux
     - disable character width detection
 - fix skippable newline handling in ``for``, ``typeof``
-- fix error line marker of anonymous functions that has empty body
+- fix error line marker of anonymous functions that have empty body
 - floating point exception from integer division (-9223372036854775808 / -1)
     - now throw ``ArithmeticError``
 - crash when specified ``-A tilde`` option to builtin ``complete`` command
