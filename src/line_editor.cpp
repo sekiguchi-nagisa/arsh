@@ -354,32 +354,29 @@ static FILE *logfp = nullptr;
 #endif
 
 static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
-  if (candidates.size() == 0) {
+  const auto size = candidates.size();
+  if (size == 0) {
     return nullptr;
-  }
-  if (candidates.size() == 1) {
-    return candidates.getValues()[0].asCStr(); // truncate characters after null
+  } else if (size == 1) {
+    return candidates.getValues()[0].asStrRef();
   }
 
-  size_t prefixSize;
-  for (prefixSize = 0;; prefixSize++) {
-    bool stop = false;
-    const char ch = candidates.getValues()[0].asCStr()[prefixSize];
-    for (size_t i = 1; i < candidates.size(); i++) {
-      auto str = candidates.getValues()[i].asStrRef();
-      if (str[0] == '\0' || prefixSize >= str.size() || ch != str.data()[prefixSize]) {
-        stop = true;
-        break;
+  // resolve common prefix length
+  size_t prefixSize = 0;
+  const auto first = candidates.getValues()[0].asStrRef();
+  for (const auto firstSize = first.size(); prefixSize < firstSize; prefixSize++) {
+    const char ch = first[prefixSize];
+    size_t index = 1;
+    for (; index < size; index++) {
+      auto ref = candidates.getValues()[index].asStrRef();
+      if (prefixSize < ref.size() && ch == ref[prefixSize]) {
+        continue;
       }
-    }
-
-    if (stop) {
       break;
     }
-  }
-
-  if (prefixSize == 0) {
-    return nullptr;
+    if (index < size) {
+      break;
+    }
   }
   return {candidates.getValues()[0].asCStr(), prefixSize};
 }
@@ -1695,11 +1692,11 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     for (size_t prevCanLen = 0; status == CompStatus::CONTINUE;) {
       // render pager
       revertInsert(ls, prevCanLen);
-      const char *can = candidates->getValues()[pager.getIndex()].asCStr();
+      const auto can = candidates->getValues()[pager.getIndex()].asStrRef();
       assert(offset <= ls.pos);
       size_t prefixLen = ls.pos - offset;
-      prevCanLen = strlen(can) - prefixLen;
-      if (linenoiseEditInsert(ls, can + prefixLen, prevCanLen)) {
+      prevCanLen = can.size() - prefixLen;
+      if (linenoiseEditInsert(ls, can.data() + prefixLen, prevCanLen)) {
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
         status = CompStatus::ERROR;

@@ -145,6 +145,16 @@ TEST_F(InteractiveTest, tab3) {
   this->send("echo @\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo @abc\\ -\\ @.csv"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "@abc - @.csv"));
+
+  // insert unprintable
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s) => [$s + $'\\t\\x01'])"));
+  this->send("var a = 'A\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = 'A  ^A"));
+  this->send("'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = 'A  ^A'\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a.quote()", ": String = A$'\\x09'$'\\x01'"));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -641,6 +651,20 @@ TEST_F(InteractiveTest, lineEditorComp) {
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
 
+  // insert unprintable (invalid, null,,)
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var aa = new LineEditor()"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$aa.setCompletion(function(m,s) => [$s + $'\\t\\x00' + $'\\xFF'])"));
+  const char *line = "var ret = $aa.readLine('> ')";
+  this->sendLine(line);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
+  this->send("12\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 12  ^@�"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$ret!.quote()", ": String = 12$'\\x09'")); // FIXME:
+
   //  // rotate candidates  //FIXME: enable multiline-aware testing
   //  ASSERT_NO_FATAL_FAILURE(
   //      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true', 'tee'])"));
@@ -654,8 +678,9 @@ TEST_F(InteractiveTest, lineEditorComp) {
   //  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
   //  this->send("\t\r");
   //  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
-  //  this->send(CTRL_D);
-  //  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
 // test tty
