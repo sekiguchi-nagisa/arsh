@@ -1186,8 +1186,7 @@ static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, Hist
   } else {
     l.len = l.pos = 0;
   }
-  const char *ptr = curBuf.data();
-  return linenoiseEditInsert(l, ptr, strlen(ptr));
+  return linenoiseEditInsert(l, curBuf.data(), curBuf.size());
 }
 
 static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
@@ -1800,8 +1799,8 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   case CustomActionType::INSERT:
     break;
   }
-  const char *ptr = ret.asCStr();
-  return linenoiseEditInsert(l, ptr, strlen(ptr));
+  auto ref = ret.asStrRef();
+  return linenoiseEditInsert(l, ref.data(), ref.size());
 }
 
 bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {

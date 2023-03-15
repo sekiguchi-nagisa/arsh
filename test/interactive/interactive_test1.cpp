@@ -637,6 +637,31 @@ OutOfRangeError: size is 2, but index is 100
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+// test history
+TEST_F(InteractiveTest, lineEditorHistory) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
+                                                  "function(m,s) => $m + $'\\t\\x00' + $'\\xFE')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^Y', 'action1')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a : [String]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory($a)"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1234", ": Int = 1234"));
+  this->send("##" CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "##  ^@�"));
+  this->send(UP);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "1234"));
+  this->send(DOWN);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "##  ^@�"));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 // test completion
 TEST_F(InteractiveTest, lineEditorComp) {
   this->invoke("--quiet", "--norc");
@@ -663,7 +688,7 @@ TEST_F(InteractiveTest, lineEditorComp) {
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$ret!.quote()", ": String = 12$'\\x09'")); // FIXME:
+      this->sendLineAndExpect("$ret!.quote()", ": String = 12$'\\x09'$'\\x00'$'\\xff'"));
 
   //  // rotate candidates  //FIXME: enable multiline-aware testing
   //  ASSERT_NO_FATAL_FAILURE(

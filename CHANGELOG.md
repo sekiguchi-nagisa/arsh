@@ -32,7 +32,7 @@
     - always use tty even if stdin/stdout is not tty
     - improve internal I/O error reporting
     - disable bracketed paste mode when restore tty setting
-    - allow prompt that has null characters
+    - allow input strings/prompts that have null characters
     - add completion candidate pager
 - add builtin ``disown`` command
 - add directory stack related builtin commands

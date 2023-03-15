@@ -2111,9 +2111,9 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
   CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
   char buf[4096];
-  auto r = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf, std::size(buf));
-  if (r > -1) {
-    auto ret = DSValue::createStr(buf);
+  auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf, std::size(buf));
+  if (readSize > -1) {
+    auto ret = DSValue::createStr(StringRef(buf, static_cast<size_t>(readSize)));
     RET(ret);
   } else if (ctx.hasError()) {
     RET_ERROR;

@@ -213,7 +213,7 @@ static int exec_interactive(DSState *state, const char *rcpath) {
       readSize = static_cast<ssize_t>(size);
     }
 
-    status = DSState_eval(state, nullptr, buf, strlen(buf), &e);
+    status = DSState_eval(state, nullptr, buf, static_cast<size_t>(readSize), &e);
     kind = e.kind;
     DSError_release(&e);
     if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
