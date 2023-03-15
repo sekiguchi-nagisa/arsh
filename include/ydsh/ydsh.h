@@ -365,14 +365,17 @@ DS_PUBLIC_API(unsigned int) DSState_featureBit();
  * customize line edit behavior via `LINE_EDIT` global variable
  * @param st
  * must not be null
+ * @param buf
+ * output buffer for read data (after read, will be null terminated)
+ * @param bufSize
  * @param e
  * may be null
  * @return
- * if has error or reach end of stream, return null
- * if cancelled, return null and set EAGAIN
- * otherwise null terminated string (call free() after use result)
+ * if has erro or reach end of strean, return -1
+ * if canceled, return -1 and set EAGAIN
+ * otherwise, return size of read data (not include last null character)
  */
-DS_PUBLIC_API(char *) DSState_readLine(DSState *st, DSError *e);
+DS_PUBLIC_API(ssize_t) DSState_readLine(DSState *st, char *buf, size_t bufSize, DSError *e);
 
 #ifdef __cplusplus
 }

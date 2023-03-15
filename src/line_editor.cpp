@@ -1501,7 +1501,10 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
 int LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size_t bufLen) {
-  assert(bufLen > 0 && bufLen <= INT32_MAX);
+  if (bufLen == 0 || bufLen > INT32_MAX) {
+    errno = EINVAL;
+    return -1;
+  }
 
   errno = 0;
   if (!isatty(this->inFd)) {

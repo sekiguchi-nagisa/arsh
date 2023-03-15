@@ -96,7 +96,10 @@
 
 #### API
 
-- **Breaking Change**: ``DSState_readLine`` api report internal error
+- **Breaking Change**: ``DSState_readLine`` api
+    - report internal error via ``DSError``
+    - explicitly pass read buffer
+    - allow strings that contain null characters
 
 ### Fixed
 

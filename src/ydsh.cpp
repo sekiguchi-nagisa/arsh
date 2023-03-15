@@ -557,8 +557,8 @@ static const char *defaultPrompt() {
 #undef STR
 }
 
-char *DSState_readLine(DSState *st, DSError *e) {
-  GUARD_NULL(st, nullptr);
+ssize_t DSState_readLine(DSState *st, char *buf, size_t bufSize, DSError *e) {
+  GUARD_NULL(st, 0);
   st->getCallStack().clearThrownObject();
   st->notifyCallback.showAndClear();
   if (e) {
@@ -566,17 +566,12 @@ char *DSState_readLine(DSState *st, DSError *e) {
   }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();
-  char buf[4096];
-  auto ret = editor.readline(*st, defaultPrompt(), buf, std::size(buf));
-  char *ptr = nullptr;
-  if (ret > -1) {
-    ptr = strdup(buf);
-  }
+  auto ret = editor.readline(*st, defaultPrompt(), buf, bufSize);
   if (st->hasError()) {
     int old = errno;
     VM::handleUncaughtException(*st, e);
     st->getCallStack().clearThrownObject();
     errno = old;
   }
-  return ptr;
+  return ret;
 }

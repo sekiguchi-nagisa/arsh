@@ -187,14 +187,15 @@ static int exec_interactive(DSState *state, const char *rcpath) {
   int status = 0;
   while (true) {
     DSError e; // NOLINT
-    char *line = DSState_readLine(state, &e);
+    char buf[4096];
+    auto readSize = DSState_readLine(state, buf, std::size(buf), &e);
     auto kind = e.kind;
     DSError_release(&e);
     if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
       status = DSState_exitStatus(state);
       break;
     }
-    if (line == nullptr) {
+    if (readSize < 0) {
       if (errno == EAGAIN) {
         continue;
       } else if (errno != 0) {
@@ -204,13 +205,17 @@ static int exec_interactive(DSState *state, const char *rcpath) {
       if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
         break;
       }
-      line = strdup("exit");
+      const char *str = "exit";
+      auto size = strlen(str);
+      assert(size + 1 <= std::size(buf));
+      memcpy(buf, str, size);
+      buf[size] = '\0';
+      readSize = static_cast<ssize_t>(size);
     }
 
-    status = DSState_eval(state, nullptr, line, strlen(line), &e);
+    status = DSState_eval(state, nullptr, buf, strlen(buf), &e);
     kind = e.kind;
     DSError_release(&e);
-    free(line);
     if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
       break;
     }
