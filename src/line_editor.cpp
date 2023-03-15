@@ -122,9 +122,6 @@
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
 
-enum {
-  LINENOISE_MAX_LINE = 4096,
-};
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
@@ -677,42 +674,33 @@ static bool linenoiseEditSwapChars(struct linenoiseState &l) {
  * program using linenoise is called in pipe or with a file redirected
  * to its standard input. In this case, we want to be able to return the
  * line regardless of its length (by default we are limited to 4k). */
-static char *linenoiseNoTTY(int inFd) {
-  char *line = nullptr;
-  size_t len = 0, maxlen = 0;
-
+static int linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
+  assert(bufLen <= INT32_MAX && bufLen > 0);
+  bufLen--; // reserve for null terminate
+  size_t len = 0;
   while (true) {
-    if (len == maxlen) {
-      if (maxlen == 0) {
-        maxlen = 16;
-      }
-      maxlen *= 2;
-      char *oldval = line;
-      line = (char *)realloc(line, maxlen);
-      if (line == nullptr) {
-        if (oldval) {
-          free(oldval);
-        }
-        return nullptr;
-      }
+    char data[64];
+    ssize_t readSize = read(inFd, data, std::size(data));
+    if (readSize == -1 && errno == EAGAIN) {
+      continue;
     }
-    signed char c;
-    if (read(inFd, &c, 1) <= 0) {
-      c = EOF;
+    if (readSize == 0) {
+      break;
     }
-    if (c == EOF || c == '\n') {
-      if (c == EOF && len == 0) {
-        free(line);
-        return nullptr;
-      } else {
-        line[len] = '\0';
-        return line;
-      }
+    if (readSize < 0) {
+      return -1;
+    }
+    auto size = static_cast<size_t>(readSize);
+    if (len + size <= bufLen) {
+      memcpy(buf + len, data, size);
+      len += size;
     } else {
-      line[len] = c;
-      len++;
+      errno = ENOMEM;
+      return -1;
     }
   }
+  buf[len] = '\0';
+  return static_cast<int>(len);
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1261,7 +1249,7 @@ static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState 
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-int LineEditorObject::editLine(DSState &state, char *buf, size_t buflen, StringRef prompt) {
+int LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size_t buflen) {
   if (this->enableRawMode(this->inFd)) {
     return -1;
   }
@@ -1512,12 +1500,14 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-char *LineEditorObject::readline(DSState &state, StringRef prompt) {
+int LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size_t bufLen) {
+  assert(bufLen > 0 && bufLen <= INT32_MAX);
+
   errno = 0;
   if (!isatty(this->inFd)) {
     /* Not a tty: read from file / pipe. In this mode we don't want any
      * limit to the line size, so we call a function to handle that. */
-    return linenoiseNoTTY(this->inFd);
+    return linenoiseNoTTY(this->inFd, buf, bufLen);
   }
 
   this->lock = true;
@@ -1532,34 +1522,30 @@ char *LineEditorObject::readline(DSState &state, StringRef prompt) {
     promptVal = this->kickCallback(state, std::move(callback), std::move(args));
     if (state.hasError()) {
       errno = EAGAIN;
-      return nullptr;
+      return -1;
     }
   }
   if (promptVal.hasStrRef()) {
     prompt = promptVal.asStrRef();
   }
-  char buf[LINENOISE_MAX_LINE];
   if (isUnsupportedTerm(this->inFd)) {
     ssize_t r = write(this->outFd, prompt.data(), prompt.size());
     UNUSED(r);
     fsync(this->outFd);
-    ssize_t rlen = read(this->inFd, buf, LINENOISE_MAX_LINE);
-    if (rlen <= 0) {
-      return nullptr;
+    bufLen--; // preserve for null terminated
+    ssize_t rlen = read(this->inFd, buf, bufLen);
+    if (rlen < 0) {
+      return -1;
     }
-    buf[rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1] = '\0';
-    size_t len = rlen < LINENOISE_MAX_LINE ? rlen : rlen - 1;
+    auto len = static_cast<size_t>(rlen);
+    buf[len] = '\0';
     while (len && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
       len--;
       buf[len] = '\0';
     }
-    return strdup(buf);
+    return len;
   } else {
-    int count = this->editLine(state, buf, LINENOISE_MAX_LINE, prompt);
-    if (count == -1) {
-      return nullptr;
-    }
-    return strdup(buf);
+    return this->editLine(state, prompt, buf, bufLen);
   }
 }
 

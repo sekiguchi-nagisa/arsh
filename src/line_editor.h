@@ -81,7 +81,7 @@ public:
 
   ~LineEditorObject();
 
-  char *readline(DSState &state, StringRef prompt); // pseudo entry point
+  int readline(DSState &state, StringRef prompt, char *buf, size_t bufLen); // pseudo entry point
 
   bool locked() const { return this->lock; }
 
@@ -143,7 +143,7 @@ private:
    * @param prompt
    * @return
    */
-  int editLine(DSState &state, char *buf, size_t buflen, StringRef prompt);
+  int editLine(DSState &state, StringRef prompt, char *buf, size_t buflen);
 
   int editInRawMode(DSState &state, struct linenoiseState &l);
 

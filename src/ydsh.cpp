@@ -566,12 +566,17 @@ char *DSState_readLine(DSState *st, DSError *e) {
   }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();
-  char *ret = editor.readline(*st, defaultPrompt());
+  char buf[4096];
+  auto ret = editor.readline(*st, defaultPrompt(), buf, std::size(buf));
+  char *ptr = nullptr;
+  if (ret > -1) {
+    ptr = strdup(buf);
+  }
   if (st->hasError()) {
     int old = errno;
     VM::handleUncaughtException(*st, e);
     st->getCallStack().clearThrownObject();
     errno = old;
   }
-  return ret;
+  return ptr;
 }

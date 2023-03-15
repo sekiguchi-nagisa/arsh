@@ -2110,10 +2110,10 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
-  char *line = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef());
-  if (line) {
-    auto ret = DSValue::createStr(line);
-    free(line);
+  char buf[4096];
+  auto r = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf, std::size(buf));
+  if (r > -1) {
+    auto ret = DSValue::createStr(buf);
     RET(ret);
   } else if (ctx.hasError()) {
     RET_ERROR;
