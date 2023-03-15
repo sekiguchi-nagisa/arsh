@@ -46,12 +46,6 @@ public:
 
   const std::string &get() const { return this->keycode; }
 
-  std::string take() {
-    std::string tmp;
-    std::swap(tmp, this->keycode);
-    return tmp;
-  }
-
   void clear() { this->keycode.clear(); }
 
   bool hasControlChar() const { return !this->empty() && isControlChar(this->keycode[0]); }
@@ -158,8 +152,6 @@ enum class PagerAction : unsigned char {
 
 class KeyBindings {
 public:
-  static constexpr const char *CTRL_C = "\x03";
-  static constexpr const char *TAB = "\x09";
   static constexpr const char *BRACKET_START = "\x1b[200~";
 
 private:
