@@ -390,6 +390,26 @@ TEST(KeyCodeReaderTest, escapeSeq) {
   ASSERT_TRUE(reader.hasEscapeSeq());
 }
 
+TEST(KeyCodeReaderTest, timeout) {
+  {
+    Pipe pipe;
+    pipe.write("\x1b[");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(2, reader.fetch());
+    ASSERT_EQ("\x1b[", reader.get());
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("\x1b");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(1, reader.fetch());
+    ASSERT_EQ("\x1b", reader.get());
+  }
+}
+
 struct KeyBindingTest : public ::testing::Test {
   static void checkCaret(StringRef caret, StringRef value) {
     auto v = KeyBindings::parseCaret(caret);

@@ -34,13 +34,22 @@ inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
 
 inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
 
+ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec = -1);
+
 class KeyCodeReader {
 private:
+  static constexpr int DEFAULT_READ_TIMEOUT_MS = 100;
+
   int fd{-1};
+  int timeout{DEFAULT_READ_TIMEOUT_MS};
   std::string keycode; // single utf8 character or escape sequence
 
 public:
   explicit KeyCodeReader(int fd) : fd(fd) {}
+
+  void setTimeout(int t) { this->timeout = t; }
+
+  int getTimeout() const { return this->timeout; }
 
   bool empty() const { return this->keycode.empty(); }
 

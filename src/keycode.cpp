@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <poll.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -28,8 +29,21 @@ namespace ydsh {
 // ##     KeyCodeReader     ##
 // ###########################
 
+ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeout) {
+  errno = 0;
+  if (timeout > -1) {
+    struct pollfd pollfd[1]{};
+    pollfd[0].fd = fd;
+    pollfd[0].events = POLLIN;
+    if (int r = poll(pollfd, std::size(pollfd), timeout); r <= 0) {
+      return r; // error or timeout
+    }
+  }
+  return read(fd, buf, bufSize);
+}
+
 static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
-  ssize_t readSize = read(fd, &buf[0], 1);
+  ssize_t readSize = readWithTimeout(fd, &buf[0], 1);
   if (readSize <= 0) {
     return readSize;
   }
@@ -37,7 +51,7 @@ static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
   if (byteSize < 1 || byteSize > 4) {
     return -1;
   } else if (byteSize > 1) {
-    readSize = read(fd, &buf[1], byteSize - 1);
+    readSize = readWithTimeout(fd, &buf[1], byteSize - 1); // FIXME: timeout ?
     if (readSize <= 0) {
       return readSize;
     }
@@ -47,7 +61,7 @@ static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
 
 #define READ_BYTE(b, bs)                                                                           \
   do {                                                                                             \
-    if (read(this->fd, (b) + (bs), 1) <= 0) {                                                      \
+    if (readWithTimeout(this->fd, (b) + (bs), 1, this->timeout) <= 0) {                            \
       goto END;                                                                                    \
     } else {                                                                                       \
       seqSize++;                                                                                   \
@@ -58,7 +72,7 @@ ssize_t KeyCodeReader::fetch() {
   constexpr const char ESC = '\x1b';
   char buf[8];
   int code;
-  ssize_t readSize = readCodePoint(this->fd, buf, code);
+  ssize_t readSize = readCodePoint(this->fd, buf, code); // FIXME: accept invalid utf8
   if (readSize <= 0) {
     return readSize;
   }
