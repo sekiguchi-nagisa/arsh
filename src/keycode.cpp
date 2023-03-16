@@ -29,13 +29,13 @@ namespace ydsh {
 // ##     KeyCodeReader     ##
 // ###########################
 
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeout) {
+ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
   errno = 0;
-  if (timeout > -1) {
+  if (timeoutMSec > -1) {
     struct pollfd pollfd[1]{};
     pollfd[0].fd = fd;
     pollfd[0].events = POLLIN;
-    if (int r = poll(pollfd, std::size(pollfd), timeout); r <= 0) {
+    if (int r = poll(pollfd, std::size(pollfd), timeoutMSec); r <= 0) {
       return r; // error or timeout
     }
   }

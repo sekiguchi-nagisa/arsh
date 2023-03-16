@@ -38,10 +38,10 @@ ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec = -1)
 
 class KeyCodeReader {
 private:
-  static constexpr int DEFAULT_READ_TIMEOUT_MS = 100;
+  static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 200;
 
   int fd{-1};
-  int timeout{DEFAULT_READ_TIMEOUT_MS};
+  int timeout{DEFAULT_READ_TIMEOUT_MSEC};
   std::string keycode; // single utf8 character or escape sequence
 
 public:
