@@ -262,6 +262,7 @@ KeyBindings::KeyBindings() {
       {ENTER_, PagerAction::SELECT},
       {CTRL_J_, PagerAction::SELECT},
       {CTRL_C_, PagerAction::CANCEL},
+      {ESC_, PagerAction::CANCEL},
       {TAB_, PagerAction::NEXT},
       {ESC_ "[Z", PagerAction::PREV}, // shift-tab
       {CTRL_P_, PagerAction::PREV},
