@@ -43,9 +43,12 @@ function tilde(s : String) : String? {
     $s.startsWith('~') || return $s
 
     var b = $s.slice(1)
-    var r = "$(echo ~$b 2>> /dev/null)"
-    return ($r.empty() || $r == $s) ? $none : $r as String?
+    try { 
+        return @(~$b)[0]
+    } catch e : TildeError {
+        return $none
+    }
 }
 
-let home = "$(echo ~)"
+let home = @(~)[0]
 let user = "$(whoami)"

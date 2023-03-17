@@ -14,7 +14,9 @@ function _sync() {
     if $HISTSIZE > $limit {
         $HISTSIZE = $limit
     }
-    for(; $HISTORY.size() > $HISTSIZE; $HISTORY.shift()) {}
+    if $HISTORY.size() > $HISTSIZE {
+        $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
+    }
 }
 
 function _error(s : String) {
@@ -74,10 +76,10 @@ function _add(s : String) {
     if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
     $s.contains($'\n') && return
 
-    while($HISTORY.size() >= $HISTSIZE) {
-        $HISTORY.shift()
-    }
     $HISTORY.add($s)
+    if $HISTORY.size() > $HISTSIZE {
+        $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
+    }
 }
 
 function _add_and_save(s : String) {
@@ -88,10 +90,10 @@ function _add_and_save(s : String) {
     if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
     if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
 
-    while($HISTORY.size() >= $HISTSIZE) {
-        $HISTORY.shift()
-    }
     $HISTORY.add($s)
+    if $HISTORY.size() > $HISTSIZE {
+        $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
+    }
 
     # save new entry
     $HISTFILESIZE == 0 && return
@@ -113,8 +115,8 @@ function _add_and_save(s : String) {
             $lines.add($line)
         }
         $lines.add($s)
-        while($lines.size() >= $HISTFILESIZE) {
-            $lines.shift()
+        if $lines.size() > $HISTFILESIZE {
+            $lines.removeRange(0, $lines.size() - $HISTFILESIZE)
         }
         for line in $lines {
             echo $line
