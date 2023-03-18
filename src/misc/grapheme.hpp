@@ -83,6 +83,10 @@ public:
 template <bool Bool>
 typename GraphemeBoundary<Bool>::BreakProperty
 GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
+  if (codePoint < 0) {
+    return BreakProperty::Control; // invalid code points are always grapheme boundary
+  }
+
   using PropertyInterval = std::tuple<int, int, BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval

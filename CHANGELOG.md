@@ -78,6 +78,7 @@
 - **Breaking Change**: change optional module import syntax ``source?``
 - **Breaking Change**: rename builtin ``eval`` command with ``call``
     - ``eval`` is still builtin command for future usage
+- **Breaking Change**: invalid utf8 bytes are always grapheme boundary
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type

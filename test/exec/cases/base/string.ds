@@ -255,20 +255,22 @@ assert "あ".width(2) == 2
 
 ## broken encoded string
 var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
-assert $invalid.count() == 5
+assert $invalid.count() == 6
 $gca = $invalid.chars()
-assert $gca.size() == 5
+assert $gca.size() == 6
 assert $gca[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
 assert $gca[1] == $'\x24'
 assert $gca[2] == $'\uFFFD'
 assert $gca[3] == $'\uFFFD'
-assert $gca[4] == $'\uFFFD\u0E33'
+assert $gca[4] == $'\uFFFD'
+assert $gca[5] == $'\u0E33'
 assert $gca[0] == $invalid.charAt(0)
 assert $gca[1] == $invalid.charAt(1)
 assert $gca[2] == $invalid.charAt(2)
 assert $gca[3] == $invalid.charAt(3)
 assert $gca[4] == $invalid.charAt(4)
-assert $invalid.width(2) == 9
+assert $gca[5] == $invalid.charAt(5)
+assert $invalid.width(2) == 10
 assert $invalid.width(1) == 6
 assert $invalid.width() == 
 { 

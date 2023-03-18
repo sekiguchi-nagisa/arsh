@@ -319,7 +319,7 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
   p = GraphemeBoundary::getBreakProperty(-1);
-  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p); // broken code point are Control
 }
 
 TEST_F(UnicodeTest, wordBreakProperty) {
@@ -551,13 +551,19 @@ TEST(GraphemeBreakTestBase, scan2) {
   ASSERT_EQ(1, ret.codePointCount);
   ASSERT_TRUE(scanner.hasNext());
 
-  // not break before spacing mark U+0E33(E0 B8 B3), event if broken code point
+  // break before spacing mark U+0E33(E0 B8 B3), if broken code point
   s = scanner.next(ret);
   ASSERT_TRUE(s);
-  ASSERT_EQ("\xC2\xE0\xB8\xB3", ret.ref);
+  ASSERT_EQ("\xC2", ret.ref);
   ASSERT_EQ(-1, ret.codePoints[0]);
-  ASSERT_EQ(0x0E33, ret.codePoints[1]);
-  ASSERT_EQ(2, ret.codePointCount);
+  ASSERT_EQ(1, ret.codePointCount);
+  ASSERT_TRUE(scanner.hasNext());
+
+  s = scanner.next(ret);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("\xE0\xB8\xB3", ret.ref);
+  ASSERT_EQ(0x0E33, ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
   ASSERT_FALSE(scanner.hasNext());
 
   s = scanner.next(ret);

@@ -56,7 +56,7 @@ var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
 for a in $invalid {
     $rr.add($a)
 }
-assert $rr.size() == 5
+assert $rr.size() == 6
 assert $rr[0] == "�"
 assert $rr[0] == $invalid.charAt(0)
 assert $rr[1] == "$"
@@ -65,5 +65,7 @@ assert $rr[2] == "�"
 assert $rr[2] == $invalid.charAt(2)
 assert $rr[3] == "�"
 assert $rr[3] == $invalid.charAt(3)
-assert $rr[4] == $'�\u0E33'
+assert $rr[4] == '�'
 assert $rr[4] == $invalid.charAt(4)
+assert $rr[5] == $'\u0E33'
+assert $rr[5] == $invalid.charAt(5)
