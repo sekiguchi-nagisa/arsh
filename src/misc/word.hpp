@@ -69,6 +69,10 @@ public:
 
 template <bool Bool>
 typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(int codePoint) {
+  if (codePoint < 0) {
+    return BreakProperty::Newline; // invalid code points are always word boundary
+  }
+
   using PropertyInterval = std::tuple<int, int, BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval

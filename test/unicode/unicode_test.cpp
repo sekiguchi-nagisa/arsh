@@ -318,8 +318,9 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
   p = GraphemeBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE); // placement char
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
+  // dummy property for broken code points (`Control` is always grapheme boundary)
   p = GraphemeBoundary::getBreakProperty(-1);
-  ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p); // broken code point are Control
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p);
 }
 
 TEST_F(UnicodeTest, wordBreakProperty) {
@@ -337,6 +338,10 @@ TEST_F(UnicodeTest, wordBreakProperty) {
 
   p = WordBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE);
   ASSERT_EQ(WordBoundary::BreakProperty::Any, p);
+
+  // dummy property for broken code points (`Newline` is always word boundary)
+  p = WordBoundary ::getBreakProperty(-1);
+  ASSERT_EQ(WordBoundary::BreakProperty::Newline, p);
 }
 
 static std::vector<int> getInput(const std::string &param) {
