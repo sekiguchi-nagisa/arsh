@@ -15,7 +15,6 @@ include(Helper)
 include(DownloadProject)
 include(GetRE2C)
 include(GenLexer)
-include(CheckPCRE2Version)
 
 
 #++++++++++++++++++++++++++#
@@ -123,8 +122,7 @@ check_program(git)
 #++++++++++++++++++++++#
 
 if (USE_PCRE)
-    find_package(PCRE2 REQUIRED)
-    check_pcre2_version("10.30" ${PCRE2_INCLUDE_DIR} ${PCRE2_LIBRARY})
+    find_package(PCRE2 10.30 REQUIRED)
 endif ()
 
 
