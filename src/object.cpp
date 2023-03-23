@@ -366,23 +366,12 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
 }
 
 DSValue DSValue::createStr(const GraphemeScanner::Result &ret) {
-  if (!ret.hasInvalid) {
+  if (ret.hasInvalid) {
+    assert(ret.codePointCount == 1);
+    return DSValue::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
+  } else {
     return DSValue::createStr(ret.ref);
   }
-
-  std::string value;
-  for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    auto codePoint = ret.codePoints[i];
-    if (codePoint == -1) {
-      value += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
-    } else {
-      char buf[8];
-      unsigned int bufSize = UnicodeUtil::codePointToUtf8(codePoint, buf);
-      value.append(buf, bufSize);
-    }
-  }
-  assert(value.size() <= StringObject::MAX_SIZE);
-  return DSValue::createStr(std::move(value));
 }
 
 // ###########################

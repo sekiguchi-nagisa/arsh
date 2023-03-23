@@ -301,16 +301,8 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       this->renderControlChar(grapheme.codePoints[0]);
     } else {
       if (grapheme.hasInvalid) {
-        for (unsigned int i = 0; i < grapheme.codePointCount; i++) {
-          auto codePoint = grapheme.codePoints[i];
-          if (codePoint == -1) {
-            this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
-          } else {
-            char buf[8];
-            unsigned int bufSize = UnicodeUtil::codePointToUtf8(codePoint, buf);
-            this->output.append(buf, bufSize);
-          }
-        }
+        assert(grapheme.codePointCount == 1);
+        this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
       } else {
         this->output += grapheme.ref;
       }
