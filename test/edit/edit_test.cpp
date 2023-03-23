@@ -678,7 +678,7 @@ TEST_F(PagerTest, small1) { // less than pager length
   // cursor up
   out = "";
   expect = "AAA DDD \r\nBBB EEE \r\nCCC \x1b[7mFFF \x1b[0m\r\n";
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
   ASSERT_EQ(2, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);
@@ -686,7 +686,7 @@ TEST_F(PagerTest, small1) { // less than pager length
   // cursor up
   out = "";
   expect = "AAA DDD \r\nBBB \x1b[7mEEE \x1b[0m\r\nCCC FFF \r\n";
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);
@@ -694,8 +694,8 @@ TEST_F(PagerTest, small1) { // less than pager length
   // cursor up+up
   out = "";
   expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0mFFF \r\n";
-  pager.moveCursorToForwad();
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
+  pager.moveCursorToForward();
   ASSERT_EQ(2, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);
@@ -802,7 +802,7 @@ TEST_F(PagerTest, large1) { // larger than pager length
   // up
   out = "";
   expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n";
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);
@@ -810,7 +810,7 @@ TEST_F(PagerTest, large1) { // larger than pager length
   // up
   out = "";
   expect = "CCC     \x1b[7mGG      \x1b[0m\r\nDDD     HHH     \r\n";
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);
@@ -818,7 +818,7 @@ TEST_F(PagerTest, large1) { // larger than pager length
   // up
   out = "";
   expect = "BBB     \x1b[7mFFF     \x1b[0m\r\nCCC     GG      \r\n";
-  pager.moveCursorToForwad();
+  pager.moveCursorToForward();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
   ASSERT_EQ(expect, out);

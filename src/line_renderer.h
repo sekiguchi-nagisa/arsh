@@ -275,7 +275,7 @@ private:
   unsigned int panes{0};             // number of pager pane
   unsigned int index{0};             // index of currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
-  bool showCursor{true};             // if true, rener cursor
+  bool showCursor{true};             // if true, render cursor
 
   ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
              unsigned int maxIndex)
@@ -330,7 +330,7 @@ public:
   void render(std::string &out) const;
 
   // for pager api
-  void moveCursorToForwad() {
+  void moveCursorToForward() {
     if (this->index == 0) {
       this->curRow = this->getActualRows() - 1;
       this->index = this->items.size() - 1;

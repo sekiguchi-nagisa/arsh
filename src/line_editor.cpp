@@ -1617,7 +1617,7 @@ static LineEditorObject::CompStatus waitPagerAction(ArrayPager &pager, const Key
   case PagerAction::CANCEL:
     return LineEditorObject::CompStatus::CANCEL;
   case PagerAction::PREV:
-    pager.moveCursorToForwad();
+    pager.moveCursorToForward();
     break;
   case PagerAction::NEXT:
     pager.moveCursorToNext();

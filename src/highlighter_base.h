@@ -58,7 +58,7 @@ const HighlightTokenEntries &getHighlightTokenEntries();
 class TokenEmitter : public TriviaStore, public TokenTracker {
 protected:
   StringRef source;
-  LexerPtr lexerPtr; // set after calll tokenizeAndEmit()
+  LexerPtr lexerPtr; // set after call tokenizeAndEmit()
 
 public:
   explicit TokenEmitter(StringRef source) : source(source) {}
