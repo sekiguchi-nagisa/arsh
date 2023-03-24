@@ -34,7 +34,7 @@ if (command -v dscolorize &>> /dev/null) {
     var lines = IFS=$'\n' $(dscolorize -l)
     let size = $lines.size()
     var i = 0
-    if $lines[$i] == 'Styles:' {
+    if $i < $size && $lines[$i] == 'Styles:' {
         var list = ""
         $i++
         for (; $i < $size && $lines[$i] !~ $/^\w/; $i++) {
@@ -46,7 +46,7 @@ if (command -v dscolorize &>> /dev/null) {
         }
         compdef --cmd dscolorize --short s --arg-list "$list"
     }
-    if $lines[$i] == 'Formatters:' {
+    if $i < $size && $lines[$i] == 'Formatters:' {
         var list = ""
         $i++
         for (; $i < $size && $lines[$i] !~ $/^\w/; $i++) {
