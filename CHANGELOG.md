@@ -89,7 +89,7 @@
 - **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with ``backward-word``
   and ``forward-word``
 - **Breaking Change**: now builtin commands support `-h`/`--help` options
-    - except for `:`, `echo`, `eval`, `false`, `test`, `true`
+    - except for `:`, `call`, `echo`, `eval`, `false`, `test`, `true`
 - **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperationError``
 - **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
@@ -116,7 +116,7 @@
     - now throw ``ArithmeticError``
 - crash when specified ``-A tilde`` option to builtin ``complete`` command
 - crash when completion candidates have empty string
-- complete executable file names in ``eval``, ``command``, ``exec``, ``sudo`` completion
+- complete executable file names in ``call``, ``command``, ``exec``, ``sudo`` completion
 - fix command name completion in multi-line
 
 ## [0.28.1] - 2023-01-04

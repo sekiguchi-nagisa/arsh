@@ -1,5 +1,5 @@
 # -h/--help option support for builtin commands
-builtin commands except for `:`, `echo`, `eval`, `false`, `test`, `true` support `-h`/`--help` options
+builtin commands except for `:`, `call`, `echo`, `eval`, `false`, `test`, `true` support `-h`/`--help` options
 
 | **builtin command** | **support** |
 |---------------------|-------------|
@@ -8,10 +8,12 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `test`, `true` support
 | `__puts`            | ✔️          |
 | `_exit`             | ✔️          |
 | `bg`                | ✔️          |
+| `call`              | -           |
 | `cd`                | ✔️          |
 | `checkenv`          | ✔️          |
 | `command`           | ✔️          |
 | `complete`          | ✔️          |
+| `dirs`              | ✔️          |
 | `disown`            | ✔️          |
 | `echo`              | -           |
 | `eval`              | -           |
@@ -23,6 +25,8 @@ builtin commands except for `:`, `echo`, `eval`, `false`, `test`, `true` support
 | `help`              | ✔️          |
 | `jobs`              | ✔️          |
 | `kill`              | ✔️          |
+| `popd`              | ✔️          |
+| `pushd`             | ✔️          |
 | `pwd`               | ✔️          |
 | `read`              | ✔️          |
 | `setenv`            | ✔️          |
