@@ -577,8 +577,8 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static bool lookupUdcFromIndex(const DSState &state, unsigned int index, ResolvedCmd &cmd,
-                               const ModType *modType) {
+static bool lookupUdcFromIndex(const DSState &state, unsigned short modId, unsigned int index,
+                               ResolvedCmd &cmd) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
   if (v) {
@@ -590,10 +590,10 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
 
   auto &type = state.typePool.get(udcObj->getTypeID());
   if (type.isModType()) { // module object
-    cmd = ResolvedCmd::fromMod(cast<ModType>(type), modType);
+    cmd = ResolvedCmd::fromMod(cast<ModType>(type), modId);
   } else { // udc object
     assert(type.isVoidType());
-    cmd = ResolvedCmd::fromUdc(*udcObj, modType);
+    cmd = ResolvedCmd::fromUdc(*udcObj);
   }
   return true;
 }
@@ -608,19 +608,12 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
  * if called from native code, may be null
  * @return
  */
-static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
-                      const ModType *modType) {
-  if (!modType) {
-    auto ret = state.typePool.getModTypeById(1);
-    assert(ret);
-    modType = cast<ModType>(ret.asOk());
-  }
-  if (modType) {
-    std::string fullname = toCmdFullName(name);
-    auto handle = modType->lookupVisibleSymbolAtModule(state.typePool, fullname);
-    if (handle) {
-      return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType);
-    }
+static bool lookupUdc(const DSState &state, const ModType &modType, const char *name,
+                      ResolvedCmd &cmd) {
+  std::string fullname = toCmdFullName(name);
+  auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
+  if (handle) {
+    return lookupUdcFromIndex(state, handle->getModId(), handle->getIndex(), cmd);
   }
   return false;
 }
@@ -643,8 +636,13 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
     } else if (!modType) {
       modType = getCurRuntimeModule(state);
     }
+    if (!modType) {
+      auto ret = state.typePool.getModTypeById(1);
+      assert(ret);
+      modType = cast<ModType>(ret.asOk());
+    }
     ResolvedCmd cmd{};
-    if (lookupUdc(state, cmdName, cmd, modType)) {
+    if (lookupUdc(state, *modType, cmdName, cmd)) {
       return cmd;
     } else if (fqn != StringRef::npos) {
       return ResolvedCmd::invalid();
@@ -684,7 +682,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
     const char *cmdName = ref.data();
     cmd = ResolvedCmd::fromExternal(state.pathCache.searchPath(cmdName, this->searchOp));
 
-    // if command not found or directory, lookup _cmd_fallback_handler
+    // if command not found or directory, lookup CMD_FALLBACK
     if (hasFlag(this->resolveOp, FROM_FALLBACK) &&
         (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
       if (getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
@@ -2351,7 +2349,7 @@ bool VM::mainLoop(DSState &state) {
         auto argv = state.stack.pop();
 
         ResolvedCmd cmd;
-        lookupUdcFromIndex(state, index, cmd, nullptr);
+        lookupUdcFromIndex(state, 0, index, cmd);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
         vmnext;
       }

@@ -280,7 +280,7 @@ public:
 
 private:
   CmdKind kind_;
-  unsigned int belongModTypeId_; // if not belong to module (external, builtin, ect), indicate 0
+  unsigned short belongModId_; // if not belong to module (external, builtin, ect), indicate 0
   union {
     const DSCode *udc_;
     const ModType *modType_;
@@ -290,18 +290,18 @@ private:
   };
 
 public:
-  static ResolvedCmd fromUdc(const FuncObject &func, const ModType *belongModType) {
+  static ResolvedCmd fromUdc(const FuncObject &func) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::USER_DEFINED;
-    cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
+    cmd.belongModId_ = func.getCode().getBelongedModId();
     cmd.udc_ = &func.getCode();
     return cmd;
   }
 
-  static ResolvedCmd fromMod(const ModType &modType, const ModType *belongModType) {
+  static ResolvedCmd fromMod(const ModType &modType, unsigned short modId) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::MODULE;
-    cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
+    cmd.belongModId_ = modId;
     cmd.modType_ = &modType;
     return cmd;
   }
@@ -309,7 +309,7 @@ public:
   static ResolvedCmd fromBuiltin(builtin_command_t bcmd) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::BUILTIN;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.builtinCmd_ = bcmd;
     return cmd;
   }
@@ -317,7 +317,7 @@ public:
   static ResolvedCmd fromBuiltin(const NativeCode &code) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::BUILTIN_S;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.udc_ = &code;
     return cmd;
   }
@@ -325,7 +325,7 @@ public:
   static ResolvedCmd fromCmdObj(DSObject *obj) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::CMD_OBJ;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.cmdObj_ = obj;
     return cmd;
   }
@@ -333,7 +333,7 @@ public:
   static ResolvedCmd fromExternal(const char *path) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::EXTERNAL;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.filePath_ = path;
     return cmd;
   }
@@ -341,7 +341,7 @@ public:
   static ResolvedCmd fallback() {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::FALLBACK;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.filePath_ = nullptr;
     return cmd;
   }
@@ -349,7 +349,7 @@ public:
   static ResolvedCmd invalid() {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::INVALID;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.filePath_ = nullptr;
     return cmd;
   }
@@ -357,14 +357,14 @@ public:
   static ResolvedCmd illegalUdc() {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::ILLEGAL_UDC;
-    cmd.belongModTypeId_ = 0;
+    cmd.belongModId_ = 0;
     cmd.udc_ = nullptr;
     return cmd;
   }
 
   CmdKind kind() const { return this->kind_; }
 
-  unsigned int belongModTypeId() const { return this->belongModTypeId_; }
+  unsigned short belongModId() const { return this->belongModId_; }
 
   const DSCode &udc() const { return *this->udc_; }
 

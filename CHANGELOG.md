@@ -94,6 +94,7 @@
 - **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperationError``
 - **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
+- ``Module#_fullname`` method for user-defined commands always return unique fully qualified names
 - builtin ``shctl info`` subcommand show more system constant information
 
 #### API

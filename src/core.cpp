@@ -611,11 +611,9 @@ std::string resolveFullCommandName(const DSState &state, const DSValue &name,
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::MODULE: {
-    unsigned int typeId = cmd.belongModTypeId();
-    assert(typeId > 0);
-    auto &type = state.typePool.get(typeId);
-    assert(type.isModType());
-    std::string fullname = type.getNameRef().toString();
+    auto ret = state.typePool.getModTypeById(cmd.belongModId());
+    assert(ret);
+    std::string fullname = ret.asOk()->getNameRef().toString();
     fullname += '\0';
     fullname += ref.data();
     return fullname;
