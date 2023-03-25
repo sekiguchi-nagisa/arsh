@@ -2220,22 +2220,19 @@ bool VM::mainLoop(DSState &state) {
         const unsigned int savedIndex = state.stack.pc() + 4;
         state.stack.pc() = index;
         state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
-        state.stack.push(DSValue::createNum(savedIndex));
+        state.stack.enterFinally(index, savedIndex);
         vmnext;
       }
       vmcase(EXIT_FINALLY) {
-        if (state.stack.restoreThrownObject()) {
-          auto v = state.stack.pop();
-          assert(v.kind() == DSValueKind::INT);
-          state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
+        auto v = state.stack.pop();
+        assert(v.kind() == DSValueKind::INT);
+        state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
+        auto entry = state.stack.exitFinally();
+        if (entry.hasError()) {
+          state.stack.setErrorObj(entry.asError());
           vmerror;
         } else {
-          assert(state.stack.peek().kind() == DSValueKind::NUMBER);
-          unsigned int index = state.stack.pop().asNum();
-          state.stack.pc() = index;
-          auto v = state.stack.pop();
-          assert(v.kind() == DSValueKind::INT);
-          state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
+          state.stack.pc() = entry.asRetAddr();
           vmnext;
         }
       }
@@ -2510,6 +2507,15 @@ bool VM::mainLoop(DSState &state) {
   }
 }
 
+void VM::rethrowFromFinally(DSState &state) {
+  auto entry = state.stack.exitFinally();
+  if (entry.hasError()) { // ignore current exception and rethrow
+    auto curError = state.stack.takeThrownObject();
+    curError->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
+    state.stack.setErrorObj(entry.asError());
+  }
+}
+
 bool VM::handleException(DSState &state) {
   if (state.hook != nullptr) {
     state.hook->vmThrowHook(state);
@@ -2521,13 +2527,25 @@ bool VM::handleException(DSState &state) {
 
       // search exception entry
       const unsigned int occurredPC = state.stack.pc() - 1;
-      const DSType &occurredType = state.typePool.get(state.stack.getThrownObject()->getTypeID());
-
       for (unsigned int i = 0; cc->getExceptionEntries()[i]; i++) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
         auto &entryType = state.typePool.get(entry.typeId);
-        if (occurredPC >= entry.begin && occurredPC < entry.end &&
-            entryType.isSameOrBaseTypeOf(occurredType)) {
+        if (occurredPC >= entry.begin && occurredPC < entry.end) {
+          // check finally
+          if (auto &entries = state.stack.getFinallyEntries();
+              !entries.empty() && entries.back().getDepth() == state.stack.getFrames().size()) {
+            auto &cur = entries.back();
+            if (entry.begin < cur.getAddr()) {
+              rethrowFromFinally(state);
+            }
+          }
+
+          const DSType &occurredType =
+              state.typePool.get(state.stack.getThrownObject()->getTypeID());
+          if (!entryType.isSameOrBaseTypeOf(occurredType)) {
+            continue;
+          }
+
           if (entryType.is(TYPE::ProcGuard_)) {
             /**
              * when exception entry indicate exception guard of sub-shell,
@@ -2540,8 +2558,8 @@ bool VM::handleException(DSState &state) {
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entryType.is(TYPE::Root_)) { // finally block
-            state.stack.saveThrownObject();
             state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
+            state.stack.enterFinally(entry.dest);
           } else { // catch block
             state.stack.loadThrownObject();
             state.setExitStatus(0); // clear exit status when enter catch block
@@ -2551,6 +2569,11 @@ bool VM::handleException(DSState &state) {
       }
     } else if (CODE(state) == &signalTrampoline) { // within signal trampoline
       unsetFlag(DSState::eventDesc, VMEvent::MASK);
+    }
+
+    auto &entries = state.stack.getFinallyEntries();
+    while (!entries.empty() && entries.back().getDepth() == state.stack.getFrames().size()) {
+      rethrowFromFinally(state);
     }
   }
   return false;
@@ -2733,7 +2756,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
                 .chars = 0,
                 .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
   }
-  state.stack.setThrownObject(std::move(except)); // restore thrown object
+  state.stack.setErrorObj(std::move(except)); // restore thrown object
   return kind;
 }
 

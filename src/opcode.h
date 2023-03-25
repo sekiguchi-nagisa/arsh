@@ -99,8 +99,8 @@ namespace ydsh {
   OP(TRY_GUARD0, 0, 1)                                                                             \
   OP(TRY_GUARD1, 1, 1)                                                                             \
   OP(THROW, 0, -1)                                                                                 \
-  OP(ENTER_FINALLY, 4, 2)                                                                          \
-  OP(EXIT_FINALLY, 0, -2)                                                                          \
+  OP(ENTER_FINALLY, 4, 1)                                                                          \
+  OP(EXIT_FINALLY, 0, -1)                                                                          \
   OP(LOOKUP_HASH, 0, -2)                                                                           \
   OP(REF_EQ, 0, -1)                                                                                \
   OP(REF_NE, 0, -1)                                                                                \

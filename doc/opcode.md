@@ -71,8 +71,8 @@
 | TRY_GUARD0        |                                | -> value                                     | push guard value onto the stack                                 |
 | TRY_GUARD1        | 1: byte                        | -> value                                     | push guard value onto the stack                                 |
 | THROW             |                                | value -> [empty]                             | throw exception                                                 |
-| ENTER_FINALLY     | 4: byte1 ~ byte4               | -> status addr                               | save current pc and go to instruction                           |
-| EXIT_FINALLY      |                                | status addr ->                               | pop stack top and go to instruction                             |
+| ENTER_FINALLY     | 4: byte1 ~ byte4               | -> status                                    | save current pc and go to instruction                           |
+| EXIT_FINALLY      |                                | status ->                                    | pop stack top and go to instruction                             |
 | LOOKUP_HASH       |                                | hashmap key ->                               | jump to the offset from stack top hashmap                       |
 | REF_EQ            |                                | value1 value2 -> value                       | check referencial equality                                      |
 | REF_NE            |                                | value1 value2 -> value                       | check referencial un-equality                                   |

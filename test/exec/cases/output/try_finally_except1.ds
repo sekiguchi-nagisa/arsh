@@ -1,0 +1,111 @@
+# RUN: exec $cmd $self
+# STATUS: 127
+
+# throw in finally/defer
+function h() {
+    try {
+        1 / 0   # ArithmeticError
+    } finally {
+        [12][34] # not ignore previously raised error
+        assert($false)
+    }
+}
+var ex = 34 as Any
+try {
+    $h()
+} catch(e) {
+    $ex = $e
+}
+assert($ex is ArithmeticError)
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: OutOfRangeError: size is 1, but index is 34
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:9 'function h\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:15 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+
+var count = 0
+function g() {
+    try {
+        1%0
+    } finally {
+        try {
+            [34][45]
+        } catch e : OutOfRangeError { # catch error within finally
+            $count++
+        }
+    }
+}
+$ex = 34
+try {
+    assert $count == 0
+    $g()
+} catch e {
+    $ex = $e
+}
+assert $ex is ArithmeticError
+assert $count == 1
+
+function f() {
+    try {
+        jfeifjreifjeir
+    } finally {
+        (function() : Int => exit)()  # ignore error in finally, even if exit
+    }
+}
+$ex = 45
+try {
+    $f()
+} catch e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: Shell Exit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function \(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function f\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:59 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+
+function ff() {
+        try {
+        echo ~fjerifejrif
+    } finally {
+        assert $false  # ignore error in finally, even if assertion failure
+    }
+}
+$ex = 45
+try {
+    $ff()
+} catch e {
+    $ex = $e
+}
+assert $ex is TildeError
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: Assertion Error: `$false'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:77 'function ff\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:82 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+
+# ignore in subshell
+assert $({
+    shctl set errraise
+    defer {
+        false
+    }
+    /fejfar/fejir
+}).empty()
+
+# CHECKERR: [warning at subshell=1]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: ExecError: command exits with non-zero status: `1'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:99 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [runtime error at subshell=1]
+# CHECKERR: SystemError: execution error: /fejfar/fejir: command not found
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:101 '<toplevel>\(\)'

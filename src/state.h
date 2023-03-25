@@ -54,6 +54,32 @@ struct ControlFrame {
   unsigned int recDepth;
 };
 
+class FinallyEntry {
+private:
+  unsigned int addr;   // finally block start address
+  unsigned int depth;  // control frame depth
+  DSValue errorOrAddr; // Error or return address of try block
+
+public:
+  FinallyEntry(unsigned int addr, unsigned int depth, ObjPtr<ErrorObject> &&error)
+      : addr(addr), depth(depth), errorOrAddr(std::move(error)) {}
+
+  FinallyEntry(unsigned int addr, unsigned int depth, unsigned int retAddr)
+      : addr(addr), depth(depth), errorOrAddr(DSValue::createNum(retAddr)) {}
+
+  bool hasError() const {
+    return this->errorOrAddr.isObject() && isa<ErrorObject>(this->errorOrAddr.get());
+  }
+
+  unsigned int getAddr() const { return this->addr; }
+
+  unsigned int getDepth() const { return this->depth; }
+
+  ObjPtr<ErrorObject> asError() const { return toObjPtr<ErrorObject>(this->errorOrAddr); }
+
+  unsigned int asRetAddr() const { return this->errorOrAddr.asNum(); }
+};
+
 class RecursionGuard;
 
 class VMState {
@@ -92,10 +118,7 @@ private:
    */
   ObjPtr<ErrorObject> thrown;
 
-  /**
-   * for finally
-   */
-  ObjPtr<ErrorObject> savedThrown;
+  std::vector<FinallyEntry> finallyEntries;
 
 public:
   VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
@@ -161,13 +184,7 @@ public:
   // for exception handling
   const auto &getThrownObject() const { return this->thrown; }
 
-  bool setThrownObject(ObjPtr<ErrorObject> &&obj) {
-    if (!this->restoreThrownObject()) {
-      this->thrown = std::move(obj);
-      return true;
-    }
-    return false;
-  }
+  void setErrorObj(ObjPtr<ErrorObject> &&obj) { this->thrown = std::move(obj); }
 
   ObjPtr<ErrorObject> takeThrownObject() {
     ObjPtr<ErrorObject> tmp;
@@ -179,18 +196,27 @@ public:
 
   void loadThrownObject() { this->push(this->takeThrownObject()); }
 
-  void saveThrownObject() { this->savedThrown = this->takeThrownObject(); }
-
-  bool restoreThrownObject() {
-    assert(!this->hasError());
-    bool r = static_cast<bool>(this->savedThrown);
-    std::swap(this->savedThrown, this->thrown);
-    return r;
-  }
-
   void clearThrownObject() {
     this->thrown.reset();
-    this->savedThrown.reset();
+    this->finallyEntries.clear();
+  }
+
+  const auto &getFinallyEntries() const { return this->finallyEntries; }
+
+  void enterFinally(unsigned int finallyAddr, unsigned int retAddr) {
+    this->finallyEntries.emplace_back(finallyAddr, this->getFrames().size(), retAddr);
+  }
+
+  void enterFinally(unsigned int finallyAddr) {
+    this->finallyEntries.emplace_back(finallyAddr, this->getFrames().size(),
+                                      this->takeThrownObject());
+  }
+
+  FinallyEntry exitFinally() {
+    assert(!this->finallyEntries.empty());
+    auto entry = std::move(this->finallyEntries.back());
+    this->finallyEntries.pop_back();
+    return entry;
   }
 
   // for local variable access

@@ -114,18 +114,3 @@ try {
 }
 assert($j == 3)
 
-# throw in finally
-function h() {
-    try {
-        1 / 0   # ArithmeticError
-    } finally {
-        [12][34] # not ignore previously raised error
-        assert($false)
-    }
-}
-
-try {
-    $h()
-} catch(e) {
-    assert($e is ArithmeticError)
-}

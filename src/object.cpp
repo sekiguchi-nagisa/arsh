@@ -658,7 +658,12 @@ void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
     break;
   }
   case PrintOp::IGNORED: {
-    std::string header = "[warning]\n";
+    std::string header = "[warning";
+    if (state.subshellLevel) {
+      header += " at subshell=";
+      header += std::to_string(state.subshellLevel);
+    }
+    header += "]\n";
     header += "the following exception within finally/defer block is ignored\n";
     fputs(header.c_str(), stderr);
     break;

@@ -187,18 +187,7 @@ public:
 
   bool hasError() const { return this->stack.hasError(); }
 
-  /**
-   * set thrownObject and update exit status
-   * @param except must be ErrorObject
-   * @param afterStatus
-   * set exit status to it
-   */
-  void throwObject(ObjPtr<ErrorObject> &&except) {
-    auto tmp = except;
-    if (!this->stack.setThrownObject(std::move(except))) {
-      tmp->printStackTrace(*this, ErrorObject::PrintOp::IGNORED);
-    }
-  }
+  void throwObject(ObjPtr<ErrorObject> &&except) { this->stack.setErrorObj(std::move(except)); }
 
   // variable manipulation
   void setGlobal(unsigned int index, const DSValue &obj) { this->setGlobal(index, DSValue(obj)); }
@@ -617,6 +606,8 @@ private:
    * if has exception, return false.
    */
   static bool mainLoop(DSState &state);
+
+  static void rethrowFromFinally(DSState &state);
 
   /**
    * if found exception handler, return true.
