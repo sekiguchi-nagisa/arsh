@@ -258,7 +258,7 @@ static BuiltinCmdDesc table[] = {
      "      -H    use `hard' resource limit\n"
      "      -S    use `soft' resource limit (default)\n"
      "      -a    show all resource limits"
-#define DEF(O, R, S, N, D) "\n        -" O "    " D
+#define DEF(O, R, S, N, D) "\n      -" O "    " D
 #include "ulimit-def.in"
 #undef DEF
     },
