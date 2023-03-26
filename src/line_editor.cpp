@@ -964,7 +964,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
 
   /* If we are at the very end of the screen with our prompt, we need to
    * emit a newline and move the prompt to the first column. */
-  if (l.pos && l.pos == l.len && (colpos2 + pcollen) % l.cols == 0) {
+  if (l.pos && (colpos2 + pcollen) % l.cols == 0) {
     lndebug("<newline>");
     ab += "\r\n";
     if (pager && l.pos == l.len) {
