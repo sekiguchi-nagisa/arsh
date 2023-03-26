@@ -268,7 +268,7 @@ private:
 
   const CharWidthProperties &ps;
   const ArrayObject &obj; // must be [String]
-  WindowSize winSize;
+  WindowSize winSize{0, 0};
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
   const unsigned int maxLenIndex;    // index of item with longest len
   unsigned int rows{0};              // pager row size (less than windows row size)

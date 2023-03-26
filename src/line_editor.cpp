@@ -971,7 +971,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       ab += "\r\n"; // only add if last is not newline
     } else {
       if (l.pos != l.len) {
-        ab += "\r\n"; // add additonal newline in multiline mode
+        ab += "\r\n"; // add additional newline in multiline mode
       }
       rows++;
     }
