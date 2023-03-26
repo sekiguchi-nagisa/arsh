@@ -278,11 +278,14 @@ private:
   bool showCursor{true};             // if true, render cursor
 
   ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
-             unsigned int maxIndex)
-      : ps(ps), obj(obj), items(std::move(items)), maxLenIndex(maxIndex) {}
+             unsigned int maxIndex, WindowSize winSize)
+      : ps(ps), obj(obj), items(std::move(items)), maxLenIndex(maxIndex) {
+    this->updateWinSize(winSize);
+  }
 
 public:
-  static ArrayPager create(const ArrayObject &obj, const CharWidthProperties &ps);
+  static ArrayPager create(const ArrayObject &obj, const CharWidthProperties &ps,
+                           WindowSize winSize);
 
   /**
    * update windows size.

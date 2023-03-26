@@ -336,7 +336,8 @@ void LineRenderer::renderControlChar(int codePoint) {
 // ##     ArrayPager     ##
 // ########################
 
-ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties &ps) {
+ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties &ps,
+                              WindowSize winSize) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
   FlexBuffer<ItemEntry> items;
@@ -368,7 +369,7 @@ ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties 
     assert(padLen % 4 == 0);
     e.tabs = padLen / 4;
   }
-  return ArrayPager(ps, obj, std::move(items), maxIndex);
+  return ArrayPager(ps, obj, std::move(items), maxIndex, winSize);
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {

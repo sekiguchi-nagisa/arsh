@@ -1650,8 +1650,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     return CompStatus::OK;
   } else {
     auto status = CompStatus::CONTINUE;
-    auto pager = ArrayPager::create(*candidates, ls.ps);
-    pager.updateWinSize({.rows = ls.rows, .cols = ls.cols});
+    auto pager = ArrayPager::create(*candidates, ls.ps, {.rows = ls.rows, .cols = ls.cols});
 
     /**
      * first, only show pager and wait next completion action.
