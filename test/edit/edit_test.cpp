@@ -623,7 +623,7 @@ TEST_F(LineRendererTest, limit) {
     ASSERT_TRUE(r);
   }
   ASSERT_EQ("\x1b[50m\x1b[0m\r\n\x1b[50m\x1b[0m\x1b[30mecho\x1b[0m\x1b[50m "
-            "\x1b[0m\x1b[40m222\x1b[0m\x1b[50m\x1b[0m\x1b[50m\x1b[0m\r\n",
+            "\x1b[0m\x1b[40m222\x1b[0m\x1b[50m\x1b[0m\r\n",
             out);
 
   out.clear();

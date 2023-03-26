@@ -272,6 +272,9 @@ static size_t getNewlineOffset(const GraphemeScanner::Result &grapheme) {
 }
 
 bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
+  if (ref.empty()) {
+    return true; // skip rendering
+  }
   auto *colorCode = this->findColorCode(tokenClass);
   if (colorCode) {
     this->output += *colorCode;
