@@ -190,6 +190,8 @@ private:
 
   size_t lineNum{0};
 
+  size_t colLenLimit{static_cast<size_t>(-1)};
+
   /**
    * if 0, ignore newline characters and not increment lineNum
    */
@@ -204,6 +206,8 @@ public:
   LineRenderer(const CharWidthProperties &ps, size_t initColLen, std::string &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
       : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), output(output) {}
+
+  void setColLenLimit(size_t limit) { this->colLenLimit = limit; }
 
   void setLineNumLimit(size_t limit) { this->lineNumLimit = limit; }
 
@@ -232,11 +236,17 @@ private:
    * @param ref
    * @param tokenClass
    * @return
-   * if reach lineNumLimit, return false
+   * if reach lineNumLimit or colLenLimit, return false
    */
   bool render(StringRef ref, HighlightTokenClass tokenClass);
 
-  void renderControlChar(int codePoint);
+  /**
+   *
+   * @param codePoint
+   * @return
+   * if reach lineNumLimit or colLenLimit, return false
+   */
+  bool renderControlChar(int codePoint);
 };
 
 class ArrayObject;
@@ -271,7 +281,8 @@ private:
   WindowSize winSize{0, 0};
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
   const unsigned int maxLenIndex;    // index of item with longest len
-  unsigned int rows{0};              // pager row size (less than windows row size)
+  unsigned int paneLen{0};           // pager pane length (paneLen * pages < window col size)
+  unsigned int rows{0};              // pager row size (less than window row size)
   unsigned int panes{0};             // number of pager pane
   unsigned int index{0};             // index of currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
@@ -301,6 +312,8 @@ public:
   unsigned int getIndex() const { return this->index; }
 
   unsigned int getPanes() const { return this->panes; }
+
+  unsigned int getPaneLen() const { return this->paneLen; }
 
   /**
    * get max row size of pager

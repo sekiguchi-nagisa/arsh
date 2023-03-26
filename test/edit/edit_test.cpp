@@ -946,6 +946,21 @@ TEST_F(PagerTest, large2) { // larger than pager length
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, truncate) {
+  this->ps.zwjSeqFallback = true;
+  auto array = this->create("@@@", "ABCD123456", "ABCD987\r", "ABCDEああ", "123456\t\t",
+                            "12345👩🏼‍🏭111");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 100, .cols = 10});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(8, pager.getPaneLen());
+  pager.setShowCursor(false);
+
+  std::string out;
+  pager.render(out);
+  const char *expect = "@@@     \r\nABCD1234\r\nABCD987.\r\nABCDEあ.\r\n123456  \r\n12345...\r\n";
+  ASSERT_EQ(expect, out);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

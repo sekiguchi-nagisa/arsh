@@ -180,7 +180,9 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
         this->output += remain.substr(0, len);
         pos = r + len;
       } else {
-        this->renderControlChar('\x1b');
+        if (!this->renderControlChar('\x1b')) {
+          return;
+        }
         pos = r + 1;
       }
     } else {
@@ -283,7 +285,8 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   iterateGrapheme(ref, [&](const GraphemeScanner::Result &grapheme) {
     if (auto offset = getNewlineOffset(grapheme)) {
       if (offset == 2) { // \r\n
-        this->renderControlChar('\r');
+        bool r = this->renderControlChar('\r');
+        (void)r; // ignore return value
       }
       if (colorCode) {
         this->output += "\x1b[0m";
@@ -301,15 +304,22 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         this->output += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
-      this->renderControlChar(grapheme.codePoints[0]);
+      return this->renderControlChar(grapheme.codePoints[0]);
     } else {
-      if (grapheme.hasInvalid) {
-        assert(grapheme.codePointCount == 1);
-        this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+      unsigned int width = getGraphemeWidth(this->ps, grapheme);
+      if (this->totalColLen + width > this->colLenLimit) {
+        this->output.append(this->colLenLimit - this->totalColLen, '.');
+        this->totalColLen = this->colLenLimit;
+        return false;
       } else {
-        this->output += grapheme.ref;
+        if (grapheme.hasInvalid) {
+          assert(grapheme.codePointCount == 1);
+          this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+        } else {
+          this->output += grapheme.ref;
+        }
+        this->totalColLen += width;
       }
-      this->totalColLen += getGraphemeWidth(this->ps, grapheme);
     }
     return true;
   });
@@ -319,20 +329,33 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   return status;
 }
 
-void LineRenderer::renderControlChar(int codePoint) {
+bool LineRenderer::renderControlChar(int codePoint) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
     unsigned int colLen = 4 - this->totalColLen % 4;
-    this->output.append(colLen, ' ');
-    this->totalColLen += colLen;
+    if (this->totalColLen + colLen > this->colLenLimit) {
+      this->output.append(this->colLenLimit - this->totalColLen, ' ');
+      this->totalColLen = this->colLenLimit;
+      return false;
+    } else {
+      this->output.append(colLen, ' ');
+      this->totalColLen += colLen;
+    }
   } else if (codePoint != '\n') {
-    auto v = static_cast<unsigned int>(codePoint);
-    v ^= 64;
-    assert(isCaretTarget(static_cast<int>(v)));
-    this->output += "^";
-    this->output += static_cast<char>(static_cast<int>(v));
-    this->totalColLen += 2;
+    if (this->totalColLen + 2 > this->colLenLimit) {
+      this->output.append(this->colLenLimit - this->totalColLen, '.');
+      this->totalColLen = this->colLenLimit;
+      return false;
+    } else {
+      auto v = static_cast<unsigned int>(codePoint);
+      v ^= 64;
+      assert(isCaretTarget(static_cast<int>(v)));
+      this->output += "^";
+      this->output += static_cast<char>(static_cast<int>(v));
+      this->totalColLen += 2;
+    }
   }
+  return true;
 }
 
 // ########################
@@ -384,8 +407,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
   if (this->rows == 0) {
     this->rows = 1;
   }
-  const auto paneSize = this->items[this->maxLenIndex].itemLen();
-  this->panes = this->winSize.cols / paneSize;
+  this->paneLen = this->items[this->maxLenIndex].itemLen();
+  this->panes = this->winSize.cols / this->paneLen;
   if (this->panes == 0) {
     this->panes = 1;
   } else if (this->panes > MAX_PANE_NUM) {
@@ -393,6 +416,12 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
   if (this->curRow > this->rows) {
     this->curRow = this->rows - 1;
+  }
+  if (this->panes == 1) {
+    unsigned int colLimit = (this->winSize.cols / 4) * 4; // truncate to multiple of 4
+    if (this->paneLen > colLimit) {
+      this->paneLen = colLimit; // larger than window size
+    }
   }
 }
 
@@ -424,6 +453,9 @@ void ArrayPager::render(std::string &out) const {
   const unsigned int actualRows = this->getActualRows();
 
   LineRenderer renderer(this->ps, 0, out);
+  if (this->getPanes() == 1) {
+    renderer.setColLenLimit(this->getPaneLen());
+  }
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setLineNumLimit(0);                     // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
