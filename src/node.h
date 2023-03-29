@@ -349,7 +349,7 @@ public:
   } kind;
 
 private:
-  bool init;
+  bool init{true};
   union {
     int64_t intValue;
     double floatValue;
@@ -361,7 +361,7 @@ public:
    * @param token
    * @param kind
    */
-  NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), init(true), intValue(0) {}
+  NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), intValue(0) {}
 
   static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
     auto node = std::make_unique<NumberNode>(token, Int);
@@ -1363,7 +1363,7 @@ private:
 public:
   BraceSeqNode(Token token, BraceRange::Kind k) : WithRtti(token) { this->range.kind = k; }
 
-  void setRange(BraceRange &&r) { this->range = std::move(r); }
+  void setRange(BraceRange r) { this->range = r; }
 
   const auto &getRange() const { return this->range; }
 

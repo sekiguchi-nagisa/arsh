@@ -265,7 +265,7 @@ void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
     switch (range.kind) {
     case BraceRange::Kind::CHAR:
     case BraceRange::Kind::INT:
-      node.setRange(std::move(range));
+      node.setRange(range);
       break;
     case BraceRange::Kind::UNINIT_CHAR:
     case BraceRange::Kind::UNINIT_INT:

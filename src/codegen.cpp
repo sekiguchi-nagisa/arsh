@@ -95,8 +95,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
       .guardLevel = 0,
   }; // sentinel
 
-  return CompiledCode(this->lexer->getSourceName(), this->modId, name, code, constPool, entries,
-                      except);
+  return {this->lexer->getSourceName(), this->modId, name, code, constPool, entries, except};
 }
 
 // ###############################

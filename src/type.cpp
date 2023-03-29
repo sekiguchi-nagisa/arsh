@@ -273,7 +273,7 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
   }
   va_end(arg);
 
-  return TypeCheckError(node.getToken(), kind, CStrPtr(str));
+  return {node.getToken(), kind, CStrPtr(str)};
 }
 
 const char *toString(HandleKind kind) {

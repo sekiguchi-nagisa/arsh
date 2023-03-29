@@ -1389,7 +1389,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     auto &seqNode = cast<BraceSeqNode>(node);
     auto constNode = std::make_unique<BraceSeqNode>(seqNode.getToken(), seqNode.getRange().kind);
     auto range = seqNode.getRange();
-    constNode->setRange(std::move(range));
+    constNode->setRange(range);
     constNode->setType(seqNode.getType());
     return constNode;
   }

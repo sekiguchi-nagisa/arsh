@@ -62,7 +62,7 @@ private:
 
 public:
   FinallyEntry(unsigned int addr, unsigned int depth, ObjPtr<ErrorObject> &&error)
-      : addr(addr), depth(depth), errorOrAddr(std::move(error)) {}
+      : addr(addr), depth(depth), errorOrAddr(error) {}
 
   FinallyEntry(unsigned int addr, unsigned int depth, unsigned int retAddr)
       : addr(addr), depth(depth), errorOrAddr(DSValue::createNum(retAddr)) {}
@@ -91,7 +91,7 @@ private:
 
   static constexpr unsigned int MAX_FRAME_SIZE = 2048;
 
-  unsigned int operandsSize;
+  unsigned int operandsSize{64};
 
   /**
    * contains operand, global variable(may be function) or local variable.
@@ -121,7 +121,7 @@ private:
   std::vector<FinallyEntry> finallyEntries;
 
 public:
-  VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
+  VMState() : operands(new DSValue[this->operandsSize]) {}
 
   ~VMState() { delete[] this->operands; }
 

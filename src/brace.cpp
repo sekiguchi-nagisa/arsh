@@ -99,7 +99,8 @@ BraceRange toBraceRange(StringRef ref, bool isChar, std::string &error) {
   auto begin = ref.slice(0, pos);
   auto end = ref.substr(pos + 2);
   StringRef step;
-  if ((pos = end.find("..")) != StringRef::npos) {
+  pos = end.find("..");
+  if (pos != StringRef::npos) {
     step = end.substr(pos + 2);
     end = end.slice(0, pos);
   }

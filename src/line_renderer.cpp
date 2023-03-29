@@ -395,7 +395,7 @@ ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties 
     assert(padLen % 4 == 0);
     e.tabs = padLen / 4;
   }
-  return ArrayPager(ps, obj, std::move(items), maxIndex, winSize);
+  return {ps, obj, std::move(items), maxIndex, winSize};
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {
