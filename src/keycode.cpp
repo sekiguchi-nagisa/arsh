@@ -42,21 +42,19 @@ ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
   return read(fd, buf, bufSize);
 }
 
-static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
+static ssize_t readBytes(int fd, char (&buf)[8]) {
   ssize_t readSize = readWithTimeout(fd, &buf[0], 1);
   if (readSize <= 0) {
     return readSize;
   }
-  unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
-  if (byteSize < 1 || byteSize > 4) {
-    return -1;
-  } else if (byteSize > 1) {
-    readSize = readWithTimeout(fd, &buf[1], byteSize - 1); // FIXME: timeout ?
-    if (readSize <= 0) {
-      return readSize;
+  const unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
+  for (unsigned int i = 1; i < byteSize; i++) {
+    if (readWithTimeout(fd, &buf[i], 1, 10) <= 0) {
+      break;
     }
+    readSize++;
   }
-  return static_cast<ssize_t>(UnicodeUtil::utf8ToCodePoint(buf, std::size(buf), code));
+  return readSize;
 }
 
 #define READ_BYTE(b, bs)                                                                           \
@@ -71,14 +69,13 @@ static ssize_t readCodePoint(int fd, char (&buf)[8], int &code) {
 ssize_t KeyCodeReader::fetch() {
   constexpr const char ESC = '\x1b';
   char buf[8];
-  int code;
-  ssize_t readSize = readCodePoint(this->fd, buf, code); // FIXME: accept invalid utf8
+  ssize_t readSize = readBytes(this->fd, buf);
   if (readSize <= 0) {
     return readSize;
   }
   assert(readSize > 0 && readSize < 5);
   this->keycode.assign(buf, static_cast<size_t>(readSize));
-  if (isEscapeChar(code)) {
+  if (isEscapeChar(buf[0])) {
     assert(readSize == 1);
     char seq[8];
     unsigned int seqSize = 0;
