@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SPLIT_RANDOM_HPP
-#define YDSH_SPLIT_RANDOM_HPP
+#ifndef MISC_LIB_SPLIT_RANDOM_HPP
+#define MISC_LIB_SPLIT_RANDOM_HPP
 
 #include <cstdint>
+
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 /**
  * splittable random number generator implementation
@@ -86,4 +88,6 @@ private:
   static uint64_t rotateLeft(uint64_t x, unsigned int k) { return (x << k) | (x >> (64 - k)); }
 };
 
-#endif // YDSH_SPLIT_RANDOM_HPP
+END_MISC_LIB_NAMESPACE_DECL
+
+#endif // MISC_LIB_SPLIT_RANDOM_HPP
