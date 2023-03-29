@@ -37,6 +37,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
     return Proc(-1);
   }
 
+  const auto childRng = st.getRng().split();
   pid_t pid = ::fork();
   if (pid == 0) { // child process
     if (hasFlag(op, Op::JOB_CONTROL)) {
@@ -63,6 +64,9 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
     // update PID, PPID
     st.setGlobal(BuiltinVarOffset::PID, DSValue::createInt(getpid()));
     st.setGlobal(BuiltinVarOffset::PPID, DSValue::createInt(getppid()));
+
+    // no inherite parent process RNG (due to prevent duplicated random numbers)
+    st.getRng() = childRng;
 
     st.subshellLevel++;
   } else if (pid > 0) {

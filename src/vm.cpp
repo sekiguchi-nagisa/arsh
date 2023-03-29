@@ -18,7 +18,6 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <random>
 
 #include "brace.h"
 #include "logger.h"
@@ -110,7 +109,7 @@ static void initEnv() {
 DSState::DSState()
     : modLoader(this->sysConfig),
       emptyFDObj(toObjPtr<UnixFdObject>(DSValue::create<UnixFdObject>(-1))),
-      baseTime(std::chrono::system_clock::now()) {
+      baseTime(std::chrono::system_clock::now()), rng(this->baseTime.time_since_epoch().count()) {
   // init envs
   initEnv();
   const char *pwd = getenv(ENV_PWD);
@@ -2430,11 +2429,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(RAND) {
-        std::random_device rand;
-        std::default_random_engine engine(rand());
-        std::uniform_int_distribution<int64_t> dist;
-        int64_t v = dist(engine);
-        state.stack.push(DSValue::createInt(v));
+        state.stack.push(DSValue::createInt(state.getRng().nextInt64()));
         vmnext;
       }
       vmcase(GET_SECOND) {

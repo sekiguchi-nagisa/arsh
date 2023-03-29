@@ -29,6 +29,19 @@ assert $MACHTYPE == "$(uname -m)" || $MACHTYPE =='i386' || $MACHTYPE =~ $/arm/ |
     var r = $RANDOM
     assert $r != $RANDOM    # value of $RANDOM is random number
 }
+var rnds : [Int]
+for(var i = 0; $i < 10; $i++) {
+    var a = "$(echo $RANDOM)".toInt()!
+    var b = $RANDOM
+    assert $a != $b
+    $rnds.add($a)
+    $rnds.add($b)
+}
+$rnds.sort()
+for(var i = 0; $i < $rnds.size(); $i++) {
+    assert $rnds[$i] != $rnds[$i-1]
+}
+
 
 # seconds
 $SECONDS = 0

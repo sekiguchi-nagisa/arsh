@@ -26,6 +26,7 @@
 #include "core.h"
 #include "job.h"
 #include "misc/noncopyable.h"
+#include "misc/split_random.hpp"
 #include "paths.h"
 #include "scope.h"
 #include "signals.h"
@@ -146,6 +147,8 @@ private:
 
   decltype(std::chrono::system_clock::now()) baseTime;
 
+  L64X128MixRNG rng;
+
 public:
   static VMEvent eventDesc;
 
@@ -260,6 +263,8 @@ public:
   auto getWorkingDir(bool useLogical = true) const {
     return ydsh::getWorkingDir(this->logicalWorkingDir, useLogical);
   }
+
+  L64X128MixRNG &getRng() { return this->rng; }
 };
 
 namespace ydsh {
