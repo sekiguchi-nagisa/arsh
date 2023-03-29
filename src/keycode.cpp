@@ -49,7 +49,7 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
   }
   const unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
   for (unsigned int i = 1; i < byteSize; i++) {
-    if (readWithTimeout(fd, &buf[i], 1, 10) <= 0) {
+    if (readWithTimeout(fd, &buf[i], 1, 100) <= 0) {
       break;
     }
     readSize++;
