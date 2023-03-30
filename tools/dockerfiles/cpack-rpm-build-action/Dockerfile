@@ -11,7 +11,7 @@ COPY . /opt/project/project_root_dir_for_cpack_rpm_build
 CMD cat /proc/1/cgroup && \
     DIR="$(pwd)" && \
     cd /opt/project/project_root_dir_for_cpack_rpm_build && \
-    sh tools/scripts/build_rpm.sh clang++ && \
+    ls -la && sh ./tools/scripts/build_rpm.sh clang++ && \
     mkdir $DIR/build && \
-    cp build-rpm/*.rpm $DIR/build/ && \
+    cp ./build-rpm/*.rpm $DIR/build/ && \
     ls $DIR/build
