@@ -19,7 +19,7 @@
     - add ``insert-keycode`` action
         - ``CTRL-V`` like bash/zsh
     - quote unprintable characters / invalid utf8 bytes
-    - support custom keybind/custom key action via the following keybinding methods
+    - support custom keybinding/custom key action via the following keybinding methods
         - ``bind``: change keybinding
         - ``bindings``: get read-only snapshot of current keybindings
             - modification of the result does not affect actual keybindings
@@ -50,7 +50,7 @@
 
 - add ``fzf`` module for ``fzf`` integration
     - now ``CTRL-R`` action (history search) is defined as custom action in this module
-    - also support ``CTRL-T``, ``ALT-C`` key-bind
+    - also support ``CTRL-T``, ``ALT-C`` keybinding
 
 ### Changed
 
@@ -58,7 +58,7 @@
 
 - **Breaking Change**: in interactive mode or ``-c`` mode without shell-name, toplevel ``$0`` indicates ``argv[0]``
 - **Breaking Change**: unbalanced brace expansions are semantic error
-- **Breaking Change**: change token format error with semantic error
+- **Breaking Change**: change some token format errors with semantic errors
 - **Breaking Change**: overhaul runtime/compile-time tilde expansion
     - in source statement `~+`, `~-` style expansions are not performed
     - support `~+N`, `~-N`, `~N` style expansions
@@ -79,7 +79,7 @@
 - **Breaking Change**: rename builtin ``eval`` command with ``call``
     - ``eval`` is still builtin command for future usage
 - **Breaking Change**: invalid utf8 bytes are always grapheme/word boundary
-- **Breaking Change**: in finally/defer block, does not ignore exceptions that can be caught within finally/defer block
+- **Breaking Change**: in finally/defer block, do not ignore exceptions that can be caught within finally/defer block
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type
@@ -93,9 +93,9 @@
     - except for `:`, `call`, `echo`, `eval`, `false`, `test`, `true`
 - **Breaking Change**: check array size modification during ``Array#sortWith`` method
     - now throw ``InvalidOperationError``
-- **Breaking Change**: now does not allow negative value of INT_MIN in constant expression
-- ``Module#_fullname`` method for user-defined commands always return unique fully qualified names
-- builtin ``shctl info`` subcommand show more system constant information
+- **Breaking Change**: now do not allow negative value of INT_MIN in constant expression
+- ``Module#_fullname`` method for user-defined commands always returns unique fully qualified names
+- builtin ``shctl info`` subcommand shows more system constant information
 
 #### API
 
