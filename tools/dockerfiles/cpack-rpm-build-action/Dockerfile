@@ -3,15 +3,18 @@ RUN zypper refresh && zypper in -y pcre2-devel gcc-c++ clang cmake git ninja sud
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-# normally, run under Github Actions. must be run root and does not set WORKDIR
-# see https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions
 
+# normally `.` directory indicate Dockerfile directory
 COPY . /home/tux/dev
 RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
-# actual build dir is /home/tux/project_root_dir_for_cpack_rpm_build (for CPackRPM workaround)
 USER tux
+
+# under Github Actions, WORKDIR always indicates GITHUB_WORKSPACE
+# (https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions)
 WORKDIR /home/tux/dev
+
+# actual build dir is /home/tux/project_root_dir_for_cpack_rpm_build (for CPackRPM workaround)
 CMD cat /proc/1/cgroup && \
     DIR="$(pwd)" && \
     mkdir /home/tux/project_root_dir_for_cpack_rpm_build && \
