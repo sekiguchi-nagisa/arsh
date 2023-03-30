@@ -6,12 +6,18 @@ RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NO
 # normally, run under Github Actions. must be run root and does not set WORKDIR
 # see https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions
 
-COPY . /opt/project/project_root_dir_for_cpack_rpm_build
+COPY . /home/tux/dev
+RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
+# actual build dir is /home/tux/project_root_dir_for_cpack_rpm_build (for CPackRPM workaround)
+USER tux
+WORKDIR /home/tux/dev
 CMD cat /proc/1/cgroup && \
     DIR="$(pwd)" && \
-    cd /opt/project/project_root_dir_for_cpack_rpm_build && \
-    ls -la && sh ./tools/scripts/build_rpm.sh clang++ && \
+    mkdir /home/tux/project_root_dir_for_cpack_rpm_build && \
+    cp -r ./ /home/tux/project_root_dir_for_cpack_rpm_build && \
+    cd /home/tux/project_root_dir_for_cpack_rpm_build && \
+    sh ./tools/scripts/build_rpm.sh clang++ && \
     mkdir $DIR/build && \
     cp ./build-rpm/*.rpm $DIR/build/ && \
     ls $DIR/build
