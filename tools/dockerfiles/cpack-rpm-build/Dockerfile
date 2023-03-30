@@ -12,6 +12,7 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 USER tux
 
 # under Github Actions, WORKDIR always indicates GITHUB_WORKSPACE (source code location)
+# so, if create directory at WORKDIR, need root privilege
 # (https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions)
 WORKDIR /home/tux/dev
 
