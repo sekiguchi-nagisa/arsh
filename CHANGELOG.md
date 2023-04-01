@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.29.1] - 2023-03-31
 
 - fix CPackRPM dockerfile if run under GitHub Actions
