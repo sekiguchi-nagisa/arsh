@@ -306,19 +306,25 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       return this->renderControlChar(grapheme.codePoints[0]);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
-      if (this->totalColLen + width > this->colLenLimit) {
-        this->output.append(this->colLenLimit - this->totalColLen, '.');
-        this->totalColLen = this->colLenLimit;
-        return false;
-      } else {
-        if (grapheme.hasInvalid) {
-          assert(grapheme.codePointCount == 1);
-          this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
-        } else {
-          this->output += grapheme.ref;
+      if (this->totalColLen + width > this->colLenLimit) { // line break
+        switch (this->breakOp) {
+        case LineBreakOp::SOFT_WRAP:
+          this->totalColLen = 0;
+          this->output += "\r\n";
+          break;
+        case LineBreakOp::TRUNCATE:
+          this->output.append(this->colLenLimit - this->totalColLen, '.');
+          this->totalColLen = this->colLenLimit;
+          return false;
         }
-        this->totalColLen += width;
       }
+      if (grapheme.hasInvalid) {
+        assert(grapheme.codePointCount == 1);
+        this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+      } else {
+        this->output += grapheme.ref;
+      }
+      this->totalColLen += width;
     }
     return true;
   });
@@ -332,27 +338,40 @@ bool LineRenderer::renderControlChar(int codePoint) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
     unsigned int colLen = 4 - this->totalColLen % 4;
-    if (this->totalColLen + colLen > this->colLenLimit) {
-      this->output.append(this->colLenLimit - this->totalColLen, ' ');
-      this->totalColLen = this->colLenLimit;
-      return false;
-    } else {
-      this->output.append(colLen, ' ');
-      this->totalColLen += colLen;
+    if (this->totalColLen + colLen > this->colLenLimit) { // line break
+      switch (this->breakOp) {
+      case LineBreakOp::SOFT_WRAP:
+        this->totalColLen = 0;
+        this->output += "\r\n";
+        colLen = 4 - this->totalColLen % 4; // re-compute tab stop
+        break;
+      case LineBreakOp::TRUNCATE:
+        this->output.append(this->colLenLimit - this->totalColLen, ' ');
+        this->totalColLen = this->colLenLimit;
+        return false;
+      }
     }
+    this->output.append(colLen, ' ');
+    this->totalColLen += colLen;
   } else if (codePoint != '\n') {
-    if (this->totalColLen + 2 > this->colLenLimit) {
-      this->output.append(this->colLenLimit - this->totalColLen, '.');
-      this->totalColLen = this->colLenLimit;
-      return false;
-    } else {
-      auto v = static_cast<unsigned int>(codePoint);
-      v ^= 64;
-      assert(isCaretTarget(static_cast<int>(v)));
-      this->output += "^";
-      this->output += static_cast<char>(static_cast<int>(v));
-      this->totalColLen += 2;
+    if (this->totalColLen + 2 > this->colLenLimit) { // line break
+      switch (this->breakOp) {
+      case LineBreakOp::SOFT_WRAP:
+        this->totalColLen = 0;
+        this->output += "\r\n";
+        break;
+      case LineBreakOp::TRUNCATE:
+        this->output.append(this->colLenLimit - this->totalColLen, '.');
+        this->totalColLen = this->colLenLimit;
+        return false;
+      }
     }
+    auto v = static_cast<unsigned int>(codePoint);
+    v ^= 64;
+    assert(isCaretTarget(static_cast<int>(v)));
+    this->output += "^";
+    this->output += static_cast<char>(static_cast<int>(v));
+    this->totalColLen += 2;
   }
   return true;
 }
@@ -454,6 +473,7 @@ void ArrayPager::render(std::string &out) const {
   LineRenderer renderer(this->ps, 0, out);
   if (this->getPanes() == 1) {
     renderer.setColLenLimit(this->getPaneLen());
+    renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
   }
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setLineNumLimit(0);                     // ignore newlines

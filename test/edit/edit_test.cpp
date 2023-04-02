@@ -658,6 +658,27 @@ TEST_F(LineRendererTest, limit) {
   ASSERT_EQ("echo 111echo 222echo 333echo 444", out);
 }
 
+TEST_F(LineRendererTest, softwrap) {
+  CharWidthProperties ps;
+  std::string out;
+  StringRef line = "\t1234567890";
+  {
+    LineRenderer renderer(ps, 2, out);
+    renderer.setColLenLimit(5);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("  1\r\n23456\r\n7890", out);
+
+  out = "";
+  line = "\t1234567890あab\r\n@";
+  {
+    LineRenderer renderer(ps, 3, out);
+    renderer.setColLenLimit(5);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", out);
+}
+
 static void append(ArrayObject &) {}
 
 template <typename... T>

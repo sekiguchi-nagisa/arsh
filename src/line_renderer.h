@@ -174,6 +174,12 @@ struct CharWidthProperties;
  * generate output string for terminal
  */
 class LineRenderer {
+public:
+  enum class LineBreakOp {
+    SOFT_WRAP,
+    TRUNCATE,
+  };
+
 private:
   const CharWidthProperties &ps;
 
@@ -195,6 +201,8 @@ private:
    */
   size_t lineNumLimit{static_cast<size_t>(-1)};
 
+  LineBreakOp breakOp{LineBreakOp::SOFT_WRAP};
+
   /**
    * append to existing content
    */
@@ -209,6 +217,8 @@ public:
   void setColLenLimit(size_t limit) { this->colLenLimit = limit; }
 
   void setLineNumLimit(size_t limit) { this->lineNumLimit = limit; }
+
+  void setLineBreakOp(LineBreakOp op) { this->breakOp = op; }
 
   /**
    * render lines with color code (ansi escape sequence).
