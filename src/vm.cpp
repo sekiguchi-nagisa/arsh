@@ -576,25 +576,23 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static bool lookupUdcFromIndex(const DSState &state, unsigned short modId, unsigned int index,
-                               ResolvedCmd &cmd) {
+static ResolvedCmd lookupUdcFromIndex(const DSState &state, unsigned short modId,
+                                      unsigned int index) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
   if (v) {
     udcObj = &typeAs<FuncObject>(v);
   } else {
-    cmd = ResolvedCmd::illegalUdc();
-    return true;
+    return ResolvedCmd::illegalUdc();
   }
 
   auto &type = state.typePool.get(udcObj->getTypeID());
   if (type.isModType()) { // module object
-    cmd = ResolvedCmd::fromMod(cast<ModType>(type), modId);
+    return ResolvedCmd::fromMod(cast<ModType>(type), modId);
   } else { // udc object
     assert(type.isVoidType());
-    cmd = ResolvedCmd::fromUdc(*udcObj);
+    return ResolvedCmd::fromUdc(*udcObj);
   }
-  return true;
 }
 
 /**
@@ -612,7 +610,8 @@ static bool lookupUdc(const DSState &state, const ModType &modType, const char *
   std::string fullname = toCmdFullName(name);
   auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
   if (handle) {
-    return lookupUdcFromIndex(state, handle->getModId(), handle->getIndex(), cmd);
+    cmd = lookupUdcFromIndex(state, handle->getModId(), handle->getIndex());
+    return true;
   }
   return false;
 }
@@ -1449,7 +1448,7 @@ static DSValue concatPath(DSState &state, const DSValue *begin, const DSValue *e
   auto ret = DSValue::createStr();
   for (; begin != end; ++begin) {
     if (!ret.appendAsStr(state, begin->asStrRef())) {
-      return DSValue();
+      return {};
     }
   }
   return ret;
@@ -2347,8 +2346,7 @@ bool VM::mainLoop(DSState &state) {
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
 
-        ResolvedCmd cmd;
-        lookupUdcFromIndex(state, 0, index, cmd);
+        ResolvedCmd cmd = lookupUdcFromIndex(state, 0, index);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
         vmnext;
       }
