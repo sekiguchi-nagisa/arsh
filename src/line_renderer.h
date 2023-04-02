@@ -182,8 +182,6 @@ private:
    */
   const ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap;
 
-  std::vector<std::pair<HighlightTokenClass, Token>> tokens; // for syntax highlight
-
   const size_t initColLen;
 
   size_t totalColLen{0};

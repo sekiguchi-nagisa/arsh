@@ -55,10 +55,9 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScann
 }
 
 static bool isControlChar(const GraphemeScanner::Result &grapheme) {
-  if (grapheme.codePointCount == 1 && isControlChar(grapheme.codePoints[0])) {
-    return true;
-  } else if (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
-             grapheme.codePoints[1] == '\n') {
+  if ((grapheme.codePointCount == 1 && isControlChar(grapheme.codePoints[0])) ||
+      (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
+       grapheme.codePoints[1] == '\n')) {
     return true;
   }
   return false;
@@ -196,12 +195,12 @@ bool LineRenderer::renderScript(const StringRef source) {
   TokenEmitterImpl tokenEmitter(source);
   auto error = tokenEmitter.tokenizeAndEmit();
   auto lex = tokenEmitter.getLexerPtr();
-  this->tokens = std::move(tokenEmitter).take();
+  auto tokens = std::move(tokenEmitter).take();
 
   // render lines with highlight
   bool next = true;
   unsigned int curPos = 0;
-  for (auto &e : this->tokens) {
+  for (auto &e : tokens) {
     Token token = e.second;
     assert(curPos <= token.pos);
     if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE)) {
@@ -230,10 +229,10 @@ bool LineRenderer::renderScript(const StringRef source) {
         return false;
       }
     }
-  } else if (!this->tokens.empty()) {
-    auto token = this->tokens.back().second;
+  } else if (!tokens.empty()) {
+    auto token = tokens.back().second;
     auto last = lex->toStrRef(token);
-    switch (this->tokens.back().first) {
+    switch (tokens.back().first) {
     case HighlightTokenClass::NONE:
       if (last.size() == 2 && last == "\\\n") {
         return false;
