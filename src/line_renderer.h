@@ -203,7 +203,8 @@ private:
 public:
   LineRenderer(const CharWidthProperties &ps, size_t initColLen, std::string &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
-      : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), output(output) {}
+      : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), totalColLen(initColLen),
+        output(output) {}
 
   void setColLenLimit(size_t limit) { this->colLenLimit = limit; }
 

@@ -140,6 +140,8 @@ TEST_F(InteractiveTest, tab3) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompletion(function(m,s) => { ['@abc\\ -\\ @.csv']; })"));
   this->send("echo @\t");
@@ -498,6 +500,7 @@ TEST_F(InteractiveTest, insert) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   this->send(CTRL_V CTRL_E);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "^E"));
   this->send(CTRL_V CTRL_I);
@@ -514,6 +517,7 @@ TEST_F(InteractiveTest, bracketPaste1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   this->send(ESC_("[200~1234") ESC_("[201~"));
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "1234\n: Int = 1234\n" + PROMPT));
@@ -642,6 +646,7 @@ TEST_F(InteractiveTest, lineEditorHistory) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.action('action1', 'replace-whole', "
                                                   "function(m,s) => $m + $'\\t\\x00' + $'\\xFE')"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^Y', 'action1')"));
@@ -668,7 +673,9 @@ TEST_F(InteractiveTest, lineEditorComp) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  // insert single candidtaes
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
+
+  // insert single candidates
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true'])"));
   this->send("()" LEFT "$t\t");
@@ -684,7 +691,7 @@ TEST_F(InteractiveTest, lineEditorComp) {
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
   this->send("12\t");
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 12  ^@�"));
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 12    ^@�"));
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(

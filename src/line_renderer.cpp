@@ -297,7 +297,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
           return false;
         }
         this->output.append(this->initColLen, ' ');
-        this->totalColLen = 0;
+        this->totalColLen = this->initColLen;
       }
       if (colorCode) {
         this->output += *colorCode;

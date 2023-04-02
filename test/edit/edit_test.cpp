@@ -557,7 +557,11 @@ TEST_F(LineRendererTest, continuation) {
 TEST_F(LineRendererTest, lines) {
   ASSERT_EQ("echo hello", renderLines("echo hello"));
   ASSERT_EQ("echo \r\n  hello\r\n  \r\n  ", renderLines("echo \nhello\n\n", 2));
-  ASSERT_EQ("echo    1   ^H^G\r\n  @   ^[", renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
+  ASSERT_EQ("echo  1   ^H^G\r\n  @ ^[", renderLines("echo \t1\t\b\a\n@\t\x1b", 2));
+  ASSERT_EQ("   @\r\n 1  @", renderLines("\t@\n1\t@", 1));
+  ASSERT_EQ("  @\r\n  1 @", renderLines("\t@\n1\t@", 2));
+  ASSERT_EQ(" @\r\n   1    @", renderLines("\t@\n1\t@", 3));
+  ASSERT_EQ("    @\r\n    1   @", renderLines("\t@\n1\t@", 4));
 
   std::string expect = "echo ";
   expect += UnicodeUtil::REPLACEMENT_CHAR_UTF8;

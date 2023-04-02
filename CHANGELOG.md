@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+#### Builtin
+
+- **Breaking Change**: change columns length counting in line editor
+    - now include prompt column length
+
 ## [0.29.1] - 2023-03-31
 
 - fix CPackRPM dockerfile if run under GitHub Actions

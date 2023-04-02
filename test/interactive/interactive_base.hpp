@@ -63,6 +63,16 @@ struct InteractiveTest : public InteractiveShellBase {
     this->timeout = 120;
     this->setPrompt(initPrompt());
   }
+
+  void changePrompt(const char *newPrompt) {
+    auto oldPrompt = this->prompt;
+    std::string line = "$LINE_EDIT.setPrompt(function(p) => '";
+    line += newPrompt;
+    line += "')";
+    ASSERT_NO_FATAL_FAILURE(this->sendLine(line.c_str()));
+    this->prompt = newPrompt;
+    ASSERT_NO_FATAL_FAILURE(this->expect(oldPrompt + line + "\n" + newPrompt));
+  }
 };
 
 inline std::string promptAfterCtrlC(const std::string &prompt) {
