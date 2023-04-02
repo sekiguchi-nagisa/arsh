@@ -677,6 +677,15 @@ TEST_F(LineRendererTest, softwrap) {
     renderer.renderLines(line);
   }
   ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", out);
+
+  out = "";
+  line = "1234\t@ \r";
+  {
+    LineRenderer renderer(ps, 0, out);
+    renderer.setColLenLimit(4);
+    renderer.renderLines(line);
+  }
+  ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);
 }
 
 static void append(ArrayObject &) {}

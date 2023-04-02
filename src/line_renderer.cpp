@@ -325,6 +325,10 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         this->output += grapheme.ref;
       }
       this->totalColLen += width;
+      if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
+        this->totalColLen = 0;
+        this->output += "\r\n";
+      }
     }
     return true;
   });
@@ -353,6 +357,10 @@ bool LineRenderer::renderControlChar(int codePoint) {
     }
     this->output.append(colLen, ' ');
     this->totalColLen += colLen;
+    if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
+      this->totalColLen = 0;
+      this->output += "\r\n";
+    }
   } else if (codePoint != '\n') {
     if (this->totalColLen + 2 > this->colLenLimit) { // line break
       switch (this->breakOp) {
@@ -372,6 +380,10 @@ bool LineRenderer::renderControlChar(int codePoint) {
     this->output += "^";
     this->output += static_cast<char>(static_cast<int>(v));
     this->totalColLen += 2;
+    if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
+      this->totalColLen = 0;
+      this->output += "\r\n";
+    }
   }
   return true;
 }
