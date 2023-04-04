@@ -16,7 +16,6 @@
 
 #include "line_renderer.h"
 #include "keycode.h"
-#include "misc/word.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -86,31 +85,6 @@ ColumnLen ColumnCounter::getCharLen(StringRef ref, ColumnLenOp op) {
   return ColumnLen{
       .byteSize = lastByteSize,
       .colSize = lastColsLen,
-  };
-}
-
-ColumnLen ColumnCounter::getWordLen(const StringRef ref, ColumnLenOp op) {
-  Utf8WordStream stream(ref.begin(), ref.end());
-  Utf8WordScanner scanner(stream);
-  unsigned int lastByteSize = 0;
-  unsigned int lastColLen = 0;
-  while (scanner.hasNext()) {
-    const StringRef word = scanner.next();
-    lastByteSize = word.size();
-    lastColLen = 0;
-    for (StringRef::size_type offset = 0; offset < word.size();) {
-      auto sub = word.substr(offset);
-      auto ret = this->getCharLen(sub, ColumnLenOp::NEXT);
-      offset += ret.byteSize;
-      lastColLen += ret.colSize;
-    }
-    if (op == ColumnLenOp::NEXT) {
-      break;
-    }
-  }
-  return ColumnLen{
-      .byteSize = lastByteSize,
-      .colSize = lastColLen,
   };
 }
 

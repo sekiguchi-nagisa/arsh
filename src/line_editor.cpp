@@ -118,6 +118,7 @@
 
 #include "line_editor.h"
 #include "misc/buffer.hpp"
+#include "misc/word.hpp"
 #include "vm.h"
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
@@ -183,27 +184,35 @@ FILE *lndebug_fp = nullptr;
 /* Get byte length and column length of the previous character */
 static size_t prevCharBytes(const linenoiseState &l) {
   auto ref = l.lineRef().substr(0, l.pos);
-  auto ret = ydsh::getCharLen(ref, ydsh::ColumnLenOp::PREV, l.ps);
-  return ret.byteSize;
+  size_t byteSize = 0;
+  iterateGrapheme(ref, [&byteSize](const GraphemeScanner::Result &grapheme) {
+    byteSize = grapheme.ref.size();
+  });
+  return byteSize;
 }
 
 /* Get byte length and column length of the next character */
 static size_t nextCharBytes(const linenoiseState &l) {
   auto ref = l.lineRef().substr(l.pos);
-  auto ret = getCharLen(ref, ColumnLenOp::NEXT, l.ps);
-  return ret.byteSize;
+  size_t byteSize = 0;
+  iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeScanner::Result &grapheme) {
+    byteSize = grapheme.ref.size();
+  });
+  return byteSize;
 }
 
 static size_t prevWordBytes(const linenoiseState &l) {
   auto ref = l.lineRef().substr(0, l.pos);
-  auto ret = ydsh::getWordLen(ref, ydsh::ColumnLenOp::PREV, l.ps);
-  return ret.byteSize;
+  size_t byteSize = 0;
+  iterateWord(ref, [&byteSize](StringRef word) { byteSize = word.size(); });
+  return byteSize;
 }
 
 static size_t nextWordBytes(const linenoiseState &l) {
   auto ref = l.lineRef().substr(l.pos);
-  auto ret = ydsh::getWordLen(ref, ydsh::ColumnLenOp::NEXT, l.ps);
-  return ret.byteSize;
+  size_t byteSize = 0;
+  iterateWordUntil(ref, 1, [&byteSize](StringRef word) { byteSize = word.size(); });
+  return byteSize;
 }
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/

@@ -100,8 +100,6 @@ public:
   size_t getTotalColLen() const { return this->totalColLen; }
 
   ColumnLen getCharLen(StringRef ref, ColumnLenOp op);
-
-  ColumnLen getWordLen(StringRef ref, ColumnLenOp op);
 };
 
 /**
@@ -113,17 +111,6 @@ public:
  */
 inline ColumnLen getCharLen(StringRef ref, ColumnLenOp op, const CharWidthProperties &ps) {
   return ColumnCounter(ps, 0).getCharLen(ref, op);
-}
-
-/**
- * get length of last consumed word
- * @param ref
- * @param op
- * @param ps
- * @return
- */
-inline ColumnLen getWordLen(StringRef ref, ColumnLenOp op, const CharWidthProperties &ps) {
-  return ColumnCounter(ps, 0).getWordLen(ref, op);
 }
 
 inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
