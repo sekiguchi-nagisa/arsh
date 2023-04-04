@@ -81,7 +81,7 @@ public:
 
   ~LineEditorObject();
 
-  int readline(DSState &state, StringRef prompt, char *buf, size_t bufLen); // pseudo entry point
+  ssize_t readline(DSState &state, StringRef prompt, char *buf, size_t bufLen);
 
   bool locked() const { return this->lock; }
 
@@ -133,19 +133,19 @@ private:
   void refreshLine(struct linenoiseState &l, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
-  int accept(DSState &state, struct linenoiseState &l);
+  ssize_t accept(DSState &state, struct linenoiseState &l);
 
   /**
    * entry point of actual line edit function
    * @param state
    * @param buf
-   * @param buflen
+   * @param bufSize
    * @param prompt
    * @return
    */
-  int editLine(DSState &state, StringRef prompt, char *buf, size_t buflen);
+  ssize_t editLine(DSState &state, StringRef prompt, char *buf, size_t bufSize);
 
-  int editInRawMode(DSState &state, struct linenoiseState &l);
+  ssize_t editInRawMode(DSState &state, struct linenoiseState &l);
 
   CompStatus completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 

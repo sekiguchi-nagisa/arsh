@@ -126,29 +126,29 @@
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
-using NewlinePos = ydsh::FlexBuffer<unsigned int>;
+using NewlinePos = FlexBuffer<unsigned int>;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;                /* Terminal stdin file descriptor. */
-  int ofd;                /* Terminal stdout file descriptor. */
-  char *buf;              /* Edited line buffer. */
-  size_t buflen;          /* Edited line buffer size. */
-  ydsh::StringRef prompt; /* Prompt to display. */
-  size_t pos;             /* Current cursor position. */
-  size_t oldcolpos;       /* Previous refresh cursor column position. */
-  size_t oldrow;          /* Previous refresh cursor row position. */
-  size_t len;             /* Current edited line length. */
-  unsigned int rows;      /* Number of rows in terminal. */
-  unsigned int cols;      /* Number of columns in terminal. */
-  size_t maxrows;         /* Maximum num of rows used so far (multiline mode) */
-  ydsh::CharWidthProperties ps;
+  int ifd;           /* Terminal stdin file descriptor. */
+  int ofd;           /* Terminal stdout file descriptor. */
+  char *buf;         /* Edited line buffer. */
+  size_t bufSize;    /* Edited line buffer size. */
+  StringRef prompt;  /* Prompt to display. */
+  size_t pos;        /* Current cursor position. */
+  size_t oldColPos;  /* Previous refresh cursor column position. */
+  size_t oldRow;     /* Previous refresh cursor row position. */
+  size_t len;        /* Current edited line length. */
+  unsigned int rows; /* Number of rows in terminal. */
+  unsigned int cols; /* Number of columns in terminal. */
+  size_t maxRows;    /* Maximum num of rows used so far (multiline mode) */
+  CharWidthProperties ps;
   NewlinePos newlinePos; // maintains newline pos
   bool rotating;
 
-  ydsh::StringRef lineRef() const { return {this->buf, this->len}; }
+  StringRef lineRef() const { return {this->buf, this->len}; }
 
   bool isSingleLine() const { return this->newlinePos.empty(); }
 };
@@ -216,12 +216,11 @@ static size_t nextWordBytes(const linenoiseState &l) {
 }
 
 /* Get column length from beginning of buffer to current byte position for multiline mode*/
-static size_t columnPosForMultiLine(const ydsh::CharWidthProperties &ps,
-                                    const ydsh::StringRef bufRef, const size_t cols,
-                                    const size_t iniPos, bool skipANSI) {
+static size_t columnPosForMultiLine(const CharWidthProperties &ps, const StringRef bufRef,
+                                    const size_t cols, const size_t iniPos, bool skipANSI) {
   size_t ret = 0;
   size_t colWidth = iniPos;
-  ydsh::ColumnCounter counter(ps, 0);
+  ColumnCounter counter(ps, 0);
   for (size_t off = 0; off < bufRef.size();) {
     if (skipANSI) {
       if (auto len = startsWithAnsiEscape(bufRef.substr(off))) {
@@ -359,7 +358,7 @@ static FILE *logfp = nullptr;
 #define logprintf(fmt, ...)
 #endif
 
-static ydsh::StringRef getCommonPrefix(const ydsh::ArrayObject &candidates) {
+static StringRef getCommonPrefix(const ArrayObject &candidates) {
   const auto size = candidates.size();
   if (size == 0) {
     return nullptr;
@@ -410,7 +409,7 @@ static void checkProperty(struct linenoiseState &l) {
     return;
   }
 
-  for (auto &e : ydsh::getCharWidthPropertyList()) {
+  for (auto &e : getCharWidthPropertyList()) {
     const char *str = e.second;
     if (write(l.ofd, str, strlen(str)) == -1) {
       return;
@@ -649,7 +648,7 @@ static bool linenoiseEditDeleteNextWord(struct linenoiseState &l) {
  *
  * On error writing to the terminal false is returned, otherwise true. */
 static bool linenoiseEditInsert(struct linenoiseState &l, const char *cbuf, size_t clen) {
-  if (l.len + clen <= l.buflen) {
+  if (l.len + clen <= l.bufSize) {
     if (l.len == l.pos) {
       memcpy(&l.buf[l.pos], cbuf, clen);
       l.pos += clen;
@@ -683,7 +682,7 @@ static bool linenoiseEditSwapChars(struct linenoiseState &l) {
  * program using linenoise is called in pipe or with a file redirected
  * to its standard input. In this case, we want to be able to return the
  * line regardless of its length (by default we are limited to 4k). */
-static int linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
+static ssize_t linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
   assert(bufLen <= INT32_MAX && bufLen > 0);
   bufLen--; // reserve for null terminate
   size_t len = 0;
@@ -709,7 +708,7 @@ static int linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
     }
   }
   buf[len] = '\0';
-  return static_cast<int>(len);
+  return static_cast<ssize_t>(len);
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -907,16 +906,16 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     rows += pager->getActualRows();
   }
   /* cursor relative row. */
-  const int rpos = (pcollen + l.oldcolpos + l.cols) / l.cols + prow + l.oldrow;
-  const int old_rows = l.maxrows;
+  const int rpos = (pcollen + l.oldColPos + l.cols) / l.cols + prow + l.oldRow;
+  const int old_rows = l.maxRows;
   std::string ab;
 
   lndebug("cols: %d, pcolloen: %d, prow: %d, colpos: %d, row: %d", (int)l.cols, (int)pcollen,
           (int)prow, (int)colpos, (int)row);
 
   /* Update maxrows if needed. */
-  if (rows > (int)l.maxrows) {
-    l.maxrows = rows;
+  if (rows > (int)l.maxRows) {
+    l.maxRows = rows;
   }
 
   /* First step: clear all the lines used before. To do so start by
@@ -984,8 +983,8 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       }
       rows++;
     }
-    if (rows > (int)l.maxrows) {
-      l.maxrows = rows;
+    if (rows > (int)l.maxRows) {
+      l.maxRows = rows;
     }
   }
   if (pager) {
@@ -1018,8 +1017,8 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   ab += seq;
 
   lndebug("\n");
-  l.oldcolpos = colpos2;
-  l.oldrow = row2;
+  l.oldColPos = colpos2;
+  l.oldRow = row2;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
@@ -1070,7 +1069,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
   return true;
 }
 
-int LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
+ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
   l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
   if (linenoiseEditMoveEnd(l)) {
     this->refreshLine(l, false);
@@ -1080,7 +1079,7 @@ int LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
     errno = EAGAIN;
     return -1;
   }
-  return static_cast<int>(l.len);
+  return static_cast<ssize_t>(l.len);
 }
 
 enum class HistRotateOp {
@@ -1257,7 +1256,7 @@ static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState 
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-int LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size_t buflen) {
+ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size_t bufSize) {
   if (this->enableRawMode(this->inFd)) {
     return -1;
   }
@@ -1268,15 +1267,15 @@ int LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size
       .ifd = this->inFd,
       .ofd = this->outFd,
       .buf = buf,
-      .buflen = buflen,
+      .bufSize = bufSize,
       .prompt = prompt,
       .pos = 0,
-      .oldcolpos = 0,
-      .oldrow = 0,
+      .oldColPos = 0,
+      .oldRow = 0,
       .len = 0,
       .rows = 24,
       .cols = 80,
-      .maxrows = 0,
+      .maxRows = 0,
       .ps = {},
       .newlinePos = {},
       .rotating = false,
@@ -1284,10 +1283,10 @@ int LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size
 
   /* Buffer starts empty. */
   l.buf[0] = '\0';
-  l.buflen--; /* Make sure there is always space for the null-term */
+  l.bufSize--; /* Make sure there is always space for the null-term */
   l.ps.replaceInvalid = true;
 
-  const int count = this->editInRawMode(state, l);
+  const ssize_t count = this->editInRawMode(state, l);
   const int errNum = errno;
   if (count == -1 && errNum == EAGAIN) {
     l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
@@ -1301,7 +1300,7 @@ int LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size
   return count;
 }
 
-int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
+ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
   HistRotate histRotate(this->history);
@@ -1312,7 +1311,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   KeyCodeReader reader(l.ifd);
   while (true) {
     if (reader.fetch() <= 0) {
-      return static_cast<int>(l.len);
+      return static_cast<ssize_t>(l.len);
     }
 
   NO_FETCH:
@@ -1500,7 +1499,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
     }
     }
   }
-  return static_cast<int>(l.len);
+  return static_cast<ssize_t>(l.len);
 }
 
 /* The high level function that is the main API of the linenoise library.
@@ -1508,7 +1507,7 @@ int LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-int LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size_t bufLen) {
+ssize_t LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size_t bufLen) {
   if (bufLen == 0 || bufLen > INT32_MAX) {
     errno = EINVAL;
     return -1;
@@ -1554,7 +1553,7 @@ int LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size
       len--;
       buf[len] = '\0';
     }
-    return len;
+    return static_cast<ssize_t>(len);
   } else {
     return this->editLine(state, prompt, buf, bufLen);
   }
