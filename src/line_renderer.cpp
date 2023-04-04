@@ -292,12 +292,13 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       }
       if (this->lineNumLimit) {
         this->output += "\r\n";
+        this->totalRows++;
         if (++this->lineNum >= this->lineNumLimit) {
           status = false;
           return false;
         }
-        this->output.append(this->initColLen, ' ');
-        this->totalColLen = this->initColLen;
+        this->output.append(this->initCols, ' ');
+        this->totalCols = this->initCols;
       }
       if (colorCode) {
         this->output += *colorCode;
@@ -306,15 +307,13 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       return this->renderControlChar(grapheme.codePoints[0]);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
-      if (this->totalColLen + width > this->colLenLimit) { // line break
+      if (this->totalCols + width > this->maxCols) { // line break
         switch (this->breakOp) {
         case LineBreakOp::SOFT_WRAP:
-          this->totalColLen = 0;
-          this->output += "\r\n";
+          this->handleSoftWrap();
           break;
         case LineBreakOp::TRUNCATE:
-          this->output.append(this->colLenLimit - this->totalColLen, '.');
-          this->totalColLen = this->colLenLimit;
+          this->handleTruncate('.');
           return false;
         }
       }
@@ -324,10 +323,9 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       } else {
         this->output += grapheme.ref;
       }
-      this->totalColLen += width;
-      if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
-        this->totalColLen = 0;
-        this->output += "\r\n";
+      this->totalCols += width;
+      if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+        this->handleSoftWrap();
       }
     }
     return true;
@@ -341,36 +339,31 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
 bool LineRenderer::renderControlChar(int codePoint) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
-    unsigned int colLen = 4 - this->totalColLen % 4;
-    if (this->totalColLen + colLen > this->colLenLimit) { // line break
+    unsigned int colLen = 4 - this->totalCols % 4;
+    if (this->totalCols + colLen > this->maxCols) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
-        this->totalColLen = 0;
-        this->output += "\r\n";
-        colLen = 4 - this->totalColLen % 4; // re-compute tab stop
+        this->handleSoftWrap();
+        colLen = 4 - this->totalCols % 4; // re-compute tab stop
         break;
       case LineBreakOp::TRUNCATE:
-        this->output.append(this->colLenLimit - this->totalColLen, ' ');
-        this->totalColLen = this->colLenLimit;
+        this->handleTruncate(' ');
         return false;
       }
     }
     this->output.append(colLen, ' ');
-    this->totalColLen += colLen;
-    if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
-      this->totalColLen = 0;
-      this->output += "\r\n";
+    this->totalCols += colLen;
+    if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+      this->handleSoftWrap();
     }
   } else if (codePoint != '\n') {
-    if (this->totalColLen + 2 > this->colLenLimit) { // line break
+    if (this->totalCols + 2 > this->maxCols) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
-        this->totalColLen = 0;
-        this->output += "\r\n";
+        this->handleSoftWrap();
         break;
       case LineBreakOp::TRUNCATE:
-        this->output.append(this->colLenLimit - this->totalColLen, '.');
-        this->totalColLen = this->colLenLimit;
+        this->handleTruncate('.');
         return false;
       }
     }
@@ -379,10 +372,9 @@ bool LineRenderer::renderControlChar(int codePoint) {
     assert(isCaretTarget(static_cast<int>(v)));
     this->output += "^";
     this->output += static_cast<char>(static_cast<int>(v));
-    this->totalColLen += 2;
-    if (this->totalColLen == this->colLenLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
-      this->totalColLen = 0;
-      this->output += "\r\n";
+    this->totalCols += 2;
+    if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+      this->handleSoftWrap();
     }
   }
   return true;
@@ -484,7 +476,7 @@ void ArrayPager::render(std::string &out) const {
 
   LineRenderer renderer(this->ps, 0, out);
   if (this->getPanes() == 1) {
-    renderer.setColLenLimit(this->getPaneLen());
+    renderer.setMaxCols(this->getPaneLen());
     renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
   }
   for (unsigned int i = 0; i < actualRows; i++) {

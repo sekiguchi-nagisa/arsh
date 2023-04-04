@@ -664,7 +664,7 @@ TEST_F(LineRendererTest, softwrap) {
   StringRef line = "\t1234567890";
   {
     LineRenderer renderer(ps, 2, out);
-    renderer.setColLenLimit(5);
+    renderer.setMaxCols(5);
     renderer.renderLines(line);
   }
   ASSERT_EQ("  1\r\n23456\r\n7890", out);
@@ -673,7 +673,7 @@ TEST_F(LineRendererTest, softwrap) {
   line = "\t1234567890あab\r\n@";
   {
     LineRenderer renderer(ps, 3, out);
-    renderer.setColLenLimit(5);
+    renderer.setMaxCols(5);
     renderer.renderLines(line);
   }
   ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", out);
@@ -682,7 +682,7 @@ TEST_F(LineRendererTest, softwrap) {
   line = "1234\t@ \r";
   {
     LineRenderer renderer(ps, 0, out);
-    renderer.setColLenLimit(4);
+    renderer.setMaxCols(4);
     renderer.renderLines(line);
   }
   ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);

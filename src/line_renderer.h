@@ -188,16 +188,18 @@ private:
    */
   const ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap;
 
-  const size_t initColLen;
+  const size_t initCols;
 
-  size_t totalColLen{0};
+  size_t totalCols{0};
+
+  size_t totalRows{0};
 
   size_t lineNum{0};
 
-  size_t colLenLimit{static_cast<size_t>(-1)};
+  size_t maxCols{static_cast<size_t>(-1)};
 
   /**
-   * if 0, ignore newline characters and not increment lineNum
+   * if 0, ignore newline characters and not increment totalRows(lineNum)
    */
   size_t lineNumLimit{static_cast<size_t>(-1)};
 
@@ -209,14 +211,18 @@ private:
   std::string &output;
 
 public:
-  LineRenderer(const CharWidthProperties &ps, size_t initColLen, std::string &output,
+  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::string &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
-      : ps(ps), escapeSeqMap(escapeSeqMap), initColLen(initColLen), totalColLen(initColLen),
+      : ps(ps), escapeSeqMap(escapeSeqMap), initCols(initCols), totalCols(initCols),
         output(output) {}
 
-  void setColLenLimit(size_t limit) { this->colLenLimit = limit; }
+  void setMaxCols(size_t limit) { this->maxCols = limit; }
 
   void setLineNumLimit(size_t limit) { this->lineNumLimit = limit; }
+
+  size_t getTotalCols() const { return this->totalCols; }
+
+  size_t getTotalRows() const { return this->totalRows; }
 
   void setLineBreakOp(LineBreakOp op) { this->breakOp = op; }
 
@@ -256,6 +262,17 @@ private:
    * if reach lineNumLimit or colLenLimit, return false
    */
   bool renderControlChar(int codePoint);
+
+  void handleSoftWrap() {
+    this->totalCols = 0;
+    this->totalRows++;
+    this->output += "\r\n";
+  }
+
+  void handleTruncate(char pad) {
+    this->output.append(this->maxCols - this->totalCols, pad);
+    this->totalCols = this->maxCols;
+  }
 };
 
 class ArrayObject;
