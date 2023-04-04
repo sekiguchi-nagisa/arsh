@@ -605,13 +605,10 @@ YDSH_METHOD string_words(RuntimeContext &ctx) {
   auto ref = LOCAL(0).asStrRef();
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
-  Utf8WordStream stream(ref.begin(), ref.end());
-  Utf8WordScanner scanner(stream);
-  while (scanner.hasNext()) {
-    ref = scanner.next();
+  iterateWord(ref, [&array](StringRef wordRef) {
     std::string word;
-    const auto *end = ref.end();
-    for (auto *iter = ref.begin(); iter != end;) {
+    const auto *end = wordRef.end();
+    for (auto *iter = wordRef.begin(); iter != end;) {
       unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end);
       if (size < 1) {
         word += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
@@ -622,7 +619,7 @@ YDSH_METHOD string_words(RuntimeContext &ctx) {
       }
     }
     array.append(DSValue::createStr(std::move(word)));
-  }
+  });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
 }

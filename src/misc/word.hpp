@@ -394,12 +394,42 @@ public:
       }
     }
     this->wordBegin = end;
-    return StringRef(begin, end - begin);
+    return {begin, static_cast<size_t>(end - begin)};
   }
 
 private:
   const char *getIter() const { return this->getStream().iter; }
 };
+
+template <typename Consumer>
+static constexpr bool word_consumer_requirement_v =
+    std::is_same_v<void, std::invoke_result_t<Consumer, StringRef>> ||
+    std::is_same_v<bool, std::invoke_result_t<Consumer, StringRef>>;
+
+template <typename Func, enable_when<word_consumer_requirement_v<Func>> = nullptr>
+size_t iterateWordUntil(StringRef ref, size_t limit, Func consumer) {
+  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8WordScanner scanner(stream);
+  size_t count = 0;
+  for (; count < limit && scanner.hasNext(); count++) {
+    auto ret = scanner.next();
+    constexpr auto v = std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
+    if constexpr (v) {
+      if (!consumer(ret)) {
+        count++;
+        break;
+      }
+    } else {
+      consumer(ret);
+    }
+  }
+  return count;
+}
+
+template <typename Func, enable_when<word_consumer_requirement_v<Func>> = nullptr>
+size_t iterateWord(StringRef ref, Func consumer) {
+  return iterateWordUntil(ref, static_cast<size_t>(-1), std::move(consumer));
+}
 
 END_MISC_LIB_NAMESPACE_DECL
 
