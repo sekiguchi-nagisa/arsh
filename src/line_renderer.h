@@ -97,21 +97,8 @@ public:
   ColumnCounter(const CharWidthProperties &ps, size_t initColLen)
       : ps(ps), totalColLen(initColLen) {}
 
-  size_t getTotalColLen() const { return this->totalColLen; }
-
   ColumnLen getCharLen(StringRef ref, ColumnLenOp op);
 };
-
-/**
- * get length of last consumed grapheme cluster
- * @param ref
- * @param op
- * @param ps
- * @return
- */
-inline ColumnLen getCharLen(StringRef ref, ColumnLenOp op, const CharWidthProperties &ps) {
-  return ColumnCounter(ps, 0).getCharLen(ref, op);
-}
 
 inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
   if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
@@ -186,7 +173,7 @@ private:
   size_t maxCols{static_cast<size_t>(-1)};
 
   /**
-   * if 0, ignore newline characters and not increment totalRows(lineNum)
+   * if 0, ignore newline characters and not increment totalRows/lineNum
    */
   size_t lineNumLimit{static_cast<size_t>(-1)};
 
@@ -195,13 +182,20 @@ private:
   /**
    * append to existing content
    */
-  std::string &output;
+  ObserverPtr<std::string> output;
 
 public:
-  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::string &output,
-               ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
+  LineRenderer(const CharWidthProperties &ps, size_t initCols, ObserverPtr<std::string> output,
+               ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap)
       : ps(ps), escapeSeqMap(escapeSeqMap), initCols(initCols), totalCols(initCols),
         output(output) {}
+
+  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::string &output,
+               ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
+      : LineRenderer(ps, initCols, makeObserver(output), escapeSeqMap) {}
+
+  LineRenderer(const CharWidthProperties &ps, size_t initCols)
+      : LineRenderer(ps, initCols, nullptr, nullptr) {}
 
   void setMaxCols(size_t limit) { this->maxCols = limit; }
 
@@ -253,11 +247,15 @@ private:
   void handleSoftWrap() {
     this->totalCols = 0;
     this->totalRows++;
-    this->output += "\r\n";
+    if (this->output) {
+      *this->output += "\r\n";
+    }
   }
 
   void handleTruncate(char pad) {
-    this->output.append(this->maxCols - this->totalCols, pad);
+    if (this->output) {
+      this->output->append(this->maxCols - this->totalCols, pad);
+    }
     this->totalCols = this->maxCols;
   }
 };

@@ -150,7 +150,9 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
     if (r != StringRef::npos) {
       auto remain = prompt.substr(r);
       if (auto len = startsWithAnsiEscape(remain)) {
-        this->output += remain.substr(0, len);
+        if (this->output) {
+          *this->output += remain.substr(0, len);
+        }
         pos = r + len;
       } else {
         if (!this->renderControlChar('\x1b')) {
@@ -251,8 +253,8 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
     return true; // skip rendering
   }
   auto *colorCode = this->findColorCode(tokenClass);
-  if (colorCode) {
-    this->output += *colorCode;
+  if (colorCode && this->output) {
+    *this->output += *colorCode;
   }
   bool status = true;
   iterateGrapheme(ref, [&](const GraphemeScanner::Result &grapheme) {
@@ -261,21 +263,25 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         bool r = this->renderControlChar('\r');
         (void)r; // ignore return value
       }
-      if (colorCode) {
-        this->output += "\x1b[0m";
+      if (colorCode && this->output) {
+        *this->output += "\x1b[0m";
       }
       if (this->lineNumLimit) {
-        this->output += "\r\n";
+        if (this->output) {
+          *this->output += "\r\n";
+        }
         this->totalRows++;
         if (++this->lineNum >= this->lineNumLimit) {
           status = false;
           return false;
         }
-        this->output.append(this->initCols, ' ');
+        if (this->output) {
+          this->output->append(this->initCols, ' ');
+        }
         this->totalCols = this->initCols;
       }
-      if (colorCode) {
-        this->output += *colorCode;
+      if (colorCode && this->output) {
+        *this->output += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
       return this->renderControlChar(grapheme.codePoints[0]);
@@ -291,11 +297,13 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
           return false;
         }
       }
-      if (grapheme.hasInvalid) {
-        assert(grapheme.codePointCount == 1);
-        this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
-      } else {
-        this->output += grapheme.ref;
+      if (this->output) {
+        if (grapheme.hasInvalid) {
+          assert(grapheme.codePointCount == 1);
+          *this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+        } else {
+          *this->output += grapheme.ref;
+        }
       }
       this->totalCols += width;
       if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
@@ -304,8 +312,8 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
     }
     return true;
   });
-  if (colorCode && status) {
-    this->output += "\x1b[0m";
+  if (colorCode && status && this->output) {
+    *this->output += "\x1b[0m";
   }
   return status;
 }
@@ -325,7 +333,9 @@ bool LineRenderer::renderControlChar(int codePoint) {
         return false;
       }
     }
-    this->output.append(colLen, ' ');
+    if (this->output) {
+      this->output->append(colLen, ' ');
+    }
     this->totalCols += colLen;
     if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
       this->handleSoftWrap();
@@ -341,11 +351,13 @@ bool LineRenderer::renderControlChar(int codePoint) {
         return false;
       }
     }
-    auto v = static_cast<unsigned int>(codePoint);
-    v ^= 64;
-    assert(isCaretTarget(static_cast<int>(v)));
-    this->output += "^";
-    this->output += static_cast<char>(static_cast<int>(v));
+    if (this->output) {
+      auto v = static_cast<unsigned int>(codePoint);
+      v ^= 64;
+      assert(isCaretTarget(static_cast<int>(v)));
+      *this->output += "^";
+      *this->output += static_cast<char>(static_cast<int>(v));
+    }
     this->totalCols += 2;
     if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
       this->handleSoftWrap();
@@ -366,13 +378,10 @@ ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties 
   items.reserve(obj.size());
   for (auto &e : obj.getValues()) {
     const StringRef ref = e.asStrRef();
-    ColumnCounter counter(ps, 0);
-    unsigned int colLen = 0;
-    for (StringRef::size_type pos = 0; pos < ref.size();) {
-      auto ret = counter.getCharLen(ref.substr(pos), ColumnLenOp::NEXT);
-      pos += ret.byteSize;
-      colLen += ret.colSize;
-    }
+    LineRenderer renderer(ps, 0);
+    renderer.setLineNumLimit(0); // ignore newline
+    renderer.renderLines(ref);
+    auto colLen = static_cast<unsigned int>(renderer.getTotalCols());
     items.push_back(ItemEntry{
         .len = colLen,
         .tabs = 0,

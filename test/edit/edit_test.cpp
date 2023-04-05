@@ -11,80 +11,69 @@
 
 using namespace ydsh;
 
+struct Len {
+  unsigned int byteSize;
+  unsigned int colSize;
+};
+
+static Len getCharLen(StringRef line, const CharWidthProperties &ps) {
+  Len len{0, 0};
+  iterateGraphemeUntil(line, 1, [&](const GraphemeScanner::Result &grapheme) {
+    LineRenderer renderer(ps, 0);
+    renderer.setLineNumLimit(0);
+    renderer.renderLines(grapheme.ref);
+    len.byteSize = grapheme.ref.size();
+    len.colSize = renderer.getTotalCols();
+  });
+  return len;
+}
+
 TEST(EncodingTest, charLen1) {
   // next char
   CharWidthProperties ps;
   StringRef line = "あaう";
   ASSERT_EQ("あaう", line);
-  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // あ
+  auto ret = getCharLen(line, ps); // あ
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("aう", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // a
+  ret = getCharLen(line, ps); // a
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("う", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // う
+  ret = getCharLen(line, ps); // う
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // end
+  ret = getCharLen(line, ps); // end
   ASSERT_EQ(0, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }
 
 TEST(EncodingTest, charLen2) {
-  // prev char
-  CharWidthProperties ps;
-  StringRef line = "あaう";
-  ASSERT_EQ("あaう", line);
-  auto ret = getCharLen(line, ColumnLenOp::PREV, ps); // う
-  ASSERT_EQ(3, ret.byteSize);
-  ASSERT_EQ(2, ret.colSize);
-
-  line.removeSuffix(ret.byteSize);
-  ASSERT_EQ("あa", line);
-  ret = getCharLen(line, ColumnLenOp::PREV, ps); // a
-  ASSERT_EQ(1, ret.byteSize);
-  ASSERT_EQ(1, ret.colSize);
-
-  line.removeSuffix(ret.byteSize);
-  ASSERT_EQ("あ", line);
-  ret = getCharLen(line, ColumnLenOp::PREV, ps); // あ
-  ASSERT_EQ(3, ret.byteSize);
-  ASSERT_EQ(2, ret.colSize);
-
-  line.removeSuffix(ret.byteSize);
-  ASSERT_EQ("", line);
-  ret = getCharLen(line, ColumnLenOp::PREV, ps); // start
-  ASSERT_EQ(0, ret.byteSize);
-  ASSERT_EQ(0, ret.colSize);
-}
-
-TEST(EncodingTest, charLen3) {
   // next char
   CharWidthProperties ps;
   StringRef line = "○a○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦";
-  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // ○
+  auto ret = getCharLen(line, ps); // ○
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // half width
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("a○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // a
+  ret = getCharLen(line, ps); // a
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps.setProperty(CharWidthProperty::EAW, 2);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // ○
+  ret = getCharLen(line, ps); // ○
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // full width
 
@@ -92,13 +81,13 @@ TEST(EncodingTest, charLen3) {
   ASSERT_EQ("🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 2);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 🇦🇽
+  ret = getCharLen(line, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // FLAG_SEQ width is 2
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // b
+  ret = getCharLen(line, ps); // b
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
@@ -106,20 +95,20 @@ TEST(EncodingTest, charLen3) {
   ASSERT_EQ("🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 4);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 🇦🇽
+  ret = getCharLen(line, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(4, ret.colSize); // FLAG_SEQ width is 4
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 💁🏾‍♀️
+  ret = getCharLen(line, ps); // 💁🏾‍♀️
   ASSERT_EQ(17, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("c💁🏾‍♀️🇦", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // c
+  ret = getCharLen(line, ps); // c
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
@@ -128,39 +117,39 @@ TEST(EncodingTest, charLen3) {
   ps = CharWidthProperties();
   ps.setProperty(CharWidthProperty::EMOJI_ZWJ_SEQ, 3);
   ps.setProperty(CharWidthProperty::EAW, 2);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // 💁🏾‍♀️
+  ret = getCharLen(line, ps); // 💁🏾‍♀️
   ASSERT_EQ(17, ret.byteSize);
   ASSERT_EQ(6, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("🇦", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); //
+  ret = getCharLen(line, ps); //
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // regional indicator is half
 }
 
 TEST(EncodingTest, charLenControl) {
   CharWidthProperties ps;
-  StringRef line = "\x1b\r\r\n\n";                    // control char
-  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \x1b
+  StringRef line = "\x1b\r\r\n\n"; // control char
+  auto ret = getCharLen(line, ps); // \x1b
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // caret
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\r\r\n\n", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \r
+  ret = getCharLen(line, ps); // \r
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\r\n\n", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \r\n
+  ret = getCharLen(line, ps); // \r\n
   ASSERT_EQ(2, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\n", line);
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps); // \n
+  ret = getCharLen(line, ps); // \n
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 }
@@ -194,19 +183,19 @@ TEST(EncodingTest, charTab) {
 TEST(EncodingTest, charInvalid) {
   CharWidthProperties ps;
   StringRef line = "\xFF\xFA";
-  auto ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  auto ret = getCharLen(line, ps);
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(0, ret.colSize);
 
   ps.replaceInvalid = true;
   ps.eaw = UnicodeUtil::HALF_WIDTH;
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  ret = getCharLen(line, ps);
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   ps.replaceInvalid = true;
   ps.eaw = UnicodeUtil::FULL_WIDTH;
-  ret = getCharLen(line, ColumnLenOp::NEXT, ps);
+  ret = getCharLen(line, ps);
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
 }
@@ -519,6 +508,8 @@ TEST_F(LineRendererTest, limit) {
     LineRenderer renderer(ps, 0, out);
     renderer.setLineNumLimit(2);
     renderer.renderLines(line);
+    ASSERT_EQ(2, renderer.getTotalRows());
+    ASSERT_EQ(5, renderer.getTotalCols());
   }
   ASSERT_EQ("111^M\r\n^M222\r\n", out);
 
@@ -526,6 +517,8 @@ TEST_F(LineRendererTest, limit) {
   {
     LineRenderer renderer(ps, 0, out); // no limit
     renderer.renderLines(line);
+    ASSERT_EQ(5, renderer.getTotalRows());
+    ASSERT_EQ(3, renderer.getTotalCols());
   }
   ASSERT_EQ("111^M\r\n^M222\r\n333\r\n444\r\n555\r\n666", out);
 
@@ -535,6 +528,8 @@ TEST_F(LineRendererTest, limit) {
     LineRenderer renderer(ps, 0, out);
     renderer.setLineNumLimit(3);
     renderer.renderWithANSI(line);
+    ASSERT_EQ(3, renderer.getTotalRows());
+    ASSERT_EQ(3, renderer.getTotalCols());
   }
   ASSERT_EQ("\x1b[40m111\r\n222\r\n33\x1b[40m3\r\n", out);
 
@@ -549,6 +544,8 @@ TEST_F(LineRendererTest, limit) {
     renderer.setLineNumLimit(2);
     bool r = renderer.renderScript(line);
     ASSERT_TRUE(r);
+    ASSERT_EQ(2, renderer.getTotalRows());
+    ASSERT_EQ(8, renderer.getTotalCols());
   }
   ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40m111\x1b[0m\r\n\x1b[30mecho\x1b[0m \x1b[40m222\x1b[0m\r\n",
             out);
@@ -565,6 +562,8 @@ TEST_F(LineRendererTest, limit) {
     renderer.setLineNumLimit(2);
     bool r = renderer.renderScript(line);
     ASSERT_TRUE(r);
+    ASSERT_EQ(2, renderer.getTotalRows());
+    ASSERT_EQ(8, renderer.getTotalCols());
   }
   ASSERT_EQ("\x1b[50m\x1b[0m\r\n\x1b[50m\x1b[0m\x1b[30mecho\x1b[0m\x1b[50m "
             "\x1b[0m\x1b[40m222\x1b[0m\x1b[50m\x1b[0m\r\n",
@@ -576,6 +575,8 @@ TEST_F(LineRendererTest, limit) {
     LineRenderer renderer(ps, 2, out);
     renderer.setLineNumLimit(0);
     renderer.renderLines(line);
+    ASSERT_EQ(0, renderer.getTotalRows());
+    ASSERT_EQ(34, renderer.getTotalCols());
   }
   ASSERT_EQ("echo 111echo 222echo 333echo 444", out);
 }
@@ -588,6 +589,8 @@ TEST_F(LineRendererTest, softwrap) {
     LineRenderer renderer(ps, 2, out);
     renderer.setMaxCols(5);
     renderer.renderLines(line);
+    ASSERT_EQ(2, renderer.getTotalRows());
+    ASSERT_EQ(4, renderer.getTotalCols());
   }
   ASSERT_EQ("  1\r\n23456\r\n7890", out);
 
@@ -597,6 +600,8 @@ TEST_F(LineRendererTest, softwrap) {
     LineRenderer renderer(ps, 3, out);
     renderer.setMaxCols(5);
     renderer.renderLines(line);
+    ASSERT_EQ(5, renderer.getTotalRows());
+    ASSERT_EQ(4, renderer.getTotalCols());
   }
   ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", out);
 
@@ -606,6 +611,8 @@ TEST_F(LineRendererTest, softwrap) {
     LineRenderer renderer(ps, 0, out);
     renderer.setMaxCols(4);
     renderer.renderLines(line);
+    ASSERT_EQ(3, renderer.getTotalRows());
+    ASSERT_EQ(0, renderer.getTotalCols());
   }
   ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);
 }
