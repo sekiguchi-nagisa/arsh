@@ -73,18 +73,22 @@ public:
 #define LOG(P, fmt, ...)                                                                           \
   do {                                                                                             \
     using namespace ydsh;                                                                          \
-    if (useLogging && Logger::instance().checkPolicy(Logger::P)) {                                 \
-      int __old = errno;                                                                           \
-      Logger::Info("%s(%s):%d: " fmt, BASE_FILENAME__, __func__, __LINE__, ##__VA_ARGS__);         \
-      errno = __old;                                                                               \
+    if constexpr (useLogging) {                                                                    \
+      if (Logger::instance().checkPolicy(Logger::P)) {                                             \
+        int __old = errno;                                                                         \
+        Logger::Info("%s(%s):%d: " fmt, BASE_FILENAME__, __func__, __LINE__, ##__VA_ARGS__);       \
+        errno = __old;                                                                             \
+      }                                                                                            \
     }                                                                                              \
   } while (false)
 
 #define LOG_IF(P, B)                                                                               \
   do {                                                                                             \
     using namespace ydsh;                                                                          \
-    if (useLogging && Logger::instance().checkPolicy(Logger::P)) {                                 \
-      B                                                                                            \
+    if constexpr (useLogging) {                                                                    \
+      if (Logger::instance().checkPolicy(Logger::P)) {                                             \
+        B                                                                                          \
+      }                                                                                            \
     }                                                                                              \
   } while (false)
 
