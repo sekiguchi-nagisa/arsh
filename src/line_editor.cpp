@@ -167,11 +167,10 @@ FILE *lndebug_fp = nullptr;
     if (lndebug_fp == nullptr) {                                                                   \
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
-    fprintf(                                                                                       \
-        lndebug_fp,                                                                                \
-        "\n[len=%d, pos=%d, oldcolpos=%d, oldrow=%d] rows: %d, rpos: %d, max: %d, oldmax: %d\n",   \
-        (int)l.len, (int)l.pos, (int)l.oldcolpos, (int)l.oldrow, rows, rpos, (int)l.maxrows,       \
-        old_rows);                                                                                 \
+    fprintf(lndebug_fp,                                                                            \
+            "\n[len=%d, pos=%d, oldcolpos=%d, oldrow=%d] rows: %d, maxRows: %d, oldmax: %d\n",     \
+            (int)l.len, (int)l.pos, (int)l.oldColPos, (int)l.oldRow, (int)rows, (int)l.maxRows,    \
+            oldRows);                                                                              \
     fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
     fflush(lndebug_fp);                                                                            \
   } while (0)
@@ -213,37 +212,6 @@ static size_t nextWordBytes(const linenoiseState &l) {
   size_t byteSize = 0;
   iterateWordUntil(ref, 1, [&byteSize](StringRef word) { byteSize = word.size(); });
   return byteSize;
-}
-
-/* Get column length from beginning of buffer to current byte position for multiline mode*/
-static size_t columnPosForMultiLine(const CharWidthProperties &ps, const StringRef bufRef,
-                                    const size_t cols, const size_t iniPos, bool skipANSI) {
-  size_t ret = 0;
-  size_t colWidth = iniPos;
-  ColumnCounter counter(ps, 0);
-  for (size_t off = 0; off < bufRef.size();) {
-    if (skipANSI) {
-      if (auto len = startsWithAnsiEscape(bufRef.substr(off))) {
-        off += len;
-        continue;
-      }
-    }
-    auto [byteSize, colLen] = counter.getCharLen(bufRef.substr(off), ColumnLenOp::NEXT);
-
-    int dif = (int)(colWidth + colLen) - (int)cols;
-    if (dif > 0) { // adjust pos for fullwidth character
-      ret += (int)cols - (int)colWidth;
-      colWidth = colLen;
-    } else if (dif == 0) {
-      colWidth = 0;
-    } else {
-      colWidth += colLen;
-    }
-
-    off += byteSize;
-    ret += colLen;
-  }
-  return ret;
 }
 
 /* ======================= Low level terminal handling ====================== */
@@ -806,83 +774,6 @@ static int preparePrompt(struct linenoiseState &l) {
   return 0;
 }
 
-struct ColRowLenParam {
-  const CharWidthProperties &ps;
-  StringRef ref;
-  size_t cols;
-  size_t initPos;
-  bool isPrompt;
-  bool endNewline;
-};
-
-static std::pair<size_t, size_t> getColRowLen(const ColRowLenParam &param) {
-  size_t col = 0;
-  size_t row = 0;
-
-  for (StringRef::size_type pos = 0;;) {
-    const auto retPos = param.ref.find('\n', pos);
-    auto sub = param.ref.slice(pos, retPos);
-    auto colLen = columnPosForMultiLine(param.ps, sub, param.cols, param.initPos, param.isPrompt);
-    if (retPos != StringRef::npos) {
-      col = colLen % param.cols;
-      row += (param.initPos + colLen) / param.cols;
-      row++;
-    } else {
-      if (param.endNewline) {
-        row += (param.initPos + colLen) / param.cols;
-        row++;
-        colLen = 0;
-      }
-      if (param.isPrompt) {
-        col = colLen % param.cols;
-        row += colLen / param.cols;
-      } else {
-        col = colLen;
-      }
-    }
-    if (retPos != StringRef::npos) {
-      pos = retPos + 1;
-    } else {
-      break;
-    }
-  }
-  return {col, row};
-}
-
-static std::pair<size_t, size_t> getPromptColRow(const CharWidthProperties &ps, StringRef prompt,
-                                                 size_t cols) {
-  return getColRowLen(ColRowLenParam{
-      .ps = ps,
-      .ref = prompt,
-      .cols = cols,
-      .initPos = 0,
-      .isPrompt = true,
-      .endNewline = false,
-  });
-}
-
-static std::pair<size_t, size_t> getColRowLenWithPager(const struct linenoiseState &l,
-                                                       ObserverPtr<ArrayPager> pager,
-                                                       size_t pcolLen) {
-  StringRef lineRef = l.lineRef();
-  bool endNewline = false;
-  if (pager) {
-    auto [pos, len] = findLineInterval(l, true);
-    lineRef = StringRef(l.buf, pos + len);
-    if (!lineRef.endsWith("\n")) {
-      endNewline = true;
-    }
-  }
-  return getColRowLen(ColRowLenParam{
-      .ps = l.ps,
-      .ref = lineRef,
-      .cols = l.cols,
-      .initPos = pcolLen,
-      .isPrompt = false,
-      .endNewline = endNewline,
-  });
-}
-
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -897,37 +788,61 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     fillNewlinePos(l.newlinePos, l.lineRef());
   }
 
-  char seq[64];
-  const auto [pcollen, prow] = getPromptColRow(l.ps, l.prompt, l.cols);
-  const auto [colpos, row] = getColRowLenWithPager(l, pager, pcollen);
-  /* rows used by current buf. */
-  int rows = (pcollen + colpos + l.cols - 1) / l.cols + prow + row;
-  if (pager) {
-    rows += pager->getActualRows();
+  // compute prompt row/column length
+  size_t promptRows;
+  size_t promptCols;
+  {
+    LineRenderer renderer(l.ps, 0);
+    renderer.setMaxCols(l.cols);
+    renderer.renderWithANSI(l.prompt);
+    promptRows = renderer.getTotalRows();
+    promptCols = renderer.getTotalCols();
   }
+
+  // compute line row/columns length
+  size_t rows = promptRows + 1;
+  {
+    StringRef lineRef = l.lineRef();
+    if (pager) {
+      auto [pos, len] = findLineInterval(l, true);
+      lineRef = StringRef(l.buf, pos + len);
+      if (!lineRef.endsWith("\n")) {
+        rows++;
+      }
+    }
+    LineRenderer renderer(l.ps, promptCols);
+    renderer.setMaxCols(l.cols);
+    renderer.renderLines(lineRef);
+    rows += renderer.getTotalRows();
+    if (pager) {
+      rows += pager->getActualRows();
+    }
+  }
+
   /* cursor relative row. */
-  const int rpos = (pcollen + l.oldColPos + l.cols) / l.cols + prow + l.oldRow;
-  const int old_rows = l.maxRows;
+  const int relativeRows = /*(promptCols + l.oldColPos + l.cols) / l.cols + promptRows +*/ l.oldRow;
+  const int oldRows = l.maxRows;
   std::string ab;
 
-  lndebug("cols: %d, pcolloen: %d, prow: %d, colpos: %d, row: %d", (int)l.cols, (int)pcollen,
-          (int)prow, (int)colpos, (int)row);
+  lndebug("cols: %d, promptCols: %d, promptRows: %d, rows: %d", (int)l.cols, (int)promptCols,
+          (int)promptRows, (int)rows);
 
-  /* Update maxrows if needed. */
-  if (rows > (int)l.maxRows) {
+  /* Update maxRows if needed. */
+  if (rows > l.maxRows) {
     l.maxRows = rows;
   }
 
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
-  if (old_rows - rpos > 0) {
-    lndebug("go down %d", old_rows - rpos);
-    snprintf(seq, 64, "\x1b[%dB", old_rows - rpos);
+  char seq[64];
+  if (oldRows - relativeRows > 0) {
+    lndebug("go down %d", oldRows - relativeRows);
+    snprintf(seq, 64, "\x1b[%dB", oldRows - relativeRows);
     ab += seq;
   }
 
   /* Now for every row clear it, go up. */
-  for (int j = 0; j < old_rows - 1; j++) {
+  for (int j = 0; j < oldRows - 1; j++) {
     lndebug("clear+up");
     ab += "\r\x1b[0K\x1b[1A";
   }
@@ -936,20 +851,10 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   lndebug("clear");
   ab += "\r\x1b[0K";
 
-  /* Get column length to cursor position */
-  const auto [colpos2, row2] = getColRowLen(ColRowLenParam{
-      .ps = l.ps,
-      .ref = l.lineRef().slice(0, l.pos),
-      .cols = l.cols,
-      .initPos = pcollen,
-      .isPrompt = false,
-      .endNewline = false,
-  });
-  lndebug("cols=%u, colpos2: %u, row2: %u", l.cols, (unsigned int)colpos2, (unsigned int)row2);
-
   /* Write the prompt and the current buffer content */
   {
     LineRenderer renderer(l.ps, 0, ab);
+    renderer.setMaxCols(l.cols);
     renderer.renderWithANSI(l.prompt);
   }
   if (const StringRef lineRef = l.lineRef(); !lineRef.empty()) {
@@ -959,66 +864,56 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
       limit = index + 1;
     }
 
+    LineRenderer renderer(l.ps, promptCols, ab,
+                          this->highlight ? makeObserver(this->escapeSeqMap) : nullptr);
+    renderer.setMaxCols(l.cols);
+    renderer.setLineNumLimit(limit);
     if (this->highlight) { // FIXME: cache previous rendered content
-      LineRenderer renderer(l.ps, pcollen, ab, makeObserver(this->escapeSeqMap));
-      renderer.setLineNumLimit(limit);
       this->continueLine = !renderer.renderScript(lineRef);
     } else {
-      LineRenderer renderer(l.ps, pcollen, ab);
-      renderer.setLineNumLimit(limit);
       renderer.renderLines(lineRef);
     }
-  }
 
-  /* If we are at the very end of the screen with our prompt, we need to
-   * emit a newline and move the prompt to the first column. */
-  if (l.pos && (colpos2 + pcollen) % l.cols == 0) {
-    lndebug("<newline>");
-    ab += "\r\n";
-    if (pager && l.pos == l.len) {
-      ab += "\r\n"; // only add if last is not newline
-    } else {
-      if (l.pos != l.len) {
-        ab += "\r\n"; // add additional newline in multiline mode
+    if (pager) {
+      if (!lineRef.endsWith("\n")) {
+        ab += "\r\n"; // force newline
       }
-      rows++;
+      pager->render(ab);
     }
-    if (rows > (int)l.maxRows) {
-      l.maxRows = rows;
-    }
-  }
-  if (pager) {
-    if (!ab.empty() && ab.back() != '\n') {
-      ab += "\r\n"; // force newline
-    }
-    pager->render(ab);
   }
 
-  /* Move cursor to right row position. */
-  int rpos2 =
-      (pcollen + colpos2 + l.cols) / l.cols + prow + row2; /* current cursor relative row. */
-  lndebug("rpos2 %d", rpos2);
+  // get cursor row/column length
+  size_t cursorCols = 0;
+  size_t cursorRows = 1;
+  {
+    auto ref = l.lineRef().slice(0, l.pos);
+    LineRenderer renderer(l.ps, promptCols);
+    renderer.setMaxCols(l.cols);
+    renderer.renderLines(ref);
+    cursorCols = renderer.getTotalCols();
+    cursorRows += renderer.getTotalRows();
+  }
+  lndebug("cursor: cursorCols: %zu, cursorRows: %zu", cursorCols, cursorRows);
 
   /* Go up till we reach the expected position. */
-  if (rows - rpos2 > 0) {
-    lndebug("go-up %d", rows - rpos2);
-    snprintf(seq, 64, "\x1b[%dA", rows - rpos2);
+  if (rows - cursorRows > 0) {
+    lndebug("go-up %d", (int)rows - (int)cursorRows);
+    snprintf(seq, 64, "\x1b[%dA", (int)rows - (int)cursorRows);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
-  int col = (pcollen + colpos2) % l.cols;
-  lndebug("set col %d", 1 + col);
-  if (col) {
-    snprintf(seq, 64, "\r\x1b[%dC", col);
+  lndebug("set col %d", 1 + (int)cursorCols);
+  if (cursorCols) {
+    snprintf(seq, 64, "\r\x1b[%dC", (int)cursorCols);
   } else {
     snprintf(seq, 64, "\r");
   }
   ab += seq;
 
   lndebug("\n");
-  l.oldColPos = colpos2;
-  l.oldRow = row2;
+  l.oldColPos = cursorCols;
+  l.oldRow = cursorRows;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */

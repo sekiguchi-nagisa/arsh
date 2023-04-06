@@ -16,14 +16,14 @@ struct Len {
   unsigned int colSize;
 };
 
-static Len getCharLen(StringRef line, const CharWidthProperties &ps) {
+static Len getCharLen(StringRef line, const CharWidthProperties &ps, unsigned int initCols = 0) {
   Len len{0, 0};
   iterateGraphemeUntil(line, 1, [&](const GraphemeScanner::Result &grapheme) {
-    LineRenderer renderer(ps, 0);
+    LineRenderer renderer(ps, initCols);
     renderer.setLineNumLimit(0);
     renderer.renderLines(grapheme.ref);
     len.byteSize = grapheme.ref.size();
-    len.colSize = renderer.getTotalCols();
+    len.colSize = renderer.getTotalCols() - initCols;
   });
   return len;
 }
@@ -157,25 +157,25 @@ TEST(EncodingTest, charLenControl) {
 TEST(EncodingTest, charTab) {
   CharWidthProperties ps;
   StringRef line = "\t\t\t\t";
-  auto ret = ColumnCounter(ps, 0).getCharLen(line, ColumnLenOp::NEXT); // \t
+  auto ret = getCharLen(line, ps, 0); // \t
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(4, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\t\t\t", line);
-  ret = ColumnCounter(ps, 1).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ret = getCharLen(line, ps, 1); // \t
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(3, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\t\t", line);
-  ret = ColumnCounter(ps, 3).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ret = getCharLen(line, ps, 3); // \t
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("\t", line);
-  ret = ColumnCounter(ps, 4).getCharLen(line, ColumnLenOp::NEXT); // \t
+  ret = getCharLen(line, ps, 4); // \t
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(4, ret.colSize);
 }

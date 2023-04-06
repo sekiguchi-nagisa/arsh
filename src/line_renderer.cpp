@@ -53,41 +53,6 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScann
   return width < 2 ? width : 2;
 }
 
-static bool isControlChar(const GraphemeScanner::Result &grapheme) {
-  if ((grapheme.codePointCount == 1 && isControlChar(grapheme.codePoints[0])) ||
-      (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
-       grapheme.codePoints[1] == '\n')) {
-    return true;
-  }
-  return false;
-}
-
-ColumnLen ColumnCounter::getCharLen(StringRef ref, ColumnLenOp op) {
-  const auto limit = op == ColumnLenOp::NEXT ? 1 : static_cast<size_t>(-1);
-  unsigned int lastByteSize = 0;
-  unsigned int lastColsLen = 0;
-  iterateGraphemeUntil(ref, limit, [&](const GraphemeScanner::Result &grapheme) {
-    lastByteSize = static_cast<unsigned int>(grapheme.ref.size());
-    if (isControlChar(grapheme)) {
-      auto codePoint = grapheme.codePoints[0];
-      if (codePoint == '\t') { // max tab len is 4
-        lastColsLen = 4 - this->totalColLen % 4;
-      } else if (codePoint == '\n') {
-        lastColsLen = 0; // ignore newline
-      } else {
-        lastColsLen = 2; // caret notation, such as ^@
-      }
-    } else {
-      lastColsLen = getGraphemeWidth(this->ps, grapheme);
-    }
-    this->totalColLen += lastColsLen;
-  });
-  return ColumnLen{
-      .byteSize = lastByteSize,
-      .colSize = lastColsLen,
-  };
-}
-
 // ##############################
 // ##     ANSIEscapeSeqMap     ##
 // ##############################
@@ -125,6 +90,33 @@ ANSIEscapeSeqMap ANSIEscapeSeqMap::fromString(StringRef setting) {
 // ##     LineRenderer     ##
 // ##########################
 
+static StringRef::size_type startsWithAnsiEscape(StringRef ref) {
+  if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
+    for (StringRef::size_type i = 2; i < ref.size(); i++) {
+      switch (ref[i]) {
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'J':
+      case 'K':
+      case 'S':
+      case 'T':
+      case 'f':
+      case 'm':
+        return i + 1;
+      default:
+        break;
+      }
+    }
+  }
+  return 0;
+}
+
 class TokenEmitterImpl : public TokenEmitter {
 private:
   std::vector<std::pair<HighlightTokenClass, Token>> tokens;
@@ -155,7 +147,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
         }
         pos = r + len;
       } else {
-        if (!this->renderControlChar('\x1b')) {
+        if (!this->renderControlChar('\x1b', nullptr)) {
           return;
         }
         pos = r + 1;
@@ -237,6 +229,15 @@ const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) c
   return nullptr;
 }
 
+static bool isControlChar(const GraphemeScanner::Result &grapheme) {
+  if ((grapheme.codePointCount == 1 && isControlChar(grapheme.codePoints[0])) ||
+      (grapheme.codePointCount == 2 && grapheme.codePoints[0] == '\r' &&
+       grapheme.codePoints[1] == '\n')) {
+    return true;
+  }
+  return false;
+}
+
 static size_t getNewlineOffset(const GraphemeScanner::Result &grapheme) {
   if (grapheme.codePointCount == 1 && grapheme.codePoints[0] == '\n') {
     return 1;
@@ -260,7 +261,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   iterateGrapheme(ref, [&](const GraphemeScanner::Result &grapheme) {
     if (auto offset = getNewlineOffset(grapheme)) {
       if (offset == 2) { // \r\n
-        bool r = this->renderControlChar('\r');
+        bool r = this->renderControlChar('\r', colorCode);
         (void)r; // ignore return value
       }
       if (colorCode && this->output) {
@@ -284,13 +285,13 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         *this->output += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
-      return this->renderControlChar(grapheme.codePoints[0]);
+      return this->renderControlChar(grapheme.codePoints[0], colorCode);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
       if (this->totalCols + width > this->maxCols) { // line break
         switch (this->breakOp) {
         case LineBreakOp::SOFT_WRAP:
-          this->handleSoftWrap();
+          this->handleSoftWrap(colorCode);
           break;
         case LineBreakOp::TRUNCATE:
           this->handleTruncate('.');
@@ -307,7 +308,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       }
       this->totalCols += width;
       if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
-        this->handleSoftWrap();
+        this->handleSoftWrap(colorCode);
       }
     }
     return true;
@@ -318,14 +319,14 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   return status;
 }
 
-bool LineRenderer::renderControlChar(int codePoint) {
+bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
     unsigned int colLen = 4 - this->totalCols % 4;
     if (this->totalCols + colLen > this->maxCols) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
-        this->handleSoftWrap();
+        this->handleSoftWrap(color);
         colLen = 4 - this->totalCols % 4; // re-compute tab stop
         break;
       case LineBreakOp::TRUNCATE:
@@ -338,13 +339,13 @@ bool LineRenderer::renderControlChar(int codePoint) {
     }
     this->totalCols += colLen;
     if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
-      this->handleSoftWrap();
+      this->handleSoftWrap(color);
     }
   } else if (codePoint != '\n') {
     if (this->totalCols + 2 > this->maxCols) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
-        this->handleSoftWrap();
+        this->handleSoftWrap(color);
         break;
       case LineBreakOp::TRUNCATE:
         this->handleTruncate('.');
@@ -360,7 +361,7 @@ bool LineRenderer::renderControlChar(int codePoint) {
     }
     this->totalCols += 2;
     if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
-      this->handleSoftWrap();
+      this->handleSoftWrap(color);
     }
   }
   return true;

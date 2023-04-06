@@ -78,55 +78,6 @@ struct CharWidthProperties {
  */
 unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret);
 
-enum class ColumnLenOp {
-  NEXT,
-  PREV,
-};
-
-struct ColumnLen {
-  unsigned int byteSize; // consumed bytes
-  unsigned int colSize;
-};
-
-class ColumnCounter {
-private:
-  const CharWidthProperties &ps;
-  size_t totalColLen; // for tab stop. if reach \n, reset to 0
-
-public:
-  ColumnCounter(const CharWidthProperties &ps, size_t initColLen)
-      : ps(ps), totalColLen(initColLen) {}
-
-  ColumnLen getCharLen(StringRef ref, ColumnLenOp op);
-};
-
-inline StringRef::size_type startsWithAnsiEscape(StringRef ref) {
-  if (ref.size() > 2 && ref[0] == '\x1b' && ref[1] == '[') {
-    for (StringRef::size_type i = 2; i < ref.size(); i++) {
-      switch (ref[i]) {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-      case 'E':
-      case 'F':
-      case 'G':
-      case 'H':
-      case 'J':
-      case 'K':
-      case 'S':
-      case 'T':
-      case 'f':
-      case 'm':
-        return i + 1;
-      default:
-        break;
-      }
-    }
-  }
-  return 0;
-}
-
 class ANSIEscapeSeqMap {
 private:
   std::unordered_map<HighlightTokenClass, std::string> values;
@@ -242,13 +193,19 @@ private:
    * @return
    * if reach lineNumLimit or colLenLimit, return false
    */
-  bool renderControlChar(int codePoint);
+  bool renderControlChar(int codePoint, const std::string *color);
 
-  void handleSoftWrap() {
+  void handleSoftWrap(const std::string *color) {
     this->totalCols = 0;
     this->totalRows++;
     if (this->output) {
+      if (color) {
+        *this->output += "\x1b[0m";
+      }
       *this->output += "\r\n";
+      if (color) {
+        *this->output += *color;
+      }
     }
   }
 
