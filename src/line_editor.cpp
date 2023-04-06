@@ -774,6 +774,48 @@ static int preparePrompt(struct linenoiseState &l) {
   return 0;
 }
 
+static std::pair<unsigned int, unsigned int> renderPrompt(struct linenoiseState &l,
+                                                          std::string &out) {
+  LineRenderer renderer(l.ps, 0, out);
+  renderer.setMaxCols(l.cols);
+  renderer.renderWithANSI(l.prompt);
+  auto promptRows = static_cast<unsigned int>(renderer.getTotalRows());
+  auto promptCols = static_cast<unsigned int>(renderer.getTotalCols());
+  return {promptRows, promptCols};
+}
+
+static std::pair<unsigned int, bool> renderLines(struct linenoiseState &l, size_t promptCols,
+                                                 ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
+                                                 ObserverPtr<ArrayPager> pager, std::string &out) {
+  size_t rows = 0;
+  StringRef lineRef = l.lineRef();
+  if (pager) {
+    auto [pos, len] = findLineInterval(l, true);
+    lineRef = StringRef(l.buf, pos + len);
+    if (!lineRef.endsWith("\n")) {
+      rows++;
+    }
+  }
+
+  bool continueLine = false;
+  LineRenderer renderer(l.ps, promptCols, out, escapeSeqMap);
+  renderer.setMaxCols(l.cols);
+  if (escapeSeqMap) { // FIXME: cache previous rendered content
+    continueLine = !renderer.renderScript(lineRef);
+  } else {
+    renderer.renderLines(lineRef);
+  }
+  rows += renderer.getTotalRows();
+  if (pager) {
+    if (!lineRef.endsWith("\n")) {
+      out += "\r\n"; // force newline
+    }
+    pager->render(out);
+    rows += pager->getActualRows();
+  }
+  return {static_cast<unsigned int>(rows), continueLine};
+}
+
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -788,36 +830,15 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     fillNewlinePos(l.newlinePos, l.lineRef());
   }
 
-  // compute prompt row/column length
-  size_t promptRows;
-  size_t promptCols;
-  {
-    LineRenderer renderer(l.ps, 0);
-    renderer.setMaxCols(l.cols);
-    renderer.renderWithANSI(l.prompt);
-    promptRows = renderer.getTotalRows();
-    promptCols = renderer.getTotalCols();
-  }
+  /* render and compute prompt row/column length */
+  std::string lineBuf; // for rendered lines
+  auto [promptRows, promptCols] = renderPrompt(l, lineBuf);
 
-  // compute line row/columns length
-  size_t rows = promptRows + 1;
-  {
-    StringRef lineRef = l.lineRef();
-    if (pager) {
-      auto [pos, len] = findLineInterval(l, true);
-      lineRef = StringRef(l.buf, pos + len);
-      if (!lineRef.endsWith("\n")) {
-        rows++;
-      }
-    }
-    LineRenderer renderer(l.ps, promptCols);
-    renderer.setMaxCols(l.cols);
-    renderer.renderLines(lineRef);
-    rows += renderer.getTotalRows();
-    if (pager) {
-      rows += pager->getActualRows();
-    }
-  }
+  /* render and compute line row/columns length */
+  auto [rows, continueLine2] = renderLines(
+      l, promptCols, this->highlight ? makeObserver(this->escapeSeqMap) : nullptr, pager, lineBuf);
+  rows += promptRows + 1;
+  this->continueLine = continueLine2;
 
   /* cursor relative row. */
   const int relativeRows = /*(promptCols + l.oldColPos + l.cols) / l.cols + promptRows +*/ l.oldRow;
@@ -851,38 +872,11 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   lndebug("clear");
   ab += "\r\x1b[0K";
 
-  /* Write the prompt and the current buffer content */
-  {
-    LineRenderer renderer(l.ps, 0, ab);
-    renderer.setMaxCols(l.cols);
-    renderer.renderWithANSI(l.prompt);
-  }
-  if (const StringRef lineRef = l.lineRef(); !lineRef.empty()) {
-    auto limit = static_cast<size_t>(-1);
-    if (pager && !l.isSingleLine()) { // resolve stop line num
-      auto index = findCurIndex(l.newlinePos, l.pos);
-      limit = index + 1;
-    }
+  /* set escape sequence */
+  lineBuf.insert(0, ab);
+  ab = std::move(lineBuf);
 
-    LineRenderer renderer(l.ps, promptCols, ab,
-                          this->highlight ? makeObserver(this->escapeSeqMap) : nullptr);
-    renderer.setMaxCols(l.cols);
-    renderer.setLineNumLimit(limit);
-    if (this->highlight) { // FIXME: cache previous rendered content
-      this->continueLine = !renderer.renderScript(lineRef);
-    } else {
-      renderer.renderLines(lineRef);
-    }
-
-    if (pager) {
-      if (!lineRef.endsWith("\n")) {
-        ab += "\r\n"; // force newline
-      }
-      pager->render(ab);
-    }
-  }
-
-  // get cursor row/column length
+  /* get cursor row/column length */
   size_t cursorCols = 0;
   size_t cursorRows = 1;
   {
