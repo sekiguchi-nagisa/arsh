@@ -318,6 +318,9 @@ public:
     if (this->index == 0) {
       this->curRow = this->getActualRows() - 1;
       this->index = this->items.size() - 1;
+      if (unsigned int offset = this->index % this->getLogicalRows(); offset < this->curRow) {
+        this->curRow = offset;
+      }
     } else {
       if (this->curRow == 0) {
         if (this->index % this->getLogicalRows() > 0) {

@@ -765,6 +765,30 @@ TEST_F(PagerTest, small2) { // less than pager length
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, small3) { // less than pager length
+  auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
+  ASSERT_EQ(2, pager.getPanes());
+
+  /**
+   * AAA DDD
+   * BBB EEE
+   * CCC
+   */
+  const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC \r\n";
+  std::string out;
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+
+  // prev
+  out = "";
+  expect = "AAA DDD \r\nBBB \x1b[7mEEE \x1b[0m\r\nCCC \r\n";
+  pager.moveCursorToForward();
+  ASSERT_EQ(1, pager.getCurRow());
+  pager.render(out);
+  ASSERT_EQ(expect, out);
+}
+
 TEST_F(PagerTest, large1) { // larger than pager length
   auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GG\t", "HHH");
   auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 20});
