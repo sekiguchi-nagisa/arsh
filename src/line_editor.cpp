@@ -878,7 +878,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
 
   /* get cursor row/column length */
   size_t cursorCols = 0;
-  size_t cursorRows = 1;
+  size_t cursorRows = promptRows + 1;
   {
     auto ref = l.lineRef().slice(0, l.pos);
     LineRenderer renderer(l.ps, promptCols);
