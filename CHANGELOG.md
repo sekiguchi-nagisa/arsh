@@ -6,7 +6,7 @@
 
 #### Builtin
 
-- show row numbers in completion pager
+- show row numbers in completion pager if actual rows are larger than rendered rows
 
 ## [0.29.2] - 2023-04-08
 

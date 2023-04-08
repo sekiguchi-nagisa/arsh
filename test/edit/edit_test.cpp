@@ -766,23 +766,23 @@ TEST_F(PagerTest, small2) { // less than pager length
 }
 
 TEST_F(PagerTest, small3) { // less than pager length
-  auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
+  auto array = this->create("AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 20});
   ASSERT_EQ(2, pager.getPanes());
 
   /**
-   * AAA DDD
-   * BBB EEE
-   * CCC
+   * AAAAA   DDDDD
+   * BBBBB   EEEEE
+   * CCCCC
    */
-  const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC \r\n";
+  const char *expect = "\x1b[7mAAAAA   \x1b[0mDDDDD   \r\nBBBBB   EEEEE   \r\nCCCCC   \r\n";
   std::string out;
   pager.render(out);
   ASSERT_EQ(expect, out);
 
   // prev
   out = "";
-  expect = "AAA DDD \r\nBBB \x1b[7mEEE \x1b[0m\r\nCCC \r\n";
+  expect = "AAAAA   DDDDD   \r\nBBBBB   \x1b[7mEEEEE   \x1b[0m\r\nCCCCC   \r\n";
   pager.moveCursorToForward();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
@@ -790,7 +790,7 @@ TEST_F(PagerTest, small3) { // less than pager length
 
   // right
   out = "";
-  expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0m\r\n";
+  expect = "AAAAA   DDDDD   \r\nBBBBB   EEEEE   \r\n\x1b[7mCCCCC   \x1b[0m\r\n";
   pager.moveCursorToRight();
   ASSERT_EQ(2, pager.getCurRow());
   pager.render(out);
@@ -798,7 +798,7 @@ TEST_F(PagerTest, small3) { // less than pager length
 
   // right
   out = "";
-  expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC \r\n";
+  expect = "\x1b[7mAAAAA   \x1b[0mDDDDD   \r\nBBBBB   EEEEE   \r\nCCCCC   \r\n";
   pager.moveCursorToRight();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
@@ -806,7 +806,7 @@ TEST_F(PagerTest, small3) { // less than pager length
 
   // left
   out = "";
-  expect = "AAA DDD \r\nBBB EEE \r\n\x1b[7mCCC \x1b[0m\r\n";
+  expect = "AAAAA   DDDDD   \r\nBBBBB   EEEEE   \r\n\x1b[7mCCCCC   \x1b[0m\r\n";
   pager.moveCursorToLeft();
   ASSERT_EQ(2, pager.getCurRow());
   pager.render(out);

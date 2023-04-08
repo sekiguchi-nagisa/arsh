@@ -431,7 +431,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
     }
   }
   this->showPageNum = false;
-  if (this->getActualRows() + 1 <= this->winSize.rows) {
+  if (this->getActualRows() + 1 <= this->winSize.rows &&
+      this->getLogicalRows() > this->getActualRows()) {
     // rows 23-111/111
     unsigned int footerSize =
         static_cast<unsigned int>(strlen("rows ")) + countDigits(this->getLogicalRows()) * 3 + 2;
