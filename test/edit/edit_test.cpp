@@ -820,14 +820,16 @@ TEST_F(PagerTest, large1) { // larger than pager length
   ASSERT_TRUE(pager.getRows() < array->size() / 2);
   ASSERT_EQ(0, pager.getCurRow());
 
-  const char *expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n";
+  const char *expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n"
+                       "\x1b[7mrows 1-2/4\x1b[0m\r\n";
   std::string out;
   pager.render(out);
   ASSERT_EQ(expect, out);
 
   // up
   out = "";
-  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n";
+  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n"
+           "\x1b[7mrows 3-4/4\x1b[0m\r\n";
   pager.moveCursorToForward();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
@@ -835,7 +837,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // up
   out = "";
-  expect = "CCC     \x1b[7mGG      \x1b[0m\r\nDDD     HHH     \r\n";
+  expect = "CCC     \x1b[7mGG      \x1b[0m\r\nDDD     HHH     \r\n"
+           "\x1b[7mrows 3-4/4\x1b[0m\r\n";
   pager.moveCursorToForward();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
@@ -843,7 +846,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // up
   out = "";
-  expect = "BBB     \x1b[7mFFF     \x1b[0m\r\nCCC     GG      \r\n";
+  expect = "BBB     \x1b[7mFFF     \x1b[0m\r\nCCC     GG      \r\n"
+           "\x1b[7mrows 2-3/4\x1b[0m\r\n";
   pager.moveCursorToForward();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
@@ -851,7 +855,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // down
   out = "";
-  expect = "BBB     FFF     \r\nCCC     \x1b[7mGG      \x1b[0m\r\n";
+  expect = "BBB     FFF     \r\nCCC     \x1b[7mGG      \x1b[0m\r\n"
+           "\x1b[7mrows 2-3/4\x1b[0m\r\n";
   pager.moveCursorToNext();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
@@ -859,7 +864,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // down
   out = "";
-  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n";
+  expect = "CCC     GG      \r\nDDD     \x1b[7mHHH     \x1b[0m\r\n"
+           "\x1b[7mrows 3-4/4\x1b[0m\r\n";
   pager.moveCursorToNext();
   ASSERT_EQ(1, pager.getCurRow());
   pager.render(out);
@@ -867,7 +873,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // down
   out = "";
-  expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n";
+  expect = "\x1b[7mAAA     \x1b[0mEEE     \r\nBBB     FFF     \r\n"
+           "\x1b[7mrows 1-2/4\x1b[0m\r\n";
   pager.moveCursorToNext();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);
@@ -875,7 +882,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // down+down+down
   out = "";
-  expect = "CCC     GG      \r\n\x1b[7mDDD     \x1b[0mHHH     \r\n";
+  expect = "CCC     GG      \r\n\x1b[7mDDD     \x1b[0mHHH     \r\n"
+           "\x1b[7mrows 3-4/4\x1b[0m\r\n";
   pager.moveCursorToNext();
   pager.moveCursorToNext();
   pager.moveCursorToNext();
@@ -885,7 +893,8 @@ TEST_F(PagerTest, large1) { // larger than pager length
 
   // down
   out = "";
-  expect = "AAA     \x1b[7mEEE     \x1b[0m\r\nBBB     FFF     \r\n";
+  expect = "AAA     \x1b[7mEEE     \x1b[0m\r\nBBB     FFF     \r\n"
+           "\x1b[7mrows 1-2/4\x1b[0m\r\n";
   pager.moveCursorToNext();
   ASSERT_EQ(0, pager.getCurRow());
   pager.render(out);

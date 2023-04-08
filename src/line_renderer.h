@@ -253,6 +253,7 @@ private:
   unsigned int index{0};             // index of currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
   bool showCursor{true};             // if true, render cursor
+  bool showPageNum{false};           // if true, render page number
 
   ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
              unsigned int maxIndex, WindowSize winSize)
@@ -303,6 +304,10 @@ public:
    * @return
    */
   unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
+
+  unsigned int getRenderedRows() const {
+    return this->getActualRows() + (this->showPageNum ? 1 : 0);
+  }
 
   /**
    * actual rendering function

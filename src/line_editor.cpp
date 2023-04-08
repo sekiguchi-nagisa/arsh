@@ -811,7 +811,7 @@ static std::pair<unsigned int, bool> renderLines(struct linenoiseState &l, size_
       out += "\r\n"; // force newline
     }
     pager->render(out);
-    rows += pager->getActualRows();
+    rows += pager->getRenderedRows();
   }
   return {static_cast<unsigned int>(rows), continueLine};
 }

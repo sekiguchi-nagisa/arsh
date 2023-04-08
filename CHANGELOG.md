@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### Builtin
+
+- show row numbers in completion pager
+
 ## [0.29.2] - 2023-04-08
 
 ### Fixed

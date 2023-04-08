@@ -16,6 +16,7 @@
 
 #include "line_renderer.h"
 #include "keycode.h"
+#include "misc/format.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -429,6 +430,15 @@ void ArrayPager::updateWinSize(WindowSize size) {
       this->paneLen = colLimit; // larger than window size
     }
   }
+  this->showPageNum = false;
+  if (this->getActualRows() + 1 <= this->winSize.rows) {
+    // rows 23-111/111
+    unsigned int footerSize =
+        static_cast<unsigned int>(strlen("rows ")) + countDigits(this->getLogicalRows()) * 3 + 2;
+    if (footerSize < this->panes * this->paneLen) {
+      this->showPageNum = true;
+    }
+  }
 }
 
 static void renderItem(LineRenderer &renderer, StringRef ref, const ArrayPager::ItemEntry &e) {
@@ -481,6 +491,12 @@ void ArrayPager::render(std::string &out) const {
     }
     renderer.setLineNumLimit(static_cast<size_t>(-1)); // re-enable newlines
     renderer.renderLines("\n");
+  }
+  if (this->showPageNum) {
+    char footer[64];
+    snprintf(footer, std::size(footer), "\x1b[7mrows %d-%d/%d\x1b[0m\n", startIndex + 1,
+             startIndex + actualRows, this->getLogicalRows());
+    renderer.renderWithANSI(footer);
   }
 }
 
