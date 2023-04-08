@@ -312,6 +312,20 @@ constexpr const char *BUILD_ARCH =
 #endif
     ;
 
+constexpr const char *BUILD_OS =
+#ifdef __linux__
+    "linux"
+#elif defined __APPLE__
+    "darwin"
+#elif defined __CYGWIN__
+    "cygwin"
+#elif defined __EMSCRIPTEN__
+    "emscripten"
+#else
+#error "unsupported operating system"
+#endif
+    ;
+
 enum class RedirOp : unsigned char {
   NOP,             // dummy
   REDIR_IN,        // [n]< word

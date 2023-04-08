@@ -165,11 +165,7 @@ TEST_F(APITest, config) {
   }
 
   value = DSState_config(this->state, DS_CONFIG_OSTYPE);
-  {
-    struct utsname name {};
-    uname(&name);
-    ASSERT_EQ(name.sysname, value);
-  }
+  ASSERT_EQ(ydsh::BUILD_OS, value);
 
   value = DSState_config(this->state, DS_CONFIG_MACHTYPE);
   ASSERT_EQ(ydsh::BUILD_ARCH, value);
@@ -192,7 +188,7 @@ TEST_F(APITest, config) {
   value = DSState_config(this->state, DS_CONFIG_MODULE_DIR);
   ASSERT_EQ(X_MODULE_DIR, value);
 
-  // invlaid
+  // invalid
   const char *v = DSState_config(this->state, (DSConfig)9999);
   ASSERT_EQ(nullptr, v);
 

@@ -196,7 +196,7 @@ $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
 $assertArray($(file ~), $(complete 'echo 23=~/'))
 $assertArray($(file ~), $(complete 'echo 23\\=~/'))
-if !$OSTYPE.startsWith("CYGWIN") {
+if $OSTYPE !~ $/cygwin/i {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete '~' | grep '~root')"
 }
@@ -254,7 +254,7 @@ $assertArray($(file '/bin' | grep '^l'), $(complete 'source /bin/l'))
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source? /bin/l'))
 $assertArray($(file ~), $(complete 'source ~/'))
 $assertArray($(file ~), $(complete 'source? ~/'))
-if !$OSTYPE.startsWith("CYGWIN") {
+if $OSTYPE !~ $/cygwin/i {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'source ~' | grep '~root')"
 }
 $assertArray(new [String](), $(complete 'source \~root'))

@@ -21,8 +21,9 @@ assert $UID is Int  # uid and euid is Int
 assert $EUID is Int
 
 # uname
-assert($OSTYPE == "$(uname -s)" || $/cygwin/i =~ $OSTYPE)
-assert $MACHTYPE == "$(uname -m)" || $MACHTYPE =='i386' || $MACHTYPE =~ $/arm/ || $MACHTYPE =~ $/aarch/
+assert($OSTYPE == "$(uname -s)".lower() || $/cygwin/ =~ $OSTYPE)
+assert $OSTYPE == "linux" || $OSTYPE == 'darwin' || $OSTYPE == 'cygwin' || $OSTYPE == 'emscripten' : "$OSTYPE"
+assert $MACHTYPE == "$(uname -m)" || $MACHTYPE =='i386' || $MACHTYPE =~ $/arm/ || $MACHTYPE =~ $/aarch/ : "$MACHTYPE"
 
 # random number, at least 32767 (RAND_MAX)
 {

@@ -112,7 +112,7 @@ assert $ex is Int
 cd $pwd
 
 ## expand to user home
-if ! $OSTYPE.startsWith("CYGWIN") {
+if $OSTYPE !~ $/cygwin/i {
     assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
 }
 

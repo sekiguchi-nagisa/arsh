@@ -5,7 +5,7 @@
 source $SCRIPT_DIR/../module/completion
 
 function _lookup() : String {
-    if($OSTYPE == "Darwin") {
+    if($OSTYPE == "darwin") {
         return '/Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash'
     }
     var list = [

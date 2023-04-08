@@ -15,7 +15,6 @@
  */
 
 #include <pwd.h>
-#include <sys/utsname.h>
 
 #include "misc/files.h"
 #include "regex_wrapper.h"
@@ -24,14 +23,13 @@
 namespace ydsh {
 
 SysConfig::SysConfig() {
-  struct utsname name {};
-  if (uname(&name) == -1) {
-    fatal_perror("cannot get utsname");
-  }
   this->values = {
-      {VERSION, X_INFO_VERSION_CORE}, {COMPILER, X_INFO_CPP " " X_INFO_CPP_V},
-      {DATA_DIR, X_DATA_DIR},         {MODULE_DIR, X_MODULE_DIR},
-      {OSTYPE, name.sysname},         {MACHTYPE, BUILD_ARCH},
+      {VERSION, X_INFO_VERSION_CORE},
+      {COMPILER, X_INFO_CPP " " X_INFO_CPP_V},
+      {DATA_DIR, X_DATA_DIR},
+      {MODULE_DIR, X_MODULE_DIR},
+      {OSTYPE, BUILD_OS},
+      {MACHTYPE, BUILD_ARCH},
   };
 
   const char *home;
