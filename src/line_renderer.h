@@ -93,8 +93,6 @@ public:
   const auto &getValues() const { return this->values; }
 };
 
-struct CharWidthProperties;
-
 /**
  * generate output string for terminal
  */
@@ -355,39 +353,43 @@ public:
   }
 
   void moveCursorToLeft() {
-    if (this->index == 0) {
-      this->curRow = this->getActualRows() - 1;
-      this->index = this->items.size() - 1;
+    const auto logicalRows = this->getLogicalRows();
+    const auto curCols = this->index / logicalRows;
+    if (curCols > 0) {
+      this->index -= logicalRows;
     } else {
-      const auto logicalRows = this->getLogicalRows();
-      const auto curCols = this->index / logicalRows;
-      if (curCols == 0) {
-        if (this->curRow > 0) {
-          this->curRow--;
-        }
-        this->index--;
-        this->index += logicalRows * (this->getPanes() - 1);
-      } else {
-        this->index -= logicalRows;
+      unsigned int nextIndex = this->index - 1 + logicalRows * (this->getPanes() - 1);
+      unsigned int curLogicalRows = this->index % logicalRows;
+      if (this->curRow > 0) {
+        this->curRow--;
       }
+      if (curLogicalRows == 0) {
+        nextIndex = logicalRows * this->getPanes() - 1;
+        this->curRow = this->getActualRows() - 1;
+      }
+      while (nextIndex >= this->items.size()) {
+        nextIndex -= logicalRows;
+      }
+      this->index = nextIndex;
     }
   }
 
   void moveCursorToRight() {
-    if (this->index == this->items.size() - 1) {
-      this->curRow = 0;
-      this->index = 0;
+    const auto logicalRows = this->getLogicalRows();
+    const auto curCols = this->index / logicalRows;
+    if (curCols < this->getPanes() - 1 && this->index + logicalRows < this->items.size()) {
+      this->index += logicalRows;
     } else {
-      const auto logicalRows = this->getLogicalRows();
-      const auto curCols = this->index / logicalRows;
-      if (curCols == this->getPanes() - 1) {
+      unsigned int nextIndex = this->index + 1 - logicalRows * curCols;
+      unsigned int curLogicalRows = this->index % logicalRows;
+      if (nextIndex < this->items.size() && curLogicalRows < logicalRows - 1) {
         if (this->curRow < this->getActualRows() - 1) {
           this->curRow++;
         }
-        this->index++;
-        this->index -= logicalRows * (this->getPanes() - 1);
+        this->index = nextIndex;
       } else {
-        this->index += logicalRows;
+        this->curRow = 0;
+        this->index = 0;
       }
     }
   }
