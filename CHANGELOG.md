@@ -1,13 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.29.2] - 2023-04-08
 
-### Changed
+### Fixed
 
-#### Builtin
-
-- **Breaking Change**: change columns length counting in line editor
-    - now include prompt column length
+- bugfix soft-wrap handling in line editor
+    - re-implement row/column counting
+    - adjust tab width counting, now include prompt column length
+- bugfix pager cursor move (left/right/forward)
 
 ## [0.29.1] - 2023-03-31
 
