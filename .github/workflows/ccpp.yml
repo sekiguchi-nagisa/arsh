@@ -63,14 +63,14 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ g++-12, clang++-13, clang++-14 ]
+        cc: [ g++-12, clang++-13, clang++-14, clang++-15 ]
     steps:
       - uses: actions/checkout@v1
       - name: prepare
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build \
-               g++-12 clang-13 clang-14
+               g++-12 clang-13 clang-14 clang-15
       - name: configure
         run: |
           mkdir build
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ g++-12, clang++-14 ]
+        cc: [ g++-12, clang++-15 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v1
@@ -100,7 +100,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build \
-               g++-12 clang-14 lld lld-14 llvm-14 llvm-14-dev
+               g++-12 clang-15 lld lld-15 llvm-15 llvm-15-dev
       - name: configure
         run: |
           mkdir build
@@ -128,14 +128,14 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-14
+          sudo apt install language-pack-ja ninja-build clang-15
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-14 \
+                -DCMAKE_CXX_COMPILER=clang++-15 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -156,14 +156,14 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-14
+          sudo apt install language-pack-ja ninja-build clang-15
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-14
+                -DCMAKE_CXX_COMPILER=clang++-15
       - name: build
         run: |
           cd build
