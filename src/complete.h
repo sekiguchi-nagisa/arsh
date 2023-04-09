@@ -115,6 +115,23 @@ using UserDefinedComp =
 
 using DynaUdcComp = std::function<void(const std::string &word, CompCandidateConsumer &consumer)>;
 
+/**
+ *
+ * @param scope
+ * @param prefix
+ * not start with '$'
+ * @param inCmdArg
+ * @param consumer
+ */
+void completeVarName(const NameScope &scope, StringRef prefix, bool inCmdArg,
+                     CompCandidateConsumer &consumer);
+
+void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
+                    StringRef word, CompCandidateConsumer &consumer);
+
+void completeType(const TypePool &pool, const NameScope &scope, const DSType *recvType,
+                  StringRef word, CompCandidateConsumer &consumer);
+
 class CodeCompletionHandler {
 private:
   UserDefinedComp userDefinedComp;

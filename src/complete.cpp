@@ -346,15 +346,8 @@ static bool completeModule(const SysConfig &config, const char *scriptDir,
   return completeFileName(config.getModuleDir().c_str(), prefix, op, consumer, cancel);
 }
 
-/**
- *
- * @param scope
- * @param prefix
- * not start with '$'
- * @param consumer
- */
-static void completeVarName(const NameScope &scope, const std::string &prefix, bool inCmdArg,
-                            CompCandidateConsumer &consumer) {
+void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdArg,
+                     CompCandidateConsumer &consumer) {
   int offset = ({
     const NameScope *cur = &scope;
     while (!cur->isGlobal()) {
@@ -400,8 +393,8 @@ static void completeExpected(const std::vector<std::string> &expected, const std
   }
 }
 
-static void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
-                           const std::string &word, CompCandidateConsumer &consumer) {
+void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
+                    const StringRef word, CompCandidateConsumer &consumer) {
   // complete field
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
                                                                    const Handle &handle) {
@@ -448,8 +441,8 @@ static void completeMember(const TypePool &pool, const NameScope &scope, const D
   }
 }
 
-static void completeType(const TypePool &pool, const DSType *recvType, const NameScope &scope,
-                         const std::string &word, CompCandidateConsumer &consumer) {
+void completeType(const TypePool &pool, const NameScope &scope, const DSType *recvType,
+                  const StringRef word, CompCandidateConsumer &consumer) {
   if (recvType) {
     std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
                                                                      const Handle &handle) {
@@ -586,7 +579,7 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     completeMember(this->pool, *this->scope, *this->recvType, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
-    completeType(this->pool, this->recvType, *this->scope, this->compWord, consumer);
+    completeType(this->pool, *this->scope, this->recvType, this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {
