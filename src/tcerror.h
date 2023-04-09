@@ -78,7 +78,7 @@ DEFINE_TCError(ReadOnlySymbol, "`%s' is defined as read only");
 DEFINE_TCError(ReadOnlyField, "field `%s' for `%s' type is defined as read only");
 DEFINE_TCError(InsideFinally, "no-return expressions (break, continue, return, throw, etc..) "
                               "are not allowed inside finally block and defer statement");
-DEFINE_TCError(InsideChild, "some no-return expression (break, continue, return) "
+DEFINE_TCError(InsideChild, "some no-return expressions (break, continue, return) "
                             "are not allowed inside sub-shell");
 DEFINE_TCError(OutsideToplevel, "%s is only available in top-level");
 DEFINE_TCError(NotCallable, "`%s' type expression is not callable, must be function type");
