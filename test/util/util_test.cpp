@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <misc/edit_distance.hpp>
 #include <misc/flag_util.hpp>
 #include <misc/num_util.hpp>
 
@@ -570,6 +571,37 @@ TEST(NumTest, double1) {
   ret = convertToDouble(n); // huge value
   ASSERT_EQ(1, ret.second);
   ASSERT_EQ(HUGE_VAL, ret.first);
+}
+
+TEST(EditDistanceTest, base) {
+  EditDistance editDistance;
+
+  ASSERT_EQ(1, editDistance("sitting", "setting"));
+  ASSERT_EQ(3, editDistance("sitting", "kitten"));
+  ASSERT_EQ(3, editDistance("kitten", "sitting"));
+  ASSERT_EQ(3, editDistance("Sunday", "Saturday"));
+  ASSERT_EQ(0, editDistance("12", "12"));
+  ASSERT_EQ(1, editDistance("12", "124"));
+  ASSERT_EQ(2, editDistance("12", ""));
+  ASSERT_EQ(0, editDistance("", ""));
+  ASSERT_EQ(5, editDistance("corporate", "cooperation"));
+  ASSERT_EQ(5, editDistance("cooperation", "corporate"));
+  ASSERT_EQ(4, editDistance("TRUE", "true"));
+  ASSERT_EQ(1, editDistance("True", "true"));
+  ASSERT_EQ(8, editDistance("jfierjft", "1234"));
+  ASSERT_EQ(1, editDistance("_0", "_s"));
+  ASSERT_EQ(1, editDistance("_", "_s"));
+  ASSERT_EQ(2, editDistance("b", "abs"));
+  ASSERT_EQ(2, editDistance("os", "?"));
+}
+
+TEST(EditDistanceTest, cost) {
+  EditDistance editDistance(2);
+
+  ASSERT_EQ(2, editDistance("sitting", "setting"));
+  ASSERT_EQ(1, editDistance("sitting", "sittin"));
+  ASSERT_EQ(1, editDistance("sitting", "stting"));
+  ASSERT_EQ(3, editDistance("os", "?"));
 }
 
 int main(int argc, char **argv) {

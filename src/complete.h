@@ -93,7 +93,9 @@ class CompCandidateConsumer {
 public:
   virtual ~CompCandidateConsumer() = default;
 
-  void operator()(StringRef ref, CompCandidateKind kind, int priority = 0);
+  void operator()(StringRef ref, CompCandidateKind kind) { (*this)(ref, kind, 0); }
+
+  virtual void operator()(StringRef ref, CompCandidateKind kind, int priority);
 
 private:
   virtual void consume(std::string &&, CompCandidateKind, int priority) = 0;
@@ -318,6 +320,55 @@ public:
   bool operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                   CodeCompOp option);
 };
+
+// for error suggestion
+
+/**
+ * get similar var name from scope
+ * @param name
+ * @param scope
+ * @param threshold
+ * @return
+ * if suggestion score (edit distance) is greater than threshold, return empty string
+ */
+StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned int threshold = 3);
+
+/**
+ * get similar type name from scope and type pool
+ * @param name
+ * @param pool
+ * @param scope
+ * @param recvType
+ * may be null
+ * @param threshold
+ * @return
+ * if suggestion score (edit distance) is greater than threshold, return empty string
+ */
+StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
+                             const DSType *recvType, unsigned int threshold = 3);
+
+enum class SuggestMemberType {
+  FIELD = 1u << 0u,
+  METHOD = 1u << 1u,
+};
+
+template <>
+struct allow_enum_bitop<SuggestMemberType> : std::true_type {};
+
+/**
+ * get similar member (field/method)
+ * @param name
+ * @param pool
+ * @param scope
+ * @param recvType
+ * @param targetType
+ * @param threshold
+ * @return
+ * if suggestion score (edit distance) is greater than threshold, return empty string
+ */
+StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
+                               const DSType &recvType, SuggestMemberType targetType,
+                               unsigned int threshold = 3);
 
 } // namespace ydsh
 

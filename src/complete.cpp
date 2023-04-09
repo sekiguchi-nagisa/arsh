@@ -22,6 +22,7 @@
 #include "complete.h"
 #include "frontend.h"
 #include "logger.h"
+#include "misc/edit_distance.hpp"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "paths.h"
@@ -676,6 +677,95 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
     handler.addCompRequest(option, ref.toString());
     return handler.invoke(this->consumer);
   }
+}
+
+class SuggestionCollector : public CompCandidateConsumer {
+private:
+  EditDistance editDistance;
+  const StringRef src;
+  StringRef target;
+  unsigned int score{UINT32_MAX};
+  ObserverPtr<const SuggestMemberType> targetMemberType;
+
+  void consume(std::string &&, CompCandidateKind, int) override {} // do nothing
+
+public:
+  explicit SuggestionCollector(StringRef name) : editDistance(3), src(name) {}
+
+  void setTargetMemberType(const SuggestMemberType &memberType) {
+    this->targetMemberType = makeObserver(memberType);
+  }
+
+  StringRef getTarget() const { return this->target; }
+
+  unsigned int getScore() const { return this->score; }
+
+  void operator()(StringRef ref, CompCandidateKind kind, int) override {
+    if (this->targetMemberType) {
+      auto targetType = *this->targetMemberType;
+      if (kind == CompCandidateKind::FIELD && !hasFlag(targetType, SuggestMemberType::FIELD)) {
+        return;
+      }
+      if (kind == CompCandidateKind::METHOD && !hasFlag(targetType, SuggestMemberType::METHOD)) {
+        return;
+      }
+    }
+
+    if (this->src[0] != ref[0]) {
+      return;
+    }
+    if (this->src[0] == '_' && this->src.size() > 1 && ref.size() > 1) {
+      if (this->src[1] != ref[1]) {
+        return;
+      }
+    }
+
+    auto dist = this->editDistance(this->src, ref);
+    if (dist < this->score) {
+      this->score = dist;
+      this->target = ref;
+    }
+  }
+};
+
+StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned int threshold) {
+  if (name.empty() || name == "_") {
+    return "";
+  }
+  SuggestionCollector collector(name);
+  completeVarName(scope, "", false, collector);
+  if (collector.getScore() <= threshold) {
+    return collector.getTarget();
+  }
+  return "";
+}
+
+StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
+                             const DSType *recvType, unsigned int threshold) {
+  if (name.empty() || name == "_") {
+    return "";
+  }
+  SuggestionCollector collector(name);
+  completeType(pool, scope, recvType, "", collector);
+  if (collector.getScore() <= threshold) {
+    return collector.getTarget();
+  }
+  return "";
+}
+
+StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
+                               const DSType &recvType, SuggestMemberType targetType,
+                               unsigned int threshold) {
+  if (name.empty() || name == "_") {
+    return "";
+  }
+  SuggestionCollector collector(name);
+  collector.setTargetMemberType(targetType);
+  completeMember(pool, scope, recvType, "", collector);
+  if (collector.getScore() <= threshold) {
+    return collector.getTarget();
+  }
+  return "";
 }
 
 } // namespace ydsh

@@ -54,10 +54,19 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     } else {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       switch (ret.asErr()) {
-      case NameLookupError::NOT_FOUND:
+      case NameLookupError::NOT_FOUND: {
+        std::string suffix;
+        auto suggestion =
+            suggestSimilarType(recvType.getNameRef(), this->typePool, *this->curScope, &recvType);
+        if (!suggestion.empty()) {
+          suffix = ", did you mean `";
+          suffix += suggestion;
+          suffix += "' ?";
+        }
         this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str(),
-                                          recvType.getName());
+                                          recvType.getName(), suffix.c_str());
         break;
+      }
       case NameLookupError::MOD_PRIVATE:
         this->reportError<PrivateField>(nameNode, nameNode.getTokenText().c_str());
         break;
@@ -372,13 +381,25 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
   const char *methodName = node.getFieldName().c_str();
   switch (attr) {
   case ApplyNode::DEFAULT:
-  case ApplyNode::INDEX:
+  case ApplyNode::INDEX: {
     if (attr == ApplyNode::INDEX) {
       methodName += strlen(INDEX_OP_NAME_PREFIX);
     }
+    std::string suffix;
+    if (attr == ApplyNode::DEFAULT) {
+      auto suggestion =
+          suggestSimilarMember(methodName, this->typePool, *this->curScope,
+                               node.getRecvNode().getType(), SuggestMemberType::METHOD);
+      if (!suggestion.empty()) {
+        suffix = ", did you mean `";
+        suffix += suggestion;
+        suffix += "' ?";
+      }
+    }
     this->reportError<UndefinedMethod>(node.getNameToken(), methodName,
-                                       node.getRecvNode().getType().getName());
+                                       node.getRecvNode().getType().getName(), suffix.c_str());
     break;
+  }
   case ApplyNode::UNARY:
     methodName += strlen(UNARY_OP_NAME_PREFIX);
     this->reportError<UndefinedUnary>(node.getNameToken(), methodName,
@@ -711,9 +732,17 @@ void TypeChecker::visitVarNode(VarNode &node) {
       node.setType(this->typePool.get(handle->getTypeId()));
     } else {
       switch (ret.asErr()) {
-      case NameLookupError::NOT_FOUND:
-        this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
+      case NameLookupError::NOT_FOUND: {
+        auto suggestion = suggestSimilarVarName(node.getVarName(), *this->curScope);
+        std::string suffix;
+        if (!suggestion.empty()) {
+          suffix = ", did you mean `";
+          suffix += suggestion;
+          suffix += "' ?";
+        }
+        this->reportError<UndefinedSymbol>(node, node.getVarName().c_str(), suffix.c_str());
         break;
+      }
       case NameLookupError::MOD_PRIVATE:
         break; // unreachable
       case NameLookupError::UPVAR_LIMIT:
@@ -763,8 +792,16 @@ void TypeChecker::visitVarNode(VarNode &node) {
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
+    std::string suffix;
+    auto suggestion = suggestSimilarMember(node.getFieldName(), this->typePool, *this->curScope,
+                                           node.getRecvNode().getType(), SuggestMemberType::FIELD);
+    if (!suggestion.empty()) {
+      suffix = ", did you mean `";
+      suffix += suggestion;
+      suffix += "' ?";
+    }
     this->reportError<UndefinedField>(node.getNameToken(), node.getFieldName().c_str(),
-                                      node.getRecvNode().getType().getName());
+                                      node.getRecvNode().getType().getName(), suffix.c_str());
   }
 }
 
@@ -968,14 +1005,13 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
     auto &type = this->typePool.get(TYPE::String);
     if (!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
       std::string methodName(OP_INTERP);
-      auto *handle =
-          exprType.isOptionType() ? nullptr : this->typePool.lookupMethod(exprType, methodName);
+      auto *handle = this->typePool.lookupMethod(exprType, methodName);
       if (handle) {
         assert(handle->getReturnType() == type);
         node.setHandle(handle);
-      } else { // if exprType is optional
+      } else { // if exprType is Unresolved
         this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str(),
-                                           exprType.getName());
+                                           exprType.getName(), "");
         node.setType(this->typePool.getUnresolvedType());
       }
     }
@@ -990,7 +1026,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         node.setHandle(handle);
         node.setType(handle->getReturnType());
       } else {
-        this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR, exprType.getName());
+        this->reportError<UndefinedMethod>(node.getExprNode(), OP_STR, exprType.getName(), "");
         node.setType(this->typePool.getUnresolvedType());
       }
     }
