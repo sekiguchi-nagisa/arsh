@@ -40,7 +40,12 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       typeNode.setHandle(handle);
       return Ok(&this->typePool.get(handle->getTypeId()));
     }
-    return this->typePool.getType(typeNode.getTokenText());
+    auto *type = this->typePool.getType(typeNode.getTokenText());
+    if (!type) {
+      this->reportError<UndefinedType>(typeNode, typeNode.getTokenText().c_str());
+      return Err(std::unique_ptr<TypeLookupError>());
+    }
+    return Ok(type);
   }
   case TypeNode::Qualified: {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);

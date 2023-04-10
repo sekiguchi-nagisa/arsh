@@ -448,9 +448,9 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
         decl && decl->getKind() == DeclSymbol::Kind::MOD) { // resolve sub-command
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
-        auto &type = *this->builder().getPool().getModTypeById(ret.first).asOk();
-        auto handle = cast<ModType>(type).lookup(this->builder().getPool(),
-                                                 toCmdFullName(nameInfo.unwrap().getName()));
+        auto &type = *this->builder().getPool().getModTypeById(ret.first);
+        auto handle =
+            type.lookup(this->builder().getPool(), toCmdFullName(nameInfo.unwrap().getName()));
         this->builder().addSymbol(nameInfo.unwrap(), DeclSymbol::Kind::CMD, handle);
       }
     }

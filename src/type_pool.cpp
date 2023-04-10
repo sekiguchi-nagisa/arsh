@@ -143,13 +143,7 @@ DSType *TypePool::addType(DSType *type) {
   return nullptr;
 }
 
-TypeOrError TypePool::getType(StringRef typeName) const {
-  auto *type = this->get(typeName);
-  if (type == nullptr) {
-    RAISE_TL_ERROR(UndefinedType, typeName.data());
-  }
-  return Ok(type);
-}
+const DSType *TypePool::getType(StringRef typeName) const { return this->get(typeName); }
 
 void TypePool::discard(const TypeDiscardPoint point) {
   for (unsigned int i = point.typeIdOffset; i < this->typeTable.size(); i++) {
@@ -351,9 +345,14 @@ const ModType &TypePool::createModType(unsigned short modId,
   return cast<ModType>(*type);
 }
 
-TypeOrError TypePool::getModTypeById(unsigned short modId) const {
+const ModType *TypePool::getModTypeById(unsigned short modId) const {
   auto name = toModTypeName(modId);
-  return this->getType(name);
+  auto *type = this->getType(name);
+  if (type) {
+    assert(type->isModType());
+    return cast<ModType>(type);
+  }
+  return nullptr;
 }
 
 class TypeDecoder {

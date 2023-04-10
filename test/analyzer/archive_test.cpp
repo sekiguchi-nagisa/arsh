@@ -154,7 +154,7 @@ public:
     ASSERT_TRUE(typeName);
     auto ret = this->orgCtx->getPool().getType(typeName);
     ASSERT_TRUE(ret);
-    this->defineAndArchive(fieldName, *ret.asOk(), kind, attr);
+    this->defineAndArchive(fieldName, *ret, kind, attr);
   }
 
   void defineAndArchive(const char *fieldName, const DSType &orgType,
@@ -235,9 +235,8 @@ public:
     auto archive = std::move(*this->orgCtx).buildArchive(this->archives);
     ASSERT_TRUE(archive);
     unsigned id = archive->getModId();
-    auto ret = poolPtr->getModTypeById(id);
-    ASSERT_TRUE(ret);
-    auto *orgModType = cast<ModType>(ret.asOk());
+    auto *orgModType = poolPtr->getModTypeById(id);
+    ASSERT_TRUE(orgModType);
 
     // deserialize
     auto *newModType = loadFromArchive(this->newCtx->getPool(), *archive);
@@ -399,7 +398,7 @@ TEST_F(ArchiveTest, func) {
 
   //
   types = std::vector<const DSType *>();
-  types.push_back(this->pool().getType("(Signal) -> Void").asOk());
+  types.push_back(this->pool().getType("(Signal) -> Void"));
   types.push_back(&type1);
   ret1 = this->pool().createTupleType(std::vector<const DSType *>(types));
   ASSERT_TRUE(ret1);
@@ -457,25 +456,24 @@ TEST_F(ArchiveTest, mod3) {
   //
   auto ret1 = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret1);
-  auto &modType3 = cast<ModType>(*ret1.asOk());
+  auto &modType3 = *ret1;
   auto handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
-            handle->getTypeId());
+  ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleKind::ENV), toString(handle->getKind()));
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModId(), handle->getModId());
 
   handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeId());
+  ASSERT_EQ(this->newPool().getType("TypeCastError")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModId(), handle->getModId());
 
   //
   ret1 = this->newPool().getModTypeById(1);
   ASSERT_TRUE(ret1);
-  auto &modType1 = cast<ModType>(*ret1.asOk());
+  auto &modType1 = *ret1;
   ASSERT_EQ(1, modType1.getModId());
   ASSERT_EQ(2, modType1.getChildSize());
   ASSERT_TRUE(modType1.getChildAt(0).isGlobal());
@@ -487,7 +485,7 @@ TEST_F(ArchiveTest, mod3) {
 
   handle = modType1.lookup(this->newPool(), "aaa");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(), handle->getTypeId());
+  ASSERT_EQ(this->newPool().getType("[GlobbingError]")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(1, handle->getModId());
 }
@@ -519,7 +517,7 @@ TEST_F(ArchiveTest, mod4) {
 
   auto ret = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret);
-  auto &modType3 = cast<ModType>(*ret.asOk());
+  auto &modType3 = *ret;
   ASSERT_EQ(3, modType3.getModId());
   ASSERT_EQ(2, modType3.getChildSize());
   auto handle = modType3.lookup(this->newPool(), "BBB");
@@ -539,9 +537,9 @@ TEST_F(ArchiveTest, mod4) {
   auto *handle2 = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
   ASSERT_TRUE(handle2);
   ASSERT_EQ(4, handle2->getModId());
-  ret = this->newPool().getType("[Bool]");
-  ASSERT_TRUE(ret);
-  ASSERT_EQ(ret.asOk()->typeId(), handle2->getTypeId());
+  auto retType = this->newPool().getType("[Bool]");
+  ASSERT_TRUE(retType);
+  ASSERT_EQ(retType->typeId(), handle2->getTypeId());
 }
 
 TEST_F(ArchiveTest, userdefined) {
@@ -567,7 +565,7 @@ TEST_F(ArchiveTest, userdefined) {
       std::unordered_map<std::string, HandlePtr> handles;
       handles.emplace(
           "begin", HandlePtr::create(recordType, 0, HandleKind::VAR, HandleAttr::READ_ONLY, modId));
-      auto *type = ctx.getPool().getType(toQualifiedTypeName("APIError", modId)).asOk();
+      auto *type = ctx.getPool().getType(toQualifiedTypeName("APIError", modId));
       handles.emplace("end",
                       HandlePtr::create(*type, 1, HandleKind::VAR, HandleAttr::READ_ONLY, modId));
       ctx.getPool().finalizeRecordType(recordType, std::move(handles));
@@ -586,13 +584,13 @@ TEST_F(ArchiveTest, userdefined) {
   ASSERT_TRUE(handle);
   auto typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
-  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  ASSERT_EQ(handle->getTypeId(), typeOrError->typeId());
   auto handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
   ASSERT_FALSE(handle2); // in named import, not found
   ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());
   auto lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
   ASSERT_TRUE(lookup);
-  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
+  ASSERT_EQ(*typeOrError, this->pool().get(lookup.asOk()->getTypeId()));
 
   //
   typeName = "Interval";
@@ -600,15 +598,15 @@ TEST_F(ArchiveTest, userdefined) {
   ASSERT_TRUE(handle);
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
-  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  ASSERT_EQ(handle->getTypeId(), typeOrError->typeId());
   handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
   ASSERT_FALSE(handle2); // in named import, not found
   ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());
   lookup = this->scope().lookupField(this->pool(), modType, toTypeAliasFullName(typeName));
   ASSERT_TRUE(lookup);
-  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(lookup.asOk()->getTypeId()));
+  ASSERT_EQ(*typeOrError, this->pool().get(lookup.asOk()->getTypeId()));
   {
-    auto &recordType = cast<RecordType>(*typeOrError.asOk());
+    auto &recordType = cast<RecordType>(*typeOrError);
     ASSERT_TRUE(recordType.isFinalized());
     ASSERT_EQ(2, recordType.getFieldSize());
     ASSERT_EQ(2, recordType.getHandleMap().size());
@@ -617,16 +615,16 @@ TEST_F(ArchiveTest, userdefined) {
     ASSERT_EQ(recordType, this->pool().get(hd->getTypeId()));
     hd = recordType.lookupField("end");
     ASSERT_TRUE(hd);
-    ASSERT_EQ(*this->pool().getType(toQualifiedTypeName("APIError", modType.getModId())).asOk(),
+    ASSERT_EQ(*this->pool().getType(toQualifiedTypeName("APIError", modType.getModId())),
               this->pool().get(hd->getTypeId()));
   }
-  auto *methodHandle = this->scope().lookupConstructor(this->pool(), *typeOrError.asOk());
+  auto *methodHandle = this->scope().lookupConstructor(this->pool(), *typeOrError);
   ASSERT_TRUE(methodHandle);
   ASSERT_TRUE(methodHandle->isConstructor());
   ASSERT_EQ(1, methodHandle->getParamSize());
   ASSERT_EQ(this->pool().get(TYPE::Int), methodHandle->getParamTypeAt(0));
-  ASSERT_EQ(*typeOrError.asOk(), methodHandle->getReturnType());
-  ASSERT_EQ(*typeOrError.asOk(), this->pool().get(methodHandle->getRecvTypeId()));
+  ASSERT_EQ(*typeOrError, methodHandle->getReturnType());
+  ASSERT_EQ(*typeOrError, this->pool().get(methodHandle->getRecvTypeId()));
   ASSERT_TRUE(methodHandle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
 
   //
@@ -635,11 +633,11 @@ TEST_F(ArchiveTest, userdefined) {
   ASSERT_TRUE(handle);
   typeOrError = this->pool().getType(toQualifiedTypeName(typeName, modType.getModId()));
   ASSERT_TRUE(typeOrError);
-  ASSERT_EQ(handle->getTypeId(), typeOrError.asOk()->typeId());
+  ASSERT_EQ(handle->getTypeId(), typeOrError->typeId());
   /**
    * after deserialized, always true
    */
-  ASSERT_TRUE(cast<RecordType>(typeOrError.asOk())->isFinalized());
+  ASSERT_TRUE(cast<RecordType>(typeOrError)->isFinalized());
   handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
   ASSERT_FALSE(handle2); // in named import, not found
   ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());

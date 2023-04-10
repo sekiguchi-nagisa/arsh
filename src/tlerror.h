@@ -50,7 +50,6 @@ using base_of_t = std::enable_if_t<std::is_base_of<B, T>::value, T>;
   }
 
 DEFINE_TLError(ElementLimit, "number of type elements reaches limit");
-DEFINE_TLError(UndefinedType, "undefined type: `%s'");
 DEFINE_TLError(DefinedType, "already defined type: `%s'");
 DEFINE_TLError(NotTemplate, "illegal type template: `%s'");
 DEFINE_TLError(InvalidElement, "invalid type element: `%s'");

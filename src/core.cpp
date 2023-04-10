@@ -209,7 +209,7 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   if (code) {
     auto ret = state.typePool.getModTypeById(code->getBelongedModId());
     assert(ret);
-    return cast<ModType>(ret.asOk());
+    return ret;
   }
   return nullptr;
 }
@@ -353,16 +353,15 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
     if (desc.empty()) {
       modType = getCurRuntimeModule(state);
       if (!modType) {
-        auto ret = state.typePool.getModTypeById(1);
-        assert(ret);
-        modType = cast<ModType>(ret.asOk());
+        modType = state.typePool.getModTypeById(1);
+        assert(modType);
       }
     } else if (desc.startsWith(OBJ_MOD_PREFIX) && desc.endsWith(")")) {
       auto typeName = desc;
       typeName.removePrefix(strlen(OBJ_MOD_PREFIX));
       typeName.removeSuffix(1);
-      if (auto ret = state.typePool.getType(typeName); ret && ret.asOk()->isModType()) {
-        modType = cast<ModType>(ret.asOk());
+      if (auto ret = state.typePool.getType(typeName); ret && ret->isModType()) {
+        modType = cast<ModType>(ret);
       }
     }
     if (!modType) {
@@ -613,7 +612,7 @@ std::string resolveFullCommandName(const DSState &state, const DSValue &name,
   case ResolvedCmd::MODULE: {
     auto ret = state.typePool.getModTypeById(cmd.belongModId());
     assert(ret);
-    std::string fullname = ret.asOk()->getNameRef().toString();
+    std::string fullname = ret->getNameRef().toString();
     fullname += '\0';
     fullname += ref.data();
     return fullname;

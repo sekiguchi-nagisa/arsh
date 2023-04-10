@@ -116,7 +116,7 @@ public:
     // assert type
     auto ret = this->pool.getType(name);
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(type == *std::move(ret).take());
+    ASSERT_TRUE(type == *ret);
   }
 
   virtual void assertSuperType(const DSType &type, const DSType &superType) {

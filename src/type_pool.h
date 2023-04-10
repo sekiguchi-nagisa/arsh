@@ -153,7 +153,7 @@ public:
   /**
    * return null, if has no type.
    */
-  TypeOrError getType(StringRef typeName) const;
+  const DSType *getType(StringRef typeName) const;
 
   const TypeTemplate &getArrayTemplate() const { return this->arrayTemplate; }
 
@@ -217,12 +217,12 @@ public:
                                ModAttr modAttr);
 
   const ModType &getBuiltinModType() const {
-    auto *type = this->getModTypeById(0).take();
+    auto *type = this->getModTypeById(0);
     assert(type && type->isModType());
-    return cast<ModType>(*type);
+    return *type;
   }
 
-  TypeOrError getModTypeById(unsigned short modId) const;
+  const ModType *getModTypeById(unsigned short modId) const;
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 

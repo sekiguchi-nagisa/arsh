@@ -626,18 +626,17 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
     const char *cmdName = ref.data();
     if (fqn != StringRef::npos) {
       auto ret = state.typePool.getType(cmdName);
-      if (!ret || !ret.asOk()->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
+      if (!ret || !ret->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
         return ResolvedCmd::invalid();
       }
-      modType = cast<ModType>(ret.asOk());
+      modType = cast<ModType>(ret);
       cmdName = ref.begin() + fqn + 1;
     } else if (!modType) {
       modType = getCurRuntimeModule(state);
     }
     if (!modType) {
-      auto ret = state.typePool.getModTypeById(1);
-      assert(ret);
-      modType = cast<ModType>(ret.asOk());
+      modType = state.typePool.getModTypeById(1);
+      assert(modType);
     }
     ResolvedCmd cmd{};
     if (lookupUdc(state, *modType, cmdName, cmd)) {
@@ -935,7 +934,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   case ResolvedCmd::FALLBACK: {
     const auto *modType = getCurRuntimeModule(state);
     if (!modType) {
-      modType = cast<ModType>(state.typePool.getModTypeById(1).asOk());
+      modType = state.typePool.getModTypeById(1);
     }
     state.stack.reserve(3);
     state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));

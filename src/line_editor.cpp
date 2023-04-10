@@ -1622,7 +1622,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
 
   const auto *modType = getCurRuntimeModule(state);
   if (!modType) {
-    modType = cast<ModType>(state.typePool.getModTypeById(1).asOk());
+    modType = state.typePool.getModTypeById(1);
   }
   auto mod = state.getGlobal(modType->getIndex());
   auto args = makeArgs(std::move(mod), DSValue::createStr(line));

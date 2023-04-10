@@ -277,8 +277,8 @@ END:
   if (hasFlag(this->compileOption, CompileOption::LOAD_TO_ROOT)) {
     auto ret = this->provider.getPool().getModTypeById(this->frontEnd.getCurModId());
     assert(ret);
-    auto msg = this->provider.getScope()->importForeignHandles(
-        this->provider.getPool(), cast<ModType>(*ret.asOk()), ImportedModKind::GLOBAL);
+    auto msg = this->provider.getScope()->importForeignHandles(this->provider.getPool(), *ret,
+                                                               ImportedModKind::GLOBAL);
     if (msg.empty()) {
       assert(this->provider.getScope()->inRootModule());
       this->provider.newModType(*this->provider.getScope());

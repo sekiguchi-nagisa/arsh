@@ -83,8 +83,8 @@ void Archiver::add(const DSType &type) {
         this->writeStr(typeName.substr(pos + 1));
         this->add(*type.getSuperType());
         auto ret = this->pool.getType(typeName.slice(0, pos));
-        assert(ret && isa<ModType>(ret.asOk()));
-        this->write16(cast<ModType>(ret.asOk())->getModId());
+        assert(ret && isa<ModType>(ret));
+        this->write16(cast<ModType>(ret)->getModId());
       }
       break;
     case TypeKind::Record:
@@ -99,8 +99,8 @@ void Archiver::add(const DSType &type) {
         assert(pos != StringRef::npos);
         this->writeStr(typeName.substr(pos + 1));
         auto ret = this->pool.getType(typeName.slice(0, pos));
-        assert(ret && isa<ModType>(ret.asOk()));
-        this->write16(cast<ModType>(ret.asOk())->getModId());
+        assert(ret && isa<ModType>(ret));
+        this->write16(cast<ModType>(ret)->getModId());
 
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
@@ -270,13 +270,11 @@ const DSType *Unarchiver::unpackType() {
   }
   case ArchiveType::MOD: {
     uint16_t modID = this->read16();
-    auto ret = TRY(this->pool.getModTypeById(modID));
-    return std::move(ret).take();
+    return TRY(this->pool.getModTypeById(modID));
   }
   case ArchiveType::CACHED: {
     std::string typeName = this->readStr();
-    auto ret = TRY(this->pool.getType(typeName));
-    return std::move(ret).take();
+    return TRY(this->pool.getType(typeName));
   }
   }
   return nullptr;
@@ -349,13 +347,7 @@ std::vector<ModuleArchivePtr> ModuleArchive::getDepsByTopologicalOrder() const {
 }
 
 static const ModType *getModType(const TypePool &pool, unsigned short modId) {
-  auto ret = pool.getModTypeById(modId);
-  if (ret) {
-    auto *type = ret.asOk();
-    assert(type && type->isModType());
-    return cast<ModType>(type);
-  }
-  return nullptr;
+  return pool.getModTypeById(modId);
 }
 
 static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
@@ -372,7 +364,7 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
   for (auto &child : archive.getImported()) {
     auto type = pool.getModTypeById(child.second->getModId());
     assert(type);
-    auto e = cast<ModType>(type.asOk())->toModEntry(child.first);
+    auto e = type->toModEntry(child.first);
     children.push_back(e);
   }
 
