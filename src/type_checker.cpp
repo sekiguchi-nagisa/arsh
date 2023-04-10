@@ -42,7 +42,13 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     }
     auto *type = this->typePool.getType(typeNode.getTokenText());
     if (!type) {
-      this->reportError<UndefinedType>(typeNode, typeNode.getTokenText().c_str());
+      auto &typeName = typeNode.getTokenText();
+      std::string suffix;
+      auto suggestion = suggestSimilarType(typeName, this->typePool, *this->curScope, nullptr);
+      if (!suggestion.empty()) {
+        addSuggestionSuffix(suffix, suggestion);
+      }
+      this->reportError<UndefinedType>(typeNode, typeName.c_str(), suffix.c_str());
       return Err(std::unique_ptr<TypeLookupError>());
     }
     return Ok(type);
@@ -60,16 +66,14 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       switch (ret.asErr()) {
       case NameLookupError::NOT_FOUND: {
+        auto &name = nameNode.getTokenText();
         std::string suffix;
-        auto suggestion =
-            suggestSimilarType(recvType.getNameRef(), this->typePool, *this->curScope, &recvType);
+        auto suggestion = suggestSimilarType(name, this->typePool, *this->curScope, &recvType);
         if (!suggestion.empty()) {
-          suffix = ", did you mean `";
-          suffix += suggestion;
-          suffix += "' ?";
+          addSuggestionSuffix(suffix, suggestion);
         }
-        this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str(),
-                                          recvType.getName(), suffix.c_str());
+        this->reportError<UndefinedField>(nameNode, name.c_str(), recvType.getName(),
+                                          suffix.c_str());
         break;
       }
       case NameLookupError::MOD_PRIVATE:
@@ -396,9 +400,7 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
           suggestSimilarMember(methodName, this->typePool, *this->curScope,
                                node.getRecvNode().getType(), SuggestMemberType::METHOD);
       if (!suggestion.empty()) {
-        suffix = ", did you mean `";
-        suffix += suggestion;
-        suffix += "' ?";
+        addSuggestionSuffix(suffix, suggestion);
       }
     }
     this->reportError<UndefinedMethod>(node.getNameToken(), methodName,
@@ -741,9 +743,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
         auto suggestion = suggestSimilarVarName(node.getVarName(), *this->curScope);
         std::string suffix;
         if (!suggestion.empty()) {
-          suffix = ", did you mean `";
-          suffix += suggestion;
-          suffix += "' ?";
+          addSuggestionSuffix(suffix, suggestion);
         }
         this->reportError<UndefinedSymbol>(node, node.getVarName().c_str(), suffix.c_str());
         break;
@@ -801,9 +801,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
     auto suggestion = suggestSimilarMember(node.getFieldName(), this->typePool, *this->curScope,
                                            node.getRecvNode().getType(), SuggestMemberType::FIELD);
     if (!suggestion.empty()) {
-      suffix = ", did you mean `";
-      suffix += suggestion;
-      suffix += "' ?";
+      addSuggestionSuffix(suffix, suggestion);
     }
     this->reportError<UndefinedField>(node.getNameToken(), node.getFieldName().c_str(),
                                       node.getRecvNode().getType().getName(), suffix.c_str());

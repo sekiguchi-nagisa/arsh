@@ -1,0 +1,8 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_var1\.ds:8:1: \[semantic error\] cannot access undefined symbol: `OSTY', did you mean `OSTYPE' \?
+#    CHECKERR: $OSTY
+#    CHECKERR: ^~~~~
+# STATUS: 1
+
+$OSTY

@@ -1,0 +1,13 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_field1\.ds:13:19: \[semantic error\] cannot access undefined field: `be' for `%mod2\.Interval' type, did you mean `begin' \?
+#    CHECKERR: new Interval(1,3).be
+#    CHECKERR:                   ^~
+# STATUS: 1
+
+typedef Interval(b : Int, e : Int) {
+    let begin = $b
+    let end = $e
+}
+
+new Interval(1,3).be

@@ -1,0 +1,8 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_method2\.ds:8:8: \[semantic error\] cannot call undefined method: `lasindexOf' for `String' type, did you mean `lastIndexOf' \?
+#    CHECKERR: "3245".lasindexOf()
+#    CHECKERR:        ^~~~~~~~~~
+# STATUS: 1
+
+"3245".lasindexOf()

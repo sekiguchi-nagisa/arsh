@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_var2\.ds:10:5: \[semantic error\] cannot access undefined symbol: `AAAB', did you mean `AAA' \?
+#    CHECKERR:     $AAAB + 34
+#    CHECKERR:     ^~~~~
+# STATUS: 1
+
+{
+    var AAA = 34
+    $AAAB + 34
+}

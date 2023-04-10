@@ -4,9 +4,14 @@
 
 ### Changed
 
+#### Core
+
+- in some semantic error, show similar name suggestion
+    - for undefined variable, undefined field/method, undefined type
+
 #### Builtin
 
-- **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname
+- **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname result
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
 - show row numbers in completion pager if actual rows are larger than rendered rows
 

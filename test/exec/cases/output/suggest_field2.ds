@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_field2\.ds:10:6: \[semantic error\] cannot access undefined field: `he' for `%mod3' type, did you mean `hey' \?
+#    CHECKERR: $mod.he
+#    CHECKERR:      ^~
+# STATUS: 1
+
+source $SCRIPT_DIR/../../_module4test/module1.ds as mod
+
+$mod.he

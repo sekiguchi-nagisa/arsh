@@ -1,0 +1,8 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_type1\.ds:8:16: \[semantic error\] undefined type: `UnwrappingEr', did you mean `UnwrappingError' \?
+#    CHECKERR: assert 2345 is UnwrappingEr
+#    CHECKERR:                ^~~~~~~~~~~~
+# STATUS: 1
+
+assert 2345 is UnwrappingEr

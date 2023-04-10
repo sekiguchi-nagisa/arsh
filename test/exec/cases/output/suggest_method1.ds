@@ -1,0 +1,17 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_method1\.ds:17:20: \[semantic error\] cannot call undefined method: `distan' for `%mod2\.Interval' type, did you mean `distance' \?
+#    CHECKERR: new Interval(1,34).distan()
+#    CHECKERR:                    ^~~~~~
+# STATUS: 1
+
+typedef Interval(b : Int, e : Int) {
+    let begin = $b
+    let end = $e
+}
+
+function distance() : Int for Interval {
+    return $this.end - $this.begin
+}
+
+new Interval(1,34).distan()

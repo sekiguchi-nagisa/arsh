@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECKERR_RE: .+/output/suggest_type2\.ds:10:18: \[semantic error\] cannot access undefined field: `Di' for `%mod3\.Interval' type, did you mean `Dist' \?
+#    CHECKERR: new mod.Interval.Di()
+#    CHECKERR:                  ^~
+# STATUS: 1
+
+source $SCRIPT_DIR/../../_module4test/module1.ds as mod
+
+new mod.Interval.Di()
