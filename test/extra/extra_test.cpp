@@ -111,10 +111,12 @@ TEST_F(ModLoadTest, system) {
         exit 100
 )";
 
-  auto e = format("%s/include5.ds:2:8: [semantic error] module not found: `mod4extra5.ds'\n"
+  auto e = format("[semantic error] module not found: `mod4extra5.ds'\n"
+                  " --> %s/include5.ds:2:8\n"
                   "source mod4extra5.ds as mod\n"
                   "       ^~~~~~~~~~~~~\n"
-                  "(string):2:16: [note] at module import\n"
+                  "[note] at module import\n"
+                  " --> (string):2:16\n"
                   "        source include5.ds\n"
                   "               ^~~~~~~~~~~\n",
                   X_MODULE_DIR);
