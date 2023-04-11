@@ -7,9 +7,9 @@ $expectRegex("$(ds --dump-ast -c '[12, 32] is Array<Int>' 2>&1)", 0, $/^### dump
 $expectRegex("$(ds --dump-ast -n -c 'source '$SCRIPT_DIR'/../../_module4test/throw.ds' 2>&1)", 0,
              $/^### dump typed AST ###\n.+/)
 
-$expectRegex("$(ds --dump-ast -c '23 / /' 2>&1)", 1, $/^.+\[semantic error\].+/)
+$expectRegex("$(ds --dump-ast -c '23 / /' 2>&1)", 1, $/^\[semantic error\].+/)
 
-$expectRegex("$(ds --dump-ast -c '23 / ' 2>&1)", 1, $/^.+\[syntax error\].+/)
+$expectRegex("$(ds --dump-ast -c '23 / ' 2>&1)", 1, $/^\[syntax error\].+/)
 
 # untyped-ast dump
 $expectRegex("$(ds --dump-untyped-ast -c '12' 2>&1)", 0, $/^### dump untyped AST ###\n.+/)
@@ -17,4 +17,4 @@ $expectRegex("$(ds --dump-untyped-ast -c '12' 2>&1)", 0, $/^### dump untyped AST
 $expectRegex("$(ds --dump-untyped-ast -n -c 'source '$SCRIPT_DIR'/../../_module4test/throw.ds' 2>&1)", 0,
              $/^### dump untyped AST ###\n.+/)
 
-$expectRegex("$(ds --dump-untyped-ast -c '23 / ' 2>&1)", 1, $/^.+\[syntax error\].+/)
+$expectRegex("$(ds --dump-untyped-ast -c '23 / ' 2>&1)", 1, $/^\[syntax error\].+/)

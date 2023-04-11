@@ -88,15 +88,21 @@ void ErrorReporter::printError(const Lexer &lex, const char *kind, Token token, 
                                const char *message) {
   std::string out;
   out.reserve(256);
+
+  // print actual error message
+  formatTo(out, "%s%s[%s]%s %s%s%s%s\n", this->color(c), this->color(TermColor::Bold), kind,
+           this->color(TermColor::Reset), this->color(TermColor::White),
+           this->color(TermColor::Bold), message, this->color(TermColor::Reset));
+
+  // print error location (source, line num, col)
   unsigned int lineNumOffset = lex.getLineNumOffset();
-  formatTo(out, "%s:", lex.getSourceName().c_str());
+  formatTo(out, " %s-->%s %s", this->color(TermColor::Blue), this->color(TermColor::Reset),
+           lex.getSourceName().c_str());
   if (lineNumOffset > 0) {
     auto srcPos = lex.getSrcPos(token);
-    formatTo(out, "%d:%d:", srcPos.lineNum, srcPos.chars);
+    formatTo(out, ":%d:%d", srcPos.lineNum, srcPos.chars);
   }
-  formatTo(out, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
-           this->color(TermColor::Reset), message);
-
+  formatTo(out, "\n");
   if (lineNumOffset > 0) {
     this->printErrorLine(out, lex, token);
   }
@@ -140,7 +146,7 @@ void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token e
                this->color(TermColor::Reset));
 
       // print line marker
-      formatTo(out, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+      formatTo(out, "%s%s%s%s\n", this->color(TermColor::Red), this->color(TermColor::Bold),
                markers[index].c_str(), this->color(TermColor::Reset));
     }
   }

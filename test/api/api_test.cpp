@@ -765,9 +765,8 @@ TEST_F(APITest, module4) {
     DSState_delete(&this->state);
     return ret;
   });
-  ASSERT_NO_FATAL_FAILURE(
-      this->expectRegex(ret, 1, WaitStatus::EXITED, "",
-                        "^.+/target.ds:1:9: \\[semantic error\\] module not found: `hoghreua'.+$"));
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+      ret, 1, WaitStatus::EXITED, "", "^\\[semantic error\\] module not found: `hoghreua'.+$"));
 }
 
 TEST_F(APITest, module5) {

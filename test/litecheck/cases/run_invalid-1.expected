@@ -1,5 +1,6 @@
 run_invalid-1.test:2: [error] invalid RUN directive: `echo ${34 / "hello"}', caused by
-(loaded):1:13: [semantic error] require `Int' type, but is `String' type
+[semantic error] require `Int' type, but is `String' type
+ --> (loaded):1:13
 echo ${34 / "hello"}
             ^~~~~~~
 

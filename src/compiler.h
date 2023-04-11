@@ -29,13 +29,13 @@ namespace ydsh {
   C(Reset, 0)                                                                                      \
   C(Bold, 1)                                                                                       \
   /*C(Black,   30)*/                                                                               \
-  /*C(Red,     31)*/                                                                               \
+  C(Red, 31)                                                                                       \
   C(Green, 32)                                                                                     \
   C(Yellow, 33)                                                                                    \
   C(Blue, 34)                                                                                      \
   C(Magenta, 35)                                                                                   \
-  C(Cyan, 36) /*                                                                                   \
-  C(white,   37)*/
+  C(Cyan, 36)                                                                                      \
+  C(White, 37)
 
 enum class TermColor : unsigned int { // ansi color code
 #define GEN_ENUM(E, N) E,

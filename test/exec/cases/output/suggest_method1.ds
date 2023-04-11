@@ -1,6 +1,7 @@
 # RUN: exec $cmd $self
 
-# CHECKERR_RE: .+/output/suggest_method1\.ds:17:20: \[semantic error\] cannot call undefined method: `distan' for `%mod2\.Interval' type, did you mean `distance' \?
+#    CHECKERR: [semantic error] cannot call undefined method: `distan' for `%mod2.Interval' type, did you mean `distance' ?
+# CHECKERR_RE:  --> .+/output/suggest_method1\.ds:18:20$
 #    CHECKERR: new Interval(1,34).distan()
 #    CHECKERR:                    ^~~~~~
 # STATUS: 1

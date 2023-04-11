@@ -1,6 +1,7 @@
 # RUN: exec $cmd $self
 
-# CHECKERR_RE: .+/output/suggest_type3\.ds:10:9: \[semantic error\] cannot access undefined field: `Intervalff' for `%mod3' type, did you mean `Interval' \?
+#    CHECKERR: [semantic error] cannot access undefined field: `Intervalff' for `%mod3' type, did you mean `Interval' ?
+# CHECKERR_RE:  --> .+/output/suggest_type3\.ds:11:9$
 #    CHECKERR: new mod.Intervalff()
 #    CHECKERR:         ^~~~~~~~~~
 # STATUS: 1

@@ -71,24 +71,25 @@ static std::string toString(const char (&value)[N]) {
 
 TEST_F(CmdlineTest, marker1) {
   // line marker of syntax error
-  const char *msg = "(string):4:4: [syntax error] expected `=', `:'\n   \n   ^\n";
+  const char *msg = "[syntax error] expected `=', `:'\n --> (string):4:4\n   \n   ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
-  msg = "(string):1:10: [syntax error] expected `=', `:'\nvar a    \n         ^\n";
+  msg = "[syntax error] expected `=', `:'\n --> (string):1:10\nvar a    \n         ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a    "), 1, "", msg));
 
   auto result = ds("-c", "{").execAndGetResult(false);
   ASSERT_EQ(1, result.status.value);
   ASSERT_EQ("", result.out);
-  ASSERT_STREQ("{\n ^\n", strchr(result.err.c_str(), '\n') + 1);
+  ASSERT_STREQ(" --> (string):1:2\n{\n ^\n", strchr(result.err.c_str(), '\n') + 1);
 
   result = ds("-c", "\n);").execAndGetResult(false);
   ASSERT_EQ(1, result.status.value);
-  ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1);
+  ASSERT_STREQ(" --> (string):2:1\n);\n^\n", strchr(result.err.c_str(), '\n') + 1);
   ASSERT_EQ("", result.out);
 
   // line marker of semantic error
-  msg = R"((string):1:6: [semantic error] require `Int' type, but is `String' type
+  msg = R"([semantic error] require `Int' type, but is `String' type
+ --> (string):1:6
 [34, "hey"]
      ^~~~~
 )";
@@ -100,7 +101,8 @@ var a = 34
 $a = 34 +
      'de'
 )";
-  msg = R"((string):3:6: [semantic error] require `Int' type, but is `String' type
+  msg = R"([semantic error] require `Int' type, but is `String' type
+ --> (string):3:6
 $a = 34 +
      ^~~~
      'de'
@@ -109,55 +111,61 @@ $a = 34 +
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
   // line marker (reach null character)
-  msg = ".+:1:6: \\[syntax error\\] invalid token, expected `<NewLine>'\nhello\n     \n";
+  msg = "\\[syntax error\\] invalid token, expected `<NewLine>'\n --> .+:1:6\nhello\n     \n";
   ASSERT_NO_FATAL_FAILURE(this->expectRegex("hello\0world" | ds(), 1, "", msg));
 
   // line marker (unclosed string literal)
-  msg = R"((string):1:1: [syntax error] string literal must be closed with '
+  msg = R"([syntax error] string literal must be closed with '
+ --> (string):1:1
 '12345
 ^~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "'12345"), 1, "", msg));
 
-  // line marker (unclosed backquote literal)
-  msg = R"((string):1:6: [syntax error] backquote literal must be closed with `
+  // line marker (unclosed back-quote literal)
+  msg = R"([syntax error] backquote literal must be closed with `
+ --> (string):1:6
 echo `12345
      ^~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo `12345"), 1, "", msg));
 
-  // line marker (unclosed backquote literal)
-  msg = R"((string):1:4: [syntax error] backquote literal must be closed with `
+  // line marker (unclosed back-quote literal)
+  msg = R"([syntax error] backquote literal must be closed with `
+ --> (string):1:4
 "23`12345
    ^~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "\"23`12345"), 1, "", msg));
 
   // line marker (unclosed regex literal)
-  msg = R"((string):1:1: [syntax error] regex literal must be closed with /
+  msg = R"([syntax error] regex literal must be closed with /
+ --> (string):1:1
 $/AAA
 ^~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "$/AAA\n34/"), 1, "", msg));
 
   // line marker (unclosed regex literal)
-  msg = R"((string):1:4: [syntax error] regex literal must be closed with /
+  msg = R"([syntax error] regex literal must be closed with /
+ --> (string):1:4
 ++ $/ss\/
    ^~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "++ $/ss\\/"), 1, "", msg));
 
-  // line marker (mismatch newlien)
-  msg =
-      "(string):1:8: [syntax error] mismatched token `<NewLine>', expected io redirection target\n"
-      "echo > \n"
-      "       ^\n";
+  // line marker (mismatch newline)
+  msg = "[syntax error] mismatched token `<NewLine>', expected io redirection target\n"
+        " --> (string):1:8\n"
+        "echo > \n"
+        "       ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo > \n\n"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker2) {
   const char *s = "$e";
-  const char *msg = R"((string):1:1: [semantic error] cannot access undefined symbol: `e'
+  const char *msg = R"([semantic error] cannot access undefined symbol: `e'
+ --> (string):1:1
 $e
 ^~
 )";
@@ -165,60 +173,69 @@ $e
 
   // iterator
   s = "for $a in 34 {}";
-  msg = "(string):1:11: [semantic error] cannot iterate `Int' type\n"
+  msg = "[semantic error] cannot iterate `Int' type\n"
+        " --> (string):1:11\n"
         "for $a in 34 {}\n"
         "          ^~\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
   // index set
   s = "$SIG['a'] = 34";
-  msg = "(string):1:5: [semantic error] cannot call undefined method: `[]=' for `Signals' type\n"
+  msg = "[semantic error] cannot call undefined method: `[]=' for `Signals' type\n"
+        " --> (string):1:5\n"
         "$SIG['a'] = 34\n"
         "    ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
   // index get
   s = "23[0]";
-  msg = "(string):1:3: [semantic error] cannot call undefined method: `[]' for `Int' type\n"
+  msg = "[semantic error] cannot call undefined method: `[]' for `Int' type\n"
+        " --> (string):1:3\n"
         "23[0]\n"
         "  ^\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker3) {
-  const char *msg = R"((string):1:4: [semantic error] cannot access undefined symbol: `a'
+  const char *msg = R"([semantic error] cannot access undefined symbol: `a'
+ --> (string):1:4
 "${a.b}"
    ^
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
 
-  msg = R"((string):1:13: [semantic error] cannot access undefined field: `t' for `Bool' type
+  msg = R"([semantic error] cannot access undefined field: `t' for `Bool' type
+ --> (string):1:13
 echo ${true.t}
             ^
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF(echo ${true.t})EOF"), 1, "", msg));
 
-  msg = R"((string):1:32: [semantic error] unreachable code
+  msg = R"([semantic error] unreachable code
+ --> (string):1:32
 throw new Error(23 as String); assert $false
                                ^~~~~~~~~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ds("-c", "throw new Error(23 as String); assert $false"), 1, "", msg));
 
-  msg = R"((string):2:6: [semantic error] require `Int' type, but is `Bool' type
+  msg = R"([semantic error] require `Int' type, but is `Bool' type
+ --> (string):2:6
 $a = true|(true|false)
      ^~~~~~~~~~~~~~~~~
 )";
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ds("-c", "var a = 34;\n$a = true|(true|false)"), 1, "", msg));
 
-  msg = R"((string):1:3: [semantic error] require `Option' type, but is `Int' type
+  msg = R"([semantic error] require `Option' type, but is `Int' type
+ --> (string):1:3
   23!
   ^~
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "  23!"), 1, "", msg));
 
-  msg = R"((string):1:3: [semantic error] require `Option' type, but is `Int' type
+  msg = R"([semantic error] require `Option' type, but is `Int' type
+ --> (string):1:3
   23 ?? 45
   ^~
 )";
@@ -229,7 +246,8 @@ TEST_F(CmdlineTest, marker4) {
   // for east asian width
 
   const char *msg =
-      R"((string):1:10: [semantic error] cannot access undefined field: `d' for `String' type
+      R"([semantic error] cannot access undefined field: `d' for `String' type
+ --> (string):1:10
 'まま○2'.d
          ^
 )";
@@ -237,7 +255,8 @@ TEST_F(CmdlineTest, marker4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
 
   if (setlocale(LC_CTYPE, "ja_JP.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
+    msg = R"([semantic error] cannot access undefined field: `d' for `String' type
+ --> (string):1:11
 'まま○2'.d
           ^
 )";
@@ -247,7 +266,8 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "zh_CN.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
+    msg = R"([semantic error] cannot access undefined field: `d' for `String' type
+ --> (string):1:11
 'まま○2'.d
           ^
 )";
@@ -257,7 +277,8 @@ TEST_F(CmdlineTest, marker4) {
   }
 
   if (setlocale(LC_CTYPE, "ko_KR.UTF-8")) {
-    msg = R"((string):1:11: [semantic error] cannot access undefined field: `d' for `String' type
+    msg = R"([semantic error] cannot access undefined field: `d' for `String' type
+ --> (string):1:11
 'まま○2'.d
           ^
 )";
@@ -574,11 +595,12 @@ TEST_F(CmdlineTest2, import1) {
   auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
   chmod(fileName.c_str(), ~S_IRUSR);
 
-  std::string str = format(
-      "(string):1:8: [semantic error] cannot read module: `%s', caused by `Permission denied'\n"
-      "source %s as mod\n"
-      "       %s\n",
-      fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+  std::string str =
+      format("[semantic error] cannot read module: `%s', caused by `Permission denied'\n"
+             " --> (string):1:8\n"
+             "source %s as mod\n"
+             "       %s\n",
+             fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str));
 }
@@ -590,11 +612,13 @@ TEST_F(CmdlineTest2, import2) {
       this->createTempFile("target.ds", format("source %s/mod.ds as mod1", this->getTempDirName()));
 
   std::string str =
-      format("%s:1:8: [semantic error] `%s' module recursively import itself\n"
+      format("[semantic error] `%s' module recursively import itself\n"
+             " --> %s:1:8\n"
              "source %s as mod2\n"
              "       %s\n",
-             modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
-  str += format("%s:1:8: [note] at module import\n"
+             fileName.c_str(), modName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+  str += format("[note] at module import\n"
+                " --> %s:1:8\n"
                 "source %s as mod1\n"
                 "       %s\n",
                 fileName.c_str(), modName.c_str(), makeLineMarker(modName).c_str());
@@ -603,16 +627,17 @@ TEST_F(CmdlineTest2, import2) {
 }
 
 TEST_F(CmdlineTest2, import3) {
-  std::string str =
-      format("(string):1:9: [semantic error] cannot read module: `.', caused by `Is a directory'\n"
-             "source  .\n"
-             "        %s\n",
-             makeLineMarker(".").c_str());
+  std::string str = format("[semantic error] cannot read module: `.', caused by `Is a directory'\n"
+                           " --> (string):1:9\n"
+                           "source  .\n"
+                           "        %s\n",
+                           makeLineMarker(".").c_str());
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("source  ."), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import4) {
-  std::string str = format("(string):1:10: [semantic error] module not found: `hoge=~/huga'\n"
+  std::string str = format("[semantic error] module not found: `hoge=~/huga'\n"
+                           " --> (string):1:10\n"
                            "source   hoge=~/huga\n"
                            "         %s\n",
                            makeLineMarker("hoge=~/huga").c_str());
