@@ -9,7 +9,7 @@ jobs:
       matrix:
         cc: [ g++-7, g++-8, g++-9, g++-10, g++-11 ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -37,7 +37,7 @@ jobs:
       matrix:
         cc: [ clang++-6.0, clang++-7, clang++-10, clang++-11, clang++-12 ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -65,7 +65,7 @@ jobs:
       matrix:
         cc: [ g++-12, clang++-13, clang++-14, clang++-15 ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -95,7 +95,7 @@ jobs:
         cc: [ g++-12, clang++-15 ]
         option: [ on, off ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -124,7 +124,7 @@ jobs:
       matrix:
         option: [ address, undefined ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -152,7 +152,7 @@ jobs:
   build_on_linux_fuzzing:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: |
           sudo apt update
@@ -176,13 +176,13 @@ jobs:
   #  build_on_linux_x86:
   #    runs-on: ubuntu-18.04
   #    steps:
-  #      - uses: actions/checkout@v1
+  #      - uses: actions/checkout@v3
   #      - name: build and test
   #        uses: ./tools/dockerfiles/ubuntu-bionic-x86
 
   build_on_alpine:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: build and test
         uses: ./tools/dockerfiles/alpine

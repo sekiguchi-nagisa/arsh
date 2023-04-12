@@ -6,7 +6,7 @@ jobs:
   build_on_mac_11:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: brew install ninja
       - name: configure
@@ -29,7 +29,7 @@ jobs:
   build_on_mac_12:
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: prepare
         run: brew install ninja
       - name: configure
