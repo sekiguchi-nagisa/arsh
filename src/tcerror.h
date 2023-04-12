@@ -91,8 +91,8 @@ DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in module path");
 DEFINE_TCError(NoGlobMatch, "glob pattern `%s' does not match any files");
 DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
-DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, but always "
-                          "matches directory: `%s'");
+DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, "
+                          "but always matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
 DEFINE_TCError(TildeFail, "cannot expand tilde, no such user: `%s'");
 DEFINE_TCError(TildeNoDirStack, "in source statement, `~+', `~+N', `~N' style "
@@ -123,6 +123,8 @@ DEFINE_TCError(UndefinedUnary, "undefined unary op: `%s' for `%s' type");
 DEFINE_TCError(UndefinedBinary, "undefined binary op: `%s' for `%s' type");
 DEFINE_TCError(NotIterable, "cannot iterate `%s' type");
 DEFINE_TCError(PrivateField, "cannot access module private field: `%s'");
+DEFINE_TCError(OptParamExpand, "`%s' type expression is not allowed "
+                               "within string interpolations and parameter expansions");
 DEFINE_TCError(Unacceptable, "unacceptable type: `%s'");
 DEFINE_TCError(DefinedCmd, "already defined command: `%s'");
 DEFINE_TCError(ConflictSymbol, "at global import, cannot import %s defined in `%s' module\n"
@@ -132,6 +134,10 @@ DEFINE_TCError(NotFoundMod, "module not found: `%s'");
 DEFINE_TCError(CircularMod, "`%s' module recursively import itself");
 DEFINE_TCError(ModLimit, "number of loaded modules reaches limit");
 DEFINE_TCError(Required, "require `%s' type, but is `%s' type");
+DEFINE_TCError(InvalidCatchType, "invalid catch type: `%s', must be `Error' or "
+                                 "its derived types (except for `Nothing' type)");
+DEFINE_TCError(NestedJob, "`&', `&|`, `&!' and `coproc' operators cannot "
+                          "be applied to `Job' type expression");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
 DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type is not allowed");
 DEFINE_TCError(UnmatchParam, "number of parameters does not match, require `%d', but is `%d'");

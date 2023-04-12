@@ -6,8 +6,12 @@
 
 #### Core
 
-- in some semantic error, show similar name suggestion
-    - for undefined variable, undefined field/method, undefined type
+- adjust error message layout and colors
+- improve semantic error message
+    - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type
+    - catch type
+    - Option type within string interpolation / parameter expansion
+    - nested job operator
 
 #### Builtin
 

@@ -998,7 +998,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
 void TypeChecker::visitEmbedNode(EmbedNode &node) {
   auto &exprType = this->checkTypeAsExpr(node.getExprNode());
   if (exprType.isOptionType()) {
-    this->reportError<Unacceptable>(node.getExprNode(), exprType.getName());
+    this->reportError<OptParamExpand>(node.getExprNode(), exprType.getName());
     node.setType(this->typePool.getUnresolvedType());
     return;
   }
@@ -1064,8 +1064,7 @@ void TypeChecker::visitTimeNode(TimeNode &node) {
 
 void TypeChecker::visitForkNode(ForkNode &node) {
   auto child = this->funcCtx->intoChild();
-  this->checkType(nullptr, node.getExprNode(),
-                  node.isJob() ? &this->typePool.get(TYPE::Job) : nullptr);
+  this->checkTypeExactly(node.getExprNode());
 
   const DSType *type = nullptr;
   switch (node.getOpKind()) {
@@ -1082,8 +1081,11 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   case ForkKind::JOB:
   case ForkKind::COPROC:
   case ForkKind::DISOWN:
-  case ForkKind::NONE:
-  case ForkKind::PIPE_FAIL:
+  case ForkKind::NONE:      // unreachable
+  case ForkKind::PIPE_FAIL: // unreachable
+    if (node.getExprNode().getType().is(TYPE::Job)) {
+      this->reportError<NestedJob>(node.getExprNode());
+    }
     type = &this->typePool.get(TYPE::Job);
     break;
   }
@@ -1626,9 +1628,10 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
-  auto &exceptionType = this->checkType(this->typePool.get(TYPE::Error), node.getTypeNode());
-  if (exceptionType.isNothingType()) {
-    this->reportError<Unacceptable>(node.getTypeNode(), exceptionType.getName());
+  auto &exceptionType = this->checkTypeExactly(node.getTypeNode());
+  if (exceptionType.isNothingType() ||
+      !this->typePool.get(TYPE::Error).isSameOrBaseTypeOf(exceptionType)) {
+    this->reportError<InvalidCatchType>(node.getTypeNode(), exceptionType.getName());
   }
 
   {
