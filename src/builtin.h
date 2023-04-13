@@ -122,7 +122,7 @@ YDSH_METHOD int_2_int_add(RuntimeContext &ctx) {
   int64_t right = LOCAL(1).asInt();
 
   int64_t ret;
-  if (sadd_overflow(left, right, ret)) {
+  if (unlikely(sadd_overflow(left, right, ret))) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
@@ -136,7 +136,7 @@ YDSH_METHOD int_2_int_sub(RuntimeContext &ctx) {
   int64_t right = LOCAL(1).asInt();
 
   int64_t ret;
-  if (ssub_overflow(left, right, ret)) {
+  if (unlikely(ssub_overflow(left, right, ret))) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
@@ -150,7 +150,7 @@ YDSH_METHOD int_2_int_mul(RuntimeContext &ctx) {
   int64_t right = LOCAL(1).asInt();
 
   int64_t ret;
-  if (smul_overflow(left, right, ret)) {
+  if (unlikely(smul_overflow(left, right, ret))) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
@@ -179,7 +179,7 @@ YDSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
 
-  if (right == 0) {
+  if (unlikely(right == 0)) {
     raiseError(ctx, TYPE::ArithmeticError, "zero modulo");
     RET_ERROR;
   }
@@ -268,7 +268,7 @@ YDSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
 YDSH_METHOD int_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_abs);
   int64_t value = LOCAL(0).asInt();
-  if (value == INT64_MIN) {
+  if (unlikely(value == INT64_MIN)) {
     raiseError(ctx, TYPE::ArithmeticError, "absolute value of INT_MIN is not defined");
     RET_ERROR;
   }
@@ -661,7 +661,7 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto __value = E;                                                                              \
-    if (ctx.hasError()) {                                                                          \
+    if (unlikely(ctx.hasError())) {                                                                \
       RET_ERROR;                                                                                   \
     }                                                                                              \
     std::forward<decltype(__value)>(__value);                                                      \
@@ -1840,7 +1840,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
   auto &obj = typeAs<MapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   DSValue value = LOCAL(2);
-  if (!obj.trySwap(LOCAL(1), value)) {
+  if (unlikely(!obj.trySwap(LOCAL(1), value))) {
     std::string msg("not found key: ");
     msg += LOCAL(1).toString();
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
@@ -1984,7 +1984,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_close);
   auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
   int fd = fdObj.getValue();
-  if (fdObj.tryToClose(true) < 0) {
+  if (unlikely(fdObj.tryToClose(true) < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));
     RET_ERROR;
@@ -1997,7 +1997,7 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
   int newfd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
-  if (newfd < 0) {
+  if (unlikely(newfd < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));
     RET_ERROR;
@@ -2016,7 +2016,7 @@ YDSH_METHOD fd_value(RuntimeContext &ctx) {
 YDSH_METHOD fd_lock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_lock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
-  if (flock(fd, LOCK_EX) == -1) {
+  if (unlikely(flock(fd, LOCK_EX) == -1)) {
     raiseSystemError(ctx, errno, "lock failed");
     RET_ERROR;
   }
@@ -2027,7 +2027,7 @@ YDSH_METHOD fd_lock(RuntimeContext &ctx) {
 YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_unlock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
-  if (flock(fd, LOCK_UN) == -1) {
+  if (unlikely(flock(fd, LOCK_UN) == -1)) {
     raiseSystemError(ctx, errno, "unlock failed");
     RET_ERROR;
   }
@@ -2087,7 +2087,7 @@ YDSH_METHOD cmd_call(RuntimeContext &ctx) {
 
 #define CHECK_EDITOR_LOCK(editor)                                                                  \
   do {                                                                                             \
-    if (editor.locked()) {                                                                         \
+    if (unlikely((editor).locked())) {                                                             \
       raiseInvalidOperationError(ctx, "cannot modify LineEditor object during line editing");      \
       RET_ERROR;                                                                                   \
     }                                                                                              \

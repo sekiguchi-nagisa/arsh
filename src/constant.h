@@ -446,6 +446,18 @@ constexpr size_t SYS_LIMIT_DIRSTACK_SIZE = UINT8_MAX;
 constexpr size_t SYS_LIMIT_INPUT_SIZE = INT32_MAX;
 constexpr size_t SYS_LIMIT_HIST_SIZE = UINT16_MAX;
 
+// helper macro definition
+#if 1
+
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+#else
+
+#define likely(x) (x)
+#define unlikely(x) (x)
+
+#endif
 } // namespace ydsh
 
 #endif // YDSH_SYMBOL_H

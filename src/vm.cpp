@@ -1737,7 +1737,7 @@ const native_func_t *nativeFuncPtrTable();
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
-    if (!(E)) {                                                                                    \
+    if (unlikely(!(E))) {                                                                          \
       vmerror;                                                                                     \
     }                                                                                              \
   } while (false)
@@ -1745,7 +1745,7 @@ const native_func_t *nativeFuncPtrTable();
 bool VM::mainLoop(DSState &state) {
   OpCode op;
   while (true) {
-    if (!empty(DSState::eventDesc)) {
+    if (unlikely(!empty(DSState::eventDesc))) {
       TRY(checkVMEvent(state));
     }
 

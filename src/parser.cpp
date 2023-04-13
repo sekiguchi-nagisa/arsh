@@ -48,7 +48,7 @@
 #define TRY(expr)                                                                                  \
   ({                                                                                               \
     auto v = expr;                                                                                 \
-    if (this->hasError()) {                                                                        \
+    if (unlikely(this->hasError())) {                                                              \
       return nullptr;                                                                              \
     }                                                                                              \
     std::forward<decltype(v)>(v);                                                                  \
@@ -58,7 +58,7 @@ namespace ydsh {
 
 #define GUARD_DEEP_NESTING(name)                                                                   \
   CallCounter name(this->callCount);                                                               \
-  if (this->callCount == MAX_NESTING_DEPTH) {                                                      \
+  if (unlikely(this->callCount == MAX_NESTING_DEPTH)) {                                            \
     this->reportDeepNestingError();                                                                \
     return nullptr;                                                                                \
   }                                                                                                \

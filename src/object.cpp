@@ -167,14 +167,14 @@ std::string DSValue::toString() const {
 #define GUARD_RECURSION(state)                                                                     \
   RecursionGuard _guard(state);                                                                    \
   do {                                                                                             \
-    if (!_guard.checkLimit()) {                                                                    \
+    if (unlikely(!_guard.checkLimit())) {                                                          \
       return false;                                                                                \
     }                                                                                              \
   } while (false)
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
-    if (!(E)) {                                                                                    \
+    if (unlikely(!(E))) {                                                                          \
       return false;                                                                                \
     }                                                                                              \
   } while (false)
@@ -346,7 +346,7 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
 
   const bool small = isSmallStr(this->kind());
   const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
-  if (size > StringObject::MAX_SIZE - value.size()) {
+  if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
     raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
     return false;
   }
@@ -438,7 +438,7 @@ bool ArrayObject::opStr(StrBuilder &builder) const {
 }
 
 bool ArrayObject::append(DSState &state, DSValue &&obj) {
-  if (this->size() == MAX_SIZE) {
+  if (unlikely(this->size() == MAX_SIZE)) {
     raiseError(state, TYPE::OutOfRangeError, "reach Array size limit");
     return false;
   }
