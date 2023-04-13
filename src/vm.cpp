@@ -1390,7 +1390,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
     auto &v = *iter;
     if (v.hasStrRef()) {
       auto ref = v.asStrRef();
-      if (ref.hasNullChar()) {
+      if (unlikely(ref.hasNullChar())) {
         raiseGlobbingError(state, begin, end, "glob pattern has null characters");
         return false;
       }
@@ -1875,7 +1875,7 @@ bool VM::mainLoop(DSState &state) {
         unsigned short index = read16(GET_CODE(state), state.stack.pc());
         state.stack.pc() += 2;
         auto v = state.getGlobal(index);
-        if (!v) { // normally unreachable
+        if (unlikely(!v)) { // normally unreachable
           raiseError(state, TYPE::IllegalAccessError,
                      "attempt to access uninitialized global variable");
           vmerror;
@@ -2507,7 +2507,7 @@ void VM::rethrowFromFinally(DSState &state) {
 }
 
 bool VM::handleException(DSState &state) {
-  if (state.hook != nullptr) {
+  if (unlikely(state.hook != nullptr)) {
     state.hook->vmThrowHook(state);
   }
 

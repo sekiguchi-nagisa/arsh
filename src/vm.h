@@ -483,7 +483,7 @@ private:
   static bool windStackFrame(DSState &state, unsigned int stackTopOffset, unsigned int paramSize,
                              const DSCode &code) {
     auto ret = state.stack.wind(stackTopOffset, paramSize, code);
-    if (!ret) {
+    if (unlikely(!ret)) {
       raiseError(state, TYPE::StackOverflowError, "local stack size reaches limit");
     }
     return ret;
@@ -543,7 +543,7 @@ private:
   static bool prepareMethodCall(DSState &state, unsigned short index,
                                 unsigned short actualParamSize) {
     auto value = state.getGlobal(index);
-    if (!value) {
+    if (unlikely(!value)) {
       raiseError(state, TYPE::IllegalAccessError,
                  "attempt to call uninitialized method or constructor");
       return false;

@@ -23,7 +23,7 @@ bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DS
   const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
   const unsigned int operandSize = code.getStackDepth();
 
-  if (this->frames.size() == MAX_FRAME_SIZE) {
+  if (unlikely(this->frames.size() == MAX_FRAME_SIZE)) {
     return false;
   }
 
