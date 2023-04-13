@@ -33,7 +33,7 @@ SysConfig::SysConfig() {
   };
 
   const char *home;
-  if (struct passwd *pw = getpwuid(getuid())) {
+  if (struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
     home = pw->pw_dir;
   } else {
 #ifndef __EMSCRIPTEN__

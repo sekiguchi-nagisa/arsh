@@ -15,6 +15,7 @@
  */
 
 #include "brace.h"
+#include "constant.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 
@@ -190,7 +191,7 @@ bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
   const bool inc = range.begin <= range.end;
   if (inc) {
     int64_t ret;
-    if (sadd_overflow(cur, range.step, ret)) {
+    if (unlikely(sadd_overflow(cur, range.step, ret))) {
       return false;
     }
     if (ret > range.end) {
@@ -199,7 +200,7 @@ bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
     cur = ret;
   } else {
     int64_t ret;
-    if (ssub_overflow(cur, range.step, ret)) {
+    if (unlikely(ssub_overflow(cur, range.step, ret))) {
       return false;
     }
     if (ret < range.end) {

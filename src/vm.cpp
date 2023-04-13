@@ -87,7 +87,7 @@ static void initEnv() {
     setenv(ENV_SHLVL, "1", 1);
   }
 
-  if (struct passwd *pw = getpwuid(getuid())) {
+  if (struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
     // set HOME
     setenv(ENV_HOME, pw->pw_dir, 1);
 
@@ -230,7 +230,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
   state.stack.push(std::move(argvObj));
 
   const unsigned int stackTopOffset = UDC_PARAM_N + (hasFlag(attr, CmdCallAttr::CLOSURE) ? 1 : 0);
-  if (!windStackFrame(state, stackTopOffset, UDC_PARAM_N, code)) {
+  if (unlikely(!windStackFrame(state, stackTopOffset, UDC_PARAM_N, code))) {
     return false;
   }
 
@@ -263,7 +263,7 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
       }
       break;
     }
-    if (str.size() > StringObject::MAX_SIZE - readSize) {
+    if (unlikely(str.size() > StringObject::MAX_SIZE - readSize)) {
       raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
       return false;
     }
@@ -312,14 +312,14 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
       }
       skipCount = 0;
       if (fieldSep) {
-        if (!array.append(state, DSValue::createStr(std::move(str)))) {
+        if (unlikely(!array.append(state, DSValue::createStr(std::move(str))))) {
           return false;
         }
         str = "";
         skipCount = isSpace(ch) ? 2 : 1;
         continue;
       }
-      if (str.size() == StringObject::MAX_SIZE) {
+      if (unlikely(str.size() == StringObject::MAX_SIZE)) {
         raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
         return false;
       }
@@ -333,7 +333,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
 
   // append remain
   if (!str.empty() || !hasSpace(ifsRef)) {
-    if (!array.append(state, DSValue::createStr(std::move(str)))) {
+    if (unlikely(!array.append(state, DSValue::createStr(std::move(str))))) {
       return false;
     }
   }
@@ -1576,7 +1576,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   CONTINUE:
     if (i == size - 1) {
-      if (DSState::isInterrupted()) {
+      if (unlikely(DSState::isInterrupted())) {
         raiseSystemError(state, EINTR, "brace expansion is canceled");
         return false;
       }

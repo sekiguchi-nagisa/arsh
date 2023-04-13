@@ -158,7 +158,7 @@ std::pair<std::string, HandlePtr> Archive::unpack(TypePool &pool) const {
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto __v = E;                                                                                  \
-    if (!__v) {                                                                                    \
+    if (unlikely(!__v)) {                                                                          \
       return {"", nullptr};                                                                        \
     }                                                                                              \
     std::forward<decltype(__v)>(__v);                                                              \
@@ -195,7 +195,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto __v = E;                                                                                  \
-    if (!__v) {                                                                                    \
+    if (unlikely(!__v)) {                                                                          \
       return nullptr;                                                                              \
     }                                                                                              \
     std::forward<decltype(__v)>(__v);                                                              \
