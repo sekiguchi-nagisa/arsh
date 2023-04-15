@@ -700,7 +700,9 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
 void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
   if (node.isUnwrapOp()) {
     this->visit(*node.getExprNode());
-    this->emit0byteIns(OpCode::UNWRAP);
+    if (node.getExprNode()->getType().isOptionType()) {
+      this->emit0byteIns(OpCode::UNWRAP);
+    }
   } else {
     this->visit(*node.getApplyNode());
   }
