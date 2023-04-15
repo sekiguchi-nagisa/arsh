@@ -226,11 +226,11 @@ function _match_chunk(checks : [Directive], output : [String]) : Bool {
 function _skip_until(c : Any, output : [String], index : Int) : Int {
     if $c is String {
         for(; $index < $output.size(); $index++) {
-            $output[$index] == $c && break
+            $output[$index] == $c as String && break
         }
     } elif $c is Regex {
         for(; $index < $output.size(); $index++) {
-            $output[$index] =~ $c && break
+            $output[$index] =~ $c as Regex && break
         }
     } else {
         assert $false : "unreachable"
@@ -334,8 +334,8 @@ litecheck() {
 
     ## check bin
     if $bin {
-        $cmd = $bin.realpath() ?? _usage "file not found: \`${$bin}'"
-        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin}'"
+        $cmd = $bin!.realpath() ?? _usage "file not found: \`${$bin!}'"
+        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin!}'"
     }
 
     # read directive

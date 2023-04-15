@@ -22,4 +22,4 @@ if $# == 0 {  # parent
 
 $this.unlock()
 
-assert $j && $j.wait() == 167
+assert $j!.wait() == 167

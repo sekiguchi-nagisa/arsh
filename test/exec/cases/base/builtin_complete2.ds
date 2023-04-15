@@ -143,7 +143,7 @@ $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey"
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds as mod; new mod.Interval(0,23)."))
 $assertArray(['abs', "toFloat"], $(complete '
-    var a = 334.4 as Any
+    let a = 334.4 as Any
     if $a is Float {
         echo $a is Float
     } elif $a is Int {
@@ -160,10 +160,10 @@ $assertArray(['show', 'source', 'ss', 'ssum', 'status'], $(complete ' typedef AN
         return $this as String + $a
     }
     hoge() { new INT().s'))
-$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa.'))
-$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 && $aa.'))
-$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any; $aa is Int && $aa == 34 ? $aa.'))
-$assertArray(['abs', 'toFloat'], $(complete 'var aa = 34 as Any?; $aa = "ss".toFloat()
+$assertArray(['abs', 'toFloat'], $(complete 'let aa = 34 as Any; $aa is Int && $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'let aa = 34 as Any; $aa is Int && $aa == 34 && $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'let aa = 34 as Any; $aa is Int && $aa == 34 ? $aa.'))
+$assertArray(['abs', 'toFloat'], $(complete 'let aa = 34 as Any?; $aa = "ss".toFloat()
     ($aa && $aa is Int) ? $aa.'))
 
 

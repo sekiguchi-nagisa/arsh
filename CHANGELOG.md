@@ -6,8 +6,9 @@
 
 #### Core
 
+- **Breaking Change**: only allow smart-cast to read-only local/global variables
 - adjust error message layout and colors
-- improve semantic error message
+- improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type
     - catch type
     - Option type within string interpolation / parameter expansion

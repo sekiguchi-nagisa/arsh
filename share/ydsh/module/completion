@@ -235,6 +235,7 @@ function _comp_autoload(cmd : String) : String? {
     } with < $path
 
     if $target {
+        var target = $target!
         call compdef --cmd $cmd --comp-path $cmd --comp-target $target && return $cmd
     }
     return $none

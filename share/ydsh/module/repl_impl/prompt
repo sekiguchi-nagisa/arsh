@@ -11,9 +11,9 @@ var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)?
 
 $LINE_EDIT.setPrompt(function(p) => {
     try {
-        $p = $PROMPT_HOOK ? $PROMPT_HOOK($PS1) : $PS1
+        $p = $PROMPT_HOOK ? $PROMPT_HOOK!($PS1) : $PS1
         if $PROMPT_RENDERER {
-            $p = $PROMPT_RENDERER($p)
+            $p = $PROMPT_RENDERER!($p)
         }
     } catch e {
         $e.show()

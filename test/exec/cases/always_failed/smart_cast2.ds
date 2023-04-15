@@ -1,10 +1,11 @@
-#$test($result = 'type', $lineNum = 9, $chars = 20, $errorKind = 'Required', $status = 1)
+#$test($result = 'type', $lineNum = 9, $chars = 13, $errorKind = 'UndefinedBinary', $status = 1)
 
-var aaa = 34 as Any?
-var bbb = 'fjriaeo'.toInt()
-
-if $aaa is Int {
-    assert $aaa == 56
-} elif $bbb {
-    assert $bbb == $aaa
+{
+    var aa = "2345".toInt()
+    function() => {
+        $aa = $none
+    }
+    if $aa {
+        $aa + 34  # $aa is captured, so does not perform smart-cast
+    }
 }

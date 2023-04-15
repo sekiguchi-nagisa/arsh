@@ -853,7 +853,11 @@ void TypeChecker::resolveSmartCast(const Node &condNode) {
     return;
   }
   auto &varNode = cast<VarNode>(typeOpNode.getExprNode());
-  if (!varNode.getHandle()) {
+  if (auto handle = varNode.getHandle(); !handle || !handle->has(HandleAttr::READ_ONLY)) {
+    /**
+     * currently, smart cast is only enabled in the following cases
+     *  - read-only local/global variable
+     */
     return;
   }
 

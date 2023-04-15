@@ -49,21 +49,24 @@ assert new Float?() ?? 34.0 == 34.0
 
 
 # assign
+{
 var o = $opt(45)
 $o = "world"
 assert $o! == "world"
 
 $o = new String?()
 $o = "34"
-assert $o && $o == "34"  # auto-unwrap && right
-assert ($o ? $o.size() : 0) == 2
-if $o {
-  $o = 'hello'
+assert $o && $o! == "34"
+assert ($o ? $o!.size() : 0) == 2
 }
-assert $o && $o == 'hello' && $o.size() > 0
 
 {
-  var o = 34 as Any?
+    let o = $opt(2)
+    assert $o && $o == 'hello' && $o.size() > 0
+}
+
+{
+  let o = 34 as Any?
   assert $o && $o is Int && $o.abs() == 34
 }
 

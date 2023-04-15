@@ -14,27 +14,27 @@ assert !$bindings.get("^[12")
 ## change keybind
 var ex = 34 as Any
 try { $editor.bind("", "complete"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "keycode must start with control character: \`'"
+assert ($ex as InvalidOperationError).message() == "keycode must start with control character: \`'"
 
 $ex = 34
 try { $editor.bind("A", "complete"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "keycode must start with control character: \`A'"
+assert ($ex as InvalidOperationError).message() == "keycode must start with control character: \`A'"
 
 $ex = 34
 try { $editor.bind("^Aあ", "complete"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "keycode must be ascii characters: \`^Aあ'"
+assert ($ex as InvalidOperationError).message() == "keycode must be ascii characters: \`^Aあ'"
 
 $ex = 34
 try { $editor.bind("^A", "hogehogehuga"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "undefined edit action: \`hogehogehuga'"
+assert ($ex as InvalidOperationError).message() == "undefined edit action: \`hogehogehuga'"
 
 $ex = 34
 try { $editor.bind("^[[200~", "complete"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "cannot change binding of bracket start code \`^[[200~'"
+assert ($ex as InvalidOperationError).message() == "cannot change binding of bracket start code \`^[[200~'"
 
 $ex = 34
 try { $editor.bind("^[D", "bracket-paste"); } catch e { $ex = $e;}
-assert $ex is InvalidOperationError && $ex.message() == "cannot bind to \`bracket-paste'"
+assert ($ex as InvalidOperationError).message() == "cannot bind to \`bracket-paste'"
 
 $ex = 34
 try { $editor.bind("^[[D", "complete"); } catch e { $ex = $e;}
@@ -69,7 +69,7 @@ try {
 } catch e : Error {
     $ex = $e
 }
-assert $ex is InvalidOperationError && $ex.message() == "number of key bindings reaches limit (up to 255)"
+assert ($ex as InvalidOperationError).message() == "number of key bindings reaches limit (up to 255)"
 
 # actions
 assert $editor.actions() is [String]
@@ -104,20 +104,17 @@ assert ($ex as InvalidOperationError).message() == "already defined action: \`ba
 $ex = 34
 try { $editor.action('%%%%fe', 'replace-whole-accept', function(s, o)=> $s);  }
 catch e { $ex = $e; }
-assert $ex is InvalidOperationError && 
-    $ex.message() == "invalid action name, must [a-zA-Z_-]: \`%%%%fe'"
+assert ($ex as InvalidOperationError).message() == "invalid action name, must [a-zA-Z_-]: \`%%%%fe'"
 
 $ex = 34
 try { $editor.action('', 'replace-whole-accept', function(s, o)=> $s);  }
 catch e { $ex = $e; }
-assert $ex is InvalidOperationError && 
-    $ex.message() == "invalid action name, must [a-zA-Z_-]: \`'"
+assert ($ex as InvalidOperationError).message() == "invalid action name, must [a-zA-Z_-]: \`'"
 
 $ex = 34
 try { $editor.action('who', 'replace-whole-accept1', function(s, o)=> $s);  }
 catch e { $ex = $e; }
-assert $ex is InvalidOperationError && 
-    $ex.message() == "unsupported custom action type: \`replace-whole-accept1'"
+assert ($ex as InvalidOperationError).message() == "unsupported custom action type: \`replace-whole-accept1'"
 
 ## limit
 $ex = 34
@@ -130,5 +127,4 @@ try {
 } catch e {
     $ex = $e
 }
-assert $ex is InvalidOperationError && 
-    $ex.message() == "number of custom actions reaches limit (up to 255)"
+assert ($ex as InvalidOperationError).message() == "number of custom actions reaches limit (up to 255)"

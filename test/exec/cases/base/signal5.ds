@@ -11,7 +11,8 @@ try {
 }
 
 if $e is SystemError {
-    assert $e.message() == "failed to send HUP to pid(2147483642), caused by \`No such process'";
+    assert ($e as SystemError).message() == 
+        "failed to send HUP to pid(2147483642), caused by \`No such process'";
 } else {
     assert $false
 }

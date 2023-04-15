@@ -72,7 +72,7 @@ function _add(s : String) {
 
     $s.empty() && return;
     if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
-    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
     $s.contains($'\n') && return
 
     $HISTORY.add($s)
@@ -87,7 +87,7 @@ function _add_and_save(s : String) {
     if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
 
     if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
-    if $HISTIGNORE && $HISTIGNORE =~ $s { return; }
+    if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
 
     $HISTORY.add($s)
     if $HISTORY.size() > $HISTSIZE {

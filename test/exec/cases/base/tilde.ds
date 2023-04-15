@@ -57,12 +57,12 @@ assert "$(echo ~+)" == "/"
 $PWD = ""
 $ex = 34
 try { echo ~+; } catch e { $ex = $e; }  # if PWD is empty, raise error
-assert $ex is TildeError && $ex.message() == "undefined or empty: ~+"
+assert ($ex as TildeError).message() == "undefined or empty: ~+"
 
 unsetenv PWD
 $ex = 34
 try { echo ~+/hoge; } catch e { $ex = $e; }  # if PWD is unset, raise error
-assert $ex is TildeError && $ex.message() == "undefined or empty: ~+"
+assert ($ex as TildeError).message() == "undefined or empty: ~+"
 
 ## expand to OLDPWD
 import-env OLDPWD : "$(pwd)"
@@ -90,12 +90,12 @@ assert "$(echo ~-)" == "."
 $OLDPWD = ""
 $ex = 34
 try { echo ~-; } catch e { $ex = $e; }  # if OLDPWD is empty, raise error
-assert $ex is TildeError && $ex.message() =~ $/~-/
+assert ($ex as TildeError).message() =~ $/~-/
 
 unsetenv OLDPWD
 $ex = 34
 try { echo ~-; } catch e { $ex = $e; }  # if OLDPWD is unset, raise error
-assert $ex is TildeError && $ex.message() =~ $/~-/
+assert ($ex as TildeError).message() =~ $/~-/
 
 $OLDPWD = $oldpwd
 
@@ -139,36 +139,36 @@ assert "$(echo ~2)" == $DIRSTACK[0]
 ## expand dirstack error
 $ex = 34
 try { assert echo ~1999999999999999999999999999999999/hoge/gheur; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() == "invalid number format: ~1999999999999999999999999999999999"
+assert ($ex as TildeError).message() == "invalid number format: ~1999999999999999999999999999999999"
 
 $ex = 34
 try { assert echo ~1fherufhaer//hoge/gheur; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() == "invalid number format: ~1fherufhaer"
+assert ($ex as TildeError).message() == "invalid number format: ~1fherufhaer"
 
 $ex = 34
 try { assert echo ~+5; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() == 
+assert ($ex as TildeError).message() == 
 "directory stack index out of range, up to directory stack limit (2): ~+5"
 
 $ex = 34
 try { assert echo ~000015; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() == 
+assert ($ex as TildeError).message() == 
 "directory stack index out of range, up to directory stack limit (2): ~000015"
 
 $ex = 34
 try { assert echo ~-0000150; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() == 
+assert ($ex as TildeError).message() == 
 "directory stack index out of range, up to directory stack limit (2): ~-0000150"
 
 $DIRSTACK[0] = ''
 $DIRSTACK[1] = $'jfeir\x00QQQ'
 $ex = 34
 try { assert echo ~-1; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() ==  "expanded path contains null characters: ~-1"
+assert ($ex as TildeError).message() ==  "expanded path contains null characters: ~-1"
 
 $ex = 34
 try { assert echo ~+00002; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() ==  "undefined or empty: ~+00002"
+assert ($ex as TildeError).message() ==  "undefined or empty: ~+00002"
 
 $DIRSTACK.clear()
 for(var i = 0; $i < 1000; $i++) {
@@ -177,7 +177,7 @@ for(var i = 0; $i < 1000; $i++) {
 assert $DIRSTACK.size() == 1000
 $ex = 34
 try { assert echo ~800; } catch e { $ex = $e;}
-assert $ex is TildeError && $ex.message() ==  
+assert ($ex as TildeError).message() ==  
     "directory stack index out of range, up to directory stack limit (255): ~800"
 
 
