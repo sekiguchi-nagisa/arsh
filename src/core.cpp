@@ -588,18 +588,21 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   }
 
   // get result
-  if (funcObj && (funcObj = getFuncObj(*funcObj))) {
-    assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
-    return Ok(funcObj);
-  } else {
-    if (errorConsumer.value.empty()) { // has no error, but empty code
-      errorConsumer.value = "require expression";
+  if (funcObj) {
+    funcObj = getFuncObj(*funcObj);
+    if (funcObj) {
+      assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
+      return Ok(funcObj);
     }
-    auto message = DSValue::createStr(std::move(errorConsumer.value));
-    auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
-                                       std::move(message), 1);
-    return Err(toObjPtr<ErrorObject>(error));
   }
+
+  if (errorConsumer.value.empty()) { // has no error, but empty code
+    errorConsumer.value = "require expression";
+  }
+  auto message = DSValue::createStr(std::move(errorConsumer.value));
+  auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
+                                     std::move(message), 1);
+  return Err(toObjPtr<ErrorObject>(error));
 }
 
 std::string resolveFullCommandName(const DSState &state, const DSValue &name,
