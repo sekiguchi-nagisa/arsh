@@ -147,7 +147,7 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
-    if (!E) {                                                                                      \
+    if (unlikely(!(E))) {                                                                          \
       return false;                                                                                \
     }                                                                                              \
   } while (false)

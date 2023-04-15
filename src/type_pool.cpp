@@ -387,7 +387,7 @@ public:
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto value = E;                                                                                \
-    if (!value) {                                                                                  \
+    if (unlikely(!value)) {                                                                        \
       return value;                                                                                \
     }                                                                                              \
     std::move(value).take();                                                                       \
@@ -465,7 +465,7 @@ TypeOrError TypeDecoder::decode() {
 #define TRY2(E)                                                                                    \
   ({                                                                                               \
     auto value = E;                                                                                \
-    if (!value) {                                                                                  \
+    if (unlikely(!value)) {                                                                        \
       return false;                                                                                \
     }                                                                                              \
     std::move(value).take();                                                                       \

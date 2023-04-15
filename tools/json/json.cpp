@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <constant.h>
+
 #include <misc/num_util.hpp>
 #include <misc/resource.hpp>
 #include <misc/unicode.hpp>
@@ -275,7 +277,7 @@ const char *toString(JSONTokenKind kind) {
 #define TRY(expr)                                                                                  \
   ({                                                                                               \
     auto v = expr;                                                                                 \
-    if (this->hasError()) {                                                                        \
+    if (unlikely(this->hasError())) {                                                              \
       return JSON();                                                                               \
     }                                                                                              \
     std::forward<decltype(v)>(v);                                                                  \
@@ -364,7 +366,7 @@ JSON JSONParser::parseNumber() {
 #define TRY2(expr)                                                                                 \
   ({                                                                                               \
     auto v = expr;                                                                                 \
-    if (this->hasError()) {                                                                        \
+    if (unlikely(this->hasError())) {                                                              \
       return {"", JSON()};                                                                         \
     }                                                                                              \
     std::forward<decltype(v)>(v);                                                                  \
