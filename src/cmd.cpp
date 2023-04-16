@@ -45,7 +45,6 @@ static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
 static int builtin_help(DSState &state, ArrayObject &argvObj);
-static int builtin_pwd(DSState &state, ArrayObject &argvObj);
 static int builtin_read(DSState &state, ArrayObject &argvObj);
 static int builtin_setenv(DSState &state, ArrayObject &argvObj);
 static int builtin_test(DSState &state, ArrayObject &argvObj);
@@ -62,6 +61,7 @@ int builtin_disown(DSState &state, ArrayObject &argvObj);
 
 int builtin_shctl(DSState &state, ArrayObject &argvObj);
 
+int builtin_pwd(DSState &state, ArrayObject &argvObj);
 int builtin_cd(DSState &state, ArrayObject &argvObj);
 int builtin_dirs(DSState &state, ArrayObject &argvObj);
 int builtin_pushd_popd(DSState &state, ArrayObject &argvObj);
@@ -427,34 +427,6 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
       return invalidOptionError(argvObj, optState);
     }
   }
-  return 0;
-}
-
-static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
-  bool useLogical = true;
-
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "LPh")) != -1;) {
-    switch (opt) {
-    case 'L':
-      useLogical = true;
-      break;
-    case 'P':
-      useLogical = false;
-      break;
-    case 'h':
-      return showHelp(argvObj);
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  auto workdir = state.getWorkingDir(useLogical);
-  if (!workdir) {
-    PERROR(argvObj, ".");
-    return 1;
-  }
-  printf("%s\n", workdir.get());
   return 0;
 }
 

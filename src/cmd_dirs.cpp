@@ -22,6 +22,34 @@
 
 namespace ydsh {
 
+int builtin_pwd(DSState &state, ArrayObject &argvObj) {
+  bool useLogical = true;
+
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "LPh")) != -1;) {
+    switch (opt) {
+    case 'L':
+      useLogical = true;
+      break;
+    case 'P':
+      useLogical = false;
+      break;
+    case 'h':
+      return showHelp(argvObj);
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  auto workdir = state.getWorkingDir(useLogical);
+  if (!workdir) {
+    PERROR(argvObj, ".");
+    return 1;
+  }
+  printf("%s\n", workdir.get());
+  return 0;
+}
+
 int builtin_cd(DSState &state, ArrayObject &argvObj) {
   GetOptState optState;
   bool useLogical = true;
