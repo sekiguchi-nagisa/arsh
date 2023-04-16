@@ -81,6 +81,10 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
       skipCount = isSpace(ch) ? 2 : 1;
       continue;
     }
+    if (unlikely(strBuf.size() == StringObject::MAX_SIZE)) {
+      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+      return false;
+    }
     strBuf += static_cast<char>(ch);
   }
 

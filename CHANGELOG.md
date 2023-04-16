@@ -20,6 +20,7 @@
 - **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname result
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
 - show row numbers in completion pager if actual rows are larger than rendered rows
+- check read string length in builtin ``read`` command
 
 ## [0.29.2] - 2023-04-08
 
