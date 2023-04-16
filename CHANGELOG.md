@@ -21,6 +21,7 @@
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
 - show row numbers in completion pager if actual rows are larger than rendered rows
 - check read string length in builtin ``read`` command
+- check iterator invalidation of ``reply`` variable within builtin ``read`` and ``shctl info`` commands
 
 ## [0.29.2] - 2023-04-08
 

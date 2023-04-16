@@ -450,6 +450,19 @@ bool ArrayObject::append(DSState &state, DSValue &&obj) {
 // ##     Map_Object     ##
 // ########################
 
+bool MapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar) const {
+  if (this->locked()) {
+    std::string value = "cannot modify map object";
+    if (isReplyVar) {
+      value += " (reply)";
+    }
+    value += " during iteration";
+    raiseError(state, TYPE::InvalidOperationError, std::move(value));
+    return false;
+  }
+  return true;
+}
+
 std::string MapObject::toString() const {
   std::string str = "[";
   unsigned int count = 0;

@@ -834,6 +834,16 @@ public:
 
   /**
    *
+   * @param state
+   * @param isReplyVar
+   * if true, check reply variable
+   * @return
+   * if locked (create iterator), return false
+   */
+  bool checkIteratorInvalidation(DSState &state, bool isReplyVar) const;
+
+  /**
+   *
    * @param key
    * @param value
    * @return

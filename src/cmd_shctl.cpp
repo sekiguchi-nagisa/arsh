@@ -275,6 +275,9 @@ static void setAndPrintConf(MapObject &mapObj, unsigned int maxKeyLen, StringRef
 
 static int showInfo(DSState &state) {
   auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
+  if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
+    return 1;
+  }
   mapObj.clear();
 
   const char *table[] = {

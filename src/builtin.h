@@ -1748,14 +1748,9 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
 // ##     Map     ##
 // #################
 
-static void raiseIterInvalid(DSState &st) {
-  raiseInvalidOperationError(st, "cannot modify map object during iteration");
-}
-
 #define CHECK_ITER_INVALIDATION(obj)                                                               \
   do {                                                                                             \
-    if (obj.locked()) {                                                                            \
-      raiseIterInvalid(ctx);                                                                       \
+    if (unlikely(!((obj).checkIteratorInvalidation(ctx, false)))) {                                \
       RET_ERROR;                                                                                   \
     }                                                                                              \
   } while (false)
