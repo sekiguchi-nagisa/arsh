@@ -839,7 +839,7 @@ public:
    * @return
    * old element. if not found (first time insertion), return invalid
    */
-  DSValue set(DSValue &&key, DSValue &&value) {
+  DSValue set(DSValue &&key, DSValue &&value) { // FIXME: check size limit
     auto pair = this->valueMap.emplace(std::move(key), value);
     if (pair.second) {
       return DSValue::createInvalid();

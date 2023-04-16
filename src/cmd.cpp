@@ -15,10 +15,8 @@
  */
 
 #include <fcntl.h>
-#include <poll.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
-#include <termios.h>
 
 #include <cstdlib>
 #include <unordered_map>
@@ -45,7 +43,6 @@ static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
 static int builtin_help(DSState &state, ArrayObject &argvObj);
-static int builtin_read(DSState &state, ArrayObject &argvObj);
 static int builtin_setenv(DSState &state, ArrayObject &argvObj);
 static int builtin_test(DSState &state, ArrayObject &argvObj);
 static int builtin_true(DSState &state, ArrayObject &argvObj);
@@ -58,6 +55,8 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj);
 int builtin_kill(DSState &state, ArrayObject &argvObj);
 int builtin_wait(DSState &state, ArrayObject &argvObj);
 int builtin_disown(DSState &state, ArrayObject &argvObj);
+
+int builtin_read(DSState &state, ArrayObject &argvObj);
 
 int builtin_shctl(DSState &state, ArrayObject &argvObj);
 
@@ -542,7 +541,7 @@ static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
   }
 }
 
-static int parseFD(StringRef value) {
+int parseFD(StringRef value) {
   if (value.startsWith("/dev/fd/")) {
     value.removePrefix(strlen("/dev/fd/"));
   }
@@ -720,194 +719,6 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
   }
   }
   return result ? 0 : 1;
-}
-
-static int xfgetc(int fd, int timeout) {
-  signed char ch;
-  do {
-    errno = 0;
-
-    if (timeout > -2) {
-      struct pollfd pollfd[1];
-      pollfd[0].fd = fd;
-      pollfd[0].events = POLLIN;
-      if (poll(pollfd, 1, timeout) != 1) {
-        return EOF;
-      }
-    }
-
-    if (read(fd, &ch, 1) <= 0) {
-      ch = EOF;
-    }
-  } while (static_cast<int>(ch) == EOF && errno == EAGAIN);
-  return ch;
-}
-
-static int builtin_read(DSState &state, ArrayObject &argvObj) { // FIXME: timeout, UTF-8
-  StringRef prompt;
-  StringRef ifs;
-  bool backslash = true;
-  bool noecho = false;
-  int fd = STDIN_FILENO;
-  int timeout = -1;
-
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":rp:f:su:t:h")) != -1;) {
-    switch (opt) {
-    case 'p':
-      prompt = optState.optArg;
-      break;
-    case 'f':
-      ifs = optState.optArg;
-      break;
-    case 'r':
-      backslash = false;
-      break;
-    case 's':
-      noecho = true;
-      break;
-    case 'u': {
-      StringRef value = optState.optArg;
-      fd = parseFD(value);
-      if (fd < 0) {
-        ERROR(argvObj, "%s: invalid file descriptor", toPrintable(value).c_str());
-        return 1;
-      }
-      break;
-    }
-    case 't': {
-      auto ret = convertToDecimal<int64_t>(optState.optArg.begin(), optState.optArg.end());
-      int64_t t = ret.first;
-      if (ret.second) {
-        if (t > -1 && t <= INT32_MAX) {
-          t *= 1000;
-          if (t > -1 && t <= INT32_MAX) {
-            timeout = static_cast<int>(t);
-            break;
-          }
-        }
-      }
-      ERROR(argvObj, "%s: invalid timeout specification", toPrintable(optState.optArg).c_str());
-      return 1;
-    }
-    case 'h':
-      return showHelp(argvObj);
-    case ':':
-      ERROR(argvObj, "-%c: option require argument", optState.optOpt);
-      return 2;
-    default:
-      return invalidOptionError(argvObj, optState);
-    }
-  }
-
-  const unsigned int argc = argvObj.getValues().size();
-  unsigned int index = optState.index;
-  const bool isTTY = isatty(fd) != 0;
-
-  // check ifs
-  if (ifs.data() == nullptr) {
-    ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
-  }
-
-  // clear old variable before read
-  state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());          // clear REPLY
-  typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR)).clear(); // clear reply
-
-  const unsigned int varSize = argc - index; // if zero, store line to REPLY
-  const auto varIndex = varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR;
-  std::string strBuf;
-
-  // show prompt
-  if (isTTY) {
-    fwrite(prompt.data(), sizeof(char), prompt.size(), stderr);
-    fflush(stderr);
-  }
-
-  // change tty state
-  struct termios tty {};
-  struct termios oldtty {};
-  if (noecho && isTTY) {
-    tcgetattr(fd, &tty);
-    oldtty = tty;
-    tty.c_lflag &= ~(ECHO | ECHOK | ECHONL);
-    tcsetattr(fd, TCSANOW, &tty);
-  }
-
-  // read line
-  if (!isTTY) {
-    timeout = -2;
-  }
-  unsigned int skipCount = 1;
-  int ch;
-  for (bool prevIsBackslash = false; (ch = xfgetc(fd, timeout)) != EOF;
-       prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
-    if (ch == '\n') {
-      if (prevIsBackslash) {
-        continue;
-      }
-      break;
-    }
-    if (ch == '\\' && !prevIsBackslash && backslash) {
-      continue;
-    }
-
-    bool fieldSep = matchFieldSep(ifs, ch) && !prevIsBackslash;
-    if (fieldSep && skipCount > 0) {
-      if (isSpace(ch)) {
-        continue;
-      }
-      if (--skipCount == 1) {
-        continue;
-      }
-    }
-    skipCount = 0;
-    if (fieldSep && index < argc - 1) {
-      auto &obj = typeAs<MapObject>(state.getGlobal(varIndex));
-      auto varObj = argvObj.getValues()[index];
-      auto valueObj = DSValue::createStr(std::move(strBuf));
-      obj.set(std::move(varObj), std::move(valueObj));
-      strBuf = "";
-      index++;
-      skipCount = isSpace(ch) ? 2 : 1;
-      continue;
-    }
-    strBuf += static_cast<char>(ch);
-  }
-
-  // remove last spaces
-  if (!strBuf.empty()) {
-    if (hasSpace(ifs)) { // check if field separator has spaces
-      while (!strBuf.empty() && isSpace(strBuf.back())) {
-        strBuf.pop_back();
-      }
-    }
-  }
-
-  if (varSize == 0) {
-    state.setGlobal(varIndex, DSValue::createStr(std::move(strBuf)));
-    strBuf = "";
-  }
-
-  // set rest variable
-  for (; index < argc; index++) {
-    auto &obj = typeAs<MapObject>(state.getGlobal(varIndex));
-    auto varObj = argvObj.getValues()[index];
-    auto valueObj = DSValue::createStr(std::move(strBuf));
-    obj.set(std::move(varObj), std::move(valueObj));
-    strBuf = "";
-  }
-
-  // restore tty setting
-  if (noecho && isTTY) {
-    tcsetattr(fd, TCSANOW, &oldtty);
-  }
-
-  // report error
-  int ret = ch == EOF ? 1 : 0;
-  if (ret != 0 && errno != 0) {
-    PERROR(argvObj, "%d", fd);
-  }
-  return ret;
 }
 
 static int builtin_hash(DSState &state, ArrayObject &argvObj) {

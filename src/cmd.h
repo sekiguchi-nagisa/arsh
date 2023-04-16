@@ -47,6 +47,8 @@ int showHelp(const ArrayObject &obj);
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
+int parseFD(StringRef value);
+
 /**
  * return exit status.
  * argvObj must be Array_Object
