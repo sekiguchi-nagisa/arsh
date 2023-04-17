@@ -23,6 +23,10 @@
 - check read string length in builtin ``read`` command
 - check iterator invalidation of ``reply`` variable within builtin ``read`` and ``shctl info`` commands
 
+#### Completion
+
+- in ydsh completion, complete command names after ``-e`` option
+
 ## [0.29.2] - 2023-04-08
 
 ### Fixed
