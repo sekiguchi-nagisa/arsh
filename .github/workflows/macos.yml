@@ -3,29 +3,6 @@ name: MacOS
 on: [ push ]
 
 jobs:
-  build_on_mac_11:
-    runs-on: macos-11
-    steps:
-      - uses: actions/checkout@v3
-      - name: prepare
-        run: brew install ninja
-      - name: configure
-        run: |
-          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
-          mkdir build
-          cd build
-          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
-      - name: build
-        run: |
-          cd build
-          ninja
-          ninja install
-          ./ydsh ../tools/scripts/copy_mod4extra.ds
-      - name: test
-        run: |
-          cd build
-          ctest -j4 --output-on-failure
-
   build_on_mac_12:
     runs-on: macos-12
     steps:
