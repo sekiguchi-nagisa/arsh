@@ -116,7 +116,6 @@ private:
       switch (this->format[pos]) {
       case 'h':
       case 'l':
-      case 'q':
       case 'L':
       case 'j':
       case 'z':
