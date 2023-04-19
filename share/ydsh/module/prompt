@@ -68,7 +68,12 @@ function renderPrompt(p : String) : String {
         }
         $ret += $ch
     }
-    return "$(echo -en "$ret@")".slice(0, -1)
+    if (help printf 2>> /dev/null) {
+        printf -v prompt "%b" $ret
+        return $reply.remove("prompt")!
+    } else { # fallback
+        return "$(echo -en "$ret@")".slice(0, -1)
+    }
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
