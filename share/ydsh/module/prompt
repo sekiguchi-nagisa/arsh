@@ -68,7 +68,7 @@ function renderPrompt(p : String) : String {
         }
         $ret += $ch
     }
-    if (help printf 2>> /dev/null) {
+    if (help printf &>> /dev/null) {
         printf -v prompt "%b" $ret
         return $reply.remove("prompt")!
     } else { # fallback
