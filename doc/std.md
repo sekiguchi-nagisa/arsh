@@ -404,7 +404,7 @@ function empty() : Bool for [T0 : T1]
 
 function get(key : T0) : T1? for [T0 : T1]
 
-function remove(key : T0) : Bool for [T0 : T1]
+function remove(key : T0) : T1? for [T0 : T1]
 
 function swap(key : T0, value : T1) : T1 for [T0 : T1]
 

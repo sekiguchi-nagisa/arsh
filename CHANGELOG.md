@@ -19,7 +19,8 @@
 
 - **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname result
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
-- show row numbers in completion pager if actual rows are larger than rendered rows
+- **Breaking Change**: change return value of ``Map#remove`` method, now returns removed value
+- ``LineEditor#readLine`` method shows row numbers in completion pager if actual rows are larger than rendered rows
 - check read string length in builtin ``read`` command
 - check iterator invalidation of ``reply`` variable within some builtin commands
     - ``printf``, ``read``, ``shctl info``

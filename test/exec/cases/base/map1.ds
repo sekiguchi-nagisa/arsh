@@ -28,9 +28,18 @@ assert $a.putIfAbsent("1234", 100) == 100
 assert $a.get("1234")! == 100
 assert $a.putIfAbsent("1234", 10) == 100
 
-assert(! $a.remove("333"))
-assert($a.remove("c"))
-assert(!$a.get("c"))
+{
+    var rr = $a.remove("333")
+    assert $rr is Int?
+    assert ! $rr
+    assert $a.remove("c")! == 789
+    assert(!$a.get("c"))
+
+    var aa = [1 : new String?()]
+    var rrr = $aa.remove(2)
+    assert $rrr is String?
+    assert ! $aa.remove(1)
+}
 
 
 var b = new Map<Int, Float>()

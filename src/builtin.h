@@ -1820,13 +1820,12 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
   RET(iter != obj.getValueMap().end() ? iter->second : DSValue::createInvalid());
 }
 
-//!bind: function remove($this : Map<T0, T1>, $key : T0) : Bool
+//!bind: function remove($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_remove);
   auto &obj = typeAs<MapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  bool r = obj.remove(LOCAL(1));
-  RET_BOOL(r);
+  RET(obj.tryRemove(LOCAL(1)));
 }
 
 //!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1

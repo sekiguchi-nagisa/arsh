@@ -872,13 +872,14 @@ public:
     return false;
   }
 
-  bool remove(const DSValue &key) {
-    auto ret = this->valueMap.find(key);
-    if (ret == this->valueMap.end()) {
-      return false;
+  DSValue tryRemove(const DSValue &key) {
+    auto iter = this->valueMap.find(key);
+    if (iter == this->valueMap.end()) {
+      return DSValue::createInvalid();
     }
-    this->valueMap.erase(ret);
-    return true;
+    auto v = std::move(iter->second);
+    this->valueMap.erase(iter);
+    return v;
   }
 
   std::string toString() const;
