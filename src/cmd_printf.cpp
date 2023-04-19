@@ -172,7 +172,7 @@ bool FormatPrinter::appendAndInterpretEscape(const StringRef ref) {
       pos += ret.consumedSize; // skip invalid code
       continue;
     case EscapeSeqResult::UNKNOWN:
-      if (this->format[pos + 1] == 'c') {
+      if (ref[pos + 1] == 'c') {
         return false; // stop further printing
       }
       break;
