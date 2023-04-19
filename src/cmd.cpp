@@ -65,6 +65,8 @@ int builtin_cd(DSState &state, ArrayObject &argvObj);
 int builtin_dirs(DSState &state, ArrayObject &argvObj);
 int builtin_pushd_popd(DSState &state, ArrayObject &argvObj);
 
+int builtin_printf(DSState &state, ArrayObject &argvObj);
+
 static auto initBuiltinMap() {
   return StrRefMap<builtin_command_t>{
       {":", builtin_true},
@@ -87,6 +89,7 @@ static auto initBuiltinMap() {
       {"jobs", builtin_jobs},
       {"kill", builtin_kill},
       {"popd", builtin_pushd_popd},
+      {"printf", builtin_printf},
       {"pushd", builtin_pushd_popd},
       {"pwd", builtin_pwd},
       {"read", builtin_read},

@@ -212,6 +212,7 @@ set(YDSH_SRC
         src/cmd_read.cpp
         src/cmd_shctl.cpp
         src/cmd_dirs.cpp
+        src/cmd_printf.cpp
         src/core.cpp
         src/scope.cpp
         src/type_pool.cpp

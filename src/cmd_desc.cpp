@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <sys/resource.h> // for ulimit macros
+#include <sys/resource.h> // for ulimit macros (do not remove it)
 
 #include <string>
 
@@ -154,6 +154,7 @@ static BuiltinCmdDesc table[] = {
      "    Arguments:\n"
      "      +N    remove the Nth entry from the left\n"
      "      -N    remove the Nth entry from the right"},
+    {"printf", "[-v var] format [arguments]", ""},
     {"pushd", "[+N | -N | dir]",
      "    Change the current directory and push the old current directory onto the stack.\n"
      "    Arguments:\n"

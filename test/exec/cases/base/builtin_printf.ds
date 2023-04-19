@@ -1,0 +1,120 @@
+# for printf command
+
+## no format
+assert "$(printf 2>&1)" == "ydsh: printf: need format string
+printf: printf [-v var] format [arguments]"
+assert $? == 2
+
+assert "$(printf -v tt 2>&1)" == "ydsh: printf: need format string
+printf: printf [-v var] format [arguments]"
+assert $? == 2
+
+## invalid option
+assert "$(printf -w 2>&1)" == "ydsh: printf: -w: invalid option
+printf: printf [-v var] format [arguments]"
+assert $? == 2
+
+## -v option no-arg
+assert "$(printf -v 2>&1)" == "ydsh: printf: -v: option requires argument"
+assert $? == 1
+
+## -v option invalid name
+assert "$(printf -v '' 2>&1)" == "ydsh: printf: must be valid identifier"
+assert $? == 1
+
+## missing conversion specifier
+assert "$(printf '12%#' 2>&1)" == "ydsh: printf: \`%#': missing conversion specifier
+12"
+assert $? == 1
+
+## invalid conversion specifier
+printf -v val '23%y'
+assert $? == 1
+assert ! $reply.get('val')
+assert "$(printf '@@%y' 2>&1)" == "ydsh: printf: \`y': invalid conversion specifier
+@@"
+assert $? == 1
+
+## just print
+assert "$(printf 'hello')" == 'hello'
+$reply.clear()
+printf -v var 'hello'
+assert $reply['var'] == 'hello'
+
+## print with escape sequence
+assert "$(printf 'hello\tworld\n\\n!!')" == $'hello\tworld\n\\n!!'
+$reply.clear()
+printf -v var 'hello\tworld\n\\n!!'
+assert $reply['var'] == $'hello\tworld\n\\n!!'
+
+$reply.clear()
+printf -v var '\hello\'
+assert $reply['var'] == '\hello\'
+
+$reply.clear()
+printf -v var '@@\chello\'  # stop printing
+assert $reply['var'] == '@@'
+
+## print with directive
+$reply.clear()
+printf -v var 'hello%%' 1   # %% directive
+assert $reply['var'] == 'hello%'
+
+$reply.clear()
+printf -v var 'hello\%%' 1  # %% directive
+assert $reply['var'] == 'hello\%'
+
+$reply.clear()
+printf -v var '%s=%s\n' key 1   # %s directive
+assert $reply['var'] == $'key=1\n'
+
+$reply.clear()
+printf -v var '%s=%s\n' key   # %s directive
+assert $reply['var'] == $'key=\n'
+
+$reply.clear()
+printf -v var '%s=%b\n' 'key\tvalue1' 'key\tvalue2'  # %b directive (interpret escape sequence)
+assert $reply['var'] == 'key\tvalue1=' + $'key\tvalue2\n'
+
+$reply.clear()
+printf -v var '(%b)'  # %b directive (no-arg)
+assert $reply['var'] == '()'
+
+$reply.clear()
+printf -v var '%s=%q\n' 'key\tvalue1' $'key\tvalue2'  # %q directive (quote as shell arg)
+assert $reply['var'] == 'key\tvalue1=' + $'key\tvalue2'.quote() + $'\n'
+
+$reply.clear()
+printf -v var '(%q)'  # %q directive (no-arg)
+assert $reply['var'] == '()'
+
+
+## multiple args with directive
+$reply.clear()
+printf -v var '%s' 1 2 3 4
+assert $reply['var'] == '1234'
+
+$reply.clear()
+printf -v var '%s %s\n' 1 2 3 4 5
+assert $reply['var'] == $'1 2\n3 4\n5 \n'
+
+$reply.clear()
+printf -v var '@\c %s\n' 1 2 3 4 5
+assert $reply['var'] == '@'  # stop printing  even if multiple args
+
+## multiple args with no-directive
+$reply.clear()
+printf -v var 'hello' 1
+assert $reply['var'] == 'hello'
+
+$reply.clear()
+printf -v var 'hello' 1 2 3
+assert $reply['var'] == 'hello'
+
+$reply.clear()
+printf -v var 'hello%%\n' 1 2 3
+assert $reply['var'] == $'hello%\n'
+
+$reply.clear()
+printf -v var '%%hello%%\n' 1 2 3 4 5
+assert $reply['var'] == $'%hello%\n'

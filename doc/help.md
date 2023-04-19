@@ -26,6 +26,7 @@ builtin commands except for `:`, `call`, `echo`, `eval`, `false`, `test`, `true`
 | `jobs`              | ✔️          |
 | `kill`              | ✔️          |
 | `popd`              | ✔️          |
+| `printf`            | ✔️          |
 | `pushd`             | ✔️          |
 | `pwd`               | ✔️          |
 | `read`              | ✔️          |

@@ -96,7 +96,7 @@ assert $m[0] == 1
 assert $m[3] == 4
 assert $m.size() == 2
 
-## modified in builtin commands (read/shctl info)
+## modified in builtin commands (printf/read/shctl info)
 $ex = 34
 try {
     $reply['aa'] = 'frefer'
@@ -118,6 +118,18 @@ try {
 assert $reply.size() == 2
 assert ($ex as InvalidOperationError).message() == 
     'cannot modify map object (reply) during iteration'
+
+$ex = 34
+try {
+    $reply['aabbcc'] = 'frefer'
+    for a in $reply { printf -v ZZZ $a; }
+} catch e {
+    $ex = $e
+}
+assert $reply.size() == 3
+assert ($ex as InvalidOperationError).message() == 
+    'cannot modify map object (reply) during iteration'
+
 
 ## nexted iter
 var ret : [String]
