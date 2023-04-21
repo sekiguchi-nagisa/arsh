@@ -45,7 +45,7 @@ public:
 
   unsigned int getBufSize() const { return this->size; }
 
-  char *getBuf() { return this->getBufSize() <= STATIC_BUF_SIZE ? this->data : this->ptr; }
+  char *getBuf() { return this->heapUsed() ? this->ptr : this->data; }
 
   /**
    * reserve at-least afterBufSize
@@ -115,14 +115,15 @@ private:
   std::function<bool(StringRef)> consumer;
   FormatBuf formatBuf;
   std::string error;
+  bool restoreLocale{false};
 
 public:
-  explicit FormatPrinter(StringRef format) : format(format) {
-    setlocale(LC_NUMERIC, ""); // printf should use current locale setting specified by env
-  }
+  explicit FormatPrinter(StringRef format) : format(format) {}
 
   ~FormatPrinter() {
-    setlocale(LC_NUMERIC, "C"); // reset locale
+    if (this->restoreLocale) {
+      setlocale(LC_NUMERIC, "C"); // reset locale
+    }
   }
 
   void setConsumer(std::function<bool(StringRef)> &&f) { this->consumer = std::move(f); }
@@ -138,6 +139,13 @@ public:
   ArrayObject::IterType operator()(ArrayObject::IterType begin, ArrayObject::IterType end);
 
 private:
+  void syncLocale() {
+    if (!this->restoreLocale) {
+      this->restoreLocale = true;
+      setlocale(LC_NUMERIC, ""); // printf should use current locale setting specified by env
+    }
+  }
+
   bool append(StringRef ref) {
     if (likely(this->consumer)) {
       if (!ref.empty()) {
@@ -299,6 +307,8 @@ bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
 bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
                                 const ArrayObject::IterType end) {
   assert(StringRef("diouxX").contains(conversion));
+  this->syncLocale();
+
   std::string fmt = "%";
 
   EACH_FORMAT_FLAG(GEN_IF);
@@ -330,6 +340,8 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::
 bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
                                   ArrayObject::IterType end) {
   assert(StringRef("eEfFgGaA").contains(conversion));
+  this->syncLocale();
+
   std::string fmt = "%";
 
   EACH_FORMAT_FLAG(GEN_IF);
