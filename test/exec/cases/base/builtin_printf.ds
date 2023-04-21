@@ -65,6 +65,14 @@ printf -v var 'hello\%%' 1  # %% directive
 assert $reply['var'] == 'hello\%'
 
 $reply.clear()
+printf -v var '%c=%c\n' key あい   # %c directive
+assert $reply['var'] == $'k=あ\n'
+
+$reply.clear()
+printf -v var '%c' $'\xFF\xFE'   # %c directive
+assert $reply['var'] == $'\xFF'  # just print invalid utf8 byte
+
+$reply.clear()
 printf -v var '%s=%s\n' key 1   # %s directive
 assert $reply['var'] == $'key=1\n'
 

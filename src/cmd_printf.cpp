@@ -14,17 +14,93 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
+
 #include "cmd.h"
+#include "misc/num_util.hpp"
 #include "vm.h"
 
 namespace ydsh {
 
+class FormatBuf {
+private:
+  static constexpr unsigned int STATIC_BUF_SIZE = 32;
+
+  unsigned int size{STATIC_BUF_SIZE};
+  union {
+    char data[STATIC_BUF_SIZE];
+    char *ptr;
+  };
+
+public:
+  FormatBuf() = default;
+
+  ~FormatBuf() {
+    if (this->heapUsed()) {
+      free(this->ptr);
+    }
+  }
+
+  bool heapUsed() const { return this->getBufSize() > STATIC_BUF_SIZE; }
+
+  unsigned int getBufSize() const { return this->size; }
+
+  char *getBuf() { return this->getBufSize() <= STATIC_BUF_SIZE ? this->data : this->ptr; }
+
+  /**
+   * reserve at-least afterBufSize
+   * @param afterBufSize
+   */
+  void resize(unsigned int afterBufSize) {
+    if (afterBufSize > this->getBufSize() && afterBufSize > STATIC_BUF_SIZE) {
+      if (!this->heapUsed()) {
+        this->ptr = nullptr;
+      }
+      auto *r = realloc(this->ptr, sizeof(char) * afterBufSize);
+      if (!r) {
+        fatal_perror("alloc failed");
+      }
+      this->ptr = static_cast<char *>(r);
+      this->size = afterBufSize;
+    }
+  }
+
+  StringRef format(const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    StringRef ref;
+    while (true) {
+      errno = 0;
+      int ret = vsnprintf(this->getBuf(), this->getBufSize(), fmt, arg);
+      if (ret < 0) {
+        ref = nullptr;
+        break;
+      }
+      const auto retSize = static_cast<unsigned int>(ret);
+      if (retSize < this->getBufSize()) {
+        ref = StringRef(this->getBuf(), retSize);
+        break;
+      }
+      this->resize(retSize + 1);
+    }
+    va_end(arg);
+
+    return ref;
+  }
+};
+
+#define EACH_FORMAT_FLAG(OP)                                                                       \
+  OP(ALTER_FORM, (1u << 0u), '#')                                                                  \
+  OP(ZERO_PAD, (1u << 1u), '0')                                                                    \
+  OP(LEFT_ADJUST, (1u << 2u), '-')                                                                 \
+  OP(SPACE, (1u << 3u), ' ')                                                                       \
+  OP(SIGN, (1u << 4u), '+')
+
 enum class FormatFlag {
-  ALTER_FORM = 1u << 0u,  // #
-  ZERO_PAD = 1u << 1u,    // 0
-  LEFT_ADJUST = 1u << 2u, // -
-  SPACE = 1u << 3u,       // ' ' (a space)
-  SIGN = 1u << 4u,        // +
+#define GEN_ENUM(E, F, C) E = (F),
+  EACH_FORMAT_FLAG(GEN_ENUM)
+#undef GEN_ENUM
 };
 
 template <>
@@ -37,6 +113,7 @@ class FormatPrinter {
 private:
   const StringRef format;
   std::function<bool(StringRef)> consumer;
+  FormatBuf formatBuf;
   std::string error;
 
 public:
@@ -80,25 +157,18 @@ private:
    */
   bool appendAndInterpretEscape(StringRef ref);
 
+#define GEN_FLAG_CASE(E, F, C)                                                                     \
+  case C:                                                                                          \
+    setFlag(flags, FormatFlag::E);                                                                 \
+    continue;
+
   FormatFlag parseFlags(StringRef::size_type &pos) {
     FormatFlag flags{};
     for (const StringRef::size_type size = this->format.size(); pos < size; pos++) {
       switch (this->format[pos]) {
-      case '#':
-        setFlag(flags, FormatFlag::ALTER_FORM);
-        continue;
-      case '0':
-        setFlag(flags, FormatFlag::ZERO_PAD);
-        continue;
-      case '-':
-        setFlag(flags, FormatFlag::LEFT_ADJUST);
-        continue;
-      case ' ':
-        setFlag(flags, FormatFlag::SPACE);
-        continue;
-      case '+':
-        setFlag(flags, FormatFlag::SIGN);
-        continue;
+        // clang-format off
+      EACH_FORMAT_FLAG(GEN_FLAG_CASE)
+        // clang-format on
       default:
         break;
       }
@@ -127,6 +197,14 @@ private:
       }
     }
   }
+
+  bool appendAsStr(char conversion, ArrayObject::IterType &begin, ArrayObject::IterType end);
+
+  bool appendAsInt(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
+                   ArrayObject::IterType end);
+
+  bool appendAsFloat(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
+                     ArrayObject::IterType end);
 };
 
 // ###########################
@@ -187,6 +265,103 @@ bool FormatPrinter::appendAndInterpretEscape(const StringRef ref) {
   return true;
 }
 
+bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
+                                const ArrayObject::IterType end) {
+  assert(conversion == 'c' || conversion == 's' || conversion == 'b' || conversion == 'q');
+  StringRef ref;
+  if (begin != end) {
+    ref = (*begin++).asStrRef();
+  }
+  switch (conversion) {
+  case 'c': {
+    StringRef c;
+    iterateGraphemeUntil(ref, 1, [&c](const auto &grapheme) { c = grapheme.ref; });
+    return this->append(c);
+  }
+  case 's':
+    return this->append(ref);
+  case 'b':
+    return this->appendAndInterpretEscape(ref);
+  case 'q': {
+    auto str = quoteAsShellArg(ref);
+    return this->append(str);
+  }
+  default:
+    return true; // normally unreachable
+  }
+}
+
+#define GEN_IF(E, F, C)                                                                            \
+  if (hasFlag(flags, FormatFlag::E)) {                                                             \
+    fmt += (C);                                                                                    \
+  }
+
+bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
+                                const ArrayObject::IterType end) {
+  assert(StringRef("diouxX").contains(conversion));
+  std::string fmt = "%";
+
+  EACH_FORMAT_FLAG(GEN_IF);
+
+  fmt += "j";
+  fmt += conversion;
+
+  int64_t v = 0;
+  if (begin != end) {
+    auto ref = (*begin++).asStrRef();
+    auto pair = convertToNum<int64_t>(ref.begin(), ref.end(), 0);
+    if (pair.second) {
+      v = pair.first;
+    } else {
+      this->error = "`";
+      this->error += toPrintable(ref);
+      this->error += "': invalid number, must be octal, hex, decimal";
+      return false;
+    }
+  }
+
+  auto ret = this->formatBuf.format(fmt.c_str(), v);
+  if (!ret.data()) {
+    return false;
+  }
+  return this->append(ret);
+}
+
+bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
+                                  ArrayObject::IterType end) {
+  assert(StringRef("eEfFgGaA").contains(conversion));
+  std::string fmt = "%";
+
+  EACH_FORMAT_FLAG(GEN_IF);
+
+  fmt += conversion;
+
+  double v = 0.0;
+  if (begin != end) {
+    auto ref = (*begin++).asStrRef();
+    bool fail = true;
+    if (!ref.hasNullChar()) {
+      auto pair = convertToDouble(ref.data(), false);
+      if (pair.second == 0) {
+        fail = false;
+        v = pair.first;
+      }
+    }
+    if (fail) {
+      this->error = "`";
+      this->error += toPrintable(ref);
+      this->error += "': invalid float number";
+      return false;
+    }
+  }
+
+  auto ret = this->formatBuf.format(fmt.c_str(), v);
+  if (!ret.data()) {
+    return false;
+  }
+  return this->append(ret);
+}
+
 ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
                                                 const ArrayObject::IterType end) {
   this->error.clear();
@@ -224,36 +399,35 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
       return end;
     }
 
-    char next = this->format[pos];
-    switch (next) {
-    case 's': {
-      StringRef ref;
-      if (begin != end) {
-        ref = (*begin++).asStrRef();
-      }
-      TRY(this->append(ref));
+    const char conversion = this->format[pos];
+    switch (conversion) {
+    case 'c':
+    case 's':
+    case 'b':
+    case 'q':
+      TRY(this->appendAsStr(conversion, begin, end));
       pos++;
       continue;
-    }
-    case 'b': {
-      StringRef ref;
-      if (begin != end) {
-        ref = (*begin++).asStrRef();
-      }
-      TRY(this->appendAndInterpretEscape(ref));
+    case 'd':
+    case 'i':
+    case 'o':
+    case 'u':
+    case 'x':
+    case 'X':
+      TRY(this->appendAsInt(flags, conversion, begin, end));
       pos++;
       continue;
-    }
-    case 'q': {
-      StringRef ref;
-      if (begin != end) {
-        ref = (*begin++).asStrRef();
-      }
-      auto str = quoteAsShellArg(ref);
-      TRY(this->append(str));
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case 'a':
+    case 'A':
+      TRY(this->appendAsFloat(flags, conversion, begin, end));
       pos++;
       continue;
-    }
     default:
       this->error = "`";
       this->error += this->format.slice(pos, pos + 1);

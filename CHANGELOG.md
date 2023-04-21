@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Builtin
+
+- add builtin ``printf`` command
+
 ### Changed
 
 #### Core
