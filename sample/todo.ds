@@ -52,7 +52,7 @@ if $# == 0 {
     $open_todo_today()
 }
 if $# == 1 && $1 !~ $/^show$/i {
-    var f = $find_todo($1)
+    let f = $find_todo($1)
     if $f {
         exec vim $f
     }
@@ -66,7 +66,7 @@ if $# == 1 && $1 =~ $/^show$/i {
 }
 
 if $1 =~ $/^show$/i {
-    var f = $find_todo($2)
+    let f = $find_todo($2)
     $f && { echo $f; exit 0; }
     echo file not found: $2 1>&2
     exit 1
