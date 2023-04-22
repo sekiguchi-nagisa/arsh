@@ -44,8 +44,8 @@ static int64_t getShellLevel() {
   int64_t level = 0;
   if (shlvl != nullptr) {
     auto pair = convertToDecimal<int64_t>(shlvl);
-    if (pair.second && pair.first > -1) {
-      level = pair.first;
+    if (pair && pair.value > -1) {
+      level = pair.value;
     }
   }
   return level;

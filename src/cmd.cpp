@@ -347,8 +347,8 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
   if (index < argvObj.size() && index > 0) {
     auto value = argvObj.getValues()[index].asStrRef();
     auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
-    if (pair.second) {
-      ret = pair.first;
+    if (pair) {
+      ret = pair.value;
     }
   }
   return maskExitStatus(ret);
@@ -549,10 +549,10 @@ int parseFD(StringRef value) {
     value.removePrefix(strlen("/dev/fd/"));
   }
   auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
-  if (!ret.second || ret.first < 0) {
+  if (!ret || ret.value < 0) {
     return -1;
   }
-  return ret.first;
+  return ret.value;
 }
 
 static int testFile(char op, const char *value) {
@@ -689,15 +689,15 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
       }
       EACH_INT_COMP_OP(GEN_CASE) {
         auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
-        int64_t n1 = pair.first;
-        if (!pair.second) {
+        int64_t n1 = pair.value;
+        if (!pair) {
           ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
           return 2;
         }
 
         pair = convertToDecimal<int64_t>(right.begin(), right.end());
-        int64_t n2 = pair.first;
-        if (!pair.second) {
+        int64_t n2 = pair.value;
+        if (!pair) {
           ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
           return 2;
         }
@@ -1005,11 +1005,11 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
   }
 
   auto pair = convertToDecimal<underlying_t>(str);
-  if (!pair.second) {
+  if (!pair) {
     return false;
   }
 
-  entry.value = pair.first;
+  entry.value = pair.value;
   entry.value <<= ulimitOps[index].shift;
   entry.kind = UlimitOptEntry::NUM;
   return true;
@@ -1322,8 +1322,8 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     auto value = argvObj.getValues()[optState.index].asStrRef();
     if (!value.empty() && isDecimal(*value.data())) {
       auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
-      int num = pair.first;
-      if (!pair.second || num < 0 || num > 0777) {
+      int num = pair.value;
+      if (!pair || num < 0 || num > 0777) {
         ERROR(argvObj, "%s: octal number out of range (0000~0777)", toPrintable(value).c_str());
         return 1;
       }

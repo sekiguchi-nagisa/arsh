@@ -228,19 +228,19 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     dest = argvObj.getValues()[optState.index].asStrRef();
     if (dest.startsWith("+") || dest.startsWith("-")) {
       auto pair = convertToDecimal<uint64_t>(dest.begin() + 1, dest.end());
-      if (!pair.second) {
+      if (!pair) {
         ERROR(argvObj, "%s: invalid number", toPrintable(dest).c_str());
         return 1;
       }
-      if (pair.first > dirstack.size()) {
+      if (pair.value > dirstack.size()) {
         ERROR(argvObj, "%s: directory stack index out of range (up to %zu)",
               toPrintable(dest).c_str(), dirstack.size());
         return 1;
       }
       if (dest[0] == '-') {
-        rotateIndex = pair.first;
+        rotateIndex = pair.value;
       } else { // +
-        rotateIndex = dirstack.size() - pair.first;
+        rotateIndex = dirstack.size() - pair.value;
       }
       rotate = true;
     }

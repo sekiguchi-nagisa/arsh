@@ -320,8 +320,8 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::
   if (begin != end) {
     auto ref = (*begin++).asStrRef();
     auto pair = convertToNum<int64_t>(ref.begin(), ref.end(), 0);
-    if (pair.second) {
-      v = pair.first;
+    if (pair) {
+      v = pair.value; // FIXME: error reporting
     } else {
       this->error = "`";
       this->error += toPrintable(ref);

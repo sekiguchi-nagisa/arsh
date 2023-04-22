@@ -70,9 +70,9 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
       auto num = ref.substr(pos + 1).toString();
       ASSERT_FALSE(num.empty());
       auto pair = convertToDecimal<int>(num.c_str());
-      ASSERT_TRUE(pair.second);
-      ASSERT_TRUE(pair.first >= 0);
-      pair.first;
+      ASSERT_TRUE(pair);
+      ASSERT_TRUE(pair.value >= 0);
+      pair.value;
     });
 
     // read expected output

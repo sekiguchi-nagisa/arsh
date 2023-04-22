@@ -49,18 +49,18 @@ static BraceInt toBraceInt(StringRef ref) {
   bool ok = false;
   int64_t value = 0;
   auto ret = convertToDecimal<uint64_t>(ref.begin(), ref.end());
-  if (ret.second) {
+  if (ret) {
     if (negate) {
-      if (ret.first < LIMIT) {
+      if (ret.value < LIMIT) {
         ok = true;
-        value = -1 * static_cast<int64_t>(ret.first);
-      } else if (ret.first == LIMIT) {
+        value = -1 * static_cast<int64_t>(ret.value);
+      } else if (ret.value == LIMIT) {
         ok = true;
         value = INT64_MIN;
       }
-    } else if (ret.first < LIMIT) {
+    } else if (ret.value < LIMIT) {
       ok = true;
-      value = static_cast<int64_t>(ret.first);
+      value = static_cast<int64_t>(ret.value);
     }
   }
 

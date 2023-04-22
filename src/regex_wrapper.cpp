@@ -142,12 +142,12 @@ static PCREVersion getVersion() {
   StringRef vv2 = ref.slice(pos + 1, ref.size());
 
   auto pair = convertToDecimal<unsigned int>(vv1.begin(), vv1.end());
-  assert(pair.second);
-  unsigned int major = pair.first;
+  assert(pair);
+  unsigned int major = pair.value;
 
   pair = convertToDecimal<unsigned int>(vv2.begin(), vv2.end());
-  assert(pair.second);
-  unsigned int minor = pair.first;
+  assert(pair);
+  unsigned int minor = pair.value;
 
   return PCREVersion{
       .major = major,

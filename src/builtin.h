@@ -934,8 +934,8 @@ YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   auto &v = LOCAL(1);
   if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
     auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
-    if (ret.second) {
-      RET(DSValue::createInt(ret.first));
+    if (ret) {
+      RET(DSValue::createInt(ret.value));
     }
   }
   RET(DSValue::createInvalid());

@@ -101,19 +101,19 @@ static DriverOptions parseOptions(int argc, char **argv) {
   }
   if (debounceTime) {
     auto pair = convertToDecimal<int>(debounceTime);
-    if (!pair.second) {
+    if (!pair) {
       fprintf(stderr, "require valid number (0~): %s\n", debounceTime);
       exit(1);
     }
-    options.debounceTime = pair.first;
+    options.debounceTime = pair.value;
   }
   if (waitTime) {
     auto pair = convertToDecimal<unsigned int>(waitTime);
-    if (!pair.second) {
+    if (!pair) {
       fprintf(stderr, "require valid number (0~): %s\n", waitTime);
       exit(1);
     }
-    options.waitTime = pair.first;
+    options.waitTime = pair.value;
   }
   return options;
 }

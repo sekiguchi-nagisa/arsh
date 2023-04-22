@@ -443,15 +443,15 @@ std::pair<int64_t, bool> Lexer::toInt64(Token token) const {
   auto ref = this->toStrRef(token);
   assert(!ref.empty());
   const bool decimal = ref[0] != '0';
-  auto [value, status] = convertToNum<uint64_t>(ref.begin(), ref.end(), 0);
-  if (status) {
+  auto ret = convertToNum<uint64_t>(ref.begin(), ref.end(), 0);
+  if (ret) {
     if (decimal) {
-      return makeSigned(value, false);
+      return makeSigned(ret.value, false);
     } else {
-      return {static_cast<int64_t>(value), true};
+      return {static_cast<int64_t>(ret.value), true};
     }
   }
-  return {static_cast<int64_t>(value), false};
+  return {static_cast<int64_t>(ret.value), false};
 }
 
 std::pair<double, bool> Lexer::toDouble(Token token) const {

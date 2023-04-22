@@ -41,96 +41,109 @@ TEST(NumTest, base0) {
   const char *begin = n;
   const char *end = toEnd(begin);
   auto ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0u, ret.value);
+  ASSERT_EQ(0, ret.consumedSize);
   ASSERT_EQ(n, begin);
 
   n = "";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::ILLEGAL_CHAR, ret.kind);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(0, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "12s";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(12u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(12, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
   ASSERT_EQ(n + 2, begin);
 
   n = "-12";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::ILLEGAL_CHAR, ret.kind);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(0, ret.consumedSize);
   ASSERT_EQ(n, begin);
 
   n = "0192";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(1u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
   ASSERT_EQ(n + 2, begin);
 
   n = "0XS92";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(2, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 2, begin);
 
   n = "234a92";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(234u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(3, ret.consumedSize);
+  ASSERT_EQ(234, ret.value);
   ASSERT_EQ(n + 3, begin);
 
   n = "FF";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n, begin);
 
   n = "00FF";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(2, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 2, begin);
 
   n = "4294967299";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(ERANGE, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::OUT_OF_RANGE, ret.kind);
+  ASSERT_EQ(9, ret.consumedSize);
+  ASSERT_EQ(3, ret.value);
   ASSERT_EQ(n + 9, begin);
 
   n = "5294967290";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(ERANGE, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::OUT_OF_RANGE, ret.kind);
+  ASSERT_EQ(9, ret.consumedSize);
   ASSERT_EQ(n + 9, begin);
 
   // decimal
@@ -138,16 +151,18 @@ TEST(NumTest, base0) {
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(4294967295, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(4294967295, ret.value);
+  ASSERT_EQ(10, ret.consumedSize);
   ASSERT_EQ(n + 10, begin);
 
   n = "42";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(42, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(42, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   // octal
@@ -155,24 +170,27 @@ TEST(NumTest, base0) {
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(042, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(042, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "0O77";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(077, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(077, ret.value);
+  ASSERT_EQ(4, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "000706";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0706, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0706, ret.value);
+  ASSERT_EQ(6, ret.consumedSize);
   ASSERT_EQ(end, begin);
 }
 
@@ -181,53 +199,59 @@ TEST(NumTest, base8) {
   const char *begin = n;
   const char *end = toEnd(begin);
   auto ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0123u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0123u, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "806";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(0, ret.consumedSize);
   ASSERT_EQ(n, begin);
 
   n = "+D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "02D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(2, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(2, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
   ASSERT_EQ(n + 2, begin);
 
   n = "0xD06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "0O406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 8);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 }
 
@@ -236,87 +260,97 @@ TEST(NumTest, base10) {
   const char *begin = n;
   const char *end = toEnd(begin);
   auto ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(123u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(123u, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n, begin);
 
   n = "0";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0u, ret.value);
+  ASSERT_EQ(1, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(6, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(6, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "02D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(2, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(2, ret.consumedSize);
+  ASSERT_EQ(2, ret.value);
   ASSERT_EQ(n + 2, begin);
 
   n = "2D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(2, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(2, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "0xD06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "0O406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "FO406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n, begin);
 
   n = "S406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 10);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n, begin);
 }
 
@@ -325,76 +359,85 @@ TEST(NumTest, base16) {
   const char *begin = n;
   const char *end = toEnd(begin);
   auto ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0x123u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0x123u, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "+D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0xD06u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0xD06u, ret.value);
+  ASSERT_EQ(4, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "0";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0u, ret.value);
+  ASSERT_EQ(1, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "+06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0x06u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0x06u, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "02D06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0x2D06u, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0x2D06u, ret.value);
+  ASSERT_EQ(5, ret.consumedSize);
   ASSERT_EQ(end, begin);
 
   n = "0xD06";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "0O406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "FO406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0xF, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(1, ret.consumedSize);
+  ASSERT_EQ(15, ret.value);
   ASSERT_EQ(n + 1, begin);
 
   n = "XO406";
   begin = n;
   end = toEnd(begin);
   ret = parseInteger<uint32_t>(begin, end, 16);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
   ASSERT_EQ(n, begin);
 }
 
@@ -402,141 +445,182 @@ TEST(NumTest, int32) {
   // decimal
   const char *n = "12345";
   auto ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(12345, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(12345, ret.value);
+  ASSERT_EQ(5, ret.consumedSize);
 
   n = "0";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(1, ret.consumedSize);
 
   n = "111111111111111111";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_FALSE(ret.second);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::OUT_OF_RANGE, ret.kind);
+  ASSERT_EQ(10, ret.consumedSize);
 
   n = "+2147483647";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(2147483647, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(2147483647, ret.value);
+  ASSERT_EQ(11, ret.consumedSize);
 
   n = "2147483648";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_FALSE(ret.second);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::OUT_OF_RANGE, ret.kind);
+  ASSERT_EQ(10, ret.consumedSize);
 
   n = "-0";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
 
   n = "-10";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(-10, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(-10, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
 
-  n = "-10";
+  n = "+10";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(-10, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(10, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
 
   n = "-2147483647";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(-2147483647, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(-2147483647, ret.value);
+  ASSERT_EQ(11, ret.consumedSize);
 
   n = "-2147483648";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(-2147483648, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(-2147483648, ret.value);
+  ASSERT_EQ(11, ret.consumedSize);
 
   // octal
   n = "00000";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(5, ret.consumedSize);
 
   n = "070";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(070, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(070, ret.value);
+  ASSERT_EQ(3, ret.consumedSize);
 
   n = "080";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_FALSE(ret.second);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(1, ret.consumedSize);
 
   n = "0o074";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(074, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(074, ret.value);
+  ASSERT_EQ(5, ret.consumedSize);
 
   n = "0o00000000000";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(13, ret.consumedSize);
 
   n = "0O74";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(074, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(074, ret.value);
+  ASSERT_EQ(4, ret.consumedSize);
 
   n = "+0O8";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_FALSE(ret.second);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(3, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "-0O8";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_FALSE(ret.second);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(3, ret.consumedSize);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.value);
 
   n = "-0O74";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(-074, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(-074, ret.value);
+  ASSERT_EQ(5, ret.consumedSize);
 
   n = "-00000";
   ret = convertToNum<int32_t>(n, toEnd(n), 0);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(0, ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(0, ret.value);
+  ASSERT_EQ(6, ret.consumedSize);
 }
 
 TEST(NumTest, radix) {
   const char *n = "GE";
   auto ret = convertToNum<int32_t>(n, toEnd(n), 17);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(17 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(17 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
 
   n = "0";
   ret = convertToNum<int32_t>(n, toEnd(n), 1);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::ILLEGAL_RADIX, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "FF";
   ret = convertToNum<int32_t>(n, toEnd(n), 15);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "gE";
   ret = convertToNum<int32_t>(n, toEnd(n), 16);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::RADIX_OVERFLOW, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "ge";
   ret = convertToNum<int32_t>(n, toEnd(n), 37);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::ILLEGAL_RADIX, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "@";
   ret = convertToNum<int32_t>(n, toEnd(n), 33);
-  ASSERT_FALSE(ret.second);
-  ASSERT_EQ(EINVAL, errno);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(IntConversionStatus::ILLEGAL_CHAR, ret.kind);
+  ASSERT_EQ(0, ret.consumedSize);
+  ASSERT_EQ(0, ret.value);
 
   n = "zZ";
   ret = convertToNum<int32_t>(n, toEnd(n), 36);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(36 * ('Z' - 'A' + 10) + ('Z' - 'A' + 10), ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(36 * ('Z' - 'A' + 10) + ('Z' - 'A' + 10), ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
 
   n = "GE";
   ret = convertToNum<int32_t>(n, toEnd(n), 35);
-  ASSERT_TRUE(ret.second);
-  ASSERT_EQ(35 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.first);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(35 * ('G' - 'A' + 10) + ('E' - 'A' + 10), ret.value);
+  ASSERT_EQ(2, ret.consumedSize);
 }
 
 TEST(NumTest, double1) {

@@ -85,8 +85,8 @@ static int parseContentLength(const std::string &line) {
   const char *ptr = line.c_str();
   ptr += std::size(HEADER_LENGTH) - 1;
   auto ret = convertToDecimal<int32_t>(ptr);
-  if (ret.second && ret.first >= 0) {
-    return ret.first;
+  if (ret && ret.value >= 0) {
+    return ret.value;
   }
   return -1;
 }

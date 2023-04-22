@@ -22,18 +22,16 @@ namespace ydsh {
 
 // job control related builtin commands
 
-static std::pair<int, bool> toInt32(StringRef str) {
-  return convertToDecimal<int32_t>(str.begin(), str.end());
-}
+static auto toInt32(StringRef str) { return convertToDecimal<int32_t>(str.begin(), str.end()); }
 
 static int toSigNum(StringRef str) {
   if (!str.empty() && isDecimal(*str.data())) {
     auto pair = toInt32(str);
-    if (!pair.second) {
+    if (!pair) {
       return -1;
     }
     auto sigList = getUniqueSignalList();
-    return std::binary_search(sigList.begin(), sigList.end(), pair.first) ? pair.first : -1;
+    return std::binary_search(sigList.begin(), sigList.end(), pair.value) ? pair.value : -1;
   }
   return getSignalNum(str);
 }
@@ -41,10 +39,10 @@ static int toSigNum(StringRef str) {
 static bool printNumOrName(StringRef str) {
   if (!str.empty() && isDecimal(*str.data())) {
     auto pair = toInt32(str);
-    if (!pair.second) {
+    if (!pair) {
       return false;
     }
-    const char *name = getSignalName(pair.first);
+    const char *name = getSignalName(pair.value);
     if (name == nullptr) {
       return false;
     }
@@ -66,11 +64,11 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
                                 bool allowNoChild) {
   bool isJob = arg.startsWith("%");
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
-  if (!pair.second) {
+  if (!pair) {
     ERROR(argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
     return {};
   }
-  int id = pair.first;
+  int id = pair.value;
 
   if (isJob) {
     if (id > 0) {
@@ -205,8 +203,8 @@ static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
   }
   Job job;
   auto pair = toInt32(name);
-  if (pair.second && pair.first > -1) {
-    job = table.find(pair.first);
+  if (pair && pair.value > -1) {
+    job = table.find(pair.value);
   }
   return job;
 }

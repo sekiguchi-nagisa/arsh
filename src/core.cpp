@@ -333,12 +333,12 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
     id.removePrefix(strlen(OBJ_TEMP_MOD_PREFIX));
     id.removeSuffix(1);
     auto pair = convertToDecimal<unsigned int>(id.begin(), id.end());
-    if (!pair.second || pair.first >= state.tempModScope.size()) {
+    if (!pair || pair.value >= state.tempModScope.size()) {
       return {};
     }
 
     ResolvedTempMod ret = {
-        .index = pair.first,
+        .index = pair.value,
         .needDiscard = false,
         .valid = true,
     };

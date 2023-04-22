@@ -773,8 +773,8 @@ void TypeChecker::visitVarNode(VarNode &node) {
   case VarNode::POSITIONAL_ARG: { // $0, $1 ...
     StringRef ref = node.getVarName();
     if (auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
-        pair.second && pair.first <= SYS_LIMIT_ARRAY_MAX) {
-      if (pair.first == 0) { // $0
+        pair && pair.value <= SYS_LIMIT_ARRAY_MAX) {
+      if (pair.value == 0) { // $0
         auto ret = this->curScope->lookup("0");
         assert(ret);
         auto handle = ret.asOk();
@@ -784,7 +784,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
         auto ret = this->curScope->lookup("@");
         assert(ret);
         node.setHandle(ret.asOk());
-        node.setExtraValue(pair.first);
+        node.setExtraValue(pair.value);
         node.setType(this->typePool.get(TYPE::String));
       }
     } else {

@@ -84,8 +84,8 @@ FormatterFactory::create(std::ostream &stream) const {
     unsigned int lineNumOffset = 1;
     if (this->lineno) {
       auto ret = convertToDecimal<unsigned int>(this->lineno);
-      if (ret.second && ret.first > 0) {
-        lineNumOffset = ret.first;
+      if (ret && ret.value > 0) {
+        lineNumOffset = ret.value;
       }
     }
     auto formatter = std::make_unique<HTMLFormatter>(*style, stream, formatOp, lineNumOffset);

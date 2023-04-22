@@ -146,8 +146,8 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
     }
     case 't': {
       auto ret = convertToDecimal<int64_t>(optState.optArg.begin(), optState.optArg.end());
-      int64_t t = ret.first;
-      if (ret.second) {
+      int64_t t = ret.value;
+      if (ret) {
         if (t > -1 && t <= INT32_MAX) {
           t *= 1000;
           if (t > -1 && t <= INT32_MAX) {

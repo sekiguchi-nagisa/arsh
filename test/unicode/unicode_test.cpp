@@ -354,10 +354,10 @@ static std::vector<int> getInput(const std::string &param) {
   for (auto &v : values) {
     StringRef ref = v;
     auto pair = convertToNum<int>(ref.begin(), ref.end(), 16);
-    if (!pair.second) {
+    if (!pair) {
       fatal("broken format: %s\n", v.c_str());
     }
-    ret.push_back(pair.first);
+    ret.push_back(pair.value);
   }
   return ret;
 }
@@ -374,10 +374,10 @@ static std::vector<std::vector<int>> getExpected(const std::string &param) {
     } else {
       StringRef ref = v;
       auto pair = convertToNum<int>(ref.begin(), ref.end(), 16);
-      if (!pair.second) {
+      if (!pair) {
         fatal("broken format: %s\n", v.c_str());
       }
-      ret.back().push_back(pair.first);
+      ret.back().push_back(pair.value);
     }
   }
 

@@ -199,7 +199,7 @@ void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
  * @param argNode
  * @return
  */
-static std::pair<int32_t, bool> toNumericCmdArg(const CmdArgNode &argNode) {
+static IntConversionResult<int32_t> toNumericCmdArg(const CmdArgNode &argNode) {
   if (argNode.getSegmentNodes().size() == 1 && isa<StringNode>(*argNode.getSegmentNodes()[0])) {
     auto &strNode = cast<StringNode>(*argNode.getSegmentNodes()[0]);
     if (strNode.getToken().size == strNode.getValue().size()) {
@@ -207,7 +207,11 @@ static std::pair<int32_t, bool> toNumericCmdArg(const CmdArgNode &argNode) {
       return convertToDecimal<int32_t>(ref.begin(), ref.end());
     }
   }
-  return {0, false};
+  return {
+      .kind = IntConversionStatus::ILLEGAL_CHAR,
+      .consumedSize = 0,
+      .value = 0,
+  };
 }
 
 void TypeChecker::visitRedirNode(RedirNode &node) {
@@ -215,8 +219,8 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     // check fd format
     StringRef ref = node.getFdName();
     auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
-    if (pair.second && pair.first >= 0 && pair.first <= 2) {
-      node.setNewFd(pair.first);
+    if (pair && pair.value >= 0 && pair.value <= 2) {
+      node.setNewFd(pair.value);
     } else {
       this->reportError<RedirFdRange>(node, node.getFdName().c_str());
     }
@@ -240,8 +244,8 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     auto &type = this->checkTypeExactly(argNode);
     if (!type.is(TYPE::FD)) {
       auto pair = toNumericCmdArg(argNode);
-      if (pair.second && pair.first >= 0 && pair.first <= 2) {
-        node.setTargetFd(pair.first);
+      if (pair && pair.value >= 0 && pair.value <= 2) {
+        node.setTargetFd(pair.value);
       } else {
         this->reportError<NeedFd>(argNode);
       }

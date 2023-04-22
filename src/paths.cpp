@@ -240,15 +240,15 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *
         num.removePrefix(1);
       }
       auto pair = convertToDecimal<uint64_t>(num.begin(), num.end());
-      if (!pair.second) {
+      if (!pair) {
         return TildeExpandStatus::INVALID_NUM;
       }
       const size_t size = provider->size();
-      if (pair.first > size) {
+      if (pair.value > size) {
         return TildeExpandStatus::OUT_OF_RANGE;
       }
       const size_t index =
-          ch == '-' ? static_cast<size_t>(pair.first) : size - static_cast<size_t>(pair.first);
+          ch == '-' ? static_cast<size_t>(pair.value) : size - static_cast<size_t>(pair.value);
       auto ret = provider->get(index);
       if (ret.empty()) {
         return TildeExpandStatus::UNDEF_OR_EMPTY;

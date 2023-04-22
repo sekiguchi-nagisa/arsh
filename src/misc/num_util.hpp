@@ -127,6 +127,28 @@ inline auto putSign(UT v) {
   return static_cast<T>(~v + 1);
 }
 
+enum class IntConversionStatus : unsigned char {
+  OK,
+  ILLEGAL_CHAR,
+  ILLEGAL_RADIX,
+  RADIX_OVERFLOW,
+  OUT_OF_RANGE,
+};
+
+template <typename T>
+struct IntConversionResult {
+  static_assert(std::is_integral_v<T> &&
+                (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t)));
+
+  IntConversionStatus kind;
+
+  unsigned int consumedSize;
+
+  T value;
+
+  explicit operator bool() const { return this->kind == IntConversionStatus::OK; }
+};
+
 template <typename U>
 inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
   static_assert(std::is_unsigned<U>::value, "must be unsigned type");
@@ -145,9 +167,11 @@ inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
 }
 
 template <typename T,
-          enable_when<std::is_unsigned<T>::value &&
+          enable_when<std::is_unsigned_v<T> &&
                       (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsigned int base) {
+inline IntConversionResult<T> parseInteger(const char *&begin, const char *end, unsigned int base) {
+  const auto oldBegin = begin;
+
   if (begin != end && *begin == '+') {
     ++begin;
   }
@@ -156,15 +180,27 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsi
     base = parseBase(begin, end);
   }
 
-  errno = 0;
-  if (begin == end || base < 2 || base > 36) {
-    errno = EINVAL;
-    return {0, false};
+  if (begin == end) {
+    return {
+        .kind = IntConversionStatus::ILLEGAL_CHAR,
+        .consumedSize = static_cast<unsigned int>(begin - oldBegin),
+        .value = 0,
+    };
+  }
+  if (base < 2 || base > 36) {
+    return {
+        .kind = IntConversionStatus::ILLEGAL_RADIX,
+        .consumedSize = static_cast<unsigned int>(begin - oldBegin),
+        .value = 0,
+    };
   }
 
   T radix = static_cast<T>(base);
-  T ret = 0;
-  bool status = true;
+  IntConversionResult<T> ret = {
+      .kind = IntConversionStatus::OK,
+      .consumedSize = 0,
+      .value = 0,
+  };
   do {
     char ch = *begin;
     T v;
@@ -175,32 +211,30 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsi
     } else if (ch >= 'A' && ch <= 'Z') {
       v = 10 + (ch - 'A');
     } else {
-      errno = EINVAL;
-      status = false;
+      ret.kind = IntConversionStatus::ILLEGAL_CHAR;
       break;
     }
 
     if (v >= radix) {
-      errno = EINVAL;
-      status = false;
+      ret.kind = IntConversionStatus::RADIX_OVERFLOW;
       break;
     }
 
-    if (mul_overflow(ret, radix, ret) || // ret = ret * radix
-        add_overflow(ret, v, ret)) {     // ret = ret + v
-      errno = ERANGE;
-      status = false;
+    if (mul_overflow(ret.value, radix, ret.value) || // ret = ret * radix
+        add_overflow(ret.value, v, ret.value)) {     // ret = ret + v
+      ret.kind = IntConversionStatus::OUT_OF_RANGE;
       break;
     }
   } while (++begin != end);
 
-  return {ret, status};
+  ret.consumedSize = static_cast<unsigned int>(begin - oldBegin);
+  return ret;
 }
 
-template <typename T,
-          enable_when<std::is_signed<T>::value &&
-                      (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
-inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsigned int base) {
+template <typename T, enable_when<std::is_signed_v<T> && (sizeof(T) == sizeof(int32_t) ||
+                                                          sizeof(T) == sizeof(int64_t))> = nullptr>
+inline IntConversionResult<T> parseInteger(const char *&begin, const char *end, unsigned int base) {
+  const auto oldBegin = begin;
   bool sign = false;
   if (begin != end && *begin == '-' && *(begin + 1) != '+') {
     sign = true;
@@ -209,10 +243,17 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsi
 
   using UT = std::make_unsigned_t<T>;
   auto ret = parseInteger<UT>(begin, end, base);
-  if (ret.second) {
-    return makeSigned(ret.first, sign);
+  IntConversionResult<T> ret2 = {
+      .kind = ret.kind,
+      .consumedSize = static_cast<unsigned int>(begin - oldBegin),
+      .value = /*ret ? makeSigned(ret.value, sign) :*/ static_cast<T>(ret.value),
+  };
+  if (ret) {
+    auto pair = makeSigned(ret.value, sign);
+    ret2.value = pair.first;
+    ret2.kind = pair.second ? IntConversionStatus::OK : IntConversionStatus::OUT_OF_RANGE;
   }
-  return {static_cast<T>(ret.first), false};
+  return ret2;
 }
 
 /**
@@ -232,18 +273,18 @@ inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, unsi
  * @return
  * if detect overflow, return {0, false}
  */
-template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToNum(const char *begin, const char *end, unsigned int base) {
+template <typename T, enable_when<std::is_integral_v<T>> = nullptr>
+inline IntConversionResult<T> convertToNum(const char *begin, const char *end, unsigned int base) {
   return parseInteger<T>(begin, end, base);
 }
 
-template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToDecimal(const char *begin, const char *end) {
+template <typename T, enable_when<std::is_integral_v<T>> = nullptr>
+inline IntConversionResult<T> convertToDecimal(const char *begin, const char *end) {
   return convertToNum<T>(begin, end, 10);
 }
 
-template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
-inline std::pair<T, bool> convertToDecimal(const char *str) {
+template <typename T, enable_when<std::is_integral_v<T>> = nullptr>
+inline IntConversionResult<T> convertToDecimal(const char *str) {
   return convertToDecimal<T>(str, str + strlen(str));
 }
 

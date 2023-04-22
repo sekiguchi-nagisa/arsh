@@ -169,8 +169,8 @@ unsigned short DSType::resolveBelongedModId() const {
     auto modTypeName = ref.slice(0, index);
     modTypeName.removePrefix(strlen(MOD_SYMBOL_PREFIX));
     auto pair = convertToDecimal<uint32_t>(modTypeName.begin(), modTypeName.end());
-    assert(pair.second && pair.first <= SYS_LIMIT_MOD_ID);
-    return static_cast<unsigned short>(pair.first);
+    assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
+    return static_cast<unsigned short>(pair.value);
   }
   return 0;
 }

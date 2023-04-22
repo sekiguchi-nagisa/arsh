@@ -55,13 +55,17 @@ static bool isSectionEnd(const std::string &line) {
   return matchSectionEnd(line, match);
 }
 
-static std::pair<unsigned int, bool> parseNum(const std::string &line) {
+static IntConversionResult<unsigned int> parseNum(const std::string &line) {
   std::smatch match;
   if (matchSectionEnd(line, match) && match.length(2) > 0) {
     auto value = match.str(2);
     return convertToDecimal<unsigned int>(value.c_str());
   }
-  return {0, false};
+  return {
+      .kind = IntConversionStatus::ILLEGAL_CHAR,
+      .consumedSize = 0,
+      .value = 0,
+  };
 }
 
 static ClientInput loadWholeFile(const std::string &fileName, std::istream &input,
@@ -155,7 +159,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
         continue;
       }
       auto pair = parseNum(line);
-      unsigned int n = pair.second ? pair.first : 0;
+      unsigned int n = pair ? pair.value : 0;
       requests.emplace_back(std::move(ret).take(), n);
     } else {
       content += line;
