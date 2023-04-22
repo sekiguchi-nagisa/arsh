@@ -61,7 +61,7 @@ function _show(argv : [String]) : Int {
     }
 
     for(var i = $histSize - $offset; $i < $histSize; $i++) {
-        echo $HISTORY[$i]
+        printf -- "%s\n" $HISTORY[$i]
     }
     return 0
 }
@@ -118,7 +118,7 @@ function _add_and_save(s : String) {
             $lines.removeRange(0, $lines.size() - $HISTFILESIZE)
         }
         for line in $lines {
-            echo $line
+            printf -- "%s\n" $line
         } with >| $HISTFILE
     } catch e {
         return # ignore io error
@@ -156,7 +156,7 @@ function _save(p : String?) {
     for(var i = $offset; $i < $size; $i++) {
         var line = $HISTORY[$i]
         $line.contains($'\n') && continue
-        echo $HISTORY[$i]
+        printf -- "%s\n" $HISTORY[$i]
     } with >| $path
     chmod g-rw,o-rw $path
 }
