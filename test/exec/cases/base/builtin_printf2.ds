@@ -1,0 +1,96 @@
+# for number conversion
+
+## invalid integer
+assert "$(printf '<>%i' @ 2>&1)" == "ydsh: printf: \`@': invalid number, must be octal, hex, decimal
+<>" 
+assert $? == 1
+
+assert "$(printf 'ww%o' --12 2>&1)" == "ydsh: printf: \`--12': invalid number, must be octal, hex, decimal
+ww" 
+assert $? == 1
+
+assert "$(printf 'ww%u' 99999999999999999999999999999 2>&1)" == 
+"ydsh: printf: \`99999999999999999999999999999': invalid number, must be octal, hex, decimal
+ww" 
+assert $? == 1
+
+$reply.clear()
+printf -v var 'hello world: %x' @@@
+assert $? == 1
+assert ! $reply.get("var")
+
+## invalid float
+assert "$(printf 'ww%f' aaa 2>&1)" == 
+"ydsh: printf: \`aaa': invalid float number
+ww" 
+assert $? == 1
+
+assert "$(printf 'qw%G' NAN2222 2>&1)" == 
+"ydsh: printf: \`NAN2222': invalid float number
+qw" 
+assert $? == 1
+
+assert "$(printf 'qw%e' hoge 2>&1)" == 
+"ydsh: printf: \`hoge': invalid float number
+qw" 
+assert $? == 1
+
+$reply.clear()
+printf -v error 'hello world: %a' @@@
+assert $? == 1
+assert ! $reply.get("error")
+
+## integer conversion
+$reply.clear()
+printf -v var '%i=' 1 2 3 4 5  # %i
+assert $reply['var'] == '1=2=3=4=5='
+
+$reply.clear()
+printf -v var '%s=%i' s  # %i (no-arg)
+assert $reply['var'] == 's=0'
+
+$reply.clear()
+printf -v var '%s=%#+i' s  # %i (no-arg)
+assert $reply['var'] == 's=+0'
+
+$reply.clear()
+printf -v var '%d=' -999 999  # %d
+assert $reply['var'] == '-999=999='
+
+$reply.clear()
+printf -v var '%+d=' -999 999  # %d
+assert $reply['var'] == '-999=+999='
+
+$reply.clear()
+printf -v var '% d=' -999 999  # %d
+assert $reply['var'] == '-999= 999='
+
+$reply.clear()
+printf -v var '%u=' -999 999  # %u (recognized as unsinged)
+assert $reply['var'] == '18446744073709550617=999='
+
+$reply.clear()
+printf -v var '%o=' -999 999  # %o (octal)
+assert $reply['var'] == '1777777777777777776031=1747='
+
+$reply.clear()
+printf -v var '%#o=' -999 999  # %o (octal)
+assert $reply['var'] == '01777777777777777776031=01747='
+
+$reply.clear()
+printf -v var '%x=' -999 999  # %x (hex)
+assert $reply['var'] == 'fffffffffffffc19=3e7='
+
+$reply.clear()
+printf -v var '%#x=' -999 999  # %x (hex)
+assert $reply['var'] == '0xfffffffffffffc19=0x3e7='
+
+$reply.clear()
+printf -v var '%X=' -999 999  # %X (hex)
+assert $reply['var'] == 'FFFFFFFFFFFFFC19=3E7='
+
+$reply.clear()
+printf -v var '%#X=' -999 999  # %X (hex)
+assert $reply['var'] == '0XFFFFFFFFFFFFFC19=0X3E7='
+
+## float conversion

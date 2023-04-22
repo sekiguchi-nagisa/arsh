@@ -275,7 +275,7 @@ bool FormatPrinter::appendAndInterpretEscape(const StringRef ref) {
 
 bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
                                 const ArrayObject::IterType end) {
-  assert(conversion == 'c' || conversion == 's' || conversion == 'b' || conversion == 'q');
+  assert(StringRef("csbq").contains(conversion));
   StringRef ref;
   if (begin != end) {
     ref = (*begin++).asStrRef();
@@ -399,8 +399,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
       continue;
     }
 
-    auto flags = this->parseFlags(pos);
-    (void)flags;
+    const auto flags = this->parseFlags(pos);
 
     this->consumeLengthModifier(pos);
 
