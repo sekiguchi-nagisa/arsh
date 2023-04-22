@@ -100,7 +100,11 @@ assert $reply['var'] == '-3.140000=3.140000=inf=-inf=nan='
 
 $reply.clear()
 printf -v var '% f=' -3.14 3.14 inf -INF Nan  # %f
-assert $reply['var'] == '-3.140000= 3.140000= inf=-inf=nan='
+if $OSTYPE == 'darwin' {
+    assert $reply['var'] == '-3.140000= 3.140000= inf=-inf=nan='
+} else {
+    assert $reply['var'] == '-3.140000= 3.140000= inf=-inf= nan='
+}
 
 $reply.clear()
 printf -v var '%F=' -3.14 3.14 inf -INF Nan  # %F
@@ -108,7 +112,12 @@ assert $reply['var'] == '-3.140000=3.140000=INF=-INF=NAN='
 
 $reply.clear()
 printf -v var '%+F=' -3.14 3.14 inf -INF Nan  # %F
-assert $reply['var'] == '-3.140000=+3.140000=+INF=-INF=NAN='
+if $OSTYPE == 'darwin' {
+    assert $reply['var'] == '-3.140000=+3.140000=+INF=-INF=NAN='
+} else {
+    assert $reply['var'] == '-3.140000=+3.140000=+INF=-INF=+NAN='
+}
+
 
 $reply.clear()
 printf -v var '%e=' -3.14 3.14 inf -INF Nan  # %e
@@ -144,4 +153,8 @@ assert $reply['varq'] == '-0X1.91EB851EB851FP+1=0X1.91EB851EB851FP+1=INF=-INF=NA
 
 $reply.clear()
 printf -v varq '%+A=' -3.14 3.14 inf -INF Nan  # %A
-assert $reply['varq'] == '-0X1.91EB851EB851FP+1=+0X1.91EB851EB851FP+1=+INF=-INF=NAN='
+if $OSTYPE == 'darwin' {
+    assert $reply['varq'] == '-0X1.91EB851EB851FP+1=+0X1.91EB851EB851FP+1=+INF=-INF=NAN='
+} else {
+    assert $reply['varq'] == '-0X1.91EB851EB851FP+1=+0X1.91EB851EB851FP+1=+INF=-INF=+NAN='
+}
