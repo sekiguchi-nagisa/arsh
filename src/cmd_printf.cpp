@@ -353,11 +353,11 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject
     auto ref = (*begin++).asStrRef();
     bool fail = true;
     if (!ref.hasNullChar()) {
-      auto pair = convertToDouble(ref.data(), false);
-      if (pair.second == 0) {
+      auto ret = convertToDouble(ref.data(), false);
+      if (ret) {
         fail = false;
-        v = pair.first;
-      }
+        v = ret.value;
+      } // FIXME: error reporting
     }
     if (fail) {
       this->error = "`";

@@ -946,8 +946,8 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toFloat);
   auto ref = LOCAL(0).asStrRef();
   if (!ref.hasNullChar()) {
-    if (auto ret = convertToDouble(ref.data(), false); ret.second == 0) {
-      RET(DSValue::createFloat(ret.first));
+    if (auto ret = convertToDouble(ref.data(), false)) {
+      RET(DSValue::createFloat(ret.value));
     }
   }
   RET(DSValue::createInvalid());

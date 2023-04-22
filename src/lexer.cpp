@@ -457,8 +457,8 @@ std::pair<int64_t, bool> Lexer::toInt64(Token token) const {
 std::pair<double, bool> Lexer::toDouble(Token token) const {
   assert(this->withinRange(token));
   auto ret = convertToDouble(this->toTokenText(token).c_str());
-  assert(ret.second > -1);
-  return {ret.first, ret.second == 0};
+  assert(ret || ret.kind == DoubleConversionResult::OUT_OF_RANGE);
+  return {ret.value, static_cast<bool>(ret)};
 }
 
 static bool isIdStart(char ch) {

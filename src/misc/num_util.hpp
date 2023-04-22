@@ -264,38 +264,53 @@ public:
 
 inline auto LC_NUMERIC_C = Locale(LC_NUMERIC_MASK, "C");
 
+struct DoubleConversionResult {
+  enum Kind : unsigned char {
+    OK,
+    ILLEGAL_CHAR,
+    OUT_OF_RANGE,
+  } kind;
+
+  unsigned int consumedSize;
+
+  double value;
+
+  explicit operator bool() const { return this->kind == OK; }
+};
+
 /**
  * parse double with locale independent way
  * @param str
  * @param skipIllegalChar
- * @return (value, status)
- * if success, status is 0.
- * if out of range, status is 1.
- * if cannot convert, status is -1.
- * if found illegal character, status is -2.
+ * @return
  */
-inline std::pair<double, int> convertToDouble(const char *str, bool skipIllegalChar = false) {
+inline DoubleConversionResult convertToDouble(const char *str, bool skipIllegalChar = false) {
   errno = 0;
 
   // convert to double
   if (std::isspace(*str)) {
-    return {0, -1};
+    return {
+        .kind = DoubleConversionResult::ILLEGAL_CHAR,
+        .consumedSize = 0,
+        .value = 0,
+    };
   }
   char *end;
-  const double value = strtod_l(str, &end, LC_NUMERIC_C.get());
-  int status = 0;
+  DoubleConversionResult ret = {
+      .kind = DoubleConversionResult::OK,
+      .consumedSize = 0,
+      .value = strtod_l(str, &end, LC_NUMERIC_C.get()),
+  };
 
   // check error
-  if (value == 0 && end == str) {
-    status = -1;
-  } else if (*end != '\0' && !skipIllegalChar) {
-    status = -2;
-  } else if (value == 0 && errno == ERANGE) {
-    status = 1;
-  } else if ((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
-    status = 1;
+  if ((ret.value == 0 && end == str) || (*end != '\0' && !skipIllegalChar)) {
+    ret.kind = DoubleConversionResult::ILLEGAL_CHAR;
+  } else if ((ret.value == 0 || ret.value == HUGE_VAL || ret.value == -HUGE_VAL) &&
+             errno == ERANGE) {
+    ret.kind = DoubleConversionResult::OUT_OF_RANGE;
   }
-  return {value, status};
+  ret.consumedSize = end - str;
+  return ret;
 }
 
 constexpr bool isDecimal(char ch) { return ch >= '0' && ch <= '9'; }

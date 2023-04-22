@@ -351,8 +351,8 @@ JSON JSONParser::parseNumber() {
   data[token.size] = '\0';
 
   if (isFloat(data)) {
-    if (auto ret = convertToDouble(data); ret.second == 0) {
-      return ret.first;
+    if (auto ret = convertToDouble(data)) {
+      return ret.value;
     }
   } else {
     if (auto ret = convertToDecimal<int64_t>(data); ret.second) {
