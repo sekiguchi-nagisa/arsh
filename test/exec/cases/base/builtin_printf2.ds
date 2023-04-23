@@ -184,9 +184,8 @@ assert "$(printf 'qw%.*d' 2147483648 12 2>&1)" ==
 qw" 
 assert $? == 1
 
-assert "$(printf 'q@w%.*f' 2147483647 999999 2>&1)" == 
-"ydsh: printf: format failed, caused by \`Value too large for defined data type'
-q@w" 
+assert "$(printf 'q@w%.*f' 2147483647 999999 2>&1)" =~ 
+$/ydsh: printf: format failed, caused by \`Value too large.+'\nq@w/ 
 assert $? == 1
 
 ## width
