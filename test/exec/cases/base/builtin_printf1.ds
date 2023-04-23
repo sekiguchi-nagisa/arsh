@@ -23,6 +23,10 @@ assert "$(printf -v '' 2>&1)" == "ydsh: printf: must be valid identifier"
 assert $? == 1
 
 ## missing conversion specifier
+assert "$(printf '12%' 2>&1)" == "ydsh: printf: require at-least one directive after %
+12"
+assert $? == 1
+
 assert "$(printf '12%#' 2>&1)" == "ydsh: printf: \`%#': missing conversion specifier
 12"
 assert $? == 1

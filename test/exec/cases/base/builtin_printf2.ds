@@ -158,3 +158,127 @@ if $OSTYPE == 'darwin' {
 } else {
     assert $reply['varq'] == '-0X1.91EB851EB851FP+1=+0X1.91EB851EB851FP+1=+INF=-INF=+NAN='
 }
+
+## invalid width/precision
+assert "$(printf 'qw%*d' hoge 12 2>&1)" == 
+"ydsh: printf: \`hoge': invalid number, must be INT32
+qw" 
+assert $? == 1
+
+assert "$(printf 'qw%*d' 2147483648 12 2>&1)" == 
+"ydsh: printf: \`2147483648': invalid number, must be INT32
+qw" 
+assert $? == 1
+
+assert "$(printf 'q@w%*f' 2147483647 999999 2>&1)" == 
+"ydsh: printf: format failed, caused by \`Value too large for defined data type'
+q@w" 
+assert $? == 1
+
+assert "$(printf 'qw%.*d' hoge 12 2>&1)" == 
+"ydsh: printf: \`hoge': invalid number, must be INT32
+qw" 
+assert $? == 1
+
+assert "$(printf 'qw%.*d' 2147483648 12 2>&1)" == 
+"ydsh: printf: \`2147483648': invalid number, must be INT32
+qw" 
+assert $? == 1
+
+assert "$(printf 'q@w%.*f' 2147483647 999999 2>&1)" == 
+"ydsh: printf: format failed, caused by \`Value too large for defined data type'
+q@w" 
+assert $? == 1
+
+## width
+$reply.clear()
+printf -v varq '%*d' 0 99  # width
+assert $reply['varq'] == '99'
+
+$reply.clear()
+printf -v varq '%*d' 1 99  # width
+assert $reply['varq'] == '99'
+
+$reply.clear()
+printf -v varq '%*d' 2 99  # width
+assert $reply['varq'] == '99'
+
+$reply.clear()
+printf -v varq '%*d' 10 99  # width
+assert $reply['varq'] == '        99'
+
+$reply.clear()
+printf -v varq '%+*d' 10 99  # width '+''
+assert $reply['varq'] == '       +99'
+
+$reply.clear()
+printf -v varq '%+0*d' 10 99  # width '+' '0'
+assert $reply['varq'] == '+000000099'
+
+$reply.clear()
+printf -v varq '%0 *d' 10 99  # width ' ' '0'
+assert $reply['varq'] == ' 000000099'
+
+$reply.clear()
+printf -v varq '%-*d' 10 99  # width '-' '*'
+assert $reply['varq'] == '99        '
+
+$reply.clear()
+printf -v varq '%*d' -10 99  # width
+assert $reply['varq'] == '99        '
+
+$reply.clear()
+printf -v varq '%-*d' 10 -99  # width '-' '*'
+assert $reply['varq'] == '-99       '
+
+$reply.clear()
+printf -v varq '%0*d' 10 -99  # width '0'
+assert $reply['varq'] == '-000000099'
+
+$reply.clear()
+printf -v varq '%0 *f' 10 -99  # width '0' ' '
+assert $reply['varq'] == '-99.000000'
+
+## precision
+$reply.clear()
+printf -v varq '%#.*x' 0 9  # precision '#'
+assert $reply['varq'] == '0x9'
+
+$reply.clear()
+printf -v varq '%#.*x' 1 9  # precision '#'
+assert $reply['varq'] == '0x9'
+
+$reply.clear()
+printf -v varq '%#.*x' 2 9  # precision '#'
+assert $reply['varq'] == '0x09'
+
+$reply.clear()
+printf -v varq '%#.*x' 10 9  # precision '#'
+assert $reply['varq'] == '0x0000000009'
+
+$reply.clear()
+printf -v varq '%#*.*x' 20 10 9  # precision '#'
+assert $reply['varq'] == '        0x0000000009'
+assert $reply['varq'].size() == 20
+
+## float precision
+$reply.clear()
+printf -v varq '%.*f=' 0 3.14 0 -99.98 
+assert $reply['varq'] == '3=-100='
+
+$reply.clear()
+printf -v varq '%.*f=' 1 3.14 1 -99.98
+assert $reply['varq'] == '3.1=-100.0='
+
+$reply.clear()
+printf -v varq '%.*f=' 2 3.14 2 -99.98 2 nan 2 inf
+assert $reply['varq'] == '3.14=-99.98=nan=inf='
+
+$reply.clear()
+printf -v varq '%.*f=' 3 3.14 3 -99.98 3 nan 3 inf
+assert $reply['varq'] == '3.140=-99.980=nan=inf='
+
+$reply.clear()
+printf -v varq '%.*f=' -1 3.14 -1 -99.98 -1 nan -1 inf
+assert $reply['varq'] == '3.140000=-99.980000=nan=inf='
+

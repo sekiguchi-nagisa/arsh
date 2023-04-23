@@ -50,43 +50,22 @@ public:
   /**
    * reserve at-least afterBufSize
    * @param afterBufSize
+   * @return
    */
-  void resize(unsigned int afterBufSize) {
+  bool resize(unsigned int afterBufSize) {
     if (afterBufSize > this->getBufSize() && afterBufSize > STATIC_BUF_SIZE) {
       if (!this->heapUsed()) {
         this->ptr = nullptr;
       }
+      errno = 0;
       auto *r = realloc(this->ptr, sizeof(char) * afterBufSize);
       if (!r) {
-        fatal_perror("alloc failed");
+        return false;
       }
       this->ptr = static_cast<char *>(r);
       this->size = afterBufSize;
     }
-  }
-
-  StringRef format(const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
-    va_list arg;
-
-    va_start(arg, fmt);
-    StringRef ref;
-    while (true) {
-      errno = 0;
-      int ret = vsnprintf(this->getBuf(), this->getBufSize(), fmt, arg);
-      if (ret < 0) {
-        ref = nullptr;
-        break;
-      }
-      const auto retSize = static_cast<unsigned int>(ret);
-      if (retSize < this->getBufSize()) {
-        ref = StringRef(this->getBuf(), retSize);
-        break;
-      }
-      this->resize(retSize + 1);
-    }
-    va_end(arg);
-
-    return ref;
+    return true;
   }
 };
 
@@ -206,13 +185,59 @@ private:
     }
   }
 
+  bool parseInt32(ArrayObject::IterType &begin, ArrayObject::IterType end, int &value) {
+    if (begin != end) {
+      auto ref = (*begin++).asStrRef();
+      auto ret = convertToNum<int>(ref.begin(), ref.end(), 0);
+      if (!ret) {
+        this->error = "`";
+        this->error += toPrintable(ref);
+        this->error += "': invalid number, must be INT32";
+        return false;
+      }
+      value = ret.value;
+    }
+    return true;
+  }
+
+  Optional<int> parseWidth(StringRef::size_type &pos, ArrayObject::IterType &begin,
+                           ArrayObject::IterType end) {
+    int v = 0;
+    if (pos < this->format.size() && this->format[pos] == '*') {
+      pos++;
+      if (!this->parseInt32(begin, end, v)) {
+        return {};
+      }
+    }
+    return v;
+  }
+
+  Optional<int> parsePrecision(StringRef::size_type &pos, ArrayObject::IterType &begin,
+                               ArrayObject::IterType end) {
+    const auto size = this->format.size();
+    int v = -1;
+    if (pos < size && this->format[pos] == '.') {
+      pos++;
+      v = 0;
+      if (pos < size && this->format[pos] == '*') {
+        pos++;
+        if (!this->parseInt32(begin, end, v)) {
+          return {};
+        }
+      }
+    }
+    return v;
+  }
+
   bool appendAsStr(char conversion, ArrayObject::IterType &begin, ArrayObject::IterType end);
 
-  bool appendAsInt(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
-                   ArrayObject::IterType end);
+  bool appendAsInt(FormatFlag flags, int width, int precision, char conversion,
+                   ArrayObject::IterType &begin, ArrayObject::IterType end);
 
-  bool appendAsFloat(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
-                     ArrayObject::IterType end);
+  bool appendAsFloat(FormatFlag flags, int width, int precision, char conversion,
+                     ArrayObject::IterType &begin, ArrayObject::IterType end);
+
+  bool appendAsFormat(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 };
 
 // ###########################
@@ -304,8 +329,8 @@ bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
     fmt += (C);                                                                                    \
   }
 
-bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
-                                const ArrayObject::IterType end) {
+bool FormatPrinter::appendAsInt(FormatFlag flags, int width, int precision, char conversion,
+                                ArrayObject::IterType &begin, const ArrayObject::IterType end) {
   assert(StringRef("diouxX").contains(conversion));
   this->syncLocale();
 
@@ -313,7 +338,7 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::
 
   EACH_FORMAT_FLAG(GEN_IF);
 
-  fmt += "j";
+  fmt += "*.*j";
   fmt += conversion;
 
   int64_t v = 0;
@@ -329,16 +354,11 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, char conversion, ArrayObject::
       return false;
     }
   }
-
-  auto ret = this->formatBuf.format(fmt.c_str(), v);
-  if (!ret.data()) {
-    return false;
-  }
-  return this->append(ret);
+  return this->appendAsFormat(fmt.c_str(), width, precision, v);
 }
 
-bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject::IterType &begin,
-                                  ArrayObject::IterType end) {
+bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, char conversion,
+                                  ArrayObject::IterType &begin, ArrayObject::IterType end) {
   assert(StringRef("eEfFgGaA").contains(conversion));
   this->syncLocale();
 
@@ -346,6 +366,7 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject
 
   EACH_FORMAT_FLAG(GEN_IF);
 
+  fmt += "*.*";
   fmt += conversion;
 
   double v = 0.0;
@@ -366,12 +387,40 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, char conversion, ArrayObject
       return false;
     }
   }
+  return this->appendAsFormat(fmt.c_str(), width, precision, v);
+}
 
-  auto ret = this->formatBuf.format(fmt.c_str(), v);
-  if (!ret.data()) {
+bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
+  va_list arg;
+
+  va_start(arg, fmt);
+  auto &buf = this->formatBuf;
+  StringRef ref;
+  while (true) {
+    errno = 0;
+    int ret = vsnprintf(buf.getBuf(), buf.getBufSize(), fmt, arg);
+    if (ret < 0) {
+      break;
+    }
+    const auto retSize = static_cast<unsigned int>(ret);
+    if (retSize < buf.getBufSize()) {
+      ref = StringRef(buf.getBuf(), retSize);
+      break;
+    }
+    if (!buf.resize(retSize + 1)) {
+      break;
+    }
+  }
+  va_end(arg);
+
+  int errNum = errno;
+  if (!ref.data()) {
+    this->error = "format failed, caused by `";
+    this->error += strerror(errNum);
+    this->error += "'";
     return false;
   }
-  return this->append(ret);
+  return this->append(ref);
 }
 
 ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
@@ -400,6 +449,20 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     }
 
     const auto flags = this->parseFlags(pos);
+    const int width = ({
+      auto r = this->parseWidth(pos, begin, end);
+      if (!r.hasValue()) {
+        return end;
+      }
+      r.unwrap();
+    });
+    const int precision = ({
+      auto r = this->parsePrecision(pos, begin, end);
+      if (!r.hasValue()) {
+        return end;
+      }
+      r.unwrap();
+    });
 
     this->consumeLengthModifier(pos);
 
@@ -425,7 +488,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'u':
     case 'x':
     case 'X':
-      TRY(this->appendAsInt(flags, conversion, begin, end));
+      TRY(this->appendAsInt(flags, width, precision, conversion, begin, end));
       pos++;
       continue;
     case 'e':
@@ -436,7 +499,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'G':
     case 'a':
     case 'A':
-      TRY(this->appendAsFloat(flags, conversion, begin, end));
+      TRY(this->appendAsFloat(flags, width, precision, conversion, begin, end));
       pos++;
       continue;
     default:
