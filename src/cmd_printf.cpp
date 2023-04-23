@@ -22,7 +22,7 @@
 
 namespace ydsh {
 
-class FormatBuf {
+class FormatBuf { // NOLINT
 private:
   static constexpr unsigned int STATIC_BUF_SIZE = 32;
 
@@ -33,7 +33,7 @@ private:
   };
 
 public:
-  FormatBuf() = default;
+  FormatBuf() = default; // NOLINT
 
   ~FormatBuf() {
     if (this->heapUsed()) {
@@ -54,15 +54,17 @@ public:
    */
   bool resize(unsigned int afterBufSize) {
     if (afterBufSize > this->getBufSize() && afterBufSize > STATIC_BUF_SIZE) {
-      if (!this->heapUsed()) {
-        this->ptr = nullptr;
-      }
+      void *p;
       errno = 0;
-      auto *r = realloc(this->ptr, sizeof(char) * afterBufSize);
-      if (!r) {
+      if (this->heapUsed()) {
+        p = realloc(this->ptr, sizeof(char) * afterBufSize);
+      } else {
+        p = malloc(sizeof(char) * afterBufSize);
+      }
+      if (!p) {
         return false;
       }
-      this->ptr = static_cast<char *>(r);
+      this->ptr = static_cast<char *>(p);
       this->size = afterBufSize;
     }
     return true;
@@ -391,14 +393,14 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
 }
 
 bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
-  va_list arg;
-
-  va_start(arg, fmt);
   auto &buf = this->formatBuf;
   StringRef ref;
   while (true) {
     errno = 0;
+    va_list arg;
+    va_start(arg, fmt);
     int ret = vsnprintf(buf.getBuf(), buf.getBufSize(), fmt, arg);
+    va_end(arg);
     if (ret < 0) {
       break;
     }
@@ -411,7 +413,6 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
       break;
     }
   }
-  va_end(arg);
 
   int errNum = errno;
   if (!ref.data()) {

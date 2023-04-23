@@ -239,6 +239,11 @@ $reply.clear()
 printf -v varq '%0 *f' 10 -99  # width '0' ' '
 assert $reply['varq'] == '-99.000000'
 
+$reply.clear()
+printf -v varq '%*d=' 99 99 999 -89  # width
+assert $reply['varq'].size() == 99 + 999 + 2
+assert $reply['varq'].endsWith("   -89=")
+
 ## precision
 $reply.clear()
 printf -v varq '%#.*x' 0 9  # precision '#'
