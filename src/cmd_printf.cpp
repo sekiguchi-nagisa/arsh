@@ -395,11 +395,13 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
 bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
   auto &buf = this->formatBuf;
   StringRef ref;
+  int errNum;
   while (true) {
-    errno = 0;
     va_list arg;
     va_start(arg, fmt);
+    errno = 0;
     int ret = vsnprintf(buf.getBuf(), buf.getBufSize(), fmt, arg);
+    errNum = errno;
     va_end(arg);
     if (ret < 0) {
       break;
@@ -410,15 +412,18 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
       break;
     }
     if (!buf.resize(retSize + 1)) {
+      errNum = errno;
       break;
     }
   }
 
-  int errNum = errno;
   if (!ref.data()) {
-    this->error = "format failed, caused by `";
-    this->error += strerror(errNum);
-    this->error += "'";
+    this->error = "format failed";
+    if (errNum != 0) { // snprintf may not set errno
+      this->error += ", caused by `";
+      this->error += strerror(errNum);
+      this->error += "'";
+    }
     return false;
   }
   return this->append(ref);
