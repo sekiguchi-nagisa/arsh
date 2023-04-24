@@ -1040,6 +1040,10 @@ YDSH_METHOD string_quote(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_quote);
   auto ref = LOCAL(0).asStrRef();
   auto ret = quoteAsShellArg(ref);
+  if (ret.size() > StringObject::MAX_SIZE) {
+    raiseOutOfRangeError(ctx, STRING_LIMIT_ERROR);
+    RET_ERROR;
+  }
   RET(DSValue::createStr(std::move(ret)));
 }
 
