@@ -52,29 +52,41 @@ printf -v var 'hello\tworld\n\\n!!'
 assert $reply['var'] == $'hello\tworld\n\\n!!'
 
 $reply.clear()
+var pp = "$(printf '\hello\')"
 printf -v var '\hello\'
 assert $reply['var'] == '\hello\'
+assert $reply['var'] == $pp
 
 $reply.clear()
+$pp = "$(printf '@@\chello\')"
 printf -v var '@@\chello\'  # stop printing
 assert $reply['var'] == '@@'
+assert $reply['var'] == $pp
 
 ## print with directive
 $reply.clear()
+$pp = "$(printf 'hello%%' 1)"
 printf -v var 'hello%%' 1   # %% directive
 assert $reply['var'] == 'hello%'
+assert $reply['var'] == $pp
 
 $reply.clear()
+$pp = "$(printf 'hello\%%' 1)"
 printf -v var 'hello\%%' 1  # %% directive
 assert $reply['var'] == 'hello\%'
+assert $reply['var'] == $pp
 
 $reply.clear()
-printf -v var '%c=%c\n' key あい   # %c directive
-assert $reply['var'] == $'k=あ\n'
+$pp = "$(printf '%c=%c\n1' key あい)"
+printf -v var '%c=%c\n1' key あい   # %c directive
+assert $reply['var'] == $'k=あ\n1'
+assert $reply['var'] == $pp
 
 $reply.clear()
+$pp = "$(printf '%c' $'\xFF\xFE')"
 printf -v var '%c' $'\xFF\xFE'   # %c directive
 assert $reply['var'] == $'\xFF'  # just print invalid utf8 byte
+assert $reply['var'] == $pp
 
 $reply.clear()
 printf -v var '%s=%s\n' key 1   # %s directive
@@ -97,14 +109,18 @@ printf -v var '%s=%q\n' 'key\tvalue1' $'key\tvalue2'  # %q directive (quote as s
 assert $reply['var'] == 'key\tvalue1=' + $'key\tvalue2'.quote() + $'\n'
 
 $reply.clear()
+$pp = "$(printf '(%q)')"
 printf -v var '(%q)'  # %q directive (no-arg)
 assert $reply['var'] == '()'
+assert $reply['var'] == $pp
 
 
 ## multiple args with directive
 $reply.clear()
+$pp = "$(printf '%s' 1 2 3 4)"
 printf -v var '%s' 1 2 3 4
 assert $reply['var'] == '1234'
+assert $reply['var'] == $pp
 
 $reply.clear()
 printf -v var '%s %s\n' 1 2 3 4 5
