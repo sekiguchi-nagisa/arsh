@@ -22,53 +22,59 @@
 
 namespace ydsh {
 
-class FormatBuf { // NOLINT
+class StringBuf {
 private:
-  static constexpr unsigned int STATIC_BUF_SIZE = 32;
-
-  unsigned int size{STATIC_BUF_SIZE};
-  union {
-    char data[STATIC_BUF_SIZE];
-    char *ptr;
-  };
+  std::string value;
+  size_t usedSize{0};
 
 public:
-  FormatBuf() = default; // NOLINT
+  size_t getBufSize() const { return this->value.size(); }
 
-  ~FormatBuf() {
-    if (this->heapUsed()) {
-      free(this->ptr);
+  size_t getUsedSize() const { return this->usedSize; }
+
+  size_t getRemainSize() const { return this->getBufSize() - this->getUsedSize(); }
+
+  void consume(size_t consumedSize) { this->usedSize += consumedSize; }
+
+  char *getBuf() { return this->value.data() + this->getUsedSize(); }
+
+  bool append(StringRef ref) {
+    if (likely(ref.size() <= SYS_LIMIT_STRING_MAX &&
+               this->usedSize <= SYS_LIMIT_STRING_MAX - ref.size())) {
+      this->value.resize(this->usedSize);
+      this->value += ref;
+      this->usedSize = this->value.size();
+      this->value.resize(this->usedSize + 32, '\0');
+      return true;
     }
+    errno = ENOMEM;
+    return false;
   }
 
-  bool heapUsed() const { return this->getBufSize() > STATIC_BUF_SIZE; }
-
-  unsigned int getBufSize() const { return this->size; }
-
-  char *getBuf() { return this->heapUsed() ? this->ptr : this->data; }
-
-  /**
-   * reserve at-least afterBufSize
-   * @param afterBufSize
-   * @return
-   */
-  bool resize(unsigned int afterBufSize) {
-    if (afterBufSize > this->getBufSize() && afterBufSize > STATIC_BUF_SIZE) {
-      void *p;
-      errno = 0;
-      if (this->heapUsed()) {
-        p = realloc(this->ptr, sizeof(char) * afterBufSize);
+  bool resize(size_t afterBufSize) {
+    if (afterBufSize > this->getBufSize()) {
+      if (likely(afterBufSize <= SYS_LIMIT_STRING_MAX)) {
+        this->value.resize(afterBufSize, '\0');
       } else {
-        p = malloc(sizeof(char) * afterBufSize);
-      }
-      if (!p) {
+        errno = ENOMEM;
         return false;
       }
-      this->ptr = static_cast<char *>(p);
-      this->size = afterBufSize;
     }
     return true;
   }
+
+  std::string take() {
+    assert(this->getUsedSize() <= this->getBufSize());
+    this->value.resize(this->getUsedSize());
+    this->usedSize = 0;
+    std::string tmp;
+    std::swap(tmp, this->value);
+    return tmp;
+  }
+
+  const std::string &getValue() const { return this->value; }
+
+  void reset() { this->usedSize = 0; }
 };
 
 #define EACH_FORMAT_FLAG(OP)                                                                       \
@@ -93,13 +99,13 @@ struct allow_enum_bitop<FormatFlag> : std::true_type {};
 class FormatPrinter {
 private:
   const StringRef format;
-  std::function<bool(StringRef)> consumer;
-  FormatBuf formatBuf;
+  StringBuf strBuf;
   std::string error;
+  const bool useBuf;
   bool restoreLocale{false};
 
 public:
-  explicit FormatPrinter(StringRef format) : format(format) {}
+  FormatPrinter(StringRef format, bool useBuf) : format(format), useBuf(useBuf) {}
 
   ~FormatPrinter() {
     if (this->restoreLocale) {
@@ -107,7 +113,7 @@ public:
     }
   }
 
-  void setConsumer(std::function<bool(StringRef)> &&f) { this->consumer = std::move(f); }
+  std::string takeBuf() && { return std::move(this->strBuf).take(); }
 
   const auto &getError() const { return this->error; }
 
@@ -128,12 +134,23 @@ private:
   }
 
   bool append(StringRef ref) {
-    if (likely(this->consumer)) {
-      if (!ref.empty()) {
-        return this->consumer(ref);
+    bool status;
+    errno = 0;
+    if (this->useBuf) {
+      status = this->strBuf.append(ref);
+    } else {
+      status = fwrite(ref.data(), sizeof(char), ref.size(), stdout) == ref.size();
+    }
+    int errNum = errno;
+    if (unlikely(!status)) {
+      this->error = "format failed";
+      if (errNum != 0) { // snprintf may not set errno
+        this->error += ", caused by `";
+        this->error += strerror(errNum);
+        this->error += "'";
       }
     }
-    return true;
+    return status;
   }
 
   /**
@@ -393,40 +410,47 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
 }
 
 bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
-  auto &buf = this->formatBuf;
-  StringRef ref;
   int errNum;
-  while (true) {
+  int ret;
+  if (this->useBuf) {
+    while (true) {
+      va_list arg;
+      va_start(arg, fmt);
+      errno = 0;
+      ret = vsnprintf(this->strBuf.getBuf(), this->strBuf.getRemainSize(), fmt, arg);
+      errNum = errno;
+      va_end(arg);
+      if (ret < 0) {
+        break;
+      }
+      const auto retSize = static_cast<unsigned int>(ret);
+      if (retSize < this->strBuf.getRemainSize()) {
+        this->strBuf.consume(retSize);
+        break;
+      }
+      if (!this->strBuf.resize(this->strBuf.getBufSize() + retSize + 64)) {
+        errNum = errno;
+        break;
+      }
+    }
+  } else {
     va_list arg;
     va_start(arg, fmt);
     errno = 0;
-    int ret = vsnprintf(buf.getBuf(), buf.getBufSize(), fmt, arg);
+    ret = vprintf(fmt, arg);
     errNum = errno;
     va_end(arg);
-    if (ret < 0) {
-      break;
-    }
-    const auto retSize = static_cast<unsigned int>(ret);
-    if (retSize < buf.getBufSize()) {
-      ref = StringRef(buf.getBuf(), retSize);
-      break;
-    }
-    if (!buf.resize(retSize + 1)) {
-      errNum = errno;
-      break;
-    }
   }
 
-  if (!ref.data()) {
+  if (ret < 0) {
     this->error = "format failed";
     if (errNum != 0) { // snprintf may not set errno
       this->error += ", caused by `";
       this->error += strerror(errNum);
       this->error += "'";
     }
-    return false;
   }
-  return this->append(ref);
+  return ret >= 0;
 }
 
 ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
@@ -550,19 +574,12 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   }
 
   auto &reply = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-  auto out = DSValue::createStr(); // for -v option
-  FormatPrinter printer(argvObj.getValues()[index].asStrRef());
+  FormatPrinter printer(argvObj.getValues()[index].asStrRef(), setVar);
   if (setVar) {
     if (unlikely(!reply.checkIteratorInvalidation(state, true))) {
       return 1;
     }
     reply.clear();
-    printer.setConsumer(
-        [&state, &out](StringRef ref) -> bool { return out.appendAsStr(state, ref); });
-  } else {
-    printer.setConsumer([](StringRef ref) -> bool {
-      return fwrite(ref.data(), sizeof(char), ref.size(), stdout) == ref.size();
-    });
   }
 
   auto begin = argvObj.getValues().begin() + (index + 1);
@@ -576,7 +593,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   } while (begin != end);
 
   if (setVar && !state.hasError()) {
-    reply.set(DSValue::createStr(target), std::move(out));
+    reply.set(DSValue::createStr(target), DSValue::createStr(std::move(printer).takeBuf()));
   }
   return 0;
 }

@@ -188,7 +188,8 @@ private:
   std::string value;
 
 public:
-  static constexpr size_t MAX_SIZE = INT32_MAX;
+  static constexpr size_t MAX_SIZE = SYS_LIMIT_STRING_MAX;
+  static_assert(MAX_SIZE <= SIZE_MAX);
 
   explicit StringObject(std::string &&value)
       : ObjectWithRtti(TYPE::String), value(std::move(value)) {}
