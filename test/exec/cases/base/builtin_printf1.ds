@@ -44,6 +44,9 @@ assert "$(printf 'hello')" == 'hello'
 $reply.clear()
 printf -v var 'hello'
 assert $reply['var'] == 'hello'
+printf -v varr 'world'
+assert $reply['varr'] == 'world'
+assert $reply['var'] == 'hello'
 
 ## print with escape sequence
 assert "$(printf 'hello\tworld\n\\n!!')" == $'hello\tworld\n\\n!!'

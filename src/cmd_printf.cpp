@@ -579,7 +579,6 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     if (unlikely(!reply.checkIteratorInvalidation(state, true))) {
       return 1;
     }
-    reply.clear();
   }
 
   auto begin = argvObj.getValues().begin() + (index + 1);
