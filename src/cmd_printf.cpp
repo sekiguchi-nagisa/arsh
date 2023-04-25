@@ -219,34 +219,21 @@ private:
     return true;
   }
 
-  Optional<int> parseWidth(StringRef::size_type &pos, ArrayObject::IterType &begin,
-                           ArrayObject::IterType end) {
-    int v = 0;
-    if (pos < this->format.size() && this->format[pos] == '*') {
-      pos++;
-      if (!this->parseInt32(begin, end, v)) {
-        return {};
-      }
+  bool parseDecimal(StringRef ref, int &value) {
+    auto ret = convertToDecimal<int>(ref.begin(), ref.end());
+    if (!ret) {
+      this->error = "must be decimal INT32";
+      return false;
     }
-    return v;
+    value = ret.value;
+    return true;
   }
 
+  Optional<int> parseWidth(StringRef::size_type &pos, ArrayObject::IterType &begin,
+                           ArrayObject::IterType end);
+
   Optional<int> parsePrecision(StringRef::size_type &pos, ArrayObject::IterType &begin,
-                               ArrayObject::IterType end) {
-    const auto size = this->format.size();
-    int v = -1;
-    if (pos < size && this->format[pos] == '.') {
-      pos++;
-      v = 0;
-      if (pos < size && this->format[pos] == '*') {
-        pos++;
-        if (!this->parseInt32(begin, end, v)) {
-          return {};
-        }
-      }
-    }
-    return v;
-  }
+                               ArrayObject::IterType end);
 
   bool appendAsStr(char conversion, ArrayObject::IterType &begin, ArrayObject::IterType end);
 
@@ -269,6 +256,64 @@ private:
       return end;                                                                                  \
     }                                                                                              \
   } while (false)
+
+Optional<int> FormatPrinter::parseWidth(StringRef::size_type &pos, ArrayObject::IterType &begin,
+                                        ArrayObject::IterType end) {
+  int v = 0;
+  if (pos == this->format.size()) {
+    return 0;
+  }
+  if (this->format[pos] == '*') {
+    pos++;
+    if (!this->parseInt32(begin, end, v)) {
+      return {};
+    }
+  } else {
+    auto oldPos = pos;
+    for (; pos < this->format.size(); pos++) {
+      char ch = this->format[pos];
+      if (ch >= '0' && ch <= '9') {
+        continue;
+      }
+      break;
+    }
+    auto ref = this->format.slice(oldPos, pos);
+    if (!ref.empty() && !this->parseDecimal(ref, v)) {
+      return {};
+    }
+  }
+  return v;
+}
+
+Optional<int> FormatPrinter::parsePrecision(StringRef::size_type &pos, ArrayObject::IterType &begin,
+                                            ArrayObject::IterType end) {
+  const auto size = this->format.size();
+  int v = -1;
+  if (pos < size && this->format[pos] == '.') {
+    pos++;
+    v = 0;
+    if (pos < size && this->format[pos] == '*') {
+      pos++;
+      if (!this->parseInt32(begin, end, v)) {
+        return {};
+      }
+    } else {
+      auto oldPos = pos;
+      for (; pos < this->format.size(); pos++) {
+        char ch = this->format[pos];
+        if (ch >= '0' && ch <= '9') {
+          continue;
+        }
+        break;
+      }
+      auto ref = this->format.slice(oldPos, pos);
+      if (!ref.empty() && !this->parseDecimal(ref, v)) {
+        return {};
+      }
+    }
+  }
+  return v;
+}
 
 bool FormatPrinter::appendAndInterpretEscape(const StringRef ref) {
   constexpr auto end = false; // dummy for TRY macro
