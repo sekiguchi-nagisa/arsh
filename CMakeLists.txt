@@ -38,6 +38,7 @@ option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
 option(USE_PCRE "enable pcre2 support" ON)
+option(BUILD_SHARED_LIB "build shared library" ON)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -106,6 +107,7 @@ show_option(FUZZING_BUILD_MODE)
 show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
 show_option(USE_PCRE)
+show_option(BUILD_SHARED_LIB)
 
 
 #+++++++++++++++++++++++++++#
@@ -267,25 +269,28 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
 target_link_libraries(${YDSH_STATIC} ${PCRE2_LIBRARY})
 
-set(YDSH_LIB ydsh_lib)
-add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
-set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
-target_link_libraries(${YDSH_LIB} ${PCRE2_LIBRARY})
+if (BUILD_SHARED_LIB)
+    set(YDSH_LIB ydsh_lib)
+    add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
+    set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
+    target_link_libraries(${YDSH_LIB} ${PCRE2_LIBRARY})
 
-if (USE_LTO)
-    check_ipo_supported(RESULT ipo_supported OUTPUT output)
-    if (ipo_supported)
-        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            check_program(lld)
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+    if (USE_LTO)
+        check_ipo_supported(RESULT ipo_supported OUTPUT output)
+        if (ipo_supported)
+            if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+                check_program(lld)
+                set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+            endif ()
+
+            set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+        else ()
+            message(FATAL_ERROR "IPO is not supported: ${output}")
         endif ()
-
-        set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-    else ()
-        message(FATAL_ERROR "IPO is not supported: ${output}")
     endif ()
+else ()
+    set(YDSH_LIB ydsh_static)
 endif ()
-
 
 #==============#
 #     ydsh     #
