@@ -274,22 +274,20 @@ if (BUILD_SHARED_LIB)
     add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
     set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
     target_link_libraries(${YDSH_LIB} ${PCRE2_LIBRARY})
-
-    if (USE_LTO)
-        check_ipo_supported(RESULT ipo_supported OUTPUT output)
-        if (ipo_supported)
-            if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-                check_program(lld)
-                set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
-            endif ()
-
-            set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-        else ()
-            message(FATAL_ERROR "IPO is not supported: ${output}")
-        endif ()
-    endif ()
 else ()
     set(YDSH_LIB ydsh_static)
+endif ()
+
+if (USE_LTO)
+    check_ipo_supported(RESULT ipo_supported OUTPUT output)
+    if (ipo_supported)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            check_program(lld)
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+        endif ()
+    else ()
+        message(FATAL_ERROR "IPO is not supported: ${output}")
+    endif ()
 endif ()
 
 #==============#
@@ -298,6 +296,14 @@ endif ()
 
 add_executable(${BIN_NAME} src/main.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_LIB})
+
+if (ipo_supported)
+    if (BUILD_SHARED_LIB)
+        set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else ()
+        set_property(TARGET ${BIN_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif ()
+endif ()
 
 install(TARGETS ${BIN_NAME} ${YDSH_LIB}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
