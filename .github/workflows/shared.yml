@@ -24,7 +24,7 @@ jobs:
                 -DCMAKE_BUILD_TYPE=release \
                 -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
                 -DUSE_LTO=${{ matrix.option }} \
-                -DBUILD_SHARED_LIB=ON
+                -DBUILD_SHARED_LIB=ON \
                 -DUSE_EXTRA_TEST=on
       - name: build
         run: |
