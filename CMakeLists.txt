@@ -38,7 +38,7 @@ option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
 option(USE_PCRE "enable pcre2 support" ON)
-option(BUILD_SHARED_LIB "build shared library" ON)
+option(BUILD_SHARED_LIB "build shared library" OFF)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
