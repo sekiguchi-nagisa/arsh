@@ -184,7 +184,6 @@ DEFINE_TCError(NeedFd,
                "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
-DEFINE_TCWarn(MeaninglessUnwrap, "meaningless unwrap op for `%s' type expression");
 
 #undef DEFINE_TCError
 #undef DEFINE_TCWarn
