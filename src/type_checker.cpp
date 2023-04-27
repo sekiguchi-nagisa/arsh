@@ -834,11 +834,11 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   auto &exprType = this->checkTypeAsExpr(*node.getExprNode());
   if (node.isUnwrapOp()) {
-    auto *type = &exprType;
-    if (type->isOptionType()) {
-      type = &cast<OptionType>(exprType).getElementType();
+    if (exprType.isOptionType()) {
+      node.setType(cast<OptionType>(exprType).getElementType());
+    } else {
+      this->reportError<Required>(*node.getExprNode(), TYPE_OPTION, exprType.getName());
     }
-    node.setType(*type);
   } else {
     if (exprType.isOptionType()) {
       this->resolveCoercion(this->typePool.get(TYPE::Bool), node.refExprNode());

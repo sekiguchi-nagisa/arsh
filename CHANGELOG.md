@@ -19,7 +19,6 @@
     - catch type
     - Option type within string interpolation / parameter expansion
     - nested job operator
-- allow unwrap-operator to arbitrary expressions for future backward compatibility
 
 #### Builtin
 

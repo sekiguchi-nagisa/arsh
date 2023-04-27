@@ -229,6 +229,13 @@ $a = true|(true|false)
 
   msg = R"([semantic error] require `Option' type, but is `Int' type
  --> (string):1:3
+  23!
+  ^~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "  23!"), 1, "", msg));
+
+  msg = R"([semantic error] require `Option' type, but is `Int' type
+ --> (string):1:3
   23 ?? 45
   ^~
 )";
