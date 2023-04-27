@@ -277,9 +277,11 @@ protected:
 
   int visitingDepth{0};
 
-  bool toplevelPrinting;
+  const bool toplevelPrinting;
 
   bool reachComp{false};
+
+  bool allowWarning{false};
 
   std::unique_ptr<FuncContext> funcCtx;
 
@@ -306,6 +308,8 @@ public:
   void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
     this->ccHandler = handler;
   }
+
+  void setAllowWarning(bool set) { this->allowWarning = set; }
 
   bool hasReachedCompNode() const { return this->reachComp; }
 
@@ -497,17 +501,17 @@ private:
     });
   }
 
-  void reportErrorImpl(Token token, const char *kind, const char *fmt, ...)
-      __attribute__((format(printf, 4, 5)));
+  void reportErrorImpl(TypeCheckError::Type errorType, Token token, const char *kind,
+                       const char *fmt, ...) __attribute__((format(printf, 5, 6)));
 
   template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
   void reportError(const Node &node, Arg &&...arg) {
-    this->reportErrorImpl(node.getToken(), T::kind, T::value, std::forward<Arg>(arg)...);
+    this->reportErrorImpl(T::type, node.getToken(), T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
   template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
   void reportError(Token token, Arg &&...arg) {
-    this->reportErrorImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
+    this->reportErrorImpl(T::type, token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
   void reportError(Token token, TypeLookupError &&e) {

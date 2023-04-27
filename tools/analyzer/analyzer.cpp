@@ -209,7 +209,8 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
 
   // prepare
   this->addNew(src);
-  FrontEnd frontEnd(*this, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
+  FrontEnd frontEnd(*this, createLexer(src),
+                    FrontEndOption::ERROR_RECOVERY | FrontEndOption::REPORT_WARN, nullptr);
   if (action.emitter) {
     frontEnd.setErrorListener(*action.emitter);
     action.emitter->enterModule(this->current()->getModId(), this->current()->getVersion());
@@ -285,6 +286,16 @@ bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<Front
   return true;
 }
 
+static DiagnosticSeverity resolveSeverity(TypeCheckError::Type type) {
+  switch (type) {
+  case TypeCheckError::Type::ERROR:
+    return DiagnosticSeverity::Error;
+  case TypeCheckError::Type::WARN:
+    return DiagnosticSeverity::Warning;
+  }
+  return DiagnosticSeverity::Error; // unreachable (due to suppress gcc warning)
+}
+
 bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                         const TypeCheckError &checkError, bool firstAppear) {
   if (!firstAppear) {
@@ -300,7 +311,7 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   code += checkError.getKind();
   cur->diagnostics.push_back(Diagnostic{
       .range = range.unwrap(),
-      .severity = DiagnosticSeverity::Error, // FIXME: support warning ?
+      .severity = resolveSeverity(checkError.getType()),
       .code = std::move(code),
       .message = checkError.getMessage(),
       .relatedInformation = {},

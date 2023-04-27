@@ -373,7 +373,8 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   return nullptr;
 }
 
-void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {
+void TypeChecker::reportErrorImpl(TypeCheckError::Type errorType, Token token, const char *kind,
+                                  const char *fmt, ...) {
   va_list arg;
 
   va_start(arg, fmt);
@@ -383,7 +384,7 @@ void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt
   }
   va_end(arg);
 
-  this->errors.emplace_back(token, kind, CStrPtr(str));
+  this->errors.emplace_back(errorType, token, kind, CStrPtr(str));
 }
 
 void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::AccessNode &node) {
@@ -552,6 +553,9 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
    * nop
    */
   if (targetType.isSameOrBaseTypeOf(exprType)) {
+    if (targetType == exprType && this->allowWarning) {
+      this->reportError<MeaninglessCast>(node);
+    }
     return;
   }
 
@@ -833,6 +837,8 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     auto *type = &exprType;
     if (type->isOptionType()) {
       type = &cast<OptionType>(exprType).getElementType();
+    } else if (this->allowWarning) {
+      this->reportError<MeaninglessUnwrap>(node, exprType.getName());
     }
     node.setType(*type);
   } else {

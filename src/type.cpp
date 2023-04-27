@@ -256,7 +256,7 @@ std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char 
   va_start(arg, fmt);
   char *str = nullptr;
   if (vasprintf(&str, fmt, arg) == -1) {
-    abort();
+    fatal_perror("failed");
   }
   va_end(arg);
 
@@ -269,7 +269,7 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
   va_start(arg, fmt);
   char *str = nullptr;
   if (vasprintf(&str, fmt, arg) == -1) {
-    abort();
+    fatal_perror("failed");
   }
   va_end(arg);
 

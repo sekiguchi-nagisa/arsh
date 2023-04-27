@@ -83,14 +83,17 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   }
   node = this->checker()(this->prevType, std::move(node), this->curScope());
   this->prevType = &node->getType();
-  if (this->checker().hasError()) {
-    this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
-    auto &errors = this->checker().getErrors();
-    if (this->listener) {
-      for (size_t i = 0; i < errors.size(); i++) {
-        this->listener->handleTypeError(this->contexts, errors[i], i == 0);
-      }
+
+  auto &errors = this->checker().getErrors();
+  unsigned int actualErrorCount = 0;
+  for (size_t i = 0; i < errors.size(); i++) {
+    this->listener &&this->listener->handleTypeError(this->contexts, errors[i], i == 0);
+    if (errors[i].getType() == TypeCheckError::Type::ERROR) {
+      actualErrorCount++;
     }
+  }
+  if (actualErrorCount) {
+    this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
     if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY) &&
         !this->checker().hasReachedCompNode()) {
       return true;

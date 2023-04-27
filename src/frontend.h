@@ -27,6 +27,7 @@ enum class FrontEndOption {
   TOPLEVEL = 1 << 1,
   ERROR_RECOVERY = 1 << 2,
   SINGLE_EXPR = 1 << 3,
+  REPORT_WARN = 1u << 4,
 };
 
 template <>
@@ -85,6 +86,9 @@ public:
           checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
           scope(std::move(scope)), ccHandler(ccHandler), option(option) {
       this->checker.setCodeCompletionHandler(ccHandler);
+      if (hasFlag(this->option, FrontEndOption::REPORT_WARN)) {
+        this->checker.setAllowWarning(true);
+      }
     }
   };
 

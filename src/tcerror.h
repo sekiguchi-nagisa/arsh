@@ -28,7 +28,15 @@ namespace ydsh {
  * for type error reporting
  */
 class TypeCheckError {
+public:
+  enum class Type : unsigned int {
+    ERROR,
+    WARN,
+  };
+
 private:
+  Type type{Type::ERROR};
+
   Token token{};
 
   const char *kind{nullptr};
@@ -38,16 +46,21 @@ private:
 public:
   TypeCheckError() = default;
 
+  TypeCheckError(Type type, Token token, const char *kind, CStrPtr &&message)
+      : type(type), token(token), kind(kind), message(std::move(message)) {}
+
   TypeCheckError(Token token, const char *kind, CStrPtr &&message)
-      : token(token), kind(kind), message(std::move(message)) {}
+      : TypeCheckError(Type::ERROR, token, kind, std::move(message)) {}
 
   TypeCheckError(Token token, TypeLookupError &&e) noexcept
       : token(token), kind(e.getKind()), message(std::move(e).takeMessage()) {}
 
-  TypeCheckError(const TypeCheckError &o) noexcept
-      : token(o.token), kind(o.kind), message(strdup(o.message.get())) {}
+  TypeCheckError(TypeCheckError &&o) noexcept
+      : type(o.type), token(o.token), kind(o.kind), message(std::move(o.message)) {}
 
   ~TypeCheckError() = default;
+
+  Type getType() const { return this->type; }
 
   Token getToken() const { return this->token; }
 
@@ -58,11 +71,19 @@ public:
 
 struct TCError {};
 
-#define DEFINE_TCError(E, fmt)                                                                     \
-  struct E : TCError {                                                                             \
+template <TypeCheckError::Type TYPE>
+struct TCErrorDetail : TCError {
+  static constexpr TypeCheckError::Type type = TYPE;
+};
+
+#define DEFINE_TCErrorImpl(T, E, fmt)                                                              \
+  struct E : TCErrorDetail<T> {                                                                    \
     static constexpr const char *kind = #E;                                                        \
     static constexpr const char *value = fmt;                                                      \
   }
+
+#define DEFINE_TCError(E, fmt) DEFINE_TCErrorImpl(TypeCheckError::Type::ERROR, E, fmt)
+#define DEFINE_TCWarn(E, fmt) DEFINE_TCErrorImpl(TypeCheckError::Type::WARN, E, fmt)
 
 DEFINE_TCError(IllegalStrEscape, "illegal escape sequence: `%s'");
 DEFINE_TCError(OutOfRangeInt, "out of range Int literal, must be INT64");
@@ -162,7 +183,11 @@ DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only a
 DEFINE_TCError(NeedFd,
                "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
 
+DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
+DEFINE_TCWarn(MeaninglessUnwrap, "meaningless unwrap op for `%s' type expression");
+
 #undef DEFINE_TCError
+#undef DEFINE_TCWarn
 
 TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char *fmt, ...)
     __attribute__((format(printf, 3, 4)));
