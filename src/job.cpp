@@ -65,7 +65,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
     st.setGlobal(BuiltinVarOffset::PID, DSValue::createInt(getpid()));
     st.setGlobal(BuiltinVarOffset::PPID, DSValue::createInt(getppid()));
 
-    // no inherite parent process RNG (due to prevent duplicated random numbers)
+    // no inherit parent process RNG (due to prevent duplicated random numbers)
     st.getRng() = childRng;
 
     st.subshellLevel++;
@@ -552,8 +552,10 @@ int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
   if (job && !job->isRunning()) {
     return job->wait(op);
   }
-  if (const Proc * p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
-    return p->exitStatus();
+  if (op == WaitOp::BLOCK_UNTRACED) {
+    if (auto *p = findLastStopped(job)) {
+      return p->exitStatus();
+    }
   }
 
   auto cleanup = finally([&] {
@@ -578,9 +580,10 @@ int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
     } else if (j == job) {
       auto &proc = job->getProcs()[offset];
       lastStatus = proc.exitStatus();
-      if (const Proc * last; proc.is(Proc::State::STOPPED) && op == WaitOp::BLOCK_UNTRACED &&
-                             (last = findLastStopped(job))) {
-        return last->exitStatus();
+      if (proc.is(Proc::State::STOPPED) && op == WaitOp::BLOCK_UNTRACED) {
+        if (auto *last = findLastStopped(job)) {
+          return last->exitStatus();
+        }
       }
     }
     if (job->isTerminated()) {
@@ -624,7 +627,7 @@ JobTable::ConstEntryIter JobTable::findIter(unsigned int jobId) const {
 }
 
 std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
-  if (ProcTable::Entry * entry; (entry = this->procTable.findProc(ret.pid))) {
+  if (ProcTable::Entry *entry = this->procTable.findProc(ret.pid)) {
     assert(!entry->isDeleted());
     auto iter = this->findIter(entry->jobId());
     assert(iter != this->jobs.end());
