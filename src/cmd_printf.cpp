@@ -27,7 +27,7 @@ static constexpr bool interpret_consumer_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<T, StringRef>>;
 
 template <typename T, enable_when<interpret_consumer_requirement_v<T>> = nullptr>
-static bool interpretEscapeSeq(StringRef ref, T callback) {
+static bool interpretEscapeSeq(const StringRef ref, T callback) {
   const auto size = ref.size();
   for (StringRef::size_type pos = 0; pos < size;) {
     const auto retPos = ref.find('\\', pos);
@@ -296,7 +296,8 @@ private:
   Optional<int> parsePrecision(StringRef::size_type &pos, ArrayObject::IterType &begin,
                                ArrayObject::IterType end);
 
-  bool appendAsStr(char conversion, ArrayObject::IterType &begin, ArrayObject::IterType end);
+  bool appendAsStr(FormatFlag flags, int width, int precision, char conversion,
+                   ArrayObject::IterType &begin, ArrayObject::IterType end);
 
   bool appendAsInt(FormatFlag flags, int width, int precision, char conversion,
                    ArrayObject::IterType &begin, ArrayObject::IterType end);
@@ -305,6 +306,17 @@ private:
                      ArrayObject::IterType &begin, ArrayObject::IterType end);
 
   bool appendAsFormat(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+
+  /**
+   *
+   * @param width
+   * @param ref
+   * @param precision
+   * @param leftAdjust
+   * if true, add padding to right
+   * @return
+   */
+  bool appendWithPadding(int width, StringRef ref, int precision, bool leftAdjust);
 };
 
 // ###########################
@@ -376,26 +388,38 @@ Optional<int> FormatPrinter::parsePrecision(StringRef::size_type &pos, ArrayObje
   return v;
 }
 
-bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
-                                const ArrayObject::IterType end) {
+bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char conversion,
+                                ArrayObject::IterType &begin, const ArrayObject::IterType end) {
   assert(StringRef("csbq").contains(conversion));
   StringRef ref;
   if (begin != end) {
     ref = (*begin++).asStrRef();
   }
+  const bool leftAdjust = hasFlag(flags, FormatFlag::LEFT_ADJUST);
   switch (conversion) {
-  case 'c': {
-    StringRef c;
-    iterateGraphemeUntil(ref, 1, [&c](const auto &grapheme) { c = grapheme.ref; });
-    return this->append(c);
-  }
+  case 'c':
+    return this->appendWithPadding(width, ref, 1, leftAdjust);
   case 's':
-    return this->append(ref);
+    return this->appendWithPadding(width, ref, precision, leftAdjust);
   case 'b':
-    return this->appendAndInterpretEscape(ref);
+    if (width == 0 && precision < 0) { // fast path
+      return this->appendAndInterpretEscape(ref);
+    } else {
+      std::string str;
+      bool r = interpretEscapeSeq(ref, [&str](StringRef sub) {
+        if (sub.size() <= SYS_LIMIT_STRING_MAX && str.size() <= SYS_LIMIT_STRING_MAX - sub.size()) {
+          str += sub;
+          return true;
+        } else {
+          errno = ENOMEM;
+          return false;
+        }
+      });
+      return r && this->appendWithPadding(width, str, precision, leftAdjust);
+    }
   case 'q': {
     auto str = quoteAsShellArg(ref);
-    return this->append(str);
+    return this->appendWithPadding(width, str, precision, leftAdjust);
   }
   default:
     return true; // normally unreachable
@@ -512,6 +536,42 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
   return ret >= 0;
 }
 
+bool FormatPrinter::appendWithPadding(int width, StringRef ref, int precision, bool leftAdjust) {
+  size_t fieldWidth;
+  if (width < 0) {
+    leftAdjust = true;
+    if (width == INT32_MIN) {
+      fieldWidth = static_cast<unsigned int>(INT32_MAX) + 1;
+    } else {
+      fieldWidth = static_cast<unsigned int>(-1 * width);
+    }
+  } else {
+    fieldWidth = static_cast<unsigned int>(width);
+  }
+
+  auto endIter = ref.begin();
+  const size_t count = iterateGraphemeUntil(
+      ref, static_cast<size_t>(precision < 0 ? -1 : precision),
+      [&endIter](const GraphemeScanner::Result &grapheme) { endIter = grapheme.ref.end(); });
+  assert(endIter >= ref.begin());
+  ref = ref.substr(0, endIter - ref.begin());
+
+  static constexpr bool end = false; // for TRY macro
+  const bool needPadding = fieldWidth > count;
+  if (needPadding && !leftAdjust) {
+    for (size_t i = 0; i < fieldWidth - count; i++) {
+      TRY(this->append(" "));
+    }
+  }
+  TRY(this->append(ref));
+  if (needPadding && leftAdjust) {
+    for (size_t i = 0; i < fieldWidth - count; i++) {
+      TRY(this->append(" "));
+    }
+  }
+  return true;
+}
+
 ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
                                                 const ArrayObject::IterType end) {
   this->error.clear();
@@ -568,7 +628,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 's':
     case 'b':
     case 'q':
-      TRY(this->appendAsStr(conversion, begin, end));
+      TRY(this->appendAsStr(flags, width, precision, conversion, begin, end));
       pos++;
       continue;
     case 'd':

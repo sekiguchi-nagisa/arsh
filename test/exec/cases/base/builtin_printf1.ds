@@ -149,3 +149,109 @@ assert $reply['var'] == $'hello%\n'
 $reply.clear()
 printf -v var '%%hello%%\n' 1 2 3 4 5
 assert $reply['var'] == $'%hello%\n'
+
+## precision
+### %s
+$reply.clear()
+printf -v var '%.0s' あいう
+assert $reply['var'] == ''
+assert $reply['var'] == "$(printf '%.0s' あいう)"
+
+$reply.clear()
+printf -v var '%.*s' 1 あいう
+assert $reply['var'] == 'あ'
+assert $reply['var'] == "$(printf '%.*s' 1 あいう)"
+
+$reply.clear()
+printf -v var '%.*s' 2 あいう
+assert $reply['var'] == 'あい'
+assert $reply['var'] == "$(printf '%.*s' 2 あいう)"
+
+$reply.clear()
+printf -v var '%.*s' 3 あいう
+assert $reply['var'] == 'あいう'
+assert $reply['var'] == "$(printf '%.*s' 3 あいう)"
+
+$reply.clear()
+printf -v var '%.*s' 30 あいう
+assert $reply['var'] == 'あいう'
+assert $reply['var'] == "$(printf '%.*s' 30 あいう)"
+
+$reply.clear()
+printf -v var '%.*s' -1 あいう
+assert $reply['var'] == 'あいう'
+assert $reply['var'] == "$(printf '%.*s' -1 あいう)"
+
+### %c
+$reply.clear()
+printf -v var '%.*c' 0 あいう
+assert $reply['var'] == 'あ'
+assert $reply['var'] == "$(printf '%.*c' 0 あいう)"
+
+$reply.clear()
+printf -v var '%.*c' 1 あいう
+assert $reply['var'] == 'あ'
+assert $reply['var'] == "$(printf '%.*c' 1 あいう)"
+
+$reply.clear()
+printf -v var '%.*c' 2 あいう
+assert $reply['var'] == 'あ'
+assert $reply['var'] == "$(printf '%.*c' 2 あいう)"
+
+$reply.clear()
+printf -v var '%.*c' -3 あいう
+assert $reply['var'] == 'あ'
+assert $reply['var'] == "$(printf '%.*c' -3 あいう)"
+
+### %b
+$reply.clear()
+printf -v var '%.*b' 2 'あ\tい'
+assert $reply['var'] == $'あ\t'
+assert $reply['var'] == "$(printf '%.*b' 2 'あ\tい')"
+
+### %q
+$reply.clear()
+printf -v var '%.*q' -1 $'あ\tい'
+assert $reply['var'] ==  $'あ\tい'.quote()
+assert $reply['var'] == "$(printf '%.*q' -1 $'あ\tい')"
+
+$reply.clear()
+printf -v var '%.*q' 3 $'あ\tい'
+assert $reply['var'] ==  "あ$'"
+assert $reply['var'] == "$(printf '%.*q' 3 $'あ\tい')"
+
+## width
+$reply.clear()
+printf -v var '%*c' 4 あいう
+assert $reply['var'] == '   あ'
+assert $reply['var'] == "$(printf '%*c' 4 あいう)"
+
+$reply.clear()
+printf -v var '%*s' 4 あいう
+assert $reply['var'] == ' あいう'
+assert $reply['var'] == "$(printf '%*s' 4 あいう)"
+
+$reply.clear()
+printf -v var '%*s' -4 あいう
+assert $reply['var'] == 'あいう '
+assert $reply['var'] == "$(printf '%*s' -4 あいう)"
+
+$reply.clear()
+printf -v var '%*b' -1 'あ\tいう'
+assert $reply['var'] == $'あ\tいう'
+assert $reply['var'] == "$(printf '%*b' -1 'あ\tいう')"
+
+$reply.clear()
+printf -v var '%*b' -10 'あ\tいう'
+assert $reply['var'] == $'あ\tいう      '
+assert $reply['var'] == "$(printf '%*b' -10 'あ\tいう')"
+
+$reply.clear()
+printf -v var '%-*q' 15 $'あ\tいう'
+assert $reply['var'] == "あ$'\x09'いう     "
+assert $reply['var'] == "$(printf '%-*q' 15 $'あ\tいう')"
+
+$reply.clear()
+printf -v var '%-*.8q' 15 $'あ\tいう'
+assert $reply['var'] == "あ$'\x09'       "
+assert $reply['var'] == "$(printf '%-*.8q' 15 $'あ\tいう')"
