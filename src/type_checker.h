@@ -391,7 +391,6 @@ private:
   /**
    * after type checking.
    * requiredType is not null.
-   * if requiredType is FloatType and targetNode->getType() is IntType,
    * wrap targetNode with CastNode.
    * if requiredType is VoidType, wrap targetNode with CastNode
    */

@@ -21,7 +21,7 @@ assert $fd as Boolean
 $fd.close()
 assert $fd as String == "/dev/fd/-1" as String
 assert ! $fd
-assert $false == $fd
+assert $false == $fd as Bool
 
 var ex = 34 as Any
 try {

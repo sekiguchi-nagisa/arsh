@@ -13,6 +13,9 @@
 #### Core
 
 - **Breaking Change**: only allow smart-cast to read-only local/global variables
+- **Breaking Change**: implicit bool coercion for ``FD``, ``T?`` type is only allowed in the following conditional
+  context
+    - if, for, while, assert
 - adjust error message layout and colors
 - improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type

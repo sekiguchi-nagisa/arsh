@@ -518,7 +518,7 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   unsigned int maxSize = std::max(argSize, paramSize);
   for (unsigned int i = 0; i < maxSize; i++) {
     if (i < argSize && i < paramSize) {
-      this->checkTypeWithCoercion(*types.paramTypes[i], node.refNodes()[i]);
+      this->checkType(*types.paramTypes[i], *node.getNodes()[i]);
     } else if (i < argSize) {
       this->checkTypeAsExpr(*node.getNodes()[i]);
     }
@@ -692,7 +692,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
   auto &elementType = this->checkTypeAsSomeExpr(*firstElementNode);
 
   for (unsigned int i = 1; i < size; i++) {
-    this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
+    this->checkType(elementType, *node.getExprNodes()[i]);
   }
 
   if (auto typeOrError = this->typePool.createArrayType(elementType)) {
@@ -710,8 +710,8 @@ void TypeChecker::visitMapNode(MapNode &node) {
   auto &valueType = this->checkTypeAsSomeExpr(*firstValueNode);
 
   for (unsigned int i = 1; i < size; i++) {
-    this->checkTypeWithCoercion(keyType, node.refKeyNodes()[i]);
-    this->checkTypeWithCoercion(valueType, node.refValueNodes()[i]);
+    this->checkType(keyType, *node.getKeyNodes()[i]);
+    this->checkType(valueType, *node.getValueNodes()[i]);
   }
 
   if (auto typeOrError = this->typePool.createMapType(keyType, valueType)) {
@@ -841,7 +841,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     }
   } else {
     if (exprType.isOptionType()) {
-      this->resolveCoercion(this->typePool.get(TYPE::Bool), node.refExprNode());
+      this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refExprNode());
     }
     auto &applyNode = node.createApplyNode();
     node.setType(this->checkTypeAsExpr(applyNode));
@@ -922,7 +922,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
     if (leftType.isOptionType()) {
       auto &elementType = cast<OptionType>(leftType).getElementType();
-      this->checkTypeWithCoercion(elementType, node.refRightNode());
+      this->checkType(elementType, *node.getRightNode());
       node.setType(elementType);
     } else {
       this->checkTypeAsExpr(*node.getRightNode());
@@ -1208,16 +1208,10 @@ void TypeChecker::visitIfNode(IfNode &node) {
   auto &elseType = this->checkTypeExactly(node.getElseNode());
 
   if (thenType.isNothingType() && elseType.isNothingType()) {
-    node.setType(thenType);
+    node.setType(this->typePool.get(TYPE::Nothing));
   } else if (thenType.isSameOrBaseTypeOf(elseType)) {
     node.setType(thenType);
   } else if (elseType.isSameOrBaseTypeOf(thenType)) {
-    node.setType(elseType);
-  } else if (this->checkCoercion(thenType, elseType)) {
-    this->checkTypeWithCoercion(thenType, node.refElseNode());
-    node.setType(thenType);
-  } else if (this->checkCoercion(elseType, thenType)) {
-    this->checkTypeWithCoercion(elseType, node.refThenNode());
     node.setType(elseType);
   } else {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refThenNode());
@@ -1770,14 +1764,8 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
     if (isa<AccessNode>(leftNode)) {
       cast<AccessNode>(leftNode).setAdditionalOp(AccessNode::DUP_RECV);
     }
-    auto &rightType = this->checkTypeAsExpr(node.getRightNode());
-    if (leftType != rightType) { // convert right hand-side type to left type
-      this->resolveCoercion(leftType, node.refRightNode());
-    }
-  } else {
-    this->checkTypeWithCoercion(leftType, node.refRightNode());
   }
-
+  this->checkType(leftType, node.getRightNode());
   node.setType(this->typePool.get(TYPE::Void));
 }
 
@@ -1790,12 +1778,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
 
   auto &elementType = this->checkTypeAsExpr(node.getGetterNode());
   cast<BinaryOpNode>(node.getRightNode()).getLeftNode()->setType(elementType);
-
-  // convert right hand-side type to element type
-  auto &rightType = this->checkTypeAsExpr(node.getRightNode());
-  if (elementType != rightType) {
-    this->resolveCoercion(elementType, node.refRightNode());
-  }
+  this->checkType(elementType, node.getRightNode());
 
   node.getSetterNode().getArgsNode().getNodes()[1]->setType(elementType);
   this->checkType(this->typePool.get(TYPE::Void), node.getSetterNode());

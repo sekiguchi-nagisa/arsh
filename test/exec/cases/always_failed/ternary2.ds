@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 3, $chars = 1, $errorKind = 'Unacceptable', $status = 1)
+
+var t2 = $true ? $STDOUT : $false
+assert($t2 is Boolean)

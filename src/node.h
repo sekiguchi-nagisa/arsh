@@ -562,8 +562,6 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getExprNodes() const { return this->nodes; }
 
-  std::vector<std::unique_ptr<Node>> &refExprNodes() { return this->nodes; }
-
   void dump(NodeDumper &dumper) const override;
 };
 
@@ -582,11 +580,7 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getKeyNodes() const { return this->keyNodes; }
 
-  std::vector<std::unique_ptr<Node>> &refKeyNodes() { return this->keyNodes; }
-
   const std::vector<std::unique_ptr<Node>> &getValueNodes() const { return this->valueNodes; }
-
-  std::vector<std::unique_ptr<Node>> &refValueNodes() { return this->valueNodes; }
 
   void dump(NodeDumper &dumper) const override;
 };

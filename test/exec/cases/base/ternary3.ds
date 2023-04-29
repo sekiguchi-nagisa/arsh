@@ -24,9 +24,3 @@ assert($tt is Error)
 
 $tt = $false ? new Error("") : new ArithmeticError("")
 assert($tt is ArithmeticError)
-
-var t2 = $true ? $STDOUT : $false
-assert($t2 is Boolean)
-
-$t2 = $false ? $false : $STDIN
-assert $t2
