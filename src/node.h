@@ -775,6 +775,15 @@ public:
     return castNode;
   }
 
+  /**
+   *
+   * @param pool
+   * @param node
+   * must be typed
+   * @return
+   */
+  static std::unique_ptr<Node> newPrintOpNode(const TypePool &pool, std::unique_ptr<Node> &&node);
+
   Node &getExprNode() const { return *this->exprNode; }
 
   /**

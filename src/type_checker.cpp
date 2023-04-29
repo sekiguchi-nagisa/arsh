@@ -283,7 +283,8 @@ void TypeChecker::checkTypeWithCoercion(const DSType &requiredType,
   CoercionKind kind = CoercionKind::INVALID_COERCION;
   this->checkType(&requiredType, *targetNode, nullptr, kind);
   if (kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
-    this->resolveCoercion(requiredType, targetNode);
+    targetNode = TypeOpNode::newTypedCastNode(std::move(targetNode), requiredType);
+    this->resolveCastOp(cast<TypeOpNode>(*targetNode));
   }
 }
 
@@ -536,7 +537,7 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   this->checkTypeExactly(node);
 }
 
-void TypeChecker::resolveCastOp(TypeOpNode &node) {
+void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
   auto &exprType = node.getExprNode().getType();
   auto &targetType = node.getType();
 
@@ -577,29 +578,24 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
       return;
     }
   } else {
-    if (targetType.is(TYPE::String)) {
-      node.setOpKind(TypeOpNode::TO_STRING);
-      return;
-    }
     if (targetType.is(TYPE::Bool) && this->typePool.lookupMethod(exprType, OP_BOOL) != nullptr) {
       node.setOpKind(TypeOpNode::TO_BOOL);
+      return;
+    }
+    if (forceToString && targetType.is(TYPE::String)) {
+      node.setOpKind(TypeOpNode::TO_STRING);
       return;
     }
     if (!targetType.isNothingType() && exprType.isSameOrBaseTypeOf(targetType)) {
       node.setOpKind(TypeOpNode::CHECK_CAST);
       return;
     }
+    if (targetType.is(TYPE::String)) {
+      node.setOpKind(TypeOpNode::TO_STRING);
+      return;
+    }
   }
   this->reportError<CastOp>(node, exprType.getName(), targetType.getName());
-}
-
-std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) {
-  if (!node->getType().isVoidType() && !node->getType().isNothingType()) {
-    auto castNode = TypeOpNode::newTypedCastNode(std::move(node), this->typePool.get(TYPE::Void));
-    castNode->setOpKind(TypeOpNode::PRINT);
-    node = std::move(castNode);
-  }
-  return std::move(node);
 }
 
 // visitor api
@@ -945,10 +941,10 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   // string concatenation
   if (node.getOp() == TokenKind::ADD && (leftType.is(TYPE::String) || rightType.is(TYPE::String))) {
     if (!leftType.is(TYPE::String)) {
-      this->resolveCoercion(this->typePool.get(TYPE::String), node.refLeftNode());
+      this->resolveToStringCoercion(node.refLeftNode());
     }
     if (!rightType.is(TYPE::String)) {
-      this->resolveCoercion(this->typePool.get(TYPE::String), node.refRightNode());
+      this->resolveToStringCoercion(node.refRightNode());
     }
     node.setType(this->typePool.get(TYPE::String));
     return;
@@ -2287,7 +2283,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   }
   if (this->toplevelPrinting && this->curScope->inRootModule() && !isCmdLike(*node)) {
     this->checkTypeExactly(*node);
-    node = this->newPrintOpNode(std::move(node));
+    node = TypeOpNode::newPrintOpNode(this->typePool, std::move(node));
   } else {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
   }

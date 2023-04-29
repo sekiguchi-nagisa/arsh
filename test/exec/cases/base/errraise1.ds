@@ -183,7 +183,7 @@ assert $? == 89
 ### case if-else
 $ex = 45
 try {
-    case $ex as String {
+    case "$ex" {
         "hoge" => true
         $/\d+/ => fail 100
         else => sh -c 'exit 90'
@@ -193,7 +193,7 @@ $assertStatus(100, $ex, 188)
 
 $ex = "hoge"
 try {
-    case $ex as String {
+    case "$ex"  {
         "hoge" => false
         $/\d+/ => fail 100
         else => sh -c 'exit 90'
@@ -203,7 +203,7 @@ $assertStatus(1, $ex, 197)
 
 $ex = $false
 try {
-    case $ex as String {
+    case "$ex"  {
         "hoge" => true
         $/\d+/ => fail 100
         else => sh -c 'exit 90'
@@ -213,7 +213,7 @@ $assertStatus(90, $ex, 209)
 
 $ex = $false
 try {
-    var aa = case $ex as String {
+    var aa = case "$ex"  {
         "hoge" => true
         $/\d+/ => fail 100
         else => sh -c 'exit 90'
@@ -224,7 +224,7 @@ assert $? == 90
 
 $ex = 345
 try {
-    var aa = case $ex as String {
+    var aa = case "$ex" {
         "hoge" => true
         $/\d+/ => fail 100
         else => sh -c 'exit 90'

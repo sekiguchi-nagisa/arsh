@@ -272,6 +272,17 @@ void AccessNode::dump(NodeDumper &dumper) const {
 // ##     TypeOpNode     ##
 // ########################
 
+std::unique_ptr<Node> TypeOpNode::newPrintOpNode(const TypePool &pool,
+                                                 std::unique_ptr<Node> &&node) {
+  assert(!node->isUntyped());
+  if (!node->getType().isVoidType() && !node->getType().isNothingType()) {
+    auto castNode = newTypedCastNode(std::move(node), pool.get(TYPE::Void));
+    castNode->setOpKind(TypeOpNode::PRINT);
+    node = std::move(castNode);
+  }
+  return std::move(node);
+}
+
 void TypeOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(exprNode);
   DUMP_PTR(targetTypeNode);

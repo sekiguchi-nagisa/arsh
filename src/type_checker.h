@@ -389,16 +389,16 @@ private:
   void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
 
   /**
-   * after type checking.
-   * requiredType is not null.
-   * wrap targetNode with CastNode.
-   * if requiredType is VoidType, wrap targetNode with CastNode
+   * after type checking, perform Bool or Void coercion
+   * @param requiredType
+   * @param targetNode
    */
   void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
 
-  void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
-    targetNode = TypeOpNode::newTypedCastNode(std::move(targetNode), requiredType);
-    this->resolveCastOp(cast<TypeOpNode>(*targetNode));
+  void resolveToStringCoercion(std::unique_ptr<Node> &targetNode) {
+    targetNode =
+        TypeOpNode::newTypedCastNode(std::move(targetNode), this->typePool.get(TYPE::String));
+    this->resolveCastOp(cast<TypeOpNode>(*targetNode), true);
   }
 
   const DSType &resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
@@ -533,17 +533,9 @@ private:
    *
    * @param node
    * must be typed
+   * @param forceToString
    */
-  void resolveCastOp(TypeOpNode &node);
-
-  /**
-   *
-   * @param node
-   * must be typed
-   * @return
-   *
-   */
-  std::unique_ptr<Node> newPrintOpNode(std::unique_ptr<Node> &&node);
+  void resolveCastOp(TypeOpNode &node, bool forceToString = false);
 
   void resolveSmartCast(const Node &condNode);
 
