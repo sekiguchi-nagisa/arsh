@@ -396,12 +396,6 @@ private:
    */
   void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
 
-  /**
-   * for int type conversion.
-   * return true if allow target type to required type implicit cast.
-   */
-  bool checkCoercion(const DSType &requiredType, const DSType &targetType);
-
   void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
     targetNode = TypeOpNode::newTypedCastNode(std::move(targetNode), requiredType);
     this->resolveCastOp(cast<TypeOpNode>(*targetNode));

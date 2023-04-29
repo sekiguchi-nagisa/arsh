@@ -119,6 +119,23 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
   return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
 }
 
+static bool checkCoercion(TypePool &pool, const DSType &requiredType, const DSType &targetType) {
+  if (requiredType.isVoidType()) { // pop stack top
+    return true;
+  }
+
+  if (requiredType.is(TYPE::Bool)) {
+    if (targetType.isOptionType()) {
+      return true;
+    }
+    auto *handle = pool.lookupMethod(targetType, OP_BOOL);
+    if (handle != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNode,
                                      const DSType *unacceptableType, CoercionKind &kind) {
   /**
@@ -163,7 +180,8 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
   /**
    * check coercion
    */
-  if (kind == CoercionKind::INVALID_COERCION && this->checkCoercion(*requiredType, type)) {
+  if (kind == CoercionKind::INVALID_COERCION &&
+      checkCoercion(this->typePool, *requiredType, type)) {
     kind = CoercionKind::PERFORM_COERCION;
     return type;
   }
@@ -267,23 +285,6 @@ void TypeChecker::checkTypeWithCoercion(const DSType &requiredType,
   if (kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
     this->resolveCoercion(requiredType, targetNode);
   }
-}
-
-bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &targetType) {
-  if (requiredType.isVoidType()) { // pop stack top
-    return true;
-  }
-
-  if (requiredType.is(TYPE::Bool)) {
-    if (targetType.isOptionType()) {
-      return true;
-    }
-    auto *handle = this->typePool.lookupMethod(targetType, OP_BOOL);
-    if (handle != nullptr) {
-      return true;
-    }
-  }
-  return false;
 }
 
 const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
@@ -1666,9 +1667,12 @@ void TypeChecker::visitTryNode(TryNode &node) {
   // check type catch block
   for (auto &c : node.getCatchNodes()) {
     auto try1 = this->funcCtx->intoTry();
-    auto &catchType = this->checkTypeExactly(*c);
-    if (!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
+    this->checkTypeExactly(*c);
+  }
+  for (auto &c : node.getCatchNodes()) {
+    if (!exprType->isSameOrBaseTypeOf(c->getType())) {
       exprType = &this->typePool.get(TYPE::Void);
+      break;
     }
   }
 
