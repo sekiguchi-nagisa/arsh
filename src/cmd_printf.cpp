@@ -22,6 +22,65 @@
 
 namespace ydsh {
 
+template <typename T>
+static constexpr bool interpret_consumer_requirement_v =
+    std::is_same_v<bool, std::invoke_result_t<T, StringRef>>;
+
+template <typename T, enable_when<interpret_consumer_requirement_v<T>> = nullptr>
+static bool interpretEscapeSeq(StringRef ref, T callback) {
+  const auto size = ref.size();
+  for (StringRef::size_type pos = 0; pos < size;) {
+    const auto retPos = ref.find('\\', pos);
+    const auto sub = ref.slice(pos, retPos);
+    if (!callback(sub)) {
+      return false;
+    }
+    if (retPos == StringRef::npos) {
+      break;
+    }
+    pos = retPos;
+    auto ret = parseEscapeSeq(ref.begin() + pos, ref.end(), true);
+    switch (ret.kind) {
+    case EscapeSeqResult::OK_CODE: {
+      char buf[5];
+      unsigned int byteSize = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
+      if (!callback(StringRef(buf, byteSize))) {
+        return false;
+      }
+      pos += ret.consumedSize;
+      continue;
+    }
+    case EscapeSeqResult::OK_BYTE: {
+      auto b = static_cast<unsigned int>(ret.codePoint);
+      char buf[1];
+      buf[0] = static_cast<char>(static_cast<unsigned char>(b));
+      if (!callback(StringRef(buf, 1))) {
+        return false;
+      }
+      pos += ret.consumedSize;
+      continue;
+    }
+    case EscapeSeqResult::RANGE:
+      pos += ret.consumedSize; // skip invalid code
+      continue;
+    case EscapeSeqResult::UNKNOWN:
+      if (ref[pos + 1] == 'c') {
+        return false; // stop further printing
+      }
+      break;
+    default:
+      break;
+    }
+    char buf[1];
+    buf[0] = ref[pos];
+    if (!callback(StringRef(buf, 1))) {
+      return false;
+    }
+    pos++;
+  }
+  return true;
+}
+
 class StringBuf {
 private:
   std::string value;
@@ -161,7 +220,9 @@ private:
    * if success, return 1
    * if stop printing, return -1
    */
-  bool appendAndInterpretEscape(StringRef ref);
+  bool appendAndInterpretEscape(StringRef ref) {
+    return interpretEscapeSeq(ref, [this](StringRef sub) { return this->append(sub); });
+  }
 
 #define GEN_FLAG_CASE(E, F, C)                                                                     \
   case C:                                                                                          \
@@ -313,53 +374,6 @@ Optional<int> FormatPrinter::parsePrecision(StringRef::size_type &pos, ArrayObje
     }
   }
   return v;
-}
-
-bool FormatPrinter::appendAndInterpretEscape(const StringRef ref) {
-  constexpr auto end = false; // dummy for TRY macro
-  const auto size = ref.size();
-  for (StringRef::size_type pos = 0; pos < size;) {
-    const auto retPos = ref.find('\\', pos);
-    const auto sub = ref.slice(pos, retPos);
-    TRY(this->append(sub));
-    if (retPos == StringRef::npos) {
-      break;
-    }
-    pos = retPos;
-    auto ret = parseEscapeSeq(ref.begin() + pos, ref.end(), true);
-    switch (ret.kind) {
-    case EscapeSeqResult::OK_CODE: {
-      char buf[5];
-      unsigned int byteSize = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
-      TRY(this->append(StringRef(buf, byteSize)));
-      pos += ret.consumedSize;
-      continue;
-    }
-    case EscapeSeqResult::OK_BYTE: {
-      auto b = static_cast<unsigned int>(ret.codePoint);
-      char buf[1];
-      buf[0] = static_cast<char>(static_cast<unsigned char>(b));
-      TRY(this->append(StringRef(buf, 1)));
-      pos += ret.consumedSize;
-      continue;
-    }
-    case EscapeSeqResult::RANGE:
-      pos += ret.consumedSize; // skip invalid code
-      continue;
-    case EscapeSeqResult::UNKNOWN:
-      if (ref[pos + 1] == 'c') {
-        return false; // stop further printing
-      }
-      break;
-    default:
-      break;
-    }
-    char buf[1];
-    buf[0] = ref[pos];
-    TRY(this->append(StringRef(buf, 1)));
-    pos++;
-  }
-  return true;
 }
 
 bool FormatPrinter::appendAsStr(char conversion, ArrayObject::IterType &begin,
@@ -585,6 +599,64 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     }
   }
   return directiveCount == 0 ? end : begin;
+}
+
+int builtin_echo(DSState &, ArrayObject &argvObj) {
+  bool newline = true;
+  bool interpEscape = false;
+
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "neE")) != -1;) {
+    switch (opt) {
+    case 'n':
+      newline = false;
+      break;
+    case 'e':
+      interpEscape = true;
+      break;
+    case 'E':
+      interpEscape = false;
+      break;
+    default:
+      goto DO_ECHO;
+    }
+  }
+
+DO_ECHO:
+  // print argument
+  if (optState.index > 1 && argvObj.getValues()[optState.index - 1].asStrRef() == "--") {
+    optState.index--;
+  }
+
+  unsigned int index = optState.index;
+  const unsigned int argc = argvObj.getValues().size();
+  bool firstArg = true;
+  for (; index < argc; index++) {
+    if (firstArg) {
+      firstArg = false;
+    } else {
+      fputc(' ', stdout);
+    }
+
+    auto arg = argvObj.getValues()[index].asStrRef();
+    if (interpEscape) {
+      bool r = interpretEscapeSeq(arg, [](StringRef sub) {
+        return fwrite(sub.data(), sizeof(char), sub.size(), stdout) == sub.size();
+      });
+      if (!r) {
+        goto END;
+      }
+    } else {
+      fwrite(arg.data(), sizeof(char), arg.size(), stdout);
+    }
+  }
+
+  if (newline) {
+    fputc('\n', stdout);
+  }
+
+END:
+  return 0; // FIXME: io error check
 }
 
 int builtin_printf(DSState &state, ArrayObject &argvObj) {

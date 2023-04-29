@@ -37,7 +37,6 @@ static int builtin_gets(DSState &state, ArrayObject &argvObj);
 static int builtin_puts(DSState &state, ArrayObject &argvObj);
 static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
-static int builtin_echo(DSState &state, ArrayObject &argvObj);
 static int builtin_eval(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
@@ -65,6 +64,7 @@ int builtin_cd(DSState &state, ArrayObject &argvObj);
 int builtin_dirs(DSState &state, ArrayObject &argvObj);
 int builtin_pushd_popd(DSState &state, ArrayObject &argvObj);
 
+int builtin_echo(DSState &state, ArrayObject &argvObj);
 int builtin_printf(DSState &state, ArrayObject &argvObj);
 
 static auto initBuiltinMap() {
@@ -248,91 +248,6 @@ static int builtin_check_env(DSState &, ArrayObject &argvObj) {
     if (env == nullptr || strlen(env) == 0) {
       return 1;
     }
-  }
-  return 0;
-}
-
-static int builtin_echo(DSState &, ArrayObject &argvObj) {
-  bool newline = true;
-  bool interpEscape = false;
-
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "neE")) != -1;) {
-    switch (opt) {
-    case 'n':
-      newline = false;
-      break;
-    case 'e':
-      interpEscape = true;
-      break;
-    case 'E':
-      interpEscape = false;
-      break;
-    default:
-      goto END;
-    }
-  }
-
-END:
-  // print argument
-  if (optState.index > 1 && argvObj.getValues()[optState.index - 1].asStrRef() == "--") {
-    optState.index--;
-  }
-
-  unsigned int index = optState.index;
-  const unsigned int argc = argvObj.getValues().size();
-  bool firstArg = true;
-  for (; index < argc; index++) {
-    if (firstArg) {
-      firstArg = false;
-    } else {
-      fputc(' ', stdout);
-    }
-    if (!interpEscape) {
-      auto ref = argvObj.getValues()[index].asStrRef();
-      fwrite(ref.data(), sizeof(char), ref.size(), stdout);
-      continue;
-    }
-    auto arg = argvObj.getValues()[index].asStrRef();
-    const char *end = arg.end();
-    for (const char *iter = arg.begin(); iter != end;) {
-      if (*iter == '\\') {
-        auto ret = parseEscapeSeq(iter, end, true);
-        switch (ret.kind) {
-        case EscapeSeqResult::OK_CODE: {
-          char buf[5];
-          unsigned int size = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
-          fwrite(buf, sizeof(char), size, stdout);
-          iter += ret.consumedSize;
-          continue;
-        }
-        case EscapeSeqResult::OK_BYTE: {
-          auto b = static_cast<unsigned int>(ret.codePoint);
-          char buf[1];
-          buf[0] = static_cast<char>(static_cast<unsigned char>(b));
-          fwrite(buf, sizeof(char), 1, stdout);
-          iter += ret.consumedSize;
-          continue;
-        }
-        case EscapeSeqResult::RANGE:
-          iter += ret.consumedSize; // skip
-          continue;
-        case EscapeSeqResult::UNKNOWN:
-          if (*(iter + 1) == 'c') {
-            return 0; // stop printing
-          }
-          break;
-        default:
-          break;
-        }
-      }
-      char ch = *(iter++);
-      fputc(ch, stdout);
-    }
-  }
-
-  if (newline) {
-    fputc('\n', stdout);
   }
   return 0;
 }
