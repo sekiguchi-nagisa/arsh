@@ -254,11 +254,6 @@ assert "$(printf 'qw%9999999999999999999d' hoge 12 2>&1)" ==
 qw" 
 assert $? == 1
 
-
-# assert "$(printf 'q@w%*f' 2147483647 999999 2>&1)" =~ 
-# $/ydsh: printf: format failed, caused by \`Value too large.+'\nq@w/ 
-# assert $? == 1
-
 assert "$(printf 'qw%.*d' hoge 12 2>&1)" == 
 "ydsh: printf: \`hoge': invalid number, must be INT32
 qw" 
@@ -273,10 +268,6 @@ assert "$(printf 'qw%.2147483648d' 12 2>&1)" ==
 "ydsh: printf: \`2147483648': invalid number, must be decimal INT32
 qw" 
 assert $? == 1
-
-# assert "$(printf 'q@w%.*f' 2147483647 999999 2>&1)" =~ 
-# $/ydsh: printf: format failed, caused by \`Value too large.+'\nq@w/ 
-# assert $? == 1
 
 ## width
 $reply.clear()

@@ -1,0 +1,11 @@
+
+# too large output
+
+assert "$(printf -v var '%*s' -2147483648 @@@@@@@@@@@@ 2>&1)" =~
+    $/ydsh: printf: format failed, caused by.+/
+
+assert "$(printf -v var '%#*x' -2147483648 9999 2>&1)" =~
+    $/ydsh: printf: format failed.+/
+
+
+true
