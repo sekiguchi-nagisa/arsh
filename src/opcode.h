@@ -89,6 +89,8 @@ namespace ydsh {
   OP(RETURN_SIG, 0, 0)                                                                             \
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
+  OP(IF_INVALID, 2, 0)                                                                             \
+  OP(IF_NOT_INVALID, 2, 0)                                                                         \
   OP(GOTO, 4, 0)                                                                                   \
   OP(JUMP_LOOP, 4, 0)                                                                              \
   OP(JUMP_LOOP_V, 4, 0)                                                                            \
@@ -134,8 +136,7 @@ namespace ydsh {
   OP(SET_SECOND, 0, -1)                                                                            \
   OP(GET_POS_ARG, 0, -1)                                                                           \
   OP(UNWRAP, 0, 0)                                                                                 \
-  OP(CHECK_UNWRAP, 0, 0)                                                                           \
-  OP(TRY_UNWRAP, 2, 0)                                                                             \
+  OP(CHECK_INVALID, 0, 0)                                                                          \
   OP(RECLAIM_LOCAL, 2, 0)
 
 enum class OpCode : unsigned char {

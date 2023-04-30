@@ -657,7 +657,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     break;
   case TypeOpNode::CHECK_UNWRAP:
     this->emitSourcePos(node.getActualPos());
-    this->emit0byteIns(OpCode::CHECK_UNWRAP);
+    this->emit0byteIns(OpCode::CHECK_INVALID);
     break;
   case TypeOpNode::PRINT: {
     this->emitSourcePos(node.getActualPos());
@@ -667,7 +667,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
 
       auto thenLabel = makeLabel();
       auto mergeLabel = makeLabel();
-      this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
+      this->emitBranchIns(OpCode::IF_NOT_INVALID, thenLabel);
       this->emitLdcIns(DSValue::createStr("(invalid)"));
       this->emitJumpIns(mergeLabel);
 
@@ -750,7 +750,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     auto mergeLabel = makeLabel();
 
     this->visit(*node.getLeftNode());
-    this->emitBranchIns(OpCode::TRY_UNWRAP, mergeLabel);
+    this->emitBranchIns(OpCode::IF_NOT_INVALID, mergeLabel);
 
     this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
     this->markLabel(mergeLabel);
@@ -1225,7 +1225,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
   auto mergeLabel = makeLabel();
   if (node.getExprNode().getType().isOptionType()) {
     this->emit0byteIns(OpCode::DUP);
-    this->emit0byteIns(OpCode::CHECK_UNWRAP);
+    this->emit0byteIns(OpCode::CHECK_INVALID);
     this->emitBranchIns(defaultLabel);
   }
   for (unsigned int index = 0; index < node.getArmNodes().size(); index++) {

@@ -2152,6 +2152,26 @@ bool VM::mainLoop(DSState &state) {
         }
         vmnext;
       }
+      vmcase(IF_INVALID) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
+        if (state.stack.peek().isInvalid()) {
+          state.stack.popNoReturn();
+          state.stack.pc() += offset - 1;
+        } else {
+          state.stack.pc() += 2;
+        }
+        vmnext;
+      }
+      vmcase(IF_NOT_INVALID) {
+        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
+        if (state.stack.peek().isInvalid()) {
+          state.stack.popNoReturn();
+          state.stack.pc() += 2;
+        } else {
+          state.stack.pc() += offset - 1;
+        }
+        vmnext;
+      }
       vmcase(GOTO) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
@@ -2463,19 +2483,9 @@ bool VM::mainLoop(DSState &state) {
         }
         vmnext;
       }
-      vmcase(CHECK_UNWRAP) {
+      vmcase(CHECK_INVALID) {
         bool b = state.stack.pop().kind() != DSValueKind::INVALID;
         state.stack.push(DSValue::createBool(b));
-        vmnext;
-      }
-      vmcase(TRY_UNWRAP) {
-        unsigned short offset = read16(GET_CODE(state), state.stack.pc());
-        if (state.stack.peek().kind() == DSValueKind::INVALID) {
-          state.stack.popNoReturn();
-          state.stack.pc() += 2;
-        } else {
-          state.stack.pc() += offset - 1;
-        }
         vmnext;
       }
       vmcase(RECLAIM_LOCAL) {

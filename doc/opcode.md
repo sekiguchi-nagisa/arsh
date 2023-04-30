@@ -61,6 +61,8 @@
 | RETURN_SIG        |                                | [no change]                                  | return from signal handler                                      |
 | BRANCH            | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset              |
 | BRANCH_NOT        | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset          | 
+| IF_INVALID        | 2: offset1 offset2             | value -> / [no change]                       | if stack top is invalid, branch to instruction at offset        |
+| IF_NOT_INVALID    | 2: offset1 offset2             | value -> / [no change]                       | if stack top is not invalid, branch to instruction at offset    |
 | GOTO              | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index                          |
 | JUMP_LOOP         | 4: byte1 ~ byte4               | [unwind until loop guard]                    | unwind stack top to guard before go to instruction              |
 | JUMP_LOOP_V       | 4: byte1 ~ byte4               | [unwind until loop guard]                    | save and restore stack top during unwinding                     |
@@ -106,6 +108,5 @@
 | SET_SECOND        |                                | value ->                                     | set base time                                                   |
 | GET_POS_ARG       |                                | args pos -> value                            | get positional argument                                         |
 | UNWRAP            |                                | value -> value                               | unwrap option value                                             |
-| CHECK_UNWRAP      |                                | value -> value                               | check if option value has a value                               |
-| TRY_UNWRAP        | 2: offset1 offset2             | value -> / [no change]                       | try to unwrap option value                                      |
+| CHECK_INVALID     |                                | value -> value                               | check if option value has a value                               |
 | RECLAIM_LOCAL     | 2: offset1 size1               | [no change]                                  | reclaim local variables specified range                         |
