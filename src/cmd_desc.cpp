@@ -160,9 +160,8 @@ static BuiltinCmdDesc table[] = {
      "      %b  interpret backslash escape sequences\n"
      "      %q  quote as shell argument\n"
      "    Options:\n"
-     "      -v var    store formatted output to reply variable (get by VAR) rather than "
-     "                print to stdout\n"
-     "stdout"},
+     "      -v var    store formatted output to reply variable (get by VAR)\n"
+     "                rather than print to stdout"},
     {"pushd", "[+N | -N | dir]",
      "    Change the current directory and push the old current directory onto the stack.\n"
      "    Arguments:\n"
