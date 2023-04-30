@@ -17,7 +17,6 @@
 #ifndef YDSH_VM_H
 #define YDSH_VM_H
 
-#include <chrono>
 #include <cstdio>
 
 #include <ydsh/ydsh.h>
@@ -27,6 +26,7 @@
 #include "job.h"
 #include "misc/noncopyable.h"
 #include "misc/split_random.hpp"
+#include "misc/time_util.hpp"
 #include "paths.h"
 #include "scope.h"
 #include "signals.h"
@@ -145,7 +145,7 @@ private:
 
   VMState stack;
 
-  decltype(std::chrono::system_clock::now()) baseTime;
+  timestamp baseTime;
 
   L64X128MixRNG rng;
 

@@ -109,7 +109,7 @@ static void initEnv() {
 DSState::DSState()
     : modLoader(this->sysConfig),
       emptyFDObj(toObjPtr<UnixFdObject>(DSValue::create<UnixFdObject>(-1))),
-      baseTime(std::chrono::system_clock::now()), rng(this->baseTime.time_since_epoch().count()) {
+      baseTime(getCurrentTimestamp()), rng(this->baseTime.time_since_epoch().count()) {
   // init envs
   initEnv();
   const char *pwd = getenv(ENV_PWD);
@@ -2450,7 +2450,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(GET_SECOND) {
-        auto now = std::chrono::system_clock::now();
+        auto now = getCurrentTimestamp();
         auto diff = now - state.baseTime;
         auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
         int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
@@ -2459,7 +2459,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(SET_SECOND) {
-        state.baseTime = std::chrono::system_clock::now();
+        state.baseTime = getCurrentTimestamp();
         auto v = state.stack.pop();
         state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
         vmnext;
