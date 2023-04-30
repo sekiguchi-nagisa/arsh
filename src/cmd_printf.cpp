@@ -319,6 +319,8 @@ private:
    * @return
    */
   bool appendWithPadding(int width, StringRef ref, int precision, bool leftAdjust);
+
+  bool putPadding(size_t size);
 };
 
 // ###########################
@@ -562,16 +564,29 @@ bool FormatPrinter::appendWithPadding(int width, StringRef ref, int precision, b
 
   static constexpr bool end = false; // for TRY macro
   const bool needPadding = fieldWidth > count;
+
   if (needPadding && !leftAdjust) {
-    for (size_t i = 0; i < fieldWidth - count; i++) {
-      TRY(this->append(" "));
-    }
+    TRY(this->putPadding(fieldWidth - count));
   }
   TRY(this->append(ref));
   if (needPadding && leftAdjust) {
-    for (size_t i = 0; i < fieldWidth - count; i++) {
-      TRY(this->append(" "));
-    }
+    TRY(this->putPadding(fieldWidth - count));
+  }
+  return true;
+}
+
+bool FormatPrinter::putPadding(size_t size) {
+  constexpr bool end = false;
+
+  const size_t chunkSize = std::min(size, static_cast<size_t>(64));
+  std::string spaces;
+  spaces.resize(chunkSize, ' ');
+
+  for (size_t i = 0; i < size / chunkSize; i++) {
+    TRY(this->append(spaces));
+  }
+  for (size_t i = 0; i < size % chunkSize; i++) {
+    TRY(this->append(" "));
   }
   return true;
 }

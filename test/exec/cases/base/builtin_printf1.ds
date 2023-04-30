@@ -259,3 +259,16 @@ $reply.clear()
 printf -v var '%-*.8q' 15 $'あ\tいう'
 assert $reply['var'] == "あ$'\x09'       "
 assert $reply['var'] == "$(printf '%-*.8q' 15 $'あ\tいう')"
+
+var expect = ""
+for(var i = 0; $i < 999/8; $i++) {
+    $expect += "        "
+}
+for(var i = 0; $i < 999%8; $i++) {
+    $expect += " "
+}
+
+$reply.clear()
+printf -v var '%-*.*s' 999 999 あいう
+assert $reply['var'] == "あいう" + $expect.slice(3) : $reply['var'].count() as String
+assert $reply['var'] == "$(printf '%-*.*s' 999 999 あいう)"
