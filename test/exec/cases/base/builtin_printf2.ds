@@ -205,6 +205,39 @@ if $OSTYPE == 'darwin' {
     assert $reply['varq'] == '-0X1.91EB851EB851FP+1=+0X1.91EB851EB851FP+1=+INF=-INF=+NAN='
 }
 
+## length modifier (always ignore)
+$reply.clear()
+printf -v varq '%hd=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%ld=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%LZd=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%lld=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%td=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%jd=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%zd=' 12345 
+assert $reply['varq'] == '12345='
+
+$reply.clear()
+printf -v varq '%Zd=' 12345 
+assert $reply['varq'] == '12345='
+
 ## invalid width/precision
 assert "$(printf 'qw%*d' hoge 12 2>&1)" == 
 "ydsh: printf: \`hoge': invalid number, must be INT32
@@ -215,6 +248,12 @@ assert "$(printf 'qw%*d' 2147483648 12 2>&1)" ==
 "ydsh: printf: \`2147483648': invalid number, must be INT32
 qw" 
 assert $? == 1
+
+assert "$(printf 'qw%9999999999999999999d' hoge 12 2>&1)" == 
+"ydsh: printf: \`9999999999999999999': invalid number, must be decimal INT32
+qw" 
+assert $? == 1
+
 
 # assert "$(printf 'q@w%*f' 2147483647 999999 2>&1)" =~ 
 # $/ydsh: printf: format failed, caused by \`Value too large.+'\nq@w/ 
@@ -227,6 +266,11 @@ assert $? == 1
 
 assert "$(printf 'qw%.*d' 2147483648 12 2>&1)" == 
 "ydsh: printf: \`2147483648': invalid number, must be INT32
+qw" 
+assert $? == 1
+
+assert "$(printf 'qw%.2147483648d' 12 2>&1)" == 
+"ydsh: printf: \`2147483648': invalid number, must be decimal INT32
 qw" 
 assert $? == 1
 

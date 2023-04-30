@@ -154,7 +154,15 @@ static BuiltinCmdDesc table[] = {
      "    Arguments:\n"
      "      +N    remove the Nth entry from the left\n"
      "      -N    remove the Nth entry from the right"},
-    {"printf", "[-v var] format [arguments]", ""},
+    {"printf", "[-v var] format [arguments]",
+     "    Print formatted string similar to printf(1).\n"
+     "    In addition to printf(1) format, support the following formats\n"
+     "      %b  interpret backslash escape sequences\n"
+     "      %q  quote as shell argument\n"
+     "    Options:\n"
+     "      -v var    store formatted output to reply variable (get by VAR) rather than "
+     "                print to stdout\n"
+     "stdout"},
     {"pushd", "[+N | -N | dir]",
      "    Change the current directory and push the old current directory onto the stack.\n"
      "    Arguments:\n"

@@ -203,7 +203,7 @@ private:
     int errNum = errno;
     if (unlikely(!status)) {
       this->error = "format failed";
-      if (errNum != 0) { // snprintf may not set errno
+      if (errNum != 0) {
         this->error += ", caused by `";
         this->error += strerror(errNum);
         this->error += "'";
@@ -283,7 +283,9 @@ private:
   bool parseDecimal(StringRef ref, int &value) {
     auto ret = convertToDecimal<int>(ref.begin(), ref.end());
     if (!ret) {
-      this->error = "must be decimal INT32";
+      this->error = "`";
+      this->error += toPrintable(ref);
+      this->error += "': invalid number, must be decimal INT32";
       return false;
     }
     value = ret.value;
@@ -433,6 +435,8 @@ bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char
 
 bool FormatPrinter::appendAsInt(FormatFlag flags, int width, int precision, char conversion,
                                 ArrayObject::IterType &begin, const ArrayObject::IterType end) {
+  static_assert(sizeof(int64_t) == sizeof(intmax_t));
+
   assert(StringRef("diouxX").contains(conversion));
   this->syncLocale();
 

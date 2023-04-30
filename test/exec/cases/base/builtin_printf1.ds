@@ -96,6 +96,10 @@ printf -v var '%s=%s\n' key 1   # %s directive
 assert $reply['var'] == $'key=1\n'
 
 $reply.clear()
+printf -v var '%js=%ls\n' key 1   # %s directive
+assert $reply['var'] == $'key=1\n'
+
+$reply.clear()
 printf -v var '%s=%s\n' key   # %s directive
 assert $reply['var'] == $'key=\n'
 
