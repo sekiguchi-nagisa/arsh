@@ -333,9 +333,9 @@ litecheck() {
     test -f $self || _usage "require regular file: ${$file!}"
 
     ## check bin
-    if $bin {
-        $cmd = $bin!.realpath() ?? _usage "file not found: \`${$bin!}'"
-        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`${$bin!}'"
+    if let b = $bin {
+        $cmd = $b.realpath() ?? _usage "file not found: \`$b'"
+        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`$b'"
     }
 
     # read directive
@@ -345,9 +345,9 @@ litecheck() {
     for d in $map[$REQUIRE] {
         var cond = try { $MODULE._func($d.line as String)(); } 
                    catch e : Error { 
-                       $_error($d.ln, "invalid $REQUIRE directive: \`${$d.line}', caused by" + $'\n' + $e.message());
+                       $_error($d.ln, "invalid $REQUIRE directive: \`${d.line}', caused by" + $'\n' + $e.message());
                    }
-        $cond is Bool || $_error($d.ln, "$REQUIRE directive must be boolean expression: \`${$d.line}'")
+        $cond is Bool || $_error($d.ln, "$REQUIRE directive must be boolean expression: \`${d.line}'")
         $cond! as Bool || { echo skip "\`$self'"; exit 125; }
     }
 
