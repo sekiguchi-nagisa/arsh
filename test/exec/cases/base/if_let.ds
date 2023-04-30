@@ -1,0 +1,14 @@
+
+function bind(a : String) : String {
+    return if let v = $a.toInt(10) {
+        $v as String
+    } elif let v = $a.toFloat() {
+        $v as String
+    } else {
+        "failed"
+    }
+}
+
+assert $bind("00034") == '34'
+assert $bind("3s4") == 'failed'
+assert $bind("0003.14000") == 3.14 as String

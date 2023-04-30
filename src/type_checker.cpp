@@ -845,65 +845,14 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   }
 }
 
-void TypeChecker::resolveSmartCast(const Node &condNode) {
-  if (!isa<TypeOpNode>(condNode)) {
-    return;
-  }
-  auto &typeOpNode = cast<TypeOpNode>(condNode);
-  if (!isa<VarNode>(typeOpNode.getExprNode())) {
-    return;
-  }
-  auto &varNode = cast<VarNode>(typeOpNode.getExprNode());
-  if (auto handle = varNode.getHandle(); !handle || !handle->has(HandleAttr::READ_ONLY)) {
-    /**
-     * currently, smart cast is only enabled in the following cases
-     *  - read-only local/global variable
-     */
-    return;
-  }
-
-  const DSType *targetType = nullptr;
-  switch (typeOpNode.getOpKind()) {
-  case TypeOpNode::INSTANCEOF:
-    targetType = &typeOpNode.getTargetTypeNode()->getType();
-    break;
-  case TypeOpNode::CHECK_UNWRAP:
-    if (isa<OptionType>(varNode.getType())) {
-      targetType = &cast<OptionType>(varNode.getType()).getElementType();
-    }
-    break;
-  default:
-    break;
-  }
-  if (targetType) {
-    auto &handle = varNode.getHandle();
-    auto newHandle = HandlePtr::create(*targetType, handle->getIndex(), handle->getKind(),
-                                       handle->attr(), handle->getModId());
-    this->curScope->defineAlias(std::string(varNode.getVarName()), newHandle, true);
-  }
-}
-
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   if (node.getOp() == TokenKind::COND_AND || node.getOp() == TokenKind::COND_OR) {
-    IntoBlock scope;
-    const bool smartCast = node.getOp() == TokenKind::COND_AND;
-    if (smartCast && !node.isInheritScope()) {
-      scope = this->intoBlock();
-    }
-
     auto &booleanType = this->typePool.get(TYPE::Bool);
     this->checkTypeWithCoercion(booleanType, node.refLeftNode());
     if (node.getLeftNode()->getType().isNothingType()) {
       this->reportError<Unreachable>(*node.getRightNode());
     }
-
-    if (smartCast) {
-      this->resolveSmartCast(*node.getLeftNode());
-    }
     this->checkTypeWithCoercion(booleanType, node.refRightNode());
-    if (smartCast && node.isInheritScope()) {
-      this->resolveSmartCast(*node.getRightNode());
-    }
     node.setType(booleanType);
     return;
   }
@@ -1194,14 +1143,37 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
   }
 }
 
-void TypeChecker::visitIfNode(IfNode &node) {
-  {
-    auto scope = this->intoBlock();
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
-    this->resolveSmartCast(node.getCondNode());
-    this->checkTypeExactly(node.getThenNode());
+void TypeChecker::resolveIfLet(IfNode &node) {
+  assert(node.isIfLet());
+  assert(isa<BlockNode>(node.getThenNode()));
+  node.setIfLetKind(IfNode::IfLetKind::ERROR);
+  auto &condNode = node.getCondNode();
+  assert(isa<VarDeclNode>(condNode));
+  auto &varDeclNode = cast<VarDeclNode>(condNode);
+  varDeclNode.setType(this->typePool.get(TYPE::Void));
+  assert(varDeclNode.getKind() == VarDeclNode::LET);
+  auto &exprNode = *varDeclNode.getExprNode();
+  auto &exprType = this->checkTypeAsExpr(exprNode);
+  if (!exprType.isOptionType()) {
+    this->reportError<IfLetOpt>(exprNode, exprType.getName());
+    return;
   }
-  auto &thenType = node.getThenNode().getType();
+  node.setIfLetKind(IfNode::IfLetKind::UNWRAP);
+  auto emptyNode = std::make_unique<EmptyNode>(varDeclNode.getNameInfo().getToken());
+  emptyNode->setType(cast<OptionType>(exprType).getElementType());
+  auto decl =
+      std::make_unique<VarDeclNode>(varDeclNode.getPos(), NameInfo(varDeclNode.getNameInfo()),
+                                    std::move(emptyNode), VarDeclNode::Kind::LET);
+  cast<BlockNode>(node.getThenNode()).insertNodeToFirst(std::move(decl));
+}
+
+void TypeChecker::visitIfNode(IfNode &node) {
+  if (node.isIfLet()) {
+    this->resolveIfLet(node);
+  } else {
+    this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
+  }
+  auto &thenType = this->checkTypeExactly(node.getThenNode());
   auto &elseType = this->checkTypeExactly(node.getElseNode());
 
   if (thenType.isNothingType() && elseType.isNothingType()) {

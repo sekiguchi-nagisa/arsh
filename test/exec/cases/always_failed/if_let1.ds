@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 5, $chars = 16, $errorKind = 'IfLetOpt', $status = 1)
+
+if $false {
+    34
+} elif let a = 345 {
+    sss
+}

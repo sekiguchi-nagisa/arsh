@@ -182,6 +182,7 @@ DEFINE_TCError(PosArgRange, "positional argument is out-of-range (up to INT32_MA
 DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only allow 0,1,2");
 DEFINE_TCError(NeedFd,
                "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
+DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 

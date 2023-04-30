@@ -1,9 +1,0 @@
-#$test($result = 'type', $lineNum = 8, $chars = 10, $errorKind = 'UndefinedMethod', $status = 1)
-
-{
-let aaa = 34 as Any?
-let bbb = 'fjriaeo'.toInt()
-
-assert $aaa is Int && $bbb && ($aaa == $bbb) || 
-    $aaa.abs() == 34  # right-hand side is not unwrap
-}

@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'UndefinedSymbol', $status = 1)
+
+if let aa = '34'.toFloat() {
+    $aa + 4.24
+} elif let bb = '34'.realpath() {
+    $bb + $aa
+}

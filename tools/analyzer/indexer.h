@@ -238,6 +238,7 @@ protected:
   void visitBlockNode(BlockNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
   void visitLoopNode(LoopNode &node) override;
+  void visitIfNode(IfNode &node) override;
   void visitCatchNode(CatchNode &node) override;
   void visitVarDeclNode(VarDeclNode &node) override;
   void visitPrefixAssignNode(PrefixAssignNode &node) override;

@@ -4,6 +4,14 @@
 
 ### Added
 
+#### Core
+
+- support ``if-let`` optional binding
+    - like swift, bind unwrapped value to variable (only visible in then block)
+      ```
+      if let a = "hgoe".realpath() { echo $a; }
+      ```
+
 #### Builtin
 
 - add builtin ``printf`` command
@@ -12,12 +20,13 @@
 
 #### Core
 
-- **Breaking Change**: only allow smart-cast to read-only local/global variables
 - **Breaking Change**: restrict implicit bool coercion for ``FD``, ``T?`` type
     - only allowed in the following conditional context
         - if, for, while, assert
 - **Breaking Change**: change ``Any`` type expression to ``String`` cast semantics.
     - now do not perform string coercion (to-string)
+- **Breaking Change**: drop support smart-cast
+    - use if-let expression instead
 - adjust error message layout and colors
 - improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type

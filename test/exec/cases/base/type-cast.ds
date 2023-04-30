@@ -17,7 +17,7 @@ assert $b3 is (String)
 assert $b3 is ((String))
 assert($b3 == "12")
 
-# cast
+# down cast
 var a4 = new Error("")
 $a4 = new OutOfRangeError("")
 ($a4 as OutOfRangeError).show()
@@ -29,41 +29,11 @@ try {
 	assert($true)
 }
 
+# to bool
+assert $STDIN as Bool
+assert !{ var a = $STDOUT.dup(); $a.close(); $a as Bool; }
 
-## smart cast
-let ww = 342345 as Any
-assert $ww is Int && $ww == 342345
-
-{
-let q = 2345 as Any
-if($q is Int) {
-    assert($q == 2345)
-}
-
-let r = 3.14 as Any
-if $q is Int && $r is Float && $q as Float != $r {
-  echo $q' != '$r
-}
-
-assert (($q is Int) ? $q : 0) == 2345
-
-assert $q is Int && $q.abs() == 2345
-
-assert ($q is Int && $r is Float) && $q.toFloat() != $r
-
-assert ($q is Int && $r is Float) ? $q.toFloat() != $r : false
-
-# ## smart cast assignment
-# if $q is Int {
-#   $q = 999
-# }
-# assert $q is Int && $q == 999
-
-# if $q is Int {
-#   var q = 34
-#   $q = 9990000
-# }
-# assert $q is Int && $q == 999
-
-# function() => { $q = ""; }
-}
+var o = "34".toInt()
+assert $o as Bool
+$o = 'ferfre'.toInt()
+assert !($o as Bool)

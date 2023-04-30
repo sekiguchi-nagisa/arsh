@@ -17,7 +17,7 @@ function create_today() : String {
 function find_todo_at($a : Int) : String? {
     var c = $a + 1
     var v = $(ls | grep '20[0-9][0-9][0-1][0-9][0-3][0-9].md' | sort -r | head -n $c)
-    var i = $a as Int
+    var i = $a
     if $i < $v.size() {
         var name = $v[$i]
         assert test -f $name
@@ -52,8 +52,8 @@ if $# == 0 {
     $open_todo_today()
 }
 if $# == 1 && $1 !~ $/^show$/i {
-    let f = $find_todo($1)
-    if $f {
+    if let f = $find_todo($1)
+    {
         exec vim $f
     }
     echo file not found: $1 1>&2
@@ -66,8 +66,8 @@ if $# == 1 && $1 =~ $/^show$/i {
 }
 
 if $1 =~ $/^show$/i {
-    let f = $find_todo($2)
-    $f && { echo $f; exit 0; }
+    if let f = $find_todo($2)
+    { echo $f; exit 0; }
     echo file not found: $2 1>&2
     exit 1
 }

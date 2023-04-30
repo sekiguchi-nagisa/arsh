@@ -29,7 +29,7 @@
 | variable (inlined import)             | ✔️             | ✔️             | ✔️                 |
 | variable (named import)               | ✔️             | ✔️             | ✔️                 |
 | variable (positional parameter)       | -              | -              | ❌ (show code)      |
-| variable (smart cast)                 | ✔️             | ✔️             | ❌                  |
+| variable (if-let)                     | ✔️             | ✔️             | ✔️                 |
 | builtin variable                      | -              | -              | ✔️                 |
 | builtin constant                      | -              | -              | ✔️ (show value)    |
 | function                              | ✔️             | ✔️             | ✔️                 |

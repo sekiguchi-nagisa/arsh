@@ -1139,8 +1139,18 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
   auto elseLabel = makeLabel();
   auto mergeLabel = makeLabel();
 
-  this->visit(node.getCondNode());
-  this->emitBranchIns(elseLabel);
+  switch (node.getIfLetKind()) {
+  case IfNode::NOP:
+    this->visit(node.getCondNode());
+    this->emitBranchIns(elseLabel);
+    break;
+  case IfNode::ERROR:
+    return; // unreachable
+  case IfNode::UNWRAP:
+    this->visit(node.getIfLetUnwrap());
+    this->emitBranchIns(OpCode::IF_INVALID, elseLabel);
+    break;
+  }
   this->visit(node.getThenNode(), CmdCallCtx::AUTO);
   if (!isEmptyCode(node.getElseNode()) && !node.getThenNode().getType().isNothingType()) {
     this->emitJumpIns(mergeLabel);

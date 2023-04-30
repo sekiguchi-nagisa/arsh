@@ -501,6 +501,23 @@ void SymbolIndexer::visitLoopNode(LoopNode &node) {
   this->visit(node.getIterNode());
 }
 
+void SymbolIndexer::visitIfNode(IfNode &node) {
+  switch (node.getIfLetKind()) {
+  case IfNode::NOP:
+    this->visit(node.getCondNode());
+    break;
+  case IfNode::ERROR:
+    break;
+  case IfNode::UNWRAP: {
+    auto &exprNode = node.getIfLetUnwrap();
+    this->visit(exprNode);
+    break;
+  }
+  }
+  this->visit(node.getThenNode());
+  this->visit(node.getElseNode());
+}
+
 void SymbolIndexer::visitCatchNode(CatchNode &node) {
   auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visit(node.getTypeNode());

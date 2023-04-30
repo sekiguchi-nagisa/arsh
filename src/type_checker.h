@@ -537,7 +537,7 @@ private:
    */
   void resolveCastOp(TypeOpNode &node, bool forceToString = false);
 
-  void resolveSmartCast(const Node &condNode);
+  void resolveIfLet(IfNode &node);
 
   void checkTypeAsBreakContinue(JumpNode &node);
   void checkTypeAsReturn(JumpNode &node);

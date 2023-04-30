@@ -60,16 +60,6 @@ assert $o && $o! == "34"
 assert ($o ? $o!.size() : 0) == 2
 }
 
-{
-    let o = $opt(2)
-    assert $o && $o == 'hello' && $o.size() > 0
-}
-
-{
-  let o = 34 as Any?
-  assert $o && $o is Int && $o.abs() == 34
-}
-
 # collection with option value
 assert [23 as Int?] as String == '[23]'
 var ex = 34 as Any

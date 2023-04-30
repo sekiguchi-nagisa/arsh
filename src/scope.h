@@ -48,7 +48,6 @@ enum class NameLookupError {
 enum class NameRegisterOp : unsigned int {
   AS_ALIAS = 1u << 0u,
   IGNORE_CONFLICT = 1u << 1u,
-  OVERWRITE = 1u << 2u, // for alias
 };
 
 template <>
@@ -234,8 +233,7 @@ public:
   NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleKind kind,
                                   HandleAttr attr);
 
-  NameRegisterResult defineAlias(std::string &&name, const HandlePtr &handle,
-                                 bool overwrite = false);
+  NameRegisterResult defineAlias(std::string &&name, const HandlePtr &handle);
 
   NameRegisterResult defineTypeAlias(const TypePool &pool, const std::string &name,
                                      const DSType &type);
@@ -350,13 +348,8 @@ private:
     return this->add(std::move(name), HandlePtr::create(type, index, k, attr, this->modId));
   }
 
-  NameRegisterResult addNewAliasHandle(std::string &&name, const HandlePtr &handle,
-                                       bool overwrite = false) {
-    auto op = NameRegisterOp::AS_ALIAS;
-    if (overwrite) {
-      setFlag(op, NameRegisterOp::OVERWRITE);
-    }
-    return this->add(std::move(name), HandlePtr(handle), op);
+  NameRegisterResult addNewAliasHandle(std::string &&name, const HandlePtr &handle) {
+    return this->add(std::move(name), HandlePtr(handle), NameRegisterOp::AS_ALIAS);
   }
 
   NameRegisterResult addNewForeignHandle(std::string &&name, const HandlePtr &handle) {

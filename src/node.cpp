@@ -668,9 +668,9 @@ void LoopNode::dump(NodeDumper &dumper) const {
 // ####################
 
 IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
-               std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode)
-    : WithRtti({startPos, 0}), condNode(std::move(condNode)), thenNode(std::move(thenNode)),
-      elseNode(std::move(elseNode)) {
+               std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode, bool ifLet)
+    : WithRtti({startPos, 0}), ifLet(ifLet), condNode(std::move(condNode)),
+      thenNode(std::move(thenNode)), elseNode(std::move(elseNode)) {
   this->updateToken(this->thenNode->getToken());
   if (this->elseNode != nullptr) {
     this->updateToken(this->elseNode->getToken());
@@ -686,7 +686,24 @@ IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
   }
 }
 
+Node &IfNode::getIfLetUnwrap() const {
+  assert(this->getIfLetKind() == IfLetKind::UNWRAP);
+  auto &varDeclNode = cast<VarDeclNode>(this->getCondNode());
+  return *varDeclNode.getExprNode();
+}
+
 void IfNode::dump(NodeDumper &dumper) const {
+  DUMP(ifLet);
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(NOP)                                                                                          \
+  OP(ERROR)                                                                                        \
+  OP(UNWRAP)
+
+  DUMP_ENUM(ifLeftKind, EACH_ENUM);
+
+#undef EACH_ENUM
+
   DUMP_PTR(condNode);
   DUMP_PTR(thenNode);
   DUMP_PTR(elseNode);

@@ -1765,7 +1765,16 @@ public:
 };
 
 class IfNode : public WithRtti<Node, NodeKind::If> {
+public:
+  enum IfLetKind : unsigned char {
+    NOP,
+    ERROR,
+    UNWRAP,
+  };
+
 private:
+  const bool ifLet;
+  IfLetKind ifLeftKind{NOP};
   std::unique_ptr<Node> condNode;
   std::unique_ptr<Node> thenNode;
   std::unique_ptr<Node> elseNode;
@@ -1775,7 +1784,7 @@ public:
    * elseNode may be null
    */
   IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&thenNode,
-         std::unique_ptr<Node> &&elseNode);
+         std::unique_ptr<Node> &&elseNode, bool ifLet);
 
   Node &getCondNode() const { return *this->condNode; }
 
@@ -1788,6 +1797,18 @@ public:
   Node &getElseNode() const { return *this->elseNode; }
 
   std::unique_ptr<Node> &refElseNode() { return this->elseNode; }
+
+  bool isIfLet() const { return this->ifLet; }
+
+  IfLetKind getIfLetKind() const { return this->ifLeftKind; }
+
+  void setIfLetKind(IfLetKind k) { this->ifLeftKind = k; }
+
+  /**
+   * must be IfLetKind::UNWRAP
+   * @return
+   */
+  Node &getIfLetUnwrap() const;
 
   void dump(NodeDumper &dumper) const override;
 };
