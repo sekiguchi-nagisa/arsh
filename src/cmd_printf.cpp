@@ -359,6 +359,10 @@ Optional<int> FormatPrinter::parseWidth(StringRef::size_type &pos, ArrayObject::
       return {};
     }
   }
+  if (v == INT32_MIN) {
+    this->error = "INT32_MIN is not allowed in width";
+    return {};
+  }
   return v;
 }
 
@@ -546,11 +550,8 @@ bool FormatPrinter::appendWithPadding(int width, StringRef ref, int precision, b
   size_t fieldWidth;
   if (width < 0) {
     leftAdjust = true;
-    if (width == INT32_MIN) {
-      fieldWidth = static_cast<unsigned int>(INT32_MAX) + 1;
-    } else {
-      fieldWidth = static_cast<unsigned int>(-1 * width);
-    }
+    assert(width != INT32_MIN);
+    fieldWidth = static_cast<unsigned int>(-1 * width);
   } else {
     fieldWidth = static_cast<unsigned int>(width);
   }
