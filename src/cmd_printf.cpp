@@ -474,13 +474,6 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
   assert(StringRef("eEfFgGaA").contains(conversion));
   this->syncLocale();
 
-  std::string fmt = "%";
-
-  EACH_FORMAT_FLAG(GEN_IF);
-
-  fmt += "*.*";
-  fmt += conversion;
-
   double v = 0.0;
   if (begin != end) {
     auto ref = (*begin++).asStrRef();
@@ -498,7 +491,18 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
       this->error += "': invalid float number";
       return false;
     }
+    if (std::isnan(v)) {
+      static_assert(std::numeric_limits<double>::has_quiet_NaN);
+      v = std::numeric_limits<double>::quiet_NaN();
+      unsetFlag(flags, FormatFlag::SIGN);
+      unsetFlag(flags, FormatFlag::SPACE);
+    }
   }
+
+  std::string fmt = "%";
+  EACH_FORMAT_FLAG(GEN_IF);
+  fmt += "*.*";
+  fmt += conversion;
   return this->appendAsFormat(fmt.c_str(), width, precision, v);
 }
 
