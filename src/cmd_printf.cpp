@@ -312,6 +312,7 @@ private:
   /**
    *
    * @param width
+   * must be not be negative number
    * @param ref
    * @param precision
    * @param leftAdjust
@@ -550,16 +551,11 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
   return ret >= 0;
 }
 
-bool FormatPrinter::appendWithPadding(int width, StringRef ref, int precision, bool leftAdjust) {
-  size_t fieldWidth;
-  if (width < 0) {
-    leftAdjust = true;
-    assert(width != INT32_MIN);
-    fieldWidth = static_cast<unsigned int>(-1 * width);
-  } else {
-    fieldWidth = static_cast<unsigned int>(width);
-  }
+bool FormatPrinter::appendWithPadding(const int width, StringRef ref, const int precision,
+                                      const bool leftAdjust) {
+  assert(width > -1);
 
+  const size_t fieldWidth = static_cast<unsigned int>(width);
   auto endIter = ref.begin();
   const size_t count = iterateGraphemeUntil(
       ref, static_cast<size_t>(precision < 0 ? -1 : precision),
@@ -601,7 +597,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
   this->error.clear();
   unsigned int directiveCount = 0;
   const size_t size = this->format.size();
-  for (StringRef::size_type pos = 0; pos < size;) {
+  for (StringRef::size_type pos = 0; pos < size; pos++) {
     const auto ret = this->format.find('%', pos);
     const auto sub = this->format.slice(pos, ret);
     TRY(this->appendAndInterpretEscape(sub));
@@ -617,17 +613,22 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     if (this->format[pos] == '%') {
       directiveCount--;
       TRY(this->append("%"));
-      pos++;
       continue;
     }
 
-    const auto flags = this->parseFlags(pos);
+    auto flags = this->parseFlags(pos);
     const int width = ({
       auto r = this->parseWidth(pos, begin, end);
       if (!r.hasValue()) {
         return end;
       }
-      r.unwrap();
+      auto v = r.unwrap();
+      if (v < 0) {
+        assert(v != INT32_MIN);
+        setFlag(flags, FormatFlag::LEFT_ADJUST);
+        v = -v;
+      }
+      v;
     });
     const int precision = ({
       auto r = this->parsePrecision(pos, begin, end);
@@ -653,7 +654,6 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'b':
     case 'q':
       TRY(this->appendAsStr(flags, width, precision, conversion, begin, end));
-      pos++;
       continue;
     case 'd':
     case 'i':
@@ -662,7 +662,6 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'x':
     case 'X':
       TRY(this->appendAsInt(flags, width, precision, conversion, begin, end));
-      pos++;
       continue;
     case 'e':
     case 'E':
@@ -673,7 +672,6 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'a':
     case 'A':
       TRY(this->appendAsFloat(flags, width, precision, conversion, begin, end));
-      pos++;
       continue;
     default:
       this->error = "`";
