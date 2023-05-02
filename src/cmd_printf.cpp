@@ -224,6 +224,15 @@ private:
     return interpretEscapeSeq(ref, [this](StringRef sub) { return this->append(sub); });
   }
 
+  void numFormatError(StringRef invalidNum, char conversion, StringRef message) {
+    this->error = "`";
+    this->error += invalidNum;
+    this->error += "': `";
+    this->error += conversion;
+    this->error += "' specifier ";
+    this->error += message;
+  }
+
 #define GEN_FLAG_CASE(E, F, C)                                                                     \
   case C:                                                                                          \
     setFlag(flags, FormatFlag::E);                                                                 \
@@ -461,9 +470,8 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, int width, int precision, char
     if (pair) {
       v = pair.value; // FIXME: error reporting
     } else {
-      this->error = "`";
-      this->error += toPrintable(ref);
-      this->error += "': invalid number, must be octal, hex, decimal";
+      this->numFormatError(toPrintable(ref), conversion,
+                           "needs valid INT64 (decimal, octal or hex number)");
       return false;
     }
   }
@@ -487,9 +495,7 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
       } // FIXME: error reporting
     }
     if (fail) {
-      this->error = "`";
-      this->error += toPrintable(ref);
-      this->error += "': invalid float number";
+      this->numFormatError(toPrintable(ref), conversion, "needs valid float number");
       return false;
     }
     if (std::isnan(v)) {

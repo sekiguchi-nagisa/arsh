@@ -1,16 +1,16 @@
 # for number conversion
 
 ## invalid integer
-assert "$(printf '<>%i' @ 2>&1)" == "ydsh: printf: \`@': invalid number, must be octal, hex, decimal
+assert "$(printf '<>%i' @ 2>&1)" == "ydsh: printf: \`@': \`i' specifier needs valid INT64 (decimal, octal or hex number)
 <>" 
 assert $? == 1
 
-assert "$(printf 'ww%o' --12 2>&1)" == "ydsh: printf: \`--12': invalid number, must be octal, hex, decimal
+assert "$(printf 'ww%o' --12 2>&1)" == "ydsh: printf: \`--12': \`o' specifier needs valid INT64 (decimal, octal or hex number)
 ww" 
 assert $? == 1
 
 assert "$(printf 'ww%u' 99999999999999999999999999999 2>&1)" == 
-"ydsh: printf: \`99999999999999999999999999999': invalid number, must be octal, hex, decimal
+"ydsh: printf: \`99999999999999999999999999999': \`u' specifier needs valid INT64 (decimal, octal or hex number)
 ww" 
 assert $? == 1
 
@@ -21,17 +21,17 @@ assert ! $reply.get("var")
 
 ## invalid float
 assert "$(printf 'ww%f' aaa 2>&1)" == 
-"ydsh: printf: \`aaa': invalid float number
+"ydsh: printf: \`aaa': \`f' specifier needs valid float number
 ww" 
 assert $? == 1
 
 assert "$(printf 'qw%G' NAN2222 2>&1)" == 
-"ydsh: printf: \`NAN2222': invalid float number
+"ydsh: printf: \`NAN2222': \`G' specifier needs valid float number
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%e' hoge 2>&1)" == 
-"ydsh: printf: \`hoge': invalid float number
+"ydsh: printf: \`hoge': \`e' specifier needs valid float number
 qw" 
 assert $? == 1
 
