@@ -159,18 +159,23 @@ class FormatPrinter {
 private:
   const StringRef format;
   StringBuf strBuf;
+  FILE *fp; // do not close it
   std::string error;
   const bool useBuf;
   bool restoreLocale{false};
 
 public:
-  FormatPrinter(StringRef format, bool useBuf) : format(format), useBuf(useBuf) {}
+  FormatPrinter(StringRef format, bool useBuf) : format(format), useBuf(useBuf) {
+    this->setOutput(stdout);
+  }
 
   ~FormatPrinter() {
     if (this->restoreLocale) {
       setlocale(LC_NUMERIC, "C"); // reset locale
     }
   }
+
+  void setOutput(FILE *f) { this->fp = f; }
 
   std::string takeBuf() && { return std::move(this->strBuf).take(); }
 
@@ -198,7 +203,7 @@ private:
     if (this->useBuf) {
       status = this->strBuf.append(ref);
     } else {
-      status = fwrite(ref.data(), sizeof(char), ref.size(), stdout) == ref.size();
+      status = fwrite(ref.data(), sizeof(char), ref.size(), this->fp) == ref.size();
     }
     int errNum = errno;
     if (unlikely(!status)) {
@@ -321,7 +326,7 @@ private:
   /**
    *
    * @param width
-   * must be not be negative number
+   * must not be negative number
    * @param ref
    * @param precision
    * @param leftAdjust
@@ -541,7 +546,7 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     errno = 0;
-    ret = vprintf(fmt, arg);
+    ret = vfprintf(this->fp, fmt, arg);
     errNum = errno;
     va_end(arg);
   }
@@ -778,8 +783,15 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  auto &reply = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   FormatPrinter printer(argvObj.getValues()[index].asStrRef(), setVar);
+#ifdef FUZZING_BUILD_MODE
+  auto nullFIle = createFilePtr(fopen, "/dev/null", "w");
+  if (getenv("YDSH_PRINTF_FUZZ")) {
+    printer.setOutput(nullFIle.get());
+  }
+#endif
+
+  auto &reply = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (setVar) {
     if (unlikely(!reply.checkIteratorInvalidation(state, true))) {
       return 1;
@@ -791,6 +803,12 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   do {
     begin = printer(begin, end);
     if (!printer.getError().empty()) {
+#ifdef FUZZING_BUILD_MODE
+      if (getenv("YDSH_PRINTF_FUZZ")) {
+        return 1; // ignore error message
+      }
+#endif
+
       ERROR(argvObj, "%s", printer.getError().c_str());
       return 1;
     }

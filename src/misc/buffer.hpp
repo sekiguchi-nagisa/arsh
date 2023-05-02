@@ -22,6 +22,7 @@
 #include <cstring>
 #include <initializer_list>
 #include <type_traits>
+#include <utility>
 
 #include "detect.hpp"
 #include "fatal.h"

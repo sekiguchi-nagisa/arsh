@@ -1,6 +1,3 @@
-//
-// Created by skgchxngsxyz-carbon on 18/11/16.
-//
 
 #include <stddef.h>
 #include <stdint.h>

@@ -1,6 +1,3 @@
-//
-// Created by skgchxngsxyz-carbon on 16/07/31.
-//
 
 #include <cstddef>
 #include <cstdint>
