@@ -654,6 +654,12 @@ static bool checkAltSymbols(const StringRef format, StringRef::size_type pos, st
   return checkAltSymbolSImpl(conversion, alt, next, error);
 }
 
+static bool putTime(StringBuf &out, const char *fmt, const struct tm &tm) {
+  char buf[64]; // FIXME: check actual required buffer size
+  auto s = strftime(buf, std::size(buf), fmt, &tm);
+  return out.append(StringRef(buf, s));
+}
+
 static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plusFormat,
                                 const struct tm &tm, std::string &error) {
   constexpr bool end = false; // for TRY macro
@@ -721,23 +727,22 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
         pos++;
         fmt += format[pos];
       }
-      char buf[64]; // FIXME: check actual required buffer size
-      auto s = strftime(buf, std::size(buf), fmt.c_str(), &tm);
-      TRY(out.append(StringRef(buf, s)));
+      TRY(putTime(out, fmt.c_str(), tm));
       continue;
     }
     case '+': {
       std::string fmt;
       if (plusFormat) {
-        fmt = "%+";
-      }
+        TRY(putTime(out, fmt.c_str(), tm));
+      } else {
 #ifdef _DATE_FMT // for glibc
-      fmt = nl_langinfo(_DATE_FMT);
+        fmt = nl_langinfo(_DATE_FMT);
 #endif
-      if (fmt.empty()) {
-        fmt = "%a %b %e %H:%M:%S %Z %Y";
+        if (fmt.empty()) {
+          fmt = "%a %b %e %H:%M:%S %Z %Y";
+        }
+        TRY(interpretTimeFormat(out, fmt, plusFormat, tm, error));
       }
-      TRY(interpretTimeFormat(out, fmt, plusFormat, tm, error));
       continue;
     }
     case '%':
