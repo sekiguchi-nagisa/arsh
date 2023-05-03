@@ -889,6 +889,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     return prepareUserDefinedCommandCall(state, cmd.udc(), std::move(argvObj),
                                          std::move(redirConfig), attr);
   case ResolvedCmd::BUILTIN: {
+    errno = 0;
     int status = cmd.builtinCmd()(state, array);
     flushStdFD();
     if (state.hasError()) {

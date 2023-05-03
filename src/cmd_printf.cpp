@@ -940,7 +940,6 @@ DO_ECHO:
   const unsigned int argc = argvObj.getValues().size();
   bool firstArg = true;
   for (; index < argc; index++) {
-    errno = 0;
     if (firstArg) {
       firstArg = false;
     } else {
