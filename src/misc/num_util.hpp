@@ -301,9 +301,14 @@ public:
   locale_t get() const { return this->value; }
 
   void use() const { uselocale(this->value); }
+
+  /**
+   * set thread locale to global
+   */
+  static void restore() { uselocale(LC_GLOBAL_LOCALE); }
 };
 
-inline auto LC_NUMERIC_C = Locale(LC_NUMERIC_MASK, "C");
+inline auto POSIX_LOCALE_C = Locale(LC_ALL_MASK, "C");
 
 struct DoubleConversionResult {
   enum Kind : unsigned char {
@@ -340,7 +345,7 @@ inline DoubleConversionResult convertToDouble(const char *str, bool skipIllegalC
   DoubleConversionResult ret = {
       .kind = DoubleConversionResult::OK,
       .consumedSize = 0,
-      .value = strtod_l(str, &end, LC_NUMERIC_C.get()),
+      .value = strtod_l(str, &end, POSIX_LOCALE_C.get()),
   };
 
   // check error

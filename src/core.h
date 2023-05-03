@@ -93,6 +93,8 @@ void setSignalSetting(DSState &st);
  */
 void resetSignalSettingUnblock(DSState &state);
 
+void setLocaleSetting();
+
 const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
 
 inline const ModType *getCurRuntimeModule(const DSState &state) {

@@ -236,10 +236,12 @@ struct Serializer {
 };
 
 std::string JSON::serialize(unsigned int tab) const {
-  LC_NUMERIC_C.use(); // always use C locale (for std::to_string)
+  POSIX_LOCALE_C.use(); // always use C locale (for std::to_string)
 
   Serializer serializer(tab);
   serializer(*this);
+
+  Locale::restore();
   return std::move(serializer.str);
 }
 

@@ -191,6 +191,13 @@ void resetSignalSettingUnblock(DSState &state) {
   state.sigVector.clear();
 }
 
+void setLocaleSetting() {
+  setlocale(LC_ALL, "");
+  setlocale(LC_MESSAGES, "C");
+  setlocale(LC_NUMERIC, "C"); // always use C locale (for std::to_string)
+  Locale::restore();
+}
+
 const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int callLevel) {
   const CompiledCode *code = nullptr;
   unsigned int depth = 0;

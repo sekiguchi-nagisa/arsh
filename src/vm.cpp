@@ -74,9 +74,7 @@ static void setPWDs() {
 
 static void initEnv() {
   // set locale
-  setlocale(LC_ALL, "");
-  setlocale(LC_MESSAGES, "C");
-  setlocale(LC_NUMERIC, "C"); // always use C locale (for std::to_string)
+  setLocaleSetting();
 
   // set environmental variables
 
@@ -2582,10 +2580,9 @@ bool VM::handleException(DSState &state) {
 EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
   assert(state.stack.recDepth() > 0);
   if (state.stack.recDepth() == 1) {
+    setLocaleSetting();
     setSignalSetting(state);
   }
-
-  LC_NUMERIC_C.use(); // always use C locale (for std::to_string)
 
   const unsigned int oldLevel = state.subshellLevel;
 
