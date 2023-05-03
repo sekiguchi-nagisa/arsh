@@ -157,8 +157,9 @@ static BuiltinCmdDesc table[] = {
     {"printf", "[-v var] format [arguments]",
      "    Print formatted string similar to printf(1).\n"
      "    In addition to printf(1) format, support the following formats\n"
-     "      %b  interpret backslash escape sequences\n"
-     "      %q  quote as shell argument\n"
+     "      %b       interpret backslash escape sequences\n"
+     "      %q       quote as shell argument\n"
+     "      %(fmt)T  interpret FMT as time format (like strftime)\n"
      "    Options:\n"
      "      -v var    store formatted output to reply variable (get by VAR)\n"
      "                rather than print to stdout"},

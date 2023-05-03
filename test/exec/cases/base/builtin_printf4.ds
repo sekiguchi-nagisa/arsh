@@ -1,0 +1,28 @@
+
+# for time format `%(fmt)T'
+
+## invalid format
+assert "$(printf -v var '% (T' -2147483648 @@@@@@@@@@@@ 2>&1)" ==
+    "ydsh: printf: \`(' specifier must end with \`)T'"
+
+## invalid argument
+assert "$(printf -v var '% ()T' @@@@@@@@@@@@ 2>&1)" ==
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+
+assert "$(printf -v var '% (aaa)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+
+assert "$(printf -v var '%(%&)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+
+assert "$(printf -v var '%(%c)T' -999 2>&1)" ==  # always check argument even if no valid time specifier
+    "ydsh: printf: \`-999': \`(' specifier does not accept negative numbers (except for -1, -2)"
+
+
+$reply.clear()
+printf '%  ()T+)T'
+LANG=C printf -v time '%  ()T+)T'   # nested )T
+assert $reply['time'] =~ $/[0-9]{2}:[0-9]{2}:[0-9]{2}\+\)T/
+assert $/[0-9]{2}:[0-9]{2}:[0-9]{2}\+\)T/ =~ "$(LANG=C printf '%  ()T+)T')"
+
+true

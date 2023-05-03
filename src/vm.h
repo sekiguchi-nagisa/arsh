@@ -102,6 +102,10 @@ public:
 
   const ObjPtr<UnixFdObject> emptyFDObj;
 
+  const timestamp initTime; // for builtin printf command
+
+  const bool support_strftime_plus; // if support strftime '%+' specifier
+
   bool isInteractive{false};
 
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |

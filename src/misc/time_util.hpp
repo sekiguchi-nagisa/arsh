@@ -32,9 +32,10 @@ inline timestamp newUnixTimestamp(int64_t epocTimeSec) {
 
 inline timestamp getCurrentTimestamp() { return timestamp::clock::now(); }
 
-inline IntConversionResult<int64_t> parseDecimalUnixTimestamp(const char *begin, const char *end,
-                                                              timestamp &out) {
-  auto ret = convertToDecimal<int64_t>(begin, end);
+inline IntConversionResult<int64_t> parseUnixTimestampWithRadix(const char *begin, const char *end,
+                                                                unsigned int radix,
+                                                                timestamp &out) {
+  auto ret = convertToNum<int64_t>(begin, end, radix);
   if (ret) {
     out = newUnixTimestamp(ret.value);
   }

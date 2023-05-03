@@ -19,6 +19,7 @@
     - in addition to printf style format, add the following conversion specifier
         - ``%b``: interpret backslash escape sequences
         - ``%q``: quote as shell argument
+        - ``%(fmt)T``: interpret `fmt` as time format (like `strftime`)
     - precisions of ``%b``, ``%q``, ``%s`` are grapheme cluster counts
     - for portability, impose the following restrictions
         - skip '-', ' ' flags if argument is NAN

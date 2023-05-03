@@ -15,9 +15,13 @@
  */
 
 #include <cstdarg>
+#include <ctime>
+
+#include <langinfo.h>
 
 #include "cmd.h"
 #include "misc/num_util.hpp"
+#include "misc/time_util.hpp"
 #include "vm.h"
 
 namespace ydsh {
@@ -161,12 +165,16 @@ private:
   StringBuf strBuf;
   FILE *fp; // do not close it
   std::string error;
+  const timestamp initTimestamp;
   const bool useBuf;
   bool restoreLocale{false};
+  bool supportPlusTimeFormat{false};
 
 public:
-  FormatPrinter(StringRef format, bool useBuf) : format(format), useBuf(useBuf) {
+  FormatPrinter(StringRef format, timestamp init, bool useBuf)
+      : format(format), initTimestamp(init), useBuf(useBuf) {
     this->setOutput(stdout);
+    setlocale(LC_TIME, ""); // always sync LC_TIME
   }
 
   ~FormatPrinter() {
@@ -176,6 +184,8 @@ public:
   }
 
   void setOutput(FILE *f) { this->fp = f; }
+
+  void setPlusFormat(bool set) { this->supportPlusTimeFormat = set; }
 
   std::string takeBuf() && { return std::move(this->strBuf).take(); }
 
@@ -205,14 +215,8 @@ private:
     } else {
       status = fwrite(ref.data(), sizeof(char), ref.size(), this->fp) == ref.size();
     }
-    int errNum = errno;
     if (unlikely(!status)) {
-      this->error = "format failed";
-      if (errNum != 0) {
-        this->error += ", caused by `";
-        this->error += strerror(errNum);
-        this->error += "'";
-      }
+      this->formatError(errno);
     }
     return status;
   }
@@ -229,13 +233,22 @@ private:
     return interpretEscapeSeq(ref, [this](StringRef sub) { return this->append(sub); });
   }
 
-  void numFormatError(StringRef invalidNum, char conversion, StringRef message) {
+  void numberError(StringRef invalidNum, char conversion, StringRef message) {
     this->error = "`";
     this->error += invalidNum;
     this->error += "': `";
     this->error += conversion;
     this->error += "' specifier ";
     this->error += message;
+  }
+
+  void formatError(int errNum) {
+    this->error = "format failed";
+    if (errNum != 0) {
+      this->error += ", caused by `";
+      this->error += strerror(errNum);
+      this->error += "'";
+    }
   }
 
 #define GEN_FLAG_CASE(E, F, C)                                                                     \
@@ -336,6 +349,9 @@ private:
   bool appendWithPadding(int width, StringRef ref, int precision, bool leftAdjust);
 
   bool putPadding(size_t size);
+
+  bool appendAsTimeFormat(FormatFlag flags, int width, int precision, StringRef timeFormat,
+                          ArrayObject::IterType &begin, ArrayObject::IterType endIter);
 };
 
 // ###########################
@@ -475,8 +491,8 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, int width, int precision, char
     if (pair) {
       v = pair.value; // FIXME: error reporting
     } else {
-      this->numFormatError(toPrintable(ref), conversion,
-                           "needs valid INT64 (decimal, octal or hex number)");
+      this->numberError(toPrintable(ref), conversion,
+                        "needs valid INT64 (decimal, octal or hex number)");
       return false;
     }
   }
@@ -500,7 +516,7 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
       } // FIXME: error reporting
     }
     if (fail) {
-      this->numFormatError(toPrintable(ref), conversion, "needs valid float number");
+      this->numberError(toPrintable(ref), conversion, "needs valid float number");
       return false;
     }
     if (std::isnan(v)) {
@@ -552,12 +568,7 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
   }
 
   if (ret < 0) {
-    this->error = "format failed";
-    if (errNum != 0) { // snprintf may not set errno
-      this->error += ", caused by `";
-      this->error += strerror(errNum);
-      this->error += "'";
-    }
+    this->formatError(errNum);
   }
   return ret >= 0;
 }
@@ -567,10 +578,14 @@ bool FormatPrinter::appendWithPadding(const int width, StringRef ref, const int 
   assert(width > -1);
 
   const size_t fieldWidth = static_cast<unsigned int>(width);
-  auto endIter = ref.begin();
-  const size_t count = iterateGraphemeUntil(
-      ref, static_cast<size_t>(precision < 0 ? -1 : precision),
-      [&endIter](const GraphemeScanner::Result &grapheme) { endIter = grapheme.ref.end(); });
+  auto endIter = ref.end();
+  size_t count = ref.size();
+  if (precision > -1 || fieldWidth != 0) {
+    endIter = ref.begin();
+    count = iterateGraphemeUntil(
+        ref, static_cast<size_t>(precision),
+        [&endIter](const GraphemeScanner::Result &grapheme) { endIter = grapheme.ref.end(); });
+  }
   assert(endIter >= ref.begin());
   ref = ref.substr(0, endIter - ref.begin());
 
@@ -601,6 +616,191 @@ bool FormatPrinter::putPadding(size_t size) {
     TRY(this->append(" "));
   }
   return true;
+}
+
+static bool checkAltSymbolSImpl(char conversion, const StringRef alt, char next,
+                                std::string &error) {
+  assert(conversion == 'E' || conversion == 'O');
+  if (alt.contains(next)) {
+    return true;
+  }
+  error = "need one of ";
+  for (StringRef::size_type i = 0; i < alt.size(); i++) {
+    if (i > 0) {
+      error += ", ";
+    }
+    error += '`';
+    error += alt[i];
+    error += '\'';
+  }
+  error += " specifiers after `";
+  error += conversion;
+  error += "'";
+  return false;
+}
+
+static bool checkAltSymbols(const StringRef format, StringRef::size_type pos, std::string &error) {
+  char conversion = format[pos];
+  char next = '\0';
+  if (pos + 1 < format.size()) {
+    next = format[pos + 1];
+  }
+  StringRef alt;
+  if (conversion == 'E') {
+    alt = "cCxXyY";
+  } else if (conversion == 'O') {
+    alt = "deHImMSuUVwWy";
+  }
+  return checkAltSymbolSImpl(conversion, alt, next, error);
+}
+
+static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plusFormat,
+                                const struct tm &tm, std::string &error) {
+  constexpr bool end = false; // for TRY macro
+  const auto size = format.size();
+  for (StringRef::size_type pos = 0; pos < size; pos++) {
+    const auto ret = format.find('%', pos);
+    const auto sub = format.slice(pos, ret);
+    TRY(out.append(sub));
+    if (ret == StringRef::npos) {
+      break;
+    }
+    pos = ret + 1;
+    if (pos == size) {
+      error = "require at-least one directive after %";
+      return false;
+    }
+
+    const char conversion = format[pos];
+    switch (conversion) {
+    case 'a':
+    case 'A':
+    case 'b':
+    case 'B':
+    case 'c':
+    case 'C':
+    case 'd':
+    case 'D':
+    case 'e':
+    case 'E':
+    case 'F':
+    case 'G':
+    case 'g':
+    case 'h':
+    case 'H':
+    case 'I':
+    case 'j':
+    case 'k':
+    case 'l':
+    case 'm':
+    case 'M':
+    case 'n':
+    case 'O':
+    case 'p':
+    case 'r':
+    case 'R':
+    case 's':
+    case 'S':
+    case 't':
+    case 'T':
+    case 'u':
+    case 'U':
+    case 'V':
+    case 'w':
+    case 'W':
+    case 'x':
+    case 'X':
+    case 'y':
+    case 'Y':
+    case 'z':
+    case 'Z': {
+      std::string fmt = "%";
+      fmt += conversion;
+      if (conversion == 'E' || conversion == 'O') {
+        TRY(checkAltSymbols(format, pos, error));
+        pos++;
+        fmt += format[pos];
+      }
+      char buf[64]; // FIXME: check actual required buffer size
+      auto s = strftime(buf, std::size(buf), fmt.c_str(), &tm);
+      TRY(out.append(StringRef(buf, s)));
+      continue;
+    }
+    case '+': {
+      std::string fmt;
+      if (plusFormat) {
+        fmt = "%+";
+      }
+#ifdef _DATE_FMT // for glibc
+      fmt = nl_langinfo(_DATE_FMT);
+#endif
+      if (fmt.empty()) {
+        fmt = "%a %b %e %H:%M:%S %Z %Y";
+      }
+      TRY(interpretTimeFormat(out, fmt, plusFormat, tm, error));
+      continue;
+    }
+    case '%':
+      TRY(out.append("%"));
+      continue;
+    default:
+      error = "`";
+      error += format.slice(pos, pos + 1);
+      error += "': invalid time conversion specifier";
+      return false;
+    }
+  }
+  return true;
+}
+
+bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precision,
+                                       StringRef timeFormat, ArrayObject::IterType &begin,
+                                       ArrayObject::IterType endIter) {
+  timestamp targetTimestamp{};
+  if (begin != endIter) {
+    auto ref = (*begin++).asStrRef();
+    auto ret = parseUnixTimestampWithRadix(ref.begin(), ref.end(), 0, targetTimestamp);
+    if (!ret) {
+      this->numberError(toPrintable(ref), '(', "needs valid INT64 (decimal, octal or hex number)");
+      return false;
+    }
+    auto v = ret.value;
+    if (v == -1) { // use current timestamp
+      targetTimestamp = getCurrentTimestamp();
+    } else if (v == -2) { // use startup timestamp
+      targetTimestamp = this->initTimestamp;
+    } else if (v < 0) {
+      this->numberError(ref, '(', "does not accept negative numbers (except for -1, -2)");
+      return false;
+    }
+  } else { // if no arg, get current timestamp
+    targetTimestamp = getCurrentTimestamp();
+  }
+
+  struct tm tm {};
+  auto time = timestampToTime(targetTimestamp);
+  tzset();
+  errno = 0;
+  if (!localtime_r(&time, &tm)) {
+    int e = errno;
+    this->error = "localtime_r failed, caused by `";
+    this->error += strerror(e);
+    this->error += "'";
+    return false;
+  }
+
+  StringBuf buf;
+  if (timeFormat.empty()) {
+    timeFormat = "%X";
+  }
+  if (!interpretTimeFormat(buf, timeFormat, this->supportPlusTimeFormat, tm, this->error)) {
+    if (this->error.empty()) {
+      this->formatError(errno);
+    }
+    return false;
+  }
+  return this->appendWithPadding(width, buf.take(), precision,
+                                 hasFlag(flags, FormatFlag::LEFT_ADJUST));
 }
 
 ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
@@ -684,6 +884,16 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
     case 'A':
       TRY(this->appendAsFloat(flags, width, precision, conversion, begin, end));
       continue;
+    case '(':
+      if (auto r = this->format.find(")T", pos); r != StringRef::npos) {
+        StringRef timeFormat = this->format.slice(pos + 1, r);
+        TRY(this->appendAsTimeFormat(flags, width, precision, timeFormat, begin, end));
+        pos = r + 1;
+        continue;
+      } else {
+        this->error = "`(' specifier must end with `)T'";
+        return end;
+      }
     default:
       this->error = "`";
       this->error += this->format.slice(pos, pos + 1);
@@ -783,7 +993,9 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  FormatPrinter printer(argvObj.getValues()[index].asStrRef(), setVar);
+  FormatPrinter printer(argvObj.getValues()[index].asStrRef(), state.initTime, setVar);
+  printer.setPlusFormat(state.support_strftime_plus);
+
 #ifdef FUZZING_BUILD_MODE
   auto nullFIle = createFilePtr(fopen, "/dev/null", "w");
   if (getenv("YDSH_PRINTF_FUZZ")) {
