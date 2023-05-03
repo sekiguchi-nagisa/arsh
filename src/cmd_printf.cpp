@@ -731,10 +731,10 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
       continue;
     }
     case '+': {
-      std::string fmt;
       if (plusFormat) {
-        TRY(putTime(out, fmt.c_str(), tm));
+        TRY(putTime(out, "%+", tm));
       } else {
+        std::string fmt;
 #ifdef _DATE_FMT // for glibc
         fmt = nl_langinfo(_DATE_FMT);
 #endif
