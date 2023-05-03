@@ -940,10 +940,13 @@ DO_ECHO:
   const unsigned int argc = argvObj.getValues().size();
   bool firstArg = true;
   for (; index < argc; index++) {
+    errno = 0;
     if (firstArg) {
       firstArg = false;
     } else {
-      fputc(' ', stdout);
+      if (fputc(' ', stdout) == EOF) {
+        goto END;
+      }
     }
 
     auto arg = argvObj.getValues()[index].asStrRef();
@@ -955,16 +958,24 @@ DO_ECHO:
         goto END;
       }
     } else {
-      fwrite(arg.data(), sizeof(char), arg.size(), stdout);
+      if (fwrite(arg.data(), sizeof(char), arg.size(), stdout) != arg.size()) {
+        goto END;
+      }
     }
   }
 
   if (newline) {
-    fputc('\n', stdout);
+    if (fputc('\n', stdout) == EOF) {
+      goto END;
+    }
   }
 
 END:
-  return 0; // FIXME: io error check
+  if (errno != 0 || fflush(stdout) == EOF) {
+    PERROR(argvObj, "io error");
+    return 1;
+  }
+  return 0;
 }
 
 int builtin_printf(DSState &state, ArrayObject &argvObj) {
@@ -1033,6 +1044,10 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
 
   if (setVar && !state.hasError()) {
     reply.set(DSValue::createStr(target), DSValue::createStr(std::move(printer).takeBuf()));
+  }
+  if (fflush(stdout) == EOF) {
+    PERROR(argvObj, "io error");
+    return 1;
   }
   return 0;
 }

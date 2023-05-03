@@ -1,5 +1,10 @@
 
 #$test($out = $'hello world\n', $err = $'hogehoge\n')
 
+## io error
+if $OSTYPE == 'linux' {
+    assert "$(echo hekllo world 2>&1 > /dev/full)" =~ $/ydsh: echo: io error: .+/
+}
+
 echo hello world
 echo hogehoge 1>&2
