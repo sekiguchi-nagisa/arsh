@@ -34,6 +34,21 @@ for invalid in "P_-0^#" {
         "ydsh: printf: \`$invalid': invalid time conversion specifier" : "for invalid \`%$invalid'"
 }
 
+## invalid E, O specifier
+for i in "12@!B" {
+    assert "$(printf -v var "%(%E$i)T" 2>&1)" == 
+        "ydsh: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
+
+    assert "$(printf -v var "%(%O$i)T" 2>&1)" == 
+        "ydsh: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
+}
+
+assert "$(printf -v var "%(%E)T" 2>&1)" == 
+    "ydsh: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
+
+assert "$(printf -v var "%(%O)T" 2>&1)" == 
+    "ydsh: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
+
 
 ## no-arg, -1, -2
 $reply.clear()
@@ -71,28 +86,41 @@ function passEpoch(epoch : String) : [String] {
     }
 }
 
-let conversions = 'aAbBcCdDeFGghHIjklmMnprRsStTuUVwWxXyYzZ%'
-for converion in $conversions {
-    let expect = "$(date $passEpoch($epoch) +%$converion=@@)"
-    assert $? == 0 && !$expect.empty() : "for %$converion"
+function assertFormat(c : String) {
+    let expect = "$(date $passEpoch($epoch) +%$c=@@)"
+    assert $? == 0 && !$expect.empty() : "for \`%$c'"
 
-    let out1 = "$(printf "%(%$converion=@@)T" $epoch 2>&1)"
-    assert $? == 0 && !$out1.empty() : "for %$converion"
+    let out1 = "$(printf "%(%$c=@@)T" $epoch 2>&1)"
+    assert $? == 0 && !$out1.empty() : "for \`%$c'"
 
-    printf -v var "%(%$converion=@@)T" $epoch
+    printf -v var "%(%$c=@@)T" $epoch
     let out2 = $reply['var']
-    assert $? == 0 && !$out2.empty() : "for %$converion"
+    assert $? == 0 && !$out2.empty() : "for \`%$c'"
 
-    assert $expect == $out1 : "for %$converion
+    assert $expect == $out1 : "for \`%$c'
     expect: $expect
     actual: $out1"
 
-    assert $expect == $out2 : "for %$converion
+    assert $expect == $out2 : "for \`%$c'
     expect: $expect
     actual: $out2"
 }
 
+let conversions = 'aAbBcCdDeFGghHIjklmMnprRsStTuUVwWxXyYzZ%'
+for converion in $conversions {
+    $assertFormat($converion)
+}
+
 ## '+' specifier (may be equivalent to date command default format)
 assert "$(printf '%(%+)T' $epoch)" == "$(date $passEpoch($epoch))"
+
+## 'E', 'O' alternative specifier
+for c in "cCxXyY" {
+    $assertFormat("E$c")
+}
+
+for c in "deHImMSuUVwWy" {
+    $assertFormat("O$c")
+}
 
 true
