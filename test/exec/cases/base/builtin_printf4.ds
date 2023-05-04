@@ -58,20 +58,28 @@ assert $reply['now1'] != $reply['now3']
 assert $reply['startup1'] != $reply['now3']
 
 ## conversion specifier
-let epoc = "2147483647"
+let epoch = "2147483647"
 
-assert "$(printf '%()T' $epoc)" == "$(printf '%(%X)T' $epoc)"  # default format is `%X`
+assert "$(printf '%()T' $epoch)" == "$(printf '%(%X)T' $epoch)"  # default format is `%X`
 assert "$(printf '%(%t%n)T@')" == "$(date +%t%n@)"
+
+function passEpoch(epoch : String) : [String] {
+    return if $OSTYPE == "darwin" {
+        ["-r", $epoch]
+    } else {
+        ["--date=@$epoch"]
+    }
+}
 
 let conversions = 'aAbBcCdDeFGghHIjklmMnprRsStTuUVwWxXyYzZ%'
 for converion in $conversions {
-    let expect = "$(date +%$converion=@@ --date=@$epoc)"
-    assert $? == 0 && !$expect.empty()
+    let expect = "$(date $passEpoch($epoch) +%$converion=@@)"
+    assert $? == 0 && !$expect.empty() : "for %$converion"
 
-    let out1 = "$(printf "%(%$converion=@@)T" $epoc 2>&1)"
+    let out1 = "$(printf "%(%$converion=@@)T" $epoch 2>&1)"
     assert $? == 0 && !$out1.empty() : "for %$converion"
 
-    printf -v var "%(%$converion=@@)T" $epoc
+    printf -v var "%(%$converion=@@)T" $epoch
     let out2 = $reply['var']
     assert $? == 0 && !$out2.empty() : "for %$converion"
 
@@ -85,6 +93,6 @@ for converion in $conversions {
 }
 
 ## '+' specifier (may be equivalent to date command default format)
-assert "$(printf '%(%+)T' $epoc)" == "$(date --date=@$epoc)"
+assert "$(printf '%(%+)T' $epoch)" == "$(date $passEpoch($epoch))"
 
 true
