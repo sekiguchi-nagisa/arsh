@@ -939,11 +939,14 @@ DO_ECHO:
   unsigned int index = optState.index;
   const unsigned int argc = argvObj.getValues().size();
   bool firstArg = true;
+  int errNum = 0;
   for (; index < argc; index++) {
+    errno = 0;
     if (firstArg) {
       firstArg = false;
     } else {
       if (fputc(' ', stdout) == EOF) {
+        errNum = errno;
         goto END;
       }
     }
@@ -954,10 +957,12 @@ DO_ECHO:
         return fwrite(sub.data(), sizeof(char), sub.size(), stdout) == sub.size();
       });
       if (!r) {
+        errNum = errno;
         goto END;
       }
     } else {
       if (fwrite(arg.data(), sizeof(char), arg.size(), stdout) != arg.size()) {
+        errNum = errno;
         goto END;
       }
     }
@@ -965,11 +970,13 @@ DO_ECHO:
 
   if (newline) {
     if (fputc('\n', stdout) == EOF) {
+      errNum = errno;
       goto END;
     }
   }
 
 END:
+  errno = errNum; // explicitly set errno (some function set errno despite success)
   if (errno != 0 || fflush(stdout) == EOF) {
     PERROR(argvObj, "io error");
     return 1;
