@@ -106,10 +106,18 @@ function assertFormat(c : String) {
     actual: $out2"
 }
 
-let conversions = 'aAbBcCdDeFGghHIjklmMnprRsStTuUVwWxXyYzZ%'
+let conversions = 'aAbBcCdDeFgGhHIjmMnprRsStTuUVwWxXyYzZ%'
 for converion in $conversions {
     $assertFormat($converion)
 }
+
+## 'k', 'l' specifiers are not implemented musl
+assert "$(TZ= printf '%(%k)T' 0)" == " 0"
+assert "$(TZ= printf '%(%k)T' 21474836)" == '13'
+assert "$(TZ= printf '%(%k)T' 21470000)" == '11'
+assert "$(TZ= printf '%(%l)T' 0)" == "12"
+assert "$(TZ= printf '%(%l)T' 21474836)" == ' 1'
+assert "$(TZ= printf '%(%l)T' 21470000)" == '11'
 
 ## '+' specifier (may be equivalent to date command default format)
 assert "$(printf '%(%+)T' $epoch)" == "$(date $passEpoch($epoch))"

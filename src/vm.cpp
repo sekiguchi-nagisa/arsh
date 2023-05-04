@@ -111,7 +111,8 @@ static bool check_strftime_plus(timestamp time) {
   if (gmtime_r(&t, &tm)) {
     char buf[64];
     auto s = strftime_l(buf, std::size(buf), "%+", &tm, POSIX_LOCALE_C.get());
-    if (StringRef(buf, s) != "%+") {
+    auto ret = StringRef(buf, s);
+    if (!ret.empty() && ret != "%+") {
       return true;
     }
   }

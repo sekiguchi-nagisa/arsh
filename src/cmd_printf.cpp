@@ -696,8 +696,6 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
     case 'H':
     case 'I':
     case 'j':
-    case 'k':
-    case 'l':
     case 'm':
     case 'M':
     case 'n':
@@ -728,6 +726,27 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
         fmt += format[pos];
       }
       TRY(putTime(out, fmt.c_str(), tm));
+      continue;
+    }
+    case 'k': {              // for musl (not implemented)
+      int hour = tm.tm_hour; // 0-23 with blank if single digits
+      char b[8];
+      int s = snprintf(b, std::size(b), "%2d", hour);
+      assert(s == 2);
+      TRY(out.append(StringRef(b, static_cast<size_t>(s))));
+      continue;
+    }
+    case 'l': {              // for musl (not implemented)
+      int hour = tm.tm_hour; // 1-12 with blank if single digits
+      if (hour == 0) {
+        hour = 12;
+      } else if (hour > 12) {
+        hour -= 12;
+      }
+      char b[8];
+      int s = snprintf(b, std::size(b), "%2d", hour);
+      assert(s == 2);
+      TRY(out.append(StringRef(b, static_cast<size_t>(s))));
       continue;
     }
     case '+': {
