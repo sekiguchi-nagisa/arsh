@@ -39,6 +39,8 @@ assert "$(printf '@@%y' 2>&1)" == "ydsh: printf: \`y': invalid conversion specif
 @@"
 assert $? == 1
 
+assert "$(printf $'%\x00' 34 2>&1)" == "ydsh: printf: \`\x00': invalid conversion specifier"
+
 ## io error
 if $OSTYPE == 'linux' {
     assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/ydsh: printf: format failed, .+/

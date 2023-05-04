@@ -673,7 +673,7 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
     }
     pos = ret + 1;
     if (pos == size) {
-      error = "require at-least one directive after %";
+      error = "require at-least one conversion specifier after %";
       return false;
     }
 
@@ -750,7 +750,7 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
       continue;
     default:
       error = "`";
-      error += format.slice(pos, pos + 1);
+      error += toPrintable(format.slice(pos, pos + 1));
       error += "': invalid time conversion specifier";
       return false;
     }
@@ -901,7 +901,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
       }
     default:
       this->error = "`";
-      this->error += this->format.slice(pos, pos + 1);
+      this->error += toPrintable(this->format.slice(pos, pos + 1));
       this->error += "': invalid conversion specifier";
       return end;
     }
