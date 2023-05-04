@@ -7,5 +7,8 @@ assert "$(printf -v var '%*s' -2147483648 @@@@@@@@@@@@ 2>&1)" ==
 assert "$(printf -v var '%#*x' -2147483648 9999 2>&1)" ==
     'ydsh: printf: INT32_MIN is not allowed in width'
 
+assert "$(printf -v va '%.212374823d%.2123741823e' 2>&1)" =~
+    $/ydsh: printf: format failed, caused by .+memory.*/
+
 
 true

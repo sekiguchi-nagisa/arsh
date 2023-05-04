@@ -95,7 +95,10 @@ public:
 
   size_t getUsedSize() const { return this->usedSize; }
 
-  size_t getRemainSize() const { return this->getBufSize() - this->getUsedSize(); }
+  size_t getRemainSize() const {
+    assert(this->getBufSize() >= this->getUsedSize());
+    return this->getBufSize() - this->getUsedSize();
+  }
 
   void consume(size_t consumedSize) { this->usedSize += consumedSize; }
 
@@ -114,16 +117,15 @@ public:
     return false;
   }
 
-  bool resize(size_t afterBufSize) {
-    if (afterBufSize > this->getBufSize()) {
-      if (likely(afterBufSize <= SYS_LIMIT_STRING_MAX)) {
-        this->value.resize(afterBufSize, '\0');
-      } else {
-        errno = ENOMEM;
-        return false;
-      }
+  bool expand(size_t additionalSize) {
+    if (additionalSize <= SYS_LIMIT_STRING_MAX &&
+        this->getBufSize() <= SYS_LIMIT_STRING_MAX - additionalSize) {
+      size_t newSize = this->getBufSize() + additionalSize;
+      this->value.resize(newSize, '\0');
+      return true;
     }
-    return true;
+    errno = ENOMEM;
+    return false;
   }
 
   std::string take() {
@@ -553,8 +555,9 @@ bool FormatPrinter::appendAsFormat(const char *fmt, ...) {
         this->strBuf.consume(retSize);
         break;
       }
-      if (!this->strBuf.resize(this->strBuf.getBufSize() + retSize + 64)) {
+      if (!this->strBuf.expand(retSize + 64)) {
         errNum = errno;
+        ret = -1;
         break;
       }
     }

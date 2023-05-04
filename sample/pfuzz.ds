@@ -8,4 +8,4 @@ var N = $FUZZ_JOBS.toInt() ?? 4
 
 
 YDSH_SUPPRESS_COMPILE_ERROR=on YDSH_SUPPRESS_MOD_LOADING=on \
-     exec $bin -jobs=$N -workers=$N -rss_limit_mb=8192 $@
+     exec $bin -jobs=$N -workers=$N -rss_limit_mb=81920 $@
