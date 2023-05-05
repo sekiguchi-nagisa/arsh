@@ -1758,6 +1758,7 @@ public:
 private:
   const bool ifLet;
   IfLetKind ifLeftKind{NOP};
+  const bool elif;
   std::unique_ptr<Node> condNode;
   std::unique_ptr<Node> thenNode;
   std::unique_ptr<Node> elseNode;
@@ -1766,8 +1767,8 @@ public:
   /**
    * elseNode may be null
    */
-  IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&thenNode,
-         std::unique_ptr<Node> &&elseNode, bool ifLet);
+  IfNode(unsigned int startPos, bool elif, std::unique_ptr<Node> &&condNode,
+         std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode, bool ifLet);
 
   Node &getCondNode() const { return *this->condNode; }
 
@@ -1792,6 +1793,8 @@ public:
    * @return
    */
   Node &getIfLetUnwrap() const;
+
+  bool isElif() const { return this->elif; }
 
   void dump(NodeDumper &dumper) const override;
 };

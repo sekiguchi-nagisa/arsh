@@ -944,7 +944,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
   if (this->incompleteNode) {
     assert(isa<BlockNode>(*this->incompleteNode));
     thenNode.reset(cast<BlockNode>(this->incompleteNode.release()));
-    this->incompleteNode = std::make_unique<IfNode>(startPos, std::move(condNode),
+    this->incompleteNode = std::make_unique<IfNode>(startPos, asElif, std::move(condNode),
                                                     std::move(thenNode), nullptr, ifLet);
     return nullptr;
   } else if (this->hasError()) {
@@ -963,7 +963,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
   if (this->tryCompleteInfixKeywords({TokenKind::ELIF, TokenKind::ELSE})) {
     return nullptr;
   }
-  return std::make_unique<IfNode>(startPos, std::move(condNode), std::move(thenNode),
+  return std::make_unique<IfNode>(startPos, asElif, std::move(condNode), std::move(thenNode),
                                   std::move(elseNode), ifLet);
 }
 
@@ -1681,7 +1681,7 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) 
         trightNode = TRY(this->parse_expression(getPrecedence(TokenKind::TERNARY)));
       }
       unsigned int pos = node->getPos();
-      node = std::make_unique<IfNode>(pos, std::move(node), std::move(tleftNode),
+      node = std::make_unique<IfNode>(pos, false, std::move(node), std::move(tleftNode),
                                       std::move(trightNode), false);
       if (comp) {
         this->incompleteNode = std::move(node);

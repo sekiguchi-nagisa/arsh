@@ -37,6 +37,7 @@
     - now do not perform string coercion (to-string)
 - **Breaking Change**: drop support smart-cast
     - use if-let expression instead
+- **Breaking Change**: change type checking of if-elif-else chain, now like case expression
 - adjust error message layout and colors
 - improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type

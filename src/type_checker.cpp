@@ -1173,20 +1173,50 @@ void TypeChecker::visitIfNode(IfNode &node) {
   } else {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Bool), node.refCondNode());
   }
-  auto &thenType = this->checkTypeExactly(node.getThenNode());
-  auto &elseType = this->checkTypeExactly(node.getElseNode());
+  this->checkTypeExactly(node.getThenNode());
+  this->checkTypeExactly(node.getElseNode());
 
-  if (thenType.isNothingType() && elseType.isNothingType()) {
-    node.setType(this->typePool.get(TYPE::Nothing));
-  } else if (thenType.isSameOrBaseTypeOf(elseType)) {
-    node.setType(thenType);
-  } else if (elseType.isSameOrBaseTypeOf(thenType)) {
-    node.setType(elseType);
-  } else {
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refThenNode());
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refElseNode());
-    node.setType(this->typePool.get(TYPE::Void));
+  if (node.isElif()) {
+    /**
+     * dummy. actual type is resolved from parent IfNode
+     */
+    node.setType(this->typePool.getUnresolvedType());
+    return;
   }
+
+  // resolve common type of if-elif-else chain
+  std::vector<const DSType *> types;
+  types.reserve(4);
+  types.push_back(&node.getThenNode().getType());
+
+  for (auto *elseNode = &node.refElseNode();;) {
+    if (isa<IfNode>(**elseNode) && cast<IfNode>(**elseNode).isElif()) {
+      auto &elifNode = cast<IfNode>(**elseNode);
+      assert(elifNode.getType().isUnresolved());
+      types.push_back(&elifNode.getThenNode().getType());
+      elseNode = &elifNode.refElseNode();
+    } else {
+      types.push_back(&elseNode->get()->getType());
+      break;
+    }
+  }
+  auto &type =
+      this->resolveCommonSuperType(node, std::move(types), &this->typePool.get(TYPE::Void));
+
+  // apply coercion
+  this->checkTypeWithCoercion(type, node.refThenNode());
+  for (auto *elseNode = &node.refElseNode();;) {
+    if (isa<IfNode>(**elseNode) && cast<IfNode>(**elseNode).isElif()) {
+      auto &elifNode = cast<IfNode>(**elseNode);
+      elifNode.setType(type);
+      this->checkTypeWithCoercion(type, elifNode.refThenNode());
+      elseNode = &elifNode.refElseNode();
+    } else {
+      this->checkTypeWithCoercion(type, *elseNode);
+      break;
+    }
+  }
+  node.setType(type);
 }
 
 bool TypeChecker::IntPatternMap::collect(const Node &constNode) {

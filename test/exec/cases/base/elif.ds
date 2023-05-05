@@ -11,3 +11,25 @@ function func($num : Int) : Int {
 assert($func(1) == 10)
 assert($func(2) == 2 * 100)
 assert($func(3) == 3 * 100)
+
+
+# if-elif-else type
+assert if $true { new Error(''); } elif $true { new ArithmeticError(''); } 
+	elif $false { new OutOfRangeError(''); } else {
+		new RegexSyntaxError('')
+	} is Error
+
+assert if $true { $none as Error?; } elif $true { new ArithmeticError(''); } 
+	elif $false { new OutOfRangeError(''); } else {
+		new RegexSyntaxError('')
+	} is Error?
+
+assert if $true { new RegexSyntaxError(''); } elif $true { new ArithmeticError(''); } 
+	elif $false { new Error('') as Error?; } else {
+		new RegexSyntaxError('')
+	} is Error?
+
+assert if $false { new Error(''); } elif $false { new ArithmeticError(''); } 
+	elif $true { $false ? new OutOfRangeError('') : 23 as Any; } else {
+		new RegexSyntaxError('')
+	} is Any

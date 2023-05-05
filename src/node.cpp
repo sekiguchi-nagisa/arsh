@@ -666,9 +666,9 @@ void LoopNode::dump(NodeDumper &dumper) const {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
+IfNode::IfNode(unsigned int startPos, bool elif, std::unique_ptr<Node> &&condNode,
                std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode, bool ifLet)
-    : WithRtti({startPos, 0}), ifLet(ifLet), condNode(std::move(condNode)),
+    : WithRtti({startPos, 0}), ifLet(ifLet), elif (elif), condNode(std::move(condNode)),
       thenNode(std::move(thenNode)), elseNode(std::move(elseNode)) {
   this->updateToken(this->thenNode->getToken());
   if (this->elseNode != nullptr) {
@@ -696,7 +696,7 @@ void IfNode::dump(NodeDumper &dumper) const {
   DUMP_ENUM(ifLeftKind, EACH_ENUM);
 
 #undef EACH_ENUM
-
+  DUMP(elif);
   DUMP_PTR(condNode);
   DUMP_PTR(thenNode);
   DUMP_PTR(elseNode);
