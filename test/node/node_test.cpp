@@ -343,7 +343,6 @@ nodes:
       kind: "Int"
       init: false
       intValue: 0
-    inheritScope: false
     op: "+"
     optNode: null
 )"},
@@ -380,7 +379,6 @@ nodes:
         handle: null
         extraOp: "NONE"
         extraValue: 0
-      inheritScope: true
       op: "&&"
       optNode: null
     rightNode:
@@ -393,7 +391,6 @@ nodes:
       handle: null
       extraOp: "NONE"
       extraValue: 0
-    inheritScope: false
     op: "&&"
     optNode: null
 )"},

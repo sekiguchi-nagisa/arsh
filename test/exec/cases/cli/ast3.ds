@@ -116,7 +116,6 @@ nodes:
             handle: null
             extraOp: \"NONE\"
             extraValue: 0
-          inheritScope: false
           op: \"/\"
           optNode: null
       baseIndex: 0
@@ -260,7 +259,6 @@ nodes:
             type: \"Int\"
             leftNode: null
             rightNode: null
-            inheritScope: false
             op: \"/\"
             optNode:
               nodeKind: Apply
