@@ -1,0 +1,6 @@
+#$test($result = 'parse', $lineNum = 5, $chars = 4, $errorKind = 'NoViableAlter', $status = 1)
+
+typedef AAA {
+   var a : Int
+   34
+}

@@ -7,7 +7,7 @@ var ee = new Empty()
 assert $ee is Any
 assert ($ee as Any) is Empty
 
-typedef AAA {
+typedef AAA (){
     typedef T = Int
     var a = 34
     var b = 'c'
@@ -45,6 +45,15 @@ assert "${$bbb.ZZZ}" == 'hello world'
 assert { import-env ZZZ; $ZZZ; } == 'hello world'
 $bbb.ZZZ += "!!"
 assert { import-env ZZZ; $ZZZ; } == 'hello world!!'
+
+## implicit constructor
+typedef Interval {
+    let begin : Int
+    let end : Int
+}
+var iii = new Interval(1,10)
+assert $iii.begin == 1
+assert $iii.end == 10
 
 ## optional arg
 typedef BBB2(a : Int?) {

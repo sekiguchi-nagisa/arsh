@@ -1,9 +1,9 @@
 #$test($result = 'type', $status = 1, $chars = 5, $errorKind = 'OutsideToplevel', $lineNum = 6)
 
-typedef AAA {
+typedef AAA (){
     typedef BBB = Int
 
-    typedef CCC {
+    typedef CCC() {
         var value = 34
     }
 }

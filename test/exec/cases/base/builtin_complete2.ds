@@ -130,6 +130,7 @@ $assertArray($(env | grep ^P | while(read -r) {
 $assertArray(["_0", "_1"], $(complete "(1,2)."))
 $assertArray([ "B", 'BB', 'C', '_A'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).'))
 $assertArray([ "B", 'BB'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).B'))
+$assertArray(['B', 'BB'], $(complete 'typedef AAA{ var B : Int; let BB : String; }; new AAA(1, "34").B'))
 assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
@@ -172,7 +173,7 @@ var types = [
 
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))
 $assertArray(['Bool', 'Boolean', 'Boolean0'], $(complete 'typedef Boolean0 : ArithmeticError; 34 is [B'));
-$assertArray(['Bool', 'Boolean', 'Boolean0'], $(complete 'typedef Boolean0 {}; 34 is [B'))
+$assertArray(['Bool', 'Boolean', 'Boolean0'], $(complete 'typedef Boolean0() {}; 34 is [B'))
 $assertArray(['StackOverflowError', 'String'], $(complete 'var a :St'))
 $assertArray($types, $(complete 'var a :'))
 $assertArray($types, $(complete '234 as '))
@@ -183,8 +184,8 @@ $assertArray(['Func','Func0'], $(complete '
     if(test -f 34) {
         typedef Func0 = [String:[Any]]
         assert 45 is Func'))
-$assertArray(["Type0", "Type1", '_AAA', ], $(complete "typedef AAA{ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA."))
-$assertArray(["Type0", "Type1"], $(complete "typedef AAA{ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA.T"))
+$assertArray(["Type0", "Type1", '_AAA', ], $(complete "typedef AAA(){ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA."))
+$assertArray(["Type0", "Type1"], $(complete "typedef AAA(){ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA.T"))
 $assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP."))
 $assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP . C"))
 $assertArray(['APIError', "BoolArray", "FloatArray", 'Interval', "StrArray"],

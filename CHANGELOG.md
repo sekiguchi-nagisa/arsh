@@ -38,6 +38,14 @@
 - **Breaking Change**: drop support smart-cast
     - use if-let expression instead
 - **Breaking Change**: change type checking of if-elif-else chain, now like case expression
+- **Breaking Change**: change syntax of user-defined type definition without ``()``
+    - now implicitly define constructor parameters
+  ```
+  typedef Interval {
+    let begin : Int
+    let end : Int
+  }
+  ```
 - adjust error message layout and colors
 - improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type

@@ -510,7 +510,7 @@ TEST_F(InteractiveTest, illegalMethod) {
   eout = "[runtime error]\n"
          "ArithmeticError: zero modulo\n"
          "    from (stdin):3 '<toplevel>()'\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23%0; typedef AAA { var a = 0; }", "", eout));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23%0; typedef AAA ( ){ var a = 0; }", "", eout));
   eout = "[runtime error]\n"
          "IllegalAccessError: attempt to call uninitialized method or constructor\n"
          "    from (stdin):4 '<toplevel>()'\n";

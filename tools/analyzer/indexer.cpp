@@ -613,6 +613,18 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
     value += ")";
   }
   value += " {\n";
+  if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
+    for (auto &e : node.getParamNodes()) {
+      auto declKind = fromVarDeclKind(e->getKind());
+      value += "    ";
+      value += DeclSymbol::getVarDeclPrefix(declKind);
+      value += " ";
+      value += e->getVarName();
+      value += " : ";
+      value += normalizeTypeName(e->getExprNode()->getType());
+      value += "\n";
+    }
+  }
   for (auto &e : node.getBlockNode().getNodes()) {
     if (isa<VarDeclNode>(*e)) {
       auto &declNode = cast<VarDeclNode>(*e);
@@ -685,12 +697,21 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
     auto func = this->builder().intoScope(getScopeKind(node),
                                           node.isMethod() ? &node.getRecvTypeNode()->getType()
                                                           : node.getResolvedType());
-    for (auto &paramNode : node.getParamNodes()) {
-      if (paramNode->getExprNode()->isUntyped()) {
-        continue;
+    if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
+      for (auto &e : node.getParamNodes()) {
+        if (auto *resolved = this->builder().curScope().getResolvedType()) {
+          this->builder().addMemberDecl(*resolved, e->getNameInfo(), e->getExprNode()->getType(),
+                                        fromVarDeclKind(e->getKind()), e->getToken());
+        }
       }
-      this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
-                              node.getToken());
+    } else {
+      for (auto &paramNode : node.getParamNodes()) {
+        if (paramNode->getExprNode()->isUntyped()) {
+          continue;
+        }
+        this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
+                                node.getToken());
+      }
     }
     this->visitBlockWithCurrentScope(node.getBlockNode());
   }

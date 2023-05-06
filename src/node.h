@@ -2234,7 +2234,8 @@ public:
   const enum Kind : unsigned char {
     FUNC,
     SINGLE_EXPR,
-    CONSTRUCTOR,
+    EXPLICIT_CONSTRUCTOR,
+    IMPLICIT_CONSTRUCTOR,
   } kind;
 
 private:
@@ -2288,6 +2289,13 @@ public:
     unsigned int pos = name.getToken().pos;
     this->paramNodes.push_back(std::make_unique<VarDeclNode>(
         pos, std::move(name), std::move(paramType), VarDeclNode::VAR));
+  }
+
+  void addParamNode(unsigned int startPos, bool readOnly, NameInfo &&name,
+                    std::unique_ptr<TypeNode> &&paramType) {
+    this->paramNodes.push_back(
+        std::make_unique<VarDeclNode>(startPos, std::move(name), std::move(paramType),
+                                      readOnly ? VarDeclNode::LET : VarDeclNode::VAR));
   }
 
   const std::vector<std::unique_ptr<VarDeclNode>> &getParamNodes() const {
@@ -2344,7 +2352,9 @@ public:
 
   bool isSingleExpr() const { return this->kind == SINGLE_EXPR; }
 
-  bool isConstructor() const { return this->kind == CONSTRUCTOR; }
+  bool isConstructor() const {
+    return this->kind == EXPLICIT_CONSTRUCTOR || this->kind == IMPLICIT_CONSTRUCTOR;
+  }
 
   bool isNamedFunc() const { return this->kind == FUNC && !this->funcName.getName().empty(); }
 

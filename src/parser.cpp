@@ -804,7 +804,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
   GUARD_DEEP_NESTING(guard);
 
   assert(CUR_KIND() == TokenKind::TYPEDEF);
-  unsigned int startPos = START_POS();
+  const unsigned int startPos = START_POS();
   this->consume(); // TYPEDEF
   auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
   switch (CUR_KIND()) {
@@ -818,44 +818,41 @@ std::unique_ptr<Node> Parser::parse_typedef() {
     auto typeToken = TRY(this->parse_typeName());
     return TypeDefNode::errorDef(startPos, std::move(nameInfo), std::move(typeToken));
   }
-  case TokenKind::LP:    // (
-  case TokenKind::LBC: { // {
-    auto node =
-        std::make_unique<FunctionNode>(startPos, std::move(nameInfo), FunctionNode::CONSTRUCTOR);
-    if (CUR_KIND() == TokenKind::LP) {
-      TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
-      for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
-        auto ctx = this->inSkippableNLCtx();
+  case TokenKind::LP: { // explicit constructor
+    auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo),
+                                               FunctionNode::EXPLICIT_CONSTRUCTOR);
+    TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
+    for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
+      auto ctx = this->inSkippableNLCtx();
 
-        if (count > 0) {
-          if (CUR_KIND() != TokenKind::COMMA) {
-            E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
-          }
-          TRY(this->expectAndChangeMode(TokenKind::COMMA, yycPARAM));
+      if (count > 0) {
+        if (CUR_KIND() != TokenKind::COMMA) {
+          E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
         }
-
-        if (CUR_KIND() == TokenKind::PARAM_NAME) {
-          auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
-          TRY(this->expect(TokenKind::COLON, false));
-          auto type = this->parse_typeName();
-          if (this->incompleteNode) {
-            Token token = this->incompleteNode->getToken();
-            auto typeofNode =
-                std::make_unique<TypeOfNode>(token.pos, std::move(this->incompleteNode), token);
-            node->addParamNode(std::move(param), std::move(typeofNode));
-            node->setFuncBody(std::make_unique<EmptyNode>(token));
-            this->incompleteNode = std::move(node);
-            return nullptr;
-          } else if (this->hasError()) {
-            return nullptr;
-          }
-          node->addParamNode(std::move(param), std::move(type));
-        } else {
-          E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
-        }
+        TRY(this->expectAndChangeMode(TokenKind::COMMA, yycPARAM));
       }
-      this->expect(TokenKind::RP); // always success
+
+      if (CUR_KIND() == TokenKind::PARAM_NAME) {
+        auto param = this->expectName(TokenKind::PARAM_NAME, &Lexer::toName); // always success
+        TRY(this->expect(TokenKind::COLON, false));
+        auto type = this->parse_typeName();
+        if (this->incompleteNode) {
+          Token token = this->incompleteNode->getToken();
+          auto typeofNode =
+              std::make_unique<TypeOfNode>(token.pos, std::move(this->incompleteNode), token);
+          node->addParamNode(std::move(param), std::move(typeofNode));
+          node->setFuncBody(std::make_unique<EmptyNode>(token));
+          this->incompleteNode = std::move(node);
+          return nullptr;
+        } else if (this->hasError()) {
+          return nullptr;
+        }
+        node->addParamNode(std::move(param), std::move(type));
+      } else {
+        E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
+      }
     }
+    this->expect(TokenKind::RP); // always success
     auto blockNode = this->parse_block();
     if (this->incompleteNode) {
       node->setFuncBody(std::move(this->incompleteNode));
@@ -865,6 +862,39 @@ std::unique_ptr<Node> Parser::parse_typedef() {
       return nullptr;
     }
     node->setFuncBody(std::move(blockNode));
+    return node;
+  }
+  case TokenKind::LBC: { // implicit constructor
+    auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo),
+                                               FunctionNode::IMPLICIT_CONSTRUCTOR);
+    Token lbcToken = this->expect(TokenKind::LBC); // always success
+    while (CUR_KIND() != TokenKind::RBC) {
+      this->changeLexerModeToSTMT();
+      if (CUR_KIND() == TokenKind::VAR || CUR_KIND() == TokenKind::LET) {
+        unsigned int pos = START_POS();
+        const bool readOnly = this->scan() == TokenKind::LET;
+        auto param = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+        TRY(this->expect(TokenKind::COLON, false));
+        auto type = this->parse_typeName();
+        if (this->incompleteNode) {
+          Token token = this->incompleteNode->getToken();
+          auto typeofNode =
+              std::make_unique<TypeOfNode>(token.pos, std::move(this->incompleteNode), token);
+          node->addParamNode(std::move(param), std::move(typeofNode));
+          node->setFuncBody(std::make_unique<EmptyNode>(token));
+          this->incompleteNode = std::move(node);
+          return nullptr;
+        } else if (this->hasError()) {
+          return nullptr;
+        }
+        TRY(this->parse_statementEnd());
+        node->addParamNode(pos, readOnly, std::move(param), std::move(type));
+      } else {
+        E_ALTER(TokenKind::VAR, TokenKind::LET, TokenKind::RBC);
+      }
+    }
+    this->expect(TokenKind::RBC); // always success
+    node->setFuncBody(std::make_unique<BlockNode>(lbcToken.pos));
     return node;
   }
   default:

@@ -906,7 +906,8 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(FUNC)                                                                                         \
   OP(SINGLE_EXPR)                                                                                  \
-  OP(CONSTRUCTOR)
+  OP(EXPLICIT_CONSTRUCTOR)                                                                         \
+  OP(IMPLICIT_CONSTRUCTOR)
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM

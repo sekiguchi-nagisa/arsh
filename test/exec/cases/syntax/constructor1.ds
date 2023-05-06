@@ -1,0 +1,5 @@
+#$test($result = 'parse', $lineNum = 4, $chars = 10, $errorKind = 'TokenMismatched', $status = 1)
+
+typedef AAA {
+   var a = 34
+}

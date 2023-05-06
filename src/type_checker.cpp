@@ -1983,7 +1983,8 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   }
 
   // finalize record type
-  const unsigned int offset = node.getParamNodes().size();
+  const unsigned int offset =
+      node.kind == FunctionNode::EXPLICIT_CONSTRUCTOR ? node.getParamNodes().size() : 0;
   std::unordered_map<std::string, HandlePtr> handles;
   for (auto &e : this->curScope->getHandles()) {
     auto handle = e.second.first;

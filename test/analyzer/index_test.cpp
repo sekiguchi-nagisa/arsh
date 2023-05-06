@@ -1191,7 +1191,7 @@ TEST_F(IndexTest, hover) {
       this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
                   "```ydsh\ntypedef API : AppError\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("typedef Interval { var begin = 34; }; var a = new Interval();\n$a",
+      this->hover("typedef Interval() { var begin = 34; }; var a = new Interval();\n$a",
                   Position{.line = 1, .character = 0}, "```ydsh\nvar a : Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
                                       "Interval?(); }\nvar a = new Interval();",
@@ -1201,11 +1201,20 @@ typedef Interval(s : Int) {
     let value : Interval?
 }
 ```)"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
+                                      "}\nvar aaaa = new Interval(2, $none);",
+                                      Position{.line = 1, .character = 20}, R"(```ydsh
+typedef Interval(n : Int, next : Interval?) {
+    var n : Int
+    let next : Interval?
+}
+```)"));
+
   ASSERT_NO_FATAL_FAILURE(this->hover(
-      "typedef Interval { var value = new Interval?(); }; var a = new Interval();\n$a.value",
+      "typedef Interval { var value : Interval?; }; var a = new Interval($none);\n$a.value",
       Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval? for Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover(
-      "typedef Interval { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
+      "typedef Interval() { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
       Position{.line = 1, .character = 2}, "```ydsh\nvar aaa : [[Interval]]\n```"));
 
   // user-defined method
@@ -1280,7 +1289,7 @@ var AAA = 'hello'
   src = "source ";
   src += tempFileFactory.getTempDirName();
   src += "/";
-  int chars = src.size() + 5;
+  int chars = static_cast<int>(src.size()) + 5;
   src += "${YDSH_VERSION}_.ds";
   ASSERT_NO_FATAL_FAILURE(this->hover(src.c_str(), Position{.line = 0, .character = chars},
                                       "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE
