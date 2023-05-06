@@ -131,6 +131,7 @@
   TOKEN(CASE_ARM, "=>")                                                                            \
   /* context dependent key word */                                                                 \
   TOKEN(AS, "as")                                                                                  \
+  TOKEN(AS_OPT, "as?")                                                                             \
   TOKEN(FUNC, "Func")                                                                              \
   TOKEN(IN, "in")                                                                                  \
   TOKEN(IS, "is")                                                                                  \
@@ -206,6 +207,7 @@
 #define EACH_OPERATOR(OP)                                                                          \
   OP(IS, 17, INFIX)                                                                                \
   OP(AS, 17, INFIX)                                                                                \
+  OP(AS_OPT, 17, INFIX)                                                                            \
   OP(MUL, 16, INFIX)                                                                               \
   OP(DIV, 16, INFIX)                                                                               \
   OP(MOD, 16, INFIX)                                                                               \
@@ -238,6 +240,7 @@
 
 #define EACH_INFIX_OPERATOR_KW(OP)                                                                 \
   OP(AS)                                                                                           \
+  OP(AS_OPT)                                                                                       \
   OP(IS)                                                                                           \
   OP(AND)                                                                                          \
   OP(OR)                                                                                           \

@@ -8,6 +8,7 @@
 | PRINT             | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack              |
 | INSTANCE_OF       | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
 | CHECK_CAST        | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
+| CHECK_CAST_OPT    | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
 | PUSH_NULL         |                                | -> value                                     | push the null value onto the stack                              |
 | PUSH_TRUE         |                                | -> value                                     | push the true value onto the stack                              |
 | PUSH_FALSE        |                                | -> value                                     | push the false value onto the stack                             |

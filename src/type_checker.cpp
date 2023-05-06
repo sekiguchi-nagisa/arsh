@@ -821,7 +821,17 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
   auto &exprType = this->checkTypeAsExpr(node.getExprNode());
   auto &targetType = this->checkTypeExactly(*node.getTargetTypeNode());
 
-  if (node.isCastOp()) {
+  if (node.getOpKind() == TypeOpNode::CHECK_CAST_OPT) {
+    node.setOpKind(TypeOpNode::NO_CAST);
+    if (!targetType.isNothingType() && exprType.isSameOrBaseTypeOf(targetType)) {
+      if (auto ret = this->typePool.createOptionType(targetType); ret) {
+        node.setOpKind(TypeOpNode::CHECK_CAST_OPT);
+        node.setType(*ret.asOk());
+      }
+    } else {
+      this->reportError<InvalidOptCast>(node, exprType.getName());
+    }
+  } else if (node.isCastOp()) {
     node.setType(targetType);
     this->resolveCastOp(node);
   } else {

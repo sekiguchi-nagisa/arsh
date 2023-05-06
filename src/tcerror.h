@@ -162,6 +162,8 @@ DEFINE_TCError(NestedJob, "`&', `&|`, `&!' and `coproc' operators cannot "
                           "be applied to `Job' type expression");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
 DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type expression is not allowed");
+DEFINE_TCError(InvalidOptCast,
+               "optional cast (`as?') only supports downcast, target type must be derived of `%s'");
 DEFINE_TCError(UnmatchParam, "number of parameters does not match, require `%d', but is `%d'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");

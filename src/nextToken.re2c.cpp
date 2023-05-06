@@ -302,6 +302,7 @@ INIT:
     <EXPR> ("=>" | "->")     { MODE(STMT); RET(CASE_ARM); }
 
     <EXPR> "as"              { RET_OR_COMP_INFIX(AS); }
+    <EXPR> "as?"             { RET_OR_COMP_INFIX(AS_OPT); }
     <EXPR> "is"              { RET_OR_COMP_INFIX(IS); }
     <EXPR> "in"              { MODE(STMT); RET_OR_COMP_INFIX(IN); }
     <EXPR> "with"            { MODE(CMD); RET_OR_COMP_INFIX(WITH); }

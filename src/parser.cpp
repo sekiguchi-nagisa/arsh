@@ -1665,6 +1665,13 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) 
       node = std::make_unique<TypeOpNode>(std::move(node), std::move(type), TypeOpNode::NO_CAST);
       break;
     }
+    case TokenKind::AS_OPT: {
+      this->expect(TokenKind::AS_OPT, false); // always success
+      auto type = TRY(this->parse_typeName());
+      node = std::make_unique<TypeOpNode>(std::move(node), std::move(type),
+                                          TypeOpNode::CHECK_CAST_OPT);
+      break;
+    }
     case TokenKind::IS: {
       this->expect(TokenKind::IS, false); // always success
       auto type = TRY(this->parse_typeName());

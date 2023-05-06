@@ -1818,6 +1818,16 @@ bool VM::mainLoop(DSState &state) {
         TRY(checkCast(state, state.typePool.get(v)));
         vmnext;
       }
+      vmcase(CHECK_CAST_OPT) {
+        unsigned int v = read24(GET_CODE(state), state.stack.pc());
+        state.stack.pc() += 3;
+        const auto &targetType = state.typePool.get(v);
+        if (!instanceOf(state.typePool, state.stack.peek(), targetType)) {
+          state.stack.popNoReturn();
+          state.stack.push(DSValue::createInvalid());
+        }
+        vmnext;
+      }
       vmcase(PUSH_NULL) {
         state.stack.push(nullptr);
         vmnext;

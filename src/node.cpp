@@ -294,6 +294,7 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
   OP(TO_STRING)                                                                                    \
   OP(TO_BOOL)                                                                                      \
   OP(CHECK_CAST)                                                                                   \
+  OP(CHECK_CAST_OPT)                                                                               \
   OP(CHECK_UNWRAP)                                                                                 \
   OP(PRINT)                                                                                        \
   OP(ALWAYS_FALSE)                                                                                 \

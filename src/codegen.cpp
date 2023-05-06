@@ -35,6 +35,7 @@ bool isTypeOp(OpCode code) {
   case OpCode::PRINT:
   case OpCode::INSTANCE_OF:
   case OpCode::CHECK_CAST:
+  case OpCode::CHECK_CAST_OPT:
   case OpCode::NEW:
     ASSERT_BYTE_SIZE(code, 3);
     return true;
@@ -654,6 +655,10 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
   case TypeOpNode::CHECK_CAST:
     this->emitSourcePos(node.getActualPos());
     this->emitTypeIns(OpCode::CHECK_CAST, node.getType());
+    break;
+  case TypeOpNode::CHECK_CAST_OPT:
+    this->emitSourcePos(node.getActualPos());
+    this->emitTypeIns(OpCode::CHECK_CAST_OPT, node.getType());
     break;
   case TypeOpNode::CHECK_UNWRAP:
     this->emitSourcePos(node.getActualPos());

@@ -732,6 +732,7 @@ public:
     TO_STRING,
     TO_BOOL,
     CHECK_CAST,
+    CHECK_CAST_OPT,
     CHECK_UNWRAP,
     PRINT,
 

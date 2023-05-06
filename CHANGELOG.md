@@ -11,6 +11,8 @@
       ```
       if let a = "hgoe".realpath() { echo $a; }
       ```
+- support ``as?`` optional cast
+    - if cast failed, return invalid instead of ``TypeCastError``
 
 #### Builtin
 
@@ -36,7 +38,7 @@
 - **Breaking Change**: change ``Any`` type expression to ``String`` cast semantics.
     - now do not perform string coercion (to-string)
 - **Breaking Change**: drop support smart-cast
-    - use if-let expression instead
+    - use if-let optional binding instead
 - **Breaking Change**: change type checking of if-elif-else chain, now like case expression
 - **Breaking Change**: change syntax of user-defined type definition without ``()``
     - now implicitly define constructor parameters

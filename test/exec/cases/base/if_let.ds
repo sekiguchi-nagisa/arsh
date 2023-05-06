@@ -12,3 +12,29 @@ function bind(a : String) : String {
 assert $bind("00034") == '34'
 assert $bind("3s4") == 'failed'
 assert $bind("0003.14000") == 3.14 as String
+
+
+## if-let with as?
+function typeName(a : Any) : String {
+    return if let v = $a as? Int {
+        assert $a is Int
+        "Int"
+    } elif let v = $a as? Float {
+        assert $a is Float
+        "Float"
+    } elif let v = $a as? ArithmeticError {
+        assert $a is ArithmeticError
+        "ArithmeticError"
+    } elif let v = $a as? Error {
+        assert $a is Error
+        "Error"
+    } else {
+        "@@@"
+    }
+}
+
+assert $typeName(2345) == "Int"
+assert $typeName(2345.345) == "Float"
+assert $typeName(new Error('')) == "Error"
+assert $typeName(new ArithmeticError('')) == "ArithmeticError"
+assert $typeName('') == "@@@"
