@@ -163,7 +163,11 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
   if (requiredType == nullptr) {
     if (!type.isNothingType() && unacceptableType != nullptr &&
         unacceptableType->isSameOrBaseTypeOf(type)) {
-      this->reportError<Unacceptable>(targetNode, type.getName());
+      if (isa<TypeNode>(targetNode)) {
+        this->reportError<UnacceptableType>(targetNode, type.getName());
+      } else {
+        this->reportError<Unacceptable>(targetNode, type.getName());
+      }
       targetNode.setType(this->typePool.getUnresolvedType());
       return targetNode.getType();
     }
@@ -194,7 +198,11 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
 const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   auto &type = this->checkTypeAsExpr(targetNode);
   if (type.isNothingType()) {
-    this->reportError<Unacceptable>(targetNode, type.getName());
+    if (isa<TypeNode>(targetNode)) {
+      this->reportError<UnacceptableType>(targetNode, type.getName());
+    } else {
+      this->reportError<Unacceptable>(targetNode, type.getName());
+    }
     targetNode.setType(this->typePool.getUnresolvedType());
     return targetNode.getType();
   }

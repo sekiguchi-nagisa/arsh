@@ -146,7 +146,8 @@ DEFINE_TCError(NotIterable, "cannot iterate `%s' type");
 DEFINE_TCError(PrivateField, "cannot access module private field: `%s'");
 DEFINE_TCError(OptParamExpand, "`%s' type expression is not allowed "
                                "within string interpolations and parameter expansions");
-DEFINE_TCError(Unacceptable, "unacceptable type: `%s'");
+DEFINE_TCError(Unacceptable, "`%s' type expression is not allowed");
+DEFINE_TCError(UnacceptableType, "`%s' type is not allowed");
 DEFINE_TCError(DefinedCmd, "already defined command: `%s'");
 DEFINE_TCError(ConflictSymbol, "at global import, cannot import %s defined in `%s' module\n"
                                "since same name symbol is already defined in this module");
@@ -160,7 +161,7 @@ DEFINE_TCError(InvalidCatchType, "invalid catch type: `%s', must be `Error' or "
 DEFINE_TCError(NestedJob, "`&', `&|`, `&!' and `coproc' operators cannot "
                           "be applied to `Job' type expression");
 DEFINE_TCError(CastOp, "unsupported cast op: `%s' type -> `%s' type");
-DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type is not allowed");
+DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type expression is not allowed");
 DEFINE_TCError(UnmatchParam, "number of parameters does not match, require `%d', but is `%d'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");

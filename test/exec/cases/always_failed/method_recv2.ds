@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 3, $chars = 24, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 3, $chars = 24, $errorKind = 'UnacceptableType', $status = 1)
 
 function f() : Int for Nothing {
     return 0
