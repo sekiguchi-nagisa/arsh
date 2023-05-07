@@ -28,6 +28,11 @@
         - always use quiet NAN
         - forbid INT32_MIN as field width
 
+#### LSP
+
+- ``textDocument/publishDiagnostics`` emit warning diagnostic
+    - meaningless cast op
+
 ### Changed
 
 #### Core
