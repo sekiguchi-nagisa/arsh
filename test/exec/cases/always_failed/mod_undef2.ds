@@ -1,5 +1,5 @@
 
-#$test($result = 'type', $lineNum = 7, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod_undef2.ds')
+#$test($result = 'type', $lineNum = 7, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = '../always_failed/mod_undef2.ds')
 
 
 source ../../_module4test/inlined3.ds

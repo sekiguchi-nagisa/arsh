@@ -24,6 +24,7 @@
 #include "directive.h"
 
 #include <misc/fatal.h>
+#include <misc/files.h>
 #include <parser.h>
 #include <paths.h>
 #include <type_checker.h>
@@ -219,16 +220,25 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
       return;
     }
 
-    std::string str = TRY(this->checkedCast<StringNode>(node))->getValue();
-    expandTilde(str, false, nullptr);
-    char *buf = realpath(str.c_str(), nullptr);
-    if (buf == nullptr) {
+    const std::string str = TRY(this->checkedCast<StringNode>(node))->getValue();
+    std::string baseDir;
+    if (auto real = getRealpath(this->sourceName.c_str())) {
+      StringRef ref = real.get();
+      auto r = ref.lastIndexOf("/");
+      assert(r != StringRef::npos);
+      auto base = ref.slice(0, r != 0 ? r : r + 1);
+      baseDir = base.toString();
+    } else {
+      baseDir = getCWD().get();
+    }
+    auto fullPath = expandDots(baseDir.c_str(), str.c_str());
+    auto real = getRealpath(fullPath.c_str());
+    if (!real) {
       std::string message = "invalid file name: ";
       message += str;
       return this->createError(node, message);
     }
-    d.setFileName(buf);
-    free(buf);
+    d.setFileName(real.get());
   });
 
   this->addHandler("envs", this->getMapType(), [&](Node &node, Directive &d) {

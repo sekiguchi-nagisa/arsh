@@ -1,4 +1,4 @@
 
-#$test($result = 'type', $lineNum = 4, $chars = 8, $errorKind = 'CircularMod', $status = 1, $fileName = '../_module4test/cycle.ds')
+#$test($result = 'type', $lineNum = 4, $chars = 8, $errorKind = 'CircularMod', $status = 1, $fileName = '../../_module4test/cycle.ds')
 
 source mod_circular1.ds as cy

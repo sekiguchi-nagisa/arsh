@@ -1,5 +1,5 @@
 
-#$test($result = 'exit', $lineNum = 4, $status = 67, $fileName = '../_module4test/command.ds', $out = $'call exit\n')
+#$test($result = 'exit', $lineNum = 4, $status = 67, $fileName = '../../_module4test/command.ds', $out = $'call exit\n')
 
 source ../../_module4test/command.ds
 source ../../_module4test/module1.ds

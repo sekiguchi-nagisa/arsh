@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $chars = 3, $errorKind = 'NotFoundMod', $status = 1, $fileName = './always_failed/source_not_found2.ds')
+#$test($result = 'type', $lineNum = 4, $chars = 3, $errorKind = 'NotFoundMod', $status = 1, $fileName = '../always_failed/source_not_found2.ds')
 
 source \
   hogehuga

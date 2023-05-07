@@ -1,4 +1,4 @@
-#$test($result = 'throw', $lineNum = 3, $errorKind = 'ArithmeticError', $status = 1, $fileName = '../_module4test/throw.ds')
+#$test($result = 'throw', $lineNum = 3, $errorKind = 'ArithmeticError', $status = 1, $fileName = '../../_module4test/throw.ds')
 
 source ../../_module4test/throw.ds as mod
 
