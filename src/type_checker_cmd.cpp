@@ -435,6 +435,14 @@ static bool isDirPattern(SourceListNode::path_iterator begin, SourceListNode::pa
 
 static bool appendPath(std::vector<std::shared_ptr<const std::string>> &results,
                        std::string &&path) {
+#ifdef FUZZING_BUILD_MODE
+  if (const char *env = getenv("YDSH_SUPPRESS_MOD_LOADING")) {
+    if (results.size() == 512) {
+      return false;
+    }
+  }
+#endif
+
   if (results.size() == SYS_LIMIT_EXPANSION_RESULTS) {
     return false;
   }
@@ -757,11 +765,6 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     }
     node.addConstNode(std::move(constNode));
   }
-#ifdef FUZZING_BUILD_MODE
-  if (const char *env = getenv("YDSH_SUPPRESS_MOD_LOADING")) {
-    return;
-  }
-#endif
   this->resolvePathList(node);
 }
 
