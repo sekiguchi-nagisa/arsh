@@ -1210,6 +1210,7 @@ class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
   unsigned int expansionSize{0};
   bool braceExpansion{false};
+  bool expansionError{false};
   std::vector<std::unique_ptr<Node>> segmentNodes; // at-least one element
 
 public:
@@ -1243,6 +1244,10 @@ public:
   unsigned int getExpansionSize() const { return this->expansionSize; }
 
   void setExpansionSize(unsigned int size) { this->expansionSize = size; }
+
+  void setExpansionError(bool set) { this->expansionError = set; }
+
+  bool hasExpansionError() const { return this->expansionError; }
 };
 
 class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {

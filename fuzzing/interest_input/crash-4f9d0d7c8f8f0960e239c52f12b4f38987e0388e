@@ -1,0 +1,4 @@
+
+source $SCRIPT_DIR/../../_module4test/{gl*{1,2}/../_module4test/{gl*{1,2},module0*
+
+assert $gg1 == "hello module!!"

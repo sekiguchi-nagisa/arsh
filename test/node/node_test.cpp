@@ -571,6 +571,7 @@ nodes:
                           size: 2
                         type:
                         expansionSize: 0
+                        expansionError: false
                         braceExpansion: false
                         segmentNodes:
                           - nodeKind: String
@@ -622,6 +623,7 @@ nodes:
                         size: 7
                       type:
                       expansionSize: 0
+                      expansionError: false
                       braceExpansion: false
                       segmentNodes:
                         - nodeKind: Embed
@@ -976,6 +978,7 @@ nodes:
             size: 4
           type:
           expansionSize: 0
+          expansionError: false
           braceExpansion: false
           segmentNodes:
             - nodeKind: String
@@ -1020,6 +1023,7 @@ nodes:
             size: 1
           type: "[String]"
           expansionSize: 1
+          expansionError: false
           braceExpansion: false
           segmentNodes:
             - nodeKind: WildCard
@@ -1366,6 +1370,7 @@ nodes:
               size: 6
             type: "String"
             expansionSize: 0
+            expansionError: false
             braceExpansion: false
             segmentNodes:
               - nodeKind: StringExpr

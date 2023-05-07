@@ -90,13 +90,12 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
       }
     }
   }
-  unsigned int errorCount = 0;
   for (; !stack.empty(); stack.pop_back()) {
-    errorCount++;
     this->reportError<BraceUnclosed>(*segmentNodes[stack.back().first]);
+    node.setExpansionError(true);
   }
 
-  if (errorCount) {
+  if (node.hasExpansionError()) {
     return;
   }
 
@@ -158,6 +157,7 @@ void TypeChecker::checkExpansion(CmdArgNode &node) {
 
   if (node.getExpansionSize() > SYS_LIMIT_EXPANSION_FRAG_NUM) {
     this->reportError<ExpandLimit>(node);
+    node.setExpansionError(true);
   }
 }
 
@@ -179,6 +179,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
           exprType = &cast<EmbedNode>(*exprNode).getExprNode().getType();
         }
         this->reportError<ConcatParam>(*exprNode, exprType->getName());
+        node.setExpansionError(true);
       }
     }
   }
@@ -688,8 +689,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
 }
 
 void TypeChecker::resolvePathList(SourceListNode &node) {
-  if (node.getConstNodes().empty() ||
-      node.getPathNode().getExpansionSize() > SYS_LIMIT_EXPANSION_FRAG_NUM) {
+  if (node.getConstNodes().empty() || node.getPathNode().hasExpansionError()) {
     return;
   }
   node.addConstNode(std::make_unique<EmptyNode>()); // sentinel

@@ -21,6 +21,7 @@ nodes:
         size: ${len}
       type:
       expansionSize: 0
+      expansionError: false
       braceExpansion: false
       segmentNodes:
         - nodeKind: String

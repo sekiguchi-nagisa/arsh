@@ -419,6 +419,7 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(expansionSize);
+  DUMP(expansionError);
   DUMP(braceExpansion);
   DUMP(segmentNodes);
 }

@@ -74,6 +74,10 @@
 
 - in ydsh completion, complete command names after ``-e`` option
 
+### Fixed
+
+- brace expansion error checking in source statement
+
 ## [0.29.2] - 2023-04-08
 
 ### Fixed
