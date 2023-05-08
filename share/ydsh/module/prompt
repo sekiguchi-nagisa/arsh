@@ -37,14 +37,20 @@ function renderPrompt(p : String) : String {
             var k = $p[$i]
             case $k {
             'd' => {
-                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt()!]
-                $ch = "$w$(date '+ %m %d')"
+                LANG=C printf -v var '%(%a %m %d)T'
+                $ch = $reply.remove('var')!
             }
-            't' => { $ch = "$(date +%T)"; }
-            'T' => { $ch = "$(date +'%I:%M:%S')"; }
+            't' => { 
+                printf -v var '%(%T)T'
+                $ch = $reply.remove('var')!
+            }
+            'T' => { 
+                printf -v var '%(%I:%M:%S)T'
+                $ch = $reply.remove('var')!
+            }
             '@' => {
-                var h = "$(date +%H)".toInt()! < 12 ? "AM" : "PM"
-                $ch = "$(date +'%I:%M ')$h"
+                LANG=C printf -v var '%(%I:%M %p)T'
+                $ch = $reply.remove('var')!
             }
             'w' => {
                 if $PWD.startsWith($home) {
