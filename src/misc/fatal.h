@@ -22,15 +22,19 @@
 #include <cstdlib>
 #include <cstring>
 
-#define BASE_FILENAME__                                                                            \
-  (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
+#ifndef __FILE_NAME__
+#define __FILE_NAME__                                                                              \
+  (__builtin_strrchr(__FILE__, '/') != nullptr                                                     \
+       ? ((const char *)__builtin_strrchr(__FILE__, '/') + 1)                                      \
+       : __FILE__)
+#endif
 
 /**
  * report error and abort.
  */
 #define fatal(fmt, ...)                                                                            \
   do {                                                                                             \
-    fprintf(stderr, "%s:%d: [fatal error] " fmt, BASE_FILENAME__, __LINE__, ##__VA_ARGS__);        \
+    fprintf(stderr, "%s:%d: [fatal error] " fmt, __FILE_NAME__, __LINE__, ##__VA_ARGS__);          \
     abort();                                                                                       \
   } while (false)
 
