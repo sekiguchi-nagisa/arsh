@@ -17,7 +17,10 @@
 #ifndef YDSH_TOOLS_ANALYZER_CLIENT_H
 #define YDSH_TOOLS_ANALYZER_CLIENT_H
 
+#include "../directive/directive.h"
+
 #include "driver.h"
+#include "lsp.h"
 #include "transport.h"
 
 namespace ydsh::lsp {
@@ -32,7 +35,9 @@ struct ClientRequest {
 };
 
 struct ClientInput {
+  std::string fileName;
   std::vector<ClientRequest> req;
+  Optional<directive::Directive> directive;
 };
 
 Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open = false,
@@ -67,16 +72,16 @@ private:
 class TestClientServerDriver : public Driver {
 private:
   LogLevel level;
-  ClientInput requests;
+  ClientInput clientInput;
 
 public:
-  TestClientServerDriver(LogLevel level, ClientInput &&requests)
-      : level(level), requests(std::move(requests)) {}
+  TestClientServerDriver(LogLevel level, ClientInput &&input)
+      : level(level), clientInput(std::move(input)) {}
 
   int run(const DriverOptions &options, std::function<int(const DriverOptions &)> &&func) override;
 
 private:
-  static void prettyprint(const JSON &json) {
+  static void prettyPrint(const JSON &json) {
     std::string value = json.serialize(2);
     fputs(value.c_str(), stdout);
     fflush(stdout);

@@ -20,7 +20,7 @@ add_library(ydshd_static STATIC
         semantic_token.cpp
         pass.cpp
         )
-target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
+target_link_libraries(ydshd_static ydsh_static jsonrpc uri directive)
 
 add_executable(${LSP_SRV} main.cpp)
 target_link_libraries(${LSP_SRV} ydshd_static ydsh_static jsonrpc uri process highlighter Threads::Threads)

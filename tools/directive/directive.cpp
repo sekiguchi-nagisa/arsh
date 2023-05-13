@@ -396,11 +396,6 @@ void DirectiveInitializer::setVarName(const char *name, const DSType &type) {
 // ##     Directive     ##
 // #######################
 
-Directive::~Directive() {
-  free(this->out);
-  free(this->err);
-}
-
 static void showError(const char *sourceName, Lexer &lexer, const std::string &line,
                       Token errorToken, const std::string &message, const char *errorName) {
   Token lineToken = {0, static_cast<unsigned int>(line.size())};

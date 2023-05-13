@@ -22,6 +22,7 @@ compdef --cmd ydshd --long language-server
 compdef --cmd ydshd --long log  --arg-list 'debug info warning error fatal'
 compdef --cmd ydshd --long test --arg-action file
 compdef --cmd ydshd --long test-open --arg-action file
+compdef --cmd ydshd --long wait-time
 
 ## dscolorize
 compdef --cmd dscolorize --long daemon

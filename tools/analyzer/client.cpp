@@ -70,7 +70,14 @@ static IntConversionResult<unsigned int> parseNum(const std::string &line) {
 
 static ClientInput loadWholeFile(const std::string &fileName, std::istream &input,
                                  unsigned int waitTime) {
-  std::vector<ClientRequest> requests;
+  ClientInput clientInput = {
+      .fileName = getRealpath(fileName.c_str()).get(),
+      .req = {},
+      .directive = directive::Directive(),
+  };
+  if (!directive::Directive::init(fileName.c_str(), clientInput.directive.unwrap())) {
+    fatal("broken directive\n");
+  }
 
   int64_t id = 0;
 
@@ -83,7 +90,8 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     JSONSerializer serializer;
     serializer(params);
 
-    requests.emplace_back(rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0);
+    clientInput.req.emplace_back(
+        rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0);
   }
 
   // send 'textDocument/didOpen' notification
@@ -97,7 +105,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     DidOpenTextDocumentParams params;
     std::string value = getRealpath(fileName.c_str()).get();
     auto uri = uri::URI::fromPath("file", std::move(value)).toString();
-    if (content.size() > 1024 * 1024 && waitTime < 2000) {
+    if (content.size() > static_cast<size_t>(1024 * 1024) && waitTime < 2000) {
       waitTime = 2000;
     }
 
@@ -111,17 +119,17 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     JSONSerializer serializer;
     serializer(params);
 
-    requests.emplace_back(
+    clientInput.req.emplace_back(
         rpc::Request("textDocument/didOpen", std::move(serializer).take()).toJSON(), waitTime);
   }
 
   // send 'shutdown' request
-  requests.emplace_back(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10);
+  clientInput.req.emplace_back(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10);
 
   // send 'exit' notification
-  requests.emplace_back(rpc::Request("exit", JSON()).toJSON(), 10);
+  clientInput.req.emplace_back(rpc::Request("exit", JSON()).toJSON(), 10);
 
-  return ClientInput{.req = std::move(requests)};
+  return clientInput;
 }
 
 Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open,
@@ -173,7 +181,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
     }
     requests.emplace_back(std::move(ret).take(), 0);
   }
-  return Ok(ClientInput{.req = std::move(requests)});
+  return Ok(ClientInput{.fileName = fileName, .req = std::move(requests), .directive = {}});
 }
 
 // ####################
@@ -272,6 +280,55 @@ rpc::Message Client::recv() {
 // ##     TestClientServerDriver     ##
 // ####################################
 
+static void collectDiagnostic(JSON &&json, std::vector<PublishDiagnosticsParams> &results) {
+  JSONDeserializer deserializer(std::move(json));
+  PublishDiagnosticsParams params;
+  deserializer(params);
+  results.push_back(std::move(params));
+}
+
+static bool expectDiagnostic(const std::vector<PublishDiagnosticsParams> &values,
+                             const directive::Directive &directive,
+                             const std::string &targetFileName, ClientLogger &logger) {
+  if (logger.enabled(LogLevel::DEBUG)) {
+    logger(LogLevel::DEBUG, "directive: (%s, %u, %u)", directive.getErrorKind().c_str(),
+           directive.getLineNum(), directive.getChars());
+  }
+
+  for (auto &v : values) {
+    auto uri = uri::URI::parse(v.uri);
+    if (uri.getPath() != targetFileName) {
+      logger(LogLevel::DEBUG, "uri: %s\ntarget: %s", v.uri.c_str(), targetFileName.c_str());
+      continue;
+    }
+
+    for (auto &d : v.diagnostics) {
+      auto &startPos = d.range.start;
+      if (logger.enabled(LogLevel::DEBUG)) {
+        logger(LogLevel::DEBUG, "diagnostic: (%s, %d + 1, %d + 1)", d.code.c_str(), startPos.line,
+               startPos.character);
+      }
+      if (StringRef(d.code).endsWith(directive.getErrorKind()) &&
+          directive.getLineNum() == static_cast<unsigned int>(startPos.line) + 1 &&
+          directive.getChars() == static_cast<unsigned int>(startPos.character) + 1) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static std::string getTargetFileName(const directive::Directive &directive,
+                                     const std::string &targetFileName) {
+  auto &fileName = directive.getFileName();
+  auto &target = fileName.empty() ? targetFileName : fileName;
+  auto targetFullPath = getRealpath(target.c_str());
+  if (!targetFullPath) {
+    fatal_perror("broken target: %s", target.c_str());
+  }
+  return targetFullPath.get();
+}
+
 int TestClientServerDriver::run(const DriverOptions &options,
                                 std::function<int(const DriverOptions &)> &&func) {
   using namespace process;
@@ -284,32 +341,50 @@ int TestClientServerDriver::run(const DriverOptions &options,
   logger.setSeverity(this->level);
   logger(LogLevel::INFO, "run lsp test client");
   Client client(logger, dup(proc.out()), dup(proc.in()));
-  client.setReplyCallback([&logger](rpc::Message &&msg) -> bool {
+  std::vector<PublishDiagnosticsParams> receivedDiagnostics;
+  client.setReplyCallback([&logger, &options, &receivedDiagnostics](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg)) {
       auto &error = get<rpc::Error>(msg);
       if (Client::isBrokenOrEmpty(error)) {
         logger(LogLevel::INFO, "%s", error.toString().c_str());
         return false;
       }
-      prettyprint(error.toJSON());
+      prettyPrint(error.toJSON());
     } else if (is<rpc::Request>(msg)) {
       auto &req = get<rpc::Request>(msg);
-      prettyprint(req.toJSON());
+      prettyPrint(req.toJSON());
+      if (options.open && req.method == "textDocument/publishDiagnostics") {
+        collectDiagnostic(std::move(req.params.unwrap()), receivedDiagnostics);
+      }
     } else if (is<rpc::Response>(msg)) {
       auto &res = get<rpc::Response>(msg);
-      prettyprint(res.toJSON());
+      prettyPrint(res.toJSON());
     } else {
       fatal("broken\n");
     }
     return true;
   });
-  client.run(this->requests);
+  client.run(this->clientInput);
   proc.waitWithTimeout(100);
   if (proc) {
     logger(LogLevel::INFO, "kill lsp server");
     proc.kill(SIGKILL);
   }
-  auto ret = proc.wait();
+  const auto ret = proc.wait();
+
+  if (options.open) {
+    assert(!receivedDiagnostics.empty());
+    auto kind = static_cast<DSErrorKind>(this->clientInput.directive.unwrap().getKind());
+    if (kind == DS_ERROR_KIND_PARSE_ERROR || kind == DS_ERROR_KIND_TYPE_ERROR) {
+      auto targetFile =
+          getTargetFileName(this->clientInput.directive.unwrap(), this->clientInput.fileName);
+      if (!expectDiagnostic(receivedDiagnostics, this->clientInput.directive.unwrap(), targetFile,
+                            logger)) {
+        return 255;
+      }
+    }
+  }
+
   return ret.toShellStatus();
 }
 

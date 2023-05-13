@@ -40,8 +40,7 @@ struct OpenTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-static inline std::vector<std::string> getSortedFileList(const char *dir,
-                                                         const char *ignored = nullptr) {
+inline std::vector<std::string> getSortedFileList(const char *dir, const char *ignored = nullptr) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),

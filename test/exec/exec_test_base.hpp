@@ -38,8 +38,8 @@ int parse(const char *src, T &&...args) {
   return Extractor(src)(std::forward<T>(args)...);
 }
 
-static inline std::vector<std::string> getSortedFileList(const char *dir,
-                                                         std::vector<std::string> ignored = {}) {
+inline std::vector<std::string> getSortedFileList(const char *dir,
+                                                  std::vector<std::string> ignored = {}) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),

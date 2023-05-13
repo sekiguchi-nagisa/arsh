@@ -23,6 +23,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <misc/resource.hpp>
+
 #include <ydsh/ydsh.h>
 
 namespace ydsh::directive {
@@ -36,8 +38,6 @@ private:
    */
   int result{DS_ERROR_KIND_SUCCESS};
 
-  std::vector<std::string> params;
-
   /**
    * for command exit status
    */
@@ -46,6 +46,8 @@ private:
   unsigned int lineNum{0};
 
   unsigned int chars{0};
+
+  std::vector<std::string> params;
 
   /**
    * represent parse or type error name or raised exception type name.
@@ -62,12 +64,12 @@ private:
   /**
    * indicate stdout value
    */
-  char *out{nullptr};
+  CStrPtr out;
 
   /**
    * indicate stderr value
    */
-  char *err{nullptr};
+  CStrPtr err;
 
   /**
    * indicate error file name.
@@ -83,8 +85,6 @@ private:
   bool ignoredPlatform{false};
 
 public:
-  ~Directive();
-
   int getKind() const { return this->result; }
 
   void setKind(int v) { this->result = v; }
@@ -113,13 +113,13 @@ public:
 
   const std::string &getIn() const { return this->in; }
 
-  void setOut(const std::string &str) { this->out = strdup(str.c_str()); }
+  void setOut(const std::string &str) { this->out.reset(strdup(str.c_str())); }
 
-  const char *getOut() const { return this->out; }
+  const char *getOut() const { return this->out.get(); }
 
-  void setErr(const std::string &str) { this->err = strdup(str.c_str()); }
+  void setErr(const std::string &str) { this->err.reset(strdup(str.c_str())); }
 
-  const char *getErr() const { return this->err; }
+  const char *getErr() const { return this->err.get(); }
 
   void setFileName(const char *name) { this->fileName = name; }
 
