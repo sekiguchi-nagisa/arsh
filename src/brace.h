@@ -40,6 +40,10 @@ struct BraceRange {
     OUT_OF_RANGE,
     OUT_OF_RANGE_STEP,
   } kind{Kind::UNINIT_CHAR};
+
+  bool hasError() const {
+    return this->kind == Kind::OUT_OF_RANGE || this->kind == Kind::OUT_OF_RANGE_STEP;
+  }
 };
 
 /**

@@ -65,6 +65,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
         break;
       case ExpandMeta::BRACE_CLOSE:
         if (stack.empty()) {
+          node.setExpansionError(true);
           this->reportError<BraceUnopened>(wild);
         } else {
           if (stack.back().second) {
@@ -87,6 +88,11 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
         break;
       default:
         break;
+      }
+    } else if (isa<BraceSeqNode>(e)) {
+      auto &seqNode = cast<BraceSeqNode>(e);
+      if (seqNode.getRange().hasError()) {
+        node.setExpansionError(true);
       }
     }
   }
@@ -267,14 +273,13 @@ void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
     std::string error;
     auto range = toBraceRange(this->lexer.toStrRef(node.getActualToken()),
                               kind == BraceRange::Kind::UNINIT_CHAR, error);
+    node.setRange(range);
     switch (range.kind) {
     case BraceRange::Kind::CHAR:
     case BraceRange::Kind::INT:
-      node.setRange(range);
+    case BraceRange::Kind::UNINIT_CHAR: // unreachable
+    case BraceRange::Kind::UNINIT_INT:  // unreachable
       break;
-    case BraceRange::Kind::UNINIT_CHAR:
-    case BraceRange::Kind::UNINIT_INT:
-      break; // unreachable
     case BraceRange::Kind::OUT_OF_RANGE:
       this->reportError<BraceOutOfRange>(node.getActualToken(), error.c_str());
       break;

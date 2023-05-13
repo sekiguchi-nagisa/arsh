@@ -187,6 +187,7 @@ std::string formatSeqValue(int64_t v, unsigned int digits, bool isChar) {
 
 bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
   assert(range.step > 0);
+  assert(!range.hasError());
 
   const bool inc = range.begin <= range.end;
   if (inc) {
