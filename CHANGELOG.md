@@ -74,6 +74,11 @@
 
 - in ydsh completion, complete command names after ``-e`` option
 
+#### API
+
+- change return value of ``DSState_setArguments``
+    - now check length of args
+
 ### Fixed
 
 - brace expansion error checking in source statement

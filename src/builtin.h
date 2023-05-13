@@ -2225,10 +2225,11 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_actions);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
-  editor.getKeyBindings().fillActions([&value](StringRef action) {
-    typeAs<ArrayObject>(value).append(DSValue::createStr(action));
-  });
-  typeAs<ArrayObject>(value).sortAsStrArray();
+  auto &array = typeAs<ArrayObject>(value);
+  editor.getKeyBindings().fillActions(
+      [&array](StringRef action) { array.append(DSValue::createStr(action)); });
+  array.sortAsStrArray();
+  ASSERT_ARRAY_SIZE(array);
   RET(value);
 }
 

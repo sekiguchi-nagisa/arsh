@@ -99,12 +99,14 @@ DS_PUBLIC_API(void) DSState_setShellName(DSState *st, const char *shellName);
 /**
  * set arguments ($@).
  * @param st
- * @param st
  * if null, do nothing
  * @param args
- * if null, clear '$@'
+ * if null, clear '@'
+ * @return
+ * if args size reaches limit, return -1 and clear '@'
+ * otherwise return 0
  */
-DS_PUBLIC_API(void) DSState_setArguments(DSState *st, char *const *args);
+DS_PUBLIC_API(int) DSState_setArguments(DSState *st, char *const *args);
 
 /**
  * set full path of current executable path (in linux, /proc/self/exe)

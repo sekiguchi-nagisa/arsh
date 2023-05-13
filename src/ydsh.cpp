@@ -213,8 +213,8 @@ void DSState_setShellName(DSState *st, const char *shellName) {
   }
 }
 
-void DSState_setArguments(DSState *st, char *const *args) {
-  GUARD_NULL(st);
+int DSState_setArguments(DSState *st, char *const *args) {
+  GUARD_NULL(st, 0);
 
   // clear previous arguments
   auto &argsObj = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
@@ -222,9 +222,13 @@ void DSState_setArguments(DSState *st, char *const *args) {
 
   if (args) {
     for (unsigned int i = 0; args[i] != nullptr; i++) {
-      argsObj.append(DSValue::createStr(args[i])); // FIXME: check limit
+      if (!argsObj.append(*st, DSValue::createStr(args[i]))) {
+        argsObj.refValues().clear();
+        return -1;
+      }
     }
   }
+  return 0;
 }
 
 int DSState_exitStatus(const DSState *st) {
