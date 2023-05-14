@@ -12,9 +12,7 @@ function _fzf_search_hist(q : String, list : [String]?) : String? {
 
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
-    var ret = "$(for e in $list! {
-        printf -- "%s\n" $e
-    } | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
+    var ret = "$(printf "%s\n" ${$list!} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
     return $ret.empty() ? $none : $ret as String?
 }
 

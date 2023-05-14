@@ -115,9 +115,7 @@ function _add_and_save(s : String) {
         if $lines.size() > $HISTFILESIZE {
             $lines.removeRange(0, $lines.size() - $HISTFILESIZE)
         }
-        for line in $lines {
-            printf -- "%s\n" $line
-        } with >| $HISTFILE
+        printf -- "%s\n" $lines >| $HISTFILE
     } catch e {
         return # ignore io error
     }
