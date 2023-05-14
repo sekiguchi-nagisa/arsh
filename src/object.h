@@ -268,49 +268,32 @@ protected:
   union {
     struct {
       DSValueKind kind;
-      DSObject *value; // not null
-    } obj;
-
-    struct {
-      DSValueKind kind;
-      uint64_t value;
-    } u64;
-
-    struct {
-      DSValueKind kind;
-      int64_t value;
-    } i64;
-
-    struct {
-      DSValueKind kind;
-      uint32_t values[3];
-    } u32s;
-
-    struct {
-      DSValueKind kind;
-      bool value;
-    } b;
-
-    struct {
-      DSValueKind kind;
-      double value;
-    } d;
-
-    struct {
-      DSValueKind kind;
-      const DSType *value; // not null
-    } type;
+      uint32_t meta; // for future usage
+      union {
+        DSObject *obj; // not null
+        uint64_t u64;
+        int64_t i64;
+        double f64;
+        bool b;
+        const DSType *type; // not null
+      };
+    } value;
 
     struct {
       DSValueKind kind;
       char value[15]; // null terminated
     } str;
+
+    struct {
+      DSValueKind kind;
+      uint32_t values[3];
+    } u32s;
   };
 
 public:
   void swap(DSValueBase &o) noexcept { std::swap(*this, o); }
 
-  DSValueKind kind() const { return this->obj.kind; }
+  DSValueKind kind() const { return this->value.kind; }
 
   static unsigned int smallStrSize(DSValueKind kind) {
     assert(isSmallStr(kind));
@@ -336,23 +319,23 @@ private:
   static_assert(sizeof(DSValueBase) == 16);
 
   explicit DSValue(uint64_t value) noexcept {
-    this->u64.kind = DSValueKind::NUMBER;
-    this->u64.value = value;
+    this->value.kind = DSValueKind::NUMBER;
+    this->value.u64 = value;
   }
 
   explicit DSValue(int64_t value) noexcept {
-    this->i64.kind = DSValueKind::INT;
-    this->i64.value = value;
+    this->value.kind = DSValueKind::INT;
+    this->value.i64 = value;
   }
 
   explicit DSValue(bool value) noexcept {
-    this->b.kind = DSValueKind::BOOL;
-    this->b.value = value;
+    this->value.kind = DSValueKind::BOOL;
+    this->value.b = value;
   }
 
   explicit DSValue(double value) noexcept {
-    this->d.kind = DSValueKind::FLOAT;
-    this->d.value = value;
+    this->value.kind = DSValueKind::FLOAT;
+    this->value.f64 = value;
   }
 
   /**
@@ -369,36 +352,36 @@ private:
 public:
   explicit DSValue(DSObject *o) noexcept {
     assert(o);
-    this->obj.kind = DSValueKind::OBJECT;
-    this->obj.value = o;
-    this->obj.value->refCount++;
+    this->value.kind = DSValueKind::OBJECT;
+    this->value.obj = o;
+    this->value.obj->refCount++;
   }
 
   /**
    * equivalent to DSValue(nullptr)
    */
-  DSValue() noexcept { this->obj.kind = DSValueKind::EMPTY; }
+  DSValue() noexcept { this->value.kind = DSValueKind::EMPTY; }
 
   DSValue(std::nullptr_t) noexcept : DSValue() {} // NOLINT
 
   DSValue(const DSValue &value) noexcept : DSValueBase(value) {
     if (this->isObject()) {
-      this->obj.value->refCount++;
+      this->value.obj->refCount++;
     }
   }
 
   /**
    * not increment refCount
    */
-  DSValue(DSValue &&value) noexcept : DSValueBase(value) { value.obj.kind = DSValueKind::EMPTY; }
+  DSValue(DSValue &&value) noexcept : DSValueBase(value) { value.value.kind = DSValueKind::EMPTY; }
 
   template <typename T, enable_when<std::is_base_of_v<DSObject, T>> = nullptr>
   DSValue(const ObjPtr<T> &o) noexcept : DSValue(DSValue(o.get())) {} // NOLINT
 
   ~DSValue() {
     if (this->isObject()) {
-      if (--this->obj.value->refCount == 0) {
-        this->obj.value->destroy();
+      if (--this->value.obj->refCount == 0) {
+        this->value.obj->destroy();
       }
     }
   }
@@ -424,12 +407,12 @@ public:
    */
   void reset() noexcept {
     this->~DSValue();
-    this->obj.kind = DSValueKind::EMPTY;
+    this->value.kind = DSValueKind::EMPTY;
   }
 
   DSObject *get() const noexcept {
     assert(this->kind() == DSValueKind::OBJECT);
-    return this->obj.value;
+    return this->value.obj;
   }
 
   ObjPtr<DSObject> toPtr() const { return ObjPtr<DSObject>(this->get()); }
@@ -460,7 +443,7 @@ public:
 
   unsigned int asNum() const {
     assert(this->kind() == DSValueKind::NUMBER);
-    return this->u64.value;
+    return this->value.u64;
   }
 
   using uint32_3 = const uint32_t (&)[3];
@@ -483,22 +466,22 @@ public:
 
   bool asBool() const {
     assert(this->kind() == DSValueKind::BOOL);
-    return this->b.value;
+    return this->value.b;
   }
 
   int asSig() const {
     assert(this->kind() == DSValueKind::SIG);
-    return this->i64.value;
+    return static_cast<int>(this->value.i64);
   }
 
   int64_t asInt() const {
     assert(this->kind() == DSValueKind::INT);
-    return this->i64.value;
+    return this->value.i64;
   }
 
   double asFloat() const {
     assert(this->kind() == DSValueKind::FLOAT);
-    return this->d.value;
+    return this->value.f64;
   }
 
   StringRef asStrRef() const;
@@ -604,7 +587,7 @@ public:
 
   static DSValue createInvalid() {
     DSValue ret;
-    ret.obj.kind = DSValueKind::INVALID;
+    ret.value.kind = DSValueKind::INVALID;
     return ret;
   }
 
@@ -612,7 +595,7 @@ public:
 
   static DSValue createSig(int num) {
     DSValue ret(static_cast<int64_t>(num));
-    ret.i64.kind = DSValueKind::SIG;
+    ret.value.kind = DSValueKind::SIG;
     return ret;
   }
 
