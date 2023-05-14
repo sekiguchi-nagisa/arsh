@@ -2010,7 +2010,7 @@ YDSH_METHOD fd_value(RuntimeContext &ctx) {
   RET(DSValue::createInt(fd));
 }
 
-//!bind: function lock($this : FD) : Void
+//!bind: function lock($this : FD) : FD
 YDSH_METHOD fd_lock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_lock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
@@ -2018,10 +2018,10 @@ YDSH_METHOD fd_lock(RuntimeContext &ctx) {
     raiseSystemError(ctx, errno, "lock failed");
     RET_ERROR;
   }
-  RET_VOID;
+  RET(LOCAL(0));
 }
 
-//!bind: function unlock($this : FD) : Void
+//!bind: function unlock($this : FD) : FD
 YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_unlock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
@@ -2029,7 +2029,7 @@ YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
     raiseSystemError(ctx, errno, "unlock failed");
     RET_ERROR;
   }
-  RET_VOID;
+  RET(LOCAL(0));
 }
 
 //!bind: function $OP_BOOL($this : FD) : Bool

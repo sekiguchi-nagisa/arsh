@@ -182,9 +182,9 @@ function dup() : FD for FD
 
 function value() : Int for FD
 
-function lock() : Void for FD
+function lock() : FD for FD
 
-function unlock() : Void for FD
+function unlock() : FD for FD
 
 function %OP_BOOL() : Bool for FD
 

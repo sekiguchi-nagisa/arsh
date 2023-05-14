@@ -107,10 +107,8 @@ function _add_and_save(s : String) {
             touch $HISTFILE 2>> /dev/null &&
             chmod g-rw,o-rw $HISTFILE
         }
-        var histFile = new FD($HISTFILE);
-        $histFile.lock()
         var lines : [String]
-        for line in $histFile {
+        for line in new FD($HISTFILE).lock() {
             $lines.add($line)
         }
         $lines.add($s)
@@ -151,8 +149,7 @@ function _save(p : String?) {
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
     $offset < $size || return
 
-    var histFile = new FD($HISTFILE);
-    $histFile.lock()
+    var histFile = new FD($HISTFILE).lock()
     for(var i = $offset; $i < $size; $i++) {
         var line = $HISTORY[$i]
         $line.contains($'\n') && continue
