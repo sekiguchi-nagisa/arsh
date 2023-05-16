@@ -321,28 +321,51 @@ static int builtin_gets(DSState &, ArrayObject &argvObj) {
   return 0;
 }
 
+static int writeLine(StringRef ref, FILE *fp) {
+  if (fwrite(ref.data(), sizeof(char), ref.size(), fp) != ref.size()) {
+    return errno;
+  }
+  if (fputc('\n', fp) == EOF) {
+    return errno;
+  }
+  if (fflush(fp) == EOF) {
+    return errno;
+  }
+  return 0;
+}
+
 /**
  * for stdout/stderr redirection test
  */
 static int builtin_puts(DSState &, ArrayObject &argvObj) {
+  int errNum = 0;
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "1:2:h")) != -1;) {
     switch (opt) {
     case '1':
-      fwrite(optState.optArg.data(), sizeof(char), optState.optArg.size(), stdout);
-      fputc('\n', stdout);
-      fflush(stdout);
+      errNum = writeLine(optState.optArg, stdout);
+      if (errNum != 0) {
+        goto END;
+      }
       break;
     case '2':
-      fwrite(optState.optArg.data(), sizeof(char), optState.optArg.size(), stderr);
-      fputc('\n', stderr);
-      fflush(stderr);
+      errNum = writeLine(optState.optArg, stderr);
+      if (errNum != 0) {
+        goto END;
+      }
       break;
     case 'h':
       return showHelp(argvObj);
     default:
       return invalidOptionError(argvObj, optState);
     }
+  }
+
+END:
+  errno = errNum;
+  if (errno != 0) {
+    PERROR(argvObj, "io error");
+    return 1;
   }
   return 0;
 }
