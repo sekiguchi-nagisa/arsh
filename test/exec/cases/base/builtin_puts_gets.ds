@@ -29,4 +29,7 @@ if $OSTYPE == 'linux' {
     assert $? == 1
 }
 
-true
+assert "$(__puts -1 hello -1 world)" == $'hello\nworld'
+assert "$(__puts -1 $'hello\x00world')" == $'hello\x00world'
+assert "$(__puts -2 hello -2 world 2>&1 > /dev/null)" == $'hello\nworld'
+assert "$(__puts -1 hello -2 world 2>&1)" == $'hello\nworld'

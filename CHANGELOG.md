@@ -70,6 +70,8 @@
 - check iterator invalidation of ``reply`` variable within some builtin commands
     - ``printf``, ``read``, ``shctl info``
 - change return value of ``FD#lock``, ``FD#unlock`` method
+- correctly report io errors in some builtin commands
+    - ``__puts``, ``echo``, ``printf``
 
 #### Completion
 
