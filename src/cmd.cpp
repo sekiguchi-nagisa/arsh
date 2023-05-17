@@ -321,15 +321,17 @@ static int builtin_gets(DSState &, ArrayObject &argvObj) {
   return 0;
 }
 
-static int writeLine(StringRef ref, FILE *fp) {
+static int writeLine(StringRef ref, FILE *fp, bool flush) {
   if (fwrite(ref.data(), sizeof(char), ref.size(), fp) != ref.size()) {
     return errno;
   }
   if (fputc('\n', fp) == EOF) {
     return errno;
   }
-  if (fflush(fp) == EOF) {
-    return errno;
+  if (flush) {
+    if (fflush(fp) == EOF) {
+      return errno;
+    }
   }
   return 0;
 }
@@ -343,13 +345,13 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
   for (int opt; (opt = optState(argvObj, "1:2:h")) != -1;) {
     switch (opt) {
     case '1':
-      errNum = writeLine(optState.optArg, stdout);
+      errNum = writeLine(optState.optArg, stdout, true);
       if (errNum != 0) {
         goto END;
       }
       break;
     case '2':
-      errNum = writeLine(optState.optArg, stderr);
+      errNum = writeLine(optState.optArg, stderr, true);
       if (errNum != 0) {
         goto END;
       }
@@ -776,10 +778,18 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     return 1;
   }
   if (show) {
+    int errNum = 0;
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for (const auto &e : ret.getValues()) {
-      fputs(e.asCStr(), stdout);
-      fputc('\n', stdout);
+      errNum = writeLine(e.asStrRef(), stdout, false);
+      if (errNum != 0) {
+        break;
+      }
+    }
+    errno = errNum;
+    if (errno != 0 || fflush(stdout) == EOF) {
+      PERROR(argvObj, "io error");
+      return 1;
     }
   }
   return 0;
