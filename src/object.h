@@ -489,6 +489,15 @@ public:
   const char *asCStr() const { return this->asStrRef().data(); }
 
   /**
+   * create new value with meta data
+   * @param metaData
+   * @return
+   */
+  DSValue withMetaData(uint32_t metaData) const;
+
+  uint32_t getMetaData() const;
+
+  /**
    * get light-weight string representation
    * @return
    */

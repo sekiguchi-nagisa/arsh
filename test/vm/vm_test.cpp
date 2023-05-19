@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "../test_common.h"
+#include <misc/split_random.hpp>
 #include <vm.h>
 
 using BreakPointHandler = std::function<void()>;
@@ -537,6 +538,56 @@ TEST_F(JobTableTest, waitJob) {
   ASSERT_FALSE(job1->isRunning());
   ASSERT_EQ(0, this->jobTable().size());
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
+}
+
+struct ObjectTest : ::testing::Test {
+  struct Param {
+    StringRef ref;
+    bool smallStr;
+    unsigned int meta;
+  };
+
+  static void checkMetaData(const Param &p) {
+    auto v = DSValue::createStr(p.ref);
+
+    ASSERT_EQ(p.ref, v.asStrRef());
+    ASSERT_EQ(p.ref.size(), v.asStrRef().size());
+    ASSERT_EQ(p.smallStr, isSmallStr(v.kind()));
+
+    auto o = v.withMetaData(p.meta);
+    ASSERT_TRUE(v.equals(o));
+    ASSERT_EQ(p.ref, o.asStrRef());
+    ASSERT_EQ(p.ref.size(), o.asStrRef().size());
+    ASSERT_EQ(p.meta, o.getMetaData());
+  }
+};
+
+static unsigned int next32(L64X128MixRNG &rng) {
+  uint64_t v = rng.next();
+  v &= UINT32_MAX;
+  return static_cast<unsigned int>(v);
+}
+
+TEST_F(ObjectTest, meta) {
+  L64X128MixRNG rng(42);
+
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abcdef", false, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abcde", false, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abcd", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abc", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789ab", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789a", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"012345678", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"01234567", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"012345", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"01234", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"012", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"01", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"0", true, next32(rng)}));
+  ASSERT_NO_FATAL_FAILURE(checkMetaData({"", true, next32(rng)}));
 }
 
 int main(int argc, char **argv) {

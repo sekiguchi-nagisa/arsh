@@ -73,10 +73,50 @@ unsigned int DSValue::getTypeID() const {
 StringRef DSValue::asStrRef() const {
   assert(this->hasStrRef());
   if (isSmallStr(this->kind())) {
-    return StringRef(this->str.value, smallStrSize(this->kind()));
+    return {this->str.value, smallStrSize(this->kind())};
   }
   auto &obj = typeAs<StringObject>(*this);
-  return StringRef(obj.getValue(), obj.size());
+  return {obj.getValue(), obj.size()};
+}
+
+DSValue DSValue::withMetaData(uint32_t metaData) const {
+  assert(this->kind() != DSValueKind::EXPAND_META && this->kind() != DSValueKind::NUM_LIST &&
+         this->kind() != DSValueKind::STACK_GUARD && this->kind() != DSValueKind::DUMMY);
+
+  DSValue newValue = *this;
+  if (isSmallStr(newValue.kind())) {
+    StringRef ref{newValue.str.value, smallStrSize(newValue.kind())};
+    if (newValue.kind() <= DSValueKind::SSTR10) {
+      union {
+        char i8[4];
+        uint32_t u32;
+      } conv = {
+          .u32 = metaData,
+      };
+      memcpy(newValue.str.value + 11, conv.i8, 4);
+      return newValue;
+    } else {
+      newValue = DSValue::create<StringObject>(ref);
+    }
+  }
+  newValue.value.meta = metaData;
+  return newValue;
+}
+
+uint32_t DSValue::getMetaData() const {
+  assert(this->kind() != DSValueKind::EXPAND_META && this->kind() != DSValueKind::NUM_LIST &&
+         this->kind() != DSValueKind::STACK_GUARD && this->kind() != DSValueKind::DUMMY);
+
+  if (isSmallStr(this->kind())) {
+    assert(smallStrSize(this->kind()) <= 10);
+    union { // NOLINT
+      char i8[4];
+      uint32_t u32;
+    } conv;
+    memcpy(conv.i8, this->str.value + 11, 4);
+    return conv.u32;
+  }
+  return this->value.meta;
 }
 
 std::string DSValue::toString() const {
