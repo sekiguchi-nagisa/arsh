@@ -365,10 +365,7 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
 
 END:
   errno = errNum;
-  if (errno != 0) {
-    PERROR(argvObj, "io error");
-    return 1;
-  }
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
@@ -787,10 +784,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
       }
     }
     errno = errNum;
-    if (errno != 0 || fflush(stdout) == EOF) {
-      PERROR(argvObj, "io error");
-      return 1;
-    }
+    CHECK_STDOUT_ERROR(argvObj);
   }
   return 0;
 }
@@ -808,10 +802,16 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
   const unsigned int size = argvObj.size();
   unsigned int index = optState.index;
   if (index == size) {
+    int errNum = 0;
     for (unsigned int i = 0; environ[i] != nullptr; i++) {
       const char *e = environ[i];
-      fprintf(stdout, "%s\n", e);
+      errNum = writeLine(e, stdout, false);
+      if (errNum != 0) {
+        break;
+      }
     }
+    errno = errNum;
+    CHECK_STDOUT_ERROR(argvObj);
     return 0;
   }
 

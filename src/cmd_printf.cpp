@@ -999,10 +999,7 @@ DO_ECHO:
 
 END:
   errno = errNum; // explicitly set errno (some function set errno despite success)
-  if (errno != 0 || fflush(stdout) == EOF) {
-    PERROR(argvObj, "io error");
-    return 1;
-  }
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 

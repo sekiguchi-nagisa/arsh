@@ -71,7 +71,7 @@
     - ``printf``, ``read``, ``shctl info``
 - change return value of ``FD#lock``, ``FD#unlock`` method
 - correctly report io errors in some builtin commands
-    - ``__puts``, ``echo``, ``printf``, ``complete``
+    - ``__puts``, ``complete``, ``echo``, ``printf``, ``setenv``
 
 #### Completion
 

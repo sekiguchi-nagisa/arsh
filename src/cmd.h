@@ -82,4 +82,12 @@ inline int maskExitStatus(int64_t status) { return status & 0xFF; }
 #define ERROR(obj, fmt, ...)                                                                       \
   fprintf(stderr, "ydsh: %s: " fmt "\n", obj.getValues()[0].asCStr(), ##__VA_ARGS__)
 
+#define CHECK_STDOUT_ERROR(obj)                                                                    \
+  do {                                                                                             \
+    if (errno != 0 || fflush(stdout) == EOF) {                                                     \
+      PERROR(obj, "io error");                                                                     \
+      return 1;                                                                                    \
+    }                                                                                              \
+  } while (false)
+
 #endif // YDSH_CMD_H

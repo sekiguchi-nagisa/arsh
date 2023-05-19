@@ -21,6 +21,10 @@ assert $PIPESTATUS[0] == 2
 
 assert setenv > /dev/null
 assert "$(setenv | grep -v '^_=')" == "$(env | grep -v '^_=')"
+if $OSTYPE == 'linux' {
+    assert "$(setenv 2>&1 > /dev/full)" =~ $/ydsh: setenv: io error:.+/
+    assert $? == 1
+}
 setenv AAA=aaa BBB=bbb
 assert $? == 0
 assert checkenv AAA BBB
