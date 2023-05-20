@@ -166,15 +166,13 @@ void OrderedMapObject::insertEntryIndex(unsigned int entryIndex, const ProbeStat
       curBucket.distanceToInitBucketIndex = dist;
       break;
     } else {
-      int curDist = curBucket.distanceToInitBucketIndex;
-      if (curDist < dist) {
+      if (curBucket.distanceToInitBucketIndex < dist) {
         Bucket bucket{
             .distanceToInitBucketIndex = dist,
             .entryIndex = static_cast<int>(entryIndex),
         };
         std::swap(curBucket, bucket);
-        this->updateDistanceToToInitBucket(bucketIndex);
-        dist = curDist;
+        dist = bucket.distanceToInitBucketIndex;
         entryIndex = bucket.entryIndex;
       }
       dist++;

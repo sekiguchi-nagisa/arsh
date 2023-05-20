@@ -100,9 +100,10 @@ public:
 };
 
 // actual hash map implementation (based on robin-hood hashmap)
-// see (https://www.sebastiansylvan.com/post/robin-hood-hashing-should-be-your-default-hash-table-implementation/)
-//     (https://codecapsule.com/2013/11/11/robin-hood-hashing/)
-//     (https://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/)
+// see
+// (https://www.sebastiansylvan.com/post/robin-hood-hashing-should-be-your-default-hash-table-implementation/)
+// (https://codecapsule.com/2013/11/11/robin-hood-hashing/)
+// (https://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/)
 class OrderedMapObject : public ObjectWithRtti<ObjectKind::OrderedMap> {
 private:
   class BucketLen {
@@ -229,31 +230,6 @@ public:
   bool opStr(StrBuilder &builder) const;
 
 private:
-  void updateDistanceToToInitBucket(unsigned int bucketIndex) const {
-    auto &bucket = this->buckets[bucketIndex];
-    unsigned int keyHash = this->entries[bucket.entryIndex].getKeyHash();
-    unsigned int initIndex = this->bucketLen.toBucketIndex(keyHash);
-    if (initIndex <= bucketIndex) {
-      /**
-       * cap = 5
-       * initIndex = 2
-       * bucketIndex = 3
-       * => distance = bucketIndex - initIndex = 1
-       */
-      bucket.distanceToInitBucketIndex = static_cast<int>(bucketIndex - initIndex);
-    } else {
-      /**
-       * cap = 5
-       * initIndex = 2
-       * bucketIndex = 0
-       * => distance = initIndex + (cap - initIndex) + bucketIndex - initIndex
-       *             = bucketIndex + cap - initIndex = 3
-       */
-      bucket.distanceToInitBucketIndex =
-          static_cast<int>(bucketIndex + this->bucketLen.capacity() - initIndex);
-    }
-  }
-
   struct ProbeState {
     unsigned int keyHash;
     unsigned int bucketIndex;
