@@ -100,6 +100,9 @@ public:
 };
 
 // actual hash map implementation (based on robin-hood hashmap)
+// see (https://www.sebastiansylvan.com/post/robin-hood-hashing-should-be-your-default-hash-table-implementation/)
+//     (https://codecapsule.com/2013/11/11/robin-hood-hashing/)
+//     (https://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/)
 class OrderedMapObject : public ObjectWithRtti<ObjectKind::OrderedMap> {
 private:
   class BucketLen {
