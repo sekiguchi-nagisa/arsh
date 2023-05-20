@@ -20,6 +20,7 @@
 #include "line_editor.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
+#include "ordered_map.h"
 #include "redir.h"
 #include "vm.h"
 

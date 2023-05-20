@@ -47,7 +47,9 @@ namespace ydsh {
   OP(Regex)                                                                                        \
   OP(Array)                                                                                        \
   OP(Map)                                                                                          \
+  OP(OrderedMap)                                                                                   \
   OP(MapIter)                                                                                      \
+  OP(OrderedMapIter)                                                                               \
   OP(Base)                                                                                         \
   OP(Error)                                                                                        \
   OP(Func)                                                                                         \

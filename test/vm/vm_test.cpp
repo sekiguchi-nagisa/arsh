@@ -2,6 +2,7 @@
 
 #include "../test_common.h"
 #include <misc/split_random.hpp>
+#include <ordered_map.h>
 #include <vm.h>
 
 using BreakPointHandler = std::function<void()>;
@@ -570,6 +571,7 @@ static unsigned int next32(L64X128MixRNG &rng) {
 
 TEST_F(ObjectTest, meta) {
   L64X128MixRNG rng(42);
+  ASSERT_NE(next32(rng), next32(rng));
 
   ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abcdef", false, next32(rng)}));
   ASSERT_NO_FATAL_FAILURE(checkMetaData({"0123456789abcde", false, next32(rng)}));
@@ -588,6 +590,257 @@ TEST_F(ObjectTest, meta) {
   ASSERT_NO_FATAL_FAILURE(checkMetaData({"01", true, next32(rng)}));
   ASSERT_NO_FATAL_FAILURE(checkMetaData({"0", true, next32(rng)}));
   ASSERT_NO_FATAL_FAILURE(checkMetaData({"", true, next32(rng)}));
+}
+
+TEST(MapTest, base) {
+  TypePool pool;
+  const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
+
+  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto obj = toObjPtr<OrderedMapObject>(value);
+
+  ASSERT_EQ(0, obj->size());
+
+  auto pair = obj->insert(DSValue::createStr("ABC"), DSValue::createInt(12));
+  ASSERT_EQ(1, obj->size());
+  ASSERT_EQ(1, obj->getEntries().getUsedSize());
+  int retIndex = obj->lookup(DSValue::createStr("ABCD"));
+  ASSERT_EQ(-1, retIndex);
+  retIndex = obj->lookup(DSValue::createStr("ABC"));
+  ASSERT_EQ(0, retIndex);
+  ASSERT_EQ(retIndex, pair.first);
+  ASSERT_TRUE(pair.second);
+  ASSERT_EQ("ABC", (*obj)[retIndex].getKey().asStrRef());
+  ASSERT_EQ(12, (*obj)[retIndex].getValue().asInt());
+
+  // insert already defined key
+  pair = obj->insert(DSValue::createStr("ABC"), DSValue::createInt(1232));
+  ASSERT_EQ(1, obj->size());
+  ASSERT_EQ(1, obj->getEntries().getUsedSize());
+  ASSERT_EQ(0, pair.first);
+  ASSERT_FALSE(pair.second);
+
+  pair = obj->insert(DSValue::createStr("1234"), DSValue::createInt(-99));
+  ASSERT_EQ(2, obj->size());
+  ASSERT_EQ(2, obj->getEntries().getUsedSize());
+  ASSERT_EQ(1, pair.first);
+  ASSERT_TRUE(pair.second);
+  retIndex = obj->lookup(DSValue::createStr("1234"));
+  ASSERT_EQ(1, retIndex);
+  ASSERT_EQ("1234", (*obj)[retIndex].getKey().asStrRef());
+  ASSERT_EQ(-99, (*obj)[retIndex].getValue().asInt());
+
+  pair = obj->insert(DSValue::createStr("***"), DSValue::createInt(9876));
+  ASSERT_EQ(3, obj->size());
+  ASSERT_EQ(3, obj->getEntries().getUsedSize());
+  ASSERT_EQ(2, pair.first);
+  ASSERT_TRUE(pair.second);
+  retIndex = obj->lookup(DSValue::createStr("***"));
+  ASSERT_EQ(2, retIndex);
+  ASSERT_EQ("***", (*obj)[retIndex].getKey().asStrRef());
+  ASSERT_EQ(9876, (*obj)[retIndex].getValue().asInt());
+  ASSERT_EQ("1234", (*obj)[1].getKey().asStrRef());
+  ASSERT_EQ(-99, (*obj)[1].getValue().asInt());
+  ASSERT_EQ("ABC", (*obj)[0].getKey().asStrRef());
+  ASSERT_EQ(12, (*obj)[0].getValue().asInt());
+}
+
+static std::string location(unsigned int index,
+                            const std::vector<std::pair<std::string, uint64_t>> &values) {
+  auto &keyValue = values[index];
+
+  std::string message = "at ";
+  message += std::to_string(index);
+  message += " (";
+  message += keyValue.first;
+  message += ", ";
+  message += std::to_string(keyValue.second);
+  message += ")";
+  return message;
+}
+
+TEST(MapTest, rand) {
+  TypePool pool;
+  const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
+
+  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto obj = toObjPtr<OrderedMapObject>(value);
+
+  ASSERT_EQ(0, obj->size());
+
+  constexpr unsigned int N = 2000;
+  L64X128MixRNG rng(42);
+  std::vector<std::pair<std::string, uint64_t>> keyValues;
+  keyValues.reserve(N);
+  for (unsigned int i = 0; i < N; i++) {
+    uint64_t v = rng.next();
+    char data[64];
+    int size = snprintf(data, std::size(data), "%#jx", v);
+    keyValues.emplace_back(std::string(data, size), v);
+  }
+
+  // insert
+  ASSERT_FALSE(keyValues.empty());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    const auto &keyValue = keyValues[i];
+    auto pair = obj->insert(DSValue::createStr(keyValue.first),
+                            DSValue::createInt(static_cast<int64_t>(keyValue.second)));
+    ASSERT_TRUE(pair.second);
+    ASSERT_EQ(i, pair.first);
+    ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
+    ASSERT_EQ(keyValue.second, (*obj)[pair.first].getValue().asInt());
+    ASSERT_EQ(i + 1, obj->size());
+    ASSERT_EQ(i + 1, obj->getEntries().getUsedSize());
+  }
+
+  // lookup
+  ASSERT_FALSE(keyValues.empty());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    const auto &keyValue = keyValues[i];
+    auto retIndex = obj->lookup(DSValue::createStr(keyValue.first));
+    ASSERT_EQ(i, retIndex);
+    ASSERT_EQ(keyValue.first, (*obj)[retIndex].getKey().asStrRef());
+    ASSERT_EQ(keyValue.second, (*obj)[retIndex].getValue().asInt());
+  }
+
+  // already inserted
+  ASSERT_FALSE(keyValues.empty());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    const auto &keyValue = keyValues[i];
+    auto pair = obj->insert(DSValue::createStr(keyValue.first),
+                            DSValue::createInt(static_cast<int64_t>(keyValue.second + 9999)));
+    ASSERT_FALSE(pair.second);
+    ASSERT_EQ(i, pair.first);
+    ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
+    ASSERT_EQ(keyValue.second, (*obj)[pair.first].getValue().asInt());
+    ASSERT_EQ(keyValues.size(), obj->size());
+    ASSERT_EQ(keyValues.size(), obj->getEntries().getUsedSize());
+  }
+
+  // lookup not found key
+  for (unsigned int i = 0; i < 150; i++) {
+    uint64_t v = rng.next();
+    char data[64];
+    int size = snprintf(data, std::size(data), "%#jx", v);
+    std::string key(data, size);
+
+    SCOPED_TRACE("at " + std::to_string(i) + " " + key);
+
+    auto retIndex = obj->lookup(DSValue::createStr(key));
+    ASSERT_EQ(-1, retIndex);
+  }
+
+  // check insertion order
+  std::vector<std::pair<StringRef, uint64_t>> entries;
+  for (auto &e : obj->getEntries()) {
+    if (!e) {
+      continue;
+    }
+    entries.emplace_back(e.getKey().asStrRef(), static_cast<uint64_t>(e.getValue().asInt()));
+  }
+  ASSERT_EQ(entries.size(), keyValues.size());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+  }
+
+  // remove
+  std::unordered_set<std::string> removeTargets;
+  for (unsigned int i = 0; i < 777; i++) {
+    auto index = static_cast<unsigned int>(rng.next() % N);
+    removeTargets.insert(keyValues[index].first);
+  }
+
+  for (auto iter = keyValues.begin(); iter != keyValues.end();) {
+    const auto &e = *iter;
+    if (removeTargets.find(e.first) != removeTargets.end()) {
+      SCOPED_TRACE("(" + e.first + ", " + std::to_string(e.second) + ")");
+
+      auto entry = obj->remove(DSValue::createStr(e.first));
+      ASSERT_TRUE(entry);
+      ASSERT_EQ(e.first, entry.getKey().asStrRef());
+      ASSERT_EQ(e.second, entry.getValue().asInt());
+      iter = keyValues.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+  ASSERT_EQ(keyValues.size(), obj->size());
+
+  // lookup removed entry
+  for (auto &e : removeTargets) {
+    SCOPED_TRACE(e);
+
+    auto retIndex = obj->lookup(DSValue::createStr(e));
+    ASSERT_EQ(-1, retIndex);
+  }
+  // lookup remain entry
+  for (auto &e : keyValues) {
+    SCOPED_TRACE("(" + e.first + ", " + std::to_string(e.second) + ")");
+
+    auto retIndex = obj->lookup(DSValue::createStr(e.first));
+    ASSERT_NE(-1, retIndex);
+    ASSERT_EQ(e.first, (*obj)[retIndex].getKey().asStrRef());
+    ASSERT_EQ(e.second, (*obj)[retIndex].getValue().asInt());
+  }
+
+  // check insertion order after remove
+  entries.clear();
+  for (auto &e : obj->getEntries()) {
+    if (!e) {
+      continue;
+    }
+    entries.emplace_back(e.getKey().asStrRef(), static_cast<uint64_t>(e.getValue().asInt()));
+  }
+  ASSERT_EQ(entries.size(), keyValues.size());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+  }
+
+  // insert after remove
+  for (unsigned int i = 0; i < 1000; i++) {
+    uint64_t v = rng.next();
+    char data[64];
+    int size = snprintf(data, std::size(data), "%#jX", v);
+    std::string key(data, size);
+    keyValues.emplace_back(key, v);
+
+    SCOPED_TRACE("(" + key + ", " + std::to_string(v) + ")");
+
+    auto pair = obj->insert(DSValue::createStr(key), DSValue::createInt(static_cast<int64_t>(v)));
+    ASSERT_TRUE(pair.second);
+    ASSERT_NE(-1, pair.first);
+
+    ASSERT_EQ(key, (*obj)[pair.first].getKey().asStrRef());
+    ASSERT_EQ(v, (*obj)[pair.first].getValue().asInt());
+  }
+
+  // check insertion order after remove and insertion
+  entries.clear();
+  for (auto &e : obj->getEntries()) {
+    if (!e) {
+      continue;
+    }
+    entries.emplace_back(e.getKey().asStrRef(), static_cast<uint64_t>(e.getValue().asInt()));
+  }
+  ASSERT_EQ(entries.size(), keyValues.size());
+  for (unsigned int i = 0; i < keyValues.size(); i++) {
+    SCOPED_TRACE(location(i, keyValues));
+
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+    ASSERT_EQ(keyValues[i].first, entries[i].first);
+  }
 }
 
 int main(int argc, char **argv) {

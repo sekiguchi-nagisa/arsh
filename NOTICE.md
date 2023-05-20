@@ -38,6 +38,11 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## src/misc/wyhash.h
+
+This file is distributed under the Unlicense (http://unlicense.org/).
+This is copied from [wangyi-fudan/wyhash](https://github.com/wangyi-fudan/wyhash)
+
 ## cmake/modules/DownloadProject.cmake, cmake/modules/DownloadProject.CMakeLists.cmake.in
 
 These files are distributed under MIT License.
