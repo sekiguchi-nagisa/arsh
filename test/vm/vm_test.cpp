@@ -673,9 +673,11 @@ TEST(MapTest, rand) {
   std::vector<std::pair<std::string, uint64_t>> keyValues;
   keyValues.reserve(N);
   for (unsigned int i = 0; i < N; i++) {
+    static_assert(sizeof(uint64_t) == sizeof(uintmax_t));
+
     uint64_t v = rng.next();
     char data[64];
-    int size = snprintf(data, std::size(data), "%#jx", v);
+    int size = snprintf(data, std::size(data), "%#jx", static_cast<uintmax_t>(v));
     keyValues.emplace_back(std::string(data, size), v);
   }
 
@@ -727,7 +729,7 @@ TEST(MapTest, rand) {
   for (unsigned int i = 0; i < 150; i++) {
     uint64_t v = rng.next();
     char data[64];
-    int size = snprintf(data, std::size(data), "%#jx", v);
+    int size = snprintf(data, std::size(data), "%#jx", static_cast<uintmax_t>(v));
     std::string key(data, size);
 
     SCOPED_TRACE("at " + std::to_string(i) + " " + key);
@@ -812,7 +814,7 @@ TEST(MapTest, rand) {
   for (unsigned int i = 0; i < 1000; i++) {
     uint64_t v = rng.next();
     char data[64];
-    int size = snprintf(data, std::size(data), "%#jX", v);
+    int size = snprintf(data, std::size(data), "%#jX", static_cast<uintmax_t>(v));
     std::string key(data, size);
     keyValues.emplace_back(key, v);
 
