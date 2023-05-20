@@ -15,6 +15,7 @@
  */
 
 #include "cmd.h"
+#include "ordered_map.h"
 #include "vm.h"
 
 namespace ydsh {
@@ -262,7 +263,7 @@ static int isSourced(const VMState &st) {
   return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
 }
 
-static void setAndPrintConf(MapObject &mapObj, unsigned int maxKeyLen, StringRef key,
+static void setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, StringRef key,
                             const std::string &value) {
   std::string out = key.toString();
   out.append(4 + maxKeyLen - out.size(), ' ');
@@ -270,11 +271,13 @@ static void setAndPrintConf(MapObject &mapObj, unsigned int maxKeyLen, StringRef
   out += '\n';
   fputs(out.c_str(), stdout);
 
-  mapObj.set(DSValue::createStr(key), DSValue::createStr(value));
+  auto pair = mapObj.insert(DSValue::createStr(key), DSValue::createStr(value));
+  assert(pair.second);
+  (void)pair;
 }
 
 static int showInfo(DSState &state) {
-  auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
+  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
     return 1;
   }

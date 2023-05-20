@@ -19,15 +19,17 @@
 #include "cmd.h"
 #include "keycode.h"
 #include "misc/num_util.hpp"
+#include "ordered_map.h"
 #include "vm.h"
 
 namespace ydsh {
 
-static void setToReplyMap(MapObject &mapObj, const ArrayObject &argvObj, unsigned int index,
-                          std::string &&buf) {
+static bool setToReplyMap(DSState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
+                          unsigned int index, std::string &&buf) {
   auto varObj = argvObj.getValues()[index];
   auto valueObj = DSValue::createStr(std::move(buf));
-  mapObj.set(std::move(varObj), std::move(valueObj));
+  auto ret = mapObj.put(state, std::move(varObj), std::move(valueObj));
+  return static_cast<bool>(ret);
 }
 
 static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigned int offset,
@@ -35,7 +37,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
   // clear REPL/reply before read
   errno = 0;
   state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
-  auto &mapObj = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
+  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
     return false;
   }
@@ -78,7 +80,9 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
     }
     skipCount = 0;
     if (fieldSep && index < size - 1) {
-      setToReplyMap(mapObj, argvObj, index, std::move(strBuf));
+      if (unlikely(!setToReplyMap(state, mapObj, argvObj, index, std::move(strBuf)))) {
+        return false;
+      }
       strBuf = "";
       index++;
       skipCount = isSpace(ch) ? 2 : 1;
@@ -104,7 +108,9 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
     state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(strBuf)));
   } else {
     for (; index < size; index++) { // set rest variable
-      setToReplyMap(mapObj, argvObj, index, std::move(strBuf));
+      if (unlikely(!setToReplyMap(state, mapObj, argvObj, index, std::move(strBuf)))) {
+        return false;
+      }
       strBuf = "";
     }
   }

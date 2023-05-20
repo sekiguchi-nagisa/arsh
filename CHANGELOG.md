@@ -59,6 +59,7 @@
     - catch type
     - Option type within string interpolation / parameter expansion
     - nested job operator
+- reimplement ``Map`` object. now always preserve insertion order
 
 #### Builtin
 

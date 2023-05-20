@@ -26,6 +26,7 @@
 #include "misc/glob.hpp"
 #include "misc/num_util.hpp"
 #include "opcode.h"
+#include "ordered_map.h"
 #include "redir.h"
 #include "vm.h"
 
@@ -215,7 +216,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     value = DSValue::create<ArrayObject>(type);
     break;
   case TypeKind::Map:
-    value = DSValue::create<MapObject>(type);
+    value = DSValue::create<OrderedMapObject>(type);
     break;
   case TypeKind::Tuple:
     value = DSValue::create<BaseObject>(cast<TupleType>(type));
@@ -680,9 +681,10 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
 
   // resolve dynamic registered user-defined command
   if (hasFlag(this->resolveOp, FROM_DYNA_UDC)) {
-    auto &map = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::DYNA_UDCS)).getValueMap();
-    if (auto iter = map.find(name); iter != map.end()) {
-      auto *obj = (*iter).second.get();
+    auto &map = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
+    if (auto retIndex = map.lookup(name); retIndex != -1) {
+      auto *obj = map[retIndex].getValue().get();
+      assert(isa<FuncObject>(*obj) || isa<ClosureObject>(*obj));
       return ResolvedCmd::fromCmdObj(obj);
     }
   }
@@ -2056,7 +2058,8 @@ bool VM::mainLoop(DSState &state) {
       vmcase(APPEND_MAP) {
         DSValue value = state.stack.pop();
         DSValue key = state.stack.pop();
-        typeAs<MapObject>(state.stack.peek()).set(std::move(key), std::move(value));
+        auto &map = typeAs<OrderedMapObject>(state.stack.peek());
+        TRY(map.put(state, std::move(key), std::move(value)));
         vmnext;
       }
       vmcase(ITER_HAS_NEXT) {
@@ -2072,10 +2075,10 @@ bool VM::mainLoop(DSState &state) {
       vmcase(MAP_ITER_NEXT) {
         unsigned short offset = read16(GET_CODE(state), state.stack.pc());
         auto mapIter = state.stack.pop();
-        if (typeAs<MapIterObject>(mapIter).hasNext()) {
-          auto [k, v] = typeAs<MapIterObject>(mapIter).nextUnpack();
-          state.stack.push(std::move(v));
-          state.stack.push(std::move(k));
+        if (typeAs<OrderedMapIterObject>(mapIter).hasNext()) {
+          auto &e = typeAs<OrderedMapIterObject>(mapIter).nextEntry();
+          state.stack.push(e.getValue());
+          state.stack.push(e.getKey());
           state.stack.pc() += 2;
         } else {
           state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
@@ -2280,11 +2283,11 @@ bool VM::mainLoop(DSState &state) {
         auto key = state.stack.pop();
         auto map = state.stack.pop();
         if (!key.isInvalid()) {
-          auto &valueMap = typeAs<MapObject>(map).getValueMap();
-          auto iter = valueMap.find(key);
-          if (iter != valueMap.end()) {
-            assert(iter->second.kind() == DSValueKind::NUMBER);
-            unsigned int index = iter->second.asNum();
+          auto &mapObj = typeAs<OrderedMapObject>(map);
+          if (auto retIndex = mapObj.lookup(key); retIndex != -1) {
+            auto &v = mapObj[retIndex].getValue();
+            assert(v.kind() == DSValueKind::NUMBER);
+            unsigned int index = v.asNum();
             state.stack.pc() = index;
           }
         }

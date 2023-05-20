@@ -78,7 +78,7 @@ public:
   Entry del(unsigned int index) {
     Entry tmp;
     std::swap(this->values[index], tmp);
-    while (!this->values[this->usedSize - 1]) {
+    while (this->usedSize > 0 && !this->values[this->usedSize - 1]) {
       this->usedSize--; // pop last deleted entry
     }
     return tmp;
@@ -148,7 +148,11 @@ private:
     }
 
   private:
-    void setCapExp(unsigned int v) { this->value |= v << 27; }
+    void setCapExp(unsigned int v) {
+      unsigned int newValue = this->value & MASK_27bit;
+      newValue |= v << 27;
+      this->value = newValue;
+    }
   };
 
   struct Bucket {
@@ -224,7 +228,19 @@ public:
 
   void clear();
 
-  bool checkIterInvalidation(DSState &state, bool isReplyVar) const;
+  bool checkIteratorInvalidation(DSState &state, bool isReplyVar) const;
+
+  /**
+   * insert key-value even if already inserted
+   * @param st
+   * @param key
+   * @param value
+   * @return
+   * if not found key (newly inserted), return invalid
+   * if insertion failed (reach limit), return empty and raise error
+   * otherwise, return old value
+   */
+  [[nodiscard]] DSValue put(DSState &st, DSValue &&key, DSValue &&value);
 
   std::string toString() const;
   bool opStr(StrBuilder &builder) const;

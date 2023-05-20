@@ -30,6 +30,7 @@
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "misc/word.hpp"
+#include "ordered_map.h"
 #include "signals.h"
 #include "vm.h"
 #include <ydsh/ydsh.h>
@@ -1762,100 +1763,106 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
 YDSH_METHOD map_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_get);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  auto iter = obj.getValueMap().find(LOCAL(1));
-  if (iter == obj.getValueMap().end()) {
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto retIndex = obj.lookup(LOCAL(1));
+  if (retIndex == -1) {
     std::string msg("not found key: ");
     msg += LOCAL(1).toString();
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
-  RET(iter->second);
+  RET(obj[retIndex].getValue());
 }
 
 //!bind: function $OP_SET($this : Map<T0, T1>, $key : T0, $value : T1) : Void
 YDSH_METHOD map_set(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_set);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  obj.set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+  TRY(obj.put(ctx, EXTRACT_LOCAL(1), EXTRACT_LOCAL(2)));
   RET_VOID;
 }
 
 //!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Option<T1>
 YDSH_METHOD map_put(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_put);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  auto v = obj.set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+  auto v = TRY(obj.put(ctx, EXTRACT_LOCAL(1), EXTRACT_LOCAL(2)));
   RET(v);
 }
 
 //!bind: function putIfAbsent($this : Map<T0, T1>, $key : T0, $value : T1) : T1
 YDSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_putIfAbsent);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  auto v = obj.setIfNotFound(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
-  RET(v);
+  auto pair = obj.insert(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+  if (unlikely(pair.first == -1)) {
+    raiseOutOfRangeError(ctx, MAP_LIMIT_ERROR);
+    RET_ERROR;
+  }
+  RET(obj[pair.first].getValue());
 }
 
 //!bind: function size($this : Map<T0, T1>) : Int
 YDSH_METHOD map_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_size);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  size_t value = obj.getValueMap().size();
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  unsigned int value = obj.size();
   RET(DSValue::createInt(value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Bool
 YDSH_METHOD map_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_empty);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  bool value = obj.getValueMap().empty();
-  RET_BOOL(value);
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  RET_BOOL(obj.size() == 0);
 }
 
 //!bind: function get($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_find(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_find);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  auto iter = obj.getValueMap().find(LOCAL(1));
-  RET(iter != obj.getValueMap().end() ? iter->second : DSValue::createInvalid());
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto retIndex = obj.lookup(LOCAL(1));
+  RET(retIndex != -1 ? obj[retIndex].getValue() : DSValue::createInvalid());
 }
 
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_remove);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  RET(obj.tryRemove(LOCAL(1)));
+  auto e = obj.remove(LOCAL(1));
+  RET(e ? std::move(e.refValue()) : DSValue::createInvalid());
 }
 
 //!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1
 YDSH_METHOD map_swap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_swap);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   DSValue value = LOCAL(2);
-  if (unlikely(!obj.trySwap(LOCAL(1), value))) {
+  auto retIndex = obj.lookup(LOCAL(1));
+  if (retIndex == -1) {
     std::string msg("not found key: ");
     msg += LOCAL(1).toString();
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
+  std::swap(obj[retIndex].refValue(), value);
   RET(value);
 }
 
 //!bind: function addAll($this : Map<T0, T1>, $value : Map<T0, T1>) : Map<T0, T1>
 YDSH_METHOD map_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_addAll);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  auto &value = typeAs<MapObject>(LOCAL(1));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto &value = typeAs<OrderedMapObject>(LOCAL(1));
   if (&obj != &value) {
     CHECK_ITER_INVALIDATION(obj);
-    for (auto &e : value.getValueMap()) {
-      obj.set(DSValue(e.first), DSValue(e.second));
+    for (auto &e : value.getEntries()) {
+      TRY(obj.put(ctx, DSValue(e.getKey()), DSValue(e.getValue())));
     }
   }
   RET(LOCAL(0));
@@ -1864,15 +1871,19 @@ YDSH_METHOD map_addAll(RuntimeContext &ctx) {
 //!bind: function copy($this : Map<T0, T1>) : Map<T0, T1>
 YDSH_METHOD map_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_copy);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
-  HashMap map(obj.getValueMap());
-  RET(DSValue::create<MapObject>(obj.getTypeID(), std::move(map)));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto ret = DSValue::create<OrderedMapObject>(ctx.typePool.get(obj.getTypeID()));
+  auto &newMap = typeAs<OrderedMapObject>(ret);
+  for (auto &e : obj.getEntries()) {
+    newMap.insert(e.getKey(), DSValue(e.getValue()));
+  }
+  RET(ret);
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void
 YDSH_METHOD map_clear(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_clear);
-  auto &obj = typeAs<MapObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   obj.clear();
   RET_VOID;
@@ -1881,13 +1892,13 @@ YDSH_METHOD map_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
 YDSH_METHOD map_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_iter);
-  RET(typeAs<MapObject>(LOCAL(0)).iter());
+  RET(DSValue::create<OrderedMapIterObject>(toObjPtr<OrderedMapObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
 YDSH_METHOD map_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_next);
-  auto &obj = typeAs<MapIterObject>(LOCAL(0));
+  auto &obj = typeAs<OrderedMapIterObject>(LOCAL(0));
   if (obj.hasNext()) {
     RET(obj.next(ctx.typePool));
   } else {
@@ -2201,9 +2212,9 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
   auto ret = ctx.typePool.createMapType(stringType, stringType);
   assert(ret);
   auto &mapType = cast<MapType>(*ret.asOk());
-  auto value = DSValue::create<MapObject>(mapType);
+  auto value = DSValue::create<OrderedMapObject>(mapType);
   editor.getKeyBindings().fillBindings([&value](StringRef key, StringRef action) {
-    typeAs<MapObject>(value).set(DSValue::createStr(key), DSValue::createStr(action));
+    typeAs<OrderedMapObject>(value).insert(DSValue::createStr(key), DSValue::createStr(action));
   });
   RET(value);
 }

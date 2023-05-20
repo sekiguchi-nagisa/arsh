@@ -180,8 +180,8 @@ std::string DSValue::toString() const {
     return typeAs<RegexObject>(*this).getStr();
   case ObjectKind::Array:
     return typeAs<ArrayObject>(*this).toString();
-  case ObjectKind::Map:
-    return typeAs<MapObject>(*this).toString();
+  case ObjectKind::OrderedMap:
+    return typeAs<OrderedMapObject>(*this).toString();
   case ObjectKind::Base:
     return typeAs<BaseObject>(*this).toString();
   case ObjectKind::Func:
@@ -231,8 +231,8 @@ bool DSValue::opStr(StrBuilder &builder) const {
     switch (this->get()->getKind()) {
     case ObjectKind::Array:
       return typeAs<ArrayObject>(*this).opStr(builder);
-    case ObjectKind::Map:
-      return typeAs<MapObject>(*this).opStr(builder);
+    case ObjectKind::OrderedMap:
+      return typeAs<OrderedMapObject>(*this).opStr(builder);
     case ObjectKind::Base:
       return typeAs<BaseObject>(*this).opStrAsTupleRecord(builder);
     case ObjectKind::Error:
@@ -262,16 +262,16 @@ bool DSValue::opInterp(StrBuilder &builder) const {
       }
       return true;
     }
-    case ObjectKind::Map: {
+    case ObjectKind::OrderedMap: {
       unsigned int count = 0;
-      for (auto &e : typeAs<MapObject>(*this).getValueMap()) {
-        if (e.second.isInvalid()) {
+      for (auto &e : typeAs<OrderedMapObject>(*this).getEntries()) {
+        if (!e || e.getValue().isInvalid()) {
           continue;
         }
         if (count++ > 0) {
           TRY(builder.add(" "));
         }
-        TRY(e.first.opInterp(builder) && builder.add(" ") && e.second.opInterp(builder));
+        TRY(e.getKey().opInterp(builder) && builder.add(" ") && e.getValue().opInterp(builder));
       }
       return true;
     }
@@ -328,25 +328,6 @@ bool DSValue::equals(const DSValue &o) const {
       return false;
     }
     return reinterpret_cast<uintptr_t>(this->get()) == reinterpret_cast<uintptr_t>(o.get());
-  }
-}
-
-size_t DSValue::hash() const {
-  switch (this->kind()) {
-  case DSValueKind::BOOL:
-    return std::hash<bool>()(this->asBool());
-  case DSValueKind::SIG:
-    return std::hash<int64_t>()(this->asSig());
-  case DSValueKind::INT:
-    return std::hash<int64_t>()(this->asInt());
-  case DSValueKind::FLOAT:
-    return std::hash<int64_t>()(doubleToBits(this->asFloat()));
-  default:
-    if (this->hasStrRef()) {
-      return StrRefHash()(this->asStrRef());
-    }
-    assert(this->isObject());
-    return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(this->get()));
   }
 }
 
@@ -488,70 +469,6 @@ bool ArrayObject::append(DSState &state, DSValue &&obj) {
 }
 
 // ########################
-// ##     Map_Object     ##
-// ########################
-
-bool MapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar) const {
-  if (this->locked()) {
-    std::string value = "cannot modify map object";
-    if (isReplyVar) {
-      value += " (reply)";
-    }
-    value += " during iteration";
-    raiseError(state, TYPE::InvalidOperationError, std::move(value));
-    return false;
-  }
-  return true;
-}
-
-std::string MapObject::toString() const {
-  std::string str = "[";
-  unsigned int count = 0;
-  for (auto &e : this->valueMap) {
-    if (count++ > 0) {
-      str += ", ";
-    }
-    str += e.first.toString();
-    str += " : ";
-    str += e.second.toString();
-  }
-  str += "]";
-  return str;
-}
-
-bool MapObject::opStr(StrBuilder &builder) const {
-  TRY(builder.add("["));
-  unsigned int count = 0;
-  for (auto &e : this->valueMap) {
-    if (count++ > 0) {
-      TRY(builder.add(", "));
-    }
-    TRY(e.first.opStr(builder)); // key
-    TRY(builder.add(" : "));
-    TRY(e.second.opStr(builder)); // value
-  }
-  return builder.add("]");
-}
-
-// ###########################
-// ##     MapIterObject     ##
-// ###########################
-
-DSValue MapIterObject::next(TypePool &pool) {
-  std::vector<const DSType *> types(2);
-  types[0] = &pool.get(this->iter->first.getTypeID());
-  types[1] = &pool.get(this->iter->second.getTypeID());
-
-  auto *type = pool.createTupleType(std::move(types)).take();
-  auto entry = DSValue::create<BaseObject>(cast<TupleType>(*type));
-  typeAs<BaseObject>(entry)[0] = this->iter->first;
-  typeAs<BaseObject>(entry)[1] = this->iter->second;
-  ++this->iter;
-
-  return entry;
-}
-
-// ########################
 // ##     BaseObject     ##
 // ########################
 
@@ -656,12 +573,12 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
         TRY(this->add(DSValue(e)));
       }
       return true;
-    case ObjectKind::Map:
-      for (auto &e : typeAs<MapObject>(arg).getValueMap()) {
-        if (e.second.isInvalid()) {
+    case ObjectKind::OrderedMap:
+      for (auto &e : typeAs<OrderedMapObject>(arg).getEntries()) {
+        if (!e || e.getValue().isInvalid()) {
           continue;
         }
-        TRY(this->add(DSValue(e.first)) && this->add(DSValue(e.second)));
+        TRY(this->add(DSValue(e.getKey())) && this->add(DSValue(e.getValue())));
       }
       return true;
     case ObjectKind::Base: {

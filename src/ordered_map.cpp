@@ -122,7 +122,9 @@ std::pair<int, bool> OrderedMapObject::insert(const DSValue &key, DSValue &&valu
 
   ProbeState state; // NOLINT
   if (this->probeBuckets(key, state)) {
-    return {this->buckets[state.bucketIndex].entryIndex, false};
+    int index = this->buckets[state.bucketIndex].entryIndex;
+    assert(index != -1);
+    return {index, false};
   }
 
   if (unlikely(this->size() == MAX_SIZE)) {
@@ -211,7 +213,10 @@ OrderedMapEntries::Entry OrderedMapObject::remove(const DSValue &key) {
 }
 
 void OrderedMapObject::clear() {
-  unsigned int size = this->bucketLen.size();
+  if (this->bucketLen.size() == 0) {
+    return;
+  }
+  unsigned int size = this->bucketLen.capacity();
   for (unsigned int i = 0; i < size; i++) {
     this->buckets[i] = Bucket();
   }
@@ -280,7 +285,7 @@ void OrderedMapObject::rehash(bool grow) {
   }
 }
 
-bool OrderedMapObject::checkIterInvalidation(DSState &state, bool isReplyVar) const {
+bool OrderedMapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar) const {
   if (this->inIteration()) {
     std::string value = "cannot modify map object";
     if (isReplyVar) {
@@ -291,6 +296,19 @@ bool OrderedMapObject::checkIterInvalidation(DSState &state, bool isReplyVar) co
     return false;
   }
   return true;
+}
+
+DSValue OrderedMapObject::put(DSState &st, DSValue &&key, DSValue &&value) {
+  auto pair = this->insert(key, DSValue(value));
+  if (pair.second) { // success insertion
+    return DSValue::createInvalid();
+  } else if (pair.first == -1) { // insertion failed (reach limit)
+    raiseError(st, TYPE::OutOfRangeError, MAP_LIMIT_ERROR);
+    return {};
+  } else { // already inserted
+    std::swap((*this)[pair.first].refValue(), value);
+    return std::move(value);
+  }
 }
 
 std::string OrderedMapObject::toString() const {

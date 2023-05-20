@@ -108,7 +108,7 @@ struct BindingConsumer {
     if (type.isArrayType()) {
       value = DSValue::create<ArrayObject>(type);
     } else if (type.isMapType()) {
-      value = DSValue::create<MapObject>(type);
+      value = DSValue::create<OrderedMapObject>(type);
     }
     this->state.setGlobal(handle.getIndex(), std::move(value));
   }

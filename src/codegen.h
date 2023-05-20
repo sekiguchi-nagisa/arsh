@@ -27,6 +27,7 @@
 #include "node.h"
 #include "object.h"
 #include "opcode.h"
+#include "ordered_map.h"
 
 #define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
 
@@ -455,7 +456,7 @@ private:
   void generateBreakContinue(JumpNode &node);
 
   void generateMapCase(CaseNode &node);
-  void generateCaseLabels(const ArmNode &node, MapObject &obj);
+  void generateCaseLabels(const ArmNode &node, OrderedMapObject &obj);
   void generateIfElseCase(CaseNode &node);
   void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
                          const MethodHandle &matchHandle, const Label &mergeLabel);

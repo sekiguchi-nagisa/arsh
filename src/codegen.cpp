@@ -1183,8 +1183,8 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   bool hasDefault = node.hasDefault();
   auto mergeLabel = makeLabel();
   auto elseLabel = makeLabel();
-  auto value = DSValue::create<MapObject>(this->typePool.get(TYPE::Void));
-  auto &map = typeAs<MapObject>(value);
+  auto value = DSValue::create<OrderedMapObject>(this->typePool.get(TYPE::Void));
+  auto &map = typeAs<OrderedMapObject>(value);
 
   this->emitLdcIns(value);
   this->visit(node.getExprNode());
@@ -1214,10 +1214,13 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   this->markLabel(mergeLabel);
 }
 
-void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, MapObject &obj) {
+void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, OrderedMapObject &obj) {
   unsigned int offset = this->currentCodeOffset();
   for (auto &e : node.getConstPatternNodes()) {
-    obj.set(newObject(*e), DSValue::createNum(offset));
+    auto pair = obj.insert(newObject(*e), DSValue::createNum(offset));
+    if (!pair.second) {
+      fatal("map insertion failed\n");
+    }
   }
 }
 

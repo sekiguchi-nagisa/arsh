@@ -46,9 +46,7 @@ namespace ydsh {
   OP(UnixFd)                                                                                       \
   OP(Regex)                                                                                        \
   OP(Array)                                                                                        \
-  OP(Map)                                                                                          \
   OP(OrderedMap)                                                                                   \
-  OP(MapIter)                                                                                      \
   OP(OrderedMapIter)                                                                               \
   OP(Base)                                                                                         \
   OP(Error)                                                                                        \
@@ -527,12 +525,6 @@ public:
   bool equals(const DSValue &o) const;
 
   /**
-   * for HashMap
-   * @return
-   */
-  size_t hash() const;
-
-  /**
    * three-way compare for Array#sort
    * @param o
    * @return
@@ -793,119 +785,6 @@ public:
 };
 
 #define ASSERT_ARRAY_SIZE(obj) assert((obj).size() <= ArrayObject::MAX_SIZE)
-
-struct KeyCompare {
-  bool operator()(const DSValue &x, const DSValue &y) const { return x.equals(y); }
-};
-
-struct GenHash {
-  std::size_t operator()(const DSValue &key) const { return key.hash(); }
-};
-
-using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
-
-class MapIterObject;
-
-class MapObject : public ObjectWithRtti<ObjectKind::Map> {
-private:
-  friend class MapIterObject;
-
-  HashMap valueMap;
-  int lockCount{0};
-
-public:
-  explicit MapObject(const DSType &type) : ObjectWithRtti(type) {}
-
-  MapObject(const DSType &type, HashMap &&map) : MapObject(type.typeId(), std::move(map)) {}
-
-  MapObject(unsigned int typeID, HashMap &&map)
-      : ObjectWithRtti(typeID), valueMap(std::move(map)) {}
-
-  const HashMap &getValueMap() const { return this->valueMap; }
-
-  bool locked() const { return this->lockCount > 0; }
-
-  void clear() { this->valueMap.clear(); }
-
-  /**
-   *
-   * @param state
-   * @param isReplyVar
-   * if true, check reply variable
-   * @return
-   * if locked (create iterator), return false
-   */
-  bool checkIteratorInvalidation(DSState &state, bool isReplyVar) const;
-
-  /**
-   *
-   * @param key
-   * @param value
-   * @return
-   * old element. if not found (first time insertion), return invalid
-   */
-  DSValue set(DSValue &&key, DSValue &&value) { // FIXME: check size limit
-    auto pair = this->valueMap.emplace(std::move(key), value);
-    if (pair.second) {
-      return DSValue::createInvalid();
-    }
-    std::swap(pair.first->second, value);
-    return std::move(value);
-  }
-
-  DSValue setIfNotFound(DSValue &&key, DSValue &&value) {
-    auto pair = this->valueMap.emplace(std::move(key), std::move(value));
-    return pair.first->second;
-  }
-
-  bool trySwap(const DSValue &key, DSValue &value) {
-    auto ret = this->valueMap.find(key);
-    if (ret != this->valueMap.end()) {
-      std::swap(ret->second, value);
-      return true;
-    }
-    return false;
-  }
-
-  DSValue tryRemove(const DSValue &key) {
-    auto iter = this->valueMap.find(key);
-    if (iter == this->valueMap.end()) {
-      return DSValue::createInvalid();
-    }
-    auto v = std::move(iter->second);
-    this->valueMap.erase(iter);
-    return v;
-  }
-
-  std::string toString() const;
-  bool opStr(StrBuilder &builder) const;
-
-  DSValue iter() { return DSValue::create<MapIterObject>(*this); }
-};
-
-class MapIterObject : public ObjectWithRtti<ObjectKind::MapIter> {
-private:
-  DSValue obj;
-  HashMap::const_iterator iter;
-
-public:
-  explicit MapIterObject(MapObject &obj)
-      : ObjectWithRtti(obj.getTypeID()), obj(&obj), iter(obj.getValueMap().begin()) {
-    obj.lockCount++;
-  }
-
-  ~MapIterObject() { typeAs<MapObject>(this->obj).lockCount--; }
-
-  bool hasNext() const { return this->iter != typeAs<MapObject>(this->obj).getValueMap().cend(); }
-
-  DSValue next(TypePool &pool);
-
-  std::pair<DSValue, DSValue> nextUnpack() {
-    auto en = *this->iter;
-    ++this->iter;
-    return en;
-  }
-};
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:

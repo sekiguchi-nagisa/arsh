@@ -22,6 +22,7 @@
 #include "cmd.h"
 #include "misc/num_util.hpp"
 #include "misc/time_util.hpp"
+#include "ordered_map.h"
 #include "vm.h"
 
 namespace ydsh {
@@ -1044,7 +1045,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   }
 #endif
 
-  auto &reply = typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
+  auto &reply = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (setVar) {
     if (unlikely(!reply.checkIteratorInvalidation(state, true))) {
       return 1;
@@ -1068,7 +1069,11 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   } while (begin != end);
 
   if (setVar && !state.hasError()) {
-    reply.set(DSValue::createStr(target), DSValue::createStr(std::move(printer).takeBuf()));
+    auto old = reply.put(state, DSValue::createStr(target),
+                         DSValue::createStr(std::move(printer).takeBuf()));
+    if (unlikely(!old)) {
+      return 1;
+    }
   }
   if (fflush(stdout) == EOF) {
     PERROR(argvObj, "io error");

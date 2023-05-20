@@ -183,6 +183,7 @@ constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
 
 constexpr const char *CMD_SUB_ERROR = "command substitution failed";
 constexpr const char *STRING_LIMIT_ERROR = "reach String size limit";
+constexpr const char *MAP_LIMIT_ERROR = "reach Map size limit";
 
 // =====  generic type name  =====
 
