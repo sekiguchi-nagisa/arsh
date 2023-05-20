@@ -76,25 +76,22 @@ unsigned int OrderedMapEntries::compact() {
 // ##############################
 
 static unsigned int hash(const DSValue &value) {
-  union { // NOLINT
-    uint64_t i64;
-    uint8_t u8[8];
-  } conv;
   bool isStr = false;
+  uint64_t u64 = 0;
   const void *ptr = nullptr;
   size_t size = 0;
   switch (value.kind()) {
   case DSValueKind::BOOL:
-    conv.i64 = value.asBool() ? 1 : 0;
+    u64 = value.asBool() ? 1 : 0;
     break;
   case DSValueKind::SIG:
-    conv.i64 = value.asSig();
+    u64 = value.asSig();
     break;
   case DSValueKind::INT:
-    conv.i64 = value.asInt();
+    u64 = value.asInt();
     break;
   case DSValueKind::FLOAT:
-    conv.i64 = doubleToBits(value.asFloat());
+    u64 = doubleToBits(value.asFloat());
     break;
   default:
     if (value.hasStrRef()) {
@@ -104,16 +101,18 @@ static unsigned int hash(const DSValue &value) {
       isStr = true;
     } else {
       assert(value.isObject());
-      conv.i64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(value.get()));
+      u64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(value.get()));
     }
     break;
   }
-  if (!isStr) {
-    ptr = conv.u8;
-    size = std::size(conv.u8);
+
+  if (isStr) {
+    uint64_t hash = wyhash(ptr, size, 42, _wyp);
+    return static_cast<unsigned int>(hash);
+  } else {
+    uint64_t hash = wy2u0k(u64, UINT64_MAX);
+    return static_cast<unsigned int>(hash);
   }
-  uint64_t hash = wyhash(ptr, size, 42, _wyp);
-  return static_cast<unsigned int>(hash);
 }
 
 std::pair<int, bool> OrderedMapObject::insert(const DSValue &key, DSValue &&value) {
