@@ -108,10 +108,9 @@ assert $args[3] == 'a b'
 var m = [34 : 'a' as String?, 9999: new String?(), 45: 'b' as String?]
 $args = @($m)
 assert $args.size() == 4
-$args.sort()
 assert $args[0] == '34'
-assert $args[1] == '45'
-assert $args[2] == 'a'
+assert $args[1] == 'a'
+assert $args[2] == '45'
 assert $args[3] == 'b'
 
 ## Tuple

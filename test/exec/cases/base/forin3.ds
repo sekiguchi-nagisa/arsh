@@ -24,9 +24,6 @@ k
 assert $keys.size() == 3
 assert $values.size() == 3
 
-$keys = $keys.sort()
-$values = $values.sort()
-
 assert $keys[0] == 'aaa'
 assert $keys[1] == 'bbb'
 assert $keys[2] == 'ccc'

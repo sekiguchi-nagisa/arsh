@@ -13,16 +13,24 @@ assert($i == 5)
 # Map for-in
 $i = 0;
 var tt : [(String, Int)]
-for e in ["a" : 1,
+for e in ["0" : 1,
             "b" : 2,
-            "c" : 3,
-            "d" : 4] {
+            "d" : 3,
+            "e" : 4] {
     assert($e is Tuple<String, Int>)
     $tt.add($e)
     $i = $i + 1
 }
 assert($i == 4)
 assert $tt.size() == 4
+assert $tt[0]._0 == '0'
+assert $tt[1]._0 == 'b'
+assert $tt[2]._0 == 'd'
+assert $tt[3]._0 == 'e'
+assert $tt[0]._1 == 1
+assert $tt[1]._1 == 2
+assert $tt[2]._1 == 3
+assert $tt[3]._1 == 4
 
 $i = 0;
 var bb = ["a" : 1,

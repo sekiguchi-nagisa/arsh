@@ -92,3 +92,4 @@ assert(new Map<Boolean, Any>() is Map<Boolean, Any>)
 
 # toString
 assert [34: $false] as String == "[34 : false]"
+assert [34: $false, -888: $true] as String == "[34 : false, -888 : true]"
