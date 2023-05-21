@@ -114,6 +114,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 
 # env name
 unsetenv COMP_WORDBREAKS
+unsetenv '!C:'
 setenv 'ZZZ(23)=hello'
 
 $assertArray($(env | while(read -r) {
