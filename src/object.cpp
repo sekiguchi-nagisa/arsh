@@ -128,7 +128,7 @@ std::string DSValue::toString() const {
     auto &nums = this->asNumList();
     char buf[256];
     snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
-    return std::string(buf);
+    return {buf};
   }
   case DSValueKind::DUMMY: {
     unsigned int typeId = this->asTypeId();
@@ -190,7 +190,7 @@ std::string DSValue::toString() const {
     char buf[32]; // hex of 64bit pointer is up to 16 chars
     snprintf(buf, std::size(buf), "closure(0x%zx)",
              reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(*this).getFuncObj()));
-    return std::string(buf);
+    return {buf};
   }
   case ObjectKind::Job: {
     std::string str = "%";
@@ -833,16 +833,16 @@ bool ReaderObject::nextLine() {
 // #########################
 
 static UserSysTime getTime() {
-  struct rusage self;
+  struct rusage self; // NOLINT
   getrusage(RUSAGE_SELF, &self);
 
-  struct rusage children;
+  struct rusage children; // NOLINT
   getrusage(RUSAGE_CHILDREN, &children);
 
-  struct timeval utime;
+  struct timeval utime; // NOLINT
   timeradd(&self.ru_utime, &children.ru_utime, &utime);
 
-  struct timeval stime;
+  struct timeval stime; // NOLINT
   timeradd(&self.ru_stime, &children.ru_stime, &stime);
 
   return {
