@@ -606,8 +606,6 @@ private:
 
   static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
 
-  static bool checkVMEvent(DSState &state);
-
   static void kickVMHook(DSState &state);
 
   /**
