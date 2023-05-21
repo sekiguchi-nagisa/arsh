@@ -1713,27 +1713,10 @@ bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
   return windStackFrame(state, 3, 3, signalTrampoline);
 }
 
-bool VM::checkVMEvent(DSState &state) {
-  if (hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && !hasFlag(DSState::eventDesc, VMEvent::MASK)) {
-    SignalGuard guard;
-    int sigNum = DSState::popPendingSignal();
-    if (sigNum == SIGCHLD) {
-      state.jobTable.waitForAny();
-    } else if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
-      setFlag(DSState::eventDesc, VMEvent::MASK);
-      if (!kickSignalHandler(state, sigNum, handler)) {
-        unsetFlag(DSState::eventDesc, VMEvent::MASK);
-        return false;
-      }
-    }
-  }
-
-  if (state.hook != nullptr) {
-    assert(hasFlag(DSState::eventDesc, VMEvent::HOOK));
-    auto op = static_cast<OpCode>(GET_CODE(state)[state.stack.pc()]);
-    state.hook->vmFetchHook(state, op);
-  }
-  return true;
+void VM::kickVMHook(DSState &state) {
+  assert(state.hook);
+  auto op = static_cast<OpCode>(GET_CODE(state)[state.stack.pc()]);
+  state.hook->vmFetchHook(state, op);
 }
 
 const native_func_t *nativeFuncPtrTable();
@@ -1759,11 +1742,21 @@ const native_func_t *nativeFuncPtrTable();
     }                                                                                              \
   } while (false)
 
+#define CHECK_SIGNAL()                                                                             \
+  do {                                                                                             \
+    if (unlikely(DSState::hasSignals())) {                                                         \
+      goto SIGNAL;                                                                                 \
+    }                                                                                              \
+  } while (false)
+
 bool VM::mainLoop(DSState &state) {
   OpCode op;
+
+  CHECK_SIGNAL();
+
   while (true) {
-    if (unlikely(!empty(DSState::eventDesc))) {
-      TRY(checkVMEvent(state));
+    if (unlikely(state.getVMHook())) {
+      kickVMHook(state);
     }
 
     // fetch next opcode
@@ -2070,6 +2063,7 @@ bool VM::mainLoop(DSState &state) {
           state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
           state.stack.pc() += offset - 1;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(MAP_ITER_NEXT) {
@@ -2084,6 +2078,7 @@ bool VM::mainLoop(DSState &state) {
           state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
           state.stack.pc() += offset - 1;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(NEW) {
@@ -2130,6 +2125,7 @@ bool VM::mainLoop(DSState &state) {
         state.stack.nativeUnwind(old);
         TRY(!state.hasError());
         state.stack.push(std::move(ret));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(RETURN) {
@@ -2139,6 +2135,7 @@ bool VM::mainLoop(DSState &state) {
         if (state.stack.checkVMReturn()) {
           return true;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(RETURN_UDC) {
@@ -2152,6 +2149,7 @@ bool VM::mainLoop(DSState &state) {
         }
         pushExitStatus(state, status);
         assert(!state.stack.checkVMReturn());
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(RETURN_SIG) {
@@ -2160,6 +2158,7 @@ bool VM::mainLoop(DSState &state) {
         state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         state.stack.unwind();
         assert(!state.stack.checkVMReturn());
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(BRANCH) {
@@ -2169,6 +2168,7 @@ bool VM::mainLoop(DSState &state) {
         } else {
           state.stack.pc() += offset - 1;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(BRANCH_NOT) {
@@ -2178,6 +2178,7 @@ bool VM::mainLoop(DSState &state) {
         } else {
           state.stack.pc() += offset - 1;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(IF_INVALID) {
@@ -2188,6 +2189,7 @@ bool VM::mainLoop(DSState &state) {
         } else {
           state.stack.pc() += 2;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(IF_NOT_INVALID) {
@@ -2198,17 +2200,20 @@ bool VM::mainLoop(DSState &state) {
         } else {
           state.stack.pc() += offset - 1;
         }
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(GOTO) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_LOOP) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
         state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_LOOP_V) {
@@ -2217,6 +2222,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.pop();
         state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
         state.stack.push(std::move(v));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(LOOP_GUARD) {
@@ -2227,6 +2233,7 @@ bool VM::mainLoop(DSState &state) {
         unsigned int index = read32(GET_CODE(state), state.stack.pc());
         state.stack.pc() = index;
         state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_TRY_V) {
@@ -2235,6 +2242,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.pop();
         state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
         state.stack.push(std::move(v));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(TRY_GUARD) {
@@ -2364,6 +2372,7 @@ bool VM::mainLoop(DSState &state) {
         auto opt = static_cast<ExpandOp>(read8(GET_CODE(state), state.stack.pc()));
         state.stack.pc()++;
         TRY(addExpandingPath(state, size, opt));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(CALL_CMD) vmcase(CALL_CMD_NOFORK) vmcase(CALL_CMD_SILENT) {
@@ -2379,6 +2388,7 @@ bool VM::mainLoop(DSState &state) {
 
         TRY(callCommand(state, CmdResolver(CmdResolver::NO_STATIC_UDC, FilePathCache::NON),
                         std::move(argv), std::move(redir), attr));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(CALL_UDC) vmcase(CALL_UDC_SILENT) {
@@ -2395,6 +2405,7 @@ bool VM::mainLoop(DSState &state) {
 
         ResolvedCmd cmd = lookupUdcFromIndex(state, 0, index);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(CALL_CMD_COMMON) {
@@ -2403,6 +2414,7 @@ bool VM::mainLoop(DSState &state) {
 
         TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
                         CmdCallAttr::NEED_FORK));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(CALL_CMD_OBJ) {
@@ -2414,6 +2426,7 @@ bool VM::mainLoop(DSState &state) {
           argvObj.refValues().push_back(DSValue::createStr()); // add dummy
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
+        CHECK_SIGNAL();
         vmnext;
       }
       vmcase(BUILTIN_CMD) {
@@ -2527,11 +2540,31 @@ bool VM::mainLoop(DSState &state) {
       }
     }
 
+  SIGNAL : {
+    assert(DSState::hasSignals());
+    SignalGuard guard;
+    if (DSState::pendingSigSet.has(SIGCHLD)) {
+      state.jobTable.waitForAny();
+    }
+    if (!DSState::pendingSigSet.empty()) {
+      int sigNum = DSState::popPendingSignal();
+      if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
+        setFlag(DSState::eventDesc, VMEvent::MASK);
+        if (!kickSignalHandler(state, sigNum, handler)) {
+          unsetFlag(DSState::eventDesc, VMEvent::MASK);
+          vmerror;
+        }
+      }
+    }
+    vmnext;
+  }
+
   EXCEPT:
     assert(state.hasError());
     if (!handleException(state)) {
       return false;
     }
+    vmnext;
   }
 }
 

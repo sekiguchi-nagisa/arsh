@@ -488,7 +488,7 @@ void JobTable::waitForAny() {
   SignalGuard guard;
   DSState::clearPendingSignal(SIGCHLD);
 
-  for (WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
+  for (WaitResult ret{}; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
     if (ret.pid == -1) {
       break;
     }

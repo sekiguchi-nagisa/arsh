@@ -50,15 +50,14 @@ namespace ydsh {
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
-#define GEN_ENUM(E, V, N) E = V,
+#define GEN_ENUM(E, V, N) E = (V),
   EACH_RUNTIME_OPTION(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 enum class VMEvent : unsigned int {
-  HOOK = 1u << 0u,
-  SIGNAL = 1u << 1u,
-  MASK = 1u << 2u,
+  SIGNAL = 1u << 0u,
+  MASK = 1u << 1u,
 };
 
 enum class EvalOP : unsigned int {
@@ -186,6 +185,11 @@ public:
     return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
   }
 
+  static bool hasSignals() {
+    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) &&
+           !hasFlag(DSState::eventDesc, VMEvent::MASK);
+  }
+
   NON_COPYABLE(DSState);
 
   DSState();
@@ -251,14 +255,9 @@ public:
     return 1;
   }
 
-  void setVMHook(VMHook *h) {
-    this->hook = h;
-    if (this->hook != nullptr) {
-      setFlag(eventDesc, VMEvent::HOOK);
-    } else {
-      unsetFlag(eventDesc, VMEvent::HOOK);
-    }
-  }
+  void setVMHook(VMHook *h) { this->hook = h; }
+
+  VMHook *getVMHook() { return this->hook; }
 
   const VMState &getCallStack() const { return this->stack; }
 
@@ -608,6 +607,8 @@ private:
   static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
 
   static bool checkVMEvent(DSState &state);
+
+  static void kickVMHook(DSState &state);
 
   /**
    *

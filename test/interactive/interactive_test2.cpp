@@ -358,6 +358,7 @@ TEST_F(InteractiveTest, pipestatus) {
       format("assert $PIPESTATUS[1] == %d : $PIPESTATUS[1] as String", 128 + SIGSTOP).c_str()));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[2] == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("kill -s CONT %1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg %1", "", "ydsh: fg: %1: no such job\n"));
 
   this->send(CTRL_D);
