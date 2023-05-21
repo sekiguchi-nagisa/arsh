@@ -175,7 +175,7 @@ static bool iteratePathList(const char *value, Func func) {
 
 static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
                             const CodeCompOp option, CompCandidateConsumer &consumer,
-                            ObserverPtr<CompCancel> cancel) {
+                            ObserverPtr<CancelToken> cancel) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     completeUDC(scope, cmdPrefix, consumer);
@@ -206,7 +206,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
       }
       auto cleanup = finally([dir] { closedir(dir); });
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
-        if (cancel && cancel->isCanceled()) {
+        if (cancel && cancel()) {
           return false;
         }
 
@@ -229,7 +229,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 }
 
 static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCompOp op,
-                             CompCandidateConsumer &consumer, ObserverPtr<CompCancel> cancel) {
+                             CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
   const auto s = prefix.lastIndexOf("/");
 
   // complete tilde
@@ -284,7 +284,7 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
 
   auto cleanup = finally([dir] { closedir(dir); });
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
-    if (cancel && cancel->isCanceled()) {
+    if (cancel && cancel()) {
       return false;
     }
 
@@ -327,7 +327,7 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
 
 static bool completeModule(const SysConfig &config, const char *scriptDir,
                            const std::string &prefix, bool tilde, CompCandidateConsumer &consumer,
-                           ObserverPtr<CompCancel> cancel) {
+                           ObserverPtr<CancelToken> cancel) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;

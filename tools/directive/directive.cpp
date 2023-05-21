@@ -149,9 +149,14 @@ static bool checkDirectiveName(ApplyNode &node) {
   return exprNode.getVarName() == "test";
 }
 
+static std::reference_wrapper<CancelToken> getCancelToken() {
+  static CancelToken cancelToken;
+  return std::ref(cancelToken);
+}
+
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, const SysConfig &sysConfig,
                                            TypePool &typePool, Lexer &lex)
-    : TypeChecker(sysConfig, typePool, false, lex), sourceName(sourceName) {
+    : TypeChecker(sysConfig, getCancelToken(), typePool, false, lex), sourceName(sourceName) {
   unsigned int modIndex = this->varCount++;
   this->curScope = NameScopePtr::create(std::ref(this->varCount), modIndex, 0);
   this->setVarName("0", this->typePool.get(TYPE::String));

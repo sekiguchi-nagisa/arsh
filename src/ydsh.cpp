@@ -381,7 +381,8 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, size_t s
   }
 
   const auto compileOption = getCompileOption(*st);
-  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope,
+                                       std::make_unique<RuntimeCancelToken>(true));
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   auto lexer = LexerPtr::create(sourceName, ByteBuffer(data, data + size), getCWD());
   lexer->setLineNumOffset(st->lineNum);
@@ -395,7 +396,8 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
   GUARD_NULL(fileName, -1);
 
   CompileOption compileOption = getCompileOption(*st);
-  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope);
+  DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope,
+                                       std::make_unique<RuntimeCancelToken>(true));
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
   auto ret =

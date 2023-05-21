@@ -245,8 +245,9 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 std::unique_ptr<FrontEnd::Context>
 DefaultModuleProvider::newContext(LexerPtr lexer, FrontEndOption option,
                                   ObserverPtr<CodeCompletionHandler> ccHandler) {
-  return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
-                                             std::move(lexer), this->scope, option, ccHandler);
+  return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->getCancelToken(),
+                                             this->pool, std::move(lexer), this->scope, option,
+                                             ccHandler);
 }
 
 const ModType &DefaultModuleProvider::newModTypeFromCurContext(
@@ -280,9 +281,9 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     auto lex = Lexer::fromFullPath(fullPath, std::move(buf));
     auto newScope = this->loader.createGlobalScopeFromFullPath(this->pool, fullPath,
                                                                this->pool.getBuiltinModType());
-    return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->pool,
-                                               std::move(lex), std::move(newScope), option,
-                                               nullptr);
+    return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->getCancelToken(),
+                                               this->pool, std::move(lex), std::move(newScope),
+                                               option, nullptr);
   } else {
     assert(is<unsigned int>(ret));
     auto &type = this->pool.get(get<unsigned int>(ret));
@@ -292,5 +293,9 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
 }
 
 const SysConfig &DefaultModuleProvider::getSysConfig() const { return this->loader.getSysConfig(); }
+
+std::reference_wrapper<CancelToken> DefaultModuleProvider::getCancelToken() const {
+  return std::ref(*this->cancelToken);
+}
 
 } // namespace ydsh

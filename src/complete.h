@@ -101,12 +101,6 @@ private:
   virtual void consume(std::string &&, CompCandidateKind, int priority) = 0;
 };
 
-struct CompCancel {
-  virtual ~CompCancel() = default;
-
-  virtual bool isCanceled() const = 0;
-};
-
 /**
  * if failed (cannot call user-defined comp or error), return -1
  * otherwise, return number of consumed completion candidates
@@ -150,7 +144,7 @@ private:
 
   const std::string &scriptDir; // for module completion
 
-  ObserverPtr<CompCancel> cancel;
+  ObserverPtr<CancelToken> cancel;
 
   /**
    * current completion word
@@ -270,7 +264,7 @@ public:
 
   void setDynaUdcComp(const DynaUdcComp &comp) { this->dynaUdcComp = comp; }
 
-  void setCancel(ObserverPtr<CompCancel> c) { this->cancel = c; }
+  void setCancel(ObserverPtr<CancelToken> c) { this->cancel = c; }
 
   /**
    *
@@ -293,7 +287,7 @@ private:
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
   DynaUdcComp dynaUdcComp;
-  ObserverPtr<CompCancel> cancel;
+  ObserverPtr<CancelToken> cancel;
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
@@ -305,7 +299,7 @@ public:
 
   void setDynaUdcComp(DynaUdcComp &&comp) { this->dynaUdcComp = std::move(comp); }
 
-  void setCancel(CompCancel &c) { this->cancel = makeObserver(c); }
+  void setCancel(CancelToken &c) { this->cancel = makeObserver(c); }
 
   /**
    * if module provider is specified, parse 'ref' and complete candidates (except for 'option')

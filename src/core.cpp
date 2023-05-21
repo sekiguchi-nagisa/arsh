@@ -221,6 +221,14 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return nullptr;
 }
 
+bool RuntimeCancelToken::operator()() {
+  bool s = DSState::isInterrupted();
+  if (s && this->clearSignal) {
+    DSState::clearPendingSignal(SIGINT);
+  }
+  return s;
+}
+
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   DSState &state;
@@ -256,11 +264,6 @@ public:
     }
     return std::move(this->reply);
   }
-};
-
-class DefaultCompCancel : public CompCancel {
-public:
-  bool isCanceled() const override { return DSState ::isInterrupted(); }
 };
 
 static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
@@ -393,7 +396,8 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
 static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef source,
                          const CodeCompOp option, DefaultCompConsumer &consumer) {
   auto scope = st.tempModScope[resolvedMod.index];
-  DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
+  DefaultModuleProvider provider(st.modLoader, st.typePool, scope,
+                                 std::make_unique<RuntimeCancelToken>());
   auto discardPoint = provider.getCurrentDiscardPoint();
 
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
@@ -415,8 +419,7 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
       }
     }
   });
-  DefaultCompCancel cancel;
-  codeCompleter.setCancel(cancel);
+  codeCompleter.setCancel(provider.getCancelToken());
 
   bool ret = codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
   provider.discard(discardPoint);
@@ -582,7 +585,8 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   // prepare
   auto scope = NameScope::reopen(state.typePool, *state.rootModScope, modType);
   CompileOption option = CompileOption::SINGLE_EXPR;
-  DefaultModuleProvider moduleProvider(state.modLoader, state.typePool, scope);
+  DefaultModuleProvider moduleProvider(state.modLoader, state.typePool, scope,
+                                       std::make_unique<RuntimeCancelToken>());
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   auto lexer = LexerPtr::create("(loaded)", ByteBuffer(expr.begin(), expr.end()), getCWD());
   auto ctx = moduleProvider.newContext(std::move(lexer), toOption(option), nullptr);

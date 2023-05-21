@@ -101,6 +101,18 @@ inline const ModType *getCurRuntimeModule(const DSState &state) {
   return getRuntimeModuleByLevel(state, 0);
 }
 
+class RuntimeCancelToken : public CancelToken {
+private:
+  const bool clearSignal;
+
+public:
+  RuntimeCancelToken() : RuntimeCancelToken(false) {}
+
+  explicit RuntimeCancelToken(bool clear) : clearSignal(clear) {}
+
+  bool operator()() override;
+};
+
 /**
  * perform completion in specified underlying module context.
  * during execution preserve exit status and IFS

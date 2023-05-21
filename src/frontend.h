@@ -80,10 +80,11 @@ public:
     unsigned int nodeIndex{0};
     FrontEndOption option;
 
-    Context(const SysConfig &config, TypePool &pool, LexerPtr lexer, NameScopePtr scope,
-            FrontEndOption option, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-        : lexer(std::move(lexer)),
-          checker(config, pool, hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
+    Context(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
+            TypePool &pool, LexerPtr lexer, NameScopePtr scope, FrontEndOption option,
+            ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
+        : lexer(std::move(lexer)), checker(config, cancelToken, pool,
+                                           hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
           scope(std::move(scope)), ccHandler(ccHandler), option(option) {
       this->checker.setCodeCompletionHandler(ccHandler);
       if (hasFlag(this->option, FrontEndOption::REPORT_WARN)) {
@@ -116,6 +117,8 @@ public:
     virtual Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) = 0;
 
     virtual const SysConfig &getSysConfig() const = 0;
+
+    virtual std::reference_wrapper<CancelToken> getCancelToken() const = 0;
   };
 
 private:
@@ -221,10 +224,12 @@ private:
   ModuleLoader &loader;
   TypePool &pool;
   NameScopePtr scope;
+  std::unique_ptr<CancelToken> cancelToken;
 
 public:
-  DefaultModuleProvider(ModuleLoader &loader, TypePool &pool, NameScopePtr scope)
-      : loader(loader), pool(pool), scope(std::move(scope)) {}
+  DefaultModuleProvider(ModuleLoader &loader, TypePool &pool, NameScopePtr scope,
+                        std::unique_ptr<CancelToken> &&cancelToken)
+      : loader(loader), pool(pool), scope(std::move(scope)), cancelToken(std::move(cancelToken)) {}
 
   ~DefaultModuleProvider() override = default;
 
@@ -245,6 +250,8 @@ public:
            ModLoadOption loadOption);
 
   const SysConfig &getSysConfig() const override;
+
+  std::reference_wrapper<CancelToken> getCancelToken() const override;
 
   TypePool &getPool() { return this->pool; }
 

@@ -81,7 +81,7 @@ struct AnalyzerAction {
   ObserverPtr<NodePass> pass;
 };
 
-class CancelPoint {
+class CancelPoint : public CancelToken {
 private:
   std::atomic<bool> value{false};
 
@@ -89,6 +89,8 @@ public:
   void cancel() { this->value.store(true); }
 
   bool isCanceled() const { return this->value.load(); }
+
+  bool operator()() override { return this->isCanceled(); }
 };
 
 class AnalyzerContext {
@@ -151,6 +153,8 @@ protected:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 
   const SysConfig &getSysConfig() const override;
+
+  std::reference_wrapper<CancelToken> getCancelToken() const override;
 
 private:
   const AnalyzerContextPtr &addNew(const Source &src);

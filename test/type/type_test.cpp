@@ -97,6 +97,7 @@ struct TypeFactory<Func_t<R, P...>> {
 class TypeTest : public ::testing::Test {
 public:
   SysConfig sysConfig;
+  CancelToken cancelToken;
   ModuleLoader loader;
   NameScopePtr scope;
   TypePool pool;
@@ -104,7 +105,9 @@ public:
   TypeChecker checker;
 
 public:
-  TypeTest() : loader(this->sysConfig), checker(this->sysConfig, this->pool, false, this->lex) {
+  TypeTest()
+      : loader(this->sysConfig),
+        checker(this->sysConfig, std::ref(this->cancelToken), this->pool, false, this->lex) {
     this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 

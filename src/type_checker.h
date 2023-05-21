@@ -26,6 +26,17 @@
 
 namespace ydsh {
 
+struct CancelToken {
+  virtual ~CancelToken() = default;
+
+  /**
+   * for type checker cancellation
+   * @return
+   * if canceled, return true
+   */
+  virtual bool operator()() { return false; }
+};
+
 enum class CoercionKind : unsigned char {
   PERFORM_COERCION,
   INVALID_COERCION, // illegal coercion.
@@ -271,6 +282,8 @@ class TypeChecker : protected NodeVisitor {
 protected:
   const SysConfig &config;
 
+  std::reference_wrapper<CancelToken> cancelToken;
+
   TypePool &typePool;
 
   NameScopePtr curScope;
@@ -294,9 +307,10 @@ protected:
   std::vector<TypeCheckError> errors;
 
 public:
-  TypeChecker(const SysConfig &config, TypePool &pool, bool toplevelPrinting, const Lexer &lex)
-      : config(config), typePool(pool), toplevelPrinting(toplevelPrinting),
-        funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
+  TypeChecker(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
+              TypePool &pool, bool toplevelPrinting, const Lexer &lex)
+      : config(config), cancelToken(cancelToken), typePool(pool),
+        toplevelPrinting(toplevelPrinting), funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
 
   ~TypeChecker() override = default;
 

@@ -58,7 +58,7 @@ static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
   ModuleLoader loader(config); // dummy
   const char *embed = embed_script;
   auto lexer = LexerPtr::create("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
-  DefaultModuleProvider provider(loader, pool, builtin);
+  DefaultModuleProvider provider(loader, pool, builtin, std::make_unique<CancelToken>());
   FrontEnd frontEnd(provider, std::move(lexer));
   consumeAllInput(frontEnd);
   gvarCount += 1; // reserve module object entry (root)
@@ -120,8 +120,9 @@ std::unique_ptr<FrontEnd::Context>
 Analyzer::newContext(LexerPtr lexer, FrontEndOption option,
                      ObserverPtr<CodeCompletionHandler> ccHandler) {
   auto &ctx = this->current();
-  return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lexer),
-                                             ctx->getScope(), option, ccHandler);
+  return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
+                                             ctx->getPool(), std::move(lexer), ctx->getScope(),
+                                             option, ccHandler);
 }
 
 const ModType &
@@ -157,8 +158,9 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     src = this->srcMan.update(fullPath, src->getVersion(), std::move(content));
     auto &ctx = this->addNew(*src);
     auto lex = createLexer(*src);
-    return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lex),
-                                               ctx->getScope(), option, nullptr);
+    return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
+                                               ctx->getPool(), std::move(lex), ctx->getScope(),
+                                               option, nullptr);
   } else {
     assert(is<unsigned int>(ret));
     auto src = this->srcMan.findById(get<unsigned int>(ret));
@@ -170,13 +172,24 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     } else { // re-parse
       auto &ctx = this->addNew(*src);
       auto lex = createLexer(*src);
-      return std::make_unique<FrontEnd::Context>(this->sysConfig, ctx->getPool(), std::move(lex),
-                                                 ctx->getScope(), option, nullptr);
+      return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
+                                                 ctx->getPool(), std::move(lex), ctx->getScope(),
+                                                 option, nullptr);
     }
   }
 }
 
 const SysConfig &Analyzer::getSysConfig() const { return this->sysConfig; }
+
+std::reference_wrapper<CancelToken> Analyzer::getCancelToken() const {
+  static CancelToken cancelToken;
+
+  if (this->cancelPoint) {
+    return std::ref(static_cast<CancelToken &>(*this->cancelPoint));
+  } else {
+    return std::ref(cancelToken);
+  }
+}
 
 const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
   LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", src.getSrcId(), src.getVersion(),
