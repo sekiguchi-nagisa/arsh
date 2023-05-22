@@ -502,7 +502,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     setFlag(option, GlobMatchOption::TILDE);
   }
   auto matcher = createGlobMatcher<SourceGlobMeta>(
-      nullptr, SourceGlobIter(begin), SourceGlobIter(end), [] { return false; }, option);
+      nullptr, SourceGlobIter(begin), SourceGlobIter(end),
+      std::reference_wrapper<CancelToken>(this->cancelToken), option);
   TildeExpandStatus tildeExpandStatus{};
   auto expander = [&tildeExpandStatus](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, nullptr);
@@ -517,18 +518,25 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     return true;
   } else {
     std::string path = concat(begin, end);
-    if (ret == GlobMatchResult::NOMATCH) {
+    switch (ret) {
+    case GlobMatchResult::NOMATCH:
       this->reportError<NoGlobMatch>(token, path.c_str());
-    } else if (ret == GlobMatchResult::NEED_ABSOLUTE_BASE_DIR) {
+      return false;
+    case GlobMatchResult::CANCELED:
+      this->reportError<ExpandCancel>(token);
+      return false;
+    case GlobMatchResult::NEED_ABSOLUTE_BASE_DIR:
       this->reportError<NoRelativeGlob>(token, path.c_str());
-    } else if (ret == GlobMatchResult::TILDE_FAIL) {
+      return false;
+    case GlobMatchResult::TILDE_FAIL:
       assert(tildeExpandStatus != TildeExpandStatus::OK);
       this->reportTildeExpansionError(token, matcher.getBase(), tildeExpandStatus);
-    } else {
+      return false;
+    default:
       assert(ret == GlobMatchResult::LIMIT);
       this->reportError<ExpandRetLimit>(token);
+      return false;
     }
-    return false;
   }
 }
 
@@ -641,6 +649,11 @@ bool TypeChecker::applyBraceExpansion(Token token,
 
   CONTINUE:
     if (i == size - 1) {
+      if (unlikely(this->cancelToken())) {
+        this->reportError<ExpandCancel>(token);
+        return false;
+      }
+
       values[usedSize] = sentinel.get(); // sentinel
 
       auto vbegin = values.begin();
