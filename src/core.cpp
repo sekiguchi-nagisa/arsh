@@ -94,10 +94,7 @@ static bool isUnhandledSignal(int sigNum) {
 }
 
 // when called this handler, all signals are blocked due to signal mask
-static void signalHandler(int sigNum) {
-  DSState::pendingSigSet.add(sigNum);
-  setFlag(DSState::eventDesc, VMEvent::SIGNAL);
-}
+static void signalHandler(int sigNum) { DSState::pendingSigSet.add(sigNum); }
 
 static struct sigaction newSigaction(int sigNum) {
   struct sigaction action {};

@@ -50,7 +50,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
 
     // reset signal setting
     DSState::clearPendingSignal();
-    unsetFlag(DSState::eventDesc, VMEvent::MASK);
+    st.canHandleSignal = true;
     resetSignalSettingUnblock(st);
 
     // clear JobTable entries

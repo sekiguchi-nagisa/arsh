@@ -34,8 +34,6 @@
 // ##     DSState     ##
 // #####################
 
-VMEvent DSState::eventDesc{};
-
 SigSet DSState::pendingSigSet;
 
 /**
@@ -2154,7 +2152,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(RETURN_SIG) {
         auto v = state.stack.getLocal(0); // old exit status
-        unsetFlag(DSState::eventDesc, VMEvent::MASK);
+        state.canHandleSignal = true;
         state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         state.stack.unwind();
         assert(!state.stack.checkVMReturn());
@@ -2542,16 +2540,16 @@ bool VM::mainLoop(DSState &state) {
 
   SIGNAL : {
     assert(DSState::hasSignals());
-    SignalGuard guard;
     if (DSState::pendingSigSet.has(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
-    if (!DSState::pendingSigSet.empty()) {
+    SignalGuard guard;
+    if (state.canHandleSignal && DSState::hasSignals()) {
       int sigNum = DSState::popPendingSignal();
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
-        setFlag(DSState::eventDesc, VMEvent::MASK);
+        state.canHandleSignal = false;
         if (!kickSignalHandler(state, sigNum, handler)) {
-          unsetFlag(DSState::eventDesc, VMEvent::MASK);
+          state.canHandleSignal = true;
           vmerror;
         }
       }
@@ -2629,7 +2627,7 @@ bool VM::handleException(DSState &state) {
         }
       }
     } else if (CODE(state) == &signalTrampoline) { // within signal trampoline
-      unsetFlag(DSState::eventDesc, VMEvent::MASK);
+      state.canHandleSignal = true;
     }
 
     auto &entries = state.stack.getFinallyEntries();
@@ -2842,13 +2840,13 @@ bool VM::callTermHook(DSState &state) {
   auto args =
       makeArgs(DSValue::createInt(termKind), termKind == TERM_ON_ERR ? except : oldExitStatus);
 
-  setFlag(DSState::eventDesc, VMEvent::MASK);
+  state.canHandleSignal = false;
   VM::callFunction(state, std::move(funcObj), std::move(args)); // ignore exception
   state.stack.clearThrownObject();
 
   // restore old value
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldExitStatus));
-  unsetFlag(DSState::eventDesc, VMEvent::MASK);
+  state.canHandleSignal = true;
 
   // clear TERM_HOOK
   state.setGlobal(state.termHookIndex, DSValue::createInvalid());

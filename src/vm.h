@@ -131,6 +131,8 @@ public:
 
   unsigned int termHookIndex{0};
 
+  bool canHandleSignal{true};
+
   std::string logicalWorkingDir;
 
   SignalVector sigVector;
@@ -153,17 +155,9 @@ private:
   L64X128MixRNG rng;
 
 public:
-  static VMEvent eventDesc;
-
   static SigSet pendingSigSet;
 
-  static int popPendingSignal() {
-    int sigNum = DSState::pendingSigSet.popPendingSig();
-    if (DSState::pendingSigSet.empty()) {
-      unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
-    }
-    return sigNum;
-  }
+  static int popPendingSignal() { return DSState::pendingSigSet.popPendingSig(); }
 
   /**
    *
@@ -176,19 +170,11 @@ public:
     } else {
       DSState::pendingSigSet.clear();
     }
-    if (DSState::pendingSigSet.empty()) {
-      unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
-    }
   }
 
-  static bool isInterrupted() {
-    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) && DSState::pendingSigSet.has(SIGINT);
-  }
+  static bool isInterrupted() { return DSState::pendingSigSet.has(SIGINT); }
 
-  static bool hasSignals() {
-    return hasFlag(DSState::eventDesc, VMEvent::SIGNAL) &&
-           !hasFlag(DSState::eventDesc, VMEvent::MASK);
-  }
+  static bool hasSignals() { return !pendingSigSet.empty(); }
 
   NON_COPYABLE(DSState);
 
