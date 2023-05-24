@@ -649,11 +649,6 @@ bool TypeChecker::applyBraceExpansion(Token token,
 
   CONTINUE:
     if (i == size - 1) {
-      if (unlikely(this->cancelToken())) {
-        this->reportError<ExpandCancel>(token);
-        return false;
-      }
-
       values[usedSize] = sentinel.get(); // sentinel
 
       auto vbegin = values.begin();

@@ -112,7 +112,7 @@ DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in module path");
 DEFINE_TCError(NoGlobMatch, "glob pattern `%s' does not match any files");
 DEFINE_TCError(ExpandRetLimit, "number of expansion results reaches limit");
-DEFINE_TCError(ExpandCancel, "glob or brace expansion canceled");
+DEFINE_TCError(ExpandCancel, "glob expansion canceled");
 DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, "
                           "but always matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
