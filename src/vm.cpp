@@ -2543,8 +2543,8 @@ bool VM::mainLoop(DSState &state) {
     if (DSState::pendingSigSet.has(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
-    SignalGuard guard;
     if (state.canHandleSignal && DSState::hasSignals()) {
+      SignalGuard guard;
       int sigNum = DSState::popPendingSignal();
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
         state.canHandleSignal = false;
