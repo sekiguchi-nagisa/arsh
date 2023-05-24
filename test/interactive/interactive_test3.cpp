@@ -76,7 +76,7 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
       this->expect(PROMPT + "source? /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
   this->send(CTRL_C);
 
-  std::string err = R"([semantic error] glob or brace expansion canceled
+  std::string err = R"([semantic error] glob expansion canceled
  --> (stdin):1:9
 source? /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
