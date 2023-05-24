@@ -71,15 +71,15 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->sendLine("source? /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
+  this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(PROMPT + "source? /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
+      this->expect(PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
   this->send(CTRL_C);
 
   std::string err = R"([semantic error] glob expansion canceled
  --> (stdin):1:9
-source? /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
-        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
+       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )";
 
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
