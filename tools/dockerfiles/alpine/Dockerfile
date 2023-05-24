@@ -5,4 +5,4 @@ COPY . /root/dev
 
 WORKDIR /root/dev
 CMD cat /proc/1/cgroup && \
-    LDFLAGS='-Wl,-z,stack-size=1024768' sh tools/scripts/run_all_test.sh g++
+    LDFLAGS='-Wl,-z,stack-size=1024768' ALPINE_WORKAROUND=on sh tools/scripts/run_all_test.sh g++

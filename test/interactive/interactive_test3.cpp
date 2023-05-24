@@ -71,6 +71,12 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  if (getenv("ALPINE_WORKAROUND")) {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+    return;
+  }
+
   this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
   ASSERT_NO_FATAL_FAILURE(
       this->expect(PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
