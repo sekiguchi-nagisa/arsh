@@ -83,7 +83,7 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
   this->send(CTRL_C);
 
   std::string err = R"([semantic error] glob expansion canceled
- --> (stdin):1:9
+ --> (stdin):1:8
 source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )";
