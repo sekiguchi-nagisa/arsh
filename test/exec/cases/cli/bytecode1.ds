@@ -105,7 +105,7 @@ Constant Pool:
   0: String (string)
   1: String $(pwd)
 Line Number Table:
-  lineNum: 1, address:  9
+  lineNum: 1, address:  0
 Exception Table:"
 
 $cmd = 'for(var i = 0; $i < 2; $i++) { var b = 34; }'
