@@ -1108,6 +1108,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     auto breakWithValueLabel = makeLabel();
     this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
 
+    this->emitSourcePos(node.getPos());
     this->visit(node.getInitNode());
     if (!isEmptyCode(node.getIterNode())) {
       this->emitJumpIns(initLabel);
