@@ -1748,12 +1748,13 @@ const native_func_t *nativeFuncPtrTable();
   } while (false)
 
 bool VM::mainLoop(DSState &state) {
+  bool hook = state.getVMHook() != nullptr;
   OpCode op;
 
   CHECK_SIGNAL();
 
   while (true) {
-    if (unlikely(state.getVMHook())) {
+    if (unlikely(hook)) {
       kickVMHook(state);
     }
 
