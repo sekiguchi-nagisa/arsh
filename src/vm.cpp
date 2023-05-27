@@ -2168,20 +2168,20 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(GOTO) {
         unsigned int index = read32(state.stack.ip());
-        state.stack.updatePCByOffset(index);
+        state.stack.updateIPByOffset(index);
         CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_LOOP) {
         unsigned int index = read32(state.stack.ip());
-        state.stack.updatePCByOffset(index);
+        state.stack.updateIPByOffset(index);
         state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
         CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_LOOP_V) {
         unsigned int index = read32(state.stack.ip());
-        state.stack.updatePCByOffset(index);
+        state.stack.updateIPByOffset(index);
         auto v = state.stack.pop();
         state.stack.clearOperandsUntilGuard(StackGuardType::LOOP);
         state.stack.push(std::move(v));
@@ -2194,14 +2194,14 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(JUMP_TRY) {
         unsigned int index = read32(state.stack.ip());
-        state.stack.updatePCByOffset(index);
+        state.stack.updateIPByOffset(index);
         state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
         CHECK_SIGNAL();
         vmnext;
       }
       vmcase(JUMP_TRY_V) {
         unsigned int index = read32(state.stack.ip());
-        state.stack.updatePCByOffset(index);
+        state.stack.updateIPByOffset(index);
         auto v = state.stack.pop();
         state.stack.clearOperandsUntilGuard(StackGuardType::TRY);
         state.stack.push(std::move(v));
@@ -2229,8 +2229,8 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(ENTER_FINALLY) {
         unsigned int index = read32(state.stack.ip());
-        const unsigned int savedIndex = state.stack.getIPOffset() + 4;
-        state.stack.updatePCByOffset(index);
+        const unsigned int savedIndex = state.stack.getFrame().getIPOffset() + 4;
+        state.stack.updateIPByOffset(index);
         ;
         state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
         state.stack.enterFinally(index, savedIndex);
@@ -2245,7 +2245,7 @@ bool VM::mainLoop(DSState &state) {
           state.stack.setErrorObj(entry.asError());
           vmerror;
         } else {
-          state.stack.updatePCByOffset(entry.asRetAddr());
+          state.stack.updateIPByOffset(entry.asRetAddr());
           vmnext;
         }
       }
@@ -2258,7 +2258,7 @@ bool VM::mainLoop(DSState &state) {
             auto &v = mapObj[retIndex].getValue();
             assert(v.kind() == DSValueKind::NUMBER);
             unsigned int index = v.asNum();
-            state.stack.updatePCByOffset(index);
+            state.stack.updateIPByOffset(index);
           }
         }
         vmnext;
@@ -2540,7 +2540,7 @@ bool VM::handleException(DSState &state) {
       auto *cc = cast<CompiledCode>(state.stack.code());
 
       // search exception entry
-      const unsigned int occurredPC = state.stack.getIPOffset() - 1;
+      const unsigned int occurredPC = state.stack.getFrame().getIPOffset() - 1;
       for (unsigned int i = 0; cc->getExceptionEntries()[i]; i++) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
         auto &entryType = state.typePool.get(entry.typeId);
@@ -2568,7 +2568,7 @@ bool VM::handleException(DSState &state) {
              */
             return false;
           }
-          state.stack.updatePCByOffset(entry.dest);
+          state.stack.updateIPByOffset(entry.dest);
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entryType.is(TYPE::Root_)) { // finally block

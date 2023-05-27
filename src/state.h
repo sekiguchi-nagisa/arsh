@@ -52,6 +52,10 @@ struct ControlFrame {
    * interpreter recursive depth
    */
   unsigned int recDepth;
+
+  unsigned int getIPOffset() const { return this->ip - this->code->getCode(); }
+
+  void setIPByOffset(unsigned int offset) { this->ip = this->code->code + offset; }
 };
 
 class FinallyEntry {
@@ -286,9 +290,7 @@ public:
 
   const unsigned char *&ip() noexcept { return this->frame.ip; }
 
-  void updatePCByOffset(unsigned int offset) { this->frame.ip = this->frame.code->code + offset; }
-
-  unsigned int getIPOffset() const { return this->frame.ip - this->frame.code->code; }
+  void updateIPByOffset(unsigned int offset) { this->frame.setIPByOffset(offset); }
 
   void reserve(unsigned int add) {
     unsigned int afterSize = this->frame.stackTopIndex + add;
@@ -342,7 +344,7 @@ public:
     this->walkFrames([&](const ControlFrame &cur) {
       auto &callable = cur.code;
       if (!callable->is(CodeKind::NATIVE)) {
-        return tracer(cast<CompiledCode>(callable)->toTraceElement(cur.ip - cur.code->code));
+        return tracer(cast<CompiledCode>(callable)->toTraceElement(cur.getIPOffset()));
       }
       return true;
     });
