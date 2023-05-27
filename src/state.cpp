@@ -40,7 +40,7 @@ bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DS
   this->frame.stackTopIndex += maxVarSize - paramSize;
   this->frame.stackBottomIndex = this->frame.stackTopIndex;
   this->frame.localVarOffset = localVarOffset;
-  this->frame.pc = 0;
+  this->frame.ip = code.code;
   return true;
 }
 
@@ -50,7 +50,7 @@ void VMState::unwind() {
   this->frame.code = savedFrame.code;
   this->frame.stackBottomIndex = savedFrame.stackBottomIndex;
   this->frame.localVarOffset = savedFrame.localVarOffset;
-  this->frame.pc = savedFrame.pc;
+  this->frame.ip = savedFrame.ip;
 
   unsigned int oldStackTopIndex = savedFrame.stackTopIndex;
   while (this->frame.stackTopIndex > oldStackTopIndex) {

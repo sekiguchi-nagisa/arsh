@@ -380,10 +380,9 @@ using ByteBuffer = FlexBuffer<char>;
 
 // for byte reading
 template <unsigned int N>
-inline uint64_t readN(const unsigned char *ptr, unsigned int index) noexcept {
+inline uint64_t readN(const unsigned char *ptr) noexcept {
   static_assert(N > 0 && N < 9, "out of range");
 
-  ptr += index;
   uint64_t v = 0;
   for (int i = N; i > 0; i--) {
     v |= static_cast<uint64_t>(*(ptr++)) << (static_cast<unsigned int>(i - 1) * 8);
@@ -391,21 +390,51 @@ inline uint64_t readN(const unsigned char *ptr, unsigned int index) noexcept {
   return v;
 }
 
+template <unsigned int N>
+inline uint64_t consumeN(const unsigned char *&ptr) noexcept {
+  static_assert(N > 0 && N < 9, "out of range");
+
+  uint64_t v = 0;
+  for (int i = N; i > 0; i--) {
+    v |= static_cast<uint64_t>(*(ptr++)) << (static_cast<unsigned int>(i - 1) * 8);
+  }
+  return v;
+}
+
+template <unsigned int N>
+inline uint64_t readN(const unsigned char *ptr, unsigned int index) noexcept {
+  return readN<N>(ptr + index);
+}
+
 inline unsigned char read8(const unsigned char *const code, unsigned int index) noexcept {
   return readN<1>(code, index);
 }
+
+inline unsigned char read8(const unsigned char *const ptr) noexcept { return readN<1>(ptr); }
+
+inline unsigned char consume8(const unsigned char *&ptr) noexcept { return consumeN<1>(ptr); }
 
 inline unsigned short read16(const unsigned char *const code, unsigned int index) noexcept {
   return readN<2>(code, index);
 }
 
+inline unsigned short read16(const unsigned char *const ptr) noexcept { return readN<2>(ptr); }
+
+inline unsigned short consume16(const unsigned char *&ptr) noexcept { return consumeN<2>(ptr); }
+
 inline unsigned int read24(const unsigned char *const code, unsigned int index) noexcept {
   return readN<3>(code, index);
 }
 
+inline unsigned int consume24(const unsigned char *&ptr) noexcept { return consumeN<3>(ptr); }
+
 inline unsigned int read32(const unsigned char *const code, unsigned int index) noexcept {
   return readN<4>(code, index);
 }
+
+inline unsigned int read32(const unsigned char *const ptr) noexcept { return readN<4>(ptr); }
+
+inline unsigned int consume32(const unsigned char *&ptr) noexcept { return consumeN<4>(ptr); }
 
 inline uint64_t read64(const unsigned char *const code, unsigned int index) noexcept {
   return readN<8>(code, index);

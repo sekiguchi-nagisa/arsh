@@ -28,6 +28,11 @@ struct ControlFrame {
   const DSCode *code;
 
   /**
+   * indicate the index of currently evaluating op code.
+   */
+  const unsigned char *ip;
+
+  /**
    * initial value is 0. increment index before push
    */
   unsigned int stackTopIndex;
@@ -42,11 +47,6 @@ struct ControlFrame {
    * initial value is equivalent to globalVarSize.
    */
   unsigned int localVarOffset;
-
-  /**
-   * indicate the index of currently evaluating op code.
-   */
-  unsigned int pc;
 
   /**
    * interpreter recursive depth
@@ -284,7 +284,11 @@ public:
 
   const DSCode *code() const { return this->frame.code; }
 
-  unsigned int &pc() noexcept { return this->frame.pc; }
+  const unsigned char *&ip() noexcept { return this->frame.ip; }
+
+  void updatePCByOffset(unsigned int offset) { this->frame.ip = this->frame.code->code + offset; }
+
+  unsigned int getIPOffset() const { return this->frame.ip - this->frame.code->code; }
 
   void reserve(unsigned int add) {
     unsigned int afterSize = this->frame.stackTopIndex + add;
@@ -338,7 +342,7 @@ public:
     this->walkFrames([&](const ControlFrame &cur) {
       auto &callable = cur.code;
       if (!callable->is(CodeKind::NATIVE)) {
-        return tracer(cast<CompiledCode>(callable)->toTraceElement(cur.pc));
+        return tracer(cast<CompiledCode>(callable)->toTraceElement(cur.ip - cur.code->code));
       }
       return true;
     });
