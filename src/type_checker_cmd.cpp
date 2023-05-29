@@ -22,19 +22,19 @@
 namespace ydsh {
 
 void TypeChecker::visitCmdNode(CmdNode &node) {
-  this->checkType(this->typePool.get(TYPE::String), node.getNameNode());
+  this->checkType(this->typePool().get(TYPE::String), node.getNameNode());
   for (auto &argNode : node.getArgNodes()) {
     this->checkTypeAsExpr(*argNode);
   }
   if (node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
-    node.setType(this->typePool.get(TYPE::Nothing));
+    node.setType(this->typePool().get(TYPE::Nothing));
   } else {
-    node.setType(this->typePool.get(TYPE::Bool));
+    node.setType(this->typePool().get(TYPE::Bool));
     std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto ret = this->curScope->lookup(cmdName)) {
       auto handle = std::move(ret).take();
       node.setHandle(handle);
-      auto &type = this->typePool.get(handle->getTypeId());
+      auto &type = this->typePool().get(handle->getTypeId());
       if (type.isFuncType()) { // resolved command may be module object
         auto &returnType = cast<FunctionType>(type).getReturnType();
         assert(returnType.is(TYPE::Int) || returnType.isNothingType());
@@ -190,7 +190,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     }
   }
   assert(!node.getSegmentNodes().empty());
-  node.setType(node.getExpansionSize() > 0 ? this->typePool.get(TYPE::StringArray)
+  node.setType(node.getExpansionSize() > 0 ? this->typePool().get(TYPE::StringArray)
                                            : node.getSegmentNodes()[0]->getType());
 }
 
@@ -198,7 +198,7 @@ void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
   for (auto &argNode : node.getCmdArgNodes()) {
     this->checkTypeAsExpr(*argNode);
   }
-  node.setType(this->typePool.get((TYPE::StringArray)));
+  node.setType(this->typePool().get((TYPE::StringArray)));
 }
 
 /**
@@ -245,7 +245,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   case RedirOp::APPEND_OUT_ERR:
   case RedirOp::HERE_DOC:
   case RedirOp::HERE_STR:
-    this->checkType(this->typePool.get(TYPE::String), argNode);
+    this->checkType(this->typePool().get(TYPE::String), argNode);
     break;
   case RedirOp::DUP_FD: {
     auto &type = this->checkTypeExactly(argNode);
@@ -260,18 +260,18 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     break;
   }
   }
-  node.setType(this->typePool.get(TYPE::Any)); // FIXME:
+  node.setType(this->typePool().get(TYPE::Any)); // FIXME:
 }
 
 void TypeChecker::visitWildCardNode(WildCardNode &node) {
-  node.setType(this->typePool.get(TYPE::String));
+  node.setType(this->typePool().get(TYPE::String));
 }
 
 void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
   auto kind = node.getRange().kind;
   if (kind == BraceRange::Kind::UNINIT_CHAR || kind == BraceRange::Kind::UNINIT_INT) {
     std::string error;
-    auto range = toBraceRange(this->lexer.toStrRef(node.getActualToken()),
+    auto range = toBraceRange(this->lexer.get().toStrRef(node.getActualToken()),
                               kind == BraceRange::Kind::UNINIT_CHAR, error);
     node.setRange(range);
     switch (range.kind) {
@@ -288,7 +288,7 @@ void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
       break;
     }
   }
-  node.setType(this->typePool.get(TYPE::String));
+  node.setType(this->typePool().get(TYPE::String));
 }
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
@@ -306,14 +306,14 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
 
   if (node.isLastPipe()) {
     auto scope = this->intoBlock();
-    this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), HandleAttr::READ_ONLY);
+    this->addEntry(node, "%%pipe", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
     node.setBaseIndex(this->curScope->getBaseIndex());
     auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
     node.setType(type);
   } else {
     auto child = this->funcCtx->intoChild();
     this->checkTypeExactly(*node.getNodes()[size - 1]);
-    node.setType(this->typePool.get(TYPE::Bool));
+    node.setType(this->typePool().get(TYPE::Bool));
   }
 }
 
@@ -331,7 +331,8 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   if (hasFlag(node.getModType().getAttr(), ModAttr::HAS_ERRORS)) { // if error recovery is enabled
     this->reportError<ErrorMod>(node, node.getPathName().c_str());
   }
-  auto ret = this->curScope->importForeignHandles(this->typePool, node.getModType(), importedKind);
+  auto ret =
+      this->curScope->importForeignHandles(this->typePool(), node.getModType(), importedKind);
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }
@@ -347,11 +348,11 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     if (!this->curScope->defineAlias(std::move(cmdName), handle)) { // for module subcommand
       this->reportError<DefinedCmd>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
-    if (!this->curScope->defineTypeAlias(this->typePool, nameInfo.getName(), node.getModType())) {
+    if (!this->curScope->defineTypeAlias(this->typePool(), nameInfo.getName(), node.getModType())) {
       this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
   }
-  node.setType(this->typePool.get(node.isUnreachable() ? TYPE::Nothing : TYPE::Void));
+  node.setType(this->typePool().get(node.isUnreachable() ? TYPE::Nothing : TYPE::Void));
 }
 
 class SourceGlobIter {
@@ -751,13 +752,13 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
 }
 
 void TypeChecker::visitSourceListNode(SourceListNode &node) {
-  node.setType(this->typePool.get(TYPE::Void));
+  node.setType(this->typePool().get(TYPE::Void));
   if (!this->isTopLevel()) { // only available toplevel scope
     this->reportError<OutsideToplevel>(node, "source statement");
     return;
   }
   this->checkTypeExactly(node.getPathNode());
-  auto &exprType = this->typePool.get(node.isExpansion() ? TYPE::StringArray : TYPE::String);
+  auto &exprType = this->typePool().get(node.isExpansion() ? TYPE::StringArray : TYPE::String);
   this->checkType(exprType, node.getPathNode());
 
   std::unique_ptr<CmdArgNode> constPathNode;

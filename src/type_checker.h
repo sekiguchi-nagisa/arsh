@@ -284,7 +284,7 @@ protected:
 
   std::reference_wrapper<CancelToken> cancelToken;
 
-  TypePool &typePool;
+  std::reference_wrapper<TypePool> pool;
 
   NameScopePtr curScope;
 
@@ -298,7 +298,7 @@ protected:
 
   std::unique_ptr<FuncContext> funcCtx;
 
-  const Lexer &lexer;
+  std::reference_wrapper<const Lexer> lexer;
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
@@ -309,15 +309,19 @@ protected:
 public:
   TypeChecker(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
               TypePool &pool, bool toplevelPrinting, const Lexer &lex)
-      : config(config), cancelToken(cancelToken), typePool(pool),
-        toplevelPrinting(toplevelPrinting), funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
+      : config(config), cancelToken(cancelToken), pool(pool), toplevelPrinting(toplevelPrinting),
+        funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
 
   ~TypeChecker() override = default;
 
   std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
                                    NameScopePtr global);
 
-  TypePool &getTypePool() { return this->typePool; }
+  void setTypePool(TypePool &p) { this->pool = p; }
+
+  TypePool &typePool() { return this->pool; }
+
+  void setLexer(const Lexer &lex) { this->lexer = lex; }
 
   void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
     this->ccHandler = handler;
@@ -340,7 +344,7 @@ protected:
    * return resolved type.
    */
   const DSType &checkTypeAsExpr(Node &targetNode) {
-    return this->checkType(nullptr, targetNode, &this->typePool.get(TYPE::Void));
+    return this->checkType(nullptr, targetNode, &this->typePool().get(TYPE::Void));
   }
 
   /**
@@ -397,7 +401,7 @@ private:
   const DSType *getRequiredType() const { return this->requiredTypes.back(); }
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
-    this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
+    this->checkTypeWithCurrentScope(&this->typePool().get(TYPE::Void), blockNode);
   }
 
   void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
@@ -411,7 +415,7 @@ private:
 
   void resolveToStringCoercion(std::unique_ptr<Node> &targetNode) {
     targetNode =
-        TypeOpNode::newTypedCastNode(std::move(targetNode), this->typePool.get(TYPE::String));
+        TypeOpNode::newTypedCastNode(std::move(targetNode), this->typePool().get(TYPE::String));
     this->resolveCastOp(cast<TypeOpNode>(*targetNode), true);
   }
 
@@ -434,7 +438,7 @@ private:
 
   HandlePtr addEnvEntry(Token token, const std::string &symbolName, bool allowCapture) {
     auto attr = allowCapture ? HandleAttr() : HandleAttr::UNCAPTURED;
-    return this->addEntry(token, symbolName, this->typePool.get(TYPE::String), HandleKind::ENV,
+    return this->addEntry(token, symbolName, this->typePool().get(TYPE::String), HandleKind::ENV,
                           attr);
   }
 

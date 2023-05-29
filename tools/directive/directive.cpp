@@ -91,7 +91,7 @@ private:
   void addHandler(const char *attributeName, const DSType &type, AttributeHandler &&handler);
 
   void addHandler(const char *attributeName, TYPE type, AttributeHandler &&handler) {
-    this->addHandler(attributeName, this->typePool.get(type), std::move(handler));
+    this->addHandler(attributeName, this->typePool().get(type), std::move(handler));
   }
 
   void addAlias(const char *alias, const char *attr);
@@ -119,8 +119,9 @@ private:
    * @return
    */
   const DSType &getMapType() {
-    return *this->typePool
-                .createMapType(this->typePool.get(TYPE::String), this->typePool.get(TYPE::String))
+    return *this->typePool()
+                .createMapType(this->typePool().get(TYPE::String),
+                               this->typePool().get(TYPE::String))
                 .take();
   }
 
@@ -159,7 +160,7 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, const SysConf
     : TypeChecker(sysConfig, getCancelToken(), typePool, false, lex), sourceName(sourceName) {
   unsigned int modIndex = this->varCount++;
   this->curScope = NameScopePtr::create(std::ref(this->varCount), modIndex, 0);
-  this->setVarName("0", this->typePool.get(TYPE::String));
+  this->setVarName("0", this->typePool().get(TYPE::String));
 }
 
 static bool isIgnoredUser(const std::string &text) {
