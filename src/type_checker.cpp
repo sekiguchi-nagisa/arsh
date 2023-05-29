@@ -2303,6 +2303,8 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   this->visitingDepth = 0;
   this->funcCtx->clear();
   this->errors.clear();
+  this->reachComp = false;
+  this->requiredTypes.clear();
 
   // set scope
   this->curScope = std::move(global);

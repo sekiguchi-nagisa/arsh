@@ -210,7 +210,7 @@ Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontE
                    CompileOption compileOption, const CompileDumpTarget *dumpTarget,
                    ErrorConsumer &consumer)
     : compileOption(compileOption), provider(moduleProvider),
-      frontEnd(this->provider, std::move(ctx), toOption(this->compileOption)),
+      frontEnd(this->provider, std::move(ctx), toOption(this->compileOption), nullptr),
       errorReporter(consumer),
       uastDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_UAST] : nullptr),
       astDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_AST] : nullptr),

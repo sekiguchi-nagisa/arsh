@@ -72,25 +72,14 @@ class FrontEnd {
 public:
   struct Context {
     LexerPtr lexer;
-    TypeChecker checker;
+    std::reference_wrapper<TypePool> pool;
     NameScopePtr scope;
     std::unique_ptr<SourceListNode> srcListNode;
     std::vector<std::unique_ptr<Node>> nodes;
-    ObserverPtr<CodeCompletionHandler> ccHandler;
     unsigned int nodeIndex{0};
-    FrontEndOption option;
 
-    Context(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
-            TypePool &pool, LexerPtr lexer, NameScopePtr scope, FrontEndOption option,
-            ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-        : lexer(std::move(lexer)), checker(config, cancelToken, pool,
-                                           hasFlag(option, FrontEndOption::TOPLEVEL), *this->lexer),
-          scope(std::move(scope)), ccHandler(ccHandler), option(option) {
-      this->checker.setCodeCompletionHandler(ccHandler);
-      if (hasFlag(this->option, FrontEndOption::REPORT_WARN)) {
-        this->checker.setAllowWarning(true);
-      }
-    }
+    Context(TypePool &pool, LexerPtr lexer, NameScopePtr scope)
+        : lexer(std::move(lexer)), pool(pool), scope(std::move(scope)) {}
   };
 
   struct ErrorListener {
@@ -106,15 +95,14 @@ public:
   struct ModuleProvider {
     virtual ~ModuleProvider() = default;
 
-    virtual std::unique_ptr<Context> newContext(LexerPtr lexer, FrontEndOption option,
-                                                ObserverPtr<CodeCompletionHandler> ccHandler) = 0;
+    virtual std::unique_ptr<Context> newContext(LexerPtr lexer) = 0;
 
     virtual const ModType &
     newModTypeFromCurContext(const std::vector<std::unique_ptr<Context>> &ctx) = 0;
 
     using Ret = Union<const ModType *, std::unique_ptr<Context>, ModLoadingError>;
 
-    virtual Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) = 0;
+    virtual Ret load(const char *scriptDir, const char *modPath) = 0;
 
     virtual const SysConfig &getSysConfig() const = 0;
 
@@ -122,6 +110,7 @@ public:
   };
 
 private:
+  TypeChecker checker;
   std::vector<std::unique_ptr<Context>> contexts;
   ModuleProvider &provider;
   const FrontEndOption option;
@@ -133,9 +122,10 @@ private:
 public:
   FrontEnd(ModuleProvider &provider, LexerPtr lexer, FrontEndOption option = {},
            ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-      : FrontEnd(provider, provider.newContext(std::move(lexer), option, ccHandler), option) {}
+      : FrontEnd(provider, provider.newContext(std::move(lexer)), option, ccHandler) {}
 
-  FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option);
+  FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option,
+           ObserverPtr<CodeCompletionHandler> ccHandler);
 
   void setErrorListener(ErrorListener &r) { this->listener.reset(&r); }
 
@@ -151,7 +141,7 @@ public:
 
   unsigned int getMaxLocalVarIndex() const { return this->curScope()->getMaxLocalVarIndex(); }
 
-  TypePool &getTypePool() { return this->checker().typePool(); }
+  TypePool &getTypePool() { return this->contexts.back()->pool; }
 
   const LexerPtr &getCurrentLexer() const { return this->contexts.back()->lexer; }
 
@@ -185,8 +175,6 @@ public:
   void teardownASTDump();
 
 private:
-  TypeChecker &checker() { return this->contexts.back()->checker; }
-
   /**
    *
    * @return
@@ -233,9 +221,7 @@ public:
 
   ~DefaultModuleProvider() override = default;
 
-  std::unique_ptr<FrontEnd::Context>
-  newContext(LexerPtr lexer, FrontEndOption option,
-             ObserverPtr<CodeCompletionHandler> ccHandler) override;
+  std::unique_ptr<FrontEnd::Context> newContext(LexerPtr lexer) override;
 
   const ModType &
   newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
@@ -244,10 +230,9 @@ public:
     return this->loader.createModType(this->pool, s);
   }
 
-  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
+  Ret load(const char *scriptDir, const char *modPath) override;
 
-  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option,
-           ModLoadOption loadOption);
+  Ret load(const char *scriptDir, const char *modPath, ModLoadOption loadOption);
 
   const SysConfig &getSysConfig() const override;
 

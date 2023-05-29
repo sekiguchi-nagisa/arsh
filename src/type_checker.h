@@ -327,6 +327,8 @@ public:
     this->ccHandler = handler;
   }
 
+  ObserverPtr<CodeCompletionHandler> getCodeCompletionHandler() const { return this->ccHandler; }
+
   void setAllowWarning(bool set) { this->allowWarning = set; }
 
   bool hasReachedCompNode() const { return this->reachComp; }

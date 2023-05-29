@@ -116,13 +116,9 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
     }                                                                                              \
   } while (false)
 
-std::unique_ptr<FrontEnd::Context>
-Analyzer::newContext(LexerPtr lexer, FrontEndOption option,
-                     ObserverPtr<CodeCompletionHandler> ccHandler) {
+std::unique_ptr<FrontEnd::Context> Analyzer::newContext(LexerPtr lexer) {
   auto &ctx = this->current();
-  return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
-                                             ctx->getPool(), std::move(lexer), ctx->getScope(),
-                                             option, ccHandler);
+  return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lexer), ctx->getScope());
 }
 
 const ModType &
@@ -141,8 +137,7 @@ static LexerPtr createLexer(const Source &src) {
   return Lexer::fromFullPath(fullPath, ByteBuffer(ptr, ptr + src.getContent().size()));
 }
 
-FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *modPath,
-                                             FrontEndOption option) {
+FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *modPath) {
   FilePtr filePtr;
   auto ret =
       ModuleLoaderBase::load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
@@ -158,9 +153,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     src = this->srcMan.update(fullPath, src->getVersion(), std::move(content));
     auto &ctx = this->addNew(*src);
     auto lex = createLexer(*src);
-    return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
-                                               ctx->getPool(), std::move(lex), ctx->getScope(),
-                                               option, nullptr);
+    return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
   } else {
     assert(is<unsigned int>(ret));
     auto src = this->srcMan.findById(get<unsigned int>(ret));
@@ -172,9 +165,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     } else { // re-parse
       auto &ctx = this->addNew(*src);
       auto lex = createLexer(*src);
-      return std::make_unique<FrontEnd::Context>(this->sysConfig, this->getCancelToken(),
-                                                 ctx->getPool(), std::move(lex), ctx->getScope(),
-                                                 option, nullptr);
+      return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
     }
   }
 }

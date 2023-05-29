@@ -125,7 +125,7 @@ protected:
   void popLexerMode();
 
   /**
-   * try to change lexer mode to STMT mode and refetech token.
+   * try to change lexer mode to STMT mode and refetch token.
    */
   void changeLexerModeToSTMT();
 

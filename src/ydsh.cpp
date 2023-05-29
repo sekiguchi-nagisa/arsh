@@ -387,7 +387,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, size_t s
   auto lexer = LexerPtr::create(sourceName, ByteBuffer(data, data + size), getCWD());
   lexer->setLineNumOffset(st->lineNum);
   st->lineNum = 0;
-  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(compileOption), nullptr);
+  auto ctx = moduleProvider.newContext(std::move(lexer));
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
@@ -400,8 +400,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
                                        std::make_unique<RuntimeCancelToken>(true));
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
-  auto ret =
-      moduleProvider.load(scriptDir.get(), fileName, toOption(compileOption), ModLoadOption{});
+  auto ret = moduleProvider.load(scriptDir.get(), fileName, ModLoadOption{});
   if (is<ModLoadingError>(ret)) {
     auto error = get<ModLoadingError>(ret);
     if (error.isFileNotFound() && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {

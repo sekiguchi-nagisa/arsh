@@ -586,7 +586,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
                                        std::make_unique<RuntimeCancelToken>());
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
   auto lexer = LexerPtr::create("(loaded)", ByteBuffer(expr.begin(), expr.end()), getCWD());
-  auto ctx = moduleProvider.newContext(std::move(lexer), toOption(option), nullptr);
+  auto ctx = moduleProvider.newContext(std::move(lexer));
 
   // compile
   CompileDumpTarget dumpTarget(state.dumpTarget.files);

@@ -141,14 +141,12 @@ public:
   ~Analyzer() override = default;
 
 protected:
-  std::unique_ptr<FrontEnd::Context>
-  newContext(LexerPtr lexer, FrontEndOption option,
-             ObserverPtr<CodeCompletionHandler> ccHandler) override;
+  std::unique_ptr<FrontEnd::Context> newContext(LexerPtr lexer) override;
 
   const ModType &
   newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
 
-  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
+  Ret load(const char *scriptDir, const char *modPath) override;
 
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 

@@ -37,20 +37,31 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
   }
 }
 
-FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option)
-    : provider(provider), option(option) {
+FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option,
+                   ObserverPtr<CodeCompletionHandler> ccHandler)
+    : checker(provider.getSysConfig(), provider.getCancelToken(), ctx->pool,
+              hasFlag(option, FrontEndOption::TOPLEVEL), *ctx->lexer),
+      provider(provider), option(option) {
   this->contexts.push_back(std::move(ctx));
   this->curScope()->clearLocalSize();
+  this->checker.setCodeCompletionHandler(ccHandler);
+  if (hasFlag(this->option, FrontEndOption::REPORT_WARN)) {
+    this->checker.setAllowWarning(true);
+  }
 }
 
 bool FrontEnd::tryToParse() {
   auto &ctx = this->contexts.back();
   if (ctx->nodes.empty()) {
     ParserOption parserOption{};
-    if (hasFlag(ctx->option, FrontEndOption::SINGLE_EXPR)) {
+    if (hasFlag(this->option, FrontEndOption::SINGLE_EXPR)) {
       setFlag(parserOption, ParserOption::SINGLE_EXPR);
     }
-    Parser parser(*ctx->lexer, parserOption, ctx->ccHandler);
+    ObserverPtr<CodeCompletionHandler> handler;
+    if (this->contexts.size() == 1) { // code completion is disabled in sourced scripts
+      handler = this->checker.getCodeCompletionHandler();
+    }
+    Parser parser(*ctx->lexer, parserOption, handler);
     ctx->nodes = parser();
     assert(!ctx->nodes.empty());
     if (parser.hasError()) {
@@ -81,10 +92,12 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   if (hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     return true;
   }
-  node = this->checker()(this->prevType, std::move(node), this->curScope());
+  this->checker.setTypePool(this->contexts.back()->pool);
+  this->checker.setLexer(*this->contexts.back()->lexer);
+  node = this->checker(this->prevType, std::move(node), this->curScope());
   this->prevType = &node->getType();
 
-  auto &errors = this->checker().getErrors();
+  auto &errors = this->checker.getErrors();
   unsigned int actualErrorCount = 0;
   for (size_t i = 0; i < errors.size(); i++) {
     this->listener &&this->listener->handleTypeError(this->contexts, errors[i], i == 0);
@@ -95,7 +108,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   if (actualErrorCount) {
     this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
     if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY) &&
-        !this->checker().hasReachedCompNode()) {
+        !this->checker.hasReachedCompNode()) {
       return true;
     }
     return false;
@@ -175,7 +188,7 @@ FrontEndResult FrontEnd::enterModule() {
   const char *modPath = node.getPathList()[pathIndex]->c_str();
   node.setCurIndex(pathIndex + 1);
 
-  auto ret = this->provider.load(this->getCurScriptDir(), modPath, this->option);
+  auto ret = this->provider.load(this->getCurScriptDir(), modPath);
   if (is<ModLoadingError>(ret)) {
     auto e = get<ModLoadingError>(ret);
     if (e.isFileNotFound() && node.isOptional()) {
@@ -242,12 +255,8 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 // ##     DefaultModuleProvider     ##
 // ###################################
 
-std::unique_ptr<FrontEnd::Context>
-DefaultModuleProvider::newContext(LexerPtr lexer, FrontEndOption option,
-                                  ObserverPtr<CodeCompletionHandler> ccHandler) {
-  return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->getCancelToken(),
-                                             this->pool, std::move(lexer), this->scope, option,
-                                             ccHandler);
+std::unique_ptr<FrontEnd::Context> DefaultModuleProvider::newContext(LexerPtr lexer) {
+  return std::make_unique<FrontEnd::Context>(this->pool, std::move(lexer), this->scope);
 }
 
 const ModType &DefaultModuleProvider::newModTypeFromCurContext(
@@ -255,15 +264,13 @@ const ModType &DefaultModuleProvider::newModTypeFromCurContext(
   return this->newModType(*ctx.back()->scope);
 }
 
-FrontEnd::ModuleProvider::Ret
-DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEndOption option) {
-  return this->load(scriptDir, modPath, option, ModLoadOption::IGNORE_NON_REG_FILE);
+FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
+                                                          const char *modPath) {
+  return this->load(scriptDir, modPath, ModLoadOption::IGNORE_NON_REG_FILE);
 }
 
-FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
-                                                          const char *modPath,
-                                                          FrontEndOption option,
-                                                          ModLoadOption loadOption) {
+FrontEnd::ModuleProvider::Ret
+DefaultModuleProvider::load(const char *scriptDir, const char *modPath, ModLoadOption loadOption) {
   FilePtr filePtr;
   auto ret = this->loader.load(scriptDir, modPath, filePtr, loadOption);
   if (is<ModLoadingError>(ret)) {
@@ -281,9 +288,7 @@ FrontEnd::ModuleProvider::Ret DefaultModuleProvider::load(const char *scriptDir,
     auto lex = Lexer::fromFullPath(fullPath, std::move(buf));
     auto newScope = this->loader.createGlobalScopeFromFullPath(this->pool, fullPath,
                                                                this->pool.getBuiltinModType());
-    return std::make_unique<FrontEnd::Context>(this->loader.getSysConfig(), this->getCancelToken(),
-                                               this->pool, std::move(lex), std::move(newScope),
-                                               option, nullptr);
+    return std::make_unique<FrontEnd::Context>(this->pool, std::move(lex), std::move(newScope));
   } else {
     assert(is<unsigned int>(ret));
     auto &type = this->pool.get(get<unsigned int>(ret));
