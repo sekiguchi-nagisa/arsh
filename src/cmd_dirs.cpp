@@ -122,7 +122,7 @@ static std::string formatDir(StringRef dir, const std::string &home) {
   return value;
 }
 
-static bool printDirstack(const ArrayObject &dirstack, const char *cwd, const PrintDirOp dirOp) {
+static bool printDirStack(const ArrayObject &dirStack, const char *cwd, const PrintDirOp dirOp) {
   std::string home;
   if (!hasFlag(dirOp, PrintDirOp::FULL_PATH)) {
     home = "~";
@@ -130,10 +130,10 @@ static bool printDirstack(const ArrayObject &dirstack, const char *cwd, const Pr
       return false;
     }
   }
-  assert(dirstack.size() <= SYS_LIMIT_DIRSTACK_SIZE);
-  const auto size = static_cast<int>(dirstack.size());
+  assert(dirStack.size() <= SYS_LIMIT_DIRSTACK_SIZE);
+  const auto size = static_cast<int>(dirStack.size());
   if (hasFlag(dirOp, PrintDirOp::PER_LINE)) {
-    unsigned int count = hasFlag(dirOp, PrintDirOp::LINENO) ? countDigits(dirstack.size()) : 0;
+    unsigned int count = hasFlag(dirOp, PrintDirOp::LINENO) ? countDigits(dirStack.size()) : 0;
     std::string prefix;
     if (count) {
       prefix = padLeft(0, count, ' ');
@@ -150,13 +150,13 @@ static bool printDirstack(const ArrayObject &dirstack, const char *cwd, const Pr
           prefix += "  ";
         }
       }
-      printf("%s%s\n", prefix.c_str(), formatDir(dirstack.getValues()[i].asStrRef(), home).c_str());
+      printf("%s%s\n", prefix.c_str(), formatDir(dirStack.getValues()[i].asStrRef(), home).c_str());
     }
   } else {
     fputs(formatDir(cwd, home).c_str(), stdout);
     for (int i = size - 1; i > -1; i--) {
       fputc(' ', stdout);
-      fputs(formatDir(dirstack.getValues()[i].asStrRef(), home).c_str(), stdout);
+      fputs(formatDir(dirStack.getValues()[i].asStrRef(), home).c_str(), stdout);
     }
     fputc('\n', stdout);
   }
@@ -165,9 +165,9 @@ static bool printDirstack(const ArrayObject &dirstack, const char *cwd, const Pr
 }
 
 int builtin_dirs(DSState &state, ArrayObject &argvObj) {
-  auto &dirstack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
-  if (dirstack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
-    dirstack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate dirstack
+  auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
+  if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
+    dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
 
   PrintDirOp dirOp{};
@@ -175,7 +175,7 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
   for (int opt; (opt = optState(argvObj, "clpvh")) != -1;) {
     switch (opt) {
     case 'c':
-      dirstack.refValues().clear();
+      dirStack.refValues().clear();
       return 0;
     case 'l':
       setFlag(dirOp, PrintDirOp::FULL_PATH);
@@ -198,14 +198,14 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
     PERROR(argvObj, "cannot resolve current working dir");
     return 1;
   }
-  printDirstack(dirstack, cwd.get(), dirOp);
+  printDirStack(dirStack, cwd.get(), dirOp);
   return 0;
 }
 
 int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
-  auto &dirstack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
-  if (dirstack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
-    dirstack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate dirstack
+  auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
+  if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
+    dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
 
   GetOptState optState;
@@ -232,15 +232,15 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
         ERROR(argvObj, "%s: invalid number", toPrintable(dest).c_str());
         return 1;
       }
-      if (pair.value > dirstack.size()) {
+      if (pair.value > dirStack.size()) {
         ERROR(argvObj, "%s: directory stack index out of range (up to %zu)",
-              toPrintable(dest).c_str(), dirstack.size());
+              toPrintable(dest).c_str(), dirStack.size());
         return 1;
       }
       if (dest[0] == '-') {
         rotateIndex = pair.value;
       } else { // +
-        rotateIndex = dirstack.size() - pair.value;
+        rotateIndex = dirStack.size() - pair.value;
       }
       rotate = true;
     }
@@ -253,59 +253,59 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     }
     if (!rotate) {
       if (optState.index < argvObj.size()) { // if specify DIR, push current and change to DIR
-        if (dirstack.size() + 1 > SYS_LIMIT_DIRSTACK_SIZE) {
+        if (dirStack.size() + 1 > SYS_LIMIT_DIRSTACK_SIZE) {
           ERROR(argvObj, "directory stack size reaches limit (up to %zu)", SYS_LIMIT_DIRSTACK_SIZE);
           return 1;
         }
       } else { // swap stack top and current
-        if (dirstack.size() == 0) {
+        if (dirStack.size() == 0) {
           ERROR(argvObj, "no other directory");
           return 1;
         }
-        dest = dirstack.getValues().back().asStrRef();
+        dest = dirStack.getValues().back().asStrRef();
       }
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
       if (optState.index == argvObj.size()) {
-        dirstack.refValues().pop_back();
+        dirStack.refValues().pop_back();
       }
-      dirstack.append(DSValue::createStr(cwd.get()));
-    } else if (rotateIndex < dirstack.size()) {
-      dest = dirstack.getValues()[rotateIndex].asStrRef();
+      dirStack.append(DSValue::createStr(cwd.get()));
+    } else if (rotateIndex < dirStack.size()) {
+      dest = dirStack.getValues()[rotateIndex].asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
-      const size_t limit = dirstack.size();
-      dirstack.refValues().insert(dirstack.refValues().begin(), DSValue::createStr(cwd.get()));
+      const size_t limit = dirStack.size();
+      dirStack.refValues().insert(dirStack.refValues().begin(), DSValue::createStr(cwd.get()));
       for (size_t count = static_cast<size_t>(rotateIndex) + 1; count < limit; count++) {
-        auto top = dirstack.refValues().back();
-        dirstack.refValues().pop_back();
-        dirstack.refValues().insert(dirstack.refValues().begin(), std::move(top));
+        auto top = dirStack.refValues().back();
+        dirStack.refValues().pop_back();
+        dirStack.refValues().insert(dirStack.refValues().begin(), std::move(top));
       }
-      dirstack.refValues().pop_back();
+      dirStack.refValues().pop_back();
     }
   } else { // popd
-    if (dirstack.size() == 0) {
+    if (dirStack.size() == 0) {
       ERROR(argvObj, "directory stack empty");
       return 1;
     }
-    if (rotate && rotateIndex < dirstack.size()) {
-      dirstack.refValues().erase(dirstack.refValues().begin() + static_cast<ssize_t>(rotateIndex));
+    if (rotate && rotateIndex < dirStack.size()) {
+      dirStack.refValues().erase(dirStack.refValues().begin() + static_cast<ssize_t>(rotateIndex));
     } else {
-      dest = dirstack.getValues().back().asStrRef();
+      dest = dirStack.getValues().back().asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
-      dirstack.refValues().pop_back();
+      dirStack.refValues().pop_back();
     }
   }
   auto cwd = state.getWorkingDir();
   assert(cwd);
-  printDirstack(dirstack, cwd.get(), PrintDirOp{});
+  printDirStack(dirStack, cwd.get(), PrintDirOp{});
   return 0;
 }
 

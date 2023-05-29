@@ -166,7 +166,7 @@ class FormatPrinter {
 private:
   const StringRef format;
   StringBuf strBuf;
-  FILE *fp; // do not close it
+  FILE *fp{nullptr}; // do not close it
   std::string error;
   const timestamp initTimestamp;
   const bool useBuf;
@@ -622,7 +622,7 @@ bool FormatPrinter::putPadding(size_t size) {
   return true;
 }
 
-static bool checkAltSymbolSImpl(char conversion, const StringRef alt, char next,
+static bool checkAltSymbolsImpl(char conversion, const StringRef alt, char next,
                                 std::string &error) {
   assert(conversion == 'E' || conversion == 'O');
   if (alt.contains(next)) {
@@ -655,7 +655,7 @@ static bool checkAltSymbols(const StringRef format, StringRef::size_type pos, st
   } else if (conversion == 'O') {
     alt = "deHImMSuUVwWy";
   }
-  return checkAltSymbolSImpl(conversion, alt, next, error);
+  return checkAltSymbolsImpl(conversion, alt, next, error);
 }
 
 static bool putTime(StringBuf &out, const char *fmt, const struct tm &tm) {
