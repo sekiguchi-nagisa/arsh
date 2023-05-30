@@ -215,8 +215,7 @@ Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontE
       uastDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_UAST] : nullptr),
       astDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_AST] : nullptr),
       codegen(this->provider.getPool()),
-      codeDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_CODE] : nullptr,
-                 this->provider.getPool()) {
+      codeDumpFile(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_CODE] : nullptr) {
   if (this->uastDumper) {
     this->frontEnd.setUASTDumper(this->uastDumper);
   }
@@ -299,8 +298,9 @@ END:
   }
 
   // dump code
-  if (this->codeDumper && func) {
-    this->codeDumper(func->getCode(), this->provider.getScope()->getMaxGlobalVarIndex());
+  if (this->codeDumpFile && func) {
+    ByteCodeDumper codeDumper(this->codeDumpFile, this->provider.getPool());
+    codeDumper(func->getCode(), this->provider.getScope()->getMaxGlobalVarIndex());
   }
   return 0;
 }

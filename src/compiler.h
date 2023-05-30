@@ -149,7 +149,7 @@ private:
   NodeDumper uastDumper;
   NodeDumper astDumper;
   ByteCodeGenerator codegen;
-  ByteCodeDumper codeDumper;
+  FILE *codeDumpFile;
 
 public:
   Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
