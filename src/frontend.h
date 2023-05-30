@@ -141,6 +141,8 @@ public:
 
   unsigned int getMaxLocalVarIndex() const { return this->curScope()->getMaxLocalVarIndex(); }
 
+  ModuleProvider &getModuleProvider() { return this->provider; }
+
   TypePool &getTypePool() { return this->contexts.back()->pool; }
 
   const LexerPtr &getCurrentLexer() const { return this->contexts.back()->lexer; }

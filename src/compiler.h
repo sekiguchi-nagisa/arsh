@@ -143,7 +143,6 @@ struct CompileDumpTarget {
 class Compiler {
 private:
   CompileOption compileOption;
-  DefaultModuleProvider &provider;
   FrontEnd frontEnd;
   ErrorReporter errorReporter;
   NodeDumper uastDumper;
@@ -164,6 +163,11 @@ public:
   unsigned int lineNum() const { return this->frontEnd.getRootLineNum(); }
 
   int operator()(ObjPtr<FuncObject> &func);
+
+private:
+  DefaultModuleProvider &provider() {
+    return dynamic_cast<DefaultModuleProvider &>(this->frontEnd.getModuleProvider());
+  }
 };
 
 } // namespace ydsh

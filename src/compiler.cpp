@@ -209,12 +209,12 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
 Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontEnd::Context> &&ctx,
                    CompileOption compileOption, const CompileDumpTarget *dumpTarget,
                    ErrorConsumer &consumer)
-    : compileOption(compileOption), provider(moduleProvider),
-      frontEnd(this->provider, std::move(ctx), toOption(this->compileOption), nullptr),
+    : compileOption(compileOption),
+      frontEnd(moduleProvider, std::move(ctx), toOption(this->compileOption), nullptr),
       errorReporter(consumer),
       uastDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_UAST] : nullptr),
       astDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_AST] : nullptr),
-      codegen(this->provider.getPool()),
+      codegen(moduleProvider.getPool()),
       codeDumpFile(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_CODE] : nullptr) {
   if (this->uastDumper) {
     this->frontEnd.setUASTDumper(this->uastDumper);
@@ -266,8 +266,8 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
       this->frontEnd.getContext().back()->scope->updateModAttr(ModAttr::UNREACHABLE);
     }
     auto &modType = hasFlag(this->compileOption, CompileOption::SINGLE_EXPR)
-                        ? this->provider.getPool().getBuiltinModType()
-                        : this->provider.newModTypeFromCurContext(this->frontEnd.getContext());
+                        ? this->provider().getPool().getBuiltinModType()
+                        : this->provider().newModTypeFromCurContext(this->frontEnd.getContext());
     if (!this->frontEndOnly()) {
       func = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex(), modType);
     }
@@ -280,13 +280,13 @@ END:
     return 1;
   }
   if (hasFlag(this->compileOption, CompileOption::LOAD_TO_ROOT)) {
-    auto ret = this->provider.getPool().getModTypeById(this->frontEnd.getCurModId());
+    auto ret = this->provider().getPool().getModTypeById(this->frontEnd.getCurModId());
     assert(ret);
-    auto msg = this->provider.getScope()->importForeignHandles(this->provider.getPool(), *ret,
-                                                               ImportedModKind::GLOBAL);
+    auto msg = this->provider().getScope()->importForeignHandles(this->provider().getPool(), *ret,
+                                                                 ImportedModKind::GLOBAL);
     if (msg.empty()) {
-      assert(this->provider.getScope()->inRootModule());
-      this->provider.newModType(*this->provider.getScope());
+      assert(this->provider().getScope()->inRootModule());
+      this->provider().newModType(*this->provider().getScope());
     } else {
       auto node = std::make_unique<EmptyNode>(Token{0, 0});
       auto error = createTCError<ConflictSymbol>(
@@ -299,8 +299,8 @@ END:
 
   // dump code
   if (this->codeDumpFile && func) {
-    ByteCodeDumper codeDumper(this->codeDumpFile, this->provider.getPool());
-    codeDumper(func->getCode(), this->provider.getScope()->getMaxGlobalVarIndex());
+    ByteCodeDumper codeDumper(this->codeDumpFile, this->provider().getPool());
+    codeDumper(func->getCode(), this->provider().getScope()->getMaxGlobalVarIndex());
   }
   return 0;
 }
