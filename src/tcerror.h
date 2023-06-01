@@ -189,6 +189,7 @@ DEFINE_TCError(NeedFd,
 DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
+DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");
 
 #undef DEFINE_TCError
 #undef DEFINE_TCWarn

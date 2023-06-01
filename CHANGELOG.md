@@ -32,6 +32,7 @@
 
 - ``textDocument/publishDiagnostics`` emit warning diagnostic
     - meaningless cast op
+    - variable shadowing
 
 ### Changed
 

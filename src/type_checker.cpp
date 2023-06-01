@@ -325,6 +325,12 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
 
 HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
                                 HandleKind kind, HandleAttr attribute) {
+  bool shadowing = false;
+  if (this->allowWarning) {
+    if (this->curScope->lookup(symbolName)) {
+      shadowing = true;
+    }
+  }
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, kind, attribute);
   if (!ret) {
     switch (ret.asErr()) {
@@ -341,6 +347,9 @@ HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, cons
       break; // normally unreachable
     }
     return nullptr;
+  }
+  if (shadowing) {
+    this->reportError<VarShadowing>(token, symbolName.c_str());
   }
   return std::move(ret).take();
 }
@@ -2183,8 +2192,13 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     this->addEntry(node, "%%redir", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
 
     // register special characters (@, 0)
-    this->addEntry(node, "@", this->typePool().get(TYPE::StringArray), HandleAttr::READ_ONLY);
-    this->addEntry(node, "0", this->typePool().get(TYPE::String), HandleAttr::READ_ONLY);
+    {
+      auto old = this->allowWarning;
+      this->allowWarning = false; // temporary disable variable shadowing check
+      this->addEntry(node, "@", this->typePool().get(TYPE::StringArray), HandleAttr::READ_ONLY);
+      this->addEntry(node, "0", this->typePool().get(TYPE::String), HandleAttr::READ_ONLY);
+      this->allowWarning = old;
+    }
 
     // check type command body
     this->checkTypeWithCurrentScope(node.getBlockNode());

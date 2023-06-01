@@ -1,0 +1,54 @@
+# RUN: call $cmd --test $self --debounce-time 10
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "{ var OSTYPE = 34; }"}
+ }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [
+#    CHECK:       {
+#    CHECK:         "code": "semantic error: VarShadowing",
+#    CHECK:         "message": "`OSTYPE' hides already defined name of outer scope",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 12,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         "severity": 2
+#    CHECK:       }
+#    CHECK:     ],
+#    CHECK:     "uri": "file:///test/test.ds"
+#    CHECK:   }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didClose",
+  "params": { "textDocument": { "uri": "file:///test/test.ds" } } }
+
+---
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF: {
+#    CHECK:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

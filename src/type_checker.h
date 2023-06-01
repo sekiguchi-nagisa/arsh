@@ -294,7 +294,7 @@ protected:
 
   bool reachComp{false};
 
-  bool allowWarning{false};
+  bool allowWarning{false}; // enable extra semantic check
 
   std::unique_ptr<FuncContext> funcCtx;
 
