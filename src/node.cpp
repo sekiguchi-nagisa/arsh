@@ -318,11 +318,12 @@ void ArgsNode::dump(NodeDumper &dumper) const {
 // #######################
 
 std::unique_ptr<ApplyNode> ApplyNode::newMethodCall(std::unique_ptr<Node> &&recvNode, Token token,
-                                                    std::string &&methodName) {
+                                                    std::string &&methodName,
+                                                    unsigned int paramPos) {
   auto exprNode =
       std::make_unique<AccessNode>(std::move(recvNode), NameInfo(token, std::move(methodName)));
-  return std::make_unique<ApplyNode>(std::move(exprNode), std::make_unique<ArgsNode>(),
-                                     METHOD_CALL);
+  return std::make_unique<ApplyNode>(std::move(exprNode),
+                                     std::make_unique<ArgsNode>(Token{paramPos, 1}), METHOD_CALL);
 }
 
 void ApplyNode::dump(NodeDumper &dumper) const {

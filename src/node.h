@@ -874,17 +874,17 @@ public:
   }
 
   static std::unique_ptr<ApplyNode> newMethodCall(std::unique_ptr<Node> &&recvNode, Token token,
-                                                  std::string &&methodName);
+                                                  std::string &&methodName, unsigned int paramPos);
 
   static std::unique_ptr<ApplyNode> newMethodCall(std::unique_ptr<Node> &&recvNode,
-                                                  std::string &&methodName) {
+                                                  std::string &&methodName, unsigned int paramPos) {
     Token token = recvNode->getToken();
-    return newMethodCall(std::move(recvNode), token, std::move(methodName));
+    return newMethodCall(std::move(recvNode), token, std::move(methodName), paramPos);
   }
 
   static std::unique_ptr<ApplyNode> newIndexCall(std::unique_ptr<Node> &&recvNode, Token token,
                                                  std::unique_ptr<Node> &&indexNode) {
-    auto node = newMethodCall(std::move(recvNode), token, std::string(OP_GET));
+    auto node = newMethodCall(std::move(recvNode), token, std::string(OP_GET), indexNode->getPos());
     node->setAttr(INDEX);
     node->argsNode->addNode(std::move(indexNode));
     return node;
@@ -893,7 +893,8 @@ public:
   static std::unique_ptr<ApplyNode> newIndexCall(std::unique_ptr<Node> &&recvNode, Token token,
                                                  std::unique_ptr<Node> &&indexNode,
                                                  std::unique_ptr<Node> &&rightNode) {
-    auto node = ApplyNode::newMethodCall(std::move(recvNode), token, std::string(OP_SET));
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), token, std::string(OP_SET),
+                                         indexNode->getPos());
     node->getArgsNode().addNode(std::move(indexNode));
     node->getArgsNode().addNode(std::move(rightNode));
     node->setAttr(INDEX);
@@ -902,27 +903,31 @@ public:
 
   static std::unique_ptr<ApplyNode> newUnary(TokenKind op, Token opToken,
                                              std::unique_ptr<Node> &&recvNode) {
-    auto node = newMethodCall(std::move(recvNode), opToken, resolveUnaryOpName(op));
+    unsigned int pos = recvNode->getPos();
+    auto node = newMethodCall(std::move(recvNode), opToken, resolveUnaryOpName(op), pos);
     node->setAttr(UNARY);
     return node;
   }
 
   static std::unique_ptr<ApplyNode> newBinary(std::unique_ptr<Node> &&leftNode, TokenKind op,
                                               Token opToken, std::unique_ptr<Node> &&rightNode) {
-    auto node = ApplyNode::newMethodCall(std::move(leftNode), opToken, resolveBinaryOpName(op));
+    auto node = ApplyNode::newMethodCall(std::move(leftNode), opToken, resolveBinaryOpName(op),
+                                         rightNode->getPos());
     node->getArgsNode().addNode(std::move(rightNode));
     node->setAttr(BINARY);
     return node;
   }
 
   static std::unique_ptr<ApplyNode> newIter(std::unique_ptr<Node> &&recvNode) {
-    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_ITER));
+    unsigned int pos = recvNode->getPos();
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_ITER), pos);
     node->setAttr(NEW_ITER);
     return node;
   }
 
   static std::unique_ptr<ApplyNode> newIterNext(std::unique_ptr<Node> &&recvNode) {
-    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_NEXT));
+    unsigned int pos = recvNode->getPos();
+    auto node = ApplyNode::newMethodCall(std::move(recvNode), std::string(OP_NEXT), pos);
     node->setAttr(ITER_NEXT);
     return node;
   }

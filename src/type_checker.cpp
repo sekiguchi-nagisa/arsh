@@ -482,6 +482,7 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     if (!this->checkAccessNode(accessNode)) {
       node.setType(this->typePool().getUnresolvedType());
       this->reportMethodLookupError(node.getAttr(), accessNode);
+      return CallableTypes(this->typePool().getUnresolvedType());
     }
   }
 
@@ -532,8 +533,10 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   unsigned int paramSize = types.paramSize;
   unsigned int minParamSize = getMinParamSize(types);
 
-  if (argSize < minParamSize || argSize > paramSize) {
-    this->reportError<UnmatchParam>(node, paramSize, argSize);
+  if (!types.returnType->isUnresolved()) {
+    if (argSize < minParamSize || argSize > paramSize) {
+      this->reportError<UnmatchParam>(node, paramSize, argSize);
+    }
   }
   unsigned int maxSize = std::max(argSize, paramSize);
   for (unsigned int i = 0; i < maxSize; i++) {
@@ -858,6 +861,9 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   auto &exprType = this->checkTypeAsExpr(*node.getExprNode());
+  if (exprType.isUnresolved()) {
+    return;
+  }
   if (node.isUnwrapOp()) {
     if (exprType.isOptionType()) {
       node.setType(cast<OptionType>(exprType).getElementType());
@@ -907,6 +913,10 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
 
   auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
   auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
+
+  if (leftType.isUnresolved() || rightType.isUnresolved()) {
+    return;
+  }
 
   // check referential equality of func object
   if (leftType.isFuncType() && (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
@@ -965,7 +975,9 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(*node.getTargetTypeNode());
   CallableTypes callableTypes(this->typePool().getUnresolvedType());
-  if (!type.isOptionType() && !type.isArrayType() && !type.isMapType()) {
+  if (type.isOptionType() || type.isArrayType() || type.isMapType()) {
+    callableTypes = CallableTypes(type);
+  } else {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
       callableTypes = handle->toCallableTypes();
       node.setHandle(handle);

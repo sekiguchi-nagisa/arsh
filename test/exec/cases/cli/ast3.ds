@@ -266,7 +266,7 @@ nodes:
               nodeKind: Apply
               token:
                 pos: 31
-                size: 4
+                size: 6
               type: \"Int\"
               exprNode:
                 nodeKind: Access
@@ -293,8 +293,8 @@ nodes:
               argsNode:
                 nodeKind: Args
                 token:
-                  pos: 0
-                  size: 38
+                  pos: 36
+                  size: 2
                 type: \"Void\"
                 nodes:
                   - nodeKind: Var
