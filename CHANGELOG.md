@@ -61,6 +61,7 @@
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type
     - catch type
     - Option type within string interpolation / parameter expansion
+    - unwrap op
     - nested job operator
 - reimplement ``Map`` object. now always preserve insertion order
 - cancel glob expansion in source statement
@@ -90,6 +91,7 @@
 ### Fixed
 
 - brace expansion error checking in source statement
+- broken error line marker of binary op
 
 ## [0.29.2] - 2023-04-08
 

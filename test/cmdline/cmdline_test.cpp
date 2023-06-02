@@ -227,7 +227,8 @@ $a = true|(true|false)
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ds("-c", "var a = 34;\n$a = true|(true|false)"), 1, "", msg));
 
-  msg = R"([semantic error] require `Option' type, but is `Int' type
+  msg =
+      R"([semantic error] unwrap op `!' must follow Option type expression, but actual is `Int' type
  --> (string):1:3
   23!
   ^~

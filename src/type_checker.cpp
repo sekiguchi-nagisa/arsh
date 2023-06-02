@@ -868,7 +868,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     if (exprType.isOptionType()) {
       node.setType(cast<OptionType>(exprType).getElementType());
     } else {
-      this->reportError<Required>(*node.getExprNode(), TYPE_OPTION, exprType.getName());
+      this->reportError<UnwrapType>(*node.getExprNode(), exprType.getName());
     }
   } else {
     if (exprType.isOptionType()) {

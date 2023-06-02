@@ -187,6 +187,8 @@ DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only a
 DEFINE_TCError(NeedFd,
                "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
 DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
+DEFINE_TCError(UnwrapType,
+               "unwrap op `!' must follow Option type expression, but actual is `%s' type");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");
