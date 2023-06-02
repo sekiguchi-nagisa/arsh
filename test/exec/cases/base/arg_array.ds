@@ -112,6 +112,17 @@ assert $args[0] == '34'
 assert $args[1] == 'a'
 assert $args[2] == '45'
 assert $args[3] == 'b'
+{
+    var m = [32: "aaa", 67: 'bbb', -88: 'ccc', 5678: 'frefeae']
+    $m.remove(32)
+    $m.remove(5678)
+    $args = @($m)
+    assert $args.size() == 4
+    assert $args[0] == '67'
+    assert $args[1] == 'bbb'
+    assert $args[2] == '-88'
+    assert $args[3] == 'ccc'
+}
 
 ## Tuple
 $args = @(${(34,['','b','','c c'],($false,))})

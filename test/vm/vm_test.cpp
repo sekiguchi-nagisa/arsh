@@ -659,7 +659,7 @@ static std::string location(unsigned int index,
   return message;
 }
 
-TEST(MapTest, rand) {
+TEST(MapTest, rand1) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
@@ -843,6 +843,14 @@ TEST(MapTest, rand) {
     ASSERT_EQ(keyValues[i].first, entries[i].first);
     ASSERT_EQ(keyValues[i].first, entries[i].first);
   }
+}
+
+TEST(MapTest, rand2) {
+  TypePool pool;
+  const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
+
+  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto obj = toObjPtr<OrderedMapObject>(value); // FIXME:
 }
 
 int main(int argc, char **argv) {

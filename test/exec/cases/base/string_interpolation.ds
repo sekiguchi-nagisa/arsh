@@ -54,6 +54,12 @@ assert "${[34 as Int?, new Int?(), 89]}" == "34 89"
 ## Map
 assert "${[23:34 as Int?, 900: new Int?()]}" == "23 34"
 assert "${[34:12, 900:45,-9: -99]}" == "34 12 900 45 -9 -99"
+{
+    var m = ['aa': 1, 'bbb': 22, 'ccc': 333, 'ddd': 444]
+    $m.remove('bbb')
+    $m.remove('aa')
+    assert "$m" == 'ccc 333 ddd 444'
+}
 
 ## Tuple
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'

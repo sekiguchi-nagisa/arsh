@@ -39,6 +39,13 @@ assert $a.putIfAbsent("1234", 10) == 100
     var rrr = $aa.remove(2)
     assert $rrr is String?
     assert ! $aa.remove(1)
+
+    var bb : [Signal : Int]
+    assert ! $bb.remove($SIGINT)
+    assert $bb.empty()
+    $bb.clear()
+    assert $bb.empty()
+    assert ! $bb.remove($SIGHUP)
 }
 
 
@@ -93,3 +100,11 @@ assert(new Map<Boolean, Any>() is Map<Boolean, Any>)
 # toString
 assert [34: $false] as String == "[34 : false]"
 assert [34: $false, -888: $true] as String == "[34 : false, -888 : true]"
+
+{
+    var m = [$SIGTTOU: $SIGTTOU.name(), $SIGCHLD: $SIGCHLD.name(), 
+            $SIGINT: $SIGINT.name(), $SIGHUP: $SIGHUP.name()]
+    $m.remove($SIGINT)
+    assert $m as String == 
+        "[$SIGTTOU : ${$SIGTTOU.name()}, $SIGCHLD : ${$SIGCHLD.name()}, $SIGHUP : ${$SIGHUP.name()}]"
+}
