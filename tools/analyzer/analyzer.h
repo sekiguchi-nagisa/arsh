@@ -60,6 +60,8 @@ public:
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                        const TypeCheckError &checkError, bool firstAppear) override;
 
+  bool handleTypeError(unsigned short modId, const TypeCheckError &checkError);
+
   bool enterModule(unsigned short modId, int version);
 
   bool exitModule();

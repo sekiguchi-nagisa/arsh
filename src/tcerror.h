@@ -193,9 +193,6 @@ DEFINE_TCError(UnwrapType,
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");
 
-#undef DEFINE_TCError
-#undef DEFINE_TCWarn
-
 TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char *fmt, ...)
     __attribute__((format(printf, 3, 4)));
 

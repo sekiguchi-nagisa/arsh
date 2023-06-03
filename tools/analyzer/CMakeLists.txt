@@ -19,6 +19,7 @@ add_library(ydshd_static STATIC
         worker.cpp
         semantic_token.cpp
         pass.cpp
+        extra_checker.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri directive)
 

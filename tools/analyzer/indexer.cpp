@@ -796,7 +796,7 @@ bool SymbolIndexer::exitModule(const std::unique_ptr<Node> &node) {
   auto index = std::make_shared<SymbolIndex>(std::move(this->builder()).build());
   this->builders.pop_back();
   this->indexes.add(std::move(index));
-  NodePass::visit(node);
+  this->visit(node);
   return true;
 }
 

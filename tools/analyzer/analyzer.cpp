@@ -215,6 +215,8 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
   this->addNew(src);
   FrontEnd frontEnd(*this, createLexer(src),
                     FrontEndOption::ERROR_RECOVERY | FrontEndOption::REPORT_WARN, nullptr);
+  action.pass &&action.pass->enterModule(this->current()->getModId(), this->current()->getVersion(),
+                                         this->current()->getPoolPtr());
   if (action.emitter) {
     frontEnd.setErrorListener(*action.emitter);
     action.emitter->enterModule(this->current()->getModId(), this->current()->getVersion());
@@ -222,8 +224,6 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
   if (action.dumper) {
     frontEnd.setASTDumper(*action.dumper);
   }
-  action.pass &&action.pass->enterModule(this->current()->getModId(), this->current()->getVersion(),
-                                         this->current()->getPoolPtr());
 
   // run front end
   frontEnd.setupASTDump();
@@ -237,23 +237,23 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
       action.pass &&action.pass->consume(ret.node);
       break;
     case FrontEndResult::ENTER_MODULE:
-      action.emitter &&action.emitter->enterModule(this->current()->getModId(),
-                                                   this->current()->getVersion());
       action.pass &&action.pass->enterModule(this->current()->getModId(),
                                              this->current()->getVersion(),
                                              this->current()->getPoolPtr());
+      action.emitter &&action.emitter->enterModule(this->current()->getModId(),
+                                                   this->current()->getVersion());
       break;
     case FrontEndResult::EXIT_MODULE:
-      action.emitter &&action.emitter->exitModule();
       action.pass &&action.pass->exitModule(ret.node);
+      action.emitter &&action.emitter->exitModule();
       break;
     case FrontEndResult::FAILED:
       fatal("unreachable\n");
     }
   }
   frontEnd.teardownASTDump();
-  action.emitter &&action.emitter->exitModule();
   action.pass &&action.pass->exitModule(nullptr);
+  action.emitter &&action.emitter->exitModule();
   if (auto *prevType = frontEnd.getPrevType(); prevType && prevType->isNothingType()) {
     this->current()->getScope()->updateModAttr(ModAttr::UNREACHABLE);
   }
@@ -302,7 +302,11 @@ static DiagnosticSeverity resolveSeverity(TypeCheckError::Type type) {
 
 bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                         const TypeCheckError &checkError, bool) {
-  auto *cur = this->findContext(ctx.back()->scope->modId);
+  return this->handleTypeError(ctx.back()->scope->modId, checkError);
+}
+
+bool DiagnosticEmitter::handleTypeError(unsigned short modId, const TypeCheckError &checkError) {
+  auto *cur = this->findContext(modId);
   assert(cur);
   auto range = toRange(*cur->src, checkError.getToken());
   if (!range.hasValue()) {

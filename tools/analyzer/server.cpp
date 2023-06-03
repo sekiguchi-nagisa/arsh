@@ -15,6 +15,7 @@
  */
 
 #include "server.h"
+#include "extra_checker.h"
 #include "indexer.h"
 #include "source.h"
 #include "symbol.h"
@@ -240,7 +241,9 @@ AnalyzerResult AnalyzerTask::doRebuild() {
 
   AnalyzerAction action;
   SymbolIndexer indexer(this->sysConfig, this->ret.indexes);
+  ExtraChecker extraChecker(this->emitter);
   MultipleNodePass passes;
+  passes.add(makeObserver(extraChecker));
   passes.add(makeObserver(indexer));
   action.emitter.reset(&this->emitter);
   action.pass = makeObserver(passes);
