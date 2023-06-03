@@ -581,6 +581,8 @@ private:
 
   void checkTypeUserDefinedCmd(UserDefinedCmdNode &node, FuncCheckOp op);
 
+  void checkTypeVarDecl(VarDeclNode &node, bool willBeField);
+
   // for case-expression
   struct PatternMap {
     virtual ~PatternMap() = default;

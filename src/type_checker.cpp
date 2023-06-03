@@ -1743,8 +1743,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
   node.setType(*exprType);
 }
 
-void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-  const bool willBeField = this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
+void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR: {
@@ -1775,6 +1774,11 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
   }
   }
   node.setType(this->typePool().get(TYPE::Void));
+}
+
+void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
+  const bool willBeField = this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
+  this->checkTypeVarDecl(node, willBeField);
 }
 
 void TypeChecker::visitAssignNode(AssignNode &node) {
@@ -2147,7 +2151,11 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
       this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
     }
     for (auto &paramNode : node.getParamNodes()) {
-      this->checkTypeExactly(*paramNode);
+      if (node.kind == FunctionNode::EXPLICIT_CONSTRUCTOR) {
+        this->checkTypeVarDecl(*paramNode, false);
+      } else {
+        this->checkTypeExactly(*paramNode);
+      }
     }
     // check type func body
     this->checkTypeWithCurrentScope(

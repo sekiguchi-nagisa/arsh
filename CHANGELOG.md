@@ -92,6 +92,7 @@
 
 - brace expansion error checking in source statement
 - broken error line marker of binary op
+- local functions do not capture constructor parameters
 
 ## [0.29.2] - 2023-04-08
 
