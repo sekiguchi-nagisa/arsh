@@ -626,6 +626,7 @@ void TypeDefNode::dump(NodeDumper &dumper) const {
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
+  DUMP_PTR(handle);
 }
 
 // #######################

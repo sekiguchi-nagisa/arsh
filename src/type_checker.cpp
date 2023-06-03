@@ -326,7 +326,7 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
 HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
                                 HandleKind kind, HandleAttr attribute) {
   bool shadowing = false;
-  if (this->allowWarning) {
+  if (this->allowWarning && !this->curScope->isGlobal()) {
     if (this->curScope->lookup(symbolName)) {
       shadowing = true;
     }
@@ -1104,11 +1104,23 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
   switch (node.getDefKind()) {
   case TypeDefNode::ALIAS: {
+    auto &nameInfo = node.getNameInfo();
     TypeNode &typeToken = node.getTargetTypeNode();
     auto &type = this->checkTypeExactly(typeToken);
-    auto ret = this->curScope->defineTypeAlias(this->typePool(), node.getName(), type);
-    if (!ret) {
-      this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
+    bool shadowing = false;
+    if (this->allowWarning && !this->curScope->isGlobal()) {
+      if (this->curScope->lookup(toTypeAliasFullName(nameInfo.getName()))) {
+        shadowing = true;
+      }
+    }
+    auto ret = this->curScope->defineTypeAlias(this->typePool(), nameInfo.getName(), type);
+    if (ret) {
+      node.setHandle(ret.asOk());
+      if (shadowing) {
+        this->reportError<TypeAliasShadowing>(nameInfo.getToken(), nameInfo.getName().c_str());
+      }
+    } else {
+      this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
     break;
   }
@@ -1123,7 +1135,9 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
     if (typeOrError) {
       auto ret =
           this->curScope->defineTypeAlias(this->typePool(), node.getName(), *typeOrError.asOk());
-      if (!ret) {
+      if (ret) {
+        node.setHandle(ret.asOk());
+      } else {
         this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
       }
     } else {

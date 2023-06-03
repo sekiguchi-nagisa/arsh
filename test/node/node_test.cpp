@@ -832,6 +832,7 @@ nodes:
           typeName: "Int"
           handle: null
     kind: "ALIAS"
+    handle: null
 )"},
 
     {DumpOp::typed, R"(while($false){})", 0, 0, R"(

@@ -33,7 +33,9 @@
 - ``textDocument/publishDiagnostics`` emit warning diagnostic
     - meaningless cast op
     - variable shadowing
+    - type-alias shadowing
     - unused local variables
+    - unused type-alias
 
 ### Changed
 

@@ -43,21 +43,17 @@ private:
 
   template <typename T, typename... Arg,
             typename = base_of_t<T, TCErrorDetail<TypeCheckError::Type::WARN>>>
-  void warn(const Node &node, Arg &&...arg) {
-    this->warnImpl(node.getToken(), T::kind, T::value, std::forward<Arg>(arg)...);
-  }
-
-  template <typename T, typename... Arg,
-            typename = base_of_t<T, TCErrorDetail<TypeCheckError::Type::WARN>>>
   void warn(Token token, Arg &&...arg) {
     this->warnImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
 protected:
   void visitVarDeclNode(VarDeclNode &node) override;
+  void visitTypeDefNode(TypeDefNode &node) override;
 };
 
 DEFINE_TCWarn(UnusedLocal, "local variable `%s' is never used");
+DEFINE_TCWarn(UnusedTypeAlias, "type alias `%s' is never used");
 
 } // namespace ydsh::lsp
 

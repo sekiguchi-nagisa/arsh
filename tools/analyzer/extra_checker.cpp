@@ -61,4 +61,14 @@ void ExtraChecker::visitVarDeclNode(VarDeclNode &node) {
   NodePass::visitVarDeclNode(node);
 }
 
+void ExtraChecker::visitTypeDefNode(TypeDefNode &node) {
+  if (node.getDefKind() == TypeDefNode::ALIAS) {
+    if (auto &handle = node.getHandle();
+        handle && !handle->has(HandleAttr::GLOBAL) && handle.useCount() == 1) {
+      this->warn<UnusedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
+    }
+  }
+  NodePass::visitTypeDefNode(node);
+}
+
 } // namespace ydsh::lsp

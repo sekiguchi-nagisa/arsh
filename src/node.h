@@ -1641,6 +1641,7 @@ public:
 private:
   NameInfo nameInfo;
   std::unique_ptr<TypeNode> targetTypeNode; // for ALIAS, ERROR_DEF
+  HandlePtr handle;
 
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
               Kind kind)
@@ -1671,6 +1672,10 @@ public:
   Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
+
+  void setHandle(HandlePtr hd) { this->handle = hd; }
+
+  const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
 };
