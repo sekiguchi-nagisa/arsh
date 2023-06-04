@@ -596,7 +596,7 @@ TEST(MapTest, base) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value);
 
   ASSERT_EQ(0, obj->size());
@@ -663,7 +663,7 @@ TEST(MapTest, rand1) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value);
 
   ASSERT_EQ(0, obj->size());
@@ -849,7 +849,7 @@ TEST(MapTest, rand2) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value); // FIXME:
 }
 

@@ -214,7 +214,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     value = DSValue::create<ArrayObject>(type);
     break;
   case TypeKind::Map:
-    value = DSValue::create<OrderedMapObject>(type);
+    value = DSValue::create<OrderedMapObject>(type, state.getRng().next());
     break;
   case TypeKind::Tuple:
     value = DSValue::create<BaseObject>(cast<TupleType>(type));

@@ -1184,7 +1184,8 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   bool hasDefault = node.hasDefault();
   auto mergeLabel = makeLabel();
   auto elseLabel = makeLabel();
-  auto value = DSValue::create<OrderedMapObject>(this->typePool.get(TYPE::Void));
+  auto value = DSValue::create<OrderedMapObject>(this->typePool.get(TYPE::Void),
+                                                 reinterpret_cast<uintptr_t>(&node));
   auto &map = typeAs<OrderedMapObject>(value);
 
   this->emitLdcIns(value);

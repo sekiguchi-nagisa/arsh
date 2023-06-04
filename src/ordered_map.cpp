@@ -75,7 +75,7 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
-static unsigned int hash(const DSValue &value) {
+static unsigned int hash(const DSValue &value, uint64_t seed) {
   bool isStr = false;
   uint64_t u64 = 0;
   const void *ptr = nullptr;
@@ -107,7 +107,7 @@ static unsigned int hash(const DSValue &value) {
   }
 
   if (isStr) {
-    uint64_t hash = wyhash(ptr, size, 42, _wyp);
+    uint64_t hash = wyhash(ptr, size, seed, _wyp);
     return static_cast<unsigned int>(hash);
   } else {
     uint64_t hash = wy2u0k(u64, UINT64_MAX);
@@ -225,7 +225,7 @@ void OrderedMapObject::clear() {
 }
 
 bool OrderedMapObject::probeBuckets(const DSValue &key, ProbeState &state) const {
-  const auto keyHash = hash(key);
+  const auto keyHash = hash(key, this->seed);
   return this->probeBuckets(key, keyHash, state);
 }
 

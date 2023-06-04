@@ -1872,7 +1872,8 @@ YDSH_METHOD map_addAll(RuntimeContext &ctx) {
 YDSH_METHOD map_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_copy);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
-  auto ret = DSValue::create<OrderedMapObject>(ctx.typePool.get(obj.getTypeID()));
+  const auto &type = ctx.typePool.get(obj.getTypeID());
+  auto ret = DSValue::create<OrderedMapObject>(type, ctx.getRng().next());
   auto &newMap = typeAs<OrderedMapObject>(ret);
   for (auto &e : obj.getEntries()) {
     newMap.insert(e.getKey(), DSValue(e.getValue()));
@@ -2212,7 +2213,7 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
   auto ret = ctx.typePool.createMapType(stringType, stringType);
   assert(ret);
   auto &mapType = cast<MapType>(*ret.asOk());
-  auto value = DSValue::create<OrderedMapObject>(mapType);
+  auto value = DSValue::create<OrderedMapObject>(mapType, ctx.getRng().next());
   editor.getKeyBindings().fillBindings([&value](StringRef key, StringRef action) {
     typeAs<OrderedMapObject>(value).insert(DSValue::createStr(key), DSValue::createStr(action));
   });

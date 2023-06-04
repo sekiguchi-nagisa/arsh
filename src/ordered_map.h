@@ -162,6 +162,7 @@ private:
     explicit operator bool() const { return this->entryIndex > -1; }
   };
 
+  const uint64_t seed;
   int iterCount{0};
   BucketLen bucketLen{2};
   std::unique_ptr<Bucket[]> buckets;
@@ -172,7 +173,7 @@ public:
 
   static constexpr double MAX_LOAD_FACTOR = 0.9;
 
-  explicit OrderedMapObject(const DSType &type) : ObjectWithRtti(type) {}
+  OrderedMapObject(const DSType &type, uint64_t seed) : ObjectWithRtti(type), seed(seed) {}
 
   unsigned int size() const { return this->bucketLen.size(); }
 
