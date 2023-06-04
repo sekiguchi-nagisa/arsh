@@ -8,10 +8,11 @@ var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex?
 let HISTORY : [String]
 
+let _HISTLIMIT = 8192
+
 function _sync() {
-    let limit = 4096
-    if $HISTSIZE > $limit {
-        $HISTSIZE = $limit
+    if $HISTSIZE > $_HISTLIMIT {
+        $HISTSIZE = $_HISTLIMIT
     }
     if $HISTORY.size() > $HISTSIZE {
         $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
@@ -97,9 +98,8 @@ function _add_and_save(s : String) {
     # save new entry
     $HISTFILESIZE == 0 && return
     $s.contains($'\n') && return
-    let limit = 4096
-    if $HISTFILESIZE > $limit {
-        $HISTFILESIZE = $limit
+    if $HISTFILESIZE > $_HISTLIMIT {
+        $HISTFILESIZE = $_HISTLIMIT
     }
     $HISTFILE.empty() && return
     try {
@@ -132,9 +132,8 @@ function _load(p : String?) {
 }
 
 function _save(p : String?) {
-    let limit = 4096
-    if $HISTFILESIZE > $limit {
-        $HISTFILESIZE = $limit
+    if $HISTFILESIZE > $_HISTLIMIT {
+        $HISTFILESIZE = $_HISTLIMIT
     }
 
     if $HISTFILESIZE == 0 || $HISTORY.empty() {
