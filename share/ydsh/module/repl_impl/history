@@ -147,12 +147,12 @@ function _save(p : String?) {
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
     $offset < $size || return
 
-    var histFile = new FD($HISTFILE).lock()
+    var histFile = new FD($path).lock()
     for(var i = $offset; $i < $size; $i++) {
         var line = $HISTORY[$i]
         $line.contains($'\n') && continue
         printf -- "%s\n" $HISTORY[$i]
-    } with >| $path
+    } with >& $histFile
     chmod g-rw,o-rw $path
 }
 
