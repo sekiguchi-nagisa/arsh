@@ -240,6 +240,7 @@ set(YDSH_SRC
         src/highlighter_base.cpp
         src/line_renderer.cpp
         src/keycode.cpp
+        src/rotate.cpp
         src/ordered_map.cpp
         ${lexer_src}
         ${bind_src}

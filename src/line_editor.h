@@ -21,7 +21,7 @@
 
 #include "keycode.h"
 #include "line_renderer.h"
-#include "object.h"
+#include "rotate.h"
 
 struct linenoiseState;
 
