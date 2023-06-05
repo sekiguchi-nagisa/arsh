@@ -126,31 +126,31 @@
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
 
-using NewlinePos = FlexBuffer<unsigned int>;
+using NLPosList = FlexBuffer<unsigned int>;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;           /* Terminal stdin file descriptor. */
-  int ofd;           /* Terminal stdout file descriptor. */
-  char *buf;         /* Edited line buffer. */
-  size_t bufSize;    /* Edited line buffer size. */
-  StringRef prompt;  /* Prompt to display. */
-  size_t pos;        /* Current cursor position. */
-  size_t oldColPos;  /* Previous refresh cursor column position. */
-  size_t oldRow;     /* Previous refresh cursor row position. */
-  size_t len;        /* Current edited line length. */
-  unsigned int rows; /* Number of rows in terminal. */
-  unsigned int cols; /* Number of columns in terminal. */
-  size_t maxRows;    /* Maximum num of rows used so far (multiline mode) */
+  int ifd;             /* Terminal stdin file descriptor. */
+  int ofd;             /* Terminal stdout file descriptor. */
+  char *buf;           /* Edited line buffer. */
+  size_t bufSize;      /* Edited line buffer size. */
+  StringRef prompt;    /* Prompt to display. */
+  size_t pos;          /* Current cursor position. */
+  size_t oldColPos;    /* Previous refresh cursor column position. */
+  size_t oldRow;       /* Previous refresh cursor row position. */
+  size_t len;          /* Current edited line length. */
+  unsigned int rows;   /* Number of rows in terminal. */
+  unsigned int cols;   /* Number of columns in terminal. */
+  size_t maxRows;      /* Maximum num of rows used so far (multiline mode) */
+  NLPosList nlPosList; // maintains newline pos
   CharWidthProperties ps;
-  NewlinePos newlinePos; // maintains newline pos
   bool rotating;
 
   StringRef lineRef() const { return {this->buf, this->len}; }
 
-  bool isSingleLine() const { return this->newlinePos.empty(); }
+  bool isSingleLine() const { return this->nlPosList.empty(); }
 };
 
 enum KEY_ACTION {
@@ -397,12 +397,12 @@ static void checkProperty(struct linenoiseState &l) {
 
 /* =========================== Line editing ================================= */
 
-static void fillNewlinePos(NewlinePos &newlinePos, StringRef ref) {
-  newlinePos.clear();
+static void fill(NLPosList &nlPosList, StringRef ref) {
+  nlPosList.clear();
   for (StringRef::size_type pos = 0;;) {
     auto retPos = ref.find('\n', pos);
     if (retPos != StringRef::npos) {
-      newlinePos.push_back(retPos);
+      nlPosList.push_back(retPos);
       pos = retPos + 1;
     } else {
       break;
@@ -410,12 +410,12 @@ static void fillNewlinePos(NewlinePos &newlinePos, StringRef ref) {
   }
 }
 
-static unsigned int findCurIndex(const NewlinePos &newlinePos, unsigned int pos) {
-  auto iter = std::lower_bound(newlinePos.begin(), newlinePos.end(), pos);
-  if (iter == newlinePos.end()) {
-    return newlinePos.size();
+static unsigned int findCurIndex(const NLPosList &nlPosList, unsigned int pos) {
+  auto iter = std::lower_bound(nlPosList.begin(), nlPosList.end(), pos);
+  if (iter == nlPosList.end()) {
+    return nlPosList.size();
   }
-  return iter - newlinePos.begin();
+  return iter - nlPosList.begin();
 }
 
 /* Move cursor on the left. */
@@ -442,11 +442,11 @@ static bool linenoiseEditMoveHome(struct linenoiseState &l) {
   if (l.isSingleLine()) { // single-line
     newPos = 0;
   } else { // multi-line
-    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    unsigned int index = findCurIndex(l.nlPosList, l.pos);
     if (index == 0) {
       newPos = 0;
     } else {
-      newPos = l.newlinePos[index - 1] + 1;
+      newPos = l.nlPosList[index - 1] + 1;
     }
   }
   if (l.pos != newPos) {
@@ -462,11 +462,11 @@ static bool linenoiseEditMoveEnd(struct linenoiseState &l) {
   if (l.isSingleLine()) { // single-line
     newPos = l.len;
   } else { // multi-line
-    unsigned int index = findCurIndex(l.newlinePos, l.pos);
-    if (index == l.newlinePos.size()) {
+    unsigned int index = findCurIndex(l.nlPosList, l.pos);
+    if (index == l.nlPosList.size()) {
       newPos = l.len;
     } else {
-      newPos = l.newlinePos[index];
+      newPos = l.nlPosList[index];
     }
   }
   if (l.pos != newPos) {
@@ -519,15 +519,15 @@ static std::pair<unsigned int, unsigned int> findLineInterval(const struct linen
     pos = 0;
     len = (wholeLine ? l.len : l.pos);
   } else { // multi-line
-    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    unsigned int index = findCurIndex(l.nlPosList, l.pos);
     if (index == 0) {
       pos = 0;
-      len = wholeLine ? l.newlinePos[index] : l.pos;
-    } else if (index < l.newlinePos.size()) {
-      pos = l.newlinePos[index - 1] + 1;
-      len = (wholeLine ? l.newlinePos[index] : l.pos) - pos;
+      len = wholeLine ? l.nlPosList[index] : l.pos;
+    } else if (index < l.nlPosList.size()) {
+      pos = l.nlPosList[index - 1] + 1;
+      len = (wholeLine ? l.nlPosList[index] : l.pos) - pos;
     } else {
-      pos = l.newlinePos[index - 1] + 1;
+      pos = l.nlPosList[index - 1] + 1;
       len = (wholeLine ? l.len : l.pos) - pos;
     }
   }
@@ -545,12 +545,12 @@ static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
     l.buf[l.pos] = '\0';
     l.len = l.pos;
   } else { // multi-line
-    unsigned int index = findCurIndex(l.newlinePos, l.pos);
+    unsigned int index = findCurIndex(l.nlPosList, l.pos);
     unsigned int newPos = 0;
-    if (index == l.newlinePos.size()) {
+    if (index == l.nlPosList.size()) {
       newPos = l.len;
     } else {
-      newPos = l.newlinePos[index];
+      newPos = l.nlPosList[index];
     }
     unsigned int delLen = newPos - l.pos;
     l.pos = newPos;
@@ -827,7 +827,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     pager->updateWinSize({.rows = l.rows, .cols = l.cols});
   }
   if (repaint) {
-    fillNewlinePos(l.newlinePos, l.lineRef());
+    fill(l.nlPosList, l.lineRef());
   }
 
   /* render and compute prompt row/column length */
@@ -959,7 +959,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
 }
 
 ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
-  l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
+  l.nlPosList.clear(); // force move cursor to end (force enter single line mode)
   if (linenoiseEditMoveEnd(l)) {
     this->refreshLine(l, false);
   }
@@ -1165,8 +1165,8 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
       .rows = 24,
       .cols = 80,
       .maxRows = 0,
+      .nlPosList = {},
       .ps = {},
-      .newlinePos = {},
       .rotating = false,
   };
 
@@ -1178,7 +1178,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
   const ssize_t count = this->editInRawMode(state, l);
   const int errNum = errno;
   if (count == -1 && errNum == EAGAIN) {
-    l.newlinePos.clear(); // force move cursor to end (force enter single line mode)
+    l.nlPosList.clear(); // force move cursor to end (force enter single line mode)
     if (linenoiseEditMoveEnd(l)) {
       this->refreshLine(l, false);
     }
