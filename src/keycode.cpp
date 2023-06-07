@@ -224,6 +224,8 @@ KeyBindings::KeyBindings() {
       {ESC_ "f", EditActionType::FORWARD_WORD},
       {ESC_ "d", EditActionType::KILL_WORD},
       {ESC_ ENTER_, EditActionType::NEWLINE},
+      {ESC_ "<", EditActionType::BEGINNING_OF_BUF},
+      {ESC_ ">", EditActionType::END_OF_BUF},
       {ESC_ "[1~", EditActionType::BEGINNING_OF_LINE},
       {ESC_ "[4~", EditActionType::END_OF_LINE}, // for putty
       {ESC_ "[3~", EditActionType::DELETE_CHAR}, // for putty

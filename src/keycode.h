@@ -89,6 +89,8 @@ public:
   OP(KILL_LINE, "kill-line")                       /* CTRL-K */                                    \
   OP(BEGINNING_OF_LINE, "beginning-of-line")       /* CTRL-A / HOME */                             \
   OP(END_OF_LINE, "end-of-line")                   /* CTRL-E / EMD */                              \
+  OP(BEGINNING_OF_BUF, "beginning-of-buffer")      /* ALT-< */                                     \
+  OP(END_OF_BUF, "end-of-buffer")                  /* ALT-> */                                     \
   OP(CLEAR_SCREEN, "clear-screen")                 /* CTRL-L */                                    \
   OP(BACKWARD_KILL_WORD, "backward-kill-word")     /* CTRL-W */                                    \
   OP(KILL_WORD, "kill-word")                       /* ALT-D */                                     \

@@ -1234,6 +1234,18 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
         this->refreshLine(l, false);
       }
       break;
+    case EditActionType::BEGINNING_OF_BUF: /* go to the start of the buffer */
+      if (l.pos != 0) {
+        l.pos = 0;
+        this->refreshLine(l, false);
+      }
+      break;
+    case EditActionType::END_OF_BUF: /* go to the end of the buffer */
+      if (l.pos != l.len) {
+        l.pos = l.len;
+        this->refreshLine(l, false);
+      }
+      break;
     case EditActionType::CLEAR_SCREEN:
       linenoiseClearScreen(l.ofd);
       this->refreshLine(l);
