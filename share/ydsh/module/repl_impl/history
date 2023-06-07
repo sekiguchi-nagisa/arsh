@@ -76,10 +76,10 @@ function _add(s : String) {
     if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
     $s.contains($'\n') && return
 
-    $HISTORY.add($s)
-    if $HISTORY.size() > $HISTSIZE {
-        $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
+    if $HISTORY.size() + 1 > $HISTSIZE {
+        $HISTORY.removeRange(0, $HISTORY.size() + 1 - $HISTSIZE)
     }
+    $HISTORY.add($s)
 }
 
 function _add_and_save(s : String) {
@@ -90,10 +90,10 @@ function _add_and_save(s : String) {
     if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
     if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
 
-    $HISTORY.add($s)
-    if $HISTORY.size() > $HISTSIZE {
-        $HISTORY.removeRange(0, $HISTORY.size() - $HISTSIZE)
+    if $HISTORY.size() + 1> $HISTSIZE {
+        $HISTORY.removeRange(0, $HISTORY.size() + 1 - $HISTSIZE)
     }
+    $HISTORY.add($s)
 
     # save new entry
     $HISTFILESIZE == 0 && return
@@ -111,10 +111,10 @@ function _add_and_save(s : String) {
         for line in new FD($HISTFILE).lock() {
             $lines.add($line)
         }
-        $lines.add($s)
-        if $lines.size() > $HISTFILESIZE {
-            $lines.removeRange(0, $lines.size() - $HISTFILESIZE)
+        if $lines.size() + 1 > $HISTFILESIZE {
+            $lines.removeRange(0, $lines.size() + 1 - $HISTFILESIZE)
         }
+        $lines.add($s)
         printf -- "%s\n" $lines >| $HISTFILE
     } catch e {
         return # ignore io error
