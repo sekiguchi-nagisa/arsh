@@ -394,9 +394,8 @@ TEST_F(InteractiveTest, killRing) {
 
   // kill-ring-select action
   this->send(CTRL_R);
-  std::this_thread::sleep_for(std::chrono::milliseconds(80));
-  this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", ": Int = 12"));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 4"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[0] == '1234567' : $a[0]"));
