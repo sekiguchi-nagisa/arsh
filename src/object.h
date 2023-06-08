@@ -345,7 +345,9 @@ private:
     assert(data || size == 0);
     assert(size <= smallStrSize(DSValueKind::SSTR14));
     this->str.kind = toSmallStrKind(size);
-    memcpy(this->str.value, data, size);
+    if (data) {
+      memcpy(this->str.value, data, size);
+    }
     this->str.value[size] = '\0';
   }
 
