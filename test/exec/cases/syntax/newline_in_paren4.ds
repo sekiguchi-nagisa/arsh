@@ -1,0 +1,10 @@
+
+var _ls_opt : [String]
+
+(case $OSTYPE {
+    'linux' | 'cygwin' => { $_ls_opt.add('--color=auto'); }
+    'darwin' => { $_ls_opt.add('-G'); }
+    else => {}
+})
+
+assert !$_ls_opt.empty()

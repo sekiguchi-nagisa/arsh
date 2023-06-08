@@ -867,6 +867,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
   case TokenKind::LBC: { // implicit constructor
     auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo),
                                                FunctionNode::IMPLICIT_CONSTRUCTOR);
+    auto ctx = this->inSkippableNLCtx(false);
     Token lbcToken = this->expect(TokenKind::LBC); // always success
     while (CUR_KIND() != TokenKind::RBC) {
       this->changeLexerModeToSTMT();
@@ -1005,6 +1006,7 @@ std::unique_ptr<Node> Parser::parse_caseExpression() {
   this->consume(); // CASE
 
   auto caseNode = std::make_unique<CaseNode>(pos, TRY(this->parse_expression()));
+  auto ctx = this->inSkippableNLCtx(false);
   TRY(this->expect(TokenKind::LBC));
   do {
     caseNode->addArmNode(TRY(this->parse_armExpression()));

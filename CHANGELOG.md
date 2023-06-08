@@ -96,6 +96,7 @@
 - brace expansion error checking in source statement
 - broken error line marker of binary op
 - local functions do not capture constructor parameters
+- do not ignore newline in case expression even if within parenthesis
 
 ## [0.29.2] - 2023-04-08
 
