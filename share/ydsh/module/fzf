@@ -62,6 +62,22 @@ function _fzf_select_killring(q : String, list : [String]?) : String? {
     return $_fzf_select($q, $list!, "--height 20%")
 }
 
+# for completion
+fzf_proc_select() {
+    command -v fzf &>> /dev/null || return 0
+
+    importenv FZF_DEFAULT_OPTS : ""
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS" + 
+                  "-m --header-lines=1 --preview 'echo {}' --preview-window down:3:wrap --min-height 15"
+    (command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
+      command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
+      for line in $STDIN {
+        var r = $/^[^ ]+[ ]+([0-9]+)/.match($line).get(1) ?? continue
+        printf "%s\n" $r
+      }
+    return 0
+}
+
 # CTRL-R
 $LINE_EDIT.action('fzf-search-hist', 'hist-select', $_fzf_search_hist)
 $LINE_EDIT.bind("^R", 'fzf-search-hist')
