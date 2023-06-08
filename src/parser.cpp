@@ -94,8 +94,8 @@ static bool isNamedFuncOrUdc(const std::unique_ptr<Node> &node) {
 }
 
 std::vector<std::unique_ptr<Node>> Parser::operator()() {
-  this->skippableNewlines.clear();
-  this->skippableNewlines.push_back(false);
+  this->ignorableNewlines.clear();
+  this->ignorableNewlines.push_back(false);
 
   std::vector<std::unique_ptr<Node>> nodes;
   if (hasFlag(this->option, ParserOption::SINGLE_EXPR)) {
@@ -421,7 +421,7 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
 
   for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
     if (count > 0) {
       if (CUR_KIND() != TokenKind::COMMA) {
         E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
@@ -579,7 +579,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
   case TokenKind::TYPEOF: {
     Token token = this->expect(TokenKind::TYPEOF); // always success
     if (CUR_KIND() == TokenKind::PTYPE_OPEN) {
-      auto ctx = this->inSkippableNLCtx();
+      auto ctx = this->inIgnorableNLCtx();
 
       this->expect(TokenKind::PTYPE_OPEN, false); // always success
       this->pushLexerMode(LexerMode(yycSTMT, true));
@@ -823,7 +823,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
                                                FunctionNode::EXPLICIT_CONSTRUCTOR);
     TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
     for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
-      auto ctx = this->inSkippableNLCtx();
+      auto ctx = this->inIgnorableNLCtx();
 
       if (count > 0) {
         if (CUR_KIND() != TokenKind::COMMA) {
@@ -867,7 +867,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
   case TokenKind::LBC: { // implicit constructor
     auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo),
                                                FunctionNode::IMPLICIT_CONSTRUCTOR);
-    auto ctx = this->inSkippableNLCtx(false);
+    auto ctx = this->inIgnorableNLCtx(false);
     Token lbcToken = this->expect(TokenKind::LBC); // always success
     while (CUR_KIND() != TokenKind::RBC) {
       this->changeLexerModeToSTMT();
@@ -906,7 +906,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
 std::unique_ptr<BlockNode> Parser::parse_block() {
   GUARD_DEEP_NESTING(guard);
 
-  auto ctx = this->inSkippableNLCtx(false);
+  auto ctx = this->inIgnorableNLCtx(false);
   Token token = TRY(this->expect(TokenKind::LBC));
   auto blockNode = std::make_unique<BlockNode>(token.pos);
   while (CUR_KIND() != TokenKind::RBC) {
@@ -1006,7 +1006,7 @@ std::unique_ptr<Node> Parser::parse_caseExpression() {
   this->consume(); // CASE
 
   auto caseNode = std::make_unique<CaseNode>(pos, TRY(this->parse_expression()));
-  auto ctx = this->inSkippableNLCtx(false);
+  auto ctx = this->inIgnorableNLCtx(false);
   TRY(this->expect(TokenKind::LBC));
   do {
     caseNode->addArmNode(TRY(this->parse_armExpression()));
@@ -1055,7 +1055,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
   TRY(this->expectAndChangeMode(TokenKind::FOR, yycPARAM));
 
   if (CUR_KIND() == TokenKind::LP) { // for
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
 
     this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
@@ -1903,7 +1903,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   case TokenKind::AT_PAREN:
     return this->parse_cmdArgArray();
   case TokenKind::LP: { // group, tuple or anonymous command
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
     Token openToken = this->expect(TokenKind::LP); // always success
     unsigned int count = 0;
     std::vector<std::unique_ptr<Node>> nodes;
@@ -1926,7 +1926,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
   }
   case TokenKind::LB: { // array or map
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
     Token token = this->expect(TokenKind::LB); // always success
     auto keyNode = TRY(this->parse_expression());
     std::unique_ptr<Node> node;
@@ -2135,7 +2135,7 @@ std::unique_ptr<Node> Parser::parse_backquoteLiteral() {
 std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
   GUARD_DEEP_NESTING(guard);
 
-  auto ctx = this->inSkippableNLCtx();
+  auto ctx = this->inIgnorableNLCtx();
   Token token = first.size == 0 ? TRY(this->expect(TokenKind::LP)) : first;
 
   auto argsNode = std::make_unique<ArgsNode>(token);
@@ -2254,7 +2254,7 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
                                        endToken);
   }
   default:
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
     unsigned int pos = START_POS();
     TRY(this->expect(TokenKind::START_INTERP));
     auto node = TRY(this->parse_expression());
@@ -2269,7 +2269,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
   switch (CUR_KIND()) {
   case TokenKind::APPLIED_NAME_WITH_BRACKET:
   case TokenKind::SPECIAL_NAME_WITH_BRACKET: { // $name[
-    auto ctx = this->inSkippableNLCtx();
+    auto ctx = this->inIgnorableNLCtx();
     Token token = this->curToken;
     this->consume(); // always success
     auto varNode = this->newVarNode(token);
@@ -2300,7 +2300,7 @@ std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
   GUARD_DEEP_NESTING(guard);
 
   assert(CUR_KIND() == TokenKind::START_SUB_CMD);
-  auto ctx = this->inSkippableNLCtx();
+  auto ctx = this->inIgnorableNLCtx();
   unsigned int pos = START_POS();
   this->consume(); // START_SUB_CMD
   auto exprNode = TRY(this->parse_expression());
@@ -2312,7 +2312,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
   GUARD_DEEP_NESTING(guard);
 
   assert(CUR_KIND() == TokenKind::START_IN_SUB || CUR_KIND() == TokenKind::START_OUT_SUB);
-  auto ctx = this->inSkippableNLCtx();
+  auto ctx = this->inIgnorableNLCtx();
   unsigned int pos = START_POS();
   bool inPipe = this->scan() == TokenKind::START_IN_SUB;
   auto exprNode = TRY(this->parse_expression());
@@ -2378,7 +2378,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
 std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   GUARD_DEEP_NESTING(guard);
 
-  auto ctx = this->inSkippableNLCtx();
+  auto ctx = this->inIgnorableNLCtx();
   Token token = TRY(this->expect(TokenKind::AT_PAREN));
   auto node = std::make_unique<ArgArrayNode>(token);
   while (true) {

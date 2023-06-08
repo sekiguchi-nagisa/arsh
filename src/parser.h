@@ -92,7 +92,7 @@ private:
 
   const ParserOption option;
 
-  std::vector<bool> skippableNewlines; // if true, newline is skippable
+  std::vector<bool> ignorableNewlines; // if true, newline is ignorable
 
   std::vector<ObserverPtr<RedirNode>> hereDocNodes;
 
@@ -113,7 +113,7 @@ public:
 
 protected:
   /**
-   * change lexer mode and refetch.
+   * change lexer mode and re-fetch.
    */
   void refetch(LexerCond cond);
 
@@ -125,7 +125,7 @@ protected:
   void popLexerMode();
 
   /**
-   * try to change lexer mode to STMT mode and refetch token.
+   * try to change lexer mode to STMT mode and re-fetch token.
    */
   void changeLexerModeToSTMT();
 
@@ -136,16 +136,16 @@ protected:
    */
   Token expectAndChangeMode(TokenKind kind, LexerCond cond, bool fetchNext = true);
 
-  auto inSkippableNLCtx(bool skip = true) {
-    this->skippableNewlines.push_back(skip);
-    return finally([&] { this->skippableNewlines.pop_back(); });
+  auto inIgnorableNLCtx(bool skip = true) {
+    this->ignorableNewlines.push_back(skip);
+    return finally([&] { this->ignorableNewlines.pop_back(); });
   }
 
   bool hasSpace() const { return this->lexer->isPrevSpace(); }
 
   bool hasNewline() const { return this->lexer->isPrevNewLine(); }
 
-  bool hasLineTerminator() const { return this->hasNewline() && !this->skippableNewlines.back(); }
+  bool hasLineTerminator() const { return this->hasNewline() && !this->ignorableNewlines.back(); }
 
   bool inHereDocBody() const {
     if (this->curKind == TokenKind::HERE_END) {
