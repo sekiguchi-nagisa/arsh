@@ -47,6 +47,11 @@ private:
   KeyBindings keyBindings;
 
   /**
+   * maintains killed text
+   */
+  KillRing killRing;
+
+  /**
    * must be `(String) -> String` type
    * may be null
    */

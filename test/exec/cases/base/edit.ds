@@ -83,9 +83,9 @@ $editor.bind('^[2', '')
 assert ! $editor.actions().contains('action1')
 $editor.action('action1', 'replace-whole', function(s, o) => $s)
 assert $editor.actions().contains('action1')
-assert !$editor.bindings().get('^Y')
-$editor.bind('^Y', 'action1')
-assert $editor.bindings()['^Y'] == 'action1'
+assert !$editor.bindings().get('^]')
+$editor.bind('^]', 'action1')
+assert $editor.bindings()['^]'] == 'action1'
 
 ## re-define
 $ex = 34

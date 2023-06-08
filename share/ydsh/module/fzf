@@ -2,18 +2,23 @@
 
 # for fzf key binding
 
-function _fzf_search_hist(q : String, list : [String]?) : String? {
+function _fzf_select(q : String, list : [String], opts : String) : String? {
     command -v fzf &>> /dev/null || return $none
-    $list || return $none
 
     importenv FZF_DEFAULT_OPTS : ""
-    importenv FZF_SEARCH_HIST_OPTS : ""
-    var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $FZF_SEARCH_HIST_OPTS +m"
+    var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $opts +m"
 
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
-    var ret = "$(printf "%s\n" ${$list!} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
+    var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
     return $ret.empty() ? $none : $ret as String?
+}
+
+function _fzf_search_hist(q : String, list : [String]?) : String? {
+    $list || return $none
+
+    importenv FZF_SEARCH_HIST_OPTS : ""
+    return $_fzf_select($q, $list!, $FZF_SEARCH_HIST_OPTS)
 }
 
 function _fzf_select_files(q : String, list : [String]?) : String? {
@@ -52,6 +57,11 @@ function _fzf_cd(q : String, list : [String]?) : String? {
     return "command cd -- ${$line.quote()}"
 }
 
+function _fzf_select_killring(q : String, list : [String]?) : String? {
+    $list || return $none
+    return $_fzf_select($q, $list!, "--height 20%")
+}
+
 # CTRL-R
 $LINE_EDIT.action('fzf-search-hist', 'hist-select', $_fzf_search_hist)
 $LINE_EDIT.bind("^R", 'fzf-search-hist')
@@ -63,3 +73,7 @@ $LINE_EDIT.bind('^T', 'fzf-select-files')
 # ALT-C
 $LINE_EDIT.action('fzf-cd', 'replace-whole-accept', $_fzf_cd)
 $LINE_EDIT.bind('^[c', 'fzf-cd')
+
+# ALT-K
+$LINE_EDIT.action('fzf-kill-ring', 'kill-ring-select', $_fzf_select_killring)
+$LINE_EDIT.bind('^[k', 'fzf-kill-ring')

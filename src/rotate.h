@@ -54,6 +54,37 @@ private:
   bool save(ssize_t index, StringRef curBuf);
 };
 
+class KillRing {
+private:
+  static constexpr size_t INIT_SIZE = 16;
+
+  static_assert(INIT_SIZE <= SYS_LIMIT_KILL_RING_MAX);
+  static_assert(SYS_LIMIT_KILL_RING_MAX <= UINT32_MAX);
+
+  ObjPtr<ArrayObject> obj; // may be null
+  unsigned int rotateIndex{0};
+  unsigned int maxSize{INIT_SIZE};
+
+public:
+  void setMaxSize(unsigned int v) {
+    this->maxSize = std::min(v, static_cast<unsigned int>(SYS_LIMIT_KILL_RING_MAX));
+  }
+
+  unsigned int getMaxSize() const { return this->maxSize; }
+
+  const auto &get() const { return this->obj; }
+
+  explicit operator bool() const { return static_cast<bool>(this->get()); }
+
+  void add(StringRef ref);
+
+  /**
+   * if no entry, return empty string
+   * @return
+   */
+  StringRef rotate(); // FIXME:
+};
+
 } // namespace ydsh
 
 #endif // YDSH_ROTATE_H

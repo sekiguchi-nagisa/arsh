@@ -285,7 +285,7 @@ TEST_F(InteractiveTest, customAction2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'hist-search')"));
   this->send("echo a" CTRL_R);
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo a")); // no happend (history is empty)
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo a")); // no happened (history is empty)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "a"));
 
   ASSERT_NO_FATAL_FAILURE(
@@ -359,6 +359,54 @@ Assertion Error: `$false'
 //     this->send(CTRL_D);
 //     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 // }
+
+TEST_F(InteractiveTest, killRing) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a : [String]"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.action('action1', 'kill-ring-select', function(q, l) => "
+                              "{ $a = $l!.copy(); $none; })"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'action1')"));
+
+  // kill-ring-select (not work)
+  this->send(CTRL_R "12\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 0"));
+
+  // kill-line
+  this->send(CTRL_Y "81234567" ESC_("<") RIGHT CTRL_K LEFT "-" CTRL_Y "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "-12345678\n: Int = -12345678\n" + PROMPT));
+
+  // backward-kill-line
+  this->send("9999-" LEFT CTRL_U RIGHT CTRL_Y "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "-9999\n: Int = -9999\n" + PROMPT));
+
+  // kill-word
+  this->send("888-8" CTRL_A ESC_("d") ESC_(">") CTRL_Y "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "-8888\n: Int = -8888\n" + PROMPT));
+
+  // backward-kill-word
+  this->send("''ABCDEF" CTRL_W LEFT CTRL_Y "\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ABCDEF'\n: String = ABCDEF\n" + PROMPT));
+
+  // kill-ring-select action
+  this->send(CTRL_R);
+  std::this_thread::sleep_for(std::chrono::milliseconds(80));
+  this->send("12\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 4"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[0] == '1234567' : $a[0]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[1] == '9999' : $a[1]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[2] == '888' : $a[2]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[3] == 'ABCDEF' : $a[3]"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
 
 TEST_F(InteractiveTest, history1) {
 #ifdef CODE_COVERAGE

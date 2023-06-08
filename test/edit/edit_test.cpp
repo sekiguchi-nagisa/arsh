@@ -7,6 +7,7 @@
 #include <keycode.h>
 #include <line_renderer.h>
 #include <object.h>
+#include <rotate.h>
 #include <type_pool.h>
 
 using namespace ydsh;
@@ -1062,6 +1063,48 @@ TEST_F(PagerTest, truncate) {
   pager.render(out);
   const char *expect = "@@@     \r\nABCD1234\r\nABCD987.\r\nABCDEあ.\r\n123456  \r\n12345...\r\n";
   ASSERT_EQ(expect, out);
+}
+
+TEST(KillRingTest, base) {
+  KillRing killRing;
+  killRing.setMaxSize(4);
+  ASSERT_FALSE(killRing);
+  killRing.add("AAA");
+  ASSERT_TRUE(killRing);
+  ASSERT_EQ(1, killRing.get()->size());
+  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+
+  // ignore empty string
+  killRing.add("");
+  ASSERT_EQ(1, killRing.get()->size());
+  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+
+  killRing.add("BBB");
+  ASSERT_EQ(2, killRing.get()->size());
+  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ("BBB", killRing.get()->getValues()[1].asStrRef());
+  killRing.add("CCC");
+  killRing.add("DDD");
+  ASSERT_EQ(4, killRing.get()->size());
+  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ("BBB", killRing.get()->getValues()[1].asStrRef());
+  ASSERT_EQ("CCC", killRing.get()->getValues()[2].asStrRef());
+  ASSERT_EQ("DDD", killRing.get()->getValues()[3].asStrRef());
+
+  // truncate old item
+  killRing.add("EEE");
+  ASSERT_EQ(4, killRing.get()->size());
+  ASSERT_EQ("BBB", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ("CCC", killRing.get()->getValues()[1].asStrRef());
+  ASSERT_EQ("DDD", killRing.get()->getValues()[2].asStrRef());
+  ASSERT_EQ("EEE", killRing.get()->getValues()[3].asStrRef());
+
+  killRing.add("FFF");
+  ASSERT_EQ(4, killRing.get()->size());
+  ASSERT_EQ("CCC", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", killRing.get()->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", killRing.get()->getValues()[2].asStrRef());
+  ASSERT_EQ("FFF", killRing.get()->getValues()[3].asStrRef());
 }
 
 int main(int argc, char **argv) {

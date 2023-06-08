@@ -69,12 +69,12 @@ bool HistRotate::rotate(StringRef &curBuf, HistRotateOp op) {
   }
 }
 
-void HistRotate::truncateUntilLimit() {
+void HistRotate::truncateUntilLimit() { // FIXME: test case
   static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
-  if (this->history->size() >= SYS_LIMIT_HIST_SIZE) {
+  if (this->history->size() + 1 > SYS_LIMIT_HIST_SIZE) {
+    unsigned int delSize = this->history->size() + 1 - SYS_LIMIT_HIST_SIZE;
     auto &values = this->history->refValues();
-    values.erase(values.begin(),
-                 values.begin() + static_cast<ssize_t>(values.size() - SYS_LIMIT_HIST_SIZE - 1));
+    values.erase(values.begin(), values.begin() + delSize);
     assert(values.size() == SYS_LIMIT_HIST_SIZE - 1);
   }
 }
@@ -88,6 +88,33 @@ bool HistRotate::save(ssize_t index, StringRef curBuf) {
     return true;
   }
   return false;
+}
+
+// ######################
+// ##     KillRing     ##
+// ######################
+
+void KillRing::add(StringRef ref) {
+  if (ref.empty()) {
+    return;
+  }
+  if (!this->obj) {
+    auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
+                                              std::vector<DSValue>());
+    this->obj = toObjPtr<ArrayObject>(value);
+  }
+  if (this->obj->size() + 1 > this->getMaxSize()) {
+    unsigned int delSize = this->obj->size() + 1 - this->getMaxSize();
+    auto &values = this->obj->refValues();
+    values.erase(values.begin(), values.begin() + delSize);
+    assert(values.size() == this->getMaxSize() - 1);
+  }
+  this->obj->append(DSValue::createStr(ref));
+}
+
+StringRef KillRing::rotate() {
+  (void)this->rotateIndex;
+  return "";
 }
 
 } // namespace ydsh

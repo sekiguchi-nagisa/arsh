@@ -534,14 +534,19 @@ static std::pair<unsigned int, unsigned int> findLineInterval(const struct linen
   return {pos, len};
 }
 
-static void linenoiseEditDeleteTo(struct linenoiseState &l, bool wholeLine = false) {
+static void linenoiseEditDeleteTo(struct linenoiseState &l, KillRing *killRing,
+                                  bool wholeLine = false) {
   auto [newPos, delLen] = findLineInterval(l, wholeLine);
   l.pos = newPos + delLen;
+  if (killRing) {
+    killRing->add(StringRef(l.buf + newPos, delLen));
+  }
   revertInsert(l, delLen);
 }
 
-static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
+static void linenoiseEditDeleteFrom(struct linenoiseState &l, KillRing &killRing) {
   if (l.isSingleLine()) { // single-line
+    killRing.add(StringRef(l.buf + l.pos, l.len - l.pos));
     l.buf[l.pos] = '\0';
     l.len = l.pos;
   } else { // multi-line
@@ -553,6 +558,7 @@ static void linenoiseEditDeleteFrom(struct linenoiseState &l) {
       newPos = l.nlPosList[index];
     }
     unsigned int delLen = newPos - l.pos;
+    killRing.add(StringRef(l.buf + l.pos, delLen));
     l.pos = newPos;
     revertInsert(l, delLen);
   }
@@ -589,9 +595,10 @@ static bool linenoiseEditBackspace(struct linenoiseState &l, std::string *cutBuf
 
 /* Delete the previous word, maintaining the cursor at the start of the
  * current word. */
-static bool linenoiseEditDeletePrevWord(struct linenoiseState &l) {
+static bool linenoiseEditDeletePrevWord(struct linenoiseState &l, KillRing &killRing) {
   if (l.pos > 0 && l.len > 0) {
     size_t wordLen = prevWordBytes(l);
+    killRing.add(StringRef(l.buf + l.pos - wordLen, wordLen));
     memmove(l.buf + l.pos - wordLen, l.buf + l.pos, l.len - l.pos);
     l.pos -= wordLen;
     l.len -= wordLen;
@@ -601,9 +608,10 @@ static bool linenoiseEditDeletePrevWord(struct linenoiseState &l) {
   return false;
 }
 
-static bool linenoiseEditDeleteNextWord(struct linenoiseState &l) {
+static bool linenoiseEditDeleteNextWord(struct linenoiseState &l, KillRing &killRing) {
   if (l.len > 0 && l.pos < l.len) {
     size_t wordLen = nextWordBytes(l);
+    killRing.add(StringRef(l.buf + l.pos, wordLen));
     memmove(l.buf + l.pos, l.buf + l.pos + wordLen, l.len - l.pos - wordLen);
     l.len -= wordLen;
     l.buf[l.len] = '\0';
@@ -988,7 +996,7 @@ static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, Hist
     return false;
   }
   if (multiline) {
-    linenoiseEditDeleteTo(l, true);
+    linenoiseEditDeleteTo(l, nullptr, true);
   } else {
     l.len = l.pos = 0;
   }
@@ -1217,11 +1225,11 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     }
     case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
-      linenoiseEditDeleteTo(l);
+      linenoiseEditDeleteTo(l, &this->killRing);
       this->refreshLine(l);
       break;
     case EditActionType::KILL_LINE: /* delete from current to end of line */
-      linenoiseEditDeleteFrom(l);
+      linenoiseEditDeleteFrom(l, this->killRing);
       this->refreshLine(l);
       break;
     case EditActionType::BEGINNING_OF_LINE: /* go to the start of the line */
@@ -1251,12 +1259,12 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       this->refreshLine(l);
       break;
     case EditActionType::BACKWARD_KILL_WORD:
-      if (linenoiseEditDeletePrevWord(l)) {
+      if (linenoiseEditDeletePrevWord(l, this->killRing)) {
         this->refreshLine(l);
       }
       break;
     case EditActionType::KILL_WORD:
-      if (linenoiseEditDeleteNextWord(l)) {
+      if (linenoiseEditDeleteNextWord(l, this->killRing)) {
         this->refreshLine(l);
       }
       break;
@@ -1277,6 +1285,20 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
         return -1;
       }
       break;
+    case EditActionType::YANK:
+      if (this->killRing && this->killRing.get()->size() > 0) {
+        StringRef line = this->killRing.get()->getValues().back().asStrRef();
+        if (!line.empty()) {
+          if (linenoiseEditInsert(l, line.data(), line.size())) {
+            this->refreshLine(l); // FIXME: yank-pop
+          } else {
+            return -1;
+          }
+        }
+      }
+      break;
+    case EditActionType::YANK_POP:
+      break; // FIXME
     case EditActionType::INSERT_KEYCODE:
       if (reader.fetch() > 0) {
         auto &buf = reader.get();
@@ -1593,6 +1615,12 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   case CustomActionType::INSERT:
     line = "";
     break;
+  case CustomActionType::KILL_RING_SELECT:
+    if (!this->killRing || this->killRing.get()->size() == 0) {
+      return true; // do nothing
+    }
+    optArg = this->killRing.get();
+    break;
   }
 
   auto ret = this->kickCallback(state, this->customCallbacks[index],
@@ -1611,9 +1639,10 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     break;
   case CustomActionType::REPLACE_LINE:
   case CustomActionType::HIST_SELCT:
-    linenoiseEditDeleteTo(l, true);
+    linenoiseEditDeleteTo(l, nullptr, true);
     break;
   case CustomActionType::INSERT:
+  case CustomActionType::KILL_RING_SELECT:
     break;
   }
   auto ref = ret.asStrRef();

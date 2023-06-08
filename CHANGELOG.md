@@ -27,6 +27,14 @@
         - skip '-', ' ' flags if argument is NAN
         - always use quiet NAN
         - forbid INT32_MIN as field width
+- add ``beginning-of-buffer``, ``end-of-buffer`` edit action to ``LineEditor``
+- ``LineEditor`` support kill-ring
+    - store removed text to kill-ring in the following action
+        - ``kill-line``, ``backward-kill-line``, ``kill-word``, ``backward-kill-word``
+    - add ``yank`` action (ctrl-y)
+        - insert latest kill-ring entry
+    - add ``kill-ring-select`` custom action
+        - select and insert from whole kill-ring entries
 
 #### LSP
 
