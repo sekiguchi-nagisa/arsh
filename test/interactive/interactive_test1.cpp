@@ -368,12 +368,12 @@ TEST_F(InteractiveTest, killRing) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a : [String]"));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$LINE_EDIT.action('action1', 'kill-ring-select', function(q, l) => "
-                              "{ $a = $l!.copy(); $none; })"));
+                              "{ $a = $l!.copy(); '12'; })"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'action1')"));
 
   // kill-ring-select (not work)
-  this->send(CTRL_R "12\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
+  this->send(CTRL_R "34\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "34\n: Int = 34\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 0"));
 
   // kill-line
@@ -395,7 +395,7 @@ TEST_F(InteractiveTest, killRing) {
   // kill-ring-select action
   this->send(CTRL_R);
   std::this_thread::sleep_for(std::chrono::milliseconds(80));
-  this->send("12\r");
+  this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12\n: Int = 12\n" + PROMPT));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 4"));
