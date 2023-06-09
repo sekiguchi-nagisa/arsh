@@ -67,11 +67,45 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
     }
 }
 
+source $SCRIPT_DIR/../module/fzf as _fzf
+
+function _kill($ctx : Module, $t : [String], $c : Int) : [String]? {
+    let size = $t.size()
+    if $c < $size {
+        var v = $t.peek()
+        case $v {
+            '-' => return ['-l', '-s']
+            else => if !$v.startsWith('-') {
+                if $t.size() > 2 {
+                    if $t[-2] == '-s' {
+                        complete -q -A signal -- $v
+                        return $COMPREPLY
+                    } elif $t[-2] == '-l' {
+                        return $none
+                    }
+                }
+            }
+        }
+    } else {
+        var v = $t.peek()
+        case $v {
+            '-s' => {
+                complete -q -A signal ''
+                return $COMPREPLY
+            }
+            else => if !$v.startsWith('-')  {
+                return [ $_fzf.fzf_proc_select().join(' ') ]
+            }
+        }
+    }
+    return new [String]()
+}
 
 $compAdd("command", $_cmd)
 $compAdd("call", $_cmd)
 $compAdd("exec", $_cmd)
 $compAdd('shctl', $_shctl)
+$compAdd('kill', $_kill)
 
 
 # defined by compdef
@@ -86,5 +120,3 @@ compdef --cmd pwd --short L
 compdef --cmd pwd --short P
 compdef --cmd complete --short A \
         --arg-cmd "help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1"
-compdef --cmd kill --short s --arg-action signal
-compdef --cmd kill --short l

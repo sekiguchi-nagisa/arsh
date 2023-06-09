@@ -29,7 +29,7 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_SELECT_FILES_OPTS -m"
 
     var ret = ""
-    find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
+    command find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
         -o -type f -print \
         -o -type d -print \
@@ -48,7 +48,7 @@ function _fzf_cd(q : String, list : [String]?) : String? {
     importenv FZF_CD_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CD_OPTS +m"
 
-    var line = "$(find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
+    var line = "$(command find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
         -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt fzf)"
     if $line.empty() {
@@ -63,19 +63,20 @@ function _fzf_select_killring(q : String, list : [String]?) : String? {
 }
 
 # for completion
-fzf_proc_select() {
-    command -v fzf &>> /dev/null || return 0
+function fzf_proc_select() : [String] {
+    command -v fzf &>> /dev/null || return new [String]()
 
     importenv FZF_DEFAULT_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS" + 
                   "-m --header-lines=1 --preview 'echo {}' --preview-window down:3:wrap --min-height 15"
+    var ret : [String]
     (command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
       command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
       for line in $STDIN {
         var r = $/^[^ ]+[ ]+([0-9]+)/.match($line).get(1) ?? continue
-        printf "%s\n" $r
+        $ret.add($r)
       }
-    return 0
+    return $ret
 }
 
 # CTRL-R

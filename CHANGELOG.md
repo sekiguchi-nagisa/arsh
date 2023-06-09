@@ -93,6 +93,7 @@
 #### Completion
 
 - in ydsh completion, complete command names after ``-e`` option
+- in builtin kill completion, complete PIDs from fzf-based selector
 
 #### API
 
@@ -105,6 +106,7 @@
 - broken error line marker of binary op
 - local functions do not capture constructor parameters
 - do not ignore newline in case expression even if within parenthesis
+- missing line refresh after completion and hist-sync callback
 
 ## [0.29.2] - 2023-04-08
 
