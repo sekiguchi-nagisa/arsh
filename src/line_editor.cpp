@@ -967,11 +967,11 @@ static bool insertBracketPaste(struct linenoiseState &l) {
 }
 
 ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
+  this->kickHistSyncCallback(state, l);
   l.nlPosList.clear(); // force move cursor to end (force enter single line mode)
   if (linenoiseEditMoveEnd(l)) {
     this->refreshLine(l, false);
   }
-  this->kickHistSyncCallback(state, l);
   if (state.hasError()) {
     errno = EAGAIN;
     return -1;
