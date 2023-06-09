@@ -1478,6 +1478,9 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
 
   StringRef line(ls.buf, ls.pos);
   auto candidates = this->kickCompletionCallback(state, line);
+  if (!candidates || candidates->size() <= 1) {
+    this->refreshLine(ls);
+  }
   if (!candidates) {
     return CompStatus::CANCEL;
   }
