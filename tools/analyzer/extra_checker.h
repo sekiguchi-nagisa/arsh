@@ -47,9 +47,12 @@ private:
     this->warnImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
+  void checkVarDecl(VarDeclNode &node, bool maybeUnused);
+
 protected:
   void visitVarDeclNode(VarDeclNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
+  void visitFunctionNode(FunctionNode &node) override;
 };
 
 DEFINE_TCWarn(UnusedLocal, "local variable `%s' is never used");

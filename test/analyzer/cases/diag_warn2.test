@@ -59,41 +59,12 @@
         "text": "function f(a : Int){}; typedef A(aa : Int) { var b = 34; }; typedef BB{ var c : Int }"}
  }
 }
+## do not emit unused-local warning for function/constructor/method parameters
+
 
 # CHECK_IF:   "method": "textDocument/publishDiagnostics",
 #    CHECK:   "params": {
-#    CHECK:     "diagnostics": [
-#    CHECK:       {
-#    CHECK:         "code": "semantic error: UnusedLocal",
-#    CHECK:         "message": "local variable `a' is never used",
-#    CHECK:         "range": {
-#    CHECK:           "end": {
-#    CHECK:             "character": 12,
-#    CHECK:             "line": 0
-#    CHECK:           },
-#    CHECK:           "start": {
-#    CHECK:             "character": 11,
-#    CHECK:             "line": 0
-#    CHECK:           }
-#    CHECK:         },
-#    CHECK:         "severity": 2
-#    CHECK:       },
-#    CHECK:       {
-#    CHECK:         "code": "semantic error: UnusedLocal",
-#    CHECK:         "message": "local variable `aa' is never used",
-#    CHECK:         "range": {
-#    CHECK:           "end": {
-#    CHECK:             "character": 35,
-#    CHECK:             "line": 0
-#    CHECK:           },
-#    CHECK:           "start": {
-#    CHECK:             "character": 33,
-#    CHECK:             "line": 0
-#    CHECK:           }
-#    CHECK:         },
-#    CHECK:         "severity": 2
-#    CHECK:       }
-#    CHECK:     ],
+#    CHECK:     "diagnostics": [],
 #    CHECK:     "uri": "file:///test/test2.ds"
 #    CHECK:   }
 

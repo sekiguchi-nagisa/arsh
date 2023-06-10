@@ -51,8 +51,8 @@ void ExtraChecker::warnImpl(Token token, const char *kind, const char *fmt, ...)
   this->emitter.handleTypeError(this->modIds.back(), error);
 }
 
-void ExtraChecker::visitVarDeclNode(VarDeclNode &node) {
-  if (auto &handle = node.getHandle()) {
+void ExtraChecker::checkVarDecl(VarDeclNode &node, bool maybeUnused) {
+  if (auto &handle = node.getHandle(); handle && !maybeUnused) {
     if (!handle->has(HandleAttr::GLOBAL) && !handle->has(HandleAttr::UNCAPTURED) &&
         !handle->is(HandleKind::ENV) && handle.useCount() == 1) {
       this->warn<UnusedLocal>(node.getNameInfo().getToken(), node.getNameInfo().getName().c_str());
@@ -60,6 +60,8 @@ void ExtraChecker::visitVarDeclNode(VarDeclNode &node) {
   }
   NodePass::visitVarDeclNode(node);
 }
+
+void ExtraChecker::visitVarDeclNode(VarDeclNode &node) { this->checkVarDecl(node, false); }
 
 void ExtraChecker::visitTypeDefNode(TypeDefNode &node) {
   if (node.getDefKind() == TypeDefNode::ALIAS) {
@@ -69,6 +71,15 @@ void ExtraChecker::visitTypeDefNode(TypeDefNode &node) {
     }
   }
   NodePass::visitTypeDefNode(node);
+}
+
+void ExtraChecker::visitFunctionNode(FunctionNode &node) {
+  for (auto &e : node.getParamNodes()) {
+    this->checkVarDecl(*e, true);
+  }
+  this->visit(node.getRecvTypeNode());
+  this->visit(node.getReturnTypeNode());
+  this->visit(node.getBlockNode());
 }
 
 } // namespace ydsh::lsp
