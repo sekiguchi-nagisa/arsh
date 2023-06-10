@@ -318,6 +318,8 @@ constexpr const char *BUILD_OS =
     "linux"
 #elif defined __APPLE__
     "darwin"
+#elif defined __MSYS__
+    "msys"
 #elif defined __CYGWIN__
     "cygwin"
 #elif defined __EMSCRIPTEN__

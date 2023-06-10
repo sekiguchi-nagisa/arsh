@@ -1,4 +1,4 @@
-#$test($ignored = 'cygwin')
+#$test($ignored = 'cygwin|msys')
 
 source expect.ds
 

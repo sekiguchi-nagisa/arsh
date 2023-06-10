@@ -77,7 +77,7 @@ struct InteractiveTest : public InteractiveShellBase {
 
 inline std::string promptAfterCtrlC(const std::string &prompt) {
   std::string value;
-  if (platform::platform() != platform::PlatformType::CYGWIN) {
+  if (!platform::isCygwinOrMsys(platform::platform())) {
     value += "^C%\n";
   }
   value += prompt;
@@ -86,7 +86,7 @@ inline std::string promptAfterCtrlC(const std::string &prompt) {
 
 inline std::string promptAfterCtrlZ(const std::string &prompt) {
   std::string value;
-  if (platform::platform() != platform::PlatformType::CYGWIN) {
+  if (!platform::isCygwinOrMsys(platform::platform())) {
     value += "^Z%\n";
   }
   value += prompt;
@@ -94,7 +94,7 @@ inline std::string promptAfterCtrlZ(const std::string &prompt) {
 }
 
 inline const char *ctrlZChar() {
-  return platform::platform() != platform::PlatformType::CYGWIN ? "^Z" : "";
+  return !platform::isCygwinOrMsys(platform::platform()) ? "^Z" : "";
 }
 
 #endif // YDSH_TEST_INTERACTIVE_BASE_HPP

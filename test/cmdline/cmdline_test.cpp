@@ -586,7 +586,7 @@ TEST_F(CmdlineTest2, cwd) {
 }
 
 TEST_F(CmdlineTest2, import1) {
-  if (platform::platform() == platform::PlatformType::CYGWIN) {
+  if (platform::isCygwinOrMsys(platform::platform())) {
     return;
   }
   if (getuid() == 0) {

@@ -39,6 +39,7 @@ Currently, under heavy development. Language specification is subject to change 
     * Arm64
 * Windows x64
     * Cygwin
+    * MSYS2
     * WSL
 
 ## How to use

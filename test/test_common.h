@@ -149,6 +149,7 @@ public:
     switch (ydsh::platform::platform()) {
     case ydsh::platform::PlatformType::DARWIN:
     case ydsh::platform::PlatformType::CYGWIN:
+    case ydsh::platform::PlatformType::MSYS:
       sleepTime = std::chrono::milliseconds(200);
       break;
     default:

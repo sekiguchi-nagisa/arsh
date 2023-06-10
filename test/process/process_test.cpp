@@ -72,7 +72,7 @@ TEST_F(ProcTest, pty1) {
 }
 
 TEST_F(ProcTest, pty2) {
-  if (ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
     return; // workaround for Cygwin
   }
 
@@ -99,7 +99,7 @@ TEST_F(ProcTest, pty2) {
 }
 
 TEST_F(ProcTest, pty3) {
-  if (ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
     return; // workaround for Cygwin
   }
 

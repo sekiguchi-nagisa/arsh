@@ -1,4 +1,4 @@
-#$test($result = 'throw', $lineNum = 11, $errorKind = 'SystemError', $status = 1, $envs = ['ASAN_OPTIONS' : 'detect_leaks=0'], $ignored = 'wsl|cygwin|#')
+#$test($result = 'throw', $lineNum = 11, $errorKind = 'SystemError', $status = 1, $envs = ['ASAN_OPTIONS' : 'detect_leaks=0'], $ignored = 'wsl|cygwin|msys|#')
 
 assert ulimit -u 1
 var js = new [Job]()

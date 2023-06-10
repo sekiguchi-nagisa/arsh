@@ -74,6 +74,9 @@ static PlatformType detectImpl() {
   if (reSearch("cygwin", sysName)) {
     return PlatformType::CYGWIN;
   }
+  if (reSearch("msys", sysName)) {
+    return PlatformType::MSYS;
+  }
   return PlatformType::UNKNOWN;
 }
 

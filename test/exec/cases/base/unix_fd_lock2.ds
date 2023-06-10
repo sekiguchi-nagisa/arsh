@@ -1,4 +1,4 @@
-#$test($ignored = 'cygwin|darwin')
+#$test($ignored = 'cygwin|msys|darwin')
 
 assert command -V flock > /dev/null
 

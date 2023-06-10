@@ -791,7 +791,7 @@ TEST_F(APITest, module5) {
 }
 
 TEST_F(APITest, module6) {
-  if (ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
     return;
   }
 

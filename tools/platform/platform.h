@@ -27,6 +27,7 @@ namespace ydsh::platform {
   OP(CONTAINER) /* linux container (docker/LXC) */                                                 \
   OP(DARWIN)    /* MacOSX */                                                                       \
   OP(CYGWIN)    /* Cygwin */                                                                       \
+  OP(MSYS)      /* MSYS2 */                                                                        \
   OP(WSL)       /* Windows Subsystem for Linux */
 
 enum class PlatformType : unsigned int {
@@ -39,8 +40,12 @@ inline bool isLinux(PlatformType type) {
   return type == PlatformType::LINUX || type == PlatformType::CONTAINER;
 }
 
+inline bool isCygwinOrMsys(PlatformType type) {
+  return type == PlatformType::CYGWIN || type == PlatformType::MSYS;
+}
+
 inline bool isWindows(PlatformType type) {
-  return type == PlatformType::WSL || type == PlatformType::CYGWIN;
+  return type == PlatformType::WSL || isCygwinOrMsys(type);
 }
 
 const char *toString(PlatformType c);

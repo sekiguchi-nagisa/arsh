@@ -1,4 +1,4 @@
-#$test($ignored = 'cygwin')
+#$test($ignored = 'cygwin|msys')
 
 # invalid option
 assert "$(ulimit -f hgoe 2>&1)" == "ydsh: ulimit: hgoe: invalid number"
