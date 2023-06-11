@@ -47,22 +47,21 @@ void HistRotator::revertAll() {
 bool HistRotator::rotate(StringRef &curBuf, HistRotator::Op op) {
   this->truncateUntilLimit();
 
-  // save current buffer content to current history entry
-  auto histSize = static_cast<ssize_t>(this->history->size());
-  ssize_t bufIndex = histSize - 1 - this->histIndex;
-  if (!this->save(bufIndex, curBuf)) {
-    this->histIndex = 0; // reset index
-    return false;
-  }
-
-  this->histIndex += op == Op::PREV ? 1 : -1;
-  if (this->histIndex < 0) {
+  const auto histSize = static_cast<ssize_t>(this->history->size());
+  const int newHistIndex = this->histIndex + (op == Op::PREV ? 1 : -1);
+  if (newHistIndex < 0) {
     this->histIndex = 0;
     return false;
-  } else if (this->histIndex >= histSize) {
+  } else if (newHistIndex >= histSize) {
     this->histIndex = static_cast<int>(histSize) - 1;
     return false;
   } else {
+    ssize_t bufIndex = histSize - 1 - this->histIndex;
+    if (!this->save(bufIndex, curBuf)) { // save current buffer content to current history entry
+      this->histIndex = 0;
+      return false;
+    }
+    this->histIndex = newHistIndex;
     bufIndex = histSize - 1 - this->histIndex;
     curBuf = this->history->getValues()[bufIndex].asStrRef();
     return true;
