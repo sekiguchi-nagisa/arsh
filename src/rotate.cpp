@@ -18,18 +18,18 @@
 
 namespace ydsh {
 
-// ########################
-// ##     HistRotate     ##
-// ########################
+// #########################
+// ##     HistRotator     ##
+// #########################
 
-HistRotate::HistRotate(ObjPtr<ArrayObject> history) : history(std::move(history)) {
+HistRotator::HistRotator(ObjPtr<ArrayObject> history) : history(std::move(history)) {
   if (this->history) {
-    this->truncateUntilLimit();
+    this->truncateUntilLimit(true);
     this->history->append(DSValue::createStr());
   }
 }
 
-void HistRotate::revertAll() {
+void HistRotator::revertAll() {
   if (this->history) {
     if (this->history->size() > 0) {
       this->history->refValues().pop_back();
@@ -44,7 +44,7 @@ void HistRotate::revertAll() {
   }
 }
 
-bool HistRotate::rotate(StringRef &curBuf, HistRotateOp op) {
+bool HistRotator::rotate(StringRef &curBuf, HistRotator::Op op) {
   this->truncateUntilLimit();
 
   // save current buffer content to current history entry
@@ -55,7 +55,7 @@ bool HistRotate::rotate(StringRef &curBuf, HistRotateOp op) {
     return false;
   }
 
-  this->histIndex += op == HistRotateOp::PREV ? 1 : -1;
+  this->histIndex += op == Op::PREV ? 1 : -1;
   if (this->histIndex < 0) {
     this->histIndex = 0;
     return false;
@@ -69,17 +69,17 @@ bool HistRotate::rotate(StringRef &curBuf, HistRotateOp op) {
   }
 }
 
-void HistRotate::truncateUntilLimit() { // FIXME: test case
-  static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
-  if (this->history->size() + 1 > SYS_LIMIT_HIST_SIZE) {
-    unsigned int delSize = this->history->size() + 1 - SYS_LIMIT_HIST_SIZE;
+void HistRotator::truncateUntilLimit(bool beforeAppend) {
+  const unsigned int offset = beforeAppend ? 1 : 0;
+  if (this->history->size() + offset > this->getMaxSize()) {
+    unsigned int delSize = this->history->size() + offset - this->getMaxSize();
     auto &values = this->history->refValues();
     values.erase(values.begin(), values.begin() + delSize);
-    assert(values.size() == SYS_LIMIT_HIST_SIZE - 1);
+    assert(values.size() == this->getMaxSize() - offset);
   }
 }
 
-bool HistRotate::save(ssize_t index, StringRef curBuf) {
+bool HistRotator::save(ssize_t index, StringRef curBuf) {
   if (index < static_cast<ssize_t>(this->history->size()) && index > -1) {
     auto actualIndex = static_cast<unsigned int>(index);
     auto org = this->history->getValues()[actualIndex];

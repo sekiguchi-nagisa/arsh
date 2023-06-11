@@ -21,21 +21,31 @@
 
 namespace ydsh {
 
-enum class HistRotateOp {
-  PREV,
-  NEXT,
-};
-
-class HistRotate {
+class HistRotator {
 private:
+  static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
+  static_assert(SYS_LIMIT_HIST_SIZE < UINT32_MAX);
+
   std::unordered_map<unsigned int, DSValue> oldEntries;
   ObjPtr<ArrayObject> history;
   int histIndex{0};
+  unsigned int maxSize{SYS_LIMIT_HIST_SIZE};
 
 public:
-  explicit HistRotate(ObjPtr<ArrayObject> history);
+  enum class Op {
+    PREV,
+    NEXT,
+  };
 
-  ~HistRotate() { this->revertAll(); }
+  explicit HistRotator(ObjPtr<ArrayObject> history);
+
+  ~HistRotator() { this->revertAll(); }
+
+  void setMaxSize(unsigned int size) {
+    this->maxSize = std::min(size, static_cast<unsigned int>(SYS_LIMIT_HIST_SIZE));
+  }
+
+  unsigned int getMaxSize() const { return this->maxSize; }
 
   void revertAll();
 
@@ -46,11 +56,11 @@ public:
    * @param curLine
    * @param next
    */
-  bool rotate(StringRef &curBuf, HistRotateOp op);
-
-  void truncateUntilLimit();
+  bool rotate(StringRef &curBuf, HistRotator::Op op);
 
 private:
+  void truncateUntilLimit(bool beforeAppend = false);
+
   bool save(ssize_t index, StringRef curBuf);
 };
 

@@ -979,7 +979,7 @@ ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
   return static_cast<ssize_t>(l.len);
 }
 
-static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
+static bool rotateHistory(HistRotator &histRotate, struct linenoiseState &l, HistRotator::Op op,
                           bool multiline) {
   if (!histRotate) {
     return false;
@@ -1003,15 +1003,15 @@ static bool rotateHistory(HistRotate &histRotate, struct linenoiseState &l, Hist
   return linenoiseEditInsert(l, curBuf.data(), curBuf.size());
 }
 
-static bool rotateHistoryOrUpDown(HistRotate &histRotate, struct linenoiseState &l, HistRotateOp op,
-                                  bool continueRotate) {
+static bool rotateHistoryOrUpDown(HistRotator &histRotate, struct linenoiseState &l,
+                                  HistRotator::Op op, bool continueRotate) {
   if (l.isSingleLine() || continueRotate) {
     l.rotating = true;
     return rotateHistory(histRotate, l, op, false);
-  } else if (op == HistRotateOp::PREV || op == HistRotateOp::NEXT) { // move cursor up/down
+  } else if (op == HistRotator::Op::PREV || op == HistRotator::Op::NEXT) { // move cursor up/down
     // resolve dest line
     const auto oldPos = l.pos;
-    if (op == HistRotateOp::PREV) { // up
+    if (op == HistRotator::Op::PREV) { // up
       linenoiseEditMoveHome(l);
       if (l.pos == 0) {
         l.pos = oldPos;
@@ -1109,7 +1109,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
 ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
-  HistRotate histRotate(this->history);
+  HistRotator histRotate(this->history);
 
   preparePrompt(l);
   this->refreshLine(l);
@@ -1208,8 +1208,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     case EditActionType::PREV_HISTORY:
     case EditActionType::NEXT_HISTORY: {
-      auto op =
-          action->type == EditActionType::PREV_HISTORY ? HistRotateOp::PREV : HistRotateOp::NEXT;
+      auto op = action->type == EditActionType::PREV_HISTORY ? HistRotator::Op::PREV
+                                                             : HistRotator::Op::NEXT;
       if (rotateHistory(histRotate, l, op, true)) {
         this->refreshLine(l);
       }
@@ -1217,8 +1217,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     }
     case EditActionType::UP_OR_HISTORY:
     case EditActionType::DOWN_OR_HISTORY: {
-      auto op =
-          action->type == EditActionType::UP_OR_HISTORY ? HistRotateOp::PREV : HistRotateOp::NEXT;
+      auto op = action->type == EditActionType::UP_OR_HISTORY ? HistRotator::Op::PREV
+                                                              : HistRotator::Op::NEXT;
       if (rotateHistoryOrUpDown(histRotate, l, op, prevRotating)) {
         this->refreshLine(l);
       }

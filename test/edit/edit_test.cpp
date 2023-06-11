@@ -1107,6 +1107,121 @@ TEST(KillRingTest, base) {
   ASSERT_EQ("FFF", killRing.get()->getValues()[3].asStrRef());
 }
 
+TEST(HistRotator, base) {
+  auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
+                                            std::vector<DSValue>());
+  auto obj = toObjPtr<ArrayObject>(value);
+  obj->append(DSValue::createStr("AAA"));
+  obj->append(DSValue::createStr("BBB"));
+  obj->append(DSValue::createStr("CCC"));
+  obj->append(DSValue::createStr("DDD"));
+  obj->append(DSValue::createStr("EEE"));
+
+  HistRotator rotate(obj);
+  rotate.setMaxSize(4);
+  ASSERT_EQ(4, rotate.getMaxSize());
+
+  ASSERT_EQ(6, obj->getValues().size());
+  ASSERT_EQ("AAA", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("BBB", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("CCC", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[4].asStrRef());
+  ASSERT_EQ("", obj->getValues()[5].asStrRef()); // reserved for current editing buffer
+
+  // rotate prev
+  StringRef ref = "@@@"; // current editing content
+  bool r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_TRUE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("@@@", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("EEE", ref);
+
+  // rotate next
+  r = rotate.rotate(ref, HistRotator::Op::NEXT);
+  ASSERT_TRUE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("@@@", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("@@@", ref);
+
+  // rotate next
+  r = rotate.rotate(ref, HistRotator::Op::NEXT);
+  ASSERT_FALSE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("@@@", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("@@@", ref);
+
+  // rotate next
+  r = rotate.rotate(ref, HistRotator::Op::NEXT);
+  ASSERT_FALSE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("@@@", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("@@@", ref);
+
+  // rotate prev+prev
+  ref = "$$$$";
+  r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_TRUE(r);
+  r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_TRUE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("$$$$", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("DDD", ref);
+
+  // rotate prev
+  ref = "&&&&";
+  r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_TRUE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("&&&&", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("$$$$", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("CCC", ref);
+
+  // rotate prev
+  r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_FALSE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("&&&&", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("$$$$", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("CCC", ref);
+
+  // rotate prev
+  r = rotate.rotate(ref, HistRotator::Op::PREV);
+  ASSERT_FALSE(r);
+  ASSERT_EQ(4, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("&&&&", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+  ASSERT_EQ("$$$$", obj->getValues()[3].asStrRef());
+  ASSERT_EQ("CCC", ref);
+
+  // revert
+  rotate.revertAll();
+  ASSERT_EQ(3, obj->size());
+  ASSERT_EQ("CCC", obj->getValues()[0].asStrRef());
+  ASSERT_EQ("DDD", obj->getValues()[1].asStrRef());
+  ASSERT_EQ("EEE", obj->getValues()[2].asStrRef());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
