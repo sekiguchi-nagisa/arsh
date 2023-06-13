@@ -99,7 +99,7 @@ INIT:
     "\x1b[" DECIMAL "C"                     { this->right(parseEscape(start, cursor)); NEXT(); }
     "\x1b[" DECIMAL "D"                     { this->left(parseEscape(start, cursor)); NEXT(); }
     "\x1b[" DECIMAL ";" DECIMAL "H"         { auto p = parseEscape2(start, cursor);
-    this->setCursor(p.first, p.second); NEXT(); }
+                                              this->setCursor(p.first, p.second); NEXT(); }
     "\x1b[" DECIMAL (";" DECIMAL)* "m"      { NEXT(); }
     "\x1b[H"                                { this->setCursor(); NEXT(); }
     "\x1b[2J"                               { this->clear(); NEXT(); }

@@ -137,7 +137,8 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool merg
 }
 
 std::string InteractiveShellBase::interpret(const std::string &line) {
-  Screen screen(this->handle.getWinSize());
+  auto [row, col] = this->handle.getWinSize();
+  Screen screen(Screen::Pos{.row = row, .col = col});
   screen.setEAW(2);
   screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
   screen.interpret(line.c_str(), line.size());
@@ -145,10 +146,11 @@ std::string InteractiveShellBase::interpret(const std::string &line) {
 }
 
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {
-  std::string err;
-  Screen screen(this->handle.getWinSize());
+  auto [row, col] = this->handle.getWinSize();
+  Screen screen(Screen::Pos{.row = row, .col = col});
   screen.setEAW(2);
   screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
+  std::string err;
   this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
     if (index == 0) {
       screen.interpret(buf, size);

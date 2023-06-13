@@ -47,8 +47,8 @@ private:
 
   unsigned char yych{0};
   unsigned int yyaccept{0};
-  const char *start{nullptr};
   int state{-1};
+  const char *start{nullptr};
 
 public:
   enum Result {
@@ -57,7 +57,14 @@ public:
     INVALID,
   };
 
-  Screen(unsigned int row, unsigned int col) : LexerBase("<screen>"), maxRow(row), maxCol(col) {
+  struct Pos {
+    unsigned int row;
+    unsigned int col;
+
+    static Pos defaultSize() { return {24, 80}; }
+  };
+
+  explicit Screen(Pos pos) : LexerBase("<screen>"), maxRow(pos.row), maxCol(pos.col) {
     this->bufs.reserve(this->maxRow);
     for (unsigned int i = 0; i < this->maxRow; i++) {
       this->bufs.emplace_back();
@@ -65,10 +72,7 @@ public:
     }
   }
 
-  explicit Screen(std::pair<unsigned short, unsigned short> winsize)
-      : Screen(winsize.first, winsize.second) {}
-
-  Screen() : Screen(24, 80) {}
+  Screen() : Screen(Pos::defaultSize()) {}
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
@@ -115,7 +119,12 @@ public:
     this->setCursor(0, 0); // FIXME: home position is equivalent to (1,1) ?
   }
 
-  std::pair<unsigned int, unsigned int> getPos() const { return {this->row + 1, this->col + 1}; }
+  Pos getCursor() const {
+    return {
+        .row = this->row + 1,
+        .col = this->col + 1,
+    };
+  }
 
   void reportPos();
 
@@ -131,13 +140,13 @@ public:
 
   // move cursor ops
   void left(unsigned int offset) {
-    offset = offset == 0 ? 1 : offset;
+    offset = offset == 0 ? 1 : offset; // FIXME:
     unsigned int pos = offset < this->col ? this->col - offset : 0;
     this->col = pos;
   }
 
   void right(unsigned int offset) {
-    unsigned int pos = this->col + (offset == 0 ? 1 : offset);
+    unsigned int pos = this->col + (offset == 0 ? 1 : offset); // FIXME: 0-based or 1-based ?
     this->col = pos > this->maxCol ? this->maxCol : pos;
   }
 

@@ -610,11 +610,11 @@ void Screen::addCodePoint(const char *begin, const char *end) {
 
 void Screen::reportPos() {
   if (this->reporter) {
-    auto pos = this->getPos();
+    auto pos = this->getCursor();
     std::string str = "\x1b[";
-    str += std::to_string(pos.first);
+    str += std::to_string(pos.row);
     str += ';';
-    str += std::to_string(pos.second);
+    str += std::to_string(pos.col);
     str += 'R';
 
     this->reporter(std::move(str));
@@ -663,7 +663,7 @@ std::string Screen::toString() const {
   for (unsigned int i = 0; i < this->maxRow; i++) {
     auto line = toStringAtLine(this->bufs[i]);
     if (i > 0) {
-      if (!line.empty() || i <= this->row) {
+      if (i <= this->row) {
         ret += '\n';
       }
     }
