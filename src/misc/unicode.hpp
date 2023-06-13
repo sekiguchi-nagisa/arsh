@@ -23,6 +23,14 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
+/**
+ * for east asian ambiguous character.
+ */
+enum class AmbiguousCharWidth : unsigned char {
+  HALF,
+  FULL,
+};
+
 namespace detail_unicode {
 
 template <bool T>
@@ -130,14 +138,6 @@ struct UnicodeUtil {
   static bool isAmbiguousChar(int codePoint);
 
   /**
-   * for east asian ambiguous character.
-   */
-  enum AmbiguousCharWidth : unsigned char {
-    HALF_WIDTH,
-    FULL_WIDTH,
-  };
-
-  /**
    * get width of unicode code point.
    * return -3, if codePoint is negate.
    * return -2, if combining character
@@ -148,7 +148,7 @@ struct UnicodeUtil {
    *
    * codePoint must be unicode code point.
    */
-  static int width(int codePoint, AmbiguousCharWidth ambiguousCharWidth = HALF_WIDTH);
+  static int width(int codePoint, AmbiguousCharWidth ambiguousCharWidth = AmbiguousCharWidth::HALF);
 
   static bool isCJKLocale() {
     const char *ctype = setlocale(LC_CTYPE, nullptr);
@@ -167,7 +167,7 @@ struct UnicodeUtil {
    * if LC_CTYPE is CJK, call width(codePoint, TWO_WIDTH)
    */
   static int localeAwareWidth(int codePoint) {
-    return width(codePoint, isCJKLocale() ? FULL_WIDTH : HALF_WIDTH);
+    return width(codePoint, isCJKLocale() ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF);
   }
 };
 
@@ -363,7 +363,7 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
   }
 
   // search ambiguous width character
-  if (ambiguousCharWidth == FULL_WIDTH && isAmbiguousChar(codePoint)) {
+  if (ambiguousCharWidth == AmbiguousCharWidth::FULL && isAmbiguousChar(codePoint)) {
     return 2;
   }
 

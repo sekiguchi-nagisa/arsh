@@ -50,7 +50,7 @@ using CharWidthPropertyList =
 const CharWidthPropertyList &getCharWidthPropertyList();
 
 struct CharWidthProperties {
-  UnicodeUtil::AmbiguousCharWidth eaw{UnicodeUtil::HALF_WIDTH};
+  AmbiguousCharWidth eaw{AmbiguousCharWidth::HALF};
   unsigned char flagSeqWidth{4};
   bool zwjSeqFallback{false};
   bool replaceInvalid{false};
@@ -58,7 +58,7 @@ struct CharWidthProperties {
   void setProperty(CharWidthProperty p, std::size_t len) {
     switch (p) {
     case CharWidthProperty::EAW:
-      this->eaw = len == 2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
+      this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
       break;
     case CharWidthProperty::EMOJI_FLAG_SEQ:
       this->flagSeqWidth = len;

@@ -325,9 +325,9 @@ template <bool T>
 std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw) const {
   assert(lineToken.pos <= token.pos);
 
-  auto charWidth = UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+  auto charWidth = AmbiguousCharWidth::HALF;
   if (eaw == 2 || (eaw != 1 && UnicodeUtil::isCJKLocale())) {
-    charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
+    charWidth = AmbiguousCharWidth::FULL;
   }
 
   std::string lineMarker;

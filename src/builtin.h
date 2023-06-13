@@ -633,10 +633,10 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
 
   // resolve east-asian width option
   auto n = v.isInvalid() ? 0 : v.asInt();
-  auto eaw = n == 2                       ? UnicodeUtil::FULL_WIDTH
-             : n == 1                     ? UnicodeUtil::HALF_WIDTH
-             : UnicodeUtil::isCJKLocale() ? UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH
-                                          : UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+  auto eaw = n == 2                       ? AmbiguousCharWidth::FULL
+             : n == 1                     ? AmbiguousCharWidth::HALF
+             : UnicodeUtil::isCJKLocale() ? AmbiguousCharWidth::FULL
+                                          : AmbiguousCharWidth::HALF;
 
   CharWidthProperties ps = {
       .eaw = eaw,

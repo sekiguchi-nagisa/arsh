@@ -42,7 +42,7 @@ public:
     int codePoint = 0;
     toCodePoint(str, codePoint);
 
-    auto e = ambiguousWidth2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
+    auto e = ambiguousWidth2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
     ASSERT_EQ(width, UnicodeUtil::width(codePoint, e));
   }
 
@@ -226,7 +226,7 @@ TEST_F(UnicodeTest, illegal) {
   }
 
   // illegal code point
-  ASSERT_EQ(-3, UnicodeUtil::width(-1, UnicodeUtil::HALF_WIDTH));
+  ASSERT_EQ(-3, UnicodeUtil::width(-1, AmbiguousCharWidth::HALF));
 }
 
 TEST_F(UnicodeTest, utf16) {

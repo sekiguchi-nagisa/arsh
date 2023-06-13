@@ -581,9 +581,9 @@ void Screen::addChar(int ch) {
 }
 
 void Screen::addCodePoint(const char *begin, const char *end) {
-  auto charWidth = ydsh::UnicodeUtil::HALF_WIDTH;
+  auto charWidth = ydsh::AmbiguousCharWidth::HALF;
   if (this->eaw != 1) {
-    charWidth = ydsh::UnicodeUtil::FULL_WIDTH;
+    charWidth = ydsh::AmbiguousCharWidth::FULL;
   }
 
   int code = ydsh::UnicodeUtil::utf8ToCodePoint(begin, end);

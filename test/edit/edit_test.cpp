@@ -189,13 +189,13 @@ TEST(EncodingTest, charInvalid) {
   ASSERT_EQ(0, ret.colSize);
 
   ps.replaceInvalid = true;
-  ps.eaw = UnicodeUtil::HALF_WIDTH;
+  ps.eaw = AmbiguousCharWidth::HALF;
   ret = getCharLen(line, ps);
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(1, ret.colSize);
 
   ps.replaceInvalid = true;
-  ps.eaw = UnicodeUtil::FULL_WIDTH;
+  ps.eaw = AmbiguousCharWidth::FULL;
   ret = getCharLen(line, ps);
   ASSERT_EQ(1, ret.byteSize);
   ASSERT_EQ(2, ret.colSize);
