@@ -252,7 +252,7 @@ TEST(ANSITest, width) {
   ASSERT_EQ("\x1b[1;3R", rep);
 
   screen = Screen();
-  screen.setEAW(2);
+  screen.setEAW(ydsh::AmbiguousCharWidth::FULL);
   rep = "";
   screen.setReporter([&](std::string &&m) { rep = std::move(m); });
   screen.interpret(line.c_str(), line.size());

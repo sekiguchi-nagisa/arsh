@@ -33,8 +33,8 @@ namespace process {
  */
 class Screen : public ydsh::LexerBase {
 private:
-  unsigned int maxRow; // y
-  unsigned int maxCol; // x
+  unsigned int maxRows; // y
+  unsigned int maxCols; // x
 
   unsigned int row{0};
   unsigned int col{0};
@@ -43,7 +43,7 @@ private:
 
   std::function<void(std::string &&)> reporter;
 
-  unsigned int eaw{1};
+  ydsh::AmbiguousCharWidth eaw{ydsh::AmbiguousCharWidth::HALF};
 
   unsigned char yych{0};
   unsigned int yyaccept{0};
@@ -64,11 +64,11 @@ public:
     static Pos defaultSize() { return {24, 80}; }
   };
 
-  explicit Screen(Pos pos) : LexerBase("<screen>"), maxRow(pos.row), maxCol(pos.col) {
-    this->bufs.reserve(this->maxRow);
-    for (unsigned int i = 0; i < this->maxRow; i++) {
+  explicit Screen(Pos pos) : LexerBase("<screen>"), maxRows(pos.row), maxCols(pos.col) {
+    this->bufs.reserve(this->maxRows);
+    for (unsigned int i = 0; i < this->maxRows; i++) {
       this->bufs.emplace_back();
-      this->bufs.back().insert(this->bufs.back().end(), this->maxCol, '\0');
+      this->bufs.back().insert(this->bufs.back().end(), this->maxCols, '\0');
     }
   }
 
@@ -76,7 +76,7 @@ public:
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
-  void setEAW(unsigned int v) { this->eaw = v; }
+  void setEAW(ydsh::AmbiguousCharWidth v) { this->eaw = v; }
 
   /**
    * entry point
@@ -103,21 +103,18 @@ public:
   void addCodePoint(const char *begin, const char *end);
 
   /**
-   * FIXME:
-   * @param r
-   * @param c
+   * set cursor position (1-based)
+   * @param pos
    */
-  void setCursor(unsigned int r, unsigned int c) { // FIXME: position ()
-    this->row = r < this->maxRow ? r : this->maxRow - 1;
-    this->col = c < this->maxCol ? c : this->maxCol - 1;
+  void setCursor(Pos pos) {
+    this->row = std::min(pos.row - 1, this->maxRows - 1);
+    this->col = std::min(pos.col - 1, this->maxCols - 1);
   }
 
   /**
    * set cursor to home position
    */
-  void setCursor() {
-    this->setCursor(0, 0); // FIXME: home position is equivalent to (1,1) ?
-  }
+  void setCursor() { this->setCursor(Pos{1, 1}); }
 
   Pos getCursor() const {
     return {
@@ -139,31 +136,42 @@ public:
   void clearLine();
 
   // move cursor ops
+
+  /**
+   *
+   * @param offset
+   * 0-based
+   */
   void left(unsigned int offset) {
-    offset = offset == 0 ? 1 : offset; // FIXME:
     unsigned int pos = offset < this->col ? this->col - offset : 0;
     this->col = pos;
   }
 
+  /**
+   *
+   * @param offset
+   * 0-based
+   */
   void right(unsigned int offset) {
-    unsigned int pos = this->col + (offset == 0 ? 1 : offset); // FIXME: 0-based or 1-based ?
-    this->col = pos > this->maxCol ? this->maxCol : pos;
+    unsigned int pos = this->col + offset;
+    this->col = pos < this->maxCols ? pos : this->maxCols - 1;
   }
 
-  // FIXME:
-  //    void up(unsigned int offset) {
-  //        offset = offset == 0 ? 1 : offset;
-  //        for(unsigned int i = 0; i < offset && this->row >= 0; i++) {
-  //            this->row--;
-  //        }
-  //    }
+  void up(unsigned int offset) {
+    if (this->row > offset) {
+      this->row -= offset;
+    } else {
+      this->row = 0;
+    }
+  }
 
-  //    void down(unsigned int offset) {
-  //        offset = offset == 0 ? 1 : offset;
-  //        for(unsigned int i = 0; i < offset && this->row < this->maxRow; i++) {
-  //            this->row++;
-  //        }
-  //    }
+  void down(unsigned int offset) {
+    if (this->row + offset < this->maxRows) {
+      this->row += offset;
+    } else {
+      this->row = this->maxRows - 1;
+    }
+  }
 
   std::string toString() const;
 

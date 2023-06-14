@@ -94,12 +94,13 @@ INIT:
 
     DECIMAL = "0" | [1-9][0-9]*;
 
-    "\x1b[" DECIMAL "A"                     { ERROR("\\e[PnA"); }
-    "\x1b[" DECIMAL "B"                     { ERROR("\\e[PnB"); }
+    "\x1b[" DECIMAL "A"                     { this->up(parseEscape(start, cursor)); NEXT(); }
+    "\x1b[" DECIMAL "B"                     { this->down(parseEscape(start, cursor)); NEXT(); }
     "\x1b[" DECIMAL "C"                     { this->right(parseEscape(start, cursor)); NEXT(); }
     "\x1b[" DECIMAL "D"                     { this->left(parseEscape(start, cursor)); NEXT(); }
     "\x1b[" DECIMAL ";" DECIMAL "H"         { auto p = parseEscape2(start, cursor);
-                                              this->setCursor(p.first, p.second); NEXT(); }
+                                              this->setCursor(Pos{.row=p.first, .col=p.second});
+                                              NEXT(); }
     "\x1b[" DECIMAL (";" DECIMAL)* "m"      { NEXT(); }
     "\x1b[H"                                { this->setCursor(); NEXT(); }
     "\x1b[2J"                               { this->clear(); NEXT(); }

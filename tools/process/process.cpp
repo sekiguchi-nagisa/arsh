@@ -581,16 +581,11 @@ void Screen::addChar(int ch) {
 }
 
 void Screen::addCodePoint(const char *begin, const char *end) {
-  auto charWidth = ydsh::AmbiguousCharWidth::HALF;
-  if (this->eaw != 1) {
-    charWidth = ydsh::AmbiguousCharWidth::FULL;
-  }
-
   int code = ydsh::UnicodeUtil::utf8ToCodePoint(begin, end);
   if (isascii(code)) {
     this->addChar(code);
   } else {
-    int width = ydsh::UnicodeUtil::width(code, charWidth);
+    int width = ydsh::UnicodeUtil::width(code, this->eaw);
     switch (width) {
     case 1:
       this->setChar(code);
@@ -660,7 +655,7 @@ static std::string toStringAtLine(const ydsh::FlexBuffer<int> &buf) {
 
 std::string Screen::toString() const {
   std::string ret;
-  for (unsigned int i = 0; i < this->maxRow; i++) {
+  for (unsigned int i = 0; i < this->maxRows; i++) {
     auto line = toStringAtLine(this->bufs[i]);
     if (i > 0) {
       if (i <= this->row) {

@@ -27,6 +27,7 @@ using namespace ydsh;
 #define CTRL_H "\x08"
 #define CTRL_I "\x09"
 #define CTRL_K "\x0B"
+#define CTRL_M "\x0D"
 #define CTRL_N "\x0E"
 #define CTRL_P "\x10"
 #define CTRL_R "\x12"
@@ -46,6 +47,8 @@ using namespace ydsh;
 #define LEFT "\x1b[D"
 #define HOME "\x1b[H"
 #define END "\x1b[F"
+
+#define ALT_ENTER "\x1b" CTRL_M
 
 #define XSTR(v) #v
 #define STR(v) XSTR(v)

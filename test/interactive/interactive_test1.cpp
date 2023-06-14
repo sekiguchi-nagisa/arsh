@@ -215,6 +215,29 @@ TEST_F(InteractiveTest, edit3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, mlEdit) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->send("34" ALT_ENTER "45\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(R"(> 34
+  45
+: Int = 34
+: Int = 45
+> )"));
+
+  this->send("echo \\\r" CTRL_V "\t45\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(R"(> echo \
+    45
+45
+> )"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, keybind) {
   this->invoke("--quiet", "--norc");
 
@@ -347,18 +370,6 @@ Assertion Error: `$false'
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n", err));
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
 }
-
-// TEST_F(InteractiveTest, edit2) {
-//     this->invoke("--quiet", "--norc");
-//
-//     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-//     this->send("\u0041\u0303" CTRL_B "'" CTRL_F "'\r");
-//     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "'\u0041\u0303'\n(String) \u0041\u0303\n"
-//     PROMPT));
-//
-//     this->send(CTRL_D);
-//     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
-// }
 
 TEST_F(InteractiveTest, killRing) {
   this->invoke("--quiet", "--norc");
