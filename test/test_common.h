@@ -210,11 +210,7 @@ protected:
 public:
   InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
 
-  std::string interpret(const std::string &line);
-
   void setPrompt(const std::string &p) { this->prompt = p; }
-
-  void setPrompt(const char *p) { this->prompt = p; }
 
   std::pair<std::string, std::string> readAll() override;
 
