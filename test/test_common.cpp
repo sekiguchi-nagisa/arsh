@@ -137,17 +137,23 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool merg
 }
 
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {
-  auto [row, col] = this->handle.getWinSize();
-  Screen screen(Screen::Pos{.row = row, .col = col});
-  screen.setEAW(ydsh::AmbiguousCharWidth::FULL);
-  screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
+  if (this->resetBeforeRead) {
+    this->resetScreen();
+  }
   std::string err;
   this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
     if (index == 0) {
-      screen.interpret(buf, size);
+      this->screen.interpret(buf, size);
     } else {
       err.append(buf, size);
     }
   });
-  return {screen.toString(), std::move(err)};
+  return {this->screen.toString(), std::move(err)};
+}
+
+void InteractiveShellBase::resetScreen() {
+  auto [row, col] = this->handle.getWinSize();
+  this->screen = Screen(Screen::Pos{.row = row, .col = col});
+  this->screen.setEAW(ydsh::AmbiguousCharWidth::FULL);
+  this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
 }

@@ -36,6 +36,8 @@ private:
   unsigned int maxRows; // y
   unsigned int maxCols; // x
 
+  unsigned int maxUsedRows{1};
+
   unsigned int row{0};
   unsigned int col{0};
 
@@ -109,6 +111,7 @@ public:
   void setCursor(Pos pos) {
     this->row = std::min(pos.row - 1, this->maxRows - 1);
     this->col = std::min(pos.col - 1, this->maxCols - 1);
+    this->updateMaxUsedRows();
   }
 
   /**
@@ -171,11 +174,18 @@ public:
     } else {
       this->row = this->maxRows - 1;
     }
+    this->updateMaxUsedRows();
   }
 
   std::string toString() const;
 
 private:
+  void updateMaxUsedRows() {
+    if (this->row + 1 > this->maxUsedRows) {
+      this->maxUsedRows = this->row + 1;
+    }
+  }
+
   void setChar(int ch) { this->bufs.at(this->row).at(this->col) = ch; }
 
   void appendToBuf(const char *data, unsigned int size) {

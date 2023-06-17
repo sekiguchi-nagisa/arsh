@@ -556,6 +556,7 @@ void Screen::addChar(int ch) {
     break;
   case '\n':
     this->row++;
+    this->updateMaxUsedRows();
     break;
   case '\r':
     this->col = 0;
@@ -655,12 +656,10 @@ static std::string toStringAtLine(const ydsh::FlexBuffer<int> &buf) {
 
 std::string Screen::toString() const {
   std::string ret;
-  for (unsigned int i = 0; i < this->maxRows; i++) {
+  for (unsigned int i = 0; i < this->maxUsedRows; i++) {
     auto line = toStringAtLine(this->bufs[i]);
     if (i > 0) {
-      if (i <= this->row) {
-        ret += '\n';
-      }
+      ret += '\n';
     }
     ret += line;
   }

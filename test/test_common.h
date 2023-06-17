@@ -206,6 +206,8 @@ public:
 class InteractiveShellBase : public InteractiveBase {
 protected:
   std::string prompt{"> "};
+  Screen screen;
+  bool resetBeforeRead{true};
 
 public:
   InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
@@ -268,6 +270,9 @@ public:
     eout += out;
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(status, type, eout, err));
   }
+
+private:
+  void resetScreen();
 };
 
 #define INIT_TEMP_FILE_FACTORY(NAME) ydsh::TempFileFactory("ydsh_" #NAME)

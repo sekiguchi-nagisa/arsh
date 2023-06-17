@@ -106,21 +106,45 @@ TEST_F(InteractiveTest, ctrlc5) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-// TEST_F(InteractiveTest, tab1) {  //FIXME: multiline-aware testing
-//   this->invoke("--quiet", "--norc");
-//
-//   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-//   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-//       "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
-//   this->send("$F\t");
-//   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+F"));
-//   this->send("\t");
-//   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE  False.+"));
-//   this->send("\t\r");
-//   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+: Bool = false.+"));
-//   this->send(CTRL_D);
-//   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
-// }
+TEST_F(InteractiveTest, tab1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->send("$F\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $F\nFALSE   False   \n"));
+  this->resetBeforeRead = false;
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $FALSE\nFALSE   False   \n"));
+  this->send("\t\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $False\n\n"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $False\n: Bool = false\n> "));
+  this->resetBeforeRead = true;
+
+  // insert common suffix with multi-line
+  this->send("$SIGU.\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGU.\n  "));
+  this->resetBeforeRead = false;
+  this->send("name()");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGU.\n  name()"));
+  this->send(UP LEFT);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGU.\n  name()"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR.\nSIGUSR1 SIGUSR2 \n"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\nSIGUSR1 SIGUSR2 \n"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\n  name()\n"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\n  name()\n: String = USR1\n> "));
+  this->resetBeforeRead = true;
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
 
 TEST_F(InteractiveTest, tab2) {
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
@@ -215,7 +239,7 @@ TEST_F(InteractiveTest, edit3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, mlEdit) {
+TEST_F(InteractiveTest, mlEdit1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -755,19 +779,25 @@ TEST_F(InteractiveTest, lineEditorComp) {
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$ret!.quote()", ": String = 12$'\\x09'$'\\x00'$'\\xff'"));
 
-  //  // rotate candidates  //FIXME: enable multiline-aware testing
-  //  ASSERT_NO_FATAL_FAILURE(
-  //      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true', 'tee'])"));
-  //  this->send("()" LEFT "$t\t");
-  //  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($t)"));
-  //  this->send("\t");
-  //  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+true  tee.+"));
-  //  this->send("\t");
-  //  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
-  //  this->send("\t");
-  //  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
-  //  this->send("\t\r");
-  //  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
+  // rotate candidates
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true', 'tee'])"));
+  this->changePrompt("> ");
+  this->send("()" LEFT "$t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));
+  this->resetBeforeRead = false;
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)\ntrue    tee     \n"));
+
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     \n"));
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     \n"));
+  this->send("\t\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n\n"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n: Bool = true\n" + PROMPT));
+  this->resetBeforeRead = true;
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
