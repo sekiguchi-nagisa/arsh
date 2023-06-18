@@ -299,7 +299,7 @@ TEST_F(InteractiveTest, customAction1) {
   this->send("'echo'" CTRL_V);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
 
-  // replace-line //FIXME: multi-line mode
+  // replace-line
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$LINE_EDIT.action('action3', 'replace-line', "
                               "function(s, m) => $s.chars().reverse().join(''))"));
@@ -308,6 +308,21 @@ TEST_F(InteractiveTest, customAction1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ohce"));
   this->send("'" CTRL_A "'\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "'ohce'\n: String = ohce\n" + PROMPT));
+
+  // replace-line in multiline mode
+  this->changePrompt("> ");
+  this->send("'\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '\n  "));
+  this->resetBeforeRead = false;
+  this->send("1234\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '\n  1234\n  "));
+  this->send("'");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '\n  1234\n  '"));
+  this->send(LEFT LEFT CTRL_X);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '\n  4321\n  '"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '\n  4321\n  '\n: String = \n4321\n\n> "));
+  this->resetBeforeRead = true;
 
   // insert
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
