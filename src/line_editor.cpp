@@ -928,8 +928,6 @@ static bool insertBracketPaste(struct linenoiseState &l) {
       return false;
     }
     switch (buf) {
-    case KEY_NULL:
-      continue; // ignore null character
     case ENTER:
       if (!linenoiseEditInsert(l, "\n", 1)) { // insert \n instead of \r
         return false;
