@@ -631,6 +631,15 @@ TEST_F(InteractiveTest, bracketPaste1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = '   @   ba'\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a.quote()", ": String = $'\\x09'@$'\\x09'ba"));
 
+  // paste with newlines
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->send(ESC_("[200~") "echo aaa\recho bbb\necho ccc" ESC_("[201~"));
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo aaa\n  echo bbb\n  echo ccc"));
+  this->resetBeforeRead = false;
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo aaa\n  echo bbb\n  echo ccc\naaa\nbbb\nccc\n> "));
+  this->resetBeforeRead = true;
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
