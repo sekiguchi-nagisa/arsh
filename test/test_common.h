@@ -273,6 +273,12 @@ public:
 
 private:
   void resetScreen();
+
+protected:
+  auto reuseScreen() {
+    this->resetBeforeRead = false;
+    return ydsh::finally([&] { this->resetBeforeRead = true; });
+  }
 };
 
 #define INIT_TEMP_FILE_FACTORY(NAME) ydsh::TempFileFactory("ydsh_" #NAME)
