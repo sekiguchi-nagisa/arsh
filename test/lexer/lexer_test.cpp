@@ -153,7 +153,7 @@ void addPair(ExpectedList &) {}
 
 template <typename... T>
 void addPair(ExpectedList &list, TokenKind kind, const char *text, T &&...rest) {
-  list.push_back(std::make_pair(kind, text));
+  list.emplace_back(kind, text);
   addPair(list, std::forward<T>(rest)...);
 }
 

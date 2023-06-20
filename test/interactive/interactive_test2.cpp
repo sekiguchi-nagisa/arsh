@@ -233,7 +233,7 @@ ArithmeticError: zero division
 
   this->send(CTRL_D); // automatically insert 'exit'
   std::string err = format("\natexit: %d, 1\n", TERM_ON_EXIT);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, err.c_str()));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, err));
 }
 
 TEST_F(InteractiveTest, skip) {

@@ -9,13 +9,11 @@ using BreakPointHandler = std::function<void()>;
 
 class VMInspector : public VMHook {
 private:
-  OpCode breakOp;
+  OpCode breakOp{OpCode::HALT};
   BreakPointHandler handler;
-  bool called;
+  bool called{true};
 
 public:
-  VMInspector() : breakOp(OpCode::HALT), handler(), called(true) {}
-
   void setHandler(OpCode op, BreakPointHandler &&hd) {
     this->breakOp = op;
     this->handler = std::move(hd);
@@ -40,11 +38,10 @@ public:
 
 class VMTest : public ExpectOutput {
 protected:
-  DSState *state;
-  VMInspector inspector;
+  DSState *state{nullptr};
+  VMInspector inspector{};
 
 public:
-  VMTest() : state(nullptr), inspector() {}
   ~VMTest() override = default;
 
   void SetUp() override {

@@ -664,7 +664,8 @@ struct SemanticTokenTest : public ::testing::Test {
 
   SemanticTokenTest() : legend(SemanticTokensLegend::create()), encoder(this->legend) {}
 
-  void testEncode(HighlightTokenClass tokenClass, SemanticTokenTypes type, unsigned int modifiers) {
+  void testEncode(HighlightTokenClass tokenClass, SemanticTokenTypes type,
+                  unsigned int modifiers) const {
     auto ret = this->encoder.encode(tokenClass);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(static_cast<unsigned int>(type), ret.unwrap().first);

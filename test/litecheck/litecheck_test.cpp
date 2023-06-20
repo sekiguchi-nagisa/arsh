@@ -58,7 +58,7 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
     return ret;
   }
 
-  void doTest() {
+  static void doTest() {
     ASSERT_TRUE(StringRef(GetParam()).endsWith(".test"));
 
     // parse status
@@ -100,7 +100,7 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-TEST_P(LitecheckTest, base) { ASSERT_NO_FATAL_FAILURE(this->doTest()); }
+TEST_P(LitecheckTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
 
 INSTANTIATE_TEST_SUITE_P(LitecheckTest, LitecheckTest,
                          ::testing::ValuesIn(getSortedFileList(LITECHECK_TEST_DIR)));
