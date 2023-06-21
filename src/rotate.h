@@ -84,7 +84,7 @@ public:
 
   const auto &get() const { return this->obj; }
 
-  explicit operator bool() const { return static_cast<bool>(this->get()); }
+  explicit operator bool() const { return static_cast<bool>(this->get()) && this->obj->size() > 0; }
 
   void add(StringRef ref);
 

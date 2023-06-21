@@ -1617,7 +1617,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     line = "";
     break;
   case CustomActionType::KILL_RING_SELECT:
-    if (!this->killRing || this->killRing.get()->size() == 0) {
+    if (!this->killRing) {
       return true; // do nothing
     }
     line = "";
