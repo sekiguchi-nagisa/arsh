@@ -88,11 +88,18 @@ public:
 
   void add(StringRef ref);
 
-  /**
-   * if no entry, return empty string
-   * @return
-   */
-  StringRef rotate(); // FIXME:
+  void reset() { this->rotateIndex = this->obj->size() - 1; }
+
+  StringRef getCurrent() const { return this->obj->getValues()[this->rotateIndex].asStrRef(); }
+
+  void rotate() {
+    const unsigned int size = this->obj->size();
+    if (this->rotateIndex > 0 && this->rotateIndex < size) {
+      this->rotateIndex--;
+    } else {
+      this->rotateIndex = size - 1;
+    }
+  }
 };
 
 } // namespace ydsh

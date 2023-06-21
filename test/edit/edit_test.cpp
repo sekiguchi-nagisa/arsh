@@ -1109,6 +1109,36 @@ TEST(KillRingTest, base) {
   ASSERT_EQ("FFF", killRing.get()->getValues()[3].asStrRef());
 }
 
+TEST(KillRingTest, pop) {
+  KillRing killRing;
+  killRing.setMaxSize(4);
+  ASSERT_FALSE(killRing);
+  killRing.add("AAA");
+  killRing.add("BBB");
+  killRing.add("CCC");
+  killRing.add("DDD");
+  ASSERT_TRUE(killRing);
+  ASSERT_EQ(4, killRing.get()->size());
+  killRing.reset();
+  ASSERT_EQ("DDD", killRing.getCurrent().toString());
+  killRing.rotate();
+  ASSERT_EQ("CCC", killRing.getCurrent().toString());
+  killRing.rotate();
+  ASSERT_EQ("BBB", killRing.getCurrent().toString());
+  killRing.rotate();
+  ASSERT_EQ("AAA", killRing.getCurrent().toString());
+  killRing.rotate();
+  ASSERT_EQ("DDD", killRing.getCurrent().toString());
+
+  killRing.get()->refValues().erase(killRing.get()->refValues().begin());
+  killRing.get()->refValues().erase(killRing.get()->refValues().begin());
+
+  killRing.rotate();
+  ASSERT_EQ("DDD", killRing.getCurrent().toString());
+  killRing.rotate();
+  ASSERT_EQ("CCC", killRing.getCurrent().toString());
+}
+
 TEST(HistRotator, base) {
   auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
                                             std::vector<DSValue>());

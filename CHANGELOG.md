@@ -33,6 +33,8 @@
         - ``kill-line``, ``backward-kill-line``, ``kill-word``, ``backward-kill-word``
     - add ``yank`` action (ctrl-y)
         - insert latest kill-ring entry
+    - add ``yank-pop`` action (alt-y)
+        - rotate kill-ring entry
     - add ``kill-ring-select`` custom action
         - select and insert from whole kill-ring entries
 

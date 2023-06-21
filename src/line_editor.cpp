@@ -147,6 +147,7 @@ struct linenoiseState {
   CharWidthProperties ps;
   NLPosList nlPosList; // maintains newline pos
   bool rotating;
+  unsigned int yankedSize;
 
   StringRef lineRef() const { return {this->buf, this->len}; }
 
@@ -1083,6 +1084,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
       .ps = {},
       .nlPosList = {},
       .rotating = false,
+      .yankedSize = 0,
   };
 
   /* Buffer starts empty. */
@@ -1121,6 +1123,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
   NO_FETCH:
     const bool prevRotating = l.rotating;
     l.rotating = false;
+    const unsigned int prevYankedSize = l.yankedSize;
+    l.yankedSize = 0;
 
     if (!reader.hasControlChar()) {
       auto &buf = reader.get();
@@ -1284,11 +1288,13 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::YANK:
-      if (this->killRing && this->killRing.get()->size() > 0) {
-        StringRef line = this->killRing.get()->getValues().back().asStrRef();
+      if (this->killRing) {
+        this->killRing.reset();
+        StringRef line = this->killRing.getCurrent();
         if (!line.empty()) {
+          l.yankedSize = line.size();
           if (linenoiseEditInsert(l, line.data(), line.size())) {
-            this->refreshLine(l); // FIXME: yank-pop
+            this->refreshLine(l);
           } else {
             return -1;
           }
@@ -1296,7 +1302,21 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::YANK_POP:
-      break; // FIXME
+      if (prevYankedSize > 0) {
+        assert(this->killRing);
+        revertInsert(l, prevYankedSize);
+        this->killRing.rotate();
+        StringRef line = this->killRing.getCurrent();
+        if (!line.empty()) {
+          l.yankedSize = line.size();
+          if (linenoiseEditInsert(l, line.data(), line.size())) {
+            this->refreshLine(l);
+          } else {
+            return -1;
+          }
+        }
+      }
+      break;
     case EditActionType::INSERT_KEYCODE:
       if (reader.fetch() > 0) {
         auto &buf = reader.get();

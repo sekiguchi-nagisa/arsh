@@ -225,7 +225,7 @@ KeyBindings::KeyBindings() {
       {ESC_ "b", EditActionType::BACKWARD_WORD},
       {ESC_ "f", EditActionType::FORWARD_WORD},
       {ESC_ "d", EditActionType::KILL_WORD},
-      //      {ESC_ "y", EditActionType::YANK_POP}, //FIXME:
+      {ESC_ "y", EditActionType::YANK_POP},
       {ESC_ ENTER_, EditActionType::NEWLINE},
       {ESC_ "<", EditActionType::BEGINNING_OF_BUF},
       {ESC_ ">", EditActionType::END_OF_BUF},

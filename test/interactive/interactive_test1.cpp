@@ -459,6 +459,27 @@ TEST_F(InteractiveTest, killRing) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[2] == '888' : $a[2]"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[3] == 'ABCDEF' : $a[3]"));
 
+  // yank-pop
+  this->send("var bb = " ESC_("y"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = "));
+  this->send(CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = ABCDEF"));
+  this->send(ESC_("y") ESC_("y") ESC_("y"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 1234567"));
+  this->send(ESC_("y") ESC_("y"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 888"));
+
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$bb", ": Int = 888"));
+
+  this->send("00" CTRL_A CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ABCDEF00"));
+  this->send(ESC_("y") ESC_("y"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900\n: Int = 999900\n" + PROMPT));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

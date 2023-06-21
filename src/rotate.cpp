@@ -111,9 +111,4 @@ void KillRing::add(StringRef ref) {
   this->obj->append(DSValue::createStr(ref));
 }
 
-StringRef KillRing::rotate() {
-  (void)this->rotateIndex;
-  return "";
-}
-
 } // namespace ydsh
