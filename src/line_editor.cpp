@@ -132,20 +132,20 @@ using NLPosList = FlexBuffer<unsigned int>;
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;             /* Terminal stdin file descriptor. */
-  int ofd;             /* Terminal stdout file descriptor. */
-  char *buf;           /* Edited line buffer. */
-  size_t bufSize;      /* Edited line buffer size. */
-  StringRef prompt;    /* Prompt to display. */
-  size_t pos;          /* Current cursor position. */
-  size_t oldColPos;    /* Previous refresh cursor column position. */
-  size_t oldRow;       /* Previous refresh cursor row position. */
-  size_t len;          /* Current edited line length. */
-  unsigned int rows;   /* Number of rows in terminal. */
-  unsigned int cols;   /* Number of columns in terminal. */
-  size_t maxRows;      /* Maximum num of rows used so far (multiline mode) */
-  NLPosList nlPosList; // maintains newline pos
+  int ifd;                /* Terminal stdin file descriptor. */
+  int ofd;                /* Terminal stdout file descriptor. */
+  char *buf;              /* Edited line buffer. */
+  size_t bufSize;         /* Edited line buffer size. */
+  StringRef prompt;       /* Prompt to display. */
+  unsigned int pos;       /* Current cursor position. */
+  unsigned int oldColPos; /* Previous refresh cursor column position. */
+  unsigned int oldRow;    /* Previous refresh cursor row position. */
+  unsigned int len;       /* Current edited line length. */
+  unsigned int rows;      /* Number of rows in terminal. */
+  unsigned int cols;      /* Number of columns in terminal. */
+  unsigned int maxRows;   /* Maximum num of rows used so far (multiline mode) */
   CharWidthProperties ps;
+  NLPosList nlPosList; // maintains newline pos
   bool rotating;
 
   StringRef lineRef() const { return {this->buf, this->len}; }
@@ -849,8 +849,8 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   this->continueLine = continueLine2;
 
   /* cursor relative row. */
-  const int relativeRows = /*(promptCols + l.oldColPos + l.cols) / l.cols + promptRows +*/ l.oldRow;
-  const int oldRows = l.maxRows;
+  const int relativeRows = static_cast<int>(l.oldRow);
+  const int oldRows = static_cast<int>(l.maxRows);
   std::string ab;
 
   lndebug("cols: %d, promptCols: %d, promptRows: %d, rows: %d", (int)l.cols, (int)promptCols,
@@ -1080,8 +1080,8 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
       .rows = 24,
       .cols = 80,
       .maxRows = 0,
-      .nlPosList = {},
       .ps = {},
+      .nlPosList = {},
       .rotating = false,
   };
 
@@ -1409,7 +1409,8 @@ size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
   bool matched = false;
   size_t offset = 0;
   if (ls.pos > 0) {
-    for (offset = ls.pos - std::min(ls.pos, prefix.size()); offset < ls.pos; offset++) {
+    for (offset = ls.pos - std::min(static_cast<size_t>(ls.pos), prefix.size()); offset < ls.pos;
+         offset++) {
       StringRef suffix(ls.buf + offset, ls.pos - offset);
       logprintf("curSuffix: %s\n", suffix.toString().c_str());
       if (auto retPos = prefix.find(suffix); retPos == 0) {
