@@ -18,6 +18,12 @@ assert pushd -q 2>&1 | grep '^ydsh: pushd: -q: invalid option'
 assert pushd -q 2>&1 | grep -E 'pushd: pushd \[\+N | -N | dir]'
 assert $PIPESTATUS[0] == 2
 
+# io error
+if $OSTYPE == 'linux' {
+    assert "$(pushd / 2>&1 > /dev/full )" =~ $/pushd: io error:.+/
+    assert $? == 1
+}
+
 ## invalid
 assert pushd 2>&1 | grep '^ydsh: pushd: no other directory$'
 assert $PIPESTATUS[0] == 1

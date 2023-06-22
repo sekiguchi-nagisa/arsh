@@ -18,6 +18,12 @@ assert dirs -u 2>&1 | grep '^ydsh: dirs: -u: invalid option'
 assert dirs -u 2>&1 | grep -E '^dirs: dirs \[-clpv]'
 assert $PIPESTATUS[0] == 2
 
+# io error
+if $OSTYPE == 'linux' {
+    assert "$(dirs 2>&1 > /dev/full )" =~ $/dirs: io error:.+/
+    assert $? == 1
+}
+
 ## truncate DIRSTACK
 $DIRSTACK.clear()
 for(var i = 0; $i < 1000; $i++) {

@@ -18,6 +18,12 @@ assert popd -r 2>&1 | grep '^ydsh: popd: -r: invalid option'
 assert popd -r 2>&1 | grep -E '^popd: popd \[\+N | -N]'
 assert $PIPESTATUS[0] == 2
 
+# io error
+if $OSTYPE == 'linux' {
+    assert "$(pushd / && popd 2>&1 > /dev/full )" =~ $/popd: io error:.+/
+    assert $? == 1
+}
+
 ## invalid
 assert popd -999999999999999999999 2>&1 | grep '^ydsh: popd: -999999999999999999999: invalid number'
 assert $PIPESTATUS[0] == 1

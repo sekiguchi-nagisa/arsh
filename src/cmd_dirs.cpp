@@ -22,6 +22,14 @@
 
 namespace ydsh {
 
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    errno = 0;                                                                                     \
+    if (!(E)) {                                                                                    \
+      goto END;                                                                                    \
+    }                                                                                              \
+  } while (false)
+
 int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   bool useLogical = true;
 
@@ -46,7 +54,10 @@ int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     PERROR(argvObj, ".");
     return 1;
   }
-  printf("%s\n", workdir.get());
+  TRY(printf("%s\n", workdir.get()) > -1);
+
+END:
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
@@ -92,13 +103,16 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
   }
 
   if (useOldpwd) {
-    printf("%s\n", toPrintable(dest).c_str());
+    TRY(printf("%s\n", toPrintable(dest).c_str()) > -1);
   }
 
   if (!changeWorkingDir(state.logicalWorkingDir, dest, useLogical)) {
     PERROR(argvObj, "%s", toPrintable(dest).c_str());
     return 1;
   }
+
+END:
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
@@ -122,14 +136,23 @@ static std::string formatDir(StringRef dir, const std::string &home) {
   return value;
 }
 
-static bool printDirStack(const ArrayObject &dirStack, const char *cwd, const PrintDirOp dirOp) {
+#undef TRY
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return errno;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+static int printDirStack(const ArrayObject &dirStack, const char *cwd, const PrintDirOp dirOp) {
   std::string home;
   if (!hasFlag(dirOp, PrintDirOp::FULL_PATH)) {
     home = "~";
     if (expandTilde(home, true, nullptr) != TildeExpandStatus::OK) {
-      return false;
+      return ENOENT;
     }
   }
+  errno = 0;
   assert(dirStack.size() <= SYS_LIMIT_DIRSTACK_SIZE);
   const auto size = static_cast<int>(dirStack.size());
   if (hasFlag(dirOp, PrintDirOp::PER_LINE)) {
@@ -141,7 +164,7 @@ static bool printDirStack(const ArrayObject &dirStack, const char *cwd, const Pr
         prefix += "  ";
       }
     }
-    printf("%s%s\n", prefix.c_str(), formatDir(cwd, home).c_str());
+    TRY(printf("%s%s\n", prefix.c_str(), formatDir(cwd, home).c_str()) > -1);
     for (int i = size - 1; i > -1; i--) {
       prefix = "";
       if (count) {
@@ -150,18 +173,18 @@ static bool printDirStack(const ArrayObject &dirStack, const char *cwd, const Pr
           prefix += "  ";
         }
       }
-      printf("%s%s\n", prefix.c_str(), formatDir(dirStack.getValues()[i].asStrRef(), home).c_str());
+      TRY(printf("%s%s\n", prefix.c_str(),
+                 formatDir(dirStack.getValues()[i].asStrRef(), home).c_str()) > -1);
     }
   } else {
-    fputs(formatDir(cwd, home).c_str(), stdout);
+    TRY(fputs(formatDir(cwd, home).c_str(), stdout) != EOF);
     for (int i = size - 1; i > -1; i--) {
-      fputc(' ', stdout);
-      fputs(formatDir(dirStack.getValues()[i].asStrRef(), home).c_str(), stdout);
+      TRY(fputc(' ', stdout) != EOF);
+      TRY(fputs(formatDir(dirStack.getValues()[i].asStrRef(), home).c_str(), stdout) != EOF);
     }
-    fputc('\n', stdout);
+    TRY(fputc('\n', stdout) != EOF);
   }
-  fflush(stdout);
-  return true;
+  return 0;
 }
 
 int builtin_dirs(DSState &state, ArrayObject &argvObj) {
@@ -198,7 +221,8 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
     PERROR(argvObj, "cannot resolve current working dir");
     return 1;
   }
-  printDirStack(dirStack, cwd.get(), dirOp);
+  errno = printDirStack(dirStack, cwd.get(), dirOp);
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
@@ -305,7 +329,8 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   }
   auto cwd = state.getWorkingDir();
   assert(cwd);
-  printDirStack(dirStack, cwd.get(), PrintDirOp{});
+  errno = printDirStack(dirStack, cwd.get(), PrintDirOp{});
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 

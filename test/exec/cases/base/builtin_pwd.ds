@@ -15,6 +15,12 @@ assert(rm -rf $tmp_dir)
 assert pwd 2>&1 | grep '^ydsh: pwd: \.: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
+# io error
+if $OSTYPE == 'linux' {
+    assert "$(cd && pwd 2>&1 > /dev/full )" =~ $/pwd: io error:.+/
+    assert $? == 1
+}
+
 # invalid option
 assert(pwd --- 2>&1 | grep 'ydsh: pwd: ---: invalid option')
 assert(pwd --we 2>&1 | grep 'ydsh: pwd: --we: invalid option')
