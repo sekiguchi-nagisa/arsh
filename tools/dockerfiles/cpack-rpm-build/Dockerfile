@@ -1,4 +1,4 @@
-FROM opensuse/leap:15.4
+FROM opensuse/leap:15.5
 RUN zypper refresh && zypper in -y pcre2-devel gcc-c++ clang cmake git ninja sudo rpm-build elfutils systemd-sysvinit
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
