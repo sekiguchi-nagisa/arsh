@@ -84,6 +84,7 @@
 - **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname result
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
 - **Breaking Change**: change return value of ``Map#remove`` method, now returns removed value
+- **Breaking Change**: in user-defined completer, escape prefix tilde of last arguments if no tilde expansion
 - ``LineEditor#readLine`` method shows row numbers in completion pager if actual rows are larger than rendered rows
 - check read string length in builtin ``read`` command
 - check iterator invalidation of ``reply`` variable within some builtin commands
@@ -97,6 +98,7 @@
 
 - in ydsh completion, complete command names after ``-e`` option
 - in builtin kill completion, complete PIDs from fzf-based selector
+- perform tilde expansion if path prefix start with tilde
 
 #### API
 

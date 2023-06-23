@@ -24,7 +24,7 @@ $assertComp('34 | ls hey', ['hey', 'ls'])
 $assertComp('ls && !echo hey 2>&1 > hoge sya', ['echo', 'hey', 'sya'])
 $assertComp('echo 2>&1 > hoge ', ['1', 'echo'])
 $assertComp('assert echo ${34 + 45}hoge "1234" aa', ['"1234"', '${34 + 45}hoge', 'aa', 'echo'])
-$assertComp('echo ~/', ['echo', '~/'])
+$assertComp('echo ~/', ['echo','~/'])
 $assertComp('echo a:hoge', ['a:hoge', 'echo'])
 $assertComp('echo :hoge', [':hoge', 'echo'])
 

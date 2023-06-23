@@ -106,7 +106,7 @@ private:
  * otherwise, return number of consumed completion candidates
  */
 using UserDefinedComp =
-    std::function<int(const Lexer &lex, const CmdNode &cmdNode, const std::string &word,
+    std::function<int(const Lexer &lex, const CmdNode &cmdNode, const std::string &word, bool tilde,
                       CompCandidateConsumer &consumer)>;
 
 using DynaUdcComp = std::function<void(const std::string &word, CompCandidateConsumer &consumer)>;

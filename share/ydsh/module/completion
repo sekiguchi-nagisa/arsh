@@ -124,12 +124,15 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                 $ret
             }
             2 => {
-                var args : [String]
+                var actions : [String]
                 for a in $arg.split("|") {
-                    $args.add("-A")
-                    $args.add($a)
+                    $actions.add("-A")
+                    $actions.add($a)
                 }
-                complete -q -m $ctx $args $prefix;
+                if $prefix.startsWith('~') {
+                    $actions.add('-A').add('tilde')
+                }
+                complete -q -m $ctx $actions $prefix;
                 $COMPREPLY
             }
             else => break

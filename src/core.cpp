@@ -264,7 +264,7 @@ public:
 };
 
 static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
-                          const std::string &word) {
+                          const std::string &word, bool tilde) {
   std::vector<DSValue> values;
 
   // add cmd
@@ -280,14 +280,19 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
 
   // add last arg
   if (!word.empty()) {
-    values.push_back(DSValue::createStr(word));
+    std::string actual;
+    if (!tilde && StringRef(word).startsWith("~")) {
+      actual += "\\";
+    }
+    actual += word;
+    values.push_back(DSValue::createStr(std::move(actual)));
   }
 
   return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
 static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
-                        const CmdNode &cmdNode, const std::string &word,
+                        const CmdNode &cmdNode, const std::string &word, bool tilde,
                         CompCandidateConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
@@ -297,7 +302,7 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
 
   // prepare argument
   auto ctx = DSValue::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
-  auto argv = createArgv(state.typePool, lex, cmdNode, word);
+  auto argv = createArgv(state.typePool, lex, cmdNode, word, tilde);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
     index--;
@@ -400,9 +405,9 @@ static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef sou
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
   codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
-                                                      const std::string &word,
+                                                      const std::string &word, bool tilde,
                                                       CompCandidateConsumer &consumer) {
-    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, consumer);
+    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, tilde, consumer);
   });
   codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
     auto &dynaUdcs = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));

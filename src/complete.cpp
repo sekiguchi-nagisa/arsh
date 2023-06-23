@@ -584,7 +584,8 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {
-      int s = this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord, consumer);
+      int s = this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord,
+                                    hasFlag(this->fallbackOp, CodeCompOp::TILDE), consumer);
       if (s < 0 && errno == EINTR) {
         return false;
       } else if (s > -1) {
