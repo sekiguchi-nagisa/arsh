@@ -2218,16 +2218,17 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     }
 
     auto func = this->intoFunc(returnType); // pseudo return type
-    // register dummy parameter (for propagating command attr)
-    this->addEntry(node, "%%attr", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
-
-    // register dummy parameter (for closing file descriptor)
-    this->addEntry(node, "%%redir", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
-
-    // register special characters (@, 0)
     {
       auto old = this->allowWarning;
       this->allowWarning = false; // temporary disable variable shadowing check
+
+      // register dummy parameter (for propagating command attr)
+      this->addEntry(node, "%%attr", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
+
+      // register dummy parameter (for closing file descriptor)
+      this->addEntry(node, "%%redir", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
+
+      // register special characters (@, 0)
       this->addEntry(node, "@", this->typePool().get(TYPE::StringArray), HandleAttr::READ_ONLY);
       this->addEntry(node, "0", this->typePool().get(TYPE::String), HandleAttr::READ_ONLY);
       this->allowWarning = old;
