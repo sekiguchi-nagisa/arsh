@@ -1429,6 +1429,12 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
+  std::string toCtxName() const {
+    std::string name = "%%pipe";
+    name += std::to_string(this->getPos());
+    return name;
+  }
+
   void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
   unsigned int getBaseIndex() const { return this->baseIndex; }
@@ -1468,6 +1474,12 @@ public:
 
   const std::vector<std::unique_ptr<RedirNode>> &getRedirNodes() const { return this->redirNodes; }
 
+  std::string toCtxName() const {
+    std::string name = "%%redir";
+    name += std::to_string(this->getPos());
+    return name;
+  }
+
   void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
   unsigned int getBaseIndex() const { return this->baseIndex; }
@@ -1489,6 +1501,12 @@ public:
   }
 
   Node &getExprNode() const { return *this->exprNode; }
+
+  std::string toCtxName() const {
+    std::string name = "%%timer";
+    name += std::to_string(this->getPos());
+    return name;
+  }
 
   void setBaseIndex(unsigned int index) { this->baseIndex = index; }
 
@@ -2230,7 +2248,7 @@ public:
 
   const std::unique_ptr<Node> &getExprNode() const { return this->exprNode; }
 
-  std::string toEnvCtxName() const {
+  std::string toCtxName() const {
     std::string name = "%%env";
     name += std::to_string(this->getPos());
     return name;

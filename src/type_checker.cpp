@@ -1035,7 +1035,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
   auto scope = this->intoBlock();
 
   // register redir config
-  this->addEntry(node, "%%redir", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
+  this->addEntry(node, node.toCtxName(), this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
 
   auto &type = this->checkTypeExactly(node.getExprNode());
   for (auto &e : node.getRedirNodes()) {
@@ -1050,7 +1050,7 @@ void TypeChecker::visitTimeNode(TimeNode &node) {
   auto scope = this->intoBlock();
 
   // register timer entry
-  this->addEntry(node, "%%timer", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
+  this->addEntry(node, node.toCtxName(), this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
 
   auto &type = this->checkTypeExactly(node.getExprNode());
   node.setBaseIndex(this->curScope->getBaseIndex());
@@ -1852,8 +1852,7 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
     auto scope = this->intoBlock();
 
     // register envctx
-    this->addEntry(node, node.toEnvCtxName(), this->typePool().get(TYPE::Any),
-                   HandleAttr::READ_ONLY);
+    this->addEntry(node, node.toCtxName(), this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
 
     for (auto &e : node.getAssignNodes()) {
       auto &rightType = this->checkType(this->typePool().get(TYPE::String), e->getRightNode());

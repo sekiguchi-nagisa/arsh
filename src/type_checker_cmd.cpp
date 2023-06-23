@@ -306,7 +306,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
 
   if (node.isLastPipe()) {
     auto scope = this->intoBlock();
-    this->addEntry(node, "%%pipe", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
+    this->addEntry(node, node.toCtxName(), this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
     node.setBaseIndex(this->curScope->getBaseIndex());
     auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
     node.setType(type);
