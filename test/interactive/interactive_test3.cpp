@@ -77,12 +77,13 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
     return;
   }
 
+  // cancel glob expansion
   this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
   ASSERT_NO_FATAL_FAILURE(
       this->expect(PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
   this->send(CTRL_C);
 
-  std::string err = R"([semantic error] glob expansion canceled
+  std::string err = R"([semantic error] glob expansion is canceled
  --> (stdin):1:8
 source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

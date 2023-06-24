@@ -439,17 +439,18 @@ static bool isDirPattern(SourceListNode::path_iterator begin, SourceListNode::pa
   return false;
 }
 
-static bool appendPath(std::vector<std::shared_ptr<const std::string>> &results,
-                       std::string &&path) {
+static unsigned int getExpansionLimit() {
 #ifdef FUZZING_BUILD_MODE
   if (const char *env = getenv("YDSH_SUPPRESS_MOD_LOADING")) {
-    if (results.size() == 512) {
-      return false;
-    }
+    return 512;
   }
 #endif
+  return SYS_LIMIT_EXPANSION_RESULTS;
+}
 
-  if (results.size() == SYS_LIMIT_EXPANSION_RESULTS) {
+static bool appendPath(std::vector<std::shared_ptr<const std::string>> &results,
+                       std::string &&path) {
+  if (results.size() == getExpansionLimit()) {
     return false;
   }
   results.push_back(std::make_shared<const std::string>(std::move(path)));
@@ -577,6 +578,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
   FlexBuffer<int64_t> seqStack;
   std::vector<std::unique_ptr<Node>> seqNodes;
   unsigned int usedSize = 0;
+  unsigned int expandCount = 0;
 
   for (unsigned int i = 0; i < size; i++) {
     auto &v = begin[i];
@@ -662,6 +664,10 @@ bool TypeChecker::applyBraceExpansion(Token token,
       }
 
       if (needGlob(vbegin, vend)) {
+        if (++expandCount == getExpansionLimit()) {
+          this->reportError<ExpandRetLimit>(token);
+          return false;
+        }
         if (!this->applyGlob(token, results, vbegin, vend, newOp)) {
           return false;
         }
