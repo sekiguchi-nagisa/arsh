@@ -26,7 +26,7 @@ assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.
 
 $i = 0
 assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean?(); } else { break $true; } } while $false) is Boolean?
-assert ! (do { if $i < 0 { break; } elif $i == 0 { break new Boolean?(); } else { break $true; } } while $false)
+assert ! (do { if $i < 0 { break; } elif $i == 0 { break $None; } else { break $true; } } while $false)
 $i = 1
 assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean?(); } else { break $true; } } while $false)! == $true
 

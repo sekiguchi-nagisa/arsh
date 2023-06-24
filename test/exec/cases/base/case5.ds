@@ -11,7 +11,7 @@ function f($s : String) : String? {
         "$DATA_HOME" => { return "$DATA_HOME-12" }
         "${MODULE_HOME}" => { "$MODULE_HOME-17"; }
         $CONFIG_HOME => "${$CONFIG_HOME}-19"
-        else => { new String?(); }
+        else => $NONE
     }
 }
 
@@ -33,7 +33,7 @@ function ff($a : Int) : String? {
         $ON_ASSERT => return "ON_ASSERT"
         $ON_ERR => return "ON_ERR"
         $ON_EXIT => return "ON_EXIT"
-        else => return new String?()
+        else => return $none
     }
 }
 

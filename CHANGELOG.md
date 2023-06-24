@@ -78,6 +78,11 @@
     - nested job operator
 - reimplement ``Map`` object. now always preserve insertion order
 - cancel glob expansion in source statement
+- change common super type resolution of ``if``, ``case``, loop with break expression.
+    - now resolve ``T?`` type in the following cases
+      ```
+      $true ? 45 : $none  # Int? type
+      ```
 
 #### Builtin
 

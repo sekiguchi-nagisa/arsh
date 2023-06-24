@@ -108,3 +108,7 @@ assert ! $no
 assert $NONE is Nothing?
 assert $None is Nothing?
 assert $none is Nothing?
+
+## special case of Nothing option
+assert ($true ? 34 : $none) is Int?
+assert ($true ? $none : $true ? new Error('') : new ArithmeticError('')) is Error?

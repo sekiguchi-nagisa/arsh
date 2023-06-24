@@ -1406,6 +1406,17 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
 const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
                                                   std::vector<const DSType *> &&types,
                                                   const DSType *fallbackType) {
+  // remove Nothing? type
+  bool hasOptNothing = false;
+  for (auto iter = types.begin(); iter != types.end();) {
+    if ((*iter)->is(TYPE::OptNothing)) {
+      iter = types.erase(iter);
+      hasOptNothing = true;
+    } else {
+      ++iter;
+    }
+  }
+
   std::sort(types.begin(), types.end(), [](const DSType *x, const DSType *y) {
     /**
      *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)
@@ -1420,7 +1431,26 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
     }
   }
   if (count == types.size()) {
-    return *types[0];
+    if (hasOptNothing) {
+      /**
+       * [T, Nothing?]
+       *  -> if T is Void -> Void
+       *  -> if T is U? -> U?
+       *  -> otherwise -> T?
+       */
+      const auto *type = types[0];
+      if (type->isVoidType() || type->isOptionType()) {
+        return *type;
+      } else {
+        auto ret = this->typePool().createOptionType(*type);
+        assert(ret);
+        return *ret.asOk();
+      }
+    } else {
+      return *types[0];
+    }
+  } else if (hasOptNothing && types.empty()) {
+    return this->typePool().get(TYPE::OptNothing);
   }
 
   if (fallbackType) {

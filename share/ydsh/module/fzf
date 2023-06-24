@@ -11,7 +11,7 @@ function _fzf_select(q : String, list : [String], opts : String) : String? {
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
     var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
-    return $ret.empty() ? $none : $ret as String?
+    return $ret.empty() ? $none : $ret
 }
 
 function _fzf_search_hist(q : String, list : [String]?) : String? {
@@ -38,7 +38,7 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
             $ret += $line.quote()
             $ret += ' '
         }
-    return $ret.empty() ? $none : $ret as String?
+    return $ret.empty() ? $none : $ret
 }
 
 function _fzf_cd(q : String, list : [String]?) : String? {
