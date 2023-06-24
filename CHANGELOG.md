@@ -103,7 +103,8 @@
 
 - in ydsh completion, complete command names after ``-e`` option
 - in builtin kill completion, complete PIDs from fzf-based selector
-- perform tilde expansion if path prefix start with tilde
+- in ``completion`` module, perform tilde expansion if path prefix start with tilde
+- in ``completion`` module, remove suffix ``.exe`` if ``OSTYPE`` is ``msys``
 
 #### API
 

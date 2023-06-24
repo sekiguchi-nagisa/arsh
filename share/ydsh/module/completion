@@ -11,7 +11,7 @@ let _compMap : [String : Completer]
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String]? {
     if (command -v $words[0] &>> /dev/null) {
         var cmd = $basename($words[0])
-        if $OSTYPE =~ $/cygwin/i && $cmd.endsWith(".exe") {
+        if ($OSTYPE == 'cygwin' || $OSTYPE == 'msys') && $cmd.endsWith(".exe") {
             $cmd = $cmd.slice(0, -4)
         }
         $words[0] = $cmd
