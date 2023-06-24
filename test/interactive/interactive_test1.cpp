@@ -470,7 +470,8 @@ TEST_F(InteractiveTest, killRing) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 888"));
 
   this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$bb", ": Int = 888"));
 
   this->send("00" CTRL_A CTRL_Y);
