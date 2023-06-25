@@ -34,7 +34,7 @@ jobs:
           ctest --output-on-failure
       - name: generate lcov
         run: |
-          ./tools/scripts/report_cov.sh build
+          ./tools/scripts/report_cov.ds build
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@1.1.3
         with:

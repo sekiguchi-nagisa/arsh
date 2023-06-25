@@ -1,0 +1,57 @@
+#!/usr/bin/env ydsh
+
+check_cmd() {
+    which "$1"
+    if $? != 0 {
+        echo not found: $1
+        exit 1
+    }
+}
+
+clear_cmake_cache() {
+    rm -rf CMakeCache.txt
+    rm -rf CMakeFiles
+}
+
+# check arg size
+if $# == 0 {
+    echo "require at least 1 argument"
+    echo "[usage] $0 [build dir] ([gcov tool path])"
+    exit 1
+}
+
+
+
+# check command
+check_cmd lcov
+
+# check gcov tool
+var TOOL:[String]
+if "$2" != "" {
+    var abspath="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
+    $TOOL.add("--gcov-tool").add($abspath)
+}
+
+
+# change to build dir
+if "$1" != "" {
+    cd "$1" || exit 1
+}
+
+
+# generate coverage report
+var OUTPUT="coverage_report"
+var OPT = if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")[1]!.toInt()! > 1{
+    ["branch_coverage=1", "--keep-going", ]
+} else {
+    ["lcov_branch_coverage=1"]
+}
+
+lcov --rc $OPT $TOOL --directory . --capture --output-file ${OUTPUT}.info
+lcov --rc $OPT --remove ${OUTPUT}.info \
+    '*test/*' '*fuzzing/*' \
+    '*-src/*' '/usr/include/*' '*v1/*' \
+    '*.re2c.cpp' '*nextToken.cpp' '*tools/json/lexer.cpp' '*tools/uri/uri_parser.cpp' \
+    '*tools/process/ansi.cpp' \
+    --output-file ${OUTPUT}-cleaned.info
+genhtml --rc $OPT -o ${OUTPUT} ${OUTPUT}-cleaned.info
