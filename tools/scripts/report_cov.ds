@@ -41,17 +41,16 @@ if "$1" != "" {
 
 # generate coverage report
 var OUTPUT="coverage_report"
-var OPT = if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")[1]!.toInt()! > 1{
-    ["branch_coverage=1", "--keep-going", ]
-} else {
-    ["lcov_branch_coverage=1"]
+var OPT : [String]
+if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")[1]!.toInt()! > 1{
+    $OPT.add("--keep-going")
 }
 
-lcov --rc $OPT $TOOL --directory . --capture --output-file ${OUTPUT}.info
-lcov --rc $OPT --remove ${OUTPUT}.info \
+lcov $OPT $TOOL --directory . --capture --output-file ${OUTPUT}.info
+lcov $OPT --remove ${OUTPUT}.info \
     '*test/*' '*fuzzing/*' \
     '*-src/*' '/usr/include/*' '*v1/*' \
     '*.re2c.cpp' '*nextToken.cpp' '*tools/json/lexer.cpp' '*tools/uri/uri_parser.cpp' \
     '*tools/process/ansi.cpp' \
     --output-file ${OUTPUT}-cleaned.info
-genhtml --rc $OPT -o ${OUTPUT} ${OUTPUT}-cleaned.info
+genhtml $OPT -o ${OUTPUT} ${OUTPUT}-cleaned.info
