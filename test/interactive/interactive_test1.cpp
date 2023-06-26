@@ -243,7 +243,7 @@ TEST_F(InteractiveTest, edit3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, mlEdit1) {
+TEST_F(InteractiveTest, mlEdit1) { // basic multi-line mode
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -261,6 +261,43 @@ TEST_F(InteractiveTest, mlEdit1) {
     45
 45
 > )"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, mlEdit2) { // edit op in multi-line mode
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->send("(\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> (\n  "));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("@@@" CTRL_A "カタカナ" ESC_("b") "'" CTRL_E CTRL_W ESC_("b") ESC_("d") "'\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (\n  'カタカナ@'\n  "));
+    this->send("$true" ESC_("b") LEFT "+" ESC_("f") ESC_("f") ")" UP UP "1+" DOWN DOWN CTRL_H "T");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (1+\n  'カタカナ@'\n  +$True)"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (1+\n  'カタカナ@'\n  +$True)\n: String = 1カタカナ@true\n> "));
+  }
+
+  this->send("123" ALT_ENTER);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 123\n  "));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("$true" ESC_("b") CTRL_K "NONE" ESC_("<") CTRL_K);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> \n  $NONE"));
+    this->send(DOWN CTRL_H);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $NONE\n"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $NONE\n: Nothing? = (invalid)\n> "));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
