@@ -1,0 +1,5 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 12, $errorKind = 'FdArgArray', $status = 1)
+
+var a = @( $STDIN)
+assert $a.size() == 1

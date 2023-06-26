@@ -83,7 +83,7 @@ assert $args.size() == 1
 assert $args[0] == new ArithmeticError("123") as String
 
 ## UnixFD
-$args = @( $STDIN)
+$args = @( "$STDIN")
 assert $args.size() == 1
 assert $args[0] =~ $/\/dev\/fd\//
 

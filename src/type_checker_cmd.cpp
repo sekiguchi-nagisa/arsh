@@ -196,7 +196,10 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
 
 void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
   for (auto &argNode : node.getCmdArgNodes()) {
-    this->checkTypeAsExpr(*argNode);
+    auto &type = this->checkTypeAsExpr(*argNode);
+    if (type.is(TYPE::FD)) {
+      this->reportError<FdArgArray>(*argNode);
+    }
   }
   node.setType(this->typePool().get((TYPE::StringArray)));
 }

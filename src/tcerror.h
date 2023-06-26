@@ -186,6 +186,9 @@ DEFINE_TCError(PosArgRange, "positional argument is out-of-range (up to INT32_MA
 DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only allow 0,1,2");
 DEFINE_TCError(NeedFd,
                "`>&', `<&' redirection only allow decimal numbers (0,1,2) or `FD' type expression");
+DEFINE_TCError(FdArgArray,
+               "cannot pass `FD' type expression to `@( )', if pass the string representation, "
+               "explicitly use string interpolation");
 DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
 DEFINE_TCError(UnwrapType,
                "unwrap op `!' must follow Option type expression, but actual is `%s' type");

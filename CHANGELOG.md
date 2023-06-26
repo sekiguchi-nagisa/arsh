@@ -69,6 +69,7 @@
   ```
 - **Breaking Change**: now check signals in basic block end (jump op) or command call
     - previously check signals before instruction dispatch
+- **Breaking Change**: do not allow ``FD`` type expression in ``@( )``
 - adjust error message layout and colors
 - improve semantic error messages
     - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type
