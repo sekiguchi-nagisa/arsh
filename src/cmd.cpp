@@ -661,6 +661,13 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
   return result ? 0 : 1;
 }
 
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      goto END;                                                                                    \
+    }                                                                                              \
+  } while (false)
+
 static int builtin_hash(DSState &state, ArrayObject &argvObj) {
   bool remove = false;
 
@@ -697,14 +704,16 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     if (remove) { // remove all cache
       state.pathCache.clear();
     } else { // show all cache
-      const auto cend = state.pathCache.end();
-      if (state.pathCache.begin() == cend) {
-        fputs("hash: file path cache is empty\n", stdout);
-        return 0;
+      errno = 0;
+      if (state.pathCache.begin() == state.pathCache.end()) {
+        TRY(printf("hash: file path cache is empty\n") > -1);
       }
       for (auto &entry : state.pathCache) {
-        printf("%s=%s\n", entry.first, entry.second.c_str());
+        TRY(printf("%s=%s\n", entry.first, entry.second.c_str()) > -1);
       }
+
+    END:
+      CHECK_STDOUT_ERROR(argvObj);
     }
   }
   return 0;
@@ -855,6 +864,14 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
 
 // for ulimit command
 
+#undef TRY
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
 static constexpr flag8_t RLIM_HARD = 1u << 0;
 static constexpr flag8_t RLIM_SOFT = 1u << 1;
 
@@ -864,22 +881,24 @@ struct ulimitOp {
   char shift;
   const char *name;
 
-  void print(flag8_set_t limOpt, unsigned int maxNameLen) const {
+  bool print(flag8_set_t limOpt, unsigned int maxNameLen) const {
     rlimit limit{};
     getrlimit(this->resource, &limit);
 
+    errno = 0;
     if (maxNameLen) {
-      printf("-%c: %-*s", this->op, maxNameLen + 2, this->name);
+      TRY(printf("-%c: %-*s", this->op, maxNameLen + 2, this->name) > -1);
     }
 
     auto value = hasFlag(limOpt, RLIM_HARD) ? limit.rlim_max : limit.rlim_cur;
     if (value == RLIM_INFINITY) {
-      printf("unlimited\n");
+      TRY(printf("unlimited\n") > -1);
     } else {
       value >>= this->shift;
-      printf("%llu\n", static_cast<unsigned long long>(value));
+      TRY(printf("%llu\n", static_cast<unsigned long long>(value)) > -1);
     }
-    fflush(stdout);
+    TRY(fflush(stdout) != EOF);
+    return true;
   }
 };
 
@@ -1051,8 +1070,11 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
   if (showAll) {
     unsigned int maxDescLen = computeMaxNameLen();
     for (auto &e : ulimitOps) {
-      e.print(limOpt, maxDescLen);
+      if (!e.print(limOpt, maxDescLen)) {
+        break;
+      }
     }
+    CHECK_STDOUT_ERROR(argvObj);
     return 0;
   }
 
@@ -1078,12 +1100,24 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
         return 1;
       }
     }
+    errno = 0;
     if (hasFlag(table.printSet, static_cast<uint64_t>(1) << index)) {
-      ulimitOps[index].print(limOpt, maxNameLen);
+      if (!ulimitOps[index].print(limOpt, maxNameLen)) {
+        break;
+      }
     }
   }
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
+
+#undef TRY
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return errno;                                                                                \
+    }                                                                                              \
+  } while (false)
 
 enum class PrintMaskOp : unsigned int {
   ONLY_PRINT = 1 << 0,
@@ -1094,7 +1128,8 @@ enum class PrintMaskOp : unsigned int {
 template <>
 struct allow_enum_bitop<PrintMaskOp> : std::true_type {};
 
-static void printMask(mode_t mask, PrintMaskOp op) {
+static int printMask(mode_t mask, PrintMaskOp op) {
+  errno = 0;
   if (hasFlag(op, PrintMaskOp::SYMBOLIC)) {
     char buf[std::size("u=rwx,g=rwx,o=rwx")];
     char *ptr = buf;
@@ -1119,10 +1154,11 @@ static void printMask(mode_t mask, PrintMaskOp op) {
       }
     }
     *ptr = '\0';
-    fprintf(stdout, "%s%s\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask -S " : "", buf);
+    TRY(printf("%s%s\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask -S " : "", buf) > -1);
   } else if (hasFlag(op, PrintMaskOp::ONLY_PRINT)) {
-    fprintf(stdout, "%s%04o\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask " : "", mask);
+    TRY(printf("%s%04o\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask " : "", mask) > -1);
   }
+  return 0;
 }
 
 /**
@@ -1288,7 +1324,8 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     }
     umask(mask);
   }
-  printMask(mask, op);
+  errno = printMask(mask, op);
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 

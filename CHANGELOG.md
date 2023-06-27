@@ -99,6 +99,7 @@
 - correctly report io errors in some builtin commands
     - ``__puts``, ``complete``, ``echo``, ``printf``, ``setenv``,
     - ``pwd``, ``cd``, ``pushd``, ``popd``, ``dirs``
+    - ``umask``, ``ulimit``, ``hash``
 
 #### Completion
 

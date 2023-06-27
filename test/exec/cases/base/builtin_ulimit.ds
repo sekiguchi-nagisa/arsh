@@ -37,6 +37,14 @@ assert "$(ulimit -a)" == "$(ulimit $opts)"
 assert "$(ulimit -a -H)" == "$(ulimit $opts -H)"
 assert "$(ulimit -a -S)" == "$(ulimit $opts -S)"
 
+if $OSTYPE == 'linux' {
+    assert "$(ulimit -a 2>&1 > /dev/full)" =~ $/ulimit: io error: .+/
+    assert $? == 1
+
+    assert "$(ulimit 2>&1 > /dev/full)" =~ $/ulimit: io error: .+/
+    assert $? == 1
+}
+
 # change resource limit
 assert "$(ulimit -S -f -f 5000)" == '5000'
 assert "$(ulimit -S -f -f unLimiTed)" == "unlimited"

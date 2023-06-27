@@ -57,3 +57,15 @@ assert("$(hash)" == "hash: file path cache is empty")
 
 # remove all cache (empty)
 assert(hash -r)
+
+## error
+if $OSTYPE == 'linux' {
+    var a = "$(hash 2>&1 > /dev/full)"
+    assert $a =~ $/hash: io error: .+/ : $a
+    assert $? == 1
+
+    assert "$(hash ps && hash 2>&1 > /dev/full)" =~ $/hash: io error: .+/
+    assert $? == 1
+}
+
+true

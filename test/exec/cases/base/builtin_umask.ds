@@ -10,6 +10,11 @@ assert $? == 2
 $assertEQ("ydsh: umask: -y: invalid option
 umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
 
+if $OSTYPE == 'linux' {
+    assert "$(umask 2>&1 > /dev/full)" =~ $/umask: io error: .+/
+    assert $? == 1
+}
+
 # help
 assert help umask | grep '^umask: umask \[-p] \[-S] \[mode]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
