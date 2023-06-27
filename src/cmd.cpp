@@ -869,10 +869,7 @@ struct ulimitOp {
     getrlimit(this->resource, &limit);
 
     if (maxNameLen) {
-      printf("-%c: %s  ", this->op, this->name);
-      for (unsigned int len = strlen(this->name); len < maxNameLen; len++) {
-        printf(" ");
-      }
+      printf("-%c: %-*s", this->op, maxNameLen + 2, this->name);
     }
 
     auto value = hasFlag(limOpt, RLIM_HARD) ? limit.rlim_max : limit.rlim_cur;
