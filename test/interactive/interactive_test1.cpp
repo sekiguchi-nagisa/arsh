@@ -836,6 +836,25 @@ TEST_F(InteractiveTest, lineEditorHistory) {
 
   this->send(CTRL_C);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$a.add('aaaa').add('bbbb')", ": [String] = [1234, $a.add('aaaa').add('bbbb'), aaaa, bbbb]"));
+
+  this->send(ALT_ENTER);
+  ASSERT_NO_FATAL_FAILURE(this->expect(">>> \n    "));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(DOWN DOWN "@@@@" ESC_("[1;3A") ESC_("[1;3A")); // ALT_UP ALT_UP
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> \n    aaaa"));
+    this->send(ESC_("[1;3B")); // ALT_DOWN
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> \n    bbbb"));
+    this->send("'" UP "'" UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> '\n    bbbb'"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> '\n    bbbb'\n: String = \nbbbb\n>>> "));
+  }
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
