@@ -27,6 +27,7 @@ using namespace ydsh;
 #define CTRL_H "\x08"
 #define CTRL_I "\x09"
 #define CTRL_K "\x0B"
+#define CTRL_L "\x0C"
 #define CTRL_M "\x0D"
 #define CTRL_N "\x0E"
 #define CTRL_P "\x10"

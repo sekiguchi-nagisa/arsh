@@ -303,6 +303,29 @@ TEST_F(InteractiveTest, mlEdit2) { // edit op in multi-line mode
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, mlEdit3) { // clean line
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("echo hello", "hello"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("'@@@@\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\nhello\n> '@@@@\n  "));
+    this->send(CTRL_L);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '@@@@\n  \n\n"));
+    this->send("'\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '@@@@\n  '\n: String = @@@@\n\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, keybind) {
   this->invoke("--quiet", "--norc");
 
