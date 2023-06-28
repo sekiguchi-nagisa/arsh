@@ -890,13 +890,25 @@ TEST_F(InteractiveTest, lineEditorComp) {
 
   ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
 
-  // insert single candidates
+  // no comp
+  this->send("123\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(">>> 123"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n>>> "));
+
+  // insert single candidates with prefix
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true'])"));
   this->send("()" LEFT "$t\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
   this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: Bool = true.+"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(">>> ($true)\n: Bool = true\n>>> "));
+
+  // insert single candidates without prefix
+  this->send("()" LEFT "\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "(true)"));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(">>> (true)\n>>> "));
 
   // insert unprintable (invalid, null,,)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var aa = new LineEditor()"));
@@ -914,25 +926,53 @@ TEST_F(InteractiveTest, lineEditorComp) {
 
   // rotate candidates
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true', 'tee'])"));
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => @(true tee touch))"));
   this->changePrompt("> ");
   this->send("()" LEFT "$t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));
-
   {
     auto cleanup = this->reuseScreen();
 
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)\ntrue    tee     \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)\ntrue    tee     touch   \n"));
 
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     \n"));
-    this->send("\t\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     touch   \n"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
+    this->send(DOWN RIGHT);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($touch)\ntrue    tee     touch   \n"));
+    this->send(LEFT LEFT);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
+
+    this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n\n"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n: Bool = true\n" + PROMPT));
+  }
+
+  // cancel rotate
+  this->send("''" LEFT "$t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\ntrue    tee     touch   \n"));
+    this->send("@"); // cancel and insert
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\n\n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\ntrue    tee     touch   \n"));
+    this->send(CTRL_W); // cancel and edit
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\n\n"));
+    this->send("%\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%'\ntrue    tee     touch   \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\ntrue    tee     touch   \n"));
+    this->send(CTRL_C); // cancel comp
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> \n"));
   }
 
   this->send(CTRL_D);
