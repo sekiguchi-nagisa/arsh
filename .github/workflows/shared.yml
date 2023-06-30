@@ -2,6 +2,8 @@ name: Shared Library
 
 on:
   push:
+    branches:
+      - '*'
     tags-ignore:
       - 'v*'
 
