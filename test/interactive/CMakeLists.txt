@@ -32,3 +32,12 @@ add_executable(${TEST_NAME}
 target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 add_test(${TEST_NAME} ${TEST_NAME})
+
+# test4
+set(TEST_NAME interactive_test4)
+add_executable(${TEST_NAME}
+        interactive_test4.cpp
+        )
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
+add_dependencies(${TEST_NAME} ${BIN_NAME})
+add_test(${TEST_NAME} ${TEST_NAME})
