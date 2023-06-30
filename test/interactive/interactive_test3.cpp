@@ -72,7 +72,7 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  if (getenv("ALPINE_WORKAROUND") || platform::platform() == platform::PlatformType::CONTAINER) {
+  if (getenv("ALPINE_WORKAROUND")) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
     return;
   }
