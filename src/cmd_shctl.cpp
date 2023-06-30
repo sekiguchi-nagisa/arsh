@@ -22,8 +22,8 @@ namespace ydsh {
 
 static int printBacktrace(const VMState &state) {
   state.fillStackTrace([](StackTraceElement &&s) {
-    fprintf(stdout, "from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
-            s.getCallerName().c_str());
+    printf("from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
+           s.getCallerName().c_str());
     return true;
   });
   return 0;
@@ -35,7 +35,7 @@ static int printFuncName(const VMState &state) {
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
     name = cast<CompiledCode>(code)->getName();
   }
-  fprintf(stdout, "%s\n", name != nullptr ? name : "<toplevel>");
+  printf("%s\n", name != nullptr ? name : "<toplevel>");
   return name != nullptr ? 0 : 1;
 }
 
@@ -82,18 +82,11 @@ static unsigned int computeMaxOptionNameSize() {
   return maxSize;
 }
 
-static void printRuntimeOpt(const char *name, unsigned int size, bool set) {
-  std::string value = name;
-  value.append(size - strlen(name), ' ');
-  value += (set ? "on" : "off");
-  value += "\n";
-  fputs(value.c_str(), stdout);
-}
-
 static void showOptions(const DSState &state) {
   const unsigned int maxNameSize = computeMaxOptionNameSize();
   for (auto &e : runtimeOptions) {
-    printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
+    printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
+           hasFlag(state.runtimeOption, e.option) ? "on" : "off");
   }
 }
 
@@ -211,7 +204,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
   const unsigned int size = argvObj.size();
   if (offset == size) {
     for (auto &e : state.modLoader) {
-      fprintf(stdout, "%s\n", e.first.get());
+      printf("%s\n", e.first.get());
     }
     return 0;
   }
@@ -231,7 +224,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
     auto ret = loader.load(cwd.get(), ref.data(), file, ModLoadOption::IGNORE_NON_REG_FILE);
     if (is<const char *>(ret)) {
       const char *path = get<const char *>(ret);
-      fprintf(stdout, "%s\n", path);
+      printf("%s\n", path);
       fflush(stdout); // due to preserve output order
       lastStatus = 0;
     } else {
@@ -265,12 +258,7 @@ static int isSourced(const VMState &st) {
 
 static void setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, StringRef key,
                             const std::string &value) {
-  std::string out = key.toString();
-  out.append(4 + maxKeyLen - out.size(), ' ');
-  out += value;
-  out += '\n';
-  fputs(out.c_str(), stdout);
-
+  printf("%-*s%s\n", static_cast<int>(maxKeyLen + 4), key.toString().c_str(), value.c_str());
   auto pair = mapObj.insert(DSValue::createStr(key), DSValue::createStr(value));
   assert(pair.second);
   (void)pair;
