@@ -1,6 +1,9 @@
 name: GitHub Actions
 
-on: [ push ]
+on:
+  push:
+    tags-ignore:
+      - 'v*'
 
 jobs:
   build_on_linux_ubuntu20_04_gcc:

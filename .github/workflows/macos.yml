@@ -1,6 +1,9 @@
 name: MacOS
 
-on: [ push ]
+on:
+  push:
+    tags-ignore:
+      - 'v*'
 
 jobs:
   build_on_mac_12:

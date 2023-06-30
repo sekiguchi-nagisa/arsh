@@ -1,6 +1,9 @@
 name: Shared Library
 
-on: [ push ]
+on:
+  push:
+    tags-ignore:
+      - 'v*'
 
 jobs:
   build_on_linux_ubuntu22_04_release_shared:
