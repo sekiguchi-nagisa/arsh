@@ -19,8 +19,8 @@ jobs:
         id: get_rpm_name
         run: |
           cd build
-          echo ::set-output name=RPM_NAME::$(ls | grep .rpm | grep -v debug) 
-          echo ::set-output name=RPM_DEBUGINFO_NAME::$(ls | grep .rpm | grep debug)
+          echo "RPM_NAME=$(ls | grep .rpm | grep -v debug)" >> $GITHUB_OUTPUT
+          echo "RPM_DEBUGINFO_NAME=$(ls | grep .rpm | grep debug)" >> $GITHUB_OUTPUT
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
