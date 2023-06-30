@@ -7,6 +7,11 @@ assert shctl set | grep 'monitor *  off'
 assert shctl set | grep 'clobber *  on'
 shctl set | grep 'assert.*  on' || _exit
 
+if $OSTYPE == 'linux' {
+    assert "$(shctl set 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert $? == 1
+}
+
 # set
 assert shctl set traceonexit
 assert shctl set | grep 'traceonexit *  on'
@@ -57,7 +62,7 @@ assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 ## for `xtrace` option
 assert shctl set | grep 'xtrace.*  off'
 shctl set xtrace
-assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:60> echo hello"
+assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:65> echo hello"
 shctl unset xtrace
 assert "$(echo hello 2>&1 > /dev/null)" == ""
 

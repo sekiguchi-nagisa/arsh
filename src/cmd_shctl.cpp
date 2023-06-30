@@ -20,22 +20,30 @@
 
 namespace ydsh {
 
-static int printBacktrace(const VMState &state) {
-  state.fillStackTrace([](StackTraceElement &&s) {
-    printf("from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
-           s.getCallerName().c_str());
+static int printBacktrace(const VMState &state, const ArrayObject &argvObj) {
+  int errNum = 0;
+  state.fillStackTrace([&errNum](StackTraceElement &&s) {
+    if (printf("from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
+               s.getCallerName().c_str()) < 0) {
+      errNum = errno;
+      return false;
+    }
     return true;
   });
+  errno = errNum;
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
-static int printFuncName(const VMState &state) {
+static int printFuncName(const VMState &state, const ArrayObject &argvObj) {
   auto *code = state.getFrame().code;
   const char *name = nullptr;
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
     name = cast<CompiledCode>(code)->getName();
   }
+  errno = 0;
   printf("%s\n", name != nullptr ? name : "<toplevel>");
+  CHECK_STDOUT_ERROR(argvObj);
   return name != nullptr ? 0 : 1;
 }
 
@@ -82,12 +90,16 @@ static unsigned int computeMaxOptionNameSize() {
   return maxSize;
 }
 
-static void showOptions(const DSState &state) {
+static int showOptions(const DSState &state) {
   const unsigned int maxNameSize = computeMaxOptionNameSize();
   for (auto &e : runtimeOptions) {
-    printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
-           hasFlag(state.runtimeOption, e.option) ? "on" : "off");
+    errno = 0;
+    if (printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
+               hasFlag(state.runtimeOption, e.option) ? "on" : "off") < 0) {
+      return errno;
+    }
   }
+  return 0;
 }
 
 static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef restoreStr) {
@@ -134,7 +146,8 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
   const unsigned int size = argvObj.size();
   if (offset == size) {
     if (set) {
-      showOptions(state);
+      errno = showOptions(state);
+      CHECK_STDOUT_ERROR(argvObj);
       return 0;
     } else {
       ERROR(argvObj, "`unset' subcommand requires argument");
@@ -203,15 +216,23 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
 static int showModule(const DSState &state, const ArrayObject &argvObj, const unsigned int offset) {
   const unsigned int size = argvObj.size();
   if (offset == size) {
+    int errNum = 0;
     for (auto &e : state.modLoader) {
-      printf("%s\n", e.first.get());
+      errno = 0;
+      if (printf("%s\n", e.first.get()) < 0) {
+        errNum = errno;
+        break;
+      }
     }
+    errno = errNum;
+    CHECK_STDOUT_ERROR(argvObj);
     return 0;
   }
 
   FakeModuleLoader loader(state.sysConfig);
   auto cwd = getCWD();
   int lastStatus = 0;
+  int errNum = 0;
   for (unsigned int i = offset; i < size; i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
     if (ref.hasNullChar()) {
@@ -224,8 +245,11 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
     auto ret = loader.load(cwd.get(), ref.data(), file, ModLoadOption::IGNORE_NON_REG_FILE);
     if (is<const char *>(ret)) {
       const char *path = get<const char *>(ret);
-      printf("%s\n", path);
-      fflush(stdout); // due to preserve output order
+      errno = 0;
+      if (printf("%s\n", path) < 0 || fflush(stdout) == EOF /* due to preserve output order */) {
+        errNum = errno;
+        break;
+      }
       lastStatus = 0;
     } else {
       assert(is<ModLoadingError>(ret));
@@ -236,6 +260,8 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
       lastStatus = 1;
     }
   }
+  errno = errNum;
+  CHECK_STDOUT_ERROR(argvObj);
   return lastStatus;
 }
 
@@ -256,15 +282,21 @@ static int isSourced(const VMState &st) {
   return top->getBelongedModId() == bottom->getBelongedModId() ? 1 : 0;
 }
 
-static void setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, StringRef key,
-                            const std::string &value) {
-  printf("%-*s%s\n", static_cast<int>(maxKeyLen + 4), key.toString().c_str(), value.c_str());
+static int setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, StringRef key,
+                           const std::string &value) {
+  errno = 0;
+  int s =
+      printf("%-*s%s\n", static_cast<int>(maxKeyLen + 4), key.toString().c_str(), value.c_str());
+  if (s < 0) {
+    return errno;
+  }
   auto pair = mapObj.insert(DSValue::createStr(key), DSValue::createStr(value));
   assert(pair.second);
   (void)pair;
+  return 0;
 }
 
-static int showInfo(DSState &state) {
+static int showInfo(DSState &state, const ArrayObject &argvObj) {
   auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
     return 1;
@@ -285,11 +317,17 @@ static int showInfo(DSState &state) {
     }
   }
 
+  int errNum = 0;
   for (auto &e : table) {
     auto *ptr = state.sysConfig.lookup(e);
     assert(ptr);
-    setAndPrintConf(mapObj, maxKeyLen, e, *ptr);
+    errNum = setAndPrintConf(mapObj, maxKeyLen, e, *ptr);
+    if (errNum != 0) {
+      break;
+    }
   }
+  errno = errNum;
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 
@@ -306,13 +344,13 @@ int builtin_shctl(DSState &state, ArrayObject &argvObj) {
   if (unsigned int index = optState.index; index < argvObj.size()) {
     auto ref = argvObj.getValues()[index].asStrRef();
     if (ref == "backtrace") {
-      return printBacktrace(state.getCallStack());
+      return printBacktrace(state.getCallStack(), argvObj);
     } else if (ref == "is-sourced") {
       return isSourced(state.getCallStack());
     } else if (ref == "is-interactive") {
       return state.isInteractive ? 0 : 1;
     } else if (ref == "function") {
-      return printFuncName(state.getCallStack());
+      return printFuncName(state.getCallStack(), argvObj);
     } else if (ref == "set") {
       return setOption(state, argvObj, index + 1, true);
     } else if (ref == "unset") {
@@ -320,7 +358,7 @@ int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     } else if (ref == "module") {
       return showModule(state, argvObj, index + 1);
     } else if (ref == "info") {
-      return showInfo(state);
+      return showInfo(state, argvObj);
     } else {
       ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
       return 2;

@@ -42,11 +42,21 @@ assert "$(shctl function)" == "<toplevel>"
 shctl function
 assert $? == 1
 
+if $OSTYPE == 'linux' {
+    assert "$(shctl function 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert $? == 1
+}
+
 # interactive
 $? = 0
 shctl is-interactive
 assert $? == 1
 assert shctl backtrace
+
+if $OSTYPE == 'linux' {
+    assert "$(shctl backtrace 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert $? == 1
+}
 
 # info
 assert $reply.empty()
@@ -74,6 +84,11 @@ assert $reply["MODULE_HOME"] == $MODULE_HOME
 assert $reply["DATA_HOME"] == $DATA_HOME
 assert $reply["MODULE_DIR"] == $MODULE_DIR
 assert $reply["DATA_DIR"] == $DATA_DIR
+
+if $OSTYPE == 'linux' {
+    assert "$(shctl info 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert $? == 1
+}
 
 # invalid optiopn
 assert shctl -s 2>&1 | grep '^ydsh: shctl: -s: invalid option'
