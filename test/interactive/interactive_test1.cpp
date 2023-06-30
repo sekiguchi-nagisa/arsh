@@ -963,16 +963,41 @@ TEST_F(InteractiveTest, lineEditorComp) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\ntrue    tee     touch   \n"));
     this->send("@"); // cancel and insert
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\n\n"));
+
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\n\n"));
+
     this->send("%\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%'\ntrue    tee     touch   \n"));
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\ntrue    tee     touch   \n"));
     this->send(CTRL_C); // cancel comp
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> \n"));
+  }
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+  this->send(";t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t\ntrue    tee     touch   \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\ntrue    tee     touch   \n"));
+    this->send(UP UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
+    this->send("2"); // cancel and insert
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\n\n"));
+
+    this->send("\t\t" UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\ntrue    tee     touch   \n"));
+    this->send(CTRL_W); // cancel and edit
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n\n"));
+    this->send(CTRL_W);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> \n\n"));
   }
 
   this->send(CTRL_D);
