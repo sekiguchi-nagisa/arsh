@@ -36,7 +36,8 @@ static int toSigNum(StringRef str) {
   return getSignalNum(str);
 }
 
-static bool printNumOrName(StringRef str) {
+static bool printNumOrName(StringRef str, int &errNum) {
+  std::string value;
   if (!str.empty() && isDecimal(*str.data())) {
     auto pair = toInt32(str);
     if (!pair) {
@@ -46,15 +47,19 @@ static bool printNumOrName(StringRef str) {
     if (name == nullptr) {
       return false;
     }
-    printf("%s\n", name);
+    value = name;
   } else {
     int sigNum = getSignalNum(str);
     if (sigNum < 0) {
       return false;
     }
-    printf("%d\n", sigNum);
+    value = std::to_string(sigNum);
   }
-  fflush(stdout);
+  errno = 0;
+  if (printf("%s\n", value.c_str()) < 0 || fflush(stdout) == EOF) {
+    errNum = errno;
+    return true;
+  }
   return true;
 }
 
@@ -157,26 +162,33 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
     if (listing) {
       auto sigList = getUniqueSignalList();
       unsigned int size = sigList.size();
+      int errNum = 0;
       for (unsigned int i = 0; i < size; i++) {
-        printf("%2d) SIG%s", sigList[i], getSignalName(sigList[i]));
-        if (i % 5 == 4 || i == size - 1) {
-          fputc('\n', stdout);
-        } else {
-          fputc('\t', stdout);
+        const char suffix = (i % 5 == 4 || i == size - 1) ? '\n' : '\t';
+        errno = 0;
+        if (printf("%2d) SIG%s%c", sigList[i], getSignalName(sigList[i]), suffix) < 0) {
+          errNum = errno;
+          break;
         }
       }
+      errno = errNum;
+      CHECK_STDOUT_ERROR(argvObj);
       return 0;
     }
     return showUsage(argvObj);
   }
 
+  int errNum = 0;
   unsigned int count = 0;
   for (; begin != end; ++begin) {
     auto arg = begin->asStrRef();
     if (listing) {
-      if (!printNumOrName(arg)) {
+      if (!printNumOrName(arg, errNum)) {
         count++;
         ERROR(argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
+      }
+      if (errNum != 0) {
+        break;
       }
     } else {
       if (killProcOrJob(state.jobTable, argvObj, arg, sigNum)) {
@@ -192,6 +204,8 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
   if (!listing && count == 0) {
     return 1;
   }
+  errno = errNum;
+  CHECK_STDOUT_ERROR(argvObj);
   return 0;
 }
 

@@ -43,6 +43,10 @@ for(var i = 0; $i < $expect.size(); $i++) {
     assert $e_str == $actual[$i] : "\`$e_str', \`${$actual[$i]}'"
 }
 
+if $OSTYPE == 'linux' {
+    assert "$(kill -l 2>&1 > /dev/full)" =~ $/kill: io error: .+/
+    assert $? == 1
+}
 
 # list specified signal
 assert "$(kill -l hoge 999 2>&1)" == $'ydsh: kill: hoge: invalid signal specification\nydsh: kill: 999: invalid signal specification'
@@ -65,6 +69,16 @@ assert "$(kill -l 9 hoge 1 2>&1)" == "KILL
 ydsh: kill: hoge: invalid signal specification
 HUP"
 assert {kill -l 9 hoge 1; $?} == 1
+
+if $OSTYPE == 'linux' {
+    assert "$(kill -l 9 1 2>&1 > /dev/full)" =~ $/kill: io error: .+/
+    assert $? == 1
+}
+
+if $OSTYPE == 'linux' {
+    assert "$(kill -l HUP KILL 2>&1 > /dev/full)" =~ $/kill: io error: .+/
+    assert $? == 1
+}
 
 
 # kill specified proc
