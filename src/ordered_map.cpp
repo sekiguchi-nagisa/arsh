@@ -27,14 +27,12 @@ namespace ydsh {
 // ###############################
 
 unsigned int OrderedMapEntries::add(DSValue &&key, DSValue &&value) {
-  if (unlikely(this->capacity == 0)) {
-    this->capacity = 4;
-    this->values = std::make_unique<Entry[]>(this->capacity);
-  }
-
   if (this->usedSize == this->capacity) {
     unsigned int newCap = this->capacity;
     newCap += (newCap >> 1);
+    if (unlikely(newCap == 0)) {
+      newCap = 4;
+    }
     auto newValues = std::make_unique<Entry[]>(newCap);
     for (unsigned int i = 0; i < this->usedSize; i++) {
       newValues[i] = std::move(this->values[i]);
