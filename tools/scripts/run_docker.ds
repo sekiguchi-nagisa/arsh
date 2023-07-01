@@ -23,7 +23,7 @@ var name = "build_${$basename($root)}:1"
 echo Dockfile path: "'$root/Dockerfile'"
 echo build docker image: "'$name'"
 
-docker build -t $name -f $root/Dockerfile $workdir || exit $?
+docker build --network host -t $name -f $root/Dockerfile $workdir || exit $?
 
 if $debug {
     docker run --rm -it $name /bin/sh
