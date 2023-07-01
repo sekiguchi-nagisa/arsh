@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_HASH_HPP
 #define MISC_LIB_HASH_HPP
 
+#include <cstdint>
 #include <cstring>
 #include <unordered_map>
 #include <unordered_set>
