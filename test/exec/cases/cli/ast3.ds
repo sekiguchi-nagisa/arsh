@@ -39,7 +39,7 @@ nodes:
     curIndex: 0
     pathList:
 maxVarNum: 0
-maxGVarNum: 45
+maxGVarNum: 46
 
 sourceName: \"$mod\"
 nodes:
@@ -191,7 +191,7 @@ nodes:
     srcIndex: 0
     maxVarNum: 0
 maxVarNum: 0
-maxGVarNum: 45
+maxGVarNum: 46
 
 sourceName: \"$mod\"
 nodes:
@@ -335,7 +335,7 @@ nodes:
       firstDeferOffset: -1
     maxVarNum: 1
     handle:
-      index: 44
+      index: 45
       kind: \"VAR\"
       attribute: \"READ_ONLY | GLOBAL\"
     resolvedType: \"(Int) -> Void\""

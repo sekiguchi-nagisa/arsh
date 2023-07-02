@@ -14,6 +14,11 @@ function _DEF_SIGINT($s : Signal) {
     throw new SystemError($s.message());
 }
 
+function SIG_EXIT(s : Signal) {
+  __puts -2 "gracefully shutdown process ($PID) by \`${$s.message()}'" || true
+  exit ${128 + $s.value()}
+}
+
 # termination hook definition
 var TERM_HOOK : ((Int, Any) => Void)?
 

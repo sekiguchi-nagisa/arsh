@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+#### Builtin
+
+- add ``SIG_EXIT`` for graceful shutdown via receiving signal
+
 ## [0.30.0] - 2023-07-01
 
 ### Added

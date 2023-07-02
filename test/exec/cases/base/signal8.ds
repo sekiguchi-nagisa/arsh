@@ -1,0 +1,24 @@
+
+# trap subshell (not inherit parent trap)
+
+function run(s : Bool) {
+    if $s {
+        $SIGINT.trap($SIG_EXIT)
+    }
+    for(var i = 0;; $i++) {
+        if $i == 10000 {
+            $i = 0
+            $SIGINT.kill($PID)
+        }
+    }
+}
+
+$SIGINT.trap($SIG_EXIT)
+
+assert ("$($run($false) with 2>&1)" with 2>&1).empty()
+assert $? == 128 + $SIGINT.value()
+true
+
+assert "$($run($true) with 2>&1)" =~ $/gracefully shutdown process \([0-9]+\) by .+/
+assert $? == 128 + $SIGINT.value()
+true
