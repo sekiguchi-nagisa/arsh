@@ -1,24 +1,39 @@
 
 # trap subshell (not inherit parent trap)
 
-function run(s : Bool) {
+function run(s : Bool, sig : Signal) {
     if $s {
-        $SIGINT.trap($SIG_EXIT)
+        [$SIGINT, $SIGHUP, $SIGTERM].trap($SIG_EXIT)
     }
     for(var i = 0;; $i++) {
         if $i == 10000 {
             $i = 0
-            $SIGINT.kill($PID)
+            $sig.kill($PID)
         }
     }
 }
 
-$SIGINT.trap($SIG_EXIT)
+[$SIGINT, $SIGHUP, $SIGTERM].trap($SIG_EXIT)
 
-assert ("$($run($false) with 2>&1)" with 2>&1).empty()
+assert ("$($run($false, $SIGINT) with 2>&1)" with 2>&1).empty()
 assert $? == 128 + $SIGINT.value()
 true
 
-assert "$($run($true) with 2>&1)" =~ $/gracefully shutdown process \([0-9]+\) by .+/
+assert "$($run($true, $SIGINT) with 2>&1)" =~ 
+    new Regex("gracefully shutdown process \([0-9]+\) by \`" + $SIGINT.message() + "'")
 assert $? == 128 + $SIGINT.value()
+true
+
+assert "$($run($true, $SIGHUP) with 2>&1)" =~ 
+    new Regex("gracefully shutdown process \([0-9]+\) by \`" + $SIGHUP.message() + "'")
+assert $? == 128 + $SIGHUP.value()
+true
+
+assert "$($run($true, $SIGTERM) with 2>&1)" =~ 
+    new Regex("gracefully shutdown process \([0-9]+\) by \`" + $SIGTERM.message() + "'")
+assert $? == 128 + $SIGTERM.value()
+true
+
+assert "$($run($true, $SIGQUIT) with 2>&1)".empty()
+assert $? == 128 + $SIGQUIT.value()
 true

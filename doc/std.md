@@ -377,6 +377,8 @@ function lastIndexOf(target : T0) : Int where T0 : Value_ for [T0]
 
 function contains(target : T0) : Bool where T0 : Value_ for [T0]
 
+function trap(handler : (Signal) -> Void) : Void where T0 : Signal for [T0]
+
 function size() : Int for [T0]
 
 function empty() : Bool for [T0]

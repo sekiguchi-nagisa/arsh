@@ -146,6 +146,14 @@ ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> 
   return installUnblock(st, sigNum, std::move(handler));
 }
 
+void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<DSObject> &handler) {
+  SignalGuard guard;
+  while (!sigSet.empty()) {
+    int sigNum = sigSet.popPendingSig();
+    installUnblock(st, sigNum, handler);
+  }
+}
+
 void setJobControlSignalSetting(DSState &st, bool set) {
   SignalGuard guard;
 

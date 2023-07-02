@@ -26,6 +26,7 @@
 #include "misc/result.hpp"
 #include "object.h"
 #include "opcode.h"
+#include "signals.h"
 
 struct DSState;
 
@@ -71,6 +72,8 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
  * old signal handler
  */
 ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> handler);
+
+void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<DSObject> &handler);
 
 /**
  * if set is true, ignore some signals.

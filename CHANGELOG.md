@@ -6,7 +6,8 @@
 
 #### Builtin
 
-- add ``SIG_EXIT`` for graceful shutdown via receiving signal
+- add ``SIG_EXIT`` function for graceful shutdown via receiving signal
+- add ``[Signal]#trap`` method for set signal handler of multiple signals at once
 
 ## [0.30.0] - 2023-07-01
 

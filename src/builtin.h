@@ -1690,6 +1690,19 @@ YDSH_METHOD array_contains(RuntimeContext &ctx) {
   RET_BOOL(found);
 }
 
+//!bind: function trap($this : Array<T0>, $handler : Func<Void,[Signal]>) : Void where T0 : Signal
+YDSH_METHOD array_trap(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_trap);
+  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto handler = LOCAL(1).toPtr();
+  SigSet set;
+  for (auto &e : arrayObj.getValues()) {
+    set.add(e.asSig());
+  }
+  installSignalHandler(ctx, set, handler);
+  RET_VOID;
+}
+
 //!bind: function size($this : Array<T0>) : Int
 YDSH_METHOD array_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_size);
