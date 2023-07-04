@@ -8,6 +8,8 @@
 
 - add ``SIG_EXIT`` function for graceful shutdown via receiving signal
 - add ``[Signal]#trap`` method for set signal handler of multiple signals at once
+- add builtin ``getenv`` command
+    - get environmental variable and store to ``REPLY``
 
 ## [0.30.0] - 2023-07-01
 

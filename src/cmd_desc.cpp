@@ -129,6 +129,7 @@ static BuiltinCmdDesc table[] = {
      "    Move job to the foreground.\n"
      "    JOB_SPEC is represented as [%]? [1-9][0-9].\n"
      "    If JOB_SPEC is not present, latest job is used."},
+    {"getenv", "name", "    Get environmental variable and store to REPLY."},
     {"hash", "[-r] [command ...]",
      "    Cache file path of specified commands.  If -r option is supplied,\n"
      "    removes specified command path (if not specified, remove all cache).\n"

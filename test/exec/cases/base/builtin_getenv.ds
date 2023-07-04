@@ -1,0 +1,49 @@
+
+## invalid option
+assert getenv -d 2>&1 | grep '^ydsh: getenv: -d: invalid option'
+assert $PIPESTATUS[0] == 2
+
+## help
+assert help getenv | grep '^getenv: getenv name'
+assert help getenv | grep 'Get environmental variable and store to REPLY'
+assert $PIPESTATUS[0] == 0
+
+assert getenv -h | grep '^getenv: getenv name'
+assert getenv -h | grep 'Get environmental variable and store to REPLY'
+assert $PIPESTATUS[0] == 2
+
+assert getenv --help | grep '^getenv: getenv name'
+assert getenv --help | grep 'Get environmental variable and store to REPLY'
+assert $PIPESTATUS[0] == 2
+
+## error (no arg)
+$REPLY = "dummy"
+assert getenv  2>&1 | grep '^getenv: getenv name'
+assert $PIPESTATUS[0] == 2
+getenv
+assert $? == 2
+assert $REPLY == "dummy"
+
+getenv --
+assert $? == 2
+assert $REPLY == "dummy"
+
+## error (null characters)
+$REPLY = "dummy"
+getenv $'HOME\x00 12'
+assert $REPLY.empty()
+assert "$(getenv $'HOME\x00 12' 2>&1)" == 'ydsh: getenv: contains null characters: HOME\x00 12'
+assert $? == 1
+
+## error (not found)
+$REPLY = "dummy"
+getenv jfijferijfaeifjiae
+assert $? == 1
+assert $REPLY.empty()
+
+$REPLY = "dummy"
+importenv HOME
+getenv -- HOME
+assert $? == 0
+assert $REPLY == $HOME
+

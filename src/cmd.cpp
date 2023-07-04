@@ -40,6 +40,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_eval(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
+static int builtin_getenv(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
 static int builtin_help(DSState &state, ArrayObject &argvObj);
 static int builtin_setenv(DSState &state, ArrayObject &argvObj);
@@ -84,6 +85,7 @@ static auto initBuiltinMap() {
       {"exit", builtin_exit},
       {"false", builtin_false},
       {"fg", builtin_fg_bg},
+      {"getenv", builtin_getenv},
       {"hash", builtin_hash},
       {"help", builtin_help},
       {"jobs", builtin_jobs},
@@ -796,6 +798,37 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     CHECK_STDOUT_ERROR(argvObj);
   }
   return 0;
+}
+
+static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+    if (opt == 'h') {
+      return showHelp(argvObj);
+    } else {
+      return invalidOptionError(argvObj, optState);
+    }
+  }
+
+  unsigned int index = optState.index;
+  if (index == argvObj.size()) {
+    return showUsage(argvObj);
+  }
+
+  state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
+  auto envName = argvObj.getValues()[index].asStrRef();
+  if (envName.hasNullChar()) {
+    ERROR(argvObj, "contains null characters: %s", toPrintable(envName).c_str());
+    return 1;
+  }
+  if (const char *env = getenv(envName.data())) {
+    std::string value = env;
+    assert(value.size() <= SYS_LIMIT_STRING_MAX);
+    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
+    return 0;
+  } else {
+    return 1;
+  }
 }
 
 static int builtin_setenv(DSState &, ArrayObject &argvObj) {
