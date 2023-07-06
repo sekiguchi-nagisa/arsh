@@ -593,7 +593,7 @@ bool FormatPrinter::appendWithPadding(const int width, StringRef ref, const int 
   assert(endIter >= ref.begin());
   ref = ref.substr(0, endIter - ref.begin());
 
-  static constexpr bool end = false; // for TRY macro
+  constexpr bool end = false; // for TRY macro
   const bool needPadding = fieldWidth > count;
 
   if (needPadding && !leftAdjust) {
@@ -659,7 +659,7 @@ static bool checkAltSymbols(const StringRef format, StringRef::size_type pos, st
 }
 
 static bool putTime(StringBuf &out, const char *fmt, const struct tm &tm) {
-  char buf[64]; // FIXME: check actual required buffer size
+  char buf[256]; // FIXME: check actual required buffer size
   auto s = strftime(buf, std::size(buf), fmt, &tm);
   return out.append(StringRef(buf, s));
 }
