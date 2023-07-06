@@ -403,8 +403,8 @@ struct WorkDoneProgressOptions {
 };
 
 struct CompletionOptions : public WorkDoneProgressOptions {
-  Optional<bool> resolveProvider;                       // optional
-  Optional<std::vector<std::string>> triggerCharacters; // optional
+  Optional<bool> resolveProvider; // optional
+  std::vector<std::string> triggerCharacters;
 
   template <typename T>
   void jsonify(T &t) {
@@ -424,8 +424,8 @@ struct SaveOptions {
 };
 
 struct TextDocumentSyncOptions {
-  Optional<bool> openClose;                // optional
-  Optional<TextDocumentSyncKind> change;   // optional
+  bool openClose;
+  TextDocumentSyncKind change;
   Optional<bool> willSave;                 // optional
   Optional<bool> willSaveWaitUntil;        // optional
   Optional<Union<bool, SaveOptions>> save; // optional
@@ -466,9 +466,9 @@ struct DocumentLinkOptions : public WorkDoneProgressOptions {
  * only define supported capability
  */
 struct ServerCapabilities {
-  Optional<TextDocumentSyncOptions> textDocumentSync; // optional
+  TextDocumentSyncOptions textDocumentSync;
   bool hoverProvider{false};
-  Optional<CompletionOptions> completionProvider; // optional
+  CompletionOptions completionProvider;
   bool definitionProvider{false};
   bool referencesProvider{false};
   bool documentHighlightProvider{false};
@@ -476,8 +476,8 @@ struct ServerCapabilities {
   bool workspaceSymbolProvider{false};
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};
-  Optional<DocumentLinkOptions> documentLinkProvider;
-  Optional<SemanticTokensOptions> semanticTokensProvider;
+  DocumentLinkOptions documentLinkProvider;
+  SemanticTokensOptions semanticTokensProvider;
 
   template <typename T>
   void jsonify(T &t) {
@@ -774,7 +774,7 @@ enum class CompletionItemKind : unsigned int {
 
 struct CompletionItem {
   std::string label;
-  Optional<CompletionItemKind> kind;
+  CompletionItemKind kind;
   Optional<std::string> sortText;
   int priority; // dummy. not defined in lsp
 
@@ -907,8 +907,8 @@ struct DocumentLinkParams : public WorkDoneProgressParams, public PartialResultP
 
 struct DocumentLink {
   Range range;
-  Optional<DocumentURI> target;
-  Optional<std::string> tooltip;
+  DocumentURI target;
+  std::string tooltip;
 
   template <typename T>
   void jsonify(T &t) {
