@@ -323,14 +323,16 @@ private:
   void registerHandles(const BuiltinType &type);
 
   /**
-   * allocate actual MethodHandle
+   * instantiate native method handle from native method index
    * @param recv
-   * @param iter
-   * after allocation, set allocated method handle pointer.
+   * @param methodIndex
+   * must be valid method handle index of receiver type
    * @return
-   * if allocation failed, return false
+   * if failed, return null
+   * // FIXME: error reporting
    */
-  bool allocNativeMethodHandle(const DSType &recv, MethodMap::iterator iter);
+  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const DSType &recv,
+                                                        unsigned int methodIndex);
 };
 
 } // namespace ydsh

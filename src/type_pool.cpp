@@ -483,12 +483,20 @@ bool TypeDecoder::decodeConstraint() {
   return true;
 }
 
-// FIXME: error reporting
-bool TypePool::allocNativeMethodHandle(const DSType &recv, MethodMap::iterator iter) {
-  assert(!iter->second);
-  const unsigned int index = iter->second.index();
+#undef TRY2
+#define TRY2(E)                                                                                    \
+  ({                                                                                               \
+    auto value = E;                                                                                \
+    if (unlikely(!value)) {                                                                        \
+      return nullptr;                                                                              \
+    }                                                                                              \
+    std::move(value).take();                                                                       \
+  })
+
+std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const DSType &recv,
+                                                                unsigned int methodIndex) {
   auto types = recv.getTypeParams(*this);
-  auto info = nativeFuncInfoTable()[index];
+  auto info = nativeFuncInfoTable()[methodIndex];
   TypeDecoder decoder(*this, info.handleInfo, std::move(types));
 
   // check type parameter constraint
@@ -502,13 +510,11 @@ bool TypePool::allocNativeMethodHandle(const DSType &recv, MethodMap::iterator i
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  const auto commitId = this->methodIdCount++;
-  auto handle = MethodHandle::createNative(*recvType, index, *returnType, paramSize - 1);
+  auto handle = MethodHandle::createNative(*recvType, methodIndex, *returnType, paramSize - 1);
   for (unsigned int i = 1; i < paramSize; i++) { // init param types
     handle->paramTypes[i - 1] = TRY2(decoder.decode());
   }
-  iter->second = Value(commitId, handle.release());
-  return true;
+  return handle;
 }
 
 const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {
@@ -518,9 +524,13 @@ const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::st
     if (iter != this->methodMap.end()) {
       if (!iter->second) {
         assert(methodName == nativeFuncInfoTable()[iter->second.index()].funcName);
-        if (!this->allocNativeMethodHandle(*type, iter)) {
+        const unsigned int index = iter->second.index();
+        auto handle = this->allocNativeMethodHandle(*type, index);
+        if (!handle) {
           return nullptr;
         }
+        const auto commitId = this->methodIdCount++;
+        iter->second = Value(commitId, handle.release());
       }
       return iter->second.handle();
     }
