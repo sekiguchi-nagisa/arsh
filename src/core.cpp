@@ -246,14 +246,17 @@ public:
       : state(state),
         reply(DSValue::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
 
-  void consume(std::string &&value, CompCandidateKind k, int) override {
+  void operator()(const CompCandidate &candidate) override {
+    if (candidate.value.empty()) {
+      return;
+    }
     if (!this->overflow) {
       auto &obj = typeAs<ArrayObject>(this->reply);
-      if (!obj.append(this->state, DSValue::createStr(std::move(value)))) {
+      if (!obj.append(this->state, DSValue::createStr(candidate.quote()))) {
         this->overflow = true;
         return;
       }
-      this->kind = k;
+      this->kind = candidate.kind;
     }
   }
 

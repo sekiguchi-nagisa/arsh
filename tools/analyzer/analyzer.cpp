@@ -372,12 +372,15 @@ private:
   std::vector<CompletionItem> items;
 
 public:
-  void consume(std::string &&value, CompCandidateKind kind, int priority) override {
+  void operator()(const CompCandidate &candidate) override {
+    if (candidate.value.empty()) {
+      return;
+    }
     this->items.push_back(CompletionItem{
-        .label = std::move(value),
-        .kind = toItemKind(kind),
+        .label = candidate.quote(),
+        .kind = toItemKind(candidate.kind),
         .sortText = {},
-        .priority = priority,
+        .priority = candidate.priority,
     });
   }
 

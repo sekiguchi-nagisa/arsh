@@ -36,25 +36,23 @@ namespace ydsh {
 
 // for input completion
 
-void CompCandidateConsumer::operator()(StringRef ref, CompCandidateKind kind, int priority) {
-  if (ref.empty()) {
-    return;
-  }
-  std::string value;
-  if (mayBeEscaped(kind)) {
-    if (kind == CompCandidateKind::COMMAND_NAME) {
+std::string CompCandidate::quote() const {
+  std::string ret;
+  auto ref = this->value;
+  if (mayBeQuoted(this->kind) && !ref.empty()) {
+    if (this->kind == CompCandidateKind::COMMAND_NAME) {
       char ch = ref[0];
       if (isDecimal(ch) || ch == '+' || ch == '-') {
-        value += '\\';
-        value += ch;
+        ret += '\\';
+        ret += ch;
         ref.removePrefix(1);
       }
     }
-    quoteAsShellArg(ref, value);
+    quoteAsShellArg(ref, ret);
   } else {
-    value += ref;
+    ret += ref;
   }
-  this->consume(std::move(value), kind, priority);
+  return ret;
 }
 
 // ###################################
@@ -710,8 +708,6 @@ private:
   unsigned int score{UINT32_MAX};
   ObserverPtr<const SuggestMemberType> targetMemberType;
 
-  void consume(std::string &&, CompCandidateKind, int) override {} // do nothing
-
 public:
   explicit SuggestionCollector(StringRef name) : editDistance(3), src(name) {}
 
@@ -723,17 +719,20 @@ public:
 
   unsigned int getScore() const { return this->score; }
 
-  void operator()(StringRef ref, CompCandidateKind kind, int) override {
+  void operator()(const CompCandidate &candidate) override {
     if (this->targetMemberType) {
       auto targetType = *this->targetMemberType;
-      if (kind == CompCandidateKind::FIELD && !hasFlag(targetType, SuggestMemberType::FIELD)) {
+      if (candidate.kind == CompCandidateKind::FIELD &&
+          !hasFlag(targetType, SuggestMemberType::FIELD)) {
         return;
       }
-      if (kind == CompCandidateKind::METHOD && !hasFlag(targetType, SuggestMemberType::METHOD)) {
+      if (candidate.kind == CompCandidateKind::METHOD &&
+          !hasFlag(targetType, SuggestMemberType::METHOD)) {
         return;
       }
     }
 
+    auto ref = candidate.value;
     if (this->src[0] != ref[0]) {
       return;
     }

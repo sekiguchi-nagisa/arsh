@@ -79,7 +79,7 @@ enum class CompCandidateKind {
   TYPE,
 };
 
-inline bool mayBeEscaped(CompCandidateKind kind) {
+inline bool mayBeQuoted(CompCandidateKind kind) {
   switch (kind) {
   case CompCandidateKind::COMMAND_NAME:
   case CompCandidateKind::COMMAND_NAME_PART:
@@ -91,16 +91,32 @@ inline bool mayBeEscaped(CompCandidateKind kind) {
   }
 }
 
+struct CompCandidate {
+  const StringRef value;
+  const CompCandidateKind kind;
+  const int priority;
+
+  CompCandidate(StringRef v, CompCandidateKind k, int p) : value(v), kind(k), priority(p) {}
+
+  /**
+   * quote as shell arg
+   * @return
+   */
+  std::string quote() const;
+};
+
 class CompCandidateConsumer {
 public:
   virtual ~CompCandidateConsumer() = default;
 
   void operator()(StringRef ref, CompCandidateKind kind) { (*this)(ref, kind, 0); }
 
-  virtual void operator()(StringRef ref, CompCandidateKind kind, int priority);
+  void operator()(StringRef ref, CompCandidateKind kind, int priority) {
+    CompCandidate candidate(ref, kind, priority);
+    (*this)(candidate);
+  }
 
-private:
-  virtual void consume(std::string &&, CompCandidateKind, int priority) = 0;
+  virtual void operator()(const CompCandidate &candidate) = 0;
 };
 
 /**
