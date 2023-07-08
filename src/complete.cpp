@@ -18,6 +18,8 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include <cctype>
+
 #include "cmd_desc.h"
 #include "complete.h"
 #include "frontend.h"
@@ -88,14 +90,34 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
   }
 }
 
-static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer &consumer) {
+static bool isValidName(StringRef name) {
+  size_t count = 0;
+  for (auto ch : name) {
+    if (count++ == 0) {
+      if (!std::isalpha(ch) && ch != '_') {
+        return false;
+      }
+    }
+    if (!std::isalnum(ch) && ch != '_') {
+      return false;
+    }
+  }
+  return true;
+}
+
+static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer &consumer,
+                            bool validNameOnly) {
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
     StringRef env(environ[i]);
     auto r = env.indexOf("=");
     assert(r != StringRef::npos);
     auto name = env.substr(0, r);
     if (name.startsWith(namePrefix)) {
-      consumer(name, CompCandidateKind::ENV);
+      if (validNameOnly && !isValidName(name)) {
+        continue;
+      }
+      auto kind = validNameOnly ? CompCandidateKind::VALID_ENV_NAME : CompCandidateKind::ENV_NAME;
+      consumer(name, kind);
     }
   }
 }
@@ -537,8 +559,8 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
     return true; // do nothing
   }
 
-  if (hasFlag(this->compOp, CodeCompOp::ENV)) {
-    completeEnvName(this->compWord, consumer);
+  if (hasFlag(this->compOp, CodeCompOp::ENV) || hasFlag(this->compOp, CodeCompOp::VALID_ENV)) {
+    completeEnvName(this->compWord, consumer, !hasFlag(this->compOp, CodeCompOp::ENV));
   }
   if (hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
     completeSigName(this->compWord, consumer);

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cctype>
-
 #include <binder.h>
 #include <complete.h>
 #include <embed.h>
@@ -375,21 +373,6 @@ private:
 
 public:
   void consume(std::string &&value, CompCandidateKind kind, int priority) override {
-    if (kind == CompCandidateKind::ENV) {
-      unsigned int count = 0;
-      for (auto ch : value) {
-        if (count == 0) {
-          if (!std::isalpha(ch) && ch != '_') {
-            return;
-          }
-        }
-        if (!std::isalnum(ch) && ch != '_') {
-          return;
-        }
-        count++;
-      }
-    }
-
     this->items.push_back(CompletionItem{
         .label = std::move(value),
         .kind = toItemKind(kind),

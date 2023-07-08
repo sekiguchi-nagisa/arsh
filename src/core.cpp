@@ -469,7 +469,8 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
       return !endsWithUnquoteSpace(first);
     }
     break;
-  case CompCandidateKind::ENV:
+  case CompCandidateKind::ENV_NAME:
+  case CompCandidateKind::VALID_ENV_NAME:
   case CompCandidateKind::USER:
   case CompCandidateKind::GROUP:
     break;

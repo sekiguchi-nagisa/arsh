@@ -28,27 +28,28 @@
 namespace ydsh {
 
 enum class CodeCompOp : unsigned int {
-  FILE = 1u << 0u,     /* complete file names (including directory) */
-  DIR = 1u << 1u,      /* complete directory names (directory only) */
-  EXEC = 1u << 2u,     /* complete executable file names (including directory) */
-  TILDE = 1u << 3u,    /* perform tilde expansion before completions */
-  EXTERNAL = 1u << 4u, /* complete external command names */
-  DYNA_UDC = 1u << 5u, /* complete dynamically registered command names */
-  BUILTIN = 1u << 6u,  /* complete builtin command names */
-  UDC = 1u << 7u,      /* complete user-defined command names */
-  VAR = 1u << 8u,      /* complete global variable names (not start with $) */
-  ENV = 1u << 9u,      /* complete environmental variable names */
-  SIGNAL = 1u << 10u,  /* complete signal names (not start with SIG) */
-  USER = 1u << 11u,    /* complete usernames */
-  GROUP = 1u << 12u,   /* complete group names */
-  MODULE = 1u << 13u,  /* complete module path */
-  STMT_KW = 1u << 14u, /* complete statement keyword */
-  EXPR_KW = 1u << 15u, /* complete expr keyword */
-  EXPECT = 1u << 16u,  /* complete expected token */
-  MEMBER = 1u << 17u,  /* complete member (field/method) */
-  TYPE = 1u << 18u,    /* complete type name */
-  CMD_ARG = 1u << 19u, /* for command argument */
-  HOOK = 1u << 20u,    /* for user-defined completion hook */
+  FILE = 1u << 0u,       /* complete file names (including directory) */
+  DIR = 1u << 1u,        /* complete directory names (directory only) */
+  EXEC = 1u << 2u,       /* complete executable file names (including directory) */
+  TILDE = 1u << 3u,      /* perform tilde expansion before completions */
+  EXTERNAL = 1u << 4u,   /* complete external command names */
+  DYNA_UDC = 1u << 5u,   /* complete dynamically registered command names */
+  BUILTIN = 1u << 6u,    /* complete builtin command names */
+  UDC = 1u << 7u,        /* complete user-defined command names */
+  VAR = 1u << 8u,        /* complete global variable names (not start with $) */
+  ENV = 1u << 9u,        /* complete environmental variable names */
+  VALID_ENV = 1u << 10u, /* complete environmental variable names (valid name only) */
+  SIGNAL = 1u << 11u,    /* complete signal names (not start with SIG) */
+  USER = 1u << 12u,      /* complete usernames */
+  GROUP = 1u << 13u,     /* complete group names */
+  MODULE = 1u << 14u,    /* complete module path */
+  STMT_KW = 1u << 15u,   /* complete statement keyword */
+  EXPR_KW = 1u << 16u,   /* complete expr keyword */
+  EXPECT = 1u << 17u,    /* complete expected token */
+  MEMBER = 1u << 18u,    /* complete member (field/method) */
+  TYPE = 1u << 19u,      /* complete type name */
+  CMD_ARG = 1u << 20u,   /* for command argument */
+  HOOK = 1u << 21u,      /* for user-defined completion hook */
   COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 
@@ -65,7 +66,8 @@ enum class CompCandidateKind {
   COMMAND_ARG,
   COMMAND_TILDE,
   COMMAND_ARG_NO_QUOTE,
-  ENV,
+  ENV_NAME,
+  VALID_ENV_NAME,
   USER,
   GROUP,
   VAR,
@@ -82,7 +84,7 @@ inline bool mayBeEscaped(CompCandidateKind kind) {
   case CompCandidateKind::COMMAND_NAME:
   case CompCandidateKind::COMMAND_NAME_PART:
   case CompCandidateKind::COMMAND_ARG:
-  case CompCandidateKind::ENV:
+  case CompCandidateKind::ENV_NAME:
     return true;
   default:
     return false;

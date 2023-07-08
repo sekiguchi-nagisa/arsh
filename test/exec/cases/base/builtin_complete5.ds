@@ -9,8 +9,22 @@ assert diff <(complete -A variable '') <(complete '$')
 assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
 
 ## env
-assert diff <(complete -A env 'X') <(complete 'importenv X')
-assert diff <(complete -A env '') <(complete 'importenv ')
+assert diff <(complete -A valid_env 'X') <(complete 'importenv X')
+assert diff <(complete -A valid_env '') <(complete 'importenv ')
+setenv 'ZZZ(23)=hello'
+assert ! diff <(complete -A env 'Z') <(complete 'importenv Z')
+assert diff <(complete -A valid_env 'Z') <(complete 'importenv Z')
+assert diff <(complete -A env 'Z') \
+              <(env | grep ^Z | for l in $STDIN { 
+                                  var ss = $l.split('='); 
+                                  $l.indexOf('=') > -1 && echo $ss[0];  } | 
+                                  sed 's/(/\\(/' | sed 's/)/\\)/' | LANG=C sort)
+assert diff <(complete -A env -A valid_env 'Z') \
+              <(env | grep ^Z | for l in $STDIN { # also complete invalid env name even if specified `valid_env` action
+                                  var ss = $l.split('='); 
+                                  $l.indexOf('=') > -1 && echo $ss[0];  } | 
+                                  sed 's/(/\\(/' | sed 's/)/\\)/' | LANG=C sort)
+
 
 ## signal
 assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)

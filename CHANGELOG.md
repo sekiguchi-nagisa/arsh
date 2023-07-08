@@ -10,6 +10,14 @@
 - add ``[Signal]#trap`` method for set signal handler of multiple signals at once
 - add builtin ``getenv`` command
     - get environmental variable and store to ``REPLY``
+- add ``valid_env`` action to builtin ``complete`` command
+    - complete only valid env names
+
+### Changed
+
+#### Builtin
+
+- **Breaking Change**: completion after ``importenv`` keyword only complete valid env names
 
 ## [0.30.0] - 2023-07-01
 

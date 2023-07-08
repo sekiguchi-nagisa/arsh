@@ -117,14 +117,16 @@ unsetenv COMP_WORDBREAKS
 unsetenv '!C:'
 setenv 'ZZZ(23)=hello'
 
-$assertArray($(env | while(read -r) {
-                        var ss = $REPLY.split('=');
-                        $REPLY.indexOf('=') > -1 && echo $ss[0];
-                     } | sed 's/(/\\(/' | sed 's/)/\\)/' ).sort(), $(complete 'import-env '))
-$assertArray($(env | grep ^P | while(read -r) {
-                                    var ss = $REPLY.split('=');
-                                    $REPLY.indexOf('=') > -1 && echo $ss[0];
-                               } | sed 's/(/\\(/' | sed 's/)/\\)/' ).sort(), $(complete 'import-env P'))
+$assertArray($(env | for l in $STDIN {
+                        var ss = $l.split('=');
+                        $l.indexOf('=') > -1 && 
+                        $/^[a-zA-Z_][0-9a-zA-Z_]*$/ =~ $ss[0] && echo $ss[0];
+                     }).sort(), $(complete 'import-env '))
+$assertArray($(env | grep ^P | for l in $STDIN {
+                                    var ss = $l.split('=');
+                                    $l.indexOf('=') > -1 && 
+                                    $/^[a-zA-Z_][0-9a-zA-Z_]*$/ =~ $ss[0] && echo $ss[0];
+                               }).sort(), $(complete 'importenv P'))
 
 
 # field/method

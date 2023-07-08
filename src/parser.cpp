@@ -703,7 +703,8 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     unsigned int startPos = START_POS();
     this->consume();                                        // IMPORT_ENV
     if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) { // complete env name
-      this->ccHandler->addCompRequest(CodeCompOp::ENV, this->lexer->toTokenText(this->curToken));
+      this->ccHandler->addCompRequest(CodeCompOp::VALID_ENV,
+                                      this->lexer->toTokenText(this->curToken));
     }
     auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
     Token token = nameInfo.getToken();
