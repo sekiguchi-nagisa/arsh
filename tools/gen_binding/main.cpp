@@ -547,9 +547,9 @@ protected:
   std::vector<std::unique_ptr<TypeToken>> paramTypes;
 
   /**
-   * contains parameter name and default value flag.
+   * contains parameter name
    */
-  std::vector<std::pair<std::string, bool>> paramNames;
+  std::vector<std::string> paramNames;
 
   /**
    * name of binding function
@@ -567,12 +567,12 @@ public:
 
   const std::vector<TypeConstraint> &getConstraints() const { return this->constraints; }
 
-  void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> &&type) {
+  void addParam(std::string &&name, std::unique_ptr<TypeToken> &&type) {
     if (!this->ownerType) { // treat first param type as receiver
       this->ownerType = std::move(type);
       return;
     }
-    this->paramNames.emplace_back(std::move(name), hasDefault);
+    this->paramNames.emplace_back(std::move(name));
     this->paramTypes.push_back(std::move(type));
   }
 
@@ -599,16 +599,16 @@ public:
   }
 
   std::string toParamNames() const {
-    std::string str("{");
-    str += "\"\"";
-    for (auto &pair : this->paramNames) {
-      str += ", ";
-      str += "\"";
-      str += pair.first;
-      str += "\"";
+    std::string value = "\"";
+    unsigned int count = 0;
+    for (auto &name : this->paramNames) {
+      if (count++ > 0) {
+        value += ";";
+      }
+      value += name;
     }
-    str += "}";
-    return str;
+    value += '"';
+    return value;
   }
 
   std::string toFuncName() const {
@@ -624,30 +624,13 @@ public:
 
   const char *getActualFuncName() const { return this->actualFuncName.c_str(); }
 
-  bool hasReturnValue() const { return !this->returnType->isType(HandleInfo::Void); }
-
-  unsigned char toDefaultFlag() const {
-    unsigned char flag = 0;
-    unsigned int size = this->paramNames.size();
-    for (unsigned int i = 0; i < size; i++) {
-      if (this->paramNames[i].second) {
-        flag += (1u << (i + 1));
-      }
-    }
-    return flag;
-  }
-
   std::string emit() const {
     std::string str("{");
     str += this->toFuncName();
     str += ", ";
+    str += this->toParamNames();
+    str += ", ";
     str += this->toSerializedHandle();
-    //        str += ", ";
-    //        str += this->toParamNames();
-    //    str += ", ";
-    //    str += this->getActualFuncName();
-    //        str += ", ";
-    //        str += std::to_string((int) this->toDefaultFlag());
     str += "}";
     return str;
   }
@@ -665,7 +648,7 @@ public:
       if (i > 0) {
         str += ", ";
       }
-      str += this->paramNames[i].first;
+      str += this->paramNames[i];
       str += " : ";
       str += this->paramTypes[i]->toString();
     }
@@ -895,15 +878,10 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
     }
 
     Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
-    bool hasDefault = false;
-    if (CUR_KIND() == DescTokenKind::OPT) {
-      TRY(this->expect(DescTokenKind::OPT));
-      hasDefault = true;
-    }
     TRY(this->expect(DescTokenKind::COLON));
     auto type = TRY(this->parse_type());
 
-    element->addParam(this->toName(token), hasDefault, std::move(type));
+    element->addParam(this->toName(token), std::move(type));
   } while (CUR_KIND() == DescTokenKind::COMMA);
 
   return nullptr;
@@ -1049,7 +1027,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
 
   // generate NativeFuncInfo table
   OUT("static NativeFuncInfo infoTable[] = {\n");
-  OUT("    {nullptr, {}},\n");
+  OUT("    {nullptr, nullptr, {}},\n");
   for (TypeBind *bind : binds) {
     for (Element *e : bind->funcElements) {
       OUT("    %s,\n", e->emit().c_str());

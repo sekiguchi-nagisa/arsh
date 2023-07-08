@@ -95,6 +95,8 @@ enum class HandleInfo : char {
 struct NativeFuncInfo {
   const char *funcName;
 
+  const char *params;
+
   /**
    * serialized function handle
    */

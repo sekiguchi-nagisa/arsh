@@ -42,8 +42,7 @@
   OP(COMMA)      /* , */                                                                           \
   OP(COLON)      /* : */                                                                           \
   OP(SEMI_COLON) /* ; */                                                                           \
-  OP(LBC)        /* { */                                                                           \
-  OP(OPT)        /* ? */
+  OP(LBC)        /* { */
 
 enum class DescTokenKind : unsigned int {
 #define GEN_ENUM(TOK) TOK,

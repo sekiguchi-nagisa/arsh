@@ -837,8 +837,8 @@ private:
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
-  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
-                                              const DSType &ret, unsigned char paramSize) {
+  static std::unique_ptr<MethodHandle> createNative(const DSType &recv, unsigned int index,
+                                                    const DSType &ret, unsigned char paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
     return std::unique_ptr<MethodHandle>(handle);

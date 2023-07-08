@@ -79,7 +79,6 @@ INIT:
     ";"                    { RET(SEMI_COLON); }
     "{"                    { RET(LBC); }
     "&"                    { RET(AND); }
-    "?"                    { RET(OPT); }
 
     [ \t\r\n]+             { SKIP(); }
     "\000"                 { REACH_EOS(); }

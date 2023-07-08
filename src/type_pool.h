@@ -330,7 +330,7 @@ private:
    * @return
    * if allocation failed, return false
    */
-  bool allocMethodHandle(const DSType &recv, MethodMap::iterator iter);
+  bool allocNativeMethodHandle(const DSType &recv, MethodMap::iterator iter);
 };
 
 } // namespace ydsh
