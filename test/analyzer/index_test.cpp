@@ -1171,62 +1171,62 @@ TEST_F(IndexTest, invalidBackref) {
 
 TEST_F(IndexTest, hover) {
   // variable or function
-  ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A : Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimportenv HOME : String\n```"));
+      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimportenv HOME: String\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexportenv ZZZ : String\n```"));
+      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexportenv ZZZ: String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
-                                      "```ydsh\nfunction hoge(s : Int) : Void\n```"));
+                                      "```ydsh\nfunction hoge(s: Int): Void\n```"));
 
   // user-defined command
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge() : Bool\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge(): Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage() : Nothing\n```"));
+      this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage(): Nothing\n```"));
 
   // user-defined type
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2,
-                                      "```ydsh\ntypedef App : OutOfRangeError\n```"));
+                                      "```ydsh\ntypedef App: OutOfRangeError\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
-                  "```ydsh\ntypedef API : AppError\n```"));
+                  "```ydsh\ntypedef API: AppError\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef Interval() { var begin = 34; }; var a = new Interval();\n$a",
-                  Position{.line = 1, .character = 0}, "```ydsh\nvar a : Interval\n```"));
+                  Position{.line = 1, .character = 0}, "```ydsh\nvar a: Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
                                       "Interval?(); }\nvar a = new Interval();",
                                       Position{.line = 1, .character = 15}, R"(```ydsh
-typedef Interval(s : Int) {
-    var n : Int
-    let value : Interval?
+typedef Interval(s: Int) {
+    var n: Int
+    let value: Interval?
 }
 ```)"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
                                       "}\nvar aaaa = new Interval(2, $none);",
                                       Position{.line = 1, .character = 20}, R"(```ydsh
-typedef Interval(n : Int, next : Interval?) {
-    var n : Int
-    let next : Interval?
+typedef Interval(n: Int, next: Interval?) {
+    var n: Int
+    let next: Interval?
 }
 ```)"));
 
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval { var value : Interval?; }; var a = new Interval($none);\n$a.value",
-      Position{.line = 1, .character = 3}, "```ydsh\nvar value : Interval? for Interval\n```"));
+      Position{.line = 1, .character = 3}, "```ydsh\nvar value: Interval? for Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval() { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
-      Position{.line = 1, .character = 2}, "```ydsh\nvar aaa : [[Interval]]\n```"));
+      Position{.line = 1, .character = 2}, "```ydsh\nvar aaa: [[Interval]]\n```"));
 
   // user-defined method
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef INT(a : Int) { var v = $a; }\n"
                                       "function value():Int for INT { return $this.v; }\n"
                                       "new INT(12).value()",
                                       Position{.line = 2, .character = 13},
-                                      "```ydsh\nfunction value() : Int for INT\n```"));
+                                      "```ydsh\nfunction value(): Int for INT\n```"));
 
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
                                       Position{.line = 1, .character = 8},
-                                      "```ydsh\nlet this : String\n```"));
+                                      "```ydsh\nlet this: String\n```"));
 
   // here doc
   ASSERT_NO_FATAL_FAILURE(this->hover(R"(cat << EOF
@@ -1243,8 +1243,8 @@ EOF)",
 
 TEST_F(IndexTest, hoverBuiltin) {
   // builtin variable or type alias
-  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ? : Int\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @ : [String]\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ?: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @: [String]\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
                                       "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
                                       "\n```"));
@@ -1264,13 +1264,13 @@ TEST_F(IndexTest, hoverBuiltin) {
   // builtin tuple or method
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '');$a._2\n$a._2",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar _2 : String for (Int, Bool, String)\n```"));
+                                      "```ydsh\nvar _2: String for (Int, Bool, String)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("''.size();[1].size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
-                                      "```ydsh\nfunction size() : Int for [Int]\n```"));
+                                      "```ydsh\nfunction size(): Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice(start : Int, stop : Int?) : String for String\n```"));
+                  "```ydsh\nfunction slice(start: Int, stop: Int?): String for String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {

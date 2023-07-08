@@ -19,6 +19,10 @@
 
 - **Breaking Change**: completion after ``importenv`` keyword only complete valid env names
 
+#### LSP
+
+- ``textDocument/completion`` shows variable/field/method type signature
+
 ## [0.30.0] - 2023-07-01
 
 ### Added

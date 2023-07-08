@@ -75,6 +75,7 @@ enum class CompCandidateKind {
   SIGNAL,
   FIELD,
   METHOD,
+  UNINIT_METHOD, // for uninitialized native method handle
   KEYWORD,
   TYPE,
 };
@@ -91,12 +92,49 @@ inline bool mayBeQuoted(CompCandidateKind kind) {
   }
 }
 
-struct CompCandidate {
+class CompCandidate {
+public:
   const StringRef value;
   const CompCandidateKind kind;
   const int priority;
 
+private:
+  union {
+    const Handle *handle;
+    struct {
+      unsigned int recvTypeId;
+      unsigned int typeId;
+    } fieldInfo;
+    struct {
+      unsigned int typeId;
+      unsigned int methodIndex;
+    } nativeMethodHandleInfo;
+  } meta{};
+
+public:
   CompCandidate(StringRef v, CompCandidateKind k, int p) : value(v), kind(k), priority(p) {}
+
+  void setHandle(const Handle &handle) { this->meta.handle = &handle; }
+
+  const Handle *getHandle() const { return this->meta.handle; }
+
+  void setFieldInfo(const DSType &recvType, const Handle &field) {
+    this->meta.fieldInfo = {
+        .recvTypeId = recvType.typeId(),
+        .typeId = field.getTypeId(),
+    };
+  }
+
+  const auto &getFieldInfo() const { return this->meta.fieldInfo; }
+
+  void setNativeMethodInfo(const DSType &type, unsigned int methodIndex) {
+    this->meta.nativeMethodHandleInfo = {
+        .typeId = type.typeId(),
+        .methodIndex = methodIndex,
+    };
+  }
+
+  const auto &getNativeMethodInfo() const { return this->meta.nativeMethodHandleInfo; }
 
   /**
    * quote as shell arg

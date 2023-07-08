@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#include <regex>
-
 #include <cmd_desc.h>
-#include <misc/format.hpp>
 
 #include "indexer.h"
 #include "symbol.h"
@@ -83,11 +80,6 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     assert(foreignIndex);
     return foreignIndex->findGlobal(mangledName);
   }
-}
-
-static std::string normalizeTypeName(const DSType &type) {
-  static std::regex re(R"(%mod\d+\.)", std::regex_constants::ECMAScript);
-  return std::regex_replace(type.getName(), re, "");
 }
 
 static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
@@ -206,43 +198,13 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
-static std::vector<StringRef> splitParamNames(const MethodHandle &handle) {
-  const unsigned int paramSize = handle.getParamSize();
-  std::vector<StringRef> params;
-  params.reserve(paramSize);
-  StringRef packed = handle.getPackedParamNames();
-  splitByDelim(packed, ';', [&params](StringRef p, bool) {
-    if (!p.empty()) {
-      params.push_back(p);
-    }
-    return true;
-  });
-  assert(paramSize == params.size());
-  return params;
-}
-
 static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
                                                     const Handle &handle) {
-  if (handle.isMethod()) {
-    /**
-     * for builtin method
-     */
+  if (handle.isMethod()) { // for builtin method
     auto &methodHandle = cast<MethodHandle>(handle);
     assert(methodHandle.isNative());
-    auto params = splitParamNames(methodHandle);
-    std::string content = "(";
-    for (unsigned int i = 0; i < methodHandle.getParamSize(); i++) {
-      if (i > 0) {
-        content += ", ";
-      }
-      content += params[i];
-      content += " : ";
-      content += normalizeTypeName(methodHandle.getParamTypeAt(i));
-    }
-    content += ") : ";
-    content += normalizeTypeName(methodHandle.getReturnType());
-    content += " for ";
-    content += normalizeTypeName(recv);
+    std::string content;
+    formatMethodSignature(recv, methodHandle, content);
     return content;
   } else {
     /**
@@ -599,10 +561,10 @@ static std::string generateFuncInfo(const FunctionNode &node) {
       value += ", ";
     }
     value += paramNode->getVarName();
-    value += " : ";
+    value += ": ";
     value += normalizeTypeName(paramNode->getExprNode()->getType());
   }
-  value += ") : ";
+  value += "): ";
   value += normalizeTypeName(node.getReturnTypeNode()->getType());
   if (node.isMethod()) {
     value += " for ";
@@ -623,7 +585,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
         value += ", ";
       }
       value += paramNode->getVarName();
-      value += " : ";
+      value += ": ";
       value += normalizeTypeName(paramNode->getExprNode()->getType());
     }
     value += ")";
@@ -636,7 +598,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += DeclSymbol::getVarDeclPrefix(declKind);
       value += " ";
       value += e->getVarName();
-      value += " : ";
+      value += ": ";
       value += normalizeTypeName(e->getExprNode()->getType());
       value += "\n";
     }
@@ -649,7 +611,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       value += DeclSymbol::getVarDeclPrefix(declKind);
       value += " ";
       value += declNode.getVarName();
-      value += " : ";
+      value += ": ";
       if (declNode.getExprNode()) {
         value += normalizeTypeName(declNode.getExprNode()->getType());
       } else {

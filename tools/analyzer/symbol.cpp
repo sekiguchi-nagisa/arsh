@@ -14,13 +14,66 @@
  * limitations under the License.
  */
 
+#include <regex>
+
 #include <cmd_desc.h>
 #include <constant.h>
+#include <misc/format.hpp>
+#include <type.h>
 
 #include "source.h"
 #include "symbol.h"
 
 namespace ydsh::lsp {
+
+std::string normalizeTypeName(const DSType &type) {
+  static std::regex re(R"(%mod\d+\.)", std::regex_constants::ECMAScript);
+  return std::regex_replace(type.getName(), re, "");
+}
+
+static std::vector<StringRef> splitParamNames(const MethodHandle &handle) {
+  const unsigned int paramSize = handle.getParamSize();
+  std::vector<StringRef> params;
+  params.reserve(paramSize);
+  StringRef packed = handle.getPackedParamNames();
+  splitByDelim(packed, ';', [&params](StringRef p, bool) {
+    if (!p.empty()) {
+      params.push_back(p);
+    }
+    return true;
+  });
+  assert(paramSize == params.size());
+  return params;
+}
+
+void formatVarSignature(const DSType &type, std::string &out) {
+  out += ": ";
+  out += normalizeTypeName(type);
+}
+
+void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out) {
+  out += ": ";
+  out += normalizeTypeName(type);
+  out += " for ";
+  out += normalizeTypeName(recvType);
+}
+
+void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out) {
+  auto params = splitParamNames(handle);
+  out += "(";
+  for (unsigned int i = 0; i < handle.getParamSize(); i++) {
+    if (i > 0) {
+      out += ", ";
+    }
+    out += params[i];
+    out += ": ";
+    out += normalizeTypeName(handle.getParamTypeAt(i));
+  }
+  out += "): ";
+  out += normalizeTypeName(handle.getReturnType());
+  out += " for ";
+  out += normalizeTypeName(recvType);
+}
 
 static const BuiltinCmdDesc *findCmdDesc(const char *name) {
   unsigned int size = getBuiltinCmdSize();
@@ -46,7 +99,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
     content += " ";
     content += name;
-    content += " : ";
+    content += ": ";
     content += decl.getInfo();
     break;
   }
@@ -104,7 +157,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   }
   case DeclSymbol::Kind::CMD: {
     content += name;
-    content += "() : ";
+    content += "(): ";
     content += decl.getInfo();
     break;
   }
@@ -118,7 +171,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::ERROR_TYPE_DEF: {
     content += "typedef ";
     content += name;
-    content += " : ";
+    content += ": ";
     content += decl.getInfo();
     break;
   }

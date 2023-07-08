@@ -93,7 +93,7 @@ public:
     Value(Value &&v) noexcept : index_(v.index_), commitId_(v.commitId_) { v.index_ = 0; }
 
     ~Value() {
-      if (this->index_ > 0) {
+      if (*this) {
         delete this->handle_;
       }
     }
@@ -226,6 +226,19 @@ public:
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
+  /**
+   * instantiate native method handle from native method index
+   * normally unused (for method name completion)
+   * @param recv
+   * @param methodIndex
+   * must be valid method handle index of receiver type
+   * @return
+   * if failed, return null
+   * // FIXME: error reporting
+   */
+  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const DSType &recv,
+                                                        unsigned int methodIndex);
+
   bool hasMethod(const DSType &recvType, const std::string &methodName) const;
 
   const MethodMap &getMethodMap() const { return this->methodMap; }
@@ -321,18 +334,6 @@ private:
   void registerHandle(const BuiltinType &recv, const char *name, unsigned int index);
 
   void registerHandles(const BuiltinType &type);
-
-  /**
-   * instantiate native method handle from native method index
-   * @param recv
-   * @param methodIndex
-   * must be valid method handle index of receiver type
-   * @return
-   * if failed, return null
-   * // FIXME: error reporting
-   */
-  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const DSType &recv,
-                                                        unsigned int methodIndex);
 };
 
 } // namespace ydsh

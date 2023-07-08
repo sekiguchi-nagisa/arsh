@@ -21,6 +21,7 @@
 #include <misc/format.hpp>
 
 #include "analyzer.h"
+#include "symbol.h"
 
 namespace ydsh::lsp {
 
@@ -349,35 +350,85 @@ bool DiagnosticEmitter::exitModule() {
   return true;
 }
 
-static CompletionItemKind toItemKind(CompCandidateKind kind) {
-  switch (kind) {
-  case CompCandidateKind::VAR:
-  case CompCandidateKind::VAR_IN_CMD_ARG:
-    return CompletionItemKind::Variable;
-  case CompCandidateKind::FIELD:
-    return CompletionItemKind::Field;
-  case CompCandidateKind::METHOD:
-    return CompletionItemKind::Method;
-  case CompCandidateKind::KEYWORD:
-    return CompletionItemKind::Keyword;
-  case CompCandidateKind::TYPE:
-    return CompletionItemKind::Class;
-  default:
-    return CompletionItemKind::Text;
-  }
-}
-
 class CompletionItemCollector : public CompCandidateConsumer {
 private:
+  std::shared_ptr<TypePool> pool;
   std::vector<CompletionItem> items;
 
 public:
+  explicit CompletionItemCollector(std::shared_ptr<TypePool> pool) : pool(std::move(pool)) {}
+
+  static CompletionItemKind toItemKind(CompCandidateKind kind) {
+    switch (kind) {
+    case CompCandidateKind::VAR:
+    case CompCandidateKind::VAR_IN_CMD_ARG:
+      return CompletionItemKind::Variable;
+    case CompCandidateKind::FIELD:
+      return CompletionItemKind::Field;
+    case CompCandidateKind::METHOD:
+    case CompCandidateKind::UNINIT_METHOD:
+      return CompletionItemKind::Method;
+    case CompCandidateKind::KEYWORD:
+      return CompletionItemKind::Keyword;
+    case CompCandidateKind::TYPE:
+      return CompletionItemKind::Class;
+    default:
+      return CompletionItemKind::Text;
+    }
+  }
+
+  static Optional<CompletionItemLabelDetails> formatLabelDetail(TypePool &pool,
+                                                                const CompCandidate &candidate) {
+    const auto itemKind = toItemKind(candidate.kind);
+    if (itemKind == CompletionItemKind::Variable) {
+      auto &type = pool.get(candidate.getHandle()->getTypeId());
+      std::string value;
+      formatVarSignature(type, value);
+      return CompletionItemLabelDetails{
+          .detail = std::move(value),
+          .description = {},
+      };
+    } else if (itemKind == CompletionItemKind::Field) {
+      auto &info = candidate.getFieldInfo();
+      auto &recvType = pool.get(info.recvTypeId);
+      auto &type = pool.get(info.typeId);
+      std::string value;
+      formatFieldSignature(recvType, type, value);
+      return CompletionItemLabelDetails{
+          .detail = std::move(value),
+          .description = {},
+      };
+    } else if (itemKind == CompletionItemKind::Method) {
+      std::string signature;
+      if (candidate.kind == CompCandidateKind::UNINIT_METHOD) {
+        auto &info = candidate.getNativeMethodInfo();
+        auto &recvType = pool.get(info.typeId);
+        auto handle = pool.allocNativeMethodHandle(recvType, info.methodIndex);
+        if (!handle) {
+          return {}; // normally unreachable
+        }
+        formatMethodSignature(recvType, *handle, signature);
+      } else {
+        auto *hd = candidate.getHandle();
+        assert(hd);
+        assert(hd->isMethod());
+        formatMethodSignature(pool.get(hd->getTypeId()), *cast<MethodHandle>(hd), signature);
+      }
+      return CompletionItemLabelDetails{
+          .detail = std::move(signature),
+          .description = {},
+      };
+    }
+    return {};
+  }
+
   void operator()(const CompCandidate &candidate) override {
     if (candidate.value.empty()) {
       return;
     }
     this->items.push_back(CompletionItem{
         .label = candidate.quote(),
+        .labelDetails = formatLabelDetail(*this->pool, candidate),
         .kind = toItemKind(candidate.kind),
         .sortText = {},
         .priority = candidate.priority,
@@ -428,9 +479,9 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int o
                                                CmdCompKind ckind, bool cmdArgComp) {
   this->reset();
 
-  CompletionItemCollector collector;
   std::string workDir = toDirName(src.getPath());
   auto &ptr = this->addNew(src);
+  CompletionItemCollector collector(ptr->getPoolPtr());
   CodeCompleter codeCompleter(collector,
                               makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
                               this->sysConfig, ptr->getPool(), workDir);

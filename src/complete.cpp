@@ -393,8 +393,10 @@ void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdA
           priority += offset;
         }
         priority *= -1;
-        consumer(varName, inCmdArg ? CompCandidateKind::VAR_IN_CMD_ARG : CompCandidateKind::VAR,
-                 priority);
+        const auto kind = inCmdArg ? CompCandidateKind::VAR_IN_CMD_ARG : CompCandidateKind::VAR;
+        CompCandidate candidate(varName, kind, priority);
+        candidate.setHandle(handle);
+        consumer(candidate);
       }
     }
     if (cur->isFunc()) {
@@ -421,7 +423,9 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
                                                                    const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.isVisibleInMod(scope.modId, name)) {
-        consumer(name, CompCandidateKind::FIELD);
+        CompCandidate candidate(name, CompCandidateKind::FIELD, 0);
+        candidate.setFieldInfo(recvType, handle);
+        consumer(candidate);
       }
     }
     return true;
@@ -438,7 +442,9 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
           name = trimMethodFullNameSuffix(name);
-          consumer(name, CompCandidateKind::METHOD);
+          CompCandidate candidate(name, CompCandidateKind::METHOD, 0);
+          candidate.setHandle(handle);
+          consumer(candidate);
           break;
         }
       }
@@ -454,7 +460,15 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
     if (name.startsWith(word) && !isMagicMethodName(name)) {
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
-          consumer(name, CompCandidateKind::METHOD);
+          const auto init = static_cast<bool>(e.second);
+          const auto kind = init ? CompCandidateKind::METHOD : CompCandidateKind::UNINIT_METHOD;
+          CompCandidate candidate(name, kind, 0);
+          if (init) {
+            candidate.setHandle(*e.second.handle());
+          } else {
+            candidate.setNativeMethodInfo(type, e.second.index());
+          }
+          consumer(candidate);
           break;
         }
       }
@@ -726,7 +740,8 @@ public:
           !hasFlag(targetType, SuggestMemberType::FIELD)) {
         return;
       }
-      if (candidate.kind == CompCandidateKind::METHOD &&
+      if ((candidate.kind == CompCandidateKind::METHOD ||
+           candidate.kind == CompCandidateKind::UNINIT_METHOD) &&
           !hasFlag(targetType, SuggestMemberType::METHOD)) {
         return;
       }

@@ -35,7 +35,7 @@
 #    CHECK:   "result": {
 #    CHECK:     "contents": {
 #    CHECK:       "kind": "markdown",
-#    CHECK:       "value": "```ydsh\u000alet COMPREPLY : [String]\u000a```"
+#    CHECK:       "value": "```ydsh\u000alet COMPREPLY: [String]\u000a```"
 #    CHECK:     },
 #    CHECK:     "range": {
 #    CHECK:       "end": {

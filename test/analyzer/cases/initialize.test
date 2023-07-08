@@ -9,6 +9,9 @@
 # CHECK:   "result": {
 # CHECK:     "capabilities": {
 # CHECK:       "completionProvider": {
+# CHECK:         "completionItem": {
+# CHECK:           "labelDetailsSupport": true
+# CHECK:         },
 # CHECK:         "triggerCharacters": [
 # CHECK:           ".",
 # CHECK:           "$",

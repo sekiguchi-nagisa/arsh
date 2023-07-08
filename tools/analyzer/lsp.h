@@ -403,14 +403,25 @@ struct WorkDoneProgressOptions {
 };
 
 struct CompletionOptions : public WorkDoneProgressOptions {
+  struct CompletionItem {
+    bool labelDetailsSupport{true};
+
+    template <typename T>
+    void jsonify(T &t) {
+      JSONIFY(labelDetailsSupport);
+    }
+  };
+
   Optional<bool> resolveProvider; // optional
   std::vector<std::string> triggerCharacters;
+  CompletionItem completionItem;
 
   template <typename T>
   void jsonify(T &t) {
     WorkDoneProgressOptions::jsonify(t);
     JSONIFY(resolveProvider);
     JSONIFY(triggerCharacters);
+    JSONIFY(completionItem);
   }
 };
 
@@ -772,8 +783,20 @@ enum class CompletionItemKind : unsigned int {
   TypeParameter = 25,
 };
 
+struct CompletionItemLabelDetails {
+  Optional<std::string> detail;
+  Optional<std::string> description;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(detail);
+    JSONIFY(description);
+  }
+};
+
 struct CompletionItem {
   std::string label;
+  Optional<CompletionItemLabelDetails> labelDetails;
   CompletionItemKind kind;
   Optional<std::string> sortText;
   int priority; // dummy. not defined in lsp
@@ -781,6 +804,7 @@ struct CompletionItem {
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(label);
+    JSONIFY(labelDetails);
     JSONIFY(kind);
     JSONIFY(sortText);
   }

@@ -485,6 +485,7 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
     break;
   case CompCandidateKind::FIELD:
   case CompCandidateKind::METHOD:
+  case CompCandidateKind::UNINIT_METHOD:
     return false;
   case CompCandidateKind::KEYWORD:
     break;

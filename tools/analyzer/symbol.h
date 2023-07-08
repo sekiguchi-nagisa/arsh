@@ -20,10 +20,23 @@
 #include "index.h"
 #include "lsp.h"
 
+namespace ydsh {
+class DSType;
+class MethodHandle;
+} // namespace ydsh
+
 namespace ydsh::lsp {
 
 class SourceManager;
 class Source;
+
+std::string normalizeTypeName(const DSType &type);
+
+void formatVarSignature(const DSType &type, std::string &out);
+
+void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
+
+void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out);
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
                                  const DeclSymbol &decl, bool markup = true);

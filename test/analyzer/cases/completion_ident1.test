@@ -33,61 +33,97 @@
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "ZAA",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "00"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z10",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "01"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z9",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "02"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z8",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "03"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z7",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "04"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z6",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "05"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z5",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "06"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z4",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "07"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z3",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "08"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z2",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "09"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "Z1",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
 #    CHECK:       "sortText": "10"
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "ZA",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Bool"
+#    CHECK:       },
 #    CHECK:       "sortText": "11"
 #    CHECK:     }
 #    CHECK:   ]

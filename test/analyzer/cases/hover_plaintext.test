@@ -31,7 +31,7 @@
 #    CHECK:   "result": {
 #    CHECK:     "contents": {
 #    CHECK:       "kind": "plaintext",
-#    CHECK:       "value": "let COMPREPLY : [String]"
+#    CHECK:       "value": "let COMPREPLY: [String]"
 #    CHECK:     },
 #    CHECK:     "range": {
 #    CHECK:       "end": {
