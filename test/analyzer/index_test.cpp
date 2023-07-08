@@ -1270,7 +1270,7 @@ TEST_F(IndexTest, hoverBuiltin) {
                                       "```ydsh\nfunction size() : Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice(p0 : Int, p1 : Int?) : String for String\n```"));
+                  "```ydsh\nfunction slice(start : Int, stop : Int?) : String for String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {

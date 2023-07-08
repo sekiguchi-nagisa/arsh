@@ -120,7 +120,8 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
 
 NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &recvType,
                                            const std::string &name, const DSType &returnType,
-                                           const std::vector<const DSType *> &paramTypes) {
+                                           const std::vector<const DSType *> &paramTypes,
+                                           PackedParamNames &&packed) {
   if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType() ||
       recvType.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
@@ -132,9 +133,10 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
   const unsigned int index = this->getMaxGlobalVarIndex();
   std::unique_ptr<MethodHandle> handle;
   if (name == OP_INIT) {
-    handle = MethodHandle::create(recvType, index, paramTypes, this->modId);
+    handle = MethodHandle::create(recvType, index, paramTypes, std::move(packed), this->modId);
   } else {
-    handle = MethodHandle::create(recvType, index, returnType, paramTypes, this->modId);
+    handle = MethodHandle::create(recvType, index, returnType, paramTypes, std::move(packed),
+                                  this->modId);
   }
   return this->add(std::move(fullname), HandlePtr(handle.release()));
 }

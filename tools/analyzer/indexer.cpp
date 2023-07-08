@@ -17,6 +17,7 @@
 #include <regex>
 
 #include <cmd_desc.h>
+#include <misc/format.hpp>
 
 #include "indexer.h"
 #include "symbol.h"
@@ -205,6 +206,21 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
+static std::vector<StringRef> splitParamNames(const MethodHandle &handle) {
+  const unsigned int paramSize = handle.getParamSize();
+  std::vector<StringRef> params;
+  params.reserve(paramSize);
+  StringRef packed = handle.getPackedParamNames();
+  splitByDelim(packed, ';', [&params](StringRef p, bool) {
+    if (!p.empty()) {
+      params.push_back(p);
+    }
+    return true;
+  });
+  assert(paramSize == params.size());
+  return params;
+}
+
 static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
                                                     const Handle &handle) {
   if (handle.isMethod()) {
@@ -213,13 +229,13 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
      */
     auto &methodHandle = cast<MethodHandle>(handle);
     assert(methodHandle.isNative());
+    auto params = splitParamNames(methodHandle);
     std::string content = "(";
     for (unsigned int i = 0; i < methodHandle.getParamSize(); i++) {
       if (i > 0) {
         content += ", ";
       }
-      content += "p";
-      content += std::to_string(i);
+      content += params[i];
       content += " : ";
       content += normalizeTypeName(methodHandle.getParamTypeAt(i));
     }

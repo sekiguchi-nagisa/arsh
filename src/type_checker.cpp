@@ -1923,11 +1923,34 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   }
 }
 
+static PackedParamNames createPackedParamNames(const FunctionNode &node) {
+  const unsigned int size = node.getParamNodes().size();
+
+  // compute buffer size (due to suppress excessive memory allocation)
+  unsigned int reservingSize = 0;
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      reservingSize++;
+    }
+    reservingSize += static_cast<unsigned int>(node.getParamNodes()[i]->getVarName().size());
+  }
+  if (reservingSize) {
+    reservingSize++; // for sentinel
+  }
+
+  PackedParamNamesBuilder builder(reservingSize);
+  for (unsigned int i = 0; i < size; i++) {
+    builder.addParamName(node.getParamNodes()[i]->getVarName());
+  }
+  return std::move(builder).build();
+}
+
 void TypeChecker::registerFuncHandle(FunctionNode &node) {
   std::vector<const DSType *> paramTypes(node.getParamNodes().size());
   for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
     paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
   }
+  auto packed = createPackedParamNames(node);
 
   if (node.isMethod()) {
     auto &recvType = node.getRecvTypeNode()->getType();
@@ -1941,7 +1964,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
                                        recvType.getName());
     } else {
       auto ret = this->curScope->defineMethod(this->typePool(), recvType, node.getFuncName(),
-                                              node.getReturnTypeNode()->getType(), paramTypes);
+                                              node.getReturnTypeNode()->getType(), paramTypes,
+                                              std::move(packed));
       if (ret) {
         assert(ret.asOk()->isMethod());
         node.setHandle(std::move(ret).take());
@@ -1968,8 +1992,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
     }
   } else if (node.isConstructor()) {
     if (auto *type = node.getResolvedType(); type && type->isRecordType()) {
-      auto ret =
-          this->curScope->defineConstructor(this->typePool(), cast<RecordType>(*type), paramTypes);
+      auto ret = this->curScope->defineConstructor(this->typePool(), cast<RecordType>(*type),
+                                                   paramTypes, std::move(packed));
       assert(ret && ret.asOk()->isMethod());
       node.setHandle(std::move(ret).take());
     }

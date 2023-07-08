@@ -312,9 +312,16 @@ void Handle::destroy() {
   }
 }
 
+// ##########################
+// ##     MethodHandle     ##
+// ##########################
+
+MethodHandle::~MethodHandle() { free(this->packedParamNames); }
+
 std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
                                                    const DSType &ret,
                                                    const std::vector<const DSType *> &params,
+                                                   PackedParamNames &&packed,
                                                    unsigned short modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
@@ -323,7 +330,24 @@ std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned 
   for (size_t i = 0; i < paramSize; i++) {
     handle->paramTypes[i] = params[i];
   }
+  if (!handle->isNative()) {
+    /**
+     * normally not native, but in some situation (for method handle unpacking) will be native.
+     * native method handle never maintain ptr
+     */
+    handle->packedParamNames = packed.value.release();
+  }
   return std::unique_ptr<MethodHandle>(handle);
+}
+
+StringRef MethodHandle::getPackedParamNames() const {
+  StringRef ref;
+  if (this->isNative()) {
+    ref = nativeFuncInfoTable()[this->getIndex()].params;
+  } else {
+    ref = this->packedParamNames;
+  }
+  return ref;
 }
 
 } // namespace ydsh

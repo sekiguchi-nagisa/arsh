@@ -404,6 +404,34 @@ struct CallableTypes {
       : returnType(&ret), paramSize(size), paramTypes(params) {}
 };
 
+struct PackedParamNames {
+  CStrPtr value; // may be null (if no param)
+};
+
+class PackedParamNamesBuilder {
+private:
+  ByteBuffer buf;
+
+public:
+  explicit PackedParamNamesBuilder(unsigned int reservingSize) : buf(reservingSize) {}
+
+  void addParamName(StringRef name) {
+    if (!this->buf.empty()) {
+      this->buf += ';';
+    }
+    this->buf.append(name.data(), name.size());
+  }
+
+  PackedParamNames build() && {
+    PackedParamNames ret;
+    if (!this->buf.empty()) {
+      this->buf += '\0';
+      ret.value.reset(std::move(this->buf).take());
+    }
+    return ret;
+  }
+};
+
 class FunctionType : public DSType {
 private:
   static_assert(sizeof(DSType) <= 24);
@@ -822,6 +850,8 @@ private:
 
   friend class TypePool;
 
+  char *packedParamNames{nullptr}; // may be null (if native method handle, always null)
+
   const DSType &returnType;
 
   /**
@@ -847,6 +877,8 @@ private:
 public:
   NON_COPYABLE(MethodHandle);
 
+  ~MethodHandle();
+
   static void operator delete(void *ptr) noexcept { // NOLINT
     free(ptr);
   }
@@ -854,7 +886,7 @@ public:
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
                                               const DSType &ret,
                                               const std::vector<const DSType *> &params,
-                                              unsigned short modId);
+                                              PackedParamNames &&packed, unsigned short modId);
 
   /**
    * for constructor
@@ -866,8 +898,8 @@ public:
    */
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
                                               const std::vector<const DSType *> &params,
-                                              unsigned short modId) {
-    auto handle = create(recv, index, recv, params, modId);
+                                              PackedParamNames &&packed, unsigned short modId) {
+    auto handle = create(recv, index, recv, params, std::move(packed), modId);
     handle->kind = HandleKind::CONSTRUCTOR;
     return handle;
   }
@@ -889,6 +921,14 @@ public:
     return {this->returnType, this->getParamSize(),
             this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]};
   }
+
+  /**
+   * get packed parameter names like the following notation
+   *   `p1;p2'
+   * @return
+   * if no param, return empty string
+   */
+  StringRef getPackedParamNames() const;
 
   static bool classof(const Handle *handle) { return handle->isMethod(); }
 };

@@ -209,6 +209,14 @@ public:
     ASSERT_EQ(toString(orgAttr), toString(newAttr));
   }
 
+  static PackedParamNames packedParamNames(std::vector<std::string> &&names) {
+    PackedParamNamesBuilder builder(16);
+    for (auto &e : names) {
+      builder.addParamName(e);
+    }
+    return std::move(builder).build();
+  }
+
   template <typename Func>
   const ModType &loadMod(bool global, Func func) {
     return this->loadModAt(*this->orgCtx, global, std::move(func));
@@ -558,9 +566,11 @@ TEST_F(ArchiveTest, userdefined) {
     ASSERT_TRUE(ret2);
     {
       auto &recordType = cast<RecordType>(*ret.asOk());
-      auto ret3 = ctx.getScope()->defineConstructor(ctx.getPool(), recordType,
-                                                    {&ctx.getPool().get(TYPE::Int)});
+      auto ret3 = ctx.getScope()->defineConstructor(
+          ctx.getPool(), recordType, {&ctx.getPool().get(TYPE::Int), &ctx.getPool().get(TYPE::Int)},
+          packedParamNames({"_begin", "_end"}));
       ASSERT_TRUE(ret3);
+      ASSERT_EQ("_begin;_end", cast<MethodHandle>(*ret3.asOk()).getPackedParamNames().toString());
 
       std::unordered_map<std::string, HandlePtr> handles;
       handles.emplace(
@@ -621,8 +631,10 @@ TEST_F(ArchiveTest, userdefined) {
   auto *methodHandle = this->scope().lookupConstructor(this->pool(), *typeOrError);
   ASSERT_TRUE(methodHandle);
   ASSERT_TRUE(methodHandle->isConstructor());
-  ASSERT_EQ(1, methodHandle->getParamSize());
+  ASSERT_EQ(2, methodHandle->getParamSize());
   ASSERT_EQ(this->pool().get(TYPE::Int), methodHandle->getParamTypeAt(0));
+  ASSERT_EQ(this->pool().get(TYPE::Int), methodHandle->getParamTypeAt(1));
+  ASSERT_EQ("_begin;_end", methodHandle->getPackedParamNames().toString());
   ASSERT_EQ(*typeOrError, methodHandle->getReturnType());
   ASSERT_EQ(*typeOrError, this->pool().get(methodHandle->getRecvTypeId()));
   ASSERT_TRUE(methodHandle->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
@@ -650,16 +662,18 @@ TEST_F(ArchiveTest, method1) {
    * for named import
    */
   auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) {
-    auto ret =
-        ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum",
-                                     ctx.getPool().get(TYPE::Int), {&ctx.getPool().get(TYPE::Int)});
+    auto ret = ctx.getScope()->defineMethod(
+        ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
+        {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"right"}));
     ASSERT_TRUE(ret);
     ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_EQ("right", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
 
     ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
-                                       ctx.getPool().get(TYPE::Int), {});
+                                       ctx.getPool().get(TYPE::Int), {}, packedParamNames({}));
     ASSERT_TRUE(ret);
     ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_EQ("", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
   });
   (void)modType;
 
@@ -675,14 +689,15 @@ TEST_F(ArchiveTest, method2) {
    * for global import
    */
   auto &modType = this->loadMod(true, [&](AnalyzerContext &ctx) {
-    auto ret =
-        ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum",
-                                     ctx.getPool().get(TYPE::Int), {&ctx.getPool().get(TYPE::Int)});
+    auto ret = ctx.getScope()->defineMethod(
+        ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
+        {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"target"}));
     ASSERT_TRUE(ret);
     ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_EQ("target", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
 
     ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
-                                       ctx.getPool().get(TYPE::Int), {});
+                                       ctx.getPool().get(TYPE::Int), {}, packedParamNames({}));
     ASSERT_TRUE(ret);
     ASSERT_TRUE(ret.asOk()->isMethod());
   });

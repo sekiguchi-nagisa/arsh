@@ -173,6 +173,15 @@ private:
     this->pos += size;
     return this->data.substr(old, size);
   }
+
+  PackedParamNames readPackedParamNames() {
+    auto value = this->readStr();
+    PackedParamNames ret;
+    if (!value.empty()) {
+      ret.value.reset(strdup(value.c_str()));
+    }
+    return ret;
+  }
 };
 
 class ModuleArchive;

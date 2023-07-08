@@ -141,6 +141,11 @@ void Archiver::add(const std::string &name, const Handle &handle) {
     for (unsigned int i = 0; i < paramSize; i++) {
       this->add(methodHandle.getParamTypeAt(i));
     }
+    StringRef packed;
+    if (!methodHandle.isNative()) {
+      packed = methodHandle.getPackedParamNames();
+    }
+    this->writeStr(packed);
   } else {
     this->write8(0);
   }
@@ -178,12 +183,14 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
     for (unsigned int i = 0; i < famSize - 1; i++) {
       paramTypes.push_back(TRY(this->unpackType()));
     }
+    auto packedParamNames = this->readPackedParamNames();
     std::unique_ptr<MethodHandle> handle;
     if (kind == HandleKind::METHOD) {
-      handle = MethodHandle::create(*type, index, *returnType, paramTypes, modId);
+      handle = MethodHandle::create(*type, index, *returnType, paramTypes,
+                                    std::move(packedParamNames), modId);
     } else {
       assert(kind == HandleKind::CONSTRUCTOR);
-      handle = MethodHandle::create(*type, index, paramTypes, modId);
+      handle = MethodHandle::create(*type, index, paramTypes, std::move(packedParamNames), modId);
     }
     return {toMethodFullName(type->typeId(), name), HandlePtr(handle.release())};
   } else {

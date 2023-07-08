@@ -240,11 +240,13 @@ public:
 
   NameRegisterResult defineMethod(const TypePool &pool, const DSType &recvType,
                                   const std::string &name, const DSType &returnType,
-                                  const std::vector<const DSType *> &paramTypes);
+                                  const std::vector<const DSType *> &paramTypes,
+                                  PackedParamNames &&packed);
 
   NameRegisterResult defineConstructor(const TypePool &pool, const RecordType &recvType,
-                                       const std::vector<const DSType *> &paramTypes) {
-    return this->defineMethod(pool, recvType, OP_INIT, recvType, paramTypes);
+                                       const std::vector<const DSType *> &paramTypes,
+                                       PackedParamNames &&packed) {
+    return this->defineMethod(pool, recvType, OP_INIT, recvType, paramTypes, std::move(packed));
   }
 
   NameRegisterResult defineConst(std::string &&name, ConstEntry entry);
