@@ -531,6 +531,16 @@ private:
     this->errors.emplace_back(token, std::move(e));
   }
 
+  enum class ErrorSymbolKind {
+    VAR,
+    METHOD,
+    TYPE_ALIAS,
+    UDC,
+  };
+
+  void reportNameRegisterError(Token token, ErrorSymbolKind kind, NameRegisterError error,
+                               const std::string &symbolName, const char *extraArg = nullptr);
+
   void reportMethodLookupError(ApplyNode::Attr attr, const AccessNode &node);
 
   void reportTildeExpansionError(Token token, const std::string &path, TildeExpandStatus status);

@@ -106,7 +106,8 @@ DEFINE_TCError(NotCallable, "`%s' type expression is not callable, must be funct
 DEFINE_TCError(UselessBlock, "useless block");
 DEFINE_TCError(EmptyTry, "empty try block");
 DEFINE_TCError(LocalLimit, "number of local variables reaches limit");
-DEFINE_TCError(GlobalLimit, "number of global variables reaches limit");
+DEFINE_TCError(GlobalLimit,
+               "number of global symbols (variable, function, method, command) reaches limit");
 DEFINE_TCError(PipeLimit, "pipeline length reaches limit");
 DEFINE_TCError(ExpandLimit, "cannot expand too large path fragments");
 DEFINE_TCError(NullInPath, "found null characters in module path");

@@ -333,19 +333,7 @@ HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, cons
   }
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, kind, attribute);
   if (!ret) {
-    switch (ret.asErr()) {
-    case NameRegisterError::DEFINED:
-      this->reportError<DefinedSymbol>(token, symbolName.c_str());
-      break;
-    case NameRegisterError::LOCAL_LIMIT:
-      this->reportError<LocalLimit>(token);
-      break;
-    case NameRegisterError::GLOBAL_LIMIT:
-      this->reportError<GlobalLimit>(token);
-      break;
-    case NameRegisterError::INVALID_TYPE:
-      break; // normally unreachable
-    }
+    this->reportNameRegisterError(token, ErrorSymbolKind::VAR, ret.asErr(), symbolName);
     return nullptr;
   }
   if (shadowing) {
@@ -387,8 +375,9 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
       this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
   if (ret) {
     return std::move(ret).take();
-  } else if (ret.asErr() == NameRegisterError::DEFINED) {
-    this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
+  } else {
+    this->reportNameRegisterError(node.getToken(), ErrorSymbolKind::UDC, ret.asErr(),
+                                  node.getCmdName());
   }
   return nullptr;
 }
@@ -405,6 +394,39 @@ void TypeChecker::reportErrorImpl(TypeCheckError::Type errorType, Token token, c
   va_end(arg);
 
   this->errors.emplace_back(errorType, token, kind, CStrPtr(str));
+}
+
+void TypeChecker::reportNameRegisterError(Token token, ErrorSymbolKind kind,
+                                          NameRegisterError error, const std::string &symbolName,
+                                          const char *extraArg) {
+  switch (error) {
+  case NameRegisterError::DEFINED: {
+    switch (kind) {
+    case ErrorSymbolKind::VAR:
+      this->reportError<DefinedSymbol>(token, symbolName.c_str());
+      break;
+    case ErrorSymbolKind::METHOD:
+      assert(extraArg);
+      this->reportError<DefinedMethod>(token, symbolName.c_str(), extraArg);
+      break;
+    case ErrorSymbolKind::TYPE_ALIAS:
+      this->reportError<DefinedTypeAlias>(token, symbolName.c_str());
+      break;
+    case ErrorSymbolKind::UDC:
+      this->reportError<DefinedCmd>(token, symbolName.c_str());
+      break;
+    }
+    break;
+  }
+  case NameRegisterError::LOCAL_LIMIT:
+    this->reportError<LocalLimit>(token);
+    break;
+  case NameRegisterError::GLOBAL_LIMIT:
+    this->reportError<GlobalLimit>(token);
+    break;
+  case NameRegisterError::INVALID_TYPE:
+    break; // normally unreachable
+  }
 }
 
 void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::AccessNode &node) {
@@ -1120,7 +1142,8 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
         this->reportError<TypeAliasShadowing>(nameInfo.getToken(), nameInfo.getName().c_str());
       }
     } else {
-      this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
+      this->reportNameRegisterError(nameInfo.getToken(), ErrorSymbolKind::TYPE_ALIAS, ret.asErr(),
+                                    nameInfo.getName());
     }
     break;
   }
@@ -1138,7 +1161,8 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
       if (ret) {
         node.setHandle(ret.asOk());
       } else {
-        this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getName().c_str());
+        this->reportNameRegisterError(node.getNameInfo().getToken(), ErrorSymbolKind::TYPE_ALIAS,
+                                      ret.asErr(), node.getName());
       }
     } else {
       this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
@@ -1912,11 +1936,12 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   auto typeOrError = this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
   if (typeOrError) {
     auto &recordType = cast<RecordType>(*typeOrError.asOk());
-    if (this->curScope->defineTypeAlias(this->typePool(), node.getFuncName(), recordType)) {
+    if (auto ret =
+            this->curScope->defineTypeAlias(this->typePool(), node.getFuncName(), recordType)) {
       node.setResolvedType(recordType);
     } else {
-      this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(),
-                                          node.getFuncName().c_str());
+      this->reportNameRegisterError(node.getNameInfo().getToken(), ErrorSymbolKind::TYPE_ALIAS,
+                                    ret.asErr(), node.getFuncName());
     }
   } else {
     this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
@@ -1970,8 +1995,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
         assert(ret.asOk()->isMethod());
         node.setHandle(std::move(ret).take());
       } else {
-        this->reportError<DefinedMethod>(node.getNameInfo().getToken(), node.getFuncName().c_str(),
-                                         recvType.getName());
+        this->reportNameRegisterError(node.getNameInfo().getToken(), ErrorSymbolKind::METHOD,
+                                      ret.asErr(), node.getFuncName(), recvType.getName());
       }
     }
   } else if (node.getReturnTypeNode()) { // for named function
