@@ -17,6 +17,7 @@
 #ifndef YDSH_TYPE_H
 #define YDSH_TYPE_H
 
+#include <array>
 #include <cassert>
 #include <functional>
 #include <memory>
