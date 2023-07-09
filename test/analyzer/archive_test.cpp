@@ -666,13 +666,13 @@ TEST_F(ArchiveTest, method1) {
         ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
         {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"right"}));
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_TRUE(ret.asOk()->isMethodHandle());
     ASSERT_EQ("right", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
 
     ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
                                        ctx.getPool().get(TYPE::Int), {}, packedParamNames({}));
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_TRUE(ret.asOk()->isMethodHandle());
     ASSERT_EQ("", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
   });
   (void)modType;
@@ -693,19 +693,19 @@ TEST_F(ArchiveTest, method2) {
         ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
         {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"target"}));
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_TRUE(ret.asOk()->isMethodHandle());
     ASSERT_EQ("target", cast<MethodHandle>(*ret.asOk()).getPackedParamNames().toString());
 
     ret = ctx.getScope()->defineMethod(ctx.getPool(), ctx.getPool().get(TYPE::Int), "_value",
                                        ctx.getPool().get(TYPE::Int), {}, packedParamNames({}));
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(ret.asOk()->isMethod());
+    ASSERT_TRUE(ret.asOk()->isMethodHandle());
   });
   (void)modType;
 
   auto method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
   ASSERT_TRUE(method);
-  ASSERT_TRUE(method->isMethod());
+  ASSERT_TRUE(method->isMethodHandle());
   ASSERT_EQ(1, method->getParamSize());
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
   ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(method->getRecvTypeId()));

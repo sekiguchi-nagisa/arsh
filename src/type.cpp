@@ -305,7 +305,7 @@ std::string toString(HandleAttr attr) {
 }
 
 void Handle::destroy() {
-  if (this->famSize()) {
+  if (isa<MethodHandle>(this)) {
     delete cast<MethodHandle>(this);
   } else {
     delete this;
@@ -319,14 +319,16 @@ void Handle::destroy() {
 MethodHandle::~MethodHandle() { free(this->packedParamNames); }
 
 std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
-                                                   const DSType &ret,
+                                                   const DSType *ret,
                                                    const std::vector<const DSType *> &params,
                                                    PackedParamNames &&packed,
                                                    unsigned short modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-  auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, modId, HandleKind::METHOD);
+  const auto &actualRet = ret ? *ret : recv;
+  auto *handle = new (ptr) MethodHandle(recv, index, actualRet, paramSize, modId,
+                                        ret ? HandleKind::METHOD : HandleKind::CONSTRUCTOR);
   for (size_t i = 0; i < paramSize; i++) {
     handle->paramTypes[i] = params[i];
   }

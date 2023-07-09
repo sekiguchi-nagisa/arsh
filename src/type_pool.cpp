@@ -309,7 +309,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
                                          std::unordered_map<std::string, HandlePtr> &&handles) {
   unsigned int fieldCount = 0;
   for (auto &e : handles) {
-    if (!e.second->isMethod() && !e.second->is(HandleKind::TYPE_ALIAS)) {
+    if (!e.second->isMethodHandle() && !e.second->is(HandleKind::TYPE_ALIAS)) {
       fieldCount++;
       auto &type = this->get(e.second->getTypeId());
       if (type.isVoidType() || type.isNothingType() || type.isUnresolved()) {
@@ -451,7 +451,6 @@ TypeOrError TypeDecoder::decode() {
   case HandleInfo::P_N5:
   case HandleInfo::P_N6:
   case HandleInfo::P_N7:
-  case HandleInfo::P_N8:
     fatal("must be type\n");
   case HandleInfo::T0:
     return Ok(this->types[0]);
@@ -507,14 +506,16 @@ std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const DSType &re
   auto *returnType = TRY2(decoder.decode()); // init return type
   const unsigned int paramSize = decoder.decodeNum();
   assert(paramSize > 0);
+  const unsigned int actualParamSize = paramSize - 1;
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  auto handle = MethodHandle::createNative(*recvType, methodIndex, *returnType, paramSize - 1);
-  for (unsigned int i = 1; i < paramSize; i++) { // init param types
-    handle->paramTypes[i - 1] = TRY2(decoder.decode());
+  std::array<const DSType *, HandleInfoParamNumMax()> paramTypes{};
+  assert(actualParamSize < paramTypes.size());
+  for (unsigned int i = 0; i < actualParamSize; i++) {
+    paramTypes[i] = TRY2(decoder.decode());
   }
-  return handle;
+  return MethodHandle::native(*recvType, methodIndex, *returnType, actualParamSize, paramTypes);
 }
 
 const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {

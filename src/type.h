@@ -293,7 +293,7 @@ class NameScope;
  * represent for class field or variable. field type may be function type.
  */
 class Handle {
-protected:
+private:
   friend class NameScope;
   friend struct HandleRefCountOp;
 
@@ -303,9 +303,9 @@ protected:
    * |   24bit  |         8bit       |
    * |  TypeID  |  param size + recv |
    */
-  unsigned int tag{0};
+  const unsigned int tag{0};
 
-  unsigned int index;
+  const unsigned int index;
 
   HandleKind kind;
 
@@ -314,7 +314,7 @@ protected:
   /**
    * if global module, id is 0.
    */
-  unsigned short modId;
+  const unsigned short modId;
 
 protected:
   Handle(unsigned char fmaSize, unsigned int typeId, unsigned int index, HandleKind kind,
@@ -334,9 +334,10 @@ public:
 
   unsigned int getTypeId() const { return this->tag >> 8; }
 
-  bool isMethod() const { return this->famSize() > 0; }
-
-  bool isConstructor() const { return this->isMethod() && this->kind == HandleKind::CONSTRUCTOR; }
+  bool isMethodHandle() const {
+    return this->famSize() > 0 && (this->is(HandleKind::NATIVE) || this->is(HandleKind::METHOD) ||
+                                   this->is(HandleKind::CONSTRUCTOR));
+  }
 
   unsigned int getIndex() const { return this->index; }
 
@@ -848,8 +849,6 @@ class MethodHandle : public Handle {
 private:
   static_assert(sizeof(Handle) == 16);
 
-  friend class TypePool;
-
   char *packedParamNames{nullptr}; // may be null (if native method handle, always null)
 
   const DSType &returnType;
@@ -867,12 +866,21 @@ private:
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
-  static std::unique_ptr<MethodHandle> createNative(const DSType &recv, unsigned int index,
-                                                    const DSType &ret, unsigned char paramSize) {
-    void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
-    return std::unique_ptr<MethodHandle>(handle);
-  }
+  /**
+   * create user-defined method or constructor handle
+   * @param recv
+   * @param index
+   * @param ret
+   * if null, indicate constructor
+   * @param params
+   * @param packed
+   * @param modId
+   * @return
+   */
+  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+                                              const DSType *ret,
+                                              const std::vector<const DSType *> &params,
+                                              PackedParamNames &&packed, unsigned short modId);
 
 public:
   NON_COPYABLE(MethodHandle);
@@ -883,10 +891,23 @@ public:
     free(ptr);
   }
 
-  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
+  static std::unique_ptr<MethodHandle>
+  native(const DSType &recv, unsigned int index, const DSType &ret, unsigned char paramSize,
+         const std::array<const DSType *, HandleInfoParamNumMax()> &paramTypes) {
+    void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
+    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
+    for (unsigned int i = 0; i < static_cast<unsigned int>(paramSize); i++) {
+      handle->paramTypes[i] = paramTypes[i];
+    }
+    return std::unique_ptr<MethodHandle>(handle);
+  }
+
+  static std::unique_ptr<MethodHandle> method(const DSType &recv, unsigned int index,
                                               const DSType &ret,
                                               const std::vector<const DSType *> &params,
-                                              PackedParamNames &&packed, unsigned short modId);
+                                              PackedParamNames &&packed, unsigned short modId) {
+    return create(recv, index, &ret, params, std::move(packed), modId);
+  }
 
   /**
    * for constructor
@@ -896,12 +917,11 @@ public:
    * @param modId
    * @return
    */
-  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
-                                              const std::vector<const DSType *> &params,
-                                              PackedParamNames &&packed, unsigned short modId) {
-    auto handle = create(recv, index, recv, params, std::move(packed), modId);
-    handle->kind = HandleKind::CONSTRUCTOR;
-    return handle;
+  static std::unique_ptr<MethodHandle> constructor(const DSType &recv, unsigned int index,
+                                                   const std::vector<const DSType *> &params,
+                                                   PackedParamNames &&packed,
+                                                   unsigned short modId) {
+    return create(recv, index, nullptr, params, std::move(packed), modId);
   }
 
   const DSType &getReturnType() const { return this->returnType; }
@@ -917,6 +937,8 @@ public:
 
   bool isNative() const { return this->is(HandleKind::NATIVE); }
 
+  bool isConstructor() const { return this->is(HandleKind::CONSTRUCTOR); }
+
   CallableTypes toCallableTypes() const {
     return {this->returnType, this->getParamSize(),
             this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]};
@@ -930,7 +952,7 @@ public:
    */
   StringRef getPackedParamNames() const;
 
-  static bool classof(const Handle *handle) { return handle->isMethod(); }
+  static bool classof(const Handle *handle) { return handle->isMethodHandle(); }
 };
 
 } // namespace ydsh

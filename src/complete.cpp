@@ -434,7 +434,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
 
   // complete user-defined method
   scope.walk([&](StringRef name, const Handle &handle) {
-    if (!handle.isMethod()) {
+    if (!handle.isMethodHandle()) {
       return true;
     }
     auto &type = pool.get(cast<MethodHandle>(handle).getRecvTypeId());

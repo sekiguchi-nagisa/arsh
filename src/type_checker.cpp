@@ -1992,7 +1992,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
                                               node.getReturnTypeNode()->getType(), paramTypes,
                                               std::move(packed));
       if (ret) {
-        assert(ret.asOk()->isMethod());
+        assert(ret.asOk()->isMethodHandle());
         node.setHandle(std::move(ret).take());
       } else {
         this->reportNameRegisterError(node.getNameInfo().getToken(), ErrorSymbolKind::METHOD,
@@ -2019,7 +2019,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
     if (auto *type = node.getResolvedType(); type && type->isRecordType()) {
       auto ret = this->curScope->defineConstructor(this->typePool(), cast<RecordType>(*type),
                                                    paramTypes, std::move(packed));
-      assert(ret && ret.asOk()->isMethod());
+      assert(ret && ret.asOk()->isMethodHandle());
       node.setHandle(std::move(ret).take());
     }
   }
@@ -2126,7 +2126,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   std::unordered_map<std::string, HandlePtr> handles;
   for (auto &e : this->curScope->getHandles()) {
     auto handle = e.second.first;
-    if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethod()) {
+    if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethodHandle()) {
       if (handle->getIndex() < offset) {
         continue;
       }

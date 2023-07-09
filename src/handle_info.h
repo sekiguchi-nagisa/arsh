@@ -76,18 +76,25 @@ namespace ydsh {
 
 /*
  * encoded type definition
- * ex. function hoge(a : Int, b = "re", c : Boolean, d = 2.3) : Int
+ * ex. function hoge(a : Int, b : String, c : Boolean, d : Float) : Int
  * --> INT_T P_N4 INT_T STRING_T BOOL_T FLOAT_T
- *     defaultValueFlag (00001010)
  * ex. constructor(a : Array<Int>, b : T1)
  * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1
- *     defaultValueFlag (00000000)
  */
 enum class HandleInfo : char {
 #define GEN_ENUM(ENUM) ENUM,
   EACH_HANDLE_INFO(GEN_ENUM)
 #undef GEN_ENUM
 };
+
+constexpr unsigned int HandleInfoParamNumMax() {
+  constexpr char table[] = {
+#define GEN_TABLE(E) 1,
+      EACH_HANDLE_INFO_NUM(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return std::size(table) - 1;
+}
 
 /**
  * for method handle creation.

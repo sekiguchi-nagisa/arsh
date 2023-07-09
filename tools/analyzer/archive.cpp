@@ -120,7 +120,7 @@ void Archiver::add(const DSType &type) {
 
 void Archiver::add(const std::string &name, const Handle &handle) {
   StringRef ref = name;
-  if (handle.isMethod()) {
+  if (handle.isMethodHandle()) {
     assert(isMethodFullName(ref));
     ref = trimMethodFullNameSuffix(ref);
   }
@@ -133,7 +133,7 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   this->write16(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
-  if (handle.isMethod()) {
+  if (handle.isMethodHandle()) {
     auto &methodHandle = cast<MethodHandle>(handle);
     const auto paramSize = methodHandle.getParamSize();
     this->write8(paramSize + 1);
@@ -186,11 +186,12 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
     auto packedParamNames = this->readPackedParamNames();
     std::unique_ptr<MethodHandle> handle;
     if (kind == HandleKind::METHOD) {
-      handle = MethodHandle::create(*type, index, *returnType, paramTypes,
+      handle = MethodHandle::method(*type, index, *returnType, paramTypes,
                                     std::move(packedParamNames), modId);
     } else {
       assert(kind == HandleKind::CONSTRUCTOR);
-      handle = MethodHandle::create(*type, index, paramTypes, std::move(packedParamNames), modId);
+      handle =
+          MethodHandle::constructor(*type, index, paramTypes, std::move(packedParamNames), modId);
     }
     return {toMethodFullName(type->typeId(), name), HandlePtr(handle.release())};
   } else {

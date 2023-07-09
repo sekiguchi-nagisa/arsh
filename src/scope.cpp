@@ -133,9 +133,9 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
   const unsigned int index = this->getMaxGlobalVarIndex();
   std::unique_ptr<MethodHandle> handle;
   if (name == OP_INIT) {
-    handle = MethodHandle::create(recvType, index, paramTypes, std::move(packed), this->modId);
+    handle = MethodHandle::constructor(recvType, index, paramTypes, std::move(packed), this->modId);
   } else {
-    handle = MethodHandle::create(recvType, index, returnType, paramTypes, std::move(packed),
+    handle = MethodHandle::method(recvType, index, returnType, paramTypes, std::move(packed),
                                   this->modId);
   }
   return this->add(std::move(fullname), HandlePtr(handle.release()));
@@ -171,7 +171,7 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
 }
 
 static bool isSameModuleMethod(const TypePool &pool, const Handle &handle) {
-  if (!handle.isMethod()) {
+  if (!handle.isMethodHandle()) {
     return false;
   }
   auto &methodHandle = cast<MethodHandle>(handle);
@@ -197,7 +197,7 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   // import actual handles
   for (auto &e : type.getHandleMap()) {
     assert(this->modId != e.second->getModId());
-    if (!global && !e.second->isConstructor() && !isSameModuleMethod(pool, *e.second)) {
+    if (!global && !e.second->is(HandleKind::CONSTRUCTOR) && !isSameModuleMethod(pool, *e.second)) {
       /**
        * in named import, does not import handles except for the following
        *   * constructor
@@ -360,7 +360,7 @@ const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvTy
   for (const DSType *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
     if (auto handle = scope->find(name)) {
-      assert(handle->isMethod());
+      assert(handle->isMethodHandle());
       if (handle->isVisibleInMod(this->modId, methodName)) {
         return cast<MethodHandle>(handle.get());
       }
@@ -402,7 +402,7 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
   auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, commitId));
   if (!pair.second) {
     if (hasFlag(op, NameRegisterOp::IGNORE_CONFLICT) && pair.first->second.first == handle &&
-        handle->isMethod()) {
+        handle->isMethodHandle()) {
       return Ok(std::move(handle));
     }
     return Err(NameRegisterError::DEFINED);

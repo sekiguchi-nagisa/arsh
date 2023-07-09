@@ -411,7 +411,7 @@ public:
       } else {
         auto *hd = candidate.getHandle();
         assert(hd);
-        assert(hd->isMethod());
+        assert(hd->isMethodHandle());
         formatMethodSignature(pool.get(hd->getTypeId()), *cast<MethodHandle>(hd), signature);
       }
       return CompletionItemLabelDetails{

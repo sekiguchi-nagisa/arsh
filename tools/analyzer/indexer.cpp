@@ -45,7 +45,7 @@ static bool isTupleOrBuiltinMethod(const std::string &mangledName, DeclSymbol::K
   if (handle.getModId() != 0) {
     return false;
   }
-  if (handle.isMethod()) {
+  if (handle.isMethodHandle()) {
     return cast<MethodHandle>(handle).isNative();
   } else if (kind == DeclSymbol::Kind::VAR && mangledName.size() > 1) {
     return DeclSymbol::mayBeMemberName(mangledName); // tuple field
@@ -200,7 +200,7 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
 
 static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
                                                     const Handle &handle) {
-  if (handle.isMethod()) { // for builtin method
+  if (handle.isMethodHandle()) { // for builtin method
     auto &methodHandle = cast<MethodHandle>(handle);
     assert(methodHandle.isNative());
     std::string content;
@@ -222,7 +222,7 @@ static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const 
 bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                              const Handle &handle, Token token) {
   const DSType *actualRecv = &recv;
-  if (recv.isModType() && !handle.isMethod()) {
+  if (recv.isModType() && !handle.isMethodHandle()) {
     actualRecv = nullptr;
   }
 
