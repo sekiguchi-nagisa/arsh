@@ -226,10 +226,26 @@ public:
   }
 
   // for name registration
+
+  /**
+   * for variable or user-defined command registration
+   * @param name
+   * @param type
+   * @param attr
+   * @return
+   */
   NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr) {
     return this->defineHandle(std::move(name), type, HandleKind::VAR, attr);
   }
 
+  /**
+   * for variable or user-defined command registration
+   * @param name
+   * @param type
+   * @param kind
+   * @param attr
+   * @return
+   */
   NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleKind kind,
                                   HandleAttr attr);
 
@@ -237,6 +253,9 @@ public:
 
   NameRegisterResult defineTypeAlias(const TypePool &pool, const std::string &name,
                                      const DSType &type);
+
+  NameRegisterResult defineNamedFunction(const std::string &name, const FunctionType &funcType,
+                                         PackedParamNames &&packed);
 
   NameRegisterResult defineMethod(const TypePool &pool, const DSType &recvType,
                                   const std::string &name, const DSType &returnType,

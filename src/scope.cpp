@@ -118,6 +118,20 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
       HandlePtr::create(type, 0, HandleKind::TYPE_ALIAS, HandleAttr{}, this->modId));
 }
 
+NameRegisterResult NameScope::defineNamedFunction(const std::string &name,
+                                                  const FunctionType &funcType,
+                                                  PackedParamNames &&packed) {
+  if (!this->isGlobal()) {
+    return Err(NameRegisterError::INVALID_TYPE); // normally unreachable
+  }
+  if (definedInBuiltin(*this, name)) {
+    return Err(NameRegisterError::DEFINED);
+  }
+  const unsigned int index = this->getMaxGlobalVarIndex();
+  auto handle = FuncHandle::create(funcType, index, std::move(packed), this->modId);
+  return this->add(std::string(name), HandlePtr(handle.release()));
+}
+
 NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &recvType,
                                            const std::string &name, const DSType &returnType,
                                            const std::vector<const DSType *> &paramTypes,

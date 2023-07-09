@@ -2007,9 +2007,14 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
       node.setResolvedType(funcType);
       if (!node.isAnonymousFunc()) {
-        auto handle = this->addEntry(node.getNameInfo(), funcType, HandleAttr::READ_ONLY);
-        if (handle) {
-          node.setHandle(std::move(handle));
+        auto &nameInfo = node.getNameInfo();
+        auto ret =
+            this->curScope->defineNamedFunction(nameInfo.getName(), funcType, std::move(packed));
+        if (ret) {
+          node.setHandle(std::move(ret).take());
+        } else {
+          this->reportNameRegisterError(nameInfo.getToken(), ErrorSymbolKind::VAR, ret.asErr(),
+                                        nameInfo.getName());
         }
       }
     } else {

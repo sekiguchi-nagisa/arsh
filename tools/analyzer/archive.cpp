@@ -119,6 +119,7 @@ void Archiver::add(const DSType &type) {
 }
 
 void Archiver::add(const std::string &name, const Handle &handle) {
+  assert(!handle.is(HandleKind::NATIVE));
   StringRef ref = name;
   if (handle.isMethodHandle()) {
     assert(isMethodFullName(ref));
@@ -141,13 +142,12 @@ void Archiver::add(const std::string &name, const Handle &handle) {
     for (unsigned int i = 0; i < paramSize; i++) {
       this->add(methodHandle.getParamTypeAt(i));
     }
-    StringRef packed;
-    if (!methodHandle.isNative()) {
-      packed = methodHandle.getPackedParamNames();
-    }
-    this->writeStr(packed);
+    this->writeStr(methodHandle.getPackedParamNames());
   } else {
     this->write8(0);
+    if (handle.isFuncHandle()) {
+      this->writeStr(cast<FuncHandle>(handle).getPackedParamNames());
+    }
   }
 }
 
@@ -194,6 +194,11 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
           MethodHandle::constructor(*type, index, paramTypes, std::move(packedParamNames), modId);
     }
     return {toMethodFullName(type->typeId(), name), HandlePtr(handle.release())};
+  } else if (kind == HandleKind::FUNC) {
+    assert(type->isFuncType());
+    auto packed = this->readPackedParamNames();
+    auto handle = FuncHandle::create(cast<FunctionType>(*type), index, std::move(packed), modId);
+    return {std::move(name), HandlePtr(handle.release())};
   } else {
     return {std::move(name), HandlePtr::create(*type, index, kind, attr, modId)};
   }

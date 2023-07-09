@@ -178,7 +178,7 @@ private:
     auto value = this->readStr();
     PackedParamNames ret;
     if (!value.empty()) {
-      ret.value.reset(strdup(value.c_str()));
+      ret = PackedParamNames(value);
     }
     return ret;
   }

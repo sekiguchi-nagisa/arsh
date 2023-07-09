@@ -1143,7 +1143,7 @@ nodes:
     maxVarNum: 2
     handle:
       index: 44
-      kind: "VAR"
+      kind: "FUNC"
       attribute: "READ_ONLY | GLOBAL"
     resolvedType: "(Int, Int) -> Void"
 )"},
@@ -1236,7 +1236,7 @@ nodes:
                 varName: "gg"
                 handle:
                   index: 45
-                  kind: "VAR"
+                  kind: "FUNC"
                   attribute: "READ_ONLY | GLOBAL"
                 extraOp: "NONE"
                 extraValue: 0
@@ -1272,7 +1272,7 @@ nodes:
         maxVarNum: 0
         handle:
           index: 44
-          kind: "VAR"
+          kind: "FUNC"
           attribute: "READ_ONLY | GLOBAL"
         resolvedType: "() -> Void"
       - nodeKind: Function
@@ -1326,7 +1326,7 @@ nodes:
         maxVarNum: 0
         handle:
           index: 45
-          kind: "VAR"
+          kind: "FUNC"
           attribute: "READ_ONLY | GLOBAL"
         resolvedType: "() -> Void"
 )"},

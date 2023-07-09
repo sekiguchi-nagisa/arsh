@@ -305,7 +305,9 @@ std::string toString(HandleAttr attr) {
 }
 
 void Handle::destroy() {
-  if (isa<MethodHandle>(this)) {
+  if (isa<FuncHandle>(this)) {
+    delete cast<FuncHandle>(this);
+  } else if (isa<MethodHandle>(this)) {
     delete cast<MethodHandle>(this);
   } else {
     delete this;
@@ -337,7 +339,7 @@ std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned 
      * normally not native, but in some situation (for method handle unpacking) will be native.
      * native method handle never maintain ptr
      */
-    handle->packedParamNames = packed.value.release();
+    handle->packedParamNames = packed.take();
   }
   return std::unique_ptr<MethodHandle>(handle);
 }

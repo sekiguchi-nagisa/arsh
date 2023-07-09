@@ -657,6 +657,65 @@ TEST_F(ArchiveTest, userdefined) {
   ASSERT_FALSE(lookup); // module private member is not found
 }
 
+TEST_F(ArchiveTest, function) {
+  /**
+   * for named import
+   */
+  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) {
+    // no args
+    auto typeOrError = ctx.getPool().createFuncType(ctx.getPool().get(TYPE::Int), {});
+    ASSERT_TRUE(typeOrError);
+    auto ret = ctx.getScope()->defineNamedFunction("get", cast<FunctionType>(*typeOrError.asOk()),
+                                                   packedParamNames({}));
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isFuncHandle());
+    ASSERT_TRUE(ret.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+    ASSERT_EQ("", cast<FuncHandle>(*ret.asOk()).getPackedParamNames().toString());
+
+    // one arg
+    typeOrError =
+        ctx.getPool().createFuncType(ctx.getPool().get(TYPE::Int), {&ctx.getPool().get(TYPE::Int)});
+    ASSERT_TRUE(typeOrError);
+    ret = ctx.getScope()->defineNamedFunction("inc", cast<FunctionType>(*typeOrError.asOk()),
+                                              packedParamNames({"value"}));
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isFuncHandle());
+    ASSERT_TRUE(ret.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+    ASSERT_EQ("value", cast<FuncHandle>(*ret.asOk()).getPackedParamNames().toString());
+
+    // tow arg
+    typeOrError = ctx.getPool().createFuncType(
+        ctx.getPool().get(TYPE::String),
+        {&ctx.getPool().get(TYPE::Int), &ctx.getPool().get(TYPE::Float)});
+    ASSERT_TRUE(typeOrError);
+    ret = ctx.getScope()->defineNamedFunction("compute", cast<FunctionType>(*typeOrError.asOk()),
+                                              packedParamNames({"left", "right"}));
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.asOk()->isFuncHandle());
+    ASSERT_TRUE(ret.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+    ASSERT_EQ("left;right", cast<FuncHandle>(*ret.asOk()).getPackedParamNames().toString());
+  });
+  (void)modType;
+
+  auto handle = this->scope().lookupField(this->pool(), modType, "get");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(handle.asOk()->isFuncHandle());
+  ASSERT_TRUE(handle.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+  ASSERT_EQ("", cast<FuncHandle>(*handle.asOk()).getPackedParamNames().toString());
+
+  handle = this->scope().lookupField(this->pool(), modType, "inc");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(handle.asOk()->isFuncHandle());
+  ASSERT_TRUE(handle.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+  ASSERT_EQ("value", cast<FuncHandle>(*handle.asOk()).getPackedParamNames().toString());
+
+  handle = this->scope().lookupField(this->pool(), modType, "compute");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(handle.asOk()->isFuncHandle());
+  ASSERT_TRUE(handle.asOk()->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
+  ASSERT_EQ("left;right", cast<FuncHandle>(*handle.asOk()).getPackedParamNames().toString());
+}
+
 TEST_F(ArchiveTest, method1) {
   /**
    * for named import
@@ -710,6 +769,7 @@ TEST_F(ArchiveTest, method2) {
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
   ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(method->getRecvTypeId()));
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
+  ASSERT_EQ("target", method->getPackedParamNames().toString());
 
   method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
   ASSERT_FALSE(method);

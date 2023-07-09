@@ -250,6 +250,7 @@ public:
 #define EACH_HANDLE_KIND(OP)                                                                       \
   OP(VAR)         /* other variable except for bellow */                                           \
   OP(ENV)         /* environmental variable */                                                     \
+  OP(FUNC)        /* function */                                                                   \
   OP(TYPE_ALIAS)  /* type alias */                                                                 \
   OP(NATIVE)      /* native method */                                                              \
   OP(METHOD)      /* user-defined method */                                                        \
@@ -334,6 +335,8 @@ public:
 
   unsigned int getTypeId() const { return this->tag >> 8; }
 
+  bool isFuncHandle() const { return this->famSize() > 0 && this->is(HandleKind::FUNC); }
+
   bool isMethodHandle() const {
     return this->famSize() > 0 && (this->is(HandleKind::NATIVE) || this->is(HandleKind::METHOD) ||
                                    this->is(HandleKind::CONSTRUCTOR));
@@ -405,8 +408,26 @@ struct CallableTypes {
       : returnType(&ret), paramSize(size), paramTypes(params) {}
 };
 
-struct PackedParamNames {
+class PackedParamNames {
+private:
   CStrPtr value; // may be null (if no param)
+  size_t len{0}; // not include sentinel (equivalent to strlen(value.get()))
+
+public:
+  PackedParamNames() = default;
+
+  PackedParamNames(char *ptr, size_t len) : value(ptr), len(len) {}
+
+  explicit PackedParamNames(const std::string &v) : value(strdup(v.c_str())), len(v.size()) {}
+
+  size_t getLen() const { return this->len; }
+
+  const char *getValue() const { return this->value.get(); }
+
+  char *take() {
+    this->len = 0;
+    return this->value.release();
+  }
 };
 
 class PackedParamNamesBuilder {
@@ -426,8 +447,9 @@ public:
   PackedParamNames build() && {
     PackedParamNames ret;
     if (!this->buf.empty()) {
+      auto len = this->buf.size();
       this->buf += '\0';
-      ret.value.reset(std::move(this->buf).take());
+      ret = PackedParamNames(std::move(this->buf).take(), len);
     }
     return ret;
   }
@@ -843,6 +865,56 @@ public:
   native_type_info_t getInfo() const { return this->info; }
 
   const std::vector<const DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
+};
+
+class FuncHandle : public Handle {
+private:
+  static_assert(sizeof(Handle) == 16);
+
+  char packedParamNames[];
+
+  FuncHandle(const FunctionType &funcType, unsigned int index, PackedParamNames &&packed,
+             unsigned short modId)
+      : Handle((funcType.getParamSize() ? 1 : 0) + 1, funcType.typeId(), index, HandleKind::FUNC,
+               HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId) {
+    if (packed.getLen()) {
+      const char *ptr = packed.getValue();
+      const auto len = packed.getLen();
+      memcpy(this->packedParamNames, ptr, len);
+      this->packedParamNames[len] = '\0';
+    }
+  }
+
+public:
+  NON_COPYABLE(FuncHandle);
+
+  static std::unique_ptr<FuncHandle> create(const FunctionType &funcType, unsigned int index,
+                                            PackedParamNames &&packed, unsigned short modId) {
+    unsigned int famSize = packed.getLen();
+    if (famSize) {
+      famSize++; // reserve sentinel
+    }
+    void *ptr = malloc(sizeof(FuncHandle) + sizeof(char) * famSize);
+    auto *handle = new (ptr) FuncHandle(funcType, index, std::move(packed), modId);
+    return std::unique_ptr<FuncHandle>(handle);
+  }
+
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
+
+  StringRef getPackedParamNames() const {
+    StringRef ref;
+    if (this->hasParams()) {
+      ref = this->packedParamNames;
+    }
+    return ref;
+  }
+
+  static bool classof(const Handle *handle) { return handle->isFuncHandle(); }
+
+private:
+  bool hasParams() const { return this->famSize() - 1 > 0; }
 };
 
 class MethodHandle : public Handle {
