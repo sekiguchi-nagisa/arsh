@@ -21,7 +21,7 @@
 
 #### LSP
 
-- ``textDocument/completion`` shows variable/field/method type signature
+- ``textDocument/completion`` shows variable/function/field/method type signature
 
 ## [0.30.0] - 2023-07-01
 

@@ -129,7 +129,56 @@
 #    CHECK:   ]
 
 <<<
-{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+    "text": "function Z0(): Int {return 0;}; function Z1(ss:String): String{return $a;}; function Z2(aA:Float,b:Float){}\n$Z"
+    }
+ }
+}
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
+    "textDocument": { "uri": "file:///test/test2.ds" }
+  }
+}
+
+# complete func name
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 3,
+#    CHECK:       "label": "Z2",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": "(aA: Float, b: Float): Void"
+#    CHECK:       },
+#    CHECK:       "sortText": "0"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 3,
+#    CHECK:       "label": "Z1",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": "(ss: String): String"
+#    CHECK:       },
+#    CHECK:       "sortText": "1"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 3,
+#    CHECK:       "label": "Z0",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": "(): Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "2"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }

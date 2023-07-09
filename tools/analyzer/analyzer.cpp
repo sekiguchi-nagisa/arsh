@@ -358,11 +358,15 @@ private:
 public:
   explicit CompletionItemCollector(std::shared_ptr<TypePool> pool) : pool(std::move(pool)) {}
 
-  static CompletionItemKind toItemKind(CompCandidateKind kind) {
-    switch (kind) {
+  static CompletionItemKind toItemKind(const CompCandidate &candidate) {
+    switch (candidate.kind) {
     case CompCandidateKind::VAR:
     case CompCandidateKind::VAR_IN_CMD_ARG:
-      return CompletionItemKind::Variable;
+      if (candidate.getHandle()->isFuncHandle()) {
+        return CompletionItemKind::Function;
+      } else {
+        return CompletionItemKind::Variable;
+      }
     case CompCandidateKind::FIELD:
       return CompletionItemKind::Field;
     case CompCandidateKind::METHOD:
@@ -379,11 +383,22 @@ public:
 
   static Optional<CompletionItemLabelDetails> formatLabelDetail(TypePool &pool,
                                                                 const CompCandidate &candidate) {
-    const auto itemKind = toItemKind(candidate.kind);
+    const auto itemKind = toItemKind(candidate);
     if (itemKind == CompletionItemKind::Variable) {
       auto &type = pool.get(candidate.getHandle()->getTypeId());
       std::string value;
       formatVarSignature(type, value);
+      return CompletionItemLabelDetails{
+          .detail = std::move(value),
+          .description = {},
+      };
+    } else if (itemKind == CompletionItemKind::Function) {
+      assert(candidate.getHandle()->isFuncHandle());
+      auto &handle = cast<FuncHandle>(*candidate.getHandle());
+      auto &type = pool.get(handle.getTypeId());
+      assert(type.isFuncType());
+      std::string value;
+      formatFuncSignature(type, handle, value);
       return CompletionItemLabelDetails{
           .detail = std::move(value),
           .description = {},
@@ -429,7 +444,7 @@ public:
     this->items.push_back(CompletionItem{
         .label = candidate.quote(),
         .labelDetails = formatLabelDetail(*this->pool, candidate),
-        .kind = toItemKind(candidate.kind),
+        .kind = toItemKind(candidate),
         .sortText = {},
         .priority = candidate.priority,
     });

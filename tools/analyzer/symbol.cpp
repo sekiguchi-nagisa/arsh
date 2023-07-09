@@ -31,12 +31,10 @@ std::string normalizeTypeName(const DSType &type) {
   return std::regex_replace(type.getName(), re, "");
 }
 
-static std::vector<StringRef> splitParamNames(const MethodHandle &handle) {
-  const unsigned int paramSize = handle.getParamSize();
+static std::vector<StringRef> splitParamNames(unsigned int paramSize, StringRef packedParamNames) {
   std::vector<StringRef> params;
   params.reserve(paramSize);
-  StringRef packed = handle.getPackedParamNames();
-  splitByDelim(packed, ';', [&params](StringRef p, bool) {
+  splitByDelim(packedParamNames, ';', [&params](StringRef p, bool) {
     if (!p.empty()) {
       params.push_back(p);
     }
@@ -51,6 +49,23 @@ void formatVarSignature(const DSType &type, std::string &out) {
   out += normalizeTypeName(type);
 }
 
+void formatFuncSignature(const DSType &type, const FuncHandle &handle, std::string &out) {
+  assert(type.isFuncType());
+  auto &funcType = cast<FunctionType>(type);
+  auto params = splitParamNames(funcType.getParamSize(), handle.getPackedParamNames());
+  out += "(";
+  for (unsigned int i = 0; i < funcType.getParamSize(); i++) {
+    if (i > 0) {
+      out += ", ";
+    }
+    out += params[i];
+    out += ": ";
+    out += normalizeTypeName(funcType.getParamTypeAt(i));
+  }
+  out += "): ";
+  out += normalizeTypeName(funcType.getReturnType());
+}
+
 void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out) {
   out += ": ";
   out += normalizeTypeName(type);
@@ -59,7 +74,7 @@ void formatFieldSignature(const DSType &recvType, const DSType &type, std::strin
 }
 
 void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out) {
-  auto params = splitParamNames(handle);
+  auto params = splitParamNames(handle.getParamSize(), handle.getPackedParamNames());
   out += "(";
   for (unsigned int i = 0; i < handle.getParamSize(); i++) {
     if (i > 0) {

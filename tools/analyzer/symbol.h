@@ -22,6 +22,7 @@
 
 namespace ydsh {
 class DSType;
+class FuncHandle;
 class MethodHandle;
 } // namespace ydsh
 
@@ -33,6 +34,8 @@ class Source;
 std::string normalizeTypeName(const DSType &type);
 
 void formatVarSignature(const DSType &type, std::string &out);
+
+void formatFuncSignature(const DSType &type, const FuncHandle &handle, std::string &out);
 
 void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
 
