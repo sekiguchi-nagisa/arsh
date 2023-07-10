@@ -1,4 +1,4 @@
 
-#$test($result = 'type', $errorKind = 'DefinedCmd', $lineNum = 3, $chars = 1, $status = 1, $fileName = '../always_failed/udc_defined6.ds')
+#$test($result = 'type', $errorKind = 'ReservedCmd', $lineNum = 3, $chars = 1, $status = 1, $fileName = '../always_failed/udc_defined6.ds')
 
 source udc_defined6.ds
