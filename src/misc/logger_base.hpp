@@ -122,7 +122,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   if (localtime_r(&timer, &local)) {
     char buf[32];
     strftime(buf, std::size(buf), "%F %T", &local);
-    auto micro =
+    long micro =
         std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
     snprintf(header, std::size(header), "%s.%06ld <%s> [%d] ", buf, micro % 1000000,
              toString(level), getpid());
