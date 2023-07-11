@@ -22,12 +22,12 @@
 
 #include <cstdarg>
 #include <cstring>
-#include <ctime>
 #include <mutex>
 #include <string>
 
 #include "fatal.h"
 #include "resource.hpp"
+#include "time_util.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -115,13 +115,17 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   char header[128];
   header[0] = '\0';
 
-  time_t timer = time(nullptr);
-  struct tm local {};
+  const auto now = getCurrentTimestamp();
+  time_t timer = timestampToTime(now);
   tzset();
+  struct tm local {};
   if (localtime_r(&timer, &local)) {
     char buf[32];
     strftime(buf, std::size(buf), "%F %T", &local);
-    snprintf(header, std::size(header), "%s <%s> [%d] ", buf, toString(level), getpid());
+    auto micro =
+        std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+    snprintf(header, std::size(header), "%s.%06ld <%s> [%d] ", buf, micro % 1000000,
+             toString(level), getpid());
   }
 
   // print body
