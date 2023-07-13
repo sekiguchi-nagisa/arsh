@@ -19,18 +19,18 @@ function(add_gen_lexer_target)
 
     cmake_parse_arguments(GL_ARGS "" "${single_args}" "" ${ARGN})
 
-    # check argumnets
-    if(NOT GL_ARGS_TARGET)
+    # check arguments
+    if (NOT GL_ARGS_TARGET)
         message(FATAL_ERROR "require TARGET")
-    endif()
+    endif ()
 
-    if(NOT GL_ARGS_SOURCE_FILE)
+    if (NOT GL_ARGS_SOURCE_FILE)
         message(FATAL_ERROR "require SOURCE_FILE")
-    endif()
+    endif ()
 
-    if(NOT GL_ARGS_OUTPUT_FILE)
+    if (NOT GL_ARGS_OUTPUT_FILE)
         message(FATAL_ERROR "require OUTPUT_FILE")
-    endif()
+    endif ()
 
     set(lexer_src ${GL_ARGS_OUTPUT_FILE})
     set(option ${GL_ARGS_RE2C_OPTION})

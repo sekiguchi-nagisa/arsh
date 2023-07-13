@@ -413,22 +413,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
 
   InitializeResult ret;
-  ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
-      .openClose = true,
-      .change = TextDocumentSyncKind::Incremental,
-      .willSave = {},
-      .willSaveWaitUntil = {},
-      .save = {},
-  };
-  ret.capabilities.definitionProvider = true;
-  ret.capabilities.referencesProvider = true;
-  ret.capabilities.documentHighlightProvider = true;
-  ret.capabilities.documentSymbolProvider = true;
-  ret.capabilities.hoverProvider = true;
-  ret.capabilities.completionProvider = CompletionOptions{};
   ret.capabilities.completionProvider.triggerCharacters = {".", "$", "/"};
-  ret.capabilities.documentLinkProvider = DocumentLinkOptions{};
-  ret.capabilities.semanticTokensProvider = SemanticTokensOptions{};
   ret.capabilities.semanticTokensProvider.legend = SemanticTokensLegend::create();
   ret.capabilities.semanticTokensProvider.full = true;
   return ret;

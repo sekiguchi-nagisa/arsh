@@ -513,8 +513,10 @@ static char *getExecutablePath() {
   ssize_t len;
   do {
     bufSize += (bufSize >> 1u);
-    buf = static_cast<char *>(realloc(buf, sizeof(char) * bufSize));
-    if (!buf) {
+    if (auto *ptr = static_cast<char *>(realloc(buf, sizeof(char) * bufSize))) {
+      buf = ptr;
+    } else {
+      free(buf);
       return nullptr;
     }
     len = readlink("/proc/self/exe", buf, bufSize);

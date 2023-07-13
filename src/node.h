@@ -1691,7 +1691,7 @@ public:
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
 
-  void setHandle(HandlePtr hd) { this->handle = hd; }
+  void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
 
   const HandlePtr &getHandle() const { return this->handle; }
 

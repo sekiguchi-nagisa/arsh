@@ -104,25 +104,25 @@ void ValidationError::appendError(const char *fmt, ...) {
 // ##################################
 
 void JSONDeserializerImpl::operator()(const char *fieldName, bool &v) {
-  if (JSON * json; (json = this->validateField<bool>(fieldName))) {
+  if (JSON *json = this->validateField<bool>(fieldName)) {
     v = json->asBool();
   }
 }
 
 void JSONDeserializerImpl::operator()(const char *fieldName, int64_t &v) {
-  if (JSON * json; (json = this->validateField<int64_t>(fieldName))) {
+  if (JSON *json = this->validateField<int64_t>(fieldName)) {
     v = json->asLong();
   }
 }
 
 void JSONDeserializerImpl::operator()(const char *fieldName, double &v) {
-  if (JSON * json; (json = this->validateField<double>(fieldName))) {
+  if (JSON *json = this->validateField<double>(fieldName)) {
     v = json->asDouble();
   }
 }
 
 void JSONDeserializerImpl::operator()(const char *fieldName, std::string &v) {
-  if (JSON * json; (json = this->validateField<String>(fieldName))) {
+  if (JSON *json = this->validateField<String>(fieldName)) {
     if (!this->validOnly) {
       v = std::move(json->asString());
     }
@@ -130,7 +130,7 @@ void JSONDeserializerImpl::operator()(const char *fieldName, std::string &v) {
 }
 
 void JSONDeserializerImpl::operator()(const char *fieldName, JSON &v) {
-  if (JSON * json; (json = this->validateField(fieldName, -1))) {
+  if (JSON *json = this->validateField(fieldName, -1)) {
     if (!this->validOnly) {
       v = std::move(*json);
     }

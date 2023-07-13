@@ -73,7 +73,7 @@ ssize_t LSPTransport::send(size_t size, const char *data) {
   if (fflush(this->output.get()) != 0) {
     return -1;
   }
-  return size;
+  return static_cast<ssize_t>(size);
 }
 
 static bool isContentLength(const std::string &line) {

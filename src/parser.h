@@ -207,7 +207,7 @@ protected:
     if (actual == kind) {
       name = (this->lexer->*func)(token);
     }
-    return NameInfo(token, std::move(name));
+    return {token, std::move(name)};
   }
 
   template <unsigned int N>

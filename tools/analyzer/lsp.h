@@ -435,8 +435,8 @@ struct SaveOptions {
 };
 
 struct TextDocumentSyncOptions {
-  bool openClose;
-  TextDocumentSyncKind change;
+  bool openClose{true};
+  TextDocumentSyncKind change{TextDocumentSyncKind::Incremental};
   Optional<bool> willSave;                 // optional
   Optional<bool> willSaveWaitUntil;        // optional
   Optional<Union<bool, SaveOptions>> save; // optional
@@ -478,12 +478,12 @@ struct DocumentLinkOptions : public WorkDoneProgressOptions {
  */
 struct ServerCapabilities {
   TextDocumentSyncOptions textDocumentSync;
-  bool hoverProvider{false};
+  bool hoverProvider{true};
   CompletionOptions completionProvider;
-  bool definitionProvider{false};
-  bool referencesProvider{false};
-  bool documentHighlightProvider{false};
-  bool documentSymbolProvider{false};
+  bool definitionProvider{true};
+  bool referencesProvider{true};
+  bool documentHighlightProvider{true};
+  bool documentSymbolProvider{true};
   bool workspaceSymbolProvider{false};
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};

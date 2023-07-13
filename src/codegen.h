@@ -97,11 +97,11 @@ struct LoopState {
 class ConstBuffer {
 private:
   std::unique_ptr<DSValue[]> values;
-  unsigned int size;
-  unsigned int cap;
+  unsigned int size{0};
+  unsigned int cap{8};
 
 public:
-  ConstBuffer() : values(new DSValue[8]), size(0), cap(8) {}
+  ConstBuffer() : values(new DSValue[8]) {}
 
   unsigned int getSize() const { return this->size; }
 

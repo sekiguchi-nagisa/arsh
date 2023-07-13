@@ -1173,7 +1173,7 @@ static DSValue newObject(Node &constNode) {
   assert(kind == NodeKind::Number || kind == NodeKind::String);
   if (kind == NodeKind::Number) {
     if (constNode.getType().is(TYPE::Signal)) {
-      return DSValue::createSig(cast<NumberNode>(constNode).getIntValue());
+      return DSValue::createSig(static_cast<int>(cast<NumberNode>(constNode).getIntValue()));
     }
     return DSValue::createInt(cast<NumberNode>(constNode).getIntValue());
   }
