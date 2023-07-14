@@ -117,7 +117,7 @@ struct PipeSet {
    */
   void setupChildStdin(ForkKind forkKind, bool jobctl) {
     tryToDup(this->in[READ_PIPE], STDIN_FILENO);
-    if (forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !jobctl)) {
+    if ((forkKind == ForkKind::DISOWN || forkKind == ForkKind::JOB) && !jobctl) {
       redirInToNull();
     }
   }

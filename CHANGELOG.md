@@ -15,6 +15,11 @@
 
 ### Changed
 
+### Core
+
+- **Breaking Change**: change disowned background job semantics
+    - now do not redirect stdin to /dev/null if job control is enabled
+
 #### Builtin
 
 - **Breaking Change**: completion after ``importenv`` keyword only complete valid env names

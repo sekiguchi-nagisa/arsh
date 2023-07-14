@@ -384,9 +384,8 @@ TEST_F(InteractiveTest, bg1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
-
   if (platform::platform() == platform::PlatformType::LINUX) {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
     this->sendLine("fg");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nread\n"));
     this->sendLine("true");
@@ -399,6 +398,7 @@ TEST_F(InteractiveTest, bg1) {
     this->sendLine("false");
     ASSERT_NO_FATAL_FAILURE(this->expect("false\n" + PROMPT));
   } else if (platform::platform() == platform::PlatformType::DARWIN) {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
     std::string err = "ydsh: read: 0: ";
     err += strerror(EINTR);
     err += "\n";
@@ -414,6 +414,27 @@ TEST_F(InteractiveTest, bg1) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read | __gets &'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
 
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
+TEST_F(InteractiveTest, bg2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &|", ": Job = %1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "", "ydsh: fg: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &!", ": Job = %2"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "", "ydsh: fg: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
+
+  // disable monitor option
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read &!'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read | __gets &|'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
