@@ -21,13 +21,14 @@ protected:
   NameScopePtr top;
 
   ScopeTest() {
-    this->builtin = NameScopePtr::create(std::ref(this->gvarCount), 0, 0);
+    this->builtin = NameScopePtr::create(std::ref(this->gvarCount), 0, BUILTIN_MOD_ID);
     this->top = createGlobalScope();
   }
 
   NameScopePtr createGlobalScope() {
     unsigned int modIndex = this->gvarCount;
-    return NameScopePtr::create(this->builtin, modIndex, ++this->modCount);
+    return NameScopePtr::create(this->builtin, modIndex,
+                                ModId{static_cast<unsigned short>(++this->modCount)});
   }
 
   const ModType &toModType(NameScopePtr &&scope) {
@@ -44,7 +45,7 @@ protected:
     ASSERT_EQ(e.index, handle->getIndex());
     ASSERT_EQ(toString(e.kind), toString(handle->getKind()));
     ASSERT_EQ(toString(e.attr), toString(handle->attr()));
-    ASSERT_EQ(e.modID, handle->getModId());
+    ASSERT_EQ(e.modID, toValue(handle->getModId()));
   }
 
   static void expect(const Entry &e, const NameRegisterResult &ret) {
@@ -64,7 +65,7 @@ TEST_F(ScopeTest, builtin) {
   ASSERT_TRUE(this->builtin->isGlobal());
   ASSERT_EQ(0, this->builtin->getMaxGlobalVarIndex());
   ASSERT_FALSE(this->builtin->parent);
-  ASSERT_EQ(0, this->builtin->modId);
+  ASSERT_EQ(0, toValue(this->builtin->modId));
 
   // define handle
   auto ret = this->builtin->defineHandle("hello", this->pool.get(TYPE::Int), HandleKind::ENV,
@@ -204,8 +205,8 @@ TEST_F(ScopeTest, builtin) {
 
 TEST_F(ScopeTest, global) {
   ASSERT_TRUE(this->top->parent);
-  ASSERT_EQ(0, this->top->parent->modId);
-  ASSERT_EQ(1, this->top->modId);
+  ASSERT_EQ(0, toValue(this->top->parent->modId));
+  ASSERT_EQ(1, toValue(this->top->modId));
   ASSERT_FALSE(this->top->inBuiltinModule());
   ASSERT_TRUE(this->top->inRootModule());
   ASSERT_TRUE(this->top->isGlobal());
@@ -311,7 +312,7 @@ TEST_F(ScopeTest, block) { // for top level block
 
   // enter block level 0
   auto block0 = this->top->enterScope(NameScope::BLOCK);
-  ASSERT_EQ(1, block0->modId);
+  ASSERT_EQ(1, toValue(block0->modId));
   ASSERT_EQ(this->top, block0->parent);
   ASSERT_EQ(0, block0->getCurLocalIndex());
   ASSERT_EQ(NameScope::BLOCK, block0->kind);
@@ -728,12 +729,12 @@ TEST_F(ScopeTest, import2) {
   mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
   mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
   auto &modType = this->toModType(std::move(mod));
-  ASSERT_EQ(2, modType.getModId());
+  ASSERT_EQ(2, toValue(modType.getModId()));
   ASSERT_EQ(0, modType.getIndex());
 
   // inlined import
   auto mod2 = this->createGlobalScope();
-  ASSERT_EQ(3, mod2->modId);
+  ASSERT_EQ(3, toValue(mod2->modId));
   mod2->defineHandle("BBB", this->pool.get(TYPE::Float), HandleAttr::READ_ONLY);
   mod2->defineTypeAlias(this->pool, "float", this->pool.get(TYPE::Float));
   auto s = mod2->importForeignHandles(this->pool, modType,
@@ -756,7 +757,7 @@ TEST_F(ScopeTest, import2) {
 
   // ModType
   auto &modType2 = this->toModType(std::move(mod2));
-  ASSERT_EQ(3, modType2.getModId());
+  ASSERT_EQ(3, toValue(modType2.getModId()));
   auto hd = modType2.lookup(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Entry{
@@ -825,12 +826,12 @@ TEST_F(ScopeTest, import2) {
 
   handle = this->top->lookup("AAA");
   ASSERT_TRUE(handle.asOk()->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
-  ASSERT_EQ(2, handle.asOk()->getModId());
+  ASSERT_EQ(2, toValue(handle.asOk()->getModId()));
   ASSERT_EQ(0, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("integer"));
   ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle.asOk()->getKind()));
-  ASSERT_EQ(2, handle.asOk()->getModId());
+  ASSERT_EQ(2, toValue(handle.asOk()->getModId()));
   ASSERT_EQ(0, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("_string"));
@@ -840,12 +841,12 @@ TEST_F(ScopeTest, import2) {
 
   handle = this->top->lookup("BBB");
   ASSERT_TRUE(handle.asOk()->has(HandleAttr::READ_ONLY | HandleAttr::GLOBAL));
-  ASSERT_EQ(3, handle.asOk()->getModId());
+  ASSERT_EQ(3, toValue(handle.asOk()->getModId()));
   ASSERT_EQ(3, handle.asOk()->getIndex());
 
   handle = this->top->lookup(toTypeAliasFullName("float"));
   ASSERT_EQ(toString(HandleKind::TYPE_ALIAS), toString(handle.asOk()->getKind()));
-  ASSERT_EQ(3, handle.asOk()->getModId());
+  ASSERT_EQ(3, toValue(handle.asOk()->getModId()));
   ASSERT_EQ(0, handle.asOk()->getIndex());
 }
 

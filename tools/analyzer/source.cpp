@@ -21,7 +21,7 @@
 
 namespace ydsh::lsp {
 
-Source::Source(std::shared_ptr<const std::string> path, unsigned short srcId, std::string &&content,
+Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content,
                int version)
     : path(std::move(path)), content(std::move(content)), srcId(srcId), version(version) {
   if (this->content.empty() || this->content.back() != '\n') {
@@ -35,9 +35,10 @@ Source::Source(std::shared_ptr<const std::string> path, unsigned short srcId, st
   }
 }
 
-SourcePtr SourceManager::findById(unsigned int id) const {
-  if (id > 0 && --id < this->entries.size()) {
-    return this->entries[id];
+SourcePtr SourceManager::findById(ModId id) const {
+  auto v = toValue(id);
+  if (v > 0 && --v < this->entries.size()) {
+    return this->entries[v];
   }
   return nullptr;
 }
@@ -62,7 +63,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
       return nullptr;
     }
     unsigned int i = this->entries.size();
-    auto src = std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
+    auto src = std::make_shared<Source>(path.data(), ModId{static_cast<unsigned short>(id)},
                                         std::move(content), version);
     auto &ret = this->entries.emplace_back(std::move(src));
     this->indexMap.emplace(ret->getPath(), i);

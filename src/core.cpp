@@ -376,7 +376,7 @@ static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool 
     if (desc.empty()) {
       modType = getCurRuntimeModule(state);
       if (!modType) {
-        modType = state.typePool.getModTypeById(1);
+        modType = state.typePool.getModTypeById(ROOT_MOD_ID);
         assert(modType);
       }
     } else if (desc.startsWith(OBJ_MOD_PREFIX) && desc.endsWith(")")) {

@@ -204,25 +204,24 @@ public:
    * @return
    */
   TypeOrError createErrorType(const std::string &typeName, const DSType &superType,
-                              unsigned short belongedModId);
+                              ModId belongedModId);
 
-  TypeOrError createRecordType(const std::string &typeName, unsigned short belongedModId);
+  TypeOrError createRecordType(const std::string &typeName, ModId belongedModId);
 
   TypeOrError finalizeRecordType(const RecordType &recordType,
                                  std::unordered_map<std::string, HandlePtr> &&handles);
 
-  const ModType &createModType(unsigned short modId,
-                               std::unordered_map<std::string, HandlePtr> &&handles,
+  const ModType &createModType(ModId modId, std::unordered_map<std::string, HandlePtr> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index,
                                ModAttr modAttr);
 
   const ModType &getBuiltinModType() const {
-    auto *type = this->getModTypeById(0);
+    auto *type = this->getModTypeById(BUILTIN_MOD_ID);
     assert(type && type->isModType());
     return *type;
   }
 
-  const ModType *getModTypeById(unsigned short modId) const;
+  const ModType *getModTypeById(ModId modId) const;
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 

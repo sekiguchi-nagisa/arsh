@@ -42,7 +42,7 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
 
 static bool isTupleOrBuiltinMethod(const std::string &mangledName, DeclSymbol::Kind kind,
                                    const Handle &handle) {
-  if (handle.getModId() != 0) {
+  if (!isBuiltinMod(handle.getModId())) {
     return false;
   }
   if (handle.isMethodHandle()) {
@@ -59,16 +59,16 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     return nullptr;
   }
 
-  unsigned short declModId;
+  ModId declModId;
   if (mangledName.size() == 1 && StringRef("#@0123456789").contains(mangledName[0])) {
-    declModId = 0;
+    declModId = BUILTIN_MOD_ID;
   } else if (handle) {
     declModId = handle->getModId();
     if (isTupleOrBuiltinMethod(mangledName, kind, *handle)) {
       declModId = this->modId;
     }
   } else if (kind == DeclSymbol::Kind::CMD) { // for builtin
-    declModId = 0;
+    declModId = BUILTIN_MOD_ID;
   } else {
     return nullptr;
   }
@@ -229,7 +229,7 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclS
   if (this->addSymbolImpl(actualRecv, nameInfo, kind, &handle)) {
     return true;
   }
-  if (handle.getModId() == 0) { // tuple field or builtin method
+  if (isBuiltinMod(handle.getModId())) { // tuple field or builtin method
     std::string hover = generateBuiltinFieldOrMethodInfo(this->getPool(), recv, handle);
     if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), token, DeclInsertOp::BUILTIN)) {
       return true;
@@ -753,16 +753,16 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (node.getNameInfo()) {
     assert(node.getSrcIndex() == 0);
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
-                            std::to_string(node.getModType().getModId()).c_str(), node.getToken());
+                            std::to_string(toValue(node.getModType().getModId())).c_str(),
+                            node.getToken());
   }
   this->builder().addLink(node.getPathToken(), node.getModType().getModId(), node.getPathName());
 }
 
-bool SymbolIndexer::enterModule(unsigned short modId, int version,
-                                const std::shared_ptr<TypePool> &p) {
+bool SymbolIndexer::enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &p) {
   this->builders.emplace_back(modId, version, p, this->indexes);
-  if (!this->indexes.find(0)) {
-    this->builders.emplace_back(0, 0, p, this->indexes);
+  if (!this->indexes.find(BUILTIN_MOD_ID)) {
+    this->builders.emplace_back(BUILTIN_MOD_ID, 0, p, this->indexes);
     this->addBuiltinSymbols();
     this->exitModule(nullptr);
   }

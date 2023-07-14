@@ -10,6 +10,7 @@
 #include "../test_common.h"
 
 using namespace ydsh::lsp;
+using namespace ydsh;
 
 struct IndexSize {
   unsigned int declSize;
@@ -42,7 +43,7 @@ struct Loc {
 
 class IndexTest : public ::testing::Test {
 protected:
-  ydsh::SysConfig sysConfig;
+  SysConfig sysConfig;
   SourceManager srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
@@ -60,25 +61,25 @@ public:
     Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
     auto ret = analyzer.analyze(*src, action);
     ASSERT_TRUE(ret);
-    modId = ret->getModId();
+    modId = toValue(ret->getModId());
   }
 
   void doAnalyze(const char *content, unsigned short &modId, const IndexSize &size) {
     ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
-    auto index = this->indexes.find(modId);
+    auto index = this->indexes.find(ModId{modId});
     ASSERT_TRUE(index);
     ASSERT_EQ(size.declSize, index->getDecls().size());
     ASSERT_EQ(size.symbolSize, index->getSymbols().size());
   }
 
   void findDecl(const Request &req, const std::vector<Loc> &expected) {
-    auto src = this->srcMan.findById(req.modId);
+    auto src = this->srcMan.findById(ModId{req.modId});
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), req.position);
     ASSERT_TRUE(pos.hasValue());
 
     SymbolRequest sr = {
-        .modId = req.modId,
+        .modId = ModId{req.modId},
         .pos = pos.unwrap(),
     };
 
@@ -90,7 +91,7 @@ public:
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(DeclResult{
-          .modId = result.decl.getModId(),
+          .modId = toValue(result.decl.getModId()),
           .range = range.unwrap(),
       });
     });
@@ -119,13 +120,13 @@ public:
   }
 
   void findRefs(const Request &req, const std::vector<Loc> &expected) {
-    auto src = this->srcMan.findById(req.modId);
+    auto src = this->srcMan.findById(ModId{req.modId});
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), req.position);
     ASSERT_TRUE(pos.hasValue());
 
     SymbolRequest sr = {
-        .modId = req.modId,
+        .modId = ModId{req.modId},
         .pos = pos.unwrap(),
     };
 
@@ -137,7 +138,7 @@ public:
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(RefsResult{
-          .modId = result.symbol.getModId(),
+          .modId = toValue(result.symbol.getModId()),
           .range = range.unwrap(),
       });
     });
@@ -158,18 +159,18 @@ public:
     ASSERT_NO_FATAL_FAILURE(this->doAnalyze(source, modId));
     ASSERT_TRUE(modId != 0);
 
-    auto src = this->srcMan.findById(modId);
+    auto src = this->srcMan.findById(ModId{modId});
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), position);
     ASSERT_TRUE(pos.hasValue());
 
     SymbolRequest sr = {
-        .modId = modId,
+        .modId = ModId{modId},
         .pos = pos.unwrap(),
     };
 
     std::string actual;
-    ydsh::Optional<Range> range;
+    Optional<Range> range;
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
       actual = generateHoverContent(this->srcMan, *src, value.decl);
       range = toRange(*src, value.request.getToken());
@@ -359,7 +360,7 @@ new [typeof(new StrArray())]()
 }
 
 TEST_F(IndexTest, globalImport) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -438,7 +439,7 @@ new FFF().HHH()
 }
 
 TEST_F(IndexTest, namedImport) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -530,7 +531,7 @@ new mod.FFF().HHH()
 }
 
 TEST_F(IndexTest, namedImportInlined) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -625,7 +626,7 @@ new mod.FFF().HHH()
 }
 
 TEST_F(IndexTest, inlinedImport) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -1275,7 +1276,7 @@ TEST_F(IndexTest, hoverBuiltin) {
 
 TEST_F(IndexTest, hoverMod) {
   // source
-  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile(X_INFO_VERSION_CORE "_.ds",
                                                  R"(
 var AAA = 'hello'

@@ -50,7 +50,7 @@ struct EmptyConsumer {
 static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
                                     unsigned int &gvarCount) {
   unsigned int modIndex = gvarCount++;
-  auto builtin = NameScopePtr::create(gvarCount, modIndex, 0);
+  auto builtin = NameScopePtr::create(gvarCount, modIndex, BUILTIN_MOD_ID);
   EmptyConsumer emptyConsumer;
   bindBuiltins(emptyConsumer, config, pool, *builtin);
 
@@ -88,7 +88,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(this->getPool().get(e.typeId()));
-    if (type.getModId() == 0) { // skip builtin module
+    if (isBuiltinMod(type.getModId())) { // skip builtin module
       continue;
     }
     auto archive = archives.find(type.getModId());
@@ -124,7 +124,8 @@ const ModType &
 Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
-  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", archive->getModId(), archive->getVersion());
+  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toValue(archive->getModId()),
+      archive->getVersion());
   auto *modType = loadFromArchive(this->current()->getPool(), *archive);
   assert(modType);
   return *modType;
@@ -155,7 +156,8 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
   } else {
     assert(is<unsigned int>(ret));
-    auto src = this->srcMan.findById(get<unsigned int>(ret));
+    auto id = ModId{static_cast<unsigned short>(get<unsigned int>(ret))};
+    auto src = this->srcMan.findById(id);
     assert(src);
     if (auto archive = this->archives.find(src->getSrcId()); archive) {
       auto *modType = loadFromArchive(this->current()->getPool(), *archive);
@@ -182,8 +184,8 @@ std::reference_wrapper<CancelToken> Analyzer::getCancelToken() const {
 }
 
 const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
-  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", src.getSrcId(), src.getVersion(),
-      src.getPath().c_str());
+  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", toValue(src.getSrcId()),
+      src.getVersion(), src.getPath().c_str());
   auto ptr = std::make_unique<AnalyzerContext>(this->sysConfig, src);
   this->ctxs.push_back(std::move(ptr));
   this->archives.reserve(src.getSrcId());
@@ -197,7 +199,7 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
     if (auto archive = this->archives.find(src->getSrcId()); archive && archive->isEmpty()) {
       return ModLoadingError(ModLoadingError::CIRCULAR_LOAD); // nested import
     }
-    return src->getSrcId();
+    return toValue(src->getSrcId());
   } else {
     src = this->srcMan.update(path, 0, ""); // dummy
     if (!src) {
@@ -304,7 +306,7 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return this->handleTypeError(ctx.back()->scope->modId, checkError);
 }
 
-bool DiagnosticEmitter::handleTypeError(unsigned short modId, const TypeCheckError &checkError) {
+bool DiagnosticEmitter::handleTypeError(ModId modId, const TypeCheckError &checkError) {
   auto *cur = this->findContext(modId);
   assert(cur);
   auto range = toRange(*cur->src, checkError.getToken());
@@ -323,7 +325,7 @@ bool DiagnosticEmitter::handleTypeError(unsigned short modId, const TypeCheckErr
   return true;
 }
 
-bool DiagnosticEmitter::enterModule(unsigned short modId, int version) {
+bool DiagnosticEmitter::enterModule(ModId modId, int version) {
   auto src = this->srcMan->findById(modId);
   assert(src);
   this->contexts.emplace_back(src, version);

@@ -38,15 +38,15 @@ public:
   std::shared_ptr<SourceManager> srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
-  std::unordered_set<unsigned short> modifiedSrcIds;
-  std::unordered_set<unsigned short> closingSrcIds;
+  std::unordered_set<ModId> modifiedSrcIds;
+  std::unordered_set<ModId> closingSrcIds;
 
   NON_COPYABLE(AnalyzerResult);
 
 private:
   AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives archives,
-                 SymbolIndexes indexes, std::unordered_set<unsigned short> modifiedSrcIds,
-                 std::unordered_set<unsigned short> willCloseSrcIds)
+                 SymbolIndexes indexes, std::unordered_set<ModId> modifiedSrcIds,
+                 std::unordered_set<ModId> willCloseSrcIds)
       : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)),
         modifiedSrcIds(std::move(modifiedSrcIds)), closingSrcIds(std::move(willCloseSrcIds)) {}
 

@@ -25,7 +25,7 @@ namespace ydsh::lsp {
 // ##     ExtraChecker     ##
 // ##########################
 
-bool ExtraChecker::enterModule(unsigned short modId, int, const std::shared_ptr<TypePool> &) {
+bool ExtraChecker::enterModule(ModId modId, int, const std::shared_ptr<TypePool> &) {
   this->modIds.push_back(modId);
   return true;
 }

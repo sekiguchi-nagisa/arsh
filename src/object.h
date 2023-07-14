@@ -1030,7 +1030,7 @@ struct ExceptionEntry {
 
 class CompiledCode : public DSCode {
 private:
-  unsigned short belongedModId;
+  ModId belongedModId;
 
   /**
    * must not be null
@@ -1060,8 +1060,8 @@ private:
 public:
   NON_COPYABLE(CompiledCode);
 
-  CompiledCode(const std::string &sourceName, unsigned short modId, const std::string &name,
-               DSCode code, DSValue *constPool, LineNumEntry *sourcePosEntries,
+  CompiledCode(const std::string &sourceName, ModId modId, const std::string &name, DSCode code,
+               DSValue *constPool, LineNumEntry *sourcePosEntries,
                ExceptionEntry *exceptionEntries) noexcept
       : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
         name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
@@ -1098,7 +1098,7 @@ public:
     return *this;
   }
 
-  unsigned short getBelongedModId() const { return this->belongedModId; }
+  ModId getBelongedModId() const { return this->belongedModId; }
 
   StringRef getSourceName() const { return this->sourceName; }
 

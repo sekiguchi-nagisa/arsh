@@ -134,7 +134,8 @@ LSPServer::resolvePosition(const TextDocumentPositionParams &params) {
 std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) const {
   std::vector<Location> values;
   findDeclaration(this->result.indexes, request, [&](const FindDeclResult &ret) {
-    if (ret.decl.getModId() == 0 || hasFlag(ret.decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
+    if (isBuiltinMod(ret.decl.getModId()) ||
+        hasFlag(ret.decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
       /**
        * ignore builtin module symbols and builtin type fields/methods
        */
@@ -257,11 +258,11 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     }
     auto src = this->ret.srcMan->findById(e);
     assert(src);
-    LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s", src->getSrcId(),
-        src->getVersion(), src->getPath().c_str());
+    LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s",
+        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     auto r = analyzer.analyze(*src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        src->getSrcId(), src->getVersion(), src->getPath().c_str());
+        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
       break;
     }
@@ -274,11 +275,11 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     }
     auto src = this->ret.srcMan->findById(targetId.unwrap());
     assert(src);
-    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s", src->getSrcId(),
+    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s", toValue(src->getSrcId()),
         src->getVersion(), src->getPath().c_str());
     auto r = analyzer.analyze(*src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        src->getSrcId(), src->getVersion(), src->getPath().c_str());
+        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
       break;
     }
@@ -621,7 +622,7 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
     std::vector<DocumentSymbol> ret;
     if (auto index = this->result.indexes.find(resolved.asOk()->getSrcId())) {
       for (auto &decl : index->getDecls()) {
-        if (decl.getModId() == 0 || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
+        if (isBuiltinMod(decl.getModId()) || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
             !hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
           continue;
         }

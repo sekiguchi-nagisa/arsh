@@ -587,7 +587,7 @@ NameScopePtr ModuleLoader::createGlobalScope(const TypePool &pool, const char *n
     return this->createGlobalScopeFromFullPath(pool, get<const char *>(ret), *modType);
   } else {
     unsigned int modIndex = this->gvarCount++;
-    return NameScopePtr::create(std::ref(this->gvarCount), modIndex, 0);
+    return NameScopePtr::create(std::ref(this->gvarCount), modIndex, BUILTIN_MOD_ID);
   }
 }
 
@@ -596,7 +596,8 @@ NameScopePtr ModuleLoader::createGlobalScopeFromFullPath(const TypePool &pool, S
   auto iter = this->indexMap.find(fullPath);
   if (iter != this->indexMap.end()) {
     unsigned int modIndex = this->gvarCount++;
-    auto scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex, iter->second);
+    auto scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex,
+                                      ModId{static_cast<unsigned short>(iter->second)});
     scope->importForeignHandles(pool, modType, ImportedModKind::GLOBAL);
     return scope;
   }
@@ -604,12 +605,12 @@ NameScopePtr ModuleLoader::createGlobalScopeFromFullPath(const TypePool &pool, S
 }
 
 const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope) {
-  assert(scope.modId < this->entries.size());
+  assert(static_cast<std::underlying_type_t<ModId>>(scope.modId) < this->entries.size());
   assert(scope.isGlobal());
   auto &modType = scope.toModType(pool);
-  bool reopened = scope.inRootModule() && this->entries[scope.modId].second.isSealed();
+  bool reopened = scope.inRootModule() && (*this)[scope.modId].second.isSealed();
   if (!reopened) {
-    auto &e = this->entries[scope.modId].second;
+    auto &e = this->entries[toValue(scope.modId)].second;
     assert(!e.isSealed());
     e.setModType(modType);
   }

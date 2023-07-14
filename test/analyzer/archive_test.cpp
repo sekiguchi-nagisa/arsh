@@ -9,7 +9,7 @@ using namespace ydsh;
 
 TEST(SourceTest, base) {
   SourceManager srcMan;
-  auto src = srcMan.findById(111);
+  auto src = srcMan.findById(ModId{111});
   ASSERT_FALSE(src);
   src = srcMan.find("ssss");
   ASSERT_FALSE(src);
@@ -19,25 +19,25 @@ TEST(SourceTest, base) {
   ASSERT_EQ(10, src->getVersion());
   ASSERT_EQ("/dummy1", src->getPath());
   ASSERT_EQ("hello\n", src->getContent());
-  ASSERT_EQ(1, src->getSrcId());
+  ASSERT_EQ(1, toValue(src->getSrcId()));
 
   src = srcMan.update("/dummy1", 12, "world");
   ASSERT_TRUE(src);
   ASSERT_EQ(12, src->getVersion());
   ASSERT_EQ("/dummy1", src->getPath());
   ASSERT_EQ("world\n", src->getContent());
-  ASSERT_EQ(1, src->getSrcId());
+  ASSERT_EQ(1, toValue(src->getSrcId()));
 
   src = srcMan.update("/dummy2", 1, "");
   ASSERT_TRUE(src);
   ASSERT_EQ(1, src->getVersion());
   ASSERT_EQ("/dummy2", src->getPath());
   ASSERT_EQ("\n", src->getContent());
-  ASSERT_EQ(2, src->getSrcId());
+  ASSERT_EQ(2, toValue(src->getSrcId()));
 }
 
 struct ArchiveBuilder {
-  unsigned short id;
+  ModId id;
   std::vector<ArchiveBuilder> children;
 
   ModuleArchivePtr build() const {
@@ -55,7 +55,7 @@ struct ArchiveBuilder {
 template <size_t N, typename... T>
 ArchiveBuilder tree(T &&...args) {
   return ArchiveBuilder{
-      .id = N,
+      .id = ModId{N},
       .children = {std::forward<T>(args)...},
   };
 }
@@ -64,16 +64,16 @@ TEST(DependentTest, deps1) {
   auto t = tree<1>(tree<2>(tree<5>(tree<7>()), tree<6>()), tree<3>(tree<4>()));
   auto archive = t.build();
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(2, archive->getImported()[0].second->getModId());
-  ASSERT_EQ(3, archive->getImported()[1].second->getModId());
+  ASSERT_EQ(2, toValue(archive->getImported()[0].second->getModId()));
+  ASSERT_EQ(3, toValue(archive->getImported()[1].second->getModId()));
   auto deps = archive->getDepsByTopologicalOrder();
   ASSERT_EQ(6, deps.size());
-  ASSERT_EQ(7, deps[0]->getModId());
-  ASSERT_EQ(5, deps[1]->getModId());
-  ASSERT_EQ(6, deps[2]->getModId());
-  ASSERT_EQ(2, deps[3]->getModId());
-  ASSERT_EQ(4, deps[4]->getModId());
-  ASSERT_EQ(3, deps[5]->getModId());
+  ASSERT_EQ(7, toValue(deps[0]->getModId()));
+  ASSERT_EQ(5, toValue(deps[1]->getModId()));
+  ASSERT_EQ(6, toValue(deps[2]->getModId()));
+  ASSERT_EQ(2, toValue(deps[3]->getModId()));
+  ASSERT_EQ(4, toValue(deps[4]->getModId()));
+  ASSERT_EQ(3, toValue(deps[5]->getModId()));
 }
 
 TEST(DependentTest, deps2) {
@@ -82,16 +82,16 @@ TEST(DependentTest, deps2) {
   auto t3 = tree<7>(t2, t1);
   auto archive = t3.build();
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(5, archive->getImported()[0].second->getModId());
-  ASSERT_EQ(1, archive->getImported()[1].second->getModId());
+  ASSERT_EQ(5, toValue(archive->getImported()[0].second->getModId()));
+  ASSERT_EQ(1, toValue(archive->getImported()[1].second->getModId()));
   auto deps = archive->getDepsByTopologicalOrder();
   ASSERT_EQ(6, deps.size());
-  ASSERT_EQ(2, deps[0]->getModId());
-  ASSERT_EQ(4, deps[1]->getModId());
-  ASSERT_EQ(3, deps[2]->getModId());
-  ASSERT_EQ(1, deps[3]->getModId());
-  ASSERT_EQ(6, deps[4]->getModId());
-  ASSERT_EQ(5, deps[5]->getModId());
+  ASSERT_EQ(2, toValue(deps[0]->getModId()));
+  ASSERT_EQ(4, toValue(deps[1]->getModId()));
+  ASSERT_EQ(3, toValue(deps[2]->getModId()));
+  ASSERT_EQ(1, toValue(deps[3]->getModId()));
+  ASSERT_EQ(6, toValue(deps[4]->getModId()));
+  ASSERT_EQ(5, toValue(deps[5]->getModId()));
 }
 
 TEST(DependentTest, deps3) {
@@ -242,7 +242,7 @@ public:
     auto poolPtr = this->orgCtx->getPoolPtr();
     auto archive = std::move(*this->orgCtx).buildArchive(this->archives);
     ASSERT_TRUE(archive);
-    unsigned id = archive->getModId();
+    auto id = archive->getModId();
     auto *orgModType = poolPtr->getModTypeById(id);
     ASSERT_TRUE(orgModType);
 
@@ -293,11 +293,11 @@ TEST_F(ArchiveTest, base) {
   auto handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
   ASSERT_TRUE(handle->has(HandleAttr::GLOBAL));
-  ASSERT_EQ(0, handle->getModId());
+  ASSERT_EQ(0, toValue(handle->getModId()));
   handle = ctx->getScope()->find("TRUE");
   ASSERT_TRUE(handle);
   ASSERT_TRUE(handle->has(HandleAttr::GLOBAL | HandleAttr::READ_ONLY));
-  ASSERT_EQ(0, handle->getModId());
+  ASSERT_EQ(0, toValue(handle->getModId()));
   ASSERT_TRUE(ctx->getTypeIdOffset() <= UINT8_MAX);
 }
 
@@ -449,7 +449,7 @@ TEST_F(ArchiveTest, mod3) {
       ASSERT_NO_FATAL_FAILURE(
           define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), HandleKind::VAR));
     });
-    ASSERT_EQ(3, modType3.getModId());
+    ASSERT_EQ(3, toValue(modType3.getModId()));
     ASSERT_EQ(1, modType3.getChildSize());
     ASSERT_TRUE(this->newPool().get(modType3.getChildAt(0).typeId()).isModType());
 
@@ -462,7 +462,7 @@ TEST_F(ArchiveTest, mod3) {
   ASSERT_NO_FATAL_FAILURE(this->archiveMod());
 
   //
-  auto ret1 = this->newPool().getModTypeById(3);
+  auto ret1 = this->newPool().getModTypeById(ModId{3});
   ASSERT_TRUE(ret1);
   auto &modType3 = *ret1;
   auto handle = modType3.lookup(this->newPool(), "AAA");
@@ -479,10 +479,10 @@ TEST_F(ArchiveTest, mod3) {
   ASSERT_EQ(modType3.getModId(), handle->getModId());
 
   //
-  ret1 = this->newPool().getModTypeById(1);
+  ret1 = this->newPool().getModTypeById(ModId{1});
   ASSERT_TRUE(ret1);
   auto &modType1 = *ret1;
-  ASSERT_EQ(1, modType1.getModId());
+  ASSERT_EQ(1, toValue(modType1.getModId()));
   ASSERT_EQ(2, modType1.getChildSize());
   ASSERT_TRUE(modType1.getChildAt(0).isGlobal());
   ASSERT_FALSE(modType1.getChildAt(1).isGlobal());
@@ -495,7 +495,7 @@ TEST_F(ArchiveTest, mod3) {
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[GlobbingError]")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
-  ASSERT_EQ(1, handle->getModId());
+  ASSERT_EQ(1, toValue(handle->getModId()));
 }
 
 TEST_F(ArchiveTest, mod4) {
@@ -508,7 +508,7 @@ TEST_F(ArchiveTest, mod4) {
         ASSERT_NO_FATAL_FAILURE(
             define(ctx2, "AAA", *ret.asOk(), HandleKind::VAR, HandleAttr::READ_ONLY));
       });
-      ASSERT_EQ(4, modType4.getModId());
+      ASSERT_EQ(4, toValue(modType4.getModId()));
 
       auto ret = ctx1.getPool().createTupleType(
           {&ctx1.getPool().get(TYPE::IllegalAccessError), &modType4});
@@ -518,19 +518,19 @@ TEST_F(ArchiveTest, mod4) {
     });
     ASSERT_NO_FATAL_FAILURE(define("CCC", modType3, HandleKind::VAR, HandleAttr::READ_ONLY));
 
-    ASSERT_EQ(3, modType3.getModId());
+    ASSERT_EQ(3, toValue(modType3.getModId()));
     ASSERT_EQ(2, modType3.getChildSize());
   }
   ASSERT_NO_FATAL_FAILURE(this->archiveMod({"CCC"}));
 
-  auto ret = this->newPool().getModTypeById(3);
+  auto ret = this->newPool().getModTypeById(ModId{3});
   ASSERT_TRUE(ret);
   auto &modType3 = *ret;
-  ASSERT_EQ(3, modType3.getModId());
+  ASSERT_EQ(3, toValue(modType3.getModId()));
   ASSERT_EQ(2, modType3.getChildSize());
   auto handle = modType3.lookup(this->newPool(), "BBB");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(3, handle->getModId());
+  ASSERT_EQ(3, toValue(handle->getModId()));
   auto &type1 = this->newPool().get(handle->getTypeId());
   ASSERT_TRUE(type1.isTupleType());
   auto &tuple = cast<TupleType>(type1);
@@ -538,13 +538,13 @@ TEST_F(ArchiveTest, mod4) {
   ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError),
             tuple.getFieldTypeAt(this->newPool(), 0));
   ASSERT_TRUE(tuple.getFieldTypeAt(this->newPool(), 1).isModType());
-  ASSERT_EQ(4, cast<ModType>(tuple.getFieldTypeAt(this->newPool(), 1)).getModId());
+  ASSERT_EQ(4, toValue(cast<ModType>(tuple.getFieldTypeAt(this->newPool(), 1)).getModId()));
 
   handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_FALSE(handle);
   auto *handle2 = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
   ASSERT_TRUE(handle2);
-  ASSERT_EQ(4, handle2->getModId());
+  ASSERT_EQ(4, toValue(handle2->getModId()));
   auto retType = this->newPool().getType("[Bool]");
   ASSERT_TRUE(retType);
   ASSERT_EQ(retType->typeId(), handle2->getTypeId());
@@ -552,7 +552,7 @@ TEST_F(ArchiveTest, mod4) {
 
 TEST_F(ArchiveTest, userdefined) {
   auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) { // named import
-    const unsigned short modId = ctx.getModId();
+    const auto modId = ctx.getModId();
     const char *typeName = "APIError";
     auto ret = ctx.getPool().createErrorType(typeName, ctx.getPool().get(TYPE::Error), modId);
     ASSERT_TRUE(ret);
@@ -820,8 +820,8 @@ TEST(ArchivesTest, revert1) {
   ASSERT_TRUE(archives.find(t4->getModId()));
 
   archives.revert({archives.find(srcMan.find("/ddd")->getSrcId())->getModId()});
-  ASSERT_EQ(1, archives.find(srcMan.find("/aaa")->getSrcId())->getModId());
-  ASSERT_EQ(2, archives.find(srcMan.find("/ccc")->getSrcId())->getModId());
+  ASSERT_EQ(1, toValue(archives.find(srcMan.find("/aaa")->getSrcId())->getModId()));
+  ASSERT_EQ(2, toValue(archives.find(srcMan.find("/ccc")->getSrcId())->getModId()));
   ASSERT_FALSE(archives.find(t2->getModId()));
   ASSERT_FALSE(archives.find(t4->getModId()));
 

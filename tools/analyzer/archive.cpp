@@ -84,7 +84,7 @@ void Archiver::add(const DSType &type) {
         this->add(*type.getSuperType());
         auto ret = this->pool.getType(typeName.slice(0, pos));
         assert(ret && isa<ModType>(ret));
-        this->write16(cast<ModType>(ret)->getModId());
+        this->writeModId(cast<ModType>(ret)->getModId());
       }
       break;
     case TypeKind::Record:
@@ -100,7 +100,7 @@ void Archiver::add(const DSType &type) {
         this->writeStr(typeName.substr(pos + 1));
         auto ret = this->pool.getType(typeName.slice(0, pos));
         assert(ret && isa<ModType>(ret));
-        this->write16(cast<ModType>(ret)->getModId());
+        this->writeModId(cast<ModType>(ret)->getModId());
 
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
@@ -112,7 +112,7 @@ void Archiver::add(const DSType &type) {
     case TypeKind::Mod:
       this->writeT(ArchiveType::MOD);
       auto &modType = cast<ModType>(type);
-      this->write16(modType.getModId());
+      this->writeModId(modType.getModId());
       break;
     }
   }
@@ -131,7 +131,7 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   this->write8(static_cast<uint8_t>(handle.getKind()));
   static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, uint8_t>);
   this->write8(static_cast<uint8_t>(handle.attr()));
-  this->write16(handle.getModId());
+  this->writeModId(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
   if (handle.isMethodHandle()) {
@@ -174,7 +174,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
   uint32_t index = this->read32();
   const auto kind = static_cast<HandleKind>(this->read8());
   const auto attr = static_cast<HandleAttr>(this->read8());
-  uint16_t modId = this->read16();
+  auto modId = this->readModId();
   auto type = TRY(this->unpackType());
   unsigned int famSize = this->read8();
   if (famSize) { // method handle
@@ -250,13 +250,13 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::ERROR: {
     std::string name = this->readStr();
     auto *superType = TRY(this->unpackType());
-    uint16_t modId = this->read16();
+    auto modId = this->readModId();
     auto ret = TRY(this->pool.createErrorType(name, *superType, modId));
     return std::move(ret).take();
   }
   case ArchiveType::RECORD: {
     std::string name = this->readStr();
-    uint16_t modId = this->read16();
+    auto modId = this->readModId();
     auto ret = TRY(this->pool.createRecordType(name, modId));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
@@ -282,8 +282,8 @@ const DSType *Unarchiver::unpackType() {
     return std::move(ret).take();
   }
   case ArchiveType::MOD: {
-    uint16_t modID = this->read16();
-    return TRY(this->pool.getModTypeById(modID));
+    auto modId = this->readModId();
+    return TRY(this->pool.getModTypeById(modId));
   }
   case ArchiveType::CACHED: {
     std::string typeName = this->readStr();
@@ -329,10 +329,10 @@ static void resolveTargets(std::vector<ModuleArchivePtr> &targets,
 
 static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
                   const ModuleArchivePtr &archive) {
-  if (used[archive->getModId()]) {
+  if (used[toValue(archive->getModId())]) {
     return;
   }
-  used[archive->getModId()] = true;
+  used[toValue(archive->getModId())] = true;
   for (auto &e : archive->getImported()) {
     visit(ret, used, e.second);
   }
@@ -344,7 +344,7 @@ static std::vector<ModuleArchivePtr> topologicalSort(const std::vector<ModuleArc
   if (targets.empty()) {
     return ret;
   }
-  std::vector<bool> used(targets.back()->getModId() + 1, false);
+  std::vector<bool> used(toValue(targets.back()->getModId()) + 1, false);
   for (auto &e : targets) {
     visit(ret, used, e);
   }
@@ -359,7 +359,7 @@ std::vector<ModuleArchivePtr> ModuleArchive::getDepsByTopologicalOrder() const {
   return topologicalSort(targets);
 }
 
-static const ModType *getModType(const TypePool &pool, unsigned short modId) {
+static const ModType *getModType(const TypePool &pool, ModId modId) {
   return pool.getModTypeById(modId);
 }
 
@@ -407,16 +407,16 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
 const ModuleArchivePtr ModuleArchives::EMPTY_ARCHIVE = std::make_shared<ModuleArchive>(); // NOLINT
 
 struct ModuleArchiveEntryComp {
-  bool operator()(const std::pair<unsigned short, ModuleArchivePtr> &x, unsigned short y) const {
+  bool operator()(const std::pair<ModId, ModuleArchivePtr> &x, ModId y) const {
     return x.first < y;
   }
 
-  bool operator()(unsigned short x, const std::pair<unsigned short, ModuleArchivePtr> &y) const {
+  bool operator()(ModId x, const std::pair<ModId, ModuleArchivePtr> &y) const {
     return x < y.first;
   }
 };
 
-ModuleArchivePtr ModuleArchives::find(unsigned short modId) const {
+ModuleArchivePtr ModuleArchives::find(ModId modId) const {
   auto iter =
       std::lower_bound(this->values.begin(), this->values.end(), modId, ModuleArchiveEntryComp());
   if (iter != this->values.end() && iter->first == modId) {
@@ -425,7 +425,7 @@ ModuleArchivePtr ModuleArchives::find(unsigned short modId) const {
   return nullptr;
 }
 
-ModuleArchives::iterator_type ModuleArchives::reserveImpl(unsigned short modId) {
+ModuleArchives::iterator_type ModuleArchives::reserveImpl(ModId modId) {
   auto iter =
       std::lower_bound(this->values.begin(), this->values.end(), modId, ModuleArchiveEntryComp());
   if (iter != this->values.end() && iter->first == modId) {
@@ -436,7 +436,7 @@ ModuleArchives::iterator_type ModuleArchives::reserveImpl(unsigned short modId) 
   }
 }
 
-static bool isRevertedArchive(std::unordered_set<unsigned short> &revertingModIdSet,
+static bool isRevertedArchive(std::unordered_set<ModId> &revertingModIdSet,
                               const ModuleArchive &archive) {
   const auto modId = archive.getModId();
   auto iter = revertingModIdSet.find(modId);
@@ -453,7 +453,7 @@ static bool isRevertedArchive(std::unordered_set<unsigned short> &revertingModId
   return false;
 }
 
-void ModuleArchives::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
+void ModuleArchives::revert(std::unordered_set<ModId> &&revertingModIdSet) {
   for (auto &e : this->values) {
     if (e.second && isRevertedArchive(revertingModIdSet, *e.second)) {
       e.second = nullptr;
@@ -461,7 +461,7 @@ void ModuleArchives::revert(std::unordered_set<unsigned short> &&revertingModIdS
   }
 }
 
-static bool isImported(const ModuleArchive &archive, unsigned short id) {
+static bool isImported(const ModuleArchive &archive, ModId id) {
   for (auto &e : archive.getImported()) {
     assert(e.second);
     if (e.second->getModId() == id) {
@@ -474,7 +474,7 @@ static bool isImported(const ModuleArchive &archive, unsigned short id) {
   return false;
 }
 
-bool ModuleArchives::removeIfUnused(unsigned short id) {
+bool ModuleArchives::removeIfUnused(ModId id) {
   for (auto &e : this->values) {
     if (e.second && isImported(*e.second, id)) {
       return false;

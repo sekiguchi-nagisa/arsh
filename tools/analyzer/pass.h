@@ -31,8 +31,7 @@ protected:
   int64_t visitingDepth{0};
 
 public:
-  virtual bool enterModule(unsigned short modId, int version,
-                           const std::shared_ptr<TypePool> &pool) = 0;
+  virtual bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) = 0;
   virtual bool exitModule(const std::unique_ptr<Node> &node) = 0;
 
   virtual bool consume(const std::unique_ptr<Node> &node);
@@ -126,8 +125,7 @@ private:
   std::vector<ObserverPtr<NodePass>> passes;
 
 public:
-  bool enterModule(unsigned short modId, int version,
-                   const std::shared_ptr<TypePool> &pool) override;
+  bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;
   bool consume(const std::unique_ptr<Node> &node) override;
 

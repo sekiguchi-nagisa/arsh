@@ -159,7 +159,7 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, const SysConf
                                            TypePool &typePool, Lexer &lex)
     : TypeChecker(sysConfig, getCancelToken(), typePool, false, lex), sourceName(sourceName) {
   unsigned int modIndex = this->varCount++;
-  this->curScope = NameScopePtr::create(std::ref(this->varCount), modIndex, 0);
+  this->curScope = NameScopePtr::create(std::ref(this->varCount), modIndex, BUILTIN_MOD_ID);
   this->setVarName("0", this->typePool().get(TYPE::String));
 }
 

@@ -589,8 +589,7 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static ResolvedCmd lookupUdcFromIndex(const DSState &state, unsigned short modId,
-                                      unsigned int index) {
+static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigned int index) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
   if (v) {
@@ -648,7 +647,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
       modType = getCurRuntimeModule(state);
     }
     if (!modType) {
-      modType = state.typePool.getModTypeById(1);
+      modType = state.typePool.getModTypeById(ROOT_MOD_ID);
       assert(modType);
     }
     ResolvedCmd cmd{};
@@ -949,7 +948,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   case ResolvedCmd::FALLBACK: {
     const auto *modType = getCurRuntimeModule(state);
     if (!modType) {
-      modType = state.typePool.getModTypeById(1);
+      modType = state.typePool.getModTypeById(ROOT_MOD_ID);
     }
     state.stack.reserve(3);
     state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));
@@ -2362,7 +2361,7 @@ bool VM::mainLoop(DSState &state) {
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
 
-        ResolvedCmd cmd = lookupUdcFromIndex(state, 0, index);
+        ResolvedCmd cmd = lookupUdcFromIndex(state, BUILTIN_MOD_ID, index);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
         CHECK_SIGNAL();
         vmnext;
@@ -2437,8 +2436,9 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(LOAD_CUR_MOD) {
-        unsigned short modId = cast<CompiledCode>(state.stack.code())->getBelongedModId();
-        auto &entry = state.modLoader[modId];
+        ModId modId = cast<CompiledCode>(state.stack.code())->getBelongedModId();
+        //        auto &entry = state.modLoader[modId];
+        const auto &entry = state.modLoader[modId];
         auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
         unsigned int index = modType.getIndex();
         state.stack.push(state.getGlobal(index));

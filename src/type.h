@@ -227,11 +227,11 @@ public:
    * if user-defined error type or user-defined record type, return belonged (defined) module id
    * otherwise, return 0
    */
-  unsigned short resolveBelongedModId() const;
+  ModId resolveBelongedModId() const;
 
   bool isUserDefinedType() const {
     return this->isRecordType() || /* fast path (mod id of record type is always not 0)*/
-           this->resolveBelongedModId() != 0;
+           !isBuiltinMod(this->resolveBelongedModId());
   }
 
   /**
@@ -316,20 +316,20 @@ private:
   /**
    * if global module, id is 0.
    */
-  const unsigned short modId;
+  const ModId modId;
 
 protected:
   Handle(unsigned char fmaSize, unsigned int typeId, unsigned int index, HandleKind kind,
-         HandleAttr attr, unsigned short modId)
+         HandleAttr attr, ModId modId)
       : tag(typeId << 8 | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {}
 
 public:
   Handle(unsigned int typeId, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
-         unsigned short modId)
+         ModId modId)
       : Handle(0, typeId, fieldIndex, kind, attribute, modId) {}
 
   Handle(const DSType &fieldType, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
-         unsigned short modId = 0)
+         ModId modId = BUILTIN_MOD_ID)
       : Handle(fieldType.typeId(), fieldIndex, kind, attribute, modId) {}
 
   ~Handle() = default;
@@ -345,10 +345,10 @@ public:
 
   unsigned int getIndex() const { return this->index; }
 
-  unsigned short getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; }
 
-  bool isVisibleInMod(unsigned short scopeModId, StringRef name) const {
-    return this->modId == 0 || scopeModId == this->modId || name[0] != '_';
+  bool isVisibleInMod(ModId scopeModId, StringRef name) const {
+    return isBuiltinMod(this->modId) || scopeModId == this->modId || name[0] != '_';
   }
 
   HandleKind getKind() const { return this->kind; }
@@ -688,6 +688,7 @@ public:
 
 private:
   static_assert(sizeof(Imported) == 4, "failed!!");
+  static_assert(sizeof(ModId) == sizeof(unsigned short));
 
   union {
     struct {
@@ -707,11 +708,11 @@ private:
   std::unordered_map<std::string, HandlePtr> handleMap;
 
 public:
-  ModType(unsigned int id, const DSType &superType, unsigned short modID,
+  ModType(unsigned int id, const DSType &superType, ModId modId,
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
           unsigned int index, ModAttr attr)
-      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType) {
-    this->meta.u16_2.v1 = modID;
+      : DSType(TypeKind::Mod, id, toModTypeName(modId), &superType) {
+    this->meta.u16_2.v1 = static_cast<std::underlying_type_t<ModId>>(modId);
     this->meta.u16_2.v2 = 0;
     this->data.e3.values[0] = index;
     this->reopen(std::move(handles), std::move(children), attr);
@@ -719,11 +720,7 @@ public:
 
   ~ModType();
 
-  unsigned short getModId() const { return this->meta.u16_2.v1; }
-
-  bool isBuiltin() const { return this->getModId() == 0; }
-
-  bool isRoot() const { return this->getModId() == 1; }
+  ModId getModId() const { return static_cast<ModId>(this->meta.u16_2.v1); }
 
   unsigned short getChildSize() const { return this->meta.u16_2.v2; }
 
@@ -744,12 +741,12 @@ public:
    * for indicating module object index
    * @return
    */
-  HandlePtr toAliasHandle(unsigned short importedModId) const {
+  HandlePtr toAliasHandle(ModId importedModId) const {
     return HandlePtr::create(*this, this->getIndex(), HandleKind::VAR,
                              HandleAttr::READ_ONLY | HandleAttr::GLOBAL, importedModId);
   }
 
-  HandlePtr toModHolder(ImportedModKind k, unsigned short importedModId) const {
+  HandlePtr toModHolder(ImportedModKind k, ModId importedModId) const {
     HandleAttr attr = HandleAttr::READ_ONLY | HandleAttr::GLOBAL;
     HandleKind kind = HandleKind::NAMED_MOD;
     if (hasFlag(k, ImportedModKind::INLINED)) {
@@ -875,7 +872,7 @@ private:
   char packedParamNames[];
 
   FuncHandle(const FunctionType &funcType, unsigned int index, PackedParamNames &&packed,
-             unsigned short modId)
+             ModId modId)
       : Handle((funcType.getParamSize() ? 1 : 0) + 1, funcType.typeId(), index, HandleKind::FUNC,
                HandleAttr::GLOBAL | HandleAttr::READ_ONLY, modId) {
     if (packed.getLen()) {
@@ -890,7 +887,7 @@ public:
   NON_COPYABLE(FuncHandle);
 
   static std::unique_ptr<FuncHandle> create(const FunctionType &funcType, unsigned int index,
-                                            PackedParamNames &&packed, unsigned short modId) {
+                                            PackedParamNames &&packed, ModId modId) {
     unsigned int famSize = packed.getLen();
     if (famSize) {
       famSize++; // reserve sentinel
@@ -932,7 +929,7 @@ private:
   const DSType *paramTypes[];
 
   MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
-               unsigned short modId, HandleKind hk)
+               ModId modId, HandleKind hk)
       : Handle(paramSize + 1, recv.typeId(), index, hk, HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
                modId),
         returnType(ret) {
@@ -953,7 +950,7 @@ private:
   static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
                                               const DSType *ret,
                                               const std::vector<const DSType *> &params,
-                                              PackedParamNames &&packed, unsigned short modId);
+                                              PackedParamNames &&packed, ModId modId);
 
 public:
   NON_COPYABLE(MethodHandle);
@@ -968,7 +965,8 @@ public:
   native(const DSType &recv, unsigned int index, const DSType &ret, unsigned char paramSize,
          const std::array<const DSType *, HandleInfoParamNumMax()> &paramTypes) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
-    auto *handle = new (ptr) MethodHandle(recv, index, ret, paramSize, 0, HandleKind::NATIVE);
+    auto *handle =
+        new (ptr) MethodHandle(recv, index, ret, paramSize, BUILTIN_MOD_ID, HandleKind::NATIVE);
     for (unsigned int i = 0; i < static_cast<unsigned int>(paramSize); i++) {
       handle->paramTypes[i] = paramTypes[i];
     }
@@ -978,7 +976,7 @@ public:
   static std::unique_ptr<MethodHandle> method(const DSType &recv, unsigned int index,
                                               const DSType &ret,
                                               const std::vector<const DSType *> &params,
-                                              PackedParamNames &&packed, unsigned short modId) {
+                                              PackedParamNames &&packed, ModId modId) {
     return create(recv, index, &ret, params, std::move(packed), modId);
   }
 
@@ -992,8 +990,7 @@ public:
    */
   static std::unique_ptr<MethodHandle> constructor(const DSType &recv, unsigned int index,
                                                    const std::vector<const DSType *> &params,
-                                                   PackedParamNames &&packed,
-                                                   unsigned short modId) {
+                                                   PackedParamNames &&packed, ModId modId) {
     return create(recv, index, nullptr, params, std::move(packed), modId);
   }
 

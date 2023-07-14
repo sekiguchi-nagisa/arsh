@@ -155,7 +155,7 @@ public:
     return this->contexts.back()->srcListNode;
   }
 
-  unsigned short getCurModId() const { return this->curScope()->modId; }
+  ModId getCurModId() const { return this->curScope()->modId; }
 
   const DSType *getPrevType() const { return this->prevType; }
 

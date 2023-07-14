@@ -20,6 +20,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <constant.h>
+
 #include "lsp.h"
 
 namespace ydsh::lsp {
@@ -31,16 +33,15 @@ private:
   std::shared_ptr<const std::string> path;
   std::string content;
   LineNumTable lineNumTable;
-  unsigned short srcId{0};
+  ModId srcId{0};
   int version{0};
 
 public:
   Source() = default;
 
-  Source(std::shared_ptr<const std::string> path, unsigned short srcId, std::string &&content,
-         int version);
+  Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content, int version);
 
-  Source(const char *path, unsigned short srcId, std::string &&content, int version)
+  Source(const char *path, ModId srcId, std::string &&content, int version)
       : Source(std::make_shared<const std::string>(path), srcId, std::move(content), version) {}
 
   const std::string &getPath() const { return *this->path; }
@@ -56,7 +57,7 @@ public:
 
   int getVersion() const { return this->version; }
 
-  unsigned short getSrcId() const { return this->srcId; }
+  ModId getSrcId() const { return this->srcId; }
 
   std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const {
     return std::make_shared<Source>(this->path, this->srcId, std::move(c), v);
@@ -84,7 +85,7 @@ public:
    * id > 0
    * @return
    */
-  SourcePtr findById(unsigned int id) const;
+  SourcePtr findById(ModId id) const;
 
   /**
    * @param path

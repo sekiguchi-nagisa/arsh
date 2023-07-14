@@ -34,7 +34,7 @@ enum class ScopeKind {
 
 class IndexBuilder {
 private:
-  const unsigned short modId;
+  const ModId modId;
   const int version;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
@@ -97,7 +97,7 @@ private:
   const SymbolIndexes &indexes;
 
 public:
-  IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
+  IndexBuilder(ModId modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
       : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create()),
         pool(std::move(pool)), indexes(indexes) {}
@@ -162,7 +162,7 @@ public:
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
-  void addLink(Token token, unsigned short targetModId, const std::string &link) {
+  void addLink(Token token, ModId targetModId, const std::string &link) {
     auto ref = SymbolRef::create(token, targetModId);
     if (ref.hasValue()) {
       this->links.emplace_back(ref.unwrap(), link);
@@ -222,8 +222,7 @@ public:
 
   ~SymbolIndexer() override = default;
 
-  bool enterModule(unsigned short modId, int version,
-                   const std::shared_ptr<TypePool> &pool) override;
+  bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;
 
 protected:

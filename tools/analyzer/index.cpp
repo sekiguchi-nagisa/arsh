@@ -40,13 +40,13 @@ void DeclBase::addRef(SymbolRef ref) {
 // ##     DeclSymbol     ##
 // ########################
 
-std::pair<unsigned short, bool> DeclSymbol::getInfoAsModId() const {
+std::pair<ModId, bool> DeclSymbol::getInfoAsModId() const {
   auto ref = this->getInfo();
   auto value = convertToDecimal<int>(ref.begin(), ref.end());
   if (value && value.value <= UINT16_MAX && value.value >= 0) {
-    return {static_cast<unsigned short>(value.value), true};
+    return {ModId{static_cast<unsigned short>(value.value)}, true};
   }
-  return {0, false};
+  return {BUILTIN_MOD_ID, false};
 }
 
 std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
@@ -183,7 +183,7 @@ void SymbolIndexes::add(SymbolIndexPtr index) {
   }
 }
 
-SymbolIndexPtr SymbolIndexes::find(unsigned short modId) const {
+SymbolIndexPtr SymbolIndexes::find(ModId modId) const {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
@@ -194,7 +194,7 @@ SymbolIndexPtr SymbolIndexes::find(unsigned short modId) const {
   return nullptr;
 }
 
-void SymbolIndexes::remove(unsigned short id) {
+void SymbolIndexes::remove(ModId id) {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), id, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {

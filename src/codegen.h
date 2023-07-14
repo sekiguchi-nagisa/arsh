@@ -127,7 +127,7 @@ struct CodeBuilder : public CodeEmitter<true> {
 
   unsigned char localVarNum;
 
-  unsigned short modId;
+  ModId modId;
 
   signed short stackDepthCount{0};
   signed short maxStackDepth{0};
@@ -156,8 +156,7 @@ struct CodeBuilder : public CodeEmitter<true> {
    */
   std::vector<bool> cmdCallCtxs;
 
-  explicit CodeBuilder(unsigned short modId, LexerPtr lexer, CodeKind kind,
-                       unsigned char localVarNum)
+  explicit CodeBuilder(ModId modId, LexerPtr lexer, CodeKind kind, unsigned char localVarNum)
       : lexer(std::move(lexer)), kind(kind), localVarNum(localVarNum), modId(modId) {
     this->cmdCallCtxs.push_back(true);
   }
@@ -461,7 +460,7 @@ private:
   void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
                          const MethodHandle &matchHandle, const Label &mergeLabel);
 
-  void initToplevelCodeBuilder(unsigned short modId, LexerPtr lex, unsigned short localVarNum) {
+  void initToplevelCodeBuilder(ModId modId, LexerPtr lex, unsigned short localVarNum) {
     assert(lex->getScriptDir());
     this->initCodeBuilder(CodeKind::TOPLEVEL, modId, std::move(lex), localVarNum);
   }
@@ -477,8 +476,7 @@ private:
     this->initCodeBuilder(kind, modId, lex, localVarNum);
   }
 
-  void initCodeBuilder(CodeKind kind, unsigned short modId, LexerPtr lex,
-                       unsigned short localVarNum) {
+  void initCodeBuilder(CodeKind kind, ModId modId, LexerPtr lex, unsigned short localVarNum) {
     this->builders.emplace_back(modId, std::move(lex), kind, localVarNum);
     if (kind == CodeKind::TOPLEVEL) {
       auto &lexer = *this->curBuilder().lexer;
@@ -583,7 +581,7 @@ public:
 
   const CodeGenError &getError() const { return this->error; }
 
-  void initialize(unsigned short modId, LexerPtr lexer) {
+  void initialize(ModId modId, LexerPtr lexer) {
     this->initToplevelCodeBuilder(modId, std::move(lexer), 0);
   }
 
@@ -593,7 +591,7 @@ public:
     return this->finalizeToplevelCodeBuilder({0, 0}, maxVarIndex, modType);
   }
 
-  void enterModule(unsigned short modId, LexerPtr lexer) {
+  void enterModule(ModId modId, LexerPtr lexer) {
     this->initToplevelCodeBuilder(modId, std::move(lexer), 0);
   }
 

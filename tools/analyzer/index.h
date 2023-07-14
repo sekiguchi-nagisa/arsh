@@ -20,6 +20,8 @@
 #include <functional>
 #include <vector>
 
+#include <constant.h>
+
 #include <misc/buffer.hpp>
 #include <misc/enum_util.hpp>
 #include <misc/resource.hpp>
@@ -33,17 +35,17 @@ class SymbolRef {
 private:
   unsigned int pos;
   unsigned short size;
-  unsigned short modId;
+  ModId modId;
 
 public:
-  static Optional<SymbolRef> create(Token token, unsigned short modId) {
+  static Optional<SymbolRef> create(Token token, ModId modId) {
     if (token.size > UINT16_MAX) {
       return {};
     }
     return SymbolRef(token.pos, static_cast<unsigned short>(token.size), modId);
   }
 
-  SymbolRef(unsigned int pos, unsigned short size, unsigned short modId)
+  SymbolRef(unsigned int pos, unsigned short size, ModId modId)
       : pos(pos), size(size), modId(modId) {}
 
   unsigned int getPos() const { return this->pos; }
@@ -55,7 +57,7 @@ public:
     };
   }
 
-  unsigned short getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; }
 
   unsigned short getSize() const { return this->size; }
 
@@ -67,7 +69,7 @@ public:
 
 // for symbol lookup
 struct SymbolRequest {
-  unsigned short modId;
+  ModId modId;
   unsigned int pos;
 };
 
@@ -75,11 +77,11 @@ class DeclBase {
 private:
   unsigned int pos;
   unsigned short size;
-  unsigned short modId;
+  ModId modId;
   FlexBuffer<SymbolRef> refs;
 
 protected:
-  DeclBase(unsigned int pos, unsigned short size, unsigned short modId)
+  DeclBase(unsigned int pos, unsigned short size, ModId modId)
       : pos(pos), size(size), modId(modId) {}
 
 public:
@@ -87,7 +89,7 @@ public:
 
   unsigned short getSize() const { return this->size; }
 
-  unsigned short getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; }
 
   Token getToken() const {
     return Token{
@@ -148,7 +150,7 @@ private:
   Token body;
 
 public:
-  static Optional<DeclSymbol> create(Kind kind, Attr attr, Name &&name, unsigned short modId,
+  static Optional<DeclSymbol> create(Kind kind, Attr attr, Name &&name, ModId modId,
                                      const char *info, Token body) {
     if (name.token.size > UINT16_MAX) {
       return {};
@@ -157,8 +159,8 @@ public:
                       modId, std::move(name.name), info != nullptr ? info : "(dummy)", body);
   }
 
-  DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, unsigned short mod,
-             CStrPtr &&name, const char *info, Token body)
+  DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, ModId mod, CStrPtr &&name,
+             const char *info, Token body)
       : DeclBase(pos, size, mod), kind(kind), attr(attr), mangledName(std::move(name)),
         info(CStrPtr(strdup(info))), body(body) {}
 
@@ -175,7 +177,7 @@ public:
    * @return
    * if kind is not Kind::MOD, return {0, false}
    */
-  std::pair<unsigned short, bool> getInfoAsModId() const;
+  std::pair<ModId, bool> getInfoAsModId() const;
 
   Token getBody() const { return this->body; }
 
@@ -233,7 +235,7 @@ class Symbol {
 private:
   unsigned int pos;
   unsigned short size;
-  unsigned short declModId;
+  ModId declModId;
   unsigned int declPos;
 
 public:
@@ -245,7 +247,7 @@ public:
                   decl.getPos());
   }
 
-  Symbol(unsigned int pos, unsigned short size, unsigned short declModId, unsigned int declPos)
+  Symbol(unsigned int pos, unsigned short size, ModId declModId, unsigned int declPos)
       : pos(pos), size(size), declModId(declModId), declPos(declPos) {}
 
   unsigned int getPos() const { return this->pos; }
@@ -257,7 +259,7 @@ public:
     };
   }
 
-  unsigned short getDeclModId() const { return this->declModId; }
+  ModId getDeclModId() const { return this->declModId; }
 
   unsigned int getDeclPos() const { return this->declPos; }
 
@@ -292,7 +294,7 @@ using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
 class SymbolIndex {
 private:
-  unsigned short modId;
+  ModId modId;
   int version;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
@@ -301,7 +303,7 @@ private:
   std::vector<std::pair<SymbolRef, std::string>> links;
 
 public:
-  SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
+  SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
               std::unordered_map<std::string, SymbolRef> &&globals,
               std::vector<std::pair<SymbolRef, std::string>> &&links)
@@ -309,7 +311,7 @@ public:
         foreignDecls(std::move(foreignDecls)), globals(std::move(globals)),
         links(std::move(links)) {}
 
-  unsigned short getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; }
 
   int getVersion() const { return this->version; }
 
@@ -328,9 +330,9 @@ public:
   const auto &getLinks() const { return this->links; }
 
   struct Compare {
-    bool operator()(const SymbolIndexPtr &x, unsigned short id) const { return x->getModId() < id; }
+    bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }
 
-    bool operator()(unsigned short id, const SymbolIndexPtr &y) const { return id < y->getModId(); }
+    bool operator()(ModId id, const SymbolIndexPtr &y) const { return id < y->getModId(); }
 
     bool operator()(const SymbolIndexPtr &x, const SymbolIndexPtr &y) const {
       return x->getModId() < y->getModId();
@@ -345,9 +347,9 @@ private:
 public:
   void add(SymbolIndexPtr index);
 
-  SymbolIndexPtr find(unsigned short modId) const;
+  SymbolIndexPtr find(ModId modId) const;
 
-  void remove(unsigned short id);
+  void remove(ModId id);
 
   const DeclSymbol *findDecl(SymbolRequest req) const {
     if (auto index = this->find(req.modId)) {

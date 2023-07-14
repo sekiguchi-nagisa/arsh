@@ -110,6 +110,11 @@ private:
 
   void write32(uint32_t b) { this->writeN<4>(b); }
 
+  void writeModId(ModId id) {
+    static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
+    this->write16(toValue(id));
+  }
+
   void writeT(ArchiveType t) {
     static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(uint8_t));
     this->write8(static_cast<uint8_t>(t));
@@ -162,6 +167,11 @@ private:
 
   uint32_t read32() { return static_cast<uint32_t>(this->readN<4>()); }
 
+  ModId readModId() {
+    static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
+    return ModId{this->read16()};
+  }
+
   ArchiveType readT() {
     auto v = this->read8();
     return static_cast<ArchiveType>(v);
@@ -191,7 +201,7 @@ using ModuleArchivePtr = std::shared_ptr<ModuleArchive>;
 class ModuleArchive {
 private:
   const int version{0};
-  const unsigned short modId{0};
+  const ModId modId{0};
   const ModAttr attr{};
   std::vector<Archive> handles;
   std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
@@ -199,14 +209,14 @@ private:
 public:
   ModuleArchive() = default;
 
-  ModuleArchive(unsigned short modId, int version, ModAttr attr, std::vector<Archive> &&handles,
+  ModuleArchive(ModId modId, int version, ModAttr attr, std::vector<Archive> &&handles,
                 std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
       : version(version), modId(modId), attr(attr), handles(std::move(handles)),
         imported(std::move(imported)) {}
 
   int getVersion() const { return this->version; }
 
-  unsigned short getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; }
 
   ModAttr getModAttr() const { return this->attr; }
 
@@ -214,7 +224,7 @@ public:
 
   const auto &getImported() const { return this->imported; }
 
-  bool isEmpty() const { return this->getModId() == 0; }
+  bool isEmpty() const { return toValue(this->getModId()) == 0; }
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 
@@ -225,9 +235,9 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);
 
 class ModuleArchives {
 private:
-  std::vector<std::pair<unsigned short, ModuleArchivePtr>> values;
+  std::vector<std::pair<ModId, ModuleArchivePtr>> values;
 
-  using iterator_type = std::vector<std::pair<unsigned short, ModuleArchivePtr>>::iterator;
+  using iterator_type = std::vector<std::pair<ModId, ModuleArchivePtr>>::iterator;
 
   static const ModuleArchivePtr EMPTY_ARCHIVE;
 
@@ -238,9 +248,9 @@ public:
    * @return
    * return null if not found
    */
-  ModuleArchivePtr find(unsigned short modId) const;
+  ModuleArchivePtr find(ModId modId) const;
 
-  void reserve(unsigned short modId) { this->reserveImpl(modId); }
+  void reserve(ModId modId) { this->reserveImpl(modId); }
 
   /**
    *
@@ -253,7 +263,7 @@ public:
     iter->second = archive;
   }
 
-  void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
+  void revert(std::unordered_set<ModId> &&revertingModIdSet);
 
   /**
    * completely remove specified archive if unused (not imported from other archives)
@@ -261,9 +271,9 @@ public:
    * @return
    * if unused, return true
    */
-  bool removeIfUnused(unsigned short id);
+  bool removeIfUnused(ModId id);
 
-  Optional<unsigned short> getFirstRevertedModId() const {
+  Optional<ModId> getFirstRevertedModId() const {
     for (auto &e : this->values) {
       if (!e.second) {
         return e.first;
@@ -273,7 +283,7 @@ public:
   }
 
 private:
-  iterator_type reserveImpl(unsigned short modId);
+  iterator_type reserveImpl(ModId modId);
 };
 
 } // namespace ydsh::lsp

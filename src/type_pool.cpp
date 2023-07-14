@@ -282,7 +282,7 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
 }
 
 TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType &superType,
-                                      unsigned short belongedModId) {
+                                      ModId belongedModId) {
   if (!this->get(TYPE::Error).isSameOrBaseTypeOf(superType)) {
     RAISE_TL_ERROR(InvalidElement, superType.getName());
   }
@@ -295,7 +295,7 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType 
   }
 }
 
-TypeOrError TypePool::createRecordType(const std::string &typeName, unsigned short belongedModId) {
+TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belongedModId) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
   auto *type = this->newType<RecordType>(name, this->get(TYPE::Any));
   if (type) {
@@ -326,7 +326,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   return Ok(newRecordType);
 }
 
-const ModType &TypePool::createModType(unsigned short modId,
+const ModType &TypePool::createModType(ModId modId,
                                        std::unordered_map<std::string, HandlePtr> &&handles,
                                        FlexBuffer<ModType::Imported> &&children, unsigned int index,
                                        ModAttr modAttr) {
@@ -339,13 +339,13 @@ const ModType &TypePool::createModType(unsigned short modId,
   } else { // re-open (only allow root module)
     assert(type->isModType());
     auto &modType = cast<ModType>(*this->getMut(type->typeId()));
-    assert(modType.isRoot());
+    assert(isRootMod(modType.getModId()));
     modType.reopen(std::move(handles), std::move(children), modAttr);
   }
   return cast<ModType>(*type);
 }
 
-const ModType *TypePool::getModTypeById(unsigned short modId) const {
+const ModType *TypePool::getModTypeById(ModId modId) const {
   auto name = toModTypeName(modId);
   auto *type = this->getType(name);
   if (type) {

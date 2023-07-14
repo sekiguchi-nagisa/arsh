@@ -28,13 +28,12 @@ class DiagnosticEmitter;
 class ExtraChecker : public NodePass {
 private:
   DiagnosticEmitter &emitter;
-  std::vector<unsigned int> modIds;
+  std::vector<ModId> modIds;
 
 public:
   explicit ExtraChecker(DiagnosticEmitter &emitter) : emitter(emitter) {}
 
-  bool enterModule(unsigned short modId, int version,
-                   const std::shared_ptr<TypePool> &pool) override;
+  bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;
 
 private:

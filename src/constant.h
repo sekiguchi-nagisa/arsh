@@ -57,6 +57,18 @@ enum class BuiltinVarOffset : unsigned int {
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
 
+enum class ModId : unsigned short {};
+
+constexpr ModId BUILTIN_MOD_ID = ModId{0};
+
+constexpr ModId ROOT_MOD_ID = ModId{1};
+
+inline bool isBuiltinMod(ModId id) { return id == BUILTIN_MOD_ID; }
+
+inline bool isRootMod(ModId id) { return id == ROOT_MOD_ID; }
+
+inline auto toValue(ModId id) { return static_cast<unsigned short>(id); }
+
 /**
  * built-in symbol(builtin variable, magic method) definition
  */
@@ -242,20 +254,20 @@ inline std::string toMethodFullName(unsigned int recvTypeId, StringRef methodNam
   return name;
 }
 
-inline std::string toModHolderName(unsigned short modId, bool global) {
+inline std::string toModHolderName(ModId modId, bool global) {
   std::string name = global ? "_g" : "_n";
-  name += std::to_string(modId);
+  name += std::to_string(static_cast<std::underlying_type_t<ModId>>(modId));
   name += MOD_HOLDER_SYMBOL_SUFFIX;
   return name;
 }
 
-inline std::string toModTypeName(unsigned short modId) {
+inline std::string toModTypeName(ModId modId) {
   std::string str = MOD_SYMBOL_PREFIX;
-  str += std::to_string(modId);
+  str += std::to_string(static_cast<std::underlying_type_t<ModId>>(modId));
   return str;
 }
 
-inline std::string toQualifiedTypeName(StringRef name, unsigned short belongedModId) {
+inline std::string toQualifiedTypeName(StringRef name, ModId belongedModId) {
   std::string value = toModTypeName(belongedModId);
   value += ".";
   value += name;

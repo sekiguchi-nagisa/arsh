@@ -159,9 +159,9 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
 }
 
-unsigned short DSType::resolveBelongedModId() const {
+ModId DSType::resolveBelongedModId() const {
   if (this->typeKind() != TypeKind::Record && this->typeKind() != TypeKind::Error) {
-    return 0; // fast path
+    return BUILTIN_MOD_ID; // fast path
   }
   if (auto ref = this->getNameRef(); isQualifiedTypeName(this->getNameRef())) {
     auto index = ref.find('.');
@@ -170,9 +170,9 @@ unsigned short DSType::resolveBelongedModId() const {
     modTypeName.removePrefix(strlen(MOD_SYMBOL_PREFIX));
     auto pair = convertToDecimal<uint32_t>(modTypeName.begin(), modTypeName.end());
     assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
-    return static_cast<unsigned short>(pair.value);
+    return ModId{static_cast<unsigned short>(pair.value)};
   }
-  return 0;
+  return BUILTIN_MOD_ID;
 }
 
 // #######################
@@ -323,8 +323,7 @@ MethodHandle::~MethodHandle() { free(this->packedParamNames); }
 std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
                                                    const DSType *ret,
                                                    const std::vector<const DSType *> &params,
-                                                   PackedParamNames &&packed,
-                                                   unsigned short modId) {
+                                                   PackedParamNames &&packed, ModId modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);

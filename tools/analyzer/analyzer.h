@@ -60,14 +60,14 @@ public:
   bool handleTypeError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                        const TypeCheckError &checkError, bool firstAppear) override;
 
-  bool handleTypeError(unsigned short modId, const TypeCheckError &checkError);
+  bool handleTypeError(ModId modId, const TypeCheckError &checkError);
 
-  bool enterModule(unsigned short modId, int version);
+  bool enterModule(ModId modId, int version);
 
   bool exitModule();
 
 private:
-  Context *findContext(unsigned short srcId) {
+  Context *findContext(ModId srcId) {
     for (auto iter = this->contexts.rbegin(); iter != this->contexts.rend(); ++iter) {
       if (iter->src->getSrcId() == srcId) {
         return &*iter;
@@ -114,7 +114,7 @@ public:
 
   const auto &getPoolPtr() const { return this->pool; }
 
-  unsigned int getModId() const { return this->scope->modId; }
+  ModId getModId() const { return this->scope->modId; }
 
   int getVersion() const { return this->version; }
 

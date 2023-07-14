@@ -75,7 +75,7 @@ public:
   /**
    * indicates belonged module id
    */
-  const unsigned short modId;
+  const ModId modId;
 
   /**
    * for module object
@@ -129,8 +129,7 @@ public:
    * @param gvarCount
    * @param modId
    */
-  NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned int modIndex,
-            unsigned short modId)
+  NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned int modIndex, ModId modId)
       : kind(GLOBAL), modId(modId), modIndex(modIndex), maxVarCount(gvarCount) {}
 
   /**
@@ -139,7 +138,7 @@ public:
    * @param parent
    * @param modId
    */
-  NameScope(const NameScopePtr &parent, unsigned int modIndex, unsigned short modId)
+  NameScope(const NameScopePtr &parent, unsigned int modIndex, ModId modId)
       : kind(GLOBAL), modId(modId), modIndex(modIndex), parent(parent),
         maxVarCount(parent->maxVarCount) {
     assert(this->parent->isGlobal());
@@ -165,9 +164,9 @@ public:
 
   bool isFunc() const { return this->kind == FUNC; }
 
-  bool inBuiltinModule() const { return this->modId == 0; }
+  bool inBuiltinModule() const { return isBuiltinMod(this->modId); }
 
-  bool inRootModule() const { return this->modId == 1; }
+  bool inRootModule() const { return isRootMod(this->modId); }
 
   ModAttr getModAttr() const { return this->modAttr; }
 
@@ -496,7 +495,7 @@ class ModuleLoader : public ModuleLoaderBase {
 private:
   static_assert(sizeof(ModEntry) == sizeof(uint32_t));
 
-  StrRefMap<unsigned int> indexMap;
+  StrRefMap<unsigned int> indexMap; // module full path to module id mapping
   std::vector<std::pair<CStrPtr, ModEntry>> entries;
 
   unsigned int gvarCount{0};
@@ -537,7 +536,7 @@ public:
     return &this->entries[iter->second].second;
   }
 
-  const auto &operator[](unsigned int modId) const { return this->entries[modId]; }
+  const auto &operator[](ModId modId) const { return this->entries[toValue(modId)]; }
 
   auto begin() const { return this->entries.begin(); }
 
