@@ -379,6 +379,29 @@ TEST_F(InteractiveTest, wait4) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
+TEST_F(InteractiveTest, bg1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
+  std::string err = "ydsh: read: 0: ";
+  err += strerror(EINTR);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read", err.c_str()));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &", ": Job = %1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read | __gets", err.c_str()));
+
+  // disable monitor option
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read &'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read | __gets &'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
 TEST_F(InteractiveTest, disown1) {
   this->invoke("--quiet", "--norc");
 

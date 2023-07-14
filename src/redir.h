@@ -74,7 +74,7 @@ inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
 }
 
 inline void redirInToNull() {
-  int fd = open("/dev/null", O_WRONLY);
+  int fd = open("/dev/null", O_RDONLY);
   dup2(fd, STDIN_FILENO);
   close(fd);
 }

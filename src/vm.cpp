@@ -503,6 +503,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
   PipeSet pipeset(forkKind);
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
+  const bool jobCtrl = state.isJobControl();
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() > 0) { // parent process
     tryToClose(pipeset.in[READ_PIPE]);
@@ -532,7 +533,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
         return false;
       }
 
-      auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+      auto waitOp = jobCtrl ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
       int status = proc.wait(waitOp); // wait exit
       int errNum = errno;
       tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
@@ -568,7 +569,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
 
     state.stack.ip() += offset - 1;
   } else if (proc.pid() == 0) { // child process
-    pipeset.setupChildStdin(forkKind, state.isJobControl());
+    pipeset.setupChildStdin(forkKind, jobCtrl);
     pipeset.setupChildStdout();
     pipeset.closeAll();
 
@@ -1180,6 +1181,7 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
   pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
+  const bool jobCtrl = state.isJobControl();
   Proc proc; // NOLINT
 
   uintptr_t procIndex;
@@ -1203,7 +1205,7 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
   if (proc.pid() == 0) {  // child
     if (procIndex == 0) { // first process
       ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-      pipeset.setupChildStdin(forkKind, state.isJobControl());
+      pipeset.setupChildStdin(forkKind, jobCtrl);
     }
     if (procIndex > 0 && procIndex < pipeSize) { // other process.
       ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);

@@ -23,6 +23,11 @@
 
 - ``textDocument/completion`` shows variable/function/field/method type signature
 
+### Fixed
+
+- fix wrong job-control checking in child process
+- fix wrong open flag in stdin redirection to /dev/null
+
 ## [0.30.0] - 2023-07-01
 
 ### Added
