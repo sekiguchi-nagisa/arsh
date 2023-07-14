@@ -385,13 +385,28 @@ TEST_F(InteractiveTest, bg1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
-  std::string err = "ydsh: read: 0: ";
-  err += strerror(EINTR);
-  err += "\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read", err.c_str()));
 
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &", ": Job = %1"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read | __gets", err.c_str()));
+  if (platform::platform() == platform::PlatformType::LINUX) {
+    this->sendLine("fg");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nread\n"));
+    this->sendLine("true");
+    ASSERT_NO_FATAL_FAILURE(this->expect("true\n" + PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY.empty()")); // REPLY is empty
+
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &", ": Job = %1"));
+    this->sendLine("fg");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nread | __gets\n"));
+    this->sendLine("false");
+    ASSERT_NO_FATAL_FAILURE(this->expect("false\n" + PROMPT));
+  } else if (platform::platform() == platform::PlatformType::DARWIN) {
+    std::string err = "ydsh: read: 0: ";
+    err += strerror(EINTR);
+    err += "\n";
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read", err.c_str()));
+
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &", ": Job = %1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read | __gets", err.c_str()));
+  }
 
   // disable monitor option
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read &'"));
