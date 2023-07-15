@@ -973,8 +973,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
     condNode = TRY(this->parse_expression());
   }
   auto thenNode = this->parse_block();
-  if (this->incompleteNode) {
-    assert(isa<BlockNode>(*this->incompleteNode));
+  if (this->incompleteNode && isa<BlockNode>(*this->incompleteNode)) {
     thenNode.reset(cast<BlockNode>(this->incompleteNode.release()));
     this->incompleteNode = std::make_unique<IfNode>(startPos, asElif, std::move(condNode),
                                                     std::move(thenNode), nullptr, ifLet);
@@ -1071,8 +1070,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     TRY(this->expect(TokenKind::RP));
     auto blockNode = this->parse_block();
     bool comp = false;
-    if (this->incompleteNode) {
-      assert(isa<BlockNode>(*this->incompleteNode));
+    if (this->incompleteNode && isa<BlockNode>(*this->incompleteNode)) {
       comp = true;
       blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
     } else if (this->hasError()) {
@@ -1096,8 +1094,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = this->parse_block();
     bool comp = false;
-    if (this->incompleteNode) {
-      assert(isa<BlockNode>(*this->incompleteNode));
+    if (this->incompleteNode && isa<BlockNode>(*this->incompleteNode)) {
       comp = true;
       blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
     } else if (this->hasError()) {
@@ -1172,8 +1169,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
 
   auto blockNode = this->parse_block();
   bool comp = false;
-  if (this->incompleteNode) {
-    assert(isa<BlockNode>(*this->incompleteNode));
+  if (this->incompleteNode && isa<BlockNode>(*this->incompleteNode)) {
     comp = true;
     blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
   } else if (this->hasError()) {
@@ -1808,9 +1804,20 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
       auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
       node = std::make_unique<AccessNode>(std::move(node), std::move(nameInfo));
       if (CUR_KIND() == TokenKind::LP && !this->hasLineTerminator()) { // treat as method call
-        auto argsNode = TRY(this->parse_arguments());
+        auto argsNode = this->parse_arguments();
+        bool incomplete = false;
+        if (this->incompleteNode && isa<ArgsNode>(*this->incompleteNode)) {
+          incomplete = true;
+          argsNode.reset(cast<ArgsNode>(this->incompleteNode.release()));
+        } else if (this->hasError()) {
+          return nullptr;
+        }
         node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode),
                                            ApplyNode::METHOD_CALL);
+        if (incomplete) {
+          this->incompleteNode = std::move(node);
+          return nullptr;
+        }
       }
       break;
     }
@@ -1824,9 +1831,20 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
       break;
     }
     case TokenKind::LP: {
-      auto argsNode = TRY(this->parse_arguments());
+      auto argsNode = this->parse_arguments();
+      bool incomplete = false;
+      if (this->incompleteNode && isa<ArgsNode>(*this->incompleteNode)) {
+        incomplete = true;
+        argsNode.reset(cast<ArgsNode>(this->incompleteNode.release()));
+      } else if (this->hasError()) {
+        return nullptr;
+      }
       node =
           std::make_unique<ApplyNode>(std::move(node), std::move(argsNode), ApplyNode::FUNC_CALL);
+      if (incomplete) {
+        this->incompleteNode = std::move(node);
+        return nullptr;
+      }
       break;
     }
     case TokenKind::INC:
@@ -1874,8 +1892,20 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     unsigned int startPos = START_POS();
     this->expect(TokenKind::NEW, false); // always success
     auto type = TRY(this->parse_typeName());
-    auto argsNode = TRY(this->parse_arguments());
-    return std::make_unique<NewNode>(startPos, std::move(type), std::move(argsNode));
+    auto argsNode = this->parse_arguments();
+    bool incomplete = false;
+    if (this->incompleteNode && isa<ArgsNode>(*this->incompleteNode)) {
+      incomplete = true;
+      argsNode.reset(cast<ArgsNode>(this->incompleteNode.release()));
+    } else if (this->hasError()) {
+      return nullptr;
+    }
+    auto node = std::make_unique<NewNode>(startPos, std::move(type), std::move(argsNode));
+    if (incomplete) {
+      this->incompleteNode = std::move(node);
+      return nullptr;
+    }
+    return node;
   }
   case TokenKind::INT_LITERAL: {
     Token token = TRY(this->expect(TokenKind::INT_LITERAL));
@@ -2148,7 +2178,15 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
       this->consume(); // COMMA
     }
     if (lookahead_expression(CUR_KIND())) {
-      argsNode->addNode(TRY(this->parse_expression()));
+      auto argNode = this->parse_expression();
+      if (this->incompleteNode) {
+        argsNode->addNode(std::move(this->incompleteNode));
+        this->incompleteNode = std::move(argsNode);
+        return nullptr;
+      } else if (this->hasError()) {
+        return nullptr;
+      }
+      argsNode->addNode(std::move(argNode));
     } else {
       E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
     }
@@ -2287,10 +2325,22 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     this->consume(); // always success
     auto varNode = this->newVarNode(token.slice(0, token.size - 1));
 
-    auto argsNode = TRY(this->parse_arguments(token.sliceFrom(token.size - 1)));
-    auto node =
+    auto argsNode = this->parse_arguments(token.sliceFrom(token.size - 1));
+    bool incomplete = false;
+    if (this->incompleteNode && isa<ArgsNode>(*this->incompleteNode)) {
+      incomplete = true;
+      argsNode.reset(cast<ArgsNode>(this->incompleteNode.release()));
+    } else if (this->hasError()) {
+      return nullptr;
+    }
+    auto exprNode =
         std::make_unique<ApplyNode>(std::move(varNode), std::move(argsNode), ApplyNode::FUNC_CALL);
-    return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(node));
+    auto node = std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(exprNode));
+    if (incomplete) {
+      this->incompleteNode = std::move(node);
+      return nullptr;
+    }
+    return node;
   }
   default:
     return this->parse_interpolation(EmbedNode::CMD_ARG);
