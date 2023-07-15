@@ -2625,10 +2625,11 @@ public:
     VAR_IN_CMD_ARG, // complete variable names (within command argument)
     MEMBER,         // complete members (field or method)
     TYPE,           // complete type name (maybe type alias)
+    CALL_SIGNATURE, // complete function/method/constructor signature (for signature completion)
   };
 
 private:
-  std::unique_ptr<Node> exprNode;
+  std::unique_ptr<Node> exprNode; // may be null
   const Kind kind;
 
 public:

@@ -402,12 +402,14 @@ struct CallSignature {
   const DSType *returnType{nullptr};
   unsigned int paramSize{0};
   const DSType *const *paramTypes{nullptr};
+  const char *name{nullptr};
   const Handle *handle{nullptr};
 
   explicit CallSignature(const DSType &retType) : returnType(&retType) {}
 
-  CallSignature(const DSType &ret, unsigned int size, const DSType *const *params, const Handle *hd)
-      : returnType(&ret), paramSize(size), paramTypes(params), handle(hd) {}
+  CallSignature(const DSType &ret, unsigned int size, const DSType *const *params, const char *name,
+                const Handle *hd)
+      : returnType(&ret), paramSize(size), paramTypes(params), name(name), handle(hd) {}
 };
 
 class PackedParamNames {
@@ -492,9 +494,9 @@ public:
 
   const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 
-  CallSignature toCallSignature(const Handle *hd) const {
+  CallSignature toCallSignature(const char *name, const Handle *hd) const {
     return {this->returnType, this->getParamSize(),
-            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], hd};
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, hd};
   }
 
   static void operator delete(void *ptr) noexcept { // NOLINT
@@ -1010,9 +1012,9 @@ public:
 
   bool isConstructor() const { return this->is(HandleKind::CONSTRUCTOR); }
 
-  CallSignature toCallSignature() const {
+  CallSignature toCallSignature(const char *name) const {
     return {this->returnType, this->getParamSize(),
-            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], this};
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, this};
   }
 
   /**

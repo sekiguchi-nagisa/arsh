@@ -995,7 +995,8 @@ void CodeCompNode::dump(NodeDumper &dumper) const {
   OP(VAR)                                                                                          \
   OP(VAR_IN_CMD_ARG)                                                                               \
   OP(MEMBER)                                                                                       \
-  OP(TYPE)
+  OP(TYPE)                                                                                         \
+  OP(CALL_SIGNATURE)
 
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM

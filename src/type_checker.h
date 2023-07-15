@@ -17,6 +17,8 @@
 #ifndef YDSH_TYPE_CHECKER_H
 #define YDSH_TYPE_CHECKER_H
 
+#include <functional>
+
 #include "lexer.h"
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
@@ -278,6 +280,8 @@ class CodeCompletionHandler;
 
 enum class TildeExpandStatus;
 
+using SignatureHandler = std::function<void(const CallSignature &, unsigned int)>;
+
 class TypeChecker : protected NodeVisitor {
 protected:
   const SysConfig &config;
@@ -301,6 +305,8 @@ protected:
   std::reference_wrapper<const Lexer> lexer;
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
+
+  SignatureHandler signatureHandler;
 
   FlexBuffer<const DSType *> requiredTypes;
 
@@ -328,6 +334,10 @@ public:
   }
 
   ObserverPtr<CodeCompletionHandler> getCodeCompletionHandler() const { return this->ccHandler; }
+
+  void setSignatureHandler(SignatureHandler &&handler) {
+    this->signatureHandler = std::move(handler);
+  }
 
   void setAllowWarning(bool set) { this->allowWarning = set; }
 

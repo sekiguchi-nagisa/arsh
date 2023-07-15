@@ -29,14 +29,6 @@ namespace ydsh::lsp {
 // ##     AnalyzerContext     ##
 // #############################
 
-static void consumeAllInput(FrontEnd &frontEnd) {
-  while (frontEnd) {
-    if (!frontEnd()) {
-      break;
-    }
-  }
-}
-
 struct EmptyConsumer {
   void operator()(const Handle &, int64_t) {}
 
@@ -400,7 +392,7 @@ public:
       auto &type = pool.get(handle.getTypeId());
       assert(type.isFuncType());
       std::string value;
-      formatFuncSignature(type, handle, value);
+      formatFuncSignature(cast<FunctionType>(type), handle, value);
       return CompletionItemLabelDetails{
           .detail = std::move(value),
           .description = {},
@@ -520,6 +512,81 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int o
   source = source.substr(0, offset);
   codeCompleter(ptr->getScope(), src.getPath(), source, ignoredOp);
   return std::move(collector).finalize();
+}
+
+static LexerPtr lex(const Source &src, unsigned int offset) {
+  std::string workDir = toDirName(src.getPath());
+  StringRef ref = src.getContent();
+  ref = ref.substr(0, offset);
+  ByteBuffer buf(ref.begin(), ref.end());
+  if (!buf.empty() && buf.back() == '\n') {
+    buf += '\n'; // explicitly append newline for command name completion
+  }
+  return LexerPtr::create(src.getPath().c_str(), std::move(buf), CStrPtr(strdup(workDir.c_str())));
+}
+
+Optional<SignatureInformation> Analyzer::collectSignature(const Source &src, unsigned int offset) {
+  this->reset();
+
+  auto &ctx = this->addNew(src);
+  auto workDir = toDirName(src.getPath());
+  CodeCompletionHandler handler(this->getSysConfig(), ctx->getPool(), workDir, ctx->getScope(),
+                                workDir); // dummy
+  FrontEnd frontEnd(static_cast<FrontEnd::ModuleProvider &>(*this), lex(src, offset),
+                    FrontEndOption::ERROR_RECOVERY | FrontEndOption::COLLECT_SIGNATURE,
+                    makeObserver(handler));
+  Optional<SignatureInformation> info;
+  frontEnd.setSignatureHandler([&](const CallSignature &signature, const unsigned int paramIndex) {
+    if (!signature.handle) {
+      return; // FIXME: reified type constructor
+    }
+    Optional<unsigned int> activeParamIndex;
+    if (signature.paramSize) {
+      if (paramIndex < signature.paramSize) {
+        activeParamIndex = paramIndex;
+      }
+    }
+    std::vector<ParameterInformation> params;
+    auto callback = [&params](StringRef ref) {
+      params.push_back(ParameterInformation{
+          .label = ref.toString(),
+      });
+    };
+    std::string out;
+    if (signature.handle->isFuncHandle()) {
+      auto *funcHandle = cast<FuncHandle>(signature.handle);
+      auto &type = ctx->getPool().get(funcHandle->getTypeId());
+      assert(isa<FunctionType>(type));
+      out = "function ";
+      if (signature.name) {
+        out += signature.name;
+      }
+      formatFuncSignature(cast<FunctionType>(type), *funcHandle, out, callback);
+    } else if (signature.handle->isMethodHandle()) {
+      auto *methodHandle = cast<MethodHandle>(signature.handle);
+      auto &recvType = ctx->getPool().get(methodHandle->getTypeId());
+      out = "function ";
+      if (signature.name) {
+        out += signature.name;
+      }
+      formatMethodSignature(recvType, *methodHandle, out, callback);
+    } // FIXME: function type
+
+    if (out.empty()) {
+      return;
+    }
+    if (!activeParamIndex.hasValue()) {
+      params.clear();
+    }
+    info = SignatureInformation{
+        .label = std::move(out),
+        .documentation = {},
+        .parameters = std::move(params),
+        .activeParameter = activeParamIndex,
+    };
+  });
+  consumeAllInput(frontEnd);
+  return info;
 }
 
 } // namespace ydsh::lsp

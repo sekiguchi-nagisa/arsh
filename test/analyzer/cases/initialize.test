@@ -55,6 +55,13 @@
 # CHECK:           ]
 # CHECK:         }
 # CHECK:       },
+# CHECK:       "signatureHelpProvider": {
+# CHECK:         "triggerCharacters": [
+# CHECK:           "(",
+# CHECK:           ",",
+# CHECK:           ")"
+# CHECK:         ]
+# CHECK:       },
 # CHECK:       "textDocumentSync": {
 # CHECK:         "change": 2,
 # CHECK:         "openClose": true

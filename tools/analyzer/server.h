@@ -164,6 +164,8 @@ private:
 
   void syncResult();
 
+  std::pair<std::shared_ptr<SourceManager>, ModuleArchives> snapshot() const;
+
 public:
   // RPC method definitions
 
@@ -200,6 +202,8 @@ public:
   Reply<std::vector<DocumentLink>> documentLink(const DocumentLinkParams &params);
 
   Reply<std::vector<DocumentSymbol>> documentSymbol(const DocumentSymbolParams &params);
+
+  Reply<Union<SignatureHelp, std::nullptr_t>> signatureHelp(const SignatureHelpParams &params);
 
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {

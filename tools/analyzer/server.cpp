@@ -55,6 +55,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/documentLink", &LSPServer::documentLink);
   this->bind("textDocument/documentSymbol", &LSPServer::documentSymbol);
   this->bind("textDocument/completion", &LSPServer::complete);
+  this->bind("textDocument/signatureHelp", &LSPServer::signatureHelp);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
 }
@@ -375,6 +376,10 @@ void LSPServer::syncResult() {
   }
 }
 
+std::pair<std::shared_ptr<SourceManager>, ModuleArchives> LSPServer::snapshot() const {
+  return {this->result.srcMan->copy(), ModuleArchives(this->result.archives)};
+}
+
 static MarkupKind resolveMarkupKind(const std::vector<MarkupKind> &formats) {
   for (auto &kind : formats) {
     if (kind == MarkupKind::Markdown) {
@@ -414,6 +419,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
 
   InitializeResult ret;
+  ret.capabilities.signatureHelpProvider.triggerCharacters = {"(", ",", ")"};
   ret.capabilities.completionProvider.triggerCharacters = {".", "$", "/"};
   ret.capabilities.semanticTokensProvider.legend = SemanticTokensLegend::create();
   ret.capabilities.semanticTokensProvider.full = true;
@@ -534,9 +540,8 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   if (auto resolved = this->resolvePosition(params)) {
     auto &src = *resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
-    ModuleArchives copiedArchives = this->result.archives;
+    auto [copiedSrcMan, copiedArchives] = this->snapshot();
     copiedArchives.revert({src.getSrcId()});
-    auto copiedSrcMan = this->result.srcMan->copy();
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
     return analyzer.complete(src, pos, this->cmdCompKind, this->cmdArgComp == BinaryFlag::enabled);
   } else {
@@ -640,6 +645,31 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
             .selectionRange = selectionRange.unwrap(),
         });
       }
+    }
+    return ret;
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<Union<SignatureHelp, std::nullptr_t>>
+LSPServer::signatureHelp(const SignatureHelpParams &params) {
+  LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  if (auto resolved = this->resolvePosition(params)) {
+    auto &src = *resolved.asOk().first;
+    auto pos = resolved.asOk().second.pos;
+    auto [copiedSrcMan, copiedArchives] = this->snapshot();
+    copiedArchives.revert({src.getSrcId()});
+    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
+    Union<SignatureHelp, std::nullptr_t> ret = nullptr;
+    auto info = analyzer.collectSignature(src, pos);
+    if (info.hasValue()) {
+      SignatureHelp value;
+      value.activeParameter = info.unwrap().activeParameter;
+      value.activeSignature = 0;
+      value.signatures.push_back(std::move(info.unwrap()));
+      ret = std::move(value);
     }
     return ret;
   } else {

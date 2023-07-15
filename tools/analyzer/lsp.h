@@ -425,6 +425,16 @@ struct CompletionOptions : public WorkDoneProgressOptions {
   }
 };
 
+struct SignatureHelpOptions : public WorkDoneProgressOptions {
+  std::vector<std::string> triggerCharacters;
+
+  template <typename T>
+  void jsonify(T &t) {
+    WorkDoneProgressOptions::jsonify(t);
+    JSONIFY(triggerCharacters);
+  }
+};
+
 struct SaveOptions {
   Optional<bool> includeText; // optional
 
@@ -478,6 +488,7 @@ struct DocumentLinkOptions : public WorkDoneProgressOptions {
  */
 struct ServerCapabilities {
   TextDocumentSyncOptions textDocumentSync;
+  SignatureHelpOptions signatureHelpProvider;
   bool hoverProvider{true};
   CompletionOptions completionProvider;
   bool definitionProvider{true};
@@ -494,6 +505,7 @@ struct ServerCapabilities {
   void jsonify(T &t) {
     JSONIFY(textDocumentSync);
     JSONIFY(hoverProvider);
+    JSONIFY(signatureHelpProvider);
     JSONIFY(completionProvider);
     JSONIFY(definitionProvider);
     JSONIFY(referencesProvider);
@@ -996,6 +1008,75 @@ struct DocumentSymbol {
     JSONIFY(kind);
     JSONIFY(range);
     JSONIFY(selectionRange);
+  }
+};
+
+enum class SignatureHelpTriggerKind : unsigned int {
+  Invoked = 1,
+  TriggerCharacter = 2,
+  ContentChange = 3,
+};
+
+struct ParameterInformation {
+  std::string label;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(label);
+  }
+};
+
+struct SignatureInformation {
+  std::string label;
+  Optional<MarkupContent> documentation;
+  Optional<std::vector<ParameterInformation>> parameters;
+  Optional<unsigned int> activeParameter;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(label);
+    JSONIFY(documentation);
+    JSONIFY(parameters);
+    JSONIFY(activeParameter);
+  }
+};
+
+struct SignatureHelp {
+  std::vector<SignatureInformation> signatures;
+  Optional<unsigned int> activeSignature;
+  Optional<unsigned int> activeParameter;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(signatures);
+    JSONIFY(activeSignature);
+    JSONIFY(activeParameter);
+  }
+};
+
+struct SignatureHelpContext {
+  SignatureHelpTriggerKind triggerKind;
+  Optional<std::string> triggerCharacter;
+  bool isRetrigger{false};
+  Optional<SignatureHelp> activeSignatureHelp;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(triggerKind);
+    JSONIFY(triggerCharacter);
+    JSONIFY(isRetrigger);
+    JSONIFY(activeSignatureHelp);
+  }
+};
+
+struct SignatureHelpParams : public TextDocumentPositionParams, public WorkDoneProgressParams {
+  Optional<SignatureHelpContext> context;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    JSONIFY(context);
   }
 };
 

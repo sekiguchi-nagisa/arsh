@@ -49,18 +49,21 @@ void formatVarSignature(const DSType &type, std::string &out) {
   out += normalizeTypeName(type);
 }
 
-void formatFuncSignature(const DSType &type, const FuncHandle &handle, std::string &out) {
-  assert(type.isFuncType());
-  auto &funcType = cast<FunctionType>(type);
+void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
+                         const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(funcType.getParamSize(), handle.getPackedParamNames());
   out += "(";
   for (unsigned int i = 0; i < funcType.getParamSize(); i++) {
     if (i > 0) {
       out += ", ";
     }
+    const size_t offset = out.size();
     out += params[i];
     out += ": ";
     out += normalizeTypeName(funcType.getParamTypeAt(i));
+    if (paramCallback) {
+      paramCallback(StringRef(out.c_str() + offset));
+    }
   }
   out += "): ";
   out += normalizeTypeName(funcType.getReturnType());
@@ -73,16 +76,21 @@ void formatFieldSignature(const DSType &recvType, const DSType &type, std::strin
   out += normalizeTypeName(recvType);
 }
 
-void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out) {
+void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
+                           const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(handle.getParamSize(), handle.getPackedParamNames());
   out += "(";
   for (unsigned int i = 0; i < handle.getParamSize(); i++) {
     if (i > 0) {
       out += ", ";
     }
+    const size_t offset = out.size();
     out += params[i];
     out += ": ";
     out += normalizeTypeName(handle.getParamTypeAt(i));
+    if (paramCallback) {
+      paramCallback(StringRef(out.c_str() + offset));
+    }
   }
   out += "): ";
   out += normalizeTypeName(handle.getReturnType());

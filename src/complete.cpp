@@ -669,14 +669,6 @@ static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::str
   return LexerPtr::create(scriptName.c_str(), std::move(buf), CStrPtr(strdup(scriptDir.c_str())));
 }
 
-static void consumeAllInput(FrontEnd &frontEnd) {
-  while (frontEnd) {
-    if (!frontEnd()) {
-      break;
-    }
-  }
-}
-
 static std::string toScriptDir(const std::string &scriptName) {
   std::string value;
   if (scriptName[0] != '/') {

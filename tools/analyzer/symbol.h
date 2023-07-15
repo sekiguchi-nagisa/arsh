@@ -22,6 +22,7 @@
 
 namespace ydsh {
 class DSType;
+class FunctionType;
 class FuncHandle;
 class MethodHandle;
 } // namespace ydsh
@@ -35,11 +36,13 @@ std::string normalizeTypeName(const DSType &type);
 
 void formatVarSignature(const DSType &type, std::string &out);
 
-void formatFuncSignature(const DSType &type, const FuncHandle &handle, std::string &out);
+void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
+                         const std::function<void(StringRef)> &paramCallback = nullptr);
 
 void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
 
-void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out);
+void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
+                           const std::function<void(StringRef)> &paramCallback = nullptr);
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
                                  const DeclSymbol &decl, bool markup = true);

@@ -489,15 +489,15 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
   if (node.isMethodCall()) {
     assert(isa<AccessNode>(exprNode));
     auto &accessNode = cast<AccessNode>(exprNode);
+    auto &methodName = accessNode.getFieldName();
 
     // first lookup method
     auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
-    if (auto *handle =
-            this->curScope->lookupMethod(this->typePool(), recvType, accessNode.getFieldName())) {
+    if (auto *handle = this->curScope->lookupMethod(this->typePool(), recvType, methodName)) {
       accessNode.setType(this->typePool().get(TYPE::Any));
       node.setKind(ApplyNode::METHOD_CALL);
       node.setHandle(handle);
-      return handle->toCallSignature();
+      return handle->toCallSignature(methodName.c_str());
     }
 
     // if method is not found, resolve field
@@ -514,10 +514,13 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
   if (type.isFuncType()) {
     node.setKind(ApplyNode::FUNC_CALL);
     const Handle *ptr = nullptr;
+    const char *name = nullptr;
     if (isa<VarNode>(exprNode)) {
-      ptr = cast<VarNode>(exprNode).getHandle().get();
+      auto &varNode = cast<VarNode>(exprNode);
+      ptr = varNode.getHandle().get();
+      name = varNode.getVarName().c_str();
     }
-    callableTypes = cast<FunctionType>(type).toCallSignature(ptr);
+    callableTypes = cast<FunctionType>(type).toCallSignature(name, ptr);
   } else {
     this->reportError<NotCallable>(exprNode, type.getName());
   }
@@ -555,9 +558,9 @@ static unsigned int getMinParamSize(const CallSignature &types) {
 }
 
 void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &node) {
-  unsigned int argSize = node.getNodes().size();
-  unsigned int paramSize = callSignature.paramSize;
-  unsigned int minParamSize = getMinParamSize(callSignature);
+  const unsigned int argSize = node.getNodes().size();
+  const unsigned int paramSize = callSignature.paramSize;
+  const unsigned int minParamSize = getMinParamSize(callSignature);
 
   if (!callSignature.returnType->isUnresolved()) {
     if (argSize < minParamSize || argSize > paramSize) {
@@ -582,6 +585,13 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
     }
   }
   this->checkTypeExactly(node);
+
+  if (this->signatureHandler && argSize > 0 && isa<CodeCompNode>(*node.getNodes()[argSize - 1])) {
+    auto &compNode = cast<CodeCompNode>(*node.getNodes()[argSize - 1]);
+    if (compNode.getKind() == CodeCompNode::Kind::CALL_SIGNATURE) {
+      this->signatureHandler(callSignature, argSize - 1);
+    }
+  }
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
@@ -1005,7 +1015,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
     callSignature = CallSignature(type);
   } else {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
-      callSignature = handle->toCallSignature();
+      callSignature = handle->toCallSignature(nullptr);
       node.setHandle(handle);
     } else {
       this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
@@ -2404,6 +2414,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
                                         this->curScope);
     break;
   }
+  case CodeCompNode::CALL_SIGNATURE:
+    break; // dummy
   }
   this->reportError<Unreachable>(node);
 }

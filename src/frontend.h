@@ -27,7 +27,8 @@ enum class FrontEndOption {
   TOPLEVEL = 1 << 1,
   ERROR_RECOVERY = 1 << 2,
   SINGLE_EXPR = 1 << 3,
-  REPORT_WARN = 1u << 4,
+  REPORT_WARN = 1 << 4,
+  COLLECT_SIGNATURE = 1u << 5,
 };
 
 template <>
@@ -139,6 +140,10 @@ public:
     this->astDumper.reset(&dumper);
   }
 
+  void setSignatureHandler(SignatureHandler &&handler) {
+    this->checker.setSignatureHandler(std::move(handler));
+  }
+
   unsigned int getMaxLocalVarIndex() const { return this->curScope()->getMaxLocalVarIndex(); }
 
   ModuleProvider &getModuleProvider() { return this->provider; }
@@ -208,6 +213,14 @@ private:
 
   std::unique_ptr<SourceNode> exitModule();
 };
+
+inline void consumeAllInput(FrontEnd &frontEnd) {
+  while (frontEnd) {
+    if (!frontEnd()) {
+      break;
+    }
+  }
+}
 
 class DefaultModuleProvider : public FrontEnd::ModuleProvider {
 private:

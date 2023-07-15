@@ -174,6 +174,8 @@ public:
 
   std::vector<CompletionItem> complete(const Source &src, unsigned int offset, CmdCompKind ckind,
                                        bool cmdArgComp);
+
+  Optional<SignatureInformation> collectSignature(const Source &src, unsigned int offset);
 };
 
 } // namespace ydsh::lsp

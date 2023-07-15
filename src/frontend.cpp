@@ -57,6 +57,9 @@ bool FrontEnd::tryToParse() {
     if (hasFlag(this->option, FrontEndOption::SINGLE_EXPR)) {
       setFlag(parserOption, ParserOption::SINGLE_EXPR);
     }
+    if (hasFlag(this->option, FrontEndOption::COLLECT_SIGNATURE)) {
+      setFlag(parserOption, ParserOption::COLLECT_SIGNATURE);
+    }
     ObserverPtr<CodeCompletionHandler> handler;
     if (this->contexts.size() == 1) { // code completion is disabled in sourced scripts
       handler = this->checker.getCodeCompletionHandler();
