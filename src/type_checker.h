@@ -551,11 +551,11 @@ private:
    * @param node
    * @return
    */
-  CallableTypes resolveCallee(ApplyNode &node);
+  CallSignature resolveCallSignature(ApplyNode &node);
 
   bool checkAccessNode(AccessNode &node);
 
-  void checkArgsNode(const CallableTypes &types, ArgsNode &node);
+  void checkArgsNode(const CallSignature &callSignature, ArgsNode &node);
 
   // helper api for type cast
 

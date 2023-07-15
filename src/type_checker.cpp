@@ -484,7 +484,7 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::Acce
  * 2-1. check type expression and check if expr is callable, return function type
  * 2-2. otherwise, report NotCallable error
  */
-CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
+CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
   auto &exprNode = node.getExprNode();
   if (node.isMethodCall()) {
     assert(isa<AccessNode>(exprNode));
@@ -497,23 +497,27 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
       accessNode.setType(this->typePool().get(TYPE::Any));
       node.setKind(ApplyNode::METHOD_CALL);
       node.setHandle(handle);
-      return handle->toCallableTypes();
+      return handle->toCallSignature();
     }
 
     // if method is not found, resolve field
     if (!this->checkAccessNode(accessNode)) {
       node.setType(this->typePool().getUnresolvedType());
       this->reportMethodLookupError(node.getAttr(), accessNode);
-      return CallableTypes(this->typePool().getUnresolvedType());
+      return CallSignature(this->typePool().getUnresolvedType());
     }
   }
 
   // otherwise, resolve function type
-  CallableTypes callableTypes(this->typePool().getUnresolvedType());
+  CallSignature callableTypes(this->typePool().getUnresolvedType());
   auto &type = this->checkTypeExactly(exprNode);
   if (type.isFuncType()) {
     node.setKind(ApplyNode::FUNC_CALL);
-    callableTypes = cast<FunctionType>(type).toCallableTypes();
+    const Handle *ptr = nullptr;
+    if (isa<VarNode>(exprNode)) {
+      ptr = cast<VarNode>(exprNode).getHandle().get();
+    }
+    callableTypes = cast<FunctionType>(type).toCallSignature(ptr);
   } else {
     this->reportError<NotCallable>(exprNode, type.getName());
   }
@@ -543,19 +547,19 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
   }
 }
 
-static unsigned int getMinParamSize(const CallableTypes &types) {
+static unsigned int getMinParamSize(const CallSignature &types) {
   unsigned int paramSize = types.paramSize;
   for (; paramSize > 0 && types.paramTypes[paramSize - 1]->isOptionType(); --paramSize)
     ;
   return paramSize;
 }
 
-void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
+void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &node) {
   unsigned int argSize = node.getNodes().size();
-  unsigned int paramSize = types.paramSize;
-  unsigned int minParamSize = getMinParamSize(types);
+  unsigned int paramSize = callSignature.paramSize;
+  unsigned int minParamSize = getMinParamSize(callSignature);
 
-  if (!types.returnType->isUnresolved()) {
+  if (!callSignature.returnType->isUnresolved()) {
     if (argSize < minParamSize || argSize > paramSize) {
       this->reportError<UnmatchParam>(node, paramSize, argSize);
     }
@@ -563,7 +567,7 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   unsigned int maxSize = std::max(argSize, paramSize);
   for (unsigned int i = 0; i < maxSize; i++) {
     if (i < argSize && i < paramSize) {
-      this->checkType(*types.paramTypes[i], *node.getNodes()[i]);
+      this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
     } else if (i < argSize) {
       this->checkTypeAsExpr(*node.getNodes()[i]);
     }
@@ -572,7 +576,7 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
   // add optional args
   if (argSize >= minParamSize && argSize < paramSize) {
     for (unsigned int i = argSize; i < paramSize; i++) {
-      auto *type = types.paramTypes[i];
+      auto *type = callSignature.paramTypes[i];
       assert(type->isOptionType());
       node.addNode(std::make_unique<NewNode>(cast<OptionType>(*type)));
     }
@@ -983,9 +987,9 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     break;
   }
   default:
-    CallableTypes callableTypes = this->resolveCallee(node);
-    this->checkArgsNode(callableTypes, node.getArgsNode());
-    node.setType(*callableTypes.returnType);
+    CallSignature callSignature = this->resolveCallSignature(node);
+    this->checkArgsNode(callSignature, node.getArgsNode());
+    node.setType(*callSignature.returnType);
     if (node.getType().isNothingType() &&
         this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
       this->reportError<InsideFinally>(node);
@@ -996,18 +1000,18 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 
 void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(*node.getTargetTypeNode());
-  CallableTypes callableTypes(this->typePool().getUnresolvedType());
+  CallSignature callSignature(this->typePool().getUnresolvedType());
   if (type.isOptionType() || type.isArrayType() || type.isMapType()) {
-    callableTypes = CallableTypes(type);
+    callSignature = CallSignature(type);
   } else {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
-      callableTypes = handle->toCallableTypes();
+      callSignature = handle->toCallSignature();
       node.setHandle(handle);
     } else {
       this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
     }
   }
-  this->checkArgsNode(callableTypes, node.getArgsNode());
+  this->checkArgsNode(callSignature, node.getArgsNode());
   node.setType(type);
 }
 
