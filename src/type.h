@@ -407,6 +407,8 @@ struct CallSignature {
 
   explicit CallSignature(const DSType &retType) : returnType(&retType) {}
 
+  CallSignature(const DSType &retType, const char *name) : returnType(&retType), name(name) {}
+
   CallSignature(const DSType &ret, unsigned int size, const DSType *const *params, const char *name,
                 const Handle *hd)
       : returnType(&ret), paramSize(size), paramTypes(params), name(name), handle(hd) {}

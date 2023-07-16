@@ -419,7 +419,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
 
   InitializeResult ret;
-  ret.capabilities.signatureHelpProvider.triggerCharacters = {"(", ",", ")"};
+  ret.capabilities.signatureHelpProvider.triggerCharacters = {"(", ","};
   ret.capabilities.completionProvider.triggerCharacters = {".", "$", "/"};
   ret.capabilities.semanticTokensProvider.legend = SemanticTokensLegend::create();
   ret.capabilities.semanticTokensProvider.full = true;

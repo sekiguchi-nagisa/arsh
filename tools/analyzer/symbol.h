@@ -39,9 +39,14 @@ void formatVarSignature(const DSType &type, std::string &out);
 void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
                          const std::function<void(StringRef)> &paramCallback = nullptr);
 
+void formatFuncSignature(const DSType &retType, unsigned int paramSize,
+                         const DSType *const *paramTypes, std::string &out,
+                         const std::function<void(StringRef)> &paramCallback = nullptr);
+
 void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
 
 void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
+                           bool constructor = false,
                            const std::function<void(StringRef)> &paramCallback = nullptr);
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,

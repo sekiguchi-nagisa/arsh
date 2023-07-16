@@ -537,9 +537,6 @@ Optional<SignatureInformation> Analyzer::collectSignature(const Source &src, uns
                     makeObserver(handler));
   Optional<SignatureInformation> info;
   frontEnd.setSignatureHandler([&](const CallSignature &signature, const unsigned int paramIndex) {
-    if (!signature.handle) {
-      return; // FIXME: reified type constructor
-    }
     Optional<unsigned int> activeParamIndex;
     if (signature.paramSize) {
       if (paramIndex < signature.paramSize) {
@@ -553,24 +550,43 @@ Optional<SignatureInformation> Analyzer::collectSignature(const Source &src, uns
       });
     };
     std::string out;
-    if (signature.handle->isFuncHandle()) {
+    if (!signature.handle) {
+      if (!signature.returnType->isUnresolved()) {
+        if (StringRef name = signature.name; name == OP_INIT) {
+          out += "typedef ";
+          out += normalizeTypeName(*signature.returnType);
+          out += "()";
+        } else {
+          formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
+                              callback);
+        }
+      }
+    } else if (signature.handle->isFuncHandle()) {
       auto *funcHandle = cast<FuncHandle>(signature.handle);
       auto &type = ctx->getPool().get(funcHandle->getTypeId());
       assert(isa<FunctionType>(type));
-      out = "function ";
+      out += "function ";
       if (signature.name) {
         out += signature.name;
       }
       formatFuncSignature(cast<FunctionType>(type), *funcHandle, out, callback);
     } else if (signature.handle->isMethodHandle()) {
+      String methodName = signature.name;
       auto *methodHandle = cast<MethodHandle>(signature.handle);
       auto &recvType = ctx->getPool().get(methodHandle->getTypeId());
-      out = "function ";
-      if (signature.name) {
-        out += signature.name;
+      const bool constructor = methodName == OP_INIT;
+      if (constructor) {
+        out += "typedef ";
+        out += normalizeTypeName(recvType);
+      } else {
+        out += "function ";
+        out += methodName;
       }
-      formatMethodSignature(recvType, *methodHandle, out, callback);
-    } // FIXME: function type
+      formatMethodSignature(recvType, *methodHandle, out, constructor, callback);
+    } else if (!signature.returnType->isUnresolved()) {
+      formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
+                          callback);
+    }
 
     if (out.empty()) {
       return;

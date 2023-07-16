@@ -1058,14 +1058,13 @@ struct SignatureHelpContext {
   SignatureHelpTriggerKind triggerKind;
   Optional<std::string> triggerCharacter;
   bool isRetrigger{false};
-  Optional<SignatureHelp> activeSignatureHelp;
+  //  Optional<SignatureHelp> activeSignatureHelp;  // unused
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(triggerKind);
     JSONIFY(triggerCharacter);
     JSONIFY(isRetrigger);
-    JSONIFY(activeSignatureHelp);
   }
 };
 

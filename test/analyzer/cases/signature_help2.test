@@ -1,0 +1,163 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+## signature help for user-defined type and method
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+    "text": "typedef AAA(a : Int) {}; function get(i : Int) : Int for AAA { return 12; }\n new AAA(23,2).get(23,23)"
+    }
+ }
+}
+
+## user-defined type constructor
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": 9, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 0,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 0,
+#    CHECK:         "label": "typedef AAA(a: Int)",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "a: Int"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 12, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "label": "typedef AAA(a: Int)",
+#    CHECK:         "parameters": []
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+## user-defined method
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": 19, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 0,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 0,
+#    CHECK:         "label": "function get(i: Int): Int for AAA",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "i: Int"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 21, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 4,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "label": "function get(i: Int): Int for AAA",
+#    CHECK:         "parameters": []
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 5, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": true,
+      "triggerCharacter": ",",
+      "triggerKind": 3
+    },
+    "position": { "character": 22, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 5,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+
+
+<<<
+{"id": 10, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

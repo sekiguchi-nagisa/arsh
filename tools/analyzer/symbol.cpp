@@ -69,6 +69,27 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
   out += normalizeTypeName(funcType.getReturnType());
 }
 
+void formatFuncSignature(const DSType &retType, unsigned int paramSize,
+                         const DSType *const *paramTypes, std::string &out,
+                         const std::function<void(StringRef)> &paramCallback) {
+  out += "(";
+  for (unsigned int i = 0; i < paramSize; i++) {
+    if (i > 0) {
+      out += ", ";
+    }
+    const size_t offset = out.size();
+    out += "p";
+    out += std::to_string(i);
+    out += ": ";
+    out += normalizeTypeName(*paramTypes[i]);
+    if (paramCallback) {
+      paramCallback(StringRef(out.c_str() + offset));
+    }
+  }
+  out += "): ";
+  out += normalizeTypeName(retType);
+}
+
 void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out) {
   out += ": ";
   out += normalizeTypeName(type);
@@ -77,7 +98,7 @@ void formatFieldSignature(const DSType &recvType, const DSType &type, std::strin
 }
 
 void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
-                           const std::function<void(StringRef)> &paramCallback) {
+                           bool constructor, const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(handle.getParamSize(), handle.getPackedParamNames());
   out += "(";
   for (unsigned int i = 0; i < handle.getParamSize(); i++) {
@@ -92,10 +113,13 @@ void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, s
       paramCallback(StringRef(out.c_str() + offset));
     }
   }
-  out += "): ";
-  out += normalizeTypeName(handle.getReturnType());
-  out += " for ";
-  out += normalizeTypeName(recvType);
+  out += ")";
+  if (!constructor) {
+    out += ": ";
+    out += normalizeTypeName(handle.getReturnType());
+    out += " for ";
+    out += normalizeTypeName(recvType);
+  }
 }
 
 static const BuiltinCmdDesc *findCmdDesc(const char *name) {

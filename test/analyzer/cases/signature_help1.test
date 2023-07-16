@@ -1,0 +1,246 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+## signature help for builtin method
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+    "text": "'23'.slice(1,2,3)\n new Error('', 2,3)\n new [String]()"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": 11, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 0,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 0,
+#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "start: Int"
+#    CHECK:           },
+#    CHECK:           {
+#    CHECK:             "label": "stop: Int?"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 13, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 1,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 1,
+#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "start: Int"
+#    CHECK:           },
+#    CHECK:           {
+#    CHECK:             "label": "stop: Int?"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 15, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "parameters": []
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+## signature help for builtin constructor
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": 11, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 4,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 0,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 0,
+#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "message: String"
+#    CHECK:           },
+#    CHECK:           {
+#    CHECK:             "label": "status: Int?"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 5, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 14, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 5,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeParameter": 1,
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "activeParameter": 1,
+#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "parameters": [
+#    CHECK:           {
+#    CHECK:             "label": "message: String"
+#    CHECK:           },
+#    CHECK:           {
+#    CHECK:             "label": "status: Int?"
+#    CHECK:           }
+#    CHECK:         ]
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 6, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": ",",
+      "triggerKind": 2
+    },
+    "position": { "character": 17, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 6,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "parameters": []
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+
+## builtin constructor (reified type)
+
+<<<
+{"id": 7, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": 14, "line": 2 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 7,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "activeSignature": 0,
+#    CHECK:     "signatures": [
+#    CHECK:       {
+#    CHECK:         "label": "typedef [String]()",
+#    CHECK:         "parameters": []
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+
+<<<
+{"id": 10, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

@@ -13,6 +13,11 @@
 - add ``valid_env`` action to builtin ``complete`` command
     - complete only valid env names
 
+#### LSP
+
+- support ``textDocument/signatureHelp`` request
+    - show (direct/indirect)function/method/constructor type signatures
+
 ### Changed
 
 ### Core

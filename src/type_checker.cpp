@@ -1012,10 +1012,10 @@ void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(*node.getTargetTypeNode());
   CallSignature callSignature(this->typePool().getUnresolvedType());
   if (type.isOptionType() || type.isArrayType() || type.isMapType()) {
-    callSignature = CallSignature(type);
+    callSignature = CallSignature(type, OP_INIT);
   } else {
     if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
-      callSignature = handle->toCallSignature(nullptr);
+      callSignature = handle->toCallSignature(OP_INIT);
       node.setHandle(handle);
     } else {
       this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());

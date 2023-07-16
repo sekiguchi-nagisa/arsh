@@ -58,8 +58,7 @@
 # CHECK:       "signatureHelpProvider": {
 # CHECK:         "triggerCharacters": [
 # CHECK:           "(",
-# CHECK:           ",",
-# CHECK:           ")"
+# CHECK:           ","
 # CHECK:         ]
 # CHECK:       },
 # CHECK:       "textDocumentSync": {
