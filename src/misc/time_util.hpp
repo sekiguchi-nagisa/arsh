@@ -86,6 +86,10 @@ inline ParseTimespecStatus parseUnixTimeWithNanoSec(const char *begin, const cha
       return ParseTimespecStatus::INVALID_NANO_SEC;
     }
   }
+  if (out.tv_sec < 0 && out.tv_nsec > 0) {
+    out.tv_sec--;
+    out.tv_nsec = 1000000000 - out.tv_nsec;
+  }
   return ParseTimespecStatus::OK;
 }
 

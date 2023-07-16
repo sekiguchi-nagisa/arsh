@@ -29,6 +29,7 @@
 
 - **Breaking Change**: completion after ``importenv`` keyword only complete valid env names
 - improve time format handling of builtin printf command
+    - support ``%N`` time specifier for nanoseconds time printing
     - support nanoseconds epoc time string like ``1689511935.00023``
     - allow negative epoc time
 

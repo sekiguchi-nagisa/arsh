@@ -744,13 +744,21 @@ TEST(TimestampTest, parse) {
   ASSERT_EQ("8775/02/08 11:33:19", toUTC(time.tv_sec));
 
   // negative
-  input = "-214748364799.987654321";
+  input = "-214748364799.00";
   time = {};
   s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
   ASSERT_EQ(ParseTimespecStatus::OK, s);
   ASSERT_EQ(-214748364799, time.tv_sec);
-  ASSERT_EQ(987654321, time.tv_nsec);
+  ASSERT_EQ(0, time.tv_nsec);
   ASSERT_EQ("-4836/11/23 12:26:41", toUTC(time.tv_sec));
+
+  input = "-214748364799.888000000";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(-214748364800, time.tv_sec);
+  ASSERT_EQ(112000000, time.tv_nsec);
+  ASSERT_EQ("-4836/11/23 12:26:40", toUTC(time.tv_sec));
 
   // error
   input = "999999999999999214748364799.987654321";
@@ -800,6 +808,20 @@ TEST(TimestampTest, parse) {
   s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
   ASSERT_EQ(ParseTimespecStatus::INVALID_NANO_SEC, s);
   ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
+  ASSERT_EQ(0, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = ".12";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
+  ASSERT_EQ(0, time.tv_sec);
   ASSERT_EQ(0, time.tv_nsec);
 }
 

@@ -753,6 +753,13 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
       TRY(out.append(StringRef(b, static_cast<size_t>(s))));
       continue;
     }
+    case 'N': {
+      char b[16];
+      int s = snprintf(b, std::size(b), "%09u", static_cast<unsigned int>(nanoSec));
+      assert(s == 9);
+      TRY(out.append(StringRef(b, static_cast<size_t>(s))));
+      continue;
+    }
     case '+': {
       if (plusFormat) {
         TRY(putTime(out, "%+", tm));
@@ -798,10 +805,11 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
       this->numberError(toPrintable(ref), '(', "needs valid fractional part (0-999999999)");
       return false;
     }
-    if (targetTime.tv_sec == -1) { // use current timestamp
-      targetTime = timestampToTimespec(getCurrentTimestamp());
-    } else if (targetTime.tv_sec == -2) { // use startup timestamp
-      targetTime = timestampToTimespec(this->initTimestamp);
+    bool frac = ref.contains('.');
+    if (targetTime.tv_sec == -1 && targetTime.tv_nsec == 0 && !frac) {
+      targetTime = timestampToTimespec(getCurrentTimestamp()); // use current timestamp
+    } else if (targetTime.tv_sec == -2 && targetTime.tv_nsec == 0 && !frac) {
+      targetTime = timestampToTimespec(this->initTimestamp); // use startup timestamp
     }
   } else { // if no arg, get current timestamp
     targetTime = timestampToTimespec(getCurrentTimestamp());
