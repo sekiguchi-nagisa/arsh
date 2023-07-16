@@ -7,16 +7,16 @@ assert "$(printf -v var '% (T' -2147483648 @@@@@@@@@@@@ 2>&1)" ==
 
 ## invalid argument
 assert "$(printf -v var '% ()T' @@@@@@@@@@@@ 2>&1)" ==
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
 assert "$(printf -v var '% (aaa)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
 assert "$(printf -v var '%(%&)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs valid INT64 (decimal, octal or hex number)"
+    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
-assert "$(printf -v var '%(%c)T' -999 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`-999': \`(' specifier does not accept negative numbers (except for -1, -2)"
+assert "$(printf -v var '%(%c)T' 999.fa 2>&1)" ==  # always check argument even if no valid time specifier
+    "ydsh: printf: \`999.fa': \`(' specifier needs valid fractional part (0-999999999)"
 
 ## invalid specifier
 assert "$(printf -v var '%(%)T' 2>&1)" == 

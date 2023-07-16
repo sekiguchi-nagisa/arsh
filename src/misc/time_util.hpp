@@ -25,24 +25,69 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 
 using timestamp = std::chrono::time_point<std::chrono::system_clock>; // for unix timestamp
 
-inline timestamp newUnixTimestamp(int64_t epocTimeSec) {
-  auto duration = std::chrono::duration<int64_t>(epocTimeSec);
-  return timestamp(duration);
-}
-
 inline timestamp getCurrentTimestamp() { return timestamp::clock::now(); }
 
-inline IntConversionResult<int64_t> parseUnixTimestampWithRadix(const char *begin, const char *end,
-                                                                unsigned int radix,
-                                                                timestamp &out) {
-  auto ret = convertToNum<int64_t>(begin, end, radix);
-  if (ret) {
-    out = newUnixTimestamp(ret.value);
-  }
-  return ret;
+inline timespec timestampToTimespec(timestamp ts) {
+  long nanoSec =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(ts.time_since_epoch()).count();
+  return {
+      .tv_sec = timestamp::clock::to_time_t(ts),
+      .tv_nsec = nanoSec % 1000000000,
+  };
 }
 
-inline time_t timestampToTime(const timestamp &t) { return timestamp::clock::to_time_t(t); }
+enum class ParseTimespecStatus {
+  OK,
+  INVALID_UNIX_TIME,
+  INVALID_NANO_SEC,
+};
+
+/**
+ * parse `UNIX_TIME[.NANO_SEC]' format
+ * @param begin
+ * @param end
+ * @return
+ * if has error, unrecognized part is -1
+ */
+inline ParseTimespecStatus parseUnixTimeWithNanoSec(const char *begin, const char *end,
+                                                    timespec &out) {
+  static_assert(sizeof(time_t) == sizeof(int64_t));
+
+  out = {0, 0};
+  auto *frac = static_cast<const char *>(memchr(begin, '.', end - begin));
+  if (auto ret = convertToNum<int64_t>(begin, frac ? frac : end, 10)) {
+    out.tv_sec = ret.value;
+  } else {
+    return ParseTimespecStatus::INVALID_UNIX_TIME;
+  }
+
+  if (frac) {
+    unsigned int v = 0;
+    unsigned int count = 0;
+    for (frac++; frac != end && count < 9; frac++) {
+      char c = *frac;
+      if (isDecimal(c)) {
+        v *= 10;
+        v += (c - '0');
+      } else {
+        return ParseTimespecStatus::INVALID_NANO_SEC;
+      }
+      count++;
+    }
+    if (count == 0) { // consume no fractional part
+      return ParseTimespecStatus::INVALID_NANO_SEC;
+    }
+    for (; count < 9; count++) {
+      v *= 10;
+    }
+    if (frac == end) {
+      out.tv_nsec = static_cast<int>(v);
+    } else {
+      return ParseTimespecStatus::INVALID_NANO_SEC;
+    }
+  }
+  return ParseTimespecStatus::OK;
+}
 
 END_MISC_LIB_NAMESPACE_DECL
 

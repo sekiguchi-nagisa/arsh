@@ -3,6 +3,7 @@
 #include <misc/edit_distance.hpp>
 #include <misc/flag_util.hpp>
 #include <misc/num_util.hpp>
+#include <misc/time_util.hpp>
 
 using namespace ydsh;
 
@@ -697,6 +698,109 @@ TEST(EditDistanceTest, cost) {
   ASSERT_EQ(1, editDistance("sitting", "sittin"));
   ASSERT_EQ(1, editDistance("sitting", "stting"));
   ASSERT_EQ(3, editDistance("os", "?"));
+}
+
+static std::string toUTC(time_t time) {
+  struct tm utc {};
+  gmtime_r(&time, &utc);
+  char data[1024];
+  strftime(data, std::size(data), "%Y/%m/%d %H:%M:%S", &utc);
+  return {data};
+}
+
+TEST(TimestampTest, parse) {
+  StringRef input = "1689511935";
+  timespec time{};
+  auto s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(1689511935, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+  ASSERT_EQ("2023/07/16 12:52:15", toUTC(time.tv_sec));
+
+  // with nano sec
+  input = "1689511935.00023";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(1689511935, time.tv_sec);
+  ASSERT_EQ(230000, time.tv_nsec);
+  ASSERT_EQ("2023/07/16 12:52:15", toUTC(time.tv_sec));
+
+  input = "1689511935.23";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(1689511935, time.tv_sec);
+  ASSERT_EQ(230000000, time.tv_nsec);
+  ASSERT_EQ("2023/07/16 12:52:15", toUTC(time.tv_sec));
+
+  // too large time
+  input = "214748364799.987654321";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(987654321, time.tv_nsec);
+  ASSERT_EQ("8775/02/08 11:33:19", toUTC(time.tv_sec));
+
+  // negative
+  input = "-214748364799.987654321";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::OK, s);
+  ASSERT_EQ(-214748364799, time.tv_sec);
+  ASSERT_EQ(987654321, time.tv_nsec);
+  ASSERT_EQ("-4836/11/23 12:26:41", toUTC(time.tv_sec));
+
+  // error
+  input = "999999999999999214748364799.987654321";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
+  ASSERT_EQ(0, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "AAAAAdddd";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
+  ASSERT_EQ(0, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "214748364799@";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
+  ASSERT_EQ(0, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "214748364799.";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_NANO_SEC, s);
+  ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "214748364799.a";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_NANO_SEC, s);
+  ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "214748364799.9999999999";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_NANO_SEC, s);
+  ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
+
+  input = "214748364799..6";
+  time = {};
+  s = parseUnixTimeWithNanoSec(input.begin(), input.end(), time);
+  ASSERT_EQ(ParseTimespecStatus::INVALID_NANO_SEC, s);
+  ASSERT_EQ(214748364799, time.tv_sec);
+  ASSERT_EQ(0, time.tv_nsec);
 }
 
 int main(int argc, char **argv) {

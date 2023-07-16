@@ -115,17 +115,14 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   char header[128];
   header[0] = '\0';
 
-  const auto now = getCurrentTimestamp();
-  time_t timer = timestampToTime(now);
+  const auto now = timestampToTimespec(getCurrentTimestamp());
   tzset();
   struct tm local {};
-  if (localtime_r(&timer, &local)) {
+  if (localtime_r(&now.tv_sec, &local)) {
     char buf[32];
     strftime(buf, std::size(buf), "%F %T", &local);
-    long micro =
-        std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
-    snprintf(header, std::size(header), "%s.%06ld <%s> [%d] ", buf, micro % 1000000,
-             toString(level), getpid());
+    snprintf(header, std::size(header), "%s.%06d <%s> [%d] ", buf,
+             static_cast<unsigned int>(now.tv_nsec) / 1000, toString(level), getpid());
   }
 
   // print body

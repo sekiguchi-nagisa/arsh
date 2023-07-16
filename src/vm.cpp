@@ -104,10 +104,10 @@ static void initEnv() {
   setPWDs();
 }
 
-static bool check_strftime_plus(timestamp time) {
-  time_t t = timestampToTime(time);
+static bool check_strftime_plus(timestamp ts) {
+  auto time = timestampToTimespec(ts);
   struct tm tm {};
-  if (gmtime_r(&t, &tm)) {
+  if (gmtime_r(&time.tv_sec, &tm)) {
     char buf[64];
     auto s = strftime_l(buf, std::size(buf), "%+", &tm, POSIX_LOCALE_C.get());
     auto ret = StringRef(buf, s);

@@ -28,6 +28,9 @@
 #### Builtin
 
 - **Breaking Change**: completion after ``importenv`` keyword only complete valid env names
+- improve time format handling of builtin printf command
+    - support nanoseconds epoc time string like ``1689511935.00023``
+    - allow negative epoc time
 
 #### LSP
 
@@ -37,6 +40,7 @@
 
 - fix wrong job-control checking in child process
 - fix wrong open flag in stdin redirection to /dev/null
+- fix unix time parsing of builtin printf command
 
 ## [0.30.0] - 2023-07-01
 

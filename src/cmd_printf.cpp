@@ -665,7 +665,7 @@ static bool putTime(StringBuf &out, const char *fmt, const struct tm &tm) {
 }
 
 static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plusFormat,
-                                const struct tm &tm, std::string &error) {
+                                const struct tm &tm, const long nanoSec, std::string &error) {
   constexpr bool end = false; // for TRY macro
   const auto size = format.size();
   for (StringRef::size_type pos = 0; pos < size; pos++) {
@@ -764,7 +764,7 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
         if (fmt.empty()) {
           fmt = "%a %b %e %H:%M:%S %Z %Y";
         }
-        TRY(interpretTimeFormat(out, fmt, plusFormat, tm, error));
+        TRY(interpretTimeFormat(out, fmt, plusFormat, tm, nanoSec, error));
       }
       continue;
     }
@@ -784,32 +784,33 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
 bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precision,
                                        StringRef timeFormat, ArrayObject::IterType &begin,
                                        ArrayObject::IterType endIter) {
-  timestamp targetTimestamp{};
+  timespec targetTime{};
   if (begin != endIter) {
     auto ref = (*begin++).asStrRef();
-    auto ret = parseUnixTimestampWithRadix(ref.begin(), ref.end(), 0, targetTimestamp);
-    if (!ret) {
-      this->numberError(toPrintable(ref), '(', "needs valid INT64 (decimal, octal or hex number)");
+    auto s = parseUnixTimeWithNanoSec(ref.begin(), ref.end(), targetTime);
+    switch (s) {
+    case ParseTimespecStatus::OK:
+      break;
+    case ParseTimespecStatus::INVALID_UNIX_TIME:
+      this->numberError(toPrintable(ref), '(', "needs INT64 decimal number");
+      return false;
+    case ParseTimespecStatus::INVALID_NANO_SEC:
+      this->numberError(toPrintable(ref), '(', "needs valid fractional part (0-999999999)");
       return false;
     }
-    auto v = ret.value;
-    if (v == -1) { // use current timestamp
-      targetTimestamp = getCurrentTimestamp();
-    } else if (v == -2) { // use startup timestamp
-      targetTimestamp = this->initTimestamp;
-    } else if (v < 0) {
-      this->numberError(ref, '(', "does not accept negative numbers (except for -1, -2)");
-      return false;
+    if (targetTime.tv_sec == -1) { // use current timestamp
+      targetTime = timestampToTimespec(getCurrentTimestamp());
+    } else if (targetTime.tv_sec == -2) { // use startup timestamp
+      targetTime = timestampToTimespec(this->initTimestamp);
     }
   } else { // if no arg, get current timestamp
-    targetTimestamp = getCurrentTimestamp();
+    targetTime = timestampToTimespec(getCurrentTimestamp());
   }
 
   struct tm tm {};
-  auto time = timestampToTime(targetTimestamp);
   tzset();
   errno = 0;
-  if (!localtime_r(&time, &tm)) {
+  if (!localtime_r(&targetTime.tv_sec, &tm)) {
     int e = errno;
     this->error = "localtime_r failed, caused by `";
     this->error += strerror(e);
@@ -821,7 +822,8 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
   if (timeFormat.empty()) {
     timeFormat = "%X";
   }
-  if (!interpretTimeFormat(buf, timeFormat, this->supportPlusTimeFormat, tm, this->error)) {
+  if (!interpretTimeFormat(buf, timeFormat, this->supportPlusTimeFormat, tm, targetTime.tv_nsec,
+                           this->error)) {
     if (this->error.empty()) {
       this->formatError(errno);
     }
