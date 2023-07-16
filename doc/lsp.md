@@ -10,6 +10,7 @@
 | ``textDocument/hover``               | ✔️         |
 | ``textDocument/documentSymbol``      | ✔️         |
 | ``textDocument/semanticTokens/full`` | ✔️         |
+| ``textDocument/signatureHelp``       | ✔️         |
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
 | ``textDocument/rename``              | ❌          |
