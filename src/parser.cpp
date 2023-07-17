@@ -2178,20 +2178,25 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
       this->consume(); // COMMA
     }
     if (lookahead_expression(CUR_KIND())) {
-      std::unique_ptr<Node> argNode;
       if (this->inCompletionPoint() && hasFlag(this->option, ParserOption::COLLECT_SIGNATURE)) {
         this->makeCodeComp(CodeCompNode::CALL_SIGNATURE, nullptr, this->curToken);
-      } else {
-        argNode = this->parse_expression();
-      }
-      if (this->incompleteNode) {
         argsNode->addNode(std::move(this->incompleteNode));
         this->incompleteNode = std::move(argsNode);
-        return nullptr;
+        E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
+      }
+      auto argNode = this->parse_expression();
+      bool incomplete = false;
+      if (this->incompleteNode) {
+        incomplete = true;
+        argNode = std::move(this->incompleteNode);
       } else if (this->hasError()) {
         return nullptr;
       }
       argsNode->addNode(std::move(argNode));
+      if (incomplete) {
+        this->incompleteNode = std::move(argsNode);
+        return nullptr;
+      }
     } else {
       E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
     }
