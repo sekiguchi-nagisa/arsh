@@ -108,7 +108,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: Void command(f)
+  2: Command command(f)
 Line Number Table:
   lineNum: 1, address:  9
 Exception Table:

@@ -602,7 +602,7 @@ static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigne
   if (type.isModType()) { // module object
     return ResolvedCmd::fromMod(cast<ModType>(type), modId);
   } else { // udc object
-    assert(type.isVoidType());
+    assert(type.is(TYPE::Command));
     return ResolvedCmd::fromUdc(*udcObj);
   }
 }

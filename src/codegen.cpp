@@ -1631,7 +1631,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!code) {
     this->reportError<TooLargeUdc>(node, node.getCmdName().c_str());
   }
-  auto func = DSValue::create<FuncObject>(node.getType(), std::move(code));
+  auto func = DSValue::create<FuncObject>(this->typePool.get(TYPE::Command), std::move(code));
 
   this->emitLdcIns(func);
   if (!node.getCaptures().empty()) {
