@@ -506,9 +506,10 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
   if (hasFlag(op, GlobOp::TILDE)) {
     setFlag(option, GlobMatchOption::TILDE);
   }
-  auto matcher = createGlobMatcher<SourceGlobMeta>(
-      nullptr, SourceGlobIter(begin), SourceGlobIter(end),
-      std::reference_wrapper<CancelToken>(this->cancelToken), option);
+  CancelToken dummy;
+  auto matcher =
+      createGlobMatcher<SourceGlobMeta>(nullptr, SourceGlobIter(begin), SourceGlobIter(end),
+                                        std::reference_wrapper<CancelToken>(dummy), option);
   TildeExpandStatus tildeExpandStatus{};
   auto expander = [&tildeExpandStatus](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, nullptr);
@@ -526,9 +527,6 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
     switch (ret) {
     case GlobMatchResult::NOMATCH:
       this->reportError<NoGlobMatch>(token, path.c_str());
-      return false;
-    case GlobMatchResult::CANCELED:
-      this->reportError<ExpandCancel>(token);
       return false;
     case GlobMatchResult::NEED_ABSOLUTE_BASE_DIR:
       this->reportError<NoRelativeGlob>(token, path.c_str());

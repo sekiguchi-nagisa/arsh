@@ -286,7 +286,7 @@ class TypeChecker : protected NodeVisitor {
 protected:
   const SysConfig &config;
 
-  std::reference_wrapper<CancelToken> cancelToken;
+  std::reference_wrapper<CancelToken> cancelToken; // for future usage
 
   std::reference_wrapper<TypePool> pool;
 
