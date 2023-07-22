@@ -26,6 +26,8 @@ let _cache = [
     '$' : $UID == 0 ? '#' : '$',
 ]
 
+## bash-compatible prompt interpreter
+
 function renderPrompt(p : String) : String {
     importenv PWD : "."
     var ret = ""
@@ -74,12 +76,8 @@ function renderPrompt(p : String) : String {
         }
         $ret += $ch
     }
-    if (help printf &>> /dev/null) {
-        printf -v prompt "%b" $ret
-        return $reply.remove("prompt")!
-    } else { # fallback
-        return "$(echo -en "$ret@")".slice(0, -1)
-    }
+    printf -v prompt "%b" $ret
+    return $reply.remove("prompt")!
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
