@@ -348,9 +348,12 @@ class CompletionItemCollector : public CompCandidateConsumer {
 private:
   std::shared_ptr<TypePool> pool;
   std::vector<CompletionItem> items;
+  bool labelDetail{false};
 
 public:
   explicit CompletionItemCollector(std::shared_ptr<TypePool> pool) : pool(std::move(pool)) {}
+
+  void setLabelDetail(bool set) { this->labelDetail = set; }
 
   static CompletionItemKind toItemKind(const CompCandidate &candidate) {
     switch (candidate.kind) {
@@ -435,9 +438,13 @@ public:
     if (candidate.value.empty()) {
       return;
     }
+    Optional<CompletionItemLabelDetails> details;
+    if (this->labelDetail) {
+      details = formatLabelDetail(*this->pool, candidate);
+    }
     this->items.push_back(CompletionItem{
         .label = candidate.quote(),
-        .labelDetails = formatLabelDetail(*this->pool, candidate),
+        .labelDetails = std::move(details),
         .kind = toItemKind(candidate),
         .sortText = {},
         .priority = candidate.priority,
@@ -485,7 +492,7 @@ static std::string toDirName(const std::string &fullPath) {
 }
 
 std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int offset,
-                                               CmdCompKind ckind, bool cmdArgComp) {
+                                               CmdCompKind ckind, ExtraCompOp extraOp) {
   this->reset();
 
   std::string workDir = toDirName(src.getPath());
@@ -494,6 +501,8 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int o
   CodeCompleter codeCompleter(collector,
                               makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
                               this->sysConfig, ptr->getPool(), workDir);
+
+  // set completion options
   CodeCompOp ignoredOp{};
   switch (ckind) {
   case CmdCompKind::disabled_:
@@ -505,9 +514,12 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int o
   case CmdCompKind::all_:
     break; // allow all
   }
-  if (!cmdArgComp) {
-    setFlag(ignoredOp, CodeCompOp::HOOK);
+  if (!hasFlag(extraOp, ExtraCompOp::CMD_ARG_COMP)) {
+    setFlag(ignoredOp, CodeCompOp::HOOK); // disable command arguments completion
   }
+  collector.setLabelDetail(hasFlag(extraOp, ExtraCompOp::SIGNATURE));
+
+  // do code completion
   StringRef source = src.getContent();
   source = source.substr(0, offset);
   codeCompleter(ptr->getScope(), src.getPath(), source, ignoredOp);

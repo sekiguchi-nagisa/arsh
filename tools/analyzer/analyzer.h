@@ -172,12 +172,24 @@ public:
 
   ModuleArchivePtr analyze(const Source &src, AnalyzerAction &action);
 
+  enum class ExtraCompOp : unsigned int {
+    CMD_ARG_COMP = 1u << 0u,
+    SIGNATURE = 1u << 1u,
+  };
+
   std::vector<CompletionItem> complete(const Source &src, unsigned int offset, CmdCompKind ckind,
-                                       bool cmdArgComp);
+                                       ExtraCompOp extraOp);
 
   Optional<SignatureInformation> collectSignature(const Source &src, unsigned int offset);
 };
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+template <>
+struct allow_enum_bitop<lsp::Analyzer::ExtraCompOp> : std::true_type {};
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_ANALYZER_ANALYZER_H

@@ -87,6 +87,7 @@ private:
   TraceValue traceSetting{TraceValue::off};
   MarkupKind markupKind{MarkupKind::PlainText};
   bool diagVersionSupport{false};
+  bool labelDetailSupport{false};
   CmdCompKind cmdCompKind{CmdCompKind::default_};
   BinaryFlag cmdArgComp{BinaryFlag::disabled};
   BinaryFlag semanticHighlight{BinaryFlag::enabled};

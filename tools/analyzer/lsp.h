@@ -293,11 +293,30 @@ struct DocumentLinkClientCapabilities {
   void jsonify(T &) {}
 };
 
+struct CompletionClientCapabilities {
+  struct CompletionItem {
+    Optional<bool> labelDetailsSupport;
+
+    template <typename T>
+    void jsonify(T &t) {
+      JSONIFY(labelDetailsSupport);
+    }
+  };
+
+  Optional<CompletionItem> completionItem;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(completionItem);
+  }
+};
+
 struct TextDocumentClientCapabilities {
   Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
   Optional<HoverClientCapabilities> hover;
   Optional<DocumentLinkClientCapabilities> documentLink;
   Optional<SemanticTokensClientCapabilities> semanticTokens;
+  Optional<CompletionClientCapabilities> completion;
 
   template <typename T>
   void jsonify(T &t) {
@@ -305,6 +324,7 @@ struct TextDocumentClientCapabilities {
     JSONIFY(hover);
     JSONIFY(documentLink);
     JSONIFY(semanticTokens);
+    JSONIFY(completion);
   }
 };
 

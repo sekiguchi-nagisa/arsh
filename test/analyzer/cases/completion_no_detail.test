@@ -1,11 +1,7 @@
 # RUN: call $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
- "params": {
-   "capabilities": {"textDocument": {"completion": {"completionItem": {"labelDetailsSupport": true}}}},
-   "rootUri": "file:///test", "processId": 46
- }
-}
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
 
 #    CHECK: {
 # CHECK_IF:     "capabilities": {
@@ -15,42 +11,44 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "34."}
+    "text": "$T"
+    }
  }
 }
 
 <<<
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
   "params": {
-    "context": { "triggerCharacter": ".", "triggerKind": 2 },
-    "position": { "character": 3, "line": 0 },
+    "context": { "triggerKind": 1 },
+    "position": { "character": 2, "line": 0 },
     "textDocument": { "uri": "file:///test/test.ds" }
   }
 }
 
-# complete methods
+# complete variable name without label details
 
 # CHECK_IF:   "id": 1,
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": [
 #    CHECK:     {
-#    CHECK:       "kind": 2,
-#    CHECK:       "label": "abs",
-#    CHECK:       "labelDetails": {
-#    CHECK:         "detail": "(): Int for Int"
-#    CHECK:       }
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "TRUE",
+#    CHECK:       "sortText": "0"
 #    CHECK:     },
 #    CHECK:     {
-#    CHECK:       "kind": 2,
-#    CHECK:       "label": "toFloat",
-#    CHECK:       "labelDetails": {
-#    CHECK:         "detail": "(): Float for Int"
-#    CHECK:       }
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "True",
+#    CHECK:       "sortText": "0"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "TERM_HOOK",
+#    CHECK:       "sortText": "1"
 #    CHECK:     }
 #    CHECK:   ]
 
 <<<
-{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }

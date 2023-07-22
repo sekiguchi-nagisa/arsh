@@ -416,6 +416,15 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
         this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap());
       }
     } // FIXME: check client supported semantic token options
+    if (textDocument.completion.hasValue()) {
+      if (auto &completion = textDocument.completion.unwrap();
+          completion.completionItem.hasValue()) {
+        auto &compItem = completion.completionItem.unwrap();
+        if (compItem.labelDetailsSupport.hasValue()) {
+          this->labelDetailSupport = compItem.labelDetailsSupport.unwrap();
+        }
+      }
+    }
   }
 
   InitializeResult ret;
@@ -543,7 +552,14 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
     copiedArchives.revert({src.getSrcId()});
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
-    return analyzer.complete(src, pos, this->cmdCompKind, this->cmdArgComp == BinaryFlag::enabled);
+    Analyzer::ExtraCompOp extraCompOp{};
+    if (this->cmdArgComp == BinaryFlag::enabled) {
+      setFlag(extraCompOp, Analyzer::ExtraCompOp::CMD_ARG_COMP);
+    }
+    if (this->labelDetailSupport) {
+      setFlag(extraCompOp, Analyzer::ExtraCompOp::SIGNATURE);
+    }
+    return analyzer.complete(src, pos, this->cmdCompKind, extraCompOp);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
