@@ -77,7 +77,6 @@ TEST_F(InteractiveTest, expand_limit) {
     return;
   }
 
-  // cancel glob expansion
   std::string err =
       R"([semantic error] not enough resources for glob expansion
  --> (stdin):1:8
@@ -85,9 +84,10 @@ source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )";
 
-  this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n" + PROMPT, err));
+  this->withTimeout(400, [&] {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+        "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
+  });
 
   // last exit status is 0 (does not update $?)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
