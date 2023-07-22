@@ -115,6 +115,7 @@ DEFINE_TCError(ExpandCancel, "glob expansion is canceled");
 DEFINE_TCError(NoGlobDir, "glob pattern in source statement should match module path, "
                           "but always matches directory: `%s'");
 DEFINE_TCError(NoRelativeGlob, "glob pattern in source statement must be absolute path: `%s'");
+DEFINE_TCError(GlobResource, "not enough resources for glob expansion");
 DEFINE_TCError(TildeFail, "cannot expand tilde, no such user: `%s'");
 DEFINE_TCError(TildeNoDirStack, "in source statement, `~+', `~+N', `~N' style "
                                 "tilde expansions are not performed: `%s'");

@@ -1452,6 +1452,8 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
     assert(tildeExpandStatus != TildeExpandStatus::OK);
     raiseTildeError(state, provider, matcher.getBase(), tildeExpandStatus);
     return false;
+    //  case GlobMatchResult::RESOURCE_LIMIT:
+    //    return false; //FIXME:
   default:
     assert(ret == GlobMatchResult::LIMIT && state.hasError());
     return false;

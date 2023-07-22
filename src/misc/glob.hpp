@@ -27,12 +27,13 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-enum class GlobMatchOption : unsigned int {
+enum class GlobMatchOption : unsigned short {
   TILDE = 1u << 0u,             // apply tilde expansion before globbing
   DOTGLOB = 1u << 1u,           // match file names start with '.'
   IGNORE_SYS_DIR = 1u << 2u,    // ignore system directory (/dev, /proc, /sys)
   FASTGLOB = 1u << 3u,          // posix incompatible optimized search
   ABSOLUTE_BASE_DIR = 1u << 4u, // only allow absolute base dir
+  GLOB_LIMIT = 1u << 5u,        // limit the number of readdir
 };
 
 template <>
@@ -200,6 +201,7 @@ enum class GlobMatchResult {
   CANCELED,
   NEED_ABSOLUTE_BASE_DIR,
   TILDE_FAIL,
+  RESOURCE_LIMIT,
 };
 
 template <typename Meta, typename Iter, typename Cancel>
@@ -215,9 +217,13 @@ private:
 
   const GlobMatchOption option;
 
+  unsigned short readdirCount{0}; // for GLOB_LIMIT option
+
   unsigned int matchCount{0};
 
   Cancel cancel; // for cancellation
+
+  static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
 
 public:
   GlobMatcher(const char *base, Iter begin, Iter end, Cancel &&cancel, GlobMatchOption option)
@@ -285,6 +291,7 @@ private:
     LIMIT,
     UNWIND,
     CANCELED,
+    RESOURCE_LIMIT,
   };
 
   template <typename Appender>
@@ -295,9 +302,10 @@ private:
       ;
     if (s == Result::LIMIT) {
       return GlobMatchResult::LIMIT;
-    }
-    if (s == Result::CANCELED) {
+    } else if (s == Result::CANCELED) {
       return GlobMatchResult::CANCELED;
+    } else if (s == Result::RESOURCE_LIMIT) {
+      return GlobMatchResult::RESOURCE_LIMIT;
     }
     return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
   }
@@ -372,6 +380,11 @@ GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender
   });
 
   for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+    if (hasFlag(this->option, GlobMatchOption::GLOB_LIMIT) &&
+        this->readdirCount++ == READDIR_LIMIT) {
+      return Result::RESOURCE_LIMIT;
+    }
+
     if (this->cancel()) {
       return Result::CANCELED;
     }

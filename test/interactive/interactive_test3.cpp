@@ -67,7 +67,7 @@ SystemError: glob expansion is canceled, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
-TEST_F(InteractiveTest, expand_ctrlc4) {
+TEST_F(InteractiveTest, expand_limit) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -78,18 +78,16 @@ TEST_F(InteractiveTest, expand_ctrlc4) {
   }
 
   // cancel glob expansion
-  this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n"));
-  this->send(CTRL_C);
-
-  std::string err = R"([semantic error] glob expansion is canceled
+  std::string err =
+      R"([semantic error] not enough resources for glob expansion
  --> (stdin):1:8
 source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )";
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  this->sendLine("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*");
+  ASSERT_NO_FATAL_FAILURE(this->expect(
+      PROMPT + "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*\n" + PROMPT, err));
 
   // last exit status is 0 (does not update $?)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
