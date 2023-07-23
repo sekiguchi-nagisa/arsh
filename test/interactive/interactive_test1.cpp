@@ -418,11 +418,12 @@ TEST_F(InteractiveTest, history1) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->withTimeout(400, [&] {
+  {
+    auto cleanup = this->withTimeout(400);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
-  });
+  }
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
@@ -453,13 +454,14 @@ TEST_F(InteractiveTest, history2) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->withTimeout(400, [&] {
+  {
+    auto cleanup = this->withTimeout(400);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var c = \"$(" HIGHLIGHTER_PATH " --dump)\""));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setColor($c)"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
-  });
+  }
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
@@ -485,11 +487,12 @@ TEST_F(InteractiveTest, history3) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->withTimeout(400, [&] {
+  {
+    auto cleanup = this->withTimeout(400);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
-  });
+  }
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));
@@ -522,11 +525,12 @@ TEST_F(InteractiveTest, history4) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->withTimeout(400, [&] {
+  {
+    auto cleanup = this->withTimeout(400);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));
-  });
+  }
 
   this->send(UP);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "3"));

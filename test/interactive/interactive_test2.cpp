@@ -314,9 +314,11 @@ TEST_F(InteractiveTest, printStackTop) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(
-      this->withTimeout(300, [&] { this->sendLineAndExpect("34|$false", ": Bool = false"); }));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&] { this->sendLineAndExpect("34|true"); }));
+  {
+    auto cleanup = this->withTimeout(300);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|$false", ": Bool = false"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|true"));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("AAA=34 true"));
 
@@ -328,8 +330,10 @@ TEST_F(InteractiveTest, cmdSubstitution) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(
-      this->withTimeout(600, [&] { this->sendLineAndExpect("var a = \"$(stty sane)\""); }));
+  {
+    auto cleanup = this->withTimeout(600);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a = \"$(stty sane)\""));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": String = "));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -392,11 +396,13 @@ TEST_F(InteractiveTest, moduleError1) {
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", eout.c_str()));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
-    this->sendLineAndExpect("f", "[runtime error]\n"
-                                 "SystemError: execution error: f: command not found\n"
-                                 "    from (stdin):2 '<toplevel>()'");
-  }));
+  {
+    auto cleanup = this->withTimeout(400);
+    ASSERT_NO_FATAL_FAILURE(
+        this->sendLineAndExpect("f", "[runtime error]\n"
+                                     "SystemError: execution error: f: command not found\n"
+                                     "    from (stdin):2 '<toplevel>()'"));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
@@ -418,12 +424,14 @@ TEST_F(InteractiveTest, moduleError2) {
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(600, [&] {
-    this->sendLineAndExpect("hey", "",
-                            "[runtime error]\n"
-                            "SystemError: execution error: hey: command not found\n"
-                            "    from (stdin):2 '<toplevel>()'\n");
-  }));
+  {
+    auto cleanup = this->withTimeout(600);
+    ASSERT_NO_FATAL_FAILURE(
+        this->sendLineAndExpect("hey", "",
+                                "[runtime error]\n"
+                                "SystemError: execution error: hey: command not found\n"
+                                "    from (stdin):2 '<toplevel>()'\n"));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));

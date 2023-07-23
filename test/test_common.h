@@ -172,12 +172,10 @@ public:
     return this->handle.readAll(this->timeout);
   }
 
-  template <typename Func>
-  void withTimeout(int time, Func func) {
+  auto withTimeout(int time) {
     auto old = this->timeout;
     this->timeout = time;
-    auto cleanup = ydsh::finally([&] { this->timeout = old; });
-    func();
+    return ydsh::finally([&] { this->timeout = old; });
   }
 
   void expectRegex(const std::string &out = "", const std::string &err = "") {
