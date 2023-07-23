@@ -32,6 +32,7 @@ function renderPrompt(p : String) : String {
     importenv PWD : "."
     var ret = ""
     let size = $p.size()
+    let key = "_" + $RANDOM % 1000000000
     for(var i = 0; $i < $size; $i++) {
         var ch = $p[$i]
         if $ch == '\' && $i + 1 < $size {
@@ -39,20 +40,20 @@ function renderPrompt(p : String) : String {
             var k = $p[$i]
             case $k {
             'd' => {
-                LANG=C printf -v var '%(%a %m %d)T'
-                $ch = $reply.remove('var')!
+                LANG=C printf -v $key '%(%a %m %d)T'
+                $ch = $reply.remove($key)!
             }
             't' => { 
-                printf -v var '%(%T)T'
-                $ch = $reply.remove('var')!
+                printf -v $key '%(%T)T'
+                $ch = $reply.remove($key)!
             }
             'T' => { 
-                printf -v var '%(%I:%M:%S)T'
-                $ch = $reply.remove('var')!
+                printf -v $key '%(%I:%M:%S)T'
+                $ch = $reply.remove($key)!
             }
             '@' => {
-                LANG=C printf -v var '%(%I:%M %p)T'
-                $ch = $reply.remove('var')!
+                LANG=C printf -v $key '%(%I:%M %p)T'
+                $ch = $reply.remove($key)!
             }
             'w' => {
                 if $PWD.startsWith($home) {
@@ -76,8 +77,8 @@ function renderPrompt(p : String) : String {
         }
         $ret += $ch
     }
-    printf -v prompt "%b" $ret
-    return $reply.remove("prompt")!
+    printf -v $key "%b" $ret
+    return $reply.remove($key)!
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
