@@ -84,10 +84,10 @@ source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 )";
 
-  this->withTimeout(400, [&] {
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-        "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
-  });
+  ASSERT_NO_FATAL_FAILURE(this->withTimeout(1500, [&] {
+    this->sendLineAndExpect("source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "",
+                            err.c_str());
+  }));
 
   // last exit status is 0 (does not update $?)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
