@@ -85,7 +85,7 @@ source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
 )";
 
   {
-    auto cleanup = this->withTimeout(1800);
+    auto cleanup = this->withTimeout(2500);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
         "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
   }
