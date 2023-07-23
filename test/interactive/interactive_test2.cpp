@@ -267,19 +267,33 @@ TEST_F(InteractiveTest, read) {
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
-//
-// TEST_F(InteractiveTest, continuation) {
-//  this->invoke("--quiet", "--norc");
-//
-//  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-//  this->sendLine("echo \\");
-//  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo \\\n> "));
-//  this->sendLine("world");
-//  ASSERT_NO_FATAL_FAILURE(this->expect("> world\nworld\n" + PROMPT));
-//
-//  this->send(CTRL_D);
-//  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
-//}
+
+TEST_F(InteractiveTest, expand_limit) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  if (getenv("ALPINE_WORKAROUND")) {
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+    return;
+  }
+
+  std::string err =
+      R"([semantic error] not enough resources for glob expansion
+ --> (stdin):1:8
+source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
+       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)";
+
+  {
+    auto cleanup = this->withTimeout(2500);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+        "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
+  }
+
+  // last exit status is 0 (does not update $?)
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
 
 TEST_F(InteractiveTest, throwFromLastPipe) {
   this->invoke("--quiet", "--norc");

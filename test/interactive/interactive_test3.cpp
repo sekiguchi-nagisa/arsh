@@ -67,33 +67,6 @@ SystemError: glob expansion is canceled, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
-TEST_F(InteractiveTest, expand_limit) {
-  this->invoke("--quiet", "--norc");
-
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-
-  if (getenv("ALPINE_WORKAROUND")) {
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
-    return;
-  }
-
-  std::string err =
-      R"([semantic error] not enough resources for glob expansion
- --> (stdin):1:8
-source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
-       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-)";
-
-  {
-    auto cleanup = this->withTimeout(2500);
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-        "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
-  }
-
-  // last exit status is 0 (does not update $?)
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
-}
-
 TEST_F(InteractiveTest, wait_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
