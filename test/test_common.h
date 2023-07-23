@@ -175,7 +175,7 @@ public:
   auto withTimeout(int time) {
     auto old = this->timeout;
     this->timeout = time;
-    return ydsh::finally([&] { this->timeout = old; });
+    return ydsh::finally([&, old] { this->timeout = old; });
   }
 
   void expectRegex(const std::string &out = "", const std::string &err = "") {
