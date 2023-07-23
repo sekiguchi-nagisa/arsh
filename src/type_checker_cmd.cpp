@@ -501,8 +501,8 @@ bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::
 
   const unsigned int oldSize = results.size();
   auto appender = [&results](std::string &&path) { return appendPath(results, std::move(path)); };
-  auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB |
-                GlobMatchOption::ABSOLUTE_BASE_DIR | GlobMatchOption::GLOB_LIMIT;
+  auto option =
+      GlobMatchOption::FASTGLOB | GlobMatchOption::ABSOLUTE_BASE_DIR | GlobMatchOption::GLOB_LIMIT;
   if (hasFlag(op, GlobOp::TILDE)) {
     setFlag(option, GlobMatchOption::TILDE);
   }

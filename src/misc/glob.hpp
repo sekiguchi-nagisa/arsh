@@ -30,10 +30,9 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 enum class GlobMatchOption : unsigned short {
   TILDE = 1u << 0u,             // apply tilde expansion before globbing
   DOTGLOB = 1u << 1u,           // match file names start with '.'
-  IGNORE_SYS_DIR = 1u << 2u,    // ignore system directory (/dev, /proc, /sys)
-  FASTGLOB = 1u << 3u,          // posix incompatible optimized search
-  ABSOLUTE_BASE_DIR = 1u << 4u, // only allow absolute base dir
-  GLOB_LIMIT = 1u << 5u,        // limit the number of readdir
+  FASTGLOB = 1u << 2u,          // posix incompatible optimized search
+  ABSOLUTE_BASE_DIR = 1u << 3u, // only allow absolute base dir
+  GLOB_LIMIT = 1u << 4u,        // limit the number of readdir
 };
 
 template <>
@@ -361,14 +360,6 @@ template <typename Meta, typename Iter, typename Cancel>
 template <typename Appender>
 typename GlobMatcher<Meta, Iter, Cancel>::Result
 GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender &appender) {
-  if (hasFlag(this->option, GlobMatchOption::IGNORE_SYS_DIR)) {
-    const char *ignore[] = {"/dev", "/proc", "/sys"};
-    for (auto &i : ignore) {
-      if (isSameFile(i, baseDir)) {
-        return Result::EXIT;
-      }
-    }
-  }
   DIR *dir = opendir(baseDir);
   if (!dir) {
     return Result::EXIT;
