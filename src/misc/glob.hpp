@@ -27,7 +27,7 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-enum class GlobMatchOption : unsigned short {
+enum class GlobMatchOption : unsigned int {
   TILDE = 1u << 0u,             // apply tilde expansion before globbing
   DOTGLOB = 1u << 1u,           // match file names start with '.'
   FASTGLOB = 1u << 2u,          // posix incompatible optimized search
@@ -216,13 +216,17 @@ private:
 
   const GlobMatchOption option;
 
-  unsigned short readdirCount{0}; // for GLOB_LIMIT option
+  unsigned int readdirCount{0}; // for GLOB_LIMIT option
+
+  unsigned int statCount{0}; // for GLOB_LIMIT option
 
   unsigned int matchCount{0};
 
   Cancel cancel; // for cancellation
 
   static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
+
+  static constexpr unsigned int STAT_LIMIT = 4096;
 
 public:
   GlobMatcher(const char *base, Iter begin, Iter end, Cancel &&cancel, GlobMatchOption option)
@@ -392,6 +396,9 @@ GlobMatcher<Meta, Iter, Cancel>::match(const char *baseDir, Iter &iter, Appender
     }
     name += entry->d_name;
 
+    if (hasFlag(this->option, GlobMatchOption::GLOB_LIMIT) && this->statCount++ == STAT_LIMIT) {
+      return Result::RESOURCE_LIMIT;
+    }
     if (isDirectory(dir, entry)) {
       while (true) {
         if (matcher.consumeSeps() > 0) {
