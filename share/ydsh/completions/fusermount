@@ -1,5 +1,5 @@
 #!/usr/bin/env ydsh
 
-source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../modules/completion
 
 compdef --cmd fusermount --short u --arg-cmd "cat /etc/mtab | grep 'fuse\\.' | cut -d ' ' -f 2"

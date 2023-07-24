@@ -1,7 +1,7 @@
 
 # test cases for completion module
 
-source ../../../../share/ydsh/module/completion
+source ../../../../share/ydsh/modules/completion
 
 # no option
 assert compdef 2>&1 | grep 'usage: compdef'

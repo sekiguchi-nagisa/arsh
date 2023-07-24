@@ -1,6 +1,6 @@
 #!/usr/bin/env ydsh
 
-source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../modules/completion
 
 
 compdef --cmd ninja --arg-cmd 'ninja -t targets all 2>> /dev/null | cut -d: -f1'

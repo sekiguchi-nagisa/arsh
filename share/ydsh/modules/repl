@@ -15,7 +15,7 @@ $LINE_EDIT.setCompletion(function(m, s) => {
     complete -m $m -q -s -- $s
     $COMPREPLY
 })
-source $DATA_DIR/completion/*
+source $DATA_DIR/completions/*
 
 # ISDIR setting
 source cnf inlined

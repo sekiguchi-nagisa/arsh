@@ -2,7 +2,7 @@
 
 # git completion for ydsh
 
-source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../modules/completion
 
 function _lookup() : String {
     if($OSTYPE == "darwin") {

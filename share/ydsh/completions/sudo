@@ -1,6 +1,6 @@
 #!/usr/bin/env ydsh
 
-source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../modules/completion
 
 function _sudo($ctx : Module, $t : [String], $c : Int) : [String]? {
     for(var i = 1; $i < $t.size(); $i++) {

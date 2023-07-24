@@ -1,6 +1,6 @@
 #!/usr/bin/env ydsh
 
-source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../modules/completion
 
 function _cmd($ctx : Module, $t : [String], $c : Int) : [String]? {
     if $t.size() == 1 || $c == 1{
@@ -67,7 +67,7 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
     }
 }
 
-source $SCRIPT_DIR/../module/fzf as _fzf
+source $SCRIPT_DIR/../modules/fzf as _fzf
 
 function _kill($ctx : Module, $t : [String], $c : Int) : [String]? {
     let size = $t.size()

@@ -21,9 +21,9 @@ assert $f($YDSH_VERSION)! == "$YDSH_VERSION-1"
 assert $f($SCRIPT_DIR)! == "$SCRIPT_DIR-1"
 assert $f($SCRIPT_NAME)! == "$SCRIPT_NAME-1"
 assert $f($DATA_DIR)! == "$DATA_DIR-3"
-assert $f("$DATA_DIR/module")! == "$MODULE_DIR-5"
+assert $f("$DATA_DIR/modules")! == "$MODULE_DIR-5"
 assert $f($DATA_HOME)! == "$DATA_HOME-12"
-assert $f("$DATA_HOME/module")! == "$MODULE_HOME-17"
+assert $f("$DATA_HOME/modules")! == "$MODULE_HOME-17"
 assert $f($CONFIG_HOME)! == "${CONFIG_HOME}-19"
 assert !$f("hello")
 

@@ -179,7 +179,7 @@ TEST_F(APITest, config) {
   value = DSState_config(this->state, DS_CONFIG_MODULE_HOME);
   {
     const char *base = DSState_config(this->state, DS_CONFIG_DATA_HOME);
-    ASSERT_EQ(format("%s/module", base), value);
+    ASSERT_EQ(format("%s/modules", base), value);
   }
 
   value = DSState_config(this->state, DS_CONFIG_DATA_DIR);

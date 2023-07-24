@@ -66,7 +66,7 @@ SysConfig::SysConfig() {
     }
 
     std::string moduleHome = dataHome;
-    moduleHome += "/module";
+    moduleHome += "/modules";
 
     this->values.emplace(DATA_HOME, std::move(dataHome));
     this->values.emplace(MODULE_HOME, std::move(moduleHome));
