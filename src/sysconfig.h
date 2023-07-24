@@ -72,7 +72,7 @@ public:
   const std::string &getDataHome() const { return *this->lookup(DATA_HOME); }
 
   /**
-   * if defined `XDG_DATA_HOME`, indicates $XDG_DATA_HOME/ydsh/module
+   * if defined `XDG_DATA_HOME`, indicates $XDG_DATA_HOME/ydsh/modules
    * otherwise, indicates $HOME/.local/share/ydsh/modules
    */
   const std::string &getModuleHome() const { return *this->lookup(MODULE_HOME); }
