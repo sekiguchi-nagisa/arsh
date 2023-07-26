@@ -103,7 +103,7 @@ TokenDelta getTokenDelta(const Range &prev, const Range &cur) {
   assert(cur.start.line == cur.end.line);
   assert(prev.start.line <= cur.start.line);
 
-  TokenDelta tokenDelta;
+  TokenDelta tokenDelta{};
   tokenDelta.deltaLine = cur.start.line - prev.start.line;
   tokenDelta.deltaStartPos =
       tokenDelta.deltaLine == 0 ? cur.start.character - prev.start.character : cur.start.character;

@@ -101,7 +101,7 @@ private:
   NameScopePtr scope;
   int version;
   unsigned int gvarCount{0};
-  TypeDiscardPoint typeDiscardPoint;
+  TypeDiscardPoint typeDiscardPoint{};
 
 public:
   NON_COPYABLE(AnalyzerContext);

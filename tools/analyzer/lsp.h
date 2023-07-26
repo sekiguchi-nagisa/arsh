@@ -680,7 +680,7 @@ enum class DocumentHighlightKind : int {
 
 struct DocumentHighlight {
   Range range;
-  DocumentHighlightKind kind;
+  DocumentHighlightKind kind{DocumentHighlightKind::Text};
 
   template <typename T>
   void jsonify(T &t) {
