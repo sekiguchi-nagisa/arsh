@@ -828,17 +828,17 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
     return true;
   }
 
-  auto subcmd = array.getValues()[1].asStrRef();
-  if (subcmd[0] == '_') {
-    ERROR(array, "cannot resolve private subcommand: %s", toPrintable(subcmd).c_str());
+  auto subCmd = array.getValues()[1].asStrRef();
+  if (subCmd[0] == '_') {
+    ERROR(array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 1);
     return true;
   }
 
-  std::string key = toCmdFullName(subcmd);
+  std::string key = toCmdFullName(subCmd);
   auto handle = modType.lookup(state.typePool, key);
   if (!handle) {
-    ERROR(array, "undefined subcommand: %s", toPrintable(subcmd).c_str());
+    ERROR(array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 2);
     return true;
   }
@@ -2497,7 +2497,7 @@ bool VM::mainLoop(DSState &state) {
       }
     }
 
-  SIGNAL : {
+  SIGNAL: {
     assert(DSState::hasSignals());
     if (DSState::pendingSigSet.has(SIGCHLD)) {
       state.jobTable.waitForAny();

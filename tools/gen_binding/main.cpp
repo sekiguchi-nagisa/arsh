@@ -97,8 +97,8 @@ public:
     vsnprintf(buf, size, fmt, args);
     va_end(args);
 
-    std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << std::endl;
-    std::cerr << this->curLine << std::endl;
+    std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << '\n';
+    std::cerr << this->curLine << '\n' << std::flush;
     abort();
   }
 };
@@ -769,10 +769,11 @@ std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
   ERR:
     if (this->hasError()) {
       auto &e = this->getError();
-      std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
-      std::cerr << line << std::endl;
+      std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << '\n';
+      std::cerr << line << '\n';
       Token lineToken{.pos = 0, .size = static_cast<unsigned int>(line.size())};
-      std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
+      std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << '\n'
+                << std::flush;
       exit(EXIT_FAILURE);
     }
   }

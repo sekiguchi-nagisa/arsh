@@ -169,7 +169,7 @@ public:
    * @return
    * if internal file descriptor is invalid, return false
    */
-  bool closeOnExec(bool set) {
+  bool closeOnExec(bool set) const {
     if (this->fd < 0) {
       errno = EBADF;
       return false;
@@ -548,7 +548,7 @@ public:
 
   template <typename T, typename... A>
   static DSValue create(A &&...args) {
-    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+    static_assert(std::is_base_of_v<DSObject, T>, "must be subtype of DSObject");
 
     return DSValue(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
   }
@@ -641,7 +641,7 @@ public:
 
 template <typename T>
 inline T &typeAs(const DSValue &value) noexcept {
-  static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+  static_assert(std::is_base_of_v<DSObject, T>, "must be subtype of DSObject");
 
 #ifdef USE_SAFE_CAST
   constexpr bool useSafeCast = true;

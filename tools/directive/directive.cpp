@@ -406,9 +406,9 @@ static void showError(const char *sourceName, Lexer &lexer, const std::string &l
                       Token errorToken, const std::string &message, const char *errorName) {
   Token lineToken = {0, static_cast<unsigned int>(line.size())};
   std::cerr << sourceName << ":" << lexer.getMaxLineNum() << ": [" << errorName << " error] ";
-  std::cerr << message << std::endl;
-  std::cerr << line << std::endl;
-  std::cerr << lexer.formatLineMarker(lineToken, errorToken) << std::endl;
+  std::cerr << message << '\n';
+  std::cerr << line << '\n';
+  std::cerr << lexer.formatLineMarker(lineToken, errorToken) << '\n' << std::flush;
 }
 
 static bool initDirective(const char *fileName, std::istream &input, Directive &directive) {
@@ -445,7 +445,7 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
 bool Directive::init(const char *fileName, Directive &d) {
   std::ifstream input(fileName);
   if (!input) {
-    std::cerr << "cannot open file: " << fileName << std::endl;
+    std::cerr << "cannot open file: " << fileName << '\n';
     return false;
   }
   return initDirective(fileName, input, d);

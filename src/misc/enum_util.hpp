@@ -27,7 +27,7 @@ struct allow_enum_bitop : std::false_type {};
 namespace detail {
 
 template <typename T>
-constexpr auto allowBitop = std::is_enum<T>::value &&allow_enum_bitop<T>::value;
+constexpr auto allowBitop = std::is_enum_v<T> && allow_enum_bitop<T>::value;
 
 } // namespace detail
 

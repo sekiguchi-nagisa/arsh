@@ -47,21 +47,22 @@ enum class OptionSet : unsigned int {
 
 void usage(std::ostream &stream, char **argv) {
   stream << "usage: " << argv[0] << " [option ...] [source file] or " << argv[0]
-         << " --dump [option ...]" << std::endl;
+         << " --dump [option ...]" << '\n'
+         << std::flush;
 }
 
 Optional<std::string> readAll(const char *sourceName) {
   std::string buf;
   auto file = createFilePtr(fopen, sourceName, "rb");
   if (!file) {
-    std::cerr << "cannot open file: " << sourceName << ", by `" << strerror(errno) << "'"
-              << std::endl;
+    std::cerr << "cannot open file: " << sourceName << ", by `" << strerror(errno) << "'" << '\n'
+              << std::flush;
     return {};
   }
 
   if (!readAll(file, buf, SYS_LIMIT_INPUT_SIZE)) {
-    std::cerr << "cannot read file: " << sourceName << ", by `" << strerror(errno) << "'"
-              << std::endl;
+    std::cerr << "cannot read file: " << sourceName << ", by `" << strerror(errno) << "'" << '\n'
+              << std::flush;
     return {};
   }
 
@@ -74,7 +75,7 @@ Optional<std::string> readAll(const char *sourceName) {
 int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output, bool dump) {
   auto ret = factory.create(output);
   if (!ret) {
-    std::cerr << ret.asErr() << std::endl;
+    std::cerr << ret.asErr() << '\n';
     return 1;
   }
   auto formatter = std::move(ret).take();
@@ -82,7 +83,7 @@ int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &ou
 
   if (dump) {
     auto value = formatter->dump();
-    output << value << std::endl;
+    output << value << '\n';
     return 0;
   }
 
@@ -118,18 +119,18 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
     names.push_back(e.first);
   }
   std::sort(names.begin(), names.end());
-  output << "Styles:" << std::endl;
+  output << "Styles:" << '\n';
   for (auto &e : names) {
-    output << "* " << e.toString() << std::endl;
+    output << "* " << e.toString() << '\n';
   }
-  output << std::endl;
+  output << '\n';
 
   // formatter
   std::unordered_map<FormatterType, std::vector<StringRef>> values;
   for (auto &e : factory.getSupportedFormats()) {
     values[e.second].emplace_back(e.first);
   }
-  output << "Formatters:" << std::endl;
+  output << "Formatters:" << '\n';
   for (unsigned int i = 0; i < values.size(); i++) {
     auto type = static_cast<FormatterType>(i);
     auto iter = values.find(type);
@@ -140,8 +141,8 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
     for (auto &e : nameList) {
       output << " " << e.toString();
     }
-    output << std::endl;
-    output << "  - " << getFormatterDescription(type) << std::endl;
+    output << '\n';
+    output << "  - " << getFormatterDescription(type) << '\n';
   }
 }
 
@@ -196,7 +197,7 @@ int main(int argc, char **argv) {
     }
   }
   if (result.error() != opt::END && !dump) {
-    std::cerr << result.formatError() << std::endl;
+    std::cerr << result.formatError() << '\n';
     parser.printOption(std::cerr);
     return 1;
   }
@@ -213,7 +214,7 @@ int main(int argc, char **argv) {
 
   std::ofstream output(outputFileName);
   if (!output) {
-    std::cerr << "cannot open file: " << outputFileName << std::endl;
+    std::cerr << "cannot open file: " << outputFileName << '\n';
     return 1;
   }
   return colorize(factory, sourceName, output, dump);

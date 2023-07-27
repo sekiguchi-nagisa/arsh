@@ -43,7 +43,7 @@ constexpr const char *getOptSuffix(OptionFlag flag) {
 
 template <typename T>
 struct Option {
-  static_assert(std::is_enum<T>::value, "must be enum type");
+  static_assert(std::is_enum_v<T>, "must be enum type");
 
   T kind;
   const char *optionName;

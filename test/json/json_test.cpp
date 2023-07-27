@@ -773,7 +773,7 @@ TEST(DeserializeTest, option2) {
   JSONDeserializer deserializer(std::move(json));
   DDD v2;
   deserializer(v2);
-  std::cerr << deserializer.getValidationError().formatError() << std::endl;
+  std::cerr << deserializer.getValidationError().formatError() << '\n';
   ASSERT_FALSE(deserializer.hasError());
   ASSERT_TRUE(v2.json.hasValue());
   ASSERT_EQ(100, v2.json.unwrap().asLong());

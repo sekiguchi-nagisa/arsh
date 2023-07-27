@@ -411,7 +411,7 @@ void HTMLFormatter::finalize() {
     this->output << "\n</td></tr></table>";
   }
   if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
-    this->output << "\n</body>\n</html>" << std::endl;
+    this->output << "\n</body>\n</html>" << '\n';
   }
   this->output.flush();
 }

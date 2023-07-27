@@ -96,21 +96,21 @@ protected:
   virtual void visitFunc(FuncTypeNode &node);
   virtual void visitTypeOf(TypeOfNode &node);
 
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+  template <typename T, enable_when<std::is_convertible_v<T *, Node *>> = nullptr>
   void visit(T *node) {
     if (node) {
       this->visit(*node);
     }
   }
 
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+  template <typename T, enable_when<std::is_convertible_v<T *, Node *>> = nullptr>
   void visit(const std::unique_ptr<T> &node) {
     if (node) {
       this->visit(*node);
     }
   }
 
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+  template <typename T, enable_when<std::is_convertible_v<T *, Node *>> = nullptr>
   void visitEach(const std::vector<std::unique_ptr<T>> &nodes) {
     for (const auto &item : nodes) {
       this->visit(item);

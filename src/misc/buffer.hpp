@@ -46,7 +46,7 @@ public:
   static constexpr size_type MAX_SIZE = static_cast<SIZE_T>(-1);
 
 private:
-  static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
+  static_assert(std::is_unsigned_v<SIZE_T>, "need unsigned type");
 
   static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
 

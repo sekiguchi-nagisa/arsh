@@ -64,9 +64,9 @@ struct FNVHash64 {
   }
 };
 
-using FNVHash = std::conditional<
+using FNVHash = std::conditional_t<
     sizeof(std::size_t) == sizeof(uint64_t), FNVHash64,
-    std::conditional<sizeof(std::size_t) == sizeof(uint32_t), FNVHash32, void>::type>::type;
+    std::conditional_t<sizeof(std::size_t) == sizeof(uint32_t), FNVHash32, void>>;
 
 struct CStringComparator {
   bool operator()(const char *x, const char *y) const { return strcmp(x, y) == 0; }

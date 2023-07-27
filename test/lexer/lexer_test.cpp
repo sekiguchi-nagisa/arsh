@@ -1470,7 +1470,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG14) {
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG15) {
-  const char *text = "\\?\\*\\??";
+  const char *text = R"(\?\*\??)";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "\\?\\*\\?", TokenKind::GLOB_ANY, "?",

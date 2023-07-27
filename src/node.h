@@ -164,7 +164,7 @@ public:
   void accept(NodeVisitor &visitor);
 };
 
-template <typename T, NodeKind K, enable_when<std::is_base_of<Node, T>::value> = nullptr>
+template <typename T, NodeKind K, enable_when<std::is_base_of_v<Node, T>> = nullptr>
 class WithRtti : public T {
 protected:
   explicit WithRtti(Token token) : T(K, token) {}
@@ -1642,7 +1642,9 @@ public:
 
   void setMaxVarSize(unsigned int size) { this->maxVarSize = size; }
 
-  void setFirstDeferOffset(unsigned short offset) { this->firstDeferOffset = offset; }
+  void setFirstDeferOffset(unsigned short offset) {
+    this->firstDeferOffset = static_cast<short>(offset);
+  }
 
   short getFirstDeferOffset() const { return this->firstDeferOffset; }
 
@@ -2844,12 +2846,12 @@ public:
     this->dumpRaw(fieldName, value ? "true" : "false");
   }
 
-  template <typename T, enable_when<std::is_arithmetic<T>::value> = nullptr>
+  template <typename T, enable_when<std::is_arithmetic_v<T>> = nullptr>
   void dump(const char *fieldName, T value) {
     this->dumpRaw(fieldName, std::to_string(value).c_str());
   }
 
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+  template <typename T, enable_when<std::is_convertible_v<T *, Node *>> = nullptr>
   void dump(const char *fieldName, const std::vector<std::unique_ptr<T>> &nodes) {
     this->dumpNodesHead(fieldName);
     for (auto &e : nodes) {
@@ -2858,7 +2860,7 @@ public:
     this->dumpNodesTail();
   }
 
-  template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+  template <typename T, enable_when<std::is_convertible_v<T *, Node *>> = nullptr>
   void dump(const char *fieldName, const std::vector<T *> &nodes) {
     this->dumpNodesHead(fieldName);
     for (auto &e : nodes) {

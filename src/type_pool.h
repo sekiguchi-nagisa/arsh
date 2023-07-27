@@ -53,8 +53,7 @@ public:
       union {
         char b[4];
         unsigned int i;
-      } wrap;
-      wrap.i = key.id;
+      } wrap = {.i = key.id};
       for (auto b : wrap.b) {
         FNVHash::update(hash, b);
       }

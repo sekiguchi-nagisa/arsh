@@ -81,7 +81,7 @@ public:
       xx0 = this->next();
     } while (xx0 == 0);
     uint64_t xx1 = this->next();
-    return L64X128MixRNG(aa, ss, xx0, xx1);
+    return {aa, ss, xx0, xx1};
   }
 
 private:

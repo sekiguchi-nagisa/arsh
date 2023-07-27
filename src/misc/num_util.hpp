@@ -115,14 +115,14 @@ inline unsigned int parseBase(const char *&begin, const char *end) {
 
 template <typename T>
 inline auto dropSign(T v) {
-  static_assert(std::is_signed<T>::value, "must be signed type");
+  static_assert(std::is_signed_v<T>, "must be signed type");
   using UT = std::make_unsigned_t<T>;
   return static_cast<UT>(~static_cast<UT>(v) + 1);
 }
 
 template <typename UT>
 inline auto putSign(UT v) {
-  static_assert(std::is_unsigned<UT>::value, "must be unsigned type");
+  static_assert(std::is_unsigned_v<UT>, "must be unsigned type");
   using T = std::make_signed_t<UT>;
   return static_cast<T>(~v + 1);
 }
@@ -151,7 +151,7 @@ struct IntConversionResult {
 
 template <typename U>
 inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
-  static_assert(std::is_unsigned<U>::value, "must be unsigned type");
+  static_assert(std::is_unsigned_v<U>, "must be unsigned type");
 
   using T = std::make_signed_t<U>;
   if (negate) {

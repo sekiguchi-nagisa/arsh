@@ -68,7 +68,7 @@ public:
 struct CGError {};
 
 template <typename T, typename B>
-using base_of_t = std::enable_if_t<std::is_base_of<B, T>::value, T>;
+using base_of_t = std::enable_if_t<std::is_base_of_v<B, T>, T>;
 
 #define DEFINE_CGError(E, fmt)                                                                     \
   struct E : CGError {                                                                             \

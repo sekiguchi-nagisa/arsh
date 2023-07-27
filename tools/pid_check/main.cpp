@@ -46,16 +46,16 @@ static int toInt32(const char *str) {
 
 static void assertPID(pid_t pid, pid_t ppid) {
   if (pid > -1 && pid != getpid()) {
-    std::cout << "expect pid: " << pid << ", but actual: " << getpid() << std::endl;
+    std::cout << "expect pid: " << pid << ", but actual: " << getpid() << '\n' << std::flush;
     exit(1);
   }
 
   if (ppid > -1 && ppid != getppid()) {
-    std::cout << "expect ppid: " << ppid << ", but actual: " << getppid() << std::endl;
+    std::cout << "expect ppid: " << ppid << ", but actual: " << getppid() << '\n' << std::flush;
     exit(1);
   }
 
-  std::cout << "OK" << std::endl;
+  std::cout << "OK" << '\n' << std::flush;
 }
 
 /**
@@ -94,7 +94,7 @@ static void dumpPID(bool isFirst) {
     }
     std::cout << buf.back() << " ";
   }
-  std::cout << str << std::endl;
+  std::cout << str << '\n' << std::flush;
 }
 
 int main(int argc, char **argv) {

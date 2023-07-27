@@ -992,9 +992,9 @@ static unsigned int computeMaxNameLen() {
 }
 
 static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &entry) {
-  using underlying_t = std::conditional<
-      sizeof(rlim_t) == sizeof(uint64_t), uint64_t,
-      std::conditional<sizeof(rlim_t) == sizeof(uint32_t), uint32_t, void>::type>::type;
+  using underlying_t =
+      std::conditional_t<sizeof(rlim_t) == sizeof(uint64_t), uint64_t,
+                         std::conditional_t<sizeof(rlim_t) == sizeof(uint32_t), uint32_t, void>>;
 
   if (ref.hasNullChar()) {
     return false;

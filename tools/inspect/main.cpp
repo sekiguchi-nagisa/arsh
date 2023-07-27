@@ -45,7 +45,7 @@ static std::ostream &format(std::ostream &stream) {
 }
 
 static void showPIDs(std::ostream &stream) {
-  stream << "+++++  PIDs  +++++" << std::endl;
+  stream << "+++++  PIDs  +++++" << '\n';
 
   struct {
     const char *name;
@@ -57,9 +57,9 @@ static void showPIDs(std::ostream &stream) {
       {"SID", getsid(0)},
   };
   for (auto &e : lists) {
-    stream << format << e.name << " => " << e.id << std::endl;
+    stream << format << e.name << " => " << e.id << '\n';
   }
-  stream << std::endl;
+  stream << '\n';
 }
 
 static void showTCPGID(int fd, std::ostream &stream) {
@@ -69,30 +69,30 @@ static void showTCPGID(int fd, std::ostream &stream) {
   errno = 0;
   auto pid = tcgetpgrp(fd);
   int errNum = errno;
-  stream << format << name << " => " << pid << std::endl;
+  stream << format << name << " => " << pid << '\n';
   stream << format << "errno"
-         << " => " << errNum << ": " << strerror(errNum) << std::endl;
+         << " => " << errNum << ": " << strerror(errNum) << '\n';
 }
 
 static void showPGroup(std::ostream &stream) {
-  stream << "+++++  foreground process group  +++++" << std::endl;
+  stream << "+++++  foreground process group  +++++" << '\n';
 
   stream << format << "STDIN"
-         << " => " << (isatty(STDIN_FILENO) ? "TTY" : "NOTTY") << std::endl;
+         << " => " << (isatty(STDIN_FILENO) ? "TTY" : "NOTTY") << '\n';
   stream << format << "STDOUT"
-         << " => " << (isatty(STDOUT_FILENO) ? "TTY" : "NOTTY") << std::endl;
+         << " => " << (isatty(STDOUT_FILENO) ? "TTY" : "NOTTY") << '\n';
   stream << format << "STDERR"
-         << " => " << (isatty(STDERR_FILENO) ? "TTY" : "NOTTY") << std::endl;
+         << " => " << (isatty(STDERR_FILENO) ? "TTY" : "NOTTY") << '\n';
 
   showTCPGID(STDIN_FILENO, stream);
   showTCPGID(STDOUT_FILENO, stream);
   showTCPGID(STDERR_FILENO, stream);
-  stream << std::endl;
+  stream << '\n';
 }
 
 static void showSignals(std::ostream &stream) {
   auto lists = getUniqueSignalList();
-  stream << "+++++  signal handler setting  +++++" << std::endl;
+  stream << "+++++  signal handler setting  +++++" << '\n';
   for (auto &e : lists) {
     stream << format << getSignalName(e) << " => ";
     struct sigaction action {};
@@ -104,18 +104,18 @@ static void showSignals(std::ostream &stream) {
     } else {
       stream << std::hex << reinterpret_cast<uintptr_t>(action.sa_handler);
     }
-    stream << std::endl;
+    stream << '\n';
   }
-  stream << std::endl;
+  stream << '\n';
 }
 
 static void showPlat(std::ostream &stream) {
-  stream << "+++++  platform info  +++++" << std::endl;
+  stream << "+++++  platform info  +++++" << '\n';
   stream << format << "platform"
-         << " => " << platform::toString(platform::platform()) << std::endl;
+         << " => " << platform::toString(platform::platform()) << '\n';
   stream << format << "arch"
-         << " => " << platform::toString(platform::arch()) << std::endl;
-  stream << std::endl;
+         << " => " << platform::toString(platform::arch()) << '\n';
+  stream << '\n';
 }
 
 static void showInfo(std::ostream &stream) {

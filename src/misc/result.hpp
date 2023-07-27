@@ -48,7 +48,7 @@ constexpr int toTypeIndex(int) {
 
 template <typename T, typename F, typename... R>
 constexpr int toTypeIndex(int index) {
-  return std::is_same<T, F>::value ? index : toTypeIndex<T, R...>(index + 1);
+  return std::is_same_v<T, F> ? index : toTypeIndex<T, R...>(index + 1);
 }
 
 template <std::size_t I, std::size_t N, typename F, typename... R>
@@ -107,7 +107,7 @@ public:
   void obtain(U &&value) {
     static_assert(TypeTag<F, T...>::value > -1, "invalid type");
 
-    using Decayed = typename std::decay<F>::type;
+    using Decayed = std::decay_t<F>;
     new (&this->data_) Decayed(std::forward<U>(value));
   }
 
@@ -229,8 +229,7 @@ inline void copy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
 template <typename... T>
 class Union {
 private:
-  static_assert(detail::andAll(std::is_move_constructible<T>::value...),
-                "must be move-constructible");
+  static_assert(detail::andAll(std::is_move_constructible_v<T>...), "must be move-constructible");
 
   using StorageType = Storage<T...>;
   StorageType value_;
@@ -379,12 +378,12 @@ struct ErrHolder {
   explicit ErrHolder(const E &value) : value(value) {}
 };
 
-template <typename T, typename Decayed = typename std::decay<T>::type>
+template <typename T, typename Decayed = std::decay_t<T>>
 OkHolder<Decayed> Ok(T &&value) {
   return OkHolder<Decayed>(std::forward<T>(value));
 }
 
-template <typename E, typename Decayed = typename std::decay<E>::type>
+template <typename E, typename Decayed = std::decay_t<E>>
 ErrHolder<Decayed> Err(E &&value) {
   return ErrHolder<Decayed>(std::forward<E>(value));
 }
