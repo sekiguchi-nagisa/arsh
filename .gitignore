@@ -41,6 +41,7 @@ linenoise-*
 *.exe
 *.out
 *.app
+*.stackdump
 
 # Others
 .DS_Store
