@@ -24,6 +24,7 @@ Currently, under heavy development. Language specification is subject to change 
 ### Optional Requirement
 
 * fzf (for history search)
+* bash-completion (for tab-completion)
 
 ### Tested Compiler
 
