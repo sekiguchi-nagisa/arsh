@@ -18,13 +18,12 @@ assert new Regex("ss", "iissm").isCaseless()
 assert new Regex("ss", "sism").isMultiLine()
 assert new Regex("ss", "iissm").isDotAll()
 
-
+assert $/\\/ =~ '\'
 assert $/a/ =~ 'bac'
 
 assert $/abc/ !~ 'cdf'
 
 assert $/\/s/ =~ 's/s'
-assert $/\\/s/ !~ 's/s'
 assert $/\\\/s/ !~ 's/s'
 assert new Regex('\/s') =~ 's/s'
 assert new Regex('\\/s') !~ 's/s'
@@ -76,6 +75,20 @@ assert $'AbCd\n\n123' =~ $/abcd$..../sim # multi line + caseless + dotall
 assert $'AbCd\n\n123' =~ new Regex('abcd$....', "msi")
 
 assert new Regex(".*", "") =~ "a"
+
+try {
+    new Regex('\')
+    assert false
+} catch e {
+    assert $e is RegexSyntaxError
+}
+
+try {
+    new Regex('\' + '\' + '\')
+    assert false
+} catch e {
+    assert $e is RegexSyntaxError
+}
 
 try {
     new Regex("**", "i")

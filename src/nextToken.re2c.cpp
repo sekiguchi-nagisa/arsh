@@ -180,7 +180,7 @@ TokenKind Lexer::nextToken(Token &token) {
     BRACE_INT_SEQ  = "{" INT_SEQ_BODY  (".." SEQ_STEP )? "}";
     BRACE_CHAR_SEQ = "{" CHAR_SEQ_BODY (".." SEQ_STEP )? "}";
 
-    REGEX_CHAR = "\\/" | [^\n\000/];
+    REGEX_CHAR = "\\" [^\n\000] | [^/\n\\\000];
     UNCLOSED_REGEX = "$/" REGEX_CHAR* ;
     REGEX = UNCLOSED_REGEX "/" [_a-z]*;
 
