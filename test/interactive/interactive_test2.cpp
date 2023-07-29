@@ -273,7 +273,7 @@ TEST_F(InteractiveTest, expand_limit) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  if (getenv("ALPINE_WORKAROUND")) {
+  if (getenv("ALPINE_WORKAROUND") || platform::isCygwinOrMsys(platform::platform())) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
     return;
   }
