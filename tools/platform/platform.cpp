@@ -58,8 +58,8 @@ static PlatformType detectImpl() {
     return PlatformType::UNKNOWN;
   }
 
-  std::string sysName = name.sysname;
-  if (reSearch("linux", sysName)) {
+  const StringRef buildOS = BUILD_OS;
+  if (buildOS == "linux") {
     if (reSearch("microsoft", name.release)) {
       return PlatformType::WSL;
     }
@@ -67,14 +67,11 @@ static PlatformType detectImpl() {
       return PlatformType::CONTAINER;
     }
     return PlatformType::LINUX;
-  }
-  if (reSearch("darwin", sysName)) {
+  } else if (buildOS == "darwin") {
     return PlatformType::DARWIN;
-  }
-  if (reSearch("cygwin", sysName)) {
+  } else if (buildOS == "cygwin") {
     return PlatformType::CYGWIN;
-  }
-  if (reSearch("msys", sysName)) {
+  } else if (buildOS == "msys") {
     return PlatformType::MSYS;
   }
   return PlatformType::UNKNOWN;
