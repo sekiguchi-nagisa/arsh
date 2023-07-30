@@ -500,14 +500,14 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
   const unsigned short offset = read16(state.stack.ip() + 1);
 
   // set in/out pipe
-  PipeSet pipeset(forkKind);
+  PipeSet pipeSet(forkKind);
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
   const bool jobCtrl = state.isJobControl();
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() > 0) { // parent process
-    tryToClose(pipeset.in[READ_PIPE]);
-    tryToClose(pipeset.out[WRITE_PIPE]);
+    tryToClose(pipeSet.in[READ_PIPE]);
+    tryToClose(pipeSet.out[WRITE_PIPE]);
 
     DSValue obj;
 
@@ -515,14 +515,14 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
     case ForkKind::STR:
     case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
       assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
-      tryToClose(pipeset.in[WRITE_PIPE]);
-      bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeset.out[READ_PIPE], obj)
-                                           : readAsStrArray(state, pipeset.out[READ_PIPE], obj);
+      tryToClose(pipeSet.in[WRITE_PIPE]);
+      bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
+                                           : readAsStrArray(state, pipeSet.out[READ_PIPE], obj);
       if (!ret || DSState::isInterrupted()) {
         /**
          * if read failed, not wait termination (always attach to job table)
          */
-        tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+        tryToClose(pipeSet.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
 
@@ -536,7 +536,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
       auto waitOp = jobCtrl ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
       int status = proc.wait(waitOp); // wait exit
       int errNum = errno;
-      tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+      tryToClose(pipeSet.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
@@ -557,7 +557,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
     }
     default:
       Proc procs[1] = {proc};
-      if (!attachAsyncJob(state, std::move(desc), 1, procs, forkKind, pipeset, obj)) {
+      if (!attachAsyncJob(state, std::move(desc), 1, procs, forkKind, pipeSet, obj)) {
         return false;
       }
     }
@@ -569,9 +569,9 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
 
     state.stack.ip() += offset - 1;
   } else if (proc.pid() == 0) { // child process
-    pipeset.setupChildStdin(forkKind, jobCtrl);
-    pipeset.setupChildStdout();
-    pipeset.closeAll();
+    pipeSet.setupChildStdin(forkKind, jobCtrl);
+    pipeSet.setupChildStdout();
+    pipeSet.closeAll();
 
     state.stack.ip() += 3;
   } else {
@@ -703,18 +703,18 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
   return cmd;
 }
 
-static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
+static void raiseCmdError(DSState &state, const char *cmdName, int errNum) {
   std::string str = EXEC_ERROR;
   str += toPrintable(cmdName);
-  if (errnum == ENOENT) {
+  if (errNum == ENOENT) {
     str += ": command not found";
     raiseError(state, TYPE::SystemError, std::move(str), 127);
-  } else if (errnum == EACCES) {
+  } else if (errNum == EACCES) {
     str += ": ";
-    str += strerror(errnum);
+    str += strerror(errNum);
     raiseError(state, TYPE::SystemError, std::move(str), 126);
   } else {
-    raiseSystemError(state, errnum, std::move(str));
+    raiseSystemError(state, errNum, std::move(str));
   }
 }
 
@@ -754,11 +754,11 @@ static DSValue toCmdDesc(char *const *argv) {
 bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
                      DSValue &&redirConfig) {
   // setup self pipe
-  int selfpipe[2];
-  if (pipe(selfpipe) < 0) {
+  int selfPipe[2];
+  if (pipe(selfPipe) < 0) {
     fatal_perror("pipe creation error");
   }
-  if (!setCloseOnExec(selfpipe[WRITE_PIPE], true)) {
+  if (!setCloseOnExec(selfPipe[WRITE_PIPE], true)) {
     fatal_perror("fcntl error");
   }
 
@@ -769,26 +769,26 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     raiseCmdError(state, argv[0], EAGAIN);
     return false;
   } else if (proc.pid() == 0) { // child
-    close(selfpipe[READ_PIPE]);
+    close(selfPipe[READ_PIPE]);
     xexecve(filePath, argv, nullptr);
 
-    int errnum = errno;
-    ssize_t r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+    int errNum = errno;
+    ssize_t r = write(selfPipe[WRITE_PIPE], &errNum, sizeof(int));
     (void)r; // FIXME:
     exit(-1);
   } else { // parent process
-    close(selfpipe[WRITE_PIPE]);
-    redirConfig = nullptr; // restore redirconfig
+    close(selfPipe[WRITE_PIPE]);
+    redirConfig = nullptr; // restore redirConfig
 
     ssize_t readSize;
-    int errnum = 0;
-    while ((readSize = read(selfpipe[READ_PIPE], &errnum, sizeof(int))) == -1) {
+    int errNum = 0;
+    while ((readSize = read(selfPipe[READ_PIPE], &errNum, sizeof(int))) == -1) {
       if (errno != EAGAIN && errno != EINTR) {
         break;
       }
     }
-    close(selfpipe[READ_PIPE]);
-    if (readSize > 0 && errnum == ENOENT) { // remove cached path
+    close(selfPipe[READ_PIPE]);
+    if (readSize > 0 && errNum == ENOENT) { // remove cached path
       state.pathCache.removePath(argv[0]);
     }
 
@@ -807,8 +807,8 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     int ret = state.tryToBeForeground();
     LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
     state.jobTable.waitForAny();
-    if (errnum != 0) {
-      errNum2 = errnum;
+    if (errNum != 0) {
+      errNum2 = errNum;
     }
     if (errNum2 != 0) {
       raiseCmdError(state, argv[0], errNum2);
@@ -1170,12 +1170,12 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
 
   assert(pipeSize > 0);
 
-  PipeSet pipeset(forkKind);
-  int pipefds[pipeSize][2];
-  initAllPipe(pipeSize, pipefds);
+  PipeSet pipeSet(forkKind);
+  int pipeFds[pipeSize][2];
+  initAllPipe(pipeSize, pipeFds);
 
   // fork
-  Proc childs[procSize];
+  Proc children[procSize];
   const auto procOp = resolveProcOp(state, forkKind);
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
@@ -1188,7 +1188,7 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
        procIndex < procSize &&
        (proc = Proc::fork(state, pgid, procIndex == 0 ? procOp : procOpRemain)).pid() > 0;
        procIndex++) {
-    childs[procIndex] = proc;
+    children[procIndex] = proc;
     if (pgid == 0) {
       pgid = proc.pid();
     }
@@ -1203,19 +1203,19 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
    */
   if (proc.pid() == 0) {  // child
     if (procIndex == 0) { // first process
-      ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-      pipeset.setupChildStdin(forkKind, jobCtrl);
+      ::dup2(pipeFds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      pipeSet.setupChildStdin(forkKind, jobCtrl);
     }
     if (procIndex > 0 && procIndex < pipeSize) { // other process.
-      ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      ::dup2(pipeFds[procIndex][WRITE_PIPE], STDOUT_FILENO);
     }
     if (procIndex == pipeSize && !lastPipe) { // last process
-      ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      pipeset.setupChildStdout();
+      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      pipeSet.setupChildStdout();
     }
-    pipeset.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
-    closeAllPipe(pipeSize, pipefds);
+    pipeSet.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
+    closeAllPipe(pipeSize, pipeFds);
 
     // set pc to next instruction
     state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
@@ -1224,18 +1224,18 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
       /**
        * in last pipe, save current stdin before call dup2
        */
-      auto jobEntry = JobObject::create(procSize, childs, true, state.emptyFDObj, state.emptyFDObj,
-                                        std::move(desc));
+      auto jobEntry = JobObject::create(procSize, children, true, state.emptyFDObj,
+                                        state.emptyFDObj, std::move(desc));
       state.jobTable.attach(jobEntry);
-      ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      closeAllPipe(pipeSize, pipefds);
+      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      closeAllPipe(pipeSize, pipeFds);
       state.stack.push(DSValue::create<PipelineObject>(state, std::move(jobEntry)));
     } else {
-      tryToClose(pipeset.in[READ_PIPE]);
-      tryToClose(pipeset.out[WRITE_PIPE]);
-      closeAllPipe(pipeSize, pipefds);
+      tryToClose(pipeSet.in[READ_PIPE]);
+      tryToClose(pipeSet.out[WRITE_PIPE]);
+      closeAllPipe(pipeSize, pipeFds);
       DSValue obj;
-      if (!attachAsyncJob(state, std::move(desc), procSize, childs, forkKind, pipeset, obj)) {
+      if (!attachAsyncJob(state, std::move(desc), procSize, children, forkKind, pipeSet, obj)) {
         return false;
       }
       if (obj) {
@@ -1248,7 +1248,7 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
   } else {
     // force terminate forked process.
     for (unsigned int i = 0; i < procIndex; i++) {
-      childs[i].send(SIGKILL);
+      children[i].send(SIGKILL);
     }
 
     raiseSystemError(state, EAGAIN, "fork failed");
