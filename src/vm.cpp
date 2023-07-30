@@ -66,8 +66,8 @@ static void setPWDs() {
     pwd = cwd;
   }
 
-  const char *oldpwd = getenv(ENV_OLDPWD);
-  if (!oldpwd || *oldpwd != '/' || !S_ISDIR(getStMode(oldpwd))) {
+  const char *oldPwd = getenv(ENV_OLDPWD);
+  if (!oldPwd || *oldPwd != '/' || !S_ISDIR(getStMode(oldPwd))) {
     setenv(ENV_OLDPWD, pwd, 1);
   }
 }
@@ -79,8 +79,8 @@ static void initEnv() {
   // set environmental variables
 
   // update shell level
-  if (auto shlvl = originalShellLevel(); shlvl < INT64_MAX) {
-    setenv(ENV_SHLVL, std::to_string(shlvl + 1).c_str(), 1);
+  if (auto level = originalShellLevel(); level < INT64_MAX) {
+    setenv(ENV_SHLVL, std::to_string(level + 1).c_str(), 1);
   } else {
     setenv(ENV_SHLVL, "1", 1);
   }
@@ -2234,7 +2234,6 @@ bool VM::mainLoop(DSState &state) {
         unsigned int index = read32(state.stack.ip());
         const unsigned int savedIndex = state.stack.getFrame().getIPOffset() + 4;
         state.stack.updateIPByOffset(index);
-        ;
         state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
         state.stack.enterFinally(index, savedIndex);
         vmnext;
@@ -2439,7 +2438,6 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(LOAD_CUR_MOD) {
         ModId modId = cast<CompiledCode>(state.stack.code())->getBelongedModId();
-        //        auto &entry = state.modLoader[modId];
         const auto &entry = state.modLoader[modId];
         auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
         unsigned int index = modType.getIndex();
