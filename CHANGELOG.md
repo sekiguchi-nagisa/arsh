@@ -49,6 +49,7 @@
 - fix wrong open flag in stdin redirection to /dev/null
 - fix unix time parsing of builtin printf command
 - backslash handling in regex literal
+- option parsing of builtin echo command
 
 ## [0.30.0] - 2023-07-01
 

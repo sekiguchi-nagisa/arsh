@@ -5,6 +5,9 @@ world")
 
 assert("$(echo -n hello && echo world)" == "helloworld")
 
+# has invalid option (not interpret options)
+assert "$(echo -neW -n 'hello\t\nworld' && echo world)" == '-neW -n hello\t\nworld' + $'\nworld'
+
 # interpret escape sequence
 assert("$(echo -e 'hello\c' world)" == "hello")
 assert("$(echo -e 'hello\t\nworld')" == $'hello\t\nworld')
@@ -19,7 +22,7 @@ assert("$(echo -e '\a')" == $'\x07')
 assert("$(echo -e '\b')" == $'\x08')
 assert("$(echo -e '\e')" == $'\x1B')
 assert("$(echo -e '\f')" == $'\x0c')
-assert("$(echo -e '\v')" == $'\013')
+assert("$(echo -en '\v' && echo @)" == $'\013'+ '@')
 assert("$(echo -e '\G')" == $'\G' && $'\G' == '\G') # invalid escape sequence
 assert "$(echo -e '\u7058')" == '灘'
 assert "$(echo -e '\U7058')" == '灘'
@@ -34,6 +37,10 @@ assert "$(echo -e '@(\UFFFFFFFF)@')" == '@()@'
 
 assert("$(echo -e -- hello)" == '-- hello')
 assert "$(echo ---)" == '---'
+assert "$(echo -)" == '-'
+assert "$(echo --)" == '--'
+assert "$(echo -h)" == '-h'
+assert "$(echo --help)" == '--help'
 
 # disable interpretation
 assert("$(echo -e -E 'hello\t\nworld')" == 'hello\t\nworld')

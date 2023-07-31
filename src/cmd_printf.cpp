@@ -946,34 +946,50 @@ int builtin_echo(DSState &, ArrayObject &argvObj) {
   bool newline = true;
   bool interpEscape = false;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "neE")) != -1;) {
-    switch (opt) {
-    case 'n':
-      newline = false;
-      break;
-    case 'e':
-      interpEscape = true;
-      break;
-    case 'E':
-      interpEscape = false;
-      break;
-    default:
+  const unsigned int size = argvObj.getValues().size();
+  unsigned int index = 1;
+  for (; index < size; index++) {
+    StringRef arg = argvObj.getValues()[index].asStrRef();
+
+    if (arg.size() < 2 || arg[0] != '-') { // no options, such as 'a' '-' 'bb' ''
       goto DO_ECHO;
+    }
+    arg.removePrefix(1); // skip '-'
+
+    // if invalid option, stop option parsing
+    for (char ch : arg) {
+      switch (ch) {
+      case 'n':
+      case 'e':
+      case 'E':
+        continue;
+      default:
+        goto DO_ECHO;
+      }
+    }
+
+    // interpret options
+    for (char ch : arg) {
+      switch (ch) {
+      case 'n':
+        newline = false;
+        break;
+      case 'e':
+        interpEscape = true;
+        break;
+      case 'E':
+        interpEscape = false;
+        break;
+      default:
+        break;
+      }
     }
   }
 
 DO_ECHO:
-  // print argument
-  if (optState.index > 1 && argvObj.getValues()[optState.index - 1].asStrRef() == "--") {
-    optState.index--;
-  }
-
-  unsigned int index = optState.index;
-  const unsigned int argc = argvObj.getValues().size();
   bool firstArg = true;
   int errNum = 0;
-  for (; index < argc; index++) {
+  for (; index < size; index++) {
     errno = 0;
     if (firstArg) {
       firstArg = false;
