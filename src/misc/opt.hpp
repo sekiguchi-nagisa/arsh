@@ -267,6 +267,8 @@ Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
 
 // getopts like command line option parser
 struct GetOptState {
+  const char *optStr{nullptr};
+
   /**
    * currently processed argument.
    */
@@ -289,7 +291,10 @@ struct GetOptState {
 
   bool foundLongOption{false};
 
-  void reset() {
+  explicit GetOptState(const char *optStr) : optStr(optStr) {}
+
+  void reset(const char *str) {
+    this->optStr = str;
     this->nextChar = nullptr;
     this->optArg = nullptr;
     this->optOpt = 0;
@@ -303,7 +308,6 @@ struct GetOptState {
    * @param begin
    * after succeed, may indicate next option.
    * @param end
-   * @param optStr
    * @return
    * recognized option.
    * if reach `end' or not match any option (not starts with '-'), return -1.
@@ -312,11 +316,11 @@ struct GetOptState {
    * if match unrecognized option, return '?' and `begin' indicate current option (no increment).
    */
   template <typename Iter>
-  int operator()(Iter &begin, Iter end, const char *optStr);
+  int operator()(Iter &begin, Iter end);
 };
 
 template <typename Iter>
-int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
+int GetOptState::operator()(Iter &begin, Iter end) {
   // reset previous state
   this->optArg = nullptr;
   this->optOpt = 0;
@@ -352,8 +356,8 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     this->nextChar.removePrefix(1);
   }
 
-  auto pos = StringRef(optStr).find(this->nextChar[0]);
-  const char *ptr = pos == StringRef::npos ? nullptr : optStr + pos;
+  auto pos = StringRef(this->optStr).find(this->nextChar[0]);
+  const char *ptr = pos == StringRef::npos ? nullptr : this->optStr + pos;
   if (ptr != nullptr && *ptr != ':') {
     if (*(ptr + 1) == ':') {
       this->nextChar.removePrefix(1);
@@ -363,7 +367,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
           if (++begin == end) {
             this->optArg = nullptr;
             this->optOpt = static_cast<unsigned char>(*ptr);
-            return *optStr == ':' ? ':' : '?';
+            return *this->optStr == ':' ? ':' : '?';
           }
           this->optArg = *begin;
         } else {

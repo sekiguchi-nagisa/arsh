@@ -34,11 +34,16 @@ struct GetOptState : public opt::GetOptState {
    */
   unsigned int index;
 
-  GetOptState() : GetOptState(1, false) { this->remapHelp = true; }
+  explicit GetOptState(const char *optStr) : GetOptState(optStr, 1, false) {
+    this->remapHelp = true;
+  }
 
-  GetOptState(unsigned int index, bool remapHelp) : index(index) { this->remapHelp = remapHelp; }
+  GetOptState(const char *optStr, unsigned int index, bool remapHelp)
+      : opt::GetOptState(optStr), index(index) {
+    this->remapHelp = remapHelp;
+  }
 
-  int operator()(const ArrayObject &obj, const char *optStr);
+  int operator()(const ArrayObject &obj);
 };
 
 int showUsage(const ArrayObject &obj);

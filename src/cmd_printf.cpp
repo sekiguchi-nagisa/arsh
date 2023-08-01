@@ -1031,10 +1031,10 @@ END:
 }
 
 int builtin_printf(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
+  GetOptState optState(":v:h");
   bool setVar = false;
   StringRef target;
-  for (int opt; (opt = optState(argvObj, ":v:h")) != -1;) {
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'v':
       setVar = true;

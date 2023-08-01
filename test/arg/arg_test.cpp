@@ -134,13 +134,13 @@ TEST(GetOptTest, base) {
   const char *argv[] = {
       "-a", "2", "hello", "-bcd", "-", "--", "hoge", "-f", "-e",
   };
-  const char *optstr = "de:ba:c";
-  opt::GetOptState optState;
+  const char *optStr = "de:ba:c";
+  opt::GetOptState optState(optStr);
 
   auto begin = std::begin(argv);
   auto end = std::end(argv);
 
-  int opt = optState(begin, end, optstr);
+  int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ("2", optState.optArg);
@@ -148,7 +148,7 @@ TEST(GetOptTest, base) {
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "hello");
 
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -157,7 +157,7 @@ TEST(GetOptTest, base) {
   ASSERT_STREQ(*begin, "hello");
 
   ++begin;
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ('b', opt);
   ASSERT_EQ("cd", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -165,7 +165,7 @@ TEST(GetOptTest, base) {
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-bcd");
 
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ('c', opt);
   ASSERT_EQ("d", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -173,7 +173,7 @@ TEST(GetOptTest, base) {
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-bcd");
 
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ('d', opt);
   ASSERT_EQ("", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -181,7 +181,7 @@ TEST(GetOptTest, base) {
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-");
 
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -190,7 +190,7 @@ TEST(GetOptTest, base) {
   ASSERT_STREQ(*begin, "-");
 
   ++begin;
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -199,7 +199,7 @@ TEST(GetOptTest, base) {
   ASSERT_STREQ(*begin, "hoge");
 
   ++begin;
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ('?', opt);
   ASSERT_EQ("f", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -208,8 +208,8 @@ TEST(GetOptTest, base) {
   ASSERT_STREQ(*begin, "-f");
 
   ++begin;
-  optState.reset();
-  opt = optState(begin, end, optstr);
+  optState.reset(optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('?', opt);
   ASSERT_EQ("", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -224,13 +224,13 @@ TEST(GetOptTest, opt) {
       "hoge",
       "-b",
   };
-  const char *optstr = ":a::b:";
-  opt::GetOptState optState;
+  const char *optStr = ":a::b:";
+  opt::GetOptState optState(optStr);
 
   auto begin = std::begin(argv);
   auto end = std::end(argv);
 
-  int opt = optState(begin, end, optstr);
+  int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ("ba", optState.optArg);
@@ -238,7 +238,7 @@ TEST(GetOptTest, opt) {
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-a");
 
-  opt = optState(begin, end, optstr);
+  opt = optState(begin, end);
   ASSERT_EQ('a', opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -247,8 +247,8 @@ TEST(GetOptTest, opt) {
   ASSERT_STREQ(*begin, "hoge");
 
   ++begin;
-  optState.reset();
-  opt = optState(begin, end, optstr);
+  optState.reset(optStr);
+  opt = optState(begin, end);
   ASSERT_EQ(':', opt);
   ASSERT_EQ("", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -264,24 +264,24 @@ TEST(GetOptTest, help) {
       "--help1",
   };
   const char *optStr = "abch";
-  opt::GetOptState optState;
+  opt::GetOptState optState(optStr);
   auto begin = std::begin(argv);
   auto end = std::end(argv);
 
-  int opt = optState(begin, end, optStr);
+  int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
   ASSERT_EQ("b", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ(0, optState.optOpt);
 
-  opt = optState(begin, end, optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('b', opt);
   ASSERT_EQ(nullptr, optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ(0, optState.optOpt);
 
   // normally long options are unrecognized
-  opt = optState(begin, end, optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('?', opt);
   ASSERT_EQ("--help", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -289,23 +289,23 @@ TEST(GetOptTest, help) {
   ASSERT_TRUE(optState.foundLongOption);
 
   // if remapHelp is true, remap --help to -h
-  optState.reset();
+  optState.reset(optStr);
   optState.remapHelp = true;
-  opt = optState(begin, end, optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('h', opt);
   ASSERT_EQ(nullptr, optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_FALSE(optState.foundLongOption);
 
-  opt = optState(begin, end, optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('c', opt);
   ASSERT_EQ(nullptr, optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
   ASSERT_EQ(0, optState.optOpt);
 
   // long options are still unrecognized except for --help
-  opt = optState(begin, end, optStr);
+  opt = optState(begin, end);
   ASSERT_EQ('?', opt);
   ASSERT_EQ("--help1", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -317,13 +317,12 @@ TEST(GetOptTest, invalid) {
   const char *argv[] = {
       "-:",
   };
-  const char *optstr = ":a::b:";
-  opt::GetOptState optState;
+  opt::GetOptState optState(":a::b:");
 
   auto begin = std::begin(argv);
   auto end = std::end(argv);
 
-  int opt = optState(begin, end, optstr);
+  int opt = optState(begin, end);
   ASSERT_EQ('?', opt);
   ASSERT_EQ(":", optState.nextChar);
   ASSERT_EQ(nullptr, optState.optArg.data());
@@ -337,13 +336,12 @@ TEST(GetOptTest, empty) {
       "-a",
       "",
   };
-  const char *optstr = "a:";
-  opt::GetOptState optState;
+  opt::GetOptState optState("a:");
 
   auto begin = std::begin(argv);
   auto end = std::end(argv);
 
-  int opt = optState(begin, end, optstr);
+  int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
   ASSERT_EQ(nullptr, optState.nextChar.data());
   ASSERT_EQ("", optState.optArg);

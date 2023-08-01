@@ -33,8 +33,8 @@ namespace ydsh {
 int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   bool useLogical = true;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "LPh")) != -1;) {
+  GetOptState optState("LPh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'L':
       useLogical = true;
@@ -62,9 +62,9 @@ END:
 }
 
 int builtin_cd(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
+  GetOptState optState("PLh");
   bool useLogical = true;
-  for (int opt; (opt = optState(argvObj, "PLh")) != -1;) {
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'P':
       useLogical = false;
@@ -194,8 +194,8 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
   }
 
   PrintDirOp dirOp{};
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "clpvh")) != -1;) {
+  GetOptState optState("clpvh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'c':
       dirStack.refValues().clear();
@@ -232,8 +232,8 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {

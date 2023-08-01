@@ -157,9 +157,9 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
 
   bool dump = false;
   bool restore = false;
-  GetOptState optState(2, false);
+  GetOptState optState(":dr:", 2, false);
   if (set) {
-    switch (optState(argvObj, ":dr:")) {
+    switch (optState(argvObj)) {
     case 'd':
       dump = true;
       break;
@@ -332,8 +332,8 @@ static int showInfo(DSState &state, const ArrayObject &argvObj) {
 }
 
 int builtin_shctl(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {

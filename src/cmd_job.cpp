@@ -127,8 +127,8 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  GetOptState optState;
-  const int opt = optState(argvObj, ":ls:h");
+  GetOptState optState(":ls:h");
+  const int opt = optState(argvObj);
   switch (opt) {
   case 'l':
     listing = true;
@@ -229,8 +229,8 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     return 1;
   }
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -304,8 +304,8 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
 
 int builtin_wait(DSState &state, ArrayObject &argvObj) {
   bool breakNext = false;
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "nh")) != -1;) {
+  GetOptState optState("nh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'n':
       breakNext = true;
@@ -425,8 +425,8 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
   auto target = JobsTarget::ALL;
   auto output = JobsOutput::DEFAULT;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "lprsh")) != -1;) {
+  GetOptState optState("lprsh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'l':
       output = JobsOutput::VERBOSE;
@@ -471,8 +471,8 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
 }
 
 int builtin_disown(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "lprsh")) != -1;) {
+  GetOptState optState("lprsh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {

@@ -136,10 +136,10 @@ struct StrArrayIter {
   }
 };
 
-int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
+int GetOptState::operator()(const ArrayObject &obj) {
   auto iter = StrArrayIter(obj.getValues().begin() + this->index);
   auto end = StrArrayIter(obj.getValues().end());
-  int ret = opt::GetOptState::operator()(iter, end, optStr);
+  int ret = opt::GetOptState::operator()(iter, end);
   this->index = iter.actual - obj.getValues().begin();
   return ret;
 }
@@ -192,9 +192,9 @@ static void printAllUsage(FILE *fp) {
 }
 
 static int builtin_help(DSState &, ArrayObject &argvObj) {
-  GetOptState optState;
+  GetOptState optState("sh");
   bool shortHelp = false;
-  for (int opt; (opt = optState(argvObj, "sh")) != -1;) {
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 's':
       shortHelp = true;
@@ -228,8 +228,8 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
 }
 
 static int builtin_check_env(DSState &, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -272,8 +272,8 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
 }
 
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -305,8 +305,8 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
  * for stdin redirection test
  */
 static int builtin_gets(DSState &, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -343,8 +343,8 @@ static int writeLine(StringRef ref, FILE *fp, bool flush) {
  */
 static int builtin_puts(DSState &, ArrayObject &argvObj) {
   int errNum = 0;
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "1:2:h")) != -1;) {
+  GetOptState optState("1:2:h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case '1':
       errNum = writeLine(optState.optArg, stdout, true);
@@ -673,8 +673,8 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
 static int builtin_hash(DSState &state, ArrayObject &argvObj) {
   bool remove = false;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "rh")) != -1;) {
+  GetOptState optState("rh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'r':
       remove = true;
@@ -754,8 +754,8 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
   bool show = true;
   bool insertSpace = false;
   StringRef moduleDesc;
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":A:m:qsh")) != -1;) {
+  GetOptState optState(":A:m:qsh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'A': {
       auto iter = actionMap.find(optState.optArg);
@@ -812,8 +812,8 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 }
 
 static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -843,8 +843,8 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
 }
 
 static int builtin_setenv(DSState &, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -886,8 +886,8 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 }
 
 static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "h")) != -1;) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
@@ -1065,17 +1065,17 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
   flag8_set_t limOpt = 0;
   bool showAll = false;
 
-  GetOptState optState;
   const char *optStr = "HSah"
 #define DEF(O, R, S, N, D) O
 #include "ulimit-def.in"
 #undef DEF
       ;
+  GetOptState optState(optStr);
 
   UlimitOptEntryTable table;
 
   // parse option
-  for (int opt; (opt = optState(argvObj, optStr)) != -1;) {
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'H':
       setFlag(limOpt, RLIM_HARD);
@@ -1323,8 +1323,8 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
 static int builtin_umask(DSState &, ArrayObject &argvObj) {
   auto op = PrintMaskOp::ONLY_PRINT;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, "pSh")) != -1;) {
+  GetOptState optState("pSh");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'p':
       setFlag(op, PrintMaskOp::REUSE);

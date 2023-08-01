@@ -126,8 +126,8 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
   int fd = STDIN_FILENO;
   int timeout = -1;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(argvObj, ":rp:f:su:t:h")) != -1;) {
+  GetOptState optState(":rp:f:su:t:h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'p':
       prompt = optState.optArg;

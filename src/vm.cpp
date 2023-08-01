@@ -982,8 +982,8 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
    */
   unsigned char showDesc = 0;
 
-  GetOptState optState;
-  for (int opt; (opt = optState(arrayObj, "pvVh")) != -1;) {
+  GetOptState optState("pvVh");
+  for (int opt; (opt = optState(arrayObj)) != -1;) {
     switch (opt) {
     case 'p':
       useDefaultPath = true;
@@ -1102,13 +1102,13 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
   auto &argvObj = typeAs<ArrayObject>(array);
   bool clearEnv = false;
   StringRef progName;
-  GetOptState optState;
+  GetOptState optState("hca:");
 
   if (redir) {
     typeAs<RedirObject>(redir).ignoreBackup();
   }
 
-  for (int opt; (opt = optState(argvObj, "hca:")) != -1;) {
+  for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'c':
       clearEnv = true;
