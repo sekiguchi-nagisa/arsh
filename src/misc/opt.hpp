@@ -29,16 +29,14 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-namespace opt {
-
-enum OptionFlag : unsigned char {
+enum class OptArgOp : unsigned char {
   NO_ARG,
   HAS_ARG, // require additional argument
   OPT_ARG, // may have additional argument
 };
 
-constexpr const char *getOptSuffix(OptionFlag flag) {
-  return flag == NO_ARG ? "" : flag == HAS_ARG ? " arg" : "[=arg]";
+constexpr const char *getOptSuffix(OptArgOp flag) {
+  return flag == OptArgOp::NO_ARG ? "" : flag == OptArgOp::HAS_ARG ? " arg" : "[=arg]";
 }
 
 template <typename T>
@@ -47,7 +45,7 @@ struct Option {
 
   T kind;
   const char *optionName;
-  OptionFlag flag;
+  OptArgOp flag;
   const char *detail;
 
   unsigned int getUsageSize() const {
@@ -74,42 +72,49 @@ std::vector<std::string> Option<T>::getDetails() const {
   return bufs;
 }
 
-enum Error : unsigned char {
+enum class OptParseError : unsigned char {
   UNRECOG,
   NEED_ARG,
   END,
 };
 
 template <typename T>
-class Parser;
+class OptParser;
 
 template <typename T>
-class Result {
+class OptParseResult {
 private:
   bool ok;
   union {
-    Error error_;
+    OptParseError error_;
     T value_;
   };
 
   const char *recog_;
   const char *arg_;
 
-  friend class Parser<T>;
+  friend class OptParser<T>;
 
 public:
-  Result(T value, const char *recog) : ok(true), value_(value), recog_(recog), arg_(nullptr) {}
+  OptParseResult(T value, const char *recog)
+      : ok(true), value_(value), recog_(recog), arg_(nullptr) {}
 
-  Result(Error error, const char *unrecog)
+  OptParseResult(OptParseError error, const char *unrecog)
       : ok(false), error_(error), recog_(unrecog), arg_(nullptr) {}
 
-  Result() : Result(END, nullptr) {}
+  OptParseResult() : OptParseResult(OptParseError::END, nullptr) {}
 
-  static Result unrecog(const char *unrecog) { return Result(UNRECOG, unrecog); }
+  static OptParseResult unrecog(const char *unrecog) {
+    return OptParseResult(OptParseError::UNRECOG, unrecog);
+  }
 
-  static Result needArg(const char *recog) { return Result(NEED_ARG, recog); }
+  static OptParseResult needArg(const char *recog) {
+    return OptParseResult(OptParseError::NEED_ARG, recog);
+  }
 
-  static Result end(const char *opt = nullptr) { return Result(END, opt); }
+  static OptParseResult end(const char *opt = nullptr) {
+    return OptParseResult(OptParseError::END, opt);
+  }
 
   const char *recog() const { return this->recog_; }
 
@@ -117,16 +122,16 @@ public:
 
   explicit operator bool() const { return this->ok; }
 
-  Error error() const { return this->error_; }
+  OptParseError error() const { return this->error_; }
 
   T value() const { return this->value_; }
 
   std::string formatError() const {
     std::string str;
     if (!(*this)) {
-      if (this->error() == UNRECOG) {
+      if (this->error() == OptParseError::UNRECOG) {
         str += "invalid option: ";
-      } else if (this->error() == NEED_ARG) {
+      } else if (this->error() == OptParseError::NEED_ARG) {
         str += "need argument: ";
       }
     }
@@ -136,13 +141,13 @@ public:
 };
 
 template <typename T>
-class Parser {
+class OptParser {
 private:
   std::vector<Option<T>> options;
 
 public:
-  Parser(std::initializer_list<Option<T>> list);
-  ~Parser() = default;
+  OptParser(std::initializer_list<Option<T>> list);
+  ~OptParser() = default;
 
   std::string formatOption() const;
 
@@ -157,15 +162,15 @@ public:
   }
 
   template <typename Iter>
-  Result<T> operator()(Iter &begin, Iter end) const;
+  OptParseResult<T> operator()(Iter &begin, Iter end) const;
 };
 
-// ####################
-// ##     Parser     ##
-// ####################
+// #######################
+// ##     OptParser     ##
+// #######################
 
 template <typename T>
-Parser<T>::Parser(std::initializer_list<Option<T>> list) : options(list.size()) {
+OptParser<T>::OptParser(std::initializer_list<Option<T>> list) : options(list.size()) {
   // init options
   unsigned int count = 0;
   for (auto &e : list) {
@@ -177,7 +182,7 @@ Parser<T>::Parser(std::initializer_list<Option<T>> list) : options(list.size()) 
 }
 
 template <typename T>
-std::string Parser<T>::formatOption() const {
+std::string OptParser<T>::formatOption() const {
   std::string value;
   unsigned int maxSizeOfUsage = 0;
 
@@ -222,18 +227,18 @@ std::string Parser<T>::formatOption() const {
 
 template <typename T>
 template <typename Iter>
-Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
+OptParseResult<T> OptParser<T>::operator()(Iter &begin, Iter end) const {
   if (begin == end) {
-    return Result<T>::end();
+    return OptParseResult<T>::end();
   }
 
   const char *haystack = *begin;
   if (haystack[0] != '-' || strcmp(haystack, "-") == 0) {
-    return Result<T>::end(haystack);
+    return OptParseResult<T>::end(haystack);
   }
   if (strcmp(haystack, "--") == 0) {
     ++begin;
-    return Result<T>::end(haystack);
+    return OptParseResult<T>::end(haystack);
   }
 
   // check options
@@ -245,25 +250,27 @@ Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
       continue;
     }
     const char *cursor = haystack + needleSize;
-    auto result = Result<T>(option.kind, haystack);
+    auto result = OptParseResult<T>(option.kind, haystack);
     if (*cursor == '\0') {
-      if (option.flag == OptionFlag::HAS_ARG) {
+      if (option.flag == OptArgOp::HAS_ARG) {
         if (begin + 1 == end) {
-          return Result<T>::needArg(haystack);
+          return OptParseResult<T>::needArg(haystack);
         }
         ++begin;
         result.arg_ = *begin;
       }
       ++begin;
       return result;
-    } else if (option.flag == OptionFlag::OPT_ARG && *cursor == '=') {
+    } else if (option.flag == OptArgOp::OPT_ARG && *cursor == '=') {
       result.arg_ = ++cursor;
       ++begin;
       return result;
     }
   }
-  return Result<T>::unrecog(haystack);
+  return OptParseResult<T>::unrecog(haystack);
 }
+
+namespace opt {
 
 // getopts like command line option parser
 struct GetOptState {

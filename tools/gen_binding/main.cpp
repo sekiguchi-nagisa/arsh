@@ -1135,10 +1135,10 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 }
 
 #define EACH_OPT(OP)                                                                               \
-  OP(DOC, "--doc", opt::NO_ARG, "generate interface documentation")                                \
-  OP(BIND, "--bind", opt::NO_ARG, "generate function binding")                                     \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
-  OP(HEADER, "--header", opt::HAS_ARG, "generated header file (only available --bind)")
+  OP(DOC, "--doc", OptArgOp::NO_ARG, "generate interface documentation")                           \
+  OP(BIND, "--bind", OptArgOp::NO_ARG, "generate function binding")                                \
+  OP(HELP, "--help", OptArgOp::NO_ARG, "show help message")                                        \
+  OP(HEADER, "--header", OptArgOp::HAS_ARG, "generated header file (only available --bind)")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -1153,7 +1153,7 @@ void usage(FILE *fp, char **argv) {
 } // namespace
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
+  OptParser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -1161,7 +1161,7 @@ int main(int argc, char **argv) {
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
 
   const char *headerFileName = nullptr;
   bool doc = false;
@@ -1182,7 +1182,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != opt::END) {
+  if (result.error() != OptParseError::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     parser.printOption(stderr);
     exit(1);

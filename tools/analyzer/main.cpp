@@ -26,15 +26,16 @@ using namespace lsp;
 #define STR(E) XSTR(E)
 
 #define EACH_OPT(OP)                                                                               \
-  OP(LOG, "--log", opt::HAS_ARG,                                                                   \
+  OP(LOG, "--log", OptArgOp::HAS_ARG,                                                              \
      "specify log level (debug, info, warning, error, fatal). default is `warning'")               \
-  OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
-  OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
-  OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
+  OP(HELP, "--help", OptArgOp::NO_ARG, "show this help message")                                   \
+  OP(LSP, "--language-server", OptArgOp::NO_ARG, "enable language server features (default)")      \
+  OP(DEBOUNCE_TIME, "--debounce-time", OptArgOp::HAS_ARG,                                          \
      "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME))                     \
-  OP(TEST, "--test", opt::HAS_ARG, "run in test mode")                                             \
-  OP(TEST_OPEN, "--test-open", opt::HAS_ARG, "run in test mode (explicitly open specified file)")  \
-  OP(WAIT_TIME, "--wait-time", opt::HAS_ARG,                                                       \
+  OP(TEST, "--test", OptArgOp::HAS_ARG, "run in test mode")                                        \
+  OP(TEST_OPEN, "--test-open", OptArgOp::HAS_ARG,                                                  \
+     "run in test mode (explicitly open specified file)")                                          \
+  OP(WAIT_TIME, "--wait-time", OptArgOp::HAS_ARG,                                                  \
      "specify wait time (ms) for test-open mode, default is 10")
 
 enum class OptionKind {
@@ -56,7 +57,7 @@ static LogLevel parseLogLevel(const char *value) {
 }
 
 static DriverOptions parseOptions(int argc, char **argv) {
-  opt::Parser<OptionKind> optParser = {
+  OptParser<OptionKind> optParser = {
 #define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -65,7 +66,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
   auto end = argv + argc;
   const char *debounceTime = nullptr;
   const char *waitTime = nullptr;
-  opt::Result<OptionKind> result;
+  OptParseResult<OptionKind> result;
   DriverOptions options;
   while ((result = optParser(begin, end))) {
     switch (result.value()) {
@@ -94,7 +95,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != opt::END) {
+  if (result.error() != OptParseError::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     optParser.printOption(stderr);
     exit(1);

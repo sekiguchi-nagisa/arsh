@@ -27,17 +27,19 @@ using namespace ydsh;
 using namespace ydsh::highlighter;
 
 #define EACH_OPT(OP)                                                                               \
-  OP(HELP, "-h", opt::NO_ARG, "show help message")                                                 \
-  OP(OUTPUT, "-o", opt::HAS_ARG, "specify output file (default is stdout)")                        \
-  OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
-  OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")    \
-  OP(LIST, "-l", opt::NO_ARG, "show supported formatters/styles")                                  \
-  OP(HTML_FULL, "--html-full", opt::NO_ARG, "generate self-contained html (for html formatter)")   \
-  OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
+  OP(HELP, "-h", OptArgOp::NO_ARG, "show help message")                                            \
+  OP(OUTPUT, "-o", OptArgOp::HAS_ARG, "specify output file (default is stdout)")                   \
+  OP(FORMAT, "-f", OptArgOp::HAS_ARG, "specify output formatter (default is `ansi' formatter)")    \
+  OP(STYLE, "-s", OptArgOp::HAS_ARG,                                                               \
+     "specify highlighter color style (default is `darcula' style)")                               \
+  OP(LIST, "-l", OptArgOp::NO_ARG, "show supported formatters/styles")                             \
+  OP(HTML_FULL, "--html-full", OptArgOp::NO_ARG,                                                   \
+     "generate self-contained html (for html formatter)")                                          \
+  OP(HTML_LINENO, "--html-lineno", OptArgOp::OPT_ARG,                                              \
      "emit line number starts with ARG (for html formatter)")                                      \
-  OP(HTML_LINENO_TABLE, "--html-lineno-table", opt::NO_ARG,                                        \
+  OP(HTML_LINENO_TABLE, "--html-lineno-table", OptArgOp::NO_ARG,                                   \
      "emit line number as table (for html formatter)")                                             \
-  OP(DUMP, "--dump", opt::NO_ARG, "dump ansi color code of theme")
+  OP(DUMP, "--dump", OptArgOp::NO_ARG, "dump ansi color code of theme")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -149,7 +151,7 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
 } // namespace
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
+  OptParser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -157,7 +159,7 @@ int main(int argc, char **argv) {
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
 
   const char *outputFileName = "/dev/stdout";
   bool listing = false;
@@ -196,7 +198,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != opt::END && !dump) {
+  if (result.error() != OptParseError::END && !dump) {
     std::cerr << result.formatError() << '\n';
     parser.printOption(std::cerr);
     return 1;
