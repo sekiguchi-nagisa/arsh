@@ -25,10 +25,10 @@
 using namespace ydsh;
 
 #define EACH_OPT(OP)                                                                               \
-  OP(PID, "--pid", OptArgOp::HAS_ARG, "specify pid")                                               \
-  OP(PPID, "--ppid", OptArgOp::HAS_ARG, "specify ppid")                                            \
-  OP(FIRST, "--first", OptArgOp::NO_ARG, "treat as first process of pipeline")                     \
-  OP(HELP, "--help", OptArgOp::NO_ARG, "show help message")
+  OP(PID, "--pid", opt::HAS_ARG, "specify pid")                                                    \
+  OP(PPID, "--ppid", opt::HAS_ARG, "specify ppid")                                                 \
+  OP(FIRST, "--first", opt::NO_ARG, "treat as first process of pipeline")                          \
+  OP(HELP, "--help", opt::NO_ARG, "show help message")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -98,7 +98,7 @@ static void dumpPID(bool isFirst) {
 }
 
 int main(int argc, char **argv) {
-  OptParser<OptionSet> parser = {
+  opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
   char **begin = argv + 1;
   char **end = argv + argc;
-  OptParseResult<OptionSet> result;
+  opt::Result<OptionSet> result;
   while ((result = parser(begin, end))) {
     switch (result.value()) {
     case OptionSet::PID:
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
   }
-  if (result.error() != OptParseError::END) {
+  if (result.error() != opt::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     parser.printOption(stderr);
     exit(1);

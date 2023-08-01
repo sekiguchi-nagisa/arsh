@@ -29,10 +29,10 @@
 using namespace ydsh;
 
 #define EACH_OPT(OP)                                                                               \
-  OP(OUT, "--out", OptArgOp::HAS_ARG, "specify output file. default is stdout")                    \
-  OP(OUT2, "-o", OptArgOp::HAS_ARG, "equivalent to '--out'")                                       \
-  OP(HELP, "--help", OptArgOp::NO_ARG, "show help message")                                        \
-  OP(HELP2, "-h", OptArgOp::NO_ARG, "equivalent to '--help'")
+  OP(OUT, "--out", opt::HAS_ARG, "specify output file. default is stdout")                         \
+  OP(OUT2, "-o", opt::HAS_ARG, "equivalent to '--out'")                                            \
+  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
+  OP(HELP2, "-h", opt::NO_ARG, "equivalent to '--help'")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -126,7 +126,7 @@ static void showInfo(std::ostream &stream) {
 }
 
 int main(int argc, char **argv) {
-  OptParser<OptionSet> parser = {
+  opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 
   char **begin = argv + 1;
   char **end = argv + argc;
-  OptParseResult<OptionSet> result;
+  opt::Result<OptionSet> result;
   while ((result = parser(begin, end))) {
     switch (result.value()) {
     case OptionSet::OUT:
@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
       exit(0);
     }
   }
-  if (result.error() != OptParseError::END) {
+  if (result.error() != opt::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     parser.printOption(stderr);
     exit(1);

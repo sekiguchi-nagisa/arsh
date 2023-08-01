@@ -24,9 +24,9 @@
 using namespace ydsh;
 
 #define EACH_OPT(OP)                                                                               \
-  OP(VAR_NAME, "-v", OptArgOp::HAS_ARG, "specify generated variable name")                         \
-  OP(FILE_NAME, "-f", OptArgOp::HAS_ARG, "specify target file name")                               \
-  OP(OUTPUT, "-o", OptArgOp::HAS_ARG, "specify output header file name")
+  OP(VAR_NAME, "-v", opt::HAS_ARG, "specify generated variable name")                              \
+  OP(FILE_NAME, "-f", opt::HAS_ARG, "specify target file name")                                    \
+  OP(OUTPUT, "-o", opt::HAS_ARG, "specify output header file name")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -67,7 +67,7 @@ static std::string escape(const std::string &line) {
 }
 
 int main(int argc, char **argv) {
-  OptParser<OptionKind> parser = {
+  opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {E, S, F, D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  OptParseResult<OptionKind> result;
+  opt::Result<OptionKind> result;
   while ((result = parser(begin, end))) {
     switch (result.value()) {
     case VAR_NAME:
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != OptParseError::END) {
+  if (result.error() != opt::END) {
     fprintf(stderr, "%s\n", result.formatError().c_str());
     parser.printOption(stderr);
   }

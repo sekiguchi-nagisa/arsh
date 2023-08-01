@@ -87,31 +87,30 @@ static void showFeature(FILE *fp) {
 }
 
 #define EACH_OPT(OP)                                                                               \
-  OP(DUMP_UAST, "--dump-untyped-ast", OptArgOp::OPT_ARG,                                           \
+  OP(DUMP_UAST, "--dump-untyped-ast", opt::OPT_ARG,                                                \
      "dump abstract syntax tree (before type checking)")                                           \
-  OP(DUMP_AST, "--dump-ast", OptArgOp::OPT_ARG, "dump abstract syntax tree (after type checking)") \
-  OP(DUMP_CODE, "--dump-code", OptArgOp::OPT_ARG, "dump compiled code")                            \
-  OP(PARSE_ONLY, "--parse-only", OptArgOp::NO_ARG, "not evaluate, parse only")                     \
-  OP(CHECK_ONLY, "--check-only", OptArgOp::NO_ARG, "not evaluate, type check only")                \
-  OP(COMPILE_ONLY, "--compile-only", OptArgOp::NO_ARG, "not evaluate, compile only")               \
-  OP(DISABLE_ASSERT, "--disable-assertion", OptArgOp::NO_ARG, "disable assert statement")          \
-  OP(TRACE_EXIT, "--trace-exit", OptArgOp::NO_ARG, "print stack strace on exit command")           \
-  OP(VERSION, "--version", OptArgOp::NO_ARG, "show version and copyright")                         \
-  OP(HELP, "--help", OptArgOp::NO_ARG, "show this help message")                                   \
-  OP(COMMAND, "-c", OptArgOp::HAS_ARG, "evaluate argument")                                        \
-  OP(NORC, "--norc", OptArgOp::NO_ARG, "not load rc file (only available interactive mode)")       \
-  OP(EXEC, "-e", OptArgOp::HAS_ARG, "execute command (ignore some options)")                       \
-  OP(STATUS_LOG, "--status-log", OptArgOp::HAS_ARG,                                                \
+  OP(DUMP_AST, "--dump-ast", opt::OPT_ARG, "dump abstract syntax tree (after type checking)")      \
+  OP(DUMP_CODE, "--dump-code", opt::OPT_ARG, "dump compiled code")                                 \
+  OP(PARSE_ONLY, "--parse-only", opt::NO_ARG, "not evaluate, parse only")                          \
+  OP(CHECK_ONLY, "--check-only", opt::NO_ARG, "not evaluate, type check only")                     \
+  OP(COMPILE_ONLY, "--compile-only", opt::NO_ARG, "not evaluate, compile only")                    \
+  OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement")               \
+  OP(TRACE_EXIT, "--trace-exit", opt::NO_ARG, "print stack strace on exit command")                \
+  OP(VERSION, "--version", opt::NO_ARG, "show version and copyright")                              \
+  OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
+  OP(COMMAND, "-c", opt::HAS_ARG, "evaluate argument")                                             \
+  OP(NORC, "--norc", opt::NO_ARG, "not load rc file (only available interactive mode)")            \
+  OP(EXEC, "-e", opt::HAS_ARG, "execute command (ignore some options)")                            \
+  OP(STATUS_LOG, "--status-log", opt::HAS_ARG,                                                     \
      "write execution status to specified file (ignored in interactive mode or -e)")               \
-  OP(FEATURE, "--feature", OptArgOp::NO_ARG, "show available features")                            \
-  OP(RC_FILE, "--rcfile", OptArgOp::HAS_ARG,                                                       \
+  OP(FEATURE, "--feature", opt::NO_ARG, "show available features")                                 \
+  OP(RC_FILE, "--rcfile", opt::HAS_ARG,                                                            \
      "load specified rc file (only available interactive mode)")                                   \
-  OP(QUIET, "--quiet", OptArgOp::NO_ARG,                                                           \
-     "suppress startup message (only available interactive mode)")                                 \
-  OP(SET_ARGS, "-s", OptArgOp::NO_ARG, "set arguments and read command from standard input")       \
-  OP(INTERACTIVE, "-i", OptArgOp::NO_ARG, "run interactive mode")                                  \
-  OP(NOEXEC, "-n", OptArgOp::NO_ARG, "equivalent to `--compile-only' option")                      \
-  OP(XTRACE, "-x", OptArgOp::NO_ARG, "trace execution of commands")
+  OP(QUIET, "--quiet", opt::NO_ARG, "suppress startup message (only available interactive mode)")  \
+  OP(SET_ARGS, "-s", opt::NO_ARG, "set arguments and read command from standard input")            \
+  OP(INTERACTIVE, "-i", opt::NO_ARG, "run interactive mode")                                       \
+  OP(NOEXEC, "-n", opt::NO_ARG, "equivalent to `--compile-only' option")                           \
+  OP(XTRACE, "-x", opt::NO_ARG, "trace execution of commands")
 
 enum class OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -225,14 +224,14 @@ static int exec_interactive(DSState *state, const char *rcpath) {
 }
 
 int main(int argc, char **argv) {
-  OptParser<OptionKind> parser = {
+  opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
       EACH_OPT(GEN_OPT)
 #undef GEN_OPT
   };
   auto begin = argv + (argc > 0 ? 1 : 0);
   auto end = argv + argc;
-  OptParseResult<OptionKind> result;
+  opt::Result<OptionKind> result;
 
   InvocationKind invocationKind = InvocationKind::FROM_FILE;
   const char *evalText = nullptr;
@@ -320,7 +319,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != OptParseError::END) {
+  if (result.error() != opt::END) {
     fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), version());
     parser.printOption(stderr);
     return 1;
