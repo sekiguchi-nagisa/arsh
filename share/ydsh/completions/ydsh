@@ -4,15 +4,15 @@ source $SCRIPT_DIR/../modules/completion
 
 ## ydsh completion
 call $YDSH_BIN --help | grep '    -' | cut -d ' ' -f 5 | cut -d '[' -f 1 |
-for $REPLY in $STDIN {
-    var k = $REPLY.startsWith('--') ? "--long" : "--short"
-    var o = $REPLY.startsWith('--') ? $REPLY.slice(2) : $REPLY.slice(1)
-    $o == 'e' && continue
+for $line in $STDIN {
+    var k = $line.startsWith('--') ? "--long" : "--short"
+    var o = $line.startsWith('--') ? $line.slice(2) : $line.slice(1)
+    ($o == 'e' || $o.startsWith('dump')) && continue
     compdef --cmd ydsh $k $o
 }
-compdef --cmd ydsh --long dump-ast= --arg-action file
-compdef --cmd ydsh --long dump-untyped-ast= --arg-action file
-compdef --cmd ydsh --long dump-code= --arg-action file
+compdef --cmd ydsh --long dump-ast --arg-action file
+compdef --cmd ydsh --long dump-untyped-ast --arg-action file
+compdef --cmd ydsh --long dump-code --arg-action file
 compdef --cmd ydsh --short e --arg-action cmd
 
 ## ydshd
@@ -28,7 +28,6 @@ compdef --cmd ydshd --long wait-time
 compdef --cmd dscolorize --long daemon
 compdef --cmd dscolorize --long html-full
 compdef --cmd dscolorize --long html-lineno
-compdef --cmd dscolorize --long html-lineno=
 compdef --cmd dscolorize --short h
 compdef --cmd dscolorize --short l
 compdef --cmd dscolorize --short o --arg-action file

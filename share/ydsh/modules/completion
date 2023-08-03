@@ -80,10 +80,10 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
         }
         if $opt.startsWith($prefix) {
             $ret.add($opt)
-        } elif $opt.startsWith("--") && $opt[-1] == "=" {
-            # opt -> --opt=
+        } elif $opt.startsWith("--") && $def.type != -1 {
+            # opt -> --opt
             # prefix -> --opt=hoge
-            if $prefix.startsWith($opt) {
+            if $prefix.startsWith($opt) && $prefix.slice($opt.size()).startsWith('=') {
                 $ret.add($opt)
             }
         }
@@ -263,6 +263,7 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]?
         # 'CMD d'
         # 'CMD -'
         # 'CMD --d'
+        # 'CMD' --dump=s
         # 'CMD -s d'
         # 'CMD arg1 d'
         assert $words.size() > 1
@@ -271,10 +272,12 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]?
             var ret = $_comp_opt($deflist, $prev)
             if $ret.size() == 1 {
                 var opt = $ret[0]
-                if $opt.startsWith("--") && $opt[-1] == "=" {
+                if $opt.startsWith("--") && $prev.startsWith($opt) {
                     # for `--opt=' style option
-                    $prev = $prev.slice($opt.size())
-                    return $_comp_arg($ctx, $deflist, $opt, $prev)
+                    if $prev.slice($opt.size()).startsWith('=') {
+                        $prev = $prev.slice($opt.size() + 1)
+                        return $_comp_arg($ctx, $deflist, $opt, $prev)
+                    }
                 }
             }
             return $ret

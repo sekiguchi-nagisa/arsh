@@ -59,21 +59,24 @@ assert $(complete 'ps A').empty()
 # long option
 compdef --cmd ls --long show --arg-cmd 'ls'
 compdef --cmd ls --long stop --arg-action signal
-compdef --cmd ls --long top= --arg-action signal
+compdef --cmd ls --long top
 
 assert diff <(complete 'ls -') <(echo --show &&
- echo --stop && echo --top= && echo -l \
+ echo --stop && echo --top && echo -l \
 && echo -q && echo -s)
 
-assert diff <(complete 'ls --') <(echo --show && echo --stop && echo --top=)
+assert diff <(complete 'ls --') <(echo --show && echo --stop && echo --top)
 assert diff <(complete 'ls --sh') <(echo --show)
 assert diff <(complete 'ls --stop') <(echo --stop)
 assert diff <(complete 'ls --show ') <(ls)
 assert diff <(complete 'ls --show') <(echo --show)
 assert diff <(complete 'ls --stop ') <(complete -A signal)
 assert diff <(complete 'ls --stop T') <(complete -A signal T)
-assert diff <(complete 'ls --top=') <(complete -A signal)
-assert diff <(complete 'ls --top=T') <(complete -A signal T)
+assert diff <(complete 'ls --stop=') <(complete -A signal)
+assert diff <(complete 'ls --stop=T') <(complete -A signal T)
+assert diff <(complete 'ls --t') <(echo --top)
+assert $(complete 'ls --top=').empty()
+assert $(complete 'ls --top=./').empty()
 
 compdef --cmd ps --long help --arg-list 'ccc aaa ddd bbb'
 assert diff <(complete 'ps --he') <(echo --help)
