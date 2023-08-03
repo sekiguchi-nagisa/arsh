@@ -24,7 +24,7 @@
 #include <DescLexer.h>
 #include <constant.h>
 #include <handle_info.h>
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 #include <misc/parser_base.hpp>
 
 namespace {
@@ -1134,16 +1134,19 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
   fclose(fp);
 }
 
-#define EACH_OPT(OP)                                                                               \
-  OP(DOC, "--doc", opt::NO_ARG, "generate interface documentation")                                \
-  OP(BIND, "--bind", opt::NO_ARG, "generate function binding")                                     \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
-  OP(HEADER, "--header", opt::HAS_ARG, "generated header file (only available --bind)")
-
 enum class OptionSet : unsigned int {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  DOC,
+  BIND,
+  HEADER,
+  HELP,
+};
+
+constexpr OptParser<OptionSet>::Option options[] = {
+    {OptionSet::DOC, 0, "doc", OptParseOp::NO_ARG, "generate interface documentation"},
+    {OptionSet::BIND, 0, "bind", OptParseOp::NO_ARG, "generate function binding"},
+    {OptionSet::HEADER, 0, "header", OptParseOp::HAS_ARG,
+     "generated header file (only available --bind)"},
+    {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
 void usage(FILE *fp, char **argv) {
@@ -1153,20 +1156,16 @@ void usage(FILE *fp, char **argv) {
 } // namespace
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
-#define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
 
-  const char *headerFileName = nullptr;
+  StringRef headerFileName;
   bool doc = false;
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionSet::DOC:
       doc = true;
       break;
@@ -1175,16 +1174,15 @@ int main(int argc, char **argv) {
       break;
     case OptionSet::HELP:
       usage(stdout, argv);
-      parser.printOption(stdout);
+      printf("%s\n", parser.formatUsage().c_str());
       exit(0);
     case OptionSet::HEADER:
-      headerFileName = result.arg();
+      headerFileName = result.getValue();
       break;
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n", result.formatError().c_str());
-    parser.printOption(stderr);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
     exit(1);
   }
 
@@ -1193,9 +1191,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
   if (!doc) {
-    if (!headerFileName) {
-      fprintf(stderr, "require --header option\n");
-      parser.printOption(stderr);
+    if (!headerFileName.data()) {
+      fprintf(stderr, "require --header option\n%s\n", parser.formatUsage().c_str());
       exit(1);
     }
   }
@@ -1209,7 +1206,7 @@ int main(int argc, char **argv) {
   if (doc) {
     gendoc(outputFileName, binds);
   } else {
-    gencode(headerFileName, outputFileName, binds);
+    gencode(headerFileName.toString().c_str(), outputFileName, binds);
   }
 
   exit(0);

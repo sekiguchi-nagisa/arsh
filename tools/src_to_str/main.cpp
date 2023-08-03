@@ -19,19 +19,20 @@
 #include <iostream>
 
 #include <misc/fatal.h>
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 
 using namespace ydsh;
 
-#define EACH_OPT(OP)                                                                               \
-  OP(VAR_NAME, "-v", opt::HAS_ARG, "specify generated variable name")                              \
-  OP(FILE_NAME, "-f", opt::HAS_ARG, "specify target file name")                                    \
-  OP(OUTPUT, "-o", opt::HAS_ARG, "specify output header file name")
+enum class OptionKind {
+  VAR_NAME,
+  FILE_NAME,
+  OUTPUT,
+};
 
-enum OptionKind {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+static constexpr OptParser<OptionKind>::Option options[] = {
+    {OptionKind::VAR_NAME, 'v', nullptr, OptParseOp::HAS_ARG, "specify generated variable name"},
+    {OptionKind::FILE_NAME, 'f', nullptr, OptParseOp::HAS_ARG, "specify target file name"},
+    {OptionKind::OUTPUT, 'o', "output", OptParseOp::HAS_ARG, "specify output header file name"},
 };
 
 static std::string escape(const std::string &line) {
@@ -67,63 +68,59 @@ static std::string escape(const std::string &line) {
 }
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionKind> parser = {
-#define GEN_OPT(E, S, F, D) {E, S, F, D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
 
-  const char *varName = nullptr;
-  const char *targetFileName = nullptr;
-  const char *outputFileName = nullptr;
+  StringRef varName;
+  StringRef targetFileName;
+  StringRef outputFileName;
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  opt::Result<OptionKind> result;
+  OptParseResult<OptionKind> result;
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
-    case VAR_NAME:
-      varName = result.arg();
+    switch (result.getOpt()) {
+    case OptionKind::VAR_NAME:
+      varName = result.getValue();
       break;
-    case FILE_NAME:
-      targetFileName = result.arg();
+    case OptionKind::FILE_NAME:
+      targetFileName = result.getValue();
       break;
-    case OUTPUT:
-      outputFileName = result.arg();
+    case OptionKind::OUTPUT:
+      outputFileName = result.getValue();
       break;
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n", result.formatError().c_str());
-    parser.printOption(stderr);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
+    return 1;
   }
-  if (varName == nullptr) {
-    parser.printOption(stderr);
+  if (!varName.data()) {
+    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
     fatal("require -v\n");
   }
-  if (targetFileName == nullptr) {
-    parser.printOption(stderr);
+  if (!targetFileName.data()) {
+    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
     fatal("require -f\n");
   }
-  if (outputFileName == nullptr) {
-    parser.printOption(stderr);
+  if (!outputFileName.data()) {
+    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
     fatal("require -o\n");
   }
 
-  std::ifstream input(targetFileName);
+  std::ifstream input(targetFileName.toString());
   if (!input) {
-    fatal("cannot open file: \n%s", targetFileName);
+    fatal("cannot open file: \n%s", targetFileName.toString().c_str());
   }
 
   std::string line;
 
-  FILE *fp = fopen(outputFileName, "w");
+  FILE *fp = fopen(outputFileName.toString().c_str(), "w");
   if (fp == nullptr) {
-    fatal_perror("%s", outputFileName);
+    fatal_perror("%s", outputFileName.toString().c_str());
   }
 
   // generate file
-  std::string headerSuffix(varName);
+  std::string headerSuffix(varName.toString());
   std::transform(headerSuffix.begin(), headerSuffix.end(), headerSuffix.begin(), ::toupper);
   std::string headerName = "SRC_TO_STR__";
   headerName += headerSuffix;
@@ -133,7 +130,7 @@ int main(int argc, char **argv) {
   fprintf(fp, "#ifndef %s\n", headerName.c_str());
   fprintf(fp, "#define %s\n", headerName.c_str());
   fputs("\n", fp);
-  fprintf(fp, "static const char *%s = \"\"\n", varName);
+  fprintf(fp, "static const char *%s = \"\"\n", varName.toString().c_str());
   while (std::getline(input, line)) {
     // skip empty line and comment
     if (line.empty() || line[0] == '#') {

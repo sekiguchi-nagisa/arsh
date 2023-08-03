@@ -363,7 +363,32 @@ TEST(OptParseTest, error2) {
   auto parser = createOptParser(options);
 
   //
-  std::vector<std::string> args = {"-A", "-onfig", "--hoge"};
+  std::vector<std::string> args = {"--config="};
+  auto begin = args.begin();
+  auto end = args.end();
+
+  auto ret = parser(begin, end);
+  ASSERT_FALSE(ret);
+  ASSERT_TRUE(ret.isError());
+  ASSERT_EQ(OptParseResult<Kind>::Status::NEED_ARG, ret.getStatus());
+  ASSERT_EQ(Kind::C, ret.getOpt());
+  ASSERT_EQ("config", ret.getValue().toString());
+  ASSERT_EQ("", parser.getRemain().toString());
+  ASSERT_TRUE(begin == end);
+}
+
+TEST(OptParseTest, error3) {
+  OptParser<Kind>::Option options[] = {
+      {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
+      {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
+      {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
+      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
+  };
+  auto parser = createOptParser(options);
+
+  //
+  std::vector<std::string> args = {"-A", "-onfig", "--hoge", "--dump=AAA"};
   auto begin = args.begin();
   auto end = args.end();
 
@@ -405,6 +430,17 @@ TEST(OptParseTest, error2) {
   ASSERT_EQ("hoge", ret.getValue().toString());
   ASSERT_EQ("", parser.getRemain().toString());
   ASSERT_EQ("--hoge", *begin);
+
+  // --dump=AAA
+  ++begin;
+  parser.reset();
+  ret = parser(begin, end);
+  ASSERT_FALSE(ret);
+  ASSERT_TRUE(ret.isError());
+  ASSERT_EQ(OptParseResult<Kind>::Status::UNDEF, ret.getStatus());
+  ASSERT_EQ("dump", ret.getValue().toString());
+  ASSERT_EQ("", parser.getRemain().toString());
+  ASSERT_EQ("--dump=AAA", *begin);
 }
 
 TEST(ArgsTest, base1) {

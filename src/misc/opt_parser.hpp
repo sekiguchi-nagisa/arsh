@@ -98,6 +98,12 @@ public:
     out += this->value;
     return true;
   }
+
+  std::string formatError() const {
+    std::string v;
+    this->formatError(v);
+    return v;
+  }
 };
 
 enum class OptParseOp : unsigned char {
@@ -121,10 +127,11 @@ public:
     const char *argName;   // argument name for help message
     const char *detail;    // option description for help message
 
-    Option(T kind, char s, const char *l, OptParseOp op, const char *arg, const char *detail)
+    constexpr Option(T kind, char s, const char *l, OptParseOp op, const char *arg,
+                     const char *detail)
         : kind(kind), op(op), shortOptName(s), longOptName(l), argName(arg), detail(detail) {}
 
-    Option(T kind, char s, const char *l, OptParseOp op, const char *detail)
+    constexpr Option(T kind, char s, const char *l, OptParseOp op, const char *detail) // NOLINT
         : Option(kind, s, l, op, "arg", detail) {}
 
     unsigned int getUsageLen() const {
@@ -183,11 +190,14 @@ public:
       return ret;
     }
 
-    void splitDetails(std::vector<StringRef> &out) {
+    void splitDetails(std::vector<StringRef> &out) const {
       out.clear();
       StringRef ref = this->detail;
       if (!ref.empty()) {
-        splitByDelim(ref, '\n', [&out](StringRef sub, bool) { out.push_back(sub); });
+        splitByDelim(ref, '\n', [&out](StringRef sub, bool) {
+          out.push_back(sub);
+          return true;
+        });
       }
     }
   };
@@ -297,6 +307,8 @@ OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
           } else if (option.op == OptParseOp::OPT_ARG) {
             return OptParseResult<T>::ok(option.kind);
           } else {
+            auto pos = longName.find('=');
+            longName = longName.slice(0, pos);
             return OptParseResult<T>::needArg(option.kind, longName);
           }
         }
@@ -304,6 +316,8 @@ OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
       continue;
     }
   }
+  auto pos = longName.find('=');
+  longName = longName.slice(0, pos);
   return OptParseResult<T>::undef(longName);
 }
 
@@ -352,7 +366,7 @@ std::string OptParser<T>::formatUsage() const {
   // compute usage len
   for (unsigned int i = 0; i < this->size; i++) {
     const Option &option = this->options[i];
-    unsigned int len = option->getUsageLen();
+    unsigned int len = option.getUsageLen();
     if (len > maxLenOfUsage) {
       maxLenOfUsage = len;
     }

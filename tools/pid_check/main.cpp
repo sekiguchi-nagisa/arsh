@@ -20,26 +20,29 @@
 #include <vector>
 
 #include <misc/fatal.h>
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 
 using namespace ydsh;
 
-#define EACH_OPT(OP)                                                                               \
-  OP(PID, "--pid", opt::HAS_ARG, "specify pid")                                                    \
-  OP(PPID, "--ppid", opt::HAS_ARG, "specify ppid")                                                 \
-  OP(FIRST, "--first", opt::NO_ARG, "treat as first process of pipeline")                          \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")
-
 enum class OptionSet : unsigned int {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  PID,
+  PPID,
+  FIRST,
+  HELP,
 };
 
-static int toInt32(const char *str) {
+static constexpr OptParser<OptionSet>::Option options[] = {
+    {OptionSet::PID, 0, "pid", OptParseOp::HAS_ARG, "specify pid"},
+    {OptionSet::PPID, 0, "ppid", OptParseOp::HAS_ARG, "specify ppid"},
+    {OptionSet::FIRST, 0, "first", OptParseOp::NO_ARG, "treat as first process of pipeline"},
+    {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
+};
+
+static int toInt32(StringRef ref) {
+  std::string str = ref.toString();
   long value = std::stol(str);
   if (value > INT32_MAX || value < INT32_MIN) {
-    fatal("broken number: %s\n", str);
+    fatal("broken number: %s\n", str.c_str());
   }
   return static_cast<int>(value);
 }
@@ -98,11 +101,7 @@ static void dumpPID(bool isFirst) {
 }
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
-#define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
 
   pid_t pid = -1;
   pid_t ppid = -1;
@@ -110,27 +109,26 @@ int main(int argc, char **argv) {
 
   char **begin = argv + 1;
   char **end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionSet::PID:
-      pid = toInt32(result.arg());
+      pid = toInt32(result.getValue());
       break;
     case OptionSet::PPID:
-      ppid = toInt32(result.arg());
+      ppid = toInt32(result.getValue());
       break;
     case OptionSet::FIRST:
       isFirst = true;
       break;
     case OptionSet::HELP:
-      parser.printOption(stdout);
-      exit(1);
+      printf("%s\n", parser.formatUsage().c_str());
+      return 1;
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n", result.formatError().c_str());
-    parser.printOption(stderr);
-    exit(1);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
+    return 1;
   }
 
   if (pid > -1 || ppid > -1) {

@@ -51,7 +51,7 @@ public:
    */
   constexpr StringRefBase(const char *value) noexcept : ptr_(value), size_(0) { // NOLINT
     if (this->ptr_) {
-      this->size_ = strlen(this->ptr_);
+      this->size_ = __builtin_strlen(this->ptr_);
     }
   }
 
