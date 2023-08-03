@@ -379,7 +379,7 @@ std::string OptParser<T>::formatUsage() const {
   value += "Options:";
   for (unsigned int i = 0; i < this->size; i++) {
     const Option &option = this->options[i];
-    value += "\n    ";
+    value += "\n  ";
     auto usage = option.getUsage();
     value += usage;
     value.append(maxLenOfUsage - usage.size(), ' ');
@@ -390,9 +390,9 @@ std::string OptParser<T>::formatUsage() const {
       if (count++ > 0) {
         value += "\n";
         value += spaces;
-        value += "    ";
+        value += "  ";
       }
-      value += "    ";
+      value += "  ";
       value += detail;
     }
   }
