@@ -75,15 +75,15 @@ FormatterFactory::create(std::ostream &stream) const {
     if (this->htmlFull) {
       setFlag(formatOp, HTMLFormatOp::FULL);
     }
-    if (this->lineno) {
+    if (!this->lineno.empty()) {
       setFlag(formatOp, HTMLFormatOp::LINENO);
     }
     if (this->htmlTable) {
       setFlag(formatOp, HTMLFormatOp::TABLE | HTMLFormatOp::LINENO);
     }
     unsigned int lineNumOffset = 1;
-    if (this->lineno) {
-      auto ret = convertToDecimal<unsigned int>(this->lineno);
+    if (!this->lineno.empty()) {
+      auto ret = convertToDecimal<unsigned int>(this->lineno.begin(), this->lineno.end());
       if (ret && ret.value > 0) {
         lineNumOffset = ret.value;
       }

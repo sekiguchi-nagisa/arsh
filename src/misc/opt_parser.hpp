@@ -311,6 +311,8 @@ OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
             longName = longName.slice(0, pos);
             return OptParseResult<T>::needArg(option.kind, longName);
           }
+        } else { // no match
+          --begin;
         }
       }
       continue;

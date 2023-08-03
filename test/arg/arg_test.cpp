@@ -209,6 +209,26 @@ TEST(OptParseTest, arg3) {
   ASSERT_EQ("--", *begin);
 }
 
+TEST(OptParseTest, commonPrefix) {
+  OptParser<Kind>::Option options[] = {
+      {Kind::A, 0, "dump", OptParseOp::OPT_ARG, "show this help message"},
+      {Kind::B, 0, "dump-state", OptParseOp::NO_ARG, "show this help message"},
+  };
+  auto parser = createOptParser(options);
+
+  //
+  std::vector<std::string> args = {"--dump-state"};
+  auto begin = args.begin();
+  auto end = args.end();
+
+  auto ret = parser(begin, end);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(Kind::B, ret.getOpt());
+  ASSERT_FALSE(ret.hasArg());
+  ASSERT_EQ("", parser.getRemain().toString());
+  ASSERT_TRUE(begin == end);
+}
+
 TEST(OptParseTest, multiArg) {
   OptParser<Kind>::Option options[] = {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},

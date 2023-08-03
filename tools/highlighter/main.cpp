@@ -17,7 +17,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 
 #include "factory.h"
 
@@ -26,23 +26,34 @@ namespace {
 using namespace ydsh;
 using namespace ydsh::highlighter;
 
-#define EACH_OPT(OP)                                                                               \
-  OP(HELP, "-h", opt::NO_ARG, "show help message")                                                 \
-  OP(OUTPUT, "-o", opt::HAS_ARG, "specify output file (default is stdout)")                        \
-  OP(FORMAT, "-f", opt::HAS_ARG, "specify output formatter (default is `ansi' formatter)")         \
-  OP(STYLE, "-s", opt::HAS_ARG, "specify highlighter color style (default is `darcula' style)")    \
-  OP(LIST, "-l", opt::NO_ARG, "show supported formatters/styles")                                  \
-  OP(HTML_FULL, "--html-full", opt::NO_ARG, "generate self-contained html (for html formatter)")   \
-  OP(HTML_LINENO, "--html-lineno", opt::OPT_ARG,                                                   \
-     "emit line number starts with ARG (for html formatter)")                                      \
-  OP(HTML_LINENO_TABLE, "--html-lineno-table", opt::NO_ARG,                                        \
-     "emit line number as table (for html formatter)")                                             \
-  OP(DUMP, "--dump", opt::NO_ARG, "dump ansi color code of theme")
-
 enum class OptionSet : unsigned int {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  HELP,
+  OUTPUT,
+  FORMAT,
+  STYLE,
+  LIST,
+  HTML_FULL,
+  HTML_LINENO,
+  HTML_LINENO_TABLE,
+  DUMP,
+};
+
+constexpr OptParser<OptionSet>::Option options[] = {
+    {OptionSet::OUTPUT, 'o', nullptr, OptParseOp::HAS_ARG, "file",
+     "specify output file (default is stdout)"},
+    {OptionSet::FORMAT, 'f', nullptr, OptParseOp::HAS_ARG, "formatter",
+     "specify output formatter (default is `ansi' formatter)"},
+    {OptionSet::STYLE, 's', nullptr, OptParseOp::HAS_ARG, "style",
+     "specify highlighter color style (default is `darcula' style)"},
+    {OptionSet::LIST, 'l', nullptr, OptParseOp::NO_ARG, "show supported formatters/styles"},
+    {OptionSet::HTML_FULL, 0, "html-full", OptParseOp::NO_ARG,
+     "generate self-contained html (for html formatter)"},
+    {OptionSet::HTML_LINENO, 0, "html-lineno", OptParseOp::OPT_ARG, "num",
+     "emit line number starts with NUM (for html formatter)"},
+    {OptionSet::HTML_LINENO_TABLE, 0, "html-lineno-table", OptParseOp::NO_ARG,
+     "emit line number as table (for html formatter)"},
+    {OptionSet::DUMP, 0, "dump", OptParseOp::NO_ARG, "dump ansi color code of theme"},
+    {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
 void usage(std::ostream &stream, char **argv) {
@@ -149,35 +160,31 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
 } // namespace
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
-#define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
 
   auto begin = argv + 1;
   auto end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
 
-  const char *outputFileName = "/dev/stdout";
+  StringRef outputFileName = "/dev/stdout";
   bool listing = false;
   bool dump = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionSet::HELP:
       usage(std::cout, argv);
-      parser.printOption(std::cout);
+      std::cout << parser.formatUsage() << std::endl; // NOLINT
       return 0;
     case OptionSet::OUTPUT:
-      outputFileName = result.arg();
+      outputFileName = result.getValue();
       break;
     case OptionSet::FORMAT:
-      factory.setFormatName(result.arg());
+      factory.setFormatName(result.getValue().toString());
       break;
     case OptionSet::STYLE:
-      factory.setStyleName(result.arg());
+      factory.setStyleName(result.getValue());
       break;
     case OptionSet::LIST:
       listing = true;
@@ -186,7 +193,7 @@ int main(int argc, char **argv) {
       factory.setHTMLFull(true);
       break;
     case OptionSet::HTML_LINENO:
-      factory.setLineno(result.arg() != nullptr ? result.arg() : "1");
+      factory.setLineno(result.hasArg() ? result.getValue() : "1");
       break;
     case OptionSet::HTML_LINENO_TABLE:
       factory.setHTMLTable(true);
@@ -196,9 +203,8 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != opt::END && !dump) {
-    std::cerr << result.formatError() << '\n';
-    parser.printOption(std::cerr);
+  if (result.isError() && !dump) {
+    std::cerr << result.formatError() << '\n' << parser.formatUsage() << std::endl; // NOLINT
     return 1;
   }
 
@@ -212,9 +218,9 @@ int main(int argc, char **argv) {
     sourceName = *begin;
   }
 
-  std::ofstream output(outputFileName);
+  std::ofstream output(outputFileName.toString());
   if (!output) {
-    std::cerr << "cannot open file: " << outputFileName << '\n';
+    std::cerr << "cannot open file: " << outputFileName.toString() << '\n';
     return 1;
   }
   return colorize(factory, sourceName, output, dump);

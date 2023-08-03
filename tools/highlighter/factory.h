@@ -36,9 +36,9 @@ private:
 
   std::string formatName{"ansi"};
 
-  std::string styleName{DEFAULT_STYLE_NAME};
+  StringRef styleName{DEFAULT_STYLE_NAME};
 
-  const char *lineno{nullptr};
+  StringRef lineno;
 
   bool htmlFull{false};
 
@@ -53,11 +53,11 @@ public:
 
   const auto &getSupportedFormats() const { return this->supportedFormats; }
 
-  void setFormatName(const char *name) { this->formatName = name; }
+  void setFormatName(std::string &&name) { this->formatName = std::move(name); }
 
-  void setStyleName(const char *name) { this->styleName = name; }
+  void setStyleName(StringRef name) { this->styleName = name; }
 
-  void setLineno(const char *num) { this->lineno = num; }
+  void setLineno(StringRef num) { this->lineno = num; }
 
   void setHTMLFull(bool set) { this->htmlFull = set; }
 
