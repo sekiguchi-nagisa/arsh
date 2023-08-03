@@ -213,7 +213,7 @@ public:
   template <typename Iter>
   OptParseResult<T> operator()(Iter &begin, Iter end);
 
-  std::string formatUsage() const;
+  std::string formatOptions() const;
 
   StringRef getRemain() const { return this->remain; }
 
@@ -361,7 +361,7 @@ OptParseResult<T> OptParser<T>::matchShortOption(Iter &begin, Iter end) {
 }
 
 template <typename T>
-std::string OptParser<T>::formatUsage() const {
+std::string OptParser<T>::formatOptions() const {
   std::string value;
   unsigned int maxLenOfUsage = 0;
 

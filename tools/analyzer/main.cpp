@@ -76,7 +76,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
       options.level = parseLogLevel(result.getValue().data());
       break;
     case OptionKind::HELP:
-      printf("%s\n", optParser.formatUsage().c_str());
+      printf("%s\n", optParser.formatOptions().c_str());
       exit(0);
     case OptionKind::LSP:
       options.lsp = true;
@@ -98,7 +98,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
     }
   }
   if (result.isError()) {
-    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), optParser.formatUsage().c_str());
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), optParser.formatOptions().c_str());
     exit(1);
   }
   if (debounceTime) {

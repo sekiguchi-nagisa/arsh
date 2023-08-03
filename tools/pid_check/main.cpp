@@ -122,12 +122,12 @@ int main(int argc, char **argv) {
       isFirst = true;
       break;
     case OptionSet::HELP:
-      printf("%s\n", parser.formatUsage().c_str());
+      printf("%s\n", parser.formatOptions().c_str());
       return 1;
     }
   }
   if (result.isError()) {
-    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatOptions().c_str());
     return 1;
   }
 

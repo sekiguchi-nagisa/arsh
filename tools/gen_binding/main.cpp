@@ -1174,7 +1174,7 @@ int main(int argc, char **argv) {
       break;
     case OptionSet::HELP:
       usage(stdout, argv);
-      printf("%s\n", parser.formatUsage().c_str());
+      printf("%s\n", parser.formatOptions().c_str());
       exit(0);
     case OptionSet::HEADER:
       headerFileName = result.getValue();
@@ -1182,7 +1182,7 @@ int main(int argc, char **argv) {
     }
   }
   if (result.isError()) {
-    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatOptions().c_str());
     exit(1);
   }
 
@@ -1192,7 +1192,7 @@ int main(int argc, char **argv) {
   }
   if (!doc) {
     if (!headerFileName.data()) {
-      fprintf(stderr, "require --header option\n%s\n", parser.formatUsage().c_str());
+      fprintf(stderr, "require --header option\n%s\n", parser.formatOptions().c_str());
       exit(1);
     }
   }

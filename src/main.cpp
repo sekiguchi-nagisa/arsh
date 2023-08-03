@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
       fprintf(stdout, "%s\n", version());
       return 0;
     case OptionKind::HELP:
-      fprintf(stdout, "%s\n%s\n", version(), parser.formatUsage().c_str());
+      fprintf(stdout, "%s\n%s\n", version(), parser.formatOptions().c_str());
       return 0;
     case OptionKind::COMMAND:
       invocationKind = InvocationKind::FROM_STRING;
@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
   }
   if (result.isError()) {
     fprintf(stderr, "%s\n%s\n%s\n", result.formatError().c_str(), version(),
-            parser.formatUsage().c_str());
+            parser.formatOptions().c_str());
     return 1;
   }
 

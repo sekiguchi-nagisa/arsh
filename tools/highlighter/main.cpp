@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
     switch (result.getOpt()) {
     case OptionSet::HELP:
       usage(std::cout, argv);
-      std::cout << parser.formatUsage() << std::endl; // NOLINT
+      std::cout << parser.formatOptions() << std::endl; // NOLINT
       return 0;
     case OptionSet::OUTPUT:
       outputFileName = result.getValue();
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
     }
   }
   if (result.isError() && !dump) {
-    std::cerr << result.formatError() << '\n' << parser.formatUsage() << std::endl; // NOLINT
+    std::cerr << result.formatError() << '\n' << parser.formatOptions() << std::endl; // NOLINT
     return 1;
   }
 

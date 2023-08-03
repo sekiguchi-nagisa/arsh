@@ -91,19 +91,19 @@ int main(int argc, char **argv) {
     }
   }
   if (result.isError()) {
-    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatOptions().c_str());
     return 1;
   }
   if (!varName.data()) {
-    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n", parser.formatOptions().c_str());
     fatal("require -v\n");
   }
   if (!targetFileName.data()) {
-    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n", parser.formatOptions().c_str());
     fatal("require -f\n");
   }
   if (!outputFileName.data()) {
-    fprintf(stderr, "%s\n", parser.formatUsage().c_str());
+    fprintf(stderr, "%s\n", parser.formatOptions().c_str());
     fatal("require -o\n");
   }
 
