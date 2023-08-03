@@ -18,7 +18,8 @@
 
 #include <memory>
 
-#include "misc/opt.hpp"
+#include "misc/flag_util.hpp"
+#include "misc/opt_parser.hpp"
 #include <ydsh/ydsh.h>
 
 using namespace ydsh;
@@ -86,36 +87,62 @@ static void showFeature(FILE *fp) {
   }
 }
 
-#define EACH_OPT(OP)                                                                               \
-  OP(DUMP_UAST, "--dump-untyped-ast", opt::OPT_ARG,                                                \
-     "dump abstract syntax tree (before type checking)")                                           \
-  OP(DUMP_AST, "--dump-ast", opt::OPT_ARG, "dump abstract syntax tree (after type checking)")      \
-  OP(DUMP_CODE, "--dump-code", opt::OPT_ARG, "dump compiled code")                                 \
-  OP(PARSE_ONLY, "--parse-only", opt::NO_ARG, "not evaluate, parse only")                          \
-  OP(CHECK_ONLY, "--check-only", opt::NO_ARG, "not evaluate, type check only")                     \
-  OP(COMPILE_ONLY, "--compile-only", opt::NO_ARG, "not evaluate, compile only")                    \
-  OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement")               \
-  OP(TRACE_EXIT, "--trace-exit", opt::NO_ARG, "print stack strace on exit command")                \
-  OP(VERSION, "--version", opt::NO_ARG, "show version and copyright")                              \
-  OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
-  OP(COMMAND, "-c", opt::HAS_ARG, "evaluate argument")                                             \
-  OP(NORC, "--norc", opt::NO_ARG, "not load rc file (only available interactive mode)")            \
-  OP(EXEC, "-e", opt::HAS_ARG, "execute command (ignore some options)")                            \
-  OP(STATUS_LOG, "--status-log", opt::HAS_ARG,                                                     \
-     "write execution status to specified file (ignored in interactive mode or -e)")               \
-  OP(FEATURE, "--feature", opt::NO_ARG, "show available features")                                 \
-  OP(RC_FILE, "--rcfile", opt::HAS_ARG,                                                            \
-     "load specified rc file (only available interactive mode)")                                   \
-  OP(QUIET, "--quiet", opt::NO_ARG, "suppress startup message (only available interactive mode)")  \
-  OP(SET_ARGS, "-s", opt::NO_ARG, "set arguments and read command from standard input")            \
-  OP(INTERACTIVE, "-i", opt::NO_ARG, "run interactive mode")                                       \
-  OP(NOEXEC, "-n", opt::NO_ARG, "equivalent to `--compile-only' option")                           \
-  OP(XTRACE, "-x", opt::NO_ARG, "trace execution of commands")
-
 enum class OptionKind {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  DUMP_UAST,
+  DUMP_AST,
+  DUMP_CODE,
+  PARSE_ONLY,
+  CHECK_ONLY,
+  COMPILE_ONLY,
+  DISABLE_ASSERT,
+  TRACE_EXIT,
+  VERSION,
+  HELP,
+  COMMAND,
+  NORC,
+  EXEC,
+  STATUS_LOG,
+  FEATURE,
+  RC_FILE,
+  QUIET,
+  SET_ARGS,
+  INTERACTIVE,
+  NOEXEC,
+  XTRACE,
+};
+
+static constexpr OptParser<OptionKind>::Option options[] = {
+    {OptionKind::DUMP_UAST, 0, "dump-untyped-ast", OptParseOp::OPT_ARG, "file",
+     "dump abstract syntax tree (before type checking)"},
+    {OptionKind::DUMP_AST, 0, "dump-ast", OptParseOp::OPT_ARG, "file",
+     "dump abstract syntax tree (after type checking)"},
+    {OptionKind::DUMP_CODE, 0, "dump-code", OptParseOp::OPT_ARG, "file", "dump compiled code"},
+    {OptionKind::PARSE_ONLY, 0, "parse-only", OptParseOp::NO_ARG, "not evaluate, parse only"},
+    {OptionKind::CHECK_ONLY, 0, "check-only", OptParseOp::NO_ARG, "not evaluate, type check only"},
+    {OptionKind::COMPILE_ONLY, 0, "compile-only", OptParseOp::NO_ARG, "not evaluate, compile only"},
+    {OptionKind::DISABLE_ASSERT, 0, "disable-assertion", OptParseOp::NO_ARG,
+     "disable assert statement"},
+    {OptionKind::TRACE_EXIT, 0, "trace-exit", OptParseOp::NO_ARG,
+     "print stack strace on exit command"},
+    {OptionKind::VERSION, 0, "version", OptParseOp::NO_ARG, "show version and copyright"},
+    {OptionKind::HELP, 0, "help", OptParseOp::NO_ARG, "show this help message"},
+    {OptionKind::COMMAND, 'c', nullptr, OptParseOp::HAS_ARG, "string", "evaluate argument"},
+    {OptionKind::NORC, 0, "norc", OptParseOp::NO_ARG,
+     "not load rc file (only available interactive mode)"},
+    {OptionKind::EXEC, 'e', nullptr, OptParseOp::HAS_ARG, "cmd",
+     "execute command (ignore some options)"},
+    {OptionKind::STATUS_LOG, 0, "status-log", OptParseOp::HAS_ARG, "file",
+     "write execution status to specified file (ignored in interactive mode or -e)"},
+    {OptionKind::FEATURE, 0, "feature", OptParseOp::NO_ARG, "show available features"},
+    {OptionKind::RC_FILE, 0, "rcfile", OptParseOp::HAS_ARG, "file",
+     "load specified rc file (only available interactive mode)"},
+    {OptionKind::QUIET, 0, "quiet", OptParseOp::NO_ARG,
+     "suppress startup message (only available interactive mode)"},
+    {OptionKind::SET_ARGS, 's', nullptr, OptParseOp::NO_ARG,
+     "set arguments and read command from standard input"},
+    {OptionKind::INTERACTIVE, 'i', nullptr, OptParseOp::NO_ARG, "run interactive mode"},
+    {OptionKind::NOEXEC, 'n', nullptr, OptParseOp::NO_ARG, "equivalent to `--compile-only' option"},
+    {OptionKind::XTRACE, 'x', nullptr, OptParseOp::NO_ARG, "trace execution of commands"},
 };
 
 enum class InvocationKind {
@@ -224,14 +251,10 @@ static int exec_interactive(DSState *state, const char *rcpath) {
 }
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionKind> parser = {
-#define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
   auto begin = argv + (argc > 0 ? 1 : 0);
   auto end = argv + argc;
-  opt::Result<OptionKind> result;
+  OptParseResult<OptionKind> result;
 
   InvocationKind invocationKind = InvocationKind::FROM_FILE;
   const char *evalText = nullptr;
@@ -251,15 +274,15 @@ int main(int argc, char **argv) {
   };
 
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionKind::DUMP_UAST:
-      dumpTarget[0].path = result.arg() != nullptr ? result.arg() : "";
+      dumpTarget[0].path = result.hasArg() ? result.getValue().data() : "";
       break;
     case OptionKind::DUMP_AST:
-      dumpTarget[1].path = result.arg() != nullptr ? result.arg() : "";
+      dumpTarget[1].path = result.hasArg() ? result.getValue().data() : "";
       break;
     case OptionKind::DUMP_CODE:
-      dumpTarget[2].path = result.arg() != nullptr ? result.arg() : "";
+      dumpTarget[2].path = result.hasArg() ? result.getValue().data() : "";
       break;
     case OptionKind::PARSE_ONLY:
       mode = DS_EXEC_MODE_PARSE_ONLY;
@@ -281,12 +304,11 @@ int main(int argc, char **argv) {
       fprintf(stdout, "%s\n", version());
       return 0;
     case OptionKind::HELP:
-      fprintf(stdout, "%s\n", version());
-      parser.printOption(stdout);
+      fprintf(stdout, "%s\n%s\n", version(), parser.formatUsage().c_str());
       return 0;
     case OptionKind::COMMAND:
       invocationKind = InvocationKind::FROM_STRING;
-      evalText = result.arg();
+      evalText = result.getValue().data();
       goto INIT;
     case OptionKind::NORC:
       rcfile = "";
@@ -297,13 +319,13 @@ int main(int argc, char **argv) {
       --begin;
       goto INIT;
     case OptionKind::STATUS_LOG:
-      statusLogPath = result.arg();
+      statusLogPath = result.getValue().data();
       break;
     case OptionKind::FEATURE:
       showFeature(stdout);
       return 0;
     case OptionKind::RC_FILE:
-      rcfile = result.arg();
+      rcfile = result.getValue().data();
       break;
     case OptionKind::QUIET:
       quiet = true;
@@ -319,9 +341,9 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), version());
-    parser.printOption(stderr);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n%s\n", result.formatError().c_str(), version(),
+            parser.formatUsage().c_str());
     return 1;
   }
 
