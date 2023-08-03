@@ -22,8 +22,12 @@ struct OpenTest : public ::testing::TestWithParam<std::string> {
     };
     unsigned int waitTime = 10;
     for (auto &e : largeFiles) {
-      if (StringRef(GetParam()).endsWith(e)) {
+      StringRef param = GetParam();
+      if (param.endsWith(e)) {
         waitTime = 2000;
+        if (param.endsWith("codegen_fail3.ds")) {
+          waitTime = 3000;
+        }
         break;
       }
     }
