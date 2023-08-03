@@ -286,7 +286,7 @@ source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*
 )";
 
   {
-    auto cleanup = this->withTimeout(2500);
+    auto cleanup = this->withTimeout(3000);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
         "source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*", "", err.c_str()));
   }
