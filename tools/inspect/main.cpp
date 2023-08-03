@@ -21,23 +21,21 @@
 #include <iostream>
 
 #include <misc/fatal.h>
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 
 #include "../platform/platform.h"
 #include <signals.h>
 
 using namespace ydsh;
 
-#define EACH_OPT(OP)                                                                               \
-  OP(OUT, "--out", opt::HAS_ARG, "specify output file. default is stdout")                         \
-  OP(OUT2, "-o", opt::HAS_ARG, "equivalent to '--out'")                                            \
-  OP(HELP, "--help", opt::NO_ARG, "show help message")                                             \
-  OP(HELP2, "-h", opt::NO_ARG, "equivalent to '--help'")
-
 enum class OptionSet : unsigned int {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  OUT,
+  HELP,
+};
+
+static constexpr OptParser<OptionSet>::Option options[] = {
+    {OptionSet::OUT, 'o', "out", OptParseOp::HAS_ARG, "specify output file. default is stdout"},
+    {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
 static std::ostream &format(std::ostream &stream) {
@@ -126,39 +124,32 @@ static void showInfo(std::ostream &stream) {
 }
 
 int main(int argc, char **argv) {
-  opt::Parser<OptionSet> parser = {
-#define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto parser = createOptParser(options);
 
-  const char *output = nullptr;
+  StringRef output;
 
   char **begin = argv + 1;
   char **end = argv + argc;
-  opt::Result<OptionSet> result;
+  OptParseResult<OptionSet> result;
   while ((result = parser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionSet::OUT:
-    case OptionSet::OUT2:
-      output = result.arg();
+      output = result.getValue();
       break;
     case OptionSet::HELP:
-    case OptionSet::HELP2:
-      parser.printOption(stdout);
+      printf("%s\n", parser.formatUsage().c_str());
       exit(0);
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n", result.formatError().c_str());
-    parser.printOption(stderr);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), parser.formatUsage().c_str());
     exit(1);
   }
 
-  if (output) {
-    std::ofstream stream(output);
+  if (!output.empty()) {
+    std::ofstream stream(output.toString());
     if (!stream) {
-      fatal_perror("cannot open file: %s", output);
+      fatal_perror("cannot open file: %s", output.toString().c_str());
     }
     showInfo(stream);
   } else {
