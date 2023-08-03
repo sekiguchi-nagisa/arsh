@@ -1,14 +1,14 @@
 
 # RUN: call $cmd --help
 
-#    CHECK: Options:
-# CHECK_RE:     --debounce-time arg    time deadline of re-build \(ms\)\. default is \d+
-#    CHECK:     --help                 show this help message
-#    CHECK:     --language-server      enable language server features (default)
-# CHECK_RE:     --log arg              specify log level \(debug, info, warning, error, fatal\)\. default is `.+'
-#    CHECK:     --test arg             run in test mode
-#    CHECK:     --test-open arg        run in test mode (explicitly open specified file)
-#    CHECK:     --wait-time arg        specify wait time (ms) for test-open mode, default is 10
+# CHECK: Options:
+# CHECK:   --log level           specify log level (debug, info, warning, error, fatal). default is `warning'
+# CHECK:   --language-server     enable language server features (default)
+# CHECK:   --debounce-time msec  time deadline of re-build (ms). default is 800
+# CHECK:   --test file           run in test mode
+# CHECK:   --test-open file      run in test mode (explicitly open specified file)
+# CHECK:   --wait-time msec      specify wait time (ms) for test-open mode, default is 10
+# CHECK:   -h, --help            show this help message
 
 # STATUS: 0
 

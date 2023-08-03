@@ -15,7 +15,7 @@
  */
 
 #include <misc/num_util.hpp>
-#include <misc/opt.hpp>
+#include <misc/opt_parser.hpp>
 
 #include "driver.h"
 
@@ -25,22 +25,29 @@ using namespace lsp;
 #define XSTR(E) #E
 #define STR(E) XSTR(E)
 
-#define EACH_OPT(OP)                                                                               \
-  OP(LOG, "--log", opt::HAS_ARG,                                                                   \
-     "specify log level (debug, info, warning, error, fatal). default is `warning'")               \
-  OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
-  OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
-  OP(DEBOUNCE_TIME, "--debounce-time", opt::HAS_ARG,                                               \
-     "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME))                     \
-  OP(TEST, "--test", opt::HAS_ARG, "run in test mode")                                             \
-  OP(TEST_OPEN, "--test-open", opt::HAS_ARG, "run in test mode (explicitly open specified file)")  \
-  OP(WAIT_TIME, "--wait-time", opt::HAS_ARG,                                                       \
-     "specify wait time (ms) for test-open mode, default is 10")
-
 enum class OptionKind {
-#define GEN_ENUM(E, S, F, D) E,
-  EACH_OPT(GEN_ENUM)
-#undef GEN_ENUM
+  LOG,
+  HELP,
+  LSP,
+  DEBOUNCE_TIME,
+  TEST,
+  TEST_OPEN,
+  WAIT_TIME,
+};
+
+static constexpr OptParser<OptionKind>::Option optOptions[] = {
+    {OptionKind::LOG, 0, "log", OptParseOp::HAS_ARG, "level",
+     "specify log level (debug, info, warning, error, fatal). default is `warning'"},
+    {OptionKind::LSP, 0, "language-server", OptParseOp::NO_ARG,
+     "enable language server features (default)"},
+    {OptionKind::DEBOUNCE_TIME, 0, "debounce-time", OptParseOp::HAS_ARG, "msec",
+     "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME)},
+    {OptionKind::TEST, 0, "test", OptParseOp::HAS_ARG, "file", "run in test mode"},
+    {OptionKind::TEST_OPEN, 0, "test-open", OptParseOp::HAS_ARG, "file",
+     "run in test mode (explicitly open specified file)"},
+    {OptionKind::WAIT_TIME, 0, "wait-time", OptParseOp::HAS_ARG, "msec",
+     "specify wait time (ms) for test-open mode, default is 10"},
+    {OptionKind::HELP, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
 };
 
 static LogLevel parseLogLevel(const char *value) {
@@ -56,47 +63,42 @@ static LogLevel parseLogLevel(const char *value) {
 }
 
 static DriverOptions parseOptions(int argc, char **argv) {
-  opt::Parser<OptionKind> optParser = {
-#define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
-      EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-  };
+  auto optParser = createOptParser(optOptions);
   auto begin = argv + (argc > 0 ? 1 : 0);
   auto end = argv + argc;
   const char *debounceTime = nullptr;
   const char *waitTime = nullptr;
-  opt::Result<OptionKind> result;
+  OptParseResult<OptionKind> result;
   DriverOptions options;
   while ((result = optParser(begin, end))) {
-    switch (result.value()) {
+    switch (result.getOpt()) {
     case OptionKind::LOG:
-      options.level = parseLogLevel(result.arg());
+      options.level = parseLogLevel(result.getValue().data());
       break;
     case OptionKind::HELP:
-      optParser.printOption(stdout);
+      printf("%s\n", optParser.formatUsage().c_str());
       exit(0);
     case OptionKind::LSP:
       options.lsp = true;
       break;
     case OptionKind::TEST:
       options.open = false;
-      options.testInput = result.arg();
+      options.testInput = result.getValue().data();
       break;
     case OptionKind::TEST_OPEN:
       options.open = true;
-      options.testInput = result.arg();
+      options.testInput = result.getValue().data();
       break;
     case OptionKind::DEBOUNCE_TIME:
-      debounceTime = result.arg();
+      debounceTime = result.getValue().data();
       break;
     case OptionKind::WAIT_TIME:
-      waitTime = result.arg();
+      waitTime = result.getValue().data();
       break;
     }
   }
-  if (result.error() != opt::END) {
-    fprintf(stderr, "%s\n", result.formatError().c_str());
-    optParser.printOption(stderr);
+  if (result.isError()) {
+    fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), optParser.formatUsage().c_str());
     exit(1);
   }
   if (debounceTime) {
