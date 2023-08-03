@@ -32,9 +32,9 @@ class FormatterFactory {
 private:
   std::reference_wrapper<const StyleMap> styleMap;
 
-  std::unordered_map<std::string, FormatterType> supportedFormats; // name to actual formatter type
+  StrRefMap<FormatterType> supportedFormats; // name to actual formatter type
 
-  std::string formatName{"ansi"};
+  StringRef formatName{"ansi"};
 
   StringRef styleName{DEFAULT_STYLE_NAME};
 
@@ -53,7 +53,7 @@ public:
 
   const auto &getSupportedFormats() const { return this->supportedFormats; }
 
-  void setFormatName(std::string &&name) { this->formatName = std::move(name); }
+  void setFormatName(StringRef name) { this->formatName = name; }
 
   void setStyleName(StringRef name) { this->styleName = name; }
 

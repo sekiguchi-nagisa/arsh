@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
       outputFileName = result.getValue();
       break;
     case OptionSet::FORMAT:
-      factory.setFormatName(result.getValue().toString());
+      factory.setFormatName(result.getValue());
       break;
     case OptionSet::STYLE:
       factory.setStyleName(result.getValue());
