@@ -578,7 +578,7 @@ Options:
   -s style             specify highlighter color style (default is `darcula' style)
   -l                   show supported formatters/styles
   --html-full          generate self-contained html (for html formatter)
-  --html-lineno [num]  emit line number starts with NUM (for html formatter)
+  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
   -h, --help           show help message
@@ -596,7 +596,7 @@ Options:
   -s style             specify highlighter color style (default is `darcula' style)
   -l                   show supported formatters/styles
   --html-full          generate self-contained html (for html formatter)
-  --html-lineno [num]  emit line number starts with NUM (for html formatter)
+  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
   -h, --help           show help message
@@ -613,7 +613,7 @@ Options:
   -s style             specify highlighter color style (default is `darcula' style)
   -l                   show supported formatters/styles
   --html-full          generate self-contained html (for html formatter)
-  --html-lineno [num]  emit line number starts with NUM (for html formatter)
+  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
   -h, --help           show help message

@@ -28,7 +28,7 @@ class OptParseResult {
 public:
   static_assert(std::is_enum_v<T>, "must be enum type");
 
-  enum Status : unsigned char {
+  enum class Status : unsigned char {
     OK,        // recognize option
     OK_ARG,    // recognize option and argument
     UNDEF,     // undefined option
@@ -136,55 +136,84 @@ public:
 
     unsigned int getUsageLen() const {
       unsigned int ret = 0;
-      if (this->shortOptName) {
-        ret += 2; // '-s'
-      }
-      if (!this->longOptName.empty()) {
-        if (ret) { // ', '
-          ret += 2;
-        }
-        ret += 2; // --long
-        ret += this->longOptName.size();
-      }
       switch (this->op) {
       case OptParseOp::NO_ARG:
-        break;
       case OptParseOp::HAS_ARG:
-      case OptParseOp::OPT_ARG:
-        ret++;
-        ret += strlen(this->argName); // arg
-        if (this->op == OptParseOp::OPT_ARG) {
-          ret += 2; // [arg]
+        if (this->shortOptName) {
+          ret += 2; // -s
+        }
+        if (!this->longOptName.empty()) {
+          if (ret) { // ', '
+            ret += 2;
+          }
+          ret += 2; // --long
+          ret += this->longOptName.size();
+        }
+        if (this->op == OptParseOp::HAS_ARG) { // -v arg
+          ret++;
+          ret += strlen(this->argName);
         }
         break;
+      case OptParseOp::OPT_ARG: { // -s[arg], --long[=arg]
+        const auto len = strlen(this->argName);
+        if (this->shortOptName) { // -s[arg]
+          ret += 4;
+          ret += len;
+        }
+        if (!this->longOptName.empty()) { // --long[=arg]
+          if (ret) {                      // ', '
+            ret += 2;
+          }
+          ret += 2;
+          ret += this->longOptName.size();
+          ret += 3;
+          ret += len;
+        }
+        break;
+      }
       }
       return ret;
     }
 
     std::string getUsage() const {
       std::string ret;
-      if (this->shortOptName) {
-        ret += '-';
-        ret += this->shortOptName;
-      }
-      if (!this->longOptName.empty()) {
-        if (!ret.empty()) {
-          ret += ", ";
-        }
-        ret += "--";
-        ret += this->longOptName;
-      }
       switch (this->op) {
       case OptParseOp::NO_ARG:
-        break;
       case OptParseOp::HAS_ARG:
-        ret += ' ';
-        ret += this->argName;
+        if (this->shortOptName) {
+          ret += '-'; // -s
+          ret += this->shortOptName;
+        }
+        if (!this->longOptName.empty()) {
+          if (!ret.empty()) { // ', '
+            ret += ", ";
+          }
+          ret += "--"; // --long
+          ret += this->longOptName;
+        }
+        if (this->op == OptParseOp::HAS_ARG) { // -v arg
+          ret += ' ';
+          ret += this->argName;
+        }
         break;
       case OptParseOp::OPT_ARG:
-        ret += " [";
-        ret += this->argName;
-        ret += ']';
+        if (this->shortOptName) { // -s[arg]
+          ret += '-';
+          ret += this->shortOptName;
+          ret += '[';
+          ret += this->argName;
+          ret += ']';
+        }
+        if (!this->longOptName.empty()) { // --long[=arg]
+          if (!ret.empty()) {             // ', '
+            ret += ", ";
+          }
+          ret += "--";
+          ret += this->longOptName;
+          ret += "[=";
+          ret += this->argName;
+          ret += ']';
+        }
         break;
       }
       return ret;
@@ -258,6 +287,7 @@ OptParseResult<T> OptParser<T>::operator()(Iter &begin, Iter end) {
     assert(arg[0] == '-' && arg.size() > 1);
     this->remain = arg;
     this->remain.removePrefix(1);
+    ++begin;
   }
   return this->matchShortOption(begin, end);
 }
@@ -287,30 +317,18 @@ OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
         StringRef v = longName;
         v.removePrefix(option.longOptName.size());
         if (v.empty()) { // --long arg
-          if (begin != end) {
+          if (option.op == OptParseOp::OPT_ARG) {
+            return OptParseResult<T>::ok(option.kind);
+          } else if (begin != end) {
             StringRef next = *begin;
-            if (option.op == OptParseOp::OPT_ARG && next.startsWith("-") &&
-                next != "-") { // --long -v
-              return OptParseResult<T>::ok(option.kind);
-            }
             ++begin;
             return OptParseResult<T>::ok(option.kind, next);
-          } else if (option.op == OptParseOp::OPT_ARG) {
-            return OptParseResult<T>::ok(option.kind);
           } else {
             return OptParseResult<T>::needArg(option.kind, longName);
           }
         } else if (v[0] == '=') { // --long=arg
           v.removePrefix(1);
-          if (!v.empty()) {
-            return OptParseResult<T>::ok(option.kind, v);
-          } else if (option.op == OptParseOp::OPT_ARG) {
-            return OptParseResult<T>::ok(option.kind);
-          } else {
-            auto pos = longName.find('=');
-            longName = longName.slice(0, pos);
-            return OptParseResult<T>::needArg(option.kind, longName);
-          }
+          return OptParseResult<T>::ok(option.kind, v);
         } else { // no match
           --begin;
         }
@@ -335,25 +353,24 @@ OptParseResult<T> OptParser<T>::matchShortOption(Iter &begin, Iter end) {
       continue;
     }
     this->remain.removePrefix(1);
-    if (this->remain.empty()) {
-      ++begin;
-    }
     switch (option.op) {
     case OptParseOp::NO_ARG:
       return OptParseResult<T>::ok(option.kind);
-    case OptParseOp::HAS_ARG:
-    case OptParseOp::OPT_ARG:
-      if (this->remain.empty() && begin != end) {
+    case OptParseOp::HAS_ARG: // -s arg
+      if (begin != end) {
         StringRef next = *begin;
-        if (option.op == OptParseOp::OPT_ARG && next.startsWith("-") && next != "-") {
-          return OptParseResult<T>::ok(option.kind);
-        }
         ++begin;
         return OptParseResult<T>::ok(option.kind, next);
-      } else if (option.op == OptParseOp::OPT_ARG) {
-        return OptParseResult<T>::ok(option.kind);
       } else {
         return OptParseResult<T>::needArg(option.kind, shortName);
+      }
+    case OptParseOp::OPT_ARG: // -sarg
+      if (this->remain.empty()) {
+        return OptParseResult<T>::ok(option.kind);
+      } else {
+        StringRef next = this->remain;
+        this->remain = "";
+        return OptParseResult<T>::ok(option.kind, next);
       }
     }
   }
