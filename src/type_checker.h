@@ -408,7 +408,7 @@ protected:
                           const DSType *unacceptableType, CoercionKind &kind);
 
 private:
-  TypeOrError toType(TypeNode &node);
+  const DSType *toType(TypeNode &node);
 
   const DSType *getRequiredType() const { return this->requiredTypes.back(); }
 

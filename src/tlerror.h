@@ -25,9 +25,14 @@ class TypeLookupError {
 private:
   const char *kind;
   CStrPtr message;
+  unsigned int elementIndex{0}; // for invalid type element
 
 public:
   TypeLookupError(const char *kind, CStrPtr &&message) : kind(kind), message(std::move(message)) {}
+
+  void setElementIndex(unsigned int index) { this->elementIndex = index; }
+
+  unsigned int getElementIndex() const { return this->elementIndex; }
 
   ~TypeLookupError() = default;
 

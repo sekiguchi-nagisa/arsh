@@ -28,7 +28,7 @@ namespace ydsh {
 // ##     TypeChecker     ##
 // #########################
 
-TypeOrError TypeChecker::toType(TypeNode &node) {
+const DSType *TypeChecker::toType(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
@@ -38,7 +38,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     if (ret) {
       auto handle = std::move(ret).take();
       typeNode.setHandle(handle);
-      return Ok(&this->typePool().get(handle->getTypeId()));
+      return &this->typePool().get(handle->getTypeId());
     }
     auto *type = this->typePool().getType(typeNode.getTokenText());
     if (!type) {
@@ -49,9 +49,9 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
         addSuggestionSuffix(suffix, suggestion);
       }
       this->reportError<UndefinedType>(typeNode, typeName.c_str(), suffix.c_str());
-      return Err(std::unique_ptr<TypeLookupError>());
+      break;
     }
-    return Ok(type);
+    return type;
   }
   case TypeNode::Qualified: {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
@@ -60,8 +60,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     auto ret = this->curScope->lookupField(this->typePool(), recvType, typeName);
     if (ret) {
       qualifiedNode.getNameTypeNode().setHandle(ret.asOk());
-      auto &resolved = this->typePool().get(ret.asOk()->getTypeId());
-      return Ok(&resolved);
+      return &this->typePool().get(ret.asOk()->getTypeId());
     } else {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       switch (ret.asErr()) {
@@ -84,7 +83,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       case NameLookupError::UNCAPTURE_FIELD:
         break; // unreachable
       }
-      return Err(std::unique_ptr<TypeLookupError>());
+      break;
     }
   }
   case TypeNode::Reified: {
@@ -92,14 +91,24 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     unsigned int size = typeNode.getElementTypeNodes().size();
     auto tempOrError = this->typePool().getTypeTemplate(typeNode.getTemplate()->getTokenText());
     if (!tempOrError) {
-      return Err(std::move(tempOrError).takeError());
+      this->reportError(typeNode.getToken(), std::move(*tempOrError.asErr()));
+      break;
     }
     auto typeTemplate = std::move(tempOrError).take();
     std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);
     }
-    return this->typePool().createReifiedType(*typeTemplate, std::move(elementTypes));
+    auto typeOrError = this->typePool().createReifiedType(*typeTemplate, std::move(elementTypes));
+    if (!typeOrError) {
+      Token token = node.getToken();
+      if (auto &e = typeOrError.asErr(); StringRef(e->getKind()) == InvalidElement::kind) {
+        token = typeNode.getElementTypeNodes()[e->getElementIndex()]->getToken();
+      }
+      this->reportError(token, std::move(*typeOrError.asErr()));
+      break;
+    }
+    return typeOrError.asOk();
   }
   case TypeNode::Func: {
     auto &typeNode = cast<FuncTypeNode>(node);
@@ -109,14 +118,22 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     for (unsigned int i = 0; i < size; i++) {
       paramTypes[i] = &this->checkTypeExactly(*typeNode.getParamTypeNodes()[i]);
     }
-    return this->typePool().createFuncType(returnType, std::move(paramTypes));
+    auto typeOrError = this->typePool().createFuncType(returnType, std::move(paramTypes));
+    if (!typeOrError) {
+      Token token = node.getToken();
+      if (auto &e = typeOrError.asErr(); StringRef(e->getKind()) == InvalidElement::kind) {
+        token = typeNode.getParamTypeNodes()[e->getElementIndex()]->getToken();
+      }
+      this->reportError(token, std::move(*typeOrError.asErr()));
+      break;
+    }
+    return typeOrError.asOk();
   }
   case TypeNode::TypeOf:
     auto &typeNode = cast<TypeOfNode>(node);
-    auto &type = this->checkTypeAsSomeExpr(typeNode.getExprNode());
-    return Ok(&type);
+    return &this->checkTypeAsSomeExpr(typeNode.getExprNode());
   }
-  return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
+  return nullptr;
 }
 
 static bool checkCoercion(TypePool &pool, const DSType &requiredType, const DSType &targetType) {
@@ -657,13 +674,8 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
 
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
-  auto ret = this->toType(node);
-  if (ret) {
-    node.setType(*std::move(ret).take());
-  } else {
-    if (ret.asErr()) {
-      this->reportError(node.getToken(), std::move(*ret.asErr()));
-    }
+  if (auto ret = this->toType(node)) {
+    node.setType(*ret);
   }
 }
 

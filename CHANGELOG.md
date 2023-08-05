@@ -30,6 +30,8 @@
     - ``MODULE_HOME`` indicates ``XDG_DATA_HOME/modules``
     - ``MODULE_DIR`` indicates ``DATA_DIR/modules``
     - completion script directory indicates ``DATA_DIR/completions``
+- improve error message of type lookup errors
+    - report correct position of invalid type elements
 
 #### Builtin
 

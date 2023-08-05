@@ -230,6 +230,13 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   return Ok(type);
 }
 
+static std::unique_ptr<TypeLookupError> createInvalidElementError(unsigned int index,
+                                                                  const char *name) {
+  auto error = createTLError<InvalidElement>(name);
+  error->setElementIndex(index);
+  return error;
+}
+
 TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementTypes) {
   if (elementTypes.size() != 1) {
     unsigned int size = elementTypes.size();
@@ -237,7 +244,7 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
   }
   auto *elementType = elementTypes[0];
   if (elementType->isVoidType()) {
-    RAISE_TL_ERROR(InvalidElement, elementType->getName());
+    return Err(createInvalidElementError(0, elementType->getName()));
   } else if (elementType->isOptionType()) {
     return Ok(elementType);
   }
@@ -642,10 +649,12 @@ TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &eleme
   if (elementTypes.size() > limit) {
     RAISE_TL_ERROR(ElementLimit);
   }
+  unsigned int index = 0;
   for (auto &type : elementTypes) {
     if (type->isVoidType() || type->isNothingType() || type->isUnresolved()) {
-      RAISE_TL_ERROR(InvalidElement, type->getName());
+      return Err(createInvalidElementError(index, type->getName()));
     }
+    index++;
   }
   return Ok(static_cast<DSType *>(nullptr));
 }
@@ -668,7 +677,7 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
     if (acceptType->is(TYPE::Any) && elementType->isOptionType()) {
       continue;
     }
-    RAISE_TL_ERROR(InvalidElement, elementType->getName());
+    return Err(createInvalidElementError(i, elementType->getName()));
   }
   return Ok(static_cast<DSType *>(nullptr));
 }
