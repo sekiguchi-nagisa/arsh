@@ -278,7 +278,7 @@ bool DSValue::opInterp(StrBuilder &builder) const {
     case ObjectKind::Base: {
       auto &obj = typeAs<BaseObject>(*this);
       assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
-             builder.getState().typePool.get(this->getTypeID()).isRecordType());
+             builder.getState().typePool.get(this->getTypeID()).isRecordOrDerived());
       unsigned int size = obj.getFieldSize();
       unsigned int count = 0;
       for (unsigned int i = 0; i < size; i++) {
@@ -506,7 +506,7 @@ bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
     }
     return builder.add(")");
   } else {
-    assert(type.isRecordType());
+    assert(type.isRecordOrDerived());
     auto &recordType = cast<RecordType>(type);
     TRY(builder.add("{"));
     unsigned int size = this->getFieldSize();

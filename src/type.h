@@ -47,7 +47,8 @@ enum class TYPE : unsigned int {
   Void,
   Nothing,
 
-  Value_, // super type of value type(int, float, bool, string). not directly used it.
+  Value_,  // super type of value type(int, float, bool, string). not directly use it.
+  ArgDef_, // super type of record type with arg attribute. not directly use it.
 
   Int,
   Float,
@@ -95,12 +96,14 @@ enum class TYPE : unsigned int {
 #define EACH_TYPE_KIND(OP)                                                                         \
   OP(Function)                                                                                     \
   OP(Builtin)                                                                                      \
+  OP(ArgParser)                                                                                    \
   OP(Array)                                                                                        \
   OP(Map)                                                                                          \
   OP(Tuple)                                                                                        \
   OP(Option)                                                                                       \
   OP(Error)                                                                                        \
   OP(Record)                                                                                       \
+  OP(ArgsRecord)                                                                                   \
   OP(Mod)
 
 enum class TypeKind : unsigned char {
@@ -173,15 +176,23 @@ public:
   bool isNothingType() const { return this->is(TYPE::Nothing); }
 
   bool isBuiltinOrDerived() const {
-    auto k = this->typeKind();
-    return static_cast<unsigned int>(k) >= static_cast<unsigned int>(TypeKind::Builtin) &&
-           static_cast<unsigned int>(k) <= static_cast<unsigned int>(TypeKind::Tuple);
+    auto k = static_cast<std::underlying_type_t<TypeKind>>(this->typeKind());
+    return k >= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Builtin) &&
+           k <= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Tuple);
+  }
+
+  bool isRecordOrDerived() const {
+    auto k = static_cast<std::underlying_type_t<TypeKind>>(this->typeKind());
+    return k >= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Record) &&
+           k <= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::ArgsRecord);
   }
 
   /**
    * if this type is FunctionType, return true.
    */
   bool isFuncType() const { return this->typeKind() == TypeKind::Function; }
+
+  bool isArgParserType() const { return this->typeKind() == TypeKind::ArgParser; }
 
   bool isArrayType() const { return this->typeKind() == TypeKind::Array; }
 
@@ -193,7 +204,7 @@ public:
 
   bool isModType() const { return this->typeKind() == TypeKind::Mod; }
 
-  bool isRecordType() const { return this->typeKind() == TypeKind::Record; }
+  bool isArgsRecordType() const { return this->typeKind() == TypeKind::ArgsRecord; }
 
   /**
    * get super type of this type.
@@ -228,11 +239,6 @@ public:
    * otherwise, return 0
    */
   ModId resolveBelongedModId() const;
-
-  bool isUserDefinedType() const {
-    return this->isRecordType() || /* fast path (mod id of record type is always not 0)*/
-           !isBuiltinMod(this->resolveBelongedModId());
-  }
 
   /**
    * if type is not number type, return -1.
@@ -619,11 +625,15 @@ private:
    */
   std::unordered_map<std::string, HandlePtr> handleMap;
 
-public:
-  RecordType(unsigned int id, StringRef ref, const DSType &superType)
-      : DSType(TypeKind::Record, id, ref, &superType) {
+protected:
+  RecordType(TypeKind k, unsigned int id, StringRef ref, const DSType &superType)
+      : DSType(k, id, ref, &superType) {
     this->meta.u32 = 0;
   }
+
+public:
+  RecordType(unsigned int id, StringRef ref, const DSType &superType)
+      : RecordType(TypeKind::Record, id, ref, superType) {}
 
   const auto &getHandleMap() const { return this->handleMap; }
 
@@ -633,16 +643,48 @@ public:
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
-  static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Record; }
+  static bool classof(const DSType *type) { return type->isRecordOrDerived(); }
 
-private:
-  void finalize(const DSType &superType, unsigned char fieldSize,
-                std::unordered_map<std::string, HandlePtr> &&handles) {
+protected:
+  void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles) {
     this->handleMap = std::move(handles);
     this->meta.u16_2.v1 = fieldSize;
     this->meta.u16_2.v2 = 1; // finalize
-    this->superType = &superType;
   }
+};
+
+class ArgEntry;
+
+class ArgsRecordType : public RecordType {
+private:
+  friend class TypePool;
+
+  std::vector<ArgEntry> entries;
+
+public:
+  ArgsRecordType(unsigned int id, StringRef ref, const DSType &superType);
+
+  const auto &getEntries() const { return this->entries; }
+
+  static bool classof(const DSType *type) { return type->isArgsRecordType(); }
+
+private:
+  void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles,
+                std::vector<ArgEntry> &&args);
+};
+
+class ArgParserType : public BuiltinType {
+private:
+  const ArgsRecordType &elementType;
+
+public:
+  ArgParserType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
+                const ArgsRecordType &type)
+      : BuiltinType(TypeKind::Array, id, ref, &superType, info), elementType(type) {}
+
+  const ArgsRecordType &getElementType() const { return this->elementType; }
+
+  static bool classof(const DSType *type) { return type->isArgParserType(); }
 };
 
 enum class ImportedModKind : unsigned char {

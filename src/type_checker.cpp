@@ -1054,7 +1054,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         !this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(
             exprType)) { // call __STR__ or __CMD__ARG
       if (exprType.isArrayType() || exprType.isMapType() || exprType.isTupleType() ||
-          exprType.isRecordType() || exprType.is(TYPE::Any)) {
+          exprType.isRecordOrDerived() || exprType.is(TYPE::Any)) {
         node.setType(this->typePool().get(TYPE::StringArray));
       } else if (auto *handle = this->typePool().lookupMethod(exprType, OP_STR)) {
         node.setHandle(handle);
@@ -2035,7 +2035,7 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
     }
   } else if (node.isConstructor()) {
-    if (auto *type = node.getResolvedType(); type && type->isRecordType()) {
+    if (auto *type = node.getResolvedType(); type && type->isRecordOrDerived()) {
       auto ret = this->curScope->defineConstructor(this->typePool(), cast<RecordType>(*type),
                                                    paramTypes, std::move(packed));
       assert(ret && ret.asOk()->isMethodHandle());
@@ -2157,7 +2157,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
     }
     handles.emplace(e.first, std::move(handle));
   }
-  assert(node.getResolvedType()->isRecordType());
+  assert(node.getResolvedType()->isRecordOrDerived());
   auto typeOrError = this->typePool().finalizeRecordType(cast<RecordType>(*node.getResolvedType()),
                                                          std::move(handles));
   if (!typeOrError) {
@@ -2398,7 +2398,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   case CodeCompNode::MEMBER: {
     assert(node.getExprNode());
     auto &recvType = this->checkTypeAsExpr(*node.getExprNode());
-    if (recvType.isRecordType() && !cast<RecordType>(recvType).isFinalized()) {
+    if (recvType.isRecordOrDerived() && !cast<RecordType>(recvType).isFinalized()) {
       break; // ignore non-finalized record type
     }
     this->ccHandler->addMemberRequest(recvType,

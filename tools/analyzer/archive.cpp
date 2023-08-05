@@ -45,6 +45,10 @@ void Archiver::add(const DSType &type) {
     }
     case TypeKind::Builtin:
       break; // unreachable
+    case TypeKind::ArgParser:
+      this->writeT(ArchiveType::ARG_PARSER);
+      this->add(cast<ArrayType>(type).getElementType());
+      break;
     case TypeKind::Array:
       this->writeT(ArchiveType::ARRAY);
       this->add(cast<ArrayType>(type).getElementType());
@@ -88,6 +92,7 @@ void Archiver::add(const DSType &type) {
       }
       break;
     case TypeKind::Record:
+    case TypeKind::ArgsRecord: // FIXME: serialize ArgEntry
       if (auto iter = this->udTypeSet.find(type.typeId()); iter != this->udTypeSet.end()) {
         this->writeT(ArchiveType::CACHED);
         this->writeStr(type.getNameRef());
@@ -220,6 +225,11 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::PREDEFINED: {
     uint32_t id = this->read8();
     return &this->pool.get(id);
+  }
+  case ArchiveType::ARG_PARSER: {
+    auto *type = TRY(this->unpackType());
+    auto ret = TRY(this->pool.createArgParserType(*type));
+    return type; // FIXME:
   }
   case ArchiveType::ARRAY: {
     auto *type = TRY(this->unpackType());

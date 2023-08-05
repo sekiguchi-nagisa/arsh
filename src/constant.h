@@ -199,6 +199,7 @@ constexpr const char *MAP_LIMIT_ERROR = "reach Map size limit";
 
 // =====  generic type name  =====
 
+constexpr const char *TYPE_ARG_PARSER = "ArgParser";
 constexpr const char *TYPE_ARRAY = "Array";
 constexpr const char *TYPE_MAP = "Map";
 constexpr const char *TYPE_TUPLE = "Tuple";

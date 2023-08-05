@@ -202,6 +202,8 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
     switch (infos[index++]) {
       EACH_HANDLE_INFO_TYPE(GEN_CASE)
       return true;
+    case HandleInfo::ArgParser:
+      return getNum(infos, index) == 1 && isType(infos, index);
     case HandleInfo::Array:
       return getNum(infos, index) == 1 && isType(infos, index);
     case HandleInfo::Map:

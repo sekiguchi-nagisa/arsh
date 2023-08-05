@@ -17,6 +17,7 @@
 #include <array>
 #include <cstdarg>
 
+// #include "arg_parser_base.h"
 #include "misc/num_util.hpp"
 #include "tcerror.h"
 #include "type_pool.h"
@@ -43,6 +44,7 @@ HandlePtr DSType::lookupField(const TypePool &pool, const std::string &fieldName
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
   case TypeKind::Record:
+  case TypeKind::ArgsRecord:
     return cast<RecordType>(this)->lookupField(fieldName);
   case TypeKind::Mod:
     return cast<ModType>(this)->lookup(pool, fieldName);
@@ -62,6 +64,7 @@ void DSType::walkField(const TypePool &pool,
     }
     break;
   case TypeKind::Record:
+  case TypeKind::ArgsRecord:
     for (auto &e : cast<RecordType>(this)->getHandleMap()) {
       if (!walker(e.first, *e.second)) {
         return;
@@ -97,6 +100,11 @@ void DSType::walkField(const TypePool &pool,
 std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
   std::vector<const DSType *> ret;
   switch (this->typeKind()) {
+  case TypeKind::ArgParser: {
+    auto &type = cast<ArgParserType>(*this);
+    ret.push_back(&type.getElementType());
+    break;
+  }
   case TypeKind::Array: {
     auto &type = cast<ArrayType>(*this);
     ret.push_back(&type.getElementType());
@@ -160,7 +168,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
 }
 
 ModId DSType::resolveBelongedModId() const {
-  if (this->typeKind() != TypeKind::Record && this->typeKind() != TypeKind::Error) {
+  if (!this->isRecordOrDerived() && this->typeKind() != TypeKind::Error) {
     return BUILTIN_MOD_ID; // fast path
   }
   if (auto ref = this->getNameRef(); isQualifiedTypeName(this->getNameRef())) {
@@ -217,6 +225,22 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
     return nullptr;
   }
   return iter->second;
+}
+
+// ############################
+// ##     ArgsRecordType     ##
+// ############################
+
+class ArgEntry {}; // dummy
+
+ArgsRecordType::ArgsRecordType(unsigned int id, ydsh::StringRef ref, const ydsh::DSType &superType)
+    : RecordType(TypeKind::ArgsRecord, id, ref, superType) {}
+
+void ArgsRecordType::finalize(unsigned char fieldSize,
+                              std::unordered_map<std::string, HandlePtr> &&handles,
+                              std::vector<ArgEntry> &&args) {
+  RecordType::finalize(fieldSize, std::move(handles));
+  this->entries = std::move(args);
 }
 
 // #####################

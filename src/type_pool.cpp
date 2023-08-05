@@ -49,6 +49,7 @@ TypePool::TypePool() {
    * hidden from script.
    */
   this->initBuiltinType(TYPE::Value_, "Value%%", true, TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::ArgDef_, "ArgDef%%", true, TYPE::Any, info_Dummy());
 
   this->initBuiltinType(TYPE::Int, "Int", false, TYPE::Value_, info_IntType());
   this->initBuiltinType(TYPE::Float, "Float", false, TYPE::Value_, info_FloatType());
@@ -68,6 +69,8 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
 
   // initialize type template
+  this->initTypeTemplate(this->argParserTemplate, TYPE_ARG_PARSER, {&this->get(TYPE::ArgDef_)},
+                         info_ArgParserType());
   this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, {&this->get(TYPE::Any)},
                          info_ArrayType());
   this->initTypeTemplate(this->mapTemplate, TYPE_MAP,
@@ -81,9 +84,7 @@ TypePool::TypePool() {
 
   // init string array type(for command argument)
   {
-    std::vector<const DSType *> types = {&this->get(TYPE::String)};
-    auto checked =
-        this->createReifiedType(this->getArrayTemplate(), std::move(types)); // TYPE::StringArray
+    auto checked = this->createArrayType(this->get(TYPE::String)); // TYPE::StringArray
     (void)checked;
     assert(checked);
   }
@@ -204,7 +205,15 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    if (this->arrayTemplate.getName() == typeTemplate.getName()) {
+    if (this->argParserTemplate.getName() == typeTemplate.getName()) {
+      assert(isa<ArgsRecordType>(*elementTypes[0]));
+      auto *argParserType =
+          this->newType<ArgParserType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
+                                       cast<ArgsRecordType>(*elementTypes[0]));
+      assert(argParserType);
+      this->registerHandles(*argParserType);
+      type = argParserType;
+    } else if (this->arrayTemplate.getName() == typeTemplate.getName()) {
       auto *arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
                                                  this->get(TYPE::Any), *elementTypes[0]);
       assert(arrayType);
@@ -322,7 +331,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   }
   auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
   assert(!newRecordType->isFinalized());
-  newRecordType->finalize(this->get(TYPE::Any), fieldCount, std::move(handles));
+  newRecordType->finalize(fieldCount, std::move(handles));
   return Ok(newRecordType);
 }
 
@@ -400,6 +409,14 @@ TypeOrError TypeDecoder::decode() {
     return Ok(&this->pool.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
+  case HandleInfo::ArgParser: {
+    auto &t = this->pool.getArgParserTemplate();
+    unsigned int size = this->decodeNum();
+    assert(size == 1);
+    std::vector<const DSType *> elementTypes(size);
+    elementTypes[0] = TRY(decode());
+    return this->pool.createReifiedType(t, std::move(elementTypes));
+  }
   case HandleInfo::Array: {
     auto &t = this->pool.getArrayTemplate();
     unsigned int size = this->decodeNum();
@@ -564,8 +581,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
     str += elementTypes[1]->getNameRef();
     str += "]";
     return str;
-  } else {
-    assert(typeTemplate == this->getOptionTemplate());
+  } else if (typeTemplate == this->getOptionTemplate()) {
     auto *type = elementTypes[0];
     std::string str;
     if (type->isFuncType()) {
@@ -576,6 +592,18 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
       str += ")";
     }
     str += "?";
+    return str;
+  } else {
+    std::string str = typeTemplate.getName();
+    str += '<';
+    unsigned int c = 0;
+    for (auto &e : elementTypes) {
+      if (c++ > 0) {
+        str += ", ";
+      }
+      str += e->getNameRef();
+    }
+    str += '>';
     return str;
   }
 }

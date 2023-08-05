@@ -120,6 +120,7 @@ private:
   StrRefMap<unsigned int> nameMap;
 
   // for reified type
+  TypeTemplate argParserTemplate;
   TypeTemplate arrayTemplate;
   TypeTemplate mapTemplate;
   TypeTemplate tupleTemplate;  // pseudo template
@@ -154,6 +155,8 @@ public:
    */
   const DSType *getType(StringRef typeName) const;
 
+  const TypeTemplate &getArgParserTemplate() const { return this->argParserTemplate; }
+
   const TypeTemplate &getArrayTemplate() const { return this->arrayTemplate; }
 
   const TypeTemplate &getMapTemplate() const { return this->mapTemplate; }
@@ -168,6 +171,10 @@ public:
 
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,
                                 std::vector<const DSType *> &&elementTypes);
+
+  TypeOrError createArgParserType(const DSType &elementType) {
+    return this->createReifiedType(this->getArgParserTemplate(), {&elementType});
+  }
 
   TypeOrError createArrayType(const DSType &elementType) {
     return this->createReifiedType(this->getArrayTemplate(), {&elementType});
