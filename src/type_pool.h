@@ -130,7 +130,7 @@ private:
   /**
    * for type template
    */
-  std::unordered_map<std::string, const TypeTemplate *> templateMap;
+  StrRefMap<const TypeTemplate *> templateMap;
 
   using MethodMap = std::unordered_map<Key, Value, Hash>;
 
@@ -165,7 +165,7 @@ public:
 
   const TypeTemplate &getOptionTemplate() const { return this->optionTemplate; }
 
-  TypeTempOrError getTypeTemplate(const std::string &typeName) const;
+  TypeTempOrError getTypeTemplate(StringRef typeName) const;
 
   const auto &getTemplateMap() const { return this->templateMap; }
 
@@ -331,7 +331,7 @@ private:
   void initBuiltinType(TYPE t, const char *typeName, bool extendible, const DSType *super,
                        native_type_info_t info);
 
-  void initTypeTemplate(TypeTemplate &temp, const char *typeName,
+  void initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
                         std::vector<const DSType *> &&elementTypes, native_type_info_t info);
 
   void initErrorType(TYPE t, const char *typeName);

@@ -338,6 +338,24 @@ void Handle::destroy() {
   }
 }
 
+const char *TypeTemplate::getName() const {
+  switch (this->kind) {
+  case Kind::ArgParser:
+    return TYPE_ARG_PARSER;
+  case Kind::Array:
+    return TYPE_ARRAY;
+  case Kind::Map:
+    return TYPE_MAP;
+  case Kind::Tuple:
+    return TYPE_TUPLE;
+  case Kind::Option:
+    return TYPE_OPTION;
+  case Kind::Func:
+    return TYPE_FUNC;
+  }
+  return nullptr;
+}
+
 // ##########################
 // ##     MethodHandle     ##
 // ##########################

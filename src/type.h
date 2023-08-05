@@ -883,25 +883,33 @@ inline T *constructType(Arg &&...arg) {
  * ReifiedType template.
  */
 class TypeTemplate {
-private:
-  std::string name;
+public:
+  enum class Kind : unsigned char {
+#define GEN_ENUM(E) E,
+    EACH_HANDLE_INFO_TYPE_TEMP(GEN_ENUM) EACH_HANDLE_INFO_FUNC_TYPE(GEN_ENUM)
+#undef GEN_ENUM
+  };
 
+private:
   std::vector<const DSType *> acceptableTypes;
 
-  native_type_info_t info;
+  Kind kind{};
+
+  native_type_info_t info{};
 
 public:
   TypeTemplate() = default;
 
-  TypeTemplate(std::string &&name, std::vector<const DSType *> &&elementTypes,
-               native_type_info_t info)
-      : name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {}
+  TypeTemplate(Kind k, std::vector<const DSType *> &&elementTypes, native_type_info_t info)
+      : acceptableTypes(std::move(elementTypes)), kind(k), info(info) {}
 
   ~TypeTemplate() = default;
 
-  bool operator==(const TypeTemplate &o) const { return this->name == o.name; }
+  bool operator==(const TypeTemplate &o) const { return this->kind == o.kind; }
 
-  const std::string &getName() const { return this->name; }
+  const char *getName() const;
+
+  Kind getKind() const { return this->kind; }
 
   unsigned int getElementTypeSize() const { return this->acceptableTypes.size(); }
 

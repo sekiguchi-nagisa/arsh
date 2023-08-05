@@ -69,18 +69,18 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
 
   // initialize type template
-  this->initTypeTemplate(this->argParserTemplate, TYPE_ARG_PARSER, {&this->get(TYPE::ArgDef_)},
-                         info_ArgParserType());
-  this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, {&this->get(TYPE::Any)},
+  this->initTypeTemplate(this->argParserTemplate, TypeTemplate::Kind::ArgParser,
+                         {&this->get(TYPE::ArgDef_)}, info_ArgParserType());
+  this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},
                          info_ArrayType());
-  this->initTypeTemplate(this->mapTemplate, TYPE_MAP,
+  this->initTypeTemplate(this->mapTemplate, TypeTemplate::Kind::Map,
                          {&this->get(TYPE::Value_), &this->get(TYPE::Any)}, info_MapType());
 
-  this->initTypeTemplate(this->tupleTemplate, TYPE_TUPLE, {}, info_TupleType());
+  this->initTypeTemplate(this->tupleTemplate, TypeTemplate::Kind::Tuple, {}, info_TupleType());
 
-  this->initTypeTemplate(this->optionTemplate, TYPE_OPTION, {}, info_OptionType());
+  this->initTypeTemplate(this->optionTemplate, TypeTemplate::Kind::Option, {}, info_OptionType());
 
-  this->initTypeTemplate(this->funcTemplate, TYPE_FUNC, {}, info_FuncType());
+  this->initTypeTemplate(this->funcTemplate, TypeTemplate::Kind::Func, {}, info_FuncType());
 
   // init string array type(for command argument)
   {
@@ -180,20 +180,20 @@ void TypePool::discard(const TypeDiscardPoint point) {
   }
 }
 
-TypeTempOrError TypePool::getTypeTemplate(const std::string &typeName) const {
+TypeTempOrError TypePool::getTypeTemplate(StringRef typeName) const {
   auto iter = this->templateMap.find(typeName);
   if (iter == this->templateMap.end()) {
-    RAISE_TL_ERROR(NotTemplate, typeName.c_str());
+    RAISE_TL_ERROR(NotTemplate, typeName.toString().c_str());
   }
   return Ok(iter->second);
 }
 
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
                                         std::vector<const DSType *> &&elementTypes) {
-  if (this->tupleTemplate.getName() == typeTemplate.getName()) {
+  if (this->tupleTemplate == typeTemplate) {
     return this->createTupleType(std::move(elementTypes));
   }
-  if (this->optionTemplate.getName() == typeTemplate.getName()) {
+  if (this->optionTemplate == typeTemplate) {
     return this->createOptionType(std::move(elementTypes));
   }
 
@@ -205,7 +205,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    if (this->argParserTemplate.getName() == typeTemplate.getName()) {
+    if (this->argParserTemplate == typeTemplate) {
       assert(isa<ArgsRecordType>(*elementTypes[0]));
       auto *argParserType =
           this->newType<ArgParserType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
@@ -213,13 +213,13 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
       assert(argParserType);
       this->registerHandles(*argParserType);
       type = argParserType;
-    } else if (this->arrayTemplate.getName() == typeTemplate.getName()) {
+    } else if (this->arrayTemplate == typeTemplate) {
       auto *arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
                                                  this->get(TYPE::Any), *elementTypes[0]);
       assert(arrayType);
       this->registerHandles(*arrayType);
       type = arrayType;
-    } else if (this->mapTemplate.getName() == typeTemplate.getName()) {
+    } else if (this->mapTemplate == typeTemplate) {
       auto *mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
                                              *elementTypes[0], *elementTypes[1]);
       assert(mapType);
@@ -240,7 +240,7 @@ static std::unique_ptr<TypeLookupError> createInvalidElementError(unsigned int i
 TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementTypes) {
   if (elementTypes.size() != 1) {
     unsigned int size = elementTypes.size();
-    RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName().c_str(), 1, size);
+    RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName(), 1, size);
   }
   auto *elementType = elementTypes[0];
   if (elementType->isVoidType()) {
@@ -665,7 +665,7 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
 
   // check element type size
   if (t.getElementTypeSize() != size) {
-    RAISE_TL_ERROR(UnmatchElement, t.getName().c_str(), t.getElementTypeSize(), size);
+    RAISE_TL_ERROR(UnmatchElement, t.getName(), t.getElementTypeSize(), size);
   }
 
   for (unsigned int i = 0; i < size; i++) {
@@ -692,11 +692,12 @@ void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool, const y
   assert(type->is(t));
 }
 
-void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
+void TypePool::initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
                                 std::vector<const DSType *> &&elementTypes,
                                 native_type_info_t info) {
-  temp = TypeTemplate(std::string(typeName), std::move(elementTypes), info);
-  this->templateMap.emplace(typeName, &temp);
+  temp = TypeTemplate(kind, std::move(elementTypes), info);
+  StringRef key = temp.getName();
+  this->templateMap.emplace(key, &temp);
 }
 
 void TypePool::initErrorType(TYPE t, const char *typeName) {
