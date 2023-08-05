@@ -102,8 +102,8 @@ const DSType *TypeChecker::toType(TypeNode &node) {
     auto typeOrError = this->typePool().createReifiedType(*typeTemplate, std::move(elementTypes));
     if (!typeOrError) {
       Token token = node.getToken();
-      if (auto &e = typeOrError.asErr(); StringRef(e->getKind()) == InvalidElement::kind) {
-        token = typeNode.getElementTypeNodes()[e->getElementIndex()]->getToken();
+      if (int index = typeOrError.asErr()->getElementIndex(); index > -1) {
+        token = typeNode.getElementTypeNodes()[index]->getToken();
       }
       this->reportError(token, std::move(*typeOrError.asErr()));
       break;
@@ -121,8 +121,8 @@ const DSType *TypeChecker::toType(TypeNode &node) {
     auto typeOrError = this->typePool().createFuncType(returnType, std::move(paramTypes));
     if (!typeOrError) {
       Token token = node.getToken();
-      if (auto &e = typeOrError.asErr(); StringRef(e->getKind()) == InvalidElement::kind) {
-        token = typeNode.getParamTypeNodes()[e->getElementIndex()]->getToken();
+      if (int index = typeOrError.asErr()->getElementIndex(); index > -1) {
+        token = typeNode.getParamTypeNodes()[index]->getToken();
       }
       this->reportError(token, std::move(*typeOrError.asErr()));
       break;

@@ -230,9 +230,35 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   return Ok(type);
 }
 
-static std::unique_ptr<TypeLookupError> createInvalidElementError(unsigned int index,
-                                                                  const char *name) {
-  auto error = createTLError<InvalidElement>(name);
+static std::unique_ptr<TypeLookupError>
+createInvalidElementError(const TypeTemplate &t, unsigned int index, const char *name) {
+  std::unique_ptr<TypeLookupError> error;
+  switch (t.getKind()) {
+  case TypeTemplate::Kind::ArgParser:
+    error = createTLError<InvalidArgElement>(name);
+    break;
+  case TypeTemplate::Kind::Array:
+    error = createTLError<InvalidArrayElement>(name);
+    break;
+  case TypeTemplate::Kind::Map:
+    if (index == 0) {
+      error = createTLError<InvalidMapKey>(name);
+    } else {
+      error = createTLError<InvalidMapValue>(name);
+    }
+    break;
+  case TypeTemplate::Kind::Tuple:
+    error = createTLError<InvalidTupleElement>(name);
+    break;
+  case TypeTemplate::Kind::Option:
+    break;
+  case TypeTemplate::Kind::Func:
+    error = createTLError<InvalidFuncParam>(name);
+    break;
+  }
+  if (!error) {
+    error = createTLError<InvalidElement>(name);
+  }
   error->setElementIndex(index);
   return error;
 }
@@ -243,8 +269,8 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
     RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName(), 1, size);
   }
   auto *elementType = elementTypes[0];
-  if (elementType->isVoidType()) {
-    return Err(createInvalidElementError(0, elementType->getName()));
+  if (elementType->isVoidType() || elementType->isUnresolved()) {
+    return Err(createInvalidElementError(this->optionTemplate, 0, elementType->getName()));
   } else if (elementType->isOptionType()) {
     return Ok(elementType);
   }
@@ -259,7 +285,7 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
 }
 
 TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes) {
-  auto checked = checkElementTypes(elementTypes, SYS_LIMIT_TUPLE_NUM);
+  auto checked = checkElementTypes(this->tupleTemplate, elementTypes, SYS_LIMIT_TUPLE_NUM);
   if (!checked) {
     return checked;
   }
@@ -281,7 +307,7 @@ TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes
 
 TypeOrError TypePool::createFuncType(const DSType &returnType,
                                      std::vector<const DSType *> &&paramTypes) {
-  auto checked = checkElementTypes(paramTypes, SYS_LIMIT_FUNC_PARAM_NUM);
+  auto checked = checkElementTypes(this->funcTemplate, paramTypes, SYS_LIMIT_FUNC_PARAM_NUM);
   if (!checked) {
     return checked;
   }
@@ -644,7 +670,8 @@ std::string TypePool::toFunctionTypeName(const DSType &returnType,
   return funcTypeName;
 }
 
-TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &elementTypes,
+TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
+                                        const std::vector<const DSType *> &elementTypes,
                                         size_t limit) {
   if (elementTypes.size() > limit) {
     RAISE_TL_ERROR(ElementLimit);
@@ -652,7 +679,7 @@ TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &eleme
   unsigned int index = 0;
   for (auto &type : elementTypes) {
     if (type->isVoidType() || type->isNothingType() || type->isUnresolved()) {
-      return Err(createInvalidElementError(index, type->getName()));
+      return Err(createInvalidElementError(t, index, type->getName()));
     }
     index++;
   }
@@ -661,6 +688,7 @@ TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &eleme
 
 TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
                                         const std::vector<const DSType *> &elementTypes) {
+  assert(t.getElementTypeSize() != 0);
   const unsigned int size = elementTypes.size();
 
   // check element type size
@@ -677,7 +705,7 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
     if (acceptType->is(TYPE::Any) && elementType->isOptionType()) {
       continue;
     }
-    return Err(createInvalidElementError(i, elementType->getName()));
+    return Err(createInvalidElementError(t, i, elementType->getName()));
   }
   return Ok(static_cast<DSType *>(nullptr));
 }

@@ -306,7 +306,8 @@ private:
    * @return
    * if success, return null
    */
-  static TypeOrError checkElementTypes(const std::vector<const DSType *> &elementTypes,
+  static TypeOrError checkElementTypes(const TypeTemplate &t,
+                                       const std::vector<const DSType *> &elementTypes,
                                        size_t limit);
 
   /**

@@ -25,14 +25,14 @@ class TypeLookupError {
 private:
   const char *kind;
   CStrPtr message;
-  unsigned int elementIndex{0}; // for invalid type element
+  int elementIndex{-1}; // for invalid type element
 
 public:
   TypeLookupError(const char *kind, CStrPtr &&message) : kind(kind), message(std::move(message)) {}
 
-  void setElementIndex(unsigned int index) { this->elementIndex = index; }
+  void setElementIndex(unsigned int index) { this->elementIndex = static_cast<int>(index); }
 
-  unsigned int getElementIndex() const { return this->elementIndex; }
+  int getElementIndex() const { return this->elementIndex; }
 
   ~TypeLookupError() = default;
 
@@ -58,6 +58,14 @@ DEFINE_TLError(ElementLimit, "number of type elements reaches limit");
 DEFINE_TLError(DefinedType, "already defined type: `%s'");
 DEFINE_TLError(NotTemplate, "illegal type template: `%s'");
 DEFINE_TLError(InvalidElement, "invalid type element: `%s'");
+DEFINE_TLError(InvalidArgElement, "invalid type for ArgParser element: `%s', "
+                                  "element type must have `ArgsDef' attribute");
+DEFINE_TLError(InvalidArrayElement, "invalid type for Array element: `%s'");
+DEFINE_TLError(InvalidMapKey, "invalid type for Map key: `%s', "
+                              "Map key only allow value types (such as Int, String, ...)");
+DEFINE_TLError(InvalidMapValue, "invalid type for Map element: `%s'");
+DEFINE_TLError(InvalidTupleElement, "invalid type for Tuple elements: `%s'");
+DEFINE_TLError(InvalidFuncParam, "invalid type for function parameters: `%s'");
 DEFINE_TLError(UnmatchElement, "not match type element, `%s' requires %d type element, but is %d");
 
 #undef DEFINE_TLError

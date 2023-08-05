@@ -32,6 +32,7 @@
     - completion script directory indicates ``DATA_DIR/completions``
 - improve error message of type lookup errors
     - report correct position of invalid type elements
+    - report more detailed error message for invalid type elements
 
 #### Builtin
 

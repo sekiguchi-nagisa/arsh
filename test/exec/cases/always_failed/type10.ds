@@ -1,0 +1,5 @@
+#$test($result = 'type', $status = 1, $errorKind = 'InvalidArgElement', $chars = 7, $lineNum = 4)
+
+assert(34 is ArgParser<
+      Int
+    >)

@@ -1,3 +1,3 @@
-#$test($result = 'type', $lineNum = 3, $chars = 18, $errorKind = 'InvalidElement', $status = 1)
+#$test($result = 'type', $lineNum = 3, $chars = 18, $errorKind = 'InvalidFuncParam', $status = 1)
 
 34 is Func<Int, [Nothing]>
