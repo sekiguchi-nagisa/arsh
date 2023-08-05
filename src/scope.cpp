@@ -610,7 +610,7 @@ const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scop
   auto &modType = scope.toModType(pool);
   bool reopened = scope.inRootModule() && (*this)[scope.modId].second.isSealed();
   if (!reopened) {
-    auto &e = this->entries[toValue(scope.modId)].second;
+    auto &e = this->entries[toUnderlying(scope.modId)].second;
     assert(!e.isSealed());
     e.setModType(modType);
   }

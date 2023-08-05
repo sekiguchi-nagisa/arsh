@@ -536,7 +536,7 @@ public:
     return &this->entries[iter->second].second;
   }
 
-  const auto &operator[](ModId modId) const { return this->entries[toValue(modId)]; }
+  const auto &operator[](ModId modId) const { return this->entries[toUnderlying(modId)]; }
 
   auto begin() const { return this->entries.begin(); }
 

@@ -61,7 +61,7 @@ public:
     Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
     auto ret = analyzer.analyze(*src, action);
     ASSERT_TRUE(ret);
-    modId = toValue(ret->getModId());
+    modId = toUnderlying(ret->getModId());
   }
 
   void doAnalyze(const char *content, unsigned short &modId, const IndexSize &size) {
@@ -91,7 +91,7 @@ public:
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(DeclResult{
-          .modId = toValue(result.decl.getModId()),
+          .modId = toUnderlying(result.decl.getModId()),
           .range = range.unwrap(),
       });
     });
@@ -138,7 +138,7 @@ public:
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(RefsResult{
-          .modId = toValue(result.symbol.getModId()),
+          .modId = toUnderlying(result.symbol.getModId()),
           .range = range.unwrap(),
       });
     });

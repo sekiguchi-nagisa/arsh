@@ -113,7 +113,7 @@ private:
 
   void writeModId(ModId id) {
     static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
-    this->write16(toValue(id));
+    this->write16(toUnderlying(id));
   }
 
   void writeT(ArchiveType t) {
@@ -225,7 +225,7 @@ public:
 
   const auto &getImported() const { return this->imported; }
 
-  bool isEmpty() const { return toValue(this->getModId()) == 0; }
+  bool isEmpty() const { return toUnderlying(this->getModId()) == 0; }
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 

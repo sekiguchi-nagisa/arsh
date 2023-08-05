@@ -67,8 +67,6 @@ inline bool isBuiltinMod(ModId id) { return id == BUILTIN_MOD_ID; }
 
 inline bool isRootMod(ModId id) { return id == ROOT_MOD_ID; }
 
-inline auto toValue(ModId id) { return static_cast<unsigned short>(id); }
-
 /**
  * built-in symbol(builtin variable, magic method) definition
  */

@@ -116,7 +116,7 @@ const ModType &
 Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
-  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toValue(archive->getModId()),
+  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toUnderlying(archive->getModId()),
       archive->getVersion());
   auto *modType = loadFromArchive(this->current()->getPool(), *archive);
   assert(modType);
@@ -176,7 +176,7 @@ std::reference_wrapper<CancelToken> Analyzer::getCancelToken() const {
 }
 
 const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
-  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", toValue(src.getSrcId()),
+  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", toUnderlying(src.getSrcId()),
       src.getVersion(), src.getPath().c_str());
   auto ptr = std::make_unique<AnalyzerContext>(this->sysConfig, src);
   this->ctxs.push_back(std::move(ptr));
@@ -191,7 +191,7 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
     if (auto archive = this->archives.find(src->getSrcId()); archive && archive->isEmpty()) {
       return ModLoadingError(ModLoadingError::CIRCULAR_LOAD); // nested import
     }
-    return toValue(src->getSrcId());
+    return toUnderlying(src->getSrcId());
   } else {
     src = this->srcMan.update(path, 0, ""); // dummy
     if (!src) {

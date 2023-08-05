@@ -69,7 +69,7 @@ protected:
     NodeDumper dumper(tmpFile.get());
     auto src = man.update("<dummy>", 0, ""); // dummy
     src = man.update(GetParam(), 0, std::move(content));
-    ASSERT_EQ(2, toValue(src->getSrcId()));
+    ASSERT_EQ(2, toUnderlying(src->getSrcId()));
     SysConfig sysConfig;
     AnalyzerAction action;
     SymbolIndexes indexes;

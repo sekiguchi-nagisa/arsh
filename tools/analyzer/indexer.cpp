@@ -753,7 +753,7 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (node.getNameInfo()) {
     assert(node.getSrcIndex() == 0);
     this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
-                            std::to_string(toValue(node.getModType().getModId())).c_str(),
+                            std::to_string(toUnderlying(node.getModType().getModId())).c_str(),
                             node.getToken());
   }
   this->builder().addLink(node.getPathToken(), node.getModType().getModId(), node.getPathName());

@@ -36,7 +36,7 @@ Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string
 }
 
 SourcePtr SourceManager::findById(ModId id) const {
-  auto v = toValue(id);
+  auto v = toUnderlying(id);
   if (v > 0 && --v < this->entries.size()) {
     return this->entries[v];
   }

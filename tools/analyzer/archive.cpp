@@ -339,10 +339,10 @@ static void resolveTargets(std::vector<ModuleArchivePtr> &targets,
 
 static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
                   const ModuleArchivePtr &archive) {
-  if (used[toValue(archive->getModId())]) {
+  if (used[toUnderlying(archive->getModId())]) {
     return;
   }
-  used[toValue(archive->getModId())] = true;
+  used[toUnderlying(archive->getModId())] = true;
   for (auto &e : archive->getImported()) {
     visit(ret, used, e.second);
   }
@@ -354,7 +354,7 @@ static std::vector<ModuleArchivePtr> topologicalSort(const std::vector<ModuleArc
   if (targets.empty()) {
     return ret;
   }
-  std::vector<bool> used(toValue(targets.back()->getModId()) + 1, false);
+  std::vector<bool> used(toUnderlying(targets.back()->getModId()) + 1, false);
   for (auto &e : targets) {
     visit(ret, used, e);
   }

@@ -260,10 +260,10 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     auto src = this->ret.srcMan->findById(e);
     assert(src);
     LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s",
-        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
+        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     auto r = analyzer.analyze(*src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
+        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
       break;
     }
@@ -276,11 +276,11 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     }
     auto src = this->ret.srcMan->findById(targetId.unwrap());
     assert(src);
-    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s", toValue(src->getSrcId()),
-        src->getVersion(), src->getPath().c_str());
+    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s",
+        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     auto r = analyzer.analyze(*src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        toValue(src->getSrcId()), src->getVersion(), src->getPath().c_str());
+        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
       break;
     }
