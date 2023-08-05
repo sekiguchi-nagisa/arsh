@@ -176,15 +176,13 @@ public:
   bool isNothingType() const { return this->is(TYPE::Nothing); }
 
   bool isBuiltinOrDerived() const {
-    auto k = static_cast<std::underlying_type_t<TypeKind>>(this->typeKind());
-    return k >= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Builtin) &&
-           k <= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Tuple);
+    auto k = toUnderlying(this->typeKind());
+    return k >= toUnderlying(TypeKind::Builtin) && k <= toUnderlying(TypeKind::Tuple);
   }
 
   bool isRecordOrDerived() const {
-    auto k = static_cast<std::underlying_type_t<TypeKind>>(this->typeKind());
-    return k >= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::Record) &&
-           k <= static_cast<std::underlying_type_t<TypeKind>>(TypeKind::ArgsRecord);
+    auto k = toUnderlying(this->typeKind());
+    return k >= toUnderlying(TypeKind::Record) && k <= toUnderlying(TypeKind::ArgsRecord);
   }
 
   /**
@@ -759,7 +757,7 @@ public:
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
           unsigned int index, ModAttr attr)
       : DSType(TypeKind::Mod, id, toModTypeName(modId), &superType) {
-    this->meta.u16_2.v1 = static_cast<std::underlying_type_t<ModId>>(modId);
+    this->meta.u16_2.v1 = toUnderlying(modId);
     this->meta.u16_2.v2 = 0;
     this->data.e3.values[0] = index;
     this->reopen(std::move(handles), std::move(children), attr);

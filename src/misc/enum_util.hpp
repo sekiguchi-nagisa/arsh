@@ -31,36 +31,41 @@ constexpr auto allowBitop = std::is_enum_v<T> && allow_enum_bitop<T>::value;
 
 } // namespace detail
 
+template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+constexpr std::underlying_type_t<T> toUnderlying(T v) {
+  return static_cast<std::underlying_type_t<T>>(v);
+}
+
 template <typename T, enable_when<detail::allowBitop<T>> = nullptr>
 constexpr T operator|(T x, T y) {
-  auto x1 = static_cast<std::underlying_type_t<T>>(x);
-  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  auto x1 = toUnderlying(x);
+  auto y1 = toUnderlying(y);
   return static_cast<T>(x1 | y1);
 }
 
 template <typename T, enable_when<detail::allowBitop<T>> = nullptr>
 constexpr T operator&(T x, T y) {
-  auto x1 = static_cast<std::underlying_type_t<T>>(x);
-  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  auto x1 = toUnderlying(x);
+  auto y1 = toUnderlying(y);
   return static_cast<T>(x1 & y1);
 }
 
 template <typename T, enable_when<detail::allowBitop<T>> = nullptr>
 constexpr T operator^(T x, T y) {
-  auto x1 = static_cast<std::underlying_type_t<T>>(x);
-  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  auto x1 = toUnderlying(x);
+  auto y1 = toUnderlying(y);
   return static_cast<T>(x1 ^ y1);
 }
 
 template <typename T, enable_when<detail::allowBitop<T>> = nullptr>
 constexpr T operator~(T x) {
-  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  auto x1 = toUnderlying(x);
   return static_cast<T>(~x1);
 }
 
 template <typename T, enable_when<detail::allowBitop<T>> = nullptr>
 constexpr bool empty(T x) {
-  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  auto x1 = toUnderlying(x);
   return x1 == 0;
 }
 

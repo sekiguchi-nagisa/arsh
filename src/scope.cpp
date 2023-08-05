@@ -605,7 +605,7 @@ NameScopePtr ModuleLoader::createGlobalScopeFromFullPath(const TypePool &pool, S
 }
 
 const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope) {
-  assert(static_cast<std::underlying_type_t<ModId>>(scope.modId) < this->entries.size());
+  assert(toUnderlying(scope.modId) < this->entries.size());
   assert(scope.isGlobal());
   auto &modType = scope.toModType(pool);
   bool reopened = scope.inRootModule() && (*this)[scope.modId].second.isSealed();

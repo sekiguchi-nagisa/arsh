@@ -257,14 +257,14 @@ inline std::string toMethodFullName(unsigned int recvTypeId, StringRef methodNam
 
 inline std::string toModHolderName(ModId modId, bool global) {
   std::string name = global ? "_g" : "_n";
-  name += std::to_string(static_cast<std::underlying_type_t<ModId>>(modId));
+  name += std::to_string(toUnderlying(modId));
   name += MOD_HOLDER_SYMBOL_SUFFIX;
   return name;
 }
 
 inline std::string toModTypeName(ModId modId) {
   std::string str = MOD_SYMBOL_PREFIX;
-  str += std::to_string(static_cast<std::underlying_type_t<ModId>>(modId));
+  str += std::to_string(toUnderlying(modId));
   return str;
 }
 
