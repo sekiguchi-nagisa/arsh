@@ -28,7 +28,7 @@ const char *toString(TokenKind kind) {
       EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME
   };
-  return table[static_cast<unsigned int>(kind)];
+  return table[toUnderlying(kind)];
 }
 
 OperatorInfo getOpInfo(TokenKind kind) {

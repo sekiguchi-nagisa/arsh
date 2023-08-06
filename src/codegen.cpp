@@ -27,7 +27,7 @@ int getByteSize(OpCode code) {
       OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
   };
-  return table[static_cast<unsigned char>(code)];
+  return table[toUnderlying(code)];
 }
 
 bool isTypeOp(OpCode code) {
@@ -87,7 +87,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     except[i] = this->catchBuilders[i].toEntry();
   }
   except[exceptEntrySize] = {
-      .typeId = static_cast<unsigned int>(TYPE::Unresolved_),
+      .typeId = toUnderlying(TYPE::Unresolved_),
       .begin = 0,
       .end = 0,
       .dest = 0,
@@ -104,7 +104,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
 // ###############################
 
 void ByteCodeGenerator::emitIns(OpCode op) {
-  this->curBuilder().append8(static_cast<unsigned char>(op));
+  this->curBuilder().append8(toUnderlying(op));
 
   // max stack depth size
   int table[] = {
@@ -112,7 +112,7 @@ void ByteCodeGenerator::emitIns(OpCode op) {
       OPCODE_LIST(GEN_SIZE_TABLE)
 #undef GEN_SIZE_TABLE
   };
-  int size = table[static_cast<unsigned int>(op)];
+  int size = table[toUnderlying(op)];
   this->curBuilder().stackDepthCount += static_cast<short>(size);
   auto count = this->curBuilder().stackDepthCount;
   if (count > 0 && static_cast<unsigned short>(count) > this->curBuilder().maxStackDepth) {
@@ -135,7 +135,7 @@ void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
    */
   unsigned int actualParamSize = handle.getParamSize() + (handle.isConstructor() ? 0 : 1);
   if (handle.isNative()) {
-    if (handle.getRecvTypeId() == static_cast<unsigned int>(TYPE::Command) &&
+    if (handle.getRecvTypeId() == toUnderlying(TYPE::Command) &&
         StringRef("call") == nativeFuncInfoTable()[handle.getIndex()].funcName) {
       this->emit0byteIns(OpCode::PUSH_NULL);
       this->emit0byteIns(OpCode::CALL_CMD_OBJ);
@@ -199,7 +199,7 @@ void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
 void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
   const unsigned int offset = this->currentCodeOffset();
   this->emitIns(OpCode::FORK);
-  this->curBuilder().append8(static_cast<unsigned char>(kind));
+  this->curBuilder().append8(toUnderlying(kind));
   this->curBuilder().append16(0);
   this->curBuilder().writeLabel(offset + 2, label, offset, CodeEmitter<true>::LabelTarget::_16);
 }
@@ -365,7 +365,7 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
                                                   : OpCode::PIPELINE_ASYNC);
   if (forkKind != ForkKind::NONE && forkKind != ForkKind::PIPE_FAIL) {
     offset++;
-    this->curBuilder().append(static_cast<unsigned char>(forkKind));
+    this->curBuilder().append(toUnderlying(forkKind));
   }
   this->curBuilder().append8(size);
   for (unsigned int i = 0; i < size; i++) {
@@ -920,9 +920,9 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     } else {
       this->generateCmdArg(node.getTargetNode());
     }
-    const auto offset = static_cast<unsigned int>(OpCode::ADD_REDIR_OP0);
+    const auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
     auto op = static_cast<OpCode>(offset + newFd);
-    this->emit1byteIns(op, static_cast<unsigned char>(node.getRedirOp()));
+    this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
   } else {
     fatal("unsupported\n");
   }
@@ -930,7 +930,7 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 
 void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
   if (node.isExpand()) {
-    this->emit2byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta),
+    this->emit2byteIns(OpCode::PUSH_META, toUnderlying(node.meta),
                        static_cast<unsigned char>(node.getBraceId()));
   } else {
     this->emitString(toString(node.meta));
@@ -947,7 +947,7 @@ void ByteCodeGenerator::visitBraceSeqNode(BraceSeqNode &node) {
   obj[0] = DSValue::createInt(range.begin);
   obj[1] = DSValue::createInt(range.end);
   obj[2] = DSValue::createInt(range.step);
-  obj[3] = DSValue::createNumList(range.digits, static_cast<unsigned int>(range.kind), 0);
+  obj[3] = DSValue::createNumList(range.digits, toUnderlying(range.kind), 0);
   this->emitLdcIns(std::move(value));
 }
 

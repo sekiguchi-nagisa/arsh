@@ -149,8 +149,7 @@ protected:
    * not directly call it.
    */
   DSType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType)
-      : tag(static_cast<unsigned int>(k) << 24 | id), name(strdup(ref.data())),
-        superType(superType) {}
+      : tag(toUnderlying(k) << 24 | id), name(strdup(ref.data())), superType(superType) {}
 
   ~DSType() = default;
 
@@ -165,7 +164,7 @@ public:
 
   unsigned int typeId() const { return this->tag & 0xFFFFFF; }
 
-  bool is(TYPE type) const { return this->typeId() == static_cast<unsigned int>(type); }
+  bool is(TYPE type) const { return this->typeId() == toUnderlying(type); }
 
   bool isUnresolved() const { return this->is(TYPE::Unresolved_); }
 
@@ -243,11 +242,9 @@ public:
    * if type is not number type, return -1.
    */
   int getNumTypeIndex() const {
-    static_assert(static_cast<unsigned int>(TYPE::Int) + 1 ==
-                  static_cast<unsigned int>(TYPE::Float));
-    if (this->typeId() >= static_cast<unsigned int>(TYPE::Int) &&
-        this->typeId() <= static_cast<unsigned int>(TYPE::Float)) {
-      return this->typeId() - static_cast<unsigned int>(TYPE::Int);
+    static_assert(toUnderlying(TYPE::Int) + 1 == toUnderlying(TYPE::Float));
+    if (this->typeId() >= toUnderlying(TYPE::Int) && this->typeId() <= toUnderlying(TYPE::Float)) {
+      return this->typeId() - toUnderlying(TYPE::Int);
     }
     return -1;
   }
@@ -717,8 +714,7 @@ public:
   public:
     Imported() = default;
 
-    Imported(const ModType &type, ImportedModKind k)
-        : value(type.typeId() << 8 | static_cast<unsigned char>(k)) {
+    Imported(const ModType &type, ImportedModKind k) : value(type.typeId() << 8 | toUnderlying(k)) {
       static_assert(sizeof(decltype(type.typeId())) == 4);
       static_assert(sizeof(k) == 1);
     }
@@ -861,7 +857,7 @@ private:
     } else {
       this->data.children.ptr = children.take();
     }
-    this->data.e3.values[1] = static_cast<unsigned char>(attr);
+    this->data.e3.values[1] = toUnderlying(attr);
   }
 
   void disposeChildren() {

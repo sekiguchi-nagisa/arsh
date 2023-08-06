@@ -55,7 +55,7 @@ enum class BuiltinVarOffset : unsigned int {
   PPID,        // PPID
 };
 
-inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
+inline unsigned int toIndex(BuiltinVarOffset offset) { return toUnderlying(offset); }
 
 enum class ModId : unsigned short {};
 

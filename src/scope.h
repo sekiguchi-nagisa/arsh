@@ -393,17 +393,17 @@ public:
 
   explicit ModLoadingError(int value) : value(value) {}
 
-  explicit ModLoadingError(Kind k) : ModLoadingError(static_cast<int>(k)) {}
+  explicit ModLoadingError(Kind k) : ModLoadingError(toUnderlying(k)) {}
 
   int getErrNo() const { return this->value; }
 
   bool isFileNotFound() const { return this->getErrNo() == ENOENT; }
 
-  bool isCircularLoad() const { return this->getErrNo() == static_cast<int>(CIRCULAR_LOAD); }
+  bool isCircularLoad() const { return this->getErrNo() == toUnderlying(CIRCULAR_LOAD); }
 
-  bool isModLimit() const { return this->getErrNo() == static_cast<int>(MOD_LIMIT); }
+  bool isModLimit() const { return this->getErrNo() == toUnderlying(MOD_LIMIT); }
 
-  bool isVarLimit() const { return this->getErrNo() == static_cast<int>(VAR_LIMIT); }
+  bool isVarLimit() const { return this->getErrNo() == toUnderlying(VAR_LIMIT); }
 };
 
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;

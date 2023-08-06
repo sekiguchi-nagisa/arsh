@@ -144,7 +144,7 @@ public:
   TypePool();
   ~TypePool();
 
-  const DSType &get(TYPE t) const { return this->get(static_cast<unsigned int>(t)); }
+  const DSType &get(TYPE t) const { return this->get(toUnderlying(t)); }
 
   const DSType &get(unsigned int index) const { return *this->typeTable[index]; }
 

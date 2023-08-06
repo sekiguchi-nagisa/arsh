@@ -239,7 +239,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
 
   // set parameter
   state.stack.reserve(UDC_PARAM_N);
-  state.stack.push(DSValue::createNum(static_cast<unsigned int>(attr)));
+  state.stack.push(DSValue::createNum(toUnderlying(attr)));
   state.stack.push(std::move(redirConfig));
   state.stack.push(std::move(argvObj));
 

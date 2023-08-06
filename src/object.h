@@ -115,7 +115,7 @@ protected:
   static_assert(sizeof(DSObject) == 8);
 
   explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.typeId()) {}
-  explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
+  explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(toUnderlying(type)) {}
   explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
 
 public:
@@ -651,8 +651,7 @@ inline T &typeAs(const DSValue &value) noexcept {
 
   if (useSafeCast) {
     if (!value.isObject()) {
-      fatal("must be represent DSObject, but actual is: %d\n",
-            static_cast<unsigned int>(value.kind()));
+      fatal("must be represent DSObject, but actual is: %d\n", toUnderlying(value.kind()));
     }
     auto *r = checked_cast<T>(value.get());
     if (r == nullptr) {

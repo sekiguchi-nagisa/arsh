@@ -380,7 +380,7 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
       EACH_PARSE_ERROR_KIND(GEN_TABLE)
 #undef GEN_TABLE
   };
-  auto &e = table[static_cast<unsigned int>(kind)];
+  auto &e = table[toUnderlying(kind)];
   std::string message;
   if (isInvalidToken(this->curKind)) {
     message += "invalid token, ";

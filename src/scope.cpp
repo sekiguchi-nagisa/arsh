@@ -179,8 +179,8 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
     typeId = TYPE::OptNothing;
     break;
   }
-  auto handle = HandlePtr::create(static_cast<unsigned int>(typeId), entry.u32,
-                                  HandleKind::SMALL_CONST, attr, this->modId);
+  auto handle = HandlePtr::create(toUnderlying(typeId), entry.u32, HandleKind::SMALL_CONST, attr,
+                                  this->modId);
   return this->add(std::move(name), std::move(handle), NameRegisterOp::AS_ALIAS);
 }
 

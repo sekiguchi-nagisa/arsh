@@ -306,7 +306,7 @@ const char *toString(HandleKind kind) {
       EACH_HANDLE_KIND(GEN_STR)
 #undef GEN_STR
   };
-  return table[static_cast<unsigned int>(kind)];
+  return table[toUnderlying(kind)];
 }
 
 std::string toString(HandleAttr attr) {

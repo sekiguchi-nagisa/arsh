@@ -265,7 +265,7 @@ private:
   void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
     assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_BUILTIN ||
            op == OpCode::ADD_EXPANDING || op == OpCode::NEW_CLOSURE);
-    this->curBuilder().append8(static_cast<unsigned char>(op));
+    this->curBuilder().append8(toUnderlying(op));
     this->curBuilder().append8(paramSize);
 
     int size = static_cast<int>(paramSize) + restSize;
@@ -296,7 +296,7 @@ private:
 
   void emitExpandIns(unsigned char paramSize, ExpandOp op) {
     this->emitValIns(OpCode::ADD_EXPANDING, paramSize, 1);
-    this->curBuilder().append8(static_cast<unsigned char>(op));
+    this->curBuilder().append8(toUnderlying(op));
   }
 
   void emitNewClosureIns(unsigned char capturedSize) {

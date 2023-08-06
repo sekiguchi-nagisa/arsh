@@ -1170,7 +1170,7 @@ static const char *toString(NodeKind kind) {
       EACH_NODE_KIND(GEN_STR)
 #undef GEN_STR
   };
-  return table[static_cast<unsigned char>(kind)];
+  return table[toUnderlying(kind)];
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
