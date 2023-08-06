@@ -111,6 +111,7 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
   this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
   this->initErrorType(TYPE::ExecError, "ExecError");
+  this->initErrorType(TYPE::ArgParseError, "ArgParseError");
 
   // init internal status type
   this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Root_,

@@ -83,6 +83,7 @@ enum class TYPE : unsigned int {
   IllegalAccessError,
   InvalidOperationError,
   ExecError,
+  ArgParseError,
 
   /**
    * for internal status reporting.
