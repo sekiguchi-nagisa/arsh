@@ -15,6 +15,7 @@
  */
 
 #include <DescLexer.h>
+#include <misc/enum_util.hpp>
 
 // helper macro definition.
 #define RET(k)                                                                                     \
@@ -105,5 +106,5 @@ const char *toString(DescTokenKind kind) {
 #undef GEN_NAME
   };
 
-  return names[static_cast<unsigned int>(kind)];
+  return names[ydsh::toUnderlying(kind)];
 }

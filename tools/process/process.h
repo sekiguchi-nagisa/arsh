@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <misc/enum_util.hpp>
 #include <misc/noncopyable.h>
 
 namespace process {
@@ -217,12 +218,12 @@ struct IOConfig {
   struct FDWrapper {
     int fd;
 
-    FDWrapper(int fd) : fd(fd) {}                          // NOLINT
-    FDWrapper(FDType type) : fd(static_cast<int>(type)) {} // NOLINT
+    FDWrapper(int fd) : fd(fd) {}                            // NOLINT
+    FDWrapper(FDType type) : fd(ydsh::toUnderlying(type)) {} // NOLINT
 
     explicit operator bool() const { return this->fd > -1; }
 
-    bool is(FDType type) const { return this->fd == static_cast<int>(type); }
+    bool is(FDType type) const { return this->fd == ydsh::toUnderlying(type); }
   };
 
   FDWrapper in;

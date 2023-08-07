@@ -118,7 +118,7 @@ private:
 
   void writeT(ArchiveType t) {
     static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(uint8_t));
-    this->write8(static_cast<uint8_t>(t));
+    this->write8(toUnderlying(t));
   }
 
   void writeStr(StringRef ref) {

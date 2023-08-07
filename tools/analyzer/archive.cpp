@@ -133,9 +133,9 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   this->writeStr(ref);
   this->write32(handle.getIndex());
   static_assert(std::is_same_v<std::underlying_type_t<HandleKind>, uint8_t>);
-  this->write8(static_cast<uint8_t>(handle.getKind()));
+  this->write8(toUnderlying(handle.getKind()));
   static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, uint8_t>);
-  this->write8(static_cast<uint8_t>(handle.attr()));
+  this->write8(toUnderlying(handle.attr()));
   this->writeModId(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);

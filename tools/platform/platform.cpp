@@ -36,7 +36,7 @@ const char *toString(PlatformType c) {
       EACH_PLATFORM_TYPE(GEN_STR)
 #undef GEN_STR
   };
-  return table[static_cast<unsigned int>(c)];
+  return table[toUnderlying(c)];
 }
 
 static bool detectContainer() {
@@ -92,7 +92,7 @@ const char *toString(ArchType c) {
       EACH_ARCH_TYPE(GEN_STR)
 #undef GEN_STR
   };
-  return table[static_cast<unsigned int>(c)];
+  return table[toUnderlying(c)];
 }
 
 static ArchType archImpl() {
@@ -120,7 +120,7 @@ bool containArch(const std::string &text, ArchType type) {
       EACH_ARCH_TYPE(GEN_STR)
 #undef GEN_STR
   };
-  return reSearch(table[static_cast<unsigned int>(type)], text);
+  return reSearch(table[toUnderlying(type)], text);
 }
 
 } // namespace ydsh::platform
