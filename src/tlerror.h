@@ -54,18 +54,19 @@ using base_of_t = std::enable_if_t<std::is_base_of_v<B, T>, T>;
     static constexpr const char *value = fmt;                                                      \
   }
 
-DEFINE_TLError(ElementLimit, "number of type elements reaches limit");
+DEFINE_TLError(ElementLimit, "number of type parameters reaches limit");
 DEFINE_TLError(DefinedType, "already defined type: `%s'");
-DEFINE_TLError(InvalidElement, "invalid type element: `%s'");
-DEFINE_TLError(InvalidArgElement, "invalid type for ArgParser element: `%s', "
-                                  "element type must have `ArgsDef' attribute");
-DEFINE_TLError(InvalidArrayElement, "invalid type for Array element: `%s'");
-DEFINE_TLError(InvalidMapKey, "invalid type for Map key: `%s', "
+DEFINE_TLError(InvalidElement, "invalid type parameter: `%s'");
+DEFINE_TLError(InvalidArgElement, "invalid type parameter for ArgParser: `%s', "
+                                  "type parameter must have `ArgsDef' attribute");
+DEFINE_TLError(InvalidArrayElement, "invalid type parameter for Array: `%s'");
+DEFINE_TLError(InvalidMapKey, "invalid type parameter for Map key: `%s', "
                               "Map key only allow value types (such as Int, String, ...)");
-DEFINE_TLError(InvalidMapValue, "invalid type for Map element: `%s'");
-DEFINE_TLError(InvalidTupleElement, "invalid type for Tuple elements: `%s'");
-DEFINE_TLError(InvalidFuncParam, "invalid type for function parameters: `%s'");
-DEFINE_TLError(UnmatchElement, "not match type element, `%s' requires %d type element, but is %d");
+DEFINE_TLError(InvalidMapValue, "invalid type parameter for Map element: `%s'");
+DEFINE_TLError(InvalidTupleElement, "invalid type parameter for Tuple: `%s'");
+DEFINE_TLError(InvalidFuncParam, "invalid type parameter for function params: `%s'");
+DEFINE_TLError(UnmatchElement,
+               "not match type parameters, `%s' requires %d type parameters, but is %d");
 
 #undef DEFINE_TLError
 
