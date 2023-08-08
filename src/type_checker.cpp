@@ -89,12 +89,12 @@ const DSType *TypeChecker::toType(TypeNode &node) {
   case TypeNode::Reified: {
     auto &typeNode = cast<ReifiedTypeNode>(node);
     unsigned int size = typeNode.getElementTypeNodes().size();
-    auto tempOrError = this->typePool().getTypeTemplate(typeNode.getTemplate()->getTokenText());
-    if (!tempOrError) {
-      this->reportError(typeNode.getToken(), std::move(*tempOrError.asErr()));
+    auto &tempName = typeNode.getTemplate()->getTokenText();
+    auto *typeTemplate = this->typePool().getTypeTemplate(tempName);
+    if (!typeTemplate) {
+      this->reportError<UndefinedGeneric>(typeNode.getTemplate()->getToken(), tempName.c_str());
       break;
     }
-    auto typeTemplate = std::move(tempOrError).take();
     std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);

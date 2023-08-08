@@ -181,12 +181,12 @@ void TypePool::discard(const TypeDiscardPoint point) {
   }
 }
 
-TypeTempOrError TypePool::getTypeTemplate(StringRef typeName) const {
+const TypeTemplate *TypePool::getTypeTemplate(StringRef typeName) const {
   auto iter = this->templateMap.find(typeName);
   if (iter == this->templateMap.end()) {
-    RAISE_TL_ERROR(NotTemplate, typeName.toString().c_str());
+    return nullptr;
   }
-  return Ok(iter->second);
+  return iter->second;
 }
 
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,

@@ -27,7 +27,6 @@
 namespace ydsh {
 
 using TypeOrError = Result<const DSType *, std::unique_ptr<TypeLookupError>>;
-using TypeTempOrError = Result<const TypeTemplate *, std::unique_ptr<TypeLookupError>>;
 
 struct TypeDiscardPoint {
   unsigned int typeIdOffset;
@@ -165,7 +164,7 @@ public:
 
   const TypeTemplate &getOptionTemplate() const { return this->optionTemplate; }
 
-  TypeTempOrError getTypeTemplate(StringRef typeName) const;
+  const TypeTemplate *getTypeTemplate(StringRef typeName) const;
 
   const auto &getTemplateMap() const { return this->templateMap; }
 

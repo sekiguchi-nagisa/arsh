@@ -137,6 +137,7 @@ DEFINE_TCError(SameModOfRecv, "method definition is only allowed at the same mod
 DEFINE_TCError(SameNameField, "cannot define method: `%s', since `%s' type has same name field");
 DEFINE_TCError(UndefinedSymbol, "cannot access undefined symbol: `%s'%s");
 DEFINE_TCError(UndefinedType, "undefined type: `%s'%s");
+DEFINE_TCError(UndefinedGeneric, "undefined generic type: `%s'");
 DEFINE_TCError(UndefinedField, "cannot access undefined field: `%s' for `%s' type%s");
 DEFINE_TCError(UndefinedMethod, "cannot call undefined method: `%s' for `%s' type%s");
 DEFINE_TCError(UndefinedInit, "constructor is not defined in `%s' type");

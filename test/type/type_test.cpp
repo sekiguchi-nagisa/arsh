@@ -136,11 +136,9 @@ public:
 
     auto ret = this->pool.getTypeTemplate(name);
     ASSERT_TRUE(ret);
-    auto gotten = std::move(ret).take();
     ASSERT_EQ(size, t.getElementTypeSize());
-    ASSERT_EQ(size, gotten->getElementTypeSize());
-    ASSERT_TRUE(reinterpret_cast<uintptr_t>(this->pool.getTypeTemplate(name).take()) ==
-                reinterpret_cast<uintptr_t>(&t));
+    ASSERT_EQ(size, ret->getElementTypeSize());
+    ASSERT_TRUE(*this->pool.getTypeTemplate(name) == t);
   }
 
   template <typename T>
