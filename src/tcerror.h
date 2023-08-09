@@ -135,6 +135,7 @@ DEFINE_TCError(NeedUdType, "method definition is only allowed for user-defined t
 DEFINE_TCError(SameModOfRecv, "method definition is only allowed at the same module "
                               "that `%s' type is defined");
 DEFINE_TCError(SameNameField, "cannot define method: `%s', since `%s' type has same name field");
+DEFINE_TCError(NeedTypeParam, "`%s' type needs type parameters");
 DEFINE_TCError(UndefinedSymbol, "cannot access undefined symbol: `%s'%s");
 DEFINE_TCError(UndefinedType, "undefined type: `%s'%s");
 DEFINE_TCError(UndefinedGeneric, "undefined generic type: `%s'");

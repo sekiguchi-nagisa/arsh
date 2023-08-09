@@ -34,15 +34,19 @@ const DSType *TypeChecker::toType(TypeNode &node) {
     auto &typeNode = cast<BaseTypeNode>(node);
 
     // fist lookup type alias
-    auto ret = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
+    auto &typeName = typeNode.getTokenText();
+    auto ret = this->curScope->lookup(toTypeAliasFullName(typeName));
     if (ret) {
       auto handle = std::move(ret).take();
       typeNode.setHandle(handle);
       return &this->typePool().get(handle->getTypeId());
     }
-    auto *type = this->typePool().getType(typeNode.getTokenText());
+    auto *type = this->typePool().getType(typeName);
     if (!type) {
-      auto &typeName = typeNode.getTokenText();
+      if (this->typePool().getTypeTemplate(typeName)) { // generic base type
+        this->reportError<NeedTypeParam>(typeNode, typeName.c_str());
+        break;
+      }
       std::string suffix;
       auto suggestion = suggestSimilarType(typeName, this->typePool(), *this->curScope, nullptr);
       if (!suggestion.empty()) {
