@@ -108,8 +108,7 @@ NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &h
 NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
                                               const DSType &type) {
   if (this->isGlobal()) {
-    auto ret = pool.getType(name);
-    if (ret) {
+    if (pool.getType(name) || pool.getTypeTemplate(name)) {
       return Err(NameRegisterError::DEFINED);
     }
   }
