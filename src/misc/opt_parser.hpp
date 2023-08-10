@@ -117,15 +117,19 @@ class OptParser {
 public:
   static_assert(std::is_enum_v<T>, "must be enum type");
 
+  using Result = OptParseResult<T>;
+
   struct Option {
     using type = T;
 
-    T kind;
-    OptParseOp op;
-    char shortOptName;     // may be null char if no short option
-    StringRef longOptName; // may be null if no long option
-    const char *argName;   // argument name for help message
-    const char *detail;    // option description for help message
+    T kind{};
+    OptParseOp op{OptParseOp::NO_ARG};
+    char shortOptName{0};         // may be null char if no short option
+    StringRef longOptName;        // may be null if no long option
+    const char *argName{nullptr}; // argument name for help message
+    const char *detail{nullptr};  // option description for help message
+
+    constexpr Option() = default;
 
     constexpr Option(T kind, char s, const char *l, OptParseOp op, const char *arg,
                      const char *detail)
@@ -232,17 +236,23 @@ public:
   };
 
 private:
-  const unsigned int size;
+  const size_t size;
   const Option *const options;
   StringRef remain; // for short option
 
 public:
-  OptParser(unsigned int size, const Option *const options) : size(size), options(options) {}
+  OptParser(size_t size, const Option *const options) : size(size), options(options) {}
 
   template <typename Iter>
   OptParseResult<T> operator()(Iter &begin, Iter end);
 
-  std::string formatOptions() const;
+  void formatOptions(std::string &out) const;
+
+  std::string formatOptions() const {
+    std::string value;
+    this->formatOptions(value);
+    return value;
+  }
 
   StringRef getRemain() const { return this->remain; }
 
@@ -256,7 +266,7 @@ private:
   OptParseResult<T> matchShortOption(Iter &begin, Iter end);
 };
 
-template <typename T, unsigned int N>
+template <typename T, size_t N>
 auto createOptParser(const T (&options)[N]) {
   return OptParser<typename T::type>(N, options);
 }
@@ -378,8 +388,7 @@ OptParseResult<T> OptParser<T>::matchShortOption(Iter &begin, Iter end) {
 }
 
 template <typename T>
-std::string OptParser<T>::formatOptions() const {
-  std::string value;
+void OptParser<T>::formatOptions(std::string &value) const {
   unsigned int maxLenOfUsage = 0;
 
   // compute usage len
@@ -415,7 +424,6 @@ std::string OptParser<T>::formatOptions() const {
       value += detail;
     }
   }
-  return value;
 }
 
 END_MISC_LIB_NAMESPACE_DECL

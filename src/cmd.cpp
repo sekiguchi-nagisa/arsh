@@ -119,23 +119,6 @@ builtin_command_t lookupBuiltinCommand(StringRef commandName) {
   return iter->second;
 }
 
-struct StrArrayIter {
-  ArrayObject::IterType actual;
-
-  explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
-
-  auto operator*() const { return this->actual->asStrRef(); }
-
-  bool operator==(const StrArrayIter &o) const { return this->actual == o.actual; }
-
-  bool operator!=(const StrArrayIter &o) const { return !(*this == o); }
-
-  StrArrayIter &operator++() {
-    ++this->actual;
-    return *this;
-  }
-};
-
 int GetOptState::operator()(const ArrayObject &obj) {
   auto iter = StrArrayIter(obj.getValues().begin() + this->index);
   auto end = StrArrayIter(obj.getValues().end());

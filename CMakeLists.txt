@@ -167,7 +167,7 @@ add_custom_command(OUTPUT ${bind_doc}
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_doc}
         MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
         DEPENDS gen_binding
-        )
+)
 
 set(bind_header ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.cpp)
@@ -177,7 +177,7 @@ add_custom_command(OUTPUT ${bind_header} ${bind_src}
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
         MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
         DEPENDS gen_binding ${bind_doc}
-        )
+)
 
 
 #=======================================#
@@ -191,7 +191,7 @@ add_custom_command(OUTPUT ${embed_src}
         -o ${embed_src} -v embed_script
         MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
         DEPENDS src_to_str
-        )
+)
 
 
 #=================#
@@ -242,6 +242,8 @@ set(YDSH_SRC
         src/keycode.cpp
         src/rotate.cpp
         src/ordered_map.cpp
+        src/arg_parser_base.cpp
+        src/arg_parser.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

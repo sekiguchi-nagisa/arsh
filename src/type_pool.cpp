@@ -348,6 +348,16 @@ TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belong
   }
 }
 
+TypeOrError TypePool::createArgsRecordType(const std::string &typeName, ModId belongedModId) {
+  std::string name = toQualifiedTypeName(typeName, belongedModId);
+  auto *type = this->newType<RecordType>(name, this->get(TYPE::ArgDef_));
+  if (type) {
+    return Ok(type);
+  } else {
+    RAISE_TL_ERROR(DefinedType, typeName.c_str());
+  }
+}
+
 TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
                                          std::unordered_map<std::string, HandlePtr> &&handles) {
   unsigned int fieldCount = 0;
@@ -367,6 +377,18 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   assert(!newRecordType->isFinalized());
   newRecordType->finalize(fieldCount, std::move(handles));
   return Ok(newRecordType);
+}
+
+TypeOrError TypePool::finalizeArgsRecordType(const ArgsRecordType &recordType,
+                                             std::unordered_map<std::string, HandlePtr> &&handles,
+                                             std::vector<ArgEntry> &&entries) {
+  auto ret = this->finalizeRecordType(recordType, std::move(handles));
+  if (ret) {
+    auto *newRecordType = cast<ArgsRecordType>(this->getMut(recordType.typeId()));
+    assert(newRecordType->isFinalized());
+    newRecordType->finalizeArgEntries(std::move(entries));
+  }
+  return ret;
 }
 
 const ModType &TypePool::createModType(ModId modId,

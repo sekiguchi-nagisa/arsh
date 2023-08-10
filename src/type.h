@@ -665,8 +665,7 @@ public:
   static bool classof(const DSType *type) { return type->isArgsRecordType(); }
 
 private:
-  void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles,
-                std::vector<ArgEntry> &&args);
+  void finalizeArgEntries(std::vector<ArgEntry> &&args);
 };
 
 class ArgParserType : public BuiltinType {

@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "arg_parser.h"
 #include "core.h"
 #include "line_editor.h"
 #include "misc/format.hpp"

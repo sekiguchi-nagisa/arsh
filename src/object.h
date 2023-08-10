@@ -59,7 +59,8 @@ namespace ydsh {
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
   OP(Redir)                                                                                        \
-  OP(LineEditor)
+  OP(LineEditor)                                                                                   \
+  OP(ArgParser)
 
 /**
  * for LLVM-style RTTI
@@ -782,6 +783,27 @@ public:
   void sortAsStrArray(unsigned int beginOffset = 0) {
     std::sort(this->values.begin() + beginOffset, this->values.end(),
               [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
+  }
+};
+
+struct StrArrayIter {
+  ArrayObject::IterType actual;
+
+  explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
+
+  auto operator*() const { return this->actual->asStrRef(); }
+
+  bool operator==(const StrArrayIter &o) const { return this->actual == o.actual; }
+
+  bool operator!=(const StrArrayIter &o) const { return !(*this == o); }
+
+  StrArrayIter &operator++() {
+    ++this->actual;
+    return *this;
+  }
+  StrArrayIter &operator--() {
+    --this->actual;
+    return *this;
   }
 };
 

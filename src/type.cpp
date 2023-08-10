@@ -17,7 +17,7 @@
 #include <array>
 #include <cstdarg>
 
-// #include "arg_parser_base.h"
+#include "arg_parser_base.h"
 #include "misc/num_util.hpp"
 #include "tcerror.h"
 #include "type_pool.h"
@@ -231,15 +231,10 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 // ##     ArgsRecordType     ##
 // ############################
 
-class ArgEntry {}; // dummy
-
 ArgsRecordType::ArgsRecordType(unsigned int id, ydsh::StringRef ref, const ydsh::DSType &superType)
     : RecordType(TypeKind::ArgsRecord, id, ref, superType) {}
 
-void ArgsRecordType::finalize(unsigned char fieldSize,
-                              std::unordered_map<std::string, HandlePtr> &&handles,
-                              std::vector<ArgEntry> &&args) {
-  RecordType::finalize(fieldSize, std::move(handles));
+void ArgsRecordType::finalizeArgEntries(std::vector<ArgEntry> &&args) {
   this->entries = std::move(args);
 }
 
