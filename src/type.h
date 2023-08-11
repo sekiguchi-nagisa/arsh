@@ -675,7 +675,7 @@ private:
 public:
   ArgParserType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
                 const ArgsRecordType &type)
-      : BuiltinType(TypeKind::Array, id, ref, &superType, info), elementType(type) {}
+      : BuiltinType(TypeKind::ArgParser, id, ref, &superType, info), elementType(type) {}
 
   const ArgsRecordType &getElementType() const { return this->elementType; }
 

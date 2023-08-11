@@ -114,9 +114,11 @@ TEST_F(ArgParserTest, base) {
   auto ret =
       this->typePool().createReifiedType(this->typePool().getArgParserTemplate(), {&recordType});
   ASSERT_TRUE(ret);
+  ASSERT_TRUE(isa<ArgParserType>(ret.asOk()));
   auto &parserType = cast<ArgParserType>(*ret.asOk());
-  auto parser = toObjPtr<ArgParserObject>(
-      DSValue::create<ArgParserObject>(parserType, DSValue::createStr("cmd1")));
+  auto value = DSValue::create<ArgParserObject>(parserType, DSValue::createStr("cmd1"));
+  ASSERT_TRUE(isa<ArgParserObject>(value.get()));
+  auto parser = toObjPtr<ArgParserObject>(value);
   auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
   ASSERT_FALSE((*out)[0]);
   ASSERT_FALSE((*out)[1]);
