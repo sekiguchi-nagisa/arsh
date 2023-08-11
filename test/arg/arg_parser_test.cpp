@@ -100,7 +100,7 @@ TEST_F(ArgParserTest, base) {
   ASSERT_STREQ("output", entries[1].getLongName());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[2].getParseOp());
   ASSERT_EQ('d', entries[2].getShortName());
-  ASSERT_FALSE(entries[3].getLongName());
+  ASSERT_FALSE(entries[2].getLongName());
 
   auto args = createArgs("-s", "--output", "AAA", "-d", "BBB", "CCC");
   ASSERT_EQ(6, args->size());
