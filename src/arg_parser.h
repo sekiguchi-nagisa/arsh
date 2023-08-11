@@ -27,7 +27,7 @@ private:
   /**
    * maintains require option index and positional argument index
    */
-  FlexBuffer<unsigned char> values; // must be sorted
+  FlexBuffer<unsigned short> values; // must be sorted
 
 public:
   explicit RequiredOptionSet(const std::vector<ArgEntry> &entries);
@@ -71,7 +71,7 @@ private:
    * @return
    * if has error, return false
    */
-  bool checkAndSetArg(DSState &state, const ArgEntry &entry, StringRef arg, BaseObject &out);
+  bool checkAndSetArg(DSState &state, const ArgEntry &entry, StringRef arg, BaseObject &out) const;
 
   bool checkRequireOrPositionalArgs(DSState &state, const RequiredOptionSet &requiredSet,
                                     StrArrayIter &begin, StrArrayIter end, BaseObject &out);

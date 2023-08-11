@@ -19,6 +19,7 @@
 
 #include <limits>
 
+#include "constant.h"
 #include "misc/buffer.hpp"
 #include "misc/enum_util.hpp"
 #include "misc/opt_parser.hpp"
@@ -26,12 +27,23 @@
 
 namespace ydsh {
 
+enum class ArgEntryAttr : unsigned short {
+  REQUIRE = 1u << 0u,    // require option
+  POSITIONAL = 1u << 1u, // positional argument
+  REMAIN = 1u << 2u,     // remain argument (last positional argument that accept string array)
+};
+
+template <>
+struct allow_enum_bitop<ArgEntryAttr> : std::true_type {};
+
 class ArgEntry {
 public:
   enum class Index : unsigned short {};
 
-  static constexpr auto HELP =
-      static_cast<Index>(std::numeric_limits<std::underlying_type_t<Index>>::max());
+  static constexpr auto HELP = static_cast<Index>(SYS_LIMIT_ARG_ENTRY_MAX);
+
+  static_assert(std::numeric_limits<std::underlying_type_t<Index>>::max() ==
+                SYS_LIMIT_ARG_ENTRY_MAX);
 
   enum class CheckerKind : unsigned char {
     NOP,    // no check
@@ -40,11 +52,9 @@ public:
   };
 
 private:
-  Index index{0}; // for corresponding field offset
+  unsigned char fieldOffset{0}; // corresponding field offset
   OptParseOp parseOp{OptParseOp::NO_ARG};
-  bool require{false};
-  bool positional{false}; // for positional arguments
-  bool remain{false};     // for last positional argument (array)
+  ArgEntryAttr attr{};
   CheckerKind checkerKind{CheckerKind::NOP};
   char shortOptName{0};
   CStrPtr longOptName{nullptr};  // may be null
@@ -64,34 +74,27 @@ private:
   };
 
 public:
-  explicit ArgEntry(unsigned int index)
-      : index(static_cast<Index>(static_cast<std::underlying_type_t<Index>>(index))),
-        intRange({0, 0}) {}
+  explicit ArgEntry(unsigned char fieldOffset) : fieldOffset(fieldOffset), intRange({0, 0}) {}
 
   ~ArgEntry();
 
-  Index getIndex() const { return this->index; }
-
-  unsigned int getIndexAsInt() const { return toUnderlying(this->getIndex()); }
+  unsigned int getFieldOffset() const { return this->fieldOffset; }
 
   void setParseOp(OptParseOp op) { this->parseOp = op; }
 
   OptParseOp getParseOp() const { return this->parseOp; }
 
-  void setRequire(bool r) { this->require = r; }
+  void setAttr(ArgEntryAttr a) { this->attr = a; }
 
-  bool isRequire() const { return this->require; }
+  ArgEntryAttr getAttr() const { return this->attr; }
 
-  void setPositional(bool p) { this->positional = p; }
+  bool hasAttr(ArgEntryAttr a) const { return hasFlag(this->attr, a); }
 
-  bool isPositional() const { return this->positional; }
+  bool isRequire() const { return this->hasAttr(ArgEntryAttr::REQUIRE); }
 
-  void setRemainArg(bool r) {
-    this->setPositional(r);
-    this->remain = r;
-  }
+  bool isPositional() const { return this->hasAttr(ArgEntryAttr::POSITIONAL); }
 
-  bool isRemainArg() const { return this->remain; }
+  bool isRemainArg() const { return this->hasAttr(ArgEntryAttr::REMAIN); }
 
   void setIntRange(int64_t min, int64_t max) {
     this->destroyCheckerData();
@@ -129,9 +132,9 @@ public:
 
   void setDetail(const char *value) { this->detail.reset(strdup(value)); }
 
-  bool isOption() const { return !this->isPositional(); }
+  const char *getDetail() const { return this->detail.get(); }
 
-  OptParser<ArgEntry::Index>::Option toOption() const;
+  bool isOption() const { return !this->isPositional(); }
 
   /**
    *

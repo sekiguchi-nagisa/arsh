@@ -461,6 +461,7 @@ constexpr size_t SYS_LIMIT_KILL_RING_MAX = UINT8_MAX;
 constexpr size_t SYS_LIMIT_DIRSTACK_SIZE = UINT8_MAX;
 constexpr size_t SYS_LIMIT_INPUT_SIZE = INT32_MAX;
 constexpr size_t SYS_LIMIT_HIST_SIZE = UINT16_MAX;
+constexpr size_t SYS_LIMIT_ARG_ENTRY_MAX = UINT16_MAX;
 
 // helper macro definition
 #if 1

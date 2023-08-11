@@ -39,13 +39,6 @@ void ArgEntry::destroyCheckerData() {
   }
 }
 
-OptParser<ArgEntry::Index>::Option ArgEntry::toOption() const {
-  assert(this->isOption());
-  const char *arg = this->argName ? this->argName.get() : "arg";
-  const char *d = this->detail ? this->detail.get() : "";
-  return {this->index, this->shortOptName, this->longOptName.get(), this->parseOp, arg, d};
-}
-
 bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
   out = 0;
   switch (this->checkerKind) {
@@ -102,6 +95,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
 
 template class OptParser<ArgEntry::Index>; // explicit instantiation
 
+static OptParser<ArgEntry::Index>::Option toOption(const ArgEntry &entry, ArgEntry::Index index) {
+  assert(entry.isOption());
+  const char *arg = entry.getArgName() ? entry.getArgName() : "arg";
+  const char *d = entry.getDetail() ? entry.getDetail() : "";
+  return {index, entry.getShortName(), entry.getLongName(), entry.getParseOp(), arg, d};
+}
+
 ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
   size_t size = 1; // reserved for help
   for (auto &e : entries) {
@@ -113,7 +113,9 @@ ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
   size_t index = 0;
   for (auto &e : entries) {
     if (e.isOption()) {
-      options[index++] = e.toOption();
+      auto i = static_cast<ArgEntry::Index>(index);
+      options[index] = toOption(e, i);
+      index++;
     }
   }
   options[size - 1] = {ArgEntry::HELP, 'h', "help", OptParseOp::NO_ARG, "show this help message"};

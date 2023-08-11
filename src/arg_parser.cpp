@@ -26,10 +26,12 @@ namespace ydsh {
 // ###############################
 
 RequiredOptionSet::RequiredOptionSet(const std::vector<ArgEntry> &entries) {
-  for (auto &e : entries) {
+  const size_t size = entries.size();
+  for (size_t i = 0; i < size; i++) {
+    auto &e = entries[i];
     if (e.isRequire() || e.isPositional()) {
-      assert(e.getIndexAsInt() <= UINT8_MAX);
-      auto v = static_cast<unsigned char>(e.getIndexAsInt());
+      assert(i <= SYS_LIMIT_ARG_ENTRY_MAX);
+      auto v = static_cast<unsigned short>(i);
       assert(this->values.empty() || this->values.back() < v);
       this->values.push_back(v);
     }
@@ -61,14 +63,13 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
       help = true;
       continue;
     }
-    const unsigned int index = toUnderlying(ret.getOpt());
-    assert(index <= UINT8_MAX);
-    requiredSet.del(static_cast<unsigned char>(index));
-    auto &entry = this->instance.getEntries()[index];
-    assert(entry.getIndexAsInt() == index);
+    const auto entryIndex = toUnderlying(ret.getOpt());
+    assert(entryIndex < SYS_LIMIT_ARG_ENTRY_MAX);
+    requiredSet.del(entryIndex);
+    auto &entry = this->instance.getEntries()[entryIndex];
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG:
-      out[index] = DSValue::createBool(true); // set flag
+      out[entryIndex] = DSValue::createBool(true); // set flag
       continue;
     case OptParseOp::HAS_ARG:
     case OptParseOp::OPT_ARG:
@@ -102,15 +103,15 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
 }
 
 bool ArgParserObject::checkAndSetArg(DSState &state, const ArgEntry &entry, StringRef arg,
-                                     BaseObject &out) {
+                                     BaseObject &out) const {
   std::string err;
   int64_t v = 0;
   if (entry.checkArg(arg, v, err)) {
-    unsigned int index = entry.getIndexAsInt();
+    unsigned int offset = entry.getFieldOffset();
     if (entry.getCheckerKind() == ArgEntry::CheckerKind::INT) {
-      out[index] = DSValue::createInt(v);
+      out[offset] = DSValue::createInt(v);
     } else {
-      out[index] = DSValue::createStr(arg);
+      out[offset] = DSValue::createStr(arg);
     }
     return true;
   } else {
@@ -150,12 +151,12 @@ bool ArgParserObject::checkRequireOrPositionalArgs(DSState &state,
     if (begin != end) {
       StringRef arg = *begin;
       ++begin;
-      if (e.isRemainArg() && out[e.getIndexAsInt()].isInvalid()) {
-        out[e.getIndexAsInt()] =
+      if (e.isRemainArg() && out[e.getFieldOffset()].isInvalid()) {
+        out[e.getFieldOffset()] =
             DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
       }
       if (e.isRemainArg()) {
-        auto &obj = typeAs<ArrayObject>(out[e.getIndexAsInt()]);
+        auto &obj = typeAs<ArrayObject>(out[e.getFieldOffset()]);
         if (!obj.append(state, DSValue::createStr(arg))) {
           return false;
         }
