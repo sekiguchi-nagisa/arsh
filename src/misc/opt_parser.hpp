@@ -410,9 +410,11 @@ void OptParser<T>::formatOptions(std::string &value) const {
     value += "\n  ";
     auto usage = option.getUsage();
     value += usage;
-    value.append(maxLenOfUsage - usage.size(), ' ');
 
     option.splitDetails(details);
+    if (!details.empty()) {
+      value.append(maxLenOfUsage - usage.size(), ' ');
+    }
     unsigned int count = 0;
     for (auto &detail : details) {
       if (count++ > 0) {

@@ -123,9 +123,38 @@ ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
 }
 
 void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &out) const {
+  unsigned int optCount = 0;
+  unsigned int argCount = 0;
+  for (auto &e : this->entries) {
+    if (e.isOption()) {
+      optCount++;
+    } else {
+      argCount++;
+    }
+  }
+
   out += "Usage: ";
   out += cmdName;
-  out += " [OPTIONS]";
+  if (optCount) {
+    out += " [OPTIONS]";
+  }
+
+  if (argCount) {
+    for (auto &e : this->entries) {
+      if (e.isPositional()) {
+        out += ' ';
+        if (!e.isRequire()) {
+          out += '[';
+        }
+        assert(e.getArgName());
+        out += e.getArgName();
+        if (!e.isRequire()) {
+          out += ']';
+        }
+      }
+    }
+  }
+
   if (printOptions) {
     out += "\n\n";
     this->formatOptions(out);

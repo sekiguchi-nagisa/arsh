@@ -28,9 +28,10 @@
 namespace ydsh {
 
 enum class ArgEntryAttr : unsigned short {
-  REQUIRE = 1u << 0u,    // require option
-  POSITIONAL = 1u << 1u, // positional argument
-  REMAIN = 1u << 2u,     // remain argument (last positional argument that accept string array)
+  REQUIRE = 1u << 0u,     // require option
+  POSITIONAL = 1u << 1u,  // positional argument
+  REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)
+  STORE_FALSE = 1u << 3u, // for flag options (no-arg option)
 };
 
 template <>
@@ -77,6 +78,33 @@ public:
   explicit ArgEntry(unsigned char fieldOffset) : fieldOffset(fieldOffset), intRange({0, 0}) {}
 
   ~ArgEntry();
+
+  ArgEntry(ArgEntry &&o) noexcept
+      : fieldOffset(o.fieldOffset), parseOp(o.parseOp), attr(o.attr), checkerKind(o.checkerKind),
+        shortOptName(o.shortOptName), longOptName(std::move(o.longOptName)),
+        defaultValue(std::move(o.defaultValue)), argName(std::move(o.argName)),
+        detail(std::move(o.detail)) {
+    switch (this->checkerKind) {
+    case CheckerKind::NOP:
+      break;
+    case CheckerKind::INT:
+      this->intRange = o.intRange;
+      break;
+    case CheckerKind::CHOICE:
+      this->choice = o.choice;
+      o.choice = {nullptr, 0};
+      break;
+    }
+    o.checkerKind = CheckerKind::NOP;
+  }
+
+  ArgEntry &operator=(ArgEntry &&o) noexcept {
+    if (this != std::addressof(o)) {
+      this->~ArgEntry();
+      new (this) ArgEntry(std::move(o));
+    }
+    return *this;
+  }
 
   unsigned int getFieldOffset() const { return this->fieldOffset; }
 

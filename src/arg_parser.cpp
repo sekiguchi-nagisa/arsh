@@ -68,8 +68,8 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
     requiredSet.del(entryIndex);
     auto &entry = this->instance.getEntries()[entryIndex];
     switch (entry.getParseOp()) {
-    case OptParseOp::NO_ARG:
-      out[entryIndex] = DSValue::createBool(true); // set flag
+    case OptParseOp::NO_ARG: // set flag
+      out[entryIndex] = DSValue::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
       continue;
     case OptParseOp::HAS_ARG:
     case OptParseOp::OPT_ARG:

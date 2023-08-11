@@ -350,7 +350,7 @@ TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belong
 
 TypeOrError TypePool::createArgsRecordType(const std::string &typeName, ModId belongedModId) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<RecordType>(name, this->get(TYPE::ArgDef_));
+  auto *type = this->newType<ArgsRecordType>(name, this->get(TYPE::ArgDef_));
   if (type) {
     return Ok(type);
   } else {
