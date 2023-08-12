@@ -253,6 +253,7 @@ TEST_F(ArgParserTest, range) {
   s = parser->parseAll(*this->state, *args, *out);
   ASSERT_FALSE(s);
   auto error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
 
   const char *err = R"(invalid argument: `qq', must be decimal integer
 Usage: cmd1 [OPTIONS] level)";
@@ -266,6 +267,7 @@ Usage: cmd1 [OPTIONS] level)";
   ASSERT_FALSE(s);
   ASSERT_EQ(0, (*out)[0].asInt());
   error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
 
   err = R"(invalid argument: `1001', must be [0, 1000]
 Usage: cmd1 [OPTIONS] level)";
@@ -291,6 +293,7 @@ Usage: cmd1 [OPTIONS] level)";
   s = parser->parseAll(*this->state, *args, *out);
   ASSERT_FALSE(s);
   error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
 
   err = R"(require -t or --time option)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
@@ -303,8 +306,53 @@ Usage: cmd1 [OPTIONS] level)";
   ASSERT_FALSE(s);
   ASSERT_EQ(9, (*out)[0].asInt());
   error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
 
   err = R"(require `level' argument)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+}
+
+TEST_F(ArgParserTest, help) {
+  ArgEntriesBuilder builder;
+  builder.add([](ArgEntry &e) {
+    e.setParseOp(OptParseOp::NO_ARG);
+    e.setArgName("output");
+    e.setAttr(ArgEntryAttr::POSITIONAL);
+  });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto ret =
+      this->typePool().createReifiedType(this->typePool().getArgParserTemplate(), {&recordType});
+  ASSERT_TRUE(ret);
+  auto parser = toObjPtr<ArgParserObject>(DSValue::create<ArgParserObject>(
+      cast<ArgParserType>(*ret.asOk()), DSValue::createStr("cmd11")));
+
+  //
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  auto args = createArgs("-h", "AAA");
+  bool s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  auto error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(0, error->getStatus());
+
+  const char *err = R"(Usage: cmd11 [output]
+
+Options:
+  -h, --help  show this help message)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // help with invalid options
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("-h", "-A");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(2, error->getStatus());
+
+  err = R"(invalid option: -A
+Usage: cmd11 [output])";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 
