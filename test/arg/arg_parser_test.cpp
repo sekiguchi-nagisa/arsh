@@ -37,6 +37,12 @@ static std::string toStringAt(const ArrayObject &obj, size_t index) {
   return obj.getValues()[index].asStrRef().toString();
 }
 
+static void fillWithInvalid(BaseObject &obj) {
+  for (unsigned int i = 0; i < obj.getFieldSize(); i++) {
+    obj[i] = DSValue::createInvalid();
+  }
+}
+
 class ArgParserTest : public ::testing::Test {
 protected:
   DSState *state{nullptr};
@@ -139,6 +145,167 @@ Options:
   std::string v;
   parser->formatUsage(true, v);
   ASSERT_EQ(help, v);
+}
+
+TEST_F(ArgParserTest, opt) {
+  ArgEntriesBuilder builder;
+  builder
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::OPT_ARG);
+        e.setShortName('d');
+        e.setLongName("dump");
+        e.setArgName("file");
+        e.setDefaultValue("stdout");
+      })
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setArgName("src");
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+      })
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setArgName("dest");
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN);
+      });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto ret =
+      this->typePool().createReifiedType(this->typePool().getArgParserTemplate(), {&recordType});
+  ASSERT_TRUE(ret);
+  auto parser = toObjPtr<ArgParserObject>(DSValue::create<ArgParserObject>(
+      cast<ArgParserType>(*ret.asOk()), DSValue::createStr("cmd1")));
+
+  //
+  auto args = createArgs("-d", "AAA");
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  bool s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("stdout", (*out)[0].asStrRef().toString());
+  ASSERT_EQ("AAA", (*out)[1].asStrRef().toString());
+  ASSERT_FALSE((*out)[2]);
+
+  //
+  args = createArgs("-d/dev/log", "111", "AAA", "BBB", "CCC");
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_TRUE(s);
+  ASSERT_EQ("/dev/log", (*out)[0].asStrRef().toString());
+  ASSERT_EQ("111", (*out)[1].asStrRef().toString());
+  ASSERT_TRUE((*out)[2].isObject());
+  ASSERT_TRUE(isa<ArrayObject>((*out)[2].get()));
+  {
+    auto &array = typeAs<ArrayObject>((*out)[2]);
+    ASSERT_EQ(3, array.size());
+    ASSERT_EQ("AAA", toStringAt(array, 0));
+    ASSERT_EQ("BBB", toStringAt(array, 1));
+    ASSERT_EQ("CCC", toStringAt(array, 2));
+  }
+
+  const char *help = R"(Usage: cmd1 [OPTIONS] src [dest ...]
+
+Options:
+  -d[file], --dump[=file]
+  -h, --help               show this help message)";
+  std::string v;
+  parser->formatUsage(true, v);
+  ASSERT_EQ(help, v);
+}
+
+TEST_F(ArgParserTest, range) {
+  ArgEntriesBuilder builder;
+  builder
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::HAS_ARG);
+        e.setShortName('t');
+        e.setLongName("time");
+        e.setArgName("msec");
+        e.setIntRange(0, 1000);
+        e.setAttr(ArgEntryAttr::REQUIRE);
+      })
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setArgName("level");
+        e.setChoice({strdup("info"), strdup("warn")});
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+      });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto ret =
+      this->typePool().createReifiedType(this->typePool().getArgParserTemplate(), {&recordType});
+  ASSERT_TRUE(ret);
+  auto parser = toObjPtr<ArgParserObject>(DSValue::create<ArgParserObject>(
+      cast<ArgParserType>(*ret.asOk()), DSValue::createStr("cmd1")));
+
+  //
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  auto args = createArgs("--time=1000", "info");
+  bool s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_TRUE(s);
+  ASSERT_EQ(1000, (*out)[0].asInt());
+  ASSERT_EQ("info", (*out)[1].asStrRef().toString());
+
+  // validation error (num format)
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("-t", "qq", "AAA");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  auto error = state->getCallStack().takeThrownObject();
+
+  const char *err = R"(invalid argument: `qq', must be decimal integer
+Usage: cmd1 [OPTIONS] level)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // validation error (int range)
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("-t", "0", "--time=1001", "AAA");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  ASSERT_EQ(0, (*out)[0].asInt());
+  error = state->getCallStack().takeThrownObject();
+
+  err = R"(invalid argument: `1001', must be [0, 1000]
+Usage: cmd1 [OPTIONS] level)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // validation error (choice)
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("-t", "0", "--time=1000", "Info");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  ASSERT_EQ(1000, (*out)[0].asInt());
+  error = state->getCallStack().takeThrownObject();
+
+  err = R"(invalid argument: `Info', must be {info, warn}
+Usage: cmd1 [OPTIONS] level)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // missing required options
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("Info");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  error = state->getCallStack().takeThrownObject();
+
+  err = R"(require -t or --time option)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // missing require arguments
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  args = createArgs("-t", "009");
+  s = parser->parseAll(*this->state, *args, *out);
+  ASSERT_FALSE(s);
+  ASSERT_EQ(9, (*out)[0].asInt());
+  error = state->getCallStack().takeThrownObject();
+
+  err = R"(require `level' argument)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 
 int main(int argc, char **argv) {
