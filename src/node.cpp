@@ -619,6 +619,7 @@ void BlockNode::dump(NodeDumper &dumper) const {
 void TypeDefNode::dump(NodeDumper &dumper) const {
   DUMP(nameInfo);
   DUMP_PTR(targetTypeNode);
+  DUMP(attrNodes);
 
 #define EACH_ENUM(OP)                                                                              \
   OP(ALIAS)                                                                                        \
@@ -809,6 +810,7 @@ VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
 void VarDeclNode::dump(NodeDumper &dumper) const {
   DUMP(varName);
   DUMP_PTR(exprNode);
+  DUMP(attrNodes);
 
 #define EACH_ENUM(OP)                                                                              \
   OP(VAR)                                                                                          \
@@ -820,6 +822,17 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 
   DUMP_PTR(handle);
+}
+
+// ###########################
+// ##     AttributeNode     ##
+// ###########################
+
+void AttributeNode::dump(NodeDumper &dumper) const {
+  DUMP(attrName);
+  DUMP(keys);
+  DUMP(valueNodes);
+  DUMP(constNodes);
 }
 
 // ########################
@@ -921,6 +934,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(returnTypeNode);
   DUMP_PTR(recvTypeNode);
   DUMP_PTR(blockNode);
+  DUMP(attrNodes);
   DUMP(maxVarNum);
   DUMP_PTR(handle);
   DUMP_PTR(resolvedType);

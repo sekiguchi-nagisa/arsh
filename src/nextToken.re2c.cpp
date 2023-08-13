@@ -261,6 +261,8 @@ INIT:
     <STMT> CMD               { MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
     <STMT> ENV_ASSIGN        { MODE(CMD); RET(ENV_ASSIGN); }
 
+    <STMT> "[<"              { MODE(ATTR); RET(ATTR_OPEN); }
+
     <EXPR> ":"               { RET(COLON); }
     <EXPR> ","               { MODE(STMT); RET(COMMA); }
 
@@ -386,17 +388,22 @@ INIT:
     <PARAM> APPLIED_NAME     { MODE(EXPR); RET_OR_COMP(PARAM_NAME); }
     <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
 
+    <ATTR> ">]"              { MODE(STMT); RET(ATTR_CLOSE); }
+    <ATTR> VAR_NAME          { RET(IDENTIFIER);}
+    <ATTR> "("               { PUSH_MODE_SKIP_NL(ATTR); RET(LP); }
+    <ATTR> ":"               { MODE(STMT); RET(ATTR_ASSIGN); }
+
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
     <STMT,EXPR,TYPE> NEW_LINE     { CHECK_HERE(); UPDATE_LN(); FIND_NEW_LINE(); }
     <NAME,PARAM> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
-    <STMT,EXPR,NAME,CMD,TYPE,PARAM> COMMENT
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> COMMENT
                              { if(this->inCompletionPoint()) { setComplete(false); }
                                STORE_COMMENT(); SKIP(); }
-    <STMT,EXPR,NAME,CMD,TYPE,PARAM> [ \t]+
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> [ \t]+
                              { FIND_SPACE(); }
-    <STMT,EXPR,NAME,CMD,TYPE,PARAM> "\\" [\n]
+    <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> "\\" [\n]
                              { UPDATE_LN(); STORE_COMMENT(); SKIP(); }
 
     <STMT,CMD> UNCLOSED_STRING_LITERAL / "\000"
@@ -408,8 +415,8 @@ INIT:
     <STMT> UNCLOSED_REGEX / [\n\000]
                              { RET(UNCLOSED_REGEX_LITERAL); }
 
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE> "\000" { REACH_EOS();}
-    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE> *      { RET(INVALID); }
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE,ATTR> "\000" { REACH_EOS();}
+    <STMT,EXPR,NAME,DSTRING,CMD,TYPE,PARAM,HERE,EXP_HERE,ATTR> *      { RET(INVALID); }
   */
 
 END:

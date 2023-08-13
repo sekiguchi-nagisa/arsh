@@ -75,6 +75,7 @@ namespace ydsh {
   OP(Catch)                                                                                        \
   OP(Try)                                                                                          \
   OP(VarDecl)                                                                                      \
+  OP(Attribute)                                                                                    \
   OP(Assign)                                                                                       \
   OP(ElementSelfAssign)                                                                            \
   OP(PrefixAssign)                                                                                 \
@@ -1651,6 +1652,8 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+class AttributeNode;
+
 class TypeDefNode : public WithRtti<Node, NodeKind::TypeDef> {
 public:
   const enum Kind : unsigned char {
@@ -1660,7 +1663,8 @@ public:
 
 private:
   NameInfo nameInfo;
-  std::unique_ptr<TypeNode> targetTypeNode; // for ALIAS, ERROR_DEF
+  std::unique_ptr<TypeNode> targetTypeNode;              // for ALIAS, ERROR_DEF
+  std::vector<std::unique_ptr<AttributeNode>> attrNodes; // dummy
   HandlePtr handle;
 
   TypeDefNode(unsigned int startPos, NameInfo &&name, std::unique_ptr<TypeNode> &&targetTypeNode,
@@ -1692,6 +1696,12 @@ public:
   Kind getDefKind() const { return this->kind; }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
+
+  void setAttrNodes(std::vector<std::unique_ptr<AttributeNode>> &&nodes) {
+    this->attrNodes = std::move(nodes);
+  }
+
+  const auto &getAttrNodes() const { return this->attrNodes; }
 
   void setHandle(HandlePtr hd) { this->handle = std::move(hd); }
 
@@ -2089,6 +2099,8 @@ private:
    */
   std::unique_ptr<Node> exprNode;
 
+  std::vector<std::unique_ptr<AttributeNode>> attrNodes; // for field
+
   HandlePtr handle;
 
 public:
@@ -2118,7 +2130,44 @@ public:
    */
   void setExprNode(std::unique_ptr<Node> &&node) { this->exprNode = std::move(node); }
 
+  void setAttrNodes(std::vector<std::unique_ptr<AttributeNode>> &&nodes) {
+    this->attrNodes = std::move(nodes);
+  }
+
+  const auto &getAttrNodes() const { return this->attrNodes; }
+
   unsigned int getVarIndex() const { return this->handle->getIndex(); }
+
+  void dump(NodeDumper &dumper) const override;
+};
+
+class AttributeNode : public WithRtti<Node, NodeKind::Attribute> {
+private:
+  NameInfo attrName;
+
+  std::vector<NameInfo> keys;
+
+  std::vector<std::unique_ptr<Node>> valueNodes;
+
+  std::vector<std::unique_ptr<Node>> constNodes;
+
+public:
+  explicit AttributeNode(NameInfo &&attrName)
+      : WithRtti(attrName.getToken()), attrName(std::move(attrName)) {}
+
+  void addParam(NameInfo &&paramName, std::unique_ptr<Node> &&exprNode) {
+    this->updateToken(exprNode->getToken());
+    this->keys.push_back(std::move(paramName));
+    this->valueNodes.push_back(std::move(exprNode));
+  }
+
+  const auto &getKeys() const { return this->keys; }
+
+  const auto &getValueNodes() const { return this->valueNodes; }
+
+  void setConstNodes(std::vector<std::unique_ptr<Node>> &nodes) {
+    this->constNodes = std::move(nodes);
+  }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2295,6 +2344,11 @@ private:
   std::unique_ptr<BlockNode> blockNode;
 
   /**
+   * for constructor
+   */
+  std::vector<std::unique_ptr<AttributeNode>> attrNodes;
+
+  /**
    * maximum number of local variable in function
    */
   unsigned int maxVarNum{0};
@@ -2360,6 +2414,12 @@ public:
    * return null before call setBlockNode()
    */
   BlockNode &getBlockNode() const { return *this->blockNode; }
+
+  void setAttrNodes(std::vector<std::unique_ptr<AttributeNode>> &&nodes) {
+    this->attrNodes = std::move(nodes);
+  }
+
+  const auto &getAttrNodes() const { return this->attrNodes; }
 
   void setMaxVarNum(unsigned int num) { this->maxVarNum = num; }
 
@@ -2743,6 +2803,7 @@ struct NodeVisitor {
   virtual void visitCatchNode(CatchNode &node) = 0;
   virtual void visitTryNode(TryNode &node) = 0;
   virtual void visitVarDeclNode(VarDeclNode &node) = 0;
+  virtual void visitAttributeNode(AttributeNode &node) = 0;
   virtual void visitAssignNode(AssignNode &node) = 0;
   virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) = 0;
   virtual void visitPrefixAssignNode(PrefixAssignNode &node) = 0;
@@ -2800,6 +2861,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
   void visitTryNode(TryNode &node) override { this->visitDefault(node); }
   void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }
+  void visitAttributeNode(AttributeNode &node) override { this->visitDefault(node); }
   void visitAssignNode(AssignNode &node) override { this->visitDefault(node); }
   void visitElementSelfAssignNode(ElementSelfAssignNode &node) override {
     this->visitDefault(node);

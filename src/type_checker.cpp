@@ -1879,6 +1879,8 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
   this->checkTypeVarDecl(node, willBeField);
 }
 
+void TypeChecker::visitAttributeNode(AttributeNode &node) { (void)node; }
+
 void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);

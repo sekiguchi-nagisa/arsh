@@ -219,6 +219,9 @@ std::string LexerMode::toString() const {
   case yycEXP_HERE:
     mode = "EXP_HERE(";
     break;
+  case yycATTR:
+    mode = "ATTR(";
+    break;
   }
   std::string value = mode;
   if (this->skipNL()) {

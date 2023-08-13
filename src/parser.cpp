@@ -750,6 +750,8 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
   }
   case TokenKind::TYPEDEF:
     return this->parse_typedef();
+  case TokenKind::ATTR_OPEN:
+    return this->parse_attributes();
     // clang-format off
   EACH_LA_varDecl(GEN_LA_CASE) return this->parse_variableDeclaration();
   EACH_LA_expression(GEN_LA_CASE) return this->parse_expression();
@@ -2453,6 +2455,68 @@ std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   }
   token = TRY(this->expect(TokenKind::RP));
   node->updateToken(token);
+  return node;
+}
+
+std::unique_ptr<Node> Parser::parse_attributes() {
+  GUARD_DEEP_NESTING(guard);
+
+  std::vector<std::unique_ptr<AttributeNode>> attrNodes;
+  TRY(this->expect(TokenKind::ATTR_OPEN));
+  do {
+    auto ctx = this->inIgnorableNLCtx();
+    if (!attrNodes.empty() && CUR_KIND() != TokenKind::IDENTIFIER) {
+      E_ALTER_OR_COMP(TokenKind::IDENTIFIER, TokenKind::ATTR_CLOSE);
+    }
+    auto attrNode = std::make_unique<AttributeNode>(
+        TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName)));
+    if (CUR_KIND() == TokenKind::LP) {
+      this->consume(); // always success
+      while (CUR_KIND() != TokenKind::RP) {
+        if (!attrNode->getKeys().empty()) {
+          if (CUR_KIND() != TokenKind::COMMA) {
+            E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
+          }
+          TRY(this->expectAndChangeMode(TokenKind::COMMA, yycATTR));
+        }
+        auto paramName = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+        TRY(this->expect(TokenKind::ATTR_ASSIGN));
+        auto exprNode = TRY(this->parse_expression());
+        attrNode->addParam(std::move(paramName), std::move(exprNode));
+      }
+      Token endToken = TRY(this->expect(TokenKind::RP));
+      attrNode->updateToken(endToken);
+    }
+    attrNodes.push_back(std::move(attrNode));
+  } while (CUR_KIND() != TokenKind::ATTR_CLOSE);
+  this->consume(); // ATTR_CLOSE
+
+  std::unique_ptr<Node> node;
+  switch (CUR_KIND()) {
+  case TokenKind::VAR:
+  case TokenKind::LET:
+    node = TRY(this->parse_variableDeclaration());
+    break;
+  case TokenKind::TYPEDEF:
+    node = TRY(this->parse_typedef());
+    break;
+  default:
+    E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPEDEF);
+  }
+
+  switch (node->getNodeKind()) {
+  case NodeKind::VarDecl:
+    cast<VarDeclNode>(*node).setAttrNodes(std::move(attrNodes));
+    break;
+  case NodeKind::TypeDef:
+    cast<TypeDefNode>(*node).setAttrNodes(std::move(attrNodes));
+    break;
+  case NodeKind::Function:
+    cast<FunctionNode>(*node).setAttrNodes(std::move(attrNodes));
+    break;
+  default:
+    break; // normally unreachable
+  }
   return node;
 }
 

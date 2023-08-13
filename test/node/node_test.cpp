@@ -192,6 +192,7 @@ nodes:
             kind: "STRING"
             init: false
             value: ""
+          attrNodes:
           kind: "VAR"
           handle: null
       baseIndex: 0
@@ -497,6 +498,7 @@ nodes:
       varSize: 0
       maxVarSize: 0
       firstDeferOffset: -1
+    attrNodes:
     maxVarNum: 0
     handle: null
     resolvedType: null
@@ -831,6 +833,7 @@ nodes:
           typeKind: "Base"
           typeName: "Int"
           handle: null
+    attrNodes:
     kind: "ALIAS"
     handle: null
 )"},
@@ -1075,6 +1078,7 @@ nodes:
           typeKind: "Base"
           typeName: "Int"
           handle: null
+        attrNodes:
         kind: "VAR"
         handle:
           index: 0
@@ -1099,6 +1103,7 @@ nodes:
           typeKind: "Base"
           typeName: "Int"
           handle: null
+        attrNodes:
         kind: "VAR"
         handle:
           index: 1
@@ -1140,6 +1145,7 @@ nodes:
       varSize: 2
       maxVarSize: 2
       firstDeferOffset: -1
+    attrNodes:
     maxVarNum: 2
     handle:
       index: 44
@@ -1269,6 +1275,7 @@ nodes:
           varSize: 0
           maxVarSize: 0
           firstDeferOffset: -1
+        attrNodes:
         maxVarNum: 0
         handle:
           index: 44
@@ -1323,6 +1330,7 @@ nodes:
           varSize: 0
           maxVarSize: 0
           firstDeferOffset: -1
+        attrNodes:
         maxVarNum: 0
         handle:
           index: 45
@@ -1401,7 +1409,51 @@ nodes:
     targetTypeNode: null
     opKind: "TO_VOID"
 )EOF"},
-};
+    {DumpOp::untyped, R"([<ArgsDef>] typedef AAA(){})", 0, 1, R"(
+nodes:
+  - nodeKind: Function
+    token:
+      pos: 12
+      size: 15
+    type:
+    kind: "EXPLICIT_CONSTRUCTOR"
+    funcName:
+      token:
+        pos: 20
+        size: 3
+      name: "AAA"
+    paramNodes:
+    returnTypeNode: null
+    recvTypeNode: null
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 25
+        size: 2
+      type:
+      nodes:
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
+      firstDeferOffset: -1
+    attrNodes:
+      - nodeKind: Attribute
+        token:
+          pos: 2
+          size: 7
+        type:
+        attrName:
+          token:
+            pos: 2
+            size: 7
+          name: "ArgsDef"
+        keys:
+        valueNodes:
+        constNodes:
+    maxVarNum: 0
+    handle: null
+    resolvedType: null
+)"}};
 
 TEST_P(NodeDumpTest, base) { ASSERT_NO_FATAL_FAILURE(this->test()); }
 

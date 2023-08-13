@@ -375,6 +375,8 @@ protected:
   std::unique_ptr<PrefixAssignNode> parse_prefixAssign();
 
   std::unique_ptr<Node> parse_cmdArgArray();
+
+  std::unique_ptr<Node> parse_attributes();
 };
 
 } // namespace ydsh

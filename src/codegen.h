@@ -563,6 +563,7 @@ private:
   void visitCatchNode(CatchNode &node) override;
   void visitTryNode(TryNode &node) override;
   void visitVarDeclNode(VarDeclNode &node) override;
+  void visitAttributeNode(AttributeNode &node) override;
   void visitAssignNode(AssignNode &node) override;
   void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
   void visitPrefixAssignNode(PrefixAssignNode &node) override;

@@ -176,6 +176,10 @@ void NodePass::visitTryNode(TryNode &node) {
 
 void NodePass::visitVarDeclNode(VarDeclNode &node) { this->visit(node.getExprNode()); }
 
+void NodePass::visitAttributeNode(AttributeNode &node) {
+  (void)node; // FIXME:
+}
+
 void NodePass::visitAssignNode(AssignNode &node) {
   this->visit(node.getLeftNode());
   this->visit(node.getRightNode());

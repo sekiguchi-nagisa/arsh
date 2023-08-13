@@ -74,6 +74,7 @@ nodes:
           typeKind: \"Base\"
           typeName: \"Int\"
           handle: null
+        attrNodes:
         kind: \"VAR\"
         handle: null
     returnTypeNode:
@@ -123,6 +124,7 @@ nodes:
       varSize: 0
       maxVarSize: 0
       firstDeferOffset: -1
+    attrNodes:
     maxVarNum: 0
     handle: null
     resolvedType: null"
@@ -226,6 +228,7 @@ nodes:
           typeKind: \"Base\"
           typeName: \"Int\"
           handle: null
+        attrNodes:
         kind: \"VAR\"
         handle:
           index: 0
@@ -333,6 +336,7 @@ nodes:
       varSize: 1
       maxVarSize: 1
       firstDeferOffset: -1
+    attrNodes:
     maxVarNum: 1
     handle:
       index: 45

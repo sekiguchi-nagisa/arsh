@@ -192,7 +192,11 @@
   TOKEN(PTYPE_CLOSE, ")") /* ) */                                                                  \
   TOKEN(TYPE_MSEP, ":")   /* : */                                                                  \
   TOKEN(TYPE_OPT, "?")    /* ? */                                                                  \
-  TOKEN(TYPE_ARROW, "->") /* -> */
+  TOKEN(TYPE_ARROW, "->") /* -> */                                                                 \
+  /* attribute */                                                                                  \
+  TOKEN(ATTR_OPEN, "[<")                                                                           \
+  TOKEN(ATTR_CLOSE, ">]")                                                                          \
+  TOKEN(ATTR_ASSIGN, ":")
 
 #define EACH_ASSIGN_OPERATOR(OP)                                                                   \
   OP(ASSIGN, 1, INFIX | RASSOC)                                                                    \
@@ -312,6 +316,7 @@
   OP(SOURCE)                                                                                       \
   OP(SOURCE_OPT)                                                                                   \
   OP(TYPEDEF)                                                                                      \
+  OP(ATTR_OPEN)                                                                                    \
   OP(LINE_END)                                                                                     \
   EACH_LA_varDecl(OP) EACH_LA_expression(OP)
 
