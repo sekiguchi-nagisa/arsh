@@ -132,10 +132,8 @@ void Archiver::add(const std::string &name, const Handle &handle) {
   }
   this->writeStr(ref);
   this->write32(handle.getIndex());
-  static_assert(std::is_same_v<std::underlying_type_t<HandleKind>, uint8_t>);
-  this->write8(toUnderlying(handle.getKind()));
-  static_assert(std::is_same_v<std::underlying_type_t<HandleAttr>, uint8_t>);
-  this->write8(toUnderlying(handle.attr()));
+  this->writeEnum(handle.getKind());
+  this->writeEnum(handle.attr());
   this->writeModId(handle.getModId());
   auto &type = this->pool.get(handle.getTypeId());
   this->add(type);
@@ -177,8 +175,8 @@ std::pair<std::string, HandlePtr> Archive::unpack(TypePool &pool) const {
 std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
   std::string name = this->readStr();
   uint32_t index = this->read32();
-  const auto kind = static_cast<HandleKind>(this->read8());
-  const auto attr = static_cast<HandleAttr>(this->read8());
+  const auto kind = this->readEnum<HandleKind>();
+  const auto attr = this->readEnum<HandleAttr>();
   auto modId = this->readModId();
   auto type = TRY(this->unpackType());
   unsigned int famSize = this->read8();

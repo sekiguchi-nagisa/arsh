@@ -113,12 +113,20 @@ private:
 
   void writeModId(ModId id) {
     static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
-    this->write16(toUnderlying(id));
+    this->writeEnum(id);
+  }
+
+  template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+  void writeEnum(T t) {
+    constexpr unsigned int N = sizeof(std::underlying_type_t<T>);
+    using unsigned_type = std::make_unsigned_t<std::underlying_type_t<T>>;
+    auto v = static_cast<unsigned_type>(toUnderlying(t));
+    this->writeN<N>(v);
   }
 
   void writeT(ArchiveType t) {
     static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(uint8_t));
-    this->write8(toUnderlying(t));
+    this->writeEnum(t);
   }
 
   void writeStr(StringRef ref) {
@@ -168,15 +176,20 @@ private:
 
   uint32_t read32() { return static_cast<uint32_t>(this->readN<4>()); }
 
-  ModId readModId() {
-    static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
-    return ModId{this->read16()};
+  template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+  T readEnum() {
+    constexpr unsigned int N = sizeof(std::underlying_type_t<T>);
+    using unsigned_type = std::make_unsigned_t<std::underlying_type_t<T>>;
+    auto v = static_cast<unsigned_type>(this->readN<N>());
+    return static_cast<T>(v);
   }
 
-  ArchiveType readT() {
-    auto v = this->read8();
-    return static_cast<ArchiveType>(v);
+  ModId readModId() {
+    static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
+    return this->readEnum<ModId>();
   }
+
+  ArchiveType readT() { return this->readEnum<ArchiveType>(); }
 
   std::string readStr() {
     auto size = this->read32();
