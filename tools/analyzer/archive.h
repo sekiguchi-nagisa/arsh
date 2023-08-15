@@ -19,6 +19,7 @@
 
 #include <string>
 
+#include <arg_parser_base.h>
 #include <misc/result.hpp>
 #include <type.h>
 
@@ -33,6 +34,7 @@ enum class ArchiveType : uint8_t {
   OPTION,
   ERROR,
   RECORD,
+  ARGS_RECORD,
   FUNC,
   MOD,
   CACHED,
@@ -111,6 +113,8 @@ private:
 
   void write32(uint32_t b) { this->writeN<4>(b); }
 
+  void write64(uint64_t b) { this->writeN<8>(b); }
+
   void writeModId(ModId id) {
     static_assert(sizeof(std::underlying_type_t<ModId>) == sizeof(unsigned short));
     this->writeEnum(id);
@@ -137,6 +141,8 @@ private:
   void add(const DSType &type);
 
   void add(const std::string &name, const Handle &handle);
+
+  void add(const ArgEntry &entry);
 };
 
 class Unarchiver {
@@ -158,6 +164,8 @@ private:
 
   std::pair<std::string, HandlePtr> unpackHandle();
 
+  std::pair<ArgEntry, bool> unpackArgEntry();
+
   template <unsigned int N>
   uint64_t readN() {
     static_assert(N > 0 && N < 9, "out of range");
@@ -175,6 +183,8 @@ private:
   uint16_t read16() { return static_cast<uint16_t>(this->readN<2>()); }
 
   uint32_t read32() { return static_cast<uint32_t>(this->readN<4>()); }
+
+  uint64_t read64() { return this->readN<8>(); }
 
   template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
   T readEnum() {

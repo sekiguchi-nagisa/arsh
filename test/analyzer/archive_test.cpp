@@ -1,6 +1,8 @@
 
 #include "gtest/gtest.h"
 
+#include "../arg_parser_helper.hpp"
+
 #include "analyzer.h"
 #include "archive.h"
 
@@ -773,6 +775,151 @@ TEST_F(ArchiveTest, method2) {
 
   method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
   ASSERT_FALSE(method);
+}
+
+TEST_F(ArchiveTest, argEntry) {
+  /**
+   * for global import
+   */
+  auto &modType = this->loadMod(true, [&](AnalyzerContext &ctx) {
+    ArgEntriesBuilder builder;
+    builder
+        .add([](ArgEntry &e) {
+          e.setParseOp(OptParseOp::NO_ARG);
+          e.setShortName('e');
+          e.setLongName("enable");
+          e.setDetail("enable features");
+        })
+        .add(0,
+             [](ArgEntry &e) {
+               e.setParseOp(OptParseOp::NO_ARG);
+               e.setShortName('d');
+               e.setLongName("disable");
+               e.setAttr(ArgEntryAttr::STORE_FALSE);
+               e.setDetail("disable features");
+             })
+        .add([](ArgEntry &e) {
+          e.setParseOp(OptParseOp::OPT_ARG);
+          e.setShortName('o');
+          e.setLongName("output");
+          e.setArgName("target");
+          e.setDefaultValue("/dev/stdout");
+          e.setAttr(ArgEntryAttr::REQUIRE);
+        })
+        .add([](ArgEntry &e) {
+          e.setParseOp(OptParseOp::HAS_ARG);
+          e.setShortName('t');
+          e.setLongName("timeout");
+          e.setIntRange(0, INT64_MAX);
+        })
+        .add([](ArgEntry &e) {
+          e.setParseOp(OptParseOp::HAS_ARG);
+          e.setLongName("log");
+          e.setArgName("level");
+          e.setChoice({strdup("info"), strdup("warn")});
+        })
+        .add([](ArgEntry &e) {
+          e.setArgName("files");
+          e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE);
+        });
+
+    auto &recordType = createRecordType(ctx.getPool(), "type1", std::move(builder), ctx.getModId());
+    ASSERT_EQ(6, recordType.getEntries().size());
+    auto ret = ctx.getScope()->defineTypeAlias(ctx.getPool(), "type1", recordType);
+    ASSERT_TRUE(ret);
+    auto ret2 =
+        ctx.getPool().createReifiedType(ctx.getPool().getArgParserTemplate(), {&recordType});
+    ASSERT_TRUE(ret2);
+
+    define(ctx, "arg_parser", *ret2.asOk());
+  });
+  (void)modType;
+
+  auto ret = this->scope().lookup("arg_parser");
+  ASSERT_TRUE(ret);
+  ASSERT_TRUE(isa<ArgParserType>(this->pool().get(ret.asOk()->getTypeId())));
+  auto &parserType = cast<ArgParserType>(this->pool().get(ret.asOk()->getTypeId()));
+  auto &recordType = parserType.getElementType();
+  auto &entries = recordType.getEntries();
+  ASSERT_EQ(6, entries.size());
+
+  // -e --enable
+  ASSERT_EQ(0, entries[0].getFieldOffset());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
+  ASSERT_EQ(ArgEntryAttr{}, entries[0].getAttr());
+  ASSERT_EQ('e', entries[0].getShortName());
+  ASSERT_STREQ("enable", entries[0].getLongName());
+  ASSERT_FALSE(entries[0].getArgName());
+  ASSERT_FALSE(entries[0].getDefaultValue());
+  ASSERT_STREQ("enable features", entries[0].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[0].getCheckerKind());
+
+  // -d --disable
+  ASSERT_EQ(0, entries[1].getFieldOffset());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[1].getParseOp());
+  ASSERT_EQ(ArgEntryAttr::STORE_FALSE, entries[1].getAttr());
+  ASSERT_EQ('d', entries[1].getShortName());
+  ASSERT_STREQ("disable", entries[1].getLongName());
+  ASSERT_FALSE(entries[1].getArgName());
+  ASSERT_FALSE(entries[1].getDefaultValue());
+  ASSERT_STREQ("disable features", entries[1].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[1].getCheckerKind());
+
+  // -o --output
+  ASSERT_EQ(1, entries[2].getFieldOffset());
+  ASSERT_EQ(OptParseOp::OPT_ARG, entries[2].getParseOp());
+  ASSERT_EQ(ArgEntryAttr::REQUIRE, entries[2].getAttr());
+  ASSERT_EQ('o', entries[2].getShortName());
+  ASSERT_STREQ("output", entries[2].getLongName());
+  ASSERT_STREQ("target", entries[2].getArgName());
+  ASSERT_STREQ("/dev/stdout", entries[2].getDefaultValue());
+  ASSERT_FALSE(entries[2].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[2].getCheckerKind());
+
+  // -t  --timeout
+  ASSERT_EQ(2, entries[3].getFieldOffset());
+  ASSERT_EQ(OptParseOp::HAS_ARG, entries[3].getParseOp());
+  ASSERT_EQ(ArgEntryAttr{}, entries[3].getAttr());
+  ASSERT_EQ('t', entries[3].getShortName());
+  ASSERT_STREQ("timeout", entries[3].getLongName());
+  ASSERT_FALSE(entries[3].getArgName());
+  ASSERT_FALSE(entries[3].getDefaultValue());
+  ASSERT_FALSE(entries[3].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::INT, entries[3].getCheckerKind());
+  {
+    auto [min, max] = entries[3].getIntRange();
+    ASSERT_EQ(0, min);
+    ASSERT_EQ(INT64_MAX, max);
+  }
+
+  // --log
+  ASSERT_EQ(3, entries[4].getFieldOffset());
+  ASSERT_EQ(OptParseOp::HAS_ARG, entries[4].getParseOp());
+  ASSERT_EQ(ArgEntryAttr{}, entries[4].getAttr());
+  ASSERT_EQ('\0', entries[4].getShortName());
+  ASSERT_STREQ("log", entries[4].getLongName());
+  ASSERT_STREQ("level", entries[4].getArgName());
+  ASSERT_FALSE(entries[4].getDefaultValue());
+  ASSERT_FALSE(entries[4].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::CHOICE, entries[4].getCheckerKind());
+  {
+    auto [begin, end] = entries[4].getChoice();
+    ASSERT_EQ(2, end - begin);
+    ASSERT_STREQ("info", *begin);
+    ASSERT_STREQ("warn", *(begin + 1));
+  }
+
+  // positional
+  ASSERT_EQ(4, entries[5].getFieldOffset());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[5].getParseOp());
+  ASSERT_EQ(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE,
+            entries[5].getAttr());
+  ASSERT_EQ('\0', entries[5].getShortName());
+  ASSERT_FALSE(entries[5].getLongName());
+  ASSERT_STREQ("files", entries[5].getArgName());
+  ASSERT_FALSE(entries[5].getDefaultValue());
+  ASSERT_FALSE(entries[5].getDetail());
+  ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[5].getCheckerKind());
 }
 
 struct Builder {

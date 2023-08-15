@@ -47,7 +47,7 @@ void Archiver::add(const DSType &type) {
       break; // unreachable
     case TypeKind::ArgParser:
       this->writeT(ArchiveType::ARG_PARSER);
-      this->add(cast<ArrayType>(type).getElementType());
+      this->add(cast<ArgParserType>(type).getElementType());
       break;
     case TypeKind::Array:
       this->writeT(ArchiveType::ARRAY);
@@ -98,7 +98,8 @@ void Archiver::add(const DSType &type) {
         this->writeStr(type.getNameRef());
       } else { // not found
         this->udTypeSet.emplace(type.typeId());
-        this->writeT(ArchiveType::RECORD);
+        this->writeT(type.typeKind() == TypeKind::Record ? ArchiveType::RECORD
+                                                         : ArchiveType::ARGS_RECORD);
         auto typeName = type.getNameRef();
         const auto pos = typeName.find('.');
         assert(pos != StringRef::npos);
@@ -111,6 +112,14 @@ void Archiver::add(const DSType &type) {
         this->write32(recordType.getHandleMap().size());
         for (auto &e : recordType.getHandleMap()) {
           this->add(e.first, *e.second);
+        }
+
+        if (type.typeKind() == TypeKind::ArgsRecord) {
+          auto &argsRecordType = cast<ArgsRecordType>(type);
+          this->write32(static_cast<uint32_t>(argsRecordType.getEntries().size()));
+          for (auto &e : argsRecordType.getEntries()) {
+            this->add(e);
+          }
         }
       }
       break;
@@ -151,6 +160,37 @@ void Archiver::add(const std::string &name, const Handle &handle) {
     if (handle.isFuncHandle()) {
       this->writeStr(cast<FuncHandle>(handle).getPackedParamNames());
     }
+  }
+}
+
+void Archiver::add(const ArgEntry &entry) {
+  this->write8(entry.getFieldOffset());
+  this->writeEnum(entry.getParseOp());
+  this->writeEnum(entry.getAttr());
+  this->writeEnum(entry.getCheckerKind());
+  this->write8(entry.getShortName());
+  this->writeStr(entry.getLongName());
+  this->writeStr(entry.getArgName());
+  this->writeStr(entry.getDefaultValue());
+  this->writeStr(entry.getDetail());
+  switch (entry.getCheckerKind()) {
+  case ArgEntry::CheckerKind::NOP:
+    break;
+  case ArgEntry::CheckerKind::INT: {
+    auto [min, max] = entry.getIntRange();
+    this->write64(min);
+    this->write64(max);
+    break;
+  }
+  case ArgEntry::CheckerKind::CHOICE: {
+    auto [begin, end] = entry.getChoice();
+    unsigned int size = end - begin;
+    this->write32(size);
+    for (; begin != end; ++begin) {
+      this->writeStr(*begin);
+    }
+    break;
+  }
   }
 }
 
@@ -218,7 +258,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
   })
 
 const DSType *Unarchiver::unpackType() {
-  auto k = this->readT();
+  const auto k = this->readT();
   switch (k) {
   case ArchiveType::PREDEFINED: {
     uint32_t id = this->read8();
@@ -227,7 +267,7 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::ARG_PARSER: {
     auto *type = TRY(this->unpackType());
     auto ret = TRY(this->pool.createArgParserType(*type));
-    return type; // FIXME:
+    return std::move(ret).take();
   }
   case ArchiveType::ARRAY: {
     auto *type = TRY(this->unpackType());
@@ -262,10 +302,12 @@ const DSType *Unarchiver::unpackType() {
     auto ret = TRY(this->pool.createErrorType(name, *superType, modId));
     return std::move(ret).take();
   }
-  case ArchiveType::RECORD: {
+  case ArchiveType::RECORD:
+  case ArchiveType::ARGS_RECORD: {
     std::string name = this->readStr();
     auto modId = this->readModId();
-    auto ret = TRY(this->pool.createRecordType(name, modId));
+    auto ret = k == ArchiveType::RECORD ? TRY(this->pool.createRecordType(name, modId))
+                                        : TRY(this->pool.createArgsRecordType(name, modId));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {
@@ -275,7 +317,22 @@ const DSType *Unarchiver::unpackType() {
       }
       handles.insert(std::move(pair));
     }
-    ret = TRY(this->pool.finalizeRecordType(cast<RecordType>(*ret.asOk()), std::move(handles)));
+    if (k == ArchiveType::RECORD) {
+      ret = TRY(this->pool.finalizeRecordType(cast<RecordType>(*ret.asOk()), std::move(handles)));
+    } else {
+      unsigned int entrySize = this->read32();
+      std::vector<ArgEntry> entries;
+      entries.reserve(entrySize);
+      for (unsigned int i = 0; i < entrySize; i++) {
+        auto pair = this->unpackArgEntry();
+        if (!pair.second) {
+          return nullptr;
+        }
+        entries.push_back(std::move(pair.first));
+      }
+      ret = TRY(this->pool.finalizeArgsRecordType(cast<ArgsRecordType>(*ret.asOk()),
+                                                  std::move(handles), std::move(entries)));
+    }
     return std::move(ret).take();
   }
   case ArchiveType::FUNC: {
@@ -299,6 +356,49 @@ const DSType *Unarchiver::unpackType() {
   }
   }
   return nullptr;
+}
+
+std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
+  ArgEntry entry(this->read8());
+  entry.setParseOp(this->readEnum<OptParseOp>());
+  entry.setAttr(this->readEnum<ArgEntryAttr>());
+  const auto kind = this->readEnum<ArgEntry::CheckerKind>();
+  entry.setShortName(static_cast<char>(this->read8()));
+  if (auto str = this->readStr(); !str.empty()) {
+    entry.setLongName(str.c_str());
+  }
+  if (auto str = this->readStr(); !str.empty()) {
+    entry.setArgName(str.c_str());
+  }
+  if (auto str = this->readStr(); !str.empty()) {
+    entry.setDefaultValue(str.c_str());
+  }
+  if (auto str = this->readStr(); !str.empty()) {
+    entry.setDetail(str.c_str());
+  }
+
+  switch (kind) {
+  case ArgEntry::CheckerKind::NOP:
+    break;
+  case ArgEntry::CheckerKind::INT: {
+    auto min = static_cast<int64_t>(this->read64());
+    auto max = static_cast<int64_t>(this->read64());
+    entry.setIntRange(min, max);
+    break;
+  }
+  case ArgEntry::CheckerKind::CHOICE: {
+    unsigned int size = this->read32();
+    FlexBuffer<char *> buf;
+    buf.reserve(size);
+    for (unsigned int i = 0; i < size; i++) {
+      auto str = this->readStr();
+      buf.push_back(strdup(str.c_str()));
+    }
+    entry.setChoice(std::move(buf));
+    break;
+  }
+  }
+  return {std::move(entry), true};
 }
 
 Optional<std::unordered_map<std::string, HandlePtr>> ModuleArchive::unpack(TypePool &pool) const {

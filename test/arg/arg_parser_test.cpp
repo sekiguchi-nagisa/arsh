@@ -4,27 +4,9 @@
 #include <vm.h>
 #include <ydsh/ydsh.h>
 
+#include "../arg_parser_helper.hpp"
+
 using namespace ydsh;
-
-class ArgEntriesBuilder {
-private:
-  std::vector<ArgEntry> values;
-  unsigned int offset{0};
-
-public:
-  template <typename Func>
-  static constexpr bool func_requirement_v =
-      std::is_same_v<void, std::invoke_result_t<Func, ArgEntry &>>;
-
-  template <typename Func, enable_when<func_requirement_v<Func>> = nullptr>
-  ArgEntriesBuilder &add(Func func) {
-    this->values.emplace_back(this->offset++);
-    func(this->values.back());
-    return *this;
-  }
-
-  std::vector<ArgEntry> build() && { return std::move(this->values); }
-};
 
 template <typename... T>
 static ObjPtr<ArrayObject> createArgs(T &&...args) {
@@ -55,23 +37,7 @@ public:
   TypePool &typePool() { return this->state->typePool; }
 
   const ArgsRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder) {
-    const auto modId = ModId{1};
-    auto ret = this->typePool().createArgsRecordType(typeName, modId);
-    assert(ret);
-    (void)ret;
-    auto entries = std::move(builder).build();
-    std::unordered_map<std::string, HandlePtr> handles;
-    for (size_t i = 0; i < entries.size(); i++) {
-      std::string name = "field_";
-      name += std::to_string(i);
-      auto handle = HandlePtr ::create(this->typePool().get(TYPE::String), i, HandleKind::VAR,
-                                       HandleAttr::UNCAPTURED, modId);
-      handles.emplace(std::move(name), std::move(handle));
-    }
-    auto &type = *cast<ArgsRecordType>(ret.asOk());
-    ret = this->typePool().finalizeArgsRecordType(type, std::move(handles), std::move(entries));
-    assert(ret);
-    return type;
+    return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1});
   }
 };
 

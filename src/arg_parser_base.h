@@ -106,7 +106,7 @@ public:
     return *this;
   }
 
-  unsigned int getFieldOffset() const { return this->fieldOffset; }
+  unsigned char getFieldOffset() const { return this->fieldOffset; }
 
   void setParseOp(OptParseOp op) { this->parseOp = op; }
 
@@ -131,6 +131,11 @@ public:
     this->intRange.max = max;
   }
 
+  std::pair<int64_t, int64_t> getIntRange() const {
+    auto [min, max] = this->intRange;
+    return {min, max};
+  }
+
   void setChoice(FlexBuffer<char *> &&buf) {
     this->destroyCheckerData();
     if (!buf.empty()) {
@@ -138,6 +143,12 @@ public:
       this->choice.len = buf.size();
       this->choice.list = std::move(buf).take();
     }
+  }
+
+  std::pair<const char *const *, const char *const *> getChoice() const {
+    auto begin = static_cast<const char *const *>(this->choice.list);
+    auto end = static_cast<const char *const *>(this->choice.list + this->choice.len);
+    return {begin, end};
   }
 
   CheckerKind getCheckerKind() const { return this->checkerKind; }
