@@ -1143,7 +1143,7 @@ enum class OptionSet : unsigned int {
   HELP,
 };
 
-constexpr OptParser<OptionSet>::Option options[] = {
+const OptParser<OptionSet>::Option options[] = {
     {OptionSet::DOC, 0, "doc", OptParseOp::NO_ARG, "generate interface documentation"},
     {OptionSet::BIND, 0, "bind", OptParseOp::NO_ARG, "generate function binding"},
     {OptionSet::HEADER, 0, "header", OptParseOp::HAS_ARG,

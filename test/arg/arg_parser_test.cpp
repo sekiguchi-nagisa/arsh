@@ -66,13 +66,13 @@ TEST_F(ArgParserTest, base) {
   ASSERT_EQ(3, entries.size());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
   ASSERT_EQ('s', entries[0].getShortName());
-  ASSERT_STREQ("status", entries[0].getLongName());
+  ASSERT_EQ("status", entries[0].getLongName());
   ASSERT_EQ(OptParseOp::HAS_ARG, entries[1].getParseOp());
   ASSERT_EQ('o', entries[1].getShortName());
-  ASSERT_STREQ("output", entries[1].getLongName());
+  ASSERT_EQ("output", entries[1].getLongName());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[2].getParseOp());
   ASSERT_EQ('d', entries[2].getShortName());
-  ASSERT_FALSE(entries[2].getLongName());
+  ASSERT_TRUE(entries[2].getLongName().empty());
 
   auto args = createArgs("-s", "--output", "AAA", "-d", "BBB", "CCC");
   ASSERT_EQ(6, args->size());

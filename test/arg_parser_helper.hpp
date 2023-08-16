@@ -19,7 +19,9 @@ public:
 
   template <typename Func, enable_when<func_requirement_v<Func>> = nullptr>
   ArgEntriesBuilder &add(unsigned char v, Func func) {
-    this->values.emplace_back(v);
+    auto index =
+        ArgEntryIndex{static_cast<std::underlying_type_t<ArgEntryIndex>>(this->values.size())};
+    this->values.emplace_back(index, v);
     func(this->values.back());
     return *this;
   }

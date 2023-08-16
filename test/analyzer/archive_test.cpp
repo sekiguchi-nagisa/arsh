@@ -848,10 +848,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[0].getAttr());
   ASSERT_EQ('e', entries[0].getShortName());
-  ASSERT_STREQ("enable", entries[0].getLongName());
-  ASSERT_FALSE(entries[0].getArgName());
-  ASSERT_FALSE(entries[0].getDefaultValue());
-  ASSERT_STREQ("enable features", entries[0].getDetail());
+  ASSERT_EQ("enable", entries[0].getLongName());
+  ASSERT_TRUE(entries[0].getArgName().empty());
+  ASSERT_TRUE(entries[0].getDefaultValue().empty());
+  ASSERT_EQ("enable features", entries[0].getDetail());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[0].getCheckerKind());
 
   // -d --disable
@@ -859,10 +859,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(OptParseOp::NO_ARG, entries[1].getParseOp());
   ASSERT_EQ(ArgEntryAttr::STORE_FALSE, entries[1].getAttr());
   ASSERT_EQ('d', entries[1].getShortName());
-  ASSERT_STREQ("disable", entries[1].getLongName());
-  ASSERT_FALSE(entries[1].getArgName());
-  ASSERT_FALSE(entries[1].getDefaultValue());
-  ASSERT_STREQ("disable features", entries[1].getDetail());
+  ASSERT_EQ("disable", entries[1].getLongName());
+  ASSERT_TRUE(entries[1].getArgName().empty());
+  ASSERT_TRUE(entries[1].getDefaultValue().empty());
+  ASSERT_EQ("disable features", entries[1].getDetail());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[1].getCheckerKind());
 
   // -o --output
@@ -870,10 +870,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(OptParseOp::OPT_ARG, entries[2].getParseOp());
   ASSERT_EQ(ArgEntryAttr::REQUIRE, entries[2].getAttr());
   ASSERT_EQ('o', entries[2].getShortName());
-  ASSERT_STREQ("output", entries[2].getLongName());
-  ASSERT_STREQ("target", entries[2].getArgName());
-  ASSERT_STREQ("/dev/stdout", entries[2].getDefaultValue());
-  ASSERT_FALSE(entries[2].getDetail());
+  ASSERT_EQ("output", entries[2].getLongName());
+  ASSERT_EQ("target", entries[2].getArgName());
+  ASSERT_EQ("/dev/stdout", entries[2].getDefaultValue());
+  ASSERT_TRUE(entries[2].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[2].getCheckerKind());
 
   // -t  --timeout
@@ -881,10 +881,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(OptParseOp::HAS_ARG, entries[3].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[3].getAttr());
   ASSERT_EQ('t', entries[3].getShortName());
-  ASSERT_STREQ("timeout", entries[3].getLongName());
-  ASSERT_FALSE(entries[3].getArgName());
-  ASSERT_FALSE(entries[3].getDefaultValue());
-  ASSERT_FALSE(entries[3].getDetail());
+  ASSERT_EQ("timeout", entries[3].getLongName());
+  ASSERT_TRUE(entries[3].getArgName().empty());
+  ASSERT_TRUE(entries[3].getDefaultValue().empty());
+  ASSERT_TRUE(entries[3].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::INT, entries[3].getCheckerKind());
   {
     auto [min, max] = entries[3].getIntRange();
@@ -897,10 +897,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(OptParseOp::HAS_ARG, entries[4].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[4].getAttr());
   ASSERT_EQ('\0', entries[4].getShortName());
-  ASSERT_STREQ("log", entries[4].getLongName());
-  ASSERT_STREQ("level", entries[4].getArgName());
-  ASSERT_FALSE(entries[4].getDefaultValue());
-  ASSERT_FALSE(entries[4].getDetail());
+  ASSERT_EQ("log", entries[4].getLongName());
+  ASSERT_EQ("level", entries[4].getArgName());
+  ASSERT_TRUE(entries[4].getDefaultValue().empty());
+  ASSERT_TRUE(entries[4].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::CHOICE, entries[4].getCheckerKind());
   {
     auto [begin, end] = entries[4].getChoice();
@@ -915,10 +915,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE,
             entries[5].getAttr());
   ASSERT_EQ('\0', entries[5].getShortName());
-  ASSERT_FALSE(entries[5].getLongName());
-  ASSERT_STREQ("files", entries[5].getArgName());
-  ASSERT_FALSE(entries[5].getDefaultValue());
-  ASSERT_FALSE(entries[5].getDetail());
+  ASSERT_TRUE(entries[5].getLongName().empty());
+  ASSERT_EQ("files", entries[5].getArgName());
+  ASSERT_TRUE(entries[5].getDefaultValue().empty());
+  ASSERT_TRUE(entries[5].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[5].getCheckerKind());
 }
 

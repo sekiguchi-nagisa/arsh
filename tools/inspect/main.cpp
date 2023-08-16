@@ -33,7 +33,7 @@ enum class OptionSet : unsigned int {
   HELP,
 };
 
-static constexpr OptParser<OptionSet>::Option options[] = {
+static const OptParser<OptionSet>::Option options[] = {
     {OptionSet::OUT, 'o', "out", OptParseOp::HAS_ARG, "specify output file. default is stdout"},
     {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };

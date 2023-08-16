@@ -35,7 +35,7 @@ enum class OptionKind {
   WAIT_TIME,
 };
 
-static constexpr OptParser<OptionKind>::Option optOptions[] = {
+static const OptParser<OptionKind>::Option optOptions[] = {
     {OptionKind::LOG, 0, "log", OptParseOp::HAS_ARG, "level",
      "specify log level (debug, info, warning, error, fatal). default is `warning'"},
     {OptionKind::LSP, 0, "language-server", OptParseOp::NO_ARG,

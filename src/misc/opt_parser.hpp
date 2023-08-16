@@ -124,18 +124,19 @@ public:
 
     T kind{};
     OptParseOp op{OptParseOp::NO_ARG};
-    char shortOptName{0};         // may be null char if no short option
-    StringRef longOptName;        // may be null if no long option
-    const char *argName{nullptr}; // argument name for help message
-    const char *detail{nullptr};  // option description for help message
+    char shortOptName{0};    // may be null char if no short option
+    std::string longOptName; // may be null if no long option
+    std::string argName;     // argument name for help message
+    std::string detail;      // option description for help message
 
-    constexpr Option() = default;
+    Option() = default;
 
-    constexpr Option(T kind, char s, const char *l, OptParseOp op, const char *arg,
-                     const char *detail)
+    explicit Option(T kind) : kind(kind) {}
+
+    Option(T kind, char s, const char *l, OptParseOp op, const char *arg, const char *detail)
         : kind(kind), op(op), shortOptName(s), longOptName(l), argName(arg), detail(detail) {}
 
-    constexpr Option(T kind, char s, const char *l, OptParseOp op, const char *detail) // NOLINT
+    Option(T kind, char s, const char *l, OptParseOp op, const char *detail) // NOLINT
         : Option(kind, s, l, op, "arg", detail) {}
 
     unsigned int getUsageLen() const {
@@ -155,11 +156,11 @@ public:
         }
         if (this->op == OptParseOp::HAS_ARG) { // -v arg
           ret++;
-          ret += strlen(this->argName);
+          ret += this->argName.size();
         }
         break;
       case OptParseOp::OPT_ARG: { // -s[arg], --long[=arg]
-        const auto len = strlen(this->argName);
+        const auto len = this->argName.size();
         if (this->shortOptName) { // -s[arg]
           ret += 4;
           ret += len;

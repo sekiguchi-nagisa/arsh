@@ -81,7 +81,7 @@ TEST(OptParseTest, shortOpt1) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -131,7 +131,7 @@ TEST(OptParseTest, shortOpt2) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -179,7 +179,7 @@ TEST(OptParseTest, longOpt1) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 0, "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -239,7 +239,7 @@ TEST(OptParseTest, longOpt2) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 0, "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -316,7 +316,7 @@ TEST(OptParseTest, multiArg) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 0, "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -377,7 +377,7 @@ TEST(OptParseTest, invalidShortOpt) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -431,7 +431,7 @@ TEST(OptParseTest, invalidLongOpt) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -468,7 +468,7 @@ TEST(OptParseTest, needArgShortOpt1) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -504,7 +504,7 @@ TEST(OptParseTest, needArgShortOpt2) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -540,7 +540,7 @@ TEST(OptParseTest, needArgLongOpt) {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);
@@ -565,10 +565,10 @@ TEST(OptParseTest, needArgLongOpt) {
 TEST(OptParseTest, options1) {
   OptParser<Kind>::Option options[] = {
       {Kind::A, 'h', "help", OptParseOp::NO_ARG, "show this help message"},
-      {Kind::A, 'H', nullptr, OptParseOp::NO_ARG, "show this help message"},
+      {Kind::A, 'H', "", OptParseOp::NO_ARG, "show this help message"},
       {Kind::B, 'v', "verbose", OptParseOp::NO_ARG, "show verbose message"},
       {Kind::C, 'c', "config", OptParseOp::HAS_ARG, "set configuration"},
-      {Kind::D, 'D', nullptr, OptParseOp::OPT_ARG, "set configuration"},
+      {Kind::D, 'D', "", OptParseOp::OPT_ARG, "set configuration"},
       {Kind::E, 'o', "output", OptParseOp::OPT_ARG, "set configuration"},
   };
   auto parser = createOptParser(options);

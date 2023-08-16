@@ -38,14 +38,14 @@ enum class OptionSet : unsigned int {
   DUMP,
 };
 
-constexpr OptParser<OptionSet>::Option options[] = {
-    {OptionSet::OUTPUT, 'o', nullptr, OptParseOp::HAS_ARG, "file",
+const OptParser<OptionSet>::Option options[] = {
+    {OptionSet::OUTPUT, 'o', "", OptParseOp::HAS_ARG, "file",
      "specify output file (default is stdout)"},
-    {OptionSet::FORMAT, 'f', nullptr, OptParseOp::HAS_ARG, "formatter",
+    {OptionSet::FORMAT, 'f', "", OptParseOp::HAS_ARG, "formatter",
      "specify output formatter (default is `ansi' formatter)"},
-    {OptionSet::STYLE, 's', nullptr, OptParseOp::HAS_ARG, "style",
+    {OptionSet::STYLE, 's', "", OptParseOp::HAS_ARG, "style",
      "specify highlighter color style (default is `darcula' style)"},
-    {OptionSet::LIST, 'l', nullptr, OptParseOp::NO_ARG, "show supported formatters/styles"},
+    {OptionSet::LIST, 'l', "", OptParseOp::NO_ARG, "show supported formatters/styles"},
     {OptionSet::HTML_FULL, 0, "html-full", OptParseOp::NO_ARG,
      "generate self-contained html (for html formatter)"},
     {OptionSet::HTML_LINENO, 0, "html-lineno", OptParseOp::OPT_ARG, "num",

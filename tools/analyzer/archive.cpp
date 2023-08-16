@@ -164,6 +164,7 @@ void Archiver::add(const std::string &name, const Handle &handle) {
 }
 
 void Archiver::add(const ArgEntry &entry) {
+  this->writeEnum(entry.getIndex());
   this->write8(entry.getFieldOffset());
   this->writeEnum(entry.getParseOp());
   this->writeEnum(entry.getAttr());
@@ -359,7 +360,8 @@ const DSType *Unarchiver::unpackType() {
 }
 
 std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
-  ArgEntry entry(this->read8());
+  auto index = this->readEnum<ArgEntryIndex>();
+  ArgEntry entry(index, this->read8());
   entry.setParseOp(this->readEnum<OptParseOp>());
   entry.setAttr(this->readEnum<ArgEntryAttr>());
   const auto kind = this->readEnum<ArgEntry::CheckerKind>();

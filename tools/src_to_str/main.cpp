@@ -29,9 +29,9 @@ enum class OptionKind {
   OUTPUT,
 };
 
-static constexpr OptParser<OptionKind>::Option options[] = {
-    {OptionKind::VAR_NAME, 'v', nullptr, OptParseOp::HAS_ARG, "specify generated variable name"},
-    {OptionKind::FILE_NAME, 'f', nullptr, OptParseOp::HAS_ARG, "specify target file name"},
+static const OptParser<OptionKind>::Option options[] = {
+    {OptionKind::VAR_NAME, 'v', "", OptParseOp::HAS_ARG, "specify generated variable name"},
+    {OptionKind::FILE_NAME, 'f', "", OptParseOp::HAS_ARG, "specify target file name"},
     {OptionKind::OUTPUT, 'o', "output", OptParseOp::HAS_ARG, "specify output header file name"},
 };
 

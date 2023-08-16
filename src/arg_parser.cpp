@@ -76,7 +76,7 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
       StringRef arg = "";
       if (ret.hasArg()) {
         arg = ret.getValue();
-      } else if (const char *v = entry.getDefaultValue()) {
+      } else if (const auto &v = entry.getDefaultValue(); !v.empty()) {
         arg = v;
       }
       if (!this->checkAndSetArg(state, entry, arg, out)) {
@@ -135,7 +135,7 @@ bool ArgParserObject::checkRequireOrPositionalArgs(DSState &state,
         err += '-';
         err += s;
       }
-      if (const char *l = e.getLongName(); l != nullptr) {
+      if (const auto &l = e.getLongName(); !l.empty()) {
         if (e.getShortName()) {
           err += " or ";
         }

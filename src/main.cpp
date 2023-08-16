@@ -111,7 +111,7 @@ enum class OptionKind {
   XTRACE,
 };
 
-static constexpr OptParser<OptionKind>::Option options[] = {
+static const OptParser<OptionKind>::Option options[] = {
     {OptionKind::DUMP_UAST, 0, "dump-untyped-ast", OptParseOp::OPT_ARG, "file",
      "dump abstract syntax tree (before type checking)"},
     {OptionKind::DUMP_AST, 0, "dump-ast", OptParseOp::OPT_ARG, "file",
@@ -126,10 +126,10 @@ static constexpr OptParser<OptionKind>::Option options[] = {
      "print stack strace on exit command"},
     {OptionKind::VERSION, 0, "version", OptParseOp::NO_ARG, "show version and copyright"},
     {OptionKind::HELP, 0, "help", OptParseOp::NO_ARG, "show this help message"},
-    {OptionKind::COMMAND, 'c', nullptr, OptParseOp::HAS_ARG, "string", "evaluate argument"},
+    {OptionKind::COMMAND, 'c', "", OptParseOp::HAS_ARG, "string", "evaluate argument"},
     {OptionKind::NORC, 0, "norc", OptParseOp::NO_ARG,
      "not load rc file (only available interactive mode)"},
-    {OptionKind::EXEC, 'e', nullptr, OptParseOp::HAS_ARG, "cmd",
+    {OptionKind::EXEC, 'e', "", OptParseOp::HAS_ARG, "cmd",
      "execute command (ignore some options)"},
     {OptionKind::STATUS_LOG, 0, "status-log", OptParseOp::HAS_ARG, "file",
      "write execution status to specified file (ignored in interactive mode or -e)"},
@@ -138,11 +138,11 @@ static constexpr OptParser<OptionKind>::Option options[] = {
      "load specified rc file (only available interactive mode)"},
     {OptionKind::QUIET, 0, "quiet", OptParseOp::NO_ARG,
      "suppress startup message (only available interactive mode)"},
-    {OptionKind::SET_ARGS, 's', nullptr, OptParseOp::NO_ARG,
+    {OptionKind::SET_ARGS, 's', "", OptParseOp::NO_ARG,
      "set arguments and read command from standard input"},
-    {OptionKind::INTERACTIVE, 'i', nullptr, OptParseOp::NO_ARG, "run interactive mode"},
-    {OptionKind::NOEXEC, 'n', nullptr, OptParseOp::NO_ARG, "equivalent to `--compile-only' option"},
-    {OptionKind::XTRACE, 'x', nullptr, OptParseOp::NO_ARG, "trace execution of commands"},
+    {OptionKind::INTERACTIVE, 'i', "", OptParseOp::NO_ARG, "run interactive mode"},
+    {OptionKind::NOEXEC, 'n', "", OptParseOp::NO_ARG, "equivalent to `--compile-only' option"},
+    {OptionKind::XTRACE, 'x', "", OptParseOp::NO_ARG, "trace execution of commands"},
 };
 
 enum class InvocationKind {

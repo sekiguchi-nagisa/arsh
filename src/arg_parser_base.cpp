@@ -25,6 +25,14 @@ namespace ydsh {
 // ##     ArgEntry     ##
 // ######################
 
+ArgEntry ArgEntry::newHelp() {
+  ArgEntry entry(HELP, 0);
+  entry.setShortName('h');
+  entry.setLongName("help");
+  entry.setDetail("show this help message");
+  return entry;
+}
+
 ArgEntry::~ArgEntry() { this->destroyCheckerData(); }
 
 void ArgEntry::destroyCheckerData() {
@@ -93,13 +101,14 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
 // ##     ArgParser     ##
 // #######################
 
-template class OptParser<ArgEntry::Index>; // explicit instantiation
+template class OptParser<ArgEntryIndex>; // explicit instantiation
 
-static OptParser<ArgEntry::Index>::Option toOption(const ArgEntry &entry, ArgEntry::Index index) {
+static OptParser<ArgEntryIndex>::Option toOption(const ArgEntry &entry, ArgEntryIndex index) {
   assert(entry.isOption());
-  const char *arg = entry.getArgName() ? entry.getArgName() : "arg";
-  const char *d = entry.getDetail() ? entry.getDetail() : "";
-  return {index, entry.getShortName(), entry.getLongName(), entry.getParseOp(), arg, d};
+  const char *arg = !entry.getArgName().empty() ? entry.getArgName().c_str() : "arg";
+  const char *d = !entry.getDetail().empty() ? entry.getDetail().c_str() : "";
+  const char *l = !entry.getLongName().empty() ? entry.getLongName().c_str() : "";
+  return {index, entry.getShortName(), l, entry.getParseOp(), arg, d};
 }
 
 ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
@@ -113,7 +122,7 @@ ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
   size_t index = 0;
   for (auto &e : entries) {
     if (e.isOption()) {
-      auto i = static_cast<ArgEntry::Index>(index);
+      auto i = static_cast<ArgEntryIndex>(index);
       options[index] = toOption(e, i);
       index++;
     }
@@ -146,7 +155,7 @@ void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &o
         if (!e.isRequire()) {
           out += '[';
         }
-        assert(e.getArgName());
+        assert(!e.getArgName().empty());
         out += e.getArgName();
         if (!e.isRequire()) {
           if (e.isRemainArg()) {

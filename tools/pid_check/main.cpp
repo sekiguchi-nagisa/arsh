@@ -31,7 +31,7 @@ enum class OptionSet : unsigned int {
   HELP,
 };
 
-static constexpr OptParser<OptionSet>::Option options[] = {
+static const OptParser<OptionSet>::Option options[] = {
     {OptionSet::PID, 0, "pid", OptParseOp::HAS_ARG, "specify pid"},
     {OptionSet::PPID, 0, "ppid", OptParseOp::HAS_ARG, "specify ppid"},
     {OptionSet::FIRST, 0, "first", OptParseOp::NO_ARG, "treat as first process of pipeline"},

@@ -37,13 +37,15 @@ enum class ArgEntryAttr : unsigned short {
 template <>
 struct allow_enum_bitop<ArgEntryAttr> : std::true_type {};
 
-class ArgEntry {
+enum class ArgEntryIndex : unsigned short {};
+
+// 56 bytes
+
+class ArgEntry : public OptParser<ArgEntryIndex>::Option {
 public:
-  enum class Index : unsigned short {};
+  static constexpr auto HELP = static_cast<ArgEntryIndex>(SYS_LIMIT_ARG_ENTRY_MAX);
 
-  static constexpr auto HELP = static_cast<Index>(SYS_LIMIT_ARG_ENTRY_MAX);
-
-  static_assert(std::numeric_limits<std::underlying_type_t<Index>>::max() ==
+  static_assert(std::numeric_limits<std::underlying_type_t<ArgEntryIndex>>::max() ==
                 SYS_LIMIT_ARG_ENTRY_MAX);
 
   enum class CheckerKind : unsigned char {
@@ -54,14 +56,10 @@ public:
 
 private:
   unsigned char fieldOffset{0}; // corresponding field offset
-  OptParseOp parseOp{OptParseOp::NO_ARG};
   ArgEntryAttr attr{};
   CheckerKind checkerKind{CheckerKind::NOP};
-  char shortOptName{0};
-  CStrPtr longOptName{nullptr};  // may be null
-  CStrPtr defaultValue{nullptr}; // for OptParseOp::OPT_ARG. may be null
-  CStrPtr argName{nullptr};      // may be null
-  CStrPtr detail{nullptr};       // may be null
+  std::string defaultValue; // for OptParseOp::OPT_ARG. may be null
+
   union {
     struct {
       int64_t min; // inclusive
@@ -75,15 +73,16 @@ private:
   };
 
 public:
-  explicit ArgEntry(unsigned char fieldOffset) : fieldOffset(fieldOffset), intRange({0, 0}) {}
+  static ArgEntry newHelp();
+
+  explicit ArgEntry(ArgEntryIndex index, unsigned char fieldOffset)
+      : Option(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
 
   ~ArgEntry();
 
-  ArgEntry(ArgEntry &&o) noexcept
-      : fieldOffset(o.fieldOffset), parseOp(o.parseOp), attr(o.attr), checkerKind(o.checkerKind),
-        shortOptName(o.shortOptName), longOptName(std::move(o.longOptName)),
-        defaultValue(std::move(o.defaultValue)), argName(std::move(o.argName)),
-        detail(std::move(o.detail)) {
+  ArgEntry(ArgEntry &&o) noexcept // NOLINT
+      : Option(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr), checkerKind(o.checkerKind),
+        defaultValue(std::move(o.defaultValue)) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
       break;
@@ -106,11 +105,13 @@ public:
     return *this;
   }
 
+  ArgEntryIndex getIndex() const { return this->kind; }
+
   unsigned char getFieldOffset() const { return this->fieldOffset; }
 
-  void setParseOp(OptParseOp op) { this->parseOp = op; }
+  void setParseOp(OptParseOp parseOp) { this->op = parseOp; }
 
-  OptParseOp getParseOp() const { return this->parseOp; }
+  OptParseOp getParseOp() const { return this->op; }
 
   void setAttr(ArgEntryAttr a) { this->attr = a; }
 
@@ -157,21 +158,21 @@ public:
 
   char getShortName() const { return this->shortOptName; }
 
-  void setLongName(const char *name) { this->longOptName.reset(strdup(name)); }
+  void setLongName(const char *name) { this->longOptName = name; }
 
-  const char *getLongName() const { return this->longOptName.get(); }
+  const std::string &getLongName() const { return this->longOptName; }
 
-  void setDefaultValue(const char *v) { this->defaultValue.reset(strdup(v)); }
+  void setDefaultValue(const char *v) { this->defaultValue = v; }
 
-  const char *getDefaultValue() const { return this->defaultValue.get(); }
+  const std::string &getDefaultValue() const { return this->defaultValue; }
 
-  void setArgName(const char *name) { this->argName.reset(strdup(name)); }
+  void setArgName(const char *name) { this->argName = name; }
 
-  const char *getArgName() const { return this->argName.get(); }
+  const std::string &getArgName() const { return this->argName; }
 
-  void setDetail(const char *value) { this->detail.reset(strdup(value)); }
+  void setDetail(const char *value) { this->detail = value; }
 
-  const char *getDetail() const { return this->detail.get(); }
+  const std::string &getDetail() const { return this->detail; }
 
   bool isOption() const { return !this->isPositional(); }
 
@@ -191,9 +192,9 @@ private:
   void destroyCheckerData();
 };
 
-class ArgParser : public OptParser<ArgEntry::Index> {
+class ArgParser : public OptParser<ArgEntryIndex> {
 private:
-  using parser = OptParser<ArgEntry::Index>;
+  using parser = OptParser<ArgEntryIndex>;
 
   const std::vector<ArgEntry> &entries;
   std::unique_ptr<const parser::Option[]> options;
