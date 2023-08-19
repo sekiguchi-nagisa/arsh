@@ -235,12 +235,12 @@ class OptParser {
 public:
   static_assert(std::is_enum_v<T>, "must be enum type");
 
-  using Option = OptParseOption<T>;
+  using Option = U;
   using Result = OptParseResult<T>;
 
 private:
   const size_t size;
-  const OptParseOption<T> *const options;
+  const Option *const options;
   StringRef remain; // for short option
 
 public:
