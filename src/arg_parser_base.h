@@ -39,12 +39,8 @@ struct allow_enum_bitop<ArgEntryAttr> : std::true_type {};
 
 enum class ArgEntryIndex : unsigned short {};
 
-// 56 bytes
-
-class ArgEntry : public OptParser<ArgEntryIndex>::Option {
+class ArgEntry : public OptParseOption<ArgEntryIndex> {
 public:
-  static constexpr auto HELP = static_cast<ArgEntryIndex>(SYS_LIMIT_ARG_ENTRY_MAX);
-
   static_assert(std::numeric_limits<std::underlying_type_t<ArgEntryIndex>>::max() ==
                 SYS_LIMIT_ARG_ENTRY_MAX);
 
@@ -73,15 +69,15 @@ private:
   };
 
 public:
-  static ArgEntry newHelp();
+  static ArgEntry newHelp(ArgEntryIndex index);
 
   explicit ArgEntry(ArgEntryIndex index, unsigned char fieldOffset)
-      : OptParser<ArgEntryIndex>::Option(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
+      : OptParseOption(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
 
   ~ArgEntry();
 
   ArgEntry(ArgEntry &&o) noexcept // NOLINT
-      : OptParser<ArgEntryIndex>::Option(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr),
+      : OptParseOption(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr),
         checkerKind(o.checkerKind), defaultValue(std::move(o.defaultValue)) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
@@ -108,6 +104,8 @@ public:
   ArgEntryIndex getIndex() const { return this->kind; }
 
   unsigned char getFieldOffset() const { return this->fieldOffset; }
+
+  bool isHelp() const { return this->getFieldOffset() == UINT8_MAX; } // FIXME: replace with 0
 
   void setParseOp(OptParseOp parseOp) { this->op = parseOp; }
 
@@ -192,19 +190,25 @@ private:
   void destroyCheckerData();
 };
 
-class ArgParser : public OptParser<ArgEntryIndex> {
+class ArgParser : public OptParser<ArgEntryIndex, ArgEntry> {
 private:
-  using parser = OptParser<ArgEntryIndex>;
+  using parser = OptParser<ArgEntryIndex, ArgEntry>;
 
   const std::vector<ArgEntry> &entries;
-  std::unique_ptr<const parser::Option[]> options;
 
 public:
-  static ArgParser create(const std::vector<ArgEntry> &entries);
+  static ArgParser create(const std::vector<ArgEntry> &entries) {
+    size_t index = 0;
+    for (; index < entries.size(); index++) {
+      if (!entries[index].isOption()) {
+        break;
+      }
+    }
+    return {entries, index};
+  }
 
-  ArgParser(const std::vector<ArgEntry> &entries, size_t size,
-            std::unique_ptr<const parser::Option[]> &&options)
-      : OptParser(size, options.get()), entries(entries), options(std::move(options)) {}
+  ArgParser(const std::vector<ArgEntry> &entries, size_t size)
+      : OptParser(size, entries.data()), entries(entries) {}
 
   const auto &getEntries() const { return this->entries; }
 

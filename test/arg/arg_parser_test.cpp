@@ -53,17 +53,19 @@ TEST_F(ArgParserTest, base) {
         e.setParseOp(OptParseOp::HAS_ARG);
         e.setShortName('o');
         e.setLongName("output");
+        e.setArgName("arg");
       })
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setShortName('d');
         e.setDetail("enable debug");
         e.setAttr(ArgEntryAttr::STORE_FALSE);
-      });
+      })
+      .addHelp();
 
   auto &recordType = this->createRecordType("type1", std::move(builder));
   auto &entries = recordType.getEntries();
-  ASSERT_EQ(3, entries.size());
+  ASSERT_EQ(4, entries.size());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
   ASSERT_EQ('s', entries[0].getShortName());
   ASSERT_EQ("status", entries[0].getLongName());
@@ -123,6 +125,7 @@ TEST_F(ArgParserTest, opt) {
         e.setArgName("file");
         e.setDefaultValue("stdout");
       })
+      .addHelp()
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("src");
@@ -189,6 +192,7 @@ TEST_F(ArgParserTest, range) {
         e.setIntRange(0, 1000);
         e.setAttr(ArgEntryAttr::REQUIRE);
       })
+      .addHelp()
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("level");
@@ -280,7 +284,7 @@ Usage: cmd1 [OPTIONS] level)";
 
 TEST_F(ArgParserTest, help) {
   ArgEntriesBuilder builder;
-  builder.add([](ArgEntry &e) {
+  builder.addHelp().add([](ArgEntry &e) {
     e.setParseOp(OptParseOp::NO_ARG);
     e.setArgName("output");
     e.setAttr(ArgEntryAttr::POSITIONAL);

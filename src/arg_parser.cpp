@@ -59,14 +59,13 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
 
   // parse and set options
   while ((ret = this->instance(begin, end))) {
-    if (ret.getOpt() == ArgEntry::HELP) {
+    const auto entryIndex = toUnderlying(ret.getOpt());
+    requiredSet.del(entryIndex);
+    auto &entry = this->instance.getEntries()[entryIndex];
+    if (entry.isHelp()) {
       help = true;
       continue;
     }
-    const auto entryIndex = toUnderlying(ret.getOpt());
-    assert(entryIndex < SYS_LIMIT_ARG_ENTRY_MAX);
-    requiredSet.del(entryIndex);
-    auto &entry = this->instance.getEntries()[entryIndex];
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG: // set flag
       out[entryIndex] = DSValue::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));

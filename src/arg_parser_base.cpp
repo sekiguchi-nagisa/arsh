@@ -25,8 +25,8 @@ namespace ydsh {
 // ##     ArgEntry     ##
 // ######################
 
-ArgEntry ArgEntry::newHelp() {
-  ArgEntry entry(HELP, 0);
+ArgEntry ArgEntry::newHelp(ArgEntryIndex index) {
+  ArgEntry entry(index, UINT8_MAX); // FIXME: replace with 0
   entry.setShortName('h');
   entry.setLongName("help");
   entry.setDetail("show this help message");
@@ -101,41 +101,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
 // ##     ArgParser     ##
 // #######################
 
-template class OptParser<ArgEntryIndex>; // explicit instantiation
-
-static OptParser<ArgEntryIndex>::Option toOption(const ArgEntry &entry, ArgEntryIndex index) {
-  assert(entry.isOption());
-  const char *arg = !entry.getArgName().empty() ? entry.getArgName().c_str() : "arg";
-  const char *d = !entry.getDetail().empty() ? entry.getDetail().c_str() : "";
-  const char *l = !entry.getLongName().empty() ? entry.getLongName().c_str() : "";
-  return {index, entry.getShortName(), l, entry.getParseOp(), arg, d};
-}
-
-ArgParser ArgParser::create(const std::vector<ArgEntry> &entries) {
-  size_t size = 1; // reserved for help
-  for (auto &e : entries) {
-    if (e.isOption()) {
-      size++;
-    }
-  }
-  auto options = std::make_unique<parser::Option[]>(size);
-  size_t index = 0;
-  for (auto &e : entries) {
-    if (e.isOption()) {
-      auto i = static_cast<ArgEntryIndex>(index);
-      options[index] = toOption(e, i);
-      index++;
-    }
-  }
-  options[size - 1] = {ArgEntry::HELP, 'h', "help", OptParseOp::NO_ARG, "show this help message"};
-  return {entries, size, std::move(options)};
-}
-
 void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &out) const {
   unsigned int optCount = 0;
   unsigned int argCount = 0;
   for (auto &e : this->entries) {
-    if (e.isOption()) {
+    if (e.isHelp()) {
+      continue;
+    } else if (e.isOption()) {
       optCount++;
     } else {
       argCount++;
