@@ -113,132 +113,134 @@ enum class OptParseOp : unsigned char {
 };
 
 template <typename T>
+struct OptParseOption {
+  using type = T;
+
+  T kind{};
+  OptParseOp op{OptParseOp::NO_ARG};
+  char shortOptName{0};    // may be null char if no short option
+  std::string longOptName; // may be null if no long option
+  std::string argName;     // argument name for help message
+  std::string detail;      // option description for help message
+
+  OptParseOption() = default;
+
+  explicit OptParseOption(T kind) : kind(kind) {}
+
+  OptParseOption(T kind, char s, const char *l, OptParseOp op, const char *arg, const char *detail)
+      : kind(kind), op(op), shortOptName(s), longOptName(l), argName(arg), detail(detail) {}
+
+  OptParseOption(T kind, char s, const char *l, OptParseOp op, const char *detail) // NOLINT
+      : OptParseOption(kind, s, l, op, "arg", detail) {}
+
+  unsigned int getUsageLen() const {
+    unsigned int ret = 0;
+    switch (this->op) {
+    case OptParseOp::NO_ARG:
+    case OptParseOp::HAS_ARG:
+      if (this->shortOptName) {
+        ret += 2; // -s
+      }
+      if (!this->longOptName.empty()) {
+        if (ret) { // ', '
+          ret += 2;
+        }
+        ret += 2; // --long
+        ret += this->longOptName.size();
+      }
+      if (this->op == OptParseOp::HAS_ARG) { // -v arg
+        ret++;
+        ret += this->argName.size();
+      }
+      break;
+    case OptParseOp::OPT_ARG: { // -s[arg], --long[=arg]
+      const auto len = this->argName.size();
+      if (this->shortOptName) { // -s[arg]
+        ret += 4;
+        ret += len;
+      }
+      if (!this->longOptName.empty()) { // --long[=arg]
+        if (ret) {                      // ', '
+          ret += 2;
+        }
+        ret += 2;
+        ret += this->longOptName.size();
+        ret += 3;
+        ret += len;
+      }
+      break;
+    }
+    }
+    return ret;
+  }
+
+  std::string getUsage() const {
+    std::string ret;
+    switch (this->op) {
+    case OptParseOp::NO_ARG:
+    case OptParseOp::HAS_ARG:
+      if (this->shortOptName) {
+        ret += '-'; // -s
+        ret += this->shortOptName;
+      }
+      if (!this->longOptName.empty()) {
+        if (!ret.empty()) { // ', '
+          ret += ", ";
+        }
+        ret += "--"; // --long
+        ret += this->longOptName;
+      }
+      if (this->op == OptParseOp::HAS_ARG) { // -v arg
+        ret += ' ';
+        ret += this->argName;
+      }
+      break;
+    case OptParseOp::OPT_ARG:
+      if (this->shortOptName) { // -s[arg]
+        ret += '-';
+        ret += this->shortOptName;
+        ret += '[';
+        ret += this->argName;
+        ret += ']';
+      }
+      if (!this->longOptName.empty()) { // --long[=arg]
+        if (!ret.empty()) {             // ', '
+          ret += ", ";
+        }
+        ret += "--";
+        ret += this->longOptName;
+        ret += "[=";
+        ret += this->argName;
+        ret += ']';
+      }
+      break;
+    }
+    return ret;
+  }
+
+  void splitDetails(std::vector<StringRef> &out) const {
+    out.clear();
+    StringRef ref = this->detail;
+    if (!ref.empty()) {
+      splitByDelim(ref, '\n', [&out](StringRef sub, bool) {
+        out.push_back(sub);
+        return true;
+      });
+    }
+  }
+};
+
+template <typename T, typename U = OptParseOption<T>>
 class OptParser {
 public:
   static_assert(std::is_enum_v<T>, "must be enum type");
 
+  using Option = OptParseOption<T>;
   using Result = OptParseResult<T>;
-
-  struct Option {
-    using type = T;
-
-    T kind{};
-    OptParseOp op{OptParseOp::NO_ARG};
-    char shortOptName{0};    // may be null char if no short option
-    std::string longOptName; // may be null if no long option
-    std::string argName;     // argument name for help message
-    std::string detail;      // option description for help message
-
-    Option() = default;
-
-    explicit Option(T kind) : kind(kind) {}
-
-    Option(T kind, char s, const char *l, OptParseOp op, const char *arg, const char *detail)
-        : kind(kind), op(op), shortOptName(s), longOptName(l), argName(arg), detail(detail) {}
-
-    Option(T kind, char s, const char *l, OptParseOp op, const char *detail) // NOLINT
-        : Option(kind, s, l, op, "arg", detail) {}
-
-    unsigned int getUsageLen() const {
-      unsigned int ret = 0;
-      switch (this->op) {
-      case OptParseOp::NO_ARG:
-      case OptParseOp::HAS_ARG:
-        if (this->shortOptName) {
-          ret += 2; // -s
-        }
-        if (!this->longOptName.empty()) {
-          if (ret) { // ', '
-            ret += 2;
-          }
-          ret += 2; // --long
-          ret += this->longOptName.size();
-        }
-        if (this->op == OptParseOp::HAS_ARG) { // -v arg
-          ret++;
-          ret += this->argName.size();
-        }
-        break;
-      case OptParseOp::OPT_ARG: { // -s[arg], --long[=arg]
-        const auto len = this->argName.size();
-        if (this->shortOptName) { // -s[arg]
-          ret += 4;
-          ret += len;
-        }
-        if (!this->longOptName.empty()) { // --long[=arg]
-          if (ret) {                      // ', '
-            ret += 2;
-          }
-          ret += 2;
-          ret += this->longOptName.size();
-          ret += 3;
-          ret += len;
-        }
-        break;
-      }
-      }
-      return ret;
-    }
-
-    std::string getUsage() const {
-      std::string ret;
-      switch (this->op) {
-      case OptParseOp::NO_ARG:
-      case OptParseOp::HAS_ARG:
-        if (this->shortOptName) {
-          ret += '-'; // -s
-          ret += this->shortOptName;
-        }
-        if (!this->longOptName.empty()) {
-          if (!ret.empty()) { // ', '
-            ret += ", ";
-          }
-          ret += "--"; // --long
-          ret += this->longOptName;
-        }
-        if (this->op == OptParseOp::HAS_ARG) { // -v arg
-          ret += ' ';
-          ret += this->argName;
-        }
-        break;
-      case OptParseOp::OPT_ARG:
-        if (this->shortOptName) { // -s[arg]
-          ret += '-';
-          ret += this->shortOptName;
-          ret += '[';
-          ret += this->argName;
-          ret += ']';
-        }
-        if (!this->longOptName.empty()) { // --long[=arg]
-          if (!ret.empty()) {             // ', '
-            ret += ", ";
-          }
-          ret += "--";
-          ret += this->longOptName;
-          ret += "[=";
-          ret += this->argName;
-          ret += ']';
-        }
-        break;
-      }
-      return ret;
-    }
-
-    void splitDetails(std::vector<StringRef> &out) const {
-      out.clear();
-      StringRef ref = this->detail;
-      if (!ref.empty()) {
-        splitByDelim(ref, '\n', [&out](StringRef sub, bool) {
-          out.push_back(sub);
-          return true;
-        });
-      }
-    }
-  };
 
 private:
   const size_t size;
-  const Option *const options;
+  const OptParseOption<T> *const options;
   StringRef remain; // for short option
 
 public:
@@ -276,9 +278,9 @@ auto createOptParser(const T (&options)[N]) {
 // ##     OptParser     ##
 // #######################
 
-template <typename T>
+template <typename T, typename U>
 template <typename Iter>
-OptParseResult<T> OptParser<T>::operator()(Iter &begin, Iter end) {
+OptParseResult<T> OptParser<T, U>::operator()(Iter &begin, Iter end) {
   if (this->remain.empty()) {
     if (begin == end) {
       return OptParseResult<T>();
@@ -303,14 +305,14 @@ OptParseResult<T> OptParser<T>::operator()(Iter &begin, Iter end) {
   return this->matchShortOption(begin, end);
 }
 
-template <typename T>
+template <typename T, typename U>
 template <typename Iter>
-OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
+OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
   StringRef longName = *begin;
   assert(longName.size() > 2);
   longName.removePrefix(2);
   for (unsigned int i = 0; i < this->size; i++) {
-    const Option &option = this->options[i];
+    const auto &option = this->options[i];
     if (option.longOptName.empty()) {
       continue;
     }
@@ -352,14 +354,14 @@ OptParseResult<T> OptParser<T>::matchLongOption(Iter &begin, Iter end) {
   return OptParseResult<T>::undef(longName);
 }
 
-template <typename T>
+template <typename T, typename U>
 template <typename Iter>
-OptParseResult<T> OptParser<T>::matchShortOption(Iter &begin, Iter end) {
+OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
   assert(!this->remain.empty());
   char s = this->remain[0];
   const StringRef shortName = this->remain.slice(0, 1);
   for (unsigned int i = 0; i < this->size; i++) {
-    const Option &option = this->options[i];
+    const auto &option = this->options[i];
     if (!option.shortOptName || s != option.shortOptName) {
       continue;
     }
@@ -388,13 +390,13 @@ OptParseResult<T> OptParser<T>::matchShortOption(Iter &begin, Iter end) {
   return OptParseResult<T>::undef(shortName);
 }
 
-template <typename T>
-void OptParser<T>::formatOptions(std::string &value) const {
+template <typename T, typename U>
+void OptParser<T, U>::formatOptions(std::string &value) const {
   unsigned int maxLenOfUsage = 0;
 
   // compute usage len
   for (unsigned int i = 0; i < this->size; i++) {
-    const Option &option = this->options[i];
+    const auto &option = this->options[i];
     unsigned int len = option.getUsageLen();
     if (len > maxLenOfUsage) {
       maxLenOfUsage = len;
@@ -407,7 +409,7 @@ void OptParser<T>::formatOptions(std::string &value) const {
   std::vector<StringRef> details;
   value += "Options:";
   for (unsigned int i = 0; i < this->size; i++) {
-    const Option &option = this->options[i];
+    const auto &option = this->options[i];
     value += "\n  ";
     auto usage = option.getUsage();
     value += usage;

@@ -76,13 +76,13 @@ public:
   static ArgEntry newHelp();
 
   explicit ArgEntry(ArgEntryIndex index, unsigned char fieldOffset)
-      : Option(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
+      : OptParser<ArgEntryIndex>::Option(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
 
   ~ArgEntry();
 
   ArgEntry(ArgEntry &&o) noexcept // NOLINT
-      : Option(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr), checkerKind(o.checkerKind),
-        defaultValue(std::move(o.defaultValue)) {
+      : OptParser<ArgEntryIndex>::Option(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr),
+        checkerKind(o.checkerKind), defaultValue(std::move(o.defaultValue)) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
       break;
