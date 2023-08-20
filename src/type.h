@@ -83,7 +83,7 @@ enum class TYPE : unsigned int {
   IllegalAccessError,
   InvalidOperationError,
   ExecError,
-  ArgParseError,
+  CLIError,
 
   /**
    * for internal status reporting.
@@ -104,7 +104,7 @@ enum class TYPE : unsigned int {
   OP(Option)                                                                                       \
   OP(Error)                                                                                        \
   OP(Record)                                                                                       \
-  OP(ArgsRecord)                                                                                   \
+  OP(CLIRecord)                                                                                    \
   OP(Mod)
 
 enum class TypeKind : unsigned char {
@@ -182,7 +182,7 @@ public:
 
   bool isRecordOrDerived() const {
     auto k = toUnderlying(this->typeKind());
-    return k >= toUnderlying(TypeKind::Record) && k <= toUnderlying(TypeKind::ArgsRecord);
+    return k >= toUnderlying(TypeKind::Record) && k <= toUnderlying(TypeKind::CLIRecord);
   }
 
   /**
@@ -202,7 +202,7 @@ public:
 
   bool isModType() const { return this->typeKind() == TypeKind::Mod; }
 
-  bool isArgsRecordType() const { return this->typeKind() == TypeKind::ArgsRecord; }
+  bool isCLIRecordType() const { return this->typeKind() == TypeKind::CLIRecord; }
 
   /**
    * get super type of this type.
@@ -651,18 +651,18 @@ protected:
 
 class ArgEntry;
 
-class ArgsRecordType : public RecordType {
+class CLIRecordType : public RecordType {
 private:
   friend class TypePool;
 
   std::vector<ArgEntry> entries;
 
 public:
-  ArgsRecordType(unsigned int id, StringRef ref, const DSType &superType);
+  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType);
 
   const auto &getEntries() const { return this->entries; }
 
-  static bool classof(const DSType *type) { return type->isArgsRecordType(); }
+  static bool classof(const DSType *type) { return type->isCLIRecordType(); }
 
 private:
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
@@ -670,14 +670,14 @@ private:
 
 class ArgParserType : public BuiltinType {
 private:
-  const ArgsRecordType &elementType;
+  const CLIRecordType &elementType;
 
 public:
   ArgParserType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-                const ArgsRecordType &type)
+                const CLIRecordType &type)
       : BuiltinType(TypeKind::ArgParser, id, ref, &superType, info), elementType(type) {}
 
-  const ArgsRecordType &getElementType() const { return this->elementType; }
+  const CLIRecordType &getElementType() const { return this->elementType; }
 
   static bool classof(const DSType *type) { return type->isArgParserType(); }
 };

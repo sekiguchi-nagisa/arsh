@@ -3,12 +3,12 @@
 
 | **attribute** | **target**                   | **description**                                               |
 |---------------|------------------------------|---------------------------------------------------------------|
-| ``ArgsDef``   | user-defined type definition | define user-defined type for declarative command line parsing |
+| ``CLI``       | user-defined type definition | define user-defined type for declarative command line parsing |
 | ``Flag``      | field declaration            | define no-arg (flag) option                                   |
 | ``Option``    | field declaration            | define has-arg option                                         |
 | ``Arg``       | field declaration            | definition positional argument                                |
 
-### ``ArgsDef`` attribute
+### ``CLI`` attribute
 only allowed for user-defied type definition
 
 | **param** | **type**   | **default**  | **description**                    |

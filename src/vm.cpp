@@ -220,7 +220,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     value = DSValue::create<BaseObject>(cast<TupleType>(type));
     break;
   case TypeKind::Record:
-  case TypeKind::ArgsRecord:
+  case TypeKind::CLIRecord:
     value = DSValue::create<BaseObject>(cast<RecordType>(type));
     break;
   default:

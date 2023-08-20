@@ -111,7 +111,7 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
   this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
   this->initErrorType(TYPE::ExecError, "ExecError");
-  this->initErrorType(TYPE::ArgParseError, "ArgParseError");
+  this->initErrorType(TYPE::CLIError, "CLIError");
 
   // init internal status type
   this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Root_,
@@ -207,10 +207,10 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   auto *type = this->get(typeName);
   if (type == nullptr) {
     if (this->argParserTemplate == typeTemplate) {
-      assert(isa<ArgsRecordType>(*elementTypes[0]));
+      assert(isa<CLIRecordType>(*elementTypes[0]));
       auto *argParserType =
           this->newType<ArgParserType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
-                                       cast<ArgsRecordType>(*elementTypes[0]));
+                                       cast<CLIRecordType>(*elementTypes[0]));
       assert(argParserType);
       this->registerHandles(*argParserType);
       type = argParserType;
@@ -348,9 +348,9 @@ TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belong
   }
 }
 
-TypeOrError TypePool::createArgsRecordType(const std::string &typeName, ModId belongedModId) {
+TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId belongedModId) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<ArgsRecordType>(name, this->get(TYPE::ArgDef_));
+  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::ArgDef_));
   if (type) {
     return Ok(type);
   } else {
@@ -379,12 +379,12 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   return Ok(newRecordType);
 }
 
-TypeOrError TypePool::finalizeArgsRecordType(const ArgsRecordType &recordType,
-                                             std::unordered_map<std::string, HandlePtr> &&handles,
-                                             std::vector<ArgEntry> &&entries) {
+TypeOrError TypePool::finalizeCLIRecordType(const CLIRecordType &recordType,
+                                            std::unordered_map<std::string, HandlePtr> &&handles,
+                                            std::vector<ArgEntry> &&entries) {
   auto ret = this->finalizeRecordType(recordType, std::move(handles));
   if (ret) {
-    auto *newRecordType = cast<ArgsRecordType>(this->getMut(recordType.typeId()));
+    auto *newRecordType = cast<CLIRecordType>(this->getMut(recordType.typeId()));
     assert(newRecordType->isFinalized());
     newRecordType->finalizeArgEntries(std::move(entries));
   }

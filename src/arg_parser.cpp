@@ -88,13 +88,13 @@ bool ArgParserObject::parseAll(DSState &state, const ArrayObject &args, BaseObje
     auto v = ret.formatError();
     v += "\n";
     this->formatUsage(false, v);
-    raiseError(state, TYPE::ArgParseError, std::move(v), 2);
+    raiseError(state, TYPE::CLIError, std::move(v), 2);
     return false;
   }
   if (help) {
     std::string v;
     this->formatUsage(true, v);
-    raiseError(state, TYPE::ArgParseError, std::move(v), 0);
+    raiseError(state, TYPE::CLIError, std::move(v), 0);
     return false;
   }
   assert(ret.isEnd());
@@ -116,7 +116,7 @@ bool ArgParserObject::checkAndSetArg(DSState &state, const ArgEntry &entry, Stri
   } else {
     err += "\n";
     this->formatUsage(false, err);
-    raiseError(state, TYPE::ArgParseError, std::move(err), 1);
+    raiseError(state, TYPE::CLIError, std::move(err), 1);
     return false;
   }
 }
@@ -142,7 +142,7 @@ bool ArgParserObject::checkRequireOrPositionalArgs(DSState &state,
         err += l;
       }
       err += " option";
-      raiseError(state, TYPE::ArgParseError, std::move(err), 1);
+      raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
 
@@ -173,7 +173,7 @@ bool ArgParserObject::checkRequireOrPositionalArgs(DSState &state,
       std::string err = "require `";
       err += e.getArgName();
       err += "' argument";
-      raiseError(state, TYPE::ArgParseError, std::move(err), 1);
+      raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
   }

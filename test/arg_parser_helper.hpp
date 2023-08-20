@@ -41,9 +41,9 @@ private:
   ArgEntryIndex getCurIndex() const { return static_cast<ArgEntryIndex>(this->values.size()); }
 };
 
-inline const ArgsRecordType &createRecordType(TypePool &pool, const char *typeName,
-                                              ArgEntriesBuilder &&builder, ModId modId) {
-  auto ret = pool.createArgsRecordType(typeName, modId);
+inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeName,
+                                             ArgEntriesBuilder &&builder, ModId modId) {
+  auto ret = pool.createCLIRecordType(typeName, modId);
   assert(ret);
   (void)ret;
   auto entries = std::move(builder).build();
@@ -55,8 +55,8 @@ inline const ArgsRecordType &createRecordType(TypePool &pool, const char *typeNa
                                     HandleAttr::UNCAPTURED, modId);
     handles.emplace(std::move(name), std::move(handle));
   }
-  auto &type = *cast<ArgsRecordType>(ret.asOk());
-  ret = pool.finalizeArgsRecordType(type, std::move(handles), std::move(entries));
+  auto &type = *cast<CLIRecordType>(ret.asOk());
+  ret = pool.finalizeCLIRecordType(type, std::move(handles), std::move(entries));
   assert(ret);
   return type;
 }

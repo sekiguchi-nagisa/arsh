@@ -92,7 +92,7 @@ void Archiver::add(const DSType &type) {
       }
       break;
     case TypeKind::Record:
-    case TypeKind::ArgsRecord: // FIXME: serialize ArgEntry
+    case TypeKind::CLIRecord:
       if (auto iter = this->udTypeSet.find(type.typeId()); iter != this->udTypeSet.end()) {
         this->writeT(ArchiveType::CACHED);
         this->writeStr(type.getNameRef());
@@ -114,10 +114,10 @@ void Archiver::add(const DSType &type) {
           this->add(e.first, *e.second);
         }
 
-        if (type.typeKind() == TypeKind::ArgsRecord) {
-          auto &argsRecordType = cast<ArgsRecordType>(type);
-          this->write32(static_cast<uint32_t>(argsRecordType.getEntries().size()));
-          for (auto &e : argsRecordType.getEntries()) {
+        if (type.typeKind() == TypeKind::CLIRecord) {
+          auto &cliRecordType = cast<CLIRecordType>(type);
+          this->write32(static_cast<uint32_t>(cliRecordType.getEntries().size()));
+          for (auto &e : cliRecordType.getEntries()) {
             this->add(e);
           }
         }
@@ -308,7 +308,7 @@ const DSType *Unarchiver::unpackType() {
     std::string name = this->readStr();
     auto modId = this->readModId();
     auto ret = k == ArchiveType::RECORD ? TRY(this->pool.createRecordType(name, modId))
-                                        : TRY(this->pool.createArgsRecordType(name, modId));
+                                        : TRY(this->pool.createCLIRecordType(name, modId));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {
@@ -331,8 +331,8 @@ const DSType *Unarchiver::unpackType() {
         }
         entries.push_back(std::move(pair.first));
       }
-      ret = TRY(this->pool.finalizeArgsRecordType(cast<ArgsRecordType>(*ret.asOk()),
-                                                  std::move(handles), std::move(entries)));
+      ret = TRY(this->pool.finalizeCLIRecordType(cast<CLIRecordType>(*ret.asOk()),
+                                                 std::move(handles), std::move(entries)));
     }
     return std::move(ret).take();
   }

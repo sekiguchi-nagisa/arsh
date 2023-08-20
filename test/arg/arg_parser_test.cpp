@@ -36,7 +36,7 @@ public:
 
   TypePool &typePool() { return this->state->typePool; }
 
-  const ArgsRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder) {
+  const CLIRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder) {
     return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1});
   }
 };

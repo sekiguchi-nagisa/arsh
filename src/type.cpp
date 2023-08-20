@@ -44,7 +44,7 @@ HandlePtr DSType::lookupField(const TypePool &pool, const std::string &fieldName
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
   case TypeKind::Record:
-  case TypeKind::ArgsRecord:
+  case TypeKind::CLIRecord:
     return cast<RecordType>(this)->lookupField(fieldName);
   case TypeKind::Mod:
     return cast<ModType>(this)->lookup(pool, fieldName);
@@ -64,7 +64,7 @@ void DSType::walkField(const TypePool &pool,
     }
     break;
   case TypeKind::Record:
-  case TypeKind::ArgsRecord:
+  case TypeKind::CLIRecord:
     for (auto &e : cast<RecordType>(this)->getHandleMap()) {
       if (!walker(e.first, *e.second)) {
         return;
@@ -227,14 +227,14 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
   return iter->second;
 }
 
-// ############################
-// ##     ArgsRecordType     ##
-// ############################
+// ###########################
+// ##     CLIRecordType     ##
+// ###########################
 
-ArgsRecordType::ArgsRecordType(unsigned int id, ydsh::StringRef ref, const ydsh::DSType &superType)
-    : RecordType(TypeKind::ArgsRecord, id, ref, superType) {}
+CLIRecordType::CLIRecordType(unsigned int id, ydsh::StringRef ref, const ydsh::DSType &superType)
+    : RecordType(TypeKind::CLIRecord, id, ref, superType) {}
 
-void ArgsRecordType::finalizeArgEntries(std::vector<ArgEntry> &&args) {
+void CLIRecordType::finalizeArgEntries(std::vector<ArgEntry> &&args) {
   this->entries = std::move(args);
 }
 

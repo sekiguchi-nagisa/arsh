@@ -216,11 +216,11 @@ public:
   TypeOrError finalizeRecordType(const RecordType &recordType,
                                  std::unordered_map<std::string, HandlePtr> &&handles);
 
-  TypeOrError createArgsRecordType(const std::string &typeName, ModId belongedModId);
+  TypeOrError createCLIRecordType(const std::string &typeName, ModId belongedModId);
 
-  TypeOrError finalizeArgsRecordType(const ArgsRecordType &recordType,
-                                     std::unordered_map<std::string, HandlePtr> &&handles,
-                                     std::vector<ArgEntry> &&entries);
+  TypeOrError finalizeCLIRecordType(const CLIRecordType &recordType,
+                                    std::unordered_map<std::string, HandlePtr> &&handles,
+                                    std::vector<ArgEntry> &&entries);
 
   const ModType &createModType(ModId modId, std::unordered_map<std::string, HandlePtr> &&handles,
                                FlexBuffer<ModType::Imported> &&children, unsigned int index,
