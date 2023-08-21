@@ -47,8 +47,7 @@ enum class TYPE : unsigned int {
   Void,
   Nothing,
 
-  Value_,  // super type of value type(int, float, bool, string). not directly use it.
-  ArgDef_, // super type of record type with arg attribute. not directly use it.
+  Value_, // super type of value type(int, float, bool, string). not directly use it.
 
   Int,
   Float,
@@ -66,6 +65,7 @@ enum class TYPE : unsigned int {
   Reader,
   Command,
   LineEditor,
+  CLI,
   StringArray, // for command argument
   OptNothing,  // for dummy invalid value
 

@@ -49,7 +49,6 @@ TypePool::TypePool() {
    * hidden from script.
    */
   this->initBuiltinType(TYPE::Value_, "Value%%", true, TYPE::Any, info_Dummy());
-  this->initBuiltinType(TYPE::ArgDef_, "ArgDef%%", true, TYPE::Any, info_Dummy());
 
   this->initBuiltinType(TYPE::Int, "Int", false, TYPE::Value_, info_IntType());
   this->initBuiltinType(TYPE::Float, "Float", false, TYPE::Value_, info_FloatType());
@@ -67,6 +66,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Reader, "Reader%", false, TYPE::Any, info_ReaderType());
   this->initBuiltinType(TYPE::Command, "Command", false, TYPE::Any, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
+  this->initBuiltinType(TYPE::CLI, "CLI", true, TYPE::Any, info_CLIType());
 
   // initialize type template
   this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},
@@ -337,7 +337,7 @@ TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belong
 
 TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId belongedModId) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::ArgDef_));
+  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::CLI));
   if (type) {
     return Ok(type);
   } else {
