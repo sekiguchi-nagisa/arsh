@@ -57,8 +57,6 @@ using base_of_t = std::enable_if_t<std::is_base_of_v<B, T>, T>;
 DEFINE_TLError(ElementLimit, "number of type parameters reaches limit");
 DEFINE_TLError(DefinedType, "already defined type: `%s'");
 DEFINE_TLError(InvalidElement, "invalid type parameter: `%s'");
-DEFINE_TLError(InvalidArgElement, "invalid type parameter for ArgParser: `%s', "
-                                  "type parameter must have `ArgsDef' attribute");
 DEFINE_TLError(InvalidArrayElement, "invalid type parameter for Array: `%s'");
 DEFINE_TLError(InvalidMapKey, "invalid type parameter for Map key: `%s', "
                               "Map key only allow value types (such as Int, String, ...)");

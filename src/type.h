@@ -97,7 +97,6 @@ enum class TYPE : unsigned int {
 #define EACH_TYPE_KIND(OP)                                                                         \
   OP(Function)                                                                                     \
   OP(Builtin)                                                                                      \
-  OP(ArgParser)                                                                                    \
   OP(Array)                                                                                        \
   OP(Map)                                                                                          \
   OP(Tuple)                                                                                        \
@@ -189,8 +188,6 @@ public:
    * if this type is FunctionType, return true.
    */
   bool isFuncType() const { return this->typeKind() == TypeKind::Function; }
-
-  bool isArgParserType() const { return this->typeKind() == TypeKind::ArgParser; }
 
   bool isArrayType() const { return this->typeKind() == TypeKind::Array; }
 
@@ -666,20 +663,6 @@ public:
 
 private:
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
-};
-
-class ArgParserType : public BuiltinType {
-private:
-  const CLIRecordType &elementType;
-
-public:
-  ArgParserType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-                const CLIRecordType &type)
-      : BuiltinType(TypeKind::ArgParser, id, ref, &superType, info), elementType(type) {}
-
-  const CLIRecordType &getElementType() const { return this->elementType; }
-
-  static bool classof(const DSType *type) { return type->isArgParserType(); }
 };
 
 enum class ImportedModKind : unsigned char {

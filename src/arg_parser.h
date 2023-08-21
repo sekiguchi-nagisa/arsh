@@ -47,46 +47,6 @@ public:
  */
 bool parseArgs(DSState &state, const ArrayObject &args, BaseObject &out);
 
-class ArgParserObject : public ObjectWithRtti<ObjectKind::ArgParser> {
-private:
-  DSValue cmdName;
-  ArgParser instance;
-
-public:
-  ArgParserObject(const ArgParserType &type, DSValue cmdName)
-      : ObjectWithRtti(type), cmdName(std::move(cmdName)),
-        instance(ArgParser::create(type.getElementType().getEntries())) {}
-
-  const DSValue &getCmdName() const { return this->cmdName; }
-
-  void formatUsage(bool printOptions, std::string &out) const {
-    this->instance.formatUsage(this->cmdName.asStrRef(), printOptions, out);
-  }
-
-  /**
-   * parse and instantiate object (call constructor)
-   * @param state
-   * @param args
-   * @param out
-   * @return
-   * if has error, return false
-   */
-  bool parseAll(DSState &state, const ArrayObject &args, BaseObject &out);
-
-private:
-  /**
-   * @param entry
-   * @param arg
-   * @param out
-   * @return
-   * if has error, return false
-   */
-  bool checkAndSetArg(DSState &state, const ArgEntry &entry, StringRef arg, BaseObject &out) const;
-
-  bool checkRequireOrPositionalArgs(DSState &state, const RequiredOptionSet &requiredSet,
-                                    StrArrayIter &begin, StrArrayIter end, BaseObject &out);
-};
-
 } // namespace ydsh
 
 #endif // YDSH_ARG_PARSER_H

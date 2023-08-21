@@ -100,11 +100,6 @@ void DSType::walkField(const TypePool &pool,
 std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
   std::vector<const DSType *> ret;
   switch (this->typeKind()) {
-  case TypeKind::ArgParser: {
-    auto &type = cast<ArgParserType>(*this);
-    ret.push_back(&type.getElementType());
-    break;
-  }
   case TypeKind::Array: {
     auto &type = cast<ArrayType>(*this);
     ret.push_back(&type.getElementType());
@@ -335,8 +330,6 @@ void Handle::destroy() {
 
 const char *TypeTemplate::getName() const {
   switch (this->kind) {
-  case Kind::ArgParser:
-    return TYPE_ARG_PARSER;
   case Kind::Array:
     return TYPE_ARRAY;
   case Kind::Map:

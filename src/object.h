@@ -59,8 +59,7 @@ namespace ydsh {
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
   OP(Redir)                                                                                        \
-  OP(LineEditor)                                                                                   \
-  OP(ArgParser)
+  OP(LineEditor)
 
 /**
  * for LLVM-style RTTI

@@ -69,8 +69,6 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
 
   // initialize type template
-  this->initTypeTemplate(this->argParserTemplate, TypeTemplate::Kind::ArgParser,
-                         {&this->get(TYPE::ArgDef_)}, info_ArgParserType());
   this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},
                          info_ArrayType());
   this->initTypeTemplate(this->mapTemplate, TypeTemplate::Kind::Map,
@@ -206,15 +204,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    if (this->argParserTemplate == typeTemplate) {
-      assert(isa<CLIRecordType>(*elementTypes[0]));
-      auto *argParserType =
-          this->newType<ArgParserType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
-                                       cast<CLIRecordType>(*elementTypes[0]));
-      assert(argParserType);
-      this->registerHandles(*argParserType);
-      type = argParserType;
-    } else if (this->arrayTemplate == typeTemplate) {
+    if (this->arrayTemplate == typeTemplate) {
       auto *arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
                                                  this->get(TYPE::Any), *elementTypes[0]);
       assert(arrayType);
@@ -235,9 +225,6 @@ static std::unique_ptr<TypeLookupError>
 createInvalidElementError(const TypeTemplate &t, unsigned int index, const char *name) {
   std::unique_ptr<TypeLookupError> error;
   switch (t.getKind()) {
-  case TypeTemplate::Kind::ArgParser:
-    error = createTLError<InvalidArgElement>(name);
-    break;
   case TypeTemplate::Kind::Array:
     error = createTLError<InvalidArrayElement>(name);
     break;
@@ -465,14 +452,6 @@ TypeOrError TypeDecoder::decode() {
     return Ok(&this->pool.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
-  case HandleInfo::ArgParser: {
-    auto &t = this->pool.getArgParserTemplate();
-    unsigned int size = this->decodeNum();
-    assert(size == 1);
-    std::vector<const DSType *> elementTypes(size);
-    elementTypes[0] = TRY(decode());
-    return this->pool.createReifiedType(t, std::move(elementTypes));
-  }
   case HandleInfo::Array: {
     auto &t = this->pool.getArrayTemplate();
     unsigned int size = this->decodeNum();

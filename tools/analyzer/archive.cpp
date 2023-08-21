@@ -45,10 +45,6 @@ void Archiver::add(const DSType &type) {
     }
     case TypeKind::Builtin:
       break; // unreachable
-    case TypeKind::ArgParser:
-      this->writeT(ArchiveType::ARG_PARSER);
-      this->add(cast<ArgParserType>(type).getElementType());
-      break;
     case TypeKind::Array:
       this->writeT(ArchiveType::ARRAY);
       this->add(cast<ArrayType>(type).getElementType());
@@ -264,11 +260,6 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::PREDEFINED: {
     uint32_t id = this->read8();
     return &this->pool.get(id);
-  }
-  case ArchiveType::ARG_PARSER: {
-    auto *type = TRY(this->unpackType());
-    auto ret = TRY(this->pool.createArgParserType(*type));
-    return std::move(ret).take();
   }
   case ArchiveType::ARRAY: {
     auto *type = TRY(this->unpackType());

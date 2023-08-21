@@ -27,7 +27,6 @@ namespace ydsh::lsp {
 
 enum class ArchiveType : uint8_t {
   PREDEFINED,
-  ARG_PARSER,
   ARRAY,
   MAP,
   TUPLE,

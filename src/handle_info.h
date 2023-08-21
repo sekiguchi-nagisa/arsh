@@ -42,7 +42,6 @@ namespace ydsh {
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \
-  OP(ArgParser)                                                                                    \
   OP(Array)                                                                                        \
   OP(Map)                                                                                          \
   OP(Tuple)                                                                                        \
