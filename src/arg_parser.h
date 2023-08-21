@@ -37,6 +37,16 @@ public:
   void del(unsigned char n);
 };
 
+/**
+ *
+ * @param state
+ * @param args
+ * @param out
+ * must be CLIRecordType
+ * @return
+ */
+bool parseArgs(DSState &state, const ArrayObject &args, BaseObject &out);
+
 class ArgParserObject : public ObjectWithRtti<ObjectKind::ArgParser> {
 private:
   DSValue cmdName;

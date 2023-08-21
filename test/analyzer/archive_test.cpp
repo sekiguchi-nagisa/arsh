@@ -790,7 +790,7 @@ TEST_F(ArchiveTest, argEntry) {
           e.setLongName("enable");
           e.setDetail("enable features");
         })
-        .add(0,
+        .add(1,
              [](ArgEntry &e) {
                e.setParseOp(OptParseOp::NO_ARG);
                e.setShortName('d');
@@ -827,24 +827,20 @@ TEST_F(ArchiveTest, argEntry) {
     ASSERT_EQ(6, recordType.getEntries().size());
     auto ret = ctx.getScope()->defineTypeAlias(ctx.getPool(), "type1", recordType);
     ASSERT_TRUE(ret);
-    auto ret2 =
-        ctx.getPool().createReifiedType(ctx.getPool().getArgParserTemplate(), {&recordType});
-    ASSERT_TRUE(ret2);
 
-    define(ctx, "arg_parser", *ret2.asOk());
+    define(ctx, "cli", recordType);
   });
   (void)modType;
 
-  auto ret = this->scope().lookup("arg_parser");
+  auto ret = this->scope().lookup("cli");
   ASSERT_TRUE(ret);
-  ASSERT_TRUE(isa<ArgParserType>(this->pool().get(ret.asOk()->getTypeId())));
-  auto &parserType = cast<ArgParserType>(this->pool().get(ret.asOk()->getTypeId()));
-  auto &recordType = parserType.getElementType();
+  ASSERT_TRUE(isa<CLIRecordType>(this->pool().get(ret.asOk()->getTypeId())));
+  auto &recordType = cast<CLIRecordType>(this->pool().get(ret.asOk()->getTypeId()));
   auto &entries = recordType.getEntries();
   ASSERT_EQ(6, entries.size());
 
   // -e --enable
-  ASSERT_EQ(0, entries[0].getFieldOffset());
+  ASSERT_EQ(1, entries[0].getFieldOffset());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[0].getAttr());
   ASSERT_EQ('e', entries[0].getShortName());
@@ -855,7 +851,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[0].getCheckerKind());
 
   // -d --disable
-  ASSERT_EQ(0, entries[1].getFieldOffset());
+  ASSERT_EQ(1, entries[1].getFieldOffset());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[1].getParseOp());
   ASSERT_EQ(ArgEntryAttr::STORE_FALSE, entries[1].getAttr());
   ASSERT_EQ('d', entries[1].getShortName());
@@ -866,7 +862,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[1].getCheckerKind());
 
   // -o --output
-  ASSERT_EQ(1, entries[2].getFieldOffset());
+  ASSERT_EQ(2, entries[2].getFieldOffset());
   ASSERT_EQ(OptParseOp::OPT_ARG, entries[2].getParseOp());
   ASSERT_EQ(ArgEntryAttr::REQUIRE, entries[2].getAttr());
   ASSERT_EQ('o', entries[2].getShortName());
@@ -877,7 +873,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[2].getCheckerKind());
 
   // -t  --timeout
-  ASSERT_EQ(2, entries[3].getFieldOffset());
+  ASSERT_EQ(3, entries[3].getFieldOffset());
   ASSERT_EQ(OptParseOp::HAS_ARG, entries[3].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[3].getAttr());
   ASSERT_EQ('t', entries[3].getShortName());
@@ -893,7 +889,7 @@ TEST_F(ArchiveTest, argEntry) {
   }
 
   // --log
-  ASSERT_EQ(3, entries[4].getFieldOffset());
+  ASSERT_EQ(4, entries[4].getFieldOffset());
   ASSERT_EQ(OptParseOp::HAS_ARG, entries[4].getParseOp());
   ASSERT_EQ(ArgEntryAttr{}, entries[4].getAttr());
   ASSERT_EQ('\0', entries[4].getShortName());
@@ -910,7 +906,7 @@ TEST_F(ArchiveTest, argEntry) {
   }
 
   // positional
-  ASSERT_EQ(4, entries[5].getFieldOffset());
+  ASSERT_EQ(5, entries[5].getFieldOffset());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[5].getParseOp());
   ASSERT_EQ(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE,
             entries[5].getAttr());

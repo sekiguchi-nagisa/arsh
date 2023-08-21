@@ -26,7 +26,7 @@ namespace ydsh {
 // ######################
 
 ArgEntry ArgEntry::newHelp(ArgEntryIndex index) {
-  ArgEntry entry(index, UINT8_MAX); // FIXME: replace with 0
+  ArgEntry entry(index, 0);
   entry.setShortName('h');
   entry.setLongName("help");
   entry.setDetail("show this help message");

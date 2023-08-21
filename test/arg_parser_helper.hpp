@@ -10,7 +10,7 @@ namespace ydsh {
 class ArgEntriesBuilder {
 private:
   std::vector<ArgEntry> values;
-  unsigned int fieldOffset{0};
+  unsigned int fieldOffset{1};
 
 public:
   template <typename Func>

@@ -105,7 +105,7 @@ public:
 
   unsigned char getFieldOffset() const { return this->fieldOffset; }
 
-  bool isHelp() const { return this->getFieldOffset() == UINT8_MAX; } // FIXME: replace with 0
+  bool isHelp() const { return this->getFieldOffset() == 0; }
 
   void setParseOp(OptParseOp parseOp) { this->op = parseOp; }
 
