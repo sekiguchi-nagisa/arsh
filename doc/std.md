@@ -329,6 +329,17 @@ function action(name : String, type : String, action : (String, [String]?) -> St
 function actions() : [String] for LineEditor
 ```
 
+## CLI type
+```
+function name() : String for CLI
+
+function setName(name : String) : Void for CLI
+
+function parse(args : [String]) : Void for CLI
+
+function usage() : String for CLI
+```
+
 ## Array type
 ```
 function %OP_GET(index : Int) : T0 for [T0]

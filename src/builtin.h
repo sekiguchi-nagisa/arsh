@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "arg_parser.h"
 #include "line_editor.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
@@ -2256,6 +2257,43 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
   array.sortAsStrArray();
   ASSERT_ARRAY_SIZE(array);
   RET(value);
+}
+
+//!bind: function name($this : CLI) : String
+YDSH_METHOD cli_get(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(cli_get);
+  auto &obj = typeAs<BaseObject>(LOCAL(0));
+  auto v = obj[0];
+  RET(v);
+}
+
+//!bind: function setName($this : CLI, $name : String) : Void
+YDSH_METHOD cli_set(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(cli_set);
+  auto &obj = typeAs<BaseObject>(LOCAL(0));
+  obj[0] = LOCAL(1);
+  RET_VOID;
+}
+
+//!bind: function parse($this : CLI, $args : Array<String>) : Void
+YDSH_METHOD cli_parse(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(cli_parse);
+  auto &obj = typeAs<BaseObject>(LOCAL(0));
+  auto &args = typeAs<ArrayObject>(LOCAL(1));
+  if (!parseArgs(ctx, args, obj)) {
+    RET_ERROR;
+  }
+  RET_VOID;
+}
+
+//!bind: function usage($this : CLI) : String
+YDSH_METHOD cli_usage(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(cli_usage);
+  auto &obj = typeAs<BaseObject>(LOCAL(0));
+  auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
+  std::string value;
+  ArgParser::create(type.getEntries()).formatUsage(obj[0].asStrRef(), true, value);
+  RET(DSValue::createStr(std::move(value)));
 }
 
 // #################

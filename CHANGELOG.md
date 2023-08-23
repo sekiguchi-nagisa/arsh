@@ -12,6 +12,11 @@
     - get environmental variable and store to ``REPLY``
 - add ``valid_env`` action to builtin ``complete`` command
     - complete only valid env names
+- add ``CLI`` type and related methods
+    - ``name``: get command name of ``CLI`` instance
+    - ``setName``: set command name
+    - ``parse``: parse command line argument and set arguments
+    - ``usage``: get usage message
 
 #### LSP
 
