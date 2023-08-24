@@ -389,7 +389,7 @@ INIT:
     <PARAM> "("              { MODE(EXPR); PUSH_MODE_SKIP_NL(PARAM); RET(LP); }
 
     <ATTR> ">]"              { MODE(STMT); RET(ATTR_CLOSE); }
-    <ATTR> VAR_NAME          { RET(IDENTIFIER);}
+    <ATTR> VAR_NAME          { RET(ATTR_NAME);}
     <ATTR> "("               { PUSH_MODE_SKIP_NL(ATTR); RET(LP); }
     <ATTR> ":"               { MODE(STMT); RET(ATTR_ASSIGN); }
 

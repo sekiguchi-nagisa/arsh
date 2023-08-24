@@ -2465,11 +2465,11 @@ std::unique_ptr<Node> Parser::parse_attributes() {
   TRY(this->expect(TokenKind::ATTR_OPEN));
   do {
     auto ctx = this->inIgnorableNLCtx();
-    if (!attrNodes.empty() && CUR_KIND() != TokenKind::IDENTIFIER) {
-      E_ALTER_OR_COMP(TokenKind::IDENTIFIER, TokenKind::ATTR_CLOSE);
+    if (!attrNodes.empty() && CUR_KIND() != TokenKind::ATTR_NAME) {
+      E_ALTER_OR_COMP(TokenKind::ATTR_NAME, TokenKind::ATTR_CLOSE);
     }
     auto attrNode = std::make_unique<AttributeNode>(
-        TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName)));
+        TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName)));
     if (CUR_KIND() == TokenKind::LP) {
       this->consume(); // always success
       while (CUR_KIND() != TokenKind::RP) {
@@ -2479,7 +2479,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
           }
           TRY(this->expectAndChangeMode(TokenKind::COMMA, yycATTR));
         }
-        auto paramName = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+        auto paramName = TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName));
         TRY(this->expect(TokenKind::ATTR_ASSIGN));
         auto exprNode = TRY(this->parse_expression());
         attrNode->addParam(std::move(paramName), std::move(exprNode));

@@ -106,6 +106,10 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::TYPE_NAME:
   case TokenKind::FUNC:
     return HighlightTokenClass::TYPE;
+  case TokenKind::ATTR_OPEN:
+  case TokenKind::ATTR_CLOSE:
+  case TokenKind::ATTR_NAME:
+    return HighlightTokenClass::ATTRIBUTE;
   default:
     break;
   }

@@ -196,6 +196,7 @@
   /* attribute */                                                                                  \
   TOKEN(ATTR_OPEN, "[<")                                                                           \
   TOKEN(ATTR_CLOSE, ">]")                                                                          \
+  TOKEN(ATTR_NAME, "<Attribute>")                                                                  \
   TOKEN(ATTR_ASSIGN, ":")
 
 #define EACH_ASSIGN_OPERATOR(OP)                                                                   \
