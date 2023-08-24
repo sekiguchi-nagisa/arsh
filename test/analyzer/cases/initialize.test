@@ -51,7 +51,8 @@
 # CHECK:             "string",
 # CHECK:             "number",
 # CHECK:             "regexp",
-# CHECK:             "operator"
+# CHECK:             "operator",
+# CHECK:             "decorator"
 # CHECK:           ]
 # CHECK:         }
 # CHECK:       },
