@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 6, $chars = 3, $errorKind = 'UndefinedAttrParam', $status = 1)
+
+[<
+  CLI
+  (
+  ZZZ: 23)
+  >]
+typedef AAA() {}

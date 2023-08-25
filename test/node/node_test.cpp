@@ -1409,17 +1409,17 @@ nodes:
     targetTypeNode: null
     opKind: "TO_VOID"
 )EOF"},
-    {DumpOp::untyped, R"([<ArgsDef>] typedef AAA(){})", 0, 1, R"(
+    {DumpOp::untyped, R"([<CLI>] typedef AAA(){})", 0, 1, R"(
 nodes:
   - nodeKind: Function
     token:
-      pos: 12
+      pos: 8
       size: 15
     type:
     kind: "EXPLICIT_CONSTRUCTOR"
     funcName:
       token:
-        pos: 20
+        pos: 16
         size: 3
       name: "AAA"
     paramNodes:
@@ -1428,7 +1428,7 @@ nodes:
     blockNode:
       nodeKind: Block
       token:
-        pos: 25
+        pos: 21
         size: 2
       type:
       nodes:
@@ -1440,13 +1440,15 @@ nodes:
       - nodeKind: Attribute
         token:
           pos: 2
-          size: 7
+          size: 3
         type:
+        loc: "CONSTRUCTOR"
+        attrKind: "Attribute::Kind::NONE"
         attrName:
           token:
             pos: 2
-            size: 7
-          name: "ArgsDef"
+            size: 3
+          name: "CLI"
         keys:
         valueNodes:
         constNodes:

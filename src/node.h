@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "attribute.h"
 #include "brace.h"
 #include "constant.h"
 #include "misc/flag_util.hpp"
@@ -2142,7 +2143,18 @@ public:
 };
 
 class AttributeNode : public WithRtti<Node, NodeKind::Attribute> {
+public:
+  enum Loc : unsigned char {
+    CONSTRUCTOR,
+    FIELD,
+    OTHER,
+  };
+
 private:
+  Loc loc{OTHER};
+
+  Attribute::Kind attrKind{Attribute::Kind::NONE};
+
   NameInfo attrName;
 
   std::vector<NameInfo> keys;
@@ -2154,6 +2166,14 @@ private:
 public:
   explicit AttributeNode(NameInfo &&attrName)
       : WithRtti(attrName.getToken()), attrName(std::move(attrName)) {}
+
+  const auto &getAttrNameInfo() const { return this->attrName; }
+
+  const auto &getAttrName() const { return this->getAttrNameInfo().getName(); }
+
+  void setLoc(Loc l) { this->loc = l; }
+
+  Loc getLoc() const { return this->loc; }
 
   void addParam(NameInfo &&paramName, std::unique_ptr<Node> &&exprNode) {
     this->updateToken(exprNode->getToken());
@@ -2168,6 +2188,10 @@ public:
   void setConstNodes(std::vector<std::unique_ptr<Node>> &nodes) {
     this->constNodes = std::move(nodes);
   }
+
+  void setAttrKind(Attribute::Kind k) { this->attrKind = k; }
+
+  Attribute::Kind getAttrKind() const { return this->attrKind; }
 
   void dump(NodeDumper &dumper) const override;
 };

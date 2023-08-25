@@ -194,6 +194,12 @@ DEFINE_TCError(FdArgArray,
 DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
 DEFINE_TCError(UnwrapType,
                "unwrap op `!' must follow Option type expression, but actual is `%s' type");
+DEFINE_TCError(AttrLoc, "attributes are only allowed in constructor or field declarations");
+DEFINE_TCError(UndefinedAttr, "undefined attribute: `%s'");
+DEFINE_TCError(UndefinedAttrParam, "undefined parameter: `%s' for `%s' attribute");
+DEFINE_TCError(DupAttrParam, "found duplicated attribute parameter: `%s'");
+DEFINE_TCError(CLIInitParam,
+               "user-defined type that have CLI attribute must have zero-argument constructor");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

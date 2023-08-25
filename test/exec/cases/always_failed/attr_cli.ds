@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 4, $chars = 9, $errorKind = 'CLIInitParam', $status = 1)
+
+[<CLI()>]
+typedef AAA(a : Int) {
+}

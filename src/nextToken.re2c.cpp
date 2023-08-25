@@ -261,7 +261,7 @@ INIT:
     <STMT> CMD               { MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
     <STMT> ENV_ASSIGN        { MODE(CMD); RET(ENV_ASSIGN); }
 
-    <STMT> "[<"              { MODE(ATTR); RET(ATTR_OPEN); }
+    <STMT,EXPR> "[<"         { MODE(ATTR); RET(ATTR_OPEN); }
 
     <EXPR> ":"               { RET(COLON); }
     <EXPR> ","               { MODE(STMT); RET(COMMA); }
@@ -391,11 +391,12 @@ INIT:
     <ATTR> ">]"              { MODE(STMT); RET(ATTR_CLOSE); }
     <ATTR> VAR_NAME          { RET(ATTR_NAME);}
     <ATTR> "("               { PUSH_MODE_SKIP_NL(ATTR); RET(LP); }
+    <ATTR> ")"               { POP_MODE(); RET(RP); }
     <ATTR> ":"               { MODE(STMT); RET(ATTR_ASSIGN); }
 
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
     <STMT,EXPR,TYPE> NEW_LINE     { CHECK_HERE(); UPDATE_LN(); FIND_NEW_LINE(); }
-    <NAME,PARAM> NEW_LINE
+    <NAME,PARAM,ATTR> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
     <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> COMMENT

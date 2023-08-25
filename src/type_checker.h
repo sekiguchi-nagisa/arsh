@@ -19,6 +19,7 @@
 
 #include <functional>
 
+#include "attribute.h"
 #include "lexer.h"
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
@@ -310,13 +311,16 @@ protected:
 
   FlexBuffer<const DSType *> requiredTypes;
 
+  AttributeMap attributeMap;
+
   std::vector<TypeCheckError> errors;
 
 public:
   TypeChecker(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
               TypePool &pool, bool toplevelPrinting, const Lexer &lex)
       : config(config), cancelToken(cancelToken), pool(pool), toplevelPrinting(toplevelPrinting),
-        funcCtx(std::make_unique<FuncContext>()), lexer(lex) {}
+        funcCtx(std::make_unique<FuncContext>()), lexer(lex),
+        attributeMap(AttributeMap::create(this->pool)) {}
 
   ~TypeChecker() override = default;
 

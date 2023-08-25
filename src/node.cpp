@@ -829,6 +829,21 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 // ###########################
 
 void AttributeNode::dump(NodeDumper &dumper) const {
+#define EACH_ENUM(OP)                                                                              \
+  OP(CONSTRUCTOR)                                                                                  \
+  OP(FIELD)                                                                                        \
+  OP(OTHER)
+
+  DUMP_ENUM(loc, EACH_ENUM);
+#undef EACH_ENUM
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(Attribute::Kind::NONE)                                                                        \
+  OP(Attribute::Kind::CLI)
+
+  DUMP_ENUM(attrKind, EACH_ENUM);
+#undef EACH_ENUM
+
   DUMP(attrName);
   DUMP(keys);
   DUMP(valueNodes);

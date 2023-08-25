@@ -225,6 +225,7 @@ set(YDSH_SRC
         src/parser.cpp
         src/type_checker.cpp
         src/type_checker_cmd.cpp
+        src/type_checker_attr.cpp
         src/frontend.cpp
         src/signals.cpp
         src/regex_wrapper.cpp

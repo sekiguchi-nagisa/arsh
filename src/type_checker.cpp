@@ -17,6 +17,7 @@
 #include <cstdarg>
 #include <vector>
 
+#include "arg_parser_base.h"
 #include "complete.h"
 #include "constant.h"
 #include "misc/num_util.hpp"
@@ -1154,6 +1155,9 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 }
 
 void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
+  for (auto &e : node.getAttrNodes()) {
+    this->checkTypeExactly(*e);
+  }
   switch (node.getDefKind()) {
   case TypeDefNode::ALIAS: {
     auto &nameInfo = node.getNameInfo();
@@ -1842,6 +1846,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
+  for (auto &e : node.getAttrNodes()) {
+    this->checkTypeExactly(*e);
+  }
+
   switch (node.getKind()) {
   case VarDeclNode::LET:
   case VarDeclNode::VAR: {
@@ -1878,8 +1886,6 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
   const bool willBeField = this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
   this->checkTypeVarDecl(node, willBeField);
 }
-
-void TypeChecker::visitAttributeNode(AttributeNode &node) { (void)node; }
 
 void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
@@ -1965,9 +1971,29 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
 
 void TypeChecker::registerRecordType(FunctionNode &node) {
   assert(node.isConstructor());
-  auto typeOrError = this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
+
+  // check CLI attribute
+  bool cli = false;
+  if (!node.getAttrNodes().empty()) {
+    for (auto &e : node.getAttrNodes()) {
+      if (e->getAttrKind() == Attribute::Kind::CLI) {
+        cli = true;
+      } else {
+        cli = false;
+        break;
+      }
+    }
+  }
+  if (cli && !node.getParamNodes().empty()) {
+    cli = false;
+    this->reportError<CLIInitParam>(node.getNameInfo().getToken());
+  }
+
+  auto typeOrError =
+      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId)
+          : this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
   if (typeOrError) {
-    auto &recordType = cast<RecordType>(*typeOrError.asOk());
+    auto &recordType = *typeOrError.asOk();
     if (auto ret =
             this->curScope->defineTypeAlias(this->typePool(), node.getFuncName(), recordType)) {
       node.setResolvedType(recordType);
@@ -2158,9 +2184,15 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   }
 
   // finalize record type
+  assert(node.getResolvedType()->isRecordOrDerived());
+  auto &resolvedType = *node.getResolvedType();
   const unsigned int offset =
       node.kind == FunctionNode::EXPLICIT_CONSTRUCTOR ? node.getParamNodes().size() : 0;
   std::unordered_map<std::string, HandlePtr> handles;
+  std::vector<ArgEntry> entries;
+  if (isa<CLIRecordType>(resolvedType)) {
+    entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(0))); // FIXME
+  }
   for (auto &e : this->curScope->getHandles()) {
     auto handle = e.second.first;
     if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethodHandle()) {
@@ -2175,9 +2207,11 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
     }
     handles.emplace(e.first, std::move(handle));
   }
-  assert(node.getResolvedType()->isRecordOrDerived());
-  auto typeOrError = this->typePool().finalizeRecordType(cast<RecordType>(*node.getResolvedType()),
-                                                         std::move(handles));
+  auto typeOrError =
+      isa<CLIRecordType>(resolvedType)
+          ? this->typePool().finalizeCLIRecordType(cast<CLIRecordType>(resolvedType),
+                                                   std::move(handles), std::move(entries))
+          : this->typePool().finalizeRecordType(cast<RecordType>(resolvedType), std::move(handles));
   if (!typeOrError) {
     this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
   }
@@ -2227,6 +2261,10 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
 
 void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
   if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
+    for (auto &e : node.getAttrNodes()) {
+      this->checkTypeExactly(*e);
+    }
+
     node.setType(this->typePool().get(TYPE::Void));
     if (!this->isTopLevel() && !node.isAnonymousFunc()) { // only available toplevel scope
       const char *message;
@@ -2287,6 +2325,12 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
       }
     }
     // check type func body
+    if (isa<CLIRecordType>(node.getResolvedType())) {
+      Token dummy = node.getNameInfo().getToken();
+      auto nameDeclNode = std::make_unique<VarDeclNode>(
+          dummy.pos, NameInfo(dummy, "%name"), std::make_unique<StringNode>(""), VarDeclNode::VAR);
+      node.getBlockNode().insertNodeToFirst(std::move(nameDeclNode));
+    }
     this->checkTypeWithCurrentScope(
         node.isAnonymousFunc() ? nullptr : &this->typePool().get(TYPE::Void), node.getBlockNode());
     node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());

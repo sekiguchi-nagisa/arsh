@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 7, $chars = 2, $errorKind = 'UndefinedAttr', $status = 1)
+
+[<CLI()>]
+typedef AAA() {}
+
+[<
+ CC>]
+typedef BBB() {
+  var a = ""
+}

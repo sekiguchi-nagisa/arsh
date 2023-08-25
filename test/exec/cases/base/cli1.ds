@@ -1,0 +1,26 @@
+
+## empty options
+[<CLI()>]
+typedef AAA() {
+    var a = ""
+}
+
+assert (new AAA()) is CLI
+
+var aa = new AAA()
+assert $aa.name() == ''
+$aa.setName("cmd1")
+assert $aa.name() == 'cmd1'
+assert $aa.usage() == "Usage: cmd1
+
+Options:
+  -h, --help  show this help message"
+
+var ex = 24 as Any
+try { $aa.parse(['--help']); } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 0
+assert ($ex as CLIError).message() == "Usage: cmd1
+
+Options:
+  -h, --help  show this help message"
