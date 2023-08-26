@@ -2175,6 +2175,13 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
   }
 }
 
+static HandlePtr copyWithOffset(const TypePool &pool, const Handle &handle, unsigned int offset) {
+  assert(handle.getIndex() >= offset);
+  auto &fieldType = pool.get(handle.getTypeId());
+  return HandlePtr::create(fieldType, handle.getIndex() - offset, handle.getKind(), handle.attr(),
+                           handle.getModId());
+}
+
 void TypeChecker::postprocessConstructor(FunctionNode &node) {
   assert(node.isConstructor() && !node.getFuncName().empty());
   assert(this->curScope->parent->kind == NameScope::FUNC);
@@ -2183,7 +2190,6 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
     return;
   }
 
-  // finalize record type
   assert(node.getResolvedType()->isRecordOrDerived());
   auto &resolvedType = *node.getResolvedType();
   const unsigned int offset =
@@ -2193,20 +2199,32 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   if (isa<CLIRecordType>(resolvedType)) {
     entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(0))); // FIXME
   }
-  for (auto &e : this->curScope->getHandles()) {
-    auto handle = e.second.first;
-    if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethodHandle()) {
-      if (handle->getIndex() < offset) {
-        continue;
-      }
 
-      // field
-      auto &fieldType = this->typePool().get(handle->getTypeId());
-      handle = HandlePtr::create(fieldType, handle->getIndex() - offset, handle->getKind(),
-                                 handle->attr(), handle->getModId());
+  // collect field/type-alias handles
+  if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) { // collect from params
+    for (auto &e : node.getParamNodes()) {
+      handles.emplace(e->getVarName(), copyWithOffset(this->typePool(), *e->getHandle(), 0));
     }
-    handles.emplace(e.first, std::move(handle));
+  } else {
+    for (auto &e : node.getBlockNode().getNodes()) {
+      HandlePtr handlePtr;
+      std::string name;
+      if (isa<VarDeclNode>(*e) && cast<VarDeclNode>(*e).getHandle()) {
+        name = cast<VarDeclNode>(*e).getVarName();
+        handlePtr = copyWithOffset(this->typePool(), *cast<VarDeclNode>(*e).getHandle(), offset);
+      } else if (isa<TypeDefNode>(*e) && cast<TypeDefNode>(*e).getHandle()) {
+        if (auto ptr = cast<TypeDefNode>(*e).getHandle(); ptr->is(HandleKind::TYPE_ALIAS)) {
+          name = toTypeAliasFullName(cast<TypeDefNode>(*e).getName());
+          handlePtr = std::move(ptr);
+        }
+      }
+      if (handlePtr) {
+        handles.emplace(std::move(name), std::move(handlePtr));
+      }
+    }
   }
+
+  // finalize record type
   auto typeOrError =
       isa<CLIRecordType>(resolvedType)
           ? this->typePool().finalizeCLIRecordType(cast<CLIRecordType>(resolvedType),
