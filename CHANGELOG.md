@@ -48,6 +48,7 @@
 - improve error message of type lookup errors
     - report correct position of invalid type elements
     - report more detailed error message for invalid type elements
+- allow user-defined type to override builtin methods
 
 #### Builtin
 

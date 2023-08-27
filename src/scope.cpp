@@ -139,8 +139,10 @@ NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &r
       recvType.isUnresolved()) {
     return Err(NameRegisterError::INVALID_TYPE);
   }
-  if (pool.hasMethod(recvType, name)) {
-    return Err(NameRegisterError::DEFINED);
+  if (isBuiltinMod(recvType.resolveBelongedModId())) {
+    if (pool.hasMethod(recvType, name)) {
+      return Err(NameRegisterError::DEFINED);
+    }
   }
   std::string fullname = toMethodFullName(recvType.typeId(), name);
   const unsigned int index = this->getMaxGlobalVarIndex();

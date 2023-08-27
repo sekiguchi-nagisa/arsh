@@ -3,6 +3,14 @@ typedef ANY : Error
 typedef INT : ANY
 typedef STR : ANY
 
+# override builtin method
+function status() : Int for ANY {
+  return -($this as Error).status()
+}
+assert new ANY('', 100).status() == -100
+assert new INT('', 88).status() == -88
+assert (new INT('', 88) as Error).status() == 88  ## call base type method
+
 function print() for INT {
     echo INT: ${$this.message()}
 }
@@ -15,6 +23,7 @@ function print() : Void for ANY {
 }
 
 assert "$(new INT('12345').print())" == 'INT: 12345'
+assert "$((new INT('12345') as ANY).print())" == 'ANY: 12345' ## call base type method
 assert "$(new ANY("$True").print())" == 'ANY: true'
 assert "$(new STR('hello').print())" == 'ANY: hello'
 
