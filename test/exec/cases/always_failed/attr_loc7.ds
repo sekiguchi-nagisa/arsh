@@ -1,0 +1,11 @@
+#$test($result = 'type', $lineNum = 8, $chars = 7, $errorKind = 'InvalidAttrLoc', $status = 1)
+
+[<CLI>]
+typedef AAA() {
+  var a = ""
+
+  {
+    [<Flag>]
+    var b = $false
+  }
+}

@@ -11,6 +11,7 @@
     - ``CLI`` attribute: for defining command line data structure (derived type of ``CLI`` type)
     - ``Flag`` attribute: for no-argument (flag) option
     - ``Option`` attribute: for option that take an argument
+    - ``Arg`` attribute: for positional argument
 
 #### Builtin
 

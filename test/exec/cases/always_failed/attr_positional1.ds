@@ -1,0 +1,24 @@
+#$test($result = 'type', $lineNum = 22, $chars = 5, $errorKind = 'UnrecogAutoArg', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b')
+    Flag(short:
+     'A')>]
+  var a = $false
+
+  [<Option(short: 'B')>]
+  var cc = 23
+
+  [<Arg>]
+  var aaa : Int?
+
+  [<Arg(placeholder: "files")>]
+  var bbb : [String]
+
+  [<Arg()>]
+  var ccc : String?
+}

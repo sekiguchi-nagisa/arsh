@@ -166,7 +166,7 @@ TEST_F(ArgParserTest, opt) {
     ASSERT_EQ("CCC", toStringAt(array, 2));
   }
 
-  const char *help = R"(Usage: cmd1 [OPTIONS] src [dest ...]
+  const char *help = R"(Usage: cmd1 [OPTIONS] src [dest...]
 
 Options:
   -d[file], --dump[=file]

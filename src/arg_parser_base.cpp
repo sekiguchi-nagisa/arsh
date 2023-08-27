@@ -129,10 +129,10 @@ void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &o
         }
         assert(!e.getArgName().empty());
         out += e.getArgName();
+        if (e.isRemainArg()) {
+          out += "...";
+        }
         if (!e.isRequire()) {
-          if (e.isRemainArg()) {
-            out += " ...";
-          }
           out += ']';
         }
       }

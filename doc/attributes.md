@@ -37,7 +37,7 @@ only allowed for field declaration that is ``String``, ``String?``, ``Int`` or `
 | required    | ``Bool``      | false                                     | required or not                                               |
 | opt         | ``Bool``      | false                                     | following argument is optional or not                         |
 | default     | ``String``    | null                                      | default argument for optional argument                        |
-| placeholder | ``String``    | equivalent to lower kebab case field name | placeholder for argument                                      |
+| placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
 | range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
 | choice      | ``[String]``  | null                                      | valid choice of string argument                               |
 | help        | ``String``    | empty string                              | help message of this option                                   |
@@ -49,6 +49,6 @@ only allowed for field declaration that is ``String``, ``String?``, ``[String]``
 | **param**   | **type**      | **default**                               | **description**                                               |
 |-------------|---------------|-------------------------------------------|---------------------------------------------------------------|
 | required    | ``Bool``      | false                                     | required or not                                               |
-| placeholder | ``String``    | equivalent to lower kebab case field name | placeholder for argument                                      |
+| placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
 | range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
 | choice      | ``[String]``  | null                                      | valid choice of string argument                               |

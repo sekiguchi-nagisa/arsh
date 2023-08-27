@@ -74,3 +74,37 @@ $bb.parse(['--output=./log.txt', '--timeout', '999'])
 assert ! $bb.d
 assert $bb.output! == './log.txt'
 assert $bb.timeout == 999
+
+## Arg
+[<CLI>]
+typedef CCC() {
+  [<Arg(required: $true)>]
+  var aaa : Int?
+
+  [<Arg>]
+  var bbb : String?
+
+  var dummy = "dummy"
+
+  [<Arg(required: $true)>]
+  var ccc : [String]
+
+  [<Flag(short: 'd', long: "debug", help: "enable debug mode")>]
+  var d = $false
+}
+
+assert (new CCC()) is CLI
+var cc = new CCC()
+$cc.setName("cmd3")
+assert $cc.usage() == "Usage: cmd3 [OPTIONS] AAA [BBB] CCC...
+
+Options:
+  -d, --debug  enable debug mode
+  -h, --help   show this help message"
+
+$cc.parse(['-d', '--', '-2', '-3', '-4', '-5'])
+assert $cc.aaa! == -2
+assert $cc.bbb! == '-3'
+assert $cc.ccc.size() == 2
+assert $cc.ccc[0] == '-4'
+assert $cc.ccc[1] == '-5'

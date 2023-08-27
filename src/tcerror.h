@@ -211,6 +211,12 @@ DEFINE_TCError(InvalidShortOpt, "invalid short option: `%s', must be single alph
 DEFINE_TCError(InvalidLongOpt, "invalid long option: `%s', must be follow `[a-zA-Z][a-zA-Z0-9-]*'");
 DEFINE_TCError(DefinedOpt, "already defined option: `%s'");
 DEFINE_TCError(DefinedAutoOpt, "already defined option: `%s' (auto-generated from `%s' field)");
+DEFINE_TCError(UnrecogArg,
+               "positional argument `%s' is never recognized,\n"
+               "since the previously defined `%s' argument will accept all remain arguments");
+DEFINE_TCError(UnrecogAutoArg,
+               "positional argument `%s' (auto-generated from `%s' field) is never recognized,\n"
+               "since the previously defined `%s' argument will accept all remain arguments");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

@@ -345,14 +345,6 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     break;
   case AttributeKind::ARG:
     setFlag(argEntryAttr, ArgEntryAttr::POSITIONAL);
-    if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::StringArray)) {
-      if (foundOptionSet.find("<remain>") != foundOptionSet.end()) { //
-        // FIXME: report error
-      } else {
-        foundOptionSet.emplace("<remain>"); // for remain arguments
-        setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
-      }
-    }
     break;
   }
   if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::Int)) {
@@ -439,7 +431,8 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
   }
 
   // add default option/arg name
-  if (entry.isOption() && entry.getShortName() == '\0' && entry.getLongName().empty()) {
+  if (attrNode.getAttrKind() != AttributeKind::ARG && entry.getShortName() == '\0' &&
+      entry.getLongName().empty()) {
     auto &varName = declNode.getVarName();
     auto optName = toLongOpt(varName);
     if (foundOptionSet.find(optName) != foundOptionSet.end()) {
@@ -450,12 +443,33 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       foundOptionSet.emplace(optName);
       entry.setLongName(optName.c_str());
     }
+  } else if (attrNode.getAttrKind() == AttributeKind::ARG) {
+    if (foundOptionSet.find("<remain>") != foundOptionSet.end()) { // already found remain arg
+      Token token = attrNode.getAttrNameInfo().getToken();
+      assert(!entries.empty());
+      auto &last = entries.back();
+      assert(last.isRemainArg());
+      if (entry.getArgName().empty()) {
+        auto &varName = declNode.getVarName();
+        auto name = toArgName(varName);
+        this->reportError<UnrecogAutoArg>(token, name.c_str(), varName.c_str(),
+                                          last.getArgName().c_str());
+      } else {
+        this->reportError<UnrecogArg>(token, entry.getArgName().c_str(), last.getArgName().c_str());
+      }
+      return;
+    } else {
+      if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::StringArray)) {
+        foundOptionSet.emplace("<remain>");
+        setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
+      }
+    }
   }
+  entry.setAttr(argEntryAttr);
   if (entry.getArgName().empty()) {
     entry.setArgName(toArgName(declNode.getVarName()).c_str());
   }
 
-  entry.setAttr(argEntryAttr);
   entries.push_back(std::move(entry));
 }
 
