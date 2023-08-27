@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 8, $chars = 30, $errorKind = 'InvalidLongOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b', long: 'b')
+    Flag(short:
+     'A')>]
+  var a = $false
+
+  [<Option(short: 'b')>]
+  var cc = 23
+}

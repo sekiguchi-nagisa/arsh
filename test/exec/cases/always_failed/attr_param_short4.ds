@@ -1,0 +1,12 @@
+#$test($result = 'type', $lineNum = 10, $chars = 6, $errorKind = 'DefinedOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b')
+    Flag(short:
+     'h')>]   # -h option is reserved
+  var a = $false
+}

@@ -24,3 +24,53 @@ assert ($ex as CLIError).message() == "Usage: cmd1
 
 Options:
   -h, --help  show this help message"
+
+## Flag/Option
+[<CLI>]
+typedef BBB() {
+  [<Flag(
+      short: "d", long: "debug", 
+      help: "enable debug mode"
+  )>]
+  var d = $false
+
+  let tmp = "this is a temp"
+
+  [<Option(help: "set output target", opt: $true, default: "/dev/stdout")>]
+  var output : String?
+
+  [<Option(help: "set timeout (default is 0)",
+    placeholder: "MSEC")>]
+  var timeout = 0
+}
+
+assert (new BBB()) is CLI
+
+var bb = new BBB()
+$bb.setName('cmd2')
+assert $bb.usage() == "Usage: cmd2 [OPTIONS]
+
+Options:
+  -d, --debug        enable debug mode
+  --output[=OUTPUT]  set output target
+  --timeout MSEC     set timeout (default is 0)
+  -h, --help         show this help message"
+
+$bb.parse(['-d', '--output='])
+assert $bb.d
+assert $bb.output! == ''
+assert $bb.timeout == 0
+
+$bb = new BBB()
+$bb.setName('cmd2')
+$bb.parse(['--debug', '--output'])
+assert $bb.d
+assert $bb.output! == '/dev/stdout'
+assert $bb.timeout == 0
+
+$bb = new BBB()
+$bb.setName('cmd2')
+$bb.parse(['--output=./log.txt', '--timeout', '999'])
+assert ! $bb.d
+assert $bb.output! == './log.txt'
+assert $bb.timeout == 999

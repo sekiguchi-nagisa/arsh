@@ -1,0 +1,20 @@
+#$test($result = 'type', $lineNum = 16, $chars = 5, $errorKind = 'Required', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option
+    (
+      short
+       :
+        's'
+        ,
+        long
+:
+    $false
+    )
+   >]
+  var a = ""
+}

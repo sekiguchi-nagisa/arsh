@@ -1847,6 +1847,9 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
 void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
   for (auto &e : node.getAttrNodes()) {
+    if (willBeField) {
+      e->setLoc(Attribute::Loc::FIELD);
+    }
     this->checkTypeExactly(*e);
   }
 
@@ -1864,10 +1867,16 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
     if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
       node.setHandle(handle);
     }
+
+    // check attribute type
+    if (!node.getAttrNodes().empty()) {
+      this->checkFieldAttributeType(node);
+    }
     break;
   }
   case VarDeclNode::IMPORT_ENV:
   case VarDeclNode::EXPORT_ENV: {
+    assert(node.getAttrNodes().empty());
     if (node.getExprNode() != nullptr) {
       this->checkType(this->typePool().get(TYPE::String), *node.getExprNode());
     }
@@ -1976,7 +1985,7 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   bool cli = false;
   if (!node.getAttrNodes().empty()) {
     for (auto &e : node.getAttrNodes()) {
-      if (e->getAttrKind() == Attribute::Kind::CLI) {
+      if (e->getAttrKind() == AttributeKind::CLI) {
         cli = true;
       } else {
         cli = false;
@@ -2189,10 +2198,6 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   const unsigned int offset =
       node.kind == FunctionNode::EXPLICIT_CONSTRUCTOR ? node.getParamNodes().size() : 0;
   std::unordered_map<std::string, HandlePtr> handles;
-  std::vector<ArgEntry> entries;
-  if (isa<CLIRecordType>(resolvedType)) {
-    entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(0))); // FIXME
-  }
   for (auto &e : this->curScope->getHandles()) {
     auto handle = e.second.first;
     if (!handle->is(HandleKind::TYPE_ALIAS) && !handle->isMethodHandle()) {
@@ -2207,6 +2212,13 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
     }
     handles.emplace(e.first, std::move(handle));
   }
+
+  std::vector<ArgEntry> entries;
+  if (isa<CLIRecordType>(resolvedType)) {
+    entries = this->resolveArgEntries(node, offset);
+  }
+
+  // finalize record type
   auto typeOrError =
       isa<CLIRecordType>(resolvedType)
           ? this->typePool().finalizeCLIRecordType(cast<CLIRecordType>(resolvedType),
@@ -2307,9 +2319,9 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
 
   if (hasFlag(op, FuncCheckOp::CHECK_BODY)) {
     // func body
-    const auto *returnType =
-        node.getReturnTypeNode() ? &node.getReturnTypeNode()->getType() : nullptr;
-    assert(!node.isConstructor() || (node.isConstructor() && !returnType));
+    const auto *returnType = node.getReturnTypeNode() ? &node.getReturnTypeNode()->getType()
+                             : node.isConstructor()   ? node.getResolvedType()
+                                                      : nullptr;
     auto func = this->intoFunc(returnType,
                                node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
     // register parameter

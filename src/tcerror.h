@@ -194,12 +194,23 @@ DEFINE_TCError(FdArgArray,
 DEFINE_TCError(IfLetOpt, "right hand-side of if-let condition must be Option type, but is `%s'");
 DEFINE_TCError(UnwrapType,
                "unwrap op `!' must follow Option type expression, but actual is `%s' type");
-DEFINE_TCError(AttrLoc, "attributes are only allowed in constructor or field declarations");
+DEFINE_TCError(InvalidAttrLoc, "`%s' attribute is only given to %s");
 DEFINE_TCError(UndefinedAttr, "undefined attribute: `%s'");
 DEFINE_TCError(UndefinedAttrParam, "undefined parameter: `%s' for `%s' attribute");
 DEFINE_TCError(DupAttrParam, "found duplicated attribute parameter: `%s'");
 DEFINE_TCError(CLIInitParam,
-               "user-defined type that have CLI attribute must have zero-argument constructor");
+               "user-defined type having `CLI' attribute must have zero-argument constructor");
+DEFINE_TCError(NeedCLIAttr,
+               "`%s' attribute is only available within user-defined type having `CLI' attribute");
+DEFINE_TCError(FieldAttrType, "`%s' attribute is only given to %s type field");
+DEFINE_TCError(FieldAttrPrivate,
+               "`%s' attribute is only given to public field (not starting with _)");
+DEFINE_TCError(FieldAttrReadOnly,
+               "`%s' attribute is only given to writable field (defined with `var')");
+DEFINE_TCError(InvalidShortOpt, "invalid short option: `%s', must be single alphabet character");
+DEFINE_TCError(InvalidLongOpt, "invalid long option: `%s', must be follow `[a-zA-Z][a-zA-Z0-9-]*'");
+DEFINE_TCError(DefinedOpt, "already defined option: `%s'");
+DEFINE_TCError(DefinedAutoOpt, "already defined option: `%s' (auto-generated from `%s' field)");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

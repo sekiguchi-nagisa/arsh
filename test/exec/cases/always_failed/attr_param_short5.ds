@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 13, $chars = 19, $errorKind = 'DefinedOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b')
+    Flag(short:
+     'A')>]
+  var a = $false
+
+  [<Option(short: 'b')>]
+  var cc = 23
+}

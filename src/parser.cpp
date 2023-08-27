@@ -2513,7 +2513,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
     break;
   case NodeKind::Function: // for constructor
     for (auto &e : attrNodes) {
-      e->setLoc(AttributeNode::CONSTRUCTOR);
+      e->setLoc(Attribute::Loc::CONSTRUCTOR);
     }
     cast<FunctionNode>(*node).setAttrNodes(std::move(attrNodes));
     break;

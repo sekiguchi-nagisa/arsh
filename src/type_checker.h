@@ -607,6 +607,14 @@ private:
 
   void checkTypeVarDecl(VarDeclNode &node, bool willBeField);
 
+  void checkFieldAttributeType(const VarDeclNode &varDeclNode);
+
+  void resolveArgEntry(std::unordered_set<std::string> &foundOptionSet, unsigned int offset,
+                       const AttributeNode &attrNode, const VarDeclNode &declNode,
+                       std::vector<ArgEntry> &entries);
+
+  std::vector<ArgEntry> resolveArgEntries(const FunctionNode &node, unsigned int offset);
+
   // for case-expression
   struct PatternMap {
     virtual ~PatternMap() = default;

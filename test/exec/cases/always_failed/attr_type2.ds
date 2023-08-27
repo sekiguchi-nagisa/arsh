@@ -1,0 +1,23 @@
+#$test($result = 'type', $lineNum = 20, $chars = 5, $errorKind = 'FieldAttrType', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<Option>]
+  var aaa : String?
+
+  [<Option>]
+  var bbb = ""
+
+  [<Option>]
+  var ccc : Int?
+
+  [<Option>]
+  var ddd = 23
+
+  [<
+    Option
+    >]
+  var eee : [String]
+}

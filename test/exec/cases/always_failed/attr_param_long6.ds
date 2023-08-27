@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 13, $chars = 5, $errorKind = 'DefinedAutoOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(help: "this is a help")
+    Flag(short:
+     'A', long: "Help")>]
+  var About = $false
+
+  [<Option(default: "111")>]
+  var ABOUT = 23
+}

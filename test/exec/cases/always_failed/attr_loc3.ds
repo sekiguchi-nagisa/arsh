@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 4, $chars = 3, $errorKind = 'InvalidAttrLoc', $status = 1)
+
+[<CLI()
+  Flag>]
+typedef AAA() {}

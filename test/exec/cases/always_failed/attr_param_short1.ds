@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 8, $chars = 18, $errorKind = 'InvalidShortOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short:'1')>]
+  var a = $false
+}

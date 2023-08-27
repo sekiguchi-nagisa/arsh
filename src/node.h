@@ -2143,17 +2143,12 @@ public:
 };
 
 class AttributeNode : public WithRtti<Node, NodeKind::Attribute> {
-public:
-  enum Loc : unsigned char {
-    CONSTRUCTOR,
-    FIELD,
-    OTHER,
-  };
-
 private:
-  Loc loc{OTHER};
+  Attribute::Loc loc{Attribute::Loc::NONE};
 
-  Attribute::Kind attrKind{Attribute::Kind::NONE};
+  AttributeKind attrKind{AttributeKind::NONE};
+
+  bool validType{false};
 
   NameInfo attrName;
 
@@ -2171,9 +2166,13 @@ public:
 
   const auto &getAttrName() const { return this->getAttrNameInfo().getName(); }
 
-  void setLoc(Loc l) { this->loc = l; }
+  void setLoc(Attribute::Loc l) { this->loc = l; }
 
-  Loc getLoc() const { return this->loc; }
+  Attribute::Loc getLoc() const { return this->loc; }
+
+  void setValidType(bool s) { this->validType = s; }
+
+  bool isValidType() const { return this->validType; }
 
   void addParam(NameInfo &&paramName, std::unique_ptr<Node> &&exprNode) {
     this->updateToken(exprNode->getToken());
@@ -2185,13 +2184,15 @@ public:
 
   const auto &getValueNodes() const { return this->valueNodes; }
 
-  void setConstNodes(std::vector<std::unique_ptr<Node>> &nodes) {
+  void setConstNodes(std::vector<std::unique_ptr<Node>> &&nodes) {
     this->constNodes = std::move(nodes);
   }
 
-  void setAttrKind(Attribute::Kind k) { this->attrKind = k; }
+  const auto &getConstNodes() const { return this->constNodes; }
 
-  Attribute::Kind getAttrKind() const { return this->attrKind; }
+  void setAttrKind(AttributeKind k) { this->attrKind = k; }
+
+  AttributeKind getAttrKind() const { return this->attrKind; }
 
   void dump(NodeDumper &dumper) const override;
 };

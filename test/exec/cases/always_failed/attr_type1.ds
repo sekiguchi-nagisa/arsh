@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 13, $chars = 5, $errorKind = 'FieldAttrType', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<Flag>]
+  var aaa : Bool?
+
+  [<Flag>]
+  var bbb = $false
+
+  [<Flag>]
+  var ccc = ""
+}

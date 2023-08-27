@@ -19,6 +19,13 @@
 
 #include "type.h"
 
+#define EACH_ATTRIBUTE_KIND(OP)                                                                    \
+  OP(NONE, "None")                                                                                 \
+  OP(CLI, "CLI")                                                                                   \
+  OP(FLAG, "Flag")                                                                                 \
+  OP(OPTION, "Option")                                                                             \
+  OP(ARG, "Arg")
+
 #define EACH_ATTRIBUTE_PARAM(OP)                                                                   \
   OP(HELP, "help", TYPE::String)                                                                   \
   OP(SHORT, "short", TYPE::String)                                                                 \
@@ -29,20 +36,24 @@
   OP(DEFAULT, "default", TYPE::String)                                                             \
   OP(PLACE_HOLDER, "placeholder", TYPE::String)                                                    \
   OP(RANGE, "range", TYPE::Void)                                                                   \
-  OP(choice, "choice", TYPE::StringArray)
+  OP(CHOICE, "choice", TYPE::StringArray)
 
 namespace ydsh {
+
+enum class AttributeKind : unsigned char {
+#define GEN_ENUM(E, S) E,
+  EACH_ATTRIBUTE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(AttributeKind k);
 
 class Attribute {
 public:
   enum class Loc : unsigned char {
+    NONE, // unresolved
     CONSTRUCTOR,
     FIELD,
-  };
-
-  enum class Kind : unsigned char {
-    NONE, // unresolved
-    CLI,
   };
 
   enum class Param : unsigned char {
@@ -52,21 +63,19 @@ public:
   };
 
 private:
-  const std::string name;
-  const Kind kind;
+  const AttributeKind kind;
   const Loc loc;
   const StrRefMap<Param> params;
   const std::vector<const DSType *> types; // for field attributes
 
 public:
-  Attribute(std::string &&name, Kind kind, Loc loc, StrRefMap<Param> &&params,
+  Attribute(AttributeKind kind, Loc loc, StrRefMap<Param> &&params,
             std::vector<const DSType *> &&types)
-      : name(std::move(name)), kind(kind), loc(loc), params(std::move(params)),
-        types(std::move(types)) {}
+      : kind(kind), loc(loc), params(std::move(params)), types(std::move(types)) {}
 
-  const auto &getName() const { return this->name; }
+  const char *getName() const { return toString(this->getKind()); }
 
-  Kind getKind() const { return this->kind; }
+  AttributeKind getKind() const { return this->kind; }
 
   Loc getLoc() const { return this->loc; }
 

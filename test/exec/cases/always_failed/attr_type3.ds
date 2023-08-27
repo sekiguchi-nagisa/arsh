@@ -1,0 +1,28 @@
+#$test($result = 'type', $lineNum = 27, $chars = 5, $errorKind = 'FieldAttrType', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<Arg>]
+  var aaa : String?
+
+  [<Arg>]
+  var bbb = ""
+
+  [<Arg>]
+  var ccc : Int?
+
+  [<Arg>]
+  var ddd = 23
+
+  [<Arg>]
+  var eee : [String]
+
+    [<Arg>]
+    var fff : [String]?
+
+  [<Arg>] var ggg = (34 as Any)
+  [<Arg>] var hhh : Any?
+  [<Arg>] var iii : [Int]
+}

@@ -1,0 +1,12 @@
+#$test($result = 'type', $lineNum = 10, $chars = 6, $errorKind = 'InvalidShortOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'Q')
+    Flag(short:
+     '')>]
+  var a = $false
+}

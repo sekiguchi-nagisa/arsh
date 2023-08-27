@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 5, $chars = 4, $errorKind = 'NeedCLIAttr', $status = 1)
+
+typedef AAA() {
+  [<
+   Arg
+   >]
+
+  var a = ""
+}

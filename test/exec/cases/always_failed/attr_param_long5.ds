@@ -1,0 +1,16 @@
+#$test($result = 'type', $lineNum = 14, $chars = 5, $errorKind = 'DefinedOpt', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b', long: 'Wbb9-9')
+    Flag(short:
+     'A', long: "Help")>]
+  var a = $false
+
+  [<Option(long:
+    "Wbb9${"-9"}")>]
+  var cc = 23
+}

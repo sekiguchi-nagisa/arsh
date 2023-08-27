@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 8, $chars = 3, $errorKind = 'FieldAttrPrivate', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<
+  Flag>]
+    let _aaa = false
+}

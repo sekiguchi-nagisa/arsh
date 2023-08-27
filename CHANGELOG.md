@@ -4,6 +4,14 @@
 
 ### Added
 
+#### Core
+
+- support declarative command line argument parsing
+    - now introduce attributes that specify command line option setting
+    - ``CLI`` attribute: for defining command line data structure (derived type of ``CLI`` type)
+    - ``Flag`` attribute: for no-argument (flag) option
+    - ``Option`` attribute: for option that take an argument
+
 #### Builtin
 
 - add ``SIG_EXIT`` function for graceful shutdown via receiving signal

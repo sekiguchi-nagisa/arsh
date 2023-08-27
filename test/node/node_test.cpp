@@ -1442,8 +1442,9 @@ nodes:
           pos: 2
           size: 3
         type:
-        loc: "CONSTRUCTOR"
-        attrKind: "Attribute::Kind::NONE"
+        loc: "Attribute::Loc::CONSTRUCTOR"
+        attrKind: "AttributeKind::NONE"
+        validType: false
         attrName:
           token:
             pos: 2

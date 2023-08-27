@@ -1,0 +1,12 @@
+#$test($result = 'type', $lineNum = 8, $chars = 7, $errorKind = 'UndefinedAttrParam', $status = 1)
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option
+    (
+      shorted
+       :
+        "s")>]
+  var a = ""
+}

@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 6, $chars = 5, $errorKind = 'InvalidAttrLoc', $status = 1)
+
+[<CLI()
+  >]
+typedef AAA() {
+  [<CLI>]
+  var a = 23
+}
