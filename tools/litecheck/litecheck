@@ -224,13 +224,13 @@ function _match_chunk(checks : [Directive], output : [String]) : Bool {
 }
 
 function _skip_until(c : Any, output : [String], index : Int) : Int {
-    if let c = $c as? String {
+    if let cc = $c as? String {
         for(; $index < $output.size(); $index++) {
-            $output[$index] == $c && break
+            $output[$index] == $cc && break
         }
-    } elif let c = $c as? Regex {
+    } elif let cc = $c as? Regex {
         for(; $index < $output.size(); $index++) {
-            $output[$index] =~ $c && break
+            $output[$index] =~ $cc && break
         }
     } else {
         assert $false : "unreachable"
