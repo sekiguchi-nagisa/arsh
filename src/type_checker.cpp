@@ -1865,12 +1865,19 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
     }
     auto &exprType = this->checkTypeAsSomeExpr(*node.getExprNode());
     if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
+      if (willBeField && isa<CLIRecordType>(this->funcCtx->getReturnType())) {
+        auto &cliType = this->typePool().get(TYPE::CLI);
+        if (this->typePool().hasMethod(cliType, node.getVarName())) {
+          this->reportError<SameNameCLIField>(node.getNameInfo().getToken(),
+                                              node.getVarName().c_str());
+        }
+      }
       node.setHandle(handle);
     }
 
     // check attribute type
     if (!node.getAttrNodes().empty()) {
-      this->checkFieldAttributeType(node);
+      this->checkFieldAttributes(node);
     }
     break;
   }

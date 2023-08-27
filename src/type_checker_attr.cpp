@@ -202,7 +202,7 @@ static std::string concatTypeNames(const std::vector<const DSType *> &types) {
   return value;
 }
 
-void TypeChecker::checkFieldAttributeType(const VarDeclNode &varDeclNode) {
+void TypeChecker::checkFieldAttributes(const VarDeclNode &varDeclNode) {
   const bool privateField = StringRef(varDeclNode.getVarName()).startsWith("_");
   const bool readOnlyField = varDeclNode.getKind() == VarDeclNode::LET;
 

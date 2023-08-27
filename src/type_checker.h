@@ -607,7 +607,7 @@ private:
 
   void checkTypeVarDecl(VarDeclNode &node, bool willBeField);
 
-  void checkFieldAttributeType(const VarDeclNode &varDeclNode);
+  void checkFieldAttributes(const VarDeclNode &varDeclNode);
 
   void resolveArgEntry(std::unordered_set<std::string> &foundOptionSet, unsigned int offset,
                        const AttributeNode &attrNode, const VarDeclNode &declNode,

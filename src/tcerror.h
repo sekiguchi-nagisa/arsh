@@ -217,6 +217,8 @@ DEFINE_TCError(UnrecogArg,
 DEFINE_TCError(UnrecogAutoArg,
                "positional argument `%s' (auto-generated from `%s' field) is never recognized,\n"
                "since the previously defined `%s' argument will accept all remain arguments");
+DEFINE_TCError(SameNameCLIField,
+               "cannot define field: `%s', since the base type (`CLI' type) has same name method");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

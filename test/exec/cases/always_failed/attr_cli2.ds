@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 8, $chars = 7, $errorKind = 'SameNameCLIField', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  var help = ""
+  var usage = ""
+}
