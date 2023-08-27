@@ -474,7 +474,7 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
   auto block = this->builder().intoScope(ScopeKind::BLOCK);
   this->visit(node.getInitNode());
-  NodePass::visit(node.getCondNode());
+  this->visit(node.getCondNode());
   this->visitBlockWithCurrentScope(node.getBlockNode());
   this->visit(node.getIterNode());
 }
@@ -520,7 +520,7 @@ static DeclSymbol::Kind fromVarDeclKind(VarDeclNode::Kind k) {
 }
 
 void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
-  NodePass::visit(node.getExprNode());
+  this->visit(node.getExprNode());
   auto &type = node.getExprNode() ? node.getExprNode()->getType()
                                   : this->builder().getPool().get(TYPE::String);
   if (this->builder().curScope().isConstructor()) {
@@ -545,7 +545,7 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       this->builder().addDecl(info, leftNode.getType(), e->getToken(),
                               DeclSymbol::Kind::EXPORT_ENV);
     }
-    NodePass::visit(node.getExprNode());
+    this->visit(node.getExprNode());
   } else {
     this->visitEach(node.getAssignNodes());
   }
@@ -665,10 +665,10 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
       }
     }
     for (auto &paramNode : node.getParamNodes()) {
-      NodePass::visit(paramNode->getExprNode());
+      this->visit(paramNode->getExprNode());
     }
-    NodePass::visit(node.getReturnTypeNode());
-    NodePass::visit(node.getRecvTypeNode());
+    this->visit(node.getReturnTypeNode());
+    this->visit(node.getRecvTypeNode());
   }
 
   if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
