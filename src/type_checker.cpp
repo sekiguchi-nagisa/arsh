@@ -150,10 +150,7 @@ static bool checkCoercion(TypePool &pool, const DSType &requiredType, const DSTy
     if (targetType.isOptionType()) {
       return true;
     }
-    auto *handle = pool.lookupMethod(targetType, OP_BOOL);
-    if (handle != nullptr) {
-      return true;
-    }
+    return pool.hasMethod(targetType, OP_BOOL);
   }
   return false;
 }
@@ -657,7 +654,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
       return;
     }
   } else {
-    if (targetType.is(TYPE::Bool) && this->typePool().lookupMethod(exprType, OP_BOOL) != nullptr) {
+    if (targetType.is(TYPE::Bool) && this->typePool().hasMethod(exprType, OP_BOOL)) {
       node.setOpKind(TypeOpNode::TO_BOOL);
       return;
     }
