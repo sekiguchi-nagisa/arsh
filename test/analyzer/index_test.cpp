@@ -1313,6 +1313,46 @@ TEST_F(IndexTest, hoverConst) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```ydsh\nconst SIGKILL = signal(9)\n```"));
 }
 
+TEST_F(IndexTest, hoverUsage) {
+  const char *src = R"([<CLI>]
+typedef AAA() {
+  [<Flag(short: "s", long: "status", help: "dump internal status")>]
+  var s = $false
+
+  [<Option(help: "specify output target", opt: $true)>]
+  var output : String?
+
+  [<Arg(required: $true)>]
+  var files : [String]
+
+  [<Arg()>]  # error
+  var dest : String?
+}
+new AAA()
+)";
+
+  const char *out = R"(```ydsh
+typedef AAA() {
+    var %name: String
+    var s: Bool
+    var output: String?
+    var files: [String]
+    var dest: String?
+}
+```
+
+**command line**
+```md
+Usage:  [OPTIONS] FILES...
+
+Options:
+  -s, --status       dump internal status
+  --output[=OUTPUT]  specify output target
+  -h, --help         show this help message
+```)";
+  ASSERT_NO_FATAL_FAILURE(this->hover(src, {14, 6}, out));
+}
+
 TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::VAR));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::LET));

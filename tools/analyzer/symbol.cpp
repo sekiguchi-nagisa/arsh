@@ -186,7 +186,25 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::CONSTRUCTOR: {
     content += "typedef ";
     content += name;
-    content += decl.getInfo();
+    StringRef info = decl.getInfo();
+    StringRef usage;
+    auto pos = info.find("---");
+    if (pos != StringRef::npos) {
+      usage = info.substr(pos + 3);
+      info = info.slice(0, pos);
+    }
+    content += info;
+    if (!usage.empty()) {
+      if (markup) {
+        content += "\n```";
+      }
+      content += "\n\n";
+      content += "**command line**\n";
+      if (markup) {
+        content += "```md\n";
+      }
+      content += usage;
+    }
     break;
   }
   case DeclSymbol::Kind::BUILTIN_CMD: {

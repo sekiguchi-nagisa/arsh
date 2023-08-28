@@ -8,10 +8,10 @@
 
 - support declarative command line argument parsing
     - now introduce attributes that specify command line option setting
-    - ``CLI`` attribute: for defining command line data structure (derived type of ``CLI`` type)
-    - ``Flag`` attribute: for no-argument (flag) option
-    - ``Option`` attribute: for option that take an argument
-    - ``Arg`` attribute: for positional argument
+        - ``CLI`` attribute: for defining command line data structure (derived type of ``CLI`` type)
+        - ``Flag`` attribute: for no-argument (flag) option
+        - ``Option`` attribute: for option that take an argument
+        - ``Arg`` attribute: for positional argument
 
 #### Builtin
 
@@ -61,6 +61,8 @@
 #### LSP
 
 - ``textDocument/completion`` shows variable/function/field/method type signature
+- ``textDocument/hover`` shows command line usage
+    - for CLI record type
 
 ### Fixed
 

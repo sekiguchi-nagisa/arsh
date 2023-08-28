@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <arg_parser_base.h>
 #include <cmd_desc.h>
 
 #include "indexer.h"
@@ -520,6 +521,7 @@ static DeclSymbol::Kind fromVarDeclKind(VarDeclNode::Kind k) {
 }
 
 void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
+  this->visitEach(node.getAttrNodes());
   this->visit(node.getExprNode());
   auto &type = node.getExprNode() ? node.getExprNode()->getType()
                                   : this->builder().getPool().get(TYPE::String);
@@ -577,20 +579,18 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
   assert(node.isConstructor());
 
   std::string value;
-  if (unsigned int size = node.getParamNodes().size(); size > 0) {
-    value += "(";
-    for (unsigned int i = 0; i < size; i++) {
-      auto &paramNode = node.getParamNodes()[i];
-      if (i > 0) {
-        value += ", ";
-      }
-      value += paramNode->getVarName();
-      value += ": ";
-      value += normalizeTypeName(paramNode->getExprNode()->getType());
+  unsigned int size = node.getParamNodes().size();
+  value += "(";
+  for (unsigned int i = 0; i < size; i++) {
+    auto &paramNode = node.getParamNodes()[i];
+    if (i > 0) {
+      value += ", ";
     }
-    value += ")";
+    value += paramNode->getVarName();
+    value += ": ";
+    value += normalizeTypeName(paramNode->getExprNode()->getType());
   }
-  value += " {\n";
+  value += ") {\n";
   if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
     for (auto &e : node.getParamNodes()) {
       auto declKind = fromVarDeclKind(e->getKind());
@@ -630,6 +630,13 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
     }
   }
   value += "}";
+  if (isa<CLIRecordType>(node.getResolvedType())) {
+    auto &entries = cast<CLIRecordType>(node.getResolvedType())->getEntries();
+    if (!entries.empty()) {
+      value += "---"; // dummy
+      ArgParser::create(entries).formatUsage("", true, value);
+    }
+  }
   return value;
 }
 
@@ -648,6 +655,8 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
     if (node.getType().isUnresolved() || (!this->builder().isGlobal() && !node.isAnonymousFunc())) {
       return;
     }
+
+    this->visitEach(node.getAttrNodes());
 
     if (node.getHandle()) {
       if (node.isConstructor()) {
