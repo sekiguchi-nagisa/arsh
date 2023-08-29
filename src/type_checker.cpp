@@ -1551,6 +1551,30 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     this->checkTypeAsExpr(*constNode);
     return constNode;
   }
+  case NodeKind::Array: {
+    auto &arrayNode = cast<ArrayNode>(node);
+    const unsigned int size = arrayNode.getExprNodes().size();
+    auto exprNode = TRY(this->evalConstant(*arrayNode.getExprNodes()[0]));
+    auto constNode = std::make_unique<ArrayNode>(arrayNode.getPos(), std::move(exprNode));
+    for (unsigned int i = 1; i < size; i++) {
+      exprNode = TRY(this->evalConstant(*arrayNode.getExprNodes()[i]));
+      constNode->addExprNode(std::move(exprNode));
+    }
+    constNode->setType(arrayNode.getType());
+    return constNode;
+  }
+  case NodeKind::Tuple: {
+    auto &tupleNode = cast<TupleNode>(node);
+    Token endToken{tupleNode.getToken().endPos() - 1, 1};
+    std::vector<std::unique_ptr<Node>> nodes;
+    nodes.reserve(tupleNode.getNodes().size());
+    for (auto &e : tupleNode.getNodes()) {
+      nodes.push_back(TRY(this->evalConstant(*e)));
+    }
+    auto constNode = std::make_unique<TupleNode>(tupleNode.getPos(), std::move(nodes), endToken);
+    constNode->setType(tupleNode.getType());
+    return constNode;
+  }
   case NodeKind::WildCard: {
     auto &wildCardNode = cast<WildCardNode>(node);
     if (wildCardNode.isExpand()) {
@@ -1584,7 +1608,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       assert(applyNode->getExprNode().is(NodeKind::Access));
       auto &accessNode = cast<AccessNode>(applyNode->getExprNode());
       auto &recvNode = accessNode.getRecvNode();
-      auto constNode = TRY(evalConstant(recvNode));
+      auto constNode = TRY(this->evalConstant(recvNode));
       TRY(isa<NumberNode>(*constNode));
       int64_t value = cast<NumberNode>(*constNode).getIntValue();
       if (op == TokenKind::MINUS) {

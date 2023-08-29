@@ -56,16 +56,15 @@ private:
   CheckerKind checkerKind{CheckerKind::NOP};
   std::string defaultValue; // for OptParseOp::OPT_ARG. may be null
 
+  using Choice = FlexBuffer<char *>;
+
   union {
     struct {
       int64_t min; // inclusive
       int64_t max; // inclusive
     } intRange;
 
-    struct {
-      char **list;
-      size_t len;
-    } choice;
+    Choice choice;
   };
 
 public:
@@ -86,8 +85,7 @@ public:
       this->intRange = o.intRange;
       break;
     case CheckerKind::CHOICE:
-      this->choice = o.choice;
-      o.choice = {nullptr, 0};
+      this->choice = std::move(o.choice);
       break;
     }
     o.checkerKind = CheckerKind::NOP;
@@ -135,19 +133,17 @@ public:
     return {min, max};
   }
 
-  void setChoice(FlexBuffer<char *> &&buf) {
-    this->destroyCheckerData();
-    if (!buf.empty()) {
+  void addChoice(char *e) {
+    if (this->checkerKind != CheckerKind::CHOICE) {
       this->checkerKind = CheckerKind::CHOICE;
-      this->choice.len = buf.size();
-      this->choice.list = std::move(buf).take();
+      new (&this->choice) Choice();
     }
+    this->choice.push_back(e);
   }
 
-  std::pair<const char *const *, const char *const *> getChoice() const {
-    auto begin = static_cast<const char *const *>(this->choice.list);
-    auto end = static_cast<const char *const *>(this->choice.list + this->choice.len);
-    return {begin, end};
+  const auto &getChoice() const {
+    assert(this->checkerKind == CheckerKind::CHOICE);
+    return this->choice;
   }
 
   CheckerKind getCheckerKind() const { return this->checkerKind; }

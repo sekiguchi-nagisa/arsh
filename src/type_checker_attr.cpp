@@ -356,7 +356,8 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
   assert(attr);
   const unsigned int size = attrNode.getKeys().size();
   for (unsigned int i = 0; i < size; i++) {
-    auto *param = attr->lookupParam(attrNode.getKeys()[i].getName());
+    auto &paramInfo = attrNode.getKeys()[i];
+    auto *param = attr->lookupParam(paramInfo.getName());
     assert(param);
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
@@ -418,15 +419,48 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     case Attribute::Param::PLACE_HOLDER:
       entry.setArgName(cast<StringNode>(constNode).getValue().c_str());
       continue;
-    case Attribute::Param::RANGE:
-      if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::Int)) {
-        // FIXME: constant expression
+    case Attribute::Param::RANGE: {
+      auto &type = this->typePool().get(TYPE::Int);
+      if (declNode.getExprNode()->getType().isSameOrBaseTypeOf(type)) {
+        auto &tupleNode = cast<TupleNode>(constNode);
+        assert(tupleNode.getNodes().size() == 2);
+        int64_t min = cast<NumberNode>(*tupleNode.getNodes()[0]).getIntValue();
+        int64_t max = cast<NumberNode>(*tupleNode.getNodes()[1]).getIntValue();
+        if (min > max) {
+          std::swap(min, max);
+        }
+        entry.setIntRange(min, max);
       } else {
-        // FIXME: report error
+        this->reportError<FieldAttrParamType>(paramInfo.getToken(), paramInfo.getName().c_str(),
+                                              type.getName());
+        return;
       }
       continue;
-    case Attribute::Param::CHOICE:
-      continue; // FIXME: constant expression
+    }
+    case Attribute::Param::CHOICE: {
+      auto &type = this->typePool().get(TYPE::String);
+      if (declNode.getExprNode()->getType().isSameOrBaseTypeOf(type)) {
+        auto &arrayNode = cast<ArrayNode>(constNode);
+        std::unordered_set<StringRef, StrRefHash> choiceSet;
+        for (auto &e : arrayNode.getExprNodes()) { // FIXME: choice size limit
+          StringRef ref = cast<StringNode>(*e).getValue();
+          if (ref.hasNullChar()) {
+            this->reportError<NulChoiceElement>(*e);
+            return;
+          }
+          if (!choiceSet.emplace(ref).second) { // already found
+            this->reportError<DupChoiceElement>(*e, ref.data());
+            return;
+          }
+          entry.addChoice(strdup(ref.data()));
+        }
+      } else {
+        this->reportError<FieldAttrParamType>(paramInfo.getToken(), paramInfo.getName().c_str(),
+                                              type.getName());
+        return;
+      }
+      continue;
+    }
     }
   }
 

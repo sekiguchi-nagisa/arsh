@@ -1,0 +1,18 @@
+#$test($result = 'type', $lineNum = 16, $chars = 9, $errorKind = 'FieldAttrParamType', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b')
+    Flag(short:
+     'A')>]
+  var a = $false
+
+  [<Option(short: 'd', range: (0,44))>]
+  var cc = 23 as Any
+
+  [<Arg(range: (-100,100))>]
+  var dd = ""
+}

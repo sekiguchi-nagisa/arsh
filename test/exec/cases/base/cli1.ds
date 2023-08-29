@@ -78,7 +78,7 @@ assert $bb.timeout == 999
 ## Arg
 [<CLI>]
 typedef CCC() {
-  [<Arg(required: $true)>]
+  [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
 
   [<Arg>]

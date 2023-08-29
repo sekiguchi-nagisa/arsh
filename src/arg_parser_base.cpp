@@ -37,13 +37,12 @@ ArgEntry::~ArgEntry() { this->destroyCheckerData(); }
 
 void ArgEntry::destroyCheckerData() {
   if (this->checkerKind == CheckerKind::CHOICE) {
-    for (size_t i = 0; i < this->choice.len; i++) {
-      free(this->choice.list[i]);
+    while (!this->choice.empty()) {
+      free(this->choice.back());
+      this->choice.pop_back();
     }
-    free(this->choice.list);
+    this->choice.~Choice();
     this->checkerKind = CheckerKind::NOP;
-    this->choice.len = 0;
-    this->choice.list = nullptr;
   }
 }
 
@@ -76,19 +75,20 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
     }
   }
   case CheckerKind::CHOICE: {
-    for (size_t i = 0; i < this->choice.len; i++) {
-      if (arg == this->choice.list[i]) {
+    for (auto &e : this->choice) {
+      if (arg == e) {
         return true;
       }
     }
     err += "invalid argument: `";
     err += arg;
     err += "', must be {";
-    for (size_t i = 0; i < this->choice.len; i++) {
+    unsigned int size = this->choice.size();
+    for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
         err += ", ";
       }
-      err += this->choice.list[i];
+      err += this->choice[i];
     }
     err += "}";
     return false;

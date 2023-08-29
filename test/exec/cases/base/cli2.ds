@@ -1,0 +1,55 @@
+
+# for error
+
+[<CLI>]
+typedef AAA() {
+    [<Option(range: (10,-10), help: "count")>]
+    var count = 0
+
+    [<Option(choice: ["error", "warn", "info", "debug"], 
+      short: 'l', long: "level", opt: $true)>]
+    var level : String?
+}
+
+## range
+var aa = new AAA()
+$aa.setName("cmd1")
+$aa.parse(["--count=10"])
+assert $aa.count == 10
+
+$aa = new AAA()
+$aa.parse(["--count", "-10"])
+assert $aa.count == -10
+
+var ex = 34 as Any
+$aa = new AAA()
+$aa.setName("cmd1")
+try { $aa.parse(["--count=11"]); } catch e { $ex = $e;}
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 1
+assert ($ex as CLIError).message() == "invalid argument: \`11', must be [-10, 10]
+Usage: cmd1 [OPTIONS]" : ($ex as CLIError).message()
+
+$ex = 234
+$aa = new AAA()
+$aa.setName("cmd2")
+try { $aa.parse(["--count=-11"]); } catch e { $ex = $e;}
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 1
+assert ($ex as CLIError).message() == "invalid argument: \`-11', must be [-10, 10]
+Usage: cmd2 [OPTIONS]" : ($ex as CLIError).message()
+
+## choice
+$aa = new AAA()
+$aa.setName("cmd3")
+$aa.parse(["--level=debug"])
+assert $aa.level! == "debug"
+
+$aa = new AAA()
+$aa.setName("cmd3")
+$ex = 234
+try { $aa.parse(["-ldebuG"]); } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 1
+assert ($ex as CLIError).message() == "invalid argument: \`debuG', must be {error, warn, info, debug}
+Usage: cmd3 [OPTIONS]" : ($ex as CLIError).message()

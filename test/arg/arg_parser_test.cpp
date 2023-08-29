@@ -191,7 +191,8 @@ TEST_F(ArgParserTest, range) {
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("level");
-        e.setChoice({strdup("info"), strdup("warn")});
+        e.addChoice(strdup("info"));
+        e.addChoice(strdup("warn"));
         e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
       });
 

@@ -180,11 +180,10 @@ void Archiver::add(const ArgEntry &entry) {
     break;
   }
   case ArgEntry::CheckerKind::CHOICE: {
-    auto [begin, end] = entry.getChoice();
-    unsigned int size = end - begin;
-    this->write32(size);
-    for (; begin != end; ++begin) {
-      this->writeStr(*begin);
+    auto &choice = entry.getChoice();
+    this->write32(choice.size());
+    for (auto &e : choice) {
+      this->writeStr(e);
     }
     break;
   }
@@ -381,13 +380,10 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
   }
   case ArgEntry::CheckerKind::CHOICE: {
     unsigned int size = this->read32();
-    FlexBuffer<char *> buf;
-    buf.reserve(size);
     for (unsigned int i = 0; i < size; i++) {
       auto str = this->readStr();
-      buf.push_back(strdup(str.c_str()));
+      entry.addChoice(strdup(str.c_str()));
     }
-    entry.setChoice(std::move(buf));
     break;
   }
   }

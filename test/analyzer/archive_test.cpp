@@ -816,7 +816,8 @@ TEST_F(ArchiveTest, argEntry) {
           e.setParseOp(OptParseOp::HAS_ARG);
           e.setLongName("log");
           e.setArgName("level");
-          e.setChoice({strdup("info"), strdup("warn")});
+          e.addChoice(strdup("info"));
+          e.addChoice(strdup("warn"));
         })
         .add([](ArgEntry &e) {
           e.setArgName("files");
@@ -899,10 +900,10 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_TRUE(entries[4].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::CHOICE, entries[4].getCheckerKind());
   {
-    auto [begin, end] = entries[4].getChoice();
-    ASSERT_EQ(2, end - begin);
-    ASSERT_STREQ("info", *begin);
-    ASSERT_STREQ("warn", *(begin + 1));
+    auto &choice = entries[4].getChoice();
+    ASSERT_EQ(2, choice.size());
+    ASSERT_STREQ("info", choice[0]);
+    ASSERT_STREQ("warn", choice[1]);
   }
 
   // positional

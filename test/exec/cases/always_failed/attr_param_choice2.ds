@@ -1,0 +1,18 @@
+#$test($result = 'type', $lineNum = 16, $chars = 29, $errorKind = 'DupChoiceElement', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+    [<Flag(short: 'b')
+    Flag(short:
+     'A')>]
+  var a = $false
+
+  [<Option(short: 'd', choice: [
+                            "info",
+                            "warn", "debug",
+                            "info"])>]
+  var bb : String?
+}
