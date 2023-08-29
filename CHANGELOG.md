@@ -71,6 +71,7 @@
 - fix unix time parsing of builtin printf command
 - backslash handling in regex literal
 - option parsing of builtin echo command
+- fix common super type resolution that have unresolved type
 
 ## [0.30.0] - 2023-07-01
 
