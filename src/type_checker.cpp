@@ -1494,7 +1494,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
        *  -> otherwise -> T?
        */
       const auto *type = types[0];
-      if (type->isVoidType() || type->isOptionType()) {
+      if (type->isVoidType() || type->isOptionType() || type->isUnresolved()) {
         return *type;
       } else {
         auto ret = this->typePool().createOptionType(*type);
