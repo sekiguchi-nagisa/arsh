@@ -361,9 +361,15 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     assert(param);
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
-    case Attribute::Param::HELP:
-      entry.setDetail(cast<StringNode>(constNode).getValue().c_str());
+    case Attribute::Param::HELP: {
+      StringRef ref = cast<StringNode>(constNode).getValue();
+      if (ref.hasNullChar()) {
+        this->reportError<NullCharAttrParam>(constNode, paramInfo.getName().c_str());
+        return;
+      }
+      entry.setDetail(ref.data());
       continue;
+    }
     case Attribute::Param::SHORT: {
       auto &optName = cast<StringNode>(constNode).getValue();
       if (optName.size() != 1 || !std::isalpha(optName[0])) {
@@ -445,7 +451,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         for (auto &e : arrayNode.getExprNodes()) { // FIXME: choice size limit
           StringRef ref = cast<StringNode>(*e).getValue();
           if (ref.hasNullChar()) {
-            this->reportError<NulChoiceElement>(*e);
+            this->reportError<NullCharAttrParam>(*e, paramInfo.getName().c_str());
             return;
           }
           if (!choiceSet.emplace(ref).second) { // already found
