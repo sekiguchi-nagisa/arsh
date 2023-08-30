@@ -376,12 +376,11 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         this->reportError<InvalidShortOpt>(constNode, optName.c_str());
         return;
       }
-      if (foundOptionSet.find(optName) != foundOptionSet.end()) { // already found
+      if (foundOptionSet.emplace(optName).second) {
+        entry.setShortName(optName[0]);
+      } else { // already found
         this->reportError<DefinedOpt>(constNode, optName.c_str());
         return;
-      } else {
-        foundOptionSet.emplace(optName);
-        entry.setShortName(optName[0]);
       }
       continue;
     }
@@ -391,12 +390,11 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         this->reportError<InvalidLongOpt>(constNode, optName.c_str());
         return;
       }
-      if (foundOptionSet.find(optName) != foundOptionSet.end()) { // already found
+      if (foundOptionSet.emplace(optName).second) {
+        entry.setLongName(optName.c_str());
+      } else { // already found
         this->reportError<DefinedOpt>(constNode, optName.c_str());
         return;
-      } else {
-        foundOptionSet.emplace(optName);
-        entry.setLongName(optName.c_str());
       }
       continue;
     }
@@ -475,13 +473,12 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       entry.getLongName().empty()) {
     auto &varName = declNode.getVarName();
     auto optName = toLongOpt(varName);
-    if (foundOptionSet.find(optName) != foundOptionSet.end()) {
+    if (foundOptionSet.emplace(optName).second) {
+      entry.setLongName(optName.c_str());
+    } else { // already found
       this->reportError<DefinedAutoOpt>(attrNode.getAttrNameInfo().getToken(), optName.c_str(),
                                         varName.c_str());
       return;
-    } else {
-      foundOptionSet.emplace(optName);
-      entry.setLongName(optName.c_str());
     }
   } else if (attrNode.getAttrKind() == AttributeKind::ARG) {
     if (foundOptionSet.find("<remain>") != foundOptionSet.end()) { // already found remain arg
