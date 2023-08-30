@@ -62,6 +62,13 @@ void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status = 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
 /**
+ * actual implementation of exit command
+ * @param st
+ * @param status
+ */
+void raiseShellExit(DSState &st, int64_t status);
+
+/**
  * get and set signal handler.
  * if handler is null, not set handler.
  * @param st

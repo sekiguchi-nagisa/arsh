@@ -64,6 +64,16 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
+void raiseShellExit(DSState &st, int64_t status) {
+  if (hasFlag(st.runtimeOption, RuntimeOption::HUP_EXIT)) {
+    st.jobTable.send(SIGHUP);
+  }
+  int s = maskExitStatus(status);
+  std::string str = "terminated by exit ";
+  str += std::to_string(s);
+  raiseError(st, TYPE::ShellExit_, std::move(str), s);
+}
+
 static bool isUnhandledSignal(int sigNum) {
   switch (sigNum) {
   case SIGBUS:

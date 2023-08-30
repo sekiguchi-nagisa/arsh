@@ -539,7 +539,7 @@ std::vector<ArgEntry> TypeChecker::resolveArgEntries(const FunctionNode &node,
       this->resolveArgEntry(foundOptionSet, offset, attrNode, declNode, entries);
     }
   });
-  entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(0)));
+  entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(entries.size())));
 
   // check Arg
   iterateFieldAttribute(node, [&](const AttributeNode &attrNode, const VarDeclNode &declNode) {

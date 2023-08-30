@@ -269,13 +269,7 @@ END:
   if (argvObj.getValues()[0].asStrRef() == "_exit") {
     exit(ret);
   } else {
-    if (hasFlag(state.runtimeOption, RuntimeOption::HUP_EXIT)) {
-      state.jobTable.send(SIGHUP);
-    }
-
-    std::string str("terminated by exit ");
-    str += std::to_string(ret);
-    raiseError(state, TYPE::ShellExit_, std::move(str), ret);
+    raiseShellExit(state, ret);
   }
   return ret;
 }

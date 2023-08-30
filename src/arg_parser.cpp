@@ -123,7 +123,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
   return true;
 }
 
-bool parseArgs(DSState &state, const ArrayObject &args, BaseObject &out) {
+bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) {
   auto &type = state.typePool.get(out.getTypeID());
   assert(isa<CLIRecordType>(type));
   auto instance = ArgParser::create(cast<CLIRecordType>(type).getEntries());

@@ -45,7 +45,13 @@ public:
  * must be CLIRecordType
  * @return
  */
-bool parseArgs(DSState &state, const ArrayObject &args, BaseObject &out);
+bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out);
+
+inline void showCommandLineUsage(const ErrorObject &obj) {
+  FILE *fp = obj.getStatus() == 0 ? stdout : stderr;
+  fprintf(fp, "%s\n", obj.getMessage().asStrRef().data());
+  fflush(fp);
+}
 
 } // namespace ydsh
 

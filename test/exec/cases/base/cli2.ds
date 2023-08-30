@@ -13,18 +13,16 @@ typedef AAA() {
 
 ## range
 var aa = new AAA()
-$aa.setName("cmd1")
-$aa.parse(["--count=10"])
+$aa.parse("cmd1", ["--count=10"])
 assert $aa.count == 10
 
 $aa = new AAA()
-$aa.parse(["--count", "-10"])
+$aa.parse("cmd1", ["--count", "-10"])
 assert $aa.count == -10
 
 var ex = 34 as Any
 $aa = new AAA()
-$aa.setName("cmd1")
-try { $aa.parse(["--count=11"]); } catch e { $ex = $e;}
+try { $aa.parse("cmd1", ["--count=11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
 assert ($ex as CLIError).message() == "invalid argument: \`11', must be [-10, 10]
@@ -32,8 +30,7 @@ Usage: cmd1 [OPTIONS]" : ($ex as CLIError).message()
 
 $ex = 234
 $aa = new AAA()
-$aa.setName("cmd2")
-try { $aa.parse(["--count=-11"]); } catch e { $ex = $e;}
+try { $aa.parse("cmd2", ["--count=-11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
 assert ($ex as CLIError).message() == "invalid argument: \`-11', must be [-10, 10]
@@ -41,15 +38,55 @@ Usage: cmd2 [OPTIONS]" : ($ex as CLIError).message()
 
 ## choice
 $aa = new AAA()
-$aa.setName("cmd3")
-$aa.parse(["--level=debug"])
+$aa.parse("cmd3", ["--level=debug"])
 assert $aa.level! == "debug"
 
 $aa = new AAA()
-$aa.setName("cmd3")
 $ex = 234
-try { $aa.parse(["-ldebuG"]); } catch e { $ex = $e; }
+try { $aa.parse("cmd3", ["-ldebuG"]); } catch e { $ex = $e; }
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
 assert ($ex as CLIError).message() == "invalid argument: \`debuG', must be {error, warn, info, debug}
 Usage: cmd3 [OPTIONS]" : ($ex as CLIError).message()
+
+# parseOrExit
+## usage
+assert "$({
+  var cli = new AAA()
+  $cli.parseOrExit("cmd1", ["--huga"])
+  12/0  # always raise
+} with 2>&1)" == "invalid option: --huga
+Usage: cmd1 [OPTIONS]"
+assert $? == 2
+
+assert "$({
+  var cli = new AAA()
+  $cli.parseOrExit("cmd1", ["--count"])
+  12/0  # always raise
+} with 2>&1)" == "need argument: --count
+Usage: cmd1 [OPTIONS]"
+assert $? == 2
+
+## help
+assert "$({
+  var cli = new AAA()
+  $cli.parseOrExit("cmd1", ["--help"])
+  12/0  # always raise
+} with 2>&1)" == "Usage: cmd1 [OPTIONS]
+
+Options:
+  --count COUNT               count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message"
+assert $? == 0
+
+## invalid
+assert "$({
+  var cli = new AAA()
+  $cli.parseOrExit("cmd1", ["--count=111"])
+  12/0  # always raise
+} with 2>&1)" == "invalid argument: \`111', must be [-10, 10]
+Usage: cmd1 [OPTIONS]"
+assert $? == 1
+
+true

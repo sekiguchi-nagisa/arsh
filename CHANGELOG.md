@@ -24,7 +24,8 @@
 - add ``CLI`` type and related methods
     - ``name``: get command name of ``CLI`` instance
     - ``setName``: set command name
-    - ``parse``: parse command line argument and set arguments
+    - ``parse``: parse command line argument and store result. if reach parse error, raise ``CLIError``
+    - ``parseOrExit``: parse command line argument and store result. if reach parse error, exit shell
     - ``usage``: get usage message
 
 #### LSP
