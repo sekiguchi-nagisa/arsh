@@ -2490,6 +2490,7 @@ private:
 
   HandlePtr handle;
   unsigned int maxVarNum{0};
+  std::unique_ptr<VarDeclNode> paramNode;   // may be null
   std::unique_ptr<TypeNode> returnTypeNode; // may be null
   std::unique_ptr<BlockNode> blockNode;
 
@@ -2500,9 +2501,10 @@ private:
 
 public:
   UserDefinedCmdNode(unsigned int startPos, NameInfo &&commandName,
+                     std::unique_ptr<VarDeclNode> &&paramNode,
                      std::unique_ptr<TypeNode> &&returnTypeNode,
                      std::unique_ptr<BlockNode> &&blockNode)
-      : WithRtti({startPos, 0}), cmdName(std::move(commandName)),
+      : WithRtti({startPos, 0}), cmdName(std::move(commandName)), paramNode(std::move(paramNode)),
         returnTypeNode(std::move(returnTypeNode)), blockNode(std::move(blockNode)) {
     this->updateToken(this->blockNode->getToken());
   }
@@ -2518,6 +2520,8 @@ public:
   void setHandle(HandlePtr &&hd) { this->handle = std::move(hd); }
 
   const HandlePtr &getHandle() const { return this->handle; }
+
+  const auto &getParamNode() const { return this->paramNode; }
 
   BlockNode &getBlockNode() const { return *this->blockNode; }
 

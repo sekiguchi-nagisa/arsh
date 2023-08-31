@@ -1,0 +1,5 @@
+#$test($result = 'type', $errorKind = 'UnacceptableType', $lineNum = 3, $chars = 10, $status = 1)
+
+hoge(a : Nothing)  {
+   return 23
+}

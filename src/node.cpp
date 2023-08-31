@@ -966,6 +966,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
   DUMP(cmdName);
   DUMP_PTR(handle);
+  DUMP_PTR(paramNode);
   DUMP_PTR(returnTypeNode);
   DUMP_PTR(blockNode);
   DUMP(maxVarNum);

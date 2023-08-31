@@ -724,6 +724,7 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
 
   if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
     auto udc = this->builder().intoScope(ScopeKind::FUNC);
+    this->visit(node.getParamNode());
     this->visitBlockWithCurrentScope(node.getBlockNode());
   }
 }

@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "arg_parser.h"
 #include "brace.h"
 #include "logger.h"
 #include "misc/files.h"
@@ -1156,6 +1157,19 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
   pushExitStatus(state, 0);
 }
 
+bool VM::returnFromUserDefinedCommand(DSState &state, int64_t status) {
+  auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
+  state.stack.unwind();
+  if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
+      hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+    raiseCmdExecError(state, status);
+    return false;
+  }
+  pushExitStatus(state, status);
+  assert(!state.stack.checkVMReturn());
+  return true;
+}
+
 bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind forkKind) {
   /**
    * ls | grep .
@@ -2106,16 +2120,8 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(RETURN_UDC) {
-        auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
         auto status = state.stack.pop().asInt();
-        state.stack.unwind();
-        if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
-            hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-          raiseCmdExecError(state, status);
-          vmerror;
-        }
-        pushExitStatus(state, status);
-        assert(!state.stack.checkVMReturn());
+        TRY(returnFromUserDefinedCommand(state, status));
         CHECK_SIGNAL();
         vmnext;
       }
@@ -2304,6 +2310,18 @@ bool VM::mainLoop(DSState &state) {
           vmerror;
         }
         state.stack.push(DSValue::createStr(std::move(str)));
+        vmnext;
+      }
+      vmcase(PARSE_CLI) {
+        auto obj = state.stack.pop();
+        auto &args = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        typeAs<BaseObject>(obj)[0] = state.stack.getLocal(UDC_PARAM_N);
+        if (!parseCommandLine(state, args, typeAs<BaseObject>(obj))) {
+          auto error = state.stack.takeThrownObject();
+          showCommandLineUsage(*error);
+          TRY(returnFromUserDefinedCommand(state, error->getStatus()));
+          CHECK_SIGNAL();
+        }
         vmnext;
       }
       vmcase(NEW_CMD) {

@@ -1627,6 +1627,11 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->initFuncCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
+  if (node.getParamNode()) {
+    this->visit(*node.getParamNode()); // var param : CLIType
+    this->emit1byteIns(OpCode::LOAD_LOCAL, node.getParamNode()->getVarIndex());
+    this->emit0byteIns(OpCode::PARSE_CLI);
+  }
   this->visit(node.getBlockNode(), CmdCallCtx::STMT);
 
   auto code = this->finalizeCodeBuilder(node.getCmdName());

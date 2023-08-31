@@ -573,6 +573,8 @@ private:
 
   static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
 
+  static bool returnFromUserDefinedCommand(DSState &state, int64_t status);
+
   /**
    *
    * @param lastPipe

@@ -1,0 +1,5 @@
+#$test($result = 'parse', $lineNum = 3, $chars = 12, $errorKind = 'TokenMismatched', $status = 1)
+
+AAA(a : CLI, b : Int) {
+  echo $a
+}

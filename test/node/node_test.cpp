@@ -915,6 +915,7 @@ nodes:
       index: 44
       kind: "VAR"
       attribute: "READ_ONLY | GLOBAL"
+    paramNode: null
     returnTypeNode: null
     blockNode:
       nodeKind: Block

@@ -1,0 +1,9 @@
+#$test($result = 'type', $errorKind = 'InvalidUDCParam', $lineNum = 7, $chars = 2, $status = 1)
+
+[<CLI>]
+typedef AAA() {}
+
+hoge(
+ a : AAA) : Nothing {
+   return 23
+}

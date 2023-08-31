@@ -85,6 +85,7 @@
 | PIPELINE_LP       | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline (lastPipe is true)                                |
 | PIPELINE_ASYNC    | 1: k 1: len 2: offset1 offset2 | desc -> value                                | call pipeline asynchronously                                    | 
 | EXPAND_TILDE      |                                | value -> value                               | perform tilde expansion                                         |
+| PARSE_CLI         |                                | value ->                                     | parse command line arguments or return                          |
 | NEW_CMD           |                                | value -> value                               | pop stack top and store it to new argv                          |
 | ADD_CMD_ARG       |                                | argv redir value -> argv redir               | add stack top value as command argument                         |
 | ADD_EXPANDING     | 2: len option                  | argv redir value1 ~ valueN+1 -> argv redir   | apply brace/glob expansion and add results to argv              |

@@ -1194,7 +1194,17 @@ std::unique_ptr<Node> Parser::parse_command() {
   Token token = this->expect(TokenKind::COMMAND); // always success
 
   if (CUR_KIND() == TokenKind::LP) { // command definition
-    this->consume();                 // LP
+    std::unique_ptr<VarDeclNode> paramNode;
+    this->expectAndChangeMode(TokenKind::LP, yycPARAM); // always success
+    if (CUR_KIND() != TokenKind::RP) {
+      auto param = TRY(this->expectName(TokenKind::PARAM_NAME, &Lexer::toName));
+      TRY(this->expect(TokenKind::COLON, false));
+      auto typeNode = TRY(this->parse_typeName());
+      auto exprNode = std::make_unique<NewNode>(std::move(typeNode));
+      unsigned int pos = param.getToken().pos;
+      paramNode = std::make_unique<VarDeclNode>(pos, std::move(param), std::move(exprNode),
+                                                VarDeclNode::VAR);
+    }
     TRY(this->expect(TokenKind::RP));
     std::unique_ptr<TypeNode> returnTypeNode;
     if (CUR_KIND() == TokenKind::COLON) {
@@ -1204,7 +1214,8 @@ std::unique_ptr<Node> Parser::parse_command() {
     auto blockNode = TRY(this->parse_block());
     NameInfo nameInfo(token, this->lexer->toCmdArg(token));
     return std::make_unique<UserDefinedCmdNode>(token.pos, std::move(nameInfo),
-                                                std::move(returnTypeNode), std::move(blockNode));
+                                                std::move(paramNode), std::move(returnTypeNode),
+                                                std::move(blockNode));
   }
 
   auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
@@ -1953,7 +1964,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     if (nodes.empty()) { // anonymous command
       auto blockNode = TRY(this->parse_block());
       return std::make_unique<UserDefinedCmdNode>(openToken.pos, NameInfo({0, 0}, ""), nullptr,
-                                                  std::move(blockNode));
+                                                  nullptr, std::move(blockNode));
     } else {
       return createTupleOrGroup(openToken, std::move(nodes), closeToken, count);
     }

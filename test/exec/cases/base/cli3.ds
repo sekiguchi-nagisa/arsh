@@ -1,0 +1,58 @@
+
+# for user-defined command with parameter
+
+[<CLI>]
+typedef CCC() {
+  [<Arg(required: $true, range:(120,-10))>]
+  var aaa : Int?
+
+  [<Arg>]
+  var bbb : String?
+
+  var dummy = "dummy"
+
+  [<Arg(required: $true)>]
+  var ccc : [String]
+
+  [<Flag(short: 'd', long: "debug", help: "enable debug mode")>]
+  var d = $false
+}
+
+assert (new CCC()) is CLI
+var cc = new CCC()
+$cc.setName("cmd3")
+assert $cc.usage() == "Usage: cmd3 [OPTIONS] AAA [BBB] CCC...
+
+Options:
+  -d, --debug  enable debug mode
+  -h, --help   show this help message"
+
+ff(p : CCC) {
+  echo $p
+}
+
+## successful parsing
+var r = "$(ff 100 10 a b c)"
+assert $r == "ff 100 10 dummy a b c false" : $r
+
+## help
+$r = "$(ff --help)"
+assert $r == "Usage: ff [OPTIONS] AAA [BBB] CCC...
+
+Options:
+  -d, --debug  enable debug mode
+  -h, --help   show this help message"
+assert $? == 0
+
+## error
+$r = "$(ff --ss 2>&1)"
+assert $r == "invalid option: --ss
+Usage: ff [OPTIONS] AAA [BBB] CCC..." : $r
+assert $? == 2
+
+$r = "$(ff sss 2>&1)"
+assert $r == "invalid argument: \`sss', must be decimal integer
+Usage: ff [OPTIONS] AAA [BBB] CCC..." : $r
+assert $? == 1
+
+true

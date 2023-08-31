@@ -223,6 +223,9 @@ DEFINE_TCError(SameNameCLIField,
 DEFINE_TCError(NullCharAttrParam,
                "attribute parameter `%s' does not accept strings that have null characters");
 DEFINE_TCError(DupChoiceElement, "attribute parameter `choice' has duplicated element: `%s'");
+DEFINE_TCError(InvalidUDCParamType, "invalid parameter type: `%s', must be derived types of "
+                                    "`CLI' (except for `Nothing type')");
+DEFINE_TCError(InvalidUDCParam, "no-return user-defined command cannot accept parameter");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

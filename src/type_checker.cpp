@@ -2399,6 +2399,20 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       this->checkType(this->typePool().get(TYPE::Nothing), *node.getReturnTypeNode());
     }
 
+    if (node.getParamNode()) {
+      if (auto &returnNode = node.getReturnTypeNode();
+          returnNode && returnNode->getType().isNothingType()) {
+        this->reportError<InvalidUDCParam>(*node.getParamNode());
+      }
+      auto &exprNode = *node.getParamNode()->getExprNode();
+      assert(isa<NewNode>(exprNode));
+      auto &typeNode = *cast<NewNode>(exprNode).getTargetTypeNode();
+      this->checkTypeAsSomeExpr(typeNode);
+      if (!typeNode.getType().isCLIRecordType()) {
+        this->reportError<InvalidUDCParamType>(typeNode, typeNode.getType().getName());
+      }
+    }
+
     // register command name
     if (node.isAnonymousCmd()) {
       node.setType(this->typePool().get(TYPE::Command));
@@ -2430,6 +2444,10 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       this->addEntry(node, "@", this->typePool().get(TYPE::StringArray), HandleAttr::READ_ONLY);
       this->addEntry(node, "0", this->typePool().get(TYPE::String), HandleAttr::READ_ONLY);
       this->allowWarning = old;
+    }
+
+    if (node.getParamNode()) {
+      this->checkTypeExactly(*node.getParamNode());
     }
 
     // check type command body
