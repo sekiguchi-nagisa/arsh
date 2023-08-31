@@ -12,6 +12,19 @@
         - ``Flag`` attribute: for no-argument (flag) option
         - ``Option`` attribute: for option that take an argument
         - ``Arg`` attribute: for positional argument
+    - automatically parse command line argument in the following form
+      ```
+      [<CLI>]
+      typedef Param() {
+        [<Flag>]
+        var debug = $false
+      }
+      
+      ff(p : Param) {
+        echo $p
+      }
+      ```
+        - user-defined command parameter ``p`` holds parsed result of command line arguments
 
 #### Builtin
 
