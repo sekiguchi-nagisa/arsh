@@ -581,16 +581,16 @@ TEST(GetOptTest, base) {
 
   int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ("2", optState.optArg);
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("2", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "hello");
 
   opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "hello");
@@ -598,32 +598,32 @@ TEST(GetOptTest, base) {
   ++begin;
   opt = optState(begin, end);
   ASSERT_EQ('b', opt);
-  ASSERT_EQ("cd", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("cd", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-bcd");
 
   opt = optState(begin, end);
   ASSERT_EQ('c', opt);
-  ASSERT_EQ("d", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("d", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-bcd");
 
   opt = optState(begin, end);
   ASSERT_EQ('d', opt);
-  ASSERT_EQ("", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-");
 
   opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-");
@@ -631,8 +631,8 @@ TEST(GetOptTest, base) {
   ++begin;
   opt = optState(begin, end);
   ASSERT_EQ(-1, opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "hoge");
@@ -640,8 +640,8 @@ TEST(GetOptTest, base) {
   ++begin;
   opt = optState(begin, end);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("f", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("f", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ('f', optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-f");
@@ -650,8 +650,8 @@ TEST(GetOptTest, base) {
   optState.reset(optStr);
   opt = optState(begin, end);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ('e', optState.optOpt);
   ASSERT_EQ(begin, end);
 }
@@ -661,7 +661,7 @@ TEST(GetOptTest, opt) {
       "-aba",
       "-a",
       "hoge",
-      "-b",
+      "-bAAA",
   };
   const char *optStr = ":a::b:";
   opt::GetOptState optState(optStr);
@@ -671,16 +671,16 @@ TEST(GetOptTest, opt) {
 
   int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ("ba", optState.optArg);
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("ba", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "-a");
 
   opt = optState(begin, end);
   ASSERT_EQ('a', opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_NE(begin, end);
   ASSERT_STREQ(*begin, "hoge");
@@ -688,10 +688,10 @@ TEST(GetOptTest, opt) {
   ++begin;
   optState.reset(optStr);
   opt = optState(begin, end);
-  ASSERT_EQ(':', opt);
-  ASSERT_EQ("", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
-  ASSERT_EQ('b', optState.optOpt);
+  ASSERT_EQ('b', opt);
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("AAA", optState.optArg.toString());
+  ASSERT_EQ(0, optState.optOpt);
   ASSERT_EQ(begin, end);
 }
 
@@ -709,21 +709,21 @@ TEST(GetOptTest, help) {
 
   int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
-  ASSERT_EQ("b", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("b", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
 
   opt = optState(begin, end);
   ASSERT_EQ('b', opt);
-  ASSERT_EQ(nullptr, optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
 
   // normally long options are unrecognized
   opt = optState(begin, end);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("--help", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("--help", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ('-', optState.optOpt);
   ASSERT_TRUE(optState.foundLongOption);
 
@@ -732,22 +732,22 @@ TEST(GetOptTest, help) {
   optState.remapHelp = true;
   opt = optState(begin, end);
   ASSERT_EQ('h', opt);
-  ASSERT_EQ(nullptr, optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_FALSE(optState.foundLongOption);
 
   opt = optState(begin, end);
   ASSERT_EQ('c', opt);
-  ASSERT_EQ(nullptr, optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
 
   // long options are still unrecognized except for --help
   opt = optState(begin, end);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ("--help1", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ("--help1", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ('-', optState.optOpt);
   ASSERT_TRUE(optState.foundLongOption);
 }
@@ -763,8 +763,8 @@ TEST(GetOptTest, invalid) {
 
   int opt = optState(begin, end);
   ASSERT_EQ('?', opt);
-  ASSERT_EQ(":", optState.nextChar);
-  ASSERT_EQ(nullptr, optState.optArg.data());
+  ASSERT_EQ(":", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(':', optState.optOpt);
   ++begin;
   ASSERT_EQ(begin, end);
@@ -782,8 +782,8 @@ TEST(GetOptTest, empty) {
 
   int opt = optState(begin, end);
   ASSERT_EQ('a', opt);
-  ASSERT_EQ(nullptr, optState.nextChar.data());
-  ASSERT_EQ("", optState.optArg);
+  ASSERT_EQ("", optState.nextChar.toString());
+  ASSERT_EQ("", optState.optArg.toString());
   ASSERT_EQ(0, optState.optOpt);
   ASSERT_EQ(begin, end);
 }

@@ -259,7 +259,7 @@ public:
 
   StringRef getRemain() const { return this->remain; }
 
-  void reset() { this->remain = ""; }
+  void reset() { this->remain = nullptr; }
 
 private:
   template <typename Iter>
@@ -385,7 +385,7 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
         }
       } else {
         StringRef next = this->remain;
-        this->remain = "";
+        this->remain = nullptr;
         ++begin;
         return OptParseResult<T>::ok(option.kind, next);
       }

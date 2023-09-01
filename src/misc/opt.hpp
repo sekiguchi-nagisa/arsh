@@ -38,12 +38,12 @@ struct GetOptState {
   /**
    * currently processed argument.
    */
-  StringRef nextChar{nullptr};
+  StringRef nextChar;
 
   /**
-   * may be null, if has no optional argument.
+   * may be null, if has no option argument.
    */
-  StringRef optArg{nullptr};
+  StringRef optArg;
 
   /**
    * unrecognized option.
@@ -83,6 +83,10 @@ struct GetOptState {
    */
   template <typename Iter>
   int operator()(Iter &begin, Iter end);
+
+private:
+  template <typename Iter>
+  int matchShortOption(Iter &begin, Iter end);
 };
 
 template <typename Iter>
@@ -90,71 +94,72 @@ int GetOptState::operator()(Iter &begin, Iter end) {
   // reset previous state
   this->optArg = nullptr;
   this->optOpt = 0;
-
-  if (begin == end) {
-    this->nextChar = nullptr;
-    return -1;
-  }
-
-  StringRef arg = *begin;
-  if (!arg.startsWith("-") || arg == "-") {
-    this->nextChar = nullptr;
-    return -1;
-  }
-
-  if (arg.startsWith("--")) {
-    if (arg.size() == 2) {
-      this->nextChar = nullptr;
-      ++begin;
-      return -1;
-    } else if (arg == "--help" && this->remapHelp) {
-      arg = "-h";
-    } else {
-      this->nextChar = arg;
-      this->optOpt = '-';
-      this->foundLongOption = true;
-      return '?';
-    }
-  }
+  this->foundLongOption = false;
 
   if (this->nextChar.empty()) {
+    if (begin == end) {
+      return -1;
+    }
+
+    StringRef arg = *begin;
+    if (arg.empty() || arg[0] != '-' || arg == "-") {
+      return -1;
+    } else if (arg.startsWith("--")) {
+      if (arg.size() == 2) { // --
+        ++begin;
+        return -1;
+      } else if (arg == "--help" && this->remapHelp) {
+        arg = "-h";
+      } else {
+        this->nextChar = arg;
+        this->optOpt = '-';
+        this->foundLongOption = true;
+        return '?';
+      }
+    }
+    assert(arg[0] == '-' && arg.size() > 1);
     this->nextChar = arg;
     this->nextChar.removePrefix(1);
   }
+  return this->matchShortOption(begin, end);
+}
 
-  auto pos = StringRef(this->optStr).find(this->nextChar[0]);
-  const char *ptr = pos == StringRef::npos ? nullptr : this->optStr + pos;
-  if (ptr != nullptr && *ptr != ':') {
-    if (*(ptr + 1) == ':') {
-      this->nextChar.removePrefix(1);
-      this->optArg = this->nextChar;
-      if (this->optArg.empty()) {
-        if (*(ptr + 2) != ':') {
-          if (++begin == end) {
-            this->optArg = nullptr;
-            this->optOpt = static_cast<unsigned char>(*ptr);
-            return *this->optStr == ':' ? ':' : '?';
-          }
-          this->optArg = *begin;
-        } else {
-          this->optArg = nullptr;
-        }
-      }
-      this->nextChar = nullptr;
-    }
-
-    if (this->nextChar.empty()) {
-      ++begin;
-    } else {
-      this->nextChar.removePrefix(1);
-      if (this->nextChar.empty()) {
-        ++begin;
-      }
-    }
-    return *ptr;
+template <typename Iter>
+int GetOptState::matchShortOption(Iter &begin, Iter end) {
+  assert(!this->nextChar.empty());
+  const char s = this->nextChar[0];
+  auto retPos = StringRef(this->optStr).find(s);
+  if (retPos == StringRef::npos || *(this->optStr + retPos) == ':') { // not found
+    this->optOpt = static_cast<unsigned char>(s);
+    return '?';
   }
-  this->optOpt = static_cast<unsigned char>(this->nextChar[0]);
-  return '?';
+
+  this->nextChar.removePrefix(1);
+  if (this->nextChar.empty()) {
+    ++begin;
+  }
+  const char *next = this->optStr + retPos + 1;
+  if (*next != ':') { // no arg
+    return s;
+  } else {                        // has arg
+    if (this->nextChar.empty()) { // -s arg
+      if (*(next + 1) == ':') {   // opt arg
+        return s;
+      } else if (begin != end) {
+        this->optArg = *begin;
+        ++begin;
+        return s;
+      } else {
+        this->optOpt = static_cast<unsigned char>(s);
+        return *this->optStr == ':' ? ':' : '?';
+      }
+    } else { // -sarg
+      this->optArg = this->nextChar;
+      this->nextChar = nullptr;
+      ++begin;
+      return s;
+    }
+  }
 }
 
 } // namespace opt
