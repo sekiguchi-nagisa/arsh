@@ -120,7 +120,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
 
 int builtin_read(DSState &state, ArrayObject &argvObj) {
   StringRef prompt;
-  StringRef ifs;
+  StringRef ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   bool backslash = true;
   bool noEcho = false;
   int fd = STDIN_FILENO;
@@ -196,11 +196,6 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
   // read line
   if (!isTTY) {
     timeout = -1; // ignore timeout if not tty
-  }
-
-  // check ifs
-  if (ifs.data() == nullptr) {
-    ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   }
 
   bool ret = readLine(state, fd, argvObj, optState.index, ifs, timeout, backslash);
