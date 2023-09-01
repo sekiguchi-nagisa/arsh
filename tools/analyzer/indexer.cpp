@@ -714,11 +714,22 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
       return;
     }
     if (node.getHandle()) {
-      const char *hover = this->builder().getPool().get(TYPE::Bool).getName();
+      std::string hover = this->builder().getPool().get(TYPE::Bool).getNameRef().toString();
       if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {
         hover = node.getReturnTypeNode()->getType().getName();
       }
-      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover, node.getToken());
+      if (node.getParamNode()) {
+        auto &exprType = node.getParamNode()->getExprNode()->getType();
+        if (isa<CLIRecordType>(exprType)) {
+          auto &entries = cast<CLIRecordType>(exprType).getEntries();
+          if (!entries.empty()) {
+            hover += "---"; // dummy
+            ArgParser::create(entries).formatUsage(node.getCmdName(), true, hover);
+          }
+        }
+      }
+      this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD, hover.c_str(),
+                              node.getToken());
     }
   }
 

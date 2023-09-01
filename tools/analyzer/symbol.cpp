@@ -134,6 +134,27 @@ static const BuiltinCmdDesc *findCmdDesc(const char *name) {
   return nullptr;
 }
 
+static void formatCommandLineUsage(StringRef info, bool markup, std::string &content) {
+  StringRef usage;
+  auto pos = info.find("---");
+  if (pos != StringRef::npos) {
+    usage = info.substr(pos + 3);
+    info = info.slice(0, pos);
+  }
+  content += info;
+  if (!usage.empty()) {
+    if (markup) {
+      content += "\n```";
+    }
+    content += "\n\n";
+    content += "**command line**\n";
+    if (markup) {
+      content += "```md\n";
+    }
+    content += usage;
+  }
+}
+
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
                                  const DeclSymbol &decl, bool markup) {
   std::string content = markup ? "```ydsh\n" : "";
@@ -186,25 +207,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::CONSTRUCTOR: {
     content += "typedef ";
     content += name;
-    StringRef info = decl.getInfo();
-    StringRef usage;
-    auto pos = info.find("---");
-    if (pos != StringRef::npos) {
-      usage = info.substr(pos + 3);
-      info = info.slice(0, pos);
-    }
-    content += info;
-    if (!usage.empty()) {
-      if (markup) {
-        content += "\n```";
-      }
-      content += "\n\n";
-      content += "**command line**\n";
-      if (markup) {
-        content += "```md\n";
-      }
-      content += usage;
-    }
+    formatCommandLineUsage(decl.getInfo(), markup, content);
     break;
   }
   case DeclSymbol::Kind::BUILTIN_CMD: {
@@ -223,7 +226,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::CMD: {
     content += name;
     content += "(): ";
-    content += decl.getInfo();
+    formatCommandLineUsage(decl.getInfo(), markup, content);
     break;
   }
   case DeclSymbol::Kind::TYPE_ALIAS: {

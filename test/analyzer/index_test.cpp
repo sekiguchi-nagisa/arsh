@@ -1313,7 +1313,7 @@ TEST_F(IndexTest, hoverConst) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```ydsh\nconst SIGKILL = signal(9)\n```"));
 }
 
-TEST_F(IndexTest, hoverUsage) {
+TEST_F(IndexTest, hoverUsage1) {
   const char *src = R"([<CLI>]
 typedef AAA() {
   [<Flag(short: "s", long: "status", help: "dump internal status")>]
@@ -1351,6 +1351,42 @@ Options:
   -h, --help         show this help message
 ```)";
   ASSERT_NO_FATAL_FAILURE(this->hover(src, {14, 6}, out));
+}
+
+TEST_F(IndexTest, hoverUsage2) {
+  const char *src = R"([<CLI>]
+typedef Param() {
+  [<Flag(short: "s", long: "status", help: "dump internal status")>]
+  var s = $false
+
+  [<Option(help: "specify output target", opt: $true, short: 'o', long: 'output')>]
+  var output : String?
+
+  [<Arg(required: $true)>]
+  var files : [String]
+
+  [<Arg()>]  # error
+  var dest : String?
+}
+
+fff($p : Param) { echo $p; }
+fff
+)";
+
+  const char *out = R"(```ydsh
+fff(): Bool
+```
+
+**command line**
+```md
+Usage: fff [OPTIONS] FILES...
+
+Options:
+  -s, --status                   dump internal status
+  -o[OUTPUT], --output[=OUTPUT]  specify output target
+  -h, --help                     show this help message
+```)";
+  ASSERT_NO_FATAL_FAILURE(this->hover(src, {16, 2}, out));
 }
 
 TEST_F(IndexTest, docSymbol) {

@@ -75,8 +75,9 @@
 #### LSP
 
 - ``textDocument/completion`` shows variable/function/field/method type signature
-- ``textDocument/hover`` shows command line usage
-    - for CLI record type
+- ``textDocument/hover`` shows command line usage in the following context
+    - user-defined type with CLI attribute
+    - user-defined command having parameter
 
 ### Fixed
 
