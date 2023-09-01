@@ -2275,31 +2275,33 @@ YDSH_METHOD cli_set(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function parse($this : CLI, $arg0 : String, $args : Array<String>) : Void
+//!bind: function parse($this : CLI, $arg0 : String, $args : Array<String>) : Int
 YDSH_METHOD cli_parse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parse);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(2));
   obj[0] = LOCAL(1);
-  if (!parseCommandLine(ctx, args, obj)) {
+  if (auto ret = parseCommandLine(ctx, args, obj)) {
+    RET(DSValue::createInt(ret.index));
+  } else {
     RET_ERROR;
   }
-  RET_VOID;
 }
 
-//!bind: function parseOrExit($this : CLI, $arg0 : String, $args: Array<String>) : Void
+//!bind: function parseOrExit($this : CLI, $arg0 : String, $args: Array<String>) : Int
 YDSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parseOrExit);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(2));
   obj[0] = LOCAL(1);
-  if (!parseCommandLine(ctx, args, obj)) {
+  if (auto ret = parseCommandLine(ctx, args, obj)) {
+    RET(DSValue::createInt(ret.index));
+  } else {
     auto error = ctx.getCallStack().takeThrownObject();
     showCommandLineUsage(*error);
     raiseShellExit(ctx, error->getStatus());
     RET_ERROR;
   }
-  RET_VOID;
 }
 
 //!bind: function usage($this : CLI) : String

@@ -792,6 +792,8 @@ struct StrArrayIter {
 
   auto operator*() const { return this->actual->asStrRef(); }
 
+  auto operator-(const StrArrayIter &o) const { return this->actual - o.actual; }
+
   bool operator==(const StrArrayIter &o) const { return this->actual == o.actual; }
 
   bool operator!=(const StrArrayIter &o) const { return !(*this == o); }

@@ -335,9 +335,9 @@ function name() : String for CLI
 
 function setName(arg0 : String) : Void for CLI
 
-function parse(arg0 : String, args : [String]) : Void for CLI
+function parse(arg0 : String, args : [String]) : Int for CLI
 
-function parseOrExit(arg0 : String, args : [String]) : Void for CLI
+function parseOrExit(arg0 : String, args : [String]) : Int for CLI
 
 function usage() : String for CLI
 ```

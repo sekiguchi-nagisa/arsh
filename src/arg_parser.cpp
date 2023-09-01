@@ -67,7 +67,7 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
 
 static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser,
                                          const RequiredOptionSet &requiredSet, StrArrayIter &begin,
-                                         StrArrayIter end, BaseObject &out) {
+                                         const StrArrayIter end, BaseObject &out) {
   for (auto &i : requiredSet.getValues()) {
     auto &e = parser.getEntries()[i];
     if (!e.isPositional()) {
@@ -109,6 +109,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
         }
       } else {
         if (!checkAndSetArg(state, parser, e, arg, out)) {
+          --begin;
           return false;
         }
       }
@@ -123,19 +124,21 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
   return true;
 }
 
-bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) {
+CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) {
   auto &type = state.typePool.get(out.getTypeID());
   assert(isa<CLIRecordType>(type));
   auto instance = ArgParser::create(cast<CLIRecordType>(type).getEntries());
 
-  auto begin = StrArrayIter(args.getValues().begin());
-  auto end = StrArrayIter(args.getValues().end());
+  const auto begin = StrArrayIter(args.getValues().begin());
+  auto iter = begin;
+  const auto end = StrArrayIter(args.getValues().end());
   RequiredOptionSet requiredSet(instance.getEntries());
   ArgParser::Result ret;
   bool help = false;
+  bool status = false;
 
   // parse and set options
-  while ((ret = instance(begin, end))) {
+  while ((ret = instance(iter, end))) {
     const auto entryIndex = toUnderlying(ret.getOpt());
     requiredSet.del(entryIndex);
     auto &entry = instance.getEntries()[entryIndex];
@@ -156,7 +159,8 @@ bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) 
         arg = v;
       }
       if (!checkAndSetArg(state, instance, entry, arg, out)) {
-        return false;
+        --iter;
+        goto END;
       }
       continue;
     }
@@ -166,16 +170,22 @@ bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) 
     v += "\n";
     instance.formatUsage(out[0].asStrRef(), false, v);
     raiseError(state, TYPE::CLIError, std::move(v), 2);
-    return false;
+    goto END;
   }
   if (help) {
     std::string v;
     instance.formatUsage(out[0].asStrRef(), true, v);
     raiseError(state, TYPE::CLIError, std::move(v), 0);
-    return false;
+    goto END;
   }
   assert(ret.isEnd());
-  return checkRequireOrPositionalArgs(state, instance, requiredSet, begin, end, out);
+  status = checkRequireOrPositionalArgs(state, instance, requiredSet, iter, end, out);
+
+END:
+  return {
+      .index = static_cast<unsigned int>(iter - begin),
+      .status = status,
+  };
 }
 
 } // namespace ydsh

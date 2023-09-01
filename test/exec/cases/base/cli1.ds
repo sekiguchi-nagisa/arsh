@@ -56,19 +56,19 @@ Options:
   --timeout MSEC     set timeout (default is 0)
   -h, --help         show this help message"
 
-$bb.parse("cmd2", ['-d', '--output='])
+assert $bb.parse("cmd2", ['-d', '--output=']) == 2
 assert $bb.d
 assert $bb.output! == ''
 assert $bb.timeout == 0
 
 $bb = new BBB()
-$bb.parse('cmd2', ['--debug', '--output'])
+assert $bb.parse('cmd2', ['--debug', '--output']) == 2
 assert $bb.d
 assert $bb.output! == '/dev/stdout'
 assert $bb.timeout == 0
 
 $bb = new BBB()
-$bb.parse('cmd2', ['--output=./log.txt', '--timeout', '999'])
+assert $bb.parse('cmd2', ['--output=./log.txt', '--timeout', '999', "reset"]) == 3
 assert ! $bb.d
 assert $bb.output! == './log.txt'
 assert $bb.timeout == 999
@@ -100,7 +100,7 @@ Options:
   -d, --debug  enable debug mode
   -h, --help   show this help message"
 
-$cc.parse("cmd3", ['-d', '--', '-2', '-3', '-4', '-5'])
+assert $cc.parse("cmd3", ['-d', '--', '-2', '-3', '-4', '-5']) == 6
 assert $cc.aaa! == -2
 assert $cc.bbb! == '-3'
 assert $cc.ccc.size() == 2

@@ -13,11 +13,11 @@ typedef AAA() {
 
 ## range
 var aa = new AAA()
-$aa.parse("cmd1", ["--count=10"])
+assert $aa.parseOrExit("cmd1", ["--count=10", "rest", "reset2"]) == 1
 assert $aa.count == 10
 
 $aa = new AAA()
-$aa.parse("cmd1", ["--count", "-10"])
+assert $aa.parseOrExit("cmd1", ["--count", "-10"]) == 2
 assert $aa.count == -10
 
 var ex = 34 as Any
@@ -38,7 +38,7 @@ Usage: cmd2 [OPTIONS]" : ($ex as CLIError).message()
 
 ## choice
 $aa = new AAA()
-$aa.parse("cmd3", ["--level=debug"])
+assert $aa.parse("cmd3", ["--level=debug"]) == 1
 assert $aa.level! == "debug"
 
 $aa = new AAA()

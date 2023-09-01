@@ -37,6 +37,13 @@ public:
   void del(unsigned char n);
 };
 
+struct CLIParseResult {
+  unsigned int index;
+  bool status;
+
+  explicit operator bool() const { return this->status; }
+};
+
 /**
  *
  * @param state
@@ -45,7 +52,7 @@ public:
  * must be CLIRecordType
  * @return
  */
-bool parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out);
+CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out);
 
 inline void showCommandLineUsage(const ErrorObject &obj) {
   FILE *fp = obj.getStatus() == 0 ? stdout : stderr;
