@@ -445,6 +445,10 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       auto &type = this->typePool().get(TYPE::String);
       if (declNode.getExprNode()->getType().isSameOrBaseTypeOf(type)) {
         auto &arrayNode = cast<ArrayNode>(constNode);
+        if (arrayNode.getExprNodes().size() > SYS_LIMIT_ATTR_CHOICE_SIZE) {
+          this->reportError<ChoiceLimit>(constNode);
+          return;
+        }
         std::unordered_set<StringRef, StrRefHash> choiceSet;
         for (auto &e : arrayNode.getExprNodes()) { // FIXME: choice size limit
           StringRef ref = cast<StringNode>(*e).getValue();

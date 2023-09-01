@@ -1558,6 +1558,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       exprNode = TRY(this->evalConstant(*arrayNode.getExprNodes()[i]));
       constNode->addExprNode(std::move(exprNode));
     }
+    constNode->updateToken({arrayNode.getToken().endPos() - 1, 1});
     constNode->setType(arrayNode.getType());
     return constNode;
   }
@@ -2299,8 +2300,13 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
 
 void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
   if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
-    for (auto &e : node.getAttrNodes()) {
-      this->checkTypeExactly(*e);
+    for (unsigned int i = 0; i < node.getAttrNodes().size(); i++) {
+      auto &attrNode = *node.getAttrNodes()[i];
+      if (i == SYS_LIMIT_ATTR_NUM) {
+        this->reportError<AttrLimit>(attrNode);
+        break;
+      }
+      this->checkTypeExactly(attrNode);
     }
 
     node.setType(this->typePool().get(TYPE::Void));

@@ -1,0 +1,12 @@
+#$test($result = 'type', $lineNum = 9, $chars = 50, $errorKind = 'AttrLimit', $status = 1)
+
+[<CLI CLI() CLI() CLI CLI
+  CLI CLI CLI>]
+typedef AAA() {
+  var a = ""
+
+    [<Option Option(short: 'a') Arg() Arg
+    Arg Option(long: 'aa') Option(long: $OSTYPE) Arg()>]
+    var b = ""
+
+}

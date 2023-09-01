@@ -226,6 +226,8 @@ DEFINE_TCError(DupChoiceElement, "attribute parameter `choice' has duplicated el
 DEFINE_TCError(InvalidUDCParamType, "invalid parameter type: `%s', must be derived types of "
                                     "`CLI' (except for `Nothing type')");
 DEFINE_TCError(InvalidUDCParam, "no-return user-defined command cannot accept parameter");
+DEFINE_TCError(AttrLimit, "number of attributes reaches limit");
+DEFINE_TCError(ChoiceLimit, "number of choice elements reaches limit");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

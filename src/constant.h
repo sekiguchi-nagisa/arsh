@@ -439,7 +439,7 @@ constexpr size_t SYS_LIMIT_TUPLE_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_FUNC_PARAM_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_METHOD_PARAM_NUM = UINT8_MAX - 1;
 constexpr size_t SYS_LIMIT_MOD_ID = INT16_MAX;
-constexpr size_t SYS_LIMIT_GLOBAL_NUM = UINT16_MAX; // FIXME: check global var limit
+constexpr size_t SYS_LIMIT_GLOBAL_NUM = UINT16_MAX;
 constexpr size_t SYS_LIMIT_LOCAL_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
 constexpr size_t SYS_LIMIT_EXPANSION_FRAG_NUM = UINT8_MAX;
@@ -462,6 +462,8 @@ constexpr size_t SYS_LIMIT_DIRSTACK_SIZE = UINT8_MAX;
 constexpr size_t SYS_LIMIT_INPUT_SIZE = INT32_MAX;
 constexpr size_t SYS_LIMIT_HIST_SIZE = UINT16_MAX;
 constexpr size_t SYS_LIMIT_ARG_ENTRY_MAX = UINT16_MAX;
+constexpr size_t SYS_LIMIT_ATTR_NUM = 8;
+constexpr size_t SYS_LIMIT_ATTR_CHOICE_SIZE = 16;
 
 // helper macro definition
 #if 1
