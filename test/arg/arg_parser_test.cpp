@@ -327,7 +327,7 @@ Options:
   args = createArgs("-h", "-A");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
-  ASSERT_EQ(2, ret.index);
+  ASSERT_EQ(1, ret.index);
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(2, error->getStatus());
 

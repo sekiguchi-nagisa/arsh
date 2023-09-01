@@ -109,7 +109,7 @@ TEST(OptParseTest, shortOpt1) {
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::B, ret.getOpt());
   ASSERT_EQ("oBBB", parser.getRemain().toString());
-  ASSERT_EQ("AAA", *begin);
+  ASSERT_EQ("-voBBB", *begin);
 
   // -oBBB
   ret = parser(begin, end);
@@ -141,31 +141,17 @@ TEST(OptParseTest, shortOpt2) {
   auto begin = args.begin();
   auto end = args.end();
 
-  // -c 111
+  // -c coBBB
   auto ret = parser(begin, end);
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::C, ret.getOpt());
   ASSERT_TRUE(ret.hasArg());
-  ASSERT_EQ("111", ret.getValue().toString());
-  ASSERT_EQ("222", *begin);
-
-  // -c 222
-  ret = parser(begin, end);
-  ASSERT_TRUE(ret);
-  ASSERT_EQ(Kind::C, ret.getOpt());
-  ASSERT_TRUE(ret.hasArg());
-  ASSERT_EQ("222", ret.getValue().toString());
-  ASSERT_EQ("-c", *begin);
-
-  // -o BBB
-  ret = parser(begin, end);
-  ASSERT_TRUE(ret);
-  ASSERT_EQ(Kind::E, ret.getOpt());
-  ASSERT_TRUE(ret.hasArg());
-  ASSERT_EQ("BBB", ret.getValue().toString());
-  ASSERT_EQ("-c", *begin);
+  ASSERT_EQ("coBBB", ret.getValue().toString());
+  ASSERT_EQ("111", *begin);
 
   // -c --
+  ++begin; // 222
+  ++begin; // -c
   ret = parser(begin, end);
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::C, ret.getOpt());
@@ -331,7 +317,7 @@ TEST(OptParseTest, multiArg) {
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::A, ret.getOpt());
   ASSERT_FALSE(ret.hasArg());
-  ASSERT_EQ("123", *begin);
+  ASSERT_EQ("-hvo", *begin);
   ASSERT_EQ("vo", parser.getRemain().toString());
 
   // -v
@@ -339,7 +325,7 @@ TEST(OptParseTest, multiArg) {
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::B, ret.getOpt());
   ASSERT_FALSE(ret.hasArg());
-  ASSERT_EQ("123", *begin);
+  ASSERT_EQ("-hvo", *begin);
   ASSERT_EQ("o", parser.getRemain().toString());
 
   // -o
@@ -395,16 +381,17 @@ TEST(OptParseTest, invalidShortOpt) {
   ASSERT_EQ(OptParseResult<Kind>::Status::UNDEF, ret.getStatus());
   ASSERT_EQ("X", ret.getValue().toString());
   ASSERT_EQ("X", parser.getRemain().toString());
-  ASSERT_EQ("-vA", *begin);
+  ASSERT_EQ("-X", *begin);
 
   // -v
   parser.reset();
+  ++begin;
   ret = parser(begin, end);
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::B, ret.getOpt());
   ASSERT_FALSE(ret.hasArg());
   ASSERT_EQ("A", parser.getRemain().toString());
-  ASSERT_EQ("-Qvo", *begin);
+  ASSERT_EQ("-vA", *begin);
 
   // -A
   ret = parser(begin, end);
@@ -413,17 +400,18 @@ TEST(OptParseTest, invalidShortOpt) {
   ASSERT_EQ(OptParseResult<Kind>::Status::UNDEF, ret.getStatus());
   ASSERT_EQ("A", ret.getValue().toString());
   ASSERT_EQ("A", parser.getRemain().toString());
-  ASSERT_EQ("-Qvo", *begin);
+  ASSERT_EQ("-vA", *begin);
 
   // -Q
   parser.reset();
+  ++begin;
   ret = parser(begin, end);
   ASSERT_FALSE(ret);
   ASSERT_TRUE(ret.isError());
   ASSERT_EQ(OptParseResult<Kind>::Status::UNDEF, ret.getStatus());
   ASSERT_EQ("Q", ret.getValue().toString());
   ASSERT_EQ("Qvo", parser.getRemain().toString());
-  ASSERT_TRUE(begin == end);
+  ASSERT_EQ("-Qvo", *begin);
 }
 
 TEST(OptParseTest, invalidLongOpt) {
@@ -515,22 +503,20 @@ TEST(OptParseTest, needArgShortOpt2) {
   auto begin = args.begin();
   auto end = args.end();
 
-  // -c -o
+  // -c c
   auto ret = parser(begin, end);
   ASSERT_TRUE(ret);
   ASSERT_EQ(Kind::C, ret.getOpt());
   ASSERT_TRUE(ret.hasArg());
-  ASSERT_EQ("-o", ret.getValue().toString());
-  ASSERT_EQ("c", parser.getRemain().toString());
-  ASSERT_TRUE(begin == end);
-
-  // -c
-  ret = parser(begin, end);
-  ASSERT_FALSE(ret);
-  ASSERT_TRUE(ret.isError());
-  ASSERT_EQ(OptParseResult<Kind>::Status::NEED_ARG, ret.getStatus());
-  ASSERT_EQ(Kind::C, ret.getOpt());
   ASSERT_EQ("c", ret.getValue().toString());
+  ASSERT_EQ("", parser.getRemain().toString());
+  ASSERT_EQ("-o", *begin);
+
+  // -o
+  ret = parser(begin, end);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(Kind::E, ret.getOpt());
+  ASSERT_EQ("", ret.getValue().toString());
   ASSERT_EQ("", parser.getRemain().toString());
   ASSERT_TRUE(begin == end);
 }

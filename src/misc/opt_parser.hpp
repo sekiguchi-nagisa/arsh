@@ -300,7 +300,6 @@ OptParseResult<T> OptParser<T, U>::operator()(Iter &begin, Iter end) {
     assert(arg[0] == '-' && arg.size() > 1);
     this->remain = arg;
     this->remain.removePrefix(1);
-    ++begin;
   }
   return this->matchShortOption(begin, end);
 }
@@ -323,8 +322,8 @@ OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
         return OptParseResult<T>::ok(option.kind);
       }
       continue;
-    case OptParseOp::HAS_ARG:
-    case OptParseOp::OPT_ARG:
+    case OptParseOp::HAS_ARG: // --long arg or --long=arg
+    case OptParseOp::OPT_ARG: // --long=arg
       if (longName.startsWith(option.longOptName)) {
         ++begin;
         StringRef v = longName;
@@ -366,23 +365,28 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
       continue;
     }
     this->remain.removePrefix(1);
+    if (this->remain.empty()) {
+      ++begin;
+    }
     switch (option.op) {
     case OptParseOp::NO_ARG:
       return OptParseResult<T>::ok(option.kind);
-    case OptParseOp::HAS_ARG: // -s arg
-      if (begin != end) {
-        StringRef next = *begin;
-        ++begin;
-        return OptParseResult<T>::ok(option.kind, next);
-      } else {
-        return OptParseResult<T>::needArg(option.kind, shortName);
-      }
+    case OptParseOp::HAS_ARG: // -s arg or -sarg
     case OptParseOp::OPT_ARG: // -sarg
       if (this->remain.empty()) {
-        return OptParseResult<T>::ok(option.kind);
+        if (option.op == OptParseOp::OPT_ARG) {
+          return OptParseResult<T>::ok(option.kind);
+        } else if (begin != end) {
+          StringRef next = *begin;
+          ++begin;
+          return OptParseResult<T>::ok(option.kind, next);
+        } else {
+          return OptParseResult<T>::needArg(option.kind, shortName);
+        }
       } else {
         StringRef next = this->remain;
         this->remain = "";
+        ++begin;
         return OptParseResult<T>::ok(option.kind, next);
       }
     }
