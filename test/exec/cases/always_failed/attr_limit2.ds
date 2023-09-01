@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 9, $chars = 50, $errorKind = 'AttrLimit', $status = 1)
+#$test($result = 'type', $lineNum = 10, $chars = 5, $errorKind = 'AttrLimit', $status = 1)
 
 [<CLI CLI() CLI() CLI CLI
   CLI CLI CLI>]
@@ -6,7 +6,8 @@ typedef AAA() {
   var a = ""
 
     [<Option Option(short: 'a') Arg() Arg
-    Arg Option(long: 'aa') Option(long: $OSTYPE) Arg()>]
+    Arg Option(long: 'aa') Option(long: $OSTYPE) Option(long: 'sss')
+    Arg()>]
     var b = ""
 
 }

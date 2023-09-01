@@ -1866,11 +1866,16 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
-  for (auto &e : node.getAttrNodes()) {
-    if (willBeField) {
-      e->setLoc(Attribute::Loc::FIELD);
+  for (unsigned int i = 0; i < node.getAttrNodes().size(); i++) {
+    auto &attrNode = *node.getAttrNodes()[i];
+    if (i == SYS_LIMIT_ATTR_NUM) {
+      this->reportError<AttrLimit>(attrNode);
+      break;
     }
-    this->checkTypeExactly(*e);
+    if (willBeField) {
+      attrNode.setLoc(Attribute::Loc::FIELD);
+    }
+    this->checkTypeExactly(attrNode);
   }
 
   switch (node.getKind()) {
