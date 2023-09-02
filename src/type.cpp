@@ -173,7 +173,7 @@ ModId DSType::resolveBelongedModId() const {
     modTypeName.removePrefix(strlen(MOD_SYMBOL_PREFIX));
     auto pair = convertToDecimal<uint32_t>(modTypeName.begin(), modTypeName.end());
     assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
-    return ModId{static_cast<unsigned short>(pair.value)};
+    return static_cast<ModId>(pair.value);
   }
   return BUILTIN_MOD_ID;
 }

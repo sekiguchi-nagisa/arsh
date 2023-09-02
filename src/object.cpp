@@ -44,7 +44,7 @@ const char *toString(ObjectKind kind) {
       EACH_OBJECT_KIND(GEN_STR)
 #undef GEN_STR
   };
-  return table[static_cast<unsigned int>(kind)];
+  return table[toUnderlying(kind)];
 }
 
 // #####################
@@ -56,16 +56,16 @@ unsigned int DSValue::getTypeID() const {
   case DSValueKind::DUMMY:
     return this->asTypeId();
   case DSValueKind::BOOL:
-    return static_cast<unsigned int>(TYPE::Bool);
+    return toUnderlying(TYPE::Bool);
   case DSValueKind::SIG:
-    return static_cast<unsigned int>(TYPE::Signal);
+    return toUnderlying(TYPE::Signal);
   case DSValueKind::INT:
-    return static_cast<unsigned int>(TYPE::Int);
+    return toUnderlying(TYPE::Int);
   case DSValueKind::FLOAT:
-    return static_cast<unsigned int>(TYPE::Float);
+    return toUnderlying(TYPE::Float);
   default:
     if (isSmallStr(this->kind())) {
-      return static_cast<unsigned int>(TYPE::String);
+      return toUnderlying(TYPE::String);
     }
     assert(this->kind() == DSValueKind::OBJECT);
     return this->get()->getTypeID();
@@ -133,7 +133,7 @@ std::string DSValue::toString() const {
   }
   case DSValueKind::DUMMY: {
     unsigned int typeId = this->asTypeId();
-    if (typeId == static_cast<unsigned int>(TYPE::Module)) {
+    if (typeId == toUnderlying(TYPE::Module)) {
       std::string str = OBJ_TEMP_MOD_PREFIX; // for temporary module descriptor
       str += std::to_string(this->asNumList()[1]);
       str += ")";

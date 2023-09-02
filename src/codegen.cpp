@@ -1828,7 +1828,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for (unsigned int i = 0; i < c.getCodeSize(); i++) {
       auto code = static_cast<OpCode>(c.getCode()[i]);
       fprintf(this->fp, "  %s: %s", formatNum(c.getCodeSize(), i).c_str(),
-              opName[static_cast<unsigned char>(code)]);
+              opName[toUnderlying(code)]);
       if (isTypeOp(code)) {
         unsigned int v = read24(c.getCode(), i + 1);
         i += 3;

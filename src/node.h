@@ -800,13 +800,9 @@ public:
 
   OpKind getOpKind() const { return this->opKind; }
 
-  bool isCastOp() const {
-    return static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(PRINT);
-  }
+  bool isCastOp() const { return toUnderlying(this->opKind) <= toUnderlying(PRINT); }
 
-  bool isInstanceOfOp() const {
-    return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(ALWAYS_FALSE);
-  }
+  bool isInstanceOfOp() const { return toUnderlying(this->opKind) >= toUnderlying(ALWAYS_FALSE); }
 
   void dump(NodeDumper &dumper) const override;
 };
