@@ -201,7 +201,7 @@ $assertArray(['AAA0', 'AAA1'], $(complete '
 # subcommand
 $assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; CP "))
 $assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; CP c"))
-assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/path as P; P ").empty()
+assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/cnf as P; P ").empty()
 $assertArray(["say0", "say1", "say2"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
 assert $(complete "aaa(){}; aaa .l").empty()

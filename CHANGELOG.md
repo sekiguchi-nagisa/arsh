@@ -80,6 +80,10 @@
     - support nanoseconds epoc time string like ``1689511935.00023``
     - allow negative epoc time
 
+#### Module
+
+- **Breaking Change**: remove ``path``. use ``String#basename``, ``String#dirname`` instead
+
 #### LSP
 
 - ``textDocument/completion`` shows variable/function/field/method type signature

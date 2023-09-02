@@ -1,7 +1,5 @@
 #!/usr/bin/env ydsh
 
-source path
-
 var debug = $false
 var file = "."
 
@@ -14,12 +12,12 @@ for $arg in $@ {
 
 var root = $file.realpath()
 if !(test -d $root) {
-    $root = $dirname($root)
+    $root = $root.dirname()
 }
 
 let workdir = "$SCRIPT_DIR/../../".realpath()
 
-var name = "build_${$basename($root)}:1"
+var name = "build_${$root.basename()}:1"
 echo Dockfile path: "'$root/Dockerfile'"
 echo build docker image: "'$name'"
 

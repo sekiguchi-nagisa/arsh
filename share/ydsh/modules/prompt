@@ -1,7 +1,5 @@
 #!/usr/bin/env ydsh
 
-source $SCRIPT_DIR/path
-
 function _escape(s : String) : String {
     var ret = ""
     let size = $s.size()
@@ -19,12 +17,14 @@ let _cache = [
     'c' : '\\c',
     'h' : $_escape("$(uname -n)").split(".")[0],
     'H' : $_escape("$(uname -n)"),
-    's' : $_escape($basename($0)),
-    'u' : $_escape($user),
+    's' : $_escape($0.basename()),
+    'u' : $_escape("$(whoami)"),
     'v' : $YDSH_VERSION.slice(0, $YDSH_VERSION.lastIndexOf('.')),
     'V' : $YDSH_VERSION,
     '$' : $UID == 0 ? '#' : '$',
 ]
+
+let _home = @(~)[0]
 
 ## bash-compatible prompt interpreter
 
@@ -56,18 +56,18 @@ function renderPrompt(p : String) : String {
                 $ch = $reply.remove($key)!
             }
             'w' => {
-                if $PWD.startsWith($home) {
-                    $ch = "~" + $_escape($PWD.slice($home.size()))
+                if $PWD.startsWith($_home) {
+                    $ch = "~" + $_escape($PWD.slice($_home.size()))
                 } else {
                     $ch = $_escape($PWD)
                 }
             }
             'W' => {
                 if $PWD == "." { $ret += '.'; continue; }
-                if $home == $PWD {
+                if $_home == $PWD {
                     $ch = "~"
                 } else {
-                    $ch = $_escape($basename($PWD))
+                    $ch = $_escape($PWD.basename())
                 }
             }
             '[' | ']' => continue;
