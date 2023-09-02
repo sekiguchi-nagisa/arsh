@@ -55,4 +55,17 @@ assert $r == "invalid argument: \`sss', must be decimal integer
 Usage: ff [OPTIONS] AAA [BBB] CCC..." : $r
 assert $? == 1
 
+## errraise
+shctl set errraise
+
+var ex = 34 as Any
+try {
+  ff --ss
+} catch e {
+  $ex = $e
+}
+assert $ex is ExecError
+assert ($ex as ExecError).status() == 2
+assert ($ex as ExecError).lineno() == 63
+
 true
