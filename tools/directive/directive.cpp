@@ -24,7 +24,7 @@
 #include "directive.h"
 
 #include <misc/fatal.h>
-#include <misc/files.h>
+#include <misc/files.hpp>
 #include <parser.h>
 #include <paths.h>
 #include <type_checker.h>

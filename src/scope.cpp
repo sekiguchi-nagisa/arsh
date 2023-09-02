@@ -17,7 +17,7 @@
 #include <algorithm>
 
 #include "logger.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "paths.h"
 #include "scope.h"
 

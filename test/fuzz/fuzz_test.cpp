@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "../test_common.h"
-#include <misc/files.h>
+#include <misc/files.hpp>
 
 using namespace ydsh;
 

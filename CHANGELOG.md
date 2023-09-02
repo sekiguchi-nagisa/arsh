@@ -41,6 +41,7 @@
     - ``parseOrExit``: parse command line argument and store result. if reach parse error, exit shell
     - ``usage``: get usage message
 - add ``ArgumentError`` for unacceptable argument
+- add ``String#basename``, ``String#dirname`` methods
 
 #### LSP
 

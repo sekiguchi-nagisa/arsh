@@ -17,7 +17,7 @@
 #include <pwd.h>
 
 #include "constant.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "paths.h"
 

@@ -28,7 +28,7 @@
 
 #include "arg_parser.h"
 #include "line_editor.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "misc/word.hpp"
 #include "ordered_map.h"
@@ -1027,6 +1027,30 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     raiseSystemError(ctx, errNum, std::move(value));
     RET_ERROR;
   }
+}
+
+//!bind: function basename($this : String) : String
+YDSH_METHOD string_basename(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_basename);
+  auto ref = LOCAL(0).asStrRef();
+  if (ref.hasNullChar()) {
+    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    RET_ERROR;
+  }
+  auto ret = getBasename(ref);
+  RET(DSValue::createStr(ret));
+}
+
+//!bind: function dirname($this : String) : String
+YDSH_METHOD string_dirname(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_dirname);
+  auto ref = LOCAL(0).asStrRef();
+  if (ref.hasNullChar()) {
+    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    RET_ERROR;
+  }
+  auto ret = getDirname(ref);
+  RET(DSValue::createStr(ret));
 }
 
 //!bind: function lower($this : String) : String

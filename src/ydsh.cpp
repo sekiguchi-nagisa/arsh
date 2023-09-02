@@ -23,7 +23,7 @@
 #include "compiler.h"
 #include "line_editor.h"
 #include "logger.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "vm.h"
 #include <embed.h>

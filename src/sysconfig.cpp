@@ -16,7 +16,7 @@
 
 #include <pwd.h>
 
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "regex_wrapper.h"
 #include "sysconfig.h"
 

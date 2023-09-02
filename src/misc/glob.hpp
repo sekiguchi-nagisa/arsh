@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "files.h"
+#include "files.hpp"
 #include "flag_util.hpp"
 #include "resource.hpp"
 

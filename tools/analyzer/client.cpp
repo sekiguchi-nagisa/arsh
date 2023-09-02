@@ -21,7 +21,7 @@
 #include <regex>
 #include <thread>
 
-#include <misc/files.h>
+#include <misc/files.hpp>
 #include <misc/num_util.hpp>
 
 #include "../tools/process/process.h"

@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include <misc/files.h>
+#include <misc/files.hpp>
 #include <misc/num_util.hpp>
 #include <misc/string_ref.hpp>
 

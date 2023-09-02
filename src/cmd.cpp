@@ -24,7 +24,7 @@
 #include <ydsh/ydsh.h>
 
 #include "cmd_desc.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "vm.h"
 

@@ -165,6 +165,10 @@ function %OP_UNMATCH(re : Regex) : Bool for String
 
 function realpath() : String for String
 
+function basename() : String for String
+
+function dirname() : String for String
+
 function lower() : String for String
 
 function upper() : String for String

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <misc/edit_distance.hpp>
+#include <misc/files.hpp>
 #include <misc/flag_util.hpp>
 #include <misc/num_util.hpp>
 #include <misc/time_util.hpp>
@@ -823,6 +824,32 @@ TEST(TimestampTest, parse) {
   ASSERT_EQ(ParseTimespecStatus::INVALID_UNIX_TIME, s);
   ASSERT_EQ(0, time.tv_sec);
   ASSERT_EQ(0, time.tv_nsec);
+}
+
+TEST(PathTest, base) {
+  struct {
+    std::string path;
+    std::string dirName;
+    std::string baseName;
+  } table[] = {
+      {"", ".", ""},
+      {"/", "/", "/"},
+      {"////", "/", "/"},
+      {"///home///work//", "///home", "work"},
+      {"/usr/bin/zip", "/usr/bin", "zip"},
+      {"/etc/passwd///", "/etc", "passwd"},
+      {"/etc////passwd", "/etc", "passwd"},
+      {"etc/passwd///", "etc", "passwd"},
+      {"passwd", ".", "passwd"},
+      {"passwd/", ".", "passwd"},
+      {".", ".", "."},
+      {"..", ".", ".."},
+  };
+
+  for (auto &e : table) {
+    ASSERT_EQ(e.dirName, getDirname(e.path).toString());
+    ASSERT_EQ(e.baseName, getBasename(e.path).toString());
+  }
 }
 
 int main(int argc, char **argv) {

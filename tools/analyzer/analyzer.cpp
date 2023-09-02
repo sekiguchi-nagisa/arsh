@@ -17,7 +17,7 @@
 #include <binder.h>
 #include <complete.h>
 #include <embed.h>
-#include <misc/files.h>
+#include <misc/files.hpp>
 #include <misc/format.hpp>
 
 #include "analyzer.h"

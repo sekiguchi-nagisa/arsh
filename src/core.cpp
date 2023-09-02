@@ -21,7 +21,7 @@
 
 #include "compiler.h"
 #include "logger.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "node.h"
 #include "vm.h"

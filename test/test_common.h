@@ -23,7 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include <ansi.h>
 #include <process.h>
 

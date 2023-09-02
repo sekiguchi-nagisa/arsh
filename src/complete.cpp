@@ -25,7 +25,7 @@
 #include "frontend.h"
 #include "logger.h"
 #include "misc/edit_distance.hpp"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "paths.h"
 #include "signals.h"

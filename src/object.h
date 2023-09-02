@@ -28,7 +28,7 @@
 
 #include "constant.h"
 #include "misc/buffer.hpp"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/grapheme.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"

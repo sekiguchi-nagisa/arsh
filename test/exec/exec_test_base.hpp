@@ -7,7 +7,7 @@
 #include <fstream>
 
 #include <directive.h>
-#include <misc/files.h>
+#include <misc/files.hpp>
 #include <misc/string_ref.hpp>
 
 #include "../test_common.h"

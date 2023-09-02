@@ -1,0 +1,50 @@
+
+# for file path op
+
+## realpath
+var ex = 34 as Any
+
+assert ".".realpath() == "$(pwd -P)"
+$ex = 23
+try { "".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { "~".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { "fhafjeoirwae54".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { $'.\x00'.realpath() } catch e { $ex = $e; }
+assert $ex is ArgumentError
+
+## basename/dirname
+function assertBaseDir($s : String) {
+    # basename
+    assert diff <(echo ${$s.basename()}) <(basename "$s")
+
+    # dirname
+    assert diff <(echo ${$s.dirname()}) <(dirname "$s")
+}
+
+$assertBaseDir("hoge")
+$assertBaseDir("/")
+$assertBaseDir("/////")
+$assertBaseDir("")
+$assertBaseDir(".")
+$assertBaseDir("/hoge//")
+$assertBaseDir("/hoge//123")
+$assertBaseDir("hoge/6543/")
+$assertBaseDir("hoge///6543//")
+$assertBaseDir("///hoge/6543/")
+$assertBaseDir("/../  ge/f")
+
+$ex = 34
+try { $'/\x00/home'.basename() } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == "file path contains null characters"
+
+$ex = 34
+try { $'/\x00/home'.dirname() } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == "file path contains null characters"

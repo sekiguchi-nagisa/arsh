@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <misc/files.h>
+#include <misc/files.hpp>
 
 #include "client.h"
 #include "driver.h"

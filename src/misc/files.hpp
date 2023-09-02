@@ -33,6 +33,7 @@
 #include "fatal.h"
 #include "flag_util.hpp"
 #include "resource.hpp"
+#include "string_ref.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -87,6 +88,51 @@ inline bool isDirectory(DIR *dir, const struct dirent *entry) {
 inline CStrPtr getRealpath(const char *path) { return CStrPtr(realpath(path, nullptr)); }
 
 inline CStrPtr getCWD() { return getRealpath("."); }
+
+inline StringRef getBasename(StringRef ref) {
+  if (ref.empty()) {
+    return ref;
+  }
+
+  // skip last '/'
+  while (!ref.empty() && ref.back() == '/') {
+    ref.removeSuffix(1);
+  }
+  if (ref.empty()) {
+    return "/";
+  }
+
+  // find last '/'
+  int64_t i = static_cast<int64_t>(ref.size()) - 1;
+  for (; i > -1 && ref[i] != '/'; i--)
+    ;
+  return ref.substr(i + 1);
+}
+
+inline StringRef getDirname(StringRef ref) {
+  if (ref.empty()) {
+    return ".";
+  }
+
+  // skip last '/'
+  while (!ref.empty() && ref.back() == '/') {
+    ref.removeSuffix(1);
+  }
+  if (ref.empty()) {
+    return "/";
+  }
+
+  // find first '/'
+  int64_t i = static_cast<int64_t>(ref.size()) - 1;
+  for (; i > -1 && ref[i] != '/'; i--)
+    ;
+
+  // skip last '/'
+  for (; i > 0 && ref[i] == '/'; i--)
+    ;
+  i++;
+  return i == 0 ? "." : ref.slice(0, i);
+}
 
 inline bool isSameFile(const struct stat &st1, const struct stat &st2) {
   return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;

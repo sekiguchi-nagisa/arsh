@@ -23,7 +23,7 @@
 #include "arg_parser.h"
 #include "brace.h"
 #include "logger.h"
-#include "misc/files.h"
+#include "misc/files.hpp"
 #include "misc/glob.hpp"
 #include "misc/num_util.hpp"
 #include "opcode.h"
