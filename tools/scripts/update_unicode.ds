@@ -1,6 +1,6 @@
 #!/usr/bin/env ydsh
 
-var src = "$SCRIPT_DIR/../../src".realpath()!
+var src = "$SCRIPT_DIR/../../src".realpath()
 
 echo try update $src/misc/unicode_width.h
 call $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.h

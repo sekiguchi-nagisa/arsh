@@ -8,10 +8,10 @@ usage() : Nothing {
     exit 1
 }
 
-let BIN = $1.realpath() ?? usage
+let BIN = $1.realpath()
 test -x $BIN || usage "$BIN" must be executable
 
-let ORG_DIR = $2.realpath() ?? usage
+let ORG_DIR = $2.realpath()
 test -d $ORG_DIR || usage "$ORG_DIR" must be directory
 
 let NEW_DIR = "${ORG_DIR}_new"

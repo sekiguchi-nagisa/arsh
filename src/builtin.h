@@ -1006,17 +1006,27 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
   RET_BOOL(r);
 }
 
-//!bind: function realpath($this : String) : Option<String>
+//!bind: function realpath($this : String) : String
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_realpath);
   auto ref = LOCAL(0).asStrRef();
-  if (!ref.hasNullChar()) {
-    auto buf = getRealpath(ref.data());
-    if (buf) {
-      RET(DSValue::createStr(buf.get()));
-    }
+  if (ref.hasNullChar()) {
+    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    RET_ERROR;
   }
-  RET(DSValue::createInvalid());
+
+  errno = 0;
+  auto buf = getRealpath(ref.data());
+  if (buf) {
+    RET(DSValue::createStr(buf.get()));
+  } else {
+    int errNum = errno;
+    std::string value = "cannot resolve realpath of `";
+    value += toPrintable(ref);
+    value += "'";
+    raiseSystemError(ctx, errNum, std::move(value));
+    RET_ERROR;
+  }
 }
 
 //!bind: function lower($this : String) : String

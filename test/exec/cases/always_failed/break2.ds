@@ -2,5 +2,5 @@
 ##$test($result = 'type', $lineNum = 5, $chars = 7, $errorKind = 'Required', $status = 1)
 
 assert !(for(;;) {
-    break "34".realpath()
+    break "fjerif".toInt()
 })

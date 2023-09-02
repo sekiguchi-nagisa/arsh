@@ -2,6 +2,6 @@
 
 if let aa = '34'.toFloat() {
     $aa + 4.24
-} elif let bb = '34'.realpath() {
+} elif let bb = 'frea'.toInt() {
     $bb + $aa
 }

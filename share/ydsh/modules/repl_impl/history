@@ -124,7 +124,7 @@ function _add_and_save(s : String) {
 function _load(p : String?) {
     $HISTSIZE == 0 && return;
     if !$p || $p!.empty() { $p = $HISTFILE; }
-    let path = $p!.realpath() ?? return;
+    let path = try { $p!.realpath() } catch e { return; }
     for $line in $STDIN {
         $_add($line)
     } with < $path

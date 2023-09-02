@@ -60,10 +60,6 @@
     - ``MODULE_DIR`` indicates ``DATA_DIR/modules``
     - completion script directory indicates ``DATA_DIR/completions``
 - **Breaking Change**: not allow override of generic base type in global scope
-- **Breaking Change**: change Error type with ``ArgumentError`` in some builtin methods
-    - ``FD`` type constructor
-    - ``Module#_func``
-    - ``LineEditor#action``, ``LineEditor#bind``
 - improve error message of type lookup errors
     - report correct position of invalid type elements
     - report more detailed error message for invalid type elements
@@ -72,6 +68,12 @@
 #### Builtin
 
 - **Breaking Change**: completion after ``importenv`` keyword only complete valid env names
+- **Breaking Change**: change Error type with ``ArgumentError`` in some builtin methods
+    - ``FD`` type constructor
+    - ``Module#_func``
+    - ``LineEditor#action``, ``LineEditor#bind``
+- **Breaking Change**: change return value of ``String#realpath``
+    - now throw Error when cannot resolve real path
 - improve time format handling of builtin printf command
     - support ``%N`` time specifier for nanoseconds time printing
     - support nanoseconds epoc time string like ``1689511935.00023``

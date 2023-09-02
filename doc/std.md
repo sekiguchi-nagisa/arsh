@@ -163,7 +163,7 @@ function %OP_MATCH(re : Regex) : Bool for String
 
 function %OP_UNMATCH(re : Regex) : Bool for String
 
-function realpath() : String? for String
+function realpath() : String for String
 
 function lower() : String for String
 

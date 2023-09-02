@@ -359,11 +359,19 @@ assert ! '3.14  '.toFloat()
 assert ! "3.14e100000000000000000000000000".toFloat()
 
 # realpath
-assert !"".realpath()
-assert ! "~".realpath()
-assert ! "fhafjeoirwae54".realpath()
-assert ".".realpath()! == "$(pwd -P)"
-assert ! $'.\x00'.realpath()
+assert ".".realpath() == "$(pwd -P)"
+$ex = 23
+try { "".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { "~".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { "fhafjeoirwae54".realpath() } catch e { $ex = $e; }
+assert $ex is SystemError
+$ex = 23
+try { $'.\x00'.realpath() } catch e { $ex = $e; }
+assert $ex is ArgumentError
 
 # string compare
 var b = "aaa"

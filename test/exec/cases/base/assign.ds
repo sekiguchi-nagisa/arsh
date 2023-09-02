@@ -103,12 +103,12 @@ $t2._0 := $getstr()
 assert $t2._0 == 'check empty and assign'
 assert $icount == 3
 
-var t3 = ('~hfore'.realpath(),)
-$t3._0 ??= "/"
-assert $t3._0! == "/"
-$t3._0 = '~'.realpath()
-$t3._0 ??= 'hoge'
-assert $t3._0! == "hoge"
+var t3 = ('~hfore'.toInt(),)
+$t3._0 ??= 888
+assert $t3._0! == 888
+$t3._0 = '~'.toInt()
+$t3._0 ??= -666
+assert $t3._0! == -666
 
 
 # indexer

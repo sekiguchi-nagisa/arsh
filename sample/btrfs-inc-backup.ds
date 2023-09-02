@@ -12,8 +12,8 @@ error() : Nothing {
 }
 
 # check arguments
-let SRC_PATH = $1.realpath() ?? usage "must be valid src path: '$1'"
-let DEST_PATH = $2.realpath() ?? usage "must be valid dest path: '$2'"
+let SRC_PATH = $1.realpath()
+let DEST_PATH = $2.realpath()
 
 let SRC_BACKUP = "$SRC_PATH/BACKUP"
 let DEST_BACKUP = "$DEST_PATH/BACKUP"

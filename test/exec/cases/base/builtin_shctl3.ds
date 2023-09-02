@@ -10,9 +10,9 @@ var a = $(shctl module)
 assert $a.size() == 5
 assert $a[0] == "(builtin)"
 assert $a[1] == "(root)"
-assert $a[2] == "${$SCRIPT_NAME.realpath()!}"
-assert $a[3] == "${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!}"
-assert $a[4] == "${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()!}"
+assert $a[2] == "${$SCRIPT_NAME.realpath()}"
+assert $a[3] == "${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()}"
+assert $a[4] == "${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()}"
 
 if $OSTYPE == 'linux' {
     assert "$(shctl module 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
@@ -25,7 +25,7 @@ if $OSTYPE == 'linux' {
 $a = $(cd $SCRIPT_DIR && shctl module ../../_module4test/module4.ds hogehoge)
 assert $? == 1
 assert $a.size() == 1
-assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!
+assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()
 
 if $OSTYPE == 'linux' {
     assert "$(cd $SCRIPT_DIR && 
@@ -36,7 +36,7 @@ if $OSTYPE == 'linux' {
 $a = $(cd $SCRIPT_DIR && shctl module ../../_module4test/module4.ds hogehoge $'hoge\x0034'  ../../_module4test/module1.ds 2>&1)
 assert $? == 0
 assert $a.size() == 4
-assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!
+assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()
 assert $a[1] == 'ydsh: shctl: hogehoge: No such file or directory'
 assert $a[2] == 'ydsh: shctl: contains null characters: hoge\x0034'
-assert $a[3] == "$SCRIPT_DIR/../../_module4test/module1.ds".realpath()!
+assert $a[3] == "$SCRIPT_DIR/../../_module4test/module1.ds".realpath()

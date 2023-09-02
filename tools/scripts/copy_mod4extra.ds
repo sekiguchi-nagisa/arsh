@@ -16,13 +16,13 @@ test -d $INSTALL_PREFIX/share/ydsh/modules || {
 
 
 # copy local
-let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()!
+let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()
 for $a in $(ls $local) {
     echo copy $local/$a to $MODULE_HOME/
     cp $local/$a $MODULE_HOME/
 }
 
-let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()!
+let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()
 for $a in $(ls $system) {
     echo copy $system/$a to $INSTALL_PREFIX/share/ydsh/modules/
     sudo cp $system/$a $INSTALL_PREFIX/share/ydsh/modules/

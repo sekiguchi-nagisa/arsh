@@ -1,7 +1,7 @@
 
 source $SCRIPT_DIR/expect.ds
 
-var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()!
+var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()
 let len = $mod.size()
 
 ## dump untyped test 

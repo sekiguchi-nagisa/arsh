@@ -12,12 +12,12 @@ for $arg in $@ {
     }
 }
 
-var root = $file.realpath()!
+var root = $file.realpath()
 if !(test -d $root) {
     $root = $dirname($root)
 }
 
-let workdir = "$SCRIPT_DIR/../../".realpath()!
+let workdir = "$SCRIPT_DIR/../../".realpath()
 
 var name = "build_${$basename($root)}:1"
 echo Dockfile path: "'$root/Dockerfile'"

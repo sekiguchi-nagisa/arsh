@@ -8,7 +8,7 @@ if $# != 1 {
 let dir = $1
 mkdir $dir || { echo already exist directory 1>&2; exit 1; }
 
-let exec_test_dir = "$SCRIPT_DIR/../test/exec/cases".realpath()!
+let exec_test_dir = "$SCRIPT_DIR/../test/exec/cases".realpath()
 
 # copy from exec_test
 for $d in $(ls $exec_test_dir) {
@@ -21,7 +21,7 @@ for $d in $(ls $exec_test_dir) {
 }
 
 # copy from module dir
-let mod = "$SCRIPT_DIR/../share/ydsh/modules".realpath()!
+let mod = "$SCRIPT_DIR/../share/ydsh/modules".realpath()
 echo copy scripts from $mod
 for $d in $(ls $mod) {
     cp $mod/$d $dir/mod_$d
@@ -33,14 +33,14 @@ for $d in $(ls $mod/repl_impl) {
 }
 
 # copy from completion dir
-let comp = "$SCRIPT_DIR/../share/ydsh/completions".realpath()!
+let comp = "$SCRIPT_DIR/../share/ydsh/completions".realpath()
 echo copy scripts from $comp
 for $d in $(ls $comp) {
     cp $comp/$d $dir/comp_$d
 }
 
 # copy from interest input
-let interest = "$SCRIPT_DIR/../fuzzing/interest_input".realpath()!
+let interest = "$SCRIPT_DIR/../fuzzing/interest_input".realpath()
 echo copying scripts from $interest
 for $d in $(ls $interest) {
     cp $interest/$d $dir/interest_$d 

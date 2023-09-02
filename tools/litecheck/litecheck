@@ -329,12 +329,12 @@ litecheck() {
 
     ## check file existence
     $file ?? _usage "require file"
-    $self = $file!.realpath() ?? _usage "file not found: \`${$file!}'"
+    $self = (test -e ${$file!}) ? $file!.realpath() : _usage "file not found: \`${$file!}'"
     test -f $self || _usage "require regular file: ${$file!}"
 
     ## check bin
     if let b = $bin {
-        $cmd = $b.realpath() ?? _usage "file not found: \`$b'"
+        $cmd = (test -e $b) ? $b.realpath() : _usage "file not found: \`$b'"
         (test -f $cmd && test -x $cmd) || _usage "must be executable: \`$b'"
     }
 
