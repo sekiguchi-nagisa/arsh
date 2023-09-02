@@ -87,5 +87,5 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is SystemError
-assert ($ex as SystemError).message() == "open failed: ./hogehoge\x0034, caused by \`Invalid argument'"
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == "file path contains null characters"

@@ -1710,7 +1710,7 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
     break;
   }
   if (!message.empty()) {
-    raiseError(state, TYPE::InvalidOperationError, std::move(message));
+    raiseError(state, TYPE::ArgumentError, std::move(message));
     return false;
   }
   return true;
@@ -1748,7 +1748,7 @@ bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, String
     message += ")";
     break;
   }
-  raiseError(state, TYPE::InvalidOperationError, std::move(message));
+  raiseError(state, TYPE::ArgumentError, std::move(message));
   return false;
 }
 

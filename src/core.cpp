@@ -639,8 +639,8 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
     errorConsumer.value = "require expression";
   }
   auto message = DSValue::createStr(std::move(errorConsumer.value));
-  auto error = ErrorObject::newError(state, state.typePool.get(TYPE::InvalidOperationError),
-                                     std::move(message), 1);
+  auto error =
+      ErrorObject::newError(state, state.typePool.get(TYPE::ArgumentError), std::move(message), 1);
   return Err(toObjPtr<ErrorObject>(error));
 }
 

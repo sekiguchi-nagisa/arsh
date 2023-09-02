@@ -84,6 +84,7 @@ enum class TYPE : unsigned int {
   InvalidOperationError,
   ExecError,
   CLIError,
+  ArgumentError,
 
   /**
    * for internal status reporting.

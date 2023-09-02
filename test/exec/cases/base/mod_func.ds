@@ -28,22 +28,22 @@ assert $mod._func('$hello')()! as String == 'hello module!!'
 # compile error
 var ex = 34 as Any
 try { $MODULE._func('var _vvv = 34')(); } catch $e { $ex = $e; }
-assert $ex is InvalidOperationError
+assert $ex is ArgumentError
 assert $/expected expression/ =~ ($ex as Error).message()
 
 $ex = 234
 try { $MODULE._func('echo $WWW')(); } catch $e { $ex = $e; }
-assert $ex is InvalidOperationError
+assert $ex is ArgumentError
 assert $/undefined/ =~ ($ex as Error).message()
 
 $ex = 234
 try { $MODULE._func('')(); } catch $e { $ex = $e; }
-assert $ex is InvalidOperationError
+assert $ex is ArgumentError
 assert $/require expression/ =~ ($ex as Error).message()
 
 $ex = 234
 try { $MODULE._func('# echo hello')(); } catch $e { $ex = $e; }
-assert $ex is InvalidOperationError
+assert $ex is ArgumentError
 assert $/require expression/ =~ ($ex as Error).message()
 
 

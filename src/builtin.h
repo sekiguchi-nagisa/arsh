@@ -1988,19 +1988,22 @@ YDSH_METHOD error_source(RuntimeContext &ctx) {
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_init);
   auto ref = LOCAL(1).asStrRef();
-  errno = EINVAL;
-  if (!ref.hasNullChar()) {
-    errno = 0;
-    int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
-    if (fd != -1) {
-      RET(DSValue::create<UnixFdObject>(fd));
-    }
+  if (ref.hasNullChar()) {
+    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    RET_ERROR;
   }
-  int e = errno;
-  std::string msg = "open failed: ";
-  msg += toPrintable(ref);
-  raiseSystemError(ctx, e, std::move(msg));
-  RET_ERROR;
+
+  errno = 0;
+  int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
+  if (fd != -1) {
+    RET(DSValue::create<UnixFdObject>(fd));
+  } else {
+    int e = errno;
+    std::string msg = "open failed: ";
+    msg += toPrintable(ref);
+    raiseSystemError(ctx, e, std::move(msg));
+    RET_ERROR;
+  }
 }
 
 //!bind: function close($this : FD) : Void
@@ -2020,13 +2023,13 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
 YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
-  int newfd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
-  if (unlikely(newfd < 0)) {
+  int newFd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+  if (unlikely(newFd < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));
     RET_ERROR;
   }
-  RET(DSValue::create<UnixFdObject>(newfd));
+  RET(DSValue::create<UnixFdObject>(newFd));
 }
 
 //!bind: function value($this : FD) : Int

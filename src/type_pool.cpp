@@ -110,6 +110,7 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
   this->initErrorType(TYPE::ExecError, "ExecError");
   this->initErrorType(TYPE::CLIError, "CLIError");
+  this->initErrorType(TYPE::ArgumentError, "ArgumentError");
 
   // init internal status type
   this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Root_,
