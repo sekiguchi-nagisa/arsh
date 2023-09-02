@@ -184,21 +184,20 @@ constexpr const char *VAL_DEFAULT_IFS = " \t\n";
 
 // =====  system error message prefix  =====
 
-constexpr const char *EXEC_ERROR = "execution error: ";
-constexpr const char *REDIR_ERROR = "io redirection failed";
-constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
-constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
+constexpr const char *ERROR_EXEC = "execution error: ";
+constexpr const char *ERROR_REDIR = "io redirection failed";
+constexpr const char *ERROR_UNDEF_ENV = "undefined environmental variable: ";
+constexpr const char *ERROR_SET_ENV = "not set environmental variable: ";
 
 // =====  error message  =====
 
-constexpr const char *CMD_SUB_ERROR = "command substitution failed";
-constexpr const char *STRING_LIMIT_ERROR = "reach String size limit";
-constexpr const char *MAP_LIMIT_ERROR = "reach Map size limit";
-constexpr const char *NULL_CHAR_FILE_PATH = "file path contains null characters";
+constexpr const char *ERROR_CMD_SUB = "command substitution failed";
+constexpr const char *ERROR_STRING_LIMIT = "reach String size limit";
+constexpr const char *ERROR_MAP_LIMIT = "reach Map size limit";
+constexpr const char *ERROR_NULL_CHAR_PATH = "file path contains null characters";
 
 // =====  generic type name  =====
 
-constexpr const char *TYPE_ARG_PARSER = "ArgParser";
 constexpr const char *TYPE_ARRAY = "Array";
 constexpr const char *TYPE_MAP = "Map";
 constexpr const char *TYPE_TUPLE = "Tuple";

@@ -89,7 +89,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
       continue;
     }
     if (unlikely(strBuf.size() == StringObject::MAX_SIZE)) {
-      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+      raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
       return false;
     }
     strBuf += static_cast<char>(ch);

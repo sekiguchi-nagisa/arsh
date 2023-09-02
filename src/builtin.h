@@ -1011,7 +1011,7 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_realpath);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
-    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    raiseError(ctx, TYPE::ArgumentError, ERROR_NULL_CHAR_PATH);
     RET_ERROR;
   }
 
@@ -1034,7 +1034,7 @@ YDSH_METHOD string_basename(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_basename);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
-    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    raiseError(ctx, TYPE::ArgumentError, ERROR_NULL_CHAR_PATH);
     RET_ERROR;
   }
   auto ret = getBasename(ref);
@@ -1046,7 +1046,7 @@ YDSH_METHOD string_dirname(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_dirname);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
-    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    raiseError(ctx, TYPE::ArgumentError, ERROR_NULL_CHAR_PATH);
     RET_ERROR;
   }
   auto ret = getDirname(ref);
@@ -1077,7 +1077,7 @@ YDSH_METHOD string_quote(RuntimeContext &ctx) {
   auto ref = LOCAL(0).asStrRef();
   auto ret = quoteAsShellArg(ref);
   if (ret.size() > StringObject::MAX_SIZE) {
-    raiseOutOfRangeError(ctx, STRING_LIMIT_ERROR);
+    raiseOutOfRangeError(ctx, ERROR_STRING_LIMIT);
     RET_ERROR;
   }
   RET(DSValue::createStr(std::move(ret)));
@@ -1847,7 +1847,7 @@ YDSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   auto pair = obj.insert(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
   if (unlikely(pair.first == -1)) {
-    raiseOutOfRangeError(ctx, MAP_LIMIT_ERROR);
+    raiseOutOfRangeError(ctx, ERROR_MAP_LIMIT);
     RET_ERROR;
   }
   RET(obj[pair.first].getValue());
@@ -2023,7 +2023,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_init);
   auto ref = LOCAL(1).asStrRef();
   if (ref.hasNullChar()) {
-    raiseError(ctx, TYPE::ArgumentError, NULL_CHAR_FILE_PATH);
+    raiseError(ctx, TYPE::ArgumentError, ERROR_NULL_CHAR_PATH);
     RET_ERROR;
   }
 

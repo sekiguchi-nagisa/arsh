@@ -370,7 +370,7 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
   const bool small = isSmallStr(this->kind());
   const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
   if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
-    raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+    raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
     return false;
   }
 

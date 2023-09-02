@@ -219,7 +219,7 @@ bool RedirObject::redirect(DSState &state) {
   for (auto &entry : this->entries) {
     int r = redirectImpl(entry, hasFlag(state.runtimeOption, RuntimeOption::CLOBBER));
     if (this->backupFDSet > 0 && r != 0) {
-      std::string msg = REDIR_ERROR;
+      std::string msg = ERROR_REDIR;
       if (entry.value) {
         if (entry.value.hasType(TYPE::String)) {
           auto ref = entry.value.asStrRef();

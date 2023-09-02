@@ -301,7 +301,7 @@ DSValue OrderedMapObject::put(DSState &st, DSValue &&key, DSValue &&value) {
   if (pair.second) { // success insertion
     return DSValue::createInvalid();
   } else if (pair.first == -1) { // insertion failed (reach limit)
-    raiseError(st, TYPE::OutOfRangeError, MAP_LIMIT_ERROR);
+    raiseError(st, TYPE::OutOfRangeError, ERROR_MAP_LIMIT);
     return {};
   } else { // already inserted
     std::swap((*this)[pair.first].refValue(), value);

@@ -176,7 +176,7 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
   if (env == nullptr && hasDefault) {
     auto ref = dValue.asStrRef();
     if (ref.hasNullChar()) {
-      std::string message = SET_ENV_ERROR;
+      std::string message = ERROR_SET_ENV;
       message += name;
       raiseError(state, TYPE::IllegalAccessError, std::move(message));
       return nullptr;
@@ -186,7 +186,7 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
   }
 
   if (env == nullptr) {
-    std::string message = UNDEF_ENV_ERROR;
+    std::string message = ERROR_UNDEF_ENV;
     message += name;
     raiseError(state, TYPE::IllegalAccessError, std::move(message));
   }
@@ -202,7 +202,7 @@ bool VM::storeEnv(DSState &state) {
   if (setenv(valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
     return true;
   }
-  std::string str = SET_ENV_ERROR;
+  std::string str = ERROR_SET_ENV;
   str += nameRef;
   raiseError(state, TYPE::IllegalAccessError, std::move(str));
   return false;
@@ -272,13 +272,13 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
     }
     if (readSize <= 0) {
       if (readSize < 0) {
-        raiseSystemError(state, errno, CMD_SUB_ERROR);
+        raiseSystemError(state, errno, ERROR_CMD_SUB);
         return false;
       }
       break;
     }
     if (unlikely(str.size() > StringObject::MAX_SIZE - readSize)) {
-      raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+      raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
       return false;
     }
     str.append(buf, readSize);
@@ -307,7 +307,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
     }
     if (readSize <= 0) {
       if (readSize < 0) {
-        raiseSystemError(state, errno, CMD_SUB_ERROR);
+        raiseSystemError(state, errno, ERROR_CMD_SUB);
         return false;
       }
       break;
@@ -334,7 +334,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
         continue;
       }
       if (unlikely(str.size() == StringObject::MAX_SIZE)) {
-        raiseError(state, TYPE::OutOfRangeError, STRING_LIMIT_ERROR);
+        raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
         return false;
       }
       str += ch;
@@ -529,7 +529,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
 
         if (ret && DSState::isInterrupted()) {
-          raiseSystemError(state, EINTR, CMD_SUB_ERROR);
+          raiseSystemError(state, EINTR, ERROR_CMD_SUB);
         }
         DSState::clearPendingSignal(SIGINT); // always clear SIGINT
         return false;
@@ -706,7 +706,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
 }
 
 static void raiseCmdError(DSState &state, const char *cmdName, int errNum) {
-  std::string str = EXEC_ERROR;
+  std::string str = ERROR_EXEC;
   str += toPrintable(cmdName);
   if (errNum == ENOENT) {
     str += ": command not found";
