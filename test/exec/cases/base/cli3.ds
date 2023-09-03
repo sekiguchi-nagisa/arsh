@@ -47,12 +47,20 @@ assert $? == 0
 ## error
 $r = "$(ff --ss 2>&1)"
 assert $r == "invalid option: --ss
-Usage: ff [OPTIONS] AAA [BBB] CCC..." : $r
+Usage: ff [OPTIONS] AAA [BBB] CCC...
+
+Options:
+  -d, --debug  enable debug mode
+  -h, --help   show this help message" : $r
 assert $? == 2
 
 $r = "$(ff sss 2>&1)"
 assert $r == "invalid argument: \`sss', must be decimal integer
-Usage: ff [OPTIONS] AAA [BBB] CCC..." : $r
+Usage: ff [OPTIONS] AAA [BBB] CCC...
+
+Options:
+  -d, --debug  enable debug mode
+  -h, --help   show this help message" : $r
 assert $? == 1
 
 ## errraise
@@ -66,6 +74,6 @@ try {
 }
 assert $ex is ExecError
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 63
+assert ($ex as ExecError).lineno() == 71
 
 true

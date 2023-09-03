@@ -46,10 +46,10 @@ void RequiredOptionSet::del(unsigned char n) {
 }
 
 static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEntry &entry,
-                           StringRef arg, BaseObject &out) {
+                           StringRef arg, bool shortOpt, BaseObject &out) {
   std::string err;
   int64_t v = 0;
-  if (entry.checkArg(arg, v, err)) {
+  if (entry.checkArg(arg, shortOpt, v, err)) {
     unsigned int offset = entry.getFieldOffset();
     if (entry.getCheckerKind() == ArgEntry::CheckerKind::INT) {
       out[offset] = DSValue::createInt(v);
@@ -58,8 +58,7 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
     }
     return true;
   } else {
-    err += "\n";
-    parser.formatUsage(out[0].asStrRef(), false, err);
+    err = parser.formatUsage(err, true);
     raiseError(state, TYPE::CLIError, std::move(err), 1);
     return false;
   }
@@ -85,6 +84,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
         err += l;
       }
       err += " option";
+      err = parser.formatUsage(err, true);
       raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
@@ -108,7 +108,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
           }
         }
       } else {
-        if (!checkAndSetArg(state, parser, e, arg, out)) {
+        if (!checkAndSetArg(state, parser, e, arg, true, out)) {
           --begin;
           return false;
         }
@@ -117,6 +117,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
       std::string err = "require `";
       err += e.getArgName();
       err += "' argument";
+      err = parser.formatUsage(err, true);
       raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
@@ -127,7 +128,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
 CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) {
   auto &type = state.typePool.get(out.getTypeID());
   assert(isa<CLIRecordType>(type));
-  auto instance = ArgParser::create(cast<CLIRecordType>(type).getEntries());
+  auto instance = ArgParser::create(out[0].asStrRef(), cast<CLIRecordType>(type).getEntries());
 
   const auto begin = StrArrayIter(args.getValues().begin());
   auto iter = begin;
@@ -158,7 +159,7 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
       } else if (const auto &v = entry.getDefaultValue(); !v.empty()) {
         arg = v;
       }
-      if (!checkAndSetArg(state, instance, entry, arg, out)) {
+      if (!checkAndSetArg(state, instance, entry, arg, ret.isShort(), out)) {
         --iter;
         goto END;
       }
@@ -167,14 +168,12 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
   }
   if (ret.isError()) {
     auto v = ret.formatError();
-    v += "\n";
-    instance.formatUsage(out[0].asStrRef(), false, v);
+    v = instance.formatUsage(v, true);
     raiseError(state, TYPE::CLIError, std::move(v), 2);
     goto END;
   }
   if (help) {
-    std::string v;
-    instance.formatUsage(out[0].asStrRef(), true, v);
+    auto v = instance.formatUsage("", true);
     raiseError(state, TYPE::CLIError, std::move(v), 0);
     goto END;
   }

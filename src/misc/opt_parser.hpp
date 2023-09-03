@@ -46,20 +46,32 @@ private:
   T opt;
 
   /**
-   * if status is OK, indicate recognized argument
+   * only available if status os OK/OK_ARG
+   */
+  bool shortOpt{true};
+
+  /**
+   * if status is OK/OK_ARG, indicate recognized argument
    *   (if specify OPT_ARG and no argument, will be null
    * if status is UNDEF, indicate unrecognized option name (without prefix - or --)
    */
   StringRef value;
 
 public:
+  OptParseResult(Status s, T o, bool shortOpt, StringRef v)
+      : status(s), opt(o), shortOpt(shortOpt), value(v) {}
+
   OptParseResult(Status s, T o, StringRef v) : status(s), opt(o), value(v) {}
 
   OptParseResult() : OptParseResult(Status::REACH_END, T{}, nullptr) {}
 
-  static OptParseResult ok(T o) { return {Status::OK, o, ""}; }
+  static OptParseResult okShort(T o) { return {Status::OK, o, true, ""}; }
 
-  static OptParseResult ok(T o, StringRef arg) { return {Status::OK_ARG, o, arg}; }
+  static OptParseResult okShort(T o, StringRef arg) { return {Status::OK_ARG, o, true, arg}; }
+
+  static OptParseResult okLong(T o) { return {Status::OK, o, false, ""}; }
+
+  static OptParseResult okLong(T o, StringRef arg) { return {Status::OK_ARG, o, false, arg}; }
 
   static OptParseResult undef(StringRef opt) { return {Status::UNDEF, T{}, opt}; }
 
@@ -72,6 +84,8 @@ public:
   Status getStatus() const { return this->status; }
 
   T getOpt() const { return this->opt; }
+
+  bool isShort() const { return this->shortOpt; }
 
   StringRef getValue() const { return this->value; }
 
@@ -319,7 +333,7 @@ OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
     case OptParseOp::NO_ARG:
       if (option.longOptName == longName) {
         ++begin;
-        return OptParseResult<T>::ok(option.kind);
+        return OptParseResult<T>::okLong(option.kind);
       }
       continue;
     case OptParseOp::HAS_ARG: // --long arg or --long=arg
@@ -330,17 +344,17 @@ OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
         v.removePrefix(option.longOptName.size());
         if (v.empty()) { // --long arg
           if (option.op == OptParseOp::OPT_ARG) {
-            return OptParseResult<T>::ok(option.kind);
+            return OptParseResult<T>::okLong(option.kind);
           } else if (begin != end) {
             StringRef next = *begin;
             ++begin;
-            return OptParseResult<T>::ok(option.kind, next);
+            return OptParseResult<T>::okLong(option.kind, next);
           } else {
             return OptParseResult<T>::needArg(option.kind, longName);
           }
         } else if (v[0] == '=') { // --long=arg
           v.removePrefix(1);
-          return OptParseResult<T>::ok(option.kind, v);
+          return OptParseResult<T>::okLong(option.kind, v);
         } else { // no match
           --begin;
         }
@@ -370,16 +384,16 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
     }
     switch (option.op) {
     case OptParseOp::NO_ARG:
-      return OptParseResult<T>::ok(option.kind);
+      return OptParseResult<T>::okShort(option.kind);
     case OptParseOp::HAS_ARG: // -s arg or -sarg
     case OptParseOp::OPT_ARG: // -sarg
       if (this->remain.empty()) {
         if (option.op == OptParseOp::OPT_ARG) {
-          return OptParseResult<T>::ok(option.kind);
+          return OptParseResult<T>::okShort(option.kind);
         } else if (begin != end) {
           StringRef next = *begin;
           ++begin;
-          return OptParseResult<T>::ok(option.kind, next);
+          return OptParseResult<T>::okShort(option.kind, next);
         } else {
           return OptParseResult<T>::needArg(option.kind, shortName);
         }
@@ -387,7 +401,7 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
         StringRef next = this->remain;
         this->remain = nullptr;
         ++begin;
-        return OptParseResult<T>::ok(option.kind, next);
+        return OptParseResult<T>::okShort(option.kind, next);
       }
     }
   }

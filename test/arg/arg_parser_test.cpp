@@ -106,8 +106,7 @@ Options:
   -o, --output arg
   -d                enable debug
   -h, --help        show this help message)";
-  std::string v;
-  ArgParser::create(recordType.getEntries()).formatUsage("cmd1", true, v);
+  std::string v = ArgParser::create("cmd1", recordType.getEntries()).formatUsage("", true);
   ASSERT_EQ(help, v);
 }
 
@@ -174,8 +173,7 @@ TEST_F(ArgParserTest, opt) {
 Options:
   -d[file], --dump[=file]
   -h, --help               show this help message)";
-  std::string v;
-  ArgParser::create(recordType.getEntries()).formatUsage("cmd1", true, v);
+  std::string v = ArgParser::create("cmd1", recordType.getEntries()).formatUsage("", true);
   ASSERT_EQ(help, v);
 }
 
@@ -224,8 +222,12 @@ TEST_F(ArgParserTest, range) {
   auto error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  const char *err = R"(invalid argument: `qq', must be decimal integer
-Usage: cmd1 [OPTIONS] level)";
+  const char *err = R"(invalid argument: `qq' for -t option, must be decimal integer
+Usage: cmd1 [OPTIONS] level
+
+Options:
+  -t, --time msec
+  -h, --help       show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // validation error (int range)
@@ -241,8 +243,12 @@ Usage: cmd1 [OPTIONS] level)";
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(invalid argument: `1001', must be [0, 1000]
-Usage: cmd1 [OPTIONS] level)";
+  err = R"(invalid argument: `1001' for --time option, must be [0, 1000]
+Usage: cmd1 [OPTIONS] level
+
+Options:
+  -t, --time msec
+  -h, --help       show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // validation error (choice)
@@ -258,7 +264,11 @@ Usage: cmd1 [OPTIONS] level)";
   error = state->getCallStack().takeThrownObject();
 
   err = R"(invalid argument: `Info', must be {info, warn}
-Usage: cmd1 [OPTIONS] level)";
+Usage: cmd1 [OPTIONS] level
+
+Options:
+  -t, --time msec
+  -h, --help       show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // missing required options
@@ -273,7 +283,12 @@ Usage: cmd1 [OPTIONS] level)";
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(require -t or --time option)";
+  err = R"(require -t or --time option
+Usage: cmd2 [OPTIONS] level
+
+Options:
+  -t, --time msec
+  -h, --help       show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // missing require arguments
@@ -289,7 +304,12 @@ Usage: cmd1 [OPTIONS] level)";
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(require `level' argument)";
+  err = R"(require `level' argument
+Usage: cmd1 [OPTIONS] level
+
+Options:
+  -t, --time msec
+  -h, --help       show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 
@@ -332,7 +352,10 @@ Options:
   ASSERT_EQ(2, error->getStatus());
 
   err = R"(invalid option: -A
-Usage: cmd11 [output])";
+Usage: cmd11 [output]
+
+Options:
+  -h, --help  show this help message)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 

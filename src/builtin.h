@@ -2346,8 +2346,7 @@ YDSH_METHOD cli_usage(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_usage);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
-  std::string value;
-  ArgParser::create(type.getEntries()).formatUsage(obj[0].asStrRef(), true, value);
+  auto value = ArgParser::create(obj[0].asStrRef(), type.getEntries()).formatUsage("", true);
   RET(DSValue::createStr(std::move(value)));
 }
 

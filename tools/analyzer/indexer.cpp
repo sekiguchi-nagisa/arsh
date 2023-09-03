@@ -634,7 +634,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
     auto &entries = cast<CLIRecordType>(node.getResolvedType())->getEntries();
     if (!entries.empty()) {
       value += "---"; // dummy
-      ArgParser::create(entries).formatUsage("", true, value);
+      value += ArgParser::create("", entries).formatUsage("", true);
     }
   }
   return value;
@@ -724,7 +724,7 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
           auto &entries = cast<CLIRecordType>(exprType).getEntries();
           if (!entries.empty()) {
             hover += "---"; // dummy
-            ArgParser::create(entries).formatUsage(node.getCmdName(), true, hover);
+            hover += ArgParser::create(node.getCmdName(), entries).formatUsage("", true);
           }
         }
       }

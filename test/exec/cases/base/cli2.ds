@@ -25,16 +25,26 @@ $aa = new AAA()
 try { $aa.parse("cmd1", ["--call-limit=11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`11', must be [-10, 10]
-Usage: cmd1 [OPTIONS]" : ($ex as CLIError).message()
+assert ($ex as CLIError).message() == "invalid argument: \`11' for --call-limit option, must be [-10, 10]
+Usage: cmd1 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message" : ($ex as CLIError).message()
 
 $ex = 234
 $aa = new AAA()
 try { $aa.parse("cmd2", ["--call-limit=-11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`-11', must be [-10, 10]
-Usage: cmd2 [OPTIONS]" : ($ex as CLIError).message()
+assert ($ex as CLIError).message() == "invalid argument: \`-11' for --call-limit option, must be [-10, 10]
+Usage: cmd2 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message" : ($ex as CLIError).message()
 
 ## choice
 $aa = new AAA()
@@ -46,8 +56,13 @@ $ex = 234
 try { $aa.parse("cmd3", ["-ldebuG"]); } catch e { $ex = $e; }
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`debuG', must be {error, warn, info, debug}
-Usage: cmd3 [OPTIONS]" : ($ex as CLIError).message()
+assert ($ex as CLIError).message() == "invalid argument: \`debuG' for -l option, must be {error, warn, info, debug}
+Usage: cmd3 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message" : ($ex as CLIError).message()
 
 # parseOrExit
 ## usage
@@ -56,7 +71,12 @@ assert "$({
   $cli.parseOrExit("cmd1", ["--huga"])
   12/0  # always raise
 } with 2>&1)" == "invalid option: --huga
-Usage: cmd1 [OPTIONS]"
+Usage: cmd1 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message"
 assert $? == 2
 
 assert "$({
@@ -64,7 +84,12 @@ assert "$({
   $cli.parseOrExit("cmd1", ["--call-limit"])
   12/0  # always raise
 } with 2>&1)" == "--call-limit option needs argument
-Usage: cmd1 [OPTIONS]"
+Usage: cmd1 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message"
 assert $? == 2
 
 ## help
@@ -85,8 +110,13 @@ assert "$({
   var cli = new AAA()
   $cli.parseOrExit("cmd1", ["--call-limit=111"])
   12/0  # always raise
-} with 2>&1)" == "invalid argument: \`111', must be [-10, 10]
-Usage: cmd1 [OPTIONS]"
+} with 2>&1)" == "invalid argument: \`111' for --call-limit option, must be [-10, 10]
+Usage: cmd1 [OPTIONS]
+
+Options:
+  --call-limit CALL_LIMIT     count
+  -l[LEVEL], --level[=LEVEL]
+  -h, --help                  show this help message"
 assert $? == 1
 
 true

@@ -46,8 +46,18 @@ void ArgEntry::destroyCheckerData() {
   }
 }
 
-bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
+bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string &err) const {
   out = 0;
+  std::string optName;
+  if (this->checkerKind != CheckerKind::NOP && this->isOption()) {
+    if (shortOpt) {
+      optName += '-';
+      optName += this->getShortName();
+    } else {
+      optName += "--";
+      optName += this->getLongName();
+    }
+  }
   switch (this->checkerKind) {
   case CheckerKind::NOP:
     break;
@@ -57,7 +67,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
     if (!ret) {
       err += "invalid argument: `";
       err += arg;
-      err += "', must be decimal integer";
+      err += '\'';
+      if (!optName.empty()) {
+        err += " for ";
+        err += optName;
+        err += " option";
+      }
+      err += ", must be decimal integer";
       return false;
     }
     if (ret.value >= this->intRange.min && ret.value <= this->intRange.max) {
@@ -66,7 +82,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
     } else {
       err += "invalid argument: `";
       err += arg;
-      err += "', must be [";
+      err += '\'';
+      if (!optName.empty()) {
+        err += " for ";
+        err += optName;
+        err += " option";
+      }
+      err += ", must be [";
       err += std::to_string(this->intRange.min);
       err += ", ";
       err += std::to_string(this->intRange.max);
@@ -82,7 +104,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
     }
     err += "invalid argument: `";
     err += arg;
-    err += "', must be {";
+    err += '\'';
+    if (!optName.empty()) {
+      err += " for ";
+      err += optName;
+      err += " option";
+    }
+    err += ", must be {";
     unsigned int size = this->choice.size();
     for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
@@ -101,7 +129,13 @@ bool ArgEntry::checkArg(StringRef arg, int64_t &out, std::string &err) const {
 // ##     ArgParser     ##
 // #######################
 
-void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &out) const {
+std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
+  std::string out;
+  if (!message.empty()) {
+    out += message;
+    out += '\n';
+  }
+
   unsigned int optCount = 0;
   unsigned int argCount = 0;
   for (auto &e : this->entries) {
@@ -115,7 +149,7 @@ void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &o
   }
 
   out += "Usage: ";
-  out += cmdName;
+  out += this->cmdName;
   if (optCount) {
     out += " [OPTIONS]";
   }
@@ -139,10 +173,11 @@ void ArgParser::formatUsage(StringRef cmdName, bool printOptions, std::string &o
     }
   }
 
-  if (printOptions) {
+  if (verbose) {
     out += "\n\n";
     this->formatOptions(out);
   }
+  return out;
 }
 
 } // namespace ydsh

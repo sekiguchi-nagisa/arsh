@@ -173,6 +173,7 @@ public:
   /**
    *
    * @param arg
+   * @param shortOpt
    * @param out
    * if CheckerKind::INT, set parsed value
    * otherwise, set 0
@@ -180,7 +181,7 @@ public:
    * if has error, set error message
    * @return
    */
-  bool checkArg(StringRef arg, int64_t &out, std::string &err) const;
+  bool checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string &err) const;
 
 private:
   void destroyCheckerData();
@@ -190,25 +191,26 @@ class ArgParser : public OptParser<ArgEntryIndex, ArgEntry> {
 private:
   using parser = OptParser<ArgEntryIndex, ArgEntry>;
 
+  StringRef cmdName;
   const std::vector<ArgEntry> &entries;
 
 public:
-  static ArgParser create(const std::vector<ArgEntry> &entries) {
+  static ArgParser create(StringRef cmdName, const std::vector<ArgEntry> &entries) {
     size_t index = 0;
     for (; index < entries.size(); index++) {
       if (!entries[index].isOption()) {
         break;
       }
     }
-    return {entries, index};
+    return {cmdName, entries, index};
   }
 
-  ArgParser(const std::vector<ArgEntry> &entries, size_t size)
-      : OptParser(size, entries.data()), entries(entries) {}
+  ArgParser(StringRef cmdName, const std::vector<ArgEntry> &entries, size_t size)
+      : OptParser(size, entries.data()), cmdName(cmdName), entries(entries) {}
 
   const auto &getEntries() const { return this->entries; }
 
-  void formatUsage(StringRef cmdName, bool printOptions, std::string &out) const;
+  std::string formatUsage(StringRef message, bool verbose) const;
 };
 
 } // namespace ydsh
