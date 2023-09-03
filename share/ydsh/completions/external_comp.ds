@@ -3,5 +3,14 @@
 
 source $SCRIPT_DIR/../modules/completion
 
-# explicity specify non-standard completion path
-compdef --cmd zypper --comp-path /etc/bash_completion.d/zypper.sh --comp-target _zypper
+# explicitly specify non-standard completion path
+{
+    var path = for p in [
+        '/etc/bash_completion.d/zypper.sh', 
+        '/usr/share/bash-completion/completions/zypper.sh'] {
+        test -f $p && break $p
+    }
+    if let actual = $path {
+        compdef --cmd zypper --comp-path $actual --comp-target _zypper
+    }
+}

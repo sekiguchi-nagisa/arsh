@@ -84,6 +84,10 @@
 
 - **Breaking Change**: remove ``path``. use ``String#basename``, ``String#dirname`` instead
 
+#### Completion
+
+- fix zypper completion path
+
 #### LSP
 
 - ``textDocument/completion`` shows variable/function/field/method type signature
