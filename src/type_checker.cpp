@@ -1531,6 +1531,9 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
   })
 
 std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
+  if (node.isUntyped() || node.getType().isUnresolved()) {
+    return nullptr;
+  }
   switch (node.getNodeKind()) {
   case NodeKind::Number:
     return cast<NumberNode>(node).clone();

@@ -1,0 +1,13 @@
+#$test($result = 'type', $lineNum = 8, $chars = 32, $errorKind = 'ChoiceLimit', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option(short: 'd', choice: [
+                            "01", "02", "03", "04",
+                                         "13", "14", "15", "16",
+       0                        ])>]
+  var bb : String?
+}
