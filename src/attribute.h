@@ -33,9 +33,10 @@
   OP(REQUIRED, "required", TYPE::Bool)                                                             \
   OP(STORE, "store", TYPE::Bool)                                                                   \
   OP(OPT, "opt", TYPE::Bool)                                                                       \
+  OP(STOP, "stop", TYPE::Bool)                                                                     \
   OP(DEFAULT, "default", TYPE::String)                                                             \
   OP(PLACE_HOLDER, "placeholder", TYPE::String)                                                    \
-  OP(RANGE, "range", TYPE::Void)                                                                   \
+  OP(RANGE, "range", TYPE::Void /* dummy type */)                                                  \
   OP(CHOICE, "choice", TYPE::StringArray)
 
 namespace ydsh {

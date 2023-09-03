@@ -23,6 +23,7 @@ only allowed for field declaration that is ``Bool`` or ``Bool?`` type
 | short     | ``String`` | empty string                              | define short option name(single ascii character)              |
 | long      | ``String`` | equivalent to lower kebab case field name | define long option name (at-least 2 or more ascii characters) |
 | required  | ``Bool``   | false                                     | required or not                                               |
+| stop      | ``Bool``   | false                                     | stop option recognition                                       |
 | store     | ``Bool``   | true                                      | set value to field                                            |
 | help      | ``String`` | empty string                              | help message of this flag                                     |
 
@@ -36,6 +37,7 @@ only allowed for field declaration that is ``String``, ``String?``, ``Int`` or `
 | long        | ``String``    | equivalent to lower kebab case field name | define long option name (at-least 2 or more ascii characters) |
 | required    | ``Bool``      | false                                     | required or not                                               |
 | opt         | ``Bool``      | false                                     | following argument is optional or not                         |
+| stop        | ``Bool``      | false                                     | stop option recognition                                       |
 | default     | ``String``    | null                                      | default argument for optional argument                        |
 | placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
 | range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |

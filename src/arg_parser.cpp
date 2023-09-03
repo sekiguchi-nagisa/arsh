@@ -150,7 +150,7 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG: // set flag
       out[entry.getFieldOffset()] = DSValue::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
-      continue;
+      break;
     case OptParseOp::HAS_ARG:
     case OptParseOp::OPT_ARG:
       StringRef arg = "";
@@ -163,7 +163,11 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
         --iter;
         goto END;
       }
-      continue;
+      break;
+    }
+    if (entry.hasAttr(ArgEntryAttr::STOP_OPTION)) {
+      ret = ArgParser::Result(); // end
+      break;
     }
   }
   if (ret.isError()) {

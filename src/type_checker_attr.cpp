@@ -85,6 +85,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
                       Attribute::Param::SHORT,
                       Attribute::Param::LONG,
                       Attribute::Param::REQUIRED,
+                      Attribute::Param::STOP,
                       Attribute::Param::STORE,
                       Attribute::Param::HELP,
                   },
@@ -95,6 +96,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
                       Attribute::Param::LONG,
                       Attribute::Param::REQUIRED,
                       Attribute::Param::OPT,
+                      Attribute::Param::STOP,
                       Attribute::Param::DEFAULT,
                       Attribute::Param::PLACE_HOLDER,
                       Attribute::Param::RANGE,
@@ -417,6 +419,13 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       entry.setParseOp(opt ? OptParseOp::OPT_ARG : OptParseOp::HAS_ARG);
       continue;
     }
+    case Attribute::Param::STOP:
+      if (cast<NumberNode>(constNode).getIntValue()) {
+        setFlag(argEntryAttr, ArgEntryAttr::STOP_OPTION);
+      } else {
+        unsetFlag(argEntryAttr, ArgEntryAttr::STOP_OPTION);
+      }
+      continue;
     case Attribute::Param::DEFAULT:
       entry.setDefaultValue(cast<StringNode>(constNode).getValue().c_str());
       continue;

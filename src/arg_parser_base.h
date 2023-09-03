@@ -32,6 +32,7 @@ enum class ArgEntryAttr : unsigned short {
   POSITIONAL = 1u << 1u,  // positional argument
   REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)
   STORE_FALSE = 1u << 3u, // for flag options (no-arg option)
+  STOP_OPTION = 1u << 4u, // stop option recognition (like --)
 };
 
 template <>

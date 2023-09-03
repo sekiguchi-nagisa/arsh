@@ -177,6 +177,50 @@ Options:
   ASSERT_EQ(help, v);
 }
 
+TEST_F(ArgParserTest, stop) {
+  ArgEntriesBuilder builder;
+  builder
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::HAS_ARG);
+        e.setShortName('c');
+        e.setArgName("cmd");
+        e.setAttr(ArgEntryAttr::STOP_OPTION);
+      })
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setShortName('d');
+      })
+      .addHelp()
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setArgName("remain");
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN);
+      });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+
+  //
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd1");
+  auto args = createArgs("-c", "invoke", "-d", "-h", "-2");
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(5, ret.index);
+  ASSERT_EQ("cmd1", (*out)[0].asStrRef().toString());
+  ASSERT_EQ("invoke", (*out)[1].asStrRef().toString());
+  ASSERT_TRUE((*out)[2].isInvalid());
+  ASSERT_TRUE((*out)[3].isObject());
+  ASSERT_TRUE(isa<ArrayObject>((*out)[3].get()));
+  {
+    auto &array = typeAs<ArrayObject>((*out)[3]);
+    ASSERT_EQ(3, array.size());
+    ASSERT_EQ("-d", toStringAt(array, 0));
+    ASSERT_EQ("-h", toStringAt(array, 1));
+    ASSERT_EQ("-2", toStringAt(array, 2));
+  }
+}
+
 TEST_F(ArgParserTest, range) {
   ArgEntriesBuilder builder;
   builder
