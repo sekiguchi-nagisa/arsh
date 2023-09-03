@@ -63,7 +63,7 @@ assert "$({
   var cli = new AAA()
   $cli.parseOrExit("cmd1", ["--call-limit"])
   12/0  # always raise
-} with 2>&1)" == "need argument: --call-limit
+} with 2>&1)" == "--call-limit option needs argument
 Usage: cmd1 [OPTIONS]"
 assert $? == 2
 

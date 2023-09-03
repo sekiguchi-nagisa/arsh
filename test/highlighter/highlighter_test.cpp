@@ -606,7 +606,7 @@ Options:
 }
 
 TEST_F(ColorizeTest, invalid2) {
-  const char *out = R"(need argument: -o
+  const char *out = R"(-o option needs argument
 Options:
   -o file              specify output file (default is stdout)
   -f formatter         specify output formatter (default is `ansi' formatter)

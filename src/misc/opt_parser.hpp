@@ -82,20 +82,20 @@ public:
   bool isError() const { return this->status == Status::UNDEF || this->status == Status::NEED_ARG; }
 
   bool formatError(std::string &out) const {
-    const char *prefix;
+    std::string optName = this->value.size() == 1 ? "-" : "--";
+    optName += this->value;
     switch (this->status) {
     case Status::UNDEF:
-      prefix = "invalid option: ";
+      out += "invalid option: ";
+      out += optName;
       break;
     case Status::NEED_ARG:
-      prefix = "need argument: ";
+      out += optName;
+      out += " option needs argument";
       break;
     default:
       return false;
     }
-    out += prefix;
-    out += this->value.size() == 1 ? "-" : "--";
-    out += this->value;
     return true;
   }
 
