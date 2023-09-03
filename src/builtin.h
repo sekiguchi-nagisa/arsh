@@ -2341,12 +2341,13 @@ YDSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function usage($this : CLI) : String
+//!bind: function usage($this : CLI, $message : Option<String>) : String
 YDSH_METHOD cli_usage(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_usage);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
+  StringRef message = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
   auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
-  auto value = ArgParser::create(obj[0].asStrRef(), type.getEntries()).formatUsage("", true);
+  auto value = ArgParser::create(obj[0].asStrRef(), type.getEntries()).formatUsage(message, true);
   RET(DSValue::createStr(std::move(value)));
 }
 

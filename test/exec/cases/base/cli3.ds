@@ -21,7 +21,8 @@ typedef CCC() {
 assert (new CCC()) is CLI
 var cc = new CCC()
 $cc.setName("cmd3")
-assert $cc.usage() == "Usage: cmd3 [OPTIONS] AAA [BBB] CCC...
+assert $cc.usage("must be valid argument") == "must be valid argument
+Usage: cmd3 [OPTIONS] AAA [BBB] CCC...
 
 Options:
   -d, --debug  enable debug mode
@@ -74,6 +75,6 @@ try {
 }
 assert $ex is ExecError
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 71
+assert ($ex as ExecError).lineno() == 72
 
 true

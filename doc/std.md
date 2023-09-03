@@ -343,7 +343,7 @@ function parse(arg0 : String, args : [String]) : Int for CLI
 
 function parseOrExit(arg0 : String, args : [String]) : Int for CLI
 
-function usage() : String for CLI
+function usage(message : String?) : String for CLI
 ```
 
 ## Array type
