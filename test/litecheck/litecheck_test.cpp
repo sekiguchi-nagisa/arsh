@@ -108,38 +108,66 @@ INSTANTIATE_TEST_SUITE_P(LitecheckTest, LitecheckTest,
 struct LitecheckCLITest : public ExpectOutput {};
 
 TEST_F(LitecheckCLITest, option) {
-  const char *err = R"(require file
-usage: litecheck [-b bin] file
+  const char *err = R"(require `FILE' argument
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
-  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck(), 2, "", err));
+  ASSERT_NO_FATAL_FAILURE(this->expect(litecheck(), 1, "", err));
 
   err = R"(file not found: `34'
-usage: litecheck [-b bin] file
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("34"), 2, "", err));
 
   err = R"(require regular file: .
-usage: litecheck [-b bin] file
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("."), 2, "", err));
 
   err = R"(invalid option: -q
-usage: litecheck [-b bin] file
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-q"), 2, "", err));
 
-  err = R"(`-b' option requires argument
-usage: litecheck [-b bin] file
+  err = R"(-b option needs argument
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b"), 2, "", err));
 
   err = R"(file not found: `123'
-usage: litecheck [-b bin] file
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", "123", LITECHECK_PATH), 2, "", err));
 
   err = R"(must be executable: `.'
-usage: litecheck [-b bin] file
+Usage: litecheck [OPTIONS] FILE
+
+Options:
+  -b BIN      target executable file
+  -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", ".", LITECHECK_PATH), 2, "", err));
 }

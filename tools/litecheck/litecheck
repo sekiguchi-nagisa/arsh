@@ -15,7 +15,6 @@ var self = ''
 
 _usage() : Nothing {
     echo 1>&2 $@
-    echo 1>&2 usage: litecheck [-b bin] file
     exit 2
 }
 
@@ -307,35 +306,26 @@ function _run_and_check(map : [String : [Directive]]) : Int {
     return $ret
 }
 
-# entry point
-litecheck() {
-    # parse command line arguments
+[<CLI>]
+typedef Param() {
+    [<Option(short: 'b', help: 'target executable file')>]
     var bin : String?
-    var file : String?
-    for(var i = 0; $i < $#; $i++) {
-        var arg = $@[$i]
-        case $arg {
-        "-b" => 
-            if $i + 1 < $# {
-                $i++
-                $bin = $@[$i]
-            } else {
-                _usage "\`$arg' option requires argument"
-            }
-        $/^-.*/ => _usage "invalid option: $arg"
-        else => { $file = $arg; break; }
-        }
-    }
 
-    ## check file existence
-    $file ?? _usage "require file"
-    $self = (test -e ${$file!}) ? $file!.realpath() : _usage "file not found: \`${$file!}'"
-    test -f $self || _usage "require regular file: ${$file!}"
+    [<Arg(required: $true)>]
+    var file = ""
+}
 
-    ## check bin
-    if let b = $bin {
-        $cmd = (test -e $b) ? $b.realpath() : _usage "file not found: \`$b'"
-        (test -f $cmd && test -x $cmd) || _usage "must be executable: \`$b'"
+# entry point
+litecheck(p : Param) {
+    # check file existence
+    $self = (test -e ${p.file}) ? $p.file.realpath() : 
+                    _usage ${$p.usage("file not found: \`${p.file}'")}
+    test -f $self || _usage ${$p.usage("require regular file: ${p.file}")}
+
+    # check bin
+    if let b = $p.bin {
+        $cmd = (test -e $b) ? $b.realpath() : _usage ${$p.usage("file not found: \`$b'")}
+        (test -f $cmd && test -x $cmd) || _usage ${$p.usage("must be executable: \`$b'")}
     }
 
     # read directive
