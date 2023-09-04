@@ -162,6 +162,9 @@ $assertArray(['show', 'source', 'ss', 'ssum', 'status'], $(complete ' typedef AN
     }
     hoge() { new INT().s'))
 $assertArray(['abs', 'toFloat'], $(complete 'let aa = "ss".toInt(); if let aaa = $aa { $aaa.'))
+$assertArray(['parse', 'parseOrExit'], $(complete '
+[<CLI>] typedef Param() {}
+hoge(p : Param) { $p.p'))
 
 
 # type

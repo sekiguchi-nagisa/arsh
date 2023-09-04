@@ -1211,11 +1211,23 @@ std::unique_ptr<Node> Parser::parse_command() {
       TRY(this->expect(TokenKind::COLON, false));
       returnTypeNode = TRY(this->parse_typeName());
     }
-    auto blockNode = TRY(this->parse_block());
+    bool comp = false;
+    auto blockNode = this->parse_block();
+    if (this->incompleteNode && isa<BlockNode>(*this->incompleteNode)) {
+      blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+      comp = true;
+    } else if (this->hasError()) {
+      return nullptr;
+    }
     NameInfo nameInfo(token, this->lexer->toCmdArg(token));
-    return std::make_unique<UserDefinedCmdNode>(token.pos, std::move(nameInfo),
-                                                std::move(paramNode), std::move(returnTypeNode),
-                                                std::move(blockNode));
+    auto node =
+        std::make_unique<UserDefinedCmdNode>(token.pos, std::move(nameInfo), std::move(paramNode),
+                                             std::move(returnTypeNode), std::move(blockNode));
+    if (comp) {
+      this->incompleteNode = std::move(node);
+      return nullptr;
+    }
+    return node;
   }
 
   auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
