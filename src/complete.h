@@ -23,6 +23,7 @@
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
+#include "attribute.h"
 #include "frontend.h"
 
 namespace ydsh {
@@ -49,7 +50,8 @@ enum class CodeCompOp : unsigned int {
   MEMBER = 1u << 18u,    /* complete member (field/method) */
   TYPE = 1u << 19u,      /* complete type name */
   CMD_ARG = 1u << 20u,   /* for command argument */
-  HOOK = 1u << 21u,      /* for user-defined completion hook */
+  ATTR = 1u << 21u,      /* complete attribute */
+  HOOK = 1u << 22u,      /* for user-defined completion hook */
   COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 

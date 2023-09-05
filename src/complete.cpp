@@ -528,6 +528,23 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
   }
 }
 
+static void completeAttribute(const std::string &prefix, CompCandidateConsumer &consumer) {
+  const AttributeKind kinds[] = {
+#define GEN_TABLE(E, S) AttributeKind::E,
+      EACH_ATTRIBUTE_KIND(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  for (auto kind : kinds) {
+    if (kind == AttributeKind::NONE) {
+      continue;
+    }
+    StringRef attr = toString(kind);
+    if (attr.startsWith(prefix)) {
+      consumer(attr, CompCandidateKind::TYPE);
+    }
+  }
+}
+
 static bool hasCmdArg(const CmdNode &node) {
   for (auto &e : node.getArgNodes()) {
     if (e->is(NodeKind::CmdArg)) {
@@ -615,6 +632,9 @@ bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
   }
   if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
     completeType(this->pool, *this->scope, this->recvType, this->compWord, consumer);
+  }
+  if (hasFlag(this->compOp, CodeCompOp::ATTR)) {
+    completeAttribute(this->compWord, consumer);
   }
   if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {

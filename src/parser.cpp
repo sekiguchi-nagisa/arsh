@@ -2481,6 +2481,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   return node;
 }
 
+/**
+ * if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) { // complete env name
+this->ccHandler->addCompRequest(CodeCompOp::VALID_ENV,
+                                this->lexer->toTokenText(this->curToken));
+}
+ * @return
+ */
+
 std::unique_ptr<Node> Parser::parse_attributes() {
   GUARD_DEEP_NESTING(guard);
 
@@ -2488,7 +2496,10 @@ std::unique_ptr<Node> Parser::parse_attributes() {
   TRY(this->expect(TokenKind::ATTR_OPEN));
   do {
     auto ctx = this->inIgnorableNLCtx();
-    if (!attrNodes.empty() && CUR_KIND() != TokenKind::ATTR_NAME) {
+    if (this->inCompletionPointAt(TokenKind::ATTR_NAME) &&
+        attrNodes.size() < SYS_LIMIT_ATTR_NUM) { // complete attribute name
+      this->ccHandler->addCompRequest(CodeCompOp::ATTR, this->lexer->toTokenText(this->curToken));
+    } else if (!attrNodes.empty() && CUR_KIND() != TokenKind::ATTR_NAME) {
       E_ALTER_OR_COMP(TokenKind::ATTR_NAME, TokenKind::ATTR_CLOSE);
     }
     auto attrNode = std::make_unique<AttributeNode>(
