@@ -547,20 +547,12 @@ static void completeAttribute(const std::string &prefix, CompCandidateConsumer &
 
 static void completeAttributeParam(const std::string &prefix, AttributeParamSet paramSet,
                                    CompCandidateConsumer &consumer) {
-  Attribute::Param params[] = {
-#define GEN_TABLE(E, S, T) Attribute::Param::E,
-      EACH_ATTRIBUTE_PARAM(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  for (auto &p : params) {
-    if (!paramSet.has(p)) {
-      continue;
+  paramSet.iterate([&](Attribute::Param param) {
+    StringRef ref = toString(param);
+    if (ref.startsWith(prefix)) {
+      consumer(ref, CompCandidateKind::FIELD);
     }
-    StringRef param = toString(p);
-    if (param.startsWith(prefix)) {
-      consumer(param, CompCandidateKind::FIELD);
-    }
-  }
+  });
 }
 
 static bool hasCmdArg(const CmdNode &node) {
