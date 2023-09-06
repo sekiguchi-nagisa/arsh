@@ -141,13 +141,11 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
   }
   if (attr->getLoc() != node.getLoc()) {
     this->reportError<InvalidAttrLoc>(node, attr->getName(), toString(attr->getLoc()));
-    return;
   }
   if (attr->getLoc() == Attribute::Loc::FIELD) {
     if (!this->funcCtx->withinConstructor() ||
         !isa<CLIRecordType>(this->funcCtx->getReturnType())) {
       this->reportError<NeedCLIAttr>(node, node.getAttrName().c_str());
-      return;
     }
   }
 
@@ -161,11 +159,11 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     auto *p = attr->lookupParam(key.getName());
     if (!p) {
       this->reportError<UndefinedAttrParam>(key.getToken(), key.getName().c_str(), attr->getName());
-      break;
+      continue;
     }
     if (paramSet.has(*p)) {
       this->reportError<DupAttrParam>(key.getToken(), key.getName().c_str());
-      break;
+      continue;
     }
     paramSet.add(*p);
 
@@ -183,6 +181,7 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     }
     constNodes.push_back(std::move(constNode));
   }
+  node.setResolvedParamSet(paramSet);
   if (constNodes.size() == paramSize) {
     node.setConstNodes(std::move(constNodes));
     node.setAttrKind(attr->getKind());

@@ -29,29 +29,30 @@
 namespace ydsh {
 
 enum class CodeCompOp : unsigned int {
-  FILE = 1u << 0u,       /* complete file names (including directory) */
-  DIR = 1u << 1u,        /* complete directory names (directory only) */
-  EXEC = 1u << 2u,       /* complete executable file names (including directory) */
-  TILDE = 1u << 3u,      /* perform tilde expansion before completions */
-  EXTERNAL = 1u << 4u,   /* complete external command names */
-  DYNA_UDC = 1u << 5u,   /* complete dynamically registered command names */
-  BUILTIN = 1u << 6u,    /* complete builtin command names */
-  UDC = 1u << 7u,        /* complete user-defined command names */
-  VAR = 1u << 8u,        /* complete global variable names (not start with $) */
-  ENV = 1u << 9u,        /* complete environmental variable names */
-  VALID_ENV = 1u << 10u, /* complete environmental variable names (valid name only) */
-  SIGNAL = 1u << 11u,    /* complete signal names (not start with SIG) */
-  USER = 1u << 12u,      /* complete usernames */
-  GROUP = 1u << 13u,     /* complete group names */
-  MODULE = 1u << 14u,    /* complete module path */
-  STMT_KW = 1u << 15u,   /* complete statement keyword */
-  EXPR_KW = 1u << 16u,   /* complete expr keyword */
-  EXPECT = 1u << 17u,    /* complete expected token */
-  MEMBER = 1u << 18u,    /* complete member (field/method) */
-  TYPE = 1u << 19u,      /* complete type name */
-  CMD_ARG = 1u << 20u,   /* for command argument */
-  ATTR = 1u << 21u,      /* complete attribute */
-  HOOK = 1u << 22u,      /* for user-defined completion hook */
+  FILE = 1u << 0u,        /* complete file names (including directory) */
+  DIR = 1u << 1u,         /* complete directory names (directory only) */
+  EXEC = 1u << 2u,        /* complete executable file names (including directory) */
+  TILDE = 1u << 3u,       /* perform tilde expansion before completions */
+  EXTERNAL = 1u << 4u,    /* complete external command names */
+  DYNA_UDC = 1u << 5u,    /* complete dynamically registered command names */
+  BUILTIN = 1u << 6u,     /* complete builtin command names */
+  UDC = 1u << 7u,         /* complete user-defined command names */
+  VAR = 1u << 8u,         /* complete global variable names (not start with $) */
+  ENV = 1u << 9u,         /* complete environmental variable names */
+  VALID_ENV = 1u << 10u,  /* complete environmental variable names (valid name only) */
+  SIGNAL = 1u << 11u,     /* complete signal names (not start with SIG) */
+  USER = 1u << 12u,       /* complete usernames */
+  GROUP = 1u << 13u,      /* complete group names */
+  MODULE = 1u << 14u,     /* complete module path */
+  STMT_KW = 1u << 15u,    /* complete statement keyword */
+  EXPR_KW = 1u << 16u,    /* complete expr keyword */
+  EXPECT = 1u << 17u,     /* complete expected token */
+  MEMBER = 1u << 18u,     /* complete member (field/method) */
+  TYPE = 1u << 19u,       /* complete type name */
+  CMD_ARG = 1u << 20u,    /* for command argument */
+  HOOK = 1u << 21u,       /* for user-defined completion hook */
+  ATTR = 1u << 22u,       /* complete attribute */
+  ATTR_PARAM = 1u << 23u, /* complete attribute parameter */
   COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 
@@ -242,6 +243,11 @@ private:
    */
   unsigned int compWordOffset{0};
 
+  /**
+   * for attribute parameter completion
+   */
+  AttributeParamSet targetAttrParams;
+
 public:
   CodeCompletionHandler(const SysConfig &config, const TypePool &pool,
                         const std::string &logicalWorkdir, NameScopePtr scope,
@@ -298,6 +304,11 @@ public:
     this->compOp = CodeCompOp::MEMBER;
     this->recvType = &type;
     this->compWord = std::move(value);
+  }
+
+  void addAttrParamRequest(std::string &&value, AttributeParamSet paramSet) {
+    this->targetAttrParams = paramSet;
+    this->addCompRequest(CodeCompOp::ATTR_PARAM, std::move(value));
   }
 
   enum class CMD_OR_KW_OP {

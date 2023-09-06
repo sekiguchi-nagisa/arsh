@@ -2513,6 +2513,10 @@ std::unique_ptr<Node> Parser::parse_attributes() {
           }
           TRY(this->expectAndChangeMode(TokenKind::COMMA, yycATTR));
         }
+        if (this->inCompletionPointAt(TokenKind::ATTR_NAME)) {
+          this->makeCodeComp(CodeCompNode::ATTR_PARAM, std::move(attrNode), this->curToken);
+          return nullptr;
+        }
         auto paramName = TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName));
         TRY(this->expect(TokenKind::ATTR_ASSIGN));
         auto exprNode = TRY(this->parse_expression());

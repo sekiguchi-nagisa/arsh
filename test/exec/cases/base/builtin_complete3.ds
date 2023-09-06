@@ -164,3 +164,9 @@ $assertArray(['Arg', 'CLI', 'Flag', 'Option'], $(complete '[< '))
 $assertArray(['Option'], $(complete '[< Flag O'))
 $assertArray(['Option'], $(complete '[< Flag O'))
 $assertArray(['>]'], $(complete '[< CLI CLI CLI CLI CLI CLI CLI CLI '))
+
+# complete attribute param
+$assertArray(['help', 'long', 'required', 'short', 'stop', 'store'], $(complete '[< Flag('))
+$assertArray(['help', 'long',  'short', 'stop', ], $(complete '
+[< Flag(required: $true, store: $false, '))
+$assertArray(['short', 'stop', 'store'], $(complete '[< Flag(s'))

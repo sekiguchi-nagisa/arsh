@@ -2548,6 +2548,26 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   }
   case CodeCompNode::CALL_SIGNATURE:
     break; // dummy
+  case CodeCompNode::ATTR_PARAM: {
+    assert(node.getExprNode());
+    assert(isa<AttributeNode>(*node.getExprNode()));
+    this->checkTypeExactly(*node.getExprNode());
+    auto &attrNode = cast<AttributeNode>(*node.getExprNode());
+
+    // fill target params
+    AttributeParamSet targetParamSet;
+    if (auto *attr = this->attributeMap.lookup(attrNode.getAttrName())) {
+      for (auto &e : attr->getParams()) {
+        targetParamSet.add(e.second);
+      }
+    }
+    // remove already found params
+    attrNode.getResolvedParamSet().iterate(
+        [&targetParamSet](Attribute::Param p) { targetParamSet.del(p); });
+    this->ccHandler->addAttrParamRequest(this->lexer.get().toName(node.getTypingToken()),
+                                         targetParamSet);
+    break;
+  }
   }
   this->reportError<Unreachable>(node);
 }

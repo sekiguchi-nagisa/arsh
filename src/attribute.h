@@ -126,10 +126,31 @@ public:
     setFlag(this->value, 1u << v);
   }
 
+  void del(Attribute::Param p) {
+    unsigned int v = toUnderlying(p);
+    assert(v < 32);
+    unsetFlag(this->value, 1u << v);
+  }
+
   bool has(Attribute::Param p) const {
     unsigned int v = toUnderlying(p);
     assert(v < 32);
     return hasFlag(this->value, 1u << v);
+  }
+
+  template <typename Walker>
+  static constexpr bool walker_requirement_v =
+      std::is_same_v<void, std::invoke_result_t<Walker, Attribute::Param>>;
+
+  template <typename Func, enable_when<walker_requirement_v<Func>> = nullptr>
+  void iterate(Func func) const {
+    constexpr unsigned int N = getNumOfAttributeParams();
+    for (unsigned int i = 0; i < N; i++) {
+      auto p = static_cast<Attribute::Param>(i);
+      if (this->has(p)) {
+        func(p);
+      }
+    }
   }
 };
 

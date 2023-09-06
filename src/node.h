@@ -2146,6 +2146,8 @@ private:
 
   bool validType{false};
 
+  AttributeParamSet resolvedParamSet; // for completion
+
   NameInfo attrName;
 
   std::vector<NameInfo> keys;
@@ -2175,6 +2177,10 @@ public:
     this->keys.push_back(std::move(paramName));
     this->valueNodes.push_back(std::move(exprNode));
   }
+
+  void setResolvedParamSet(AttributeParamSet paramSet) { this->resolvedParamSet = paramSet; }
+
+  AttributeParamSet getResolvedParamSet() const { return this->resolvedParamSet; }
 
   const auto &getKeys() const { return this->keys; }
 
@@ -2713,6 +2719,7 @@ public:
     MEMBER,         // complete members (field or method)
     TYPE,           // complete type name (maybe type alias)
     CALL_SIGNATURE, // complete function/method/constructor signature (for signature completion)
+    ATTR_PARAM,     // complete attribute parameters
   };
 
 private:
