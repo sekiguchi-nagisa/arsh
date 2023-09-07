@@ -2554,18 +2554,16 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     this->checkTypeExactly(*node.getExprNode());
     auto &attrNode = cast<AttributeNode>(*node.getExprNode());
 
-    // fill target params
     AttributeParamSet targetParamSet;
+    AttributeParamSet resolved = attrNode.getResolvedParamSet();
     if (auto *attr = this->attributeMap.lookup(attrNode.getAttrName())) {
       for (auto &e : attr->getParams()) {
+        if (resolved.has(e.second)) {
+          continue; // skip already found attribute
+        }
         targetParamSet.add(e.second);
       }
     }
-    // remove already found params
-    attrNode.getResolvedParamSet().iterate(
-        [&targetParamSet](Attribute::Param p) { targetParamSet.del(p); });
-    this->ccHandler->addAttrParamRequest(this->lexer.get().toName(node.getTypingToken()),
-                                         targetParamSet);
     break;
   }
   }

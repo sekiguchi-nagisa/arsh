@@ -126,12 +126,6 @@ public:
     setFlag(this->value, 1u << v);
   }
 
-  void del(Attribute::Param p) {
-    unsigned int v = toUnderlying(p);
-    assert(v < 32);
-    unsetFlag(this->value, 1u << v);
-  }
-
   bool has(Attribute::Param p) const {
     unsigned int v = toUnderlying(p);
     assert(v < 32);
