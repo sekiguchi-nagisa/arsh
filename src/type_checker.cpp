@@ -2564,6 +2564,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
         targetParamSet.add(e.second);
       }
     }
+    this->ccHandler->addAttrParamRequest(this->lexer.get().toName(node.getTypingToken()),
+                                         targetParamSet);
     break;
   }
   }
