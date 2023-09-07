@@ -613,10 +613,12 @@ bool FormatPrinter::putPadding(size_t size) {
   std::string spaces;
   spaces.resize(chunkSize, ' ');
 
-  for (size_t i = 0; i < size / chunkSize; i++) {
+  size_t limit = size / chunkSize;
+  for (size_t i = 0; i < limit; i++) {
     TRY(this->append(spaces));
   }
-  for (size_t i = 0; i < size % chunkSize; i++) {
+  limit = size % chunkSize;
+  for (size_t i = 0; i < limit; i++) {
     TRY(this->append(" "));
   }
   return true;
