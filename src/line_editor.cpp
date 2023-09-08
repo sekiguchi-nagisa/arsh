@@ -352,7 +352,21 @@ static StringRef getCommonPrefix(const ArrayObject &candidates) {
       break;
     }
   }
-  return {candidates.getValues()[0].asCStr(), prefixSize};
+
+  // extract valid utf8 string
+  StringRef prefix(candidates.getValues()[0].asCStr(), prefixSize);
+  auto begin = prefix.begin();
+  auto iter = begin;
+  for (auto end = prefix.end(); iter != end;) {
+    int codePoint = 0;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+    if (byteSize != 0) {
+      iter += byteSize;
+    } else {
+      break;
+    }
+  }
+  return {begin, static_cast<size_t>(iter - begin)};
 }
 
 /**

@@ -267,7 +267,7 @@ TEST_F(InteractiveTest, lineEditorHistory) {
 }
 
 // test completion
-TEST_F(InteractiveTest, lineEditorComp) {
+TEST_F(InteractiveTest, lineEditorComp1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -307,6 +307,18 @@ TEST_F(InteractiveTest, lineEditorComp) {
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$ret!.quote()", ": String = 12$'\\x09'$'\\x00'$'\\xff'"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+// completion candidate rotation
+TEST_F(InteractiveTest, lineEditorComp2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
 
   // rotate candidates
   ASSERT_NO_FATAL_FAILURE(
@@ -382,6 +394,34 @@ TEST_F(InteractiveTest, lineEditorComp) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n\n"));
     this->send(CTRL_W);
     ASSERT_NO_FATAL_FAILURE(this->expect("> \n\n"));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+// insert common prefix with multi-bytes char
+TEST_F(InteractiveTest, lineEditorComp3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(s,m) => @(20230907_バイタル 20230907_ラベル))"));
+  this->send("echo 20");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> echo 20230907_\n20230907_バイタル   20230907_ラベル     \n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> echo 20230907_バイタル\n20230907_バイタル   20230907_ラベル     \n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20230907_バイタル\n> \n"));
   }
 
   this->send(CTRL_D);

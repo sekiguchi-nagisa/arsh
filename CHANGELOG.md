@@ -103,6 +103,7 @@
 - backslash handling in regex literal
 - option parsing of builtin echo command
 - fix common super type resolution that have unresolved type
+- common prefix resolution of completion candidates that having multi-bytes characters
 
 ## [0.30.0] - 2023-07-01
 
