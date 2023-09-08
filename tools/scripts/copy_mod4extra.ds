@@ -48,5 +48,9 @@ function make_dummy(depth : Int) {
 }
 shctl set errraise; 
 printf "[%(%Y-%m-%d %H:%M:%S.%N)T] start dummy files generation\n"
-try { $make_dummy(0) } catch e : ArgumentError {}
+try { 
+    defer { popd; }
+    pushd $tmp_dir
+    $make_dummy(0)
+} catch e : ArgumentError {}
 printf "[%(%Y-%m-%d %H:%M:%S.%N)T] finish dummy files generation\n"
