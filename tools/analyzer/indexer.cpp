@@ -634,7 +634,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
     auto &entries = cast<CLIRecordType>(node.getResolvedType())->getEntries();
     if (!entries.empty()) {
       value += "---"; // dummy
-      value += ArgParser::create("", entries).formatUsage("", true);
+      value += ArgParser::create(node.getCLIName(), entries).formatUsage("", true);
     }
   }
   return value;

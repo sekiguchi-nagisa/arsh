@@ -607,6 +607,8 @@ private:
 
   void checkTypeVarDecl(VarDeclNode &node, bool willBeField);
 
+  void checkAttributes(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes, bool field);
+
   void checkFieldAttributes(const VarDeclNode &varDeclNode);
 
   void resolveArgEntry(std::unordered_set<std::string> &foundOptionSet, unsigned int offset,

@@ -1865,17 +1865,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
-  for (unsigned int i = 0; i < node.getAttrNodes().size(); i++) {
-    auto &attrNode = *node.getAttrNodes()[i];
-    if (i == SYS_LIMIT_ATTR_NUM) {
-      this->reportError<AttrLimit>(attrNode);
-      break;
-    }
-    if (willBeField) {
-      attrNode.setLoc(Attribute::Loc::FIELD);
-    }
-    this->checkTypeExactly(attrNode);
-  }
+  this->checkAttributes(node.getAttrNodes(), willBeField);
 
   switch (node.getKind()) {
   case VarDeclNode::LET:
@@ -2304,14 +2294,7 @@ void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
 
 void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
   if (hasFlag(op, FuncCheckOp::REGISTER_NAME)) {
-    for (unsigned int i = 0; i < node.getAttrNodes().size(); i++) {
-      auto &attrNode = *node.getAttrNodes()[i];
-      if (i == SYS_LIMIT_ATTR_NUM) {
-        this->reportError<AttrLimit>(attrNode);
-        break;
-      }
-      this->checkTypeExactly(attrNode);
-    }
+    this->checkAttributes(node.getAttrNodes(), false);
 
     node.setType(this->typePool().get(TYPE::Void));
     if (!this->isTopLevel() && !node.isAnonymousFunc()) { // only available toplevel scope
@@ -2376,7 +2359,8 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
     if (isa<CLIRecordType>(node.getResolvedType())) {
       Token dummy = node.getNameInfo().getToken();
       auto nameDeclNode = std::make_unique<VarDeclNode>(
-          dummy.pos, NameInfo(dummy, "%name"), std::make_unique<StringNode>(""), VarDeclNode::VAR);
+          dummy.pos, NameInfo(dummy, "%name"),
+          std::make_unique<StringNode>(node.getCLIName().toString()), VarDeclNode::VAR);
       node.getBlockNode().insertNodeToFirst(std::move(nameDeclNode));
     }
     this->checkTypeWithCurrentScope(

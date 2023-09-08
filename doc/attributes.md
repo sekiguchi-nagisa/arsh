@@ -13,7 +13,7 @@ only allowed for user-defied type definition
 
 | **param** | **type**   | **default**  | **description**                    |
 |-----------|------------|--------------|------------------------------------|
-| help      | ``String`` | empty string | help message of whole command line |
+| name      | ``String`` | empty string | default command name               |
 
 ### ``Flag`` attribute
 only allowed for field declaration that is ``Bool`` or ``Bool?`` type

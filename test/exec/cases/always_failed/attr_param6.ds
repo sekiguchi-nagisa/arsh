@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 7, $chars = 9, $errorKind = 'NullCharAttrParam', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI (
+  name: $'\x00')>]
+typedef AAA() {
+  var a : Bool?
+}

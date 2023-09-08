@@ -2485,6 +2485,13 @@ public:
 
   bool isMethod() const { return this->kind == FUNC && static_cast<bool>(this->getRecvTypeNode()); }
 
+  /**
+   * for CLI record
+   * @return
+   * if not found, return empty string
+   */
+  StringRef getCLIName() const;
+
   void dump(NodeDumper &dumper) const override;
 };
 

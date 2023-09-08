@@ -1,7 +1,7 @@
 
 # for error
 
-[<CLI>]
+[<CLI(name: 'cmd1')>]
 typedef AAA() {
     [<Option(range: (10,-10), help: "count")>]
     var Call_Limit = 0
@@ -13,18 +13,16 @@ typedef AAA() {
 
 ## range
 var aa = new AAA()
-$aa.setName('cmd1')
+assert $aa.name() == 'cmd1'
 assert $aa.parseOrExit(["--call-limit=10", "rest", "reset2"]) == 1
 assert $aa.Call_Limit == 10
 
 $aa = new AAA()
-$aa.setName('cmd1')
 assert $aa.parseOrExit(["--call-limit", "-10"]) == 2
 assert $aa.Call_Limit == -10
 
 var ex = 34 as Any
 $aa = new AAA()
-$aa.setName('cmd1')
 try { $aa.parse(["--call-limit=11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
@@ -52,7 +50,6 @@ Options:
 
 ## choice
 $aa = new AAA()
-$aa.setName('cmd3')
 assert $aa.parse(["--level=debug"]) == 1
 assert $aa.Level! == "debug"
 
@@ -74,7 +71,6 @@ Options:
 ## usage
 assert "$({
   var cli = new AAA()
-  $cli.setName('cmd1')
   $cli.parseOrExit(["--huga"])
   12/0  # always raise
 } with 2>&1)" == "invalid option: --huga
@@ -88,7 +84,6 @@ assert $? == 2
 
 assert "$({
   var cli = new AAA()
-  $cli.setName('cmd1')
   $cli.parseOrExit(["--call-limit"])
   12/0  # always raise
 } with 2>&1)" == "--call-limit option needs argument
@@ -103,10 +98,10 @@ assert $? == 2
 ## help
 assert "$({
   var cli = new AAA()
-  $cli.setName('cmd1')
+  $cli.setName('cmd12')
   $cli.parseOrExit(["--help"])
   12/0  # always raise
-} with 2>&1)" == "Usage: cmd1 [OPTIONS]
+} with 2>&1)" == "Usage: cmd12 [OPTIONS]
 
 Options:
   --call-limit CALL_LIMIT     count
@@ -117,11 +112,11 @@ assert $? == 0
 ## invalid
 assert "$({
   var cli = new AAA()
-  $cli.setName('cmd1')
+  $cli.setName('cmd13')
   $cli.parseOrExit(["--call-limit=111"])
   12/0  # always raise
 } with 2>&1)" == "invalid argument: \`111' for --call-limit option, must be [-10, 10]
-Usage: cmd1 [OPTIONS]
+Usage: cmd13 [OPTIONS]
 
 Options:
   --call-limit CALL_LIMIT     count

@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 5, $chars = 4, $errorKind = 'DupAttr', $status = 1)
+
+[<
+  CLI(name: 'something')
+>] [<CLI>]
+typedef AAA() {
+  var aaa = ""
+  var bbb : String?
+}

@@ -943,6 +943,24 @@ void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
   this->updateToken(this->blockNode->getToken());
 }
 
+StringRef FunctionNode::getCLIName() const {
+  StringRef name;
+  for (auto &e : this->attrNodes) {
+    if (e->getAttrKind() != AttributeKind::CLI || !e->isValidType()) {
+      continue;
+    }
+    const unsigned int size = e->getKeys().size();
+    for (unsigned int i = 0; i < size; i++) {
+      if (e->getKeys()[i].getName() == "name") {
+        name = cast<StringNode>(*e->getConstNodes()[i]).getValue();
+        break;
+      }
+    }
+    break;
+  }
+  return name;
+}
+
 void FunctionNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(FUNC)                                                                                         \

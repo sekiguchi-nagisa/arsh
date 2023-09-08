@@ -1314,7 +1314,7 @@ TEST_F(IndexTest, hoverConst) {
 }
 
 TEST_F(IndexTest, hoverUsage1) {
-  const char *src = R"([<CLI>]
+  const char *src = R"([<CLI(name: 'command!!')>]
 typedef AAA() {
   [<Flag(short: "s", long: "status", help: "dump internal status")>]
   var s = $false
@@ -1343,7 +1343,7 @@ typedef AAA() {
 
 **command line**
 ```md
-Usage:  [OPTIONS] FILES...
+Usage: command!! [OPTIONS] FILES...
 
 Options:
   -s, --status       dump internal status
@@ -1354,7 +1354,7 @@ Options:
 }
 
 TEST_F(IndexTest, hoverUsage2) {
-  const char *src = R"([<CLI>]
+  const char *src = R"([<CLI(name: 'sss')>]
 typedef Param() {
   [<Flag(short: "s", long: "status", help: "dump internal status")>]
   var s = $false

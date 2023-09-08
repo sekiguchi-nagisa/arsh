@@ -197,6 +197,7 @@ DEFINE_TCError(UnwrapType,
 DEFINE_TCError(InvalidAttrLoc, "`%s' attribute is only given to %s");
 DEFINE_TCError(UndefinedAttr, "undefined attribute: `%s'");
 DEFINE_TCError(UndefinedAttrParam, "undefined parameter: `%s' for `%s' attribute");
+DEFINE_TCError(DupAttr, "found duplicated attribute: `%s'");
 DEFINE_TCError(DupAttrParam, "found duplicated attribute parameter: `%s'");
 DEFINE_TCError(CLIInitParam,
                "user-defined type having `CLI' attribute must have zero-argument constructor");

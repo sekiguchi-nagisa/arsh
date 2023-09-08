@@ -79,7 +79,11 @@ static void defineAttribute(StrRefMap<std::unique_ptr<Attribute>> &values, Attri
 AttributeMap AttributeMap::create(const TypePool &pool) {
   StrRefMap<std::unique_ptr<Attribute>> values;
 
-  defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR, {}, {});
+  defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR,
+                  {
+                      Attribute::Param::NAME,
+                  },
+                  {});
   defineAttribute(values, AttributeKind::FLAG, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::SHORT,
@@ -179,6 +183,13 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     if (!constNode) {
       continue;
     }
+    if (attr->getKind() == AttributeKind::CLI && *p == Attribute::Param::NAME) {
+      StringRef ref = cast<StringNode>(*constNode).getValue();
+      if (ref.hasNullChar()) {
+        this->reportError<NullCharAttrParam>(*constNode, toString(Attribute::Param::NAME));
+        continue;
+      }
+    }
     constNodes.push_back(std::move(constNode));
   }
   node.setResolvedParamSet(paramSet);
@@ -186,6 +197,31 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     node.setConstNodes(std::move(constNodes));
     node.setAttrKind(attr->getKind());
     node.setType(this->typePool().get(TYPE::Void));
+    if (node.getAttrKind() == AttributeKind::CLI) {
+      node.setValidType(true);
+    }
+  }
+}
+
+void TypeChecker::checkAttributes(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes,
+                                  bool field) {
+  unsigned int cliAttrCount = 0;
+  for (unsigned int i = 0; i < attrNodes.size(); i++) {
+    auto &attrNode = *attrNodes[i];
+    if (i == SYS_LIMIT_ATTR_NUM) {
+      this->reportError<AttrLimit>(attrNode);
+      break;
+    }
+    if (field) {
+      attrNode.setLoc(Attribute::Loc::FIELD);
+    }
+    this->checkTypeExactly(attrNode);
+    if (attrNode.getAttrKind() == AttributeKind::CLI) {
+      if (cliAttrCount > 0) {
+        this->reportError<DupAttr>(attrNode, toString(AttributeKind::CLI));
+      }
+      cliAttrCount++;
+    }
   }
 }
 
@@ -362,6 +398,8 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     assert(param);
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
+    case Attribute::Param::NAME:
+      continue; // unreachable
     case Attribute::Param::HELP: {
       StringRef ref = cast<StringNode>(constNode).getValue();
       if (ref.hasNullChar()) {
