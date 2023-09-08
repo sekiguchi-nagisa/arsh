@@ -9,7 +9,7 @@ typedef AAA() {
   var bbb : [String]?
 
     [<Flag(short: 'b')
-    Flag(short:
+    >] [<Flag(short:
      'A')>]
   var a = $false
 

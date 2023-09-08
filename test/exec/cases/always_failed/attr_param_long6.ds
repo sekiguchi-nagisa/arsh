@@ -6,7 +6,7 @@ var ss = "s"
   CLI >]
 typedef AAA() {
     [<Flag(help: "this is a help")
-    Flag(short:
+    >] [<Flag(short:
      'A', long: "Help")>]
   var About = $false
 

@@ -6,7 +6,7 @@ var ss = "s"
   CLI >]
 typedef AAA() {
     [<Flag(short: 'b', long: 'Wbb9-9')
-    Flag(short:
+    >] [<Flag(short:
      'A', long: "Help")>]
   var a = $false
 

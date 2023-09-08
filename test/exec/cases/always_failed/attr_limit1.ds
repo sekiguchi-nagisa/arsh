@@ -1,7 +1,8 @@
-#$test($result = 'type', $lineNum = 4, $chars = 15, $errorKind = 'AttrLimit', $status = 1)
+#$test($result = 'type', $lineNum = 5, $chars = 1, $errorKind = 'AttrLimit', $status = 1)
 
-[<CLI CLI() CLI() CLI CLI
-  CLI CLI CLI CLI() CLI>]
+[<CLI>] [<CLI>] [<CLI>] [<CLI>]
+[<CLI>] [<CLI>] [<CLI>] [<CLI>]
+[<CLI>] [<CLI>]
 typedef AAA() {
   var a = ""
 

@@ -6,7 +6,7 @@ var ss = "s"
   CLI >]
 typedef AAA() {
     [<Flag(short: 'b')
-    Flag(short:
+    >] [<Flag(short:
      'h')>]   # -h option is reserved
   var a = $false
 }

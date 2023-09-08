@@ -1440,8 +1440,8 @@ nodes:
     attrNodes:
       - nodeKind: Attribute
         token:
-          pos: 2
-          size: 3
+          pos: 0
+          size: 7
         type:
         loc: "Attribute::Loc::CONSTRUCTOR"
         attrKind: "AttributeKind::NONE"

@@ -161,9 +161,9 @@ this is a pen
 
 # complete attribute
 $assertArray(['Arg', 'CLI', 'Flag', 'Option'], $(complete '[< '))
-$assertArray(['Option'], $(complete '[< Flag O'))
-$assertArray(['Option'], $(complete '[< Flag O'))
-$assertArray(['>]'], $(complete '[< CLI CLI CLI CLI CLI CLI CLI CLI '))
+$assertArray(['Option'], $(complete '[< Op'))
+$assertArray(['>]'], $(complete '[< CLI '))
+$assertArray(['[<', 'let', 'typedef', 'var'], $(complete '[< CLI >] '))
 
 # complete attribute param
 $assertArray(['help', 'long', 'required', 'short', 'stop', 'store'], $(complete '[< Flag('))

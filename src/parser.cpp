@@ -2481,26 +2481,15 @@ std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   return node;
 }
 
-/**
- * if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) { // complete env name
-this->ccHandler->addCompRequest(CodeCompOp::VALID_ENV,
-                                this->lexer->toTokenText(this->curToken));
-}
- * @return
- */
-
 std::unique_ptr<Node> Parser::parse_attributes() {
   GUARD_DEEP_NESTING(guard);
 
   std::vector<std::unique_ptr<AttributeNode>> attrNodes;
-  TRY(this->expect(TokenKind::ATTR_OPEN));
   do {
     auto ctx = this->inIgnorableNLCtx();
-    if (this->inCompletionPointAt(TokenKind::ATTR_NAME) &&
-        attrNodes.size() < SYS_LIMIT_ATTR_NUM) { // complete attribute name
+    Token open = TRY(this->expect(TokenKind::ATTR_OPEN));
+    if (this->inCompletionPointAt(TokenKind::ATTR_NAME)) {
       this->ccHandler->addCompRequest(CodeCompOp::ATTR, this->lexer->toTokenText(this->curToken));
-    } else if (!attrNodes.empty() && CUR_KIND() != TokenKind::ATTR_NAME) {
-      E_ALTER_OR_COMP(TokenKind::ATTR_NAME, TokenKind::ATTR_CLOSE);
     }
     auto attrNode = std::make_unique<AttributeNode>(
         TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName)));
@@ -2522,12 +2511,13 @@ std::unique_ptr<Node> Parser::parse_attributes() {
         auto exprNode = TRY(this->parse_expression());
         attrNode->addParam(std::move(paramName), std::move(exprNode));
       }
-      Token endToken = TRY(this->expect(TokenKind::RP));
+      Token endToken = this->expect(TokenKind::RP); // always success
       attrNode->updateToken(endToken);
     }
+    Token close = TRY(this->expect(TokenKind::ATTR_CLOSE));
+    attrNode->setParenPos(open.pos, close);
     attrNodes.push_back(std::move(attrNode));
-  } while (CUR_KIND() != TokenKind::ATTR_CLOSE);
-  this->consume(); // ATTR_CLOSE
+  } while (CUR_KIND() == TokenKind::ATTR_OPEN);
 
   std::unique_ptr<Node> node;
   switch (CUR_KIND()) {
@@ -2539,7 +2529,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
     node = TRY(this->parse_typedef());
     break;
   default:
-    E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPEDEF);
+    E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPEDEF, TokenKind::ATTR_OPEN);
   }
 
   switch (node->getNodeKind()) {

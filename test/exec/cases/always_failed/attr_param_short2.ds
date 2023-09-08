@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 9, $chars = 16, $errorKind = 'InvalidShortOpt', $status = 1)
+#$test($result = 'type', $lineNum = 9, $chars = 21, $errorKind = 'InvalidShortOpt', $status = 1)
 
 var ss = "s"
 
@@ -6,6 +6,6 @@ var ss = "s"
   CLI >]
 typedef AAA() {
     [<Flag(short: 'b')
-    Flag(short:'aa')>]
+    >] [<Flag(short:'aa')>]
   var a = $false
 }

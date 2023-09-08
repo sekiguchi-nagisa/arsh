@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 20, $chars = 5, $errorKind = 'FieldAttrType', $status = 1)
+#$test($result = 'type', $lineNum = 19, $chars = 3, $errorKind = 'FieldAttrType', $status = 1)
 
 [<
   CLI
