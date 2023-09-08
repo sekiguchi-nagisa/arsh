@@ -882,7 +882,7 @@ nodes:
             pos: 0
             size: 0
           type: "Nothing"
-          opKind: "CONTINUE"
+          opKind: "IMPLICIT_CONTINUE"
           fieldOffset: 0
           fieldSize: 0
           tryDepth: 0

@@ -656,6 +656,10 @@ LoopNode::LoopNode(unsigned int startPos, std::unique_ptr<Node> &&initNode,
     this->iterNode = std::make_unique<EmptyNode>();
   }
 
+  if (this->blockNode->getNodes().empty() || !isa<JumpNode>(*this->blockNode->getNodes().back())) {
+    this->blockNode->addNode(JumpNode::newContinue({0, 0}, false));
+  }
+
   this->updateToken(this->asDoWhile ? this->condNode->getToken() : this->blockNode->getToken());
 }
 
@@ -759,6 +763,7 @@ void JumpNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
+  OP(IMPLICIT_CONTINUE)                                                                            \
   OP(THROW)                                                                                        \
   OP(RETURN)                                                                                       \
   OP(RETURN_INIT)

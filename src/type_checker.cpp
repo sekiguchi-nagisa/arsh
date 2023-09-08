@@ -265,7 +265,10 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
   for (auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
     auto &targetNode = *iter;
     if (blockType->isNothingType()) {
-      this->reportError<Unreachable>(*targetNode);
+      if (!isa<JumpNode>(*targetNode) ||
+          cast<JumpNode>(*targetNode).getOpKind() != JumpNode::IMPLICIT_CONTINUE) {
+        this->reportError<Unreachable>(*targetNode);
+      }
     }
 
     // type check
@@ -1243,14 +1246,6 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     blockNode.setBaseIndex(baseIndex + 1);
     blockNode.setVarSize(varSize - 1);
   }
-
-  if (!node.getBlockNode().getType().isNothingType()) { // insert continue to block end
-    auto jumpNode = JumpNode::newContinue({0, 0});
-    jumpNode->setType(this->typePool().get(TYPE::Nothing));
-    jumpNode->getExprNode().setType(this->typePool().get(TYPE::Void));
-    node.getBlockNode().setType(jumpNode->getType());
-    node.getBlockNode().addNode(std::move(jumpNode));
-  }
 }
 
 void TypeChecker::resolveIfLet(IfNode &node) {
@@ -1778,6 +1773,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
   switch (node.getOpKind()) {
   case JumpNode::BREAK:
   case JumpNode::CONTINUE:
+  case JumpNode::IMPLICIT_CONTINUE:
     this->checkTypeAsBreakContinue(node);
     break;
   case JumpNode::THROW:

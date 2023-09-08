@@ -74,3 +74,21 @@ assert $ii.begin == 10
 assert $ii.end == 20
 
 assert "$(new Interval(10, 20))" == $'10010\n10 ~~ 20'
+
+## defer in loop
+var o = "$(
+for(var i = 0; $i < 5; $i++) {
+    defer { echo defer: $i; }
+    echo enter: $i
+}
+)" 
+assert $o == "enter: 0
+defer: 0
+enter: 1
+defer: 1
+enter: 2
+defer: 2
+enter: 3
+defer: 3
+enter: 4
+defer: 4" : $o

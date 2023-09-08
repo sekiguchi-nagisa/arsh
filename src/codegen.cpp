@@ -1341,6 +1341,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
   switch (node.getOpKind()) {
   case JumpNode::BREAK:
   case JumpNode::CONTINUE:
+  case JumpNode::IMPLICIT_CONTINUE:
     this->generateBreakContinue(node);
     break;
   case JumpNode::THROW: {

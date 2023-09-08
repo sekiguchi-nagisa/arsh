@@ -1927,6 +1927,7 @@ public:
   enum OpKind : unsigned char {
     BREAK,
     CONTINUE,
+    IMPLICIT_CONTINUE, // for loop end without explicit continue
     THROW,
     RETURN,
     RETURN_INIT, // for constructor
@@ -1946,8 +1947,9 @@ public:
     return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK, std::move(exprNode)));
   }
 
-  static std::unique_ptr<JumpNode> newContinue(Token token) {
-    return std::unique_ptr<JumpNode>(new JumpNode(token, CONTINUE, nullptr));
+  static std::unique_ptr<JumpNode> newContinue(Token token, bool explicitContinue = true) {
+    return std::unique_ptr<JumpNode>(
+        new JumpNode(token, explicitContinue ? CONTINUE : IMPLICIT_CONTINUE, nullptr));
   }
 
   /**
