@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars =8, $errorKind = 'GlobResource', $status = 1, $ignored = 'cygwin|msys')
+
+source /*//*//*/*//*/*//*/*/*//**/?!/%/*/*/*/s*/../*/../*

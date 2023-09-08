@@ -17,13 +17,36 @@ test -d $INSTALL_PREFIX/share/ydsh/modules || {
 
 # copy local
 let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()
-for $a in $(ls $local) {
-    echo copy $local/$a to $MODULE_HOME/
-    cp $local/$a $MODULE_HOME/
+for a in @($local/*) {
+    echo copy $a to $MODULE_HOME/
+    cp $a $MODULE_HOME/
 }
 
 let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()
-for $a in $(ls $system) {
-    echo copy $system/$a to $INSTALL_PREFIX/share/ydsh/modules/
-    sudo cp $system/$a $INSTALL_PREFIX/share/ydsh/modules/
+for a in @($system/*) {
+    echo copy $a to $INSTALL_PREFIX/share/ydsh/modules/
+    sudo cp $a $INSTALL_PREFIX/share/ydsh/modules/
 }
+
+# generate dummy files for glob limit checking
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+var count = 0
+function make_dummy(depth : Int) {
+    $depth == 10 && return
+    $count > 100000 && throw new ArgumentError("break")
+
+    for(var i = 0; $i < 50; $i++) {
+        let base = "${i}_" + $RANDOM % 1000000
+        let dir = "dir_$base"
+        mkdir $dir
+        touch "f_$base"
+        pushd $dir > /dev/null
+        defer { popd > /dev/null; }
+        $count+=2
+        $make_dummy($depth + 1)
+    }
+}
+shctl set errraise; 
+printf "[%(%Y-%m-%d %H:%M:%S.%N)T] start dummy files generation\n"
+try { $make_dummy(0) } catch e : ArgumentError {}
+printf "[%(%Y-%m-%d %H:%M:%S.%N)T] finish dummy files generation\n"

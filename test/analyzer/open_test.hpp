@@ -32,6 +32,11 @@ struct OpenTest : public ::testing::TestWithParam<std::string> {
       }
     }
 
+    if (StringRef(GetParam()).endsWith("/source_glob_limit.ds")) {
+      fprintf(stderr, "@@@ skip: %s\n", GetParam().c_str());
+      return; // skip
+    }
+
     auto file = createFilePtr(fopen, "/dev/null", "w");
     auto result = ProcBuilder{ANALYZER_PATH, "--test-open"}
                       .addArg(GetParam())
