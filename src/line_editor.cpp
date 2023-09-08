@@ -358,7 +358,7 @@ static StringRef getCommonPrefix(const ArrayObject &candidates) {
   const auto begin = prefix.begin();
   auto iter = begin;
   for (const auto end = prefix.end(); iter != end;) {
-    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end);
+    unsigned int byteSize = UnicodeUtil::utf8ValidateChar(iter, end);
     if (byteSize != 0) {
       iter += byteSize;
     } else {
