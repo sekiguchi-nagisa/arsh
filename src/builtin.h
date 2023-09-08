@@ -2312,12 +2312,11 @@ YDSH_METHOD cli_set(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function parse($this : CLI, $arg0 : String, $args : Array<String>) : Int
+//!bind: function parse($this : CLI, $args : Array<String>) : Int
 YDSH_METHOD cli_parse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parse);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
-  auto &args = typeAs<ArrayObject>(LOCAL(2));
-  obj[0] = LOCAL(1);
+  auto &args = typeAs<ArrayObject>(LOCAL(1));
   if (auto ret = parseCommandLine(ctx, args, obj)) {
     RET(DSValue::createInt(ret.index));
   } else {
@@ -2325,12 +2324,11 @@ YDSH_METHOD cli_parse(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function parseOrExit($this : CLI, $arg0 : String, $args: Array<String>) : Int
+//!bind: function parseOrExit($this : CLI, $args: Array<String>) : Int
 YDSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parseOrExit);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
-  auto &args = typeAs<ArrayObject>(LOCAL(2));
-  obj[0] = LOCAL(1);
+  auto &args = typeAs<ArrayObject>(LOCAL(1));
   if (auto ret = parseCommandLine(ctx, args, obj)) {
     RET(DSValue::createInt(ret.index));
   } else {

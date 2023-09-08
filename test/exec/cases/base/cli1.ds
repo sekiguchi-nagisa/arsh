@@ -17,7 +17,8 @@ Options:
   -h, --help  show this help message"
 
 var ex = 24 as Any
-try { $aa.parse("cmd1", ['--help']); } catch e { $ex = $e; }
+$aa.setName('cmd1')
+try { $aa.parse(['--help']); } catch e { $ex = $e; }
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 0
 assert ($ex as CLIError).message() == "Usage: cmd1
@@ -56,19 +57,22 @@ Options:
   --timeout MSEC     set timeout (default is 0)
   -h, --help         show this help message"
 
-assert $bb.parse("cmd2", ['-d', '--output=']) == 2
+$bb.setName('cmd2')
+assert $bb.parse(['-d', '--output=']) == 2
 assert $bb.d
 assert $bb.output! == ''
 assert $bb.timeout == 0
 
 $bb = new BBB()
-assert $bb.parse('cmd2', ['--debug', '--output']) == 2
+$bb.setName('cmd2')
+assert $bb.parse(['--debug', '--output']) == 2
 assert $bb.d
 assert $bb.output! == '/dev/stdout'
 assert $bb.timeout == 0
 
 $bb = new BBB()
-assert $bb.parse('cmd2', ['--output=./log.txt', '--timeout', '999', "reset"]) == 3
+$bb.setName('cmd2')
+assert $bb.parse(['--output=./log.txt', '--timeout', '999', "reset"]) == 3
 assert ! $bb.d
 assert $bb.output! == './log.txt'
 assert $bb.timeout == 999
@@ -100,7 +104,8 @@ Options:
   -d, --debug  enable debug mode
   -h, --help   show this help message"
 
-assert $cc.parse("cmd3", ['-d', '--', '-2', '-3', '-4', '-5']) == 6
+$cc.setName('cmd3')
+assert $cc.parse(['-d', '--', '-2', '-3', '-4', '-5']) == 6
 assert $cc.aaa! == -2
 assert $cc.bbb! == '-3'
 assert $cc.ccc.size() == 2
