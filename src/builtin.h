@@ -1593,8 +1593,7 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
 YDSH_METHOD array_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_copy);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  std::vector<DSValue> values = obj.getValues();
-  RET(DSValue::create<ArrayObject>(obj.getTypeID(), std::move(values)));
+  RET(obj.copy());
 }
 
 //!bind: function reverse($this : Array<T0>) : Array<T0>

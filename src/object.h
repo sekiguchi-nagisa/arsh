@@ -773,6 +773,10 @@ public:
    */
   [[nodiscard]] bool append(DSState &state, DSValue &&obj);
 
+  DSValue copy() const {
+    return DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(this->values));
+  }
+
   DSValue takeFirst() {
     auto v = this->values.front();
     this->values.erase(values.begin());

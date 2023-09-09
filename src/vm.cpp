@@ -2398,6 +2398,9 @@ bool VM::mainLoop(DSState &state) {
       vmcase(CALL_CMD_OBJ) {
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
+        if (argv.get()->getRefcount() > 1) {
+          argv = typeAs<ArrayObject>(argv).copy();
+        }
         auto obj = state.stack.pop();
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
         if (auto &argvObj = typeAs<ArrayObject>(argv); argvObj.size() == 0) {
