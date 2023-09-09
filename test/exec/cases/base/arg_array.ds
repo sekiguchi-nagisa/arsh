@@ -87,6 +87,11 @@ $args = @( "$STDIN")
 assert $args.size() == 1
 assert $args[0] =~ $/\/dev\/fd\//
 
+var ex = 34 as Any
+try { $args = @(${$STDIN as Any}) } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == 'cannot pass FD object to argument array'
+
 ## Array
 $args = @( ${new [Int]()} )
 assert $args.empty()
@@ -103,6 +108,11 @@ assert $args[0] == ''
 assert $args[1] == 'a'
 assert $args[2] == ''
 assert $args[3] == 'a b'
+
+$ex = 34 as Any
+try { $args = @(${[$STDOUT, $STDOUT]}) } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == 'cannot pass FD object to argument array'
 
 ## Map
 var m = [34 : 'a' as String?, 9999: new String?(), 45: 'b' as String?]

@@ -551,6 +551,9 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
        */
       if (!this->redir) {
         this->redir = DSValue::create<RedirObject>();
+      } else if (this->redir.isInvalid()) {
+        raiseError(this->state, TYPE::ArgumentError, "cannot pass FD object to argument array");
+        return false;
       }
 
       if (arg.get()->getRefcount() > 1) {

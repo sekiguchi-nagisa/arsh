@@ -905,7 +905,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
 
 void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
   this->emitTypeIns(OpCode::NEW, node.getType());
-  this->emit0byteIns(OpCode::PUSH_NULL);
+  this->emit0byteIns(OpCode::PUSH_INVALID);
   for (auto &argNode : node.getCmdArgNodes()) {
     this->visit(*argNode);
   }
