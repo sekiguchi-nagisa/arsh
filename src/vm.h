@@ -274,6 +274,7 @@ public:
 
 private:
   CmdKind kind_;
+  bool nullChar{false};
   ModId belongModId_; // if not belong to module (external, builtin, ect), indicate 0
   union {
     const DSCode *udc_;
@@ -284,17 +285,19 @@ private:
   };
 
 public:
-  static ResolvedCmd fromUdc(const FuncObject &func) {
+  static ResolvedCmd fromUdc(const FuncObject &func, bool nullChar) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::USER_DEFINED;
+    cmd.nullChar = nullChar;
     cmd.belongModId_ = func.getCode().getBelongedModId();
     cmd.udc_ = &func.getCode();
     return cmd;
   }
 
-  static ResolvedCmd fromMod(const ModType &modType, ModId modId) {
+  static ResolvedCmd fromMod(const ModType &modType, ModId modId, bool nullChar) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::MODULE;
+    cmd.nullChar = nullChar;
     cmd.belongModId_ = modId;
     cmd.modType_ = &modType;
     return cmd;
@@ -357,6 +360,8 @@ public:
   }
 
   CmdKind kind() const { return this->kind_; }
+
+  bool hasNullChar() const { return this->nullChar; }
 
   ModId belongModId() const { return this->belongModId_; }
 

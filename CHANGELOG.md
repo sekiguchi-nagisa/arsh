@@ -61,6 +61,7 @@
     - ``MODULE_DIR`` indicates ``DATA_DIR/modules``
     - completion script directory indicates ``DATA_DIR/completions``
 - **Breaking Change**: not allow override of generic base type in global scope
+- **Breaking Change**: when call fullname command, ``$0`` indicate actual command name (not contain null characters)
 - improve error message of type lookup errors
     - report correct position of invalid type elements
     - report more detailed error message for invalid type elements

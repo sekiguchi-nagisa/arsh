@@ -15,3 +15,18 @@ assert "$(call $ret 1 2)" == 'say!! 1 2'
 ## module
 assert $MODULE._fullname('m')! == $'%mod3\x00m'
 assert $MODULE._fullname('m')! == $f._fullname('m')!
+
+# fullname arg0
+var arg0 : String?
+ggg() {
+    $arg0 = $0
+}
+
+ggg
+assert $arg0! == 'ggg'
+$arg0 = $none
+
+$ret = $MODULE._fullname('ggg')!
+assert $ret == $'%mod2\x00ggg'
+call $ret
+assert $arg0! == 'ggg' # not indicate fullname

@@ -591,7 +591,8 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigned int index) {
+static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigned int index,
+                                      bool nullChar = false) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
   if (v) {
@@ -602,10 +603,10 @@ static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigne
 
   auto &type = state.typePool.get(udcObj->getTypeID());
   if (type.isModType()) { // module object
-    return ResolvedCmd::fromMod(cast<ModType>(type), modId);
+    return ResolvedCmd::fromMod(cast<ModType>(type), modId, nullChar);
   } else { // udc object
     assert(type.is(TYPE::Command));
-    return ResolvedCmd::fromUdc(*udcObj);
+    return ResolvedCmd::fromUdc(*udcObj, nullChar);
   }
 }
 
@@ -613,18 +614,18 @@ static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigne
  * lookup user-defined command from module.
  * if modType is null, lookup from root module
  * @param state
- * @param name
- * @param cmd
  * @param modType
- * if called from native code, may be null
+ * @param name
+ * @param nullChar
+ * @param cmd
  * @return
  */
-static bool lookupUdc(const DSState &state, const ModType &modType, const char *name,
+static bool lookupUdc(const DSState &state, const ModType &modType, const char *name, bool nullChar,
                       ResolvedCmd &cmd) {
   std::string fullname = toCmdFullName(name);
   auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
   if (handle) {
-    cmd = lookupUdcFromIndex(state, handle->getModId(), handle->getIndex());
+    cmd = lookupUdcFromIndex(state, handle->getModId(), handle->getIndex(), nullChar);
     return true;
   }
   return false;
@@ -638,7 +639,8 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
   if (hasFlag(this->resolveOp, FROM_UDC)) {
     auto fqn = hasFlag(this->resolveOp, FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
     const char *cmdName = ref.data();
-    if (fqn != StringRef::npos) {
+    const bool hasNullChar = fqn != StringRef::npos;
+    if (hasNullChar) {
       auto ret = state.typePool.getType(cmdName);
       if (!ret || !ret->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
         return ResolvedCmd::invalid();
@@ -653,9 +655,9 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
       assert(modType);
     }
     ResolvedCmd cmd{};
-    if (lookupUdc(state, *modType, cmdName, cmd)) {
+    if (lookupUdc(state, *modType, cmdName, hasNullChar, cmd)) {
       return cmd;
-    } else if (fqn != StringRef::npos) {
+    } else if (hasNullChar) {
       return ResolvedCmd::invalid();
     }
   }
@@ -879,6 +881,13 @@ static void traceCmd(const DSState &state, const ArrayObject &argv) {
 bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
                      DSValue &&redirConfig, CmdCallAttr attr) {
   auto &array = typeAs<ArrayObject>(argvObj);
+  if (cmd.hasNullChar()) { // adjust command name
+    StringRef name = array.getValues()[0].asStrRef();
+    auto pos = name.find('\0');
+    assert(pos != StringRef::npos);
+    name = name.substr(pos + 1);
+    array.refValues()[0] = DSValue::createStr(name);
+  }
   if (hasFlag(state.runtimeOption, RuntimeOption::XTRACE)) {
     traceCmd(state, array);
   }
