@@ -71,10 +71,11 @@ Options:
 ## usage
 assert "$({
   var cli = new AAA()
+  $cli.setName($'cmd1\x00@@')
   $cli.parseOrExit(["--huga"])
   12/0  # always raise
 } with 2>&1)" == "invalid option: --huga
-Usage: cmd1 [OPTIONS]
+Usage: cmd1${$'\x00'}@@ [OPTIONS]
 
 Options:
   --call-limit CALL_LIMIT     count

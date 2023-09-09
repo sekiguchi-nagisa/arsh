@@ -1314,7 +1314,7 @@ TEST_F(IndexTest, hoverConst) {
 }
 
 TEST_F(IndexTest, hoverUsage1) {
-  const char *src = R"([<CLI(name: 'command!!')>]
+  const char *src = R"([<CLI(name: $'command\x00!!')>]
 typedef AAA() {
   [<Flag(short: "s", long: "status", help: "dump internal status")>]
   var s = $false

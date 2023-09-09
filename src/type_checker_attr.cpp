@@ -183,13 +183,6 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     if (!constNode) {
       continue;
     }
-    if (attr->getKind() == AttributeKind::CLI && *p == Attribute::Param::NAME) {
-      StringRef ref = cast<StringNode>(*constNode).getValue();
-      if (ref.hasNullChar()) {
-        this->reportError<NullCharAttrParam>(*constNode, toString(Attribute::Param::NAME));
-        continue;
-      }
-    }
     constNodes.push_back(std::move(constNode));
   }
   node.setResolvedParamSet(paramSet);

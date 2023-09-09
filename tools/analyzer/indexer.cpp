@@ -633,8 +633,14 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
   if (isa<CLIRecordType>(node.getResolvedType())) {
     auto &entries = cast<CLIRecordType>(node.getResolvedType())->getEntries();
     if (!entries.empty()) {
+      std::string name; // not contains null char
+      splitByDelim(node.getCLIName(), '\0', [&name](StringRef ref, bool) {
+        name += ref;
+        return true;
+      });
+
       value += "---"; // dummy
-      value += ArgParser::create(node.getCLIName(), entries).formatUsage("", true);
+      value += ArgParser::create(name, entries).formatUsage("", true);
     }
   }
   return value;

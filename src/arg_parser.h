@@ -56,7 +56,9 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
 
 inline void showCommandLineUsage(const ErrorObject &obj) {
   FILE *fp = obj.getStatus() == 0 ? stdout : stderr;
-  fprintf(fp, "%s\n", obj.getMessage().asStrRef().data());
+  auto ref = obj.getMessage().asStrRef();
+  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fputc('\n', fp);
   fflush(fp);
 }
 

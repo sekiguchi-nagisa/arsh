@@ -1,7 +1,7 @@
 
 # for user-defined command with parameter
 
-[<CLI(name: 'default')>]
+[<CLI(name: $'default\x00!!')>]
 typedef CCC() {
   [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -20,8 +20,9 @@ typedef CCC() {
 
 assert (new CCC()) is CLI
 var cc = new CCC()
+assert $cc.name() == $'default\x00!!'
 assert $cc.usage("must be valid argument") == "must be valid argument
-Usage: default [OPTIONS] AAA [BBB] CCC...
+Usage: default${$'\x00'}!! [OPTIONS] AAA [BBB] CCC...
 
 Options:
   -d, --debug  enable debug mode
@@ -75,6 +76,6 @@ try {
 }
 assert $ex is ExecError
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 72
+assert ($ex as ExecError).lineno() == 73
 
 true
