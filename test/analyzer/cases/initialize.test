@@ -28,6 +28,9 @@
 # CHECK:       "documentSymbolProvider": true,
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
+# CHECK:       "renameProvider": {
+# CHECK:         "prepareProvider": false
+# CHECK:       },
 # CHECK:       "semanticTokensProvider": {
 # CHECK:         "full": true,
 # CHECK:         "legend": {

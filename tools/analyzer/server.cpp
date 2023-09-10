@@ -57,6 +57,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/completion", &LSPServer::complete);
   this->bind("textDocument/signatureHelp", &LSPServer::signatureHelp);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
+  this->bind("textDocument/rename", &LSPServer::rename);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
 }
 
@@ -214,6 +215,31 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
     };
   });
   return ret;
+}
+
+Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &request,
+                                                         const std::string &newName) const {
+  WorkspaceEdit workspaceEdit;
+  auto status = validateRename(this->result.indexes, request, newName,
+                               [&](const FindRefsResult &ret) { (void)ret; });
+  switch (status) {
+  case RenameValidationStatus::CAN_RENAME:
+  case RenameValidationStatus::DO_NOTHING:
+    break;
+  case RenameValidationStatus::INVALID_SYMBOL:
+    return Err(std::string("rename target must be symbol"));
+  case RenameValidationStatus::INVALID_NAME: {
+    std::string v = "invalid new name: ";
+    v += newName;
+    return Err(std::move(v));
+  }
+  case RenameValidationStatus::NAME_CONFLICT: {
+    std::string v = newName;
+    v += " is already exists in current scope";
+    return Err(std::move(v));
+  }
+  }
+  return Ok(std::move(workspaceEdit));
 }
 
 DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan) {
@@ -688,6 +714,23 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
       ret = std::move(value);
     }
     return ret;
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<WorkspaceEdit> LSPServer::rename(const RenameParams &params) {
+  LOG(LogLevel::INFO, "rename at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  this->syncResult();
+  if (auto resolved = this->resolvePosition(params)) {
+    auto &request = resolved.asOk().second;
+    auto ret = this->renameImpl(request, params.newName);
+    if (ret) {
+      return std::move(ret).take();
+    } else {
+      return newError(LSPErrorCode::RequestFailed, std::move(ret).takeError());
+    }
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

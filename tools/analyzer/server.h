@@ -157,6 +157,9 @@ private:
 
   Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request) const;
 
+  Result<WorkspaceEdit, std::string> renameImpl(const SymbolRequest &request,
+                                                const std::string &newName) const;
+
   DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
 
   bool tryRebuild();
@@ -205,6 +208,8 @@ public:
   Reply<std::vector<DocumentSymbol>> documentSymbol(const DocumentSymbolParams &params);
 
   Reply<Union<SignatureHelp, std::nullptr_t>> signatureHelp(const SignatureHelpParams &params);
+
+  Reply<WorkspaceEdit> rename(const RenameParams &params);
 
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {

@@ -364,21 +364,33 @@ public:
 };
 
 struct FindDeclResult {
-  const DeclSymbol &decl;
-  const Symbol &request;
+  const DeclSymbol &decl; // found declaration
+  const Symbol &request;  // resolved request symbol
 };
 
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(const FindDeclResult &)> &consumer);
 
 struct FindRefsResult {
-  const SymbolRef &symbol;
-  const DeclSymbol &request;
+  const SymbolRef &symbol;   // found symbol (reference)
+  const DeclSymbol &request; // resolved request declaration
 };
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const FindRefsResult &)> &consumer,
                        bool ignoreBuiltin = true);
+
+enum class RenameValidationStatus {
+  CAN_RENAME,
+  DO_NOTHING, // not perform rename since new name is equivalent to old new
+  INVALID_SYMBOL,
+  INVALID_NAME,
+  NAME_CONFLICT,
+};
+
+RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
+                                      const std::string &newName,
+                                      const std::function<void(const FindRefsResult &)> &consumer);
 
 } // namespace ydsh::lsp
 

@@ -33,12 +33,21 @@ using namespace json;
 // definition of basic interface of language server protocol
 // LSP specific error code
 enum LSPErrorCode : int {
-  ServerErrorStart = -32099,
-  ServerErrorEnd = -32000,
+  // JSON-RPC reserved error code
+  JSONPRCReservedErrorRangeStart = -32099,
+  ServerErrorStart = JSONPRCReservedErrorRangeStart,
   ServerNotInitialized = -32002,
   UnknownErrorCode = -32001,
-  RequestCancelled = -32800,
+  JSONRPCReservedErrorRangeEnd = -32000,
+  ServerErrorEnd = JSONRPCReservedErrorRangeEnd,
+
+  // LSP specific error code
+  LSPReservedErrorRangeStart = -32899,
+  RequestFailed = -32803,
+  ServerCancelled = -32802,
   ContentModified = -32801,
+  RequestCancelled = -32800,
+  LSPReservedErrorRangeEnd = -32800,
 };
 
 #define JSONIFY(m) t(#m, m)
@@ -499,7 +508,18 @@ struct DocumentLinkOptions : public WorkDoneProgressOptions {
 
   template <typename T>
   void jsonify(T &t) {
+    WorkDoneProgressOptions::jsonify(t);
     JSONIFY(resolveProvider);
+  }
+};
+
+struct RenameOptions : public WorkDoneProgressOptions {
+  bool prepareProvider{false};
+
+  template <typename T>
+  void jsonify(T &t) {
+    WorkDoneProgressOptions::jsonify(t);
+    JSONIFY(prepareProvider);
   }
 };
 
@@ -520,6 +540,7 @@ struct ServerCapabilities {
   bool documentFormattingProvider{false};
   bool documentRangeFormattingProvider{false};
   DocumentLinkOptions documentLinkProvider;
+  RenameOptions renameProvider;
   SemanticTokensOptions semanticTokensProvider;
 
   template <typename T>
@@ -536,6 +557,7 @@ struct ServerCapabilities {
     JSONIFY(documentFormattingProvider);
     JSONIFY(documentRangeFormattingProvider);
     JSONIFY(documentLinkProvider);
+    JSONIFY(renameProvider);
     JSONIFY(semanticTokensProvider);
   }
 };
@@ -1097,6 +1119,47 @@ struct SignatureHelpParams : public TextDocumentPositionParams, public WorkDoneP
     TextDocumentPositionParams::jsonify(t);
     WorkDoneProgressParams::jsonify(t);
     JSONIFY(context);
+  }
+};
+
+struct TextEdit {
+  Range range;
+  std::string newText;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(range);
+    JSONIFY(newText);
+  }
+};
+
+struct WorkspaceEdit {
+  Optional<std::map<DocumentURI, std::vector<TextEdit>>> changes;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(changes);
+  }
+
+  /**
+   * if insertion success, return true
+   * @param uri
+   * @param edits
+   * @return
+   */
+  bool insert(const uri::URI &uri, std::vector<TextEdit> &&edits) {
+    return this->changes.unwrap().insert(std::make_pair(uri.toString(), std::move(edits))).second;
+  }
+};
+
+struct RenameParams : public TextDocumentPositionParams, public WorkDoneProgressParams {
+  std::string newName;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    JSONIFY(newName);
   }
 };
 
