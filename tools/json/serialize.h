@@ -31,6 +31,15 @@ template <typename T>
 constexpr bool is_array_v = is_array<T>::value;
 
 template <typename T>
+struct is_map : std::false_type {};
+
+template <typename T>
+struct is_map<std::map<std::string, T>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_map_v = is_map<T>::value;
+
+template <typename T>
 constexpr bool is_string_v = std::is_same_v<T, String>;
 
 template <typename T>
@@ -52,7 +61,7 @@ template <typename T>
 constexpr bool is_optional_v = is_optional<T>::value;
 
 template <typename T>
-constexpr bool is_object_v = !is_string_v<T> && !is_array_v<T> && !is_union_v<T> &&
+constexpr bool is_object_v = !is_string_v<T> && !is_array_v<T> && !is_map_v<T> && !is_union_v<T> &&
                              !is_optional_v<T> && !std::is_same_v<T, JSON> && std::is_class_v<T>;
 
 template <typename T>
@@ -65,6 +74,17 @@ struct array_element<std::vector<T>> {
 
 template <typename T>
 using array_element_t = typename array_element<T>::type;
+
+template <typename T>
+struct map_value {};
+
+template <typename T>
+struct map_value<std::map<std::string, T>> {
+  using type = T;
+};
+
+template <typename T>
+using map_value_t = typename map_value<T>::type;
 
 class JSONSerializer {
 private:
@@ -107,6 +127,15 @@ public:
     auto s = JSONSerializer::asArray();
     for (auto &e : v) {
       s(nullptr, e);
+    }
+    this->append(fieldName, std::move(s).take());
+  }
+
+  template <typename T, enable_when<is_map_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    auto s = JSONSerializer::asObject();
+    for (auto &e : v) {
+      s(e.first.c_str(), e.second);
     }
     this->append(fieldName, std::move(s).take());
   }
@@ -223,6 +252,25 @@ public:
       }
       if (!deserializer.validOnly) {
         v.push_back(std::move(element));
+      }
+    }
+  }
+
+  template <typename T, enable_when<is_map_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    JSON *json = this->validateField<Object>(fieldName);
+    if (!json || (this->validOnly && fieldName)) {
+      return;
+    }
+    for (auto &e : json->asObject()) {
+      JSONDeserializerImpl deserializer(e.second, this->validationError, this->validOnly);
+      map_value_t<T> element;
+      deserializer(element);
+      if (deserializer.hasError()) {
+        break;
+      }
+      if (!deserializer.validOnly) {
+        v.insert(std::make_pair(std::move(e.first), std::move(element)));
       }
     }
   }

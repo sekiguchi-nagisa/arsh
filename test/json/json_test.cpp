@@ -524,6 +524,34 @@ TEST(SerializeTest, variant) {
   ASSERT_EQ("@@@@", ret["b2"].asString());
 }
 
+TEST(SerializeTest, map) {
+  std::map<std::string, std::vector<unsigned int>> map = {
+      {"AAA", {1, 2, 3}},
+      {"BBB", {4, 5, 6}},
+  };
+  auto ret = serialize(map);
+  ASSERT_TRUE(ret.isObject());
+  ASSERT_EQ(2, ret.asObject().size());
+  ASSERT_TRUE(ret.asObject().find("AAA") != ret.asObject().end());
+  ASSERT_TRUE(ret.asObject().find("BBB") != ret.asObject().end());
+  ASSERT_TRUE(ret.asObject().at("AAA").isArray());
+  ASSERT_TRUE(ret.asObject().at("BBB").isArray());
+  {
+    auto &array = ret.asObject().at("AAA").asArray();
+    ASSERT_EQ(3, array.size());
+    ASSERT_EQ(1, array[0].asLong());
+    ASSERT_EQ(2, array[1].asLong());
+    ASSERT_EQ(3, array[2].asLong());
+  }
+  {
+    auto &array = ret.asObject().at("BBB").asArray();
+    ASSERT_EQ(3, array.size());
+    ASSERT_EQ(4, array[0].asLong());
+    ASSERT_EQ(5, array[1].asLong());
+    ASSERT_EQ(6, array[2].asLong());
+  }
+}
+
 TEST(DeserializeTest, base) {
   JSONDeserializer deserializer(false);
   bool b = true;
@@ -598,6 +626,29 @@ TEST(DeserializeTest, object) {
   ASSERT_EQ(190, v2.a1);
   ASSERT_EQ(-234, v2.a2.b1);
   ASSERT_EQ("world!!", v2.a2.b2);
+}
+
+TEST(DeserializeTest, map) {
+  using Map = std::map<std::string, std::vector<unsigned int>>;
+  Map v1 = {
+      {"AAA", {1, 2, 3}},
+      {"BBB", {4, 5, 6}},
+  };
+  auto ret = serialize(v1);
+  JSONDeserializer deserializer(std::move(ret));
+  Map v2;
+  deserializer(v2);
+  ASSERT_FALSE(deserializer.hasError());
+  ASSERT_EQ(2, v2.size());
+  ASSERT_EQ(3, v2.at("AAA").size());
+  ASSERT_EQ(1, v2.at("AAA")[0]);
+  ASSERT_EQ(2, v2.at("AAA")[1]);
+  ASSERT_EQ(3, v2.at("AAA")[2]);
+
+  ASSERT_EQ(3, v2.at("BBB").size());
+  ASSERT_EQ(4, v2.at("BBB")[0]);
+  ASSERT_EQ(5, v2.at("BBB")[1]);
+  ASSERT_EQ(6, v2.at("BBB")[2]);
 }
 
 static JSONDeserializer operator""_deserialize(const char *text, size_t) {
