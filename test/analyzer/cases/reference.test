@@ -11,7 +11,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "var ZZZ = 34;\n$ZZZ"}
+                     "text": "var ZZZ = 34;\necho $ZZZ"}
  }
 }
 
@@ -44,6 +44,88 @@
 #    CHECK:     {
 #    CHECK:       "range": {
 #    CHECK:         "end": {
+#    CHECK:           "character": 9,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 5,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test.ds"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/references",
+  "params": {
+    "position": {
+      "character": 6,
+      "line": 1
+    },
+    "textDocument": { "uri": "file:///test/test.ds" },
+    "context": { "includeDeclaration": false }
+  }
+}
+
+## if position does not directly indicate declaration, resolve actual declaration and find references
+
+# CHECK_IF:   "result": [
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 7,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 4,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test.ds"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 9,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 5,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test.ds"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+                     "text": "echo hello;\n  echo AAA"}
+ }
+}
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/references",
+  "params": {
+    "position": {
+      "character": 2,
+      "line": 1
+    },
+    "textDocument": { "uri": "file:///test/test.ds" },
+    "context": { "includeDeclaration": false }
+  }
+}
+
+## for builtin symbol (builtin command)
+## builtin commands are implicitly imported from all source
+
+# CHECK_IF:   "result": [
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
 #    CHECK:           "character": 4,
 #    CHECK:           "line": 1
 #    CHECK:         },
@@ -53,12 +135,38 @@
 #    CHECK:         }
 #    CHECK:       },
 #    CHECK:       "uri": "file:///test/test.ds"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 4,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 0,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test2.ds"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 6,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 2,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test2.ds"
 #    CHECK:     }
 #    CHECK:   ]
 
 
 <<<
-{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+{"id": 4, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }

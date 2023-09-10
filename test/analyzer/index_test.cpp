@@ -199,8 +199,10 @@ try { $false; } catch($e) {
       Request{.modId = modId, .position = {.line = 2, .character = 4}}, std::vector<Loc>()));
 
   // reference
-  ASSERT_NO_FATAL_FAILURE(this->findRefs(
-      Request{.modId = modId, .position = {.line = 2, .character = 3}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 3}},
+                     {{modId, "(1:22~1:24)"},  // itself
+                      {modId, "(2:2~2:4)"}})); // $e
   ASSERT_NO_FATAL_FAILURE(
       this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 22}},
                      {{modId, "(1:22~1:24)"},  // itself

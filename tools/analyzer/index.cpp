@@ -187,7 +187,7 @@ SymbolIndexPtr SymbolIndexes::find(ModId modId) const {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
-    if (auto &ret = *iter; ret->getModId() == modId) {
+    if (auto ret = *iter; ret->getModId() == modId) {
       return ret;
     }
   }
@@ -223,57 +223,70 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
   return false;
 }
 
-bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &consumer,
-                       bool ignoreBuiltin) {
+static unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &decl,
+                                      const std::function<void(const FindRefsResult &)> &consumer,
+                                      bool ignoreBuiltin) {
   unsigned int count = 0;
-  if (auto *decl = indexes.findDecl(request)) {
-    if (hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
-      return false;
-    }
+  if (hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
+    return 0;
+  }
 
-    // add its self
+  // add its self
+  count++;
+  if (consumer) {
+    FindRefsResult ret = {
+        .symbol = decl.toRef(),
+        .request = decl,
+    };
+    consumer(ret);
+  }
+
+  // search local ref
+  for (auto &e : decl.getRefs()) {
     count++;
     if (consumer) {
       FindRefsResult ret = {
-          .symbol = decl->toRef(),
-          .request = *decl,
+          .symbol = e,
+          .request = decl,
       };
       consumer(ret);
     }
+  }
 
-    // search local ref
-    for (auto &e : decl->getRefs()) {
-      count++;
-      if (consumer) {
-        FindRefsResult ret = {
-            .symbol = e,
-            .request = *decl,
-        };
-        consumer(ret);
-      }
+  // search foreign ref
+  const SymbolRequest request{
+      .modId = decl.getModId(),
+      .pos = decl.getPos(),
+  };
+  for (auto &index : indexes) {
+    if (index->getModId() == request.modId) {
+      continue;
     }
-
-    // search foreign ref
-    for (auto &index : indexes) {
-      if (index->getModId() == request.modId) {
-        continue;
-      }
-      if (auto *foreign = index->findForeignDecl(request)) {
-        for (auto &e : foreign->getRefs()) {
-          count++;
-          if (consumer) {
-            FindRefsResult ret = {
-                .symbol = e,
-                .request = *decl,
-            };
-            consumer(ret);
-          }
+    if (auto *foreign = index->findForeignDecl(request)) {
+      for (auto &e : foreign->getRefs()) {
+        count++;
+        if (consumer) {
+          FindRefsResult ret = {
+              .symbol = e,
+              .request = decl,
+          };
+          consumer(ret);
         }
       }
     }
   }
-  return count > 0;
+  return count;
+}
+
+bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
+                       const std::function<void(const FindRefsResult &)> &consumer,
+                       bool ignoreBuiltin) {
+  const DeclSymbol *decl = nullptr;
+  findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
+  if (!decl) {
+    return false;
+  }
+  return findAllReferences(indexes, *decl, consumer, ignoreBuiltin) > 0;
 }
 
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,

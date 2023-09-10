@@ -145,11 +145,10 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
     }
     auto s = this->result.srcMan->findById(ret.decl.getModId());
     assert(s);
-    std::string uri = "file://";
-    uri += s->getPath();
     auto range = toRange(*s, ret.decl.getToken());
     assert(range.hasValue());
-    values.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+    values.push_back(Location{.uri = toURI(*this->result.srcMan, s->getPath()).toString(),
+                              .range = range.unwrap()});
   });
   return values;
 }
@@ -157,13 +156,12 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
 std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request) const {
   std::vector<Location> values;
   findAllReferences(this->result.indexes, request, [&](const FindRefsResult &ret) {
-    auto s = this->result.srcMan->findById(ret.symbol.getModId());
-    assert(s);
-    std::string uri = "file://";
-    uri += s->getPath();
-    auto range = toRange(*s, ret.symbol.getToken());
-    assert(range.hasValue());
-    values.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+    if (auto s = this->result.srcMan->findById(ret.symbol.getModId())) {
+      auto range = toRange(*s, ret.symbol.getToken());
+      assert(range.hasValue());
+      values.push_back(Location{.uri = toURI(*this->result.srcMan, s->getPath()).toString(),
+                                .range = range.unwrap()});
+    }
   });
   return values;
 }

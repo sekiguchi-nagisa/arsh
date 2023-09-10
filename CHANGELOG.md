@@ -96,6 +96,9 @@
 - ``textDocument/hover`` shows command line usage in the following context
     - user-defined type with CLI attribute
     - user-defined command having parameter
+- ``textDocument/references`` always resolve actual declaration position
+    - if specified position does not indicate declaration, find declaration before reference lookup
+    - now can find all references of builtin commands
 
 ### Fixed
 
