@@ -3,6 +3,7 @@
 #include <misc/edit_distance.hpp>
 #include <misc/files.hpp>
 #include <misc/flag_util.hpp>
+#include <misc/format.hpp>
 #include <misc/num_util.hpp>
 #include <misc/time_util.hpp>
 
@@ -849,6 +850,38 @@ TEST(PathTest, base) {
   for (auto &e : table) {
     ASSERT_EQ(e.dirName, getDirname(e.path).toString());
     ASSERT_EQ(e.baseName, getBasename(e.path).toString());
+  }
+}
+
+TEST(CamelSplitTest, base) {
+  struct {
+    std::string identifier;
+    std::vector<std::string> words;
+  } table[] = {
+      {"", {}},
+      {"a", {"a"}},
+      {"ab", {"ab"}},
+      {"A", {"A"}},
+      {"AA", {"AA"}},
+      {"_", {}},
+      {"__", {}},
+      {"___", {}},
+      {"ASCIICode", {"ASCII", "Code"}},
+      {"camelCase", {"camel", "Case"}},
+      {"UpperCamelCase", {"Upper", "Camel", "Case"}},
+      {"_kebab__case__", {"kebab", "case"}},
+      {"utf8CodePoint", {"utf8", "Code", "Point"}},
+      {"P2PProtocol", {"P2", "P", "Protocol"}},
+      {"HTTPResponseCodeXYZ", {"HTTP", "Response", "Code", "XYZ"}},
+      {"Upper0C1Amel0Case", {"Upper0", "C1", "Amel0", "Case"}},
+  };
+
+  for (auto &e : table) {
+    SCOPED_TRACE("for: " + e.identifier);
+    std::vector<std::string> words;
+    splitCamelCaseIdentifier(e.identifier,
+                             [&words](StringRef ref) { words.push_back(ref.toString()); });
+    ASSERT_EQ(e.words, words);
   }
 }
 

@@ -84,6 +84,53 @@ inline bool splitByDelim(const StringRef ref, const char delim, Func func) {
   return true;
 }
 
+/**
+ * split identifier with word
+ *
+ * @tparam Func
+ * @param ref
+ * @param func
+ */
+template <typename Func,
+          enable_when<std::is_same_v<void, std::invoke_result_t<Func, StringRef>>> = nullptr>
+inline void splitCamelCaseIdentifier(const StringRef ref, Func func) {
+  const auto is_lower = [](char ch) -> bool { return ch >= 'a' && ch <= 'z'; };
+  const auto is_lower_or_digit = [](char ch) -> bool {
+    return (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9');
+  };
+
+  const auto size = ref.size();
+  StringRef::size_type start = 0;
+  for (StringRef::size_type i = 0; i < size; i++) {
+    StringRef::size_type stop = 0;
+    char ch = ref[i];
+    if (ch == '_') {
+      if (i > start) {
+        stop = i;
+      } else {
+        start = i + 1;
+        continue;
+      }
+    } else if (i + 1 == size) {
+      stop = size;
+    } else if (ch >= 'A' && ch <= 'Z') {
+      if ((i + 1 < size && is_lower(ref[i + 1])) || (i > 0 && is_lower_or_digit(ref[i - 1]))) {
+        stop = i;
+      } else {
+        continue;
+      }
+    } else {
+      continue;
+    }
+
+    if (start < stop) {
+      auto sub = ref.slice(start, stop);
+      func(sub);
+      start = ch == '_' ? i + 1 : i;
+    }
+  }
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_FORMAT_HPP

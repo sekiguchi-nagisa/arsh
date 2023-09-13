@@ -287,73 +287,38 @@ static bool isValidLongOpt(const std::string &opt) {
   return true;
 }
 
-static bool isLower(char ch) { return ch >= 'a' && ch <= 'z'; }
-
-static bool isLowerOrDigit(char ch) { return isLower(ch) || (ch >= '0' && ch <= '9'); }
-
-static bool isUpper(char ch) { return ch >= 'A' && ch <= 'Z'; }
-
 static std::string toLongOpt(const std::string &name) {
   assert(!name.empty());
   assert(name[0] != '_');
   std::string opt;
-
-  /**
-   * camelCase -> camel-case
-   * CamelCase -> camel-case
-   * snake__case -> snake-case
-   */
-  char prev = '\0';
-  for (char ch : name) {
-    if (ch == '_') {
-      if (prev != '_') {
-        opt += '-';
-      }
-    } else {
-      if (isLowerOrDigit(prev) && isUpper(ch)) {
-        opt += '-';
-      }
-      char l = ch;
-      if (isUpper(ch)) {
-        l = static_cast<char>('a' + (ch - 'A'));
-      }
-      opt += l;
+  splitCamelCaseIdentifier(name, [&opt](StringRef ref) {
+    if (!opt.empty()) {
+      opt += '-';
     }
-    prev = ch;
-  }
-  if (opt.size() == 1) {
-    opt += opt;
-  }
+    for (char ch : ref) {
+      if (ch >= 'A' && ch <= 'Z') {
+        ch = static_cast<char>(ch - 'A' + 'a');
+      }
+      opt += ch;
+    }
+  });
   return opt;
 }
 
 static std::string toArgName(const std::string &name) {
   assert(!name.empty());
   std::string value;
-
-  /**
-   * camelCase -> CAMEL_CASE
-   * CamelCase -> CAMEL_CASE
-   * snake__case -> SNAKE_CASE
-   */
-  char prev = '\0';
-  for (char ch : name) {
-    if (ch == '_') {
-      if (prev != '_') {
-        value += '_';
-      }
-    } else {
-      if (isLowerOrDigit(prev) && isUpper(ch)) {
-        value += '_';
-      }
-      char u = ch;
-      if (isLower(ch)) {
-        u = static_cast<char>('A' + (ch - 'a'));
-      }
-      value += u;
+  splitCamelCaseIdentifier(name, [&value](StringRef ref) {
+    if (!value.empty()) {
+      value += '_';
     }
-    prev = ch;
-  }
+    for (char ch : ref) {
+      if (ch >= 'a' && ch <= 'z') {
+        ch = static_cast<char>(ch - 'a' + 'A');
+      }
+      value += ch;
+    }
+  });
   return value;
 }
 

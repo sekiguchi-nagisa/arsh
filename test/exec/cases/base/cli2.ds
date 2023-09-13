@@ -67,6 +67,23 @@ Options:
   -l[LEVEL], --level[=LEVEL]
   -h, --help                  show this help message" : ($ex as CLIError).message()
 
+# auto-gen option/arg name
+[<CLI(name: 'test')>]
+typedef _AAA() {
+    [<Option>]
+    var camelCase = ""
+
+    [<Option>]
+    var Upper0C1Amel0Case = ""
+}
+assert new _AAA().usage() == 'Usage: test [OPTIONS]
+
+Options:
+  --camel-case CAMEL_CASE
+  --upper0-c1-amel0-case UPPER0_C1_AMEL0_CASE
+  -h, --help                                   show this help message' : new _AAA().usage()
+
+
 # parseOrExit
 ## usage
 assert "$({
