@@ -170,3 +170,6 @@ $assertArray(['help', 'long', 'required', 'short', 'stop', 'store'], $(complete 
 $assertArray(['help', 'long',  'short', 'stop', ], $(complete '
 [< Flag(required: $true, store: $false, '))
 $assertArray(['short', 'stop', 'store'], $(complete '[< Flag(s'))
+$assertArray(["long"], $(complete '
+[<CLI>] typedef BBB() {[<Flag(short: "d",
+lo'))
