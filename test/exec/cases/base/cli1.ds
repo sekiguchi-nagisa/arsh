@@ -31,7 +31,8 @@ Options:
 typedef BBB() {
   [<Flag(
       short: "d", long: "debug", 
-      help: "enable debug mode"
+      help: "enable debug mode",
+      stop: $false
   )>]
   var d = $false
 
@@ -43,6 +44,9 @@ typedef BBB() {
   [<Option(help: "set timeout (default is 0)",
     placeholder: "MSEC")>]
   var timeout = 0
+
+  [<Flag(short: 'v', long: 'version', stop: $true, help: 'show version')>]
+  var version = $false
 }
 
 assert (new BBB()) is CLI
@@ -55,6 +59,7 @@ Options:
   -d, --debug        enable debug mode
   --output[=OUTPUT]  set output target
   --timeout MSEC     set timeout (default is 0)
+  -v, --version      show version
   -h, --help         show this help message"
 
 $bb.setName('cmd2')
@@ -62,6 +67,7 @@ assert $bb.parse(['-d', '--output=']) == 2
 assert $bb.d
 assert $bb.output! == ''
 assert $bb.timeout == 0
+assert !$bb.version
 
 $bb = new BBB()
 $bb.setName('cmd2')
@@ -69,6 +75,7 @@ assert $bb.parse(['--debug', '--output']) == 2
 assert $bb.d
 assert $bb.output! == '/dev/stdout'
 assert $bb.timeout == 0
+assert !$bb.version
 
 $bb = new BBB()
 $bb.setName('cmd2')
@@ -76,6 +83,15 @@ assert $bb.parse(['--output=./log.txt', '--timeout', '999', "reset"]) == 3
 assert ! $bb.d
 assert $bb.output! == './log.txt'
 assert $bb.timeout == 999
+assert !$bb.version
+
+$bb = new BBB()
+$bb.setName("cmd3")
+assert $bb.parse(['--version', '--output=./log.txt', '--timeout', '999', "reset"]) == 1
+assert !$bb.d
+assert !$bb.output
+assert $bb.timeout == 0
+assert $bb.version
 
 ## Arg
 [<CLI>]
