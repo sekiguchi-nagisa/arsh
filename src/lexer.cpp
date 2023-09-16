@@ -17,6 +17,7 @@
 #include "lexer.h"
 #include "constant.h"
 #include "misc/fatal.h"
+#include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
 
@@ -464,27 +465,10 @@ std::pair<double, bool> Lexer::toDouble(Token token) const {
   return {ret.value, static_cast<bool>(ret)};
 }
 
-static bool isIdStart(char ch) {
-  return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
-}
-
 bool Lexer::toEnvName(Token token, std::string &out) const {
   auto ref = this->toStrRef(token);
-  if (isIdStart(ref[0])) {
-    out += ref[0];
-  } else {
-    return false;
-  }
-  unsigned int size = ref.size();
-  for (unsigned int i = 1; i < size; i++) {
-    char ch = ref[i];
-    if (isDecimal(ch) || isIdStart(ch)) {
-      out += ch;
-    } else {
-      return false;
-    }
-  }
-  return true;
+  out = ref.toString();
+  return isValidIdentifier(ref);
 }
 
 static EscapeSeqResult okByte(unsigned char b, unsigned short size) {

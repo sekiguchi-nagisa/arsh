@@ -131,6 +131,34 @@ inline void splitCamelCaseIdentifier(const StringRef ref, Func func) {
   }
 }
 
+inline bool isIdentifierStart(char ch) {
+  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+}
+
+/**
+ *
+ * @param value
+ * @return
+ * if follow [a-zA-Z_][0-9a-zA-Z_]*, return true
+ */
+inline bool isValidIdentifier(const StringRef value) {
+  if (value.empty()) {
+    return false;
+  }
+  auto begin = value.begin();
+  const auto end = value.end();
+  if (char ch = *begin; !isIdentifierStart(ch)) {
+    return false;
+  }
+  for (begin++; begin != end; begin++) {
+    char ch = *begin;
+    if (!isIdentifierStart(ch) && !(ch >= '0' && ch <= '9')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_FORMAT_HPP

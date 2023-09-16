@@ -26,6 +26,7 @@
 #include "logger.h"
 #include "misc/edit_distance.hpp"
 #include "misc/files.hpp"
+#include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "paths.h"
 #include "signals.h"
@@ -80,21 +81,6 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
   }
 }
 
-static bool isValidName(StringRef name) {
-  size_t count = 0;
-  for (auto ch : name) {
-    if (count++ == 0) {
-      if (!std::isalpha(ch) && ch != '_') {
-        return false;
-      }
-    }
-    if (!std::isalnum(ch) && ch != '_') {
-      return false;
-    }
-  }
-  return true;
-}
-
 static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer &consumer,
                             bool validNameOnly) {
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
@@ -103,7 +89,7 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
     assert(r != StringRef::npos);
     auto name = env.substr(0, r);
     if (name.startsWith(namePrefix)) {
-      if (validNameOnly && !isValidName(name)) {
+      if (validNameOnly && !isValidIdentifier(name)) {
         continue;
       }
       auto kind = validNameOnly ? CompCandidateKind::VALID_ENV_NAME : CompCandidateKind::ENV_NAME;

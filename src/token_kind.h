@@ -443,10 +443,6 @@ inline bool isInfixKeyword(TokenKind kind) {
   }
 }
 
-inline bool isIDStart(char ch) {
-  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
-}
-
 const char *resolveUnaryOpName(TokenKind op);
 
 const char *resolveBinaryOpName(TokenKind op);
