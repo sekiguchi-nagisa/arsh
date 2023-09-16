@@ -540,7 +540,7 @@ static void completeAttribute(const std::string &prefix, CompCandidateConsumer &
     }
     StringRef attr = toString(kind);
     if (attr.startsWith(prefix)) {
-      consumer(attr, CompCandidateKind::TYPE);
+      consumer(attr, CompCandidateKind::KEYWORD);
     }
   }
 }
@@ -550,7 +550,7 @@ static void completeAttributeParam(const std::string &prefix, AttributeParamSet 
   paramSet.iterate([&](Attribute::Param param) {
     StringRef ref = toString(param);
     if (ref.startsWith(prefix)) {
-      consumer(ref, CompCandidateKind::FIELD);
+      consumer(ref, CompCandidateKind::KEYWORD);
     }
   });
 }

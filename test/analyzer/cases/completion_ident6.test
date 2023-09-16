@@ -1,0 +1,87 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+    "text": "[<CLI>] typedef AAA() {[<Flag(\ns"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerKind": 1 },
+    "position": { "character": 2, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# complete attribute
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "Arg"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "CLI"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "Flag"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "Option"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerKind": 1 },
+    "position": { "character": 1, "line": 1 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# complete attribute parameters
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "short"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "stop"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "store"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
