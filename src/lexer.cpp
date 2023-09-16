@@ -582,15 +582,26 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
   }
 }
 
-void quoteAsShellArg(StringRef ref, std::string &out) {
+bool quoteAsCmdOrShellArg(const StringRef ref, std::string &out, bool asCmd) {
+  StringRef::size_type hexCount = 0;
   auto begin = ref.begin();
-  for (const auto end = ref.end(); begin != end;) {
+  const auto end = ref.end();
+  if (asCmd && begin != end) {
+    if (char ch = *begin; isDecimal(ch) || ch == '+' || ch == '-') {
+      out += '\\';
+      out += ch;
+      begin++;
+    }
+  }
+  while (begin != end) {
     int codePoint = 0;
     const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(begin, end, codePoint);
     if (byteSize == 0) { // invalid utf-8 byte sequence
       char d[32];
-      snprintf(d, std::size(d), "$'\\x%02x'", static_cast<unsigned char>(*begin));
-      out += d;
+      int size = snprintf(d, std::size(d), "$'\\x%02x'", static_cast<unsigned char>(*begin));
+      assert(size > 0);
+      out.append(d, static_cast<unsigned int>(size));
+      hexCount++;
       begin++;
     } else {
       switch (codePoint) {
@@ -623,8 +634,10 @@ void quoteAsShellArg(StringRef ref, std::string &out) {
       default:
         if ((codePoint >= 0 && codePoint < 32) || codePoint == 127) {
           char d[32];
-          snprintf(d, std::size(d), "$'\\x%02x'", codePoint);
-          out += d;
+          int size = snprintf(d, std::size(d), "$'\\x%02x'", codePoint);
+          assert(size > 0);
+          out.append(d, static_cast<unsigned int>(size));
+          hexCount++;
         } else {
           out.append(begin, byteSize);
         }
@@ -633,6 +646,7 @@ void quoteAsShellArg(StringRef ref, std::string &out) {
       begin += byteSize;
     }
   }
+  return hexCount == 0;
 }
 
 std::string toPrintable(StringRef ref) {

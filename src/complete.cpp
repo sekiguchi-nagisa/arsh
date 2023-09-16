@@ -40,15 +40,7 @@ std::string CompCandidate::quote() const {
   std::string ret;
   auto ref = this->value;
   if (mayBeQuoted(this->kind) && !ref.empty()) {
-    if (this->kind == CompCandidateKind::COMMAND_NAME) {
-      char ch = ref[0];
-      if (isDecimal(ch) || ch == '+' || ch == '-') {
-        ret += '\\';
-        ret += ch;
-        ref.removePrefix(1);
-      }
-    }
-    quoteAsShellArg(ref, ret);
+    quoteAsCmdOrShellArg(ref, ret, this->kind == CompCandidateKind::COMMAND_NAME);
   } else {
     ret += ref;
   }

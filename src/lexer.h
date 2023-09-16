@@ -361,16 +361,22 @@ struct EscapeSeqResult {
 EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
 
 /**
- * quote string that can be reused in command argument.
- * if contains unprintable characters or invalid utf8 sequence, convert to hex notation
+ * quote string that can be reused in command name or command argument.
+ * unlike lexer definition, if contains unprintable characters or invalid utf8 sequence,
+ * convert to hex notation even if command name (asCmd is true)
  * @param ref
  * @param out
+ * @param asCmd
+ * quote as command name
+ * @return
+ * if contains unprintable characters or invalid utf8 sequences, return false
+ * otherwise, return true
  */
-void quoteAsShellArg(StringRef ref, std::string &out);
+bool quoteAsCmdOrShellArg(StringRef ref, std::string &out, bool asCmd);
 
 inline std::string quoteAsShellArg(StringRef ref) {
   std::string ret;
-  quoteAsShellArg(ref, ret);
+  quoteAsCmdOrShellArg(ref, ret, false);
   return ret;
 }
 
