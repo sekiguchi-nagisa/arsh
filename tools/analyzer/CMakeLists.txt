@@ -16,11 +16,12 @@ add_library(ydshd_static STATIC
         client.cpp
         driver.cpp
         symbol.cpp
+        rename.cpp
         worker.cpp
         semantic_token.cpp
         pass.cpp
         extra_checker.cpp
-        )
+)
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri directive)
 
 add_executable(${LSP_SRV} main.cpp)

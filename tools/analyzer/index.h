@@ -181,6 +181,10 @@ public:
 
   Token getBody() const { return this->body; }
 
+  std::string toDemangledName() const {
+    return demangle(this->getKind(), this->getAttr(), this->getMangledName());
+  }
+
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const {
       return x.getToken().endPos() - 1 < y;
@@ -372,25 +376,13 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(const FindDeclResult &)> &consumer);
 
 struct FindRefsResult {
-  const SymbolRef &symbol;   // found symbol (reference)
+  const SymbolRef symbol;    // found symbol (reference)
   const DeclSymbol &request; // resolved request declaration
 };
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const FindRefsResult &)> &consumer,
                        bool ignoreBuiltin = true);
-
-enum class RenameValidationStatus {
-  CAN_RENAME,
-  DO_NOTHING, // not perform rename since new name is equivalent to old new
-  INVALID_SYMBOL,
-  INVALID_NAME,
-  NAME_CONFLICT,
-};
-
-RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
-                                      const std::string &newName,
-                                      const std::function<void(const FindRefsResult &)> &consumer);
 
 } // namespace ydsh::lsp
 

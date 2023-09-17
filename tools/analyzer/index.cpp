@@ -289,18 +289,4 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
   return findAllReferences(indexes, *decl, consumer, ignoreBuiltin) > 0;
 }
 
-RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
-                                      const std::string &newName,
-                                      const std::function<void(const FindRefsResult &)> &consumer) {
-  const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
-  if (!decl) {
-    return RenameValidationStatus::INVALID_SYMBOL;
-  }
-
-  (void)newName;
-  (void)consumer;
-  return RenameValidationStatus::DO_NOTHING;
-}
-
 } // namespace ydsh::lsp

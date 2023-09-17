@@ -17,6 +17,7 @@
 #include "server.h"
 #include "extra_checker.h"
 #include "indexer.h"
+#include "rename.h"
 #include "source.h"
 #include "symbol.h"
 
@@ -217,9 +218,12 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
 
 Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &request,
                                                          const std::string &newName) const {
-  WorkspaceEdit workspaceEdit;
-  auto status = validateRename(this->result.indexes, request, newName,
-                               [&](const FindRefsResult &ret) { (void)ret; });
+  std::unordered_map<unsigned int, std::vector<TextEdit>> changes;
+  auto status =
+      validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
+        changes[toUnderlying(ret.symbol.getModId())].push_back(
+            ret.toTextEdit(*this->result.srcMan));
+      });
   switch (status) {
   case RenameValidationStatus::CAN_RENAME:
   case RenameValidationStatus::DO_NOTHING:
@@ -231,11 +235,21 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
     v += newName;
     return Err(std::move(v));
   }
+  case RenameValidationStatus::BUILTIN:
+    return Err(std::string("cannot perform rename since builtin symbol"));
   case RenameValidationStatus::NAME_CONFLICT: {
     std::string v = newName;
     v += " is already exists in current scope";
     return Err(std::move(v));
   }
+  }
+
+  WorkspaceEdit workspaceEdit;
+  for (auto &e : changes) {
+    auto src = this->result.srcMan->findById(static_cast<ModId>(e.first));
+    assert(src);
+    auto uri = toURI(*this->result.srcMan, src->getPath());
+    workspaceEdit.insert(uri, std::move(e.second));
   }
   return Ok(std::move(workspaceEdit));
 }
@@ -674,7 +688,7 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
 
         auto selectionRange = toRange(*resolved.asOk(), decl.getToken());
         auto range = toRange(*resolved.asOk(), decl.getBody());
-        auto name = DeclSymbol::demangle(decl.getKind(), decl.getAttr(), decl.getMangledName());
+        auto name = decl.toDemangledName();
         assert(selectionRange.hasValue());
         assert(range.hasValue());
         ret.push_back(DocumentSymbol{

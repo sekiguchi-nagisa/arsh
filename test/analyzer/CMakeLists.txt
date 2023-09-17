@@ -56,6 +56,19 @@ target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static highlighter tes
 add_test(${TEST_NAME} ${TEST_NAME})
 
 
+#=====================#
+#     rename_test     #
+#=====================#
+
+set(TEST_NAME rename_test)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        rename_test.cpp
+        )
+target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static test_common)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+
 #====================#
 #     open_test1     #
 #====================#

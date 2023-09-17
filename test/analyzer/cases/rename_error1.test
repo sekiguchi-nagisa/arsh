@@ -1,0 +1,64 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "$COMPREPLY\n1111111"}
+ }
+}
+
+# rename failed since builtin
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "AAA",
+    "position": {
+      "character": 3,
+      "line": 0
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "code": -32803,
+#    CHECK:   "message": "cannot perform rename since builtin symbol"
+#    CHECK: }
+
+
+# rename failed since no symbol
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "AAA",
+    "position": {
+      "character": 3,
+      "line": 1
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "code": -32803,
+#    CHECK:   "message": "rename target must be symbol"
+#    CHECK: }
+
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
