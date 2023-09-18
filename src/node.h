@@ -2631,6 +2631,17 @@ public:
 
   bool isInlined() const { return this->inlined; }
 
+  ImportedModKind getImportedModKind() const {
+    ImportedModKind importedKind{};
+    if (!this->getNameInfo()) {
+      setFlag(importedKind, ImportedModKind::GLOBAL);
+    }
+    if (this->isInlined()) {
+      setFlag(importedKind, ImportedModKind::INLINED);
+    }
+    return importedKind;
+  }
+
   bool isUnreachable() const { return hasFlag(this->modType.getAttr(), ModAttr::UNREACHABLE); }
 
   unsigned short getSrcIndex() const { return this->srcIndex; }

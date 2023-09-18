@@ -304,6 +304,29 @@ public:
   };
 };
 
+class IndexLink {
+public:
+  enum class ImportAttr {
+    GLOBAL = 1u << 0u,
+    INLINED = 1u << 1u,
+  };
+
+private:
+  ModId modId{0};
+  ImportAttr importAttr{};
+  std::string pathName;
+
+public:
+  IndexLink(ModId modId, ImportAttr importKind, std::string &&pathName)
+      : modId(modId), importAttr(importKind), pathName(std::move(pathName)) {}
+
+  ModId getModId() const { return this->modId; }
+
+  ImportAttr getImportAttr() const { return this->importAttr; }
+
+  const std::string &getPathName() const { return this->pathName; }
+};
+
 class SymbolIndex;
 using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
@@ -315,13 +338,13 @@ private:
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
-  std::vector<std::pair<SymbolRef, std::string>> links;
+  std::vector<std::pair<SymbolRef, IndexLink>> links; // for importing module
 
 public:
   SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
               std::unordered_map<std::string, SymbolRef> &&globals,
-              std::vector<std::pair<SymbolRef, std::string>> &&links)
+              std::vector<std::pair<SymbolRef, IndexLink>> &&links)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
         foreignDecls(std::move(foreignDecls)), globals(std::move(globals)),
         links(std::move(links)) {}
@@ -401,6 +424,9 @@ namespace ydsh {
 
 template <>
 struct allow_enum_bitop<lsp::DeclSymbol::Attr> : std::true_type {};
+
+template <>
+struct allow_enum_bitop<lsp::IndexLink::ImportAttr> : std::true_type {};
 
 } // namespace ydsh
 

@@ -664,7 +664,7 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
         ret.push_back(DocumentLink{
             .range = range.unwrap(),
             .target = toURI(*this->result.srcMan, src->getPath()).toString(),
-            .tooltip = e.second,
+            .tooltip = e.second.getPathName(),
         });
       }
     }

@@ -324,18 +324,11 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   assert(this->isTopLevel());
 
   // import module
-  ImportedModKind importedKind{};
-  if (!node.getNameInfo()) {
-    setFlag(importedKind, ImportedModKind::GLOBAL);
-  }
-  if (node.isInlined()) {
-    setFlag(importedKind, ImportedModKind::INLINED);
-  }
   if (hasFlag(node.getModType().getAttr(), ModAttr::HAS_ERRORS)) { // if error recovery is enabled
     this->reportError<ErrorMod>(node, node.getPathName().c_str());
   }
-  auto ret =
-      this->curScope->importForeignHandles(this->typePool(), node.getModType(), importedKind);
+  auto ret = this->curScope->importForeignHandles(this->typePool(), node.getModType(),
+                                                  node.getImportedModKind());
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }

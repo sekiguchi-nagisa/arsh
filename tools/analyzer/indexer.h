@@ -40,7 +40,7 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreign;
-  std::vector<std::pair<SymbolRef, std::string>> links;
+  std::vector<std::pair<SymbolRef, IndexLink>> links;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -189,10 +189,18 @@ public:
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
-  void addLink(Token token, ModId targetModId, const std::string &link) {
+  void addLink(Token token, ModId targetModId, ImportedModKind modKind, const std::string &link) {
     auto ref = SymbolRef::create(token, targetModId);
     if (ref.hasValue()) {
-      this->links.emplace_back(ref.unwrap(), link);
+      IndexLink::ImportAttr importAttr{};
+      if (hasFlag(modKind, ImportedModKind::GLOBAL)) {
+        setFlag(importAttr, IndexLink::ImportAttr::GLOBAL);
+      }
+      if (hasFlag(modKind, ImportedModKind::INLINED)) {
+        setFlag(importAttr, IndexLink::ImportAttr::INLINED);
+      }
+
+      this->links.emplace_back(ref.unwrap(), IndexLink(targetModId, importAttr, std::string(link)));
     }
   }
 
