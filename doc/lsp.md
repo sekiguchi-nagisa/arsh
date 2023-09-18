@@ -13,7 +13,7 @@
 | ``textDocument/signatureHelp``       | ✔️         |
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
-| ``textDocument/rename``              | ❌          |
+| ``textDocument/rename``              | ✔️         |
 
 
 ## Supported symbols

@@ -6,7 +6,7 @@
 | ``CLI``       | user-defined type definition | define user-defined type for declarative command line parsing |
 | ``Flag``      | field declaration            | define no-arg (flag) option                                   |
 | ``Option``    | field declaration            | define has-arg option                                         |
-| ``Arg``       | field declaration            | definition positional argument                                |
+| ``Arg``       | field declaration            | define positional argument                                    |
 
 ### ``CLI`` attribute
 only allowed for user-defied type definition

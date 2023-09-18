@@ -47,6 +47,7 @@
 
 - support ``textDocument/signatureHelp`` request
     - show (direct/indirect)function/method/constructor type signatures
+- experimental support ``textDocument/rename`` request
 
 ### Changed
 
@@ -55,7 +56,7 @@
 - **Breaking Change**: change disowned background job semantics
     - now do not redirect stdin to /dev/null if job control is enabled
 - **Breaking Change**: restrict the number of traversed directories in glob expansion of source statement
-    - now glob cancellation is no longer needed
+    - glob cancellation is no longer needed
 - **Breaking Change**: change module directory structure
     - ``MODULE_HOME`` indicates ``XDG_DATA_HOME/modules``
     - ``MODULE_DIR`` indicates ``DATA_DIR/modules``
