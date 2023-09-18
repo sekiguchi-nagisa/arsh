@@ -348,7 +348,8 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
 HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
                                 HandleKind kind, HandleAttr attribute) {
   bool shadowing = false;
-  if (this->allowWarning && !this->curScope->isGlobal()) {
+  if (this->allowWarning && !this->curScope->isGlobal() &&
+      !hasFlag(attribute, HandleAttr::UNCAPTURED)) {
     if (this->curScope->lookup(symbolName)) {
       shadowing = true;
     }
@@ -1164,7 +1165,7 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
     TypeNode &typeToken = node.getTargetTypeNode();
     auto &type = this->checkTypeExactly(typeToken);
     bool shadowing = false;
-    if (this->allowWarning && !this->curScope->isGlobal()) {
+    if (this->allowWarning && !this->curScope->isGlobal() && !this->isConstructorTopLevel()) {
       if (this->curScope->lookup(toTypeAliasFullName(nameInfo.getName()))) {
         shadowing = true;
       }
@@ -1913,7 +1914,7 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-  const bool willBeField = this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
+  const bool willBeField = this->isConstructorTopLevel();
   this->checkTypeVarDecl(node, willBeField);
 }
 

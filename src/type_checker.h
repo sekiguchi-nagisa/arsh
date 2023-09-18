@@ -485,6 +485,10 @@ private:
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
 
+  bool isConstructorTopLevel() const {
+    return this->funcCtx->withinConstructor() && this->curScope->parent->isFunc();
+  }
+
   class IntoBlock {
   private:
     ObserverPtr<NameScopePtr> scopePtr;
