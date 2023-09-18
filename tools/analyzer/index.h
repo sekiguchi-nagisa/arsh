@@ -143,27 +143,34 @@ public:
     CStrPtr name;
   };
 
+  struct ScopeInfo {
+    unsigned int id;
+    unsigned int depth;
+  };
+
 private:
   Kind kind;
   Attr attr;
   CStrPtr mangledName;
   CStrPtr info; // hover information
   Token body;
+  ScopeInfo scopeInfo;
 
 public:
   static Optional<DeclSymbol> create(Kind kind, Attr attr, Name &&name, ModId modId,
-                                     const char *info, Token body) {
+                                     const char *info, Token body, ScopeInfo scopeInfo) {
     if (name.token.size > UINT16_MAX) {
       return {};
     }
     return DeclSymbol(kind, attr, name.token.pos, static_cast<unsigned short>(name.token.size),
-                      modId, std::move(name.name), info != nullptr ? info : "(dummy)", body);
+                      modId, std::move(name.name), info != nullptr ? info : "(dummy)", body,
+                      scopeInfo);
   }
 
   DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, ModId mod, CStrPtr &&name,
-             const char *info, Token body)
+             const char *info, Token body, ScopeInfo scopeInfo)
       : DeclBase(pos, size, mod), kind(kind), attr(attr), mangledName(std::move(name)),
-        info(CStrPtr(strdup(info))), body(body) {}
+        info(CStrPtr(strdup(info))), body(body), scopeInfo(scopeInfo) {}
 
   Kind getKind() const { return this->kind; }
 
@@ -181,6 +188,8 @@ public:
   std::pair<ModId, bool> getInfoAsModId() const;
 
   Token getBody() const { return this->body; }
+
+  ScopeInfo getScopeInfo() const { return this->scopeInfo; }
 
   std::string toDemangledName() const {
     return demangle(this->getKind(), this->getAttr(), this->getMangledName());

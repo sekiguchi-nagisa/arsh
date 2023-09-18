@@ -36,9 +36,10 @@ class IndexBuilder {
 private:
   const ModId modId;
   const int version;
+  unsigned int scopeIdCount{0};
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
-  std::vector<ForeignDecl> foreigns;
+  std::vector<ForeignDecl> foreign;
   std::vector<std::pair<SymbolRef, std::string>> links;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
@@ -55,10 +56,17 @@ private:
 
     const ScopeKind kind;
 
-    ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, ScopeKind kind, const DSType *type)
-        : resolvedType(type), parent(parent), kind(kind) {}
+    const unsigned int scopeId;
 
-    ScopeEntry() : ScopeEntry(nullptr, ScopeKind::GLOBAL, nullptr) {}
+    const unsigned int scopeDepth;
+
+    ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, ScopeKind kind, unsigned int scopeId,
+               const DSType *type)
+        : resolvedType(type), parent(parent), kind(kind), scopeId(scopeId),
+          scopeDepth(this->parent ? this->parent->scopeDepth + 1 : 0) {}
+
+    explicit ScopeEntry(unsigned int scopeId)
+        : ScopeEntry(nullptr, ScopeKind::GLOBAL, scopeId, nullptr) {}
 
     bool isGlobal() const { return !this->parent; }
 
@@ -87,6 +95,13 @@ private:
       return nullptr;
     }
 
+    DeclSymbol::ScopeInfo getScopeInfo() const {
+      return {
+          .id = this->scopeId,
+          .depth = this->scopeDepth,
+      };
+    }
+
     auto take() && { return std::move(this->map); }
   };
 
@@ -99,7 +114,7 @@ private:
 public:
   IndexBuilder(ModId modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create()),
+      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create(this->scopeIdCount)),
         pool(std::move(pool)), indexes(indexes) {}
 
   SymbolIndex build() && {
@@ -107,7 +122,7 @@ public:
             this->version,
             std::move(this->decls),
             std::move(this->symbols),
-            std::move(this->foreigns),
+            std::move(this->foreign),
             std::move(*this->scope).take(),
             std::move(this->links)};
   }
@@ -117,7 +132,7 @@ public:
   const ScopeEntry &curScope() const { return *this->scope; }
 
   auto intoScope(ScopeKind kind, const DSType *type = nullptr) {
-    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, kind, type);
+    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, kind, ++this->scopeIdCount, type);
     return finally([&] { this->scope = this->scope->parent; });
   }
 

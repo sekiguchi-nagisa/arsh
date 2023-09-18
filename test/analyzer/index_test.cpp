@@ -238,6 +238,21 @@ function assertArray(
       this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 10}},
                      {{modId, "(7:10~7:12)"},    // itself
                       {modId, "(7:26~7:28)"}})); // echo $a
+
+  // scope info
+  auto index = this->indexes.find(static_cast<ModId>(modId));
+  ASSERT_TRUE(index);
+  ASSERT_EQ(5, index->getDecls().size());
+  ASSERT_EQ(0, index->getDecls()[0].getScopeInfo().id);
+  ASSERT_EQ(0, index->getDecls()[0].getScopeInfo().depth);
+  ASSERT_EQ(1, index->getDecls()[1].getScopeInfo().id);
+  ASSERT_EQ(1, index->getDecls()[1].getScopeInfo().depth);
+  ASSERT_EQ(1, index->getDecls()[2].getScopeInfo().id);
+  ASSERT_EQ(1, index->getDecls()[2].getScopeInfo().depth);
+  ASSERT_EQ(2, index->getDecls()[3].getScopeInfo().id);
+  ASSERT_EQ(2, index->getDecls()[3].getScopeInfo().depth);
+  ASSERT_EQ(3, index->getDecls()[4].getScopeInfo().id);
+  ASSERT_EQ(2, index->getDecls()[4].getScopeInfo().depth);
 }
 
 TEST_F(IndexTest, scope3) {

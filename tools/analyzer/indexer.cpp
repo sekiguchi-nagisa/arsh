@@ -155,15 +155,15 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
     assert(decl->getPos() == ref->getPos());
   } else { // foreign decl
     SymbolRequest request = {.modId = ref->getModId(), .pos = ref->getPos()};
-    auto iter = std::lower_bound(this->foreigns.begin(), this->foreigns.end(), request,
+    auto iter = std::lower_bound(this->foreign.begin(), this->foreign.end(), request,
                                  ForeignDecl::Compare());
-    if (iter == this->foreigns.end() || (*iter).getModId() != request.modId ||
+    if (iter == this->foreign.end() || (*iter).getModId() != request.modId ||
         (*iter).getPos() != request.pos) { // not found, register foreign decl
       auto *ret = this->indexes.findDecl(request);
       if (!ret || !hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
         return nullptr;
       }
-      iter = this->foreigns.insert(iter, ForeignDecl(*ret));
+      iter = this->foreign.insert(iter, ForeignDecl(*ret));
     }
     decl = &*iter;
   }
@@ -284,7 +284,8 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
   // create DeclSymbol
-  auto ret = DeclSymbol::create(k, attr, std::move(name), this->modId, info, body);
+  auto ret = DeclSymbol::create(k, attr, std::move(name), this->modId, info, body,
+                                this->scope->getScopeInfo());
   if (!ret.hasValue()) {
     return nullptr;
   }
