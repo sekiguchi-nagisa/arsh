@@ -179,11 +179,11 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
 bool IndexBuilder::addThis(const NameInfo &info, const HandlePtr &handle) {
   auto *methodScope = this->curScope().findMethodScope();
   assert(methodScope);
-  if (methodScope->find(mangleSymbolName(nullptr, DeclSymbol::Kind::LET, info))) {
-    return this->addSymbol(info, DeclSymbol::Kind::LET, handle);
+  if (methodScope->find(mangleSymbolName(nullptr, DeclSymbol::Kind::THIS, info))) {
+    return this->addSymbol(info, DeclSymbol::Kind::THIS, handle);
   } else {
     return this->addDecl(info, *methodScope->getResolvedType(), info.getToken(),
-                         DeclSymbol::Kind::LET);
+                         DeclSymbol::Kind::THIS);
   }
 }
 

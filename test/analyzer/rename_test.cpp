@@ -72,8 +72,10 @@ TEST_F(RenameTest, invalid1) {
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 0, .character = 5}, "aaa",
                                        RenameValidationStatus::DO_NOTHING));
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze("$OSTYPE", 3));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze("$OSTYPE\n$?", 3));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 3, .line = 0, .character = 2}, "var",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 3, .line = 1, .character = 1}, "var",
                                        RenameValidationStatus::BUILTIN));
 
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze("AAA() {}", 4));
@@ -81,6 +83,17 @@ TEST_F(RenameTest, invalid1) {
                                        RenameValidationStatus::INVALID_NAME));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 4, .line = 0, .character = 1}, "AAA",
                                        RenameValidationStatus::DO_NOTHING));
+
+  const char *content = R"(
+typedef AAA() {}
+function get() : AAA for AAA {
+  return \
+$this
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 5));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 5, .line = 4, .character = 2}, "var",
+                                       RenameValidationStatus::BUILTIN));
 }
 
 TEST_F(RenameTest, invalid2) {

@@ -163,7 +163,8 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::EXPORT_ENV:
-  case DeclSymbol::Kind::IMPORT_ENV: {
+  case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::THIS: {
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
     content += " ";
     content += name;
@@ -274,6 +275,7 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::EXPORT_ENV:
+  case DeclSymbol::Kind::THIS:
     symbolKind = SymbolKind::Variable;
     break;
   case DeclSymbol::Kind::CONST:

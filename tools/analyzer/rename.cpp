@@ -63,7 +63,8 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   if (!decl || decl->getKind() == DeclSymbol::Kind::HERE_START) {
     return RenameValidationStatus::INVALID_SYMBOL;
   }
-  if (isBuiltinMod(decl->getModId()) || hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN)) {
+  if (isBuiltinMod(decl->getModId()) || hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN) ||
+      decl->getKind() == DeclSymbol::Kind::THIS) {
     return RenameValidationStatus::BUILTIN;
   }
 

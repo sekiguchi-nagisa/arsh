@@ -117,6 +117,7 @@ public:
     LET,
     IMPORT_ENV,
     EXPORT_ENV,
+    THIS,
     CONST,
     MOD_CONST,
     FUNC,
@@ -224,6 +225,7 @@ public:
     case DeclSymbol::Kind::VAR:
       return "var";
     case DeclSymbol::Kind::LET:
+    case DeclSymbol::Kind::THIS:
       return "let";
     case DeclSymbol::Kind::EXPORT_ENV:
       return "exportenv";
