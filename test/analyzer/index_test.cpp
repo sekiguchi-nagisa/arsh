@@ -748,7 +748,7 @@ TEST_F(IndexTest, udtype) {
   const char *content = R"E(
     typedef APIError : Error
     typedef AAA($e : APIError) {
-      let error = $e
+      let error = $e; $error;
       import-env HOME
     }
     var a = new AAA(new APIError("hello"))
@@ -756,7 +756,7 @@ TEST_F(IndexTest, udtype) {
     $a.HOME
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 14}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 15}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(
@@ -790,6 +790,7 @@ TEST_F(IndexTest, udtype) {
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = modId, .position = {.line = 3, .character = 11}}, // let error = $e
       {{modId, "(3:10~3:15)"},                                           // itself
+       {modId, "(3:22~3:28)"},                                           // $error
        {modId, "(7:7~7:12)"}}));                                         // $a.error
 }
 
@@ -799,18 +800,19 @@ TEST_F(IndexTest, udtypeRec) {
     typedef AAA($n : AAA?) {
       let next = $n
       typedef Next = Option<typeof(new AAA(new AAA?()))>
+      23 is Next
     }
     new AAA(new AAA.Next()).next
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 12}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 13}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 3, .character = 49}}, // new AAA?()
       {{modId, "(1:12~1:15)"}}));                                        // typedef AAA($n : AAA?)
   ASSERT_NO_FATAL_FAILURE(
-      this->findDecl(Request{.modId = modId, .position = {.line = 5, .character = 23}}, // AAA.Next
+      this->findDecl(Request{.modId = modId, .position = {.line = 6, .character = 23}}, // AAA.Next
                      {{modId, "(3:14~3:18)"}})); // typedef Next
 
   // references
@@ -820,14 +822,15 @@ TEST_F(IndexTest, udtypeRec) {
        {modId, "(1:21~1:24)"},                                           // $n : AAA?
        {modId, "(3:39~3:42)"},                                           // new AAA(new AAA?())
        {modId, "(3:47~3:50)"},                                           // new AAA?()
-       {modId, "(5:8~5:11)"},     //     new AAA(new AAA.Next()).next
-       {modId, "(5:16~5:19)"}})); //     new AAA.Next()
+       {modId, "(6:8~6:11)"},     //     new AAA(new AAA.Next()).next
+       {modId, "(6:16~6:19)"}})); //     new AAA.Next()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = modId,
               .position = {.line = 3,
                            .character = 17}}, // typedef Next = Option<typeof(new AAA(new AAA?()))>
       {{modId, "(3:14~3:18)"},                // itself
-       {modId, "(5:20~5:24)"}}));             //     new AAA(new AAA.Next()).next
+       {modId, "(4:12~4:16)"},                // 23 is Next
+       {modId, "(6:20~6:24)"}}));             //     new AAA(new AAA.Next()).next
 }
 
 TEST_F(IndexTest, method) {
@@ -1202,12 +1205,14 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage(): Nothing\n```"));
 
-  // user-defined type
+  // user-defined error type
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2,
                                       "```ydsh\ntypedef App: OutOfRangeError\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
                   "```ydsh\ntypedef API: AppError\n```"));
+
+  // user-defined type with explicit constructor
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef Interval() { var begin = 34; }; var a = new Interval();\n$a",
                   Position{.line = 1, .character = 0}, "```ydsh\nvar a: Interval\n```"));
@@ -1219,6 +1224,20 @@ typedef Interval(s: Int) {
     let value: Interval?
 }
 ```)"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { var begin = 34; }\nnew AAA().\nbegin",
+                                      Position{.line = 2, .character = 1},
+                                      "```ydsh\nvar begin: Int for AAA\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { var begin = 34; \n$begin;}",
+                                      Position{.line = 1, .character = 3},
+                                      "```ydsh\nvar begin: Int for AAA\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; }\n23 is AAA.\nType",
+                                      Position{.line = 2, .character = 3},
+                                      "```ydsh\ntypedef Type = Int for AAA\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; 34 is \nType; }",
+                                      Position{.line = 1, .character = 3},
+                                      "```ydsh\ntypedef Type = Int for AAA\n```"));
+
+  // user-defined type with implicit constructor
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
                                       "}\nvar aaaa = new Interval(2, $none);",
                                       Position{.line = 1, .character = 20}, R"(```ydsh

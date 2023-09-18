@@ -47,7 +47,7 @@ private:
     /**
      * mangled name => DeclSymbol reference
      */
-    std::unordered_map<std::string, SymbolRef> map; // FIXME: replace string with StringRef
+    std::unordered_map<std::string, SymbolRef> map;
 
     const DSType *resolvedType{nullptr}; // for constructor
 
@@ -82,6 +82,18 @@ private:
     }
 
     const DSType *getResolvedType() const { return this->resolvedType; }
+
+    /**
+     * low-level api, normally unused
+     * @param name
+     * must be proper mangled name
+     * @param decl
+     * @return
+     * if successfully insert, return true
+     */
+    bool addDeclWithSpecifiedName(std::string &&name, const DeclSymbol &decl) {
+      return this->map.emplace(std::move(name), decl.toRef()).second;
+    }
 
     bool addDecl(const DeclSymbol &decl);
 

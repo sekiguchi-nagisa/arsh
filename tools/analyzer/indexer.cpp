@@ -27,16 +27,16 @@ namespace ydsh::lsp {
 // ##########################
 
 bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
-  bool r1 = this->map.emplace(decl.getMangledName().toString(), decl.toRef()).second;
+  bool r1 = this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl);
   if (decl.getKind() == DeclSymbol::Kind::MOD) {
     // register udc
     std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName());
-    auto r2 = this->map.emplace(std::move(name), decl.toRef());
+    bool r2 = this->addDeclWithSpecifiedName(std::move(name), decl);
 
     // register type alias
     name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName());
-    auto r3 = this->map.emplace(std::move(name), decl.toRef());
-    r1 = r1 || r2.second || r3.second;
+    bool r3 = this->addDeclWithSpecifiedName(std::move(name), decl);
+    r1 = r1 && r2 && r3;
   }
   return r1;
 }
@@ -280,6 +280,15 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
   }
 }
 
+static bool isMemberDecl(const DeclSymbol &decl) {
+  auto kind = decl.getKind();
+  if (kind == DeclSymbol::Kind::TYPE_ALIAS) {
+    return true;
+  }
+  StringRef prefix = DeclSymbol::getVarDeclPrefix(kind);
+  return !prefix.empty();
+}
+
 DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
@@ -304,8 +313,12 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
     while (!global->isGlobal()) {
       global = global->parent.get();
     }
-    if (op == DeclInsertOp::MEMBER && !this->scope->isGlobal()) {
-      if (!this->scope->addDecl(decl)) {
+    if (op == DeclInsertOp::MEMBER && !this->scope->isGlobal() && isMemberDecl(decl)) {
+      /**
+       * for field/type-alias access from constructor
+       */
+      auto mangledName = DeclSymbol::mangle(decl.getKind(), decl.toDemangledName());
+      if (!this->scope->addDeclWithSpecifiedName(std::move(mangledName), decl)) {
         return nullptr;
       }
     }

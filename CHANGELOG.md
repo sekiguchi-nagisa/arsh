@@ -110,6 +110,7 @@
 - fix common super type resolution that have unresolved type
 - common prefix resolution of completion candidates that having multi-bytes characters
 - fix code generation of defer block in loop expression
+- fix indexing of user-defined type member when access from constructor
 
 ## [0.30.0] - 2023-07-01
 
