@@ -3,7 +3,6 @@
 source ../../../../share/ydsh/modules/prompt
 
 function dirname($s : String) : String {
-    import-env HOME
     if $s.startsWith($HOME) {
         var d = '~'
         $d += $s.slice($HOME.size())
@@ -25,13 +24,11 @@ assert $renderPrompt('\\\n') == $'\\\n'
 assert $renderPrompt('\r') == "$(echo -e '\r')"
 assert $renderPrompt('\s') == "$(basename $0)"
 assert $renderPrompt('\u') == "$(whoami)"
-import-env USER
 let OLD_USER = $USER
 $USER=""
 assert($renderPrompt('\u') == "$(whoami)")
 $USER = $OLD_USER
 
-import-env PWD : "$(pwd)"
 assert($renderPrompt('\w') == $dirname($PWD))
 assert $renderPrompt('\\w') == '\w'
 

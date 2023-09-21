@@ -6,7 +6,6 @@ assert(command ls)
 
 # execute external command using default path
 hash -r
-import-env PATH
 var OLD_PATH = $PATH
 
 $PATH = ""

@@ -3,7 +3,7 @@
 source ../../../../share/ydsh/completions/sudo
 source ../../../../share/ydsh/completions/printenv
 
-exportenv PATH = "/usr/bin:/bin:"
+PATH=/usr/bin:/bin:
 
 sudo() {}   # workaround for sudo not installed env
 

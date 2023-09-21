@@ -525,9 +525,9 @@ TEST_F(CmdlineTest2, cwd) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 
   // follow symbolic link
-  ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; import-env PWD; assert $PWD == '%s/link'",
-                                          this->getTempDirName(), this->getTempDirName()),
-                                       0));
+  ASSERT_NO_FATAL_FAILURE(this->expect(
+      CL("cd %s/link; assert $PWD == '%s/link'", this->getTempDirName(), this->getTempDirName()),
+      0));
 
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; assert \"$(pwd)\" == '%s/link'",
                                           this->getTempDirName(), this->getTempDirName()),
@@ -551,16 +551,14 @@ TEST_F(CmdlineTest2, cwd) {
                       this->getTempDirName(), this->getTempDirName()),
                    0));
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("assert(cd %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s/link'",
-         this->getTempDirName(), this->getTempDirName()),
-      0));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(CL("assert(cd %s/link); assert cd ../; assert $OLDPWD == '%s/link'",
+                      this->getTempDirName(), this->getTempDirName()),
+                   0));
 
   // without symbolic link
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("assert(cd -P %s/link); import-env PWD; assert $PWD == '%s'",
-                      this->getTempDirName(), target.c_str()),
-                   0));
+  ASSERT_NO_FATAL_FAILURE(this->expect(
+      CL("assert(cd -P %s/link); assert $PWD == '%s'", this->getTempDirName(), target.c_str()), 0));
 
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd)\" == '%s'",
                                           this->getTempDirName(), target.c_str()),
@@ -579,10 +577,10 @@ TEST_F(CmdlineTest2, cwd) {
                       this->getTempDirName(), this->getTempDirName()),
                    0));
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(
-      CL("assert(cd -P %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s'",
-         this->getTempDirName(), target.c_str()),
-      0));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(CL("assert(cd -P %s/link); assert cd ../; assert $OLDPWD == '%s'",
+                      this->getTempDirName(), target.c_str()),
+                   0));
 }
 
 TEST_F(CmdlineTest2, import1) {
@@ -721,27 +719,25 @@ struct CmdlineTest3 : public CmdlineTest2 {
   };
 
   void expect(Param &&p) {
-    auto builder = CL("import-env PWD; import-env OLDPWD; echo -n $PWD $OLDPWD")
-                       .setWorkingDir(p.workdir.c_str())
-                       .setBeforeExec([&] {
-                         if (p.beforeExec) {
-                           p.beforeExec();
-                         }
+    auto builder = CL("echo -n $PWD $OLDPWD").setWorkingDir(p.workdir.c_str()).setBeforeExec([&] {
+      if (p.beforeExec) {
+        p.beforeExec();
+      }
 
-                         // set PWD
-                         if (p.before.first.empty()) {
-                           unsetenv(ENV_PWD);
-                         } else {
-                           setenv(ENV_PWD, p.before.first.c_str(), 1);
-                         }
+      // set PWD
+      if (p.before.first.empty()) {
+        unsetenv(ENV_PWD);
+      } else {
+        setenv(ENV_PWD, p.before.first.c_str(), 1);
+      }
 
-                         // set OLDPWD
-                         if (p.before.second.empty()) {
-                           unsetenv(ENV_OLDPWD);
-                         } else {
-                           setenv(ENV_OLDPWD, p.before.second.c_str(), 1);
-                         }
-                       });
+      // set OLDPWD
+      if (p.before.second.empty()) {
+        unsetenv(ENV_OLDPWD);
+      } else {
+        setenv(ENV_OLDPWD, p.before.second.c_str(), 1);
+      }
+    });
 
     std::string out = p.after.first;
     out += " ";

@@ -6,8 +6,5 @@ cd ~
 
 # after call cd command, set OLDPWD, PWD
 
-import-env OLDPWD
-import-env PWD
-
 assert $OLDPWD.empty()
 assert $PWD == "$(pwd)"

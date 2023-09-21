@@ -1,7 +1,6 @@
 
 source ../../../../share/ydsh/completions/builtin
 
-importenv PATH
 $PATH = "/usr/bin:/bin:"
 
 # help

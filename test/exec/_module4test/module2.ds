@@ -4,4 +4,4 @@ var hey = {
     "h" + 'e' + 'y'
 }
 
-import-env HOME
+import-env ZZZZ : "hello env!!"

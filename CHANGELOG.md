@@ -78,6 +78,8 @@
     - ``LineEditor#action``, ``LineEditor#bind``
 - **Breaking Change**: change return value of ``String#realpath``
     - now throw Error when cannot resolve real path
+- **Breaking Change**: now import some environmental variables by default
+    - ``HOME``, ``PATH``, ``PWD``, ``OLDPWD``, ``USER``, ``LOGNAME``
 - improve time format handling of builtin printf command
     - support ``%N`` time specifier for nanoseconds time printing
     - support nanoseconds epoc time string like ``1689511935.00023``

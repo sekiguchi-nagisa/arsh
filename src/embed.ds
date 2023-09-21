@@ -1,8 +1,9 @@
 # builtin variable definition (not call external command, sub-shell)
 
-if !(checkenv PATH) {
-    export-env PATH = '/bin:/usr/bin:/usr/local/bin'
-}
+checkenv PATH || setenv PATH=/bin:/usr/bin:/usr/local/bin
+
+importenv HOME; importenv PATH; importenv PWD; importenv OLDPWD;
+importenv USER; importenv LOGNAME;
 
 typedef Boolean = Bool; typedef UnixFD = FD
 

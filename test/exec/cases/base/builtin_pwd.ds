@@ -3,7 +3,6 @@
 assert pwd johefre
 
 cd
-import-env PWD
 assert($PWD == "$(pwd)")
 
 # error (not found)

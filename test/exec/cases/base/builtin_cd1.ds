@@ -1,12 +1,9 @@
 # builtin cd command
 
 cd ~
-import-env PWD
-import-env OLDPWD
 assert($PWD == "$(pwd)")
 assert($PWD == "$(echo ~+)")
 
-import-env HOME
 assert($PWD == $HOME)
 
 var OLD = $PWD

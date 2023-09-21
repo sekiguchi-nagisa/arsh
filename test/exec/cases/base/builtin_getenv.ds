@@ -42,7 +42,6 @@ assert $? == 1
 assert $REPLY.empty()
 
 $REPLY = "dummy"
-importenv HOME
 getenv -- HOME
 assert $? == 0
 assert $REPLY == $HOME

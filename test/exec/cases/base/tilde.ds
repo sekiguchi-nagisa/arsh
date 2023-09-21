@@ -3,7 +3,6 @@
 var ex = 334 as Any
 
 ## expand to HOME
-import-env HOME
 assert($HOME == "$(echo ~)")
 assert "if=$HOME" == "$(echo if=~)"
 assert "if\\=$HOME" == "$(echo if\\=~)"
@@ -26,7 +25,6 @@ assert $home == "$(echo ~)"
 $HOME = $home
 
 ## expand to PWD
-import-env PWD : "$(pwd)"
 assert($PWD == "$(echo ~+)") : "$PWD, $(pwd), $(echo ~+)"
 assert($PWD + "/" == "$(echo ~'+/')")
 assert($PWD + "/huge" == "$(echo ~+/huge)")
@@ -65,7 +63,6 @@ try { echo ~+/hoge; } catch e { $ex = $e; }  # if PWD is unset, raise error
 assert ($ex as TildeError).message() == "undefined or empty: ~+"
 
 ## expand to OLDPWD
-import-env OLDPWD : "$(pwd)"
 assert($OLDPWD == "$(echo ~-)")
 assert($OLDPWD + "/" == "$(echo ~-/)")
 assert($OLDPWD + "/we" == "$(echo ~-/we)")

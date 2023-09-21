@@ -10,23 +10,23 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     var gvars = [
         '#', '$', '0', '?', '@',
         'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
-        'DIRSTACK', 'DYNA_UDCS', 'EUID', 'FALSE', 'False', 'IFS', 'LINE_EDIT', 'MACHTYPE', 
-        'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None',
-        'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
+        'DIRSTACK', 'DYNA_UDCS', 'EUID', 'FALSE', 'False', 'HOME', 'IFS', 'LINE_EDIT', 'LOGNAME', 
+        'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None', 'OLDPWD',
+        'ON_ASSERT', 'ON_ERR', 'ON_EXIT', 'OSTYPE', 'PATH', 'PID', 'PIPESTATUS', 'PPID', 'PWD',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
         'SIGABRT', 'SIGALRM', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP',
         'SIGILL', 'SIGINT', 'SIGKILL', 'SIGPIPE', 'SIGQUIT', 'SIGSEGV',
         'SIGSTOP', 'SIGTERM', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1', 'SIGUSR2',
         'SIG_DFL', 'SIG_EXIT', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
-        'TRUE', 'True', 'UID', 'YDSH_BIN', 'YDSH_VERSION',
+        'TRUE', 'True', 'UID',  'USER', 'YDSH_BIN', 'YDSH_VERSION',
         'assertArray', 'false', 'none', 'reply', 'true', 'types',
     ]
 
     $assertArray($gvars, $(complete '$'))
 
     var gvars2 = [
-        'PID', 'PIPESTATUS', 'PPID',
+        'PATH', 'PID', 'PIPESTATUS', 'PPID', 'PWD',
     ]
 
     $assertArray($gvars2, $(complete '$P'))
@@ -49,7 +49,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 
     # scope
     var gvar3 = [
-        'PID', 'PIPESTATUS', 'PPID', 'PZ0', 'PZ1', 'PZ2'
+       'PATH', 'PID', 'PIPESTATUS', 'PPID', 'PWD', 'PZ0', 'PZ1', 'PZ2'
     ]
     $assertArray($gvar3, $(complete '
         var PZ2 = ls -la && $true
