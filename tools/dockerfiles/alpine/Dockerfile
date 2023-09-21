@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk update && apk add gcc g++ cmake ninja pcre2 pcre2-dev sudo git
+RUN apk update && apk add gcc g++ cmake ninja pcre2 pcre2-dev sudo git python3
 
 COPY . /root/dev
 
