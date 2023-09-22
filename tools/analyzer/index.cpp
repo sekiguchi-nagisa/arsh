@@ -87,10 +87,13 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   return value;
 }
 
-std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
+std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
+                                                             StringRef mangledName) {
+  StringRef recvTypeName;
   if (hasFlag(a, Attr::MEMBER)) {
     auto pos = mangledName.lastIndexOf("@");
     assert(pos != StringRef::npos);
+    recvTypeName = mangledName.substr(pos + 1);
     mangledName = mangledName.substr(0, pos);
   }
 
@@ -119,7 +122,11 @@ std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
   case DeclSymbol::Kind::HERE_START:
     break;
   }
-  return mangledName.toString();
+  return {recvTypeName, mangledName};
+}
+
+std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
+  return demangleWithRecv(k, a, mangledName).second.toString();
 }
 
 // #########################
@@ -225,9 +232,9 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
   return false;
 }
 
-static unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &decl,
-                                      const std::function<void(const FindRefsResult &)> &consumer,
-                                      bool ignoreBuiltin) {
+unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &decl,
+                               bool ignoreBuiltin,
+                               const std::function<void(const FindRefsResult &)> &consumer) {
   unsigned int count = 0;
   if (hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
     return 0;
@@ -278,17 +285,6 @@ static unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSy
     }
   }
   return count;
-}
-
-bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &consumer,
-                       bool ignoreBuiltin) {
-  const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
-  if (!decl) {
-    return false;
-  }
-  return findAllReferences(indexes, *decl, consumer, ignoreBuiltin) > 0;
 }
 
 } // namespace ydsh::lsp

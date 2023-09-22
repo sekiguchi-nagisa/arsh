@@ -31,14 +31,22 @@ enum class RenameValidationStatus {
   NAME_CONFLICT,
 };
 
-struct RenameResult {
-  const SymbolRef symbol; // rename target symbol
-  const StringRef newName;
+struct RenameTarget {
+  const SymbolRef symbol;  // rename target symbol
+  const StringRef newName; // may be escaped (for user-defined command)
 
-  RenameResult(SymbolRef symbol, StringRef newName) : symbol(symbol), newName(newName) {}
+  RenameTarget(SymbolRef symbol, StringRef newName) : symbol(symbol), newName(newName) {}
 
   TextEdit toTextEdit(const SourceManager &srcMan) const;
 };
+
+struct RenameConflict {
+  const SymbolRef symbol; // conflict symbol
+
+  explicit RenameConflict(SymbolRef symbol) : symbol(symbol) {}
+};
+
+using RenameResult = ydsh::Result<RenameTarget, RenameConflict>;
 
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
                                       StringRef newName,

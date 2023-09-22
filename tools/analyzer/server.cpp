@@ -221,8 +221,11 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
   std::unordered_map<unsigned int, std::vector<TextEdit>> changes;
   auto status =
       validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
-        changes[toUnderlying(ret.symbol.getModId())].push_back(
-            ret.toTextEdit(*this->result.srcMan));
+        if (ret) {
+          auto &target = ret.asOk();
+          changes[toUnderlying(target.symbol.getModId())].push_back(
+              target.toTextEdit(*this->result.srcMan));
+        }
       });
   switch (status) {
   case RenameValidationStatus::CAN_RENAME:
@@ -245,6 +248,9 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
   }
 
   WorkspaceEdit workspaceEdit;
+  if (!changes.empty()) {
+    workspaceEdit.init();
+  }
   for (auto &e : changes) {
     auto src = this->result.srcMan->findById(static_cast<ModId>(e.first));
     assert(src);

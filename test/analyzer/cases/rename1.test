@@ -1,0 +1,86 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "var ZZZ = 34;\necho $ZZZ\necho ${ZZZ}"}
+ }
+}
+
+# rename global variable
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "AAAA",
+    "position": {
+      "character": 5,
+      "line": 1
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "result": {
+#    CHECK:     "changes": {
+#    CHECK:       "file:///test/test.ds": [
+#    CHECK:         {
+#    CHECK:           "newText": "AAAA",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 7,
+#    CHECK:               "line": 0
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 4,
+#    CHECK:               "line": 0
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         {
+#    CHECK:           "newText": "AAAA",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 9,
+#    CHECK:               "line": 1
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 6,
+#    CHECK:               "line": 1
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         {
+#    CHECK:           "newText": "AAAA",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 10,
+#    CHECK:               "line": 2
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 7,
+#    CHECK:               "line": 2
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       ]
+#    CHECK:     }
+#    CHECK:   }
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

@@ -1134,12 +1134,16 @@ struct TextEdit {
 };
 
 struct WorkspaceEdit {
-  Optional<std::map<DocumentURI, std::vector<TextEdit>>> changes;
+  using change_type = std::map<DocumentURI, std::vector<TextEdit>>;
+
+  Optional<change_type> changes;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(changes);
   }
+
+  void init() { this->changes = change_type(); }
 
   /**
    * if insertion success, return true

@@ -55,6 +55,101 @@ static std::string quoteCommandName(StringRef name) {
   return "";
 }
 
+static void resolveGlobalImportedIndexes(const SymbolIndexes &indexes,
+                                         const SymbolIndexPtr &thisIndex, SymbolIndexes &resolved) {
+  for (auto &e : thisIndex->getLinks()) {
+    auto &link = e.second;
+    if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::GLOBAL)) {
+      auto importedIndex = indexes.find(link.getModId());
+      assert(importedIndex);
+      resolved.add(std::move(importedIndex));
+      if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
+        resolveGlobalImportedIndexes(indexes, importedIndex, resolved);
+      }
+    }
+  }
+}
+
+/**
+ * get imported modules at this module
+ * @param indexes
+ * @param thisIndex
+ * @return
+ */
+static SymbolIndexes resolveGlobalImportedIndexes(const SymbolIndexes &indexes,
+                                                  const SymbolIndexPtr &thisIndex) {
+  SymbolIndexes resolved;
+  auto builtin = indexes.find(BUILTIN_MOD_ID);
+  assert(builtin);
+  resolved.add(builtin);
+  resolveGlobalImportedIndexes(indexes, thisIndex, resolved);
+  return resolved;
+}
+
+/**
+ * get modules that import this module
+ * @param indexes
+ * @param thisIndex
+ * @return
+ */
+static SymbolIndexes collectGlobalImportingIndexes(const SymbolIndexes &indexes,
+                                                   const SymbolIndexPtr &thisIndex) {
+  SymbolIndexes importing;
+  (void)indexes;
+  (void)thisIndex;
+  return importing;
+}
+
+static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &decl,
+                              StringRef newName,
+                              const std::function<void(const RenameResult &)> &consumer) {
+  switch (decl.getKind()) {
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::LET:
+  case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::EXPORT_ENV:
+    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
+      return false; // TODO: support field
+    }
+    break;
+  default:
+    return false; // TODO: support other symbols
+  }
+
+  auto recvTypeName =
+      DeclSymbol::demangleWithRecv(decl.getKind(), decl.getAttr(), decl.getMangledName()).first;
+  auto mangledName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
+  auto declIndex = indexes.find(decl.getModId());
+  assert(declIndex);
+
+  // check name conflict in global/inlined imported indexes (also include builtin index)
+  auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
+  for (auto &importedIndex : importedIndexes) {
+    if (auto *r = importedIndex->findGlobal(mangledName)) {
+      if (consumer) {
+        consumer(Err(RenameConflict(*r)));
+      }
+      return false;
+    }
+  }
+
+  // check name conflict in this index // FIXME: scope-aware conflict checking
+  for (auto &e : declIndex->getDecls()) {
+    if (e.getMangledName() == mangledName) {
+      if (consumer) {
+        consumer(Err(RenameConflict(e.toRef())));
+      }
+      return false;
+    }
+  }
+
+  // check name conflict in other indexes that importing this index
+  if (hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
+    auto importing = collectGlobalImportingIndexes(indexes, declIndex);
+  }
+  return true;
+}
+
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
                                       StringRef newName,
                                       const std::function<void(const RenameResult &)> &consumer) {
@@ -87,17 +182,32 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   }
 
   // check name conflict of builtin type (for constructor/type alias)
+  if (!checkNameConflict(indexes, *decl, newName, consumer)) {
+    return RenameValidationStatus::NAME_CONFLICT;
+  }
 
-  (void)consumer;
-  return RenameValidationStatus::DO_NOTHING;
+  if (consumer) {
+    findAllReferences(indexes, *decl, false, [&](const FindRefsResult &ret) {
+      consumer(Ok(RenameTarget(ret.symbol, actualNewName)));
+    });
+  }
+  return RenameValidationStatus::CAN_RENAME;
 }
 
-TextEdit RenameResult::toTextEdit(const SourceManager &srcMan) const {
+TextEdit RenameTarget::toTextEdit(const SourceManager &srcMan) const {
   auto src = srcMan.findById(this->symbol.getModId());
   assert(src);
-  auto range = toRange(*src, this->symbol.getToken()).unwrap(); // FIXME: resolve actual range?
+  auto token = this->symbol.getToken();
+  if (auto ref = src->toStrRef(token); ref.startsWith("$") && ref.size() > 1) {
+    token = token.sliceFrom(1); // remove prefix '$'
+    ref = src->toStrRef(token);
+    if (ref.startsWith("{") && ref.endsWith("}") && ref.size() > 2) {
+      token = token.sliceFrom(1); // remove surrounded '{ }'
+      token.size--;
+    }
+  }
   return {
-      .range = range,
+      .range = toRange(*src, token).unwrap(),
       .newText = this->newName.toString(),
   };
 }

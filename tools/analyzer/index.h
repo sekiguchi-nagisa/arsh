@@ -213,6 +213,16 @@ public:
 
   static std::string demangle(Kind k, Attr a, StringRef mangledName);
 
+  /**
+   *
+   * @param k
+   * @param a
+   * @param mangledName
+   * @return
+   * (recvTypeName, symbolName)
+   */
+  static std::pair<StringRef, StringRef> demangleWithRecv(Kind k, Attr a, StringRef mangledName);
+
   static bool mayBeMemberName(StringRef ref) { return ref.contains('@'); }
 
   static bool isVarName(Kind k) {
@@ -414,9 +424,20 @@ struct FindRefsResult {
   const DeclSymbol &request; // resolved request declaration
 };
 
-bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const FindRefsResult &)> &consumer,
-                       bool ignoreBuiltin = true);
+unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &decl,
+                               bool ignoreBuiltin,
+                               const std::function<void(const FindRefsResult &)> &consumer);
+
+inline bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
+                              const std::function<void(const FindRefsResult &)> &consumer,
+                              bool ignoreBuiltin = true) {
+  const DeclSymbol *decl = nullptr;
+  findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
+  if (!decl) {
+    return false;
+  }
+  return findAllReferences(indexes, *decl, ignoreBuiltin, consumer) > 0;
+}
 
 } // namespace ydsh::lsp
 
