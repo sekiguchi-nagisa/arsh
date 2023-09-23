@@ -1,5 +1,5 @@
 # List of Attributes
-## ArgParser related attributes
+## command line argument parsing related attributes
 
 | **attribute** | **target**                   | **description**                                               |
 |---------------|------------------------------|---------------------------------------------------------------|
