@@ -15,10 +15,29 @@
  }
 }
 
-# rename failed since builtin
+# invalid rename param
 
 <<<
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "AAA",
+    "position": {
+      "character": 3,
+      "line": -23
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "code": -32602,
+#    CHECK:   "message": "broken position at: file:///test/test.ds:-23:3"
+#    CHECK: }
+
+
+# rename failed since builtin
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/rename",
   "params": {
     "newName": "AAA",
     "position": {
@@ -37,7 +56,7 @@
 # rename failed since no symbol
 
 <<<
-{"id": 2, "jsonrpc": "2.0", "method": "textDocument/rename",
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/rename",
   "params": {
     "newName": "AAA",
     "position": {
@@ -54,7 +73,7 @@
 
 
 <<<
-{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+{"id": 5, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }

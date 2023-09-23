@@ -53,8 +53,27 @@
 #    CHECK: }
 
 
+## rename failed since name conflict
+
 <<<
-{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "OSTYPE",
+    "position": {
+      "character": 4,
+      "line": 0
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "code": -32803,
+#    CHECK:   "message": "OSTYPE is already exists in current scope"
+#    CHECK: }
+
+
+<<<
+{"id": 10, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null
 #    CHECK: }

@@ -1,0 +1,46 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+## signature help for builtin method
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+    "text": "var aaa = 34423"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/signatureHelp",
+  "params": {
+    "context": {
+      "isRetrigger": false,
+      "triggerCharacter": "(",
+      "triggerKind": 2
+    },
+    "position": { "character": -23, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "code": -32602,
+#    CHECK:   "message": "broken position at: test:///test.ds:0:-23"
+#    CHECK: }
+
+<<<
+{"id": 10, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
