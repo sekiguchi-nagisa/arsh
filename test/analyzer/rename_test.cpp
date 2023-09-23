@@ -189,6 +189,24 @@ EOF
                                        RenameValidationStatus::BUILTIN));
 }
 
+TEST_F(RenameTest, invalid3) {
+  const char *content = R"(
+123.toFloat()
+(34,)._0
+echo $0
+echo ${11}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 5}, "var",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 6}, "_var",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 5}, "var",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 7}, "var",
+                                       RenameValidationStatus::INVALID_SYMBOL));
+}
+
 TEST_F(RenameTest, global1) {
   // rename global without conflict
   const char *content = R"({ var var = 34; }

@@ -29,7 +29,7 @@
 | variable (global import)              | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (inlined import)             | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (named import)               | ✔️             | ✔️             | ✔️              | ❌          |
-| variable (positional parameter)       | -              | -              | ❌ (show code)   | ❌          |
+| variable (positional parameter)       | -              | -              | ❌ (show code)   | -          |
 | variable (if-let)                     | ✔️             | ✔️             | ✔️              | ❌          |
 | builtin variable                      | -              | -              | ✔️              | -          |
 | builtin constant                      | -              | -              | ✔️ (show value) | -          |
@@ -47,9 +47,9 @@
 | type (inlined import)                 | ✔️             | ✔️️            | ✔️              | ❌          |
 | type (named import)                   | ✔️             | ✔️             | ✔️              | ❌          |
 | type (user-defined type)              | ✔️             | ✔️             | ✔️              | ❌          |
-| field (tuple)                         | -              | -              | ✔️              | ❌          |
+| field (tuple)                         | -              | -              | ✔️              | -          |
 | field (user-defined type)             | ✔️             | ✔️             | ✔️              | ❌          |
-| method (builtin)                      | -              | -              | ✔️              | ❌          |
+| method (builtin)                      | -              | -              | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️             | ✔️              | ❌          |
 | source (variable)                     | ✔️             | ✔️             | ✔️              | ❌          |
 | source (type alias)                   | ✔️             | ✔️             | ✔️              | ❌          |
