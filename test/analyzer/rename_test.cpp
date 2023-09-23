@@ -191,16 +191,16 @@ EOF
 
 TEST_F(RenameTest, global1) {
   // rename global without conflict
-  const char *content = R"(
+  const char *content = R"({ var var = 34; }
 var aaaa = 1234;
 echo $aaaa;
 $aaaa++
-"${aaaa}"
+{ "${aaaa}" }
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
   ASSERT_NO_FATAL_FAILURE(
       this->rename(Request{.modId = 1, .line = 1, .character = 4}, "var",
-                   {{1, "(1:4~1:8)"}, {1, "(2:6~2:10)"}, {1, "(3:1~3:5)"}, {1, "(4:3~4:7)"}}));
+                   {{1, "(1:4~1:8)"}, {1, "(2:6~2:10)"}, {1, "(3:1~3:5)"}, {1, "(4:5~4:9)"}}));
 
   // rename global with conflict
   content = R"(
@@ -220,6 +220,28 @@ echo ${bbb}
                                        RenameValidationStatus::NAME_CONFLICT));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 2, .character = 4}, "HOME",
                                        RenameValidationStatus::NAME_CONFLICT));
+}
+
+TEST_F(RenameTest, local1) {
+  // rename local without conflict
+  const char *content = R"({ var var = 1234; }
+{ var aaa = 34;
+echo "$aaa";
+ { var bbb = ''; }
+}
+{ var var = 'helll'; }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 6}, "var",
+                                       {{1, "(1:6~1:9)"}, {1, "(2:7~2:10)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 3, .character = 8}, "var", {{1, "(3:7~3:10)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 0, .character = 8}, "aaa", {{1, "(0:6~0:9)"}}));
+
+  // rename local with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 7},
+                                                   "bbb", {1, "(3:7~3:10)"}));
 }
 
 int main(int argc, char **argv) {

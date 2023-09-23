@@ -146,6 +146,31 @@ public:
   struct ScopeInfo {
     unsigned int id;
     unsigned int depth;
+
+    bool operator==(const ScopeInfo other) const {
+      return this->id == other.id && this->depth == other.depth;
+    }
+
+    bool operator!=(const ScopeInfo other) const { return !(*this == other); }
+
+    /**
+     * check if this scope include other scope
+     * @param other
+     * @return
+     */
+    bool isIncluding(const ScopeInfo other) const {
+      /**
+       * for example.
+       *   { left right } => true
+       *   { { left } { right } } => false
+       *   { left { right } } => true
+       *   { { left } right } => false
+       */
+      if (this->depth == other.depth) {
+        return this->id == other.id;
+      }
+      return this->depth < other.depth;
+    }
   };
 
 private:

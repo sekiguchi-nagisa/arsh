@@ -20,7 +20,7 @@
 
 | **Symbol**                            | ``definition`` | ``references`` | ``hover``       | ``rename`` |
 |---------------------------------------|----------------|----------------|-----------------|------------|
-| variable (local/global)               | ✔️             | ✔️             | ✔️              | ❌          |
+| variable (local/global)               | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (for-in)                     | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (catch)                      | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (function parameter)         | ✔️             | ✔️             | ✔️              | ❌          |

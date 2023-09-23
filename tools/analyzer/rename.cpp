@@ -124,7 +124,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
 
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
-  for (auto &importedIndex : importedIndexes) {
+  for (auto &importedIndex : importedIndexes) { // FIXME: import order aware conflict check
     if (auto *r = importedIndex->findGlobal(mangledName)) {
       if (consumer) {
         consumer(Err(RenameConflict(*r)));
@@ -133,8 +133,18 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     }
   }
 
-  // check name conflict in this index // FIXME: scope-aware conflict checking
+  // check name conflict in this index // FIXME: check constructor field
   for (auto &e : declIndex->getDecls()) {
+    if (!decl.getScopeInfo().isIncluding(e.getScopeInfo())) {
+      continue;
+    }
+    if (decl.getScopeInfo() != e.getScopeInfo() && decl.getPos() > e.getPos()) {
+      /**
+       * ignore following case
+       *   { { decl } e }
+       */
+      continue;
+    }
     if (e.getMangledName() == mangledName) {
       if (consumer) {
         consumer(Err(RenameConflict(e.toRef())));
@@ -181,7 +191,6 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
     }
   }
 
-  // check name conflict of builtin type (for constructor/type alias)
   if (!checkNameConflict(indexes, *decl, newName, consumer)) {
     return RenameValidationStatus::NAME_CONFLICT;
   }
