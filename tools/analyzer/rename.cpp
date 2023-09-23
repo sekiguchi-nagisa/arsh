@@ -224,15 +224,7 @@ Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes,
 TextEdit RenameTarget::toTextEdit(const SourceManager &srcMan) const {
   auto src = srcMan.findById(this->symbol.getModId());
   assert(src);
-  auto token = this->symbol.getToken();
-  if (auto ref = src->toStrRef(token); ref.startsWith("$") && ref.size() > 1) {
-    token = token.sliceFrom(1); // remove prefix '$'
-    ref = src->toStrRef(token);
-    if (ref.startsWith("{") && ref.endsWith("}") && ref.size() > 2) {
-      token = token.sliceFrom(1); // remove surrounded '{ }'
-      token.size--;
-    }
-  }
+  auto token = src->stripAppliedNameSigil(this->symbol.getToken());
   return {
       .range = src->toRange(token).unwrap(),
       .newText = this->newName.toString(),

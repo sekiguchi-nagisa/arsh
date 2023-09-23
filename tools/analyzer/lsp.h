@@ -1175,6 +1175,17 @@ struct PrepareRenameParams : public TextDocumentPositionParams, public WorkDoneP
   }
 };
 
+struct PrepareRename {
+  Range range;
+  std::string placeholder;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(range);
+    JSONIFY(placeholder);
+  }
+};
+
 #undef JSONIFY
 
 } // namespace ydsh::lsp

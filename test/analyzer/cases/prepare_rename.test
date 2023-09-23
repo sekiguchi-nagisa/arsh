@@ -11,7 +11,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "cat << EOF\nthis is a comment\nEOF\necho"}
+                     "text": "cat << EOF\nthis is a comment\nEOF\necho ${TRUE}"}
  }
 }
 
@@ -77,7 +77,7 @@
 {"id": 4, "jsonrpc": "2.0", "method": "textDocument/prepareRename",
   "params": {
     "position": {
-      "character": 1,
+      "character": 6,
       "line": 3
     },
     "textDocument": { "uri": "file:///test/test.ds" }
@@ -87,13 +87,16 @@
 # CHECK_IF:   "id": 4,
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": {
-#    CHECK:     "end": {
-#    CHECK:       "character": 4,
-#    CHECK:       "line": 3
-#    CHECK:     },
-#    CHECK:     "start": {
-#    CHECK:       "character": 0,
-#    CHECK:       "line": 3
+#    CHECK:     "placeholder": "TRUE",
+#    CHECK:     "range": {
+#    CHECK:       "end": {
+#    CHECK:         "character": 12,
+#    CHECK:         "line": 3
+#    CHECK:       },
+#    CHECK:       "start": {
+#    CHECK:         "character": 5,
+#    CHECK:         "line": 3
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   }
 #    CHECK: }

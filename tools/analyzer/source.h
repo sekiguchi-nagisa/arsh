@@ -53,6 +53,8 @@ public:
    */
   const std::string &getContent() const { return this->content; }
 
+  Token stripAppliedNameSigil(Token token) const;
+
   StringRef toStrRef(Token token) const {
     StringRef ref = this->content;
     ref = ref.substr(token.pos, token.size);

@@ -755,17 +755,22 @@ Reply<WorkspaceEdit> LSPServer::rename(const RenameParams &params) {
   }
 }
 
-Reply<Union<Range, std::nullptr_t>> LSPServer::prepareRename(const PrepareRenameParams &params) {
+Reply<Union<PrepareRename, std::nullptr_t>>
+LSPServer::prepareRename(const PrepareRenameParams &params) {
   LOG(LogLevel::INFO, "prepare rename at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   this->syncResult();
   if (auto resolved = this->resolvePosition(params)) {
     auto renameLocation = resolveRenameLocation(this->result.indexes, resolved.asOk().second);
-    Union<Range, std::nullptr_t> ret = nullptr;
+    Union<PrepareRename, std::nullptr_t> ret = nullptr;
     if (renameLocation.hasValue()) {
-      auto range = resolved.asOk().first->toRange(renameLocation.unwrap().request.getToken());
-      if (range.hasValue()) {
-        ret = range.unwrap();
+      Token token = renameLocation.unwrap().request.getToken();
+      auto &src = *resolved.asOk().first;
+      if (auto range = src.toRange(token); range.hasValue()) {
+        ret = PrepareRename{
+            .range = range.unwrap(),
+            .placeholder = src.toStrRef(src.stripAppliedNameSigil(token)).toString(),
+        };
       }
     }
     return ret;

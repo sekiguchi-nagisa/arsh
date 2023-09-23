@@ -211,7 +211,7 @@ public:
 
   Reply<WorkspaceEdit> rename(const RenameParams &params);
 
-  Reply<Union<Range, std::nullptr_t>> prepareRename(const PrepareRenameParams &params);
+  Reply<Union<PrepareRename, std::nullptr_t>> prepareRename(const PrepareRenameParams &params);
 
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {

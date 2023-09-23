@@ -35,6 +35,19 @@ Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string
   }
 }
 
+Token Source::stripAppliedNameSigil(Token token) const {
+  auto ref = this->toStrRef(token);
+  if (ref.startsWith("$") && ref.size() > 1) {
+    token = token.sliceFrom(1); // remove prefix '$'
+    ref = this->toStrRef(token);
+    if (ref.startsWith("{") && ref.endsWith("}") && ref.size() > 2) {
+      token = token.sliceFrom(1); // remove surrounded '{ }'
+      token.size--;
+    }
+  }
+  return token;
+}
+
 static unsigned int utf16Len(StringRef ref) {
   unsigned int count = 0;
   const char *end = ref.end();
