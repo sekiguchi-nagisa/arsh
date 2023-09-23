@@ -234,7 +234,7 @@ TextEdit RenameTarget::toTextEdit(const SourceManager &srcMan) const {
     }
   }
   return {
-      .range = toRange(*src, token).unwrap(),
+      .range = src->toRange(token).unwrap(),
       .newText = this->newName.toString(),
   };
 }

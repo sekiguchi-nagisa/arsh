@@ -87,7 +87,7 @@ public:
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &result) {
       auto retSrc = this->srcMan.findById(result.decl.getModId());
       ASSERT_TRUE(retSrc);
-      auto range = toRange(*retSrc, result.decl.getToken());
+      auto range = retSrc->toRange(result.decl.getToken());
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(DeclResult{
@@ -134,7 +134,7 @@ public:
     findAllReferences(this->indexes, sr, [&](const FindRefsResult &result) {
       auto retSrc = this->srcMan.findById(result.symbol.getModId());
       ASSERT_TRUE(retSrc);
-      auto range = toRange(*retSrc, result.symbol.getToken());
+      auto range = retSrc->toRange(result.symbol.getToken());
       ASSERT_TRUE(range.hasValue());
 
       actual.push_back(RefsResult{
@@ -173,7 +173,7 @@ public:
     Optional<Range> range;
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
       actual = generateHoverContent(this->srcMan, *src, value.decl);
-      range = toRange(*src, value.request.getToken());
+      range = src->toRange(value.request.getToken());
     });
 
     ASSERT_TRUE(range.hasValue());

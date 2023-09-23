@@ -59,6 +59,15 @@ public:
     return ref;
   }
 
+  /**
+   * convert byte offset (token pos) to LSP Position
+   * @param pos
+   * @return
+   */
+  Optional<Position> toPosition(unsigned int pos) const;
+
+  Optional<Range> toRange(Token token) const;
+
   const LineNumTable &getLineNumTable() const { return this->lineNumTable; }
 
   int getVersion() const { return this->version; }
@@ -121,6 +130,10 @@ public:
   SourcePtr add(SourcePtr other);
 
   std::shared_ptr<SourceManager> copy() const { return std::make_shared<SourceManager>(*this); }
+
+  std::string resolveURI(const uri::URI &uri) const;
+
+  uri::URI toURI(const std::string &path) const;
 };
 
 /**
@@ -133,14 +146,6 @@ public:
 Optional<unsigned int> toTokenPos(StringRef content, const Position &position);
 
 /**
- *
- * @param src
- * @param pos
- * @return
- */
-Optional<Position> toPosition(const Source &src, unsigned int pos);
-
-/**
  * FIXME: use Source?
  * @param content
  * may not be terminated with newline
@@ -149,19 +154,7 @@ Optional<Position> toPosition(const Source &src, unsigned int pos);
  */
 Optional<ydsh::Token> toToken(StringRef content, const Range &range);
 
-/**
- *
- * @param src
- * @param token
- * @return
- */
-Optional<Range> toRange(const Source &src, Token token);
-
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
-
-std::string resolveURI(const SourceManager &srcMan, const uri::URI &uri);
-
-uri::URI toURI(const SourceManager &srcMan, const std::string &path);
 
 } // namespace ydsh::lsp
 

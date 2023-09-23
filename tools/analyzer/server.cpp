@@ -99,7 +99,7 @@ Result<SourcePtr, CStrPtr> LSPServer::resolveSource(const TextDocumentIdentifier
     LOG(LogLevel::ERROR, "%s", str.get());
     return Err(std::move(str));
   }
-  auto fullPath = resolveURI(*this->result.srcMan, uri);
+  auto fullPath = this->result.srcMan->resolveURI(uri);
   auto src = this->result.srcMan->find(fullPath);
   if (!src) {
     auto str = format("broken textDocument: %s", doc.uri.c_str());
@@ -147,9 +147,9 @@ std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request
     }
     auto s = this->result.srcMan->findById(ret.decl.getModId());
     assert(s);
-    auto range = toRange(*s, ret.decl.getToken());
+    auto range = s->toRange(ret.decl.getToken());
     assert(range.hasValue());
-    values.push_back(Location{.uri = toURI(*this->result.srcMan, s->getPath()).toString(),
+    values.push_back(Location{.uri = this->result.srcMan->toURI(s->getPath()).toString(),
                               .range = range.unwrap()});
   });
   return values;
@@ -159,9 +159,9 @@ std::vector<Location> LSPServer::findReferenceImpl(const SymbolRequest &request)
   std::vector<Location> values;
   findAllReferences(this->result.indexes, request, [&](const FindRefsResult &ret) {
     if (auto s = this->result.srcMan->findById(ret.symbol.getModId())) {
-      auto range = toRange(*s, ret.symbol.getToken());
+      auto range = s->toRange(ret.symbol.getToken());
       assert(range.hasValue());
-      values.push_back(Location{.uri = toURI(*this->result.srcMan, s->getPath()).toString(),
+      values.push_back(Location{.uri = this->result.srcMan->toURI(s->getPath()).toString(),
                                 .range = range.unwrap()});
     }
   });
@@ -185,7 +185,7 @@ LSPServer::documentHighlightImpl(const SymbolRequest &request) const {
       this->result.indexes, req,
       [&](const FindRefsResult &value) {
         if (value.symbol.getModId() == request.modId) {
-          auto range = toRange(*src, value.symbol.getToken());
+          auto range = src->toRange(value.symbol.getToken());
           assert(range.hasValue());
           values.push_back(DocumentHighlight{
               .range = range.unwrap(),
@@ -211,7 +211,7 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
                 .value = generateHoverContent(*this->result.srcMan, src, value.decl,
                                               this->markupKind == MarkupKind::Markdown),
             },
-        .range = toRange(src, value.request.getToken()),
+        .range = src.toRange(value.request.getToken()),
     };
   });
   return ret;
@@ -255,7 +255,7 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
   for (auto &e : changes) {
     auto src = this->result.srcMan->findById(static_cast<ModId>(e.first));
     assert(src);
-    auto uri = toURI(*this->result.srcMan, src->getPath());
+    auto uri = this->result.srcMan->toURI(src->getPath());
     workspaceEdit.insert(uri, std::move(e.second));
   }
   return Ok(std::move(workspaceEdit));
@@ -506,7 +506,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   const char *uriStr = params.textDocument.uri.c_str();
   LOG(LogLevel::INFO, "open textDocument: %s", uriStr);
   if (auto uri = uri::URI::parse(params.textDocument.uri)) {
-    if (auto fullPath = resolveURI(*this->result.srcMan, uri); !fullPath.empty()) {
+    if (auto fullPath = this->result.srcMan->resolveURI(uri); !fullPath.empty()) {
       this->updateSource(fullPath, params.textDocument.version,
                          std::string(params.textDocument.text));
       this->syncResult();
@@ -664,13 +664,13 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
     std::vector<DocumentLink> ret;
     if (auto index = this->result.indexes.find(resolved.asOk()->getSrcId())) {
       for (auto &e : index->getLinks()) {
-        auto range = toRange(*resolved.asOk(), e.first.getToken());
+        auto range = resolved.asOk()->toRange(e.first.getToken());
         assert(range.hasValue());
         auto src = this->result.srcMan->findById(e.first.getModId());
         assert(src);
         ret.push_back(DocumentLink{
             .range = range.unwrap(),
-            .target = toURI(*this->result.srcMan, src->getPath()).toString(),
+            .target = this->result.srcMan->toURI(src->getPath()).toString(),
             .tooltip = e.second.getPathName(),
         });
       }
@@ -693,8 +693,8 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
           continue;
         }
 
-        auto selectionRange = toRange(*resolved.asOk(), decl.getToken());
-        auto range = toRange(*resolved.asOk(), decl.getBody());
+        auto selectionRange = resolved.asOk()->toRange(decl.getToken());
+        auto range = resolved.asOk()->toRange(decl.getBody());
         auto name = decl.toDemangledName();
         assert(selectionRange.hasValue());
         assert(range.hasValue());
@@ -763,7 +763,7 @@ Reply<Union<Range, std::nullptr_t>> LSPServer::prepareRename(const PrepareRename
     auto renameLocation = resolveRenameLocation(this->result.indexes, resolved.asOk().second);
     Union<Range, std::nullptr_t> ret = nullptr;
     if (renameLocation.hasValue()) {
-      auto range = toRange(*resolved.asOk().first, renameLocation.unwrap().request.getToken());
+      auto range = resolved.asOk().first->toRange(renameLocation.unwrap().request.getToken());
       if (range.hasValue()) {
         ret = range.unwrap();
       }

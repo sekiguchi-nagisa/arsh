@@ -119,7 +119,7 @@ void SemanticTokenEmitter::emit(HighlightTokenClass tokenClass, Token token) {
     return;
   }
   splitTokenByNewline(this->source, token, [&](Token subToken) {
-    auto ret = toRange(this->src, subToken);
+    auto ret = this->src.toRange(subToken);
     assert(ret.hasValue());
     auto &range = ret.unwrap();
     auto delta = getTokenDelta(this->prev, range);

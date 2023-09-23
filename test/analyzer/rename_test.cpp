@@ -82,7 +82,7 @@ public:
                        auto &conflict = ret.asErr();
                        auto src = this->srcMan.findById(conflict.symbol.getModId());
                        ASSERT_TRUE(src);
-                       auto range = toRange(*src, conflict.symbol.getToken());
+                       auto range = src->toRange(conflict.symbol.getToken());
                        ASSERT_TRUE(range.hasValue());
                        actual = Conflict(conflict.symbol.getModId(), range.unwrap().toString());
                      });

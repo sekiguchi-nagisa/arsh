@@ -472,13 +472,13 @@ struct LocationTest : public ::testing::Test {
       ASSERT_TRUE(pos2.hasValue());
       ASSERT_EQ(pos, pos2.unwrap());
 
-      auto position2 = toPosition(src, pos2.unwrap());
+      auto position2 = src.toPosition(pos2.unwrap());
       ASSERT_TRUE(position2.hasValue());
       ASSERT_EQ(position.toString(), position2.unwrap().toString());
     }
 
     {
-      auto position2 = toPosition(src, pos);
+      auto position2 = src.toPosition(pos);
       ASSERT_TRUE(position2.hasValue());
       ASSERT_EQ(position.toString(), position2.unwrap().toString());
 
@@ -496,13 +496,13 @@ struct LocationTest : public ::testing::Test {
       ASSERT_TRUE(token2.hasValue());
       ASSERT_EQ(token.str(), token2.unwrap().str());
 
-      auto range2 = toRange(src, token2.unwrap());
+      auto range2 = src.toRange(token2.unwrap());
       ASSERT_TRUE(range2.hasValue());
       ASSERT_EQ(range.toString(), range2.unwrap().toString());
     }
 
     {
-      auto range2 = toRange(src, token);
+      auto range2 = src.toRange(token);
       ASSERT_TRUE(range2.hasValue());
       ASSERT_EQ(range.toString(), range2.unwrap().toString());
 
@@ -545,30 +545,30 @@ TEST_F(LocationTest, position1) {
   ASSERT_TRUE(toTokenPos(content, {.line = 3, .character = 16}).hasValue());
   ASSERT_EQ(45, toTokenPos(content, {.line = 3, .character = 16}).unwrap());
 
-  ASSERT_TRUE(toPosition(source(""), 0).hasValue());
-  ASSERT_TRUE(toPosition(source(""), 1).hasValue());
+  ASSERT_TRUE(source("").toPosition(0).hasValue());
+  ASSERT_TRUE(source("").toPosition(1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 0}).toString(),
-            toPosition(source(""), 1).unwrap().toString());
+            source("").toPosition(1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(source("a"), 1).hasValue());
+  ASSERT_TRUE(source("a").toPosition(1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 1}).toString(),
-            toPosition(source("a"), 1).unwrap().toString());
+            source("a").toPosition(1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(source("\n"), 1).hasValue());
+  ASSERT_TRUE(source("\n").toPosition(1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 0}).toString(),
-            toPosition(source("\n"), 1).unwrap().toString());
+            source("\n").toPosition(1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(source(" \n"), 1).hasValue());
+  ASSERT_TRUE(source(" \n").toPosition(1).hasValue());
   ASSERT_EQ((Position{.line = 0, .character = 1}).toString(),
-            toPosition(source(" \n"), 1).unwrap().toString());
+            source(" \n").toPosition(1).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(source(content), 45).hasValue());
+  ASSERT_TRUE(source(content).toPosition(45).hasValue());
   ASSERT_EQ((Position{.line = 3, .character = 15}).toString(),
-            toPosition(source(content), 45).unwrap().toString());
+            source(content).toPosition(45).unwrap().toString());
 
-  ASSERT_TRUE(toPosition(source(content), 46).hasValue());
+  ASSERT_TRUE(source(content).toPosition(46).hasValue());
   ASSERT_EQ((Position{.line = 3, .character = 15}).toString(),
-            toPosition(source(content), 46).unwrap().toString());
+            source(content).toPosition(46).unwrap().toString());
 }
 
 TEST_F(LocationTest, position2) {
@@ -587,9 +587,9 @@ TEST_F(LocationTest, position2) {
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 16, {.line = 1, .character = 4}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 17, {.line = 1, .character = 5}));
 
-  ASSERT_TRUE(toPosition(source(content), 18).hasValue());
+  ASSERT_TRUE(source(content).toPosition(18).hasValue());
   ASSERT_EQ((Position{.line = 1, .character = 5}).toString(),
-            toPosition(source(content), 18).unwrap().toString());
+            source(content).toPosition(18).unwrap().toString());
 }
 
 TEST_F(LocationTest, range) {

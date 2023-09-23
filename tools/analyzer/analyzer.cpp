@@ -267,7 +267,7 @@ bool DiagnosticEmitter::handleParseError(const std::vector<std::unique_ptr<Front
                                          const ParseError &parseError) {
   auto *cur = this->findContext(ctx.back()->scope->modId);
   assert(cur);
-  auto range = toRange(*cur->src, parseError.getErrorToken());
+  auto range = cur->src->toRange(parseError.getErrorToken());
   if (!range.hasValue()) {
     return false;
   }
@@ -301,7 +301,7 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
 bool DiagnosticEmitter::handleTypeError(ModId modId, const TypeCheckError &checkError) {
   auto *cur = this->findContext(modId);
   assert(cur);
-  auto range = toRange(*cur->src, checkError.getToken());
+  auto range = cur->src->toRange(checkError.getToken());
   if (!range.hasValue()) {
     return false;
   }
@@ -331,7 +331,7 @@ bool DiagnosticEmitter::exitModule() {
 
   if (this->callback) {
     PublishDiagnosticsParams params = {
-        .uri = toURI(*this->srcMan, this->contexts.back().src->getPath()).toString(),
+        .uri = this->srcMan->toURI(this->contexts.back().src->getPath()).toString(),
         .version = {},
         .diagnostics = std::move(this->contexts.back().diagnostics),
     };

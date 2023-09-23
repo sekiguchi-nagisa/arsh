@@ -35,6 +35,57 @@ Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string
   }
 }
 
+static unsigned int utf16Len(StringRef ref) {
+  unsigned int count = 0;
+  const char *end = ref.end();
+  for (const char *iter = ref.begin(); iter != end;) {
+    int codePoint;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+    if (byteSize == 0) {
+      byteSize++;
+    }
+    iter += byteSize;
+    count += codePoint < 0 || UnicodeUtil::isBmpCodePoint(codePoint) ? 1 : 2;
+  }
+  return count;
+}
+
+Optional<Position> Source::toPosition(unsigned int pos) const {
+  if (this->getContent().size() > UINT32_MAX) {
+    return {};
+  }
+  pos =
+      static_cast<unsigned int>(std::min(this->getContent().size() - 1, static_cast<size_t>(pos)));
+
+  unsigned int c = this->getLineNumTable().lookup(pos);
+  unsigned int offset = 0;
+  if (c > 0) {
+    offset = this->getLineNumTable().getNewlinePos(c - 1) + 1;
+  }
+
+  auto line = StringRef(this->getContent()).slice(offset, pos);
+  offset = utf16Len(line);
+  if (c > INT32_MAX || offset > INT32_MAX) {
+    return {};
+  }
+  return Position{
+      .line = static_cast<int>(c),
+      .character = static_cast<int>(offset),
+  };
+}
+
+Optional<Range> Source::toRange(Token token) const {
+  auto start = this->toPosition(token.pos);
+  auto end = this->toPosition(token.endPos());
+  if (start.hasValue() && end.hasValue()) {
+    return Range{
+        .start = start.unwrap(),
+        .end = end.unwrap(),
+    };
+  }
+  return {};
+}
+
 SourcePtr SourceManager::findById(ModId id) const {
   auto v = toUnderlying(id);
   if (v > 0 && --v < this->entries.size()) {
@@ -81,6 +132,30 @@ SourcePtr SourceManager::add(SourcePtr other) {
   return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()));
 }
 
+std::string SourceManager::resolveURI(const uri::URI &uri) const {
+  std::string path;
+  if (uri.getScheme() == "file") {
+    path = uri.getPath();
+  } else if (this->getTestWorkDir() && uri.getScheme() == "test") {
+    path += *this->getTestWorkDir();
+    if (path.back() != '/' && !uri.getPath().empty() && uri.getPath()[0] != '/') {
+      path += "/";
+    }
+    path += uri.getPath();
+  }
+  return path;
+}
+
+uri::URI SourceManager::toURI(const std::string &path) const {
+  StringRef ref = path;
+  const char *scheme = "file";
+  if (this->getTestWorkDir() && ref.startsWith(*this->getTestWorkDir())) {
+    ref.removePrefix((*this->getTestWorkDir()).size());
+    scheme = "test";
+  }
+  return uri::URI::fromPath(scheme, ref.toString());
+}
+
 static size_t findLineStartPos(StringRef content, unsigned int count) {
   StringRef::size_type pos = 0;
   for (unsigned int i = 0; i < count; i++) {
@@ -125,44 +200,6 @@ Optional<unsigned int> toTokenPos(StringRef content, const Position &position) {
   return static_cast<unsigned int>(pos);
 }
 
-static unsigned int utf16Len(StringRef ref) {
-  unsigned int count = 0;
-  const char *end = ref.end();
-  for (const char *iter = ref.begin(); iter != end;) {
-    int codePoint;
-    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
-    if (byteSize == 0) {
-      byteSize++;
-    }
-    iter += byteSize;
-    count += codePoint < 0 || UnicodeUtil::isBmpCodePoint(codePoint) ? 1 : 2;
-  }
-  return count;
-}
-
-Optional<Position> toPosition(const Source &src, unsigned int pos) {
-  if (src.getContent().size() > UINT32_MAX) {
-    return {};
-  }
-  pos = static_cast<unsigned int>(std::min(src.getContent().size() - 1, static_cast<size_t>(pos)));
-
-  unsigned int c = src.getLineNumTable().lookup(pos);
-  unsigned int offset = 0;
-  if (c > 0) {
-    offset = src.getLineNumTable().getNewlinePos(c - 1) + 1;
-  }
-
-  auto line = StringRef(src.getContent()).slice(offset, pos);
-  offset = utf16Len(line);
-  if (c > INT32_MAX || offset > INT32_MAX) {
-    return {};
-  }
-  return Position{
-      .line = static_cast<int>(c),
-      .character = static_cast<int>(offset),
-  };
-}
-
 Optional<Token> toToken(StringRef content, const Range &range) {
   auto r = toTokenPos(content, range.start);
   if (!r.hasValue()) {
@@ -178,18 +215,6 @@ Optional<Token> toToken(StringRef content, const Range &range) {
       .pos = start,
       .size = end - start,
   };
-}
-
-Optional<Range> toRange(const Source &src, Token token) {
-  auto start = toPosition(src, token.pos);
-  auto end = toPosition(src, token.endPos());
-  if (start.hasValue() && end.hasValue()) {
-    return Range{
-        .start = start.unwrap(),
-        .end = end.unwrap(),
-    };
-  }
-  return {};
 }
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change) {
@@ -213,30 +238,6 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
   }
   content.replace(token.pos, token.size, change.text);
   return true;
-}
-
-std::string resolveURI(const SourceManager &srcMan, const uri::URI &uri) {
-  std::string path;
-  if (uri.getScheme() == "file") {
-    path = uri.getPath();
-  } else if (srcMan.getTestWorkDir() && uri.getScheme() == "test") {
-    path += *srcMan.getTestWorkDir();
-    if (path.back() != '/' && !uri.getPath().empty() && uri.getPath()[0] != '/') {
-      path += "/";
-    }
-    path += uri.getPath();
-  }
-  return path;
-}
-
-uri::URI toURI(const SourceManager &srcMan, const std::string &path) {
-  StringRef ref = path;
-  const char *scheme = "file";
-  if (srcMan.getTestWorkDir() && ref.startsWith(*srcMan.getTestWorkDir())) {
-    ref.removePrefix((*srcMan.getTestWorkDir()).size());
-    scheme = "test";
-  }
-  return uri::URI::fromPath(scheme, ref.toString());
 }
 
 } // namespace ydsh::lsp
