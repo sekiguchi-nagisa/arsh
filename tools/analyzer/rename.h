@@ -22,6 +22,8 @@
 
 namespace ydsh::lsp {
 
+Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes, SymbolRequest request);
+
 enum class RenameValidationStatus {
   CAN_RENAME,
   DO_NOTHING, // not perform rename since new name is equivalent to old new

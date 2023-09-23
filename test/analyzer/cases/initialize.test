@@ -29,7 +29,7 @@
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
 # CHECK:       "renameProvider": {
-# CHECK:         "prepareProvider": false
+# CHECK:         "prepareProvider": true
 # CHECK:       },
 # CHECK:       "semanticTokensProvider": {
 # CHECK:         "full": true,

@@ -45,9 +45,11 @@
 
 #### LSP
 
-- support ``textDocument/signatureHelp`` request
-    - show (direct/indirect)function/method/constructor type signatures
-- experimental support ``textDocument/rename`` request
+- support the following requests
+    - ``textDocument/signatureHelp``
+        - show (direct/indirect)function/method/constructor type signatures
+    - ``textDocument/rename`` (experimental support)
+    - ``textDocument/prepareRename``
 
 ### Changed
 

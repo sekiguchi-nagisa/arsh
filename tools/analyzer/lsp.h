@@ -514,7 +514,7 @@ struct DocumentLinkOptions : public WorkDoneProgressOptions {
 };
 
 struct RenameOptions : public WorkDoneProgressOptions {
-  bool prepareProvider{false};
+  bool prepareProvider{true};
 
   template <typename T>
   void jsonify(T &t) {
@@ -1164,6 +1164,14 @@ struct RenameParams : public TextDocumentPositionParams, public WorkDoneProgress
     TextDocumentPositionParams::jsonify(t);
     WorkDoneProgressParams::jsonify(t);
     JSONIFY(newName);
+  }
+};
+
+struct PrepareRenameParams : public TextDocumentPositionParams, public WorkDoneProgressParams {
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
   }
 };
 

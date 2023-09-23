@@ -163,24 +163,25 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
                                       StringRef newName,
                                       const std::function<void(const RenameResult &)> &consumer) {
-  const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
-  if (!decl || decl->getKind() == DeclSymbol::Kind::HERE_START) {
+  const auto resolved = resolveRenameLocation(indexes, request);
+  if (!resolved.hasValue()) {
     return RenameValidationStatus::INVALID_SYMBOL;
   }
-  if (isBuiltinMod(decl->getModId()) || hasFlag(decl->getAttr(), DeclSymbol::Attr::BUILTIN) ||
-      decl->getKind() == DeclSymbol::Kind::THIS) {
+  const auto &decl = resolved.unwrap().decl;
+
+  if (isBuiltinMod(decl.getModId()) || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
+      decl.getKind() == DeclSymbol::Kind::THIS) {
     return RenameValidationStatus::BUILTIN;
   }
 
   // check newName
-  std::string declName = decl->toDemangledName();
+  std::string declName = decl.toDemangledName();
   if (declName == newName) {
     return RenameValidationStatus::DO_NOTHING;
   }
   auto actualNewName = newName.toString();
-  assert(decl->getKind() != DeclSymbol::Kind::BUILTIN_CMD);
-  if (decl->getKind() == DeclSymbol::Kind::CMD) {
+  assert(decl.getKind() != DeclSymbol::Kind::BUILTIN_CMD);
+  if (decl.getKind() == DeclSymbol::Kind::CMD) {
     actualNewName = quoteCommandName(actualNewName);
     if (actualNewName.empty()) {
       return RenameValidationStatus::INVALID_NAME;
@@ -191,16 +192,33 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
     }
   }
 
-  if (!checkNameConflict(indexes, *decl, newName, consumer)) {
+  if (!checkNameConflict(indexes, decl, newName, consumer)) {
     return RenameValidationStatus::NAME_CONFLICT;
   }
 
   if (consumer) {
-    findAllReferences(indexes, *decl, false, [&](const FindRefsResult &ret) {
+    findAllReferences(indexes, decl, false, [&](const FindRefsResult &ret) {
       consumer(Ok(RenameTarget(ret.symbol, actualNewName)));
     });
   }
   return RenameValidationStatus::CAN_RENAME;
+}
+
+Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes,
+                                               SymbolRequest request) {
+  const DeclSymbol *decl = nullptr;
+  const Symbol *symbol = nullptr;
+  findDeclaration(indexes, request, [&decl, &symbol](const FindDeclResult &r) {
+    decl = &r.decl;
+    symbol = &r.request;
+  });
+  if (!decl || decl->getKind() == DeclSymbol::Kind::HERE_START) {
+    return {};
+  }
+  return FindDeclResult{
+      .decl = *decl,
+      .request = *symbol,
+  };
 }
 
 TextEdit RenameTarget::toTextEdit(const SourceManager &srcMan) const {

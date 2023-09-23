@@ -59,6 +59,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/signatureHelp", &LSPServer::signatureHelp);
   this->bind("textDocument/semanticTokens/full", &LSPServer::semanticToken);
   this->bind("textDocument/rename", &LSPServer::rename);
+  this->bind("textDocument/prepareRename", &LSPServer::prepareRename);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
 }
 
@@ -749,6 +750,25 @@ Reply<WorkspaceEdit> LSPServer::rename(const RenameParams &params) {
     } else {
       return newError(LSPErrorCode::RequestFailed, std::move(ret).takeError());
     }
+  } else {
+    return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
+  }
+}
+
+Reply<Union<Range, std::nullptr_t>> LSPServer::prepareRename(const PrepareRenameParams &params) {
+  LOG(LogLevel::INFO, "prepare rename at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  this->syncResult();
+  if (auto resolved = this->resolvePosition(params)) {
+    auto renameLocation = resolveRenameLocation(this->result.indexes, resolved.asOk().second);
+    Union<Range, std::nullptr_t> ret = nullptr;
+    if (renameLocation.hasValue()) {
+      auto range = toRange(*resolved.asOk().first, renameLocation.unwrap().request.getToken());
+      if (range.hasValue()) {
+        ret = range.unwrap();
+      }
+    }
+    return ret;
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

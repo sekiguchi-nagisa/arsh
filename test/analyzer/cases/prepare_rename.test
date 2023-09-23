@@ -1,0 +1,111 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "cat << EOF\nthis is a comment\nEOF\necho"}
+ }
+}
+
+# invalid rename location (not symbol)
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/prepareRename",
+  "params": {
+    "position": {
+      "character": 4,
+      "line": 0
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+# invalid rename location (not symbol)
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/prepareRename",
+  "params": {
+    "position": {
+      "character": 8,
+      "line": 0
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+
+# invalid rename location (not symbol)
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/prepareRename",
+  "params": {
+    "position": {
+      "character": 4,
+      "line": 1
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+
+# valid symbol but actually cannot rename since builtin
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "textDocument/prepareRename",
+  "params": {
+    "position": {
+      "character": 1,
+      "line": 3
+    },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 4,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "end": {
+#    CHECK:       "character": 4,
+#    CHECK:       "line": 3
+#    CHECK:     },
+#    CHECK:     "start": {
+#    CHECK:       "character": 0,
+#    CHECK:       "line": 3
+#    CHECK:     }
+#    CHECK:   }
+#    CHECK: }
+
+
+
+<<<
+{"id": 10, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

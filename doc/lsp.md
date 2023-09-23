@@ -14,6 +14,7 @@
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
 | ``textDocument/rename``              | ✔️         |
+| ``textDocument/prepareRename``       | ✔️         |
 
 
 ## Supported symbols
