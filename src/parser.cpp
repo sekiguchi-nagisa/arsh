@@ -2346,7 +2346,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     auto ctx = this->inIgnorableNLCtx();
     Token token = this->curToken;
     this->consume(); // always success
-    auto varNode = this->newVarNode(token);
+    auto varNode = this->newVarNode(token.slice(0, token.size - 1));
     auto indexNode = TRY(this->parse_expression());
     Token opToken = token.sliceFrom(token.size - 1); // last '['
 

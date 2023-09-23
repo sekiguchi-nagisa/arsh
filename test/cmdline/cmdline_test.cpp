@@ -171,6 +171,14 @@ $e
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
+  s = "echo $e[0]";
+  msg = R"([semantic error] cannot access undefined symbol: `e'
+ --> (string):1:6
+echo $e[0]
+     ^~
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+
   // iterator
   s = "for $a in 34 {}";
   msg = "[semantic error] cannot iterate `Int' type\n"
