@@ -874,20 +874,6 @@ void AttributeNode::dump(NodeDumper &dumper) const {
   DUMP(constNodes);
 }
 
-std::pair<int, int>
-lookupValidAttributeParamFromList(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes,
-                                  AttributeKind kind, Attribute::Param p) {
-  unsigned int size = attrNodes.size();
-  for (unsigned int i = 0; i < size; i++) {
-    auto &attrNode = attrNodes[i];
-    if (attrNode->getAttrKind() == kind) {
-      int index = attrNode->findValidAttrParamIndex(p);
-      return {static_cast<int>(i), index};
-    }
-  }
-  return {-1, -1};
-}
-
 // ########################
 // ##     AssignNode     ##
 // ########################
