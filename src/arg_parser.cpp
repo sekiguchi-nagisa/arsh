@@ -45,6 +45,11 @@ void RequiredOptionSet::del(unsigned char n) {
   }
 }
 
+static bool verboseUsage(const DSState &st, const BaseObject &out) {
+  auto &type = st.typePool.get(out.getTypeID());
+  return hasFlag(cast<CLIRecordType>(type).getAttr(), CLIRecordType::Attr::VERBOSE);
+}
+
 static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEntry &entry,
                            StringRef arg, bool shortOpt, BaseObject &out) {
   std::string err;
@@ -58,7 +63,7 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
     }
     return true;
   } else {
-    err = parser.formatUsage(err, true);
+    err = parser.formatUsage(err, verboseUsage(state, out));
     raiseError(state, TYPE::CLIError, std::move(err), 1);
     return false;
   }
@@ -67,6 +72,7 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
 static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser,
                                          const RequiredOptionSet &requiredSet, StrArrayIter &begin,
                                          const StrArrayIter end, BaseObject &out) {
+  const bool verbose = verboseUsage(state, out);
   for (auto &i : requiredSet.getValues()) {
     auto &e = parser.getEntries()[i];
     if (!e.isPositional()) {
@@ -84,7 +90,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
         err += l;
       }
       err += " option";
-      err = parser.formatUsage(err, true);
+      err = parser.formatUsage(err, verbose);
       raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
@@ -117,7 +123,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
       std::string err = "require `";
       err += e.getArgName();
       err += "' argument";
-      err = parser.formatUsage(err, true);
+      err = parser.formatUsage(err, verbose);
       raiseError(state, TYPE::CLIError, std::move(err), 1);
       return false;
     }
@@ -172,7 +178,7 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
   }
   if (ret.isError()) {
     auto v = ret.formatError();
-    v = instance.formatUsage(v, true);
+    v = instance.formatUsage(v, verboseUsage(state, out));
     raiseError(state, TYPE::CLIError, std::move(v), 2);
     goto END;
   }

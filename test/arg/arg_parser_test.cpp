@@ -36,8 +36,9 @@ public:
 
   TypePool &typePool() { return this->state->typePool; }
 
-  const CLIRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder) {
-    return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1});
+  const CLIRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder,
+                                        CLIRecordType::Attr attr = CLIRecordType::Attr::VERBOSE) {
+    return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1}, attr);
   }
 };
 
@@ -400,6 +401,109 @@ Usage: cmd11 [output]
 
 Options:
   -h, --help  show this help message)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+}
+
+TEST_F(ArgParserTest, shortUsage1) {
+  ArgEntriesBuilder builder;
+  builder.addHelp().add([](ArgEntry &e) {
+    e.setParseOp(OptParseOp::NO_ARG);
+    e.setArgName("output");
+    e.setAttr(ArgEntryAttr::POSITIONAL);
+  });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder), CLIRecordType::Attr{});
+
+  // help (always show verbose usage without verbose attr)
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd11");
+  auto args = createArgs("-h", "AAA");
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(1, ret.index);
+  auto error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(0, error->getStatus());
+  const char *err = R"(Usage: cmd11 [output]
+
+Options:
+  -h, --help  show this help message)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // invalid option
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd11");
+  args = createArgs("-A");
+  ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(0, ret.index);
+  error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(2, error->getStatus());
+  err = R"(invalid option: -A
+See `cmd11 --help' for more information.)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+}
+
+TEST_F(ArgParserTest, shortUsage2) {
+  ArgEntriesBuilder builder;
+  builder
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::HAS_ARG);
+        e.setArgName("time");
+        e.setShortName('t');
+        e.setIntRange(0, 1000);
+        e.setAttr(ArgEntryAttr::REQUIRE);
+      })
+      .addHelp()
+      .add([](ArgEntry &e) {
+        e.setParseOp(OptParseOp::NO_ARG);
+        e.setArgName("output");
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+      });
+
+  auto &recordType = this->createRecordType("type1", std::move(builder), CLIRecordType::Attr{});
+
+  // missing option
+  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd11");
+  auto args = createArgs("AAA");
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(0, ret.index);
+  auto error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
+  const char *err = R"(require -t option
+See `cmd11 --help' for more information.)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // missing positional
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd12");
+  args = createArgs("-t", "12");
+  ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(2, ret.index);
+  error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
+  err = R"(require `output' argument
+See `cmd12 --help' for more information.)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // option arg format
+  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = DSValue::createStr("cmd22");
+  args = createArgs("-t", "121111111");
+  ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(1, ret.index);
+  error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(1, error->getStatus());
+  err = R"(invalid argument: `121111111' for -t option, must be [0, 1000]
+See `cmd22 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 

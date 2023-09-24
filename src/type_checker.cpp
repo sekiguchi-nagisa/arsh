@@ -2005,14 +2005,23 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
 
   // check CLI attribute
   bool cli = false;
+  auto attr = CLIRecordType::Attr::VERBOSE;
   if (!node.getAttrNodes().empty()) {
     for (auto &e : node.getAttrNodes()) {
       if (e->getAttrKind() == AttributeKind::CLI) {
         cli = true;
+        auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE);
+        if (index != -1) {
+          if (cast<NumberNode>(*e->getConstNodes()[index]).getIntValue()) {
+            setFlag(attr, CLIRecordType::Attr::VERBOSE);
+          } else {
+            unsetFlag(attr, CLIRecordType::Attr::VERBOSE);
+          }
+        }
       } else {
         cli = false;
-        break;
       }
+      break;
     }
   }
   if (cli && !node.getParamNodes().empty()) {
@@ -2021,8 +2030,7 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   }
 
   auto typeOrError =
-      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId,
-                                                 CLIRecordType::Attr{})
+      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId, attr)
           : this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
   if (typeOrError) {
     auto &recordType = *typeOrError.asOk();

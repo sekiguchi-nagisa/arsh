@@ -833,6 +833,21 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 // ##     AttributeNode     ##
 // ###########################
 
+int AttributeNode::findValidAttrParamIndex(Attribute::Param p) const {
+  if (this->getAttrKind() == AttributeKind::NONE || !this->isValidType() ||
+      !this->getResolvedParamSet().has(p)) {
+    return -1;
+  }
+  StringRef paramName = toString(p);
+  const unsigned int size = this->getKeys().size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (this->getKeys()[i].getName() == paramName) {
+      return static_cast<int>(i);
+    }
+  }
+  return -1;
+}
+
 void AttributeNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(Attribute::Loc::NONE)                                                                         \
@@ -857,6 +872,20 @@ void AttributeNode::dump(NodeDumper &dumper) const {
   DUMP(keys);
   DUMP(valueNodes);
   DUMP(constNodes);
+}
+
+std::pair<int, int>
+lookupValidAttributeParamFromList(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes,
+                                  AttributeKind kind, Attribute::Param p) {
+  unsigned int size = attrNodes.size();
+  for (unsigned int i = 0; i < size; i++) {
+    auto &attrNode = attrNodes[i];
+    if (attrNode->getAttrKind() == kind) {
+      int index = attrNode->findValidAttrParamIndex(p);
+      return {static_cast<int>(i), index};
+    }
+  }
+  return {-1, -1};
 }
 
 // ########################
@@ -945,18 +974,11 @@ void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
 
 StringRef FunctionNode::getCLIName() const {
   StringRef name;
-  for (auto &e : this->attrNodes) {
-    if (e->getAttrKind() != AttributeKind::CLI || !e->isValidType()) {
-      continue;
-    }
-    const unsigned int size = e->getKeys().size();
-    for (unsigned int i = 0; i < size; i++) {
-      if (e->getKeys()[i].getName() == "name") {
-        name = cast<StringNode>(*e->getConstNodes()[i]).getValue();
-        break;
-      }
-    }
-    break;
+  auto pair = lookupValidAttributeParamFromList(this->attrNodes, AttributeKind::CLI,
+                                                Attribute::Param::NAME);
+  if (pair.first > -1 && pair.second > -1) {
+    auto &node = this->attrNodes[pair.first]->getConstNodes()[pair.second];
+    name = cast<StringNode>(*node).getValue();
   }
   return name;
 }

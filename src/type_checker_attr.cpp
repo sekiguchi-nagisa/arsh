@@ -82,6 +82,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
   defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR,
                   {
                       Attribute::Param::NAME,
+                      Attribute::Param::VERBOSE,
                   },
                   {});
   defineAttribute(values, AttributeKind::FLAG, Attribute::Loc::FIELD,
@@ -357,6 +358,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
     case Attribute::Param::NAME:
+    case Attribute::Param::VERBOSE:
       continue; // unreachable
     case Attribute::Param::HELP: {
       StringRef ref = cast<StringNode>(constNode).getValue();

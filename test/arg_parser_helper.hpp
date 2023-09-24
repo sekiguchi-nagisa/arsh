@@ -43,7 +43,7 @@ private:
 
 inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeName,
                                              ArgEntriesBuilder &&builder, ModId modId,
-                                             CLIRecordType::Attr attr = {}) {
+                                             CLIRecordType::Attr attr) {
   auto ret = pool.createCLIRecordType(typeName, modId, attr);
   assert(ret);
   (void)ret;

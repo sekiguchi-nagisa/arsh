@@ -661,7 +661,7 @@ class ArgEntry;
 class CLIRecordType : public RecordType {
 public:
   enum class Attr : unsigned char {
-    SHORT_USAGE = 1u << 0u,
+    VERBOSE = 1u << 0u, // verbose usage message
   };
 
 private:

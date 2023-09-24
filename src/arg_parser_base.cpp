@@ -136,46 +136,49 @@ std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
     out += '\n';
   }
 
-  unsigned int optCount = 0;
-  unsigned int argCount = 0;
-  for (auto &e : this->entries) {
-    if (e.isHelp()) {
-      continue;
-    } else if (e.isOption()) {
-      optCount++;
-    } else {
-      argCount++;
-    }
-  }
-
-  out += "Usage: ";
-  out += this->cmdName;
-  if (optCount) {
-    out += " [OPTIONS]";
-  }
-
-  if (argCount) {
+  if (verbose) {
+    unsigned int optCount = 0;
+    unsigned int argCount = 0;
     for (auto &e : this->entries) {
-      if (e.isPositional()) {
-        out += ' ';
-        if (!e.isRequire()) {
-          out += '[';
-        }
-        assert(!e.getArgName().empty());
-        out += e.getArgName();
-        if (e.isRemainArg()) {
-          out += "...";
-        }
-        if (!e.isRequire()) {
-          out += ']';
+      if (e.isHelp()) {
+        continue;
+      } else if (e.isOption()) {
+        optCount++;
+      } else {
+        argCount++;
+      }
+    }
+
+    out += "Usage: ";
+    out += this->cmdName;
+    if (optCount) {
+      out += " [OPTIONS]";
+    }
+
+    if (argCount) {
+      for (auto &e : this->entries) {
+        if (e.isPositional()) {
+          out += ' ';
+          if (!e.isRequire()) {
+            out += '[';
+          }
+          assert(!e.getArgName().empty());
+          out += e.getArgName();
+          if (e.isRemainArg()) {
+            out += "...";
+          }
+          if (!e.isRequire()) {
+            out += ']';
+          }
         }
       }
     }
-  }
-
-  if (verbose) {
     out += "\n\n";
     this->formatOptions(out);
+  } else {
+    out += "See `";
+    out += this->cmdName;
+    out += " --help' for more information.";
   }
   return out;
 }

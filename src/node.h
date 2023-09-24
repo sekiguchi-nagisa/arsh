@@ -2198,8 +2198,28 @@ public:
 
   AttributeKind getAttrKind() const { return this->attrKind; }
 
+  /**
+   *
+   * @param p
+   * @return
+   * if not found or invalid attribute, return -1
+   */
+  int findValidAttrParamIndex(Attribute::Param p) const;
+
   void dump(NodeDumper &dumper) const override;
 };
+
+/**
+ * get first occurred attribute parameter
+ * @param attrNodes
+ * @param kind
+ * @param p
+ * @return
+ * if not found , (-1,-1)
+ */
+std::pair<int, int>
+lookupValidAttributeParamFromList(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes,
+                                  AttributeKind kind, Attribute::Param p);
 
 /**
  * for assignment, self assignment or named parameter
