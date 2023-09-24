@@ -209,7 +209,8 @@ public:
   TypeOrError finalizeRecordType(const RecordType &recordType,
                                  std::unordered_map<std::string, HandlePtr> &&handles);
 
-  TypeOrError createCLIRecordType(const std::string &typeName, ModId belongedModId);
+  TypeOrError createCLIRecordType(const std::string &typeName, ModId belongedModId,
+                                  CLIRecordType::Attr attr);
 
   TypeOrError finalizeCLIRecordType(const CLIRecordType &recordType,
                                     std::unordered_map<std::string, HandlePtr> &&handles,

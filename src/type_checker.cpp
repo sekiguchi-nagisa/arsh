@@ -2021,7 +2021,8 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   }
 
   auto typeOrError =
-      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId)
+      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId,
+                                                 CLIRecordType::Attr{})
           : this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
   if (typeOrError) {
     auto &recordType = *typeOrError.asOk();

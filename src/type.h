@@ -132,9 +132,14 @@ protected:
     unsigned int u32;
     struct {
       unsigned short v1;
+      unsigned char v2_1;
+      unsigned char v2_2;
+    } u16_u8;
+    struct {
+      unsigned short v1;
       unsigned short v2;
     } u16_2;
-  } meta;
+  } meta{};
 
   const CStrPtr name;
 
@@ -625,15 +630,19 @@ protected:
     this->meta.u32 = 0;
   }
 
+  void setExtraAttr(unsigned char attr) { this->meta.u16_u8.v2_2 = attr; }
+
+  unsigned char getExtraAttr() const { return this->meta.u16_u8.v2_2; }
+
 public:
   RecordType(unsigned int id, StringRef ref, const DSType &superType)
       : RecordType(TypeKind::Record, id, ref, superType) {}
 
   const auto &getHandleMap() const { return this->handleMap; }
 
-  unsigned int getFieldSize() const { return this->meta.u16_2.v1; }
+  unsigned int getFieldSize() const { return this->meta.u16_u8.v1; }
 
-  bool isFinalized() const { return this->meta.u16_2.v2 != 0; }
+  bool isFinalized() const { return this->meta.u16_u8.v2_1 != 0; }
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
@@ -642,29 +651,39 @@ public:
 protected:
   void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles) {
     this->handleMap = std::move(handles);
-    this->meta.u16_2.v1 = fieldSize;
-    this->meta.u16_2.v2 = 1; // finalize
+    this->meta.u16_u8.v1 = fieldSize;
+    this->meta.u16_u8.v2_1 = 1; // finalize
   }
 };
 
 class ArgEntry;
 
 class CLIRecordType : public RecordType {
+public:
+  enum class Attr : unsigned char {
+    SHORT_USAGE = 1u << 0u,
+  };
+
 private:
   friend class TypePool;
 
   std::vector<ArgEntry> entries;
 
 public:
-  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType);
+  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr);
 
   const auto &getEntries() const { return this->entries; }
+
+  Attr getAttr() const { return static_cast<Attr>(this->getExtraAttr()); }
 
   static bool classof(const DSType *type) { return type->isCLIRecordType(); }
 
 private:
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
 };
+
+template <>
+struct allow_enum_bitop<CLIRecordType::Attr> : std::true_type {};
 
 enum class ImportedModKind : unsigned char {
   GLOBAL = 1u << 0u,

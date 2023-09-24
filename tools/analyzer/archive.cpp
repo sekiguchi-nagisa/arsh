@@ -95,7 +95,7 @@ void Archiver::add(const DSType &type) {
       } else { // not found
         this->udTypeSet.emplace(type.typeId());
         this->writeT(type.typeKind() == TypeKind::Record ? ArchiveType::RECORD
-                                                         : ArchiveType::ARGS_RECORD);
+                                                         : ArchiveType::CLI_RECORD);
         auto typeName = type.getNameRef();
         const auto pos = typeName.find('.');
         assert(pos != StringRef::npos);
@@ -103,6 +103,9 @@ void Archiver::add(const DSType &type) {
         auto ret = this->pool.getType(typeName.slice(0, pos));
         assert(ret && isa<ModType>(ret));
         this->writeModId(cast<ModType>(ret)->getModId());
+        if (type.typeKind() == TypeKind::CLIRecord) {
+          this->writeEnum(cast<CLIRecordType>(type).getAttr());
+        }
 
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
@@ -294,11 +297,15 @@ const DSType *Unarchiver::unpackType() {
     return std::move(ret).take();
   }
   case ArchiveType::RECORD:
-  case ArchiveType::ARGS_RECORD: {
+  case ArchiveType::CLI_RECORD: {
     std::string name = this->readStr();
     auto modId = this->readModId();
+    CLIRecordType::Attr attr{};
+    if (k == ArchiveType::CLI_RECORD) {
+      attr = this->readEnum<CLIRecordType::Attr>();
+    }
     auto ret = k == ArchiveType::RECORD ? TRY(this->pool.createRecordType(name, modId))
-                                        : TRY(this->pool.createCLIRecordType(name, modId));
+                                        : TRY(this->pool.createCLIRecordType(name, modId, attr));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {

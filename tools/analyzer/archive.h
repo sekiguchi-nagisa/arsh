@@ -33,7 +33,7 @@ enum class ArchiveType : uint8_t {
   OPTION,
   ERROR,
   RECORD,
-  ARGS_RECORD,
+  CLI_RECORD,
   FUNC,
   MOD,
   CACHED,

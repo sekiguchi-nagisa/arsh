@@ -42,8 +42,9 @@ private:
 };
 
 inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeName,
-                                             ArgEntriesBuilder &&builder, ModId modId) {
-  auto ret = pool.createCLIRecordType(typeName, modId);
+                                             ArgEntriesBuilder &&builder, ModId modId,
+                                             CLIRecordType::Attr attr = {}) {
+  auto ret = pool.createCLIRecordType(typeName, modId, attr);
   assert(ret);
   (void)ret;
   auto entries = std::move(builder).build();
