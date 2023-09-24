@@ -2005,7 +2005,7 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
 
   // check CLI attribute
   bool cli = false;
-  auto attr = CLIRecordType::Attr::VERBOSE;
+  CLIRecordType::Attr attr{};
   if (!node.getAttrNodes().empty()) {
     for (auto &e : node.getAttrNodes()) {
       if (e->getAttrKind() == AttributeKind::CLI) {

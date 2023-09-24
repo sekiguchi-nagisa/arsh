@@ -11,10 +11,10 @@
 ### ``CLI`` attribute
 only allowed for user-defied type definition
 
-| **param** | **type**   | **default**  | **description**              |
-|-----------|------------|--------------|------------------------------|
-| name      | ``String`` | empty string | default command name         |
-| verbose   | ``Bool``   | true         | default usage message format |
+| **param** | **type**   | **default**  | **description**                                             |
+|-----------|------------|--------------|-------------------------------------------------------------|
+| name      | ``String`` | empty string | default command name                                        |
+| verbose   | ``Bool``   | false        | show detailed usage when encounter command line parse error |
 
 ### ``Flag`` attribute
 only allowed for field declaration that is ``Bool`` or ``Bool?`` type

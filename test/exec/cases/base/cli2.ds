@@ -1,7 +1,7 @@
 
 # for error
 
-[<CLI(name: 'cmd1')>]
+[<CLI(name: 'cmd1', verbose: $true)>]
 typedef AAA() {
     [<Option(range: (10,-10), help: "count")>]
     var Call_Limit = 0
@@ -68,7 +68,7 @@ Options:
   -h, --help                  show this help message" : ($ex as CLIError).message()
 
 # auto-gen option/arg name
-[<CLI(name: 'test')>]
+[<CLI(name: 'test', verbose: $true)>]
 typedef _AAA() {
     [<Option>]
     var camelCase = ""

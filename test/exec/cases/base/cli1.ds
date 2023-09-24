@@ -1,6 +1,6 @@
 
 ## empty options
-[<CLI()>]
+[<CLI(verbose: $true)>]
 typedef AAA() {
     var a = ""
 }
@@ -27,7 +27,7 @@ Options:
   -h, --help  show this help message"
 
 ## Flag/Option
-[<CLI>]
+[<CLI(verbose: $true)>]
 typedef BBB() {
   [<Flag(
       short: "d", long: "debug", 
@@ -94,7 +94,7 @@ assert $bb.timeout == 0
 assert $bb.version
 
 ## Arg
-[<CLI>]
+[<CLI(verbose: $true)>]
 typedef CCC() {
   [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -139,7 +139,7 @@ assert $cc.ccc.size() == 1
 assert $cc.ccc[0] == 'qqq'
 
 ## short-usage
-[<CLI(verbose: $false, name: 'example')>]
+[<CLI(name: 'example', verbose: $false)>]
 typedef DDD() {
     [<Option(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -169,3 +169,14 @@ $ex = 34
 try { $dd.parse(['-q']); } catch e { $ex = $e; }
 assert ($ex as CLIError).message() == "invalid option: -q
 See \`example --help' for more information."
+
+[<CLI(name: "www")>]
+typedef EEE() {
+    [<Arg(required: $true, range:(120,-10))>]
+  var aaa : Int?
+}
+
+$ex = 34
+try { new EEE().parse(new [String]()); } catch e { $ex = $e; }
+assert ($ex as CLIError).message() == "require \`AAA' argument
+See \`www --help' for more information."
