@@ -1420,6 +1420,9 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   // check pattern type
   for (auto &e : node.getPatternNodes()) {
     auto *type = &this->checkTypeAsExpr(*e);
+    if (type->isOptionType()) {
+      this->reportError<Unacceptable>(*e, type->getName());
+    }
     if (type->is(TYPE::Regex)) {
       collector.setKind(CaseNode::IF_ELSE);
       type = &this->typePool().get(TYPE::String);

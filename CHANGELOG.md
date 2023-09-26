@@ -66,6 +66,7 @@
 - **Breaking Change**: not allow override of generic base type in global scope
 - **Breaking Change**: when call fullname command, ``$0`` indicate actual command name (not contain null characters)
 - **Breaking Change**: when pass FD object to argument array (``@( )``), throw ``ArgumentError``
+- **Breaking Change**: not allow ``Nothing?`` expression in case pattern
 - improve error message of type lookup errors
     - report correct position of invalid type elements
     - report more detailed error message for invalid type elements
