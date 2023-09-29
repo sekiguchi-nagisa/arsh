@@ -100,7 +100,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-15 clang-11
+          sudo apt install language-pack-ja ninja-build clang-15 clang-11 clang-12
       - name: configure
         run: |
           mkdir build
