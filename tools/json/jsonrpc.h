@@ -22,6 +22,8 @@
 #include "json.h"
 #include "serialize.h"
 #include <misc/logger_base.hpp>
+#include <misc/split_random.hpp>
+#include <misc/time_util.hpp>
 
 namespace ydsh::rpc {
 
@@ -148,19 +150,20 @@ private:
   using Entry = std::pair<std::string, ResponseCallback>;
 
   std::mutex mutex;
-  std::unordered_map<long, Entry> map;
-  long index{0};
+  L64X128MixRNG rng;
+  std::unordered_map<std::string, Entry> map;
 
 public:
+  CallbackMap() : rng(getCurrentTimestamp().time_since_epoch().count()) {}
+
   /**
    *
    * @param methodName
    * @param callback
    * @return
    * call id.
-   * if already added, return 0.
    */
-  long add(const std::string &methodName, ResponseCallback &&callback);
+  std::string add(const std::string &methodName, ResponseCallback &&callback);
 
   /**
    * take callback entry corresponding to 'id'
@@ -168,7 +171,14 @@ public:
    * @return
    * if not found corresponding entry, return empty entry.
    */
-  Entry take(long id);
+  Entry take(const std::string &id);
+
+private:
+  /**
+   * not thread safe. take lock before call it
+   * @return
+   */
+  std::string generateId();
 };
 
 class Handler;
@@ -370,7 +380,7 @@ public:
   }
 
   template <typename Ret, typename Param, typename Func, typename Error>
-  auto call(Transport &transport, const std::string &name, const Param &param, Func callback,
+  void call(Transport &transport, const std::string &name, const Param &param, Func callback,
             Error ecallback) {
     ResponseCallback func = [this, callback, ecallback, name](Response &&res) {
       if (res) {
@@ -388,7 +398,7 @@ public:
     };
     JSONSerializer serializer;
     serializer(param);
-    return this->callImpl(transport, name, std::move(serializer).take(), std::move(func));
+    this->callImpl(transport, name, std::move(serializer).take(), std::move(func));
   }
 
   template <typename Param>
@@ -409,7 +419,7 @@ protected:
 
   void bindImpl(const std::string &methodName, Notification &&func);
 
-  long callImpl(Transport &transport, const std::string &methodName, JSON &&json,
+  void callImpl(Transport &transport, const std::string &methodName, JSON &&json,
                 ResponseCallback &&func);
 };
 

@@ -16,6 +16,8 @@
 
 #include "jsonrpc.h"
 
+#include <misc/format.hpp>
+
 namespace ydsh::rpc {
 
 std::string Error::toString() const {
@@ -91,17 +93,20 @@ Message MessageParser::operator()() {
   }
 }
 
-long CallbackMap::add(const std::string &methodName, ResponseCallback &&callback) {
+std::string CallbackMap::add(const std::string &methodName, ResponseCallback &&callback) {
   std::lock_guard<std::mutex> guard(this->mutex);
-  long id = ++this->index;
-  auto pair = this->map.emplace(id, std::make_pair(methodName, std::move(callback)));
-  if (!pair.second) {
-    return 0;
+  std::string id;
+  Entry entry = {methodName, std::move(callback)};
+  while (true) {
+    id = this->generateId();
+    if (this->map.try_emplace(id, std::move(entry)).second) {
+      break;
+    }
   }
   return id;
 }
 
-CallbackMap::Entry CallbackMap::take(long id) {
+CallbackMap::Entry CallbackMap::take(const std::string &id) {
   std::lock_guard<std::mutex> guard(this->mutex);
   auto iter = this->map.find(id);
   if (iter != this->map.end()) {
@@ -110,6 +115,14 @@ CallbackMap::Entry CallbackMap::take(long id) {
     return entry;
   }
   return {"", ResponseCallback()};
+}
+
+std::string CallbackMap::generateId() {
+  std::string ret;
+  auto v1 = static_cast<uintmax_t>(this->rng.next());
+  auto v2 = static_cast<uintmax_t>(this->rng.next());
+  formatTo(ret, "id-%jx-%jX", v1, v2);
+  return ret;
 }
 
 // #######################
@@ -222,15 +235,14 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
 }
 
 void Handler::onResponse(Response &&res) {
-  assert(res.id.isLong());
-  long id = res.id.asLong();
-  auto entry = this->callbackMap.take(id);
-
-  if (!entry.second) {
-    LOG(LogLevel::ERROR, "broken response: %ld", id);
-    return;
+  if (res.id.isString()) {
+    auto &id = res.id.asString();
+    if (auto entry = this->callbackMap.take(id); entry.second) {
+      entry.second(std::move(res));
+      return;
+    }
   }
-  entry.second(std::move(res));
+  LOG(LogLevel::ERROR, "broken response: %s", res.toJSON().serialize(2).c_str());
 }
 
 ReplyImpl Handler::requestValidationError(const std::string &name, const ValidationError &e) {
@@ -266,11 +278,10 @@ void Handler::bindImpl(const std::string &methodName, Notification &&func) {
   }
 }
 
-long Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json,
+void Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json,
                        ResponseCallback &&func) {
-  long id = this->callbackMap.add(methodName, std::move(func));
-  transport.call(static_cast<int64_t>(id), methodName, std::move(json));
-  return id;
+  auto id = this->callbackMap.add(methodName, std::move(func));
+  transport.call(std::move(id), methodName, std::move(json));
 }
 
 } // namespace ydsh::rpc
