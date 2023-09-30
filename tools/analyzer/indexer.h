@@ -35,11 +35,11 @@ enum class ScopeKind {
 class IndexBuilder {
 private:
   const SourcePtr src;
-  unsigned int scopeIdCount{0};
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreign;
   std::vector<std::pair<SymbolRef, IndexLink>> links;
+  std::vector<ScopeInterval> scopeIntervals;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -124,22 +124,31 @@ private:
 
 public:
   IndexBuilder(SourcePtr src, std::shared_ptr<TypePool> pool, const SymbolIndexes &indexes)
-      : src(std::move(src)), scope(IntrusivePtr<ScopeEntry>::create(this->scopeIdCount)),
-        pool(std::move(pool)), indexes(indexes) {}
+      : src(std::move(src)), scope(IntrusivePtr<ScopeEntry>::create(0)), pool(std::move(pool)),
+        indexes(indexes) {
+    this->scopeIntervals.push_back({0, static_cast<unsigned int>(this->src->getContent().size())});
+  }
 
   SymbolIndex build() && {
-    return {this->src->getSrcId(),    this->src->getVersion(),  std::move(this->decls),
-            std::move(this->symbols), std::move(this->foreign), std::move(*this->scope).take(),
-            std::move(this->links)};
+    return {this->src->getSrcId(),    this->src->getVersion(),
+            std::move(this->decls),   std::move(this->symbols),
+            std::move(this->foreign), std::move(*this->scope).take(),
+            std::move(this->links),   std::move(this->scopeIntervals)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
-  auto intoScope(ScopeKind kind, const DSType *type = nullptr) {
-    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope, kind, ++this->scopeIdCount, type);
+  auto intoScope(ScopeKind kind, ScopeInterval interval, const DSType *type = nullptr) {
+    this->scope =
+        IntrusivePtr<ScopeEntry>::create(this->scope, kind, this->scopeIntervals.size(), type);
+    this->scopeIntervals.push_back(interval);
     return finally([&] { this->scope = this->scope->parent; });
+  }
+
+  auto intoScope(ScopeKind kind, Token token) {
+    return this->intoScope(kind, ScopeInterval::create(token));
   }
 
   bool isGlobal() const { return this->scope->isGlobal(); }

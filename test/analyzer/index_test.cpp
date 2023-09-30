@@ -209,6 +209,15 @@ try { $false; } catch($e) {
                       {modId, "(2:2~2:4)"}})); // $e
 }
 
+static std::string toString(const ScopeInterval &interval) {
+  std::string value = "(";
+  value += std::to_string(interval.beginPos);
+  value += ", ";
+  value += std::to_string(interval.endPos);
+  value += ")";
+  return value;
+}
+
 TEST_F(IndexTest, scope2) {
   unsigned short modId;
   const char *content = R"(
@@ -253,6 +262,32 @@ function assertArray(
   ASSERT_EQ(2, index->getDecls()[3].getScopeInfo().depth);
   ASSERT_EQ(3, index->getDecls()[4].getScopeInfo().id);
   ASSERT_EQ(2, index->getDecls()[4].getScopeInfo().depth);
+
+  auto &scopes = index->getScopes();
+  ASSERT_EQ(4, scopes.size());
+  for (unsigned int i = 0; i < scopes.size() - 1; i++) {
+    auto &cur = scopes[i];
+    auto &next = scopes[i + 1];
+
+    SCOPED_TRACE("i=" + std::to_string(i) + ", cur=" + toString(cur) + ". next=" + toString(next));
+    ASSERT_TRUE(cur.beginPos <= next.beginPos);
+    ASSERT_TRUE(cur != next);
+  }
+  for (unsigned int i = 0; i < scopes.size(); i++) {
+    auto &base = scopes[0];
+    auto &cur = scopes[i];
+    SCOPED_TRACE("i=" + std::to_string(i) + ", base=" + toString(base) + ". cur=" + toString(cur));
+    ASSERT_TRUE(base.isIncluding(cur));
+  }
+  ASSERT_TRUE(scopes[1].isIncluding(scopes[2]));
+  ASSERT_TRUE(scopes[1].isIncluding(scopes[3]));
+  ASSERT_FALSE(scopes[1].isIncluding(scopes[0]));
+  ASSERT_FALSE(scopes[2].isIncluding(scopes[0]));
+  ASSERT_FALSE(scopes[2].isIncluding(scopes[1]));
+  ASSERT_FALSE(scopes[2].isIncluding(scopes[3]));
+  ASSERT_FALSE(scopes[3].isIncluding(scopes[2]));
+  ASSERT_FALSE(scopes[3].isIncluding(scopes[1]));
+  ASSERT_FALSE(scopes[3].isIncluding(scopes[0]));
 }
 
 TEST_F(IndexTest, scope3) {

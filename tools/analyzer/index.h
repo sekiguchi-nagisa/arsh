@@ -362,6 +362,28 @@ public:
   const std::string &getPathName() const { return this->pathName; }
 };
 
+struct ScopeInterval {
+  unsigned int beginPos; // inclusive
+  unsigned int endPos;   // exclusive
+
+  static ScopeInterval create(Token token) {
+    return {
+        .beginPos = token.pos,
+        .endPos = token.endPos(),
+    };
+  }
+
+  bool operator==(const ScopeInterval &o) const {
+    return this->beginPos == o.beginPos && this->endPos == o.endPos;
+  }
+
+  bool operator!=(const ScopeInterval &o) const { return !(*this == o); }
+
+  bool isIncluding(const ScopeInterval &o) const {
+    return this->beginPos <= o.beginPos && o.endPos <= this->endPos;
+  }
+};
+
 class SymbolIndex;
 using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
@@ -374,15 +396,17 @@ private:
   std::vector<ForeignDecl> foreignDecls;
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
   std::vector<std::pair<SymbolRef, IndexLink>> links; // for importing module
+  std::vector<ScopeInterval> scopes;
 
 public:
   SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
               std::unordered_map<std::string, SymbolRef> &&globals,
-              std::vector<std::pair<SymbolRef, IndexLink>> &&links)
+              std::vector<std::pair<SymbolRef, IndexLink>> &&links,
+              std::vector<ScopeInterval> &&scopes)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
-        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)),
-        links(std::move(links)) {}
+        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)), links(std::move(links)),
+        scopes(std::move(scopes)) {}
 
   ModId getModId() const { return this->modId; }
 
@@ -401,6 +425,8 @@ public:
   const std::vector<Symbol> &getSymbols() const { return this->symbols; }
 
   const auto &getLinks() const { return this->links; }
+
+  const auto &getScopes() const { return this->scopes; }
 
   struct Compare {
     bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }

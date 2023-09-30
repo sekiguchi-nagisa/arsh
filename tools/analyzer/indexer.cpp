@@ -459,7 +459,7 @@ void SymbolIndexer::visitRedirNode(RedirNode &node) {
 }
 
 void SymbolIndexer::visitBlockNode(BlockNode &node) {
-  auto block = this->builder().intoScope(ScopeKind::BLOCK);
+  auto block = this->builder().intoScope(ScopeKind::BLOCK, node.getToken());
   this->visitBlockWithCurrentScope(node);
 }
 
@@ -487,7 +487,7 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
 }
 
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
-  auto block = this->builder().intoScope(ScopeKind::BLOCK);
+  auto block = this->builder().intoScope(ScopeKind::BLOCK, node.getToken());
   this->visit(node.getInitNode());
   this->visit(node.getCondNode());
   this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -512,7 +512,7 @@ void SymbolIndexer::visitIfNode(IfNode &node) {
 }
 
 void SymbolIndexer::visitCatchNode(CatchNode &node) {
-  auto block = this->builder().intoScope(ScopeKind::BLOCK);
+  auto block = this->builder().intoScope(ScopeKind::BLOCK, node.getToken());
   this->visit(node.getTypeNode());
   this->builder().addDecl(node.getNameInfo(), node.getTypeNode().getType(),
                           node.getNameInfo().getToken());
@@ -552,7 +552,7 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
 
 void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
   if (node.getExprNode()) {
-    auto block = this->builder().intoScope(ScopeKind::BLOCK);
+    auto block = this->builder().intoScope(ScopeKind::BLOCK, node.getToken());
     for (auto &e : node.getAssignNodes()) {
       this->visit(e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
@@ -701,7 +701,11 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
   }
 
   if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
-    auto func = this->builder().intoScope(getScopeKind(node),
+    auto interval = ScopeInterval::create(node.getBlockNode().getToken());
+    if (!node.getParamNodes().empty()) {
+      interval.beginPos = node.getParamNodes()[0]->getPos();
+    }
+    auto func = this->builder().intoScope(getScopeKind(node), interval,
                                           node.isMethod() ? &node.getRecvTypeNode()->getType()
                                                           : node.getResolvedType());
     if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
@@ -754,7 +758,11 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
   }
 
   if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
-    auto udc = this->builder().intoScope(ScopeKind::FUNC);
+    auto interval = ScopeInterval::create(node.getBlockNode().getToken());
+    if (node.getParamNode()) {
+      interval.beginPos = node.getParamNode()->getPos();
+    }
+    auto udc = this->builder().intoScope(ScopeKind::FUNC, interval);
     this->visit(node.getParamNode());
     this->visitBlockWithCurrentScope(node.getBlockNode());
   }
