@@ -122,7 +122,7 @@ protected:
     path += std::to_string(count++);
     auto src = srcMan.update(path, 0, "");
     archives.reserve(src->getSrcId());
-    return std::make_unique<AnalyzerContext>(config, *src);
+    return std::make_unique<AnalyzerContext>(config, src);
   }
 
   AnalyzerContextPtr newctx() { return newctx(this->sysConfig, this->srcMan, this->archives); }

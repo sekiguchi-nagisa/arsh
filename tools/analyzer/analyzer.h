@@ -40,10 +40,9 @@ private:
 
   struct Context {
     SourcePtr src;
-    int version;
     std::vector<Diagnostic> diagnostics;
 
-    Context(SourcePtr src, int version) : src(std::move(src)), version(version) {}
+    explicit Context(SourcePtr src) : src(std::move(src)) {}
   };
 
   std::vector<Context> contexts;
@@ -62,7 +61,10 @@ public:
 
   bool handleTypeError(ModId modId, const TypeCheckError &checkError);
 
-  bool enterModule(ModId modId, int version);
+  bool enterModule(const SourcePtr &src) {
+    this->contexts.emplace_back(src);
+    return true;
+  }
 
   bool exitModule();
 
@@ -99,14 +101,14 @@ class AnalyzerContext {
 private:
   std::shared_ptr<TypePool> pool;
   NameScopePtr scope;
-  int version;
+  SourcePtr src;
   unsigned int gvarCount{0};
   TypeDiscardPoint typeDiscardPoint{};
 
 public:
   NON_COPYABLE(AnalyzerContext);
 
-  AnalyzerContext(const SysConfig &config, const Source &src);
+  AnalyzerContext(const SysConfig &config, SourcePtr src);
 
   const NameScopePtr &getScope() const { return this->scope; }
 
@@ -116,7 +118,7 @@ public:
 
   ModId getModId() const { return this->scope->modId; }
 
-  int getVersion() const { return this->version; }
+  const auto &getSrc() const { return this->src; }
 
   unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
 
@@ -157,7 +159,7 @@ protected:
   std::reference_wrapper<CancelToken> getCancelToken() const override;
 
 private:
-  const AnalyzerContextPtr &addNew(const Source &src);
+  const AnalyzerContextPtr &addNew(const SourcePtr &src);
 
   const AnalyzerContextPtr &current() const { return this->ctxs.back(); }
 
@@ -170,17 +172,17 @@ private:
 public:
   void reset() { this->ctxs.clear(); }
 
-  ModuleArchivePtr analyze(const Source &src, AnalyzerAction &action);
+  ModuleArchivePtr analyze(const SourcePtr &src, AnalyzerAction &action);
 
   enum class ExtraCompOp : unsigned int {
     CMD_ARG_COMP = 1u << 0u,
     SIGNATURE = 1u << 1u,
   };
 
-  std::vector<CompletionItem> complete(const Source &src, unsigned int offset, CmdCompKind ckind,
+  std::vector<CompletionItem> complete(const SourcePtr &src, unsigned int offset, CmdCompKind ckind,
                                        ExtraCompOp extraOp);
 
-  Optional<SignatureInformation> collectSignature(const Source &src, unsigned int offset);
+  Optional<SignatureInformation> collectSignature(const SourcePtr &src, unsigned int offset);
 };
 
 } // namespace ydsh::lsp

@@ -56,11 +56,11 @@ static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,
   return builtin->toModType(pool);
 }
 
-AnalyzerContext::AnalyzerContext(const SysConfig &config, const Source &src)
-    : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
+AnalyzerContext::AnalyzerContext(const SysConfig &config, SourcePtr src)
+    : pool(std::make_shared<TypePool>()), src(std::move(src)) {
   auto &builtin = createBuiltin(config, this->getPool(), this->gvarCount);
   unsigned int modIndex = this->gvarCount++;
-  this->scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex, src.getSrcId());
+  this->scope = NameScopePtr::create(std::ref(this->gvarCount), modIndex, this->src->getSrcId());
   this->scope->importForeignHandles(this->getPool(), builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
@@ -89,8 +89,8 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   }
 
   auto archive =
-      std::make_shared<ModuleArchive>(modType.getModId(), this->getVersion(), modType.getAttr(),
-                                      std::move(handles), std::move(imported));
+      std::make_shared<ModuleArchive>(modType.getModId(), this->getSrc()->getVersion(),
+                                      modType.getAttr(), std::move(handles), std::move(imported));
   archives.add(archive);
   return archive;
 }
@@ -143,7 +143,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     const char *fullPath = get<const char *>(ret);
     auto src = this->srcMan.find(fullPath);
     src = this->srcMan.update(fullPath, src->getVersion(), std::move(content));
-    auto &ctx = this->addNew(*src);
+    auto &ctx = this->addNew(src);
     auto lex = createLexer(*src);
     return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
   } else {
@@ -156,7 +156,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
       assert(modType);
       return modType;
     } else { // re-parse
-      auto &ctx = this->addNew(*src);
+      auto &ctx = this->addNew(src);
       auto lex = createLexer(*src);
       return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
     }
@@ -175,12 +175,13 @@ std::reference_wrapper<CancelToken> Analyzer::getCancelToken() const {
   }
 }
 
-const AnalyzerContextPtr &Analyzer::addNew(const Source &src) {
-  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", toUnderlying(src.getSrcId()),
-      src.getVersion(), src.getPath().c_str());
+const AnalyzerContextPtr &Analyzer::addNew(const SourcePtr &src) {
+  assert(src);
+  LOG(LogLevel::INFO, "enter module: id=%d, version=%d, path=%s", toUnderlying(src->getSrcId()),
+      src->getVersion(), src->getPath().c_str());
   auto ptr = std::make_unique<AnalyzerContext>(this->sysConfig, src);
   this->ctxs.push_back(std::move(ptr));
-  this->archives.reserve(src.getSrcId());
+  this->archives.reserve(src->getSrcId());
   return this->current();
 }
 
@@ -201,18 +202,17 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
   }
 }
 
-ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
+ModuleArchivePtr Analyzer::analyze(const SourcePtr &src, AnalyzerAction &action) {
   this->reset();
 
   // prepare
   this->addNew(src);
-  FrontEnd frontEnd(*this, createLexer(src),
+  FrontEnd frontEnd(*this, createLexer(*src),
                     FrontEndOption::ERROR_RECOVERY | FrontEndOption::REPORT_WARN, nullptr);
-  action.pass &&action.pass->enterModule(this->current()->getModId(), this->current()->getVersion(),
-                                         this->current()->getPoolPtr());
+  action.pass &&action.pass->enterModule(this->current()->getSrc(), this->current()->getPoolPtr());
   if (action.emitter) {
     frontEnd.setErrorListener(*action.emitter);
-    action.emitter->enterModule(this->current()->getModId(), this->current()->getVersion());
+    action.emitter->enterModule(this->current()->getSrc());
   }
   if (action.dumper) {
     frontEnd.setASTDumper(*action.dumper);
@@ -230,11 +230,9 @@ ModuleArchivePtr Analyzer::analyze(const Source &src, AnalyzerAction &action) {
       action.pass &&action.pass->consume(ret.node);
       break;
     case FrontEndResult::ENTER_MODULE:
-      action.pass &&action.pass->enterModule(this->current()->getModId(),
-                                             this->current()->getVersion(),
+      action.pass &&action.pass->enterModule(this->current()->getSrc(),
                                              this->current()->getPoolPtr());
-      action.emitter &&action.emitter->enterModule(this->current()->getModId(),
-                                                   this->current()->getVersion());
+      action.emitter &&action.emitter->enterModule(this->current()->getSrc());
       break;
     case FrontEndResult::EXIT_MODULE:
       action.pass &&action.pass->exitModule(ret.node);
@@ -317,13 +315,6 @@ bool DiagnosticEmitter::handleTypeError(ModId modId, const TypeCheckError &check
   return true;
 }
 
-bool DiagnosticEmitter::enterModule(ModId modId, int version) {
-  auto src = this->srcMan->findById(modId);
-  assert(src);
-  this->contexts.emplace_back(src, version);
-  return true;
-}
-
 bool DiagnosticEmitter::exitModule() {
   if (this->contexts.empty()) {
     return false;
@@ -336,7 +327,7 @@ bool DiagnosticEmitter::exitModule() {
         .diagnostics = std::move(this->contexts.back().diagnostics),
     };
     if (this->supportVersion) {
-      params.version = this->contexts.back().version;
+      params.version = this->contexts.back().src->getVersion();
     }
     this->callback(std::move(params));
   }
@@ -491,11 +482,11 @@ static std::string toDirName(const std::string &fullPath) {
   return ref.empty() ? "/" : ref.toString();
 }
 
-std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int offset,
+std::vector<CompletionItem> Analyzer::complete(const SourcePtr &src, unsigned int offset,
                                                CmdCompKind ckind, ExtraCompOp extraOp) {
   this->reset();
 
-  std::string workDir = toDirName(src.getPath());
+  std::string workDir = toDirName(src->getPath());
   auto &ptr = this->addNew(src);
   CompletionItemCollector collector(ptr->getPoolPtr());
   CodeCompleter codeCompleter(collector,
@@ -520,9 +511,9 @@ std::vector<CompletionItem> Analyzer::complete(const Source &src, unsigned int o
   collector.setLabelDetail(hasFlag(extraOp, ExtraCompOp::SIGNATURE));
 
   // do code completion
-  StringRef source = src.getContent();
+  StringRef source = src->getContent();
   source = source.substr(0, offset);
-  codeCompleter(ptr->getScope(), src.getPath(), source, ignoredOp);
+  codeCompleter(ptr->getScope(), src->getPath(), source, ignoredOp);
   return std::move(collector).finalize();
 }
 
@@ -537,14 +528,15 @@ static LexerPtr lex(const Source &src, unsigned int offset) {
   return LexerPtr::create(src.getPath().c_str(), std::move(buf), CStrPtr(strdup(workDir.c_str())));
 }
 
-Optional<SignatureInformation> Analyzer::collectSignature(const Source &src, unsigned int offset) {
+Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
+                                                          unsigned int offset) {
   this->reset();
 
   auto &ctx = this->addNew(src);
-  auto workDir = toDirName(src.getPath());
+  auto workDir = toDirName(src->getPath());
   CodeCompletionHandler handler(this->getSysConfig(), ctx->getPool(), workDir, ctx->getScope(),
                                 workDir); // dummy
-  FrontEnd frontEnd(static_cast<FrontEnd::ModuleProvider &>(*this), lex(src, offset),
+  FrontEnd frontEnd(static_cast<FrontEnd::ModuleProvider &>(*this), lex(*src, offset),
                     FrontEndOption::ERROR_RECOVERY | FrontEndOption::COLLECT_SIGNATURE,
                     makeObserver(handler));
   Optional<SignatureInformation> info;

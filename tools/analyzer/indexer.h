@@ -34,8 +34,7 @@ enum class ScopeKind {
 
 class IndexBuilder {
 private:
-  const ModId modId;
-  const int version;
+  const SourcePtr src;
   unsigned int scopeIdCount{0};
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
@@ -124,18 +123,13 @@ private:
   const SymbolIndexes &indexes;
 
 public:
-  IndexBuilder(ModId modId, int version, std::shared_ptr<TypePool> pool,
-               const SymbolIndexes &indexes)
-      : modId(modId), version(version), scope(IntrusivePtr<ScopeEntry>::create(this->scopeIdCount)),
+  IndexBuilder(SourcePtr src, std::shared_ptr<TypePool> pool, const SymbolIndexes &indexes)
+      : src(std::move(src)), scope(IntrusivePtr<ScopeEntry>::create(this->scopeIdCount)),
         pool(std::move(pool)), indexes(indexes) {}
 
   SymbolIndex build() && {
-    return {this->modId,
-            this->version,
-            std::move(this->decls),
-            std::move(this->symbols),
-            std::move(this->foreign),
-            std::move(*this->scope).take(),
+    return {this->src->getSrcId(),    this->src->getVersion(),  std::move(this->decls),
+            std::move(this->symbols), std::move(this->foreign), std::move(*this->scope).take(),
             std::move(this->links)};
   }
 
@@ -207,6 +201,8 @@ public:
   void addHereDocStartEnd(const NameInfo &start, Token end);
 
 private:
+  ModId getModId() const { return this->src->getSrcId(); }
+
   const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,
                           const Handle *handle) const;
 
@@ -257,7 +253,7 @@ public:
 
   ~SymbolIndexer() override = default;
 
-  bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) override;
+  bool enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;
 
 protected:

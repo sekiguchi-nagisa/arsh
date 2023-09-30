@@ -308,7 +308,7 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     assert(src);
     LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s",
         toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    auto r = analyzer.analyze(*src, action);
+    auto r = analyzer.analyze(src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
         toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
@@ -325,7 +325,7 @@ AnalyzerResult AnalyzerTask::doRebuild() {
     assert(src);
     LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s",
         toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    auto r = analyzer.analyze(*src, action);
+    auto r = analyzer.analyze(src, action);
     LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
         toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
     if (!r) {
@@ -594,10 +594,10 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   if (auto resolved = this->resolvePosition(params)) {
-    auto &src = *resolved.asOk().first;
+    auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
-    copiedArchives.revert({src.getSrcId()});
+    copiedArchives.revert({src->getSrcId()});
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
     Analyzer::ExtraCompOp extraCompOp{};
     if (this->cmdArgComp == BinaryFlag::enabled) {
@@ -722,10 +722,11 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
   LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   if (auto resolved = this->resolvePosition(params)) {
-    auto &src = *resolved.asOk().first;
+    
+    auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
-    copiedArchives.revert({src.getSrcId()});
+    copiedArchives.revert({src->getSrcId()});
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
     Union<SignatureHelp, std::nullptr_t> ret = nullptr;
     auto info = analyzer.collectSignature(src, pos);

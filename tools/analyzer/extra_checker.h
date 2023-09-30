@@ -33,7 +33,7 @@ private:
 public:
   explicit ExtraChecker(DiagnosticEmitter &emitter) : emitter(emitter) {}
 
-  bool enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &pool) override;
+  bool enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;
 
 private:

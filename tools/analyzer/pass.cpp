@@ -257,10 +257,9 @@ void NodePass::visitTypeOf(TypeOfNode &node) { this->visit(node.getExprNode()); 
 // ##     MultipleNodePass     ##
 // ##############################
 
-bool MultipleNodePass::enterModule(ModId modId, int version,
-                                   const std::shared_ptr<TypePool> &pool) {
+bool MultipleNodePass::enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &pool) {
   for (auto &e : this->passes) {
-    e->enterModule(modId, version, pool);
+    e->enterModule(src, pool);
   }
   return true;
 }

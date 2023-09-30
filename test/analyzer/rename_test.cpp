@@ -65,7 +65,7 @@ public:
     SymbolIndexer indexer(this->sysConfig, this->indexes);
     action.pass.reset(&indexer);
     Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
-    auto ret = analyzer.analyze(*src, action);
+    auto ret = analyzer.analyze(src, action);
     ASSERT_TRUE(ret);
     ASSERT_EQ(modId, ydsh::toUnderlying(ret->getModId()));
   }

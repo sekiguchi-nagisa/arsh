@@ -66,7 +66,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
   } else if (handle) {
     declModId = handle->getModId();
     if (isTupleOrBuiltinMethod(mangledName, kind, *handle)) {
-      declModId = this->modId;
+      declModId = this->getModId();
     }
   } else if (kind == DeclSymbol::Kind::CMD) { // for builtin
     declModId = BUILTIN_MOD_ID;
@@ -74,7 +74,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     return nullptr;
   }
 
-  if (this->modId == declModId) {
+  if (this->getModId() == declModId) {
     return this->scope->find(mangledName);
   } else {
     auto foreignIndex = this->indexes.find(declModId);
@@ -145,7 +145,7 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
   }
 
   DeclBase *decl;
-  if (ref->getModId() == this->modId) {
+  if (ref->getModId() == this->getModId()) {
     auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), ref->getPos(),
                                  DeclSymbol::Compare());
     if (iter == this->decls.end()) {
@@ -168,7 +168,7 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
     decl = &*iter;
   }
   if (auto *symbol = this->insertNewSymbol(nameInfo.getToken(), decl)) {
-    auto symbolRef = SymbolRef::create(nameInfo.getToken(), this->modId);
+    auto symbolRef = SymbolRef::create(nameInfo.getToken(), this->getModId());
     assert(symbolRef.hasValue());
     decl->addRef(symbolRef.unwrap());
     return symbol;
@@ -240,7 +240,7 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclS
 }
 
 const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
-  if (symbol.getDeclModId() == this->modId) {
+  if (symbol.getDeclModId() == this->getModId()) {
     auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), symbol.getDeclPos(),
                                  DeclSymbol::Compare());
     if (iter == this->decls.end() || iter->getPos() != symbol.getDeclPos()) {
@@ -274,7 +274,7 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
 
   // insert here end
   if (end.size > 0 && this->insertNewSymbol(end, decl)) {
-    auto symbolRef = SymbolRef::create(end, this->modId);
+    auto symbolRef = SymbolRef::create(end, this->getModId());
     assert(symbolRef.hasValue());
     decl->addRef(symbolRef.unwrap());
   }
@@ -293,7 +293,7 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
   // create DeclSymbol
-  auto ret = DeclSymbol::create(k, attr, std::move(name), this->modId, info, body,
+  auto ret = DeclSymbol::create(k, attr, std::move(name), this->getModId(), info, body,
                                 this->scope->getScopeInfo());
   if (!ret.hasValue()) {
     return nullptr;
@@ -801,10 +801,12 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
                           node.getImportedModKind(), node.getPathName());
 }
 
-bool SymbolIndexer::enterModule(ModId modId, int version, const std::shared_ptr<TypePool> &p) {
-  this->builders.emplace_back(modId, version, p, this->indexes);
+bool SymbolIndexer::enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &p) {
+  this->builders.emplace_back(src, p, this->indexes);
   if (!this->indexes.find(BUILTIN_MOD_ID)) {
-    this->builders.emplace_back(BUILTIN_MOD_ID, 0, p, this->indexes);
+    auto dummy = std::make_shared<Source>();
+    assert(dummy->getSrcId() == BUILTIN_MOD_ID);
+    this->builders.emplace_back(dummy, p, this->indexes);
     this->addBuiltinSymbols();
     this->exitModule(nullptr);
   }

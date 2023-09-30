@@ -77,7 +77,7 @@ protected:
     action.dumper.reset(&dumper);
     action.pass.reset(&indexer);
     Analyzer analyzer(sysConfig, man, archives);
-    analyzer.analyze(*src, action);
+    analyzer.analyze(src, action);
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);
