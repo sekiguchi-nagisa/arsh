@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### LSP
+
+- improve ``textDocument/rename``
+    - rewrite scope-aware name conflict checking
+
 ## [0.31.0] - 2023-09-30
 
 ### Added

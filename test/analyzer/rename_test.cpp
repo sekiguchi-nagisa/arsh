@@ -248,6 +248,8 @@ echo "$aaa";
  { var bbb = ''; }
 }
 { var var = 'helll'; }
+{{ var aaa = 34; }}
+var ccc = $false
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 6}, "var",
@@ -256,10 +258,100 @@ echo "$aaa";
       this->rename(Request{.modId = 1, .line = 3, .character = 8}, "var", {{1, "(3:7~3:10)"}}));
   ASSERT_NO_FATAL_FAILURE(
       this->rename(Request{.modId = 1, .line = 0, .character = 8}, "aaa", {{1, "(0:6~0:9)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 0, .character = 8}, "ccc", {{1, "(0:6~0:9)"}}));
 
   // rename local with conflict
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 7},
                                                    "bbb", {1, "(3:7~3:10)"}));
+}
+
+TEST_F(RenameTest, local2) {
+  const char *content = R"(
+function ff(
+pp : String) {
+  for a in $pp {
+    try { $a[1]; }
+    catch $e {
+      $pp
+      $e.show()
+    }
+  }
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  // function param
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 1}, "var",
+                                       {{1, "(2:0~2:2)"}, {1, "(3:12~3:14)"}, {1, "(6:7~6:9)"}}));
+  // for-in
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 6}, "var",
+                                       {{1, "(3:6~3:7)"}, {1, "(4:11~4:12)"}}));
+  // catch
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 11}, "var",
+                                       {{1, "(5:11~5:12)"}, {1, "(7:7~7:8)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 7},
+                                                   "ff", {1, "(1:9~1:11)"}));
+}
+
+TEST_F(RenameTest, upvar) {
+  const char *content = R"(
+var aaa = 1
+{
+  $aaa
+  var aaa = 12
+  function() => {
+    var bbb = {
+    $aaa; }
+  }
+}
+$aaa
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  // rename hidden global
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 6}, "var",
+                                       {{1, "(1:4~1:7)"}, {1, "(3:3~3:6)"}, {1, "(10:1~10:4)"}}));
+  // rename upvar
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 7, .character = 6}, "var",
+                                       {{1, "(4:6~4:9)"}, {1, "(7:5~7:8)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "bbb", {1, "(6:8~6:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 9},
+                                                   "aaa", {1, "(1:4~1:7)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 4, .character = 7},
+                                                   "bbb", {1, "(6:8~6:11)"}));
+}
+
+TEST_F(RenameTest, ifLet) {
+  const char *content = R"(
+var ret = 34 as Any
+if let aaa = $ret as? Int {
+  $aaa
+  { var bbb = $aaa; }
+} elif let aaa = $ret as? String {
+  $aaa
+  { var bbb = $aaa; }
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "var",
+                                       {{1, "(2:7~2:10)"}, {1, "(3:3~3:6)"}, {1, "(4:15~4:18)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 4}, "cccc",
+                                       {{1, "(5:11~5:14)"}, {1, "(6:3~6:6)"}, {1, "(7:15~7:18)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "aaa", {1, "(2:7~2:10)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 9},
+                                                   "bbb", {1, "(4:8~4:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 5},
+                                                   "bbb", {1, "(7:8~7:11)"}));
 }
 
 int main(int argc, char **argv) {

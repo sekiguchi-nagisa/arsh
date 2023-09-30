@@ -294,7 +294,7 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
                                         DeclInsertOp op) {
   // create DeclSymbol
   auto ret = DeclSymbol::create(k, attr, std::move(name), this->getModId(), info, body,
-                                this->scope->getScopeInfo());
+                                this->scope->scopeId);
   if (!ret.hasValue()) {
     return nullptr;
   }

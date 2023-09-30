@@ -57,12 +57,9 @@ private:
 
     const unsigned int scopeId;
 
-    const unsigned int scopeDepth;
-
     ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, ScopeKind kind, unsigned int scopeId,
                const DSType *type)
-        : resolvedType(type), parent(parent), kind(kind), scopeId(scopeId),
-          scopeDepth(this->parent ? this->parent->scopeDepth + 1 : 0) {}
+        : resolvedType(type), parent(parent), kind(kind), scopeId(scopeId) {}
 
     explicit ScopeEntry(unsigned int scopeId)
         : ScopeEntry(nullptr, ScopeKind::GLOBAL, scopeId, nullptr) {}
@@ -104,13 +101,6 @@ private:
         }
       }
       return nullptr;
-    }
-
-    DeclSymbol::ScopeInfo getScopeInfo() const {
-      return {
-          .id = this->scopeId,
-          .depth = this->scopeDepth,
-      };
     }
 
     auto take() && { return std::move(this->map); }

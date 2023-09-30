@@ -108,6 +108,12 @@ public:
     return this->getModId() < o.getModId() ||
            (!(o.getModId() < this->getModId()) && this->getToken().endPos() < o.getPos());
   }
+
+  bool operator==(const DeclBase &o) const {
+    return this->getModId() == o.getModId() && this->getToken() == o.getToken();
+  }
+
+  bool operator!=(const DeclBase &o) const { return !(*this == o); }
 };
 
 class DeclSymbol : public DeclBase {
@@ -143,63 +149,35 @@ public:
     CStrPtr name;
   };
 
-  struct ScopeInfo {
-    unsigned int id;
-    unsigned int depth;
-
-    bool operator==(const ScopeInfo other) const {
-      return this->id == other.id && this->depth == other.depth;
-    }
-
-    bool operator!=(const ScopeInfo other) const { return !(*this == other); }
-
-    /**
-     * check if this scope include other scope
-     * @param other
-     * @return
-     */
-    bool isIncluding(const ScopeInfo other) const {
-      /**
-       * for example.
-       *   { left right } => true
-       *   { { left } { right } } => false
-       *   { left { right } } => true
-       *   { { left } right } => false
-       */
-      if (this->depth == other.depth) {
-        return this->id == other.id;
-      }
-      return this->depth < other.depth;
-    }
-  };
-
 private:
   Kind kind;
   Attr attr;
+  unsigned int scopeId;
   CStrPtr mangledName;
   CStrPtr info; // hover information
   Token body;
-  ScopeInfo scopeInfo;
 
 public:
   static Optional<DeclSymbol> create(Kind kind, Attr attr, Name &&name, ModId modId,
-                                     const char *info, Token body, ScopeInfo scopeInfo) {
+                                     const char *info, Token body, unsigned int scopeId) {
     if (name.token.size > UINT16_MAX) {
       return {};
     }
     return DeclSymbol(kind, attr, name.token.pos, static_cast<unsigned short>(name.token.size),
                       modId, std::move(name.name), info != nullptr ? info : "(dummy)", body,
-                      scopeInfo);
+                      scopeId);
   }
 
   DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, ModId mod, CStrPtr &&name,
-             const char *info, Token body, ScopeInfo scopeInfo)
-      : DeclBase(pos, size, mod), kind(kind), attr(attr), mangledName(std::move(name)),
-        info(CStrPtr(strdup(info))), body(body), scopeInfo(scopeInfo) {}
+             const char *info, Token body, unsigned int scopeId)
+      : DeclBase(pos, size, mod), kind(kind), attr(attr), scopeId(scopeId),
+        mangledName(std::move(name)), info(CStrPtr(strdup(info))), body(body) {}
 
   Kind getKind() const { return this->kind; }
 
   Attr getAttr() const { return this->attr; }
+
+  unsigned int getScopeId() const { return this->scopeId; }
 
   StringRef getMangledName() const { return this->mangledName.get(); }
 
@@ -213,8 +191,6 @@ public:
   std::pair<ModId, bool> getInfoAsModId() const;
 
   Token getBody() const { return this->body; }
-
-  ScopeInfo getScopeInfo() const { return this->scopeInfo; }
 
   std::string toDemangledName() const {
     return demangle(this->getKind(), this->getAttr(), this->getMangledName());

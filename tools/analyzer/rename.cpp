@@ -134,22 +134,44 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   }
 
   // check name conflict in this index // FIXME: check constructor field
-  for (auto &e : declIndex->getDecls()) {
-    if (!decl.getScopeInfo().isIncluding(e.getScopeInfo())) {
-      continue;
-    }
-    if (decl.getScopeInfo() != e.getScopeInfo() && decl.getPos() > e.getPos()) {
-      /**
-       * ignore following case
-       *   { { decl } e }
-       */
-      continue;
-    }
-    if (e.getMangledName() == mangledName) {
-      if (consumer) {
-        consumer(Err(RenameConflict(e.toRef())));
+  for (auto &target : declIndex->getDecls()) {
+    auto &declScope = declIndex->getScopes()[decl.getScopeId()];
+    auto &targetScope = declIndex->getScopes()[target.getScopeId()];
+
+    /**
+     * check name conflict in the following case
+     *
+     * { { decl } { target } } => no check
+     * { { target } { decl } } => no check
+     * { decl { target } } => check name conflict
+     * { { decl } target } => no check
+     * { target { decl } } => check name conflict
+     * { { target } decl } => no check
+     */
+    if (declScope.isIncluding(targetScope) || targetScope.isIncluding(declScope)) {
+      if (!declScope.isIncluding(targetScope) && target.getPos() > decl.getPos()) {
+        /**
+         * ignore the following case
+         *
+         * { { decl } target }
+         */
+        continue;
       }
-      return false;
+      if (!targetScope.isIncluding(declScope) && decl.getPos() > target.getPos()) {
+        /**
+         * ignore the following case
+         *
+         * { { target } decl }
+         */
+        continue;
+      }
+
+      if (target != decl && target.getMangledName() == mangledName) {
+        if (consumer) {
+          consumer(Err(RenameConflict(target.toRef())));
+        }
+        return false;
+      }
     }
   }
 

@@ -13,7 +13,7 @@
 | ``textDocument/signatureHelp``       | ✔️         |
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
-| ``textDocument/rename``              | ✔️         |
+| ``textDocument/rename``              | ⛛          |
 | ``textDocument/prepareRename``       | ✔️         |
 
 
@@ -22,16 +22,17 @@
 | **Symbol**                            | ``definition`` | ``references`` | ``hover``       | ``rename`` |
 |---------------------------------------|----------------|----------------|-----------------|------------|
 | variable (local/global)               | ✔️             | ✔️             | ✔️              | ✔️         |
-| variable (for-in)                     | ✔️             | ✔️             | ✔️              | ❌          |
-| variable (catch)                      | ✔️             | ✔️             | ✔️              | ❌          |
-| variable (function parameter)         | ✔️             | ✔️             | ✔️              | ❌          |
+| variable (for-in)                     | ✔️             | ✔️             | ✔️              | ✔️         |
+| variable (catch)                      | ✔️             | ✔️             | ✔️              | ✔️         |
+| variable (function param)             | ✔️             | ✔️             | ✔️              | ✔️         |
+| variable (user-defined command param) | ❌              | ❌              | ✔️              | ❌          |
 | variable (this)                       | ✔️             | ✔️             | ✔️              | -          |
-| variable (upper variable)             | ✔️             | ✔️             | ✔️              | ❌          |
+| variable (upper variable)             | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (global import)              | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (inlined import)             | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (named import)               | ✔️             | ✔️             | ✔️              | ❌          |
 | variable (positional parameter)       | -              | -              | ❌ (show code)   | -          |
-| variable (if-let)                     | ✔️             | ✔️             | ✔️              | ❌          |
+| variable (if-let)                     | ✔️             | ✔️             | ✔️              | ✔️         |
 | builtin variable                      | -              | -              | ✔️              | -          |
 | builtin constant                      | -              | -              | ✔️ (show value) | -          |
 | function                              | ✔️             | ✔️             | ✔️              | ❌          |
