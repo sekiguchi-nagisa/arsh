@@ -15,6 +15,20 @@
  }
 }
 
+# enable rename
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "ydshd": {
+        "rename": "enabled"
+      }
+    }
+  }
+}
+
 # rename global variable
 
 <<<

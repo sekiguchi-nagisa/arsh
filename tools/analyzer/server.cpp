@@ -220,14 +220,16 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
 Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &request,
                                                          const std::string &newName) const {
   std::unordered_map<unsigned int, std::vector<TextEdit>> changes;
-  auto status =
-      validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
-        if (ret) {
-          auto &target = ret.asOk();
-          changes[toUnderlying(target.symbol.getModId())].push_back(
-              target.toTextEdit(*this->result.srcMan));
-        }
-      });
+  auto status = RenameValidationStatus::DO_NOTHING;
+  if (this->renameSupport == BinaryFlag::enabled) {
+    status = validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
+      if (ret) {
+        auto &target = ret.asOk();
+        changes[toUnderlying(target.symbol.getModId())].push_back(
+            target.toTextEdit(*this->result.srcMan));
+      }
+    });
+  }
   switch (status) {
   case RenameValidationStatus::CAN_RENAME:
   case RenameValidationStatus::DO_NOTHING:
@@ -636,6 +638,8 @@ void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &param
                          [&](LogLevel level) { this->logger.get().setSeverity(level); });
           getOrShowError(this->logger, setting.semanticHighlight, "semanticHighlight",
                          [&](BinaryFlag enabled) { this->semanticHighlight = enabled; });
+          getOrShowError(this->logger, setting.rename, "rename",
+                         [&](BinaryFlag enabled) { this->renameSupport = enabled; });
         });
       });
 }

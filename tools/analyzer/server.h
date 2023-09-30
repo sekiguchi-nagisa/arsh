@@ -91,6 +91,7 @@ private:
   CmdCompKind cmdCompKind{CmdCompKind::default_};
   BinaryFlag cmdArgComp{BinaryFlag::disabled};
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
+  BinaryFlag renameSupport{BinaryFlag::disabled};
 
 public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, int time)

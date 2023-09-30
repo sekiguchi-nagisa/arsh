@@ -48,7 +48,7 @@
 - support the following requests
     - ``textDocument/signatureHelp``
         - show (direct/indirect)function/method/constructor type signatures
-    - ``textDocument/rename`` (experimental support)
+    - ``textDocument/rename`` (experimental support, disabled by default)
     - ``textDocument/prepareRename``
 
 ### Changed

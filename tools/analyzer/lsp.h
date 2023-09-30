@@ -923,6 +923,7 @@ struct ConfigSetting {
   Optional<Union<CmdCompKind, JSON>> commandCompletion;
   Optional<Union<BinaryFlag, JSON>> commandArgumentCompletion;
   Optional<Union<BinaryFlag, JSON>> semanticHighlight;
+  Optional<Union<BinaryFlag, JSON>> rename;
 
   template <typename T>
   void jsonify(T &t) {
@@ -930,6 +931,7 @@ struct ConfigSetting {
     JSONIFY(commandCompletion);
     JSONIFY(commandArgumentCompletion);
     JSONIFY(semanticHighlight);
+    JSONIFY(rename);
   }
 };
 

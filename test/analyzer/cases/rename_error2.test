@@ -15,6 +15,21 @@
  }
 }
 
+# enable rename
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "ydshd": {
+        "rename": "enabled"
+      }
+    }
+  }
+}
+
+
 ## do nothing since newName is equivalent to old name
 
 <<<
