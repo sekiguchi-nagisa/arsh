@@ -541,7 +541,7 @@ static ConfigSetting deserializeConfigSetting(LoggerBase &logger, const std::vec
         key = key.substr(r + 1);
         map[key.toString()] = values[i];
       }
-      std::move(map);
+      std::forward<decltype(map)>(map);
     });
     JSONDeserializer deserializer(std::move(json));
     deserializer(setting);
