@@ -959,7 +959,7 @@ TEST_F(IndexTest, upvar) {
 
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 6}));
 
-  // defintion
+  // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
       Request{.modId = modId, .position = {.line = 4, .character = 13}}, {{modId, "(1:8~1:13)"}}));
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -981,6 +981,44 @@ TEST_F(IndexTest, upvar) {
       Request{.modId = modId, .position = {.line = 5, .character = 16}}, // var value = 34
       {{modId, "(5:12~5:17)"},                                           // itself
        {modId, "(6:8~6:14)"}}));
+}
+
+TEST_F(IndexTest, udcParam) {
+  unsigned short modId;
+  const char *content = R"E(
+[<CLI>]
+typedef Param() {}
+fff(pp : Param) {
+  echo $pp
+}
+fff
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 7}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl( // typedef Param()
+      Request{.modId = modId, .position = {.line = 3, .character = 13}}, {{modId, "(2:8~2:13)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl( // pp : Param
+      Request{.modId = modId, .position = {.line = 4, .character = 9}}, {{modId, "(3:4~3:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl( // fff(pp : Param)
+      Request{.modId = modId, .position = {.line = 6, .character = 1}}, {{modId, "(3:0~3:3)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 2, .character = 11}}, // typedef Param()
+      {{modId, "(2:8~2:13)"},                                            // itself
+       {modId, "(3:9~3:14)"}}));                                         // pp : Param
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 3, .character = 5}}, // pp
+                     {{modId, "(3:4~3:6)"},     // pp : Param (itself)
+                      {modId, "(4:7~4:10)"}})); // echo $pp
+
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(
+      Request{.modId = modId, .position = {.line = 3, .character = 2}}, // fff(pp : Param)
+      {{modId, "(3:0~3:3)"},                                            // itself
+       {modId, "(6:0~6:3)"}}));                                         // fff
 }
 
 TEST_F(IndexTest, backrefFunc) {

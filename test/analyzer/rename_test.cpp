@@ -354,6 +354,53 @@ if let aaa = $ret as? Int {
                                                    "bbb", {1, "(7:8~7:11)"}));
 }
 
+TEST_F(RenameTest, udcParam) {
+  const char *content = R"(
+[<CLI(name: 'example')>]
+typedef Param() {}
+fff($pp: Param) {
+  echo $pp
+  var aaa = $pp
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 14}, "var",
+                                       {{1, "(3:5~3:7)"}, {1, "(4:8~4:10)"}, {1, "(5:13~5:15)"}}));
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 4, .character = 8},
+                                                   "aaa", {1, "(5:6~5:9)"}));
+}
+
+TEST_F(RenameTest, env) {
+  const char *content = R"(
+importenv AAA
+exportenv BBB = $OSTYPE
+CCC=@@@ DDD=^^^^ {
+  echo $CCC
+  "$BBB"
+  importenv DDD : \
+  $AAA
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 11}, "var",
+                                       {{1, "(1:10~1:13)"}, {1, "(7:3~7:6)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 11}, "var",
+                                       {{1, "(2:10~2:13)"}, {1, "(5:4~5:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 1}, "var",
+                                       {{1, "(3:0~3:3)"}, {1, "(4:8~4:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 3, .character = 10}, "var", {{1, "(3:8~3:11)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 12},
+                                                   "DDD", {1, "(3:8~3:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 12}, "PATH",
+                                       RenameValidationStatus::NAME_CONFLICT));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

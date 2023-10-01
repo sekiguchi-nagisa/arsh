@@ -25,7 +25,7 @@
 | variable (for-in)                     | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (catch)                      | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (function param)             | ✔️             | ✔️             | ✔️              | ✔️         |
-| variable (user-defined command param) | ❌              | ❌              | ✔️              | ❌          |
+| variable (user-defined command param) | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (this)                       | ✔️             | ✔️             | ✔️              | -          |
 | variable (upper variable)             | ✔️             | ✔️             | ✔️              | ✔️         |
 | variable (global import)              | ✔️             | ✔️             | ✔️              | ❌          |
