@@ -75,15 +75,41 @@
 # CHECK: }
 
 <<<
+
 { "jsonrpc": "2.0", "method" : "initialized", "params": {}}
----
+
+# CHECK_RE_IF:   "id": "id-+
+#       CHECK:   "jsonrpc": "2.0",
+#       CHECK:   "method": "workspace/configuration",
+#       CHECK:   "params": {
+#       CHECK:     "items": [
+#       CHECK:       {
+#       CHECK:         "section": "ydshd.logLevel"
+#       CHECK:       },
+#       CHECK:       {
+#       CHECK:         "section": "ydshd.commandCompletion"
+#       CHECK:       },
+#       CHECK:       {
+#       CHECK:         "section": "ydshd.commandArgumentCompletion"
+#       CHECK:       },
+#       CHECK:       {
+#       CHECK:         "section": "ydshd.semanticHighlight"
+#       CHECK:       },
+#       CHECK:       {
+#       CHECK:         "section": "ydshd.rename"
+#       CHECK:       }
+#       CHECK:     ]
+#       CHECK:   }
+#       CHECK: }
+
+<<<
+
 {"id": 1, "jsonrpc": "2.0", "method": "shutdown"}
 
-# CHECK: {
-# CHECK:   "id": 1,
-# CHECK:   "jsonrpc": "2.0",
-# CHECK:   "result": null
-# CHECK: }
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
 <<<
 {"jsonrpc": "2.0", "method": "exit"}
 # STATUS: 0

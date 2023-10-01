@@ -27,10 +27,12 @@ namespace ydsh::lsp {
 // ##     LSPServer     ##
 // #######################
 
-#define LOG(L, ...)                                                                                \
+#define LLOG(logger, L, ...)                                                                       \
   do {                                                                                             \
-    this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
+    (logger).enabled(L) && (logger)(L, __VA_ARGS__);                                               \
   } while (false)
+
+#define LOG(L, ...) LLOG(this->logger.get(), L, __VA_ARGS__)
 
 ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
   if (!this->init && name != "initialize") {
@@ -482,8 +484,92 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   return ret;
 }
 
+static const char *configSections[] = {
+#define GEN_TABLE(N, T) "ydshd." #N,
+    EACH_CONFIG_SETTING(GEN_TABLE)
+#undef GEN_TABLE
+};
+
+template <typename T, typename Func>
+static void getOrShowError(LoggerBase &logger, const Union<T, JSON> &field, const char *fieldName,
+                           Func &&callback) {
+  if (!field.hasValue()) {
+    return;
+  }
+  if (is<T>(field)) {
+    callback(get<T>(field));
+  } else if (is<JSON>(field)) {
+    LLOG(logger, LogLevel::WARNING, "field: `%s' is invalid type", fieldName);
+  }
+}
+
+void LSPServer::loadConfigSetting(const ConfigSetting &setting) {
+  getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
+                 [&](CmdCompKind kind) { this->cmdCompKind = kind; });
+  getOrShowError(this->logger, setting.commandArgumentCompletion, "commandArgumentCompletion",
+                 [&](BinaryFlag enabled) { this->cmdArgComp = enabled; });
+  getOrShowError(this->logger, setting.logLevel, "logLevel",
+                 [&](LogLevel level) { this->logger.get().setSeverity(level); });
+  getOrShowError(this->logger, setting.semanticHighlight, "semanticHighlight",
+                 [&](BinaryFlag enabled) { this->semanticHighlight = enabled; });
+  getOrShowError(this->logger, setting.rename, "rename",
+                 [&](BinaryFlag enabled) { this->renameSupport = enabled; });
+}
+
+static ConfigSetting deserializeConfigSetting(LoggerBase &logger, const std::vector<JSON> &values) {
+  ConfigSetting setting;
+  const unsigned int size = std::size(configSections);
+  if (values.size() != size) {
+    LLOG(logger, LogLevel::ERROR,
+         "broken response of 'workspace/configuration', expect: %d items, but actual is: %d", size,
+         static_cast<unsigned int>(values.size()));
+  } else {
+    if (logger.enabled(LogLevel::DEBUG)) {
+      json::Object map;
+      for (unsigned int i = 0; i < size; i++) {
+        map[configSections[i]] = values[i];
+      }
+      logger(LogLevel::DEBUG, "response of 'workspace/configuration':\n%s",
+             JSON(std::move(map)).serialize(2).c_str());
+    }
+    JSON json = ({
+      json::Object map;
+      for (unsigned int i = 0; i < size; i++) {
+        StringRef key = configSections[i];
+        auto r = key.find('.');
+        assert(r != StringRef::npos);
+        key = key.substr(r + 1);
+        map[key.toString()] = values[i];
+      }
+      std::move(map);
+    });
+    JSONDeserializer deserializer(std::move(json));
+    deserializer(setting);
+    if (deserializer.hasError()) {
+      LLOG(logger, LogLevel::ERROR, "broken response of 'workspace/configuration', %s",
+           deserializer.getValidationError().formatError().c_str());
+    }
+  }
+  return setting;
+}
+
 void LSPServer::initialized(const InitializedParams &) {
   LOG(LogLevel::INFO, "server initialized!!");
+
+  // FIXME: check client capability
+  ConfigurationParams params;
+  for (auto &c : configSections) {
+    params.items.push_back({ConfigurationItem{.section = c}});
+  }
+  this->call<std::vector<JSON>>(
+      "workspace/configuration", std::move(params),
+      [&](const std::vector<JSON> &ret) {
+        auto setting = deserializeConfigSetting(this->logger.get(), ret);
+        this->loadConfigSetting(setting);
+      },
+      [&](const Error &error) {
+        LOG(LogLevel::ERROR, "'workspace/configuration' failed, %s", error.toString().c_str());
+      });
 }
 
 Reply<void> LSPServer::shutdown() {
@@ -612,35 +698,11 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   }
 }
 
-template <typename T, typename Func>
-static void getOrShowError(LoggerBase &logger, const Union<T, JSON> &field, const char *fieldName,
-                           Func &&callback) {
-  if (!field.hasValue()) {
-    return;
-  }
-  if (is<T>(field)) {
-    callback(get<T>(field));
-  } else if (is<JSON>(field)) {
-    logger(LogLevel::WARNING, "field: `%s' is invalid type", fieldName);
-  }
-}
-
 void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &params) {
   getOrShowError(
       this->logger, params.settings, "settings", [&](const ConfigSettingWrapper &wrapper) {
-        getOrShowError(this->logger, wrapper.ydshd, "ydshd", [&](const ConfigSetting &setting) {
-          getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
-                         [&](CmdCompKind kind) { this->cmdCompKind = kind; });
-          getOrShowError(this->logger, setting.commandArgumentCompletion,
-                         "commandArgumentCompletion",
-                         [&](BinaryFlag enabled) { this->cmdArgComp = enabled; });
-          getOrShowError(this->logger, setting.logLevel, "logLevel",
-                         [&](LogLevel level) { this->logger.get().setSeverity(level); });
-          getOrShowError(this->logger, setting.semanticHighlight, "semanticHighlight",
-                         [&](BinaryFlag enabled) { this->semanticHighlight = enabled; });
-          getOrShowError(this->logger, setting.rename, "rename",
-                         [&](BinaryFlag enabled) { this->renameSupport = enabled; });
-        });
+        getOrShowError(this->logger, wrapper.ydshd, "ydshd",
+                       [&](const ConfigSetting &setting) { this->loadConfigSetting(setting); });
       });
 }
 
@@ -722,7 +784,7 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
   LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   if (auto resolved = this->resolvePosition(params)) {
-    
+
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();

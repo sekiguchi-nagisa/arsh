@@ -918,20 +918,23 @@ void jsonify(T &t, BinaryFlag &kind) {
   }
 }
 
+#define EACH_CONFIG_SETTING(OP)                                                                    \
+  OP(logLevel, LogLevel)                                                                           \
+  OP(commandCompletion, CmdCompKind)                                                               \
+  OP(commandArgumentCompletion, BinaryFlag)                                                        \
+  OP(semanticHighlight, BinaryFlag)                                                                \
+  OP(rename, BinaryFlag)
+
 struct ConfigSetting {
-  Optional<Union<LogLevel, JSON>> logLevel;
-  Optional<Union<CmdCompKind, JSON>> commandCompletion;
-  Optional<Union<BinaryFlag, JSON>> commandArgumentCompletion;
-  Optional<Union<BinaryFlag, JSON>> semanticHighlight;
-  Optional<Union<BinaryFlag, JSON>> rename;
+#define GEN_FIELD(N, T) Optional<Union<T, JSON>> N;
+  EACH_CONFIG_SETTING(GEN_FIELD)
+#undef GEN_FIELD
 
   template <typename T>
   void jsonify(T &t) {
-    JSONIFY(logLevel);
-    JSONIFY(commandCompletion);
-    JSONIFY(commandArgumentCompletion);
-    JSONIFY(semanticHighlight);
-    JSONIFY(rename);
+#define GEN_FIELD(N, T) JSONIFY(N);
+    EACH_CONFIG_SETTING(GEN_FIELD)
+#undef GEN_FIELD
   }
 };
 
@@ -941,6 +944,24 @@ struct ConfigSettingWrapper {
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(ydshd);
+  }
+};
+
+struct ConfigurationItem {
+  std::string section;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(section);
+  }
+};
+
+struct ConfigurationParams {
+  std::vector<ConfigurationItem> items;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(items);
   }
 };
 

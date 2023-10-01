@@ -135,7 +135,7 @@ private:
   }
 
   template <typename Ret, typename Param, typename Func, typename Error>
-  auto call(const std::string &name, const Param &param, Func callback, Error ecallback) {
+  auto call(const std::string &name, Param &&param, Func callback, Error ecallback) {
     return Handler::call<Ret>(this->transport, name, param, std::forward<Func>(callback),
                               std::forward<Error>(ecallback));
   }
@@ -160,6 +160,8 @@ private:
 
   Result<WorkspaceEdit, std::string> renameImpl(const SymbolRequest &request,
                                                 const std::string &newName) const;
+
+  void loadConfigSetting(const ConfigSetting &setting);
 
   DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
 

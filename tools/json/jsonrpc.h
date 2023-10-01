@@ -380,7 +380,7 @@ public:
   }
 
   template <typename Ret, typename Param, typename Func, typename Error>
-  void call(Transport &transport, const std::string &name, const Param &param, Func callback,
+  void call(Transport &transport, const std::string &name, Param &&param, Func callback,
             Error ecallback) {
     ResponseCallback func = [this, callback, ecallback, name](Response &&res) {
       if (res) {
@@ -394,7 +394,7 @@ public:
           return;
         }
       }
-      ecallback(std::move(res.error.unwrap()));
+      ecallback(res.error.unwrap());
     };
     JSONSerializer serializer;
     serializer(param);

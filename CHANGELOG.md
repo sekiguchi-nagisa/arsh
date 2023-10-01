@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+#### LSP
+
+- support ``workspace/configuration``
+
 ### Changed
 
 #### LSP
