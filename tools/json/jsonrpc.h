@@ -23,7 +23,6 @@
 #include "serialize.h"
 #include <misc/logger_base.hpp>
 #include <misc/split_random.hpp>
-#include <misc/time_util.hpp>
 
 namespace ydsh::rpc {
 
@@ -154,7 +153,7 @@ private:
   std::unordered_map<std::string, Entry> map;
 
 public:
-  CallbackMap() : rng(getCurrentTimestamp().time_since_epoch().count()) {}
+  explicit CallbackMap(uint64_t seed) : rng(seed) {}
 
   /**
    *
@@ -311,7 +310,9 @@ private:
   CallbackMap callbackMap;
 
 public:
-  explicit Handler(LoggerBase &logger) : logger(logger) {}
+  Handler(LoggerBase &logger, uint64_t seed) : logger(logger), callbackMap(seed) {}
+
+  explicit Handler(LoggerBase &logger) : Handler(logger, 42) {}
 
   virtual ~Handler() = default;
 

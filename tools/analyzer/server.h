@@ -94,9 +94,10 @@ private:
   BinaryFlag renameSupport{BinaryFlag::disabled};
 
 public:
-  LSPServer(LoggerBase &logger, int inFd, int outFd, int time)
-      : Handler(logger), encoder(SemanticTokensLegend::create()), transport(logger, inFd, outFd),
-        result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
+  LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
+      : Handler(logger, seed), encoder(SemanticTokensLegend::create()),
+        transport(logger, inFd, outFd), result(std::make_shared<SourceManager>()),
+        defaultDebounceTime(time) {
     this->bindAll();
   }
 

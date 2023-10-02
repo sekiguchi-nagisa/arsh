@@ -545,10 +545,6 @@ static ConfigSetting deserializeConfigSetting(LoggerBase &logger, const std::vec
     });
     JSONDeserializer deserializer(std::move(json));
     deserializer(setting);
-    if (deserializer.hasError()) {
-      LLOG(logger, LogLevel::ERROR, "broken response of 'workspace/configuration', %s",
-           deserializer.getValidationError().formatError().c_str());
-    }
   }
   return setting;
 }

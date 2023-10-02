@@ -1,0 +1,72 @@
+# RUN: call $cmd --test $self --log debug
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+
+{ "jsonrpc": "2.0", "method" : "initialized", "params": {}}
+
+# CHECK_IF:   "id": "id-858b24f53709d312-9871734DC2C02298",
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "method": "workspace/configuration",
+#    CHECK:   "params": {
+#    CHECK:     "items": [
+#    CHECK:       {
+#    CHECK:         "section": "ydshd.logLevel"
+#    CHECK:       },
+#    CHECK:       {
+#    CHECK:         "section": "ydshd.commandCompletion"
+#    CHECK:       },
+#    CHECK:       {
+#    CHECK:         "section": "ydshd.commandArgumentCompletion"
+#    CHECK:       },
+#    CHECK:       {
+#    CHECK:         "section": "ydshd.semanticHighlight"
+#    CHECK:       },
+#    CHECK:       {
+#    CHECK:         "section": "ydshd.rename"
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+#    CHECK: }
+
+<<<
+{
+  "id": "id-858b24f53709d312-9871734DC2C02298",
+  "jsonrpc": "2.0",
+  "result": [
+    "debug",
+    "default",
+    "disabled",
+    "enabled",
+    "enabled"
+  ]
+}
+
+# CHECKERR_RE_IF: ^.+ <debug> .+ response of 'workspace/configuration':
+#       CHECKERR: {
+#       CHECKERR:   "ydshd.commandArgumentCompletion": "disabled",
+#       CHECKERR:   "ydshd.commandCompletion": "default",
+#       CHECKERR:   "ydshd.logLevel": "debug",
+#       CHECKERR:   "ydshd.rename": "enabled",
+#       CHECKERR:   "ydshd.semanticHighlight": "enabled"
+#       CHECKERR: }
+
+# CHECKERR_RE_IF: .*
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

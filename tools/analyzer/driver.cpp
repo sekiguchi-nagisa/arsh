@@ -15,6 +15,7 @@
  */
 
 #include <misc/files.hpp>
+#include <misc/time_util.hpp>
 
 #include "client.h"
 #include "driver.h"
@@ -70,8 +71,10 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
     logger.setSeverity(options.level);
     logger.setAppender(FilePtr(stderr));
     showInfo(argv, logger);
-    LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), options.debounceTime);
-    if (options.testInput && !options.open) {
+    const bool testMode = options.testInput && !options.open;
+    uint64_t seed = testMode ? 42 : getCurrentTimestamp().time_since_epoch().count();
+    LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), options.debounceTime, seed);
+    if (testMode) {
       server.setTestWorkDir(getBaseDir(options.testInput));
     }
     server.run();
