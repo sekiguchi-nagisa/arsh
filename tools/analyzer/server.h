@@ -68,6 +68,12 @@ public:
   }
 };
 
+enum class SupportedCapability : unsigned int {
+  DIAG_VERSION = 1u << 0u,
+  LABEL_DETAIL = 1u << 1u,
+  WORKSPACE_CONFIG = 1u << 2u,
+};
+
 class LSPServer : public Handler {
 private:
   const SysConfig sysConfig;
@@ -83,12 +89,11 @@ private:
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
   MarkupKind markupKind{MarkupKind::PlainText};
-  bool diagVersionSupport{false};
-  bool labelDetailSupport{false};
   CmdCompKind cmdCompKind{CmdCompKind::default_};
   BinaryFlag cmdArgComp{BinaryFlag::disabled};
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
   BinaryFlag renameSupport{BinaryFlag::disabled};
+  SupportedCapability supportedCapability{};
 
 public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
@@ -221,5 +226,12 @@ public:
 };
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+template <>
+struct allow_enum_bitop<lsp::SupportedCapability> : std::true_type {};
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_ANALYZER_SERVER_H

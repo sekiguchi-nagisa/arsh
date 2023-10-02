@@ -1,7 +1,8 @@
 # RUN: call $cmd --test $self --log debug
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
- "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+ "params": {"capabilities": {"workspace": {"configuration": true}},
+ "rootUri": "file:///test", "processId": 46}}
 
 #    CHECK: {
 # CHECK_IF:     "capabilities": {

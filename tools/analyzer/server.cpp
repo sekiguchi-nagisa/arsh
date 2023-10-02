@@ -268,7 +268,7 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
 DiagnosticEmitter LSPServer::newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan) {
   return {std::move(srcMan),
           [&](PublishDiagnosticsParams &&params) { this->publishDiagnostics(std::move(params)); },
-          this->diagVersionSupport};
+          hasFlag(this->supportedCapability, SupportedCapability::DIAG_VERSION)};
 }
 
 struct AnalyzerTask {
@@ -436,8 +436,8 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     auto &textDocument = params.capabilities.textDocument.unwrap();
     if (textDocument.publishDiagnostics.hasValue()) {
       auto &diag = textDocument.publishDiagnostics.unwrap();
-      if (diag.versionSupport.hasValue()) {
-        this->diagVersionSupport = diag.versionSupport.unwrap();
+      if (diag.versionSupport.hasValue() && diag.versionSupport.unwrap()) {
+        setFlag(this->supportedCapability, SupportedCapability::DIAG_VERSION);
       }
     }
     if (textDocument.hover.hasValue()) {
@@ -449,10 +449,16 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       if (auto &completion = textDocument.completion.unwrap();
           completion.completionItem.hasValue()) {
         auto &compItem = completion.completionItem.unwrap();
-        if (compItem.labelDetailsSupport.hasValue()) {
-          this->labelDetailSupport = compItem.labelDetailsSupport.unwrap();
+        if (compItem.labelDetailsSupport.hasValue() && compItem.labelDetailsSupport.unwrap()) {
+          setFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL);
         }
       }
+    }
+  }
+  if (params.capabilities.workspace.hasValue()) {
+    auto &workspace = params.capabilities.workspace.unwrap();
+    if (workspace.configuration.hasValue() && workspace.configuration.unwrap()) {
+      setFlag(this->supportedCapability, SupportedCapability::WORKSPACE_CONFIG);
     }
   }
 
@@ -532,20 +538,21 @@ static ConfigSetting deserializeConfigSetting(LoggerBase &logger, const std::vec
 void LSPServer::initialized(const InitializedParams &) {
   LOG(LogLevel::INFO, "server initialized!!");
 
-  // FIXME: check client capability
-  ConfigurationParams params;
-  for (auto &c : configSections) {
-    params.items.push_back({ConfigurationItem{.section = c}});
+  if (hasFlag(this->supportedCapability, SupportedCapability::WORKSPACE_CONFIG)) {
+    ConfigurationParams params;
+    for (auto &c : configSections) {
+      params.items.push_back({ConfigurationItem{.section = c}});
+    }
+    this->call<std::vector<JSON>>(
+        "workspace/configuration", std::move(params),
+        [&](const std::vector<JSON> &ret) {
+          auto setting = deserializeConfigSetting(this->logger.get(), ret);
+          this->loadConfigSetting(setting);
+        },
+        [&](const Error &error) {
+          LOG(LogLevel::ERROR, "'workspace/configuration' failed, %s", error.toString().c_str());
+        });
   }
-  this->call<std::vector<JSON>>(
-      "workspace/configuration", std::move(params),
-      [&](const std::vector<JSON> &ret) {
-        auto setting = deserializeConfigSetting(this->logger.get(), ret);
-        this->loadConfigSetting(setting);
-      },
-      [&](const Error &error) {
-        LOG(LogLevel::ERROR, "'workspace/configuration' failed, %s", error.toString().c_str());
-      });
 }
 
 Reply<void> LSPServer::shutdown() {
@@ -674,7 +681,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     if (this->cmdArgComp == BinaryFlag::enabled) {
       setFlag(extraCompOp, Analyzer::ExtraCompOp::CMD_ARG_COMP);
     }
-    if (this->labelDetailSupport) {
+    if (hasFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL)) {
       setFlag(extraCompOp, Analyzer::ExtraCompOp::SIGNATURE);
     }
     return analyzer.complete(src, pos, this->cmdCompKind, extraCompOp);

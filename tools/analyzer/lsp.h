@@ -338,9 +338,18 @@ struct TextDocumentClientCapabilities {
   }
 };
 
+struct WorkspaceClientCapability {
+  Optional<bool> configuration;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(configuration);
+  }
+};
+
 struct ClientCapabilities {
-  Optional<JSON> workspace;                              // optional
-  Optional<TextDocumentClientCapabilities> textDocument; // optional
+  Optional<WorkspaceClientCapability> workspace;
+  Optional<TextDocumentClientCapabilities> textDocument;
 
   template <typename T>
   void jsonify(T &t) {
