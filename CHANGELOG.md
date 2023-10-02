@@ -14,6 +14,7 @@
 
 - improve ``textDocument/rename``
     - rewrite scope-aware name conflict checking
+- ``textDocument/didClose`` always synchronize analyzer state
 
 ## [0.31.0] - 2023-09-30
 

@@ -334,20 +334,12 @@ AnalyzerResult AnalyzerTask::doRebuild() {
       break;
     }
   }
-
-  if (!this->cancelPoint->isCanceled()) {
-    // close
-    for (auto &id : this->ret.closingSrcIds) {
-      if (this->ret.archives.removeIfUnused(id)) {
-        auto src = this->ret.srcMan->findById(id);
-        LOG(LogLevel::INFO, "close textDocument: %s", src->getPath().c_str());
-        this->ret.indexes.remove(id);
-      }
-    }
+  if (this->cancelPoint->isCanceled()) {
+    LOG(LogLevel::INFO, "rebuild canceled");
+  } else {
     this->ret.modifiedSrcIds.clear();
-    this->ret.closingSrcIds.clear();
+    LOG(LogLevel::INFO, "rebuild finished");
   }
-  LOG(LogLevel::INFO, "rebuild finished");
   return std::move(this->ret);
 }
 
@@ -372,16 +364,6 @@ bool LSPServer::tryRebuild() {
       assert(src);
       this->result.modifiedSrcIds.emplace(src->getSrcId());
     }
-
-    // merge closing src
-    tmp.closingSrcIds.merge(this->result.closingSrcIds);
-    this->result.closingSrcIds.clear();
-    for (auto &id : tmp.closingSrcIds) {
-      auto src = this->result.srcMan->findById(id);
-      src = tmp.srcMan->add(src);
-      assert(src);
-      this->result.closingSrcIds.emplace(src->getSrcId());
-    }
     this->result.srcMan = std::move(tmp.srcMan);
   }
 
@@ -389,7 +371,6 @@ bool LSPServer::tryRebuild() {
     this->cancelPoint = std::make_shared<CancelPoint>();
     auto ret = this->result.deepCopy();
     this->result.modifiedSrcIds.clear();
-    this->result.closingSrcIds.clear();
     DiagnosticEmitter emitter = this->newDiagnosticEmitter(ret.srcMan);
     AnalyzerTask{
         .sysConfig = std::ref(this->sysConfig),
@@ -412,7 +393,6 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
   }
   this->timeout = this->defaultDebounceTime;
   this->result.modifiedSrcIds.emplace(src->getSrcId());
-  this->result.closingSrcIds.erase(src->getSrcId());
 }
 
 void LSPServer::syncResult() {
@@ -601,9 +581,18 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
+  LOG(LogLevel::INFO, "try close textDocument: %s", params.textDocument.uri.c_str());
+  this->syncResult(); // always synchronize state, before actual close operation
   if (auto resolved = this->resolveSource(params.textDocument)) {
     auto &src = resolved.asOk();
-    this->result.closingSrcIds.emplace(src->getSrcId());
+    /**
+     * only close unused module.
+     * remove archive and index, but source is still existing
+     */
+    if (this->result.archives.removeIfUnused(src->getSrcId())) {
+      LOG(LogLevel::INFO, "do close textDocument: %s", src->getPath().c_str());
+      this->result.indexes.remove(src->getSrcId());
+    }
   }
 }
 

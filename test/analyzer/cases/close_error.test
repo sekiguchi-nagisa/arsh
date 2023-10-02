@@ -28,6 +28,8 @@
 {"jsonrpc": "2.0", "method": "textDocument/didClose",
   "params": { "textDocument": { "uri": "https:///test/not-found" } } }
 
+# CHECKERR_RE_IF: ^.+ <error> .+ broken textDocument: https:///test/not-found
+
 ---
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 

@@ -39,23 +39,21 @@ public:
   ModuleArchives archives;
   SymbolIndexes indexes;
   std::unordered_set<ModId> modifiedSrcIds;
-  std::unordered_set<ModId> closingSrcIds;
 
   NON_COPYABLE(AnalyzerResult);
 
 private:
   AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives archives,
-                 SymbolIndexes indexes, std::unordered_set<ModId> modifiedSrcIds,
-                 std::unordered_set<ModId> willCloseSrcIds)
+                 SymbolIndexes indexes, std::unordered_set<ModId> modifiedSrcIds)
       : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)),
-        modifiedSrcIds(std::move(modifiedSrcIds)), closingSrcIds(std::move(willCloseSrcIds)) {}
+        modifiedSrcIds(std::move(modifiedSrcIds)) {}
 
 public:
   explicit AnalyzerResult(std::shared_ptr<SourceManager> srcMan) : srcMan(std::move(srcMan)) {}
 
   AnalyzerResult(AnalyzerResult &&o) noexcept
       : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)), indexes(std::move(o.indexes)),
-        modifiedSrcIds(std::move(o.modifiedSrcIds)), closingSrcIds(std::move(o.closingSrcIds)) {}
+        modifiedSrcIds(std::move(o.modifiedSrcIds)) {}
 
   AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
     if (this != std::addressof(o)) {
@@ -66,8 +64,7 @@ public:
   }
 
   AnalyzerResult deepCopy() const {
-    return {this->srcMan->copy(), this->archives, this->indexes, this->modifiedSrcIds,
-            this->closingSrcIds};
+    return {this->srcMan->copy(), this->archives, this->indexes, this->modifiedSrcIds};
   }
 };
 
