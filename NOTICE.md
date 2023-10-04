@@ -38,7 +38,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## src/misc/wyhash.h
+## external/wyhash/wyhash.h
 
 This file is distributed under the Unlicense (http://unlicense.org/).
 This is copied from [wangyi-fudan/wyhash](https://github.com/wangyi-fudan/wyhash)

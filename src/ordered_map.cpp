@@ -15,9 +15,9 @@
  */
 
 #include "ordered_map.h"
+#include "../external/wyhash/wyhash.h"
 #include "core.h"
 #include "misc/num_util.hpp"
-#include "misc/wyhash.h"
 #include "type_pool.h"
 
 namespace ydsh {
