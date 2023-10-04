@@ -103,6 +103,8 @@ public:
     TRUNCATE,
   };
 
+  static constexpr unsigned int TAB_WIDTH = 4;
+
 private:
   const CharWidthProperties &ps;
 

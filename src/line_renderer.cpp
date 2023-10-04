@@ -323,12 +323,12 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
 bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
-    unsigned int colLen = 4 - this->totalCols % 4;
+    unsigned int colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH;
     if (this->totalCols + colLen > this->maxCols) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
         this->handleSoftWrap(color);
-        colLen = 4 - this->totalCols % 4; // re-compute tab stop
+        colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH; // re-compute tab stop
         break;
       case LineBreakOp::TRUNCATE:
         this->handleTruncate(' ');
@@ -396,11 +396,11 @@ ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties 
 
   // compute extra tabs
   const auto paneSize = items[maxIndex].itemLen();
-  assert(paneSize % 4 == 0);
+  assert(paneSize % LineRenderer::TAB_WIDTH == 0);
   for (auto &e : items) {
     auto padLen = paneSize - e.itemLen();
-    assert(padLen % 4 == 0);
-    e.tabs = padLen / 4;
+    assert(padLen % LineRenderer::TAB_WIDTH == 0);
+    e.tabs = padLen / LineRenderer::TAB_WIDTH;
   }
   return {ps, obj, std::move(items), maxIndex, winSize};
 }
@@ -425,7 +425,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
     this->curRow = this->rows - 1;
   }
   if (this->panes == 1) {
-    unsigned int colLimit = (this->winSize.cols / 4) * 4; // truncate to multiple of 4
+    unsigned int colLimit = (this->winSize.cols / LineRenderer::TAB_WIDTH) *
+                            LineRenderer::TAB_WIDTH; // truncate to multiple of TAB_WIDTH
     if (this->paneLen > colLimit) {
       this->paneLen = colLimit; // larger than window size
     }
