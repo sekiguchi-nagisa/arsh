@@ -90,6 +90,8 @@ public:
 
   static ANSIEscapeSeqMap fromString(StringRef setting);
 
+  static bool checkSGRSeq(StringRef seq);
+
   const auto &getValues() const { return this->values; }
 };
 

@@ -10,6 +10,10 @@
 
 ### Changed
 
+#### Builtin
+
+- ``LineEditor#setColor`` method ignore invalid ansi escape sequence (SGR)
+
 #### LSP
 
 - improve ``textDocument/rename``

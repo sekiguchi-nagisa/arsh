@@ -17,6 +17,7 @@
 #include "line_renderer.h"
 #include "keycode.h"
 #include "misc/format.hpp"
+#include "misc/num_util.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -58,6 +59,40 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScann
 // ##     ANSIEscapeSeqMap     ##
 // ##############################
 
+static bool consumeDigits(const char *&iter, const char *end) {
+  if (iter == end || !isDecimal(*iter)) {
+    return false;
+  }
+  for (++iter; iter != end && isDecimal(*iter); ++iter)
+    ;
+  return true;
+}
+
+bool ANSIEscapeSeqMap::checkSGRSeq(StringRef seq) {
+  const auto end = seq.end();
+  for (auto iter = seq.begin(); iter != end; ++iter) {
+    if (*iter != '\x1b' || iter + 1 == end || *(iter + 1) != '[' || iter + 2 == end) {
+      return false;
+    }
+    iter += 2;          // skip '\x1b['
+    if (*iter != 'm') { // consume [0-9][0-9]* (; [0-9][0-9]*)*
+      if (!consumeDigits(iter, end)) {
+        return false;
+      }
+      while (iter != end && *iter == ';') {
+        ++iter;
+        if (!consumeDigits(iter, end)) {
+          return false;
+        }
+      }
+    }
+    if (iter == end || *iter != 'm') {
+      return false;
+    }
+  }
+  return true;
+}
+
 ANSIEscapeSeqMap ANSIEscapeSeqMap::fromString(StringRef setting) {
   std::unordered_map<HighlightTokenClass, std::string> values;
 
@@ -73,10 +108,13 @@ ANSIEscapeSeqMap ANSIEscapeSeqMap::fromString(StringRef setting) {
       continue; // skip invalid entry
     }
     auto element = entry.slice(0, retPos);
-    auto escapeSeq = entry.substr(retPos + 1); // FIXME: check escape sequence format?
+    auto escapeSeq = entry.substr(retPos + 1);
+    if (!checkSGRSeq(escapeSeq) || escapeSeq.empty()) {
+      continue; // skip invalid color sequence
+    }
 
     for (auto &e : getHighlightTokenEntries()) {
-      if (element == e.second && !escapeSeq.empty()) {
+      if (element == e.second) {
         values[e.first] = escapeSeq.toString();
         break;
       }
