@@ -237,7 +237,10 @@ public:
     unsigned int len;  // actual item columns size
     unsigned int tabs; // number of extra tab characters
 
-    unsigned int itemLen() const { return this->len + (4 - this->len % 4) + this->tabs * 4; }
+    unsigned int itemLen() const {
+      return this->len + (LineRenderer::TAB_WIDTH - this->len % LineRenderer::TAB_WIDTH) +
+             this->tabs * LineRenderer::TAB_WIDTH;
+    }
   };
 
 private:
