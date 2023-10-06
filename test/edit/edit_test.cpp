@@ -509,6 +509,49 @@ TEST(ColorEscapeTest, base) {
   ASSERT_FALSE(ANSIEscapeSeqMap::checkSGRSeq("\x1b[1324231;2324m1"));
 }
 
+TEST(ColorEscapeTest, map) {
+  StringRef color =
+      "lineno=\x1b[38;2;149;149;149m background=\x1b[38;2;212;212;212m "
+      "foreground=\x1b[38;2;212;212;212m "
+      "attribute=\x1b[38;2;212;212;212m none=\x1b[38;2;212;212;212m comment=\x1b[38;2;128;128;128m "
+      "keyword=\x1b[38;2;204;120;50m\x1b[1m operator=\x1b[38;2;204;120;50m\x1b[1m "
+      "number=\x1b[38;2;104;151;187m regex=\x1b[38;2;100;102;149m string=\x1b[38;2;106;135;89m "
+      "command=\x1b[38;2;255;198;109m command_arg=\x1b[38;2;169;183;198m "
+      "redirect=\x1b[38;2;169;183;198m variable=\x1b[38;2;152;118;170m type=\x1b[38;2;255;198;109m "
+      "member=\x1b[38;2;169;183;198m";
+
+  auto seqMap = ANSIEscapeSeqMap::fromString(color);
+  auto &values = seqMap.getValues();
+  ASSERT_EQ(17, values.size());
+  ASSERT_EQ(values.find(HighlightTokenClass::NONE)->second, "\x1b[38;2;212;212;212m");
+  ASSERT_EQ(values.find(HighlightTokenClass::COMMENT)->second, "\x1b[38;2;128;128;128m");
+  ASSERT_EQ(values.find(HighlightTokenClass::KEYWORD)->second, "\x1b[38;2;204;120;50m\x1b[1m");
+  ASSERT_EQ(values.find(HighlightTokenClass::OPERATOR)->second, "\x1b[38;2;204;120;50m\x1b[1m");
+  ASSERT_EQ(values.find(HighlightTokenClass::NUMBER)->second, "\x1b[38;2;104;151;187m");
+  ASSERT_EQ(values.find(HighlightTokenClass::REGEX)->second, "\x1b[38;2;100;102;149m");
+  ASSERT_EQ(values.find(HighlightTokenClass::STRING)->second, "\x1b[38;2;106;135;89m");
+  ASSERT_EQ(values.find(HighlightTokenClass::COMMAND)->second, "\x1b[38;2;255;198;109m");
+  ASSERT_EQ(values.find(HighlightTokenClass::COMMAND_ARG)->second, "\x1b[38;2;169;183;198m");
+  ASSERT_EQ(values.find(HighlightTokenClass::REDIRECT)->second, "\x1b[38;2;169;183;198m");
+  ASSERT_EQ(values.find(HighlightTokenClass::VARIABLE)->second, "\x1b[38;2;152;118;170m");
+  ASSERT_EQ(values.find(HighlightTokenClass::TYPE)->second, "\x1b[38;2;255;198;109m");
+  ASSERT_EQ(values.find(HighlightTokenClass::MEMBER)->second, "\x1b[38;2;169;183;198m");
+  ASSERT_EQ(values.find(HighlightTokenClass::ATTRIBUTE)->second, "\x1b[38;2;212;212;212m");
+  ASSERT_EQ(values.find(HighlightTokenClass::FOREGROUND_)->second, "\x1b[38;2;212;212;212m");
+  ASSERT_EQ(values.find(HighlightTokenClass::BACKGROUND_)->second, "\x1b[38;2;212;212;212m");
+  ASSERT_EQ(values.find(HighlightTokenClass::LINENO_)->second, "\x1b[38;2;149;149;149m");
+}
+
+TEST(ColorEscapeTest, invalid) {
+  StringRef color = "lineno=\x1b[38;2;149;149;149m hogea BBB=23 background=\x1b[38;2;212;212;212m "
+                    "AAAAA=\x1b[38;2;212;212;212m";
+  auto seqMap = ANSIEscapeSeqMap::fromString(color);
+  auto &values = seqMap.getValues();
+  ASSERT_EQ(2, values.size());
+  ASSERT_EQ(values.find(HighlightTokenClass::LINENO_)->second, "\x1b[38;2;149;149;149m");
+  ASSERT_EQ(values.find(HighlightTokenClass::BACKGROUND_)->second, "\x1b[38;2;212;212;212m");
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
