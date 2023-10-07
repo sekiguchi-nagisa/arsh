@@ -68,7 +68,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     if (isTupleOrBuiltinMethod(mangledName, kind, *handle)) {
       declModId = this->getModId();
     }
-  } else if (kind == DeclSymbol::Kind::CMD) { // for builtin
+  } else if (kind == DeclSymbol::Kind::CMD || kind == DeclSymbol::Kind::TYPE_ALIAS) { // for builtin
     declModId = BUILTIN_MOD_ID;
   } else {
     return nullptr;
@@ -859,6 +859,31 @@ static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> 
 void SymbolIndexer::addBuiltinSymbols() {
   auto &modType = this->builder().getPool().getBuiltinModType();
   unsigned int offset = 0;
+
+  // add builtin type/method (except for generic type)
+  for (auto &type : this->builder().getPool().getTypeTable()) {
+    if (type->typeKind() != TypeKind::Builtin && type->typeKind() != TypeKind::Error) {
+      continue;
+    }
+    NameInfo nameInfo(Token{offset, 1}, type->getNameRef().toString());
+    if (isa<ErrorType>(type)) {
+      auto &baseType = *type->getSuperType();
+      this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
+                              DeclSymbol::Kind::ERROR_TYPE_DEF);
+    } else {
+      assert(isa<BuiltinType>(type));
+      this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_TYPE, "", nameInfo.getToken());
+    }
+    offset += 5;
+  }
+  // add type template
+  for (auto &e : this->builder().getPool().getTemplateMap()) {
+    NameInfo nameInfo(Token{offset, 1}, e.first.toString());
+    this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_TYPE, "", nameInfo.getToken());
+    offset += 5;
+  }
+
+  // add builtin symbols (also defined in embed)
   for (auto &e : modType.getHandleMap()) {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));

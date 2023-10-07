@@ -131,6 +131,7 @@ public:
     METHOD,
     BUILTIN_CMD,
     CMD,
+    BUILTIN_TYPE,
     TYPE_ALIAS,
     ERROR_TYPE_DEF,
     MOD, // for named import

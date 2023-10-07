@@ -230,6 +230,9 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     formatCommandLineUsage(decl.getInfo(), markup, content);
     break;
   }
+  case DeclSymbol::Kind::BUILTIN_TYPE: {
+    return "";
+  }
   case DeclSymbol::Kind::TYPE_ALIAS: {
     content += "typedef ";
     content += name;
@@ -295,6 +298,7 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
   case DeclSymbol::Kind::CMD:
     symbolKind = SymbolKind::Function;
     break;
+  case DeclSymbol::Kind::BUILTIN_TYPE:
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
     symbolKind = SymbolKind::Class;

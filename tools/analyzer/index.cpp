@@ -56,6 +56,7 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   case DeclSymbol::Kind::CMD:
     value = toCmdFullName(name);
     break;
+  case DeclSymbol::Kind::BUILTIN_TYPE:
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:
@@ -102,6 +103,7 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
   case DeclSymbol::Kind::CMD:
     mangledName.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
     break;
+  case DeclSymbol::Kind::BUILTIN_TYPE:
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:

@@ -19,6 +19,8 @@
 
 #### LSP
 
+- improve indexing
+    - index builtin type or type template
 - improve ``textDocument/rename``
     - rewrite scope-aware name conflict checking
 - ``textDocument/didClose`` always synchronizes analyzer state

@@ -230,7 +230,7 @@ function assertArray(
     <(for $a in $y { echo $a; })
 }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 11}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 13}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -331,7 +331,7 @@ $a : Int) =>
 $a + 34
 $a(234)
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 4}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -380,13 +380,13 @@ hoge a b $(hoge) "$(hoge)" # hoge
 
 TEST_F(IndexTest, type1) {
   unsigned short modId;
-  const char *content = R"E(typeof StrArray = Int; {
+  const char *content = R"E(typedef StrArray = Int; {
 typedef StrArray = [String]
 new [typeof(new StrArray())]()
 }
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 2, .symbolSize = 5}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -779,7 +779,7 @@ TEST_F(IndexTest, udtype) {
     $a.HOME
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 15}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 6, .symbolSize = 16}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(
@@ -865,7 +865,7 @@ TEST_F(IndexTest, method) {
     new BigInt(23).factorial()
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 16}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 18}));
 
   // definition ( function factorial() : Int for BigInt )
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -916,7 +916,7 @@ TEST_F(IndexTest, methodOverride) {
     new STR().print()
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 16}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 17}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -1167,7 +1167,7 @@ var bbb = (34 as Void)  # not allow 'Void'
 var ccc = 34
 var ccc = $ccc
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 3}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -1188,7 +1188,7 @@ function func($a : Nothing) : Int { return 34 + $func(34); }  # not allow 'Nothi
 $b + $func(34)
 { function gg() : Int { return 34; } }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 4}));
 
   // definition
   ASSERT_NO_FATAL_FAILURE(this->findDecl(
@@ -1225,7 +1225,7 @@ typedef AAA($a : Int) {
   var next = new AAA(12).value
 }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 5}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 6}));
 }
 
 TEST_F(IndexTest, invalidBackref) {
@@ -1340,6 +1340,12 @@ EOF)",
 }
 
 TEST_F(IndexTest, hoverBuiltin) {
+  // builtin type
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nInt", 1, ""));
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, ""));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("34 is\nArithmeticError", 1, "```ydsh\ntypedef ArithmeticError: Error\n```"));
+
   // builtin variable or type alias
   ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ?: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @: [String]\n```"));
