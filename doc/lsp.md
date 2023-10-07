@@ -43,7 +43,7 @@
 | user-defined command (global import)  | ✔️             | ✔️             | ✔️              | ❌          |
 | user-defined command (inlined import) | ✔️             | ✔️️            | ✔️              | ❌          |
 | user-defined command (named import)   | ✔️             | ✔️️️           | ✔️️             | ❌          |
-| builtin command                       | -              | -              | ✔️️ (show help) | -          |
+| builtin command                       | -              | ✔️             | ✔️️ (show help) | -          |
 | type (builtin)                        | -              | ✔️️️           | ✔️️️            | ❌          |
 | type (alias)                          | ✔️             | ✔️             | ✔️              | ❌          |
 | type (global import)                  | ✔️             | ✔️             | ✔️              | ❌          |

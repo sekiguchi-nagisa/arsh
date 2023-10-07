@@ -132,6 +132,9 @@ public:
 
     std::vector<RefsResult> actual;
     findAllReferences(this->indexes, sr, [&](const FindRefsResult &result) {
+      if (result.symbol.getModId() == BUILTIN_MOD_ID) {
+        return;
+      }
       auto retSrc = this->srcMan.findById(result.symbol.getModId());
       ASSERT_TRUE(retSrc);
       auto range = retSrc->toRange(result.symbol.getToken());
@@ -376,6 +379,29 @@ hoge a b $(hoge) "$(hoge)" # hoge
                       {modId, "(3:0~3:4)"},      // hoge a b
                       {modId, "(3:11~3:15)"},    // $(hoge)
                       {modId, "(3:20~3:24)"}})); // "$(hoge)"
+}
+
+TEST_F(IndexTest, cmd2) {
+  unsigned short modId;
+  const char *content = R"E(
+true
+if(echo && echo) {
+  echo
+}
+
+)E";
+  // for builtin command
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 4}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 2}},
+                     {{modId, "(1:0~1:4)"}})); // true
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 4}},
+                     {{modId, "(2:3~2:7)"},    // echo && echo
+                      {modId, "(2:11~2:15)"},  // && echo
+                      {modId, "(3:2~3:6)"}})); // echo
 }
 
 TEST_F(IndexTest, type1) {
@@ -1355,7 +1381,7 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$true is\nBoolean", 1, "```ydsh\ntypedef Boolean = Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_5'\n```"));
+      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_8'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
 
   // builtin command
