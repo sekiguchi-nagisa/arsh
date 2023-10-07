@@ -324,11 +324,11 @@ struct CompletionClientCapabilities {
 };
 
 struct RenameClientCapability {
-  Optional<bool> dynamicRegistration;
+  Optional<bool> prepareSupport;
 
   template <typename T>
   void jsonify(T &t) {
-    JSONIFY(dynamicRegistration);
+    JSONIFY(prepareSupport);
   }
 };
 

@@ -462,6 +462,12 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
         }
       }
     }
+    if (textDocument.rename.hasValue()) {
+      if (auto &rename = textDocument.rename.unwrap();
+          rename.prepareSupport.hasValue() && rename.prepareSupport.unwrap()) {
+        setFlag(this->supportedCapability, SupportedCapability::PREPARE_RENAME);
+      }
+    }
   }
   if (params.capabilities.workspace.hasValue()) {
     auto &workspace = params.capabilities.workspace.unwrap();
@@ -471,6 +477,10 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
 
   InitializeResult ret;
+  ret.capabilities.completionProvider.completionItem.labelDetailsSupport =
+      hasFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL);
+  ret.capabilities.renameProvider.prepareProvider =
+      hasFlag(this->supportedCapability, SupportedCapability::PREPARE_RENAME);
   if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION)) {
     auto options = SemanticTokensRegistrationOptions::createStatic(this->idGenerator("reg"));
     this->registrationMap.registerCapability(options);

@@ -10,7 +10,7 @@
 # CHECK:     "capabilities": {
 # CHECK:       "completionProvider": {
 # CHECK:         "completionItem": {
-# CHECK:           "labelDetailsSupport": true
+# CHECK:           "labelDetailsSupport": false
 # CHECK:         },
 # CHECK:         "triggerCharacters": [
 # CHECK:           ".",
@@ -29,7 +29,7 @@
 # CHECK:       "hoverProvider": true,
 # CHECK:       "referencesProvider": true,
 # CHECK:       "renameProvider": {
-# CHECK:         "prepareProvider": true
+# CHECK:         "prepareProvider": false
 # CHECK:       },
 # CHECK:       "semanticTokensProvider": {
 # CHECK:         "full": true,

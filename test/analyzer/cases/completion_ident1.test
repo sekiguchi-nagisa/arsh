@@ -9,6 +9,9 @@
 
 #    CHECK: {
 # CHECK_IF:     "capabilities": {
+# CHECK_IF:       "completionProvider": {
+#    CHECK:         "completionItem": {
+#    CHECK:           "labelDetailsSupport": true
 # CHECK_IF: }
 
 <<<

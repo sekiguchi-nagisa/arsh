@@ -74,6 +74,7 @@ enum class SupportedCapability : unsigned int {
   LABEL_DETAIL = 1u << 1u,
   WORKSPACE_CONFIG = 1u << 2u,
   SEMANTIC_TOKEN_REGISTRATION = 1u << 3u,
+  PREPARE_RENAME = 1u << 4u,
 };
 
 class LSPServer : public Handler {

@@ -1,10 +1,16 @@
 # RUN: call $cmd --test $self
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
- "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+ "params": {
+   "capabilities": {"textDocument": {"rename": {"prepareSupport": true}}},
+   "rootUri": "file:///test", "processId": 46
+ }
+}
 
 #    CHECK: {
 # CHECK_IF:     "capabilities": {
+# CHECK_IF:       "renameProvider": {
+#    CHECK:         "prepareProvider": true
 # CHECK_IF: }
 
 <<<
