@@ -547,10 +547,10 @@ struct SemanticTokensOptions : public WorkDoneProgressOptions {
   Optional<bool> full;
 
   static SemanticTokensOptions create() {
-    return {
-        .legend = SemanticTokensLegend::create(),
-        .full = true,
-    };
+    SemanticTokensOptions options;
+    options.legend = SemanticTokensLegend::create();
+    options.full = true;
+    return options;
   }
 
   template <typename T>
