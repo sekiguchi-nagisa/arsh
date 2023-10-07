@@ -286,12 +286,14 @@ struct SemanticTokensLegend {
 };
 
 struct SemanticTokensClientCapabilities {
+  Optional<bool> dynamicRegistration;
   std::vector<SemanticTokenTypes> tokenTypes;
   std::vector<SemanticTokenModifiers> tokenModifiers;
   std::vector<TokenFormat> formats;
 
   template <typename T>
   void jsonify(T &t) {
+    JSONIFY(dynamicRegistration);
     JSONIFY(tokenTypes);
     JSONIFY(tokenModifiers);
     JSONIFY(formats);
@@ -321,12 +323,22 @@ struct CompletionClientCapabilities {
   }
 };
 
+struct RenameClientCapability {
+  Optional<bool> dynamicRegistration;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(dynamicRegistration);
+  }
+};
+
 struct TextDocumentClientCapabilities {
   Optional<PublishDiagnosticsClientCapabilities> publishDiagnostics;
   Optional<HoverClientCapabilities> hover;
   Optional<DocumentLinkClientCapabilities> documentLink;
   Optional<SemanticTokensClientCapabilities> semanticTokens;
   Optional<CompletionClientCapabilities> completion;
+  Optional<RenameClientCapability> rename;
 
   template <typename T>
   void jsonify(T &t) {
@@ -335,6 +347,7 @@ struct TextDocumentClientCapabilities {
     JSONIFY(documentLink);
     JSONIFY(semanticTokens);
     JSONIFY(completion);
+    JSONIFY(rename);
   }
 };
 
@@ -426,6 +439,35 @@ struct InitializeParams : public WorkDoneProgressParams {
 };
 
 // for server capability
+struct StaticRegistrationOptions {
+  Optional<std::string> id;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(id);
+  }
+};
+
+struct DocumentFilter {
+  std::string language{"ydsh"};
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(language);
+  }
+};
+
+using DocumentSelector = std::vector<DocumentFilter>;
+
+struct TextDocumentRegistrationOptions {
+  Union<DocumentSelector, std::nullptr_t> documentSelector;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(documentSelector);
+  }
+};
+
 enum class TextDocumentSyncKind : int {
   None = 0,
   Full = 1,
@@ -452,7 +494,7 @@ struct CompletionOptions : public WorkDoneProgressOptions {
   };
 
   Optional<bool> resolveProvider; // optional
-  std::vector<std::string> triggerCharacters;
+  std::vector<std::string> triggerCharacters{".", "$", "/"};
   CompletionItem completionItem;
 
   template <typename T>
@@ -465,7 +507,7 @@ struct CompletionOptions : public WorkDoneProgressOptions {
 };
 
 struct SignatureHelpOptions : public WorkDoneProgressOptions {
-  std::vector<std::string> triggerCharacters;
+  std::vector<std::string> triggerCharacters{"(", ","};
 
   template <typename T>
   void jsonify(T &t) {
@@ -504,11 +546,42 @@ struct SemanticTokensOptions : public WorkDoneProgressOptions {
   SemanticTokensLegend legend;
   Optional<bool> full;
 
+  static SemanticTokensOptions create() {
+    return {
+        .legend = SemanticTokensLegend::create(),
+        .full = true,
+    };
+  }
+
   template <typename T>
   void jsonify(T &t) {
     WorkDoneProgressOptions::jsonify(t);
     JSONIFY(legend);
     JSONIFY(full);
+  }
+};
+
+struct SemanticTokensRegistrationOptions : public TextDocumentRegistrationOptions,
+                                           public SemanticTokensOptions,
+                                           public StaticRegistrationOptions {
+  static SemanticTokensRegistrationOptions createStatic(std::string &&id) {
+    SemanticTokensRegistrationOptions options = createDynamic();
+    options.id = std::move(id);
+    return options;
+  }
+
+  static SemanticTokensRegistrationOptions createDynamic() {
+    SemanticTokensRegistrationOptions options;
+    options.legend = SemanticTokensLegend::create();
+    options.full = true;
+    return options;
+  }
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentRegistrationOptions::jsonify(t);
+    SemanticTokensOptions::jsonify(t);
+    StaticRegistrationOptions::jsonify(t);
   }
 };
 
@@ -550,7 +623,7 @@ struct ServerCapabilities {
   bool documentRangeFormattingProvider{false};
   DocumentLinkOptions documentLinkProvider;
   RenameOptions renameProvider;
-  SemanticTokensOptions semanticTokensProvider;
+  Union<SemanticTokensRegistrationOptions, SemanticTokensOptions> semanticTokensProvider;
 
   template <typename T>
   void jsonify(T &t) {
@@ -1215,6 +1288,52 @@ struct PrepareRename {
   void jsonify(T &t) {
     JSONIFY(range);
     JSONIFY(placeholder);
+  }
+};
+
+struct Registration {
+  std::string id;
+  std::string method;
+  Optional<JSON> registerOptions;
+
+  explicit operator bool() const { return !this->id.empty(); }
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(id);
+    JSONIFY(method);
+    JSONIFY(registerOptions);
+  }
+};
+
+struct RegistrationParam {
+  std::vector<Registration> registrations;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(registrations);
+  }
+};
+
+struct Unregistration {
+  std::string id;
+  std::string method;
+
+  explicit operator bool() const { return !this->id.empty(); }
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(id);
+    JSONIFY(method);
+  }
+};
+
+struct UnregistrationParam {
+  std::vector<Unregistration> unregistrations;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(unregistrations);
   }
 };
 

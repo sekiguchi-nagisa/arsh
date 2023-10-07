@@ -21,6 +21,7 @@
 #include "analyzer.h"
 #include "index.h"
 #include "lsp.h"
+#include "registration.h"
 #include "semantic_token.h"
 #include "transport.h"
 #include "worker.h"
@@ -72,12 +73,15 @@ enum class SupportedCapability : unsigned int {
   DIAG_VERSION = 1u << 0u,
   LABEL_DETAIL = 1u << 1u,
   WORKSPACE_CONFIG = 1u << 2u,
+  SEMANTIC_TOKEN_REGISTRATION = 1u << 3u,
 };
 
 class LSPServer : public Handler {
 private:
   const SysConfig sysConfig;
   SemanticTokenEncoder encoder;
+  IDGenerator idGenerator;
+  RegistrationMap registrationMap;
   LSPTransport transport;
   AnalyzerResult result;
   BackgroundWorker worker;
@@ -97,7 +101,7 @@ private:
 
 public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
-      : Handler(logger, seed), encoder(SemanticTokensLegend::create()),
+      : Handler(logger, seed), encoder(SemanticTokensLegend::create()), idGenerator(seed),
         transport(logger, inFd, outFd), result(std::make_shared<SourceManager>()),
         defaultDebounceTime(time) {
     this->bindAll();
@@ -221,7 +225,15 @@ public:
 
   // server to client method
   void publishDiagnostics(PublishDiagnosticsParams &&params) {
-    this->notify("textDocument/publishDiagnostics", params);
+    this->notify("textDocument/publishDiagnostics", std::move(params));
+  }
+
+  void registerCapability(RegistrationParam &&param) {
+    this->notify("client/registerCapability", std::move(param));
+  }
+
+  void unregisterCapability(UnregistrationParam &&param) {
+    this->notify("client/unregisterCapability", std::move(param));
   }
 };
 

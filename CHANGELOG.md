@@ -6,7 +6,10 @@
 
 #### LSP
 
-- support ``workspace/configuration``
+- support the following request
+    - ``workspace/configuration``
+    - ``client/registerCapability``
+    - ``client/unregisterCapability``
 
 ### Changed
 
@@ -18,7 +21,8 @@
 
 - improve ``textDocument/rename``
     - rewrite scope-aware name conflict checking
-- ``textDocument/didClose`` always synchronize analyzer state
+- ``textDocument/didClose`` always synchronizes analyzer state
+- ``textDocument/semanticTokens`` supports dynamic registration
 
 ## [0.31.0] - 2023-09-30
 

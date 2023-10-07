@@ -444,7 +444,15 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       if (auto &hover = textDocument.hover.unwrap(); hover.contentFormat.hasValue()) {
         this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap());
       }
-    } // FIXME: check client supported semantic token options
+    }
+    if (textDocument.semanticTokens
+            .hasValue()) { // FIXME: check client supported semantic token options
+      auto &semanticTokens = textDocument.semanticTokens.unwrap();
+      if (semanticTokens.dynamicRegistration.hasValue() &&
+          semanticTokens.dynamicRegistration.unwrap()) {
+        setFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION);
+      }
+    }
     if (textDocument.completion.hasValue()) {
       if (auto &completion = textDocument.completion.unwrap();
           completion.completionItem.hasValue()) {
@@ -463,10 +471,13 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
 
   InitializeResult ret;
-  ret.capabilities.signatureHelpProvider.triggerCharacters = {"(", ","};
-  ret.capabilities.completionProvider.triggerCharacters = {".", "$", "/"};
-  ret.capabilities.semanticTokensProvider.legend = SemanticTokensLegend::create();
-  ret.capabilities.semanticTokensProvider.full = true;
+  if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION)) {
+    auto options = SemanticTokensRegistrationOptions::createStatic(this->idGenerator("reg"));
+    this->registrationMap.registerCapability(options);
+    ret.capabilities.semanticTokensProvider = std::move(options);
+  } else {
+    ret.capabilities.semanticTokensProvider = SemanticTokensOptions::create();
+  }
   return ret;
 }
 
@@ -490,16 +501,44 @@ static void getOrShowError(LoggerBase &logger, const Union<T, JSON> &field, cons
 }
 
 void LSPServer::loadConfigSetting(const ConfigSetting &setting) {
+  RegistrationParam registrationParam;
+  UnregistrationParam unregistrationParam;
+
   getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
                  [&](CmdCompKind kind) { this->cmdCompKind = kind; });
   getOrShowError(this->logger, setting.commandArgumentCompletion, "commandArgumentCompletion",
                  [&](BinaryFlag enabled) { this->cmdArgComp = enabled; });
   getOrShowError(this->logger, setting.logLevel, "logLevel",
                  [&](LogLevel level) { this->logger.get().setSeverity(level); });
-  getOrShowError(this->logger, setting.semanticHighlight, "semanticHighlight",
-                 [&](BinaryFlag enabled) { this->semanticHighlight = enabled; });
+  getOrShowError(
+      this->logger, setting.semanticHighlight, "semanticHighlight", [&](BinaryFlag enabled) {
+        if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION) &&
+            this->semanticHighlight != enabled) {
+          if (enabled == BinaryFlag::enabled) {
+            auto registration = this->registrationMap.registerCapability(
+                this->idGenerator, RegistrationMap::Capability::SEMANTIC_TOKENS);
+            if (registration) {
+              registrationParam.registrations.push_back(std::move(registration));
+            }
+          } else {
+            auto unregistration = this->registrationMap.unregisterCapability(
+                RegistrationMap::Capability::SEMANTIC_TOKENS);
+            if (unregistration) {
+              unregistrationParam.unregistrations.push_back(std::move(unregistration));
+            }
+          }
+        }
+        this->semanticHighlight = enabled;
+      });
   getOrShowError(this->logger, setting.rename, "rename",
                  [&](BinaryFlag enabled) { this->renameSupport = enabled; });
+
+  if (!registrationParam.registrations.empty()) {
+    this->registerCapability(std::move(registrationParam));
+  }
+  if (!unregistrationParam.unregistrations.empty()) {
+    this->unregisterCapability(std::move(unregistrationParam));
+  }
 }
 
 static ConfigSetting deserializeConfigSetting(LoggerBase &logger, const std::vector<JSON> &values) {
