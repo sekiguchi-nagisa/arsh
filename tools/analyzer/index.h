@@ -458,7 +458,7 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
 
 inline bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                               const std::function<void(const FindRefsResult &)> &consumer,
-                              bool ignoreBuiltin = true) {
+                              bool ignoreBuiltin = false) {
   const DeclSymbol *decl = nullptr;
   findDeclaration(indexes, request, [&decl](const FindDeclResult &r) { decl = &r.decl; });
   if (!decl) {

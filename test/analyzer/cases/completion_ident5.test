@@ -33,14 +33,6 @@
 #    CHECK:     {
 #    CHECK:       "kind": 1,
 #    CHECK:       "label": "reference_empty1.test"
-#    CHECK:     },
-#    CHECK:     {
-#    CHECK:       "kind": 1,
-#    CHECK:       "label": "reference_empty2.test"
-#    CHECK:     },
-#    CHECK:     {
-#    CHECK:       "kind": 1,
-#    CHECK:       "label": "reference_empty3.test"
 #    CHECK:     }
 #    CHECK:   ]
 

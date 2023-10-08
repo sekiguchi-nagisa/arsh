@@ -128,6 +128,8 @@ public:
 
   const TypePool &getPool() const { return *this->pool; }
 
+  TypePool &refPool() const { return *this->pool; }
+
   const ScopeEntry &curScope() const { return *this->scope; }
 
   auto intoScope(ScopeKind kind, ScopeInterval interval, const DSType *type = nullptr) {

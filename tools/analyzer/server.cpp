@@ -183,19 +183,16 @@ LSPServer::documentHighlightImpl(const SymbolRequest &request) const {
   assert(src);
   SymbolRequest req = {.modId = decl->getModId(), .pos = decl->getPos()};
   std::vector<DocumentHighlight> values;
-  findAllReferences(
-      this->result.indexes, req,
-      [&](const FindRefsResult &value) {
-        if (value.symbol.getModId() == request.modId) {
-          auto range = src->toRange(value.symbol.getToken());
-          assert(range.hasValue());
-          values.push_back(DocumentHighlight{
-              .range = range.unwrap(),
-              .kind = DocumentHighlightKind::Text,
-          });
-        }
-      },
-      false);
+  findAllReferences(this->result.indexes, req, [&](const FindRefsResult &value) {
+    if (value.symbol.getModId() == request.modId) {
+      auto range = src->toRange(value.symbol.getToken());
+      assert(range.hasValue());
+      values.push_back(DocumentHighlight{
+          .range = range.unwrap(),
+          .kind = DocumentHighlightKind::Text,
+      });
+    }
+  });
   return values;
 }
 

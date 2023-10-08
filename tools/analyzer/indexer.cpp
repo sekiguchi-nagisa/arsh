@@ -41,13 +41,14 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
-static bool isTupleOrBuiltinMethod(const std::string &mangledName, DeclSymbol::Kind kind,
-                                   const Handle &handle) {
+static bool isTupleOrGenericTypeMethod(const TypePool &pool, const std::string &mangledName,
+                                       DeclSymbol::Kind kind, const Handle &handle) {
   if (!isBuiltinMod(handle.getModId())) {
     return false;
   }
   if (handle.isMethodHandle()) {
-    return cast<MethodHandle>(handle).isNative();
+    auto &recvType = pool.get(handle.getTypeId());
+    return cast<MethodHandle>(handle).isNative() && !isa<BuiltinType>(recvType);
   } else if (kind == DeclSymbol::Kind::VAR && mangledName.size() > 1) {
     return DeclSymbol::mayBeMemberName(mangledName); // tuple field
   }
@@ -65,7 +66,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     declModId = BUILTIN_MOD_ID;
   } else if (handle) {
     declModId = handle->getModId();
-    if (isTupleOrBuiltinMethod(mangledName, kind, *handle)) {
+    if (isTupleOrGenericTypeMethod(this->getPool(), mangledName, kind, *handle)) {
       declModId = this->getModId();
     }
   } else if (kind == DeclSymbol::Kind::CMD || kind == DeclSymbol::Kind::TYPE_ALIAS) { // for builtin
@@ -857,7 +858,6 @@ static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> 
 }
 
 void SymbolIndexer::addBuiltinSymbols() {
-  auto &modType = this->builder().getPool().getBuiltinModType();
   unsigned int offset = 0;
 
   // add builtin type/method (except for generic type)
@@ -882,8 +882,29 @@ void SymbolIndexer::addBuiltinSymbols() {
     this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_TYPE, "", nameInfo.getToken());
     offset += 5;
   }
+  // builtin method
+  for (auto &e : this->builder().getPool().getMethodMap()) {
+    StringRef name = e.first.ref;
+    if (isMagicMethodName(name)) {
+      continue;
+    }
+    NameInfo nameInfo(Token{offset, 1}, name.toString());
+    auto &recvType = this->builder().getPool().get(e.first.id);
+    if (!isa<BuiltinType>(recvType)) {
+      continue; // FIXME: generic type
+    }
+    const auto init = static_cast<bool>(e.second);
+    if (init) {
+      this->builder().addMember(*e.second.handle(), nameInfo, nameInfo.getToken());
+    } else {
+      auto handle = this->builder().refPool().allocNativeMethodHandle(recvType, e.second.index());
+      this->builder().addMember(*handle, nameInfo, nameInfo.getToken());
+    }
+    offset += 5;
+  }
 
   // add builtin symbols (also defined in embed)
+  auto &modType = this->builder().getPool().getBuiltinModType();
   for (auto &e : modType.getHandleMap()) {
     const auto kind = resolveDeclKind(e);
     NameInfo nameInfo(Token{offset, 1}, DeclSymbol::demangle(kind, e.first));

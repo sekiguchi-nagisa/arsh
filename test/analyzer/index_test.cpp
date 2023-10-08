@@ -968,6 +968,45 @@ TEST_F(IndexTest, methodOverride) {
        {modId, "(3:14~3:19)"}}));                                        // new INT().print()
 }
 
+TEST_F(IndexTest, builtinSymbol) {
+  unsigned short modId;
+  const char *content = R"E(
+'aaa'.chars()
+($true as String).
+chars() +
+$OSTYPE
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 5}));
+
+  unsigned short modId2;
+  content = R"(
+$OSTYPE.
+chars() is
+String
+  )";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId2, {.declSize = 0, .symbolSize = 3}));
+
+  // reference
+  // builtin variable
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 4, .character = 3}},
+                     {{modId, "(4:0~4:7)"},     // $OSTYPE
+                      {modId2, "(1:0~1:7)"}})); // $OSTYPE
+  // builtin type
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId2, .position = {.line = 3, .character = 3}},
+                     {{modId, "(2:10~2:16)"},   // ($true as String).
+                      {modId2, "(3:0~3:6)"}})); // String
+  // builtin method
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 8}},
+                     {{modId, "(1:6~1:11)"},    // 'aaa'.chars()
+                      {modId, "(3:0~3:5)"},     // chars()
+                      {modId2, "(2:0~2:5)"}})); // chars() is
+}
+
 TEST_F(IndexTest, upvar) {
   unsigned short modId;
   const char *content = R"E({

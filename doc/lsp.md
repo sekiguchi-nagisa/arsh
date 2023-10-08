@@ -52,7 +52,8 @@
 | type (user-defined type)              | ✔️             | ✔️             | ✔️              | ❌          |
 | field (tuple)                         | -              | -              | ✔️              | -          |
 | field (user-defined type)             | ✔️             | ✔️             | ✔️              | ❌          |
-| method (builtin)                      | -              | -              | ✔️              | -          |
+| method (builtin)                      | -              | ✔️             | ✔️              | -          |
+| method (generic type)                 | -              | -              | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️             | ✔️              | ❌          |
 | source (variable)                     | ✔️             | ✔️             | ✔️              | ❌          |
 | source (type alias)                   | ✔️             | ✔️             | ✔️              | ❌          |

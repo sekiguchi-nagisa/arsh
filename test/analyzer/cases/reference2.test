@@ -11,23 +11,39 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "$?.abs()"}
+                     "text": "var a = (34,'')\n$a._0"}
  }
 }
+
+## reference for tuple field
 
 <<<
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/references",
   "params": {
     "position": {
-      "character": 4,
-      "line": 0
+      "character": 3,
+      "line": 1
     },
     "textDocument": { "uri": "file:///test/test.ds" },
     "context": { "includeDeclaration": false }
   }
 }
 
-# CHECK_IF:   "result": []
+# CHECK_IF:   "result": [
+#    CHECK:     {
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 5,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 3,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "uri": "file:///test/test.ds"
+#    CHECK:     }
+#    CHECK:   ]
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
