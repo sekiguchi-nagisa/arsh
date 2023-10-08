@@ -649,10 +649,10 @@ public:
         str += ", ";
       }
       str += this->paramNames[i];
-      str += " : ";
+      str += ": ";
       str += this->paramTypes[i]->toString();
     }
-    str += ") : ";
+    str += "): ";
     str += this->returnType->toString();
 
     if (!this->constraints.empty()) {
