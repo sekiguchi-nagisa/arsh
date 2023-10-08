@@ -1262,6 +1262,16 @@ $b + $func(34)
   // references
   ASSERT_NO_FATAL_FAILURE(this->findRefs(
       Request{.modId = modId, .position = {.line = 2, .character = 12}}, std::vector<Loc>()));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 4}}, // var b
+                     {{modId, "(1:4~1:5)"},                                            // itself
+                      {modId, "(3:0~3:2)"}}));                                         // $b
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 19}}, // Nothing
+                     {{modId, "(2:19~2:26)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 32}},
+                     {{modId, "(2:30~2:33)"}})); // Int
 }
 
 TEST_F(IndexTest, invalidUdc) {
