@@ -124,10 +124,6 @@ TypePool::~TypePool() {
   for (auto &e : this->typeTable) {
     e->destroy();
   }
-
-  for (auto &e : this->methodMap) {
-    const_cast<Key &>(e.first).dispose();
-  }
 }
 
 DSType *TypePool::addType(DSType *type) {
@@ -166,7 +162,6 @@ void TypePool::discard(const TypeDiscardPoint point) {
   this->methodIdCount = point.methodIdOffset;
   for (auto iter = this->methodMap.begin(); iter != this->methodMap.end();) {
     if (iter->first.id >= point.typeIdOffset) { // discard all method of discarded type
-      const_cast<Key &>(iter->first).dispose();
       iter = this->methodMap.erase(iter);
       continue;
     } else if (iter->second && iter->second.commitId() >= point.methodIdOffset) {
@@ -741,7 +736,7 @@ void TypePool::initErrorType(TYPE t, const char *typeName) {
 }
 
 void TypePool::registerHandle(const BuiltinType &recv, const char *name, unsigned int index) {
-  auto ret = this->methodMap.emplace(Key(recv, strdup(name)), Value(index));
+  auto ret = this->methodMap.emplace(Key(recv, name), Value(index));
   (void)ret;
   assert(ret.second);
 }

@@ -41,8 +41,6 @@ public:
 
     Key(const DSType &recv, StringRef ref) : id(recv.typeId()), ref(ref) {}
 
-    void dispose() { free(const_cast<char *>(this->ref.take())); }
-
     bool operator==(const Key &key) const { return this->id == key.id && this->ref == key.ref; }
   };
 
