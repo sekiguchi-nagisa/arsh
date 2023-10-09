@@ -229,7 +229,14 @@ public:
 
   void clear();
 
-  bool checkIteratorInvalidation(DSState &state, bool isReplyVar) const;
+  /**
+   *
+   * @param state
+   * @param isReplyVar
+   * @return
+   * if in iteration, return false
+   */
+  bool checkIteratorInvalidation(DSState &state, bool isReplyVar = false) const;
 
   /**
    * insert key-value even if already inserted

@@ -1401,6 +1401,13 @@ YDSH_METHOD module_fullname(RuntimeContext &ctx) {
 // ##     Array     ##
 // ###################
 
+#define CHECK_ITER_INVALIDATION(obj)                                                               \
+  do {                                                                                             \
+    if (unlikely(!((obj).checkIteratorInvalidation(ctx)))) {                                       \
+      RET_ERROR;                                                                                   \
+    }                                                                                              \
+  } while (false)
+
 //!bind: function $OP_GET($this : Array<T0>, $index : Int) : T0
 YDSH_METHOD array_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_get);
@@ -1763,34 +1770,15 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_iter);
-
-  /**
-   * record ArrayIter<T0> {
-   *      var ref : Array<T0>
-   *      var index : Int
-   * }
-   *
-   * FIXME: object layout and type is mismatched
-   */
-  auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  auto value = DSValue::create<BaseObject>(type, 2);
-  auto &obj = typeAs<BaseObject>(value);
-  obj[0] = LOCAL(0);
-  obj[1] = DSValue::createInt(0);
-  RET(value);
+  RET(DSValue::create<ArrayIterObject>(toObjPtr<ArrayObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
 YDSH_METHOD array_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_next);
-  auto &iterObj = typeAs<BaseObject>(LOCAL(0));
-  auto &obj = typeAs<ArrayObject>(iterObj[0]);
-  assert(iterObj[1].asInt() > -1);
-  size_t index = iterObj[1].asInt();
-  if (index < obj.size()) {
-    auto value = obj.getValues()[index++];
-    iterObj[1] = DSValue::createInt(index);
-    RET(value);
+  auto &obj = typeAs<ArrayIterObject>(LOCAL(0));
+  if (obj.hasNext()) {
+    RET(obj.next());
   } else {
     RET_VOID;
   }
@@ -1799,13 +1787,6 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
 // #################
 // ##     Map     ##
 // #################
-
-#define CHECK_ITER_INVALIDATION(obj)                                                               \
-  do {                                                                                             \
-    if (unlikely(!((obj).checkIteratorInvalidation(ctx, false)))) {                                \
-      RET_ERROR;                                                                                   \
-    }                                                                                              \
-  } while (false)
 
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
 YDSH_METHOD map_get(RuntimeContext &ctx) {

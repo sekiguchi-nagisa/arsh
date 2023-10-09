@@ -46,6 +46,7 @@ namespace ydsh {
   OP(UnixFd)                                                                                       \
   OP(Regex)                                                                                        \
   OP(Array)                                                                                        \
+  OP(ArrayIter)                                                                                    \
   OP(OrderedMap)                                                                                   \
   OP(OrderedMapIter)                                                                               \
   OP(Base)                                                                                         \
@@ -735,8 +736,17 @@ public:
 };
 
 class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {
+public:
+  enum class LockType : unsigned char {
+    NONE,
+    ITER,
+    SORT_WITH,
+  };
+
 private:
   std::vector<DSValue> values;
+  LockType lockType{LockType::NONE};
+  int lockCount{0};
 
 public:
   static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
@@ -750,6 +760,19 @@ public:
 
   ArrayObject(unsigned int typeID, std::vector<DSValue> &&values)
       : ObjectWithRtti(typeID), values(std::move(values)) {}
+
+  void lock(LockType t) {
+    this->lockType = t;
+    this->lockCount++;
+  }
+
+  void unlock() {
+    if (--this->lockCount == 0) {
+      this->lockType = LockType::NONE;
+    }
+  }
+
+  bool locking() const { return this->lockCount > 0; }
 
   const std::vector<DSValue> &getValues() const { return this->values; }
 
@@ -773,6 +796,16 @@ public:
    */
   [[nodiscard]] bool append(DSState &state, DSValue &&obj);
 
+  /**
+   *
+   * @param state
+   * @param name
+   * additional name
+   * @return
+   * if in locking, return false
+   */
+  bool checkIteratorInvalidation(DSState &state, const char *name = nullptr) const;
+
   DSValue copy() const {
     return DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(this->values));
   }
@@ -787,6 +820,24 @@ public:
     std::sort(this->values.begin() + beginOffset, this->values.end(),
               [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
   }
+};
+
+class ArrayIterObject : public ObjectWithRtti<ObjectKind::ArrayIter> {
+private:
+  ObjPtr<ArrayObject> arrayObj;
+  unsigned int index{0};
+
+public:
+  explicit ArrayIterObject(ObjPtr<ArrayObject> obj)
+      : ObjectWithRtti(obj->getTypeID()), arrayObj(std::move(obj)) {
+    this->arrayObj->lock(ArrayObject::LockType::ITER);
+  }
+
+  ~ArrayIterObject() { this->arrayObj->unlock(); }
+
+  bool hasNext() const { return this->index < this->arrayObj->size(); }
+
+  DSValue next() { return this->arrayObj->getValues()[this->index++]; }
 };
 
 struct StrArrayIter {

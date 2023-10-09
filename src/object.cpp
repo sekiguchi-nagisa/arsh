@@ -469,6 +469,31 @@ bool ArrayObject::append(DSState &state, DSValue &&obj) {
   return true;
 }
 
+bool ArrayObject::checkIteratorInvalidation(DSState &state, const char *message) const {
+  if (this->locking()) {
+    std::string value = "cannot modify array object";
+    StringRef ref = message;
+    if (!ref.empty()) {
+      value += "(";
+      value += ref;
+      value += ")";
+    }
+    switch (this->lockType) {
+    case LockType::NONE:
+      break; // unreachable
+    case LockType::ITER:
+      value += " during iteration";
+      break;
+    case LockType::SORT_WITH:
+      value += " during sortWith method";
+      break;
+    }
+    raiseError(state, TYPE::InvalidOperationError, std::move(value));
+    return false;
+  }
+  return true;
+}
+
 // ########################
 // ##     BaseObject     ##
 // ########################
