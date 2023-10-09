@@ -979,9 +979,11 @@ $@.shift()
 $@.copy().shift()
 (23,)._0
 (231,)._0
+$MODULE._fullname('aa')
+_exit
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 12}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 15}));
 
   unsigned short modId2;
   content = R"(
@@ -990,9 +992,11 @@ chars() is
 String
 ['34'].shift()
 (231,)._0
+$MODULE._fullname('')
+ _exit
   )";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId2, {.declSize = 1, .symbolSize = 5}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId2, {.declSize = 1, .symbolSize = 8}));
 
   // reference
   // builtin variable
@@ -1025,6 +1029,16 @@ String
   ASSERT_NO_FATAL_FAILURE(
       this->findRefs(Request{.modId = modId2, .position = {.line = 5, .character = 7}},
                      {{modId2, "(5:7~5:9)"}})); // (231,)._0
+  // private builtin method
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId2, .position = {.line = 6, .character = 14}},
+                     {{modId, "(9:8~9:17)"},     // $MODULE._fullname('aa')
+                      {modId2, "(6:8~6:17)"}})); // $MODULE._fullname('')
+  // private builtin command (__puts, _exit)
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 10, .character = 3}},
+                     {{modId, "(10:0~10:5)"},   // _exit
+                      {modId2, "(7:1~7:6)"}})); //  _exit
 }
 
 TEST_F(IndexTest, upvar) {

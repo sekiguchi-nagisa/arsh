@@ -165,7 +165,8 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
     if (iter == this->foreign.end() || (*iter).getModId() != request.modId ||
         (*iter).getPos() != request.pos) { // not found, register foreign decl
       auto *ret = this->indexes.findDecl(request);
-      if (!ret || !hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
+      if (!ret || (!hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC) &&
+                   !isBuiltinMod(ref->getModId()))) {
         return nullptr;
       }
       iter = this->foreign.insert(iter, ForeignDecl(*ret));
