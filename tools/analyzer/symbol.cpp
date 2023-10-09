@@ -45,12 +45,6 @@ static std::vector<StringRef> splitParamNames(StringRef packedParamNames) {
   return params;
 }
 
-static std::vector<StringRef> splitParamNames(unsigned int paramSize, StringRef packedParamNames) {
-  auto params = splitParamNames(packedParamNames);
-  assert(paramSize == params.size());
-  return params;
-}
-
 void formatVarSignature(const DSType &type, std::string &out) {
   out += ": ";
   out += normalizeTypeName(type);
@@ -58,7 +52,8 @@ void formatVarSignature(const DSType &type, std::string &out) {
 
 void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
                          const std::function<void(StringRef)> &paramCallback) {
-  auto params = splitParamNames(funcType.getParamSize(), handle.getPackedParamNames());
+  auto params = splitParamNames(handle.getPackedParamNames());
+  assert(params.size() == funcType.getParamSize());
   out += "(";
   for (unsigned int i = 0; i < funcType.getParamSize(); i++) {
     if (i > 0) {
@@ -106,7 +101,8 @@ void formatFieldSignature(const DSType &recvType, const DSType &type, std::strin
 
 void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
                            bool constructor, const std::function<void(StringRef)> &paramCallback) {
-  auto params = splitParamNames(handle.getParamSize(), handle.getPackedParamNames());
+  auto params = splitParamNames(handle.getPackedParamNames());
+  assert(params.size() == handle.getParamSize());
   out += "(";
   for (unsigned int i = 0; i < handle.getParamSize(); i++) {
     if (i > 0) {
