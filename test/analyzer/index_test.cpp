@@ -175,16 +175,7 @@ public:
     std::string actual;
     Optional<Range> range;
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
-      StringRef packedParamTypes;
-      if (value.decl.getKind() == DeclSymbol::Kind::GENERIC_METHOD) {
-        if (auto index = this->indexes.find(src->getSrcId())) {
-          auto *r = index->getPackedParamTypesMap().lookupByPos(value.request.getPos());
-          if (r) {
-            packedParamTypes = *r;
-          }
-        }
-      }
-      actual = generateHoverContent(this->srcMan, *src, value.decl, packedParamTypes);
+      actual = generateHoverContent(this->srcMan, this->indexes, *src, value);
       range = src->toRange(value.request.getToken());
     });
 

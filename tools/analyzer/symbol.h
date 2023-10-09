@@ -58,8 +58,8 @@ void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, s
 void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
                                  std::string &out);
 
-std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
-                                 const DeclSymbol &decl, StringRef packedParamTypes,
+std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexes &indexes,
+                                 const Source &src, const FindDeclResult &result,
                                  bool markup = true);
 
 SymbolKind toSymbolKind(DeclSymbol::Kind kind);

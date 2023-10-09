@@ -362,8 +362,19 @@ static void formatCommandLineUsage(StringRef info, bool markup, std::string &con
   }
 }
 
-std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
-                                 const DeclSymbol &decl, StringRef packedParamTypes, bool markup) {
+std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexes &indexes,
+                                 const Source &src, const FindDeclResult &result, bool markup) {
+  auto &decl = result.decl;
+  StringRef packedParamTypes;
+  if (decl.getKind() == DeclSymbol::Kind::GENERIC_METHOD) {
+    if (auto index = indexes.find(src.getSrcId())) {
+      auto *r = index->getPackedParamTypesMap().lookupByPos(result.request.getPos());
+      if (r) {
+        packedParamTypes = *r;
+      }
+    }
+  }
+
   std::string content = markup ? "```ydsh\n" : "";
   std::string name = decl.toDemangledName();
   switch (decl.getKind()) {
