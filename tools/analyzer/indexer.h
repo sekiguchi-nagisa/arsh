@@ -40,6 +40,7 @@ private:
   std::vector<ForeignDecl> foreign;
   std::vector<std::pair<SymbolRef, IndexLink>> links;
   std::vector<ScopeInterval> scopeIntervals;
+  PackedParamTypesMap packedParamTypesMap;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -108,7 +109,7 @@ private:
 
   IntrusivePtr<ScopeEntry> scope;
 
-  std::shared_ptr<TypePool> pool;
+  std::shared_ptr<const TypePool> pool; // do not mutate it
 
   const SymbolIndexes &indexes;
 
@@ -120,15 +121,18 @@ public:
   }
 
   SymbolIndex build() && {
-    return {this->src->getSrcId(),    this->src->getVersion(),
-            std::move(this->decls),   std::move(this->symbols),
-            std::move(this->foreign), std::move(*this->scope).take(),
-            std::move(this->links),   std::move(this->scopeIntervals)};
+    return {this->src->getSrcId(),
+            this->src->getVersion(),
+            std::move(this->decls),
+            std::move(this->symbols),
+            std::move(this->foreign),
+            std::move(*this->scope).take(),
+            std::move(this->links),
+            std::move(this->scopeIntervals),
+            std::move(this->packedParamTypesMap)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
-
-  TypePool &refPool() const { return *this->pool; }
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
@@ -181,6 +185,8 @@ public:
     }
     return this->addDeclImpl(&recv, nameInfo, kind, info, token, DeclInsertOp::MEMBER);
   }
+
+  bool addBuiltinMethod(const DSType &recvType, unsigned int methodIndex, const NameInfo &nameInfo);
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
@@ -240,6 +246,13 @@ private:
    * @return
    */
   const Symbol *insertNewSymbol(Token token, const DeclBase *decl);
+
+  /**
+   * for generic method
+   * @param token
+   * @param type
+   */
+  void addParamTypeInfo(Token token, const DSType &type);
 };
 
 class SymbolIndexer : public NodePass {

@@ -62,7 +62,8 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   case DeclSymbol::Kind::CONSTRUCTOR:
     value = toTypeAliasFullName(name);
     break;
-  case DeclSymbol::Kind::METHOD: {
+  case DeclSymbol::Kind::METHOD:
+  case DeclSymbol::Kind::GENERIC_METHOD: {
     value = name.toString();
     value += METHOD_SYMBOL_SUFFIX;
     break;
@@ -110,6 +111,7 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
     mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
     break;
   case DeclSymbol::Kind::METHOD:
+  case DeclSymbol::Kind::GENERIC_METHOD:
     mangledName.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
     break;
   case DeclSymbol::Kind::VAR:
@@ -129,6 +131,35 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
 
 std::string DeclSymbol::demangle(Kind k, Attr a, StringRef mangledName) {
   return demangleWithRecv(k, a, mangledName).second.toString();
+}
+
+// #################################
+// ##     PackedParamTypesMap     ##
+// #################################
+
+bool PackedParamTypesMap::addPackedParamTypes(unsigned int type, std::string &&packed) {
+  auto pair = this->types.emplace(type, std::move(packed));
+  return pair.second;
+}
+
+bool PackedParamTypesMap::addSymbol(SymbolRef symbol, unsigned int typeId) {
+  auto pair = this->ids.emplace(symbol.getPos(), typeId);
+  return pair.second;
+}
+
+const std::string *PackedParamTypesMap::lookupByTypeId(unsigned int typeId) const {
+  auto iter = this->types.find(typeId);
+  return iter != this->types.end() ? &iter->second : nullptr;
+}
+
+const std::string *PackedParamTypesMap::lookupByPos(unsigned int pos) const {
+  auto iter = this->ids.find(pos);
+  if (iter == this->ids.end()) {
+    return nullptr;
+  }
+  auto packed = this->lookupByTypeId(iter->second);
+  assert(packed); // always found
+  return packed;
 }
 
 // #########################

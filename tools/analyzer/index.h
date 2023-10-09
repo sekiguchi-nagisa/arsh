@@ -129,6 +129,7 @@ public:
     FUNC,
     CONSTRUCTOR,
     METHOD,
+    GENERIC_METHOD,
     BUILTIN_CMD,
     CMD,
     BUILTIN_TYPE,
@@ -361,6 +362,21 @@ struct ScopeInterval {
   }
 };
 
+class PackedParamTypesMap {
+private:
+  std::unordered_map<unsigned int, unsigned int> ids;  // pos => id
+  std::unordered_map<unsigned int, std::string> types; // id => packedParamTypes
+
+public:
+  bool addPackedParamTypes(unsigned int type, std::string &&packed);
+
+  bool addSymbol(SymbolRef symbol, unsigned int typeId);
+
+  const std::string *lookupByTypeId(unsigned int typeId) const;
+
+  const std::string *lookupByPos(unsigned int pos) const;
+};
+
 class SymbolIndex;
 using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
@@ -374,16 +390,17 @@ private:
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
   std::vector<std::pair<SymbolRef, IndexLink>> links; // for importing module
   std::vector<ScopeInterval> scopes;
+  PackedParamTypesMap packedParamTypesMap; // for generic method hover
 
 public:
   SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
               std::unordered_map<std::string, SymbolRef> &&globals,
               std::vector<std::pair<SymbolRef, IndexLink>> &&links,
-              std::vector<ScopeInterval> &&scopes)
+              std::vector<ScopeInterval> &&scopes, PackedParamTypesMap &&packedParamTypesMap)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
         foreignDecls(std::move(foreignDecls)), globals(std::move(globals)), links(std::move(links)),
-        scopes(std::move(scopes)) {}
+        scopes(std::move(scopes)), packedParamTypesMap(std::move(packedParamTypesMap)) {}
 
   ModId getModId() const { return this->modId; }
 
@@ -404,6 +421,8 @@ public:
   const auto &getLinks() const { return this->links; }
 
   const auto &getScopes() const { return this->scopes; }
+
+  const auto &getPackedParamTypesMap() const { return this->packedParamTypesMap; }
 
   struct Compare {
     bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }

@@ -26,20 +26,27 @@
 
 namespace ydsh::lsp {
 
-std::string normalizeTypeName(const DSType &type) {
+static std::string normalizeTypeName(StringRef typeName) {
   static std::regex re(R"(%mod\d+\.)", std::regex_constants::ECMAScript);
-  return std::regex_replace(type.getName(), re, "");
+  return std::regex_replace(typeName.toString(), re, "");
 }
 
-static std::vector<StringRef> splitParamNames(unsigned int paramSize, StringRef packedParamNames) {
+std::string normalizeTypeName(const DSType &type) { return normalizeTypeName(type.getNameRef()); }
+
+static std::vector<StringRef> splitParamNames(StringRef packedParamNames) {
   std::vector<StringRef> params;
-  params.reserve(paramSize);
+  params.reserve(4);
   splitByDelim(packedParamNames, ';', [&params](StringRef p, bool) {
     if (!p.empty()) {
       params.push_back(p);
     }
     return true;
   });
+  return params;
+}
+
+static std::vector<StringRef> splitParamNames(unsigned int paramSize, StringRef packedParamNames) {
+  auto params = splitParamNames(packedParamNames);
   assert(paramSize == params.size());
   return params;
 }
@@ -122,6 +129,206 @@ void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, s
   }
 }
 
+class Decoder {
+private:
+  const HandleInfo *ptr;
+  const std::vector<StringRef> &paramTypes;
+
+public:
+  Decoder(const HandleInfo *ptr, const std::vector<StringRef> &types)
+      : ptr(ptr), paramTypes(types) {}
+
+  unsigned int decodeNum() {
+    return static_cast<unsigned int>(static_cast<int>(*(this->ptr++)) -
+                                     static_cast<int>(HandleInfo::P_N0));
+  }
+
+  std::string decodeType();
+
+  /**
+   * consume constraint part
+   */
+  void decodeConstraint() {
+    unsigned int size = this->decodeNum();
+    for (unsigned int i = 0; i < size; i++) {
+      this->decodeType();
+      this->decodeType();
+    }
+  }
+};
+
+static bool isFuncType(StringRef ref) {
+  if (!ref.startsWith("(")) {
+    return false;
+  }
+  int level = 0;
+  auto iter = ref.begin();
+  const auto end = ref.end();
+  for (; iter != end; ++iter) {
+    char ch = *iter;
+    if (ch == '(') {
+      level++;
+    } else if (ch == ')') {
+      level--;
+    }
+    if (level == 0) {
+      ++iter;
+      break;
+    }
+  }
+  for (; iter != end; ++iter) {
+    char ch = *iter;
+    if (ch == '-' && iter + 1 != end && *(iter + 1) == '>') {
+      return true;
+    }
+  }
+  return false;
+}
+
+static const char *toStringPrimitive(HandleInfo info) {
+  switch (info) {
+#define GEN_CASE(E)                                                                                \
+  case HandleInfo::E:                                                                              \
+    return #E;
+    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#undef GEN_CASE
+  default:
+    break;
+  }
+  return "";
+}
+
+std::string Decoder::decodeType() {
+  const auto info = *(this->ptr++);
+  switch (info) {
+#define GEN_CASE(E) case HandleInfo::E:
+    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#undef GEN_CASE
+    {
+      StringRef v = toStringPrimitive(info);
+      if (v == "Reader") {
+        v = "Reader%%";
+      } else if (v == "Value_") {
+        v = "Value%%";
+      } else if (v == "StringIter") {
+        v = "StringIter%%";
+      }
+      return v.toString();
+    }
+  case HandleInfo::Array: {
+    unsigned int size = this->decodeNum();
+    (void)size;
+    assert(size == 1);
+    std::string out = "[";
+    out += this->decodeType();
+    out += "]";
+    return out;
+  }
+  case HandleInfo::Map: {
+    unsigned int size = this->decodeNum();
+    (void)size;
+    assert(size == 2);
+    std::string out = "[";
+    out += this->decodeType();
+    out += " : ";
+    out += this->decodeType();
+    out += "]";
+    return out;
+  }
+  case HandleInfo::Tuple: {
+    unsigned int size = this->decodeNum();
+    assert(size > 0);
+    std::string out = "(";
+    if (size == 1) {
+      out += this->decodeType();
+      out += ",";
+    } else {
+      for (unsigned int i = 0; i < size; i++) {
+        if (i > 0) {
+          out += ", ";
+        }
+        out += this->decodeType();
+      }
+    }
+    out += ")";
+    return out;
+  }
+  case HandleInfo::Option: {
+    unsigned int size = this->decodeNum();
+    (void)size;
+    assert(size == 1);
+    std::string out = this->decodeType();
+    if (isFuncType(out)) {
+      out.insert(0, "(") += ")";
+    }
+    out += "?";
+    return out;
+  }
+  case HandleInfo::Func: {
+    std::string ret = this->decodeType();
+    unsigned int size = this->decodeNum();
+    std::string out = "(";
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        out += ", ";
+      }
+      out += this->decodeType();
+    }
+    out += ") -> ";
+    out += ret;
+    return out;
+  }
+  case HandleInfo::P_N0:
+  case HandleInfo::P_N1:
+  case HandleInfo::P_N2:
+  case HandleInfo::P_N3:
+  case HandleInfo::P_N4:
+  case HandleInfo::P_N5:
+  case HandleInfo::P_N6:
+  case HandleInfo::P_N7:
+  case HandleInfo::P_N8:
+    break; // normally unreachable
+  case HandleInfo::T0:
+    return this->paramTypes[0].toString();
+  case HandleInfo::T1:
+    return this->paramTypes[1].toString();
+  }
+  return ""; // normally unreachable due to suppress gcc warning
+}
+
+void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
+                                 std::string &out) {
+  auto params = splitParamNames(funcInfo->params);
+  auto paramTypes = splitParamNames(packedParamType);
+  Decoder decoder(funcInfo->handleInfo, paramTypes);
+
+  decoder.decodeConstraint(); // ignore constraint
+
+  auto returnTypeName = decoder.decodeType();
+  unsigned int paramSize = decoder.decodeNum();
+  assert(paramSize > 0);
+  paramSize--; // ignore receiver
+  assert(paramSize == params.size());
+  auto recvTypeName = decoder.decodeType();
+
+  out += "(";
+  for (unsigned int i = 0; i < paramSize; i++) {
+    if (i > 0) {
+      out += ", ";
+    }
+    out += params[i];
+    out += ": ";
+    out += normalizeTypeName(decoder.decodeType());
+  }
+  out += ")";
+  if (StringRef(funcInfo->funcName) != OP_INIT) { // method
+    out += ": ";
+    out += normalizeTypeName(returnTypeName);
+    out += " for ";
+    out += normalizeTypeName(recvTypeName);
+  }
+}
+
 static const BuiltinCmdDesc *findCmdDesc(const char *name) {
   unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();
@@ -156,7 +363,7 @@ static void formatCommandLineUsage(StringRef info, bool markup, std::string &con
 }
 
 std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
-                                 const DeclSymbol &decl, bool markup) {
+                                 const DeclSymbol &decl, StringRef packedParamTypes, bool markup) {
   std::string content = markup ? "```ydsh\n" : "";
   std::string name = decl.toDemangledName();
   switch (decl.getKind()) {
@@ -209,6 +416,14 @@ std::string generateHoverContent(const SourceManager &srcMan, const Source &src,
     content += "typedef ";
     content += name;
     formatCommandLineUsage(decl.getInfo(), markup, content);
+    break;
+  }
+  case DeclSymbol::Kind::GENERIC_METHOD: {
+    content += "function ";
+    content += name;
+    auto ret = convertToDecimal<unsigned int>(decl.getInfo().begin(), decl.getInfo().end());
+    assert(ret);
+    formatNativeMethodSignature(&nativeFuncInfoTable()[ret.value], packedParamTypes, content);
     break;
   }
   case DeclSymbol::Kind::BUILTIN_CMD: {
@@ -292,6 +507,7 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
     symbolKind = SymbolKind::Constructor; // FIXME:
     break;
   case DeclSymbol::Kind::METHOD:
+  case DeclSymbol::Kind::GENERIC_METHOD:
     symbolKind = SymbolKind::Method;
     break;
   case DeclSymbol::Kind::BUILTIN_CMD:

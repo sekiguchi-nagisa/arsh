@@ -175,7 +175,16 @@ public:
     std::string actual;
     Optional<Range> range;
     findDeclaration(this->indexes, sr, [&](const FindDeclResult &value) {
-      actual = generateHoverContent(this->srcMan, *src, value.decl);
+      StringRef packedParamTypes;
+      if (value.decl.getKind() == DeclSymbol::Kind::GENERIC_METHOD) {
+        if (auto index = this->indexes.find(src->getSrcId())) {
+          auto *r = index->getPackedParamTypesMap().lookupByPos(value.request.getPos());
+          if (r) {
+            packedParamTypes = *r;
+          }
+        }
+      }
+      actual = generateHoverContent(this->srcMan, *src, value.decl, packedParamTypes);
       range = src->toRange(value.request.getToken());
     });
 
@@ -975,18 +984,24 @@ TEST_F(IndexTest, builtinSymbol) {
 ($true as String).
 chars() +
 $OSTYPE
+$@.shift()
+$@.copy().shift()
+(23,)._0
+(231,)._0
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 5}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 12}));
 
   unsigned short modId2;
   content = R"(
 $OSTYPE.
 chars() is
 String
+['34'].shift()
+(231,)._0
   )";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId2, {.declSize = 0, .symbolSize = 3}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId2, {.declSize = 1, .symbolSize = 5}));
 
   // reference
   // builtin variable
@@ -1005,6 +1020,20 @@ String
                      {{modId, "(1:6~1:11)"},    // 'aaa'.chars()
                       {modId, "(3:0~3:5)"},     // chars()
                       {modId2, "(2:0~2:5)"}})); // chars() is
+  // generic method
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 6, .character = 14}},
+                     {{modId, "(5:3~5:8)"},      // $@.shift()
+                      {modId, "(6:10~6:15)"},    // $@.copy().shift()
+                      {modId2, "(4:7~4:12)"}})); // ['34'].shift()
+  // tuple field (not lookup foreign module)
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 7}},
+                     {{modId, "(7:6~7:8)"},    // (23,)._0
+                      {modId, "(8:7~8:9)"}})); // (231,)._0
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId2, .position = {.line = 5, .character = 7}},
+                     {{modId2, "(5:7~5:9)"}})); // (231,)._0
 }
 
 TEST_F(IndexTest, upvar) {
@@ -1582,6 +1611,47 @@ TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Constructor, toSymbolKind(DeclSymbol::Kind::CONSTRUCTOR));
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::TYPE_ALIAS));
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::ERROR_TYPE_DEF));
+}
+
+static std::string resolvePackedParamType(const DSType &type) {
+  if (isa<ArrayType>(type)) {
+    return cast<ArrayType>(type).getElementType().getNameRef().toString();
+  } else if (isa<MapType>(type)) {
+    auto &mapType = cast<MapType>(type);
+    return mapType.getKeyType().getNameRef().toString() + ";" +
+           mapType.getValueType().getNameRef().toString();
+  } else {
+    return "";
+  }
+}
+
+TEST_F(IndexTest, signature) {
+  TypePool pool;
+
+  std::vector<TypePool::Key> keys;
+  for (auto &e : pool.getMethodMap()) {
+    keys.push_back(e.first);
+  }
+
+  for (auto &key : keys) {
+    auto &type = pool.get(key.id);
+    SCOPED_TRACE("key(" + key.ref.toString() + ", " + type.getName() + ")");
+    auto iter = pool.getMethodMap().find(key);
+    ASSERT_TRUE(iter != pool.getMethodMap().end());
+    unsigned int index = iter->second ? iter->second.handle()->getIndex() : iter->second.index();
+    auto handle = pool.allocNativeMethodHandle(type, index);
+    ASSERT_TRUE(handle);
+    std::string expect = "function ";
+    expect += key.ref;
+    formatMethodSignature(type, *handle, expect, key.ref == OP_INIT);
+
+    std::string actual = "function ";
+    actual += key.ref;
+    formatNativeMethodSignature(&nativeFuncInfoTable()[index], resolvePackedParamType(type),
+                                actual);
+
+    ASSERT_EQ(expect, actual);
+  }
 }
 
 int main(int argc, char **argv) {

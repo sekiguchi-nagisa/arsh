@@ -63,7 +63,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", false, TYPE::Any, info_FDType());
-  this->initBuiltinType(TYPE::Reader, "Reader%", false, TYPE::Any, info_ReaderType());
+  this->initBuiltinType(TYPE::Reader, "Reader%%", false, TYPE::Any, info_ReaderType());
   this->initBuiltinType(TYPE::Command, "Command", false, TYPE::Any, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
   this->initBuiltinType(TYPE::CLI, "CLI", true, TYPE::Any, info_CLIType());
@@ -500,14 +500,14 @@ TypeOrError TypeDecoder::decode() {
   case HandleInfo::P_N5:
   case HandleInfo::P_N6:
   case HandleInfo::P_N7:
+  case HandleInfo::P_N8:
     fatal("must be type\n");
   case HandleInfo::T0:
     return Ok(this->types[0]);
   case HandleInfo::T1:
     return Ok(this->types[1]);
-  default:
-    return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
   }
+  return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
 }
 
 #define TRY2(E)                                                                                    \

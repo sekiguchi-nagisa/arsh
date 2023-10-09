@@ -203,12 +203,22 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
     if (is<Hover>(ret)) {
       return;
     }
+    StringRef packedParamTypes;
+    if (value.decl.getKind() == DeclSymbol::Kind::GENERIC_METHOD) {
+      if (auto index = this->result.indexes.find(src.getSrcId())) {
+        auto *r = index->getPackedParamTypesMap().lookupByPos(value.request.getPos());
+        if (r) {
+          packedParamTypes = *r;
+        }
+      }
+    }
     ret = Hover{
         .contents =
             MarkupContent{
                 .kind = this->markupKind,
-                .value = generateHoverContent(*this->result.srcMan, src, value.decl,
-                                              this->markupKind == MarkupKind::Markdown),
+                .value =
+                    generateHoverContent(*this->result.srcMan, src, value.decl, packedParamTypes,
+                                         this->markupKind == MarkupKind::Markdown),
             },
         .range = src.toRange(value.request.getToken()),
     };

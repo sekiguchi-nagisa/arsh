@@ -41,15 +41,9 @@ bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   return r1;
 }
 
-static bool isTupleOrGenericTypeMethod(const TypePool &pool, const std::string &mangledName,
-                                       DeclSymbol::Kind kind, const Handle &handle) {
-  if (!isBuiltinMod(handle.getModId())) {
-    return false;
-  }
-  if (handle.isMethodHandle()) {
-    auto &recvType = pool.get(handle.getTypeId());
-    return cast<MethodHandle>(handle).isNative() && !isa<BuiltinType>(recvType);
-  } else if (kind == DeclSymbol::Kind::VAR && mangledName.size() > 1) {
+static bool isTupleField(const std::string &mangledName, DeclSymbol::Kind kind,
+                         const Handle &handle) {
+  if (isBuiltinMod(handle.getModId()) && kind == DeclSymbol::Kind::VAR && mangledName.size() > 1) {
     return DeclSymbol::mayBeMemberName(mangledName); // tuple field
   }
   return false;
@@ -66,7 +60,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
     declModId = BUILTIN_MOD_ID;
   } else if (handle) {
     declModId = handle->getModId();
-    if (isTupleOrGenericTypeMethod(this->getPool(), mangledName, kind, *handle)) {
+    if (isTupleField(mangledName, kind, *handle)) {
       declModId = this->getModId();
     }
   } else if (kind == DeclSymbol::Kind::CMD || kind == DeclSymbol::Kind::TYPE_ALIAS) { // for builtin
@@ -92,7 +86,17 @@ static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
   if (DeclSymbol::isVarName(k) && nameInfo.getName()[0] == '%') {
     return "";
   }
-  return DeclSymbol::mangle(recv ? recv->getNameRef() : "", k, nameInfo.getName());
+  StringRef recvTypeName;
+  if (recv) {
+    if (isa<ArrayType>(recv)) {
+      recvTypeName = TYPE_ARRAY;
+    } else if (isa<MapType>(recv)) {
+      recvTypeName = TYPE_MAP;
+    } else {
+      recvTypeName = recv->getNameRef();
+    }
+  }
+  return DeclSymbol::mangle(recvTypeName, k, nameInfo.getName());
 }
 
 const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type, Token token,
@@ -200,8 +204,8 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
-static std::string generateBuiltinFieldOrMethodInfo(const TypePool &pool, const DSType &recv,
-                                                    const Handle &handle) {
+static std::string generateTupleInfo(const TypePool &pool, const DSType &recv,
+                                     const Handle &handle) {
   if (handle.isMethodHandle()) { // for builtin method
     auto &methodHandle = cast<MethodHandle>(handle);
     assert(methodHandle.isNative());
@@ -229,13 +233,33 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclS
   }
 
   if (this->addSymbolImpl(actualRecv, nameInfo, kind, &handle)) {
+    if (handle.isMethodHandle() && cast<MethodHandle>(handle).isNative()) {
+      this->addParamTypeInfo(nameInfo.getToken(), recv);
+    }
     return true;
   }
-  if (isBuiltinMod(handle.getModId())) { // tuple field or builtin method
-    std::string hover = generateBuiltinFieldOrMethodInfo(this->getPool(), recv, handle);
+  if (recv.isTupleType()) { // tuple field
+    std::string hover = generateTupleInfo(this->getPool(), recv, handle);
     if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), token, DeclInsertOp::BUILTIN)) {
       return true;
     }
+  }
+  return false;
+}
+
+bool IndexBuilder::addBuiltinMethod(const DSType &recvType, unsigned int methodIndex,
+                                    const NameInfo &nameInfo) {
+  assert(isBuiltinMod(this->getModId()));
+  if (recvType.typeKind() == TypeKind::Builtin) {
+    std::string content;
+    auto info = &nativeFuncInfoTable()[methodIndex];
+    formatNativeMethodSignature(info, "T0;T1", content);
+    return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::METHOD, content.c_str(),
+                             nameInfo.getToken(), DeclInsertOp::BUILTIN);
+  } else if (isa<ArrayType>(recvType) || isa<MapType>(recvType)) {
+    auto content = std::to_string(methodIndex);
+    return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::GENERIC_METHOD, content.c_str(),
+                             nameInfo.getToken(), DeclInsertOp::BUILTIN);
   }
   return false;
 }
@@ -359,6 +383,33 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
   }
   iter = this->symbols.insert(iter, symbol);
   return &(*iter);
+}
+
+void IndexBuilder::addParamTypeInfo(Token token, const DSType &type) {
+  if (!isa<ArrayType>(type) && !isa<MapType>(type)) {
+    return;
+  }
+  auto symbolRef = SymbolRef::create(token, this->getModId());
+  if (symbolRef.hasValue()) {
+    if (!this->packedParamTypesMap.addSymbol(symbolRef.unwrap(), type.typeId())) {
+      fatal("try to add token: %s, but already added\n", toString(token).c_str());
+    }
+    if (!this->packedParamTypesMap.lookupByTypeId(type.typeId())) {
+      std::string packed;
+      if (isa<ArrayType>(type)) {
+        packed += cast<ArrayType>(type).getElementType().getNameRef();
+      } else {
+        assert(isa<MapType>(type));
+        auto &mapType = cast<MapType>(type);
+        packed += mapType.getKeyType().getNameRef();
+        packed += ";";
+        packed += mapType.getValueType().getNameRef();
+      }
+      bool s = this->packedParamTypesMap.addPackedParamTypes(type.typeId(), std::move(packed));
+      assert(s);
+      (void)s;
+    }
+  }
 }
 
 // ###########################
@@ -861,8 +912,15 @@ void SymbolIndexer::addBuiltinSymbols() {
   unsigned int offset = 0;
 
   // add builtin type/method (except for generic type)
+  const DSType *mapType = nullptr;
   for (auto &type : this->builder().getPool().getTypeTable()) {
+    if (type->isMapType() && !mapType) {
+      mapType = type;
+    }
     if (type->typeKind() != TypeKind::Builtin && type->typeKind() != TypeKind::Error) {
+      continue;
+    }
+    if (type->isUnresolved()) {
       continue;
     }
     NameInfo nameInfo(Token{offset, 1}, type->getNameRef().toString());
@@ -890,17 +948,34 @@ void SymbolIndexer::addBuiltinSymbols() {
     }
     NameInfo nameInfo(Token{offset, 1}, name.toString());
     auto &recvType = this->builder().getPool().get(e.first.id);
-    if (!isa<BuiltinType>(recvType)) {
-      continue; // FIXME: generic type
+    if (recvType.typeKind() != TypeKind::Builtin) {
+      continue;
     }
-    const auto init = static_cast<bool>(e.second);
-    if (init) {
-      this->builder().addMember(*e.second.handle(), nameInfo, nameInfo.getToken());
-    } else {
-      auto handle = this->builder().refPool().allocNativeMethodHandle(recvType, e.second.index());
-      this->builder().addMember(*handle, nameInfo, nameInfo.getToken());
-    }
+    bool s = this->builder().addBuiltinMethod(
+        recvType, e.second ? e.second.handle()->getIndex() : e.second.index(), nameInfo);
+    (void)s;
+    assert(s);
     offset += 5;
+  }
+  // array type method
+  {
+    auto &type = this->builder().getPool().get(TYPE::StringArray);
+    const auto info = cast<ArrayType>(type).getNativeTypeInfo();
+    for (unsigned int i = 0; i < info.methodSize; i++) {
+      NameInfo nameInfo(Token{offset, 1}, info.getMethodInfo(i).funcName);
+      this->builder().addBuiltinMethod(type, info.getActualMethodIndex(i), nameInfo);
+      offset += 5;
+    }
+  }
+  // map type method
+  {
+    assert(mapType);
+    const auto info = cast<MapType>(*mapType).getNativeTypeInfo();
+    for (unsigned int i = 0; i < info.methodSize; i++) {
+      NameInfo nameInfo(Token{offset, 1}, info.getMethodInfo(i).funcName);
+      this->builder().addBuiltinMethod(*mapType, info.getActualMethodIndex(i), nameInfo);
+      offset += 5;
+    }
   }
 
   // add builtin symbols (also defined in embed)
