@@ -283,10 +283,13 @@ public:
   // for name lookup
   /**
    * lookup handle
+   * if found upper scope variable, set `BOXED` attribute and add to captures
    * @param name
+   * @param checkOnly
+   * only name lookup (not set `BOXED` attribute)
    * @return
    */
-  Result<HandlePtr, NameLookupError> lookup(const std::string &name);
+  Result<HandlePtr, NameLookupError> lookup(const std::string &name, bool checkOnly = false);
 
   Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
                                                  const std::string &fieldName) const;

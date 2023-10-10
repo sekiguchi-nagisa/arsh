@@ -301,7 +301,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
                             this->modIndex, this->modAttr);
 }
 
-Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) {
+Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name, bool checkOnly) {
   constexpr unsigned int funcScopeSize = SYS_LIMIT_FUNC_DEPTH + 1;
   NameScope *funcScopes[funcScopeSize];
   unsigned int funcScopeDepth = 0;
@@ -333,19 +333,22 @@ Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) {
           return Err(NameLookupError::UPVAR_LIMIT);
         }
 
-        auto attr = handle->attr();
-        setFlag(attr, HandleAttr::UPVAR);
-        if (!handle->has(HandleAttr::READ_ONLY)) {
-          auto newAttr = handle->attr();
-          setFlag(newAttr, HandleAttr::BOXED);
-          handle->setAttr(newAttr);
+        if (!checkOnly) {
+          auto attr = handle->attr();
+          setFlag(attr, HandleAttr::UPVAR);
+          if (!handle->has(HandleAttr::READ_ONLY)) {
+            auto newAttr = handle->attr();
+            setFlag(newAttr, HandleAttr::BOXED);
+            handle->setAttr(newAttr);
+          }
+          curFuncScope->captures.push_back(handle);
+          auto upvar = HandlePtr::create(handle->getTypeId(), captureIndex, handle->getKind(), attr,
+                                         handle->getModId());
+          auto ret =
+              curFuncScope->add(std::string(name), std::move(upvar), NameRegisterOp::AS_ALIAS);
+          assert(ret);
+          handle = std::move(ret).take();
         }
-        curFuncScope->captures.push_back(handle);
-        auto upvar = HandlePtr::create(handle->getTypeId(), captureIndex, handle->getKind(), attr,
-                                       handle->getModId());
-        auto ret = curFuncScope->add(std::string(name), std::move(upvar), NameRegisterOp::AS_ALIAS);
-        assert(ret);
-        handle = std::move(ret).take();
       }
     }
     return Ok(std::move(handle));
