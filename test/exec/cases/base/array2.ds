@@ -32,7 +32,8 @@ function rev3($x : Int, $y : Int) : Boolean {
 
 $ex = 0
 try { $c.sortWith($rev3); assert $false; } catch $e { $ex = $e; }
-assert $ex is StackOverflowError
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object during sortWith method'
 
 # stable sort
 function comp1($x : (Int, String), $y : (Int, String)) : Boolean {
@@ -65,6 +66,6 @@ var aa = $(seq 1 100)
 $ex = 34
 try { $aa.sortWith(function(x,y)=> { $aa.add("ws"); $x < $y; }); }
 catch e { $ex = $e;  }
-assert ($ex as InvalidOperationError).message() =~ $/array size has been changed during sortWith method/
+assert ($ex as InvalidOperationError).message() == "cannot modify array object during sortWith method"
 
 true

@@ -62,6 +62,16 @@ assert $DIRSTACK.size() == 255
 ## limit
 assert "$(pushd 2>&1 /home)" == "ydsh: pushd: directory stack size reaches limit (up to 255)"
 
+## iteration invalidation
+$DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))
+var ex = 34 as Any
+try {
+    for a in $DIRSTACK {
+        pushd
+    }
+} catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object (DIRSTACK) during iteration'
+
 ## invalid cwd
 $DIRSTACK.clear()
 let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"

@@ -1,0 +1,155 @@
+
+# modification in for-in
+
+var array = [1,2,3,4,5,6,7]
+var ex = 34 as Any
+
+## set
+$ex = 234
+try {
+    for a in $array {
+        $array[0]
+        $array[0] = $a
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 12
+
+## remove
+$ex = 234
+try {
+    for a in $array {
+        $array.remove(0)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## removeRange
+$ex = 234
+try {
+    for a in $array {
+        $array.removeRange(0, 3)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert $array.size() == 7
+
+## push
+$ex = 234
+try {
+    for a in $array {
+        $array.push($a)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## pop
+$ex = 234
+try {
+    for a in $array {
+        $array.pop()
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## shift
+$ex = 234
+try {
+    for a in $array {
+        $array.shift()
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## unshit
+$ex = 234
+try {
+    for a in $array {
+        $array.unshift($a)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## insert
+$ex = 234
+try {
+    for a in $array {
+        $array.insert(1, $a)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## add
+$ex = 34
+try {
+    for a in $array {
+        $array.add($a)
+    }
+} catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object during iteration'
+
+## addAll
+$ex = 234
+try {
+    for a in $array {
+        $array.addAll($array)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+
+## swap
+$ex = 234
+try {
+    for a in $array {
+        $array.copy()
+        $array.swap($a, 1111)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 105
+
+## reverse
+$ex = 234
+try {
+    for a in $array {
+        $array.peek()
+        $array.reverse()
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 116
+
+## sort
+$ex = 234
+try {
+    for a in $array {
+        $array.slice(0)
+        $array.sort()
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 127
+
+## sortWith
+$ex = 234
+try {
+    for a in $array {
+        $array.join('+')
+        $array.sortWith(function(a, b) => $a + $RANDOM < $b + $RANDOM)
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 138
+
+## clear
+$ex = 234
+try {
+    for a in $array {
+        $array.indexOf(2) + $array.size()
+        $array.lastIndexOf(3)
+        $array.empty() || $array.contains(4)
+        $array.clear()
+    }
+} catch e { $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as Error).lineno() == 151

@@ -123,4 +123,18 @@ try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
 assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == "cannot call method within user-defined completer"
 
+## mood
+var ccc = ['ABCD', ]
+$COMP_HOOK = function(ctx, words, c) => {
+    return $ccc
+}
+$ex = 34
+try {
+    for(var i = 0; $i < 2; $i++) {
+        complete -s -- 'ls ';  # never modify callback return value
+    }
+} catch e { $ex = $e; }
+assert $ex is Int
+assert $COMPREPLY[0] == 'ABCD '
+
 true

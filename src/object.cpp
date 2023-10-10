@@ -418,13 +418,13 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
     raiseError(state, TYPE::RegexMatchError, std::move(errorStr));
   }
   if (out && matchCount > 0) {
-    out->refValues().reserve(matchCount);
+    out->refValues().reserve(matchCount); // not check iterator invalidation
     for (int i = 0; i < matchCount; i++) {
       PCRECapture capture; // NOLINT
       bool set = this->re.getCaptureAt(i, capture);
       auto v = set ? DSValue::createStr(ref.slice(capture.begin, capture.end))
                    : DSValue::createInvalid();
-      out->append(std::move(v));
+      out->append(std::move(v)); // not check iterator invalidation
     }
     ASSERT_ARRAY_SIZE(*out);
   }
@@ -461,6 +461,9 @@ bool ArrayObject::opStr(StrBuilder &builder) const {
 }
 
 bool ArrayObject::append(DSState &state, DSValue &&obj) {
+  if (unlikely(!this->checkIteratorInvalidation(state))) {
+    return false;
+  }
   if (unlikely(this->size() == MAX_SIZE)) {
     raiseError(state, TYPE::OutOfRangeError, "reach Array size limit");
     return false;
@@ -474,7 +477,7 @@ bool ArrayObject::checkIteratorInvalidation(DSState &state, const char *message)
     std::string value = "cannot modify array object";
     StringRef ref = message;
     if (!ref.empty()) {
-      value += "(";
+      value += " (";
       value += ref;
       value += ")";
     }

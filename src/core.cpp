@@ -274,7 +274,7 @@ public:
 
   DSValue finalize() && {
     if (auto &values = typeAs<ArrayObject>(this->reply).refValues(); values.size() > 1) {
-      typeAs<ArrayObject>(this->reply).sortAsStrArray();
+      typeAs<ArrayObject>(this->reply).sortAsStrArray(); // not check iterator invalidation
       auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
         return x.asStrRef() == y.asStrRef();
       });
@@ -521,7 +521,8 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool inse
   // check space insertion
   auto &reply = typeAs<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
   if (!ret || DSState::isInterrupted() || st.hasError()) {
-    reply.refValues().clear(); // if cancelled, clear completion results
+    // if cancelled, force clear completion results (not check iterator invalidation)
+    reply.refValues().clear();
     reply.refValues().shrink_to_fit();
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
@@ -537,7 +538,7 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool inse
       auto ref = reply.getValues()[0].asStrRef();
       auto v = ref.toString();
       v += " ";
-      reply.refValues()[0] = DSValue::createStr(std::move(v));
+      reply.refValues()[0] = DSValue::createStr(std::move(v)); // not check iterator invalidation
     }
     return static_cast<int>(size);
   }
@@ -692,16 +693,10 @@ static bool merge(DSState &state, ArrayObject &arrayObj, DSValue *buf, const DSV
   size_t k = 0;
 
   while (i < mid && j < right) {
-    const size_t oldSize = arrayObj.size();
     auto &x = arrayObj.getValues()[i];
     auto &y = arrayObj.getValues()[j];
     bool ret = !compare(state, y, x, compFunc);
     if (state.hasError()) {
-      return false;
-    }
-    if (oldSize != arrayObj.size()) {
-      raiseError(state, TYPE::InvalidOperationError,
-                 "array size has been changed during sortWith method");
       return false;
     }
     if (ret) {
@@ -741,7 +736,11 @@ static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, DSValue *buf,
 
 bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc) {
   auto buf = std::make_unique<DSValue[]>(arrayObj.size());
-  return mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
+  assert(!arrayObj.locking());
+  arrayObj.lock(ArrayObject::LockType::SORT_WITH);
+  bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
+  arrayObj.unlock();
+  return r;
 }
 
 int xexecve(const char *filePath, char *const *argv, char *const *envp) {

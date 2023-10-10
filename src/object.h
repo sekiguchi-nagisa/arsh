@@ -762,7 +762,9 @@ public:
       : ObjectWithRtti(typeID), values(std::move(values)) {}
 
   void lock(LockType t) {
-    this->lockType = t;
+    if (this->lockCount == 0) {
+      this->lockType = t;
+    }
     this->lockCount++;
   }
 

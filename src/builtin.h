@@ -595,8 +595,9 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
 
-  iterateGrapheme(
-      ref, [&array](const GraphemeScanner::Result &ret) { array.append(DSValue::createStr(ret)); });
+  iterateGrapheme(ref, [&array](const GraphemeScanner::Result &ret) {
+    array.append(DSValue::createStr(ret)); // not check iterator invalidation
+  });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
 }
@@ -620,7 +621,7 @@ YDSH_METHOD string_words(RuntimeContext &ctx) {
         iter += size;
       }
     }
-    array.append(DSValue::createStr(std::move(word)));
+    array.append(DSValue::createStr(std::move(word))); // not check iterator invalidation
   });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
@@ -852,11 +853,11 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
   auto delimStr = LOCAL(1).asStrRef();
 
   if (delimStr.empty()) {
-    ptr.append(LOCAL(0));
+    ptr.append(LOCAL(0)); // not check iterator invalidation
   } else {
     for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
       auto ret = thisStr.find(delimStr, pos);
-      ptr.append(DSValue::createStr(thisStr.slice(pos, ret)));
+      ptr.append(DSValue::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
       pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
     }
   }
@@ -1311,7 +1312,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
   auto v = DSValue::create<ArrayObject>(*type);
   auto &array = typeAs<ArrayObject>(v);
   for (auto &e : getUniqueSignalList()) {
-    array.append(DSValue::createSig(e));
+    array.append(DSValue::createSig(e)); // not check iterator invalidation
   }
   ASSERT_ARRAY_SIZE(array);
   RET(v);
@@ -1438,6 +1439,7 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_set);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   size_t size = obj.getValues().size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
@@ -1450,6 +1452,7 @@ YDSH_METHOD array_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_remove);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   size_t size = obj.getValues().size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
@@ -1463,6 +1466,7 @@ YDSH_METHOD array_removeRange(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_removeRange);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   auto from = LOCAL(1).asInt();
   auto &v = LOCAL(2);
   assert(obj.size() <= ArrayObject::MAX_SIZE);
@@ -1494,6 +1498,9 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
 
 static bool array_insertImpl(DSState &ctx, int64_t index, const DSValue &v) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  if (unlikely(!obj.checkIteratorInvalidation(ctx))) {
+    return false;
+  }
   size_t size = obj.getValues().size();
   if (size == ArrayObject::MAX_SIZE) {
     raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
@@ -1523,18 +1530,24 @@ YDSH_METHOD array_push(RuntimeContext &ctx) {
 //!bind: function pop($this : Array<T0>) : T0
 YDSH_METHOD array_pop(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_pop);
+
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   DSValue v;
   TRY(array_fetch(ctx, v));
-  typeAs<ArrayObject>(LOCAL(0)).refValues().pop_back();
+  obj.refValues().pop_back();
   RET(v);
 }
 
 //!bind: function shift($this : Array<T0>) : T0
 YDSH_METHOD array_shift(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_shift);
+
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   DSValue v;
   TRY(array_fetch(ctx, v, false));
-  auto &values = typeAs<ArrayObject>(LOCAL(0)).refValues();
+  auto &values = obj.refValues();
   values.erase(values.begin());
   RET(v);
 }
@@ -1564,6 +1577,7 @@ YDSH_METHOD array_add(RuntimeContext &ctx) {
 YDSH_METHOD array_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_addAll);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   auto &value = typeAs<ArrayObject>(LOCAL(1));
   if (&obj != &value) {
     size_t valueSize = value.getValues().size();
@@ -1578,6 +1592,7 @@ YDSH_METHOD array_addAll(RuntimeContext &ctx) {
 YDSH_METHOD array_swap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_swap);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, obj.getValues().size()));
   DSValue value = LOCAL(2);
@@ -1607,6 +1622,7 @@ YDSH_METHOD array_copy(RuntimeContext &ctx) {
 YDSH_METHOD array_reverse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_reverse);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   std::reverse(obj.refValues().begin(), obj.refValues().end());
   RET(LOCAL(0));
 }
@@ -1615,6 +1631,7 @@ YDSH_METHOD array_reverse(RuntimeContext &ctx) {
 YDSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   std::sort(obj.refValues().begin(), obj.refValues().end(),
             [](const DSValue &x, const DSValue &y) { return x.compare(y) < 0; });
   RET(LOCAL(0));
@@ -1623,9 +1640,10 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
 //!bind: function sortWith($this : Array<T0>, $comp : Func<Bool, [T0, T0]>) : Array<T0>
 YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
-  auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   auto &comp = LOCAL(1);
-  if (mergeSort(ctx, arrayObj, comp)) {
+  if (mergeSort(ctx, obj, comp)) {
     RET(LOCAL(0));
   } else {
     RET_ERROR;
@@ -1763,6 +1781,7 @@ YDSH_METHOD array_empty(RuntimeContext &ctx) {
 YDSH_METHOD array_clear(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_clear);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
   obj.refValues().clear();
   RET_VOID;
 }
@@ -2269,9 +2288,10 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
-  editor.getKeyBindings().fillActions(
-      [&array](StringRef action) { array.append(DSValue::createStr(action)); });
-  array.sortAsStrArray();
+  editor.getKeyBindings().fillActions([&array](StringRef action) {
+    array.append(DSValue::createStr(action)); // not check iterator invalidation
+  });
+  array.sortAsStrArray(); // not check iterator invalidation
   ASSERT_ARRAY_SIZE(array);
   RET(value);
 }

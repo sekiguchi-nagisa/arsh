@@ -189,6 +189,9 @@ static int printDirStack(const ArrayObject &dirStack, const char *cwd, const Pri
 
 int builtin_dirs(DSState &state, ArrayObject &argvObj) {
   auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
+  if (unlikely(!dirStack.checkIteratorInvalidation(state, "DIRSTACK"))) {
+    return 1;
+  }
   if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
     dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
@@ -228,6 +231,9 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
 
 int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
+  if (unlikely(!dirStack.checkIteratorInvalidation(state, "DIRSTACK"))) {
+    return 1;
+  }
   if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
     dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }

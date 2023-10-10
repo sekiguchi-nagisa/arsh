@@ -50,6 +50,17 @@ assert $PIPESTATUS[0] == 1
 assert popd -1 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
+## iteration invalidation
+$DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))
+var ex = 34 as Any
+try {
+    for a in $DIRSTACK {
+        popd
+    }
+} catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object (DIRSTACK) during iteration'
+
+
 ## truncate DIRSTACK
 $DIRSTACK.clear()
 for(var i = 0; $i < 1000; $i++) {

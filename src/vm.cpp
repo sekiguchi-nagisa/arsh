@@ -135,7 +135,7 @@ DSState::DSState()
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const {
   auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
-  obj.refValues().clear();
+  obj.refValues().clear(); // FIXME: check iterator invalidation
   obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
 
   for (unsigned int i = 0; i < size; i++) {
@@ -251,7 +251,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
 
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) { // set variable
     auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-    auto cmdName = argv.takeFirst();
+    auto cmdName = argv.takeFirst();                              // not check iterator invalidation
     state.stack.setLocal(UDC_PARAM_ARGV + 1, std::move(cmdName)); // 0
   }
   return true;
@@ -847,7 +847,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
     return true;
   }
   auto &udc = typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
-  array.takeFirst();
+  array.takeFirst(); // not check iterator invalidation
   return prepareUserDefinedCommandCall(state, udc, std::move(argvObj), std::move(redirConfig),
                                        CmdCallAttr::SET_VAR);
 }
@@ -886,7 +886,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
     auto pos = name.find('\0');
     assert(pos != StringRef::npos);
     name = name.substr(pos + 1);
-    array.refValues()[0] = DSValue::createStr(name);
+    array.refValues()[0] = DSValue::createStr(name); // not check iterator invalidation
   }
   if (hasFlag(state.runtimeOption, RuntimeOption::XTRACE)) {
     traceCmd(state, array);
@@ -1027,7 +1027,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
       }
 
       auto &values = arrayObj.refValues();
-      values.erase(values.begin(), values.begin() + index);
+      values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
 
       auto resolve =
           CmdResolver(CmdResolver::NO_UDC,
@@ -1463,7 +1463,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   case GlobMatchResult::MATCH:
   case GlobMatchResult::NOMATCH:
     if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
-      argv.sortAsStrArray(oldSize);
+      argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
     } else {
       raiseGlobbingError(state, begin, end, "no matches for glob pattern");
@@ -2337,7 +2337,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.pop();
         auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
         auto &argv = typeAs<ArrayObject>(obj);
-        argv.append(std::move(v));
+        argv.append(std::move(v)); // not check iterator invalidation
         state.stack.push(std::move(obj));
         vmnext;
       }
@@ -2413,7 +2413,8 @@ bool VM::mainLoop(DSState &state) {
         auto obj = state.stack.pop();
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
         if (auto &argvObj = typeAs<ArrayObject>(argv); argvObj.size() == 0) {
-          argvObj.refValues().push_back(DSValue::createStr()); // add dummy
+          // add dummy
+          argvObj.refValues().push_back(DSValue::createStr()); // not check iterator invalidation
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         CHECK_SIGNAL();
@@ -2435,7 +2436,7 @@ bool VM::mainLoop(DSState &state) {
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
         DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 
-        typeAs<ArrayObject>(argv).takeFirst();
+        typeAs<ArrayObject>(argv).takeFirst(); // not check iterator invalidation
         auto &array = typeAs<ArrayObject>(argv);
         if (!array.getValues().empty()) {
           TRY(callCommand(state,

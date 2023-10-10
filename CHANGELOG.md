@@ -16,6 +16,9 @@
 #### Builtin
 
 - ``LineEditor#setColor`` method ignore invalid ansi escape sequence (SGR)
+- **Breaking Change**: check iterator invalidation of Array object
+    - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs``
+    - check object modification in ``sortWith`` method
 
 #### LSP
 

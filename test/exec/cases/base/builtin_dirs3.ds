@@ -43,6 +43,17 @@ assert dirs 2>&1 |
     grep '^ydsh: dirs: cannot resolve current working dir: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
+## iteration invalidation
+$DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))
+var ex = 34 as Any
+try {
+    for a in $DIRSTACK {
+        dirs
+    }
+} catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object (DIRSTACK) during iteration'
+$DIRSTACK.clear()
+
 # pushd
 cd ~/
 assert "$(pushd -0)" == "~"
