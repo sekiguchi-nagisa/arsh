@@ -54,7 +54,7 @@ void ExtraChecker::warnImpl(Token token, const char *kind, const char *fmt, ...)
 void ExtraChecker::checkVarDecl(VarDeclNode &node, bool maybeUnused) {
   if (auto &handle = node.getHandle(); handle && !maybeUnused) {
     if (!handle->has(HandleAttr::GLOBAL) && !handle->has(HandleAttr::UNCAPTURED) &&
-        !handle->is(HandleKind::ENV) && handle.useCount() == 1) {
+        !handle->is(HandleKind::ENV) && handle.useCount() == 1 && node.getVarName() != "_") {
       this->warn<UnusedLocal>(node.getNameInfo().getToken(), node.getNameInfo().getName().c_str());
     }
   }

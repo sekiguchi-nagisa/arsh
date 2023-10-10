@@ -349,7 +349,7 @@ HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, cons
                                 HandleKind kind, HandleAttr attribute) {
   bool shadowing = false;
   if (this->allowWarning && !this->curScope->isGlobal() &&
-      !hasFlag(attribute, HandleAttr::UNCAPTURED)) {
+      !hasFlag(attribute, HandleAttr::UNCAPTURED) && symbolName != "_") {
     if (this->curScope->lookup(symbolName, true)) {
       shadowing = true;
     }

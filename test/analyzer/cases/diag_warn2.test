@@ -71,6 +71,23 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test22.ds",
+        "text": "for _ in [1,2,3] {}"}
+ }
+}
+## do not emit unused-local warning for _ variable
+
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "file:///test/test22.ds"
+#    CHECK:   }
+
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
     "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test3.ds",
         "text": "typedef AAA() { var true = $true; }"}
  }
@@ -97,6 +114,22 @@
 #    CHECK:     "diagnostics": [],
 #    CHECK:     "uri": "file:///test/test4.ds"
 #    CHECK:   }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test5.ds",
+        "text": "var _ = 34; { var _ = ''; $_; }"}
+ }
+}
+## do not emit local variable shadowing warning for _ variable
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "file:///test/test5.ds"
+#    CHECK:   }
+
 
 
 <<<
