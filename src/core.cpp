@@ -38,6 +38,17 @@ const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
   return st.getGlobal(handle->getIndex());
 }
 
+void reassignReplyVar(DSState &st) {
+  if (auto &obj = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::REPLY_VAR));
+      obj.getRefcount() > 1) {
+    auto &type = st.typePool.get(obj.getTypeID());
+    st.setGlobal(BuiltinVarOffset::REPLY_VAR,
+                 DSValue::create<OrderedMapObject>(type, st.getRng().next()));
+  } else { // reuse existing object
+    obj.clear();
+  }
+}
+
 void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
   auto except = ErrorObject::newError(st, st.typePool.get(type),
                                       DSValue::createStr(std::move(message)), status);

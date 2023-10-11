@@ -37,12 +37,9 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
   // clear REPL/reply before read
   errno = 0;
   state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
-  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-  if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
-    return false;
-  }
-  mapObj.clear();
+  reassignReplyVar(state);
 
+  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   const unsigned int size = argvObj.getValues().size();
   unsigned int index = offset;
   const unsigned int varSize = size - index; // if zero, store line to REPLY

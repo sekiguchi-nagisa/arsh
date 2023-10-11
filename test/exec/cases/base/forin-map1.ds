@@ -10,7 +10,7 @@ var ex = 34 as Any
 ## set
 $ex = 34
 try {
-    for $a in $m {
+    for $_ in $m {
         $m[3] = 100
     }
 } catch $e {
@@ -25,7 +25,7 @@ assert $m[3] == 4
 $ex = 34
 try {
     for
-      a in $m {
+      _ in $m {
         $m.put(0, -9)
     }
 } catch
@@ -40,7 +40,7 @@ assert $m[3] == 4
 ## default
 $ex = 34
 try {
-    for $a in $m {
+    for $_ in $m {
         $m.putIfAbsent(900, -900)
     }
 } catch $e {
@@ -55,7 +55,7 @@ assert $m.size() == 2
 ## remove
 $ex = 34
 try {
-    for a in $m {
+    for _ in $m {
         $m.remove(0)
     }
 } catch $e {
@@ -70,7 +70,7 @@ assert $m.size() == 2
 ## swap
 $ex = 34
 try {
-    for $a in $m {
+    for _ in $m {
         $m.swap(0, -1000)
     }
 } catch $e {
@@ -85,7 +85,7 @@ assert $m.size() == 2
 ## clear
 $ex = 34
 try {
-    for $a in $m {
+    for $_ in $m {
         $m.clear()
     }
 } catch $e {
@@ -96,7 +96,7 @@ assert $m[0] == 1
 assert $m[3] == 4
 assert $m.size() == 2
 
-## modified in builtin commands (printf/read/shctl info)
+## modified in builtin commands (printf/read/shctl info), but assign new object
 $ex = 34
 try {
     $reply['aa'] = 'frefer'
@@ -104,9 +104,8 @@ try {
 } catch e {
     $ex = $e
 }
-assert $reply.size() == 1
-assert ($ex as InvalidOperationError).message() == 
-    'cannot modify map object (reply) during iteration'
+assert $reply.size() > 1
+assert $ex is Int
 
 $ex = 34
 try {
@@ -115,9 +114,8 @@ try {
 } catch e {
     $ex = $e
 }
-assert $reply.size() == 2
-assert ($ex as InvalidOperationError).message() == 
-    'cannot modify map object (reply) during iteration'
+assert $reply.size() == 1
+assert $ex is Int
 
 $ex = 34
 try {
@@ -126,16 +124,15 @@ try {
 } catch e {
     $ex = $e
 }
-assert $reply.size() == 3
-assert ($ex as InvalidOperationError).message() == 
-    'cannot modify map object (reply) during iteration'
+assert $reply.size() == 1
+assert $ex is Int
 
 
 ## nexted iter
 var ret : [String]
 var m2 = ['a': 100, 'b': 200]
 
-for $a in $m2 {
+for $_ in $m2 {
     for $b in $m2 {
         $ret.add($b._0)
     }
@@ -156,7 +153,7 @@ $ex = 34
 try {
     $m2.put('c', 999)
     assert $m2.size() == 2
-    for $a in $m2 {
+    for $_ in $m2 {
         for $b in $m2 {
             $ret.add($b._0)
         }

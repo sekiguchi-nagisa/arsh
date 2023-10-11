@@ -50,6 +50,8 @@ struct VMHook {
 
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
 
+void reassignReplyVar(DSState &st);
+
 /**
  * raise Error Object and update exit status
  * @param st

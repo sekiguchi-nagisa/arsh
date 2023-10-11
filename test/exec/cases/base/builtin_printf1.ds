@@ -54,7 +54,7 @@ printf -v var 'hello'
 assert $reply['var'] == 'hello'
 printf -v varr 'world'
 assert $reply['varr'] == 'world'
-assert $reply['var'] == 'hello'
+assert $reply.size() == 1
 
 ## print with escape sequence
 assert "$(printf 'hello\tworld\n\\n!!')" == $'hello\tworld\n\\n!!'

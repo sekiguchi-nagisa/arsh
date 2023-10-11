@@ -135,7 +135,7 @@ DSState::DSState()
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
   if (auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
-      obj.locking()) {
+      obj.getRefcount() > 1) {
     auto &type = this->typePool.get(obj.getTypeID());
     this->setGlobal(BuiltinVarOffset::PIPESTATUS, DSValue::create<ArrayObject>(type));
   } else { // reuse existing object

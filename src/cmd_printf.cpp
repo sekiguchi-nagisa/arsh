@@ -1073,11 +1073,8 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   }
 #endif
 
-  auto &reply = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   if (setVar) {
-    if (unlikely(!reply.checkIteratorInvalidation(state, true))) {
-      return 1;
-    }
+    reassignReplyVar(state);
   }
 
   auto begin = argvObj.getValues().begin() + (index + 1);
@@ -1097,6 +1094,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   } while (begin != end);
 
   if (setVar && !state.hasError()) {
+    auto &reply = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
     auto old = reply.put(state, DSValue::createStr(target),
                          DSValue::createStr(std::move(printer).takeBuf()));
     if (unlikely(!old)) {

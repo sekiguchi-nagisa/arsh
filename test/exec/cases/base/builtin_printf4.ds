@@ -61,16 +61,21 @@ $reply.clear()
 assert "$(printf '%(\t\n)T')" == "\t\n"  # no interpret escape
 
 printf -v now1 '%()T'    # current time
+var now1 = $reply['now1']
 printf -v now2 '%()T' -1    # current time
+var now2 = $reply['now2']
 printf -v startup1 '%()T' -2 # startup time (always indicate same time)
+var startup1 = $reply['startup1']
 sleep 1
 printf -v startup2 '%()T' -2
+var startup2 = $reply['startup2']
 printf -v now3 '%()T' -1
+var now3 = $reply['now3']
 
-assert $reply['startup1'] == $reply['startup2']
-assert $reply['now1'] == $reply['now2']
-assert $reply['now1'] != $reply['now3']
-assert $reply['startup1'] != $reply['now3']
+assert $startup1 == $startup2
+assert $now1 == $now2
+assert $now1 != $now3
+assert $startup1 != $now3
 
 ## conversion specifier
 let epoch = "2147483647"

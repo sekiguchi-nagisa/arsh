@@ -297,12 +297,6 @@ static int setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, Str
 }
 
 static int showInfo(DSState &state, const ArrayObject &argvObj) {
-  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-  if (unlikely(!mapObj.checkIteratorInvalidation(state, true))) {
-    return 1;
-  }
-  mapObj.clear();
-
   const char *table[] = {
 #define GEN_STR(E, S) S,
       EACH_SYSCONFIG(GEN_STR)
@@ -317,6 +311,8 @@ static int showInfo(DSState &state, const ArrayObject &argvObj) {
     }
   }
 
+  reassignReplyVar(state);
+  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   int errNum = 0;
   for (auto &e : table) {
     auto *ptr = state.sysConfig.lookup(e);
