@@ -133,16 +133,22 @@ DSState::DSState()
   }
 }
 
-void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const {
-  auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
-  obj.refValues().clear(); // FIXME: check iterator invalidation
-  obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
+void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
+  if (auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
+      obj.locking()) {
+    auto &type = this->typePool.get(obj.getTypeID());
+    this->setGlobal(BuiltinVarOffset::PIPESTATUS, DSValue::create<ArrayObject>(type));
+  } else { // reuse existing object
+    obj.refValues().clear();
+    obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
+  }
 
+  auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
   for (unsigned int i = 0; i < size; i++) {
-    obj.append(DSValue::createInt(procs[i].exitStatus()));
+    obj.append(DSValue::createInt(procs[i].exitStatus())); // not check iterator invalidation
   }
   if (mergeExitStatus) {
-    obj.append(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
+    obj.append(this->getGlobal(BuiltinVarOffset::EXIT_STATUS)); // not check iterator invalidation
   }
   ASSERT_ARRAY_SIZE(obj);
 }

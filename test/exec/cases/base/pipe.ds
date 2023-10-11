@@ -37,3 +37,18 @@ cat /dev/urandom | {}    # not show signal message in last-pipe
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 141
 assert $PIPESTATUS[1] == 0
+
+# iterate PIPESTATUS
+assert $PIPESTATUS.size() == 2
+var count = 0
+for _ in $PIPESTATUS {
+    exit 56 | exit 67 | exit 89   # update PIPESTATUS over iteration
+    $count++
+}
+assert $PIPESTATUS.size() == 3  # if iterator invalidation, allocate new object
+assert $PIPESTATUS[0] == 56
+assert $PIPESTATUS[1] == 67
+assert $PIPESTATUS[2] == 89
+assert $count == 2
+
+true

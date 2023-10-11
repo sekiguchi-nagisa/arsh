@@ -219,7 +219,7 @@ public:
     this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
   }
 
-  void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const;
+  void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
 
   bool isRootShell() const { return this->subshellLevel == 0; }
 
