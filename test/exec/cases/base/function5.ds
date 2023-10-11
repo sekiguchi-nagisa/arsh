@@ -10,7 +10,7 @@ assert $f == $f
 assert $f != $g  # subtype
 assert $g != $h
 
-## anoymous function with capture
+## anonymous function with capture
 function get(i : Int) : (Int) -> Int {
     return function(a) => {
         $a + $i
@@ -25,7 +25,7 @@ assert $c1 != $c2  # closures are always indicate different address
 assert $c1 != $c3
 assert $c3 != $c2
 
-## anoymous function without capture
+## anonymous function without capture
 function get2() : (Int) -> Int {
     return function(a) => $a * $a
 }

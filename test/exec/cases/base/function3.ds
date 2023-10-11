@@ -99,6 +99,16 @@ assert $nest is (Int) -> (String) -> String
 var r = $nest(1)("pp")
 assert $r == 'pp2_2': "$r"
 
+## local func with capture (type-alias)
+{
+    typedef AAA = Int
+    function(a : Int) => {
+        assert $a is AAA
+        typedef AAA = String
+        assert !($a is AAA)
+    }
+}
+
 ## local func in user-defined command
 udc() {
     var aa = 'udc'
