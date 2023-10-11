@@ -216,18 +216,16 @@ void DSState_setShellName(DSState *st, const char *shellName) {
 int DSState_setArguments(DSState *st, char *const *args) {
   GUARD_NULL(st, 0);
 
-  // clear previous arguments
-  auto &argsObj = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-  argsObj.refValues().clear();
-
+  auto value = DSValue::create<ArrayObject>(st->typePool.get(TYPE::StringArray));
   if (args) {
+    auto &argsObj = typeAs<ArrayObject>(value);
     for (unsigned int i = 0; args[i] != nullptr; i++) {
       if (!argsObj.append(*st, DSValue::createStr(args[i]))) {
-        argsObj.refValues().clear();
         return -1;
       }
     }
   }
+  st->setGlobal(BuiltinVarOffset::ARGS, std::move(value));
   return 0;
 }
 

@@ -19,6 +19,11 @@
 - **Breaking Change**: check iterator invalidation of Array object
     - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs``
     - check object modification in ``sortWith`` method
+    - assign new object to ``PIPESTATUS`` if detect invalidation
+
+#### API
+
+- ``DSState_setArguments`` api always assign new object
 
 #### LSP
 

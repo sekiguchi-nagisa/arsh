@@ -340,6 +340,31 @@ TEST_F(APITest, arg) {
     assert $9 == 'i' && $9 == $@[8]
     assert $@[9] == '100'
     assert $@[10] == 'hey'
+    var old = $@  # save old arguments
+)";
+  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  ASSERT_EQ(0, s);
+  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(0, e->chars);
+  ASSERT_EQ(0, e->lineNum);
+  e = newError();
+
+  // clear arguments, but still maintain old (allocate new object)
+  DSState_setArguments(this->state, nullptr);
+  src = R"(
+    assert $old.size() == 11
+    assert $old[0] == 'aa'
+    assert $old[1] == 'bb'
+    assert $old[2] == 'ccc'
+    assert $old[3] == 'ddd'
+    assert $old[4] == 'eee'
+    assert $old[5] == 'f'
+    assert $old[6] == 'ggg'
+    assert $old[7] == 'hhhh'
+    assert $old[8] == 'i'
+    assert $old[9] == '100'
+    assert $old[10] == 'hey'
+    assert $@.empty()
 )";
   s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
