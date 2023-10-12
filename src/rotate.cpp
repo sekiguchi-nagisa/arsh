@@ -25,21 +25,24 @@ namespace ydsh {
 HistRotator::HistRotator(ObjPtr<ArrayObject> history) : history(std::move(history)) {
   if (this->history) {
     this->truncateUntilLimit(true);
-    this->history->append(DSValue::createStr());
+    this->history->append(DSValue::createStr()); // not check iterator invalidation
+    this->history->lock(ArrayObject::LockType::HISTORY);
   }
 }
 
 void HistRotator::revertAll() {
   if (this->history) {
     if (this->history->size() > 0) {
-      this->history->refValues().pop_back();
+      this->history->refValues().pop_back(); // not check iterator invalidation
     }
     this->truncateUntilLimit();
     for (auto &e : this->oldEntries) { // revert modified entry
       if (e.first < this->history->size()) {
-        this->history->refValues()[e.first] = std::move(e.second);
+        this->history->refValues()[e.first] =
+            std::move(e.second); // not check iterator invalidation
       }
     }
+    this->history->unlock();
     this->history = nullptr;
   }
 }
@@ -72,7 +75,7 @@ void HistRotator::truncateUntilLimit(bool beforeAppend) {
   const unsigned int offset = beforeAppend ? 1 : 0;
   if (this->history->size() + offset > this->getMaxSize()) {
     unsigned int delSize = this->history->size() + offset - this->getMaxSize();
-    auto &values = this->history->refValues();
+    auto &values = this->history->refValues(); // not check iterator invalidation
     values.erase(values.begin(), values.begin() + delSize);
     assert(values.size() == this->getMaxSize() - offset);
   }
@@ -83,7 +86,8 @@ bool HistRotator::save(ssize_t index, StringRef curBuf) {
     auto actualIndex = static_cast<unsigned int>(index);
     auto org = this->history->getValues()[actualIndex];
     this->oldEntries.emplace(actualIndex, std::move(org));
-    this->history->refValues()[actualIndex] = DSValue::createStr(curBuf);
+    this->history->refValues()[actualIndex] =
+        DSValue::createStr(curBuf); // not check iterator invalidation
     return true;
   }
   return false;

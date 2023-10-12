@@ -490,6 +490,9 @@ bool ArrayObject::checkIteratorInvalidation(DSState &state, const char *message)
     case LockType::SORT_WITH:
       value += " during sortWith method";
       break;
+    case LockType::HISTORY:
+      value += " during line editing";
+      break;
     }
     raiseError(state, TYPE::InvalidOperationError, std::move(value));
     return false;

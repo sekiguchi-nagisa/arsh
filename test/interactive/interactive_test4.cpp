@@ -266,6 +266,40 @@ TEST_F(InteractiveTest, lineEditorHistory) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+// test history modification
+TEST_F(InteractiveTest, lineEditorInvalid) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var hist : [String]"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory($hist)"));
+
+  // iterator invalidation
+  const char *err = R"([runtime error]
+InvalidOperationError: cannot modify array object during iteration
+    from (stdin):3 '<toplevel>()'
+)";
+  this->sendLine("for a in $hist { $LINE_EDIT.readLine(); }");
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(PROMPT + "for a in $hist { $LINE_EDIT.readLine(); }\n\n" + PROMPT, err));
+
+  // modify history
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m, s) => $hist.add($s))"));
+  this->sendLine("$LINE_EDIT.readLine('> ')");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.readLine('> ')\n> "));
+  this->send("$T\t");
+  err = R"([runtime error]
+InvalidOperationError: cannot modify array object during line editing
+    from (stdin):4 'function ()'
+    from (stdin):5 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $T\n" + PROMPT, err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 // test completion
 TEST_F(InteractiveTest, lineEditorComp1) {
   this->invoke("--quiet", "--norc");

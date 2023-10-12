@@ -741,6 +741,7 @@ public:
     NONE,
     ITER,
     SORT_WITH,
+    HISTORY,
   };
 
 private:

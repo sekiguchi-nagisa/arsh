@@ -1122,6 +1122,10 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
 ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
+  if (unlikely(this->history && !this->history->checkIteratorInvalidation(state))) {
+    errno = EAGAIN;
+    return -1;
+  }
   HistRotator histRotate(this->history);
 
   preparePrompt(l);

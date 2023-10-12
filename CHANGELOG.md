@@ -19,6 +19,7 @@
 - **Breaking Change**: check iterator invalidation of Array object
     - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs``
     - check object modification in ``sortWith`` method
+    - check object modification in ``LineEditor#readLine`` method
 - **Breaking Change**: assign new object to the following builtin variables at internal modification
     - ``reply``, ``PIPESTATUS``
 
