@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <misc/buffer.hpp>
+#include <misc/ring_buffer.hpp>
 
 using namespace ydsh;
 
@@ -402,6 +403,52 @@ TEST(BufferTest, case17) {
   ASSERT_EQ(6, b.size());
   ASSERT_EQ('h', b[0]);
   ASSERT_EQ('\0', b[5]);
+}
+
+TEST(RingBuffer, base1) {
+  RingBuffer<std::unique_ptr<std::string>> buffer;
+  ASSERT_TRUE(buffer.empty());
+  ASSERT_EQ(0, buffer.size());
+  ASSERT_EQ(1, buffer.capacity());
+  buffer.push_back(std::make_unique<std::string>("hello"));
+  ASSERT_EQ(1, buffer.size());
+  ASSERT_EQ("hello", *buffer.back());
+  ASSERT_EQ("hello", *buffer.front());
+
+  buffer.push_back(std::make_unique<std::string>("AAA"));
+  ASSERT_EQ(1, buffer.size());
+  ASSERT_EQ("AAA", *buffer.back());
+  ASSERT_EQ("AAA", *buffer.front());
+  buffer.pop_front();
+  ASSERT_TRUE(buffer.empty());
+
+  buffer.push_back(std::make_unique<std::string>("BBB"));
+  ASSERT_EQ("BBB", *buffer.back());
+  ASSERT_EQ("BBB", *buffer.front());
+  buffer.pop_back();
+  ASSERT_TRUE(buffer.empty());
+}
+
+TEST(RingBuffer, base2) {
+  RingBuffer<unsigned int> buffer;
+  ASSERT_TRUE(buffer.empty());
+  ASSERT_EQ(0, buffer.size());
+  ASSERT_EQ(1, buffer.capacity());
+  buffer.push_back(12);
+  ASSERT_EQ(1, buffer.size());
+  ASSERT_EQ(12, buffer.back());
+  ASSERT_EQ(12, buffer.front());
+}
+
+TEST(RingBuffer, pop) {
+  RingBuffer<std::unique_ptr<std::string>> buffer(2);
+  ASSERT_EQ(3, buffer.capacity());
+  for (unsigned int i = 0; i < 100; i++) {
+    buffer.push_back(std::make_unique<std::string>(std::to_string(i)));
+  }
+  ASSERT_EQ(3, buffer.size());
+  ASSERT_EQ("99", *buffer.back());
+  ASSERT_EQ("97", *buffer.front());
 }
 
 int main(int argc, char **argv) {
