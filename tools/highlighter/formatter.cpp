@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cfloat>
-
 #include <misc/format.hpp>
 
 #include "formatter.h"

@@ -23,6 +23,6 @@ CMD cat /proc/1/cgroup && \
     cp -r ./ /home/tux/project_root_dir_for_cpack_rpm_build && \
     cd /home/tux/project_root_dir_for_cpack_rpm_build && \
     sh ./tools/scripts/build_rpm.sh clang++ && \
-    sudo mkdir $DIR/build && \
-    sudo cp ./build-rpm/*.rpm $DIR/build/ && \
-    ls $DIR/build
+    sudo mkdir "$DIR/build" && \
+    sudo cp ./build-rpm/*.rpm "$DIR/build/" && \
+    ls "$DIR/build"
