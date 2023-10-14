@@ -169,6 +169,29 @@ public:
     return this->deleteFromCursor(wordBytes, capture);
   }
 
+  bool deleteLineToCursor(bool wholeLine, std::string *capture) {
+    auto [pos, len] = this->findCurLineInterval(wholeLine);
+    this->cursor = pos + len;
+    return this->deleteToCursor(len, capture);
+  }
+
+  bool deleteLineFromCursor(std::string *capture) {
+    if (this->isSingleLine()) { // single-line
+      return this->deleteFromCursor(this->getUsedSize() - this->getCursor(), capture);
+    } else { // multi-line
+      unsigned int index = this->findCurNewlineIndex();
+      unsigned int newCursor;
+      if (index == this->newlinePosList.size()) {
+        newCursor = this->getUsedSize();
+      } else {
+        newCursor = this->newlinePosList[index];
+      }
+      unsigned int delLen = newCursor - this->getCursor();
+      this->cursor = newCursor;
+      return this->deleteToCursor(delLen, capture);
+    }
+  }
+
   void deleteAll() {
     this->cursor = 0;
     this->usedSize = 0;

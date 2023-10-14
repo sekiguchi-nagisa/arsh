@@ -364,36 +364,22 @@ static void checkProperty(struct linenoiseState &l) {
 
 /* =========================== Line editing ================================= */
 
-static void linenoiseEditDeleteTo(LineBuffer &buf, KillRing *killRing, bool wholeLine = false) {
-  auto ret = buf.findCurLineInterval(wholeLine);
-  buf.setCursor(ret.pos + ret.len);
+static bool linenoiseEditDeleteTo(LineBuffer &buf, KillRing &killRing) {
   std::string out;
-  if (buf.deleteToCursor(ret.len, &out) && killRing) {
-    killRing->add(std::move(out));
+  bool r = buf.deleteLineToCursor(false, &out);
+  if (r) {
+    killRing.add(std::move(out));
   }
+  return r;
 }
 
-static void linenoiseEditDeleteFrom(LineBuffer &buf, KillRing &killRing) {
-  if (buf.isSingleLine()) { // single-line
-    std::string out;
-    if (buf.deleteFromCursor(buf.getUsedSize() - buf.getCursor(), &out)) {
-      killRing.add(std::move(out));
-    }
-  } else { // multi-line
-    unsigned int index = buf.findCurNewlineIndex();
-    unsigned int newCursor;
-    if (index == buf.getNewlinePosList().size()) {
-      newCursor = buf.getUsedSize();
-    } else {
-      newCursor = buf.getNewlinePosList()[index];
-    }
-    unsigned int delLen = newCursor - buf.getCursor();
-    std::string out;
-    buf.setCursor(newCursor);
-    if (buf.deleteToCursor(delLen, &out)) {
-      killRing.add(std::move(out));
-    }
+static bool linenoiseEditDeleteFrom(LineBuffer &buf, KillRing &killRing) {
+  std::string out;
+  bool r = buf.deleteLineFromCursor(&out);
+  if (r) {
+    killRing.add(std::move(out));
   }
+  return r;
 }
 
 /* Delete the previous word, maintaining the cursor at the start of the
@@ -762,7 +748,7 @@ static bool rotateHistory(HistRotator &histRotate, LineBuffer &buf, HistRotator:
     return false;
   }
   if (multiline) {
-    linenoiseEditDeleteTo(buf, nullptr, true);
+    buf.deleteLineToCursor(true, nullptr);
   } else {
     buf.deleteAll();
   }
@@ -981,12 +967,14 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     }
     case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
-      linenoiseEditDeleteTo(l.buf, &this->killRing);
-      this->refreshLine(l);
+      if (linenoiseEditDeleteTo(l.buf, this->killRing)) {
+        this->refreshLine(l);
+      }
       break;
     case EditActionType::KILL_LINE: /* delete from current to end of line */
-      linenoiseEditDeleteFrom(l.buf, this->killRing);
-      this->refreshLine(l);
+      if (linenoiseEditDeleteFrom(l.buf, this->killRing)) {
+        this->refreshLine(l);
+      }
       break;
     case EditActionType::BEGINNING_OF_LINE: /* go to the start of the line */
       if (l.buf.moveCursorToStartOfLine()) {
@@ -1415,7 +1403,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
     break;
   case CustomActionType::REPLACE_LINE:
   case CustomActionType::HIST_SELCT:
-    linenoiseEditDeleteTo(l.buf, nullptr, true);
+    l.buf.deleteLineToCursor(true, nullptr);
     break;
   case CustomActionType::INSERT:
   case CustomActionType::KILL_RING_SELECT:
