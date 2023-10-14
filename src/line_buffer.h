@@ -31,6 +31,8 @@ private:
   FlexBuffer<unsigned int> newlinePosList;
 
 public:
+  NON_COPYABLE(LineBuffer);
+
   LineBuffer(char *buf, size_t bufSize) : buf(buf), bufSize(bufSize - 1) {
     this->buf[0] = '\0'; // always null terminated
   }
@@ -48,6 +50,10 @@ public:
   unsigned int getCursor() const { return this->cursor; }
 
   void setCursor(unsigned int v) { this->cursor = v; }
+
+  void incCursor(unsigned int delta) { this->cursor += delta; }
+
+  void decCursor(unsigned int delta) { this->cursor -= delta; }
 
   unsigned int getUsedSize() const { return this->usedSize; }
 
@@ -94,6 +100,18 @@ public:
    */
   unsigned int findCurNewlineIndex() const;
 
+  /**
+   * get current line
+   * @param wholeLine
+   * if true, get whole current line
+   * if false, line until current cursor
+   * @return
+   */
+  StringRef getCurLine(bool wholeLine) const {
+    auto interval = this->findCurLineInterval(wholeLine);
+    return {this->buf + interval.pos, interval.len};
+  }
+
   // edit op
 
   /**
@@ -131,10 +149,100 @@ public:
    */
   bool deleteFromCursor(size_t size, std::string *capture = nullptr);
 
+  bool deletePrevChar(std::string *capture) {
+    size_t charBytes = this->prevCharBytes();
+    return this->deleteToCursor(charBytes, capture);
+  }
+
+  bool deleteNextChar(std::string *capture) {
+    size_t charBytes = this->nextCharBytes();
+    return this->deleteFromCursor(charBytes, capture);
+  }
+
+  bool deletePrevWord(std::string *capture) {
+    size_t wordBytes = this->prevWordBytes();
+    return this->deleteToCursor(wordBytes, capture);
+  }
+
+  bool deleteNextWord(std::string *capture) {
+    size_t wordBytes = this->nextWordBytes();
+    return this->deleteFromCursor(wordBytes, capture);
+  }
+
   void deleteAll() {
     this->cursor = 0;
     this->usedSize = 0;
     this->buf[0] = '\0';
+  }
+
+  bool moveCursorToLeftByChar() {
+    if (this->getCursor() > 0) {
+      this->cursor -= this->prevCharBytes();
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToRightByChar() {
+    if (this->getCursor() != this->getUsedSize()) {
+      this->cursor += this->nextCharBytes();
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToLeftByWord() {
+    if (this->getCursor() > 0) {
+      this->cursor -= this->prevWordBytes();
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToRightByWord() {
+    if (this->getCursor() != this->getUsedSize()) {
+      this->cursor += this->nextWordBytes();
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToStartOfLine() {
+    unsigned int newCursor;
+    if (this->isSingleLine()) { // single-line
+      newCursor = 0;
+    } else { // multi-line
+      unsigned int index = this->findCurNewlineIndex();
+      if (index == 0) {
+        newCursor = 0;
+      } else {
+        newCursor = this->newlinePosList[index - 1] + 1;
+      }
+    }
+    if (this->getCursor() != newCursor) {
+      this->cursor = newCursor;
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToEndOfLine() {
+    unsigned int newCursor;
+    if (this->isSingleLine()) {
+      newCursor = this->getUsedSize();
+    } else { // multi-line
+      unsigned int index = this->findCurNewlineIndex();
+      if (index == this->newlinePosList.size()) {
+        newCursor = this->getUsedSize();
+      } else {
+        newCursor = this->newlinePosList[index];
+      }
+    }
+    if (this->getCursor() != newCursor) {
+      this->cursor = newCursor;
+      return true;
+    }
+    return false;
   }
 };
 

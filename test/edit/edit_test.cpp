@@ -568,14 +568,9 @@ struct LineBufferTest : public ::testing::Test {
       unsigned int index = buffer.findCurNewlineIndex();
       ASSERT_EQ(e.expectIndex, index);
 
-      // line
-      auto interval = buffer.findCurLineInterval(false);
-      auto actualLine = buffer.get().substr(interval.pos, interval.len).toString();
+      auto actualLine = buffer.getCurLine(false).toString();
       ASSERT_EQ(e.line, actualLine);
-
-      // whole line
-      interval = buffer.findCurLineInterval(true);
-      actualLine = buffer.get().substr(interval.pos, interval.len).toString();
+      actualLine = buffer.getCurLine(true).toString();
       ASSERT_EQ(e.wholeLine, actualLine);
     }
   }
@@ -646,7 +641,7 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, retSize);
   retSize = buffer.prevCharBytes();
   ASSERT_EQ(3, retSize);
-  buffer.setCursor(buffer.getCursor() - retSize);
+  buffer.decCursor(retSize);
   ASSERT_EQ("あい", buffer.getToCursor().toString());
   ASSERT_EQ("う", buffer.getFromCursor().toString());
   retSize = buffer.nextCharBytes();
@@ -665,7 +660,7 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, retSize);
   retSize = buffer.prevWordBytes();
   ASSERT_EQ(3, retSize);
-  buffer.setCursor(buffer.getCursor() - retSize);
+  buffer.decCursor(retSize);
   ASSERT_EQ("あ111", buffer.getToCursor().toString());
   ASSERT_EQ("い", buffer.getFromCursor().toString());
   retSize = buffer.prevWordBytes();
