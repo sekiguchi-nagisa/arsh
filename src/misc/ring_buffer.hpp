@@ -47,7 +47,8 @@ public:
       : frontIndex_(o.frontIndex_), backIndex_(o.backIndex_), storage_(std::move(o.storage_)) {
     o.frontIndex_ = 0;
     o.backIndex_ = 0;
-    o.storage_ = Storage();
+    o.storage_.size = 0;
+    o.storage_.ptr = nullptr;
   }
 
   ~RingBuffer() {
@@ -117,6 +118,8 @@ private:
   }
 
   T *values() { return this->storage_.ptr; }
+
+  const T *values() const { return this->storage_.ptr; }
 
   size_t allocSize() const { return this->storage_.size; }
 

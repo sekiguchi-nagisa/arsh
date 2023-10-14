@@ -369,7 +369,7 @@ static void linenoiseEditDeleteTo(LineBuffer &buf, KillRing *killRing, bool whol
   buf.setCursor(ret.pos + ret.len);
   std::string out;
   if (buf.deleteToCursor(ret.len, &out) && killRing) {
-    killRing->add(out);
+    killRing->add(std::move(out));
   }
 }
 
@@ -377,7 +377,7 @@ static void linenoiseEditDeleteFrom(LineBuffer &buf, KillRing &killRing) {
   if (buf.isSingleLine()) { // single-line
     std::string out;
     if (buf.deleteFromCursor(buf.getUsedSize() - buf.getCursor(), &out)) {
-      killRing.add(out);
+      killRing.add(std::move(out));
     }
   } else { // multi-line
     unsigned int index = buf.findCurNewlineIndex();
@@ -391,7 +391,7 @@ static void linenoiseEditDeleteFrom(LineBuffer &buf, KillRing &killRing) {
     std::string out;
     buf.setCursor(newCursor);
     if (buf.deleteToCursor(delLen, &out)) {
-      killRing.add(out);
+      killRing.add(std::move(out));
     }
   }
 }
@@ -402,7 +402,7 @@ static bool linenoiseEditDeletePrevWord(LineBuffer &buf, KillRing &killRing) {
   std::string out;
   bool r = buf.deletePrevWord(&out);
   if (r) {
-    killRing.add(out);
+    killRing.add(std::move(out));
   }
   return r;
 }
@@ -411,7 +411,7 @@ static bool linenoiseEditDeleteNextWord(LineBuffer &buf, KillRing &killRing) {
   std::string out;
   bool r = buf.deleteNextWord(&out);
   if (r) {
-    killRing.add(out);
+    killRing.add(std::move(out));
   }
   return r;
 }
@@ -1395,7 +1395,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
       return true; // do nothing
     }
     line = "";
-    optArg = this->killRing.get();
+    optArg = this->killRing.toObj(state.typePool);
     break;
   }
 

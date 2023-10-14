@@ -17,6 +17,7 @@
 #ifndef YDSH_ROTATE_H
 #define YDSH_ROTATE_H
 
+#include "misc/ring_buffer.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -71,35 +72,42 @@ private:
   static_assert(INIT_SIZE <= SYS_LIMIT_KILL_RING_MAX);
   static_assert(SYS_LIMIT_KILL_RING_MAX <= UINT32_MAX);
 
-  ObjPtr<ArrayObject> obj; // may be null
+  RingBuffer<std::string> buf;
   unsigned int rotateIndex{0};
-  unsigned int maxSize{INIT_SIZE};
 
 public:
-  void setMaxSize(unsigned int v) {
-    this->maxSize = std::min(v, static_cast<unsigned int>(SYS_LIMIT_KILL_RING_MAX));
+  KillRing() : buf(INIT_SIZE) {}
+
+  const auto &get() const { return this->buf; }
+
+  void add(std::string &&value) {
+    if (!value.empty()) {
+      this->buf.push_back(std::move(value));
+    }
   }
 
-  unsigned int getMaxSize() const { return this->maxSize; }
+  void reset() { this->rotateIndex = this->buf.size() - 1; }
 
-  const auto &get() const { return this->obj; }
+  explicit operator bool() const { return !this->buf.empty(); }
 
-  explicit operator bool() const { return static_cast<bool>(this->get()) && this->obj->size() > 0; }
-
-  void add(StringRef ref);
-
-  void reset() { this->rotateIndex = this->obj->size() - 1; }
-
-  StringRef getCurrent() const { return this->obj->getValues()[this->rotateIndex].asStrRef(); }
+  const std::string &getCurrent() const { return this->buf[this->rotateIndex]; }
 
   void rotate() {
-    const unsigned int size = this->obj->size();
+    const unsigned int size = this->buf.size();
     if (this->rotateIndex > 0 && this->rotateIndex < size) {
       this->rotateIndex--;
     } else {
       this->rotateIndex = size - 1;
     }
   }
+
+  /**
+   * re-allocate internal ring buffer
+   * @param afterSize
+   */
+  void expand(unsigned int afterSize);
+
+  ObjPtr<ArrayObject> toObj(const TypePool &pool) const;
 };
 
 } // namespace ydsh

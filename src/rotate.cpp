@@ -15,6 +15,7 @@
  */
 
 #include "rotate.h"
+#include "type_pool.h"
 
 namespace ydsh {
 
@@ -97,22 +98,25 @@ bool HistRotator::save(ssize_t index, StringRef curBuf) {
 // ##     KillRing     ##
 // ######################
 
-void KillRing::add(StringRef ref) {
-  if (ref.empty()) {
-    return;
+void KillRing::expand(unsigned int afterSize) {
+  RingBuffer<std::string> newBuf(afterSize);
+  while (!this->buf.empty()) {
+    newBuf.push_back(std::move(this->buf.front()));
+    this->buf.pop_front();
   }
-  if (!this->obj) {
-    auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                              std::vector<DSValue>());
-    this->obj = toObjPtr<ArrayObject>(value);
+  this->buf = std::move(newBuf);
+  if (*this) {
+    this->reset();
   }
-  if (this->obj->size() + 1 > this->getMaxSize()) {
-    unsigned int delSize = this->obj->size() + 1 - this->getMaxSize();
-    auto &values = this->obj->refValues();
-    values.erase(values.begin(), values.begin() + delSize);
-    assert(values.size() == this->getMaxSize() - 1);
+}
+
+ObjPtr<ArrayObject> KillRing::toObj(const TypePool &pool) const {
+  auto obj = toObjPtr<ArrayObject>(DSValue::create<ArrayObject>(pool.get(TYPE::StringArray)));
+  unsigned int size = this->buf.size();
+  for (unsigned int i = 0; i < size; i++) {
+    obj->append(DSValue::createStr(this->buf[i])); // not check iterator invalidation
   }
-  this->obj->append(DSValue::createStr(ref));
+  return obj;
 }
 
 } // namespace ydsh

@@ -210,74 +210,66 @@ TEST_F(KeyBindingTest, caret2) {
 
 TEST(KillRingTest, base) {
   KillRing killRing;
-  killRing.setMaxSize(4);
+  killRing.expand(3);
   ASSERT_FALSE(killRing);
   killRing.add("AAA");
   ASSERT_TRUE(killRing);
-  ASSERT_EQ(1, killRing.get()->size());
-  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ(1, killRing.get().size());
+  ASSERT_EQ("AAA", killRing.get()[0]);
 
   // ignore empty string
   killRing.add("");
-  ASSERT_EQ(1, killRing.get()->size());
-  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
+  ASSERT_EQ(1, killRing.get().size());
+  ASSERT_EQ("AAA", killRing.get()[0]);
 
   killRing.add("BBB");
-  ASSERT_EQ(2, killRing.get()->size());
-  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
-  ASSERT_EQ("BBB", killRing.get()->getValues()[1].asStrRef());
+  ASSERT_EQ(2, killRing.get().size());
+  ASSERT_EQ("AAA", killRing.get()[0]);
+  ASSERT_EQ("BBB", killRing.get()[1]);
+
   killRing.add("CCC");
-  killRing.add("DDD");
-  ASSERT_EQ(4, killRing.get()->size());
-  ASSERT_EQ("AAA", killRing.get()->getValues()[0].asStrRef());
-  ASSERT_EQ("BBB", killRing.get()->getValues()[1].asStrRef());
-  ASSERT_EQ("CCC", killRing.get()->getValues()[2].asStrRef());
-  ASSERT_EQ("DDD", killRing.get()->getValues()[3].asStrRef());
+  ASSERT_EQ(3, killRing.get().size());
+  ASSERT_EQ("AAA", killRing.get()[0]);
+  ASSERT_EQ("BBB", killRing.get()[1]);
+  ASSERT_EQ("CCC", killRing.get()[2]);
 
   // truncate old item
+  killRing.add("DDD");
+  ASSERT_EQ(3, killRing.get().size());
+  ASSERT_EQ("BBB", killRing.get()[0]);
+  ASSERT_EQ("CCC", killRing.get()[1]);
+  ASSERT_EQ("DDD", killRing.get()[2]);
+
   killRing.add("EEE");
-  ASSERT_EQ(4, killRing.get()->size());
-  ASSERT_EQ("BBB", killRing.get()->getValues()[0].asStrRef());
-  ASSERT_EQ("CCC", killRing.get()->getValues()[1].asStrRef());
-  ASSERT_EQ("DDD", killRing.get()->getValues()[2].asStrRef());
-  ASSERT_EQ("EEE", killRing.get()->getValues()[3].asStrRef());
+  ASSERT_EQ(3, killRing.get().size());
+  ASSERT_EQ("CCC", killRing.get()[0]);
+  ASSERT_EQ("DDD", killRing.get()[1]);
+  ASSERT_EQ("EEE", killRing.get()[2]);
 
   killRing.add("FFF");
-  ASSERT_EQ(4, killRing.get()->size());
-  ASSERT_EQ("CCC", killRing.get()->getValues()[0].asStrRef());
-  ASSERT_EQ("DDD", killRing.get()->getValues()[1].asStrRef());
-  ASSERT_EQ("EEE", killRing.get()->getValues()[2].asStrRef());
-  ASSERT_EQ("FFF", killRing.get()->getValues()[3].asStrRef());
+  ASSERT_EQ(3, killRing.get().size());
+  ASSERT_EQ("DDD", killRing.get()[0]);
+  ASSERT_EQ("EEE", killRing.get()[1]);
+  ASSERT_EQ("FFF", killRing.get()[2]);
 }
 
 TEST(KillRingTest, pop) {
   KillRing killRing;
-  killRing.setMaxSize(4);
+  killRing.expand(3);
   ASSERT_FALSE(killRing);
   killRing.add("AAA");
   killRing.add("BBB");
   killRing.add("CCC");
-  killRing.add("DDD");
   ASSERT_TRUE(killRing);
-  ASSERT_EQ(4, killRing.get()->size());
+  ASSERT_EQ(3, killRing.get().size());
   killRing.reset();
-  ASSERT_EQ("DDD", killRing.getCurrent().toString());
+  ASSERT_EQ("CCC", killRing.getCurrent());
   killRing.rotate();
-  ASSERT_EQ("CCC", killRing.getCurrent().toString());
+  ASSERT_EQ("BBB", killRing.getCurrent());
   killRing.rotate();
-  ASSERT_EQ("BBB", killRing.getCurrent().toString());
+  ASSERT_EQ("AAA", killRing.getCurrent());
   killRing.rotate();
-  ASSERT_EQ("AAA", killRing.getCurrent().toString());
-  killRing.rotate();
-  ASSERT_EQ("DDD", killRing.getCurrent().toString());
-
-  killRing.get()->refValues().erase(killRing.get()->refValues().begin());
-  killRing.get()->refValues().erase(killRing.get()->refValues().begin());
-
-  killRing.rotate();
-  ASSERT_EQ("DDD", killRing.getCurrent().toString());
-  killRing.rotate();
-  ASSERT_EQ("CCC", killRing.getCurrent().toString());
+  ASSERT_EQ("CCC", killRing.getCurrent());
 }
 
 TEST(HistRotatorTest, base) {
