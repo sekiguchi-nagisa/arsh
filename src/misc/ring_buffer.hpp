@@ -24,23 +24,29 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <typename T>
 class RingBuffer {
 private:
+  struct Storage : protected std::allocator<T> {
+    size_t size{0};
+    T *ptr{nullptr};
+
+    explicit Storage(size_t n) : size(n), ptr(this->allocate(n)) {}
+
+    ~Storage() { this->deallocate(this->ptr, this->size); }
+  };
+
   unsigned int frontIndex_{0};
   unsigned int backIndex_{0};
-  unsigned int allocSize_{0};
-  std::unique_ptr<T[]> values_;
+  Storage storage_;
 
 public:
-  explicit RingBuffer(unsigned int cap)
-      : allocSize_(adjustCap(cap)), values_(std::make_unique<T[]>(this->allocSize_)) {}
+  explicit RingBuffer(unsigned int cap) : storage_(adjustCap(cap)) {}
 
   RingBuffer() : RingBuffer(0) {}
 
   RingBuffer(RingBuffer &&o) noexcept
-      : frontIndex_(o.frontIndex_), backIndex_(o.backIndex_), allocSize_(o.allocSize_),
-        values_(std::move(o.values_)) {
+      : frontIndex_(o.frontIndex_), backIndex_(o.backIndex_), storage_(std::move(o.storage_)) {
     o.frontIndex_ = 0;
     o.backIndex_ = 0;
-    o.allocSize_ = 0;
+    o.storage_ = Storage();
   }
 
   ~RingBuffer() {
@@ -57,41 +63,48 @@ public:
     return *this;
   }
 
-  unsigned int capacity() const { return this->allocSize_ - 1; }
+  unsigned int capacity() const { return this->allocSize() - 1; }
 
   unsigned int size() const { return this->backIndex_ - this->frontIndex_; }
 
   bool empty() const { return this->size() == 0; }
 
   void push_back(T &&v) {
-    this->values_[this->actualIndex(this->backIndex_)] = std::move(v);
+    new (&this->values()[this->actualIndex(this->backIndex_)]) T(std::move(v));
     this->backIndex_++;
-    if (this->size() == this->allocSize_) {
+    if (this->size() == this->allocSize()) {
       this->pop_front();
     }
   }
 
   void pop_back() {
     this->backIndex_--;
-    this->values_[this->actualIndex(this->backIndex_)].~T();
+    this->values()[this->actualIndex(this->backIndex_)].~T();
   }
 
-  T &back() { return this->values_[this->actualIndex(this->backIndex_ - 1)]; }
+  T &back() { return this->values()[this->actualIndex(this->backIndex_ - 1)]; }
 
-  const T &back() const { return this->values_[this->actualIndex(this->backIndex_ - 1)]; }
+  const T &back() const { return this->values()[this->actualIndex(this->backIndex_ - 1)]; }
 
-  T &front() { return this->values_[this->actualIndex(this->frontIndex_)]; }
+  T &front() { return this->values()[this->actualIndex(this->frontIndex_)]; }
 
-  const T &front() const { return this->values_[this->actualIndex(this->frontIndex_)]; }
+  const T &front() const { return this->values()[this->actualIndex(this->frontIndex_)]; }
 
   void pop_front() {
-    this->values_[this->actualIndex(this->frontIndex_)].~T();
+    this->values()[this->actualIndex(this->frontIndex_)].~T();
     this->frontIndex_++;
+  }
+
+  T &operator[](unsigned int index) {
+    return this->values()[this->actualIndex(this->frontIndex_ + index)];
+  }
+
+  const T &operator[](unsigned int index) const {
+    return this->values()[this->actualIndex(this->frontIndex_ + index)];
   }
 
 private:
   static unsigned int adjustCap(unsigned int cap) {
-    assert(cap < UINT32_MAX);
     if (cap == 0) {
       cap = 1;
     }
@@ -99,8 +112,12 @@ private:
     for (; cap; count++) {
       cap = cap >> 1;
     }
-    return 1 << count;
+    return 1 << std::min(count, 31u);
   }
+
+  T *values() { return this->storage_.ptr; }
+
+  size_t allocSize() const { return this->storage_.size; }
 
   unsigned int actualIndex(unsigned int index) const { return index & this->capacity(); }
 };

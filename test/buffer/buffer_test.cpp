@@ -449,6 +449,10 @@ TEST(RingBuffer, pop) {
   ASSERT_EQ(3, buffer.size());
   ASSERT_EQ("99", *buffer.back());
   ASSERT_EQ("97", *buffer.front());
+
+  ASSERT_EQ("97", *buffer[0]);
+  ASSERT_EQ("98", *buffer[1]);
+  ASSERT_EQ("99", *buffer[2]);
 }
 
 int main(int argc, char **argv) {
