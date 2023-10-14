@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_RING_BUFFER_HPP
 #define MISC_LIB_RING_BUFFER_HPP
 
+#include <algorithm>
 #include <memory>
 
 BEGIN_MISC_LIB_NAMESPACE_DECL

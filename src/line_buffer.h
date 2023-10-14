@@ -18,7 +18,6 @@
 #define YDSH_LINE_BUFFER_H
 
 #include "misc/buffer.hpp"
-#include "misc/ring_buffer.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
