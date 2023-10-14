@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 #include <keycode.h>
+#include <line_buffer.h>
 #include <line_renderer.h>
 #include <rotate.h>
 
@@ -550,6 +551,223 @@ TEST(ColorEscapeTest, invalid) {
   ASSERT_EQ(2, values.size());
   ASSERT_EQ(values.find(HighlightTokenClass::LINENO_)->second, "\x1b[38;2;149;149;149m");
   ASSERT_EQ(values.find(HighlightTokenClass::BACKGROUND_)->second, "\x1b[38;2;212;212;212m");
+}
+
+struct LineBufferTest : public ::testing::Test {
+  struct LineIntervalSet {
+    unsigned int cursor;
+    unsigned int expectIndex;
+    std::string line;
+    std::string wholeLine;
+  };
+
+  static void checkLineInterval(const std::vector<LineIntervalSet> &testSets, LineBuffer &buffer) {
+    for (auto &e : testSets) {
+      SCOPED_TRACE("cursor: " + std::to_string(e.cursor));
+      buffer.setCursor(e.cursor);
+      unsigned int index = buffer.findCurNewlineIndex();
+      ASSERT_EQ(e.expectIndex, index);
+
+      // line
+      auto interval = buffer.findCurLineInterval(false);
+      auto actualLine = buffer.get().substr(interval.pos, interval.len).toString();
+      ASSERT_EQ(e.line, actualLine);
+
+      // whole line
+      interval = buffer.findCurLineInterval(true);
+      actualLine = buffer.get().substr(interval.pos, interval.len).toString();
+      ASSERT_EQ(e.wholeLine, actualLine);
+    }
+  }
+};
+
+TEST_F(LineBufferTest, base) {
+  std::string storage;
+  storage.resize(16, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ(0, buffer.getUsedSize());
+  ASSERT_EQ(0, buffer.getCursor());
+  ASSERT_EQ("", buffer.get().toString());
+
+  // insert
+  ASSERT_TRUE(buffer.insertToCursor("1234"));
+  ASSERT_EQ(4, buffer.getUsedSize());
+  ASSERT_EQ(4, buffer.getCursor());
+  ASSERT_EQ("1234", buffer.get().toString());
+  ASSERT_EQ("1234", buffer.getToCursor().toString());
+  ASSERT_EQ("", buffer.getFromCursor().toString());
+
+  // insert large data
+  ASSERT_FALSE(buffer.insertToCursor("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQqqqq"));
+  ASSERT_EQ(4, buffer.getUsedSize());
+  ASSERT_EQ(4, buffer.getCursor());
+
+  // move cursor
+  buffer.setCursor(1);
+  ASSERT_EQ(1, buffer.getCursor());
+  ASSERT_EQ("1234", buffer.get().toString());
+  ASSERT_EQ("1", buffer.getToCursor().toString());
+  ASSERT_EQ("234", buffer.getFromCursor().toString());
+
+  // delete right
+  ASSERT_TRUE(buffer.deleteFromCursor(1));
+  ASSERT_EQ(3, buffer.getUsedSize());
+  ASSERT_EQ(1, buffer.getCursor());
+  ASSERT_EQ("134", buffer.get().toString());
+  ASSERT_EQ("1", buffer.getToCursor().toString());
+  ASSERT_EQ("34", buffer.getFromCursor().toString());
+
+  // delete left
+  ASSERT_TRUE(buffer.deleteToCursor(1));
+  ASSERT_EQ(2, buffer.getUsedSize());
+  ASSERT_EQ(0, buffer.getCursor());
+  ASSERT_EQ("34", buffer.get().toString());
+  ASSERT_EQ("", buffer.getToCursor().toString());
+  ASSERT_EQ("34", buffer.getFromCursor().toString());
+
+  // delete fail
+  ASSERT_FALSE(buffer.deleteToCursor(0));
+  ASSERT_FALSE(buffer.deleteToCursor(4));
+  ASSERT_FALSE(buffer.deleteFromCursor(0));
+  ASSERT_FALSE(buffer.deleteFromCursor(4));
+}
+
+TEST_F(LineBufferTest, charOp) {
+  std::string storage;
+  storage.resize(16, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+
+  ASSERT_TRUE(buffer.insertToCursor("あいう"));
+  ASSERT_EQ(9, buffer.getUsedSize());
+  ASSERT_EQ(9, buffer.getCursor());
+
+  // char op
+  auto retSize = buffer.nextCharBytes();
+  ASSERT_EQ(0, retSize);
+  retSize = buffer.prevCharBytes();
+  ASSERT_EQ(3, retSize);
+  buffer.setCursor(buffer.getCursor() - retSize);
+  ASSERT_EQ("あい", buffer.getToCursor().toString());
+  ASSERT_EQ("う", buffer.getFromCursor().toString());
+  retSize = buffer.nextCharBytes();
+  ASSERT_EQ(3, retSize);
+  buffer.setCursor(0);
+  ASSERT_EQ(0, buffer.prevCharBytes());
+
+  buffer.deleteAll();
+  ASSERT_EQ(0, buffer.getUsedSize());
+  ASSERT_EQ(0, buffer.getCursor());
+  ASSERT_TRUE(buffer.insertToCursor("あ111い"));
+  ASSERT_EQ(9, buffer.getCursor());
+
+  // word op
+  retSize = buffer.nextWordBytes();
+  ASSERT_EQ(0, retSize);
+  retSize = buffer.prevWordBytes();
+  ASSERT_EQ(3, retSize);
+  buffer.setCursor(buffer.getCursor() - retSize);
+  ASSERT_EQ("あ111", buffer.getToCursor().toString());
+  ASSERT_EQ("い", buffer.getFromCursor().toString());
+  retSize = buffer.prevWordBytes();
+  ASSERT_EQ(3, retSize);
+  retSize = buffer.nextWordBytes();
+  ASSERT_EQ(3, retSize);
+  buffer.setCursor(0);
+  ASSERT_EQ(0, buffer.prevWordBytes());
+}
+
+TEST_F(LineBufferTest, deleteOut) {
+  std::string storage;
+  storage.resize(16, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("あいう"));
+  buffer.setCursor(3);
+  ASSERT_EQ("あ", buffer.getToCursor().toString());
+  ASSERT_EQ("いう", buffer.getFromCursor().toString());
+
+  std::string out;
+  ASSERT_TRUE(buffer.deleteToCursor(3, &out));
+  ASSERT_EQ("あ", out);
+  ASSERT_EQ("いう", buffer.getFromCursor().toString());
+  ASSERT_TRUE(buffer.deleteFromCursor(3, &out));
+  ASSERT_EQ("い", out);
+  ASSERT_EQ("う", buffer.getFromCursor().toString());
+}
+
+TEST_F(LineBufferTest, newline1) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123")); // not end with newline
+  ASSERT_EQ(3, buffer.getCursor());
+  ASSERT_EQ(3, buffer.getUsedSize());
+  buffer.syncNewlinePosList();
+  ASSERT_TRUE(buffer.isSingleLine());
+  auto &newlinePosList = buffer.getNewlinePosList();
+  ASSERT_EQ(0, newlinePosList.size());
+
+  unsigned int r = buffer.findCurNewlineIndex();
+  ASSERT_EQ(0, r);
+
+  std::vector<LineIntervalSet> table = {
+      {0, 0, "", "123"},
+      {1, 0, "1", "123"},
+      {2, 0, "12", "123"},
+      {3, 0, "123", "123"},
+  };
+  ASSERT_NO_FATAL_FAILURE(checkLineInterval(table, buffer));
+}
+
+TEST_F(LineBufferTest, newline2) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123\n456\n789")); // not end with newline
+  ASSERT_EQ(11, buffer.getCursor());
+  ASSERT_EQ(11, buffer.getUsedSize());
+  buffer.syncNewlinePosList();
+  ASSERT_FALSE(buffer.isSingleLine());
+  auto &newlinePosList = buffer.getNewlinePosList();
+  ASSERT_EQ(2, newlinePosList.size());
+  ASSERT_EQ(3, newlinePosList[0]);
+  ASSERT_EQ(7, newlinePosList[1]);
+
+  unsigned int r = buffer.findCurNewlineIndex();
+  ASSERT_EQ(2, r);
+
+  std::vector<LineIntervalSet> table = {
+      {0, 0, "", "123"}, {1, 0, "1", "123"}, {2, 0, "12", "123"},  {3, 0, "123", "123"},
+      {4, 1, "", "456"}, {5, 1, "4", "456"}, {6, 1, "45", "456"},  {7, 1, "456", "456"},
+      {8, 2, "", "789"}, {9, 2, "7", "789"}, {10, 2, "78", "789"}, {11, 2, "789", "789"},
+  };
+  ASSERT_NO_FATAL_FAILURE(checkLineInterval(table, buffer));
+}
+
+TEST_F(LineBufferTest, newline3) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123\n456\n789\n")); // end with newline
+  ASSERT_EQ(12, buffer.getCursor());
+  ASSERT_EQ(12, buffer.getUsedSize());
+  buffer.syncNewlinePosList();
+  ASSERT_FALSE(buffer.isSingleLine());
+  auto &newlinePosList = buffer.getNewlinePosList();
+  ASSERT_EQ(3, newlinePosList.size());
+  ASSERT_EQ(3, newlinePosList[0]);
+  ASSERT_EQ(7, newlinePosList[1]);
+  ASSERT_EQ(11, newlinePosList[2]);
+
+  unsigned int r = buffer.findCurNewlineIndex();
+  ASSERT_EQ(3, r);
+
+  std::vector<LineIntervalSet> table = {
+      {0, 0, "", "123"}, {1, 0, "1", "123"}, {2, 0, "12", "123"},  {3, 0, "123", "123"},
+      {4, 1, "", "456"}, {5, 1, "4", "456"}, {6, 1, "45", "456"},  {7, 1, "456", "456"},
+      {8, 2, "", "789"}, {9, 2, "7", "789"}, {10, 2, "78", "789"}, {11, 2, "789", "789"},
+      {12, 3, "", ""},
+  };
+  ASSERT_NO_FATAL_FAILURE(checkLineInterval(table, buffer));
 }
 
 int main(int argc, char **argv) {
