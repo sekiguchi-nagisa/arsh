@@ -25,7 +25,7 @@ namespace ydsh {
 
 class LineBuffer {
 public:
-  enum class ChangeOp : unsigned int {
+  enum class ChangeOp : unsigned char {
     INSERT,      // old_cursor + delta => cursor
     DELETE_TO,   // old_cursor - delta => cursor
     DELETE_FROM, // no cursor changed

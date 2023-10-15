@@ -191,7 +191,6 @@ std::string KeyBindings::toCaret(StringRef value) {
 #define CTRL_W_ "\x17"
 #define CTRL_Y_ "\x19"
 #define CTRL_Z_ "\x1A"
-#define CTRL___ "\x1F"
 #define ESC_ "\x1b"
 #define BACKSPACE_ "\x7F"
 
@@ -223,13 +222,13 @@ KeyBindings::KeyBindings() {
       {CTRL_V_, EditActionType::INSERT_KEYCODE},
       {CTRL_Y_, EditActionType::YANK},
       {CTRL_Z_, EditActionType::UNDO},
-      {CTRL___, EditActionType::REDO},
 
       // escape sequence
       {ESC_ "b", EditActionType::BACKWARD_WORD},
       {ESC_ "f", EditActionType::FORWARD_WORD},
       {ESC_ "d", EditActionType::KILL_WORD},
       {ESC_ "y", EditActionType::YANK_POP},
+      {ESC_ "/", EditActionType::REDO},
       {ESC_ ENTER_, EditActionType::NEWLINE},
       {ESC_ "<", EditActionType::BEGINNING_OF_BUF},
       {ESC_ ">", EditActionType::END_OF_BUF},

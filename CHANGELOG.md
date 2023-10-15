@@ -4,6 +4,12 @@
 
 ### Added
 
+#### Builtin
+
+- ``LineEditor`` support undo/redo op
+    - ctrl-z: undo
+    - atl-/: redo
+
 #### LSP
 
 - support the following request
