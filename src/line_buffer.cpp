@@ -101,7 +101,7 @@ unsigned int LineBuffer::findCurNewlineIndex() const {
   return iter - this->newlinePosList.begin();
 }
 
-bool LineBuffer::insertToCursor(const char *data, size_t size) {
+bool LineBuffer::insertToCursor(const char *data, size_t size, bool trackChange) {
   if (this->usedSize + size <= this->bufSize) {
     if (this->usedSize == this->cursor) { // insert to last
       memcpy(&this->buf[this->cursor], data, size);
@@ -116,39 +116,110 @@ bool LineBuffer::insertToCursor(const char *data, size_t size) {
       this->usedSize += size;
       this->buf[this->usedSize] = '\0';
     }
+    if (trackChange) {
+      this->trackChange(ChangeOp::INSERT, std::string(data, size));
+    }
     return true;
   }
   return false;
 }
 
-bool LineBuffer::deleteToCursor(size_t size, std::string *capture) {
+bool LineBuffer::deleteToCursor(size_t size, std::string *capture, bool trackChange) {
   if (this->cursor > 0 && this->usedSize > 0 && size > 0 && size <= this->cursor) {
+    std::string delta;
+    if (trackChange || capture) {
+      delta = std::string(this->buf + this->cursor - size, size);
+    }
     if (capture) {
-      *capture = std::string(this->buf + this->cursor - size, size);
+      *capture = delta;
     }
     memmove(this->buf + this->cursor - size, this->buf + this->cursor,
             this->usedSize - this->cursor);
     this->cursor -= size;
     this->usedSize -= size;
     this->buf[this->usedSize] = '\0';
+    if (trackChange) {
+      this->trackChange(ChangeOp::DELETE_TO, std::move(delta));
+    }
     return true;
   }
   return false;
 }
 
-bool LineBuffer::deleteFromCursor(size_t size, std::string *capture) {
+bool LineBuffer::deleteFromCursor(size_t size, std::string *capture, bool trackChange) {
   if (this->usedSize > 0 && this->cursor < this->usedSize && size > 0 &&
       size <= this->usedSize - this->cursor) {
+    std::string delta;
+    if (trackChange || capture) {
+      delta = std::string(this->buf + this->cursor, size);
+    }
     if (capture) {
-      *capture = std::string(this->buf + this->cursor, size);
+      *capture = delta;
     }
     memmove(this->buf + this->cursor, this->buf + this->cursor + size,
             this->usedSize - this->cursor - size);
     this->usedSize -= size;
     this->buf[this->usedSize] = '\0';
+    if (trackChange) {
+      this->trackChange(ChangeOp::DELETE_FROM, std::move(delta));
+    }
     return true;
   }
   return false;
+}
+
+bool LineBuffer::undo() {
+  if (this->changeIndex == 0) {
+    return false;
+  }
+  this->changeIndex--;
+  const auto &change = this->changes[this->changeIndex];
+  this->cursor = change.cursor;
+  switch (change.type) {
+  case ChangeOp::INSERT:
+    this->deleteToCursor(change.delta.size(), nullptr, false);
+    break;
+  case ChangeOp::DELETE_TO:
+  case ChangeOp::DELETE_FROM:
+    this->insertToCursor(change.delta.c_str(), change.delta.size(), false);
+    if (change.type == ChangeOp::DELETE_FROM) {
+      this->cursor = change.cursor;
+    }
+    break;
+  }
+  return true;
+}
+
+bool LineBuffer::redo() {
+  if (this->changeIndex == this->changes.size()) {
+    return false;
+  }
+  assert(this->changeIndex < this->changes.size());
+  const auto &change = this->changes[this->changeIndex];
+  this->changeIndex++;
+  switch (change.type) {
+  case ChangeOp::INSERT:
+    this->cursor = change.cursor - change.delta.size();
+    this->insertToCursor(change.delta.c_str(), change.delta.size(), false);
+    break;
+  case ChangeOp::DELETE_TO:
+    this->cursor = change.cursor + change.delta.size();
+    this->deleteToCursor(change.delta.size(), nullptr, false);
+    break;
+  case ChangeOp::DELETE_FROM:
+    this->cursor = change.cursor;
+    this->deleteFromCursor(change.delta.size(), nullptr, false);
+    break;
+  }
+  return true;
+}
+
+void LineBuffer::trackChange(ChangeOp op, std::string &&delta) {
+  while (this->changeIndex < this->changes.size()) {
+    this->changes.pop_back();
+  }
+  this->changes.emplace_back(op, this->cursor, std::move(delta)); // FIXME: merge changes
+  this->changeIndex = this->changes.size();
 }
 
 } // namespace ydsh

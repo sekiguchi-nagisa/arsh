@@ -18,22 +18,46 @@
 #define YDSH_LINE_BUFFER_H
 
 #include "misc/buffer.hpp"
+#include "misc/ring_buffer.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
 
 class LineBuffer {
+public:
+  enum class ChangeOp : unsigned int {
+    INSERT,      // old_cursor + delta => cursor
+    DELETE_TO,   // old_cursor - delta => cursor
+    DELETE_FROM, // no cursor changed
+  };
+
+  struct Change {
+    ChangeOp type;
+
+    /**
+     * cursor after changed
+     */
+    unsigned int cursor;
+
+    std::string delta;
+
+    Change(ChangeOp op, unsigned int cursor, std::string &&delta)
+        : type(op), cursor(cursor), delta(std::move(delta)) {}
+  };
+
 private:
   char *buf;            // user specified buffer. not delete it
   const size_t bufSize; // reserve sentinel null. so actual size is bufSize + 1
   unsigned int cursor{0};
   unsigned int usedSize{0};
   FlexBuffer<unsigned int> newlinePosList;
+  RingBuffer<Change> changes;
+  unsigned int changeIndex{0};
 
 public:
   NON_COPYABLE(LineBuffer);
 
-  LineBuffer(char *buf, size_t bufSize) : buf(buf), bufSize(bufSize - 1) {
+  LineBuffer(char *buf, size_t bufSize) : buf(buf), bufSize(bufSize - 1), changes(10) {
     this->buf[0] = '\0'; // always null terminated
   }
 
@@ -123,7 +147,9 @@ public:
    * if insertion succeed, return true
    * otherwise, return false
    */
-  bool insertToCursor(const char *data, size_t size);
+  bool insertToCursor(const char *data, size_t size) {
+    return this->insertToCursor(data, size, true);
+  }
 
   bool insertToCursor(StringRef ref) { return this->insertToCursor(ref.data(), ref.size()); }
 
@@ -136,7 +162,9 @@ public:
    * @return
    * if deletion succeed, return true
    */
-  bool deleteToCursor(size_t size, std::string *capture = nullptr);
+  bool deleteToCursor(size_t size, std::string *capture = nullptr) {
+    return this->deleteToCursor(size, capture, true);
+  }
 
   /**
    * delete bytes at the right of cursor
@@ -147,7 +175,9 @@ public:
    * @return
    * if deletion succeed, return true
    */
-  bool deleteFromCursor(size_t size, std::string *capture = nullptr);
+  bool deleteFromCursor(size_t size, std::string *capture = nullptr) {
+    return this->deleteFromCursor(size, capture, true);
+  }
 
   bool deletePrevChar(std::string *capture) {
     size_t charBytes = this->prevCharBytes();
@@ -176,20 +206,11 @@ public:
   }
 
   bool deleteLineFromCursor(std::string *capture) {
-    if (this->isSingleLine()) { // single-line
-      return this->deleteFromCursor(this->getUsedSize() - this->getCursor(), capture);
-    } else { // multi-line
-      unsigned int index = this->findCurNewlineIndex();
-      unsigned int newCursor;
-      if (index == this->newlinePosList.size()) {
-        newCursor = this->getUsedSize();
-      } else {
-        newCursor = this->newlinePosList[index];
-      }
-      unsigned int delLen = newCursor - this->getCursor();
-      this->cursor = newCursor;
-      return this->deleteToCursor(delLen, capture);
-    }
+    const unsigned int oldCursor = this->cursor;
+    this->moveCursorToEndOfLine();
+    const unsigned int newCursor = this->cursor;
+    this->cursor = oldCursor;
+    return this->deleteFromCursor(newCursor - oldCursor, capture);
   }
 
   void deleteAll() {
@@ -267,6 +288,39 @@ public:
     }
     return false;
   }
+
+  bool undo();
+
+  bool redo();
+
+private:
+  bool insertToCursor(const char *data, size_t size, bool trackChange);
+
+  /**
+   * delete bytes at the left of cursor
+   * after deletion, decrement cursor by size
+   * @param size
+   * @param capture
+   * may be null
+   * @param trackChange
+   * @return
+   * if deletion succeed, return true
+   */
+  bool deleteToCursor(size_t size, std::string *capture, bool trackChange);
+
+  /**
+   * delete bytes at the right of cursor
+   * after deletion, not decrement cursor (but still decrement usedSize by size)
+   * @param size
+   * @param capture
+   * may be null
+   * @param trackChange
+   * @return
+   * if deletion succeed, return true
+   */
+  bool deleteFromCursor(size_t size, std::string *capture, bool trackChange);
+
+  void trackChange(ChangeOp op, std::string &&delta);
 };
 
 } // namespace ydsh

@@ -1059,6 +1059,16 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
         }
       }
       break;
+    case EditActionType::UNDO:
+      if (l.buf.undo()) {
+        this->refreshLine(l);
+      }
+      break;
+    case EditActionType::REDO:
+      if (l.buf.redo()) {
+        this->refreshLine(l);
+      }
+      break;
     case EditActionType::INSERT_KEYCODE:
       if (reader.fetch() > 0) {
         auto &buf = reader.get();

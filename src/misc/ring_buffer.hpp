@@ -71,13 +71,16 @@ public:
 
   bool empty() const { return this->size() == 0; }
 
-  void push_back(T &&v) {
-    new (&this->values()[this->actualIndex(this->backIndex_)]) T(std::move(v));
+  template <typename... Args>
+  void emplace_back(Args &&...args) {
+    new (&this->values()[this->actualIndex(this->backIndex_)]) T(std::forward<Args>(args)...);
     this->backIndex_++;
     if (this->size() == this->allocSize()) {
       this->pop_front();
     }
   }
+
+  void push_back(T &&v) { this->emplace_back(std::move(v)); }
 
   void pop_back() {
     this->backIndex_--;

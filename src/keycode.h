@@ -99,6 +99,8 @@ public:
   OP(NEWLINE, "newline")                           /* ALT-ENTER */                                 \
   OP(YANK, "yank")                                 /* CTRL-Y */                                    \
   OP(YANK_POP, "yank-pop")                         /* ALT-Y */                                     \
+  OP(UNDO, "undo")                                 /* CTRL-Z */                                    \
+  OP(REDO, "redo")                                 /* CTRL-_ */                                    \
   OP(INSERT_KEYCODE, "insert-keycode")             /* CTRL-V */                                    \
   OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */                                 \
   OP(CUSTOM, "%custom")                            /* for custom action */

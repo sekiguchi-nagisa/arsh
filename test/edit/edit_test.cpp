@@ -757,6 +757,98 @@ TEST_F(LineBufferTest, newline3) {
   ASSERT_NO_FATAL_FAILURE(checkLineInterval(table, buffer));
 }
 
+TEST_F(LineBufferTest, undoInsert) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_FALSE(buffer.undo());
+
+  // insert
+  ASSERT_TRUE(buffer.insertToCursor("123\n456\n"));
+  ASSERT_EQ(8, buffer.getCursor());
+  buffer.setCursor(3);
+  ASSERT_TRUE(buffer.insertToCursor("789"));
+  ASSERT_EQ("123789\n456\n", buffer.get().toString());
+  ASSERT_EQ(6, buffer.getCursor());
+  buffer.setCursor(0);
+
+  // undo
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123\n456\n", buffer.get().toString());
+  ASSERT_EQ(3, buffer.getCursor());
+  buffer.setCursor(2);
+
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_EQ(0, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.undo());
+
+  // redo
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123\n456\n", buffer.get().toString());
+  ASSERT_EQ(8, buffer.getCursor());
+  buffer.setCursor(5);
+
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123789\n456\n", buffer.get().toString());
+  ASSERT_EQ(6, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.redo());
+}
+
+TEST_F(LineBufferTest, undoDelete) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+
+  ASSERT_TRUE(buffer.insertToCursor("123\n456\n789"));
+  buffer.setCursor(4);
+  ASSERT_TRUE(buffer.deleteFromCursor(3));
+  ASSERT_EQ("123\n\n789", buffer.get().toString());
+  ASSERT_EQ(4, buffer.getCursor());
+  buffer.setCursor(6);
+  ASSERT_TRUE(buffer.deleteToCursor(2));
+  ASSERT_EQ("123\n89", buffer.get().toString());
+  ASSERT_EQ(4, buffer.getCursor());
+  buffer.setCursor(0);
+
+  // undo
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123\n\n789", buffer.get().toString());
+  ASSERT_EQ(6, buffer.getCursor());
+  buffer.setCursor(8);
+
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123\n456\n789", buffer.get().toString());
+  ASSERT_EQ(4, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_EQ(0, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.undo());
+
+  // redo
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123\n456\n789", buffer.get().toString());
+  ASSERT_EQ(11, buffer.getCursor());
+  buffer.setCursor(1);
+
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123\n\n789", buffer.get().toString());
+  ASSERT_EQ(4, buffer.getCursor());
+  buffer.setCursor(7);
+
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123\n89", buffer.get().toString());
+  ASSERT_EQ(4, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.redo());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
