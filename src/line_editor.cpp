@@ -760,40 +760,9 @@ static bool rotateHistoryOrUpDown(HistRotator &histRotate, struct linenoiseState
   if (l.buf.isSingleLine() || continueRotate) {
     l.rotating = true;
     return rotateHistory(histRotate, l.buf, op, false);
-  } else if (op == HistRotator::Op::PREV || op == HistRotator::Op::NEXT) { // move cursor up/down
-    // resolve dest line
-    const auto oldPos = l.buf.getCursor();
-    if (op == HistRotator::Op::PREV) { // up
-      l.buf.moveCursorToStartOfLine();
-      if (l.buf.getCursor() == 0) {
-        l.buf.setCursor(oldPos);
-        return false;
-      }
-      l.buf.decCursor(1);
-    } else { // down
-      l.buf.moveCursorToEndOfLine();
-      if (l.buf.getCursor() == l.buf.getUsedSize()) {
-        l.buf.setCursor(oldPos);
-        return false;
-      }
-      l.buf.incCursor(1);
-    }
-    StringRef dest = l.buf.getCurLine(true);
-    l.buf.setCursor(oldPos);
-
-    // resolve line to current position
-    size_t count = iterateGrapheme(l.buf.getCurLine(false), [](const GraphemeScanner::Result &) {});
-    GraphemeScanner::Result ret;
-    size_t retCount = iterateGraphemeUntil(
-        dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
-    if (retCount) {
-      l.buf.setCursor(ret.ref.end() - l.buf.getRawBuf());
-    } else {
-      l.buf.setCursor(dest.begin() - l.buf.getRawBuf());
-    }
-    return true;
+  } else {
+    return l.buf.moveCursorUpDown(op == HistRotator::Op::PREV);
   }
-  return false;
 }
 
 /* This function is the core of the line editing capability of linenoise.

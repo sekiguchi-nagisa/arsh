@@ -633,7 +633,7 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, retSize);
   retSize = buffer.prevCharBytes();
   ASSERT_EQ(3, retSize);
-  buffer.decCursor(retSize);
+  buffer.setCursor(buffer.getCursor() - retSize);
   ASSERT_EQ("あい", buffer.getToCursor().toString());
   ASSERT_EQ("う", buffer.getFromCursor().toString());
   retSize = buffer.nextCharBytes();
@@ -652,7 +652,7 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, retSize);
   retSize = buffer.prevWordBytes();
   ASSERT_EQ(3, retSize);
-  buffer.decCursor(retSize);
+  buffer.setCursor(buffer.getCursor() - retSize);
   ASSERT_EQ("あ111", buffer.getToCursor().toString());
   ASSERT_EQ("い", buffer.getFromCursor().toString());
   retSize = buffer.prevWordBytes();

@@ -169,6 +169,39 @@ bool LineBuffer::deleteFromCursor(size_t size, std::string *capture, bool trackC
   return false;
 }
 
+bool LineBuffer::moveCursorUpDown(bool up) {
+  const auto oldCursor = this->getCursor();
+  if (up) { // up
+    this->moveCursorToStartOfLine();
+    if (this->getCursor() == 0) {
+      this->cursor = oldCursor;
+      return false;
+    }
+    this->cursor--;
+  } else { // down
+    this->moveCursorToEndOfLine();
+    if (this->getCursor() == this->getUsedSize()) {
+      this->cursor = oldCursor;
+      return false;
+    }
+    this->cursor++;
+  }
+  StringRef dest = this->getCurLine(true);
+  this->cursor = oldCursor;
+
+  // resolve line to current position
+  size_t count = iterateGrapheme(this->getCurLine(false), [](const GraphemeScanner::Result &) {});
+  GraphemeScanner::Result ret;
+  size_t retCount = iterateGraphemeUntil(
+      dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
+  if (retCount) {
+    this->cursor = ret.ref.end() - this->buf;
+  } else {
+    this->cursor = dest.begin() - this->buf;
+  }
+  return true;
+}
+
 bool LineBuffer::undo() {
   if (this->changeIndex == 0) {
     return false;

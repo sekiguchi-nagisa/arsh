@@ -69,15 +69,9 @@ public:
 
   void clearNewlinePosList() { this->newlinePosList.clear(); }
 
-  const char *getRawBuf() const { return this->buf; }
-
   unsigned int getCursor() const { return this->cursor; }
 
   void setCursor(unsigned int v) { this->cursor = v; }
-
-  void incCursor(unsigned int delta) { this->cursor += delta; }
-
-  void decCursor(unsigned int delta) { this->cursor -= delta; }
 
   unsigned int getUsedSize() const { return this->usedSize; }
 
@@ -287,6 +281,8 @@ public:
     }
     return false;
   }
+
+  bool moveCursorUpDown(bool up);
 
   bool undo();
 
