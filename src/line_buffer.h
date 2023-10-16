@@ -215,8 +215,7 @@ public:
 
   void deleteAll() {
     this->cursor = 0;
-    this->usedSize = 0;
-    this->buf[0] = '\0';
+    this->deleteFromCursor(this->getUsedSize());
   }
 
   bool moveCursorToLeftByChar() {

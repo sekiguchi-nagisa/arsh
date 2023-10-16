@@ -102,6 +102,7 @@ unsigned int LineBuffer::findCurNewlineIndex() const {
 }
 
 bool LineBuffer::insertToCursor(const char *data, size_t size, bool trackChange) {
+  assert(this->cursor <= this->usedSize);
   if (this->usedSize + size <= this->bufSize) {
     if (this->usedSize == this->cursor) { // insert to last
       memcpy(&this->buf[this->cursor], data, size);
