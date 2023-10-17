@@ -256,13 +256,30 @@ bool LineBuffer::Change::tryMerge(const Change &o) {
   if (!this->merge || !o.merge) {
     return false;
   }
-  if (this->type != o.type || this->type != ChangeOp::INSERT) {
+  if (this->type != o.type) {
     return false;
   }
-  if (this->cursor == o.cursor - o.delta.size()) {
-    this->cursor = o.cursor;
-    this->delta += o.delta;
-    return true;
+  switch (this->type) {
+  case ChangeOp::INSERT:
+    if (this->cursor == o.cursor - o.delta.size()) {
+      this->cursor = o.cursor;
+      this->delta += o.delta;
+      return true;
+    }
+    break;
+  case ChangeOp::DELETE_TO:
+    if (this->cursor == o.cursor + o.delta.size()) {
+      this->cursor = o.cursor;
+      this->delta.insert(0, o.delta);
+      return true;
+    }
+    break;
+  case ChangeOp::DELETE_FROM:
+    if (this->cursor == o.cursor) {
+      this->delta += o.delta;
+      return true;
+    }
+    break;
   }
   return false;
 }

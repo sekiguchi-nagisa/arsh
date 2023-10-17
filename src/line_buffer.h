@@ -187,14 +187,14 @@ public:
     return this->deleteFromCursor(size, capture, EditOp{.trackChange = true, .mergeChange = merge});
   }
 
-  bool deletePrevChar(std::string *capture) {
+  bool deletePrevChar(std::string *capture, bool merge = false) {
     size_t charBytes = this->prevCharBytes();
-    return this->deleteToCursor(charBytes, capture);
+    return this->deleteToCursor(charBytes, capture, merge);
   }
 
-  bool deleteNextChar(std::string *capture) {
+  bool deleteNextChar(std::string *capture, bool merge = false) {
     size_t charBytes = this->nextCharBytes();
-    return this->deleteFromCursor(charBytes, capture);
+    return this->deleteFromCursor(charBytes, capture, merge);
   }
 
   bool deletePrevWord(std::string *capture) {
