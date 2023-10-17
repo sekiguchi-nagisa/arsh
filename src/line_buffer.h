@@ -25,6 +25,11 @@ namespace ydsh {
 
 class LineBuffer {
 public:
+  struct EditOp {
+    bool trackChange;
+    bool mergeChange;
+  };
+
   enum class ChangeOp : unsigned char {
     INSERT,      // old_cursor + delta => cursor
     DELETE_TO,   // old_cursor - delta => cursor
@@ -34,6 +39,8 @@ public:
   struct Change {
     ChangeOp type;
 
+    bool merge;
+
     /**
      * cursor after changed
      */
@@ -41,8 +48,17 @@ public:
 
     std::string delta;
 
-    Change(ChangeOp op, unsigned int cursor, std::string &&delta)
-        : type(op), cursor(cursor), delta(std::move(delta)) {}
+    Change(ChangeOp op, unsigned int cursor, std::string &&delta, bool merge)
+        : type(op), merge(merge), cursor(cursor), delta(std::move(delta)) {}
+
+    /**
+     *
+     * @param o
+     * @return
+     * if merge succeed, return true.
+     * otherwise, return false (original object is not changed)
+     */
+    bool tryMerge(const Change &o);
   };
 
 private:
@@ -135,29 +151,27 @@ public:
   /**
    * insert bytes to cursor position.
    * after insertion, increment cursor by size
-   * @param data
-   * @param size
+   * @param ref
+   * @param merge
    * @return
    * if insertion succeed, return true
    * otherwise, return false
    */
-  bool insertToCursor(const char *data, size_t size) {
-    return this->insertToCursor(data, size, true);
+  bool insertToCursor(StringRef ref, bool merge = false) {
+    return this->insertToCursor(ref, EditOp{.trackChange = true, .mergeChange = merge});
   }
-
-  bool insertToCursor(StringRef ref) { return this->insertToCursor(ref.data(), ref.size()); }
 
   /**
    * delete bytes at the left of cursor
    * after deletion, decrement cursor by size
    * @param size
    * @param capture
-   * may be null
+   * @param merge
    * @return
    * if deletion succeed, return true
    */
-  bool deleteToCursor(size_t size, std::string *capture = nullptr) {
-    return this->deleteToCursor(size, capture, true);
+  bool deleteToCursor(size_t size, std::string *capture = nullptr, bool merge = false) {
+    return this->deleteToCursor(size, capture, EditOp{.trackChange = true, .mergeChange = merge});
   }
 
   /**
@@ -165,12 +179,12 @@ public:
    * after deletion, not decrement cursor (but still decrement usedSize by size)
    * @param size
    * @param capture
-   * may be null
+   * @param merge
    * @return
    * if deletion succeed, return true
    */
-  bool deleteFromCursor(size_t size, std::string *capture = nullptr) {
-    return this->deleteFromCursor(size, capture, true);
+  bool deleteFromCursor(size_t size, std::string *capture = nullptr, bool merge = false) {
+    return this->deleteFromCursor(size, capture, EditOp{.trackChange = true, .mergeChange = merge});
   }
 
   bool deletePrevChar(std::string *capture) {
@@ -284,12 +298,18 @@ public:
 
   bool moveCursorUpDown(bool up);
 
+  void fixLastChange() {
+    if (this->changeIndex > 0) {
+      this->changes[this->changeIndex - 1].merge = false;
+    }
+  }
+
   bool undo();
 
   bool redo();
 
 private:
-  bool insertToCursor(const char *data, size_t size, bool trackChange);
+  bool insertToCursor(StringRef ref, EditOp editOp);
 
   /**
    * delete bytes at the left of cursor
@@ -297,11 +317,11 @@ private:
    * @param size
    * @param capture
    * may be null
-   * @param trackChange
+   * @param editOp
    * @return
    * if deletion succeed, return true
    */
-  bool deleteToCursor(size_t size, std::string *capture, bool trackChange);
+  bool deleteToCursor(size_t size, std::string *capture, EditOp editOp);
 
   /**
    * delete bytes at the right of cursor
@@ -309,13 +329,13 @@ private:
    * @param size
    * @param capture
    * may be null
-   * @param trackChange
+   * @param editOp
    * @return
    * if deletion succeed, return true
    */
-  bool deleteFromCursor(size_t size, std::string *capture, bool trackChange);
+  bool deleteFromCursor(size_t size, std::string *capture, EditOp editOp);
 
-  void trackChange(ChangeOp op, std::string &&delta);
+  void trackChange(ChangeOp op, std::string &&delta, bool merge);
 };
 
 } // namespace ydsh

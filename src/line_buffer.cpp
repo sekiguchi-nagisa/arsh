@@ -101,34 +101,34 @@ unsigned int LineBuffer::findCurNewlineIndex() const {
   return iter - this->newlinePosList.begin();
 }
 
-bool LineBuffer::insertToCursor(const char *data, size_t size, bool trackChange) {
+bool LineBuffer::insertToCursor(const StringRef ref, const EditOp editOp) {
   assert(this->cursor <= this->usedSize);
-  if (this->usedSize + size <= this->bufSize) {
+  if (this->usedSize + ref.size() <= this->bufSize) {
     if (this->usedSize == this->cursor) { // insert to last
-      memcpy(&this->buf[this->cursor], data, size);
-      this->cursor += size;
-      this->usedSize += size;
+      memcpy(&this->buf[this->cursor], ref.data(), ref.size());
+      this->cursor += ref.size();
+      this->usedSize += ref.size();
       this->buf[this->usedSize] = '\0';
     } else {
-      memmove(this->buf + this->cursor + size, this->buf + this->cursor,
+      memmove(this->buf + this->cursor + ref.size(), this->buf + this->cursor,
               this->usedSize - this->cursor);
-      memcpy(&this->buf[this->cursor], data, size);
-      this->cursor += size;
-      this->usedSize += size;
+      memcpy(&this->buf[this->cursor], ref.data(), ref.size());
+      this->cursor += ref.size();
+      this->usedSize += ref.size();
       this->buf[this->usedSize] = '\0';
     }
-    if (trackChange) {
-      this->trackChange(ChangeOp::INSERT, std::string(data, size));
+    if (editOp.trackChange) {
+      this->trackChange(ChangeOp::INSERT, ref.toString(), editOp.mergeChange);
     }
     return true;
   }
   return false;
 }
 
-bool LineBuffer::deleteToCursor(size_t size, std::string *capture, bool trackChange) {
+bool LineBuffer::deleteToCursor(size_t size, std::string *capture, const EditOp editOp) {
   if (this->cursor > 0 && this->usedSize > 0 && size > 0 && size <= this->cursor) {
     std::string delta;
-    if (trackChange || capture) {
+    if (editOp.trackChange || capture) {
       delta = std::string(this->buf + this->cursor - size, size);
     }
     if (capture) {
@@ -139,19 +139,19 @@ bool LineBuffer::deleteToCursor(size_t size, std::string *capture, bool trackCha
     this->cursor -= size;
     this->usedSize -= size;
     this->buf[this->usedSize] = '\0';
-    if (trackChange) {
-      this->trackChange(ChangeOp::DELETE_TO, std::move(delta));
+    if (editOp.trackChange) {
+      this->trackChange(ChangeOp::DELETE_TO, std::move(delta), editOp.mergeChange);
     }
     return true;
   }
   return false;
 }
 
-bool LineBuffer::deleteFromCursor(size_t size, std::string *capture, bool trackChange) {
+bool LineBuffer::deleteFromCursor(size_t size, std::string *capture, const EditOp editOp) {
   if (this->usedSize > 0 && this->cursor < this->usedSize && size > 0 &&
       size <= this->usedSize - this->cursor) {
     std::string delta;
-    if (trackChange || capture) {
+    if (editOp.trackChange || capture) {
       delta = std::string(this->buf + this->cursor, size);
     }
     if (capture) {
@@ -161,8 +161,8 @@ bool LineBuffer::deleteFromCursor(size_t size, std::string *capture, bool trackC
             this->usedSize - this->cursor - size);
     this->usedSize -= size;
     this->buf[this->usedSize] = '\0';
-    if (trackChange) {
-      this->trackChange(ChangeOp::DELETE_FROM, std::move(delta));
+    if (editOp.trackChange) {
+      this->trackChange(ChangeOp::DELETE_FROM, std::move(delta), editOp.mergeChange);
     }
     return true;
   }
@@ -207,15 +207,17 @@ bool LineBuffer::undo() {
     return false;
   }
   this->changeIndex--;
+  this->changes[this->changeIndex].merge = false;
   const auto &change = this->changes[this->changeIndex];
+  EditOp editOp{.trackChange = false, .mergeChange = false};
   this->cursor = change.cursor;
   switch (change.type) {
   case ChangeOp::INSERT:
-    this->deleteToCursor(change.delta.size(), nullptr, false);
+    this->deleteToCursor(change.delta.size(), nullptr, editOp);
     break;
   case ChangeOp::DELETE_TO:
   case ChangeOp::DELETE_FROM:
-    this->insertToCursor(change.delta.c_str(), change.delta.size(), false);
+    this->insertToCursor(change.delta, editOp);
     if (change.type == ChangeOp::DELETE_FROM) {
       this->cursor = change.cursor;
     }
@@ -229,30 +231,56 @@ bool LineBuffer::redo() {
     return false;
   }
   assert(this->changeIndex < this->changes.size());
+  this->changes[this->changeIndex].merge = false;
   const auto &change = this->changes[this->changeIndex];
+  EditOp editOp{.trackChange = false, .mergeChange = false};
   this->changeIndex++;
   switch (change.type) {
   case ChangeOp::INSERT:
     this->cursor = change.cursor - change.delta.size();
-    this->insertToCursor(change.delta.c_str(), change.delta.size(), false);
+    this->insertToCursor(change.delta, editOp);
     break;
   case ChangeOp::DELETE_TO:
     this->cursor = change.cursor + change.delta.size();
-    this->deleteToCursor(change.delta.size(), nullptr, false);
+    this->deleteToCursor(change.delta.size(), nullptr, editOp);
     break;
   case ChangeOp::DELETE_FROM:
     this->cursor = change.cursor;
-    this->deleteFromCursor(change.delta.size(), nullptr, false);
+    this->deleteFromCursor(change.delta.size(), nullptr, editOp);
     break;
   }
   return true;
 }
 
-void LineBuffer::trackChange(ChangeOp op, std::string &&delta) {
+bool LineBuffer::Change::tryMerge(const Change &o) {
+  if (!this->merge || !o.merge) {
+    return false;
+  }
+  if (this->type != o.type || this->type != ChangeOp::INSERT) {
+    return false;
+  }
+  if (this->cursor == o.cursor - o.delta.size()) {
+    this->cursor = o.cursor;
+    this->delta += o.delta;
+    return true;
+  }
+  return false;
+}
+
+void LineBuffer::trackChange(ChangeOp op, std::string &&delta, bool merge) {
   while (this->changeIndex < this->changes.size()) {
     this->changes.pop_back();
   }
-  this->changes.emplace_back(op, this->cursor, std::move(delta)); // FIXME: merge changes
+
+  Change newChange(op, this->cursor, std::move(delta), merge);
+  if (!this->changes.empty()) {
+    bool r = this->changes.back().tryMerge(newChange);
+    this->changes.back().merge = r;
+    if (r) {
+      return;
+    }
+  }
+  this->changes.push_back(std::move(newChange));
   this->changeIndex = this->changes.size();
 }
 

@@ -849,6 +849,40 @@ TEST_F(LineBufferTest, undoDelete) {
   ASSERT_FALSE(buffer.redo());
 }
 
+TEST_F(LineBufferTest, mergeInsert) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+
+  // merge
+  ASSERT_TRUE(buffer.insertToCursor("123"));
+  ASSERT_TRUE(buffer.insertToCursor("456", true));
+  ASSERT_TRUE(buffer.insertToCursor("7", true));
+  ASSERT_TRUE(buffer.insertToCursor("8", false));
+  ASSERT_EQ("12345678", buffer.get().toString());
+
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("1234567", buffer.get().toString());
+  ASSERT_EQ(7, buffer.getCursor());
+  buffer.setCursor(6);
+
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123", buffer.get().toString());
+  ASSERT_EQ(3, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.insertToCursor("@@", true));
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123", buffer.get().toString());
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123@@", buffer.get().toString());
+  ASSERT_TRUE(buffer.insertToCursor("!!", true));
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("123@@", buffer.get().toString());
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("123@@!!", buffer.get().toString());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -688,7 +688,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
     }
     switch (buf) {
     case ENTER:
-      if (!l.buf.insertToCursor("\n", 1)) { // insert \n instead of \r
+      if (!l.buf.insertToCursor({"\n", 1}, true)) { // insert \n instead of \r
         return false;
       }
       continue;
@@ -702,7 +702,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
           return false;
         }
         if (seq[count + 1] != expect[count]) {
-          if (!l.buf.insertToCursor(seq, count + 2)) {
+          if (!l.buf.insertToCursor({seq, count + 2}, true)) {
             return false;
           }
           break;
@@ -714,7 +714,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
       continue;
     }
     default:
-      if (!l.buf.insertToCursor(&buf, 1)) {
+      if (!l.buf.insertToCursor({&buf, 1}, true)) {
         return false;
       }
       continue;
@@ -854,7 +854,7 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     switch (action->type) {
     case EditActionType::ACCEPT:
       if (this->continueLine) {
-        if (l.buf.insertToCursor("\n", 1)) {
+        if (l.buf.insertToCursor({"\n", 1})) {
           this->refreshLine(l);
         } else {
           return -1;
@@ -992,7 +992,7 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::NEWLINE:
-      if (l.buf.insertToCursor("\n", 1)) {
+      if (l.buf.insertToCursor({"\n", 1})) {
         this->refreshLine(l);
       } else {
         return -1;
@@ -1015,7 +1015,7 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     case EditActionType::YANK_POP:
       if (prevYankedSize > 0) {
         assert(this->killRing);
-        l.buf.deleteToCursor(prevYankedSize);
+        l.buf.undo();
         this->killRing.rotate();
         StringRef line = this->killRing.getCurrent();
         if (!line.empty()) {
@@ -1048,13 +1048,17 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
         }
       }
       break;
-    case EditActionType::BRACKET_PASTE:
-      if (insertBracketPaste(l)) {
+    case EditActionType::BRACKET_PASTE: {
+      l.buf.fixLastChange();
+      bool r = insertBracketPaste(l);
+      l.buf.fixLastChange();
+      if (r) {
         this->refreshLine(l);
       } else {
         return -1;
       }
       break;
+    }
     case EditActionType::CUSTOM: {
       bool r =
           this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex);
@@ -1262,12 +1266,14 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     pager.setShowCursor(true);
     for (size_t prevCanLen = 0; status == CompStatus::CONTINUE;) {
       // render pager
-      ls.buf.deleteToCursor(prevCanLen);
+      if (prevCanLen) {
+        ls.buf.undo();
+      }
       const auto can = candidates->getValues()[pager.getIndex()].asStrRef();
       assert(offset <= ls.buf.getCursor());
       size_t prefixLen = ls.buf.getCursor() - offset;
       prevCanLen = can.size() - prefixLen;
-      if (ls.buf.insertToCursor(can.data() + prefixLen, prevCanLen)) {
+      if (ls.buf.insertToCursor({can.data() + prefixLen, prevCanLen})) {
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
         status = CompStatus::ERROR;
