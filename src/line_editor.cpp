@@ -736,8 +736,8 @@ ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
   return static_cast<ssize_t>(l.buf.getUsedSize());
 }
 
-static bool rotateHistory(HistRotator &histRotate, LineBuffer &buf, HistRotator::Op op,
-                          bool multiline) {
+static bool rotateHistory(HistRotator &histRotate, bool continueRotate, LineBuffer &buf,
+                          HistRotator::Op op, bool multiline) {
   if (!histRotate) {
     return false;
   }
@@ -747,10 +747,14 @@ static bool rotateHistory(HistRotator &histRotate, LineBuffer &buf, HistRotator:
   if (!histRotate.rotate(curBuf, op)) {
     return false;
   }
-  if (multiline) {
-    buf.deleteLineToCursor(true, nullptr);
+  if (continueRotate) {
+    buf.undo();
   } else {
-    buf.deleteAll();
+    if (multiline) {
+      buf.deleteLineToCursor(true, nullptr);
+    } else {
+      buf.deleteAll();
+    }
   }
   return buf.insertToCursor(curBuf);
 }
@@ -758,8 +762,8 @@ static bool rotateHistory(HistRotator &histRotate, LineBuffer &buf, HistRotator:
 static bool rotateHistoryOrUpDown(HistRotator &histRotate, struct linenoiseState &l,
                                   HistRotator::Op op, bool continueRotate) {
   if (l.buf.isSingleLine() || continueRotate) {
-    l.rotating = true;
-    return rotateHistory(histRotate, l.buf, op, false);
+    l.rotating = rotateHistory(histRotate, continueRotate, l.buf, op, false);
+    return l.rotating;
   } else {
     return l.buf.moveCursorUpDown(op == HistRotator::Op::PREV);
   }
@@ -922,7 +926,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     case EditActionType::NEXT_HISTORY: {
       auto op = action->type == EditActionType::PREV_HISTORY ? HistRotator::Op::PREV
                                                              : HistRotator::Op::NEXT;
-      if (rotateHistory(histRotate, l.buf, op, true)) {
+      if (rotateHistory(histRotate, prevRotating, l.buf, op, true)) {
+        l.rotating = true;
         this->refreshLine(l);
       }
       break;

@@ -701,6 +701,21 @@ TEST_F(InteractiveTest, undoRotate) { // FIXME:
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
   // history
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/rcfile3"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("echo hello11", "hello11"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("echo hello22", "hello22"));
+  this->send("ls -la");
+  this->send(UP);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo hello22"));
+  this->send(UP);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo hello11"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + ""));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ls -la"));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
   // completion
 

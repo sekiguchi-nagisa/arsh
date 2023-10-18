@@ -222,8 +222,8 @@ public:
   }
 
   void deleteAll() {
-    this->cursor = 0;
-    this->deleteFromCursor(this->getUsedSize());
+    this->cursor = this->getUsedSize();
+    this->deleteToCursor(this->getUsedSize());
   }
 
   bool moveCursorToLeftByChar() {
