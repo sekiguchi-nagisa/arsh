@@ -620,6 +620,94 @@ TEST_F(InteractiveTest, bracketPaste2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, undo1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // insert chars
+  this->send("@@@@@");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "@@@@@"));
+  this->send(CTRL_U);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + ""));
+  this->send("111111");
+  this->send(CTRL_Z CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "@@@@@"));
+  this->send(ESC_("/") ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "111111"));
+  this->send(CTRL_Z);
+
+  // insert space separated chars
+  this->send("ls -la");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ls -la"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ls "));
+  this->send(CTRL_H CTRL_H CTRL_H);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ls "));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, undo2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // bracket paste
+  this->send("12345");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345"));
+  this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345"));
+  this->send(ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, undoRotate) { // FIXME:
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // kill-ring
+  this->send("/usr/share");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/share"));
+  this->send(CTRL_W CTRL_W);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/"));
+  this->send(ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr"));
+  this->send(CTRL_Z CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/share"));
+  this->send(CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/share/"));
+  this->send(ESC_("y"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/shareshare"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/share"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  // history
+
+  // completion
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

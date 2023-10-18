@@ -837,7 +837,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
 
     if (!reader.hasControlChar()) {
       auto &buf = reader.get();
-      if (l.buf.insertToCursor(buf)) {
+      bool merge = buf != " ";
+      if (l.buf.insertToCursor(buf, merge)) {
         this->refreshLine(l);
         continue;
       } else {
@@ -882,19 +883,19 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::BACKWARD_DELETE_CHAR:
-      if (l.buf.deletePrevChar(nullptr)) {
+      if (l.buf.deletePrevChar(nullptr, true)) {
         this->refreshLine(l);
       }
       break;
     case EditActionType::DELETE_CHAR:
-      if (l.buf.deleteNextChar(nullptr)) {
+      if (l.buf.deleteNextChar(nullptr, true)) {
         this->refreshLine(l);
       }
       break;
     case EditActionType::DELETE_OR_EXIT: /* remove char at right of cursor, or if the line is empty,
                                         act as end-of-file. */
       if (l.buf.getUsedSize() > 0) {
-        if (l.buf.deleteNextChar(nullptr)) {
+        if (l.buf.deleteNextChar(nullptr, true)) {
           this->refreshLine(l);
         }
       } else {
@@ -1041,7 +1042,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     case EditActionType::INSERT_KEYCODE:
       if (reader.fetch() > 0) {
         auto &buf = reader.get();
-        if (l.buf.insertToCursor(buf)) {
+        bool merge = buf != " " && buf != "\n";
+        if (l.buf.insertToCursor(buf, merge)) {
           this->refreshLine(l);
         } else {
           return -1;
