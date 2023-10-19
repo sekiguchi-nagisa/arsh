@@ -650,6 +650,19 @@ TEST_F(InteractiveTest, undo1) {
   this->send(CTRL_C);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
+  this->changePrompt("> ");
+  this->send("echo hello" ALT_ENTER "ps");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  "));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello"));
+  this->send(ESC_("/") ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -658,6 +671,20 @@ TEST_F(InteractiveTest, undo2) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // ctrl-v
+  this->changePrompt("> ");
+  this->send("1234" CTRL_V CTRL_J "@@@" CTRL_V " 111");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ 111"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
+  this->send(CTRL_Z CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  "));
+  this->send(ESC_("/") ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
   // bracket paste
   this->send("12345");
@@ -675,7 +702,7 @@ TEST_F(InteractiveTest, undo2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, undoRotate) { // FIXME:
+TEST_F(InteractiveTest, undoRotate1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -717,7 +744,39 @@ TEST_F(InteractiveTest, undoRotate) { // FIXME:
   this->send(CTRL_C);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, undoRotate2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
   // completion
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s)=> @(true tee touch))"));
+  this->changePrompt("> ");
+  this->send("()" LEFT "$t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)\ntrue    tee     touch   \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     touch   \n"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n\n"));
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($t)\n\n"));
+    this->send(ESC_("/"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n\n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n" + PROMPT + "\n"));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
