@@ -663,6 +663,39 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, buffer.prevWordBytes());
 }
 
+TEST_F(LineBufferTest, cursor) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123\nあいうえ\n456"));
+
+  // left char
+  buffer.setCursor(2222);
+  ASSERT_EQ(20, buffer.getCursor());
+  ASSERT_TRUE(buffer.moveCursorToLeftByChar());
+  ASSERT_EQ(19, buffer.getCursor());
+  buffer.setCursor(0);
+  ASSERT_FALSE(buffer.moveCursorToLeftByChar());
+
+  // right char
+  ASSERT_TRUE(buffer.moveCursorToRightByChar());
+  ASSERT_EQ(1, buffer.getCursor());
+  buffer.setCursor(2222);
+  ASSERT_FALSE(buffer.moveCursorToRightByChar());
+
+  // left word
+  ASSERT_TRUE(buffer.moveCursorToLeftByWord());
+  ASSERT_EQ(17, buffer.getCursor());
+  buffer.setCursor(0);
+  ASSERT_FALSE(buffer.moveCursorToLeftByWord());
+
+  // right word
+  ASSERT_TRUE(buffer.moveCursorToRightByWord());
+  ASSERT_EQ(3, buffer.getCursor());
+  buffer.setCursor(2222);
+  ASSERT_FALSE(buffer.moveCursorToRightByWord());
+}
+
 TEST_F(LineBufferTest, deleteOut) {
   std::string storage;
   storage.resize(16, '@');

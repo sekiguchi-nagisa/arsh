@@ -87,7 +87,7 @@ public:
 
   unsigned int getCursor() const { return this->cursor; }
 
-  void setCursor(unsigned int v) { this->cursor = v; }
+  void setCursor(unsigned int v) { this->cursor = std::min(v, this->getUsedSize()); }
 
   unsigned int getUsedSize() const { return this->usedSize; }
 
