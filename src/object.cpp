@@ -500,6 +500,47 @@ bool ArrayObject::checkIteratorInvalidation(DSState &state, const char *message)
   return true;
 }
 
+StringRef ArrayObject::getCommonPrefixStr() const {
+  const auto size = this->getValues().size();
+  if (this->getTypeID() != toUnderlying(TYPE::StringArray) || size == 0) {
+    return "";
+  } else if (size == 1) {
+    return this->getValues()[0].asStrRef();
+  }
+
+  // resolve common prefix length
+  size_t prefixSize = 0;
+  const auto first = this->getValues()[0].asStrRef();
+  for (const auto firstSize = first.size(); prefixSize < firstSize; prefixSize++) {
+    const char ch = first[prefixSize];
+    size_t index = 1;
+    for (; index < size; index++) {
+      auto ref = this->getValues()[index].asStrRef();
+      if (prefixSize < ref.size() && ch == ref[prefixSize]) {
+        continue;
+      }
+      break;
+    }
+    if (index < size) {
+      break;
+    }
+  }
+
+  // extract valid utf8 string
+  StringRef prefix(this->getValues()[0].asCStr(), prefixSize);
+  const auto begin = prefix.begin();
+  auto iter = begin;
+  for (const auto end = prefix.end(); iter != end;) {
+    unsigned int byteSize = UnicodeUtil::utf8ValidateChar(iter, end);
+    if (byteSize != 0) {
+      iter += byteSize;
+    } else {
+      break;
+    }
+  }
+  return {begin, static_cast<size_t>(iter - begin)};
+}
+
 // ########################
 // ##     BaseObject     ##
 // ########################

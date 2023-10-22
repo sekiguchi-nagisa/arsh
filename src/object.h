@@ -823,6 +823,14 @@ public:
     std::sort(this->values.begin() + beginOffset, this->values.end(),
               [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
   }
+
+  /**
+   * resolve common prefix string (valid utf-8)
+   * @return
+   * if not [String] object, return empty
+   * if not found common prefix string, return empty
+   */
+  StringRef getCommonPrefixStr() const;
 };
 
 class ArrayIterObject : public ObjectWithRtti<ObjectKind::ArrayIter> {

@@ -265,62 +265,6 @@ static void linenoiseBeep(int fd) {
   fsync(fd);
 }
 
-/* ============================== Completion ================================ */
-
-#if 0
-static FILE *logfp = nullptr;
-#define logprintf(fmt, ...)                                                                        \
-  do {                                                                                             \
-    if (logfp == nullptr) {                                                                        \
-      logfp = fopen("/dev/pts/4", "w");                                                            \
-    }                                                                                              \
-    fprintf(logfp, fmt, ##__VA_ARGS__);                                                            \
-  } while (0)
-#else
-#define logprintf(fmt, ...)
-#endif
-
-static StringRef getCommonPrefix(const ArrayObject &candidates) {
-  const auto size = candidates.size();
-  if (size == 0) {
-    return nullptr;
-  } else if (size == 1) {
-    return candidates.getValues()[0].asStrRef();
-  }
-
-  // resolve common prefix length
-  size_t prefixSize = 0;
-  const auto first = candidates.getValues()[0].asStrRef();
-  for (const auto firstSize = first.size(); prefixSize < firstSize; prefixSize++) {
-    const char ch = first[prefixSize];
-    size_t index = 1;
-    for (; index < size; index++) {
-      auto ref = candidates.getValues()[index].asStrRef();
-      if (prefixSize < ref.size() && ch == ref[prefixSize]) {
-        continue;
-      }
-      break;
-    }
-    if (index < size) {
-      break;
-    }
-  }
-
-  // extract valid utf8 string
-  StringRef prefix(candidates.getValues()[0].asCStr(), prefixSize);
-  const auto begin = prefix.begin();
-  auto iter = begin;
-  for (const auto end = prefix.end(); iter != end;) {
-    unsigned int byteSize = UnicodeUtil::utf8ValidateChar(iter, end);
-    if (byteSize != 0) {
-      iter += byteSize;
-    } else {
-      break;
-    }
-  }
-  return {begin, static_cast<size_t>(iter - begin)};
-}
-
 /**
  * workaround for screen/tmux
  * @return
@@ -1150,52 +1094,57 @@ ssize_t LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, 
   }
 }
 
+#if 0
+static FILE *logfp = nullptr;
+#define logprintf(fmt, ...)                                                                        \
+  do {                                                                                             \
+    if (logfp == nullptr) {                                                                        \
+      logfp = fopen("/dev/pts/4", "w");                                                            \
+    }                                                                                              \
+    fprintf(logfp, fmt, ##__VA_ARGS__);                                                            \
+  } while (0)
+#else
+#define logprintf(fmt, ...)
+#endif
+
 /**
- * @param ls
+ *
+ * @param buf
  * @param candidates
+ * @param inserting
  * @return
- * return token start cursor
+ * token start cursor
  */
-size_t LineEditorObject::insertEstimatedSuffix(struct linenoiseState &ls,
-                                               const ArrayObject &candidates) {
-  const auto prefix = getCommonPrefix(candidates);
-  if (prefix.empty()) {
-    return ls.buf.getCursor();
-  }
+static size_t resolveEstimatedSuffix(const LineBuffer &buf, const ArrayObject &candidates,
+                                     StringRef &inserting) {
+  const size_t cursor = buf.getCursor();
+  const auto prefix = candidates.getCommonPrefixStr();
+  inserting = "";
 
   logprintf("#prefix: %s\n", prefix.toString().c_str());
-  logprintf("pos: %ld\n", ls.buf.getCursor());
+  logprintf("cursor: %ld\n", cursor);
 
   // compute suffix
   bool matched = false;
-  size_t offset = 0;
-  if (ls.buf.getCursor() > 0) {
-    for (offset =
-             ls.buf.getCursor() - std::min(static_cast<size_t>(ls.buf.getCursor()), prefix.size());
-         offset < ls.buf.getCursor(); offset++) {
-      auto suffix = ls.buf.get().substr(offset, ls.buf.getCursor() - offset);
-      logprintf("curSuffix: %s\n", suffix.toString().c_str());
-      if (auto retPos = prefix.find(suffix); retPos == 0) {
-        matched = true;
-        break;
-      }
+  size_t offset = cursor - std::min(cursor, prefix.size());
+  for (; offset < cursor; offset++) {
+    auto suffix = buf.get().substr(offset, cursor - offset);
+    logprintf("curSuffix: %s\n", suffix.toString().c_str());
+    if (prefix.startsWith(suffix)) {
+      matched = true;
+      break;
     }
   }
 
   logprintf("offset: %ld\n", offset);
   if (matched) {
-    size_t insertingSize = prefix.size() - (ls.buf.getCursor() - offset);
-    StringRef inserting(prefix.data() + (prefix.size() - insertingSize), insertingSize);
+    size_t insertingSize = prefix.size() - (cursor - offset);
+    inserting = {prefix.data() + (prefix.size() - insertingSize), insertingSize};
     logprintf("inserting: %s\n", inserting.toString().c_str());
-    if (ls.buf.insertToCursor(inserting)) {
-      this->refreshLine(ls);
-    }
-  } else if (candidates.size() == 1) { // if candidate does not match previous token, insert it.
-    if (ls.buf.insertToCursor(prefix)) {
-      this->refreshLine(ls);
-    }
+  } else if (candidates.size() == 1) {
+    inserting = prefix; // if candidate does not match previous token, use common candidate prefix
   }
-  return matched ? offset : ls.buf.getCursor();
+  return matched ? offset : buf.getCursor();
 }
 
 static LineEditorObject::CompStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
@@ -1237,8 +1186,7 @@ LineEditorObject::CompStatus
 LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
   reader.clear();
 
-  StringRef line = ls.buf.getToCursor();
-  auto candidates = this->kickCompletionCallback(state, line);
+  auto candidates = this->kickCompletionCallback(state, ls.buf.getToCursor());
   if (!candidates || candidates->size() <= 1) {
     this->refreshLine(ls);
   }
@@ -1246,7 +1194,13 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     return CompStatus::CANCEL;
   }
 
-  const size_t offset = this->insertEstimatedSuffix(ls, *candidates);
+  StringRef inserting;
+  const size_t offset = resolveEstimatedSuffix(ls.buf, *candidates, inserting);
+  if (candidates->size() > 0 && !inserting.empty()) {
+    if (ls.buf.insertToCursor(inserting)) {
+      this->refreshLine(ls); // FIXME: report error
+    }
+  }
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls.ofd);
     return CompStatus::OK;

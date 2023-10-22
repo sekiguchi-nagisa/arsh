@@ -154,8 +154,6 @@ private:
 
   CompStatus completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 
-  size_t insertEstimatedSuffix(struct linenoiseState &ls, const ArrayObject &candidates);
-
   DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
