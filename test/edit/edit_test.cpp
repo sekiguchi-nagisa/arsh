@@ -663,7 +663,7 @@ TEST_F(LineBufferTest, charOp) {
   ASSERT_EQ(0, buffer.prevWordBytes());
 }
 
-TEST_F(LineBufferTest, cursor) {
+TEST_F(LineBufferTest, cursor1) {
   std::string storage;
   storage.resize(32, '@');
   LineBuffer buffer(storage.data(), storage.size());
@@ -694,6 +694,79 @@ TEST_F(LineBufferTest, cursor) {
   ASSERT_EQ(3, buffer.getCursor());
   buffer.setCursor(2222);
   ASSERT_FALSE(buffer.moveCursorToRightByWord());
+}
+
+TEST_F(LineBufferTest, cursor2) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123\nあいうえ\n456"));
+  buffer.syncNewlinePosList();
+  ASSERT_EQ(20, buffer.getCursor());
+
+  // move to start
+  ASSERT_TRUE(buffer.moveCursorToStartOfLine());
+  ASSERT_EQ(17, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorToLeftByChar());
+  ASSERT_EQ(16, buffer.getCursor());
+  ASSERT_TRUE(buffer.moveCursorToStartOfLine());
+  ASSERT_EQ(4, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorToLeftByChar());
+  ASSERT_EQ(3, buffer.getCursor());
+  ASSERT_TRUE(buffer.moveCursorToStartOfLine());
+  ASSERT_EQ(0, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.moveCursorToLeftByChar());
+
+  // move to end
+  ASSERT_TRUE(buffer.moveCursorToEndOfLine());
+  ASSERT_EQ(3, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorToRightByChar());
+  ASSERT_TRUE(buffer.moveCursorToRightByChar());
+  ASSERT_EQ(7, buffer.getCursor());
+  ASSERT_TRUE(buffer.moveCursorToEndOfLine());
+  ASSERT_EQ(16, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorToRightByChar());
+  ASSERT_EQ(17, buffer.getCursor());
+  ASSERT_TRUE(buffer.moveCursorToEndOfLine());
+  ASSERT_EQ(20, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.moveCursorToEndOfLine());
+}
+
+TEST_F(LineBufferTest, cursor3) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_TRUE(buffer.insertToCursor("123\nあいうえ\n456"));
+  buffer.syncNewlinePosList();
+  ASSERT_EQ(20, buffer.getCursor());
+
+  // up
+  ASSERT_TRUE(buffer.moveCursorUpDown(true));
+  ASSERT_EQ(13, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorUpDown(true));
+  ASSERT_EQ(3, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.moveCursorUpDown(true));
+
+  // down
+  ASSERT_TRUE(buffer.moveCursorUpDown(false));
+  ASSERT_EQ(13, buffer.getCursor());
+
+  buffer.setCursor(2);
+  ASSERT_TRUE(buffer.moveCursorUpDown(false));
+  ASSERT_EQ(10, buffer.getCursor());
+
+  ASSERT_TRUE(buffer.moveCursorUpDown(false));
+  ASSERT_EQ(19, buffer.getCursor());
+
+  ASSERT_FALSE(buffer.moveCursorUpDown(false));
 }
 
 TEST_F(LineBufferTest, deleteOut) {
