@@ -144,9 +144,7 @@ struct linenoiseState {
 };
 
 enum KEY_ACTION {
-  KEY_NULL = 0, /* NULL */
-  ENTER = 13,   /* Enter */
-  ESC = 27,     /* Escape */
+  ESC = 27, /* Escape */
 };
 
 /* Debugging macro. */
@@ -624,57 +622,6 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   } /* Can't recover from write error. */
 }
 
-static bool insertBracketPaste(struct linenoiseState &l) { // FIXME: read timeout
-  bool noMem = false;
-  while (true) {
-    char buf;
-    if (read(l.ifd, &buf, 1) <= 0) {
-      return false;
-    }
-    switch (buf) {
-    case ENTER:
-      if (!l.buf.insertToCursor({"\n", 1}, true)) { // insert \n instead of \r
-        noMem = true;
-      }
-      continue;
-    case ESC: { // bracket stop \e[201~
-      char seq[6];
-      seq[0] = '\x1b';
-      const char expect[] = {'[', '2', '0', '1', '~'};
-      unsigned int count = 0;
-      for (; count < std::size(expect); count++) {
-        if (read(l.ifd, seq + count + 1, 1) <= 0) {
-          return false;
-        }
-        if (seq[count + 1] != expect[count]) {
-          if (!l.buf.insertToCursor({seq, count + 2}, true)) {
-            noMem = true;
-          }
-          break;
-        }
-      }
-      if (count == std::size(expect)) {
-        goto END; // end bracket paste mode
-      }
-      continue;
-    }
-    default:
-      if (!l.buf.insertToCursor({&buf, 1}, true)) {
-        noMem = true;
-      }
-      continue;
-    }
-  }
-
-END:
-  if (noMem) {
-    errno = ENOMEM;
-    return false;
-  } else {
-    return true;
-  }
-}
-
 ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
   this->kickHistSyncCallback(state, l.buf);
   l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
@@ -1010,7 +957,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     case EditActionType::BRACKET_PASTE: {
       l.buf.fixLastChange();
-      bool r = insertBracketPaste(l);
+      bool r = reader.intoBracketedPasteMode(
+          [&l](StringRef ref) { return l.buf.insertToCursor(ref, true); });
       l.buf.fixLastChange();
       this->refreshLine(l); // always refresh line even if error
       if (!r) {

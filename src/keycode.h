@@ -66,9 +66,68 @@ public:
    * @return
    * size of read
    * if read failed, return -1
-   * //FIXME: read timeout
+   * //FIXME: report read timeout
    */
   ssize_t fetch();
+
+  template <typename Func>
+  static constexpr bool consumer_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
+
+  template <typename Func, enable_when<consumer_requirement_v<Func>> = nullptr>
+  bool intoBracketedPasteMode(Func func) const { // FIXME: set timeout ?
+    constexpr char ENTER = 13;
+    constexpr char ESC = 27;
+
+    bool noMem = false;
+    while (true) {
+      char buf;
+      if (readWithTimeout(this->fd, &buf, 1) <= 0) {
+        return false;
+      }
+      switch (buf) {
+      case ENTER:
+        if (!func({"\n", 1})) { // insert \n instead of \r
+          noMem = true;
+        }
+        continue;
+      case ESC: { // bracket stop \e[201~
+        char seq[6];
+        seq[0] = '\x1b';
+        const char expect[] = {'[', '2', '0', '1', '~'};
+        unsigned int count = 0;
+        for (; count < std::size(expect); count++) {
+          if (readWithTimeout(this->fd, seq + count + 1, 1) <= 0) {
+            return false;
+          }
+          if (seq[count + 1] != expect[count]) {
+            if (!func({seq, count + 2})) {
+              noMem = true;
+            }
+            break;
+          }
+        }
+        if (count == std::size(expect)) {
+          goto END; // end bracket paste mode
+        }
+        continue;
+      }
+      default:
+        if (!func({&buf, 1})) {
+          noMem = true;
+        }
+        continue;
+      }
+    }
+
+  END:
+    if (noMem) {
+      errno = ENOMEM;
+      return false;
+    } else {
+      return true;
+    }
+  }
 };
 
 #define EACH_EDIT_ACTION_TYPE(OP)                                                                  \
