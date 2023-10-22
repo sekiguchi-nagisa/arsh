@@ -27,6 +27,8 @@ struct linenoiseState;
 
 namespace ydsh {
 
+class LineBuffer;
+
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int inFd;
@@ -158,18 +160,18 @@ private:
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 
-  bool kickHistSyncCallback(DSState &state, struct linenoiseState &l);
+  bool kickHistSyncCallback(DSState &state, const LineBuffer &buf);
 
   /**
    *
    * @param state
-   * @param l
+   * @param buf
    * @param type
    * @param index
    * @return
    * if has error or does not insert, return false
    */
-  bool kickCustomCallback(DSState &state, struct linenoiseState &l, CustomActionType type,
+  bool kickCustomCallback(DSState &state, LineBuffer &buf, CustomActionType type,
                           unsigned int index);
 };
 

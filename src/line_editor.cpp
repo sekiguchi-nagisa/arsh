@@ -485,7 +485,7 @@ static int preparePrompt(struct linenoiseState &l) {
   return 0;
 }
 
-static std::pair<unsigned int, unsigned int> renderPrompt(struct linenoiseState &l,
+static std::pair<unsigned int, unsigned int> renderPrompt(const struct linenoiseState &l,
                                                           std::string &out) {
   LineRenderer renderer(l.ps, 0, out);
   renderer.setMaxCols(l.cols);
@@ -495,7 +495,7 @@ static std::pair<unsigned int, unsigned int> renderPrompt(struct linenoiseState 
   return {promptRows, promptCols};
 }
 
-static std::pair<unsigned int, bool> renderLines(struct linenoiseState &l, size_t promptCols,
+static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l, size_t promptCols,
                                                  ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                                                  ObserverPtr<ArrayPager> pager, std::string &out) {
   size_t rows = 0;
@@ -591,7 +591,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   size_t cursorCols = 0;
   size_t cursorRows = promptRows + 1;
   {
-    auto ref = l.buf.get().slice(0, l.buf.getCursor());
+    auto ref = l.buf.getToCursor();
     LineRenderer renderer(l.ps, promptCols);
     renderer.setMaxCols(l.cols);
     renderer.renderLines(ref);
@@ -676,7 +676,7 @@ END:
 }
 
 ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
-  this->kickHistSyncCallback(state, l);
+  this->kickHistSyncCallback(state, l.buf);
   l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
   if (l.buf.moveCursorToEndOfLine()) {
     this->refreshLine(l, false);
@@ -1020,8 +1020,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     }
     case EditActionType::CUSTOM: {
-      bool r =
-          this->kickCustomCallback(state, l, action->customActionType, action->customActionIndex);
+      bool r = this->kickCustomCallback(state, l.buf, action->customActionType,
+                                        action->customActionIndex);
       this->refreshLine(l); // always refresh line even if error
       if (r && action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
         histRotate.revertAll();
@@ -1297,27 +1297,27 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
   return toObjPtr<ArrayObject>(ret);
 }
 
-bool LineEditorObject::kickHistSyncCallback(DSState &state, struct linenoiseState &l) {
+bool LineEditorObject::kickHistSyncCallback(DSState &state, const LineBuffer &buf) {
   if (!this->history) {
     return true;
   }
   if (this->histSyncCallback) {
     this->kickCallback(state, this->histSyncCallback,
-                       makeArgs(DSValue::createStr(l.buf.get()), this->history));
+                       makeArgs(DSValue::createStr(buf.get()), this->history));
     return !state.hasError();
   } else {
-    return this->history->append(state, DSValue::createStr(l.buf.get()));
+    return this->history->append(state, DSValue::createStr(buf.get()));
   }
 }
 
-bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState &l,
-                                          CustomActionType type, unsigned int index) {
+bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, CustomActionType type,
+                                          unsigned int index) {
   StringRef line;
   auto optArg = DSValue::createInvalid();
   switch (type) {
   case CustomActionType::REPLACE_WHOLE:
   case CustomActionType::REPLACE_WHOLE_ACCEPT:
-    line = l.buf.get();
+    line = buf.get();
     break;
   case CustomActionType::REPLACE_LINE:
   case CustomActionType::HIST_SELCT: {
@@ -1327,7 +1327,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
       }
       optArg = this->history;
     }
-    line = l.buf.getCurLine(true);
+    line = buf.getCurLine(true);
     break;
   }
   case CustomActionType::INSERT:
@@ -1354,18 +1354,18 @@ bool LineEditorObject::kickCustomCallback(DSState &state, struct linenoiseState 
   switch (type) {
   case CustomActionType::REPLACE_WHOLE:
   case CustomActionType::REPLACE_WHOLE_ACCEPT:
-    l.buf.deleteAll();
+    buf.deleteAll();
     break;
   case CustomActionType::REPLACE_LINE:
   case CustomActionType::HIST_SELCT:
-    l.buf.deleteLineToCursor(true, nullptr);
+    buf.deleteLineToCursor(true, nullptr);
     break;
   case CustomActionType::INSERT:
   case CustomActionType::KILL_RING_SELECT:
     break;
   }
   auto ref = ret.asStrRef();
-  return l.buf.insertToCursor(ref);
+  return buf.insertToCursor(ref);
 }
 
 bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
