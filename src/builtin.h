@@ -2177,7 +2177,7 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
   } else if (errno == EAGAIN || errno == 0) {
     RET(DSValue::createInvalid());
   } else {
-    raiseSystemError(ctx, errno, "readLine failed");
+    raiseSystemError(ctx, errno, ERROR_READLINE);
     RET_ERROR;
   }
 }

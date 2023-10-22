@@ -328,12 +328,14 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
 }
 
 void DSError_release(DSError *e) {
+  int old = errno;
   if (e != nullptr) {
     free(e->fileName);
     e->fileName = nullptr;
     free(e->name);
     e->name = nullptr;
   }
+  errno = old;
 }
 
 static CompileOption getCompileOption(const DSState &st) {
@@ -570,11 +572,13 @@ ssize_t DSState_readLine(DSState *st, char *buf, size_t bufSize, DSError *e) {
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();
   auto ret = editor.readline(*st, defaultPrompt(), buf, bufSize);
+  if (errno == ENOMEM) {
+    raiseSystemError(*st, ENOMEM, ERROR_READLINE);
+  }
   if (st->hasError()) {
-    int old = errno;
     VM::handleUncaughtException(*st, e);
     st->getCallStack().clearThrownObject();
-    errno = old;
+    errno = EAGAIN;
   }
   return ret;
 }

@@ -188,6 +188,7 @@ constexpr const char *ERROR_EXEC = "execution error: ";
 constexpr const char *ERROR_REDIR = "io redirection failed";
 constexpr const char *ERROR_UNDEF_ENV = "undefined environmental variable: ";
 constexpr const char *ERROR_SET_ENV = "not set environmental variable: ";
+constexpr const char *ERROR_READLINE = "readLine failed";
 
 // =====  error message  =====
 

@@ -122,6 +122,7 @@ bool LineBuffer::insertToCursor(const StringRef ref, const EditOp editOp) {
     }
     return true;
   }
+  errno = ENOMEM;
   return false;
 }
 

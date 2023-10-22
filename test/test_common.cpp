@@ -125,7 +125,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool merg
                      .setIn(IOConfig::PTY)
                      .setOut(IOConfig::PTY)
                      .setErr(mergeErrToOut ? IOConfig::PTY : IOConfig::PIPE)
-                     .setWinSize(24, 200)
+                     .setWinSize(MAX_WIN_ROW, MAX_WIN_COL)
                      .setTerm(term);
   for (auto &e : this->envMap) {
     builder.addEnv(e.first.c_str(), e.second.c_str());

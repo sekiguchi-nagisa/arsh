@@ -126,6 +126,9 @@ struct ExpectOutput : public ::testing::Test {
 
 class InteractiveBase : public ExpectOutput {
 protected:
+  static constexpr unsigned int MAX_WIN_ROW = 24;
+  static constexpr unsigned int MAX_WIN_COL = 200;
+
   int timeout{80};
 
   ProcHandle handle;

@@ -680,7 +680,8 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   } /* Can't recover from write error. */
 }
 
-static bool insertBracketPaste(struct linenoiseState &l) {
+static bool insertBracketPaste(struct linenoiseState &l) { // FIXME: read timeout
+  bool noMem = false;
   while (true) {
     char buf;
     if (read(l.ifd, &buf, 1) <= 0) {
@@ -689,7 +690,7 @@ static bool insertBracketPaste(struct linenoiseState &l) {
     switch (buf) {
     case ENTER:
       if (!l.buf.insertToCursor({"\n", 1}, true)) { // insert \n instead of \r
-        return false;
+        noMem = true;
       }
       continue;
     case ESC: { // bracket stop \e[201~
@@ -703,24 +704,31 @@ static bool insertBracketPaste(struct linenoiseState &l) {
         }
         if (seq[count + 1] != expect[count]) {
           if (!l.buf.insertToCursor({seq, count + 2}, true)) {
-            return false;
+            noMem = true;
           }
           break;
         }
       }
       if (count == std::size(expect)) {
-        return true; // end bracket paste mode
+        goto END; // end bracket paste mode
       }
       continue;
     }
     default:
       if (!l.buf.insertToCursor({&buf, 1}, true)) {
-        return false;
+        noMem = true;
       }
       continue;
     }
   }
-  return true;
+
+END:
+  if (noMem) {
+    errno = ENOMEM;
+    return false;
+  } else {
+    return true;
+  }
 }
 
 ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
@@ -803,7 +811,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
 
   const ssize_t count = this->editInRawMode(state, l);
   const int errNum = errno;
-  if (count == -1 && errNum == EAGAIN) {
+  if (count == -1 && errNum != 0) {
     l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
     if (l.buf.moveCursorToEndOfLine()) {
       this->refreshLine(l, false);
@@ -812,6 +820,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
   this->disableRawMode(this->inFd);
   ssize_t r = write(this->outFd, "\n", 1);
   UNUSED(r);
+  errno = errNum;
   return count;
 }
 
@@ -1059,9 +1068,9 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       l.buf.fixLastChange();
       bool r = insertBracketPaste(l);
       l.buf.fixLastChange();
-      if (r) {
-        this->refreshLine(l);
-      } else {
+      this->refreshLine(l); // always refresh line even if error
+      if (!r) {
+        errno = ENOMEM;
         return -1;
       }
       break;

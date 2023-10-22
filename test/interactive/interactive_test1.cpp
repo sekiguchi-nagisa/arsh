@@ -620,6 +620,50 @@ TEST_F(InteractiveTest, bracketPaste2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+static std::string formatInput(StringRef prompt, StringRef input, const unsigned int maxCol) {
+  std::string ret;
+  ret += prompt;
+
+  unsigned int cols = prompt.size();
+  for (auto ch : input) {
+    if (cols == maxCol) {
+      cols = 0;
+      ret += "\n";
+    }
+    ret += ch;
+    cols++;
+  }
+  return ret;
+}
+
+TEST_F(InteractiveTest, bracketPaste3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  std::string largeInput;
+  largeInput.resize(4095, '@');
+
+  std::string in;
+  in += ESC_("[200~");
+  in += largeInput;
+  in += "#";
+  in += ESC_("[201~");
+
+  std::string err = format(R"([runtime error]
+SystemError: readLine failed, caused by `%s'
+)",
+                           strerror(ENOMEM));
+
+  this->send(in.c_str());
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(formatInput(PROMPT, largeInput, MAX_WIN_COL) + "\n" + PROMPT, err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, undo1) {
   this->invoke("--quiet", "--norc");
 
