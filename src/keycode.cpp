@@ -36,20 +36,26 @@ ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
     pollfd[0].fd = fd;
     pollfd[0].events = POLLIN;
     if (int r = poll(pollfd, std::size(pollfd), timeoutMSec); r <= 0) {
-      return r; // error or timeout
+      if (r == 0) { // timeout
+        return -2;
+      }
+      return r; // error
     }
   }
   return read(fd, buf, bufSize);
 }
 
 static ssize_t readBytes(int fd, char (&buf)[8]) {
-  ssize_t readSize = readWithTimeout(fd, &buf[0], 1);
+  ssize_t readSize = readWithTimeout(fd, &buf[0], 1); // no-timeout
   if (readSize <= 0) {
     return readSize;
   }
   const unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
   for (unsigned int i = 1; i < byteSize; i++) {
-    if (readWithTimeout(fd, &buf[i], 1, 100) <= 0) {
+    if (ssize_t r = readWithTimeout(fd, &buf[i], 1, 100); r <= 0) {
+      if (r == -1) {
+        return -1;
+      }
       break;
     }
     readSize++;
@@ -59,7 +65,11 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
 
 #define READ_BYTE(b, bs)                                                                           \
   do {                                                                                             \
-    if (readWithTimeout(this->fd, (b) + (bs), 1, this->timeout) <= 0) {                            \
+    ssize_t r = readWithTimeout(this->fd, (b) + (bs), 1, this->timeout);                           \
+    if (r <= 0) {                                                                                  \
+      if (r == -1) {                                                                               \
+        return -1;                                                                                 \
+      }                                                                                            \
       goto END;                                                                                    \
     } else {                                                                                       \
       seqSize++;                                                                                   \

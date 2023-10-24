@@ -34,6 +34,17 @@ inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
 
 inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
 
+/**
+ *
+ * @param fd
+ * @param buf
+ * @param bufSize
+ * @param timeoutMSec
+ * @return
+ * if timeout, return -2
+ * if has error, return -1 and set errno
+ * otherwise, return non-negative number
+ */
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec = -1);
 
 class KeyCodeReader {
@@ -66,7 +77,6 @@ public:
    * @return
    * size of read
    * if read failed, return -1
-   * //FIXME: report read timeout
    */
   ssize_t fetch();
 
@@ -75,15 +85,22 @@ public:
       std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
 
   template <typename Func, enable_when<consumer_requirement_v<Func>> = nullptr>
-  bool intoBracketedPasteMode(Func func) const { // FIXME: set timeout ?
+  bool intoBracketedPasteMode(Func func) const {
     constexpr char ENTER = 13;
     constexpr char ESC = 27;
 
+    errno = 0;
     bool noMem = false;
     while (true) {
       char buf;
-      if (readWithTimeout(this->fd, &buf, 1) <= 0) {
-        return false;
+      if (ssize_t r = readWithTimeout(this->fd, &buf, 1, this->timeout); r <= 0) {
+        if (r < 0) {
+          if (r == -2) {
+            errno = ETIME;
+          }
+          return false;
+        }
+        goto END;
       }
       switch (buf) {
       case ENTER:
@@ -97,8 +114,14 @@ public:
         const char expect[] = {'[', '2', '0', '1', '~'};
         unsigned int count = 0;
         for (; count < std::size(expect); count++) {
-          if (readWithTimeout(this->fd, seq + count + 1, 1) <= 0) {
-            return false;
+          if (ssize_t r = readWithTimeout(this->fd, seq + count + 1, 1, this->timeout); r <= 0) {
+            if (r < 0) {
+              if (r == -2) {
+                errno = ETIME;
+              }
+              return false;
+            }
+            goto END;
           }
           if (seq[count + 1] != expect[count]) {
             if (!func({seq, count + 2})) {

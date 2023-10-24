@@ -150,6 +150,32 @@ TEST(KeyCodeReaderTest, invalid) {
   ASSERT_EQ("\xF0\x80", reader.get());
 }
 
+TEST(KeyCodeReaderTest, bracketError) {
+  {
+    Pipe pipe;
+    pipe.write("12345");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return true; }));
+    ASSERT_EQ(ETIME, errno);
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("12345\x1b[201");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return true; }));
+    ASSERT_EQ(ETIME, errno);
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("12345\x1b[201~");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return false; }));
+    ASSERT_EQ(ENOMEM, errno);
+  }
+}
+
 struct KeyBindingTest : public ::testing::Test {
   static void checkCaret(StringRef caret, StringRef value) {
     auto v = KeyBindings::parseCaret(caret);

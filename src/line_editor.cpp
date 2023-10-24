@@ -729,7 +729,10 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
 
   KeyCodeReader reader(l.ifd);
   while (true) {
-    if (reader.fetch() <= 0) {
+    if (ssize_t r = reader.fetch(); r <= 0) {
+      if (r == -1) {
+        return -1;
+      }
       return static_cast<ssize_t>(l.buf.getUsedSize());
     }
 
@@ -959,10 +962,11 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       l.buf.fixLastChange();
       bool r = reader.intoBracketedPasteMode(
           [&l](StringRef ref) { return l.buf.insertToCursor(ref, true); });
+      int old = errno;
       l.buf.fixLastChange();
       this->refreshLine(l); // always refresh line even if error
       if (!r) {
-        errno = ENOMEM;
+        errno = old;
         return -1;
       }
       break;

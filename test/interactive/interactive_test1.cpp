@@ -636,12 +636,13 @@ static std::string formatInput(StringRef prompt, StringRef input, const unsigned
   return ret;
 }
 
-TEST_F(InteractiveTest, bracketPaste3) {
+TEST_F(InteractiveTest, bracketPasteError1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
+  // too large paste input
   std::string largeInput;
   largeInput.resize(4095, '@');
 
@@ -662,6 +663,22 @@ SystemError: readLine failed, caused by `%s'
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, bracketPasteError2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  // timeout paste
+  std::string err = format(R"([fatal] readLine failed, caused by `%s'
+)",
+                           strerror(ETIME));
+  this->send(ESC_("[200~") "hello world!!");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300)); // wait read timeout
+  ASSERT_NO_FATAL_FAILURE(
+      this->waitAndExpect(1, WaitStatus::EXITED, PROMPT + "hello world!!\n", err));
 }
 
 TEST_F(InteractiveTest, undo1) {
