@@ -462,6 +462,60 @@ TEST_F(InteractiveTest, lineEditorComp3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorCompError) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  // insert large item
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m,s)=> [$(seq 1 9999).join(' ')])"));
+
+  std::string err = format(R"([runtime error]
+SystemError: readLine failed, caused by `%s'
+)",
+                           strerror(ENOMEM));
+
+  this->send("\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "\n" + PROMPT, err));
+
+  // rotate and insert large item
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m,s)=> ['2', $(seq 1 9999).join(' ')])"));
+  this->send("12");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 12"));
+
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> 12\n"
+                     "2                                                                 "
+                     "                                                                           "
+                     "                                                           \n"
+                     "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 "
+                     "26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 "
+                     "51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70\n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> 122\n"
+                     "2                                                                 "
+                     "                                                                           "
+                     "                                                           \n"
+                     "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 "
+                     "26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 "
+                     "51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70\n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 12\n> \n\n", err));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 // test tty
 TEST_F(InteractiveTest, lineEditorTTY) {
   this->invoke("--quiet", "--norc");

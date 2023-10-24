@@ -779,7 +779,7 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       if (this->completionCallback) {
         auto s = this->completeLine(state, l, reader);
         if (s == CompStatus::ERROR) {
-          return static_cast<int>(l.buf.getUsedSize());
+          return -1;
         } else if (s == CompStatus::CANCEL) {
           errno = EAGAIN;
           return -1;
@@ -1150,7 +1150,9 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
   const size_t offset = resolveEstimatedSuffix(ls.buf, *candidates, inserting);
   if (candidates->size() > 0 && !inserting.empty()) {
     if (ls.buf.insertToCursor(inserting)) {
-      this->refreshLine(ls); // FIXME: report error
+      this->refreshLine(ls);
+    } else {
+      return CompStatus::ERROR;
     }
   }
   if (const auto len = candidates->size(); len == 0) {
@@ -1205,10 +1207,11 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
     }
 
   END:
+    int old = errno;
     this->refreshLine(ls); // clear pager
+    errno = old;
     return status;
   }
-  return CompStatus::OK;
 }
 
 DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
