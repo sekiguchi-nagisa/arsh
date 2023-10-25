@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <poll.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -32,14 +31,18 @@ namespace ydsh {
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
   errno = 0;
   if (timeoutMSec > -1) {
-    struct pollfd pollfd[1]{};
-    pollfd[0].fd = fd;
-    pollfd[0].events = POLLIN;
-    if (int r = poll(pollfd, std::size(pollfd), timeoutMSec); r <= 0) {
-      if (r == 0) { // timeout
+    fd_set fds;
+    struct timeval tv {
+      .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
+    };
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    int ret = select(fd + 1, &fds, nullptr, nullptr, &tv); // use select due to macOS poll is broken
+    if (ret <= 0) {
+      if (ret == 0) {
         return -2;
       }
-      return r; // error
+      return ret;
     }
   }
   return read(fd, buf, bufSize);
