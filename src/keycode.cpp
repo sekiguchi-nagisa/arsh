@@ -22,7 +22,7 @@
 #include "keycode.h"
 #include "misc/unicode.hpp"
 
-// #ifdef __APPLE__
+#ifdef __APPLE__
 
 /**
  * for macOS.
@@ -53,6 +53,37 @@ static int waitForInputReady(int fd, int timeoutMSec) {
   }
   return 0;
 }
+
+#else
+#include <poll.h>
+
+/**
+ *
+ * @param fd
+ * @param timeoutMSec
+ * @return
+ * if input is ready, return 0
+ * if has error, return -1 and set errno
+ * if timeout, return -2
+ */
+static int waitForInputReady(int fd, int timeoutMSec) {
+  if (timeoutMSec < 0) {
+    return 0;
+  }
+  struct pollfd fds[1];
+  fds[0].fd = fd;
+  fds[0].events = POLLIN;
+  int ret = poll(fds, std::size(fds), timeoutMSec);
+  if (ret <= 0) {
+    if (ret == 0) {
+      return -2;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+#endif
 
 namespace ydsh {
 
