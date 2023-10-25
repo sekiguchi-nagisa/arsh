@@ -22,6 +22,38 @@
 #include "keycode.h"
 #include "misc/unicode.hpp"
 
+// #ifdef __APPLE__
+
+/**
+ * for macOS.
+ * macOS poll is completely broken for pty
+ * @param fd
+ * @param timeoutMSec
+ * @return
+ * if input is ready, return 0
+ * if has error, return -1 and set errno
+ * if timeout, return -2
+ */
+static int waitForInputReady(int fd, int timeoutMSec) {
+  if (timeoutMSec < 0) {
+    return 0;
+  }
+  fd_set fds;
+  struct timeval tv {
+    .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
+  };
+  FD_ZERO(&fds);
+  FD_SET(fd, &fds);
+  int ret = select(fd + 1, &fds, nullptr, nullptr, &tv);
+  if (ret <= 0) {
+    if (ret == 0) {
+      return -2;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 namespace ydsh {
 
 // ###########################
@@ -30,20 +62,9 @@ namespace ydsh {
 
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
   errno = 0;
-  if (timeoutMSec > -1) {
-    fd_set fds;
-    struct timeval tv {
-      .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
-    };
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-    int ret = select(fd + 1, &fds, nullptr, nullptr, &tv); // use select due to macOS poll is broken
-    if (ret <= 0) {
-      if (ret == 0) {
-        return -2;
-      }
-      return ret;
-    }
+  int r = waitForInputReady(fd, timeoutMSec);
+  if (r != 0) {
+    return r;
   }
   return read(fd, buf, bufSize);
 }
