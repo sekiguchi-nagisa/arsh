@@ -154,7 +154,7 @@ public:
    * @param ref
    * @param merge
    * @return
-   * if insertion succeed, return true
+   * if insertion succeed, return true (if ref is empty, return true)
    * otherwise, return false
    */
   bool insertToCursor(StringRef ref, bool merge = false) {
@@ -298,7 +298,7 @@ public:
 
   bool moveCursorUpDown(bool up);
 
-  void fixLastChange() {
+  void commitLastChange() {
     if (this->changeIndex > 0) {
       this->changes[this->changeIndex - 1].merge = false;
     }

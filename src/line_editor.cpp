@@ -959,11 +959,11 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::BRACKET_PASTE: {
-      l.buf.fixLastChange();
+      l.buf.commitLastChange();
       bool r = reader.intoBracketedPasteMode(
           [&l](StringRef ref) { return l.buf.insertToCursor(ref, true); });
       int old = errno;
-      l.buf.fixLastChange();
+      l.buf.commitLastChange();
       this->refreshLine(l); // always refresh line even if error
       if (!r) {
         errno = old;

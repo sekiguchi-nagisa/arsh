@@ -744,7 +744,7 @@ TEST_F(LineBufferTest, cursor2) {
   ASSERT_TRUE(buffer.moveCursorToStartOfLine());
   ASSERT_EQ(0, buffer.getCursor());
 
-  ASSERT_FALSE(buffer.moveCursorToLeftByChar());
+  ASSERT_FALSE(buffer.moveCursorToStartOfLine());
 
   // move to end
   ASSERT_TRUE(buffer.moveCursorToEndOfLine());
@@ -889,7 +889,7 @@ TEST_F(LineBufferTest, newline3) {
   ASSERT_NO_FATAL_FAILURE(checkLineInterval(table, buffer));
 }
 
-TEST_F(LineBufferTest, undoInsert) {
+TEST_F(LineBufferTest, undoInsert1) {
   std::string storage;
   storage.resize(32, '@');
   LineBuffer buffer(storage.data(), storage.size());
@@ -928,6 +928,24 @@ TEST_F(LineBufferTest, undoInsert) {
   ASSERT_EQ(6, buffer.getCursor());
 
   ASSERT_FALSE(buffer.redo());
+}
+
+TEST_F(LineBufferTest, undoInsert2) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_FALSE(buffer.undo());
+
+  ASSERT_TRUE(buffer.insertToCursor(""));
+  ASSERT_EQ(0, buffer.getCursor());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_FALSE(buffer.undo());
+
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ(0, buffer.getCursor());
+  ASSERT_EQ("", buffer.get().toString());
 }
 
 TEST_F(LineBufferTest, undoDelete) {
