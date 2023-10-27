@@ -44,12 +44,12 @@
 | user-defined command (inlined import) | ✔️             | ✔️️                   | ✔️              | ❌          |
 | user-defined command (named import)   | ✔️             | ✔️️️                  | ✔️️             | ❌          |
 | builtin command                       | -              | ✔️                    | ✔️️ (show help) | -          |
-| type (builtin)                        | -              | ✔️️️                  | ✔️️️            | ❌          |
-| type (alias)                          | ✔️             | ✔️                    | ✔️              | ❌          |
+| type (builtin)                        | -              | ✔️️️                  | ✔️️️            | -          |
+| type (alias)                          | ✔️             | ✔️                    | ✔️              | ✔️         |
 | type (global import)                  | ✔️             | ✔️                    | ✔️              | ❌          |
 | type (inlined import)                 | ✔️             | ✔️️                   | ✔️              | ❌          |
 | type (named import)                   | ✔️             | ✔️                    | ✔️              | ❌          |
-| type (user-defined type)              | ✔️             | ✔️                    | ✔️              | ❌          |
+| type (user-defined type)              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | field (tuple)                         | -              | ✔️ (same module only) | ✔️              | -          |
 | field (user-defined type)             | ✔️             | ✔️                    | ✔️              | ❌          |
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |

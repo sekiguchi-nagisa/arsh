@@ -195,6 +195,7 @@ TEST_F(RenameTest, invalid3) {
 (34,)._0
 echo $0
 echo ${11}
+23 is Int
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 5}, "var",
@@ -205,6 +206,8 @@ echo ${11}
                                        RenameValidationStatus::BUILTIN));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 7}, "var",
                                        RenameValidationStatus::INVALID_SYMBOL));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 6}, "Int",
+                                       RenameValidationStatus::BUILTIN));
 }
 
 TEST_F(RenameTest, global1) {
@@ -399,6 +402,64 @@ CCC=@@@ DDD=^^^^ {
                                                    "DDD", {1, "(3:8~3:11)"}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 12}, "PATH",
                                        RenameValidationStatus::NAME_CONFLICT));
+}
+
+TEST_F(RenameTest, type1) {
+  const char *content = R"(
+typedef AAA = Int
+{
+  34 is AAA
+  typedef BBB = String
+  34 as BBB
+}
+34 is AAA
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 9}, "T",
+                                       {{1, "(1:8~1:11)"}, {1, "(3:8~3:11)"}, {1, "(7:6~7:9)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 10}, "T",
+                                       {{1, "(4:10~4:13)"}, {1, "(5:8~5:11)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 10}, "Bool",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 10}, "Boolean",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 9},
+                                                   "BBB", {1, "(4:10~4:13)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 4, .character = 11},
+                                                   "AAA", {1, "(1:8~1:11)"}));
+}
+
+TEST_F(RenameTest, type2) {
+  const char *content = R"(
+typedef AAA : Error
+typedef BBB() { new BBB(); }
+{
+  34 is AAA
+  typedef BBB = String
+  34 as BBB
+}
+34 is AAA
+new BBB()
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 9}, "T",
+                                       {{1, "(1:8~1:11)"}, {1, "(4:8~4:11)"}, {1, "(8:6~8:9)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 9}, "T",
+                                       {{1, "(2:8~2:11)"}, {1, "(2:20~2:23)"}, {1, "(9:4~9:7)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 10}, "UnixFD",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 10}, "Error",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 9},
+                                                   "BBB", {1, "(2:8~2:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 9},
+                                                   "AAA", {1, "(1:8~1:11)"}));
 }
 
 int main(int argc, char **argv) {
