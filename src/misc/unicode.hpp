@@ -410,6 +410,34 @@ struct Utf8Stream {
   }
 };
 
+class CodePointWithMeta {
+private:
+  /**
+   * | 8bit (meta) | 24bit (code point) |
+   */
+  unsigned int value{0};
+
+  explicit CodePointWithMeta(unsigned int v) : value(v) {}
+
+public:
+  CodePointWithMeta() = default;
+
+  static CodePointWithMeta from(unsigned int v) { return CodePointWithMeta(v); }
+
+  CodePointWithMeta(int codePoint, unsigned char meta) : value(meta << 24) {
+    this->value |= codePoint < 0 ? 0xFFFFFF : static_cast<unsigned int>(codePoint) & 0xFFFFFF;
+  }
+
+  unsigned int getValue() const { return this->value; }
+
+  unsigned char getMeta() const { return this->value >> 24; }
+
+  int codePoint() const {
+    unsigned int cc = this->value & 0xFFFFFF;
+    return cc == 0xFFFFFF ? -1 : static_cast<int>(cc);
+  }
+};
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_UNICODE_HPP

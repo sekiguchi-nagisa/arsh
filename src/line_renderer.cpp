@@ -35,10 +35,10 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
   unsigned int width = 0;
   unsigned int flagSeqCount = 0;
   for (unsigned int i = 0; i < ret.getCodePointCount(); i++) {
-    auto codePoint = ret.getCodePoints()[i];
+    auto codePoint = ret.getCodePointAt(i);
     if (ps.replaceInvalid && codePoint < 0) {
       codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
-    } else if (ret.getBreakProperties()[i] == GraphemeBoundary::BreakProperty::Regional_Indicator) {
+    } else if (ret.getBreakPropertyAt(i) == GraphemeBoundary::BreakProperty::Regional_Indicator) {
       flagSeqCount++;
     }
     int w = UnicodeUtil::width(codePoint, ps.eaw);
@@ -269,20 +269,20 @@ const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) c
 }
 
 static bool isControlChar(const GraphemeCluster &grapheme) {
-  if ((grapheme.getCodePointCount() == 1 && isControlChar(grapheme.getCodePoints()[0])) ||
-      (grapheme.getCodePointCount() == 2 && grapheme.getCodePoints()[0] == '\r' &&
-       grapheme.getCodePoints()[1] == '\n')) {
+  if ((grapheme.getCodePointCount() == 1 && isControlChar(grapheme.getCodePointAt(0))) ||
+      (grapheme.getCodePointCount() == 2 && grapheme.getCodePointAt(0) == '\r' &&
+       grapheme.getCodePointAt(1) == '\n')) {
     return true;
   }
   return false;
 }
 
 static size_t getNewlineOffset(const GraphemeCluster &grapheme) {
-  if (grapheme.getCodePointCount() == 1 && grapheme.getCodePoints()[0] == '\n') {
+  if (grapheme.getCodePointCount() == 1 && grapheme.getCodePointAt(0) == '\n') {
     return 1;
   }
-  if (grapheme.getCodePointCount() == 2 && grapheme.getCodePoints()[0] == '\r' &&
-      grapheme.getCodePoints()[1] == '\n') {
+  if (grapheme.getCodePointCount() == 2 && grapheme.getCodePointAt(0) == '\r' &&
+      grapheme.getCodePointAt(1) == '\n') {
     return 2;
   }
   return 0;
@@ -324,7 +324,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         *this->output += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
-      return this->renderControlChar(grapheme.getCodePoints()[0], colorCode);
+      return this->renderControlChar(grapheme.getCodePointAt(0), colorCode);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
       if (this->totalCols + width > this->maxCols) { // line break

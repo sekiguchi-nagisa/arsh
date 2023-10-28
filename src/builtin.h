@@ -960,19 +960,16 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
 static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
   const char *charBegin = ref.begin() + values[0];
   const char *cur = ref.begin() + values[1];
-  unsigned int cc = 0xFFFFFF & values[2];
-  unsigned char p = values[2] >> 24;
-  return {Utf8Stream(cur, ref.end()), charBegin, cc == 0xFFFFFF ? -1 : static_cast<int>(cc),
-          static_cast<GraphemeBoundary::BreakProperty>(p)};
+  auto vv = CodePointWithMeta::from(values[2]);
+  return {Utf8Stream(cur, ref.end()), charBegin, vv.codePoint(),
+          static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta())};
 }
 
 static DSValue asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
   unsigned int prevPos = scanner.getCharBegin() - ref.begin();
   unsigned int curPos = scanner.getStream().iter - ref.begin();
-  unsigned char p = toUnderlying(scanner.getProperty());
-  int c = scanner.getCodePoint();
-  unsigned int v = c < 0 ? 0xFFFFFF : static_cast<unsigned int>(c) & 0xFFFFFF;
-  v |= p << 24;
+  unsigned int v =
+      CodePointWithMeta(scanner.getCodePoint(), toUnderlying(scanner.getProperty())).getValue();
 
   return DSValue::createNumList(prevPos, curPos, v);
 }

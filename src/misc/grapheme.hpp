@@ -20,6 +20,7 @@
 #include <tuple>
 
 #include "detect.hpp"
+#include "enum_util.hpp"
 #include "string_ref.hpp"
 #include "unicode.hpp"
 
@@ -103,16 +104,14 @@ private:
   StringRef ref; // grapheme cluster
   bool invalid{false};
   unsigned short codePointCount{0}; // count of containing code points
-  int codePoints[MAX_GRAPHEME_CODE_POINTS];
-  GraphemeBoundary::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
+  CodePointWithMeta data[MAX_GRAPHEME_CODE_POINTS];
 
 public:
   bool add(int codePoint, GraphemeBoundary::BreakProperty p) {
     if (this->codePointCount == MAX_GRAPHEME_CODE_POINTS) {
       return false;
     }
-    this->codePoints[this->codePointCount] = codePoint;
-    this->breakProperties[this->codePointCount] = p;
+    this->data[this->codePointCount] = CodePointWithMeta(codePoint, toUnderlying(p));
     this->codePointCount++;
     if (codePoint == -1) {
       invalid = true;
@@ -134,9 +133,11 @@ public:
 
   unsigned int getCodePointCount() const { return this->codePointCount; }
 
-  const auto &getCodePoints() const { return this->codePoints; }
+  int getCodePointAt(unsigned int index) const { return this->data[index].codePoint(); }
 
-  const auto &getBreakProperties() const { return this->breakProperties; }
+  GraphemeBoundary::BreakProperty getBreakPropertyAt(unsigned int index) const {
+    return static_cast<GraphemeBoundary::BreakProperty>(this->data[index].getMeta());
+  }
 };
 
 template <typename Stream>
