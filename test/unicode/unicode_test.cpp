@@ -398,6 +398,24 @@ static std::string toUTF8(const std::vector<int> &codes) {
   return ret;
 }
 
+class CodePointStream {
+private:
+  std::reference_wrapper<const std::vector<int>> codePoints;
+  unsigned int index{0};
+
+public:
+  explicit CodePointStream(const std::vector<int> &codePoints)
+      : codePoints(std::cref(codePoints)) {}
+
+  explicit operator bool() const { return this->index < this->codePoints.get().size(); }
+
+  unsigned int saveState() const { return this->index; }
+
+  void restoreState(unsigned int i) { this->index = i; }
+
+  int nextCodePoint() { return this->codePoints.get()[this->index++]; }
+};
+
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto input = getInput(GetParam());
@@ -411,13 +429,15 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
 
     std::vector<std::vector<int>> output;
     output.emplace_back();
-    GraphemeBoundary boundary;
-    for (auto &codePoint : input) {
-      auto property = GraphemeBoundary::getBreakProperty(codePoint);
-      if (boundary.scanBoundary(property)) {
+    CodePointStream stream(input);
+    GraphemeScanner<CodePointStream> scanner(std::move(stream));
+    while (scanner.getStream()) {
+      auto p = scanner.nextProperty();
+      auto c = scanner.getCodePoint();
+      if (scanner.scanBoundary(p)) {
         output.emplace_back();
       }
-      output.back().push_back(codePoint);
+      output.back().push_back(c);
     }
     ASSERT_EQ(expected, output);
   }
@@ -432,12 +452,13 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
       expectedList.push_back(toUTF8(e));
     }
 
-    GraphemeScanner scanner(inputStr);
+    Utf8GraphemeScanner scanner(inputStr);
     std::vector<std::string> outputList;
-    GraphemeScanner::Result ret;
-    for (unsigned int i = 0; scanner.next(ret); i++) {
-      ASSERT_EQ(expected[i][0], ret.codePoints[0]);
-      outputList.push_back(ret.ref.toString());
+    GraphemeCluster ret;
+    for (unsigned int i = 0; scanner.hasNext(); i++) {
+      scanner.next(ret);
+      ASSERT_EQ(expected[i][0], ret.getCodePoints()[0]);
+      outputList.push_back(ret.getRef().toString());
     }
     ASSERT_FALSE(scanner.hasNext());
     ASSERT_EQ(expectedList, outputList);
@@ -465,114 +486,99 @@ TEST(GraphemeBreakTestBase, expect) {
 }
 
 TEST(GraphemeBreakTestBase, scan1) {
-  GraphemeScanner scanner("abc");
+  Utf8GraphemeScanner scanner("abc");
   ASSERT_TRUE(scanner.hasNext());
-  GraphemeScanner::Result ret;
+  GraphemeCluster ret;
 
-  bool s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("a", ret.ref);
-  ASSERT_EQ('a', ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
-  ASSERT_TRUE(scanner.hasNext());
-
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("b", ret.ref);
-  ASSERT_EQ('b', ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("a", ret.getRef());
+  ASSERT_EQ('a', ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("c", ret.ref);
-  ASSERT_EQ('c', ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
-  ASSERT_FALSE(scanner.hasNext());
-
-  s = scanner.next(ret);
-  ASSERT_FALSE(s);
-  ASSERT_EQ(3, scanner.getPrevPos());
-  ASSERT_EQ(3, scanner.getCurPos());
-  ASSERT_EQ(3, ret.ref.begin() - scanner.getRef().begin());
-  ASSERT_EQ(0, ret.ref.size());
-  ASSERT_EQ(0, ret.codePointCount);
-  ASSERT_FALSE(scanner.hasNext());
-
-  scanner = GraphemeScanner("🇯🇵");
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("🇯🇵", ret.ref);
-  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.codePoints[0]);
-  ASSERT_EQ(0x1F1E6 + ('p' - 'a'), ret.codePoints[1]);
-  ASSERT_EQ(2, ret.codePointCount);
-  ASSERT_FALSE(scanner.hasNext());
-
-  s = scanner.next(ret);
-  ASSERT_FALSE(s);
-
-  scanner = GraphemeScanner("");
-  ASSERT_FALSE(scanner.hasNext());
-  s = scanner.next(ret);
-  ASSERT_FALSE(s);
-
-  scanner = GraphemeScanner(StringRef("\0", 1));
+  scanner.next(ret);
+  ASSERT_EQ("b", ret.getRef());
+  ASSERT_EQ('b', ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
+
+  scanner.next(ret);
+  ASSERT_EQ("c", ret.getRef());
+  ASSERT_EQ('c', ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_FALSE(scanner.hasNext());
+
+  scanner.next(ret);
+  ASSERT_EQ(0, ret.getRef().size());
+  ASSERT_EQ(0, ret.getCodePointCount());
+  ASSERT_FALSE(scanner.hasNext());
+
+  scanner = Utf8GraphemeScanner("🇯🇵");
+  scanner.next(ret);
+  ASSERT_EQ("🇯🇵", ret.getRef());
+  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.getCodePoints()[0]);
+  ASSERT_EQ(0x1F1E6 + ('p' - 'a'), ret.getCodePoints()[1]);
+  ASSERT_EQ(2, ret.getCodePointCount());
+  ASSERT_FALSE(scanner.hasNext());
+
+  scanner.next(ret);
+  ASSERT_FALSE(scanner.hasNext());
+
+  scanner = Utf8GraphemeScanner("");
+  ASSERT_FALSE(scanner.hasNext());
+  scanner.next(ret);
+  ASSERT_FALSE(scanner.hasNext());
+
+  scanner = Utf8GraphemeScanner(StringRef("\0", 1));
+  ASSERT_TRUE(scanner.hasNext());
+  scanner.next(ret);
   ASSERT_FALSE(scanner.hasNext());
 }
 
 TEST(GraphemeBreakTestBase, scan2) {
-  GraphemeScanner scanner("\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3");
+  Utf8GraphemeScanner scanner("\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3");
   ASSERT_TRUE(scanner.hasNext());
-  GraphemeScanner::Result ret;
+  GraphemeCluster ret;
 
-  bool s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\xC2", ret.ref);
-  ASSERT_EQ(-1, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
-  ASSERT_TRUE(scanner.hasNext());
-
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\x24", ret.ref);
-  ASSERT_EQ(0x24, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("\xC2", ret.getRef());
+  ASSERT_EQ(-1, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\xE0", ret.ref);
-  ASSERT_EQ(-1, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("\x24", ret.getRef());
+  ASSERT_EQ(0x24, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\xA4", ret.ref);
-  ASSERT_EQ(-1, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("\xE0", ret.getRef());
+  ASSERT_EQ(-1, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_TRUE(scanner.hasNext());
+
+  scanner.next(ret);
+  ASSERT_EQ("\xA4", ret.getRef());
+  ASSERT_EQ(-1, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
   // break before spacing mark U+0E33(E0 B8 B3), if broken code point
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\xC2", ret.ref);
-  ASSERT_EQ(-1, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("\xC2", ret.getRef());
+  ASSERT_EQ(-1, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  s = scanner.next(ret);
-  ASSERT_TRUE(s);
-  ASSERT_EQ("\xE0\xB8\xB3", ret.ref);
-  ASSERT_EQ(0x0E33, ret.codePoints[0]);
-  ASSERT_EQ(1, ret.codePointCount);
+  scanner.next(ret);
+  ASSERT_EQ("\xE0\xB8\xB3", ret.getRef());
+  ASSERT_EQ(0x0E33, ret.getCodePoints()[0]);
+  ASSERT_EQ(1, ret.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
-  s = scanner.next(ret);
-  ASSERT_FALSE(s);
+  scanner.next(ret);
+  ASSERT_FALSE(scanner.hasNext());
 }
 
 TEST_P(GraphemeBreakTest, base) {
@@ -591,23 +597,6 @@ static std::vector<std::string> getGraphemeTargets() {
 
 INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest,
                          ::testing::ValuesIn(getGraphemeTargets()));
-
-class CodePointStream {
-private:
-  const std::vector<int> &codePoints;
-  unsigned int index{0};
-
-public:
-  explicit CodePointStream(const std::vector<int> &codePoints) : codePoints(codePoints) {}
-
-  explicit operator bool() const { return this->index < this->codePoints.size(); }
-
-  unsigned int saveState() const { return this->index; }
-
-  void restoreState(unsigned int i) { this->index = i; }
-
-  int nextCodePoint() { return this->codePoints[this->index++]; }
-};
 
 struct WordBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {

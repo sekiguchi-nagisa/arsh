@@ -400,7 +400,9 @@ struct Utf8Stream {
     unsigned int size = UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint);
     if (size < 1) {
       codePoint = -1;
-      this->iter++;
+      if (this->iter != this->end) {
+        this->iter++;
+      }
     } else {
       this->iter += size;
     }

@@ -41,17 +41,16 @@ void LineBuffer::syncNewlinePosList() {
 size_t LineBuffer::prevCharBytes() const {
   auto ref = this->getToCursor();
   size_t byteSize = 0;
-  iterateGrapheme(ref, [&byteSize](const GraphemeScanner::Result &grapheme) {
-    byteSize = grapheme.ref.size();
-  });
+  iterateGrapheme(
+      ref, [&byteSize](const GraphemeCluster &grapheme) { byteSize = grapheme.getRef().size(); });
   return byteSize;
 }
 
 size_t LineBuffer::nextCharBytes() const {
   auto ref = this->getFromCursor();
   size_t byteSize = 0;
-  iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeScanner::Result &grapheme) {
-    byteSize = grapheme.ref.size();
+  iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeCluster &grapheme) {
+    byteSize = grapheme.getRef().size();
   });
   return byteSize;
 }
@@ -191,12 +190,12 @@ bool LineBuffer::moveCursorUpDown(bool up) {
   this->cursor = oldCursor;
 
   // resolve line to current position
-  size_t count = iterateGrapheme(this->getCurLine(false), [](const GraphemeScanner::Result &) {});
-  GraphemeScanner::Result ret;
-  size_t retCount = iterateGraphemeUntil(
-      dest, count, [&ret](const GraphemeScanner::Result &scanned) { ret = scanned; });
+  size_t count = iterateGrapheme(this->getCurLine(false), [](const GraphemeCluster &) {});
+  GraphemeCluster ret;
+  size_t retCount =
+      iterateGraphemeUntil(dest, count, [&ret](const GraphemeCluster &scanned) { ret = scanned; });
   if (retCount) {
-    this->cursor = ret.ref.end() - this->buf;
+    this->cursor = ret.getRef().end() - this->buf;
   } else {
     this->cursor = dest.begin() - this->buf;
   }

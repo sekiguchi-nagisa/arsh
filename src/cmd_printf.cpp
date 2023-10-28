@@ -588,7 +588,7 @@ bool FormatPrinter::appendWithPadding(const int width, StringRef ref, const int 
     endIter = ref.begin();
     count = iterateGraphemeUntil(
         ref, static_cast<size_t>(precision),
-        [&endIter](const GraphemeScanner::Result &grapheme) { endIter = grapheme.ref.end(); });
+        [&endIter](const GraphemeCluster &grapheme) { endIter = grapheme.getRef().end(); });
   }
   assert(endIter >= ref.begin());
   ref = ref.substr(0, endIter - ref.begin());

@@ -583,7 +583,7 @@ YDSH_METHOD string_empty(RuntimeContext &ctx) {
 //!bind: function count($this : String) : Int
 YDSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
-  size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeScanner::Result &) {});
+  size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeCluster &) {});
   assert(count <= StringObject::MAX_SIZE);
   RET(DSValue::createInt(count));
 }
@@ -595,7 +595,7 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
 
-  iterateGrapheme(ref, [&array](const GraphemeScanner::Result &ret) {
+  iterateGrapheme(ref, [&array](const GraphemeCluster &ret) {
     array.append(DSValue::createStr(ret)); // not check iterator invalidation
   });
   ASSERT_ARRAY_SIZE(array);
@@ -647,9 +647,8 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
       .replaceInvalid = true,
   };
   int64_t value = 0;
-  iterateGrapheme(ref, [&value, &ps](const GraphemeScanner::Result &ret) {
-    value += getGraphemeWidth(ps, ret);
-  });
+  iterateGrapheme(
+      ref, [&value, &ps](const GraphemeCluster &ret) { value += getGraphemeWidth(ps, ret); });
 
   RET(DSValue::createInt(value));
 }
@@ -715,12 +714,14 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 YDSH_METHOD string_charAt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_charAt);
 
-  GraphemeScanner scanner(LOCAL(0).asStrRef());
-  GraphemeScanner::Result ret;
+  StringRef ref = LOCAL(0).asStrRef();
+  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
+  GraphemeCluster ret;
   const auto pos = LOCAL(1).asInt();
 
   ssize_t count = 0;
-  for (; scanner.next(ret); count++) {
+  for (; scanner.hasNext(); count++) {
+    scanner.next(ret);
     if (count == pos) {
       RET(DSValue::createStr(ret));
     }
@@ -956,14 +957,24 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
   RET(DSValue::createInvalid());
 }
 
-static GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
-  return GraphemeScanner(ref, values[0], values[1],
-                         GraphemeBoundary(static_cast<GraphemeBoundary::BreakProperty>(values[2])));
+static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
+  const char *charBegin = ref.begin() + values[0];
+  const char *cur = ref.begin() + values[1];
+  unsigned int cc = 0xFFFFFF & values[2];
+  unsigned char p = values[2] >> 24;
+  return {Utf8Stream(cur, ref.end()), charBegin, cc == 0xFFFFFF ? -1 : static_cast<int>(cc),
+          static_cast<GraphemeBoundary::BreakProperty>(p)};
 }
 
-static DSValue asDSValue(const GraphemeScanner &scanner) {
-  return DSValue::createNumList(scanner.getPrevPos(), scanner.getCurPos(),
-                                static_cast<uint32_t>(scanner.getBoundary().getState()));
+static DSValue asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
+  unsigned int prevPos = scanner.getCharBegin() - ref.begin();
+  unsigned int curPos = scanner.getStream().iter - ref.begin();
+  unsigned char p = toUnderlying(scanner.getProperty());
+  int c = scanner.getCodePoint();
+  unsigned int v = c < 0 ? 0xFFFFFF : static_cast<unsigned int>(c) & 0xFFFFFF;
+  v |= p << 24;
+
+  return DSValue::createNumList(prevPos, curPos, v);
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
@@ -983,9 +994,10 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
    */
   auto value = DSValue::create<BaseObject>(ctx.typePool.get(TYPE::StringIter), 2);
   auto &obj = typeAs<BaseObject>(value);
-  GraphemeScanner scanner(LOCAL(0).asStrRef());
+  StringRef ref = LOCAL(0).asStrRef();
+  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
   obj[0] = LOCAL(0);
-  obj[1] = asDSValue(scanner);
+  obj[1] = asDSValue(ref, scanner);
   RET(value);
 }
 
@@ -1094,11 +1106,9 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
   auto &iter = typeAs<BaseObject>(LOCAL(0));
   auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
   if (scanner.hasNext()) {
-    GraphemeScanner::Result ret;
-    bool r = scanner.next(ret);
-    (void)r;
-    assert(r);
-    iter[1] = asDSValue(scanner);
+    GraphemeCluster ret;
+    scanner.next(ret);
+    iter[1] = asDSValue(iter[0].asStrRef(), scanner);
     RET(DSValue::createStr(ret));
   } else {
     RET_VOID;

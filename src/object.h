@@ -637,7 +637,7 @@ public:
    * @param ret
    * @return
    */
-  static DSValue createStr(const GraphemeScanner::Result &ret);
+  static DSValue createStr(const GraphemeCluster &ret);
 };
 
 template <typename T>

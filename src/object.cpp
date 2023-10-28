@@ -388,12 +388,12 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
   return true;
 }
 
-DSValue DSValue::createStr(const GraphemeScanner::Result &ret) {
-  if (ret.hasInvalid) {
-    assert(ret.codePointCount == 1);
+DSValue DSValue::createStr(const GraphemeCluster &ret) {
+  if (ret.hasInvalid()) {
+    assert(ret.getCodePointCount() == 1);
     return DSValue::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
   } else {
-    return DSValue::createStr(ret.ref);
+    return DSValue::createStr(ret.getRef());
   }
 }
 

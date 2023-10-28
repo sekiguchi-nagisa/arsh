@@ -76,7 +76,7 @@ struct CharWidthProperties {
  * @param ret
  * @return
  */
-unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeScanner::Result &ret);
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret);
 
 class ANSIEscapeSeqMap {
 private:

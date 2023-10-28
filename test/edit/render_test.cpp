@@ -15,11 +15,11 @@ struct Len {
 
 static Len getCharLen(StringRef line, const CharWidthProperties &ps, unsigned int initCols = 0) {
   Len len{0, 0};
-  iterateGraphemeUntil(line, 1, [&](const GraphemeScanner::Result &grapheme) {
+  iterateGraphemeUntil(line, 1, [&](const GraphemeCluster &grapheme) {
     LineRenderer renderer(ps, initCols);
     renderer.setLineNumLimit(0);
-    renderer.renderLines(grapheme.ref);
-    len.byteSize = grapheme.ref.size();
+    renderer.renderLines(grapheme.getRef());
+    len.byteSize = grapheme.getRef().size();
     len.colSize = renderer.getTotalCols() - initCols;
   });
   return len;

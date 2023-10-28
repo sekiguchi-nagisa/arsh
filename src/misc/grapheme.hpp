@@ -33,7 +33,7 @@ public:
   static_assert(Bool, "not allowed instantiation");
 
   // for grapheme cluster boundary. only support extended grapheme cluster
-  enum class BreakProperty {
+  enum class BreakProperty : unsigned char {
     SOT, // for GB1
 
     Any,
@@ -57,27 +57,6 @@ public:
   };
 
   static BreakProperty getBreakProperty(int codePoint);
-
-private:
-  /**
-   * may be indicate previous code point property
-   */
-  BreakProperty state{BreakProperty::SOT};
-
-public:
-  GraphemeBoundary() = default;
-
-  explicit GraphemeBoundary(BreakProperty init) : state(init) {}
-
-  BreakProperty getState() const { return this->state; }
-
-  /**
-   * scan grapheme cluster boundary
-   * @param breakProperty
-   * @return
-   * if grapheme cluster boundary is between prev codePoint and codePoint, return true
-   */
-  bool scanBoundary(BreakProperty breakProperty);
 };
 
 template <bool Bool>
@@ -112,9 +91,95 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
   return BreakProperty::Any;
 }
 
+} // namespace detail
+
+using GraphemeBoundary = detail::GraphemeBoundary<true>;
+
+class GraphemeCluster {
+public:
+  static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
+
+private:
+  StringRef ref; // grapheme cluster
+  bool invalid{false};
+  unsigned short codePointCount{0}; // count of containing code points
+  int codePoints[MAX_GRAPHEME_CODE_POINTS];
+  GraphemeBoundary::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
+
+public:
+  bool add(int codePoint, GraphemeBoundary::BreakProperty p) {
+    if (this->codePointCount == MAX_GRAPHEME_CODE_POINTS) {
+      return false;
+    }
+    this->codePoints[this->codePointCount] = codePoint;
+    this->breakProperties[this->codePointCount] = p;
+    this->codePointCount++;
+    if (codePoint == -1) {
+      invalid = true;
+    }
+    return true;
+  }
+
+  void clear() {
+    this->codePointCount = 0;
+    this->invalid = false;
+    this->ref = "";
+  }
+
+  void setRef(StringRef v) { this->ref = v; }
+
+  StringRef getRef() const { return this->ref; }
+
+  bool hasInvalid() const { return this->invalid; }
+
+  unsigned int getCodePointCount() const { return this->codePointCount; }
+
+  const auto &getCodePoints() const { return this->codePoints; }
+
+  const auto &getBreakProperties() const { return this->breakProperties; }
+};
+
+template <typename Stream>
+class GraphemeScanner {
+public:
+  using BreakProperty = GraphemeBoundary::BreakProperty;
+
+private:
+  Stream stream;
+  int codePoint;
+  BreakProperty state;
+
+protected:
+  GraphemeScanner(Stream &&stream, int codePoint, BreakProperty property)
+      : stream(std::move(stream)), codePoint(codePoint), state(property) {}
+
+public:
+  explicit GraphemeScanner(Stream &&stream)
+      : GraphemeScanner(std::move(stream), -1, BreakProperty::SOT) {}
+
+  const auto &getStream() const { return this->stream; }
+
+  int getCodePoint() const { return this->codePoint; }
+
+  BreakProperty getProperty() const { return this->state; }
+
+  /**
+   * scan grapheme cluster boundary
+   * @param breakProperty
+   * @return
+   * if grapheme cluster boundary is between prev codePoint and codePoint, return true
+   */
+  bool scanBoundary(BreakProperty breakProperty);
+
+  BreakProperty nextProperty() {
+    this->codePoint = this->stream.nextCodePoint();
+    return GraphemeBoundary::getBreakProperty(this->codePoint);
+  }
+};
+
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
-template <bool Bool>
-bool GraphemeBoundary<Bool>::scanBoundary(BreakProperty breakProperty) {
+template <typename Stream>
+bool GraphemeScanner<Stream>::scanBoundary(BreakProperty breakProperty) {
   auto after = breakProperty;
   auto before = this->state;
   this->state = after;
@@ -212,40 +277,25 @@ bool GraphemeBoundary<Bool>::scanBoundary(BreakProperty breakProperty) {
   return true; // GB999
 }
 
-template <bool Bool>
-class GraphemeScanner {
+class Utf8GraphemeScanner : public GraphemeScanner<Utf8Stream> {
 private:
-  static_assert(Bool, "not allowed instantiation");
-
-  StringRef ref;
-  size_t prevPos;
-  size_t curPos;
-  GraphemeBoundary<Bool> boundary;
+  const char *charBegin;
 
 public:
-  explicit GraphemeScanner(StringRef ref, size_t prevPos = 0, size_t curPos = 0,
-                           GraphemeBoundary<Bool> boundary = {})
-      : ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
+  explicit Utf8GraphemeScanner(StringRef ref)
+      : Utf8GraphemeScanner(Utf8Stream(ref.begin(), ref.end())) {}
 
-  StringRef getRef() const { return this->ref; }
+  Utf8GraphemeScanner(Utf8Stream &&stream, const char *charBegin = nullptr, int codePoint = -1,
+                      BreakProperty p = BreakProperty::SOT)
+      : GraphemeScanner(std::move(stream), codePoint, p), charBegin(charBegin) {
+    if (!this->charBegin) {
+      this->charBegin = this->getIter();
+    }
+  }
 
-  size_t getPrevPos() const { return this->prevPos; }
+  const char *getCharBegin() const { return this->charBegin; }
 
-  size_t getCurPos() const { return this->curPos; }
-
-  GraphemeBoundary<Bool> getBoundary() const { return this->boundary; }
-
-  bool hasNext() const { return this->prevPos <= this->curPos && this->prevPos < this->ref.size(); }
-
-  static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
-
-  struct Result {
-    StringRef ref; // grapheme cluster
-    bool hasInvalid{false};
-    unsigned short codePointCount{0}; // count of containing code points
-    int codePoints[MAX_GRAPHEME_CODE_POINTS];
-    typename GraphemeBoundary<Bool>::BreakProperty breakProperties[MAX_GRAPHEME_CODE_POINTS];
-  };
+  bool hasNext() const { return this->charBegin != this->getStream().end; }
 
   /**
    * get grapheme cluster
@@ -254,61 +304,34 @@ public:
    * @return
    * if reach eof, return false
    */
-  bool next(Result &result);
+  void next(GraphemeCluster &result) {
+    result.clear();
+    if (this->getProperty() != BreakProperty::SOT && this->hasNext()) {
+      result.add(this->getCodePoint(), this->getProperty());
+    }
+    auto *begin = this->charBegin;
+    const char *end;
+    while (true) {
+      end = this->getIter();
+      auto p = this->nextProperty();
+      if (this->scanBoundary(p)) {
+        break;
+      }
+      result.add(this->getCodePoint(), p);
+    }
+    this->charBegin = end;
+    StringRef ref(begin, static_cast<size_t>(end - begin));
+    result.setRef(ref);
+  }
+
+private:
+  const char *getIter() const { return this->getStream().iter; }
 };
-
-template <bool Bool>
-bool GraphemeScanner<Bool>::next(Result &result) {
-  const size_t startPos = this->prevPos;
-  result.hasInvalid = false;
-  result.codePointCount = 0;
-  if (this->prevPos != this->curPos) {
-    result.codePointCount = 1;
-    result.codePoints[0] =
-        UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->prevPos, this->ref.end());
-    result.hasInvalid = result.hasInvalid || result.codePoints[0] == -1;
-  }
-
-  while (this->curPos < this->ref.size()) {
-    const size_t pos = this->curPos;
-    int codePoint = 0;
-    unsigned int consumedSize =
-        UnicodeUtil::utf8ToCodePoint(this->ref.begin() + this->curPos, this->ref.end(), codePoint);
-    if (consumedSize < 1) {
-      consumedSize = 1;
-    }
-    auto breakProperty = GraphemeBoundary<Bool>::getBreakProperty(codePoint);
-    assert(result.codePointCount < std::size(result.codePoints));
-    this->curPos += consumedSize;
-    if (this->boundary.scanBoundary(breakProperty)) {
-      size_t byteSize = pos - this->prevPos;
-      result.ref = this->ref.substr(startPos, byteSize);
-      this->prevPos = pos;
-      return true;
-    }
-    unsigned int index = result.codePointCount++;
-    result.codePoints[index] = codePoint;
-    result.breakProperties[index] = breakProperty;
-    result.hasInvalid = result.hasInvalid || codePoint == -1;
-  }
-  if (this->curPos == this->ref.size()) {
-    size_t byteSize = this->curPos - this->prevPos;
-    result.ref = this->ref.substr(startPos, byteSize);
-    this->prevPos = this->curPos;
-  }
-  return result.codePointCount > 0;
-}
-
-} // namespace detail
-
-using GraphemeBoundary = detail::GraphemeBoundary<true>;
-
-using GraphemeScanner = detail::GraphemeScanner<true>;
 
 template <typename Consumer>
 static constexpr bool grapheme_consumer_requirement_v =
-    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>> ||
-    std::is_same_v<bool, std::invoke_result_t<Consumer, const GraphemeScanner::Result &>>;
+    std::is_same_v<void, std::invoke_result_t<Consumer, const GraphemeCluster &>> ||
+    std::is_same_v<bool, std::invoke_result_t<Consumer, const GraphemeCluster &>>;
 
 /**
  * iterate grapheme cluster
@@ -323,12 +346,12 @@ static constexpr bool grapheme_consumer_requirement_v =
  */
 template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
 size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
-  GraphemeScanner scanner(ref);
-  GraphemeScanner::Result ret;
+  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
+  GraphemeCluster ret;
   size_t count = 0;
-  for (; count < limit && scanner.next(ret); count++) {
-    constexpr auto v =
-        std::is_same_v<bool, std::invoke_result_t<Func, const GraphemeScanner::Result &>>;
+  for (; count < limit && scanner.hasNext(); count++) {
+    scanner.next(ret);
+    constexpr auto v = std::is_same_v<bool, std::invoke_result_t<Func, const GraphemeCluster &>>;
     if constexpr (v) {
       if (!consumer(ret)) {
         count++;
