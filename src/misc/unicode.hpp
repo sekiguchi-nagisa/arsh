@@ -383,6 +383,31 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
 
 using UnicodeUtil = detail_unicode::UnicodeUtil<true>;
 
+struct Utf8Stream {
+  const char *iter{nullptr};
+  const char *end{nullptr};
+
+  Utf8Stream(const char *begin, const char *end) : iter(begin), end(end) {}
+
+  explicit operator bool() const { return this->iter != this->end; }
+
+  const char *saveState() const { return this->iter; }
+
+  void restoreState(const char *ptr) { this->iter = ptr; }
+
+  int nextCodePoint() {
+    int codePoint = 0;
+    unsigned int size = UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint);
+    if (size < 1) {
+      codePoint = -1;
+      this->iter++;
+    } else {
+      this->iter += size;
+    }
+    return codePoint;
+  }
+};
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_UNICODE_HPP

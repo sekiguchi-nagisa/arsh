@@ -122,6 +122,11 @@ public:
   bool scanBoundary();
 
 private:
+  WordBoundary::BreakProperty nextProperty() {
+    int codePoint = this->stream.nextCodePoint();
+    return WordBoundary::getBreakProperty(codePoint);
+  }
+
   /**
    * lookahead next property (except for Extend, Format, ZWJ)
    * restore stream state
@@ -131,7 +136,7 @@ private:
     auto p = WordBoundary::BreakProperty::EOT;
     auto oldState = this->stream.saveState();
     while (this->stream) {
-      p = this->stream.nextProperty();
+      p = this->nextProperty();
       switch (p) {
       case WordBoundary::BreakProperty::Extend:
       case WordBoundary::BreakProperty::Format:
@@ -153,7 +158,7 @@ bool WordScanner<Stream>::scanBoundary() {
   if (!this->stream) {
     return true;
   }
-  const auto after = this->stream.nextProperty();
+  const auto after = this->nextProperty();
   const auto before = this->state;
   this->state = after;
   const bool prevZWJ = this->zwj;
@@ -349,38 +354,12 @@ inline WordScanner<Stream> makeWordScanner(Stream &stream) {
   return WordScanner<Stream>(stream);
 }
 
-struct Utf8WordStream {
-  const char *iter{nullptr};
-  const char *end{nullptr};
-
-  Utf8WordStream(const char *begin, const char *end) : iter(begin), end(end) {}
-
-  explicit operator bool() const { return this->iter != this->end; }
-
-  const char *saveState() const { return this->iter; }
-
-  void restoreState(const char *ptr) { this->iter = ptr; }
-
-  WordBoundary::BreakProperty nextProperty() {
-    int codePoint = 0;
-    unsigned int size = UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint);
-    if (size < 1) {
-      codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
-      this->iter++;
-    } else {
-      this->iter += size;
-    }
-    return WordBoundary::getBreakProperty(codePoint);
-  }
-};
-
-class Utf8WordScanner : public WordScanner<Utf8WordStream> {
+class Utf8WordScanner : public WordScanner<Utf8Stream> {
 private:
   const char *wordBegin;
 
 public:
-  explicit Utf8WordScanner(Utf8WordStream &stream)
-      : WordScanner(stream), wordBegin(this->getIter()) {}
+  explicit Utf8WordScanner(Utf8Stream &stream) : WordScanner(stream), wordBegin(this->getIter()) {}
 
   bool hasNext() const { return this->wordBegin != this->getStream().end; }
 
@@ -408,7 +387,7 @@ static constexpr bool word_consumer_requirement_v =
 
 template <typename Func, enable_when<word_consumer_requirement_v<Func>> = nullptr>
 size_t iterateWordUntil(StringRef ref, size_t limit, Func consumer) {
-  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8Stream stream(ref.begin(), ref.end());
   Utf8WordScanner scanner(stream);
   size_t count = 0;
   for (; count < limit && scanner.hasNext(); count++) {

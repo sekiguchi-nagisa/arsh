@@ -594,23 +594,19 @@ INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest,
 
 class CodePointStream {
 private:
-  FlexBuffer<WordBoundary::BreakProperty> properties;
+  const std::vector<int> &codePoints;
   unsigned int index{0};
 
 public:
-  explicit CodePointStream(const std::vector<int> &codePoints) {
-    for (auto &codePoint : codePoints) {
-      this->properties.push_back(WordBoundary::getBreakProperty(codePoint));
-    }
-  }
+  explicit CodePointStream(const std::vector<int> &codePoints) : codePoints(codePoints) {}
 
-  explicit operator bool() const { return this->index < this->properties.size(); }
+  explicit operator bool() const { return this->index < this->codePoints.size(); }
 
   unsigned int saveState() const { return this->index; }
 
   void restoreState(unsigned int i) { this->index = i; }
 
-  WordBoundary::BreakProperty nextProperty() { return this->properties[this->index++]; }
+  int nextCodePoint() { return this->codePoints[this->index++]; }
 };
 
 struct WordBreakTest : public ::testing::TestWithParam<std::string> {
@@ -655,7 +651,7 @@ struct WordBreakTest : public ::testing::TestWithParam<std::string> {
       expectedList.push_back(toUTF8(e));
     }
 
-    Utf8WordStream stream(inputStr.c_str(), inputStr.c_str() + inputStr.size());
+    Utf8Stream stream(inputStr.c_str(), inputStr.c_str() + inputStr.size());
     Utf8WordScanner scanner(stream);
     std::vector<std::string> outputList;
     while (scanner.hasNext()) {
@@ -667,7 +663,7 @@ struct WordBreakTest : public ::testing::TestWithParam<std::string> {
 
 TEST(WordBreakTestBase, base1) {
   StringRef ref = "\n1234";
-  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8Stream stream(ref.begin(), ref.end());
   auto scanner = makeWordScanner(stream);
 
   // newline
@@ -710,7 +706,7 @@ TEST(WordBreakTestBase, base1) {
 
 TEST(WordBreakTestBase, base2) {
   StringRef ref = "\r1234\n🇯🇵3.14";
-  Utf8WordStream stream(ref.begin(), ref.end());
+  Utf8Stream stream(ref.begin(), ref.end());
   Utf8WordScanner scanner(stream);
 
   ASSERT_TRUE(scanner.hasNext());
