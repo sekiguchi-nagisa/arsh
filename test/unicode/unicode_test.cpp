@@ -416,6 +416,27 @@ public:
   int nextCodePoint() { return this->codePoints.get()[this->index++]; }
 };
 
+class CodePoints {
+private:
+  std::vector<int> codes;
+
+public:
+  CodePoints() = default;
+
+  explicit CodePoints(const GraphemeCluster &g) : CodePoints(g.getRef()) {}
+
+  explicit CodePoints(StringRef ref) {
+    Utf8Stream stream(ref.begin(), ref.end());
+    while (stream) {
+      this->codes.push_back(stream.nextCodePoint());
+    }
+  }
+
+  unsigned int getCodePointCount() const { return this->codes.size(); }
+
+  int getCodePointAt(unsigned int i) const { return this->codes[i]; }
+};
+
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto input = getInput(GetParam());
@@ -454,10 +475,11 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
 
     Utf8GraphemeScanner scanner(inputStr);
     std::vector<std::string> outputList;
-    GraphemeCluster ret;
+    CodePoints codes;
     for (unsigned int i = 0; scanner.hasNext(); i++) {
-      scanner.next(ret);
-      ASSERT_EQ(expected[i][0], ret.getCodePointAt(0));
+      GraphemeCluster ret = scanner.next();
+      codes = CodePoints(ret);
+      ASSERT_EQ(expected[i][0], codes.getCodePointAt(0));
       outputList.push_back(ret.getRef().toString());
     }
     ASSERT_FALSE(scanner.hasNext());
@@ -489,95 +511,113 @@ TEST(GraphemeBreakTestBase, scan1) {
   Utf8GraphemeScanner scanner("abc");
   ASSERT_TRUE(scanner.hasNext());
   GraphemeCluster ret;
+  CodePoints codes;
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("a", ret.getRef());
-  ASSERT_EQ('a', ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ('a', codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("b", ret.getRef());
-  ASSERT_EQ('b', ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ('b', codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("c", ret.getRef());
-  ASSERT_EQ('c', ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ('c', codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ(0, ret.getRef().size());
-  ASSERT_EQ(0, ret.getCodePointCount());
+  ASSERT_EQ(0, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
   scanner = Utf8GraphemeScanner("🇯🇵");
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("🇯🇵", ret.getRef());
-  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.getCodePointAt(0));
-  ASSERT_EQ(0x1F1E6 + ('p' - 'a'), ret.getCodePointAt(1));
-  ASSERT_EQ(2, ret.getCodePointCount());
+  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), codes.getCodePointAt(0));
+  ASSERT_EQ(0x1F1E6 + ('p' - 'a'), codes.getCodePointAt(1));
+  ASSERT_EQ(2, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
+  ASSERT_EQ(0, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
   scanner = Utf8GraphemeScanner("");
   ASSERT_FALSE(scanner.hasNext());
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_FALSE(scanner.hasNext());
+  ASSERT_EQ(0, codes.getCodePointCount());
 
   scanner = Utf8GraphemeScanner(StringRef("\0", 1));
   ASSERT_TRUE(scanner.hasNext());
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
+  ASSERT_EQ('\0', codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 }
 
 TEST(GraphemeBreakTestBase, scan2) {
   Utf8GraphemeScanner scanner("\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3");
   ASSERT_TRUE(scanner.hasNext());
-  GraphemeCluster ret;
 
-  scanner.next(ret);
+  GraphemeCluster ret = scanner.next();
+  CodePoints codes = CodePoints(ret);
   ASSERT_EQ("\xC2", ret.getRef());
-  ASSERT_EQ(-1, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(-1, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("\x24", ret.getRef());
-  ASSERT_EQ(0x24, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(0x24, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("\xE0", ret.getRef());
-  ASSERT_EQ(-1, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(-1, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("\xA4", ret.getRef());
-  ASSERT_EQ(-1, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(-1, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
   // break before spacing mark U+0E33(E0 B8 B3), if broken code point
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("\xC2", ret.getRef());
-  ASSERT_EQ(-1, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(-1, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_TRUE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
+  codes = CodePoints(ret);
   ASSERT_EQ("\xE0\xB8\xB3", ret.getRef());
-  ASSERT_EQ(0x0E33, ret.getCodePointAt(0));
-  ASSERT_EQ(1, ret.getCodePointCount());
+  ASSERT_EQ(0x0E33, codes.getCodePointAt(0));
+  ASSERT_EQ(1, codes.getCodePointCount());
   ASSERT_FALSE(scanner.hasNext());
 
-  scanner.next(ret);
+  ret = scanner.next();
   ASSERT_FALSE(scanner.hasNext());
 }
 

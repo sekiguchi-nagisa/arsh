@@ -31,14 +31,19 @@ const CharWidthPropertyList &getCharWidthPropertyList() {
   return table;
 }
 
+static bool isRegionalIndicator(int codePoint) {
+  return codePoint >= 0x1F1E6 && codePoint <= 0x1F1E6 + ('z' - 'a');
+}
+
 unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret) {
   unsigned int width = 0;
   unsigned int flagSeqCount = 0;
-  for (unsigned int i = 0; i < ret.getCodePointCount(); i++) {
-    auto codePoint = ret.getCodePointAt(i);
+  Utf8Stream stream(ret.getRef().begin(), ret.getRef().end());
+  while (stream) {
+    int codePoint = stream.nextCodePoint();
     if (ps.replaceInvalid && codePoint < 0) {
       codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
-    } else if (ret.getBreakPropertyAt(i) == GraphemeBoundary::BreakProperty::Regional_Indicator) {
+    } else if (isRegionalIndicator(codePoint)) {
       flagSeqCount++;
     }
     int w = UnicodeUtil::width(codePoint, ps.eaw);
@@ -269,20 +274,18 @@ const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) c
 }
 
 static bool isControlChar(const GraphemeCluster &grapheme) {
-  if ((grapheme.getCodePointCount() == 1 && isControlChar(grapheme.getCodePointAt(0))) ||
-      (grapheme.getCodePointCount() == 2 && grapheme.getCodePointAt(0) == '\r' &&
-       grapheme.getCodePointAt(1) == '\n')) {
+  if ((grapheme.getRef().size() == 1 && isControlChar(grapheme.getRef()[0])) ||
+      (grapheme.getRef().size() == 2 && grapheme.getRef() == "\r\n")) {
     return true;
   }
   return false;
 }
 
 static size_t getNewlineOffset(const GraphemeCluster &grapheme) {
-  if (grapheme.getCodePointCount() == 1 && grapheme.getCodePointAt(0) == '\n') {
+  if (grapheme.getRef().size() == 1 && grapheme.getRef()[0] == '\n') {
     return 1;
   }
-  if (grapheme.getCodePointCount() == 2 && grapheme.getCodePointAt(0) == '\r' &&
-      grapheme.getCodePointAt(1) == '\n') {
+  if (grapheme.getRef().size() == 2 && grapheme.getRef() == "\r\n") {
     return 2;
   }
   return 0;
@@ -324,7 +327,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         *this->output += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
-      return this->renderControlChar(grapheme.getCodePointAt(0), colorCode);
+      return this->renderControlChar(grapheme.getRef()[0], colorCode);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
       if (this->totalCols + width > this->maxCols) { // line break
@@ -339,7 +342,6 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       }
       if (this->output) {
         if (grapheme.hasInvalid()) {
-          assert(grapheme.getCodePointCount() == 1);
           *this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
         } else {
           *this->output += grapheme.getRef();

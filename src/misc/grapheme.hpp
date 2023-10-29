@@ -97,47 +97,18 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 using GraphemeBoundary = detail::GraphemeBoundary<true>;
 
 class GraphemeCluster {
-public:
-  static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
-
 private:
   StringRef ref; // grapheme cluster
   bool invalid{false};
-  unsigned short codePointCount{0}; // count of containing code points
-  CodePointWithMeta data[MAX_GRAPHEME_CODE_POINTS];
 
 public:
-  bool add(int codePoint, GraphemeBoundary::BreakProperty p) {
-    if (this->codePointCount == MAX_GRAPHEME_CODE_POINTS) {
-      return false;
-    }
-    this->data[this->codePointCount] = CodePointWithMeta(codePoint, toUnderlying(p));
-    this->codePointCount++;
-    if (codePoint == -1) {
-      invalid = true;
-    }
-    return true;
-  }
+  GraphemeCluster() = default;
 
-  void clear() {
-    this->codePointCount = 0;
-    this->invalid = false;
-    this->ref = "";
-  }
-
-  void setRef(StringRef v) { this->ref = v; }
+  GraphemeCluster(StringRef ref, bool invalid) : ref(ref), invalid(invalid) {}
 
   StringRef getRef() const { return this->ref; }
 
   bool hasInvalid() const { return this->invalid; }
-
-  unsigned int getCodePointCount() const { return this->codePointCount; }
-
-  int getCodePointAt(unsigned int index) const { return this->data[index].codePoint(); }
-
-  GraphemeBoundary::BreakProperty getBreakPropertyAt(unsigned int index) const {
-    return static_cast<GraphemeBoundary::BreakProperty>(this->data[index].getMeta());
-  }
 };
 
 template <typename Stream>
@@ -305,10 +276,10 @@ public:
    * @return
    * if reach eof, return false
    */
-  void next(GraphemeCluster &result) {
-    result.clear();
-    if (this->getProperty() != BreakProperty::SOT && this->hasNext()) {
-      result.add(this->getCodePoint(), this->getProperty());
+  GraphemeCluster next() {
+    bool invalid = false;
+    if (this->getProperty() != BreakProperty::SOT && this->hasNext() && this->getCodePoint() < 0) {
+      invalid = true;
     }
     auto *begin = this->charBegin;
     const char *end;
@@ -318,11 +289,13 @@ public:
       if (this->scanBoundary(p)) {
         break;
       }
-      result.add(this->getCodePoint(), p);
+      if (this->getCodePoint() < 0) {
+        invalid = true;
+      }
     }
     this->charBegin = end;
     StringRef ref(begin, static_cast<size_t>(end - begin));
-    result.setRef(ref);
+    return {ref, invalid};
   }
 
 private:
@@ -348,10 +321,9 @@ static constexpr bool grapheme_consumer_requirement_v =
 template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
 size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
   Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
-  GraphemeCluster ret;
   size_t count = 0;
   for (; count < limit && scanner.hasNext(); count++) {
-    scanner.next(ret);
+    GraphemeCluster ret = scanner.next();
     constexpr auto v = std::is_same_v<bool, std::invoke_result_t<Func, const GraphemeCluster &>>;
     if constexpr (v) {
       if (!consumer(ret)) {

@@ -390,7 +390,6 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
 
 DSValue DSValue::createStr(const GraphemeCluster &ret) {
   if (ret.hasInvalid()) {
-    assert(ret.getCodePointCount() == 1);
     return DSValue::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
   } else {
     return DSValue::createStr(ret.getRef());

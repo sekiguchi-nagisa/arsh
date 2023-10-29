@@ -716,12 +716,11 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
 
   StringRef ref = LOCAL(0).asStrRef();
   Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
-  GraphemeCluster ret;
   const auto pos = LOCAL(1).asInt();
 
   ssize_t count = 0;
   for (; scanner.hasNext(); count++) {
-    scanner.next(ret);
+    GraphemeCluster ret = scanner.next();
     if (count == pos) {
       RET(DSValue::createStr(ret));
     }
@@ -1103,8 +1102,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
   auto &iter = typeAs<BaseObject>(LOCAL(0));
   auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
   if (scanner.hasNext()) {
-    GraphemeCluster ret;
-    scanner.next(ret);
+    GraphemeCluster ret = scanner.next();
     iter[1] = asDSValue(iter[0].asStrRef(), scanner);
     RET(DSValue::createStr(ret));
   } else {
