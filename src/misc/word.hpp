@@ -77,7 +77,7 @@ typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
-#include "word_break_property.h"
+#include "word_break_property.in"
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 

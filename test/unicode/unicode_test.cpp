@@ -318,6 +318,19 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
   p = GraphemeBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE); // placement char
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
+  // InCB=Consonant
+  p = GraphemeBoundary::getBreakProperty(0x0915);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::InCB_Consonant, p);
+
+  p = GraphemeBoundary::getBreakProperty(0x0924);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::InCB_Consonant, p);
+
+  // InCB=Linker
+  p = GraphemeBoundary::getBreakProperty(0x094D);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Extend, p);
+  p = GraphemeBoundary::getInCBExtendOrLinker(0x094D);
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::InCB_Linker, p);
+
   // dummy property for broken code points (`Control` is always grapheme boundary)
   p = GraphemeBoundary::getBreakProperty(-1);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p);
@@ -393,6 +406,7 @@ static std::string toUTF8(const std::vector<int> &codes) {
   for (auto &c : codes) {
     char buf[8];
     unsigned int size = UnicodeUtil::codePointToUtf8(c, buf);
+    assert(size > 0);
     ret.append(buf, size);
   }
   return ret;
@@ -438,31 +452,6 @@ public:
 };
 
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
-  static void doTest() {
-    auto input = getInput(GetParam());
-    auto expected = getExpected(GetParam());
-
-    ASSERT_FALSE(input.empty());
-    ASSERT_FALSE(expected.empty());
-    for (auto &e : expected) {
-      ASSERT_FALSE(e.empty());
-    }
-
-    std::vector<std::vector<int>> output;
-    output.emplace_back();
-    CodePointStream stream(input);
-    GraphemeScanner<CodePointStream> scanner(std::move(stream));
-    while (scanner.getStream()) {
-      auto p = scanner.nextProperty();
-      auto c = scanner.getCodePoint();
-      if (scanner.scanBoundary(p)) {
-        output.emplace_back();
-      }
-      output.back().push_back(c);
-    }
-    ASSERT_EQ(expected, output);
-  }
-
   static void doTest2() {
     auto input = getInput(GetParam());
     auto expected = getExpected(GetParam());
@@ -475,11 +464,8 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
 
     Utf8GraphemeScanner scanner(inputStr);
     std::vector<std::string> outputList;
-    CodePoints codes;
-    for (unsigned int i = 0; scanner.hasNext(); i++) {
+    while (scanner.hasNext()) {
       GraphemeCluster ret = scanner.next();
-      codes = CodePoints(ret);
-      ASSERT_EQ(expected[i][0], codes.getCodePointAt(0));
       outputList.push_back(ret.getRef().toString());
     }
     ASSERT_FALSE(scanner.hasNext());
@@ -621,10 +607,16 @@ TEST(GraphemeBreakTestBase, scan2) {
   ASSERT_FALSE(scanner.hasNext());
 }
 
-TEST_P(GraphemeBreakTest, base) {
-  ASSERT_NO_FATAL_FAILURE(doTest());
-  ASSERT_NO_FATAL_FAILURE(doTest2());
+TEST_P(GraphemeBreakTest, InCB) {
+  std::vector<int> codes = {0x0915, 0x094D, 0x094D, 0x0924};
+  GraphemeScanner<CodePointStream> scanner((CodePointStream(codes)));
+
+  while (scanner.getStream()) {
+    scanner.scanBoundary();
+  }
 }
+
+TEST_P(GraphemeBreakTest, base) { ASSERT_NO_FATAL_FAILURE(doTest2()); }
 
 static std::vector<std::string> getGraphemeTargets() {
 #include GRAPHEME_BREAK_TEST_H

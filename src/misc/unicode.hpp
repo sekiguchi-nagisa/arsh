@@ -314,7 +314,7 @@ template <bool T>
 bool UnicodeUtil<T>::isCombiningChar(int codePoint) {
 #define USE_ZERO_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.h"
+#include "unicode_width.in"
   return searchFrom(zero_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_ZERO_WIDTH_TABLE
@@ -324,7 +324,7 @@ template <bool T>
 bool UnicodeUtil<T>::isWideChar(int codePoint) {
 #define USE_TWO_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.h"
+#include "unicode_width.in"
   return searchFrom(two_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_TWO_WIDTH_TABLE
@@ -334,7 +334,7 @@ template <bool T>
 bool UnicodeUtil<T>::isAmbiguousChar(int codePoint) {
 #define USE_AMBIGUOUS_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.h"
+#include "unicode_width.in"
   return searchFrom(ambiguous_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_AMBIGUOUS_WIDTH_TABLE

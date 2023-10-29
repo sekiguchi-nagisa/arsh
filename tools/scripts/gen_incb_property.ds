@@ -8,17 +8,11 @@ if $# != 1 {
 command -v curl &> /dev/null || { echo require curl 1>&2; exit 1; }
 
 let out = $1.startsWith("/") ? $1 : "../$1"
-let work_dir = "grapheme-temp"
+let work_dir = "incb-temp"
 
 test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
-
-test -f GraphemeBreakProperty.txt ||
-    curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakProperty.txt -o ./GraphemeBreakProperty.txt
-
-test -f emoji-data.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/ucd/emoji/emoji-data.txt -o emoji-data.txt
 
 test -f DerivedCoreProperties.txt ||
     curl https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt -o DerivedCoreProperties.txt
@@ -48,23 +42,6 @@ function try_merge(o : Range) : Range? for Range {
         )
     }
     return $none
-}
-
-function parse($line : String) : Range {
-    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+;[ ]+([a-zA-Z0-9_]+)[ ]*#.+$/.match($line)
-    var begin = "0x${$m[1]!}"
-    var end = "0x${$m[3] ?? $m[1]!}"
-    var p = $m[4]!
-
-    var ret = new Range(
-        $begin.toInt()!,
-        $end.toInt()!,
-        $begin,
-        $end,
-        $p
-    )
-    assert $ret.begin <= $ret.end
-    return $ret
 }
 
 function parse_incb($line : String) : Range {
@@ -109,48 +86,22 @@ function minimize($ranges : [Range]) : [Range] {
 
 var ranges : [Range]
 
-# GraphemeBreakProperty.txt
-cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
-    if $count < 2 {
-        echo $REPLY >> $out
-        continue
-    }
-
-    if $REPLY.startsWith('#') || $REPLY.empty() {
-        continue
-    }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
-    echo $REPLY
-} with > ./trimed_GraphemeBreakProperty.txt 
-
-# emoji-data.txt
-cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
-    if $count < 2 {
-        echo $REPLY >> $out
-        continue
-    }
-
-    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
-        continue
-    }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
-    echo $REPLY
-} with > ./trimed_emoji-data.txt
-
-# DerivedCoreProperties.txt (only extract InCB Consonant)
+# DerivedCoreProperties.txt (only extract InCB Extend, InCB Linker)
 cat ./DerivedCoreProperties.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $count < 2 {
         echo $REPLY >> $out
         continue
     }
 
-    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("InCB; Consonant") == -1 {
+    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("InCB") == -1 {
+        continue
+    }
+    if $REPLY.contains('InCB; Consonant') {
         continue
     }
     try { $ranges.add($parse_incb($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_DerivedCoreProperties.txt
-
 
 $ranges.sortWith(function (x,y) => $x.compare($y))
 $ranges = $minimize($ranges)
@@ -160,7 +111,7 @@ $ranges = $minimize($ranges)
     echo "*/"
     echo
     echo // clang-format off
-    echo "static const UNICODE_PROPERTY_RANGE grapheme_break_property_table[] = {"
+    echo "static const UNICODE_PROPERTY_RANGE incb_property_table[] = {"
 } with >> $out
 
 for $r in $ranges {

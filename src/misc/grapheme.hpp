@@ -55,9 +55,29 @@ public:
     Extended_Pictographic,
 
     Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
+
+    InCB_Consonant,
+
+    // for Indic_Conjunct_Break
+    InCB_Extend,
+    InCB_Linker,
   };
 
+  /**
+   * get break property except for InCB_*
+   * @param codePoint
+   * @return
+   */
   static BreakProperty getBreakProperty(int codePoint);
+
+  /**
+   * get InCB_* property
+   * @param codePoint
+   * @return
+   * if has no InCB property, return Any
+   * otherwise, return InCB_Linker or InCB_Extend
+   */
+  static BreakProperty getInCBExtendOrLinker(int codePoint);
 };
 
 template <bool Bool>
@@ -71,7 +91,7 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
-#include "grapheme_break_property.h"
+#include "grapheme_break_property.in"
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
@@ -84,6 +104,38 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
   auto iter = std::lower_bound(std::begin(grapheme_break_property_table),
                                std::end(grapheme_break_property_table), codePoint, Comp());
   if (iter != std::end(grapheme_break_property_table)) {
+    auto &interval = *iter;
+    if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
+      return std::get<2>(interval);
+    }
+  }
+  return BreakProperty::Any;
+}
+
+template <bool Bool>
+typename GraphemeBoundary<Bool>::BreakProperty
+GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
+  if (codePoint < 0) {
+    return BreakProperty::Any; // invalid code points are always grapheme boundary
+  }
+
+  using PropertyInterval = std::tuple<int, int, BreakProperty>;
+
+#define UNICODE_PROPERTY_RANGE PropertyInterval
+#define PROPERTY(E) BreakProperty::E
+#include "incb_property.in"
+#undef PROPERTY
+#undef UNICODE_PROPERTY_RANGE
+
+  struct Comp {
+    bool operator()(const PropertyInterval &l, int r) const { return std::get<1>(l) < r; }
+
+    bool operator()(int l, const PropertyInterval &r) const { return l < std::get<0>(r); }
+  };
+
+  auto iter = std::lower_bound(std::begin(incb_property_table), std::end(incb_property_table),
+                               codePoint, Comp());
+  if (iter != std::end(incb_property_table)) {
     auto &interval = *iter;
     if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
       return std::get<2>(interval);
@@ -137,23 +189,79 @@ public:
 
   /**
    * scan grapheme cluster boundary
-   * @param breakProperty
    * @return
    * if grapheme cluster boundary is between prev codePoint and codePoint, return true
    */
-  bool scanBoundary(BreakProperty breakProperty);
+  bool scanBoundary();
 
+private:
   BreakProperty nextProperty() {
     this->codePoint = this->stream.nextCodePoint();
     return GraphemeBoundary::getBreakProperty(this->codePoint);
+  }
+
+  bool tryConsumeInCBSeq() {
+    const auto oldState = this->stream.saveState();
+
+    enum InCBState {
+      Init,
+      Pre_Extend,
+      Linker,
+      Post_Extend,
+    } prevInCB = Init;
+
+    int code = this->codePoint;
+    for (;; code = this->stream.nextCodePoint()) {
+      if (code < 0) {
+        goto ERROR;
+      }
+      auto p = GraphemeBoundary::getInCBExtendOrLinker(code);
+      switch (prevInCB) {
+      case Init:
+      case Pre_Extend:
+        if (p == BreakProperty::InCB_Extend) {
+          prevInCB = Pre_Extend;
+          continue;
+        } else if (p == BreakProperty::InCB_Linker) {
+          prevInCB = Linker;
+          continue;
+        }
+        goto ERROR;
+      case Linker:
+      case Post_Extend:
+        if (p == BreakProperty::InCB_Extend) {
+          prevInCB = Post_Extend;
+          continue;
+        } else if (p == BreakProperty::InCB_Linker) {
+          prevInCB = Linker;
+          continue;
+        }
+        goto TRY_CONSONANT;
+      }
+    }
+
+  TRY_CONSONANT:
+    if (auto p = GraphemeBoundary::getBreakProperty(code); p == BreakProperty::InCB_Consonant) {
+      this->codePoint = code;
+      this->state = p;
+      return true;
+    }
+
+  ERROR:
+    this->stream.restoreState(oldState);
+    return false;
   }
 };
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
 template <typename Stream>
-bool GraphemeScanner<Stream>::scanBoundary(BreakProperty breakProperty) {
-  auto after = breakProperty;
-  auto before = this->state;
+bool GraphemeScanner<Stream>::scanBoundary() {
+  if (!this->stream) {
+    return true;
+  }
+
+  const auto after = this->nextProperty();
+  const auto before = this->state;
   this->state = after;
 
   switch (before) {
@@ -201,6 +309,11 @@ bool GraphemeScanner<Stream>::scanBoundary(BreakProperty breakProperty) {
   case BreakProperty::T:
     if (after == BreakProperty::T) {
       return false; // GB8
+    }
+    break;
+  case BreakProperty::InCB_Consonant:
+    if (this->tryConsumeInCBSeq()) {
+      return false; // GB9c
     }
     break;
   default:
@@ -257,9 +370,9 @@ public:
   explicit Utf8GraphemeScanner(StringRef ref)
       : Utf8GraphemeScanner(Utf8Stream(ref.begin(), ref.end())) {}
 
-  Utf8GraphemeScanner(Utf8Stream &&stream, const char *charBegin = nullptr, int codePoint = -1,
-                      BreakProperty p = BreakProperty::SOT)
-      : GraphemeScanner(std::move(stream), codePoint, p), charBegin(charBegin) {
+  explicit Utf8GraphemeScanner(Utf8Stream &&stream, const char *charBegin = nullptr,
+                               int codePoint = -1, BreakProperty p = BreakProperty::SOT)
+      : GraphemeScanner(std::move(stream), codePoint, p), charBegin(charBegin) { // NOLINT
     if (!this->charBegin) {
       this->charBegin = this->getIter();
     }
@@ -285,8 +398,7 @@ public:
     const char *end;
     while (true) {
       end = this->getIter();
-      auto p = this->nextProperty();
-      if (this->scanBoundary(p)) {
+      if (this->scanBoundary()) {
         break;
       }
       if (this->getCodePoint() < 0) {

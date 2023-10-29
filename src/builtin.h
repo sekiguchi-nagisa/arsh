@@ -960,8 +960,8 @@ static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&val
   const char *charBegin = ref.begin() + values[0];
   const char *cur = ref.begin() + values[1];
   auto vv = CodePointWithMeta::from(values[2]);
-  return {Utf8Stream(cur, ref.end()), charBegin, vv.codePoint(),
-          static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta())};
+  return Utf8GraphemeScanner(Utf8Stream(cur, ref.end()), charBegin, vv.codePoint(),
+                             static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta()));
 }
 
 static DSValue asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
