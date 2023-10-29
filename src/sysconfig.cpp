@@ -17,6 +17,7 @@
 #include <pwd.h>
 
 #include "misc/files.hpp"
+#include "misc/unicode_version.in"
 #include "regex_wrapper.h"
 #include "sysconfig.h"
 
@@ -24,11 +25,9 @@ namespace ydsh {
 
 SysConfig::SysConfig() {
   this->values = {
-      {VERSION, X_INFO_VERSION_CORE},
-      {COMPILER, X_INFO_CPP " " X_INFO_CPP_V},
-      {DATA_DIR, X_DATA_DIR},
-      {MODULE_DIR, X_MODULE_DIR},
-      {OSTYPE, BUILD_OS},
+      {VERSION, X_INFO_VERSION_CORE}, {COMPILER, X_INFO_CPP " " X_INFO_CPP_V},
+      {UNICODE, UNICODE_VERSION_STR}, {DATA_DIR, X_DATA_DIR},
+      {MODULE_DIR, X_MODULE_DIR},     {OSTYPE, BUILD_OS},
       {MACHTYPE, BUILD_ARCH},
   };
 

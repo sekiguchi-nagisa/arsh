@@ -2,6 +2,9 @@
 
 var src = "$SCRIPT_DIR/../../src".realpath()
 
+echo try update $src/misc/unicode_version.in
+call $YDSH_BIN $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
+
 echo try update $src/misc/unicode_width.in
 call $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.in
 

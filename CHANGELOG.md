@@ -23,6 +23,7 @@
 
 - ``LineEditor#setColor`` method ignore invalid ansi escape sequence (only accept SGR sequence)
 - ``LineEditor#readLine`` method correctly report out-of-memory error
+- ``shctl info`` sub-command show unicode version
 - **Breaking Change**: check iterator invalidation of Array object
     - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs``
     - check object modification in ``sortWith`` method
@@ -33,6 +34,7 @@
 #### API
 
 - ``DSState_setArguments`` api always assign new object
+- add ``DS_CONFIG_UNICODE`` constant to ``DSState_config`` for unicode version detection
 
 #### LSP
 

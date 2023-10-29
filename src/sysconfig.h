@@ -23,7 +23,8 @@ namespace ydsh {
 
 #define EACH_SYSCONFIG_UNEXPORTED(OP)                                                              \
   OP(COMPILER, "%compiler")                                                                        \
-  OP(REGEX, "%regex")
+  OP(REGEX, "%regex")                                                                              \
+  OP(UNICODE, "%unicode")
 
 #define EACH_SYSCONFIG_EXPORTED(OP)                                                                \
   OP(VERSION, "YDSH_VERSION")                                                                      \
