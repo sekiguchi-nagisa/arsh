@@ -172,16 +172,15 @@ public:
 
 private:
   Stream stream;
-  int codePoint;
-  BreakProperty state;
+  int codePoint{-1};
+  BreakProperty state{BreakProperty::SOT};
 
 protected:
   GraphemeScanner(Stream &&stream, int codePoint, BreakProperty property)
       : stream(std::move(stream)), codePoint(codePoint), state(property) {}
 
 public:
-  explicit GraphemeScanner(Stream &&stream)
-      : GraphemeScanner(std::move(stream), -1, BreakProperty::SOT) {}
+  explicit GraphemeScanner(Stream &&stream) : stream(std::move(stream)) {}
 
   const auto &getStream() const { return this->stream; }
 
@@ -202,7 +201,7 @@ private:
     return GraphemeBoundary::getBreakProperty(this->codePoint);
   }
 
-  bool lookupInCBSeq() {
+  bool lookaheadInCBSeq() {
     bool r = false;
     const auto oldState = this->stream.saveState();
 
@@ -313,7 +312,7 @@ bool GraphemeScanner<Stream>::scanBoundary() {
     }
     break;
   case BreakProperty::InCB_Consonant:
-    if (this->lookupInCBSeq()) {
+    if (this->lookaheadInCBSeq()) {
       this->state = BreakProperty::InCB_Extend_Linker;
       return false; // GB9c
     }
