@@ -20,8 +20,8 @@ call $YDSH_BIN $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_prope
 ## for test case
 var test = "$SCRIPT_DIR/../../test"
 
-echo try update $test/unicode/grapheme_break_test.h
-call $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.h
+echo try update $test/unicode/grapheme_break_test.in
+call $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.in
 
-echo try update $test/unicode/word_break_test.h
-call $YDSH_BIN $SCRIPT_DIR/gen_word_break_test.ds $test/unicode/word_break_test.h
+echo try update $test/unicode/word_break_test.in
+call $YDSH_BIN $SCRIPT_DIR/gen_word_break_test.ds $test/unicode/word_break_test.in
