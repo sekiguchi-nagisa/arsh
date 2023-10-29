@@ -29,6 +29,12 @@ let _home = @(~)[0]
 ## bash-compatible prompt interpreter
 
 function renderPrompt(p : String) : String {
+    let old_reply = $reply.copy()
+    defer {
+        $reply.clear()
+        $reply.addAll($old_reply) # restore reply
+    }
+
     importenv PWD : "."
     var ret = ""
     let size = $p.size()
