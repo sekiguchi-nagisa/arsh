@@ -452,6 +452,30 @@ public:
 };
 
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
+  static void doTest() {
+    auto input = getInput(GetParam());
+    auto expected = getExpected(GetParam());
+
+    ASSERT_FALSE(input.empty());
+    ASSERT_FALSE(expected.empty());
+    for (auto &e : expected) {
+      ASSERT_FALSE(e.empty());
+    }
+
+    std::vector<std::vector<int>> output;
+    output.emplace_back();
+    GraphemeScanner<CodePointStream> scanner((CodePointStream(input)));
+    for (unsigned int count = 0; scanner.getStream(); count++) {
+      auto codePoint = input[count];
+      if (scanner.scanBoundary()) {
+        output.emplace_back();
+      }
+      output.back().push_back(codePoint);
+    }
+
+    ASSERT_EQ(expected, output);
+  }
+
   static void doTest2() {
     auto input = getInput(GetParam());
     auto expected = getExpected(GetParam());
@@ -616,7 +640,10 @@ TEST_P(GraphemeBreakTest, InCB) {
   }
 }
 
-TEST_P(GraphemeBreakTest, base) { ASSERT_NO_FATAL_FAILURE(doTest2()); }
+TEST_P(GraphemeBreakTest, base) {
+  ASSERT_NO_FATAL_FAILURE(doTest());
+  ASSERT_NO_FATAL_FAILURE(doTest2());
+}
 
 static std::vector<std::string> getGraphemeTargets() {
 #include GRAPHEME_BREAK_TEST_H
@@ -644,7 +671,7 @@ struct WordBreakTest : public ::testing::TestWithParam<std::string> {
     std::vector<std::vector<int>> output;
     output.emplace_back();
     CodePointStream stream(input);
-    auto scanner = makeWordScanner(stream);
+    WordScanner scanner(stream);
     for (unsigned int count = 0; stream; count++) {
       auto codePoint = input[count];
       if (scanner.scanBoundary()) {
@@ -685,7 +712,7 @@ struct WordBreakTest : public ::testing::TestWithParam<std::string> {
 TEST(WordBreakTestBase, base1) {
   StringRef ref = "\n1234";
   Utf8Stream stream(ref.begin(), ref.end());
-  auto scanner = makeWordScanner(stream);
+  WordScanner<Utf8Stream> scanner(stream);
 
   // newline
   auto old1 = stream.iter;

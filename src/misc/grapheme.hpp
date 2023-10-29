@@ -56,15 +56,17 @@ public:
 
     Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
 
-    InCB_Consonant,
-
     // for Indic_Conjunct_Break
+    InCB_Consonant,
     InCB_Extend,
     InCB_Linker,
+
+    // indicate [InCB_Extend InCB_Linker]* InCB_Linker [InCB_Extend InCB_Linker]*
+    InCB_Extend_Linker,
   };
 
   /**
-   * get break property except for InCB_*
+   * get break property except for InCB_Extend, InCB_Linker
    * @param codePoint
    * @return
    */
@@ -200,7 +202,8 @@ private:
     return GraphemeBoundary::getBreakProperty(this->codePoint);
   }
 
-  bool tryConsumeInCBSeq() {
+  bool lookupInCBSeq() {
+    bool r = false;
     const auto oldState = this->stream.saveState();
 
     enum InCBState {
@@ -213,7 +216,7 @@ private:
     int code = this->codePoint;
     for (;; code = this->stream.nextCodePoint()) {
       if (code < 0) {
-        goto ERROR;
+        goto END;
       }
       auto p = GraphemeBoundary::getInCBExtendOrLinker(code);
       switch (prevInCB) {
@@ -226,7 +229,7 @@ private:
           prevInCB = Linker;
           continue;
         }
-        goto ERROR;
+        goto END;
       case Linker:
       case Post_Extend:
         if (p == BreakProperty::InCB_Extend) {
@@ -242,14 +245,12 @@ private:
 
   TRY_CONSONANT:
     if (auto p = GraphemeBoundary::getBreakProperty(code); p == BreakProperty::InCB_Consonant) {
-      this->codePoint = code;
-      this->state = p;
-      return true;
+      r = true;
     }
 
-  ERROR:
+  END:
     this->stream.restoreState(oldState);
-    return false;
+    return r;
   }
 };
 
@@ -312,10 +313,16 @@ bool GraphemeScanner<Stream>::scanBoundary() {
     }
     break;
   case BreakProperty::InCB_Consonant:
-    if (this->tryConsumeInCBSeq()) {
+    if (this->lookupInCBSeq()) {
+      this->state = BreakProperty::InCB_Extend_Linker;
       return false; // GB9c
     }
     break;
+  case BreakProperty::InCB_Extend_Linker:
+    if (after != BreakProperty::InCB_Consonant) {
+      this->state = BreakProperty::InCB_Extend_Linker;
+    }
+    return false; // GB9c
   default:
     break;
   }

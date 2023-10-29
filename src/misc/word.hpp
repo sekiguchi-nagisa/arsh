@@ -349,11 +349,6 @@ bool WordScanner<Stream>::scanBoundary() {
   return true; // WB999
 }
 
-template <typename Stream>
-inline WordScanner<Stream> makeWordScanner(Stream &stream) {
-  return WordScanner<Stream>(stream);
-}
-
 class Utf8WordScanner : public WordScanner<Utf8Stream> {
 private:
   const char *wordBegin;
