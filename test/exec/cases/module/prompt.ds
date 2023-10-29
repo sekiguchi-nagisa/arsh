@@ -11,6 +11,13 @@ function dirname($s : String) : String {
     return $s;
 }
 
+# preserve reply
+$reply['aaaaa'] = '1234567'
+assert $reply.size() == 1
+$renderPrompt('\u')
+assert $reply.size() == 1
+$reply['aaaaa'] == '1234567'
+
 
 # interpret
 assert $renderPrompt('hello\!!') == "hello\!!"
