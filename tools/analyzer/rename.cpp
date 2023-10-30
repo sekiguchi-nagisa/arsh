@@ -109,11 +109,12 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::TYPE_ALIAS:
-  case DeclSymbol::Kind::ERROR_TYPE_DEF:
-  case DeclSymbol::Kind::CONSTRUCTOR:
     if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
       return false; // TODO: support field
     }
+  case DeclSymbol::Kind::ERROR_TYPE_DEF:
+  case DeclSymbol::Kind::CONSTRUCTOR:
+  case DeclSymbol::Kind::METHOD:
     break;
   default:
     return false; // TODO: support other symbols

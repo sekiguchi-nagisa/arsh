@@ -196,6 +196,7 @@ TEST_F(RenameTest, invalid3) {
 echo $0
 echo ${11}
 23 is Int
+[34].size()
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 5}, "var",
@@ -207,6 +208,8 @@ echo ${11}
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 7}, "var",
                                        RenameValidationStatus::INVALID_SYMBOL));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 6}, "Int",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 8}, "size22",
                                        RenameValidationStatus::BUILTIN));
 }
 
@@ -460,6 +463,43 @@ new BBB()
                                                    "BBB", {1, "(2:8~2:11)"}));
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 9},
                                                    "AAA", {1, "(1:8~1:11)"}));
+}
+
+TEST_F(RenameTest, method1) {
+  const char *content = R"(
+typedef AAA : Error
+[<CLI>] typedef BBB() {}
+
+function size() : Int for AAA {
+  return 1 + $this.size() + $this.get().size();
+}
+
+function get() : String for AAA {
+  return $this.message()
+}
+
+function get() : String for BBB {
+  return $this.name()
+}
+
+new AAA().size()
+new AAA().get()
+new BBB().get()
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 4, .character = 11}, "size2",
+                   {{1, "(4:9~4:13)"}, {1, "(5:19~5:23)"}, {1, "(16:10~16:14)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 8, .character = 10}, "size2",
+                   {{1, "(8:9~8:12)"}, {1, "(5:34~5:37)"}, {1, "(17:10~17:13)"}})); // backward ref
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 12, .character = 11}, "size",
+                                       {{1, "(12:9~12:12)"}, {1, "(18:10~18:13)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 8, .character = 10},
+                                                   "size", {1, "(4:9~4:13)"}));
 }
 
 int main(int argc, char **argv) {

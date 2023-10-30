@@ -54,7 +54,8 @@
 | field (user-defined type)             | ✔️             | ✔️                    | ✔️              | ❌          |
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |
 | method (generic type)                 | -              | ✔️                    | ✔️              | -          |
-| method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ❌          |
+| method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ✔️         |
+| method (user-defined, override)       | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (variable)                     | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (type alias)                   | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (command)                      | ✔️             | ✔️                    | ✔️              | ❌          |
