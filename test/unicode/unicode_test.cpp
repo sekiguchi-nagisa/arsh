@@ -458,7 +458,6 @@ public:
 
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
-    printf("%s\n", GetParam().c_str());
     auto input = getInput(GetParam());
     auto expected = getExpected(GetParam());
 
