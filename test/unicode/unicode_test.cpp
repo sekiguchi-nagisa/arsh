@@ -427,7 +427,12 @@ public:
 
   void restoreState(unsigned int i) { this->index = i; }
 
-  int nextCodePoint() { return this->codePoints.get()[this->index++]; }
+  int nextCodePoint() {
+    if (this->index == this->codePoints.get().size()) {
+      return -1;
+    }
+    return this->codePoints.get()[this->index++];
+  }
 };
 
 class CodePoints {
@@ -453,6 +458,7 @@ public:
 
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
+    printf("%s\n", GetParam().c_str());
     auto input = getInput(GetParam());
     auto expected = getExpected(GetParam());
 
