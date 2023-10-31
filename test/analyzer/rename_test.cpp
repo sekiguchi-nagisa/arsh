@@ -502,6 +502,34 @@ new BBB().get()
                                                    "size", {1, "(4:9~4:13)"}));
 }
 
+TEST_F(RenameTest, func) {
+  const char *content = R"(
+function aaa() {
+  $bbb()
+}
+function bbb() {
+  $aaa()
+}
+$aaa()
+$bbb()
+{ var ccccc = 34; }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 11}, "size",
+                                       {{1, "(1:9~1:12)"}, {1, "(5:3~5:6)"}, {1, "(7:1~7:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 5}, "d1234",
+                                       {{1, "(4:9~4:12)"}, {1, "(2:3~2:6)"}, {1, "(8:1~8:4)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 10}, "OSTYPE",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 10},
+                                                   "bbb", {1, "(4:9~4:12)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 10},
+                                                   "ccccc", {1, "(9:6~9:11)"}));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -35,7 +35,7 @@
 | variable (if-let)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
 | builtin variable                      | -              | -                     | ✔️              | -          |
 | builtin constant                      | -              | -                     | ✔️ (show value) | -          |
-| function                              | ✔️             | ✔️                    | ✔️              | ❌          |
+| function                              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | function (global import)              | ✔️             | ✔️                    | ✔️              | ❌          |
 | function (inlined import)             | ✔️             | ✔️                    | ✔️              | ❌          |
 | function (named import)               | ✔️             | ✔️                    | ✔️              | ❌          |
@@ -55,7 +55,6 @@
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |
 | method (generic type)                 | -              | ✔️                    | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ✔️         |
-| method (user-defined, override)       | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (variable)                     | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (type alias)                   | ✔️             | ✔️                    | ✔️              | ❌          |
 | source (command)                      | ✔️             | ✔️                    | ✔️              | ❌          |
