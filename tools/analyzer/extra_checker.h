@@ -27,8 +27,21 @@ class DiagnosticEmitter;
 
 class ExtraChecker : public NodePass {
 private:
+  class Context {
+  private:
+    ModId modId;
+    std::shared_ptr<TypePool> pool;
+
+  public:
+    Context(ModId modId, std::shared_ptr<TypePool> pool) : modId(modId), pool(std::move(pool)) {}
+
+    ModId getModId() const { return this->modId; }
+
+    const TypePool &getPool() const { return *this->pool; }
+  };
+
   DiagnosticEmitter &emitter;
-  std::vector<ModId> modIds;
+  std::vector<Context> contexts;
 
 public:
   explicit ExtraChecker(DiagnosticEmitter &emitter) : emitter(emitter) {}
@@ -52,6 +65,7 @@ protected:
   void visitVarDeclNode(VarDeclNode &node) override;
   void visitTypeDefNode(TypeDefNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
+  void visitCmdNode(CmdNode &node) override;
 };
 
 DEFINE_TCWarn(UnusedLocal, "local variable `%s' is never used");

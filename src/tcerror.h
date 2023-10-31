@@ -233,6 +233,7 @@ DEFINE_TCError(ChoiceLimit, "number of choice elements reaches limit");
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");
 DEFINE_TCWarn(TypeAliasShadowing, "`%s' hides already defined type alias of outer scope");
+DEFINE_TCWarn(UndefinedSubCmd, "undefined sub-command: `%s'");
 
 TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char *fmt, ...)
     __attribute__((format(printf, 3, 4)));

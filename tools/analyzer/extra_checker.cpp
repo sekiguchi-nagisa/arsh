@@ -25,14 +25,14 @@ namespace ydsh::lsp {
 // ##     ExtraChecker     ##
 // ##########################
 
-bool ExtraChecker::enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &) {
-  this->modIds.push_back(src->getSrcId());
+bool ExtraChecker::enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &pool) {
+  this->contexts.emplace_back(src->getSrcId(), pool);
   return true;
 }
 
 bool ExtraChecker::exitModule(const std::unique_ptr<Node> &node) {
-  assert(!this->modIds.empty());
-  this->modIds.pop_back();
+  assert(!this->contexts.empty());
+  this->contexts.pop_back();
   this->visit(node);
   return true;
 }
@@ -48,7 +48,7 @@ void ExtraChecker::warnImpl(Token token, const char *kind, const char *fmt, ...)
   va_end(arg);
 
   TypeCheckError error(TypeCheckError::Type::WARN, token, kind, CStrPtr(str));
-  this->emitter.handleTypeError(this->modIds.back(), error);
+  this->emitter.handleTypeError(this->contexts.back().getModId(), error);
 }
 
 void ExtraChecker::checkVarDecl(VarDeclNode &node, bool maybeUnused) {
@@ -80,6 +80,23 @@ void ExtraChecker::visitFunctionNode(FunctionNode &node) {
   this->visit(node.getRecvTypeNode());
   this->visit(node.getReturnTypeNode());
   this->visit(node.getBlockNode());
+}
+
+void ExtraChecker::visitCmdNode(CmdNode &node) {
+  this->visit(node.getNameNode());
+  if (auto &handle = node.getHandle()) {
+    auto &type = this->contexts.back().getPool().get(handle->getTypeId());
+    if (type.isModType()) { // may be sub-command call
+      if (auto ret = getConstArg(node.getArgNodes()); ret.hasValue()) {
+        auto &nameInfo = ret.unwrap();
+        auto subCmd = toCmdFullName(nameInfo.getName());
+        if (!cast<ModType>(type).lookup(this->contexts.back().getPool(), subCmd)) {
+          this->warn<UndefinedSubCmd>(nameInfo.getToken(), nameInfo.getName().c_str());
+        }
+      }
+    }
+  }
+  this->visitEach(node.getArgNodes());
 }
 
 } // namespace ydsh::lsp

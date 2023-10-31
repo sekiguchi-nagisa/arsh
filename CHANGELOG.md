@@ -44,6 +44,7 @@
     - rewrite scope-aware name conflict checking
 - ``textDocument/didClose`` always synchronizes analyzer state
 - ``textDocument/semanticTokens`` supports dynamic registration
+- ``textDocument/publishDiagnostics`` emit undefined sub-command warning
 
 ## [0.31.0] - 2023-09-30
 

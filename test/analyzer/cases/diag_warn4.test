@@ -1,0 +1,78 @@
+# RUN: call $cmd --test $self --debounce-time 10
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test.ds",
+        "text": "source $SCRIPT_DIR/mod1.ds as mm;\nmm ls"}
+ }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "test:///mod1.ds"
+#    CHECK:   }
+#    CHECK: }
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [
+#    CHECK:       {
+#    CHECK:         "code": "semantic error: UndefinedSubCmd",
+#    CHECK:         "message": "undefined sub-command: `ls'",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 5,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 3,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         "severity": 2
+#    CHECK:       }
+#    CHECK:     ],
+#    CHECK:     "uri": "test:///test.ds"
+#    CHECK:   }
+
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "test:///test2.ds",
+        "text": "mm hey-say"}
+ }
+}
+## do not emit type-alias shadowing warning for constructor field
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "test:///test2.ds"
+#    CHECK:   }
+
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didClose",
+  "params": { "textDocument": { "uri": "test:///test.ds" } } }
+
+---
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF: {
+#    CHECK:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

@@ -465,24 +465,6 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
   this->visit(node.getArgsNode());
 }
 
-static Optional<NameInfo> getConstArg(const std::vector<std::unique_ptr<Node>> &argsNode,
-                                      unsigned int offset = 0) {
-  const CmdArgNode *argNode = nullptr;
-  unsigned int offsetCount = 0;
-  for (unsigned int i = 0; i < argsNode.size() && offset <= offsetCount; i++) {
-    if (isa<CmdArgNode>(*argsNode[i]) && offset == offsetCount++) {
-      argNode = cast<CmdArgNode>(argsNode[i].get());
-      break;
-    }
-  }
-  if (argNode && argNode->getSegmentNodes().size() == 1 &&
-      isa<StringNode>(*argNode->getSegmentNodes()[0])) {
-    auto &strNode = cast<StringNode>(*argNode->getSegmentNodes()[0]);
-    return NameInfo(strNode.getToken(), strNode.getValue());
-  }
-  return {};
-}
-
 void SymbolIndexer::visitCmdNode(CmdNode &node) {
   const Symbol *symbol = nullptr;
   if (auto &cmdName = node.getNameNode().getValue(); !cmdName.empty()) {
