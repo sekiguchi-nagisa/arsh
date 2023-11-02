@@ -27,7 +27,7 @@
 #    CHECK:     "diagnostics": [
 #    CHECK:       {
 #    CHECK:         "code": "semantic error: UndefinedSubCmd",
-#    CHECK:         "message": "undefined sub-command: `ls'",
+#    CHECK:         "message": "may be undefined sub-command: `ls'",
 #    CHECK:         "range": {
 #    CHECK:           "end": {
 #    CHECK:             "character": 5,
