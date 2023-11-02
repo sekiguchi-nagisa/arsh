@@ -70,6 +70,7 @@ protected:
 
 DEFINE_TCWarn(UnusedLocal, "local variable `%s' is never used");
 DEFINE_TCWarn(UnusedTypeAlias, "type alias `%s' is never used");
+DEFINE_TCWarn(UndefinedSubCmd, "may be undefined sub-command: `%s'");
 
 } // namespace ydsh::lsp
 
