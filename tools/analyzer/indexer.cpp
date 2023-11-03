@@ -182,6 +182,14 @@ const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &na
   return nullptr;
 }
 
+const Symbol *IndexBuilder::addCmd(const NameInfo &info, const HandlePtr &hd) {
+  auto *symbol = this->addSymbol(info, DeclSymbol::Kind::CMD, hd);
+  if (!symbol) { // external commands
+    this->externalCmdSet.emplace(info.getName());
+  }
+  return symbol;
+}
+
 bool IndexBuilder::addThis(const NameInfo &info, const HandlePtr &handle) {
   auto *methodScope = this->curScope().findMethodScope();
   assert(methodScope);
@@ -469,7 +477,7 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
   const Symbol *symbol = nullptr;
   if (auto &cmdName = node.getNameNode().getValue(); !cmdName.empty()) {
     NameInfo info(node.getNameNode().getToken(), cmdName);
-    symbol = this->builder().addSymbol(info, DeclSymbol::Kind::CMD, node.getHandle());
+    symbol = this->builder().addCmd(info, node.getHandle());
   }
   if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
     if (auto *decl = this->builder().findDecl(*symbol);

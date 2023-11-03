@@ -530,6 +530,43 @@ $bbb()
                                                    "ccccc", {1, "(9:6~9:11)"}));
 }
 
+TEST_F(RenameTest, udc) {
+  const char *content = R"(
+fff && ls
+fff() {
+  ggg  # backward ref
+}
+ggg() {
+  fff
+}
+fff
+ggg && ps
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 2}, "size",
+                                       {{1, "(2:0~2:3)"}, {1, "(6:2~6:5)"}, {1, "(8:0~8:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(
+      Request{.modId = 1, .line = 2, .character = 2}, "1234",
+      {{1, "(2:0~2:3)", "\\1234"}, {1, "(6:2~6:5)", "\\1234"}, {1, "(8:0~8:3)", "\\1234"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 3}, "importenv",
+                                       {{1, "(5:0~5:3)", "\\importenv"},
+                                        {1, "(3:2~3:5)", "\\importenv"},
+                                        {1, "(9:0~9:3)", "\\importenv"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 3}, "import-env",
+                                       {{1, "(5:0~5:3)", "\\import-env"},
+                                        {1, "(3:2~3:5)", "\\import-env"},
+                                        {1, "(9:0~9:3)", "\\import-env"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 1}, "echo",
+                                       RenameValidationStatus::NAME_CONFLICT)); // builtin
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 1}, "ls",
+                                       RenameValidationStatus::NAME_CONFLICT)); // external
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 1}, "ps",
+                                       RenameValidationStatus::NAME_CONFLICT)); // external
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

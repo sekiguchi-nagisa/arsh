@@ -39,7 +39,7 @@
 | function (global import)              | ✔️             | ✔️                    | ✔️              | ❌          |
 | function (inlined import)             | ✔️             | ✔️                    | ✔️              | ❌          |
 | function (named import)               | ✔️             | ✔️                    | ✔️              | ❌          |
-| user-defined command                  | ✔️             | ✔️                    | ✔️              | ❌          |
+| user-defined command                  | ✔️             | ✔️                    | ✔️              | ✔️         |
 | user-defined command (global import)  | ✔️             | ✔️                    | ✔️              | ❌          |
 | user-defined command (inlined import) | ✔️             | ✔️️                   | ✔️              | ❌          |
 | user-defined command (named import)   | ✔️             | ✔️️️                  | ✔️️             | ❌          |

@@ -390,17 +390,20 @@ private:
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
   std::vector<std::pair<SymbolRef, IndexLink>> links; // for importing module
   std::vector<ScopeInterval> scopes;
-  PackedParamTypesMap packedParamTypesMap; // for generic method hover
+  PackedParamTypesMap packedParamTypesMap;        // for generic method hover
+  std::unordered_set<std::string> externalCmdSet; // for user-defined command rename
 
 public:
   SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
               std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
               std::unordered_map<std::string, SymbolRef> &&globals,
               std::vector<std::pair<SymbolRef, IndexLink>> &&links,
-              std::vector<ScopeInterval> &&scopes, PackedParamTypesMap &&packedParamTypesMap)
+              std::vector<ScopeInterval> &&scopes, PackedParamTypesMap &&packedParamTypesMap,
+              std::unordered_set<std::string> &&externalCmdSet)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
         foreignDecls(std::move(foreignDecls)), globals(std::move(globals)), links(std::move(links)),
-        scopes(std::move(scopes)), packedParamTypesMap(std::move(packedParamTypesMap)) {}
+        scopes(std::move(scopes)), packedParamTypesMap(std::move(packedParamTypesMap)),
+        externalCmdSet(std::move(externalCmdSet)) {}
 
   ModId getModId() const { return this->modId; }
 
@@ -423,6 +426,8 @@ public:
   const auto &getScopes() const { return this->scopes; }
 
   const auto &getPackedParamTypesMap() const { return this->packedParamTypesMap; }
+
+  const auto &getExternalCmdSet() const { return this->externalCmdSet; }
 
   struct Compare {
     bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }

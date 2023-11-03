@@ -113,9 +113,11 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
       return false; // TODO: support field
     }
+    break;
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:
   case DeclSymbol::Kind::METHOD:
+  case DeclSymbol::Kind::CMD:
     break;
   default:
     return false; // TODO: support other symbols
@@ -139,6 +141,12 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   }
 
   // check name conflict in this index // FIXME: check constructor field
+  if (decl.getKind() == DeclSymbol::Kind::CMD) { // check already used external command names
+    const auto &set = declIndex->getExternalCmdSet();
+    if (set.find(newName.toString()) != set.end()) {
+      return false;
+    }
+  }
   for (auto &target : declIndex->getDecls()) {
     auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     auto &targetScope = declIndex->getScopes()[target.getScopeId()];

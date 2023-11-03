@@ -41,6 +41,7 @@ private:
   std::vector<std::pair<SymbolRef, IndexLink>> links;
   std::vector<ScopeInterval> scopeIntervals;
   PackedParamTypesMap packedParamTypesMap;
+  std::unordered_set<std::string> externalCmdSet;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -129,7 +130,8 @@ public:
             std::move(*this->scope).take(),
             std::move(this->links),
             std::move(this->scopeIntervals),
-            std::move(this->packedParamTypesMap)};
+            std::move(this->packedParamTypesMap),
+            std::move(this->externalCmdSet)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
@@ -164,6 +166,8 @@ public:
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind, const HandlePtr &hd) {
     return this->addSymbolImpl(nullptr, info, kind, hd.get());
   }
+
+  const Symbol *addCmd(const NameInfo &info, const HandlePtr &hd);
 
   bool addThis(const NameInfo &info, const HandlePtr &hd);
 
