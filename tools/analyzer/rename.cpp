@@ -100,6 +100,29 @@ static SymbolIndexes collectGlobalImportingIndexes(const SymbolIndexes &indexes,
   return importing;
 }
 
+static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDeclName,
+                       const DeclSymbol &target) {
+  if (target.getKind() == DeclSymbol::Kind::MOD) {
+    switch (decl.getKind()) {
+    case DeclSymbol::Kind::TYPE_ALIAS:
+    case DeclSymbol::Kind::ERROR_TYPE_DEF:
+    case DeclSymbol::Kind::CONSTRUCTOR:
+    case DeclSymbol::Kind::CMD:
+      if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
+        auto name = target.toDemangledName();
+        auto mangledName = DeclSymbol::mangle(decl.getKind(), name);
+        if (mangledName == mangledNewDeclName) {
+          return true;
+        }
+      }
+      break;
+    default:
+      break;
+    }
+  }
+  return target != decl && target.getMangledName() == mangledNewDeclName;
+}
+
 static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &decl,
                               StringRef newName,
                               const std::function<void(const RenameResult &)> &consumer) {
@@ -125,14 +148,14 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
 
   auto recvTypeName =
       DeclSymbol::demangleWithRecv(decl.getKind(), decl.getAttr(), decl.getMangledName()).first;
-  auto mangledName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
+  auto mangledNewName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
   auto declIndex = indexes.find(decl.getModId());
   assert(declIndex);
 
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
   for (auto &importedIndex : importedIndexes) { // FIXME: import order aware conflict check
-    if (auto *r = importedIndex->findGlobal(mangledName)) {
+    if (auto *r = importedIndex->findGlobal(mangledNewName)) {
       if (consumer) {
         consumer(Err(RenameConflict(*r)));
       }
@@ -179,7 +202,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         continue;
       }
 
-      if (target != decl && target.getMangledName() == mangledName) {
+      if (equalsName(decl, mangledNewName, target)) {
         if (consumer) {
           consumer(Err(RenameConflict(target.toRef())));
         }

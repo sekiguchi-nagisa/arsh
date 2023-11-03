@@ -5,6 +5,8 @@
 #include "indexer.h"
 #include "rename.h"
 
+#include "../test_common.h"
+
 using namespace ydsh::lsp;
 
 struct Request {
@@ -565,6 +567,43 @@ ggg && ps
                                        RenameValidationStatus::NAME_CONFLICT)); // external
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 1}, "ps",
                                        RenameValidationStatus::NAME_CONFLICT)); // external
+}
+
+TEST_F(RenameTest, source1) {
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName = tempFileFactory.createTempFile("mod.ds", "");
+
+  auto content = format(R"(
+function aaa() {}
+var bbb = 34
+typedef AAA = Int
+typedef BBB() {}
+typedef CCC : Error
+fff() {}
+
+source %s as
+  mod
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  // var name conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 11},
+                                                   "mod", {1, "(9:2~9:5)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 6},
+                                                   "mod", {1, "(9:2~9:5)"}));
+
+  // type name conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 3, .character = 9},
+                                                   "mod", {1, "(9:2~9:5)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 4, .character = 9},
+                                                   "mod", {1, "(9:2~9:5)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 5, .character = 9},
+                                                   "mod", {1, "(9:2~9:5)"}));
+
+  // cmd name conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 2},
+                                                   "mod", {1, "(9:2~9:5)"}));
 }
 
 int main(int argc, char **argv) {
