@@ -171,7 +171,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * contains script argument(exclude script name). ($@)
    * must be Array_Object
    */
-  binder.bind("@", pool.get(TYPE::StringArray));
+  binder.bind(VAR_ARGS, pool.get(TYPE::StringArray));
 
   /**
    * dummy object for completion. actually not used
@@ -182,7 +182,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * represent shell or shell script name.
    * must be String_Object
    */
-  binder.bind("0", "ydsh");
+  binder.bind(CVAR_ARG0, "ydsh");
 
   /**
    * process id of root shell. ($$)
@@ -267,6 +267,18 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
     if (pair.sigNum == SIGTTOU) {
       break;
     }
+  }
+
+  // add alias
+  {
+    auto ret = scope.lookup(VAR_ARGS);
+    assert(ret);
+    scope.defineAlias("@", ret.asOk());
+  }
+  {
+    auto ret = scope.lookup(CVAR_ARG0);
+    assert(ret);
+    scope.defineAlias("0", ret.asOk());
   }
 }
 

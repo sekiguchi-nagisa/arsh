@@ -4,3 +4,10 @@ assert($@.size() == 3)
 assert($@[0] == "a")
 assert($@[1] == "b")
 assert($@[2] == "c")
+
+assert($ARGS[0] == "a")
+assert($ARGS[1] == "b")
+assert($ARGS[2] == "c")
+
+$ARGS.add("ddd")
+assert $@[3] == 'ddd'

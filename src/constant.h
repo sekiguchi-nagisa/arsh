@@ -34,7 +34,7 @@ enum class BuiltinVarOffset : unsigned int {
   SCRIPT_NAME, // SCRIPT_NAME
   SCRIPT_DIR,  // SCRIPT_DIR
   REPLY,       // REPLY (for read command)
-  REPLY_VAR,   // reply (fo read command)
+  REPLY_VAR,   // reply (for read command)
   DYNA_UDCS,   // DYNA_UDCS (for dynamic registered command)
   MODULE,      // MODULE
   RANDOM,      // RANDOM
@@ -87,10 +87,12 @@ constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 constexpr const char *VAR_YDSH_BIN = "YDSH_BIN";
 constexpr const char *VAR_IFS = "IFS";
 constexpr const char *VAR_THIS = "this"; // for method receiver
+constexpr const char *VAR_ARGS = "ARGS";
 
 // used in constant expression
 constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";
+constexpr const char *CVAR_ARG0 = "ARG0";
 
 constexpr const unsigned int CVAR_OFFSET_SCRIPT_NAME = 0;
 constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;

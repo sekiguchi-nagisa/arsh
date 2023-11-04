@@ -8,7 +8,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 # complete global variable name
 {
     var gvars = [
-        '#', '$', '0', '?', '@',
+        '#', '$', '0', '?', '@', 'ARG0', 'ARGS',
         'CMD_FALLBACK', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
         'DIRSTACK', 'DYNA_UDCS', 'EUID', 'FALSE', 'False', 'HOME', 'IFS', 'LINE_EDIT', 'LOGNAME', 
         'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None', 'OLDPWD',
@@ -94,7 +94,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
             var aa = 34
             $aa + $a'))
 
-    $assertArray(['AA', 'AAA'], $(complete '
+    $assertArray(['AA', 'AAA', 'ARG0', 'ARGS'], $(complete '
         AAA=1234 AA=$false BBB=$A'))
 
     $assertArray($gvar3, $(complete '
@@ -104,7 +104,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
             $P'))
     $assertArray($gvar3, $(complete $'var PZ0 = 34; var PZ1 = 34; export-env PZ2 = "34"; echo\n$P'))
 
-    $assertArray(['AA', 'AAA'], $(complete '
+    $assertArray(['AA', 'AAA', 'ARG0', 'ARGS'], $(complete '
         {
             var AA = 34
             function() => {
