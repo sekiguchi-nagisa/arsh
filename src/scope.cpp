@@ -301,7 +301,17 @@ const ModType &NameScope::toModType(TypePool &pool) const {
                             this->modIndex, this->modAttr);
 }
 
-Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name, bool checkOnly) {
+Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) const {
+  for (auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
+    auto handle = scope->find(name);
+    if (handle) {
+      return Ok(std::move(handle));
+    }
+  }
+  return Err(NameLookupError::NOT_FOUND);
+}
+
+Result<HandlePtr, NameLookupError> NameScope::lookupAndCaptureUpVar(const std::string &name) {
   constexpr unsigned int funcScopeSize = SYS_LIMIT_FUNC_DEPTH + 1;
   NameScope *funcScopes[funcScopeSize];
   unsigned int funcScopeDepth = 0;
@@ -333,22 +343,19 @@ Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name, bo
           return Err(NameLookupError::UPVAR_LIMIT);
         }
 
-        if (!checkOnly) {
-          auto attr = handle->attr();
-          setFlag(attr, HandleAttr::UPVAR);
-          if (!handle->has(HandleAttr::READ_ONLY)) {
-            auto newAttr = handle->attr();
-            setFlag(newAttr, HandleAttr::BOXED);
-            handle->setAttr(newAttr);
-          }
-          curFuncScope->captures.push_back(handle);
-          auto upvar = HandlePtr::create(handle->getTypeId(), captureIndex, handle->getKind(), attr,
-                                         handle->getModId());
-          auto ret =
-              curFuncScope->add(std::string(name), std::move(upvar), NameRegisterOp::AS_ALIAS);
-          assert(ret);
-          handle = std::move(ret).take();
+        auto attr = handle->attr();
+        setFlag(attr, HandleAttr::UPVAR);
+        if (!handle->has(HandleAttr::READ_ONLY)) {
+          auto newAttr = handle->attr();
+          setFlag(newAttr, HandleAttr::BOXED);
+          handle->setAttr(newAttr);
         }
+        curFuncScope->captures.push_back(handle);
+        auto upVar = HandlePtr::create(handle->getTypeId(), captureIndex, handle->getKind(), attr,
+                                       handle->getModId());
+        auto ret = curFuncScope->add(std::string(name), std::move(upVar), NameRegisterOp::AS_ALIAS);
+        assert(ret);
+        handle = std::move(ret).take();
       }
     }
     return Ok(std::move(handle));

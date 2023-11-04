@@ -350,7 +350,7 @@ HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, cons
   bool shadowing = false;
   if (this->allowWarning && !this->curScope->isGlobal() &&
       !hasFlag(attribute, HandleAttr::UNCAPTURED) && symbolName != "_") {
-    if (this->curScope->lookup(symbolName, true)) {
+    if (this->curScope->lookup(symbolName)) {
       shadowing = true;
     }
   }
@@ -808,7 +808,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 void TypeChecker::visitVarNode(VarNode &node) {
   switch (node.getExtraOp()) {
   case VarNode::NONE: {
-    auto ret = this->curScope->lookup(node.getVarName());
+    auto ret = this->curScope->lookupAndCaptureUpVar(node.getVarName());
     if (ret) {
       auto handle = std::move(ret).take();
       node.setHandle(handle);
@@ -840,7 +840,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
     break;
   }
   case VarNode::ARGS_LEN: { // $#
-    auto ret = this->curScope->lookup("@");
+    auto ret = this->curScope->lookupAndCaptureUpVar("@");
     assert(ret);
     node.setHandle(ret.asOk());
     node.setType(this->typePool().get(TYPE::Int));
@@ -851,13 +851,13 @@ void TypeChecker::visitVarNode(VarNode &node) {
     if (auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
         pair && pair.value <= SYS_LIMIT_ARRAY_MAX) {
       if (pair.value == 0) { // $0
-        auto ret = this->curScope->lookup("0");
+        auto ret = this->curScope->lookupAndCaptureUpVar("0");
         assert(ret);
         auto handle = ret.asOk();
         node.setHandle(handle);
         node.setType(this->typePool().get(handle->getTypeId()));
       } else {
-        auto ret = this->curScope->lookup("@");
+        auto ret = this->curScope->lookupAndCaptureUpVar("@");
         assert(ret);
         node.setHandle(ret.asOk());
         node.setExtraValue(pair.value);
