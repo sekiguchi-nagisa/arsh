@@ -606,6 +606,68 @@ source %s as
                                                    "mod", {1, "(9:2~9:5)"}));
 }
 
+TEST_F(RenameTest, source2) {
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName = tempFileFactory.createTempFile("mod.ds", "");
+
+  auto content = format(R"(
+function aaa() {}
+var bbb = 34
+typedef AAA = Int
+typedef BBB() {}
+typedef CCC : Error
+fff() {}
+
+source %s as
+  mod
+$mod
+34 is mod
+mod 34 && ls
+source %s as
+  mod2
+)",
+                        fileName.c_str(), fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 9, .character = 2}, "size",
+                   {{1, "(9:2~9:5)"}, {1, "(10:1~10:4)"}, {1, "(11:6~11:9)"}, {1, "(12:0~12:3)"}}));
+
+  // var name conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "aaa", {1, "(1:9~1:12)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "bbb", {1, "(2:4~2:7)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "mod2", {1, "(14:2~14:6)"}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "OSTYPE",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "export-env",
+                                       RenameValidationStatus::INVALID_NAME));
+
+  // type name conflict
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "Int",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "AAA", {1, "(3:8~3:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "BBB", {1, "(4:8~4:11)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "CCC", {1, "(5:8~5:11)"}));
+
+  // command name conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 2},
+                                                   "fff", {1, "(6:0~6:3)"}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "ls",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "command",
+                                       RenameValidationStatus::NAME_CONFLICT));
+
+  // conflict with keyword
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 9, .character = 2}, "while",
+                                       RenameValidationStatus::KEYWORD));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

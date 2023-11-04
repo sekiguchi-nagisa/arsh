@@ -240,6 +240,11 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
     v += newName;
     return Err(std::move(v));
   }
+  case RenameValidationStatus::KEYWORD: {
+    std::string v = newName;
+    v += " conflict with keyword";
+    return Err(std::move(v));
+  }
   case RenameValidationStatus::BUILTIN:
     return Err(std::string("cannot perform rename since builtin symbol"));
   case RenameValidationStatus::NAME_CONFLICT: {

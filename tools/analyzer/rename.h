@@ -29,6 +29,7 @@ enum class RenameValidationStatus {
   DO_NOTHING, // not perform rename since new name is equivalent to old new
   INVALID_SYMBOL,
   INVALID_NAME,
+  KEYWORD, // not perform rename since new name is equivalent to keyword
   BUILTIN, // not perform rename since builtin method/field/command
   NAME_CONFLICT,
 };

@@ -55,7 +55,7 @@
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |
 | method (generic type)                 | -              | ✔️                    | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ✔️         |
-| source (variable)                     | ✔️             | ✔️                    | ✔️              | ❌          |
-| source (type alias)                   | ✔️             | ✔️                    | ✔️              | ❌          |
-| source (command)                      | ✔️             | ✔️                    | ✔️              | ❌          |
+| source (variable)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
+| source (type alias)                   | ✔️             | ✔️                    | ✔️              | ✔️         |
+| source (command)                      | ✔️             | ✔️                    | ✔️              | ✔️         |
 | here doc start/end                    | ✔️             | ✔️                    | ✔️              | -          |

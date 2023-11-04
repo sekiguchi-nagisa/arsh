@@ -40,9 +40,13 @@ static std::unordered_set<StringRef, StrRefHash> initStatementKeywordSet() {
   return set;
 }
 
-static std::string quoteCommandName(StringRef name) {
+static bool isKeyword(StringRef name) {
   static const auto keywordSet = initStatementKeywordSet();
-  if (keywordSet.find(name) != keywordSet.end()) {
+  return keywordSet.find(name) != keywordSet.end();
+}
+
+static std::string quoteCommandName(StringRef name) {
+  if (isKeyword(name)) {
     std::string ret = "\\";
     ret += name;
     return ret;
@@ -141,36 +145,51 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   case DeclSymbol::Kind::CONSTRUCTOR:
   case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::CMD:
+  case DeclSymbol::Kind::MOD:
     break;
   default:
     return false; // TODO: support other symbols
   }
 
-  auto recvTypeName =
-      DeclSymbol::demangleWithRecv(decl.getKind(), decl.getAttr(), decl.getMangledName()).first;
-  auto mangledNewName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
+  std::vector<std::string> mangledNewNames;
+  {
+    auto recvTypeName =
+        DeclSymbol::demangleWithRecv(decl.getKind(), decl.getAttr(), decl.getMangledName()).first;
+    auto mangledNewName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
+    mangledNewNames.push_back(std::move(mangledNewName));
+
+    // for mod variable
+    if (decl.getKind() == DeclSymbol::Kind::MOD) {
+      mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, newName));
+      mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::CMD, newName));
+    }
+  }
+
   auto declIndex = indexes.find(decl.getModId());
   assert(declIndex);
 
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
   for (auto &importedIndex : importedIndexes) { // FIXME: import order aware conflict check
-    if (auto *r = importedIndex->findGlobal(mangledNewName)) {
-      if (consumer) {
-        consumer(Err(RenameConflict(*r)));
+    for (auto &mangledNewName : mangledNewNames) {
+      if (auto *r = importedIndex->findGlobal(mangledNewName)) {
+        if (consumer) {
+          consumer(Err(RenameConflict(*r)));
+        }
+        return false;
       }
-      return false;
     }
   }
 
-  // check name conflict in this index // FIXME: check constructor field
-  if (decl.getKind() == DeclSymbol::Kind::CMD) { // check already used external command names
+  // check name conflict in this index
+  if (decl.getKind() == DeclSymbol::Kind::CMD ||
+      decl.getKind() == DeclSymbol::Kind::MOD) { // check already used external command names
     const auto &set = declIndex->getExternalCmdSet();
     if (set.find(newName.toString()) != set.end()) {
       return false;
     }
   }
-  for (auto &target : declIndex->getDecls()) {
+  for (auto &target : declIndex->getDecls()) { // FIXME: check constructor field
     auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     auto &targetScope = declIndex->getScopes()[target.getScopeId()];
 
@@ -202,11 +221,13 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         continue;
       }
 
-      if (equalsName(decl, mangledNewName, target)) {
-        if (consumer) {
-          consumer(Err(RenameConflict(target.toRef())));
+      for (auto &mangledNewName : mangledNewNames) {
+        if (equalsName(decl, mangledNewName, target)) {
+          if (consumer) {
+            consumer(Err(RenameConflict(target.toRef())));
+          }
+          return false;
         }
-        return false;
       }
     }
   }
@@ -247,6 +268,11 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   } else {
     if (!isValidIdentifier(actualNewName)) {
       return RenameValidationStatus::INVALID_NAME;
+    }
+    if (decl.getKind() == DeclSymbol::Kind::MOD) {
+      if (isKeyword(actualNewName)) {
+        return RenameValidationStatus::KEYWORD;
+      }
     }
   }
 
