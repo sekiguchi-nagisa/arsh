@@ -9,6 +9,8 @@
 - ``LineEditor`` support undo/redo op
     - ctrl-z: undo
     - atl-/: redo
+- add ``ARG0``, ``ARGS`` variables
+    - indicate top level ``0`` and ``@``
 
 #### LSP
 
