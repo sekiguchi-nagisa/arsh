@@ -720,6 +720,7 @@ void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
     auto v = std::move(builder).take();
     auto ref = v.asStrRef();
     fwrite(ref.data(), sizeof(char), ref.size(), stderr);
+    fputc('\n', stderr);
   }
 
   // print stack trace
