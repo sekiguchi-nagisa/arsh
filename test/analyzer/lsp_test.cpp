@@ -121,8 +121,8 @@ struct TransportTest : public ::testing::Test {
   LSPTransport transport;
 
   TransportTest()
-      : transport(this->logger, dup(fileno(createFilePtr(tmpfile).get())),
-                  dup(fileno(createFilePtr(tmpfile).get()))) {
+      : transport(this->logger, dupFD(fileno(createFilePtr(tmpfile).get())),
+                  dupFD(fileno(createFilePtr(tmpfile).get()))) {
     this->logger.setSeverity(LogLevel::INFO);
     this->logger.setAppender(createFilePtr(tmpfile));
   }
@@ -225,13 +225,13 @@ struct ServerTest : public InteractiveBase {
       LSPLogger logger;
       logger.setSeverity(LogLevel::INFO);
       logger.setAppender(std::move(this->logFile));
-      LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), 100);
+      LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), 100);
       server.run();
       return 1;
     });
 
-    auto clIn = dup(this->handle.out());
-    auto clOut = dup(this->handle.in());
+    auto clIn = dupFD(this->handle.out());
+    auto clOut = dupFD(this->handle.in());
     this->client = std::make_unique<LSPTransport>(this->clLogger, clIn, clOut);
   }
 
@@ -441,7 +441,7 @@ TEST(ClientTest, run) {
 
   ClientLogger logger;
   logger.setSeverity(LogLevel::DEBUG);
-  Client client(logger, dup(proc.out()), dup(proc.in()));
+  Client client(logger, dupFD(proc.out()), dupFD(proc.in()));
   rpc::Message ret;
   client.setReplyCallback([&ret](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg) && Client::isBrokenOrEmpty(get<rpc::Error>(msg))) {

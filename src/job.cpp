@@ -225,7 +225,7 @@ JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
     this->procs[i] = procs[i];
   }
   if (saveStdin) {
-    this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    this->oldStdin = dupFDCloseOnExec(STDIN_FILENO);
     setFlag(this->meta, ATTR_LAST_PIPE);
   }
   if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {

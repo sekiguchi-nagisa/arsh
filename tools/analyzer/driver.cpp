@@ -73,7 +73,7 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
     showInfo(argv, logger);
     const bool testMode = options.testInput && !options.open;
     uint64_t seed = testMode ? 42 : getCurrentTimestamp().time_since_epoch().count();
-    LSPServer server(logger, dup(STDIN_FILENO), dup(STDOUT_FILENO), options.debounceTime, seed);
+    LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), options.debounceTime, seed);
     if (testMode) {
       server.setTestWorkDir(getBaseDir(options.testInput));
     }

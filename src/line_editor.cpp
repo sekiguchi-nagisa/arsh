@@ -112,7 +112,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -399,9 +398,10 @@ namespace ydsh {
 LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
   if (int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
     this->inFd = ttyFd;
+    remapFDCloseOnExec(this->inFd);
     this->outFd = this->inFd;
   } else { // fallback
-    this->inFd = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    this->inFd = dupFDCloseOnExec(STDIN_FILENO);
     this->outFd = STDOUT_FILENO;
   }
 }

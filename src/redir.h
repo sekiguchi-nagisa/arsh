@@ -17,12 +17,10 @@
 #ifndef YDSH_REDIR_H
 #define YDSH_REDIR_H
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <cstdio>
 
 #include "job.h"
+#include "misc/files.hpp"
 #include "object.h"
 
 namespace ydsh {
@@ -194,7 +192,7 @@ private:
   void saveFDs() {
     for (int i = 0; i < 3; i++) {
       if (this->backupFDSet & (1u << i)) {
-        this->oldFds[i] = fcntl(i, F_DUPFD_CLOEXEC, 0);
+        this->oldFds[i] = dupFDCloseOnExec(i);
       }
     }
   }

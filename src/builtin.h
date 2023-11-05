@@ -17,7 +17,6 @@
 #ifndef YDSH_BUILTIN_H
 #define YDSH_BUILTIN_H
 
-#include <fcntl.h>
 #include <sys/file.h>
 
 #include <algorithm>
@@ -2033,6 +2032,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
 
   errno = 0;
   int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
+  remapFD(fd);
   if (fd != -1) {
     RET(DSValue::create<UnixFdObject>(fd));
   } else {
@@ -2061,7 +2061,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
 YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
-  int newFd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+  int newFd = dupFDCloseOnExec(fd);
   if (unlikely(newFd < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));

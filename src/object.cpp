@@ -628,7 +628,7 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       }
 
       if (arg.get()->getRefcount() > 1) {
-        if (int newFd = dup(typeAs<UnixFdObject>(arg).getValue()); newFd > -1) {
+        if (int newFd = dupFD(typeAs<UnixFdObject>(arg).getValue()); newFd > -1) {
           arg = DSValue::create<UnixFdObject>(newFd);
         } else {
           raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");

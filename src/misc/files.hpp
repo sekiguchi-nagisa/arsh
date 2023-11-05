@@ -177,6 +177,26 @@ inline bool setFDFlag(int fd, int addFlag, bool set) {
   return fcntl(fd, F_SETFL, flag) != -1;
 }
 
+constexpr unsigned int RESERVED_FD_LIMIT = 10;
+
+inline bool remapFD(int &fd) {
+  int r = fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT);
+  close(fd);
+  fd = r;
+  return r != -1;
+}
+
+inline bool remapFDCloseOnExec(int &fd) {
+  int r = fcntl(fd, F_DUPFD_CLOEXEC, RESERVED_FD_LIMIT);
+  close(fd);
+  fd = r;
+  return r != -1;
+}
+
+inline int dupFD(int fd) { return fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT); }
+
+inline int dupFDCloseOnExec(int fd) { return fcntl(fd, F_DUPFD_CLOEXEC, RESERVED_FD_LIMIT); }
+
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
   for (std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
     std::string path = std::move(dirList.front());

@@ -17,15 +17,13 @@
 #ifndef MISC_LIB_LOGGER_BASE_HPP
 #define MISC_LIB_LOGGER_BASE_HPP
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <cstdarg>
 #include <cstring>
 #include <mutex>
 #include <string>
 
 #include "fatal.h"
+#include "files.hpp"
 #include "resource.hpp"
 #include "time_util.hpp"
 
@@ -167,7 +165,7 @@ void LoggerBase<T>::syncAppenderWithEnv() {
     file = createFilePtr(fopen, appender, "we");
   }
   if (!file) {
-    file = createFilePtr(fdopen, fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 0), "w");
+    file = createFilePtr(fdopen, dupFDCloseOnExec(STDERR_FILENO), "w");
   }
   this->setAppender(std::move(file));
 }

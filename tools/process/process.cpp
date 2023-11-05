@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-#include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#include <unistd.h>
 
 #if !defined(__CYGWIN__)
 #include <sys/ttydefaults.h>
@@ -31,6 +29,7 @@
 
 #include <constant.h>
 #include <misc/fatal.h>
+#include <misc/files.hpp>
 #include <misc/unicode.hpp>
 
 #include "ansi.h"
@@ -366,6 +365,7 @@ static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
     }
     masterFD = fd;
     fd = open(ptsname(masterFD), O_RDWR | O_NOCTTY);
+    ydsh::remapFD(fd);
     if (fd == -1) {
       fatal_perror("open pty slave failed");
     }
@@ -394,8 +394,9 @@ public:
    * @param config
    */
   explicit StreamBuilder(const IOConfig &config)
-      : config(config), inpipe{dup(this->config.in.fd), -1}, outpipe{-1, dup(this->config.out.fd)},
-        errpipe{-1, dup(this->config.err.fd)} {
+      : config(config), inpipe{ydsh::dupFD(this->config.in.fd), -1},
+        outpipe{-1, ydsh::dupFD(this->config.out.fd)},
+        errpipe{-1, ydsh::dupFD(this->config.err.fd)} {
     openPTY(this->config, this->masterFD, this->slaveFD);
     this->initPipe();
   }
@@ -405,13 +406,13 @@ public:
     this->closeInParent();
     if (this->masterFD > -1) {
       if (this->config.in.is(IOConfig::PTY)) {
-        this->inpipe[WRITE_PIPE] = dup(this->masterFD);
+        this->inpipe[WRITE_PIPE] = ydsh::dupFD(this->masterFD);
       }
       if (this->config.out.is(IOConfig::PTY)) {
-        this->outpipe[READ_PIPE] = dup(this->masterFD);
+        this->outpipe[READ_PIPE] = ydsh::dupFD(this->masterFD);
       }
       if (this->config.err.is(IOConfig::PTY)) {
-        this->errpipe[READ_PIPE] = dup(this->masterFD);
+        this->errpipe[READ_PIPE] = ydsh::dupFD(this->masterFD);
       }
       close(this->masterFD);
     }
@@ -479,13 +480,13 @@ private:
     loginPTY(fd);
 
     if (this->config.in.is(IOConfig::PTY)) {
-      this->inpipe[READ_PIPE] = dup(fd);
+      this->inpipe[READ_PIPE] = ydsh::dupFD(fd);
     }
     if (this->config.out.is(IOConfig::PTY)) {
-      this->outpipe[WRITE_PIPE] = dup(fd);
+      this->outpipe[WRITE_PIPE] = ydsh::dupFD(fd);
     }
     if (this->config.err.is(IOConfig::PTY)) {
-      this->errpipe[WRITE_PIPE] = dup(fd);
+      this->errpipe[WRITE_PIPE] = ydsh::dupFD(fd);
     }
     close(fd);
   }

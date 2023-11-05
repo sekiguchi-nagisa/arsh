@@ -340,7 +340,7 @@ int TestClientServerDriver::run(const DriverOptions &options,
   ClientLogger logger;
   logger.setSeverity(this->level);
   logger(LogLevel::INFO, "run lsp test client");
-  Client client(logger, dup(proc.out()), dup(proc.in()));
+  Client client(logger, dupFD(proc.out()), dupFD(proc.in()));
   std::vector<PublishDiagnosticsParams> receivedDiagnostics;
   client.setReplyCallback([&logger, &options, &receivedDiagnostics](rpc::Message &&msg) -> bool {
     if (is<rpc::Error>(msg)) {

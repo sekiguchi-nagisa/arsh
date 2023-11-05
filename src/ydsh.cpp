@@ -247,8 +247,13 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
 
   FilePtr file;
   if (target != nullptr) {
-    file.reset(strlen(target) == 0 ? fdopen(fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0), "w")
-                                   : fopen(target, "we"));
+    if (strlen(target) == 0) {
+      file.reset(fdopen(dupFDCloseOnExec(STDOUT_FILENO), "w"));
+    } else {
+      int fd = open(target, O_RDWR | O_CLOEXEC | O_CREAT, 0666);
+      remapFDCloseOnExec(fd);
+      file.reset(fdopen(fd, "w"));
+    }
     if (!file) {
       return -1;
     }
