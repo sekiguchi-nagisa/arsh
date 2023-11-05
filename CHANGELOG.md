@@ -32,6 +32,7 @@
     - check object modification in ``LineEditor#readLine`` method
 - **Breaking Change**: assign new object to the following builtin variables at internal modification
     - ``reply``, ``PIPESTATUS``
+- **Breaking Change**: ``FD#dup`` method inherit ``CLOEXEC`` flag from original file descriptor
 
 #### API
 

@@ -164,6 +164,14 @@ inline bool setCloseOnExec(int fd, bool set) {
   return fcntl(fd, F_SETFD, flag) != -1;
 }
 
+inline bool hasCloseOnExec(int fd) {
+  int flag = fcntl(fd, F_GETFD);
+  if (flag == -1) {
+    return false;
+  }
+  return hasFlag(flag, FD_CLOEXEC);
+}
+
 inline bool setFDFlag(int fd, int addFlag, bool set) {
   int flag = fcntl(fd, F_GETFL);
   if (flag == -1) {
@@ -196,6 +204,11 @@ inline bool remapFDCloseOnExec(int &fd) {
 inline int dupFD(int fd) { return fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT); }
 
 inline int dupFDCloseOnExec(int fd) { return fcntl(fd, F_DUPFD_CLOEXEC, RESERVED_FD_LIMIT); }
+
+inline int dupFDExactly(int fd) {
+  bool r = hasCloseOnExec(fd);
+  return fcntl(fd, r ? F_DUPFD_CLOEXEC : F_DUPFD, RESERVED_FD_LIMIT);
+}
 
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
   for (std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
