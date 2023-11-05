@@ -98,6 +98,7 @@ struct BindingConsumer {
   }
 
   void operator()(const Handle &handle, FILE *fp) {
+    assert(fp);
     int fd = fileno(fp);
     assert(fd > -1);
     this->state.setGlobal(handle.getIndex(), DSValue::create<UnixFdObject>(fd));
@@ -249,9 +250,9 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
   if (target != nullptr) {
     if (strlen(target) == 0) {
       file.reset(fdopen(dupFDCloseOnExec(STDOUT_FILENO), "w"));
-    } else {
-      int fd = open(target, O_RDWR | O_CLOEXEC | O_CREAT, 0666);
-      remapFDCloseOnExec(fd);
+    } else if (FILE *fp = fopen(target, "w")) {
+      int fd = dupFDCloseOnExec(fileno(fp));
+      fclose(fp);
       file.reset(fdopen(fd, "w"));
     }
     if (!file) {
