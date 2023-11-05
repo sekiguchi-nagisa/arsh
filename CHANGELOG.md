@@ -52,6 +52,10 @@
 - ``textDocument/semanticTokens`` supports dynamic registration
 - ``textDocument/publishDiagnostics`` emit undefined sub-command warning
 
+### Fixed
+
+- not truncate ``Error#show`` message having null characters
+
 ## [0.31.0] - 2023-09-30
 
 ### Added

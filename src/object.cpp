@@ -716,7 +716,11 @@ void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
   }
   }
 
-  fprintf(stderr, "%s\n", std::move(builder).take().asCStr());
+  {
+    auto v = std::move(builder).take();
+    auto ref = v.asStrRef();
+    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
+  }
 
   // print stack trace
   for (auto &s : this->stackTrace) {
