@@ -1,7 +1,7 @@
 
 # for user-defined command with parameter
 
-[<CLI(name: $'default\x00!!', verbose: $true)>]
+[<CLI(verbose: $true)>]
 typedef CCC() {
   [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -18,24 +18,33 @@ typedef CCC() {
   var d = $false
 }
 
+[<CLI(name: $'default\x00!!', verbose: $true)>]
+typedef DDD() {}
+
 assert (new CCC()) is CLI
-var cc = new CCC()
-assert $cc.name() == $'default\x00!!'
-assert $cc.usage("must be valid argument") == "must be valid argument
-Usage: default${$'\x00'}!! [OPTIONS] AAA [BBB] CCC...
+assert (new DDD()) is CLI
+var dd = new DDD()
+assert $dd.name() == $'default\x00!!'
+assert $dd.usage("must be valid argument") == "must be valid argument
+Usage: default${$'\x00'}!!
 
 Options:
-  -d, --debug  enable debug mode
-  -h, --help   show this help message"
+  -h, --help  show this help message"
 
 ff(p : CCC) {
-  assert $p.name() == 'ff'  # always set to $0
+  assert $p.name() == 'ff'  # if not specified `name` attribute (name is empty), set to $0
+  echo $p
+}
+gg(p : DDD) {
+  assert $p.name() == $'default\x00!!'  # if specified `name` attribute (name is not empty) always set to $0
   echo $p
 }
 
 ## successful parsing
 var r = "$(ff 100 10 a b c)"
 assert $r == "ff 100 10 dummy a b c false" : $r
+$r = "$(gg 1 2 3)"
+assert $r == $'default\x00!!' : $r
 
 ## help
 $r = "$(ff --help)"
@@ -76,6 +85,6 @@ try {
 }
 assert $ex is ExecError
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 73
+assert ($ex as ExecError).lineno() == 82
 
 true

@@ -2328,10 +2328,13 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(PARSE_CLI) {
-        auto obj = state.stack.pop();
+        auto value = state.stack.pop();
+        auto &obj = typeAs<BaseObject>(value);
         auto &args = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        typeAs<BaseObject>(obj)[0] = state.stack.getLocal(UDC_PARAM_N);
-        if (!parseCommandLine(state, args, typeAs<BaseObject>(obj))) {
+        if (obj[0].asStrRef().empty()) {
+          obj[0] = state.stack.getLocal(UDC_PARAM_N);
+        }
+        if (!parseCommandLine(state, args, obj)) {
           auto error = state.stack.takeThrownObject();
           showCommandLineUsage(*error);
           TRY(returnFromUserDefinedCommand(state, error->getStatus()));

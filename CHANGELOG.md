@@ -33,6 +33,9 @@
 - **Breaking Change**: assign new object to the following builtin variables at internal modification
     - ``reply``, ``PIPESTATUS``
 - **Breaking Change**: ``FD#dup`` method inherit ``CLOEXEC`` flag from original file descriptor
+- **Breaking Change**: change default value of ``CLI#name`` method in user-defined command param
+    - if ``name`` attribute is not specified or specified empty string, set command name
+    - if ``name`` attribute is specified (not empty string), not set command name
 
 #### API
 
