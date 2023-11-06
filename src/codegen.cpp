@@ -519,6 +519,11 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
+  if (node.getExtraOp() == VarNode::CUR_ARG0) {
+    this->emit0byteIns(OpCode::LOAD_CUR_ARG0);
+    return;
+  }
+
   this->emitSourcePos(node.getActualPos());
   if (node.getHandle()->is(HandleKind::ENV)) {
     if (node.hasAttr(HandleAttr::GLOBAL)) {
@@ -591,6 +596,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     }
     break;
   case VarNode::NONE:
+  case VarNode::CUR_ARG0:
     break;
   }
 }

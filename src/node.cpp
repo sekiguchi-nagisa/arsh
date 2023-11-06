@@ -243,7 +243,8 @@ void VarNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(NONE)                                                                                         \
   OP(ARGS_LEN)                                                                                     \
-  OP(POSITIONAL_ARG)
+  OP(POSITIONAL_ARG)                                                                               \
+  OP(CUR_ARG0)
 
   DUMP_ENUM(extraOp, EACH_ENUM);
 #undef EACH_ENUM

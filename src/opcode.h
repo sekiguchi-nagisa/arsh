@@ -133,6 +133,7 @@ namespace ydsh {
   OP(ADD_REDIR_OP2, 1, -1)                                                                         \
   OP(DO_REDIR, 0, 0)                                                                               \
   OP(LOAD_CUR_MOD, 0, 1)                                                                           \
+  OP(LOAD_CUR_ARG0, 0, 1)                                                                          \
   OP(RAND, 0, 1)                                                                                   \
   OP(GET_SECOND, 0, 1)                                                                             \
   OP(SET_SECOND, 0, -1)                                                                            \

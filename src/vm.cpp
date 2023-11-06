@@ -2331,9 +2331,6 @@ bool VM::mainLoop(DSState &state) {
         auto value = state.stack.pop();
         auto &obj = typeAs<BaseObject>(value);
         auto &args = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        if (obj[0].asStrRef().empty()) {
-          obj[0] = state.stack.getLocal(UDC_PARAM_N);
-        }
         if (!parseCommandLine(state, args, obj)) {
           auto error = state.stack.takeThrownObject();
           showCommandLineUsage(*error);
@@ -2483,6 +2480,25 @@ bool VM::mainLoop(DSState &state) {
         auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
         unsigned int index = modType.getIndex();
         state.stack.push(state.getGlobal(index));
+        vmnext;
+      }
+      vmcase(LOAD_CUR_ARG0) {
+        const ControlFrame *frame = nullptr;
+        state.stack.walkFrames([&frame](const ControlFrame &f) {
+          if (f.code->is(CodeKind::USER_DEFINED_CMD)) {
+            frame = &f;
+            return false;
+          }
+          return true;
+        });
+        DSValue arg0;
+        if (frame) {
+          unsigned int localOffset = frame->localVarOffset;
+          arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_N);
+        } else {
+          arg0 = state.getGlobal(BuiltinVarOffset::POS_0);
+        }
+        state.stack.push(std::move(arg0));
         vmnext;
       }
       vmcase(RAND) {

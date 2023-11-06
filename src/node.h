@@ -657,6 +657,7 @@ public:
     NONE,
     ARGS_LEN,
     POSITIONAL_ARG,
+    CUR_ARG0, // for cli record
   };
 
 private:
@@ -666,6 +667,12 @@ private:
 
 public:
   VarNode(Token token, std::string &&varName);
+
+  static std::unique_ptr<VarNode> createCurArg0(Token token) {
+    auto node = std::make_unique<VarNode>(token, "dummy");
+    node->extraOp = CUR_ARG0;
+    return node;
+  }
 
   ~VarNode() override = default;
 

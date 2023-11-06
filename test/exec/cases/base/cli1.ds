@@ -8,7 +8,7 @@ typedef AAA() {
 assert (new AAA()) is CLI
 
 var aa = new AAA()
-assert $aa.name() == ''
+assert $aa.name() == $ARG0
 $aa.setName("cmd1")
 assert $aa.name() == 'cmd1'
 assert $aa.usage() == "Usage: cmd1

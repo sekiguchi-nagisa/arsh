@@ -441,7 +441,7 @@ void SymbolIndexer::visitQualified(QualifiedTypeNode &node) {
 
 void SymbolIndexer::visitVarNode(VarNode &node) {
   if (!node.isUntyped() && !node.getType().isUnresolved() && !node.getType().isVoidType() &&
-      !node.getType().isNothingType()) {
+      !node.getType().isNothingType() && node.getHandle()) {
     NameInfo info(node.getToken(), node.getVarName());
     if (this->builder().isReceiver(node.getVarName(), *node.getHandle())) {
       this->builder().addThis(info, node.getHandle());

@@ -868,6 +868,9 @@ void TypeChecker::visitVarNode(VarNode &node) {
     }
     break;
   }
+  case VarNode::CUR_ARG0:
+    node.setType(this->typePool().get(TYPE::String));
+    break;
   }
 }
 
@@ -2371,9 +2374,14 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
     // check type func body
     if (isa<CLIRecordType>(node.getResolvedType())) {
       Token dummy = node.getNameInfo().getToken();
-      auto nameDeclNode = std::make_unique<VarDeclNode>(
-          dummy.pos, NameInfo(dummy, "%name"),
-          std::make_unique<StringNode>(node.getCLIName().toString()), VarDeclNode::VAR);
+      std::unique_ptr<Node> exprNode;
+      if (auto cliName = node.getCLIName(); !cliName.empty()) {
+        exprNode = std::make_unique<StringNode>(cliName.toString());
+      } else { // use current ARG0
+        exprNode = VarNode::createCurArg0(dummy);
+      }
+      auto nameDeclNode = std::make_unique<VarDeclNode>(dummy.pos, NameInfo(dummy, "%name"),
+                                                        std::move(exprNode), VarDeclNode::VAR);
       node.getBlockNode().insertNodeToFirst(std::move(nameDeclNode));
     }
     this->checkTypeWithCurrentScope(

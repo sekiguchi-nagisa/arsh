@@ -245,6 +245,13 @@ public:
     this->push(std::move(v));
   }
 
+  /**
+   * normally should not use
+   * @param offset
+   * @return
+   */
+  const DSValue &unsafeGetOperand(unsigned int offset) const { return this->operands[offset]; }
+
   ClosureObject &getCurrentClosure() const {
     return typeAs<ClosureObject>(this->operands[this->frame.localVarOffset - 1]);
   }
