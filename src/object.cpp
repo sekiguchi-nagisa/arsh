@@ -684,11 +684,6 @@ bool ErrorObject::opStr(StrBuilder &builder) const {
 }
 
 void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
-  StrBuilder builder(state);
-  bool r = this->opStr(builder);
-  (void)r;
-  assert(r);
-
   // print header
   switch (op) {
   case PrintOp::DEFAULT:
@@ -716,9 +711,13 @@ void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
   }
   }
 
+  // print message (suppress error)
   {
-    auto v = std::move(builder).take();
-    auto ref = v.asStrRef();
+    auto ref = state.typePool.get(this->getTypeID()).getNameRef();
+    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
+    ref = ": ";
+    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
+    ref = this->message.asStrRef();
     fwrite(ref.data(), sizeof(char), ref.size(), stderr);
     fputc('\n', stderr);
   }
