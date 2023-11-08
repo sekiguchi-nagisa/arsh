@@ -18,12 +18,13 @@ typedef CCC() {
   var d = $false
 }
 
-[<CLI(name: $'default\x00!!', verbose: $true)>]
+[<CLI(verbose: $true)>]
 typedef DDD() {}
 
 assert (new CCC()) is CLI
 assert (new DDD()) is CLI
 var dd = new DDD()
+$dd.setName($'default\x00!!')
 assert $dd.name() == $'default\x00!!'
 assert $dd.usage("must be valid argument") == "must be valid argument
 Usage: default${$'\x00'}!!
@@ -32,11 +33,11 @@ Options:
   -h, --help  show this help message"
 
 ff(p : CCC) {
-  assert $p.name() == 'ff'  # if not specified `name` attribute (name is empty), set to $0
+  assert $p.name() == 'ff'  # always set to $0
   echo $p
 }
 gg(p : DDD) {
-  assert $p.name() == $'default\x00!!'  # if specified `name` attribute (name is not empty) always set to $0
+  assert $p.name() == $'gg'  # always set to $0
   echo $p
 }
 
@@ -44,7 +45,7 @@ gg(p : DDD) {
 var r = "$(ff 100 10 a b c)"
 assert $r == "ff 100 10 dummy a b c false" : $r
 $r = "$(gg 1 2 3)"
-assert $r == $'default\x00!!' : $r
+assert $r == $'gg' : $r
 
 ## help
 $r = "$(ff --help)"
@@ -85,6 +86,6 @@ try {
 }
 assert $ex is ExecError
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 82
+assert ($ex as ExecError).lineno() == 83
 
 true

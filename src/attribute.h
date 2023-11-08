@@ -27,7 +27,6 @@
   OP(ARG, "Arg")
 
 #define EACH_ATTRIBUTE_PARAM(OP)                                                                   \
-  OP(NAME, "name", TYPE::String)                                                                   \
   OP(VERBOSE, "verbose", TYPE::Bool)                                                               \
   OP(HELP, "help", TYPE::String)                                                                   \
   OP(SHORT, "short", TYPE::String)                                                                 \

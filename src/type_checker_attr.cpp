@@ -81,7 +81,6 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
 
   defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR,
                   {
-                      Attribute::Param::NAME,
                       Attribute::Param::VERBOSE,
                   },
                   {});
@@ -357,7 +356,6 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     assert(param);
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
-    case Attribute::Param::NAME:
     case Attribute::Param::VERBOSE:
       continue; // unreachable
     case Attribute::Param::HELP: {

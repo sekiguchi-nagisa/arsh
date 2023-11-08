@@ -21,6 +21,10 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
+
 #### Builtin
 
 - ``LineEditor#setColor`` method ignore invalid ansi escape sequence (only accept SGR sequence)

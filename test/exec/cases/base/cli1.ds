@@ -139,13 +139,15 @@ assert $cc.ccc.size() == 1
 assert $cc.ccc[0] == 'qqq'
 
 ## short-usage
-[<CLI(name: 'example', verbose: $false)>]
+[<CLI(verbose: $false)>]
 typedef DDD() {
     [<Option(required: $true, range:(120,-10))>]
   var aaa : Int?
 }
 
 var dd = new DDD()
+assert $dd.name() == $ARG0
+$dd.setName('example')
 assert $dd.name() == 'example'
 assert $dd.usage('error', $true) == "error
 Usage: example [OPTIONS]
@@ -170,7 +172,7 @@ try { $dd.parse(['-q']); } catch e { $ex = $e; }
 assert ($ex as CLIError).message() == "invalid option: -q
 See \`example --help' for more information."
 
-[<CLI(name: "www")>]
+[<CLI()>]
 typedef EEE() {
     [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -179,17 +181,12 @@ typedef EEE() {
 $ex = 34
 try { new EEE().parse(new [String]()); } catch e { $ex = $e; }
 assert ($ex as CLIError).message() == "require \`AAA' argument
-See \`www --help' for more information."
+See \`$ARG0 --help' for more information."
 
 
 ## name
-assert new EEE().name() == "www"
 assert new AAA().name() == $0
 assert (function() => new AAA().name())() == $0
-assert (function() => new EEE().name())() == 'www'
 assert (function() => function() => new AAA().name())()() == $0
-assert (function() => function() => new EEE().name())()() == 'www'
 assert "$(((){ echo ${new AAA().name()}; }).call(['a', 'b']))" == 'a'
-assert "$(((){ echo ${new EEE().name()}; }).call(['a', 'b']))" == 'www'
 assert "$(((){ echo ${(function() => new AAA().name())()}; }).call(['a', 'b']))" == 'a'
-assert "$(((){ echo ${(function() => new EEE().name())()}; }).call(['a', 'b']))" == 'www'

@@ -2374,14 +2374,9 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
     // check type func body
     if (isa<CLIRecordType>(node.getResolvedType())) {
       Token dummy = node.getNameInfo().getToken();
-      std::unique_ptr<Node> exprNode;
-      if (auto cliName = node.getCLIName(); !cliName.empty()) {
-        exprNode = std::make_unique<StringNode>(cliName.toString());
-      } else { // use current ARG0
-        exprNode = VarNode::createCurArg0(dummy);
-      }
-      auto nameDeclNode = std::make_unique<VarDeclNode>(dummy.pos, NameInfo(dummy, "%name"),
-                                                        std::move(exprNode), VarDeclNode::VAR);
+      std::unique_ptr<Node> exprNode = VarNode::createCurArg0(dummy);
+      auto nameDeclNode = std::make_unique<VarDeclNode>(
+          dummy.pos, NameInfo(dummy, "%name"), VarNode::createCurArg0(dummy), VarDeclNode::VAR);
       node.getBlockNode().insertNodeToFirst(std::move(nameDeclNode));
     }
     this->checkTypeWithCurrentScope(

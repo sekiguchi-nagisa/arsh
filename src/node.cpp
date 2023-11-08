@@ -959,17 +959,6 @@ void FunctionNode::setFuncBody(std::unique_ptr<Node> &&node) {
   this->updateToken(this->blockNode->getToken());
 }
 
-StringRef FunctionNode::getCLIName() const {
-  StringRef name;
-  auto pair = lookupValidAttributeParamFromList(this->attrNodes, AttributeKind::CLI,
-                                                Attribute::Param::NAME);
-  if (pair.first > -1 && pair.second > -1) {
-    auto &node = this->attrNodes[pair.first]->getConstNodes()[pair.second];
-    name = cast<StringNode>(*node).getValue();
-  }
-  return name;
-}
-
 void FunctionNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(FUNC)                                                                                         \
