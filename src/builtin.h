@@ -2048,7 +2048,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
 YDSH_METHOD fd_close(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_close);
   auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
-  int fd = fdObj.getValue();
+  int fd = fdObj.getRawFd();
   if (unlikely(fdObj.tryToClose(true) < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));
@@ -2060,7 +2060,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
 //!bind: function dup($this : FD) : FD
 YDSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   int newFd = dupFDExactly(fd);
   if (unlikely(newFd < 0)) {
     int e = errno;
@@ -2073,14 +2073,14 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
 //!bind: function value($this : FD) : Int
 YDSH_METHOD fd_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_value);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET(DSValue::createInt(fd));
 }
 
 //!bind: function lock($this : FD) : FD
 YDSH_METHOD fd_lock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_lock);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   if (unlikely(flock(fd, LOCK_EX) == -1)) {
     raiseSystemError(ctx, errno, "lock failed");
     RET_ERROR;
@@ -2091,7 +2091,7 @@ YDSH_METHOD fd_lock(RuntimeContext &ctx) {
 //!bind: function unlock($this : FD) : FD
 YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_unlock);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   if (unlikely(flock(fd, LOCK_UN) == -1)) {
     raiseSystemError(ctx, errno, "unlock failed");
     RET_ERROR;
@@ -2102,14 +2102,14 @@ YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
 //!bind: function $OP_BOOL($this : FD) : Bool
 YDSH_METHOD fd_bool(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_bool);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET_BOOL(fd != -1);
 }
 
 //!bind: function $OP_NOT($this : FD) : Bool
 YDSH_METHOD fd_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_not);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getValue();
+  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET_BOOL(fd == -1);
 }
 

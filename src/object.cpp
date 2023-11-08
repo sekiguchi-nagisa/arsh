@@ -174,7 +174,7 @@ std::string DSValue::toString() const {
   switch (this->get()->getKind()) {
   case ObjectKind::UnixFd: {
     std::string str = "/dev/fd/";
-    str += std::to_string(typeAs<UnixFdObject>(*this).getValue());
+    str += std::to_string(typeAs<UnixFdObject>(*this).getRawFd());
     return str;
   }
   case ObjectKind::Regex:
@@ -628,7 +628,7 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       }
 
       if (arg.get()->getRefcount() > 1) {
-        if (int newFd = dupFD(typeAs<UnixFdObject>(arg).getValue()); newFd > -1) {
+        if (int newFd = dupFD(typeAs<UnixFdObject>(arg).getRawFd()); newFd > -1) {
           arg = DSValue::create<UnixFdObject>(newFd);
         } else {
           raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
@@ -873,7 +873,7 @@ bool ReaderObject::nextLine() {
   std::string line;
   while (true) {
     if (this->remainPos == this->usedSize) {
-      const ssize_t readSize = read(this->fdObj->getValue(), this->buf, std::size(this->buf));
+      const ssize_t readSize = read(this->fdObj->getRawFd(), this->buf, std::size(this->buf));
       if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
         continue;
       }

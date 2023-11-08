@@ -205,7 +205,7 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
     return 0;
   case RedirOp::DUP_FD: {
     auto &src = typeAs<UnixFdObject>(entry.value);
-    if (dup2(src.getValue(), entry.newFd) < 0) {
+    if (dup2(src.getRawFd(), entry.newFd) < 0) {
       return errno;
     }
     return 0;
@@ -232,7 +232,7 @@ bool RedirObject::redirect(DSState &state) {
           }
         } else if (entry.value.hasType(TYPE::FD)) { // FIXME:
           msg += ": ";
-          msg += std::to_string(typeAs<UnixFdObject>(entry.value).getValue());
+          msg += std::to_string(typeAs<UnixFdObject>(entry.value).getRawFd());
         }
       }
       raiseSystemError(state, r, std::move(msg));

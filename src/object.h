@@ -181,7 +181,7 @@ public:
     return true;
   }
 
-  int getValue() const { return this->fd; }
+  int getRawFd() const { return this->fd; }
 };
 
 class StringObject : public ObjectWithRtti<ObjectKind::String> {
@@ -1327,7 +1327,7 @@ private:
 public:
   explicit ReaderObject(ObjPtr<UnixFdObject> &&fdObj)
       : ObjectWithRtti(TYPE::Reader), fdObj(std::move(fdObj)) {
-    if (this->fdObj->getValue() == -1) {
+    if (this->fdObj->getRawFd() == -1) {
       this->available = false;
     }
   }
