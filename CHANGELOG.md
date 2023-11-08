@@ -55,6 +55,7 @@
 ### Fixed
 
 - not truncate ``Error#show`` message having null characters
+- not allow number before ``&>``, ``&>|``, ``&>>`` op
 
 ## [0.31.0] - 2023-09-30
 

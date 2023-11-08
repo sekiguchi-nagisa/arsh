@@ -355,9 +355,9 @@ INIT:
     <CMD> [0-9]* ">"         { RET(REDIR_OUT); }
     <CMD> [0-9]* ">|"        { RET(REDIR_OUT_CLOBBER); }
     <CMD> [0-9]* ">>"        { RET(REDIR_APPEND); }
-    <CMD> [0-9]* "&>"        { RET(REDIR_OUT_ERR); }
-    <CMD> [0-9]* "&>|"       { RET(REDIR_OUT_ERR_CLOBBER); }
-    <CMD> [0-9]* "&>>"       { RET(REDIR_APPEND_OUT_ERR); }
+    <CMD>        "&>"        { RET(REDIR_OUT_ERR); }
+    <CMD>        "&>|"       { RET(REDIR_OUT_ERR_CLOBBER); }
+    <CMD>        "&>>"       { RET(REDIR_APPEND_OUT_ERR); }
     <CMD> [0-9]* "<&"        { RET(REDIR_DUP_IN); }
     <CMD> [0-9]* ">&"        { RET(REDIR_DUP_OUT); }
     <CMD> [0-9]* "<<"        { RET(REDIR_HERE_DOC); }
