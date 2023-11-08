@@ -43,7 +43,9 @@ PipelineObject::~PipelineObject() {
 RedirObject::~RedirObject() {
   this->restoreFDs();
   for (int fd : this->oldFds) {
-    close(fd);
+    if (fd > -1) {
+      close(fd);
+    }
   }
 }
 
@@ -148,9 +150,10 @@ void RedirObject::addEntry(DSValue &&value, RedirOp op, int newFd) {
       op == RedirOp::CLOBBER_OUT_ERR) {
     this->backupFDSet |= 1u << 1u;
     this->backupFDSet |= 1u << 2u;
-  } else if (newFd >= 0 && newFd <= 2) {
+  } else if (newFd >= 0 && static_cast<unsigned int>(newFd) <= MAX_FD_NUM) {
     this->backupFDSet |= 1u << static_cast<unsigned int>(newFd);
   }
+  assert(newFd < 0 || static_cast<unsigned int>(newFd) <= MAX_FD_NUM);
   this->entries.push_back(Entry{
       .value = std::move(value),
       .op = op,

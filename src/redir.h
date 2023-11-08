@@ -168,17 +168,23 @@ public:
     int newFd; // ignore it when op is REDIR_OUT_ERR, APPEND_OUT_ERR or CLOBBER_OUT_ERR
   };
 
+  static constexpr unsigned int MAX_FD_NUM = 2;
+
 private:
   unsigned int backupFDSet{0}; // if corresponding bit is set, backup old fd
 
-  int oldFds[3];
+  int oldFds[MAX_FD_NUM + 1];
 
   std::vector<Entry> entries;
 
 public:
   NON_COPYABLE(RedirObject);
 
-  RedirObject() : ObjectWithRtti(TYPE::Void), oldFds{-1, -1, -1} {}
+  RedirObject() : ObjectWithRtti(TYPE::Void) { // NOLINT
+    for (size_t i = 0; i < std::size(this->oldFds); i++) {
+      this->oldFds[i] = -1;
+    }
+  }
 
   ~RedirObject();
 
@@ -190,17 +196,17 @@ public:
 
 private:
   void saveFDs() {
-    for (int i = 0; i < 3; i++) {
+    for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
       if (this->backupFDSet & (1u << i)) {
-        this->oldFds[i] = dupFDCloseOnExec(i);
+        this->oldFds[i] = dupFDCloseOnExec(static_cast<int>(i));
       }
     }
   }
 
   void restoreFDs() {
-    for (int i = 0; i < 3; i++) {
+    for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
       if (this->backupFDSet & (1u << i)) {
-        dup2(this->oldFds[i], i);
+        dup2(this->oldFds[i], static_cast<int>(i));
       }
     }
   }
