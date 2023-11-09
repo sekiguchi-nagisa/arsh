@@ -1,0 +1,16 @@
+#$test($ignored = 'cygwin|msys|darwin')
+
+assert command -V flock > /dev/null
+
+exec 9< $SCRIPT_NAME
+
+flock -n 9 || {
+    echo already running
+    exit 188
+}
+
+var out = "$(call $YDSH_BIN $SCRIPT_NAME 2>&1)"
+assert $? == 188
+assert $out == 'already running'
+
+true

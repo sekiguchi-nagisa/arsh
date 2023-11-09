@@ -919,16 +919,22 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 }
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
-  if (int newFd = node.getNewFd(); newFd >= 0 && newFd <= 2) {
-    if (int targetFd = node.getTargetFd(); targetFd >= 0 && targetFd <= 2) {
-      unsigned int index = toIndex(BuiltinVarOffset::STDIN) + targetFd;
-      this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
+  if (int newFd = node.getNewFd();
+      newFd >= 0 && static_cast<unsigned int>(newFd) < RESERVED_FD_LIMIT) {
+    if (int targetFd = node.getTargetFd();
+        targetFd >= 0 && static_cast<unsigned int>(targetFd) < RESERVED_FD_LIMIT) {
+      this->emitInt(targetFd);
     } else {
       this->generateCmdArg(node.getTargetNode());
     }
-    const auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
-    auto op = static_cast<OpCode>(offset + newFd);
-    this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
+    if (newFd < 3) {
+      const auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
+      auto op = static_cast<OpCode>(offset + newFd);
+      this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
+    } else {
+      this->emit2byteIns(OpCode::ADD_REDIR_OP, toUnderlying(node.getRedirOp()),
+                         static_cast<unsigned char>(newFd));
+    }
   } else {
     fatal("unsupported\n");
   }

@@ -103,14 +103,13 @@ enum class RedirOpenFlag {
 
 /**
  *
- * @param fileName must be String
+ * @param fileName
  * @param openFlag
  * @param newFD
  * @return
  * if failed, return non-zero value (errno)
  */
-static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int newFd) {
-  assert(fileName.hasStrRef());
+static int redirectToFile(StringRef fileName, RedirOpenFlag openFlag, int newFd) {
   int flag = 0;
   switch (openFlag) {
   case RedirOpenFlag::READ:
@@ -127,12 +126,11 @@ static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int n
     break;
   }
 
-  auto ref = fileName.asStrRef();
-  if (ref.hasNullChar()) {
+  if (fileName.hasNullChar()) {
     return EINVAL;
   }
 
-  int fd = open(ref.data(), flag, 0666);
+  int fd = open(fileName.data(), flag, 0666);
   if (fd < 0) {
     return errno;
   }
@@ -191,11 +189,13 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
   case RedirOp::REDIR_OUT:
   case RedirOp::CLOBBER_OUT:
   case RedirOp::APPEND_OUT:
-    return redirectToFile(entry.value, resolveOpenFlag(entry.op, overwrite), entry.newFd);
+    return redirectToFile(entry.value.asStrRef(), resolveOpenFlag(entry.op, overwrite),
+                          entry.newFd);
   case RedirOp::REDIR_OUT_ERR:
   case RedirOp::CLOBBER_OUT_ERR:
   case RedirOp::APPEND_OUT_ERR:
-    if (int r = redirectToFile(entry.value, resolveOpenFlag(entry.op, overwrite), STDOUT_FILENO);
+    if (int r = redirectToFile(entry.value.asStrRef(), resolveOpenFlag(entry.op, overwrite),
+                               STDOUT_FILENO);
         r != 0) {
       return r;
     }
@@ -204,8 +204,13 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
     }
     return 0;
   case RedirOp::DUP_FD: {
-    auto &src = typeAs<UnixFdObject>(entry.value);
-    if (dup2(src.getRawFd(), entry.newFd) < 0) {
+    int fd = -1;
+    if (entry.value.isObject() && isa<UnixFdObject>(entry.value.get())) {
+      fd = typeAs<UnixFdObject>(entry.value).getRawFd();
+    } else if (entry.value.kind() == DSValueKind::INT) {
+      fd = static_cast<int>(entry.value.asInt());
+    }
+    if (dup2(fd, entry.newFd) < 0) {
       return errno;
     }
     return 0;
@@ -230,9 +235,11 @@ bool RedirObject::redirect(DSState &state) {
             msg += ": ";
             msg += toPrintable(ref);
           }
-        } else if (entry.value.hasType(TYPE::FD)) { // FIXME:
+        } else if (entry.value.hasType(TYPE::FD) || entry.value.hasType(TYPE::Int)) {
           msg += ": ";
-          msg += std::to_string(typeAs<UnixFdObject>(entry.value).getRawFd());
+          int rawFd = entry.value.hasType(TYPE::FD) ? typeAs<UnixFdObject>(entry.value).getRawFd()
+                                                    : static_cast<int>(entry.value.asInt());
+          msg += std::to_string(rawFd);
         }
       }
       raiseSystemError(state, r, std::move(msg));

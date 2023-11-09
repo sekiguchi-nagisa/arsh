@@ -168,7 +168,7 @@ public:
     int newFd; // ignore it when op is REDIR_OUT_ERR, APPEND_OUT_ERR or CLOBBER_OUT_ERR
   };
 
-  static constexpr unsigned int MAX_FD_NUM = 2;
+  static constexpr unsigned int MAX_FD_NUM = 9;
 
 private:
   unsigned int backupFDSet{0}; // if corresponding bit is set, backup old fd
@@ -206,7 +206,13 @@ private:
   void restoreFDs() {
     for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
       if (this->backupFDSet & (1u << i)) {
-        dup2(this->oldFds[i], static_cast<int>(i));
+        int oldFd = this->oldFds[i];
+        int fd = static_cast<int>(i);
+        if (oldFd < 0) {
+          close(fd);
+        } else {
+          dup2(oldFd, fd);
+        }
       }
     }
   }

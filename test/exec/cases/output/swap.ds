@@ -1,0 +1,19 @@
+# RUN: exec $cmd $self
+
+__puts -1 'this is a stdout11' -2 'this is a stderr22'
+# CHECK    : this is a stdout11
+# CHECK_ERR: this is a stderr22
+
+## swap stdout/stderr
+assert !test -e /dev/fd/3
+__puts 3>&1 01>&2 2>&003 -1 'this is a stdout111' -2 'this is a stderr222'
+# CHECK_ERR: this is a stdout111
+# CHECK    : this is a stderr222
+
+## restore
+assert !test -e /dev/fd/3
+__puts -1 'this is a stdout1111' -2 'this is a stderr2222'
+# CHECK    : this is a stdout1111
+# CHECK_ERR: this is a stderr2222
+
+# STATUS: 0

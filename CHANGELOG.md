@@ -24,6 +24,12 @@
 #### Core
 
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
+- in io redirection, allow file descriptor number greater than 4 (up to 0)
+    - now support like the following bash idiom
+  ```shell
+  do-something 3>&1 1>&2 2>&3   # swap stdout and stderr
+  exec 9>lockfile && flock -n 9 # flock with file descriptor number
+  ```
 
 #### Builtin
 

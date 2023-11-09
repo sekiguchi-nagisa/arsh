@@ -128,6 +128,7 @@ namespace ydsh {
   OP(BUILTIN_CALL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \
   OP(NEW_REDIR, 0, 1)                                                                              \
+  OP(ADD_REDIR_OP, 2, -1)                                                                          \
   OP(ADD_REDIR_OP0, 1, -1)                                                                         \
   OP(ADD_REDIR_OP1, 1, -1)                                                                         \
   OP(ADD_REDIR_OP2, 1, -1)                                                                         \

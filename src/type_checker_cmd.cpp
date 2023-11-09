@@ -229,7 +229,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     // check fd format
     StringRef ref = node.getFdName();
     auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
-    if (pair && pair.value >= 0 && pair.value <= 2) {
+    if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
       node.setNewFd(pair.value);
     } else {
       this->reportError<RedirFdRange>(node, node.getFdName().c_str());
@@ -254,7 +254,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     auto &type = this->checkTypeExactly(argNode);
     if (!type.is(TYPE::FD)) {
       auto pair = toNumericCmdArg(argNode);
-      if (pair && pair.value >= 0 && pair.value <= 2) {
+      if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
         node.setTargetFd(pair.value);
       } else {
         this->reportError<NeedFd>(argNode);
@@ -263,7 +263,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     break;
   }
   }
-  node.setType(this->typePool().get(TYPE::Any)); // FIXME:
+  node.setType(this->typePool().get(TYPE::Any));
 }
 
 void TypeChecker::visitWildCardNode(WildCardNode &node) {
