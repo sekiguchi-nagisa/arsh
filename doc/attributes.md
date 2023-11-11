@@ -13,7 +13,7 @@ only allowed for user-defied type definition
 
 | **param** | **type**   | **default**  | **description**                                             |
 |-----------|------------|--------------|-------------------------------------------------------------|
-| name      | ``String`` | empty string | default command name                                        |
+| toplevel  | ``Bool``   | false        | set toplevel arg0 to cli name                               |
 | verbose   | ``Bool``   | false        | show detailed usage when encounter command line parse error |
 
 ### ``Flag`` attribute

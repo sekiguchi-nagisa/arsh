@@ -1601,6 +1601,27 @@ Options:
   ASSERT_NO_FATAL_FAILURE(this->hover(src, {16, 2}, out));
 }
 
+TEST_F(IndexTest, hoverUsage3) {
+  const char *src = R"([<CLI(toplevel: $true)>]
+typedef Param() {}
+fff($p : Param) { echo $p; }
+fff
+)";
+
+  const char *out = R"(```ydsh
+fff(): Bool
+```
+
+**command line**
+```md
+Usage: <$ARG0>
+
+Options:
+  -h, --help  show this help message
+```)";
+  ASSERT_NO_FATAL_FAILURE(this->hover(src, {3, 2}, out));
+}
+
 TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::VAR));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::LET));

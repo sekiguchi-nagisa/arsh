@@ -661,7 +661,8 @@ class ArgEntry;
 class CLIRecordType : public RecordType {
 public:
   enum class Attr : unsigned char {
-    VERBOSE = 1u << 0u, // verbose usage message
+    VERBOSE = 1u << 0u,  // verbose usage message
+    TOPLEVEL = 1u << 1u, // default cli name is toplevel arg0
   };
 
 private:

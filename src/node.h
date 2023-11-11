@@ -421,6 +421,8 @@ public:
 
   int64_t getIntValue() const { return this->intValue; }
 
+  bool getAsBoolValue() const { return this->intValue > 0; }
+
   double getFloatValue() const { return this->floatValue; }
 
   bool isInit() const { return this->init; }

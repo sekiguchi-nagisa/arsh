@@ -218,6 +218,14 @@ public:
    */
   NameScopePtr exitScope() { return this->parent; }
 
+  const NameScope *getGlobalScope() const {
+    const NameScope *cur = this;
+    while (!cur->isGlobal()) {
+      cur = cur->parent.get();
+    }
+    return cur;
+  }
+
   void clearLocalSize() {
     assert(this->isGlobal());
     this->curLocalIndex = 0;

@@ -81,6 +81,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
 
   defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR,
                   {
+                      Attribute::Param::TOPLEVEL,
                       Attribute::Param::VERBOSE,
                   },
                   {});
@@ -356,6 +357,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     assert(param);
     auto &constNode = *attrNode.getConstNodes()[i];
     switch (*param) {
+    case Attribute::Param::TOPLEVEL:
     case Attribute::Param::VERBOSE:
       continue; // unreachable
     case Attribute::Param::HELP: {
@@ -396,26 +398,26 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       continue;
     }
     case Attribute::Param::REQUIRED:
-      if (cast<NumberNode>(constNode).getIntValue()) {
+      if (cast<NumberNode>(constNode).getAsBoolValue()) {
         setFlag(argEntryAttr, ArgEntryAttr::REQUIRE);
       } else {
         unsetFlag(argEntryAttr, ArgEntryAttr::REQUIRE);
       }
       continue;
     case Attribute::Param::STORE:
-      if (cast<NumberNode>(constNode).getIntValue()) {
+      if (cast<NumberNode>(constNode).getAsBoolValue()) {
         unsetFlag(argEntryAttr, ArgEntryAttr::STORE_FALSE);
       } else {
         setFlag(argEntryAttr, ArgEntryAttr::STORE_FALSE);
       }
       continue;
     case Attribute::Param::OPT: {
-      bool opt = cast<NumberNode>(constNode).getIntValue() > 0;
+      bool opt = cast<NumberNode>(constNode).getAsBoolValue();
       entry.setParseOp(opt ? OptParseOp::OPT_ARG : OptParseOp::HAS_ARG);
       continue;
     }
     case Attribute::Param::STOP:
-      if (cast<NumberNode>(constNode).getIntValue()) {
+      if (cast<NumberNode>(constNode).getAsBoolValue()) {
         setFlag(argEntryAttr, ArgEntryAttr::STOP_OPTION);
       } else {
         unsetFlag(argEntryAttr, ArgEntryAttr::STOP_OPTION);

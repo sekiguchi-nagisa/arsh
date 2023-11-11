@@ -18,7 +18,7 @@ typedef CCC() {
   var d = $false
 }
 
-[<CLI(verbose: $true)>]
+[<CLI(verbose: $true, toplevel: $true)>]
 typedef DDD() {}
 
 assert (new CCC()) is CLI
@@ -37,7 +37,7 @@ ff(p : CCC) {
   echo $p
 }
 gg(p : DDD) {
-  assert $p.name() == $'gg'  # always set to $0
+  assert $p.name() == $ARG0  # if specified `toplevel` attr param, set to $ARG0
   echo $p
 }
 
@@ -45,7 +45,7 @@ gg(p : DDD) {
 var r = "$(ff 100 10 a b c)"
 assert $r == "ff 100 10 dummy a b c false" : $r
 $r = "$(gg 1 2 3)"
-assert $r == $'gg' : $r
+assert $r == $ARG0 : $r
 
 ## help
 $r = "$(ff --help)"

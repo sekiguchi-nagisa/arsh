@@ -172,7 +172,7 @@ try { $dd.parse(['-q']); } catch e { $ex = $e; }
 assert ($ex as CLIError).message() == "invalid option: -q
 See \`example --help' for more information."
 
-[<CLI()>]
+[<CLI(toplevel: $true)>]
 typedef EEE() {
     [<Arg(required: $true, range:(120,-10))>]
   var aaa : Int?
@@ -186,7 +186,13 @@ See \`$ARG0 --help' for more information."
 
 ## name
 assert new AAA().name() == $0
+assert new EEE().name() == $0
 assert (function() => new AAA().name())() == $0
+assert (function() => new EEE().name())() == $0
 assert (function() => function() => new AAA().name())()() == $0
+assert (function() => function() => new EEE().name())()() == $0
+assert $0 != 'a'
 assert "$(((){ echo ${new AAA().name()}; }).call(['a', 'b']))" == 'a'
+assert "$(((){ echo ${new EEE().name()}; }).call(['a', 'b']))" == $0
 assert "$(((){ echo ${(function() => new AAA().name())()}; }).call(['a', 'b']))" == 'a'
+assert "$(((){ echo ${(function() => new EEE().name())()}; }).call(['a', 'b']))" == $0

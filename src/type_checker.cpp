@@ -2016,12 +2016,18 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
     for (auto &e : node.getAttrNodes()) {
       if (e->getAttrKind() == AttributeKind::CLI) {
         cli = true;
-        auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE);
-        if (index != -1) {
-          if (cast<NumberNode>(*e->getConstNodes()[index]).getIntValue()) {
+        if (auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE); index != -1) {
+          if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
             setFlag(attr, CLIRecordType::Attr::VERBOSE);
           } else {
             unsetFlag(attr, CLIRecordType::Attr::VERBOSE);
+          }
+        }
+        if (auto index = e->findValidAttrParamIndex(Attribute::Param::TOPLEVEL); index != -1) {
+          if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
+            setFlag(attr, CLIRecordType::Attr::TOPLEVEL);
+          } else {
+            unsetFlag(attr, CLIRecordType::Attr::TOPLEVEL);
           }
         }
       } else {
@@ -2374,9 +2380,19 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
     // check type func body
     if (isa<CLIRecordType>(node.getResolvedType())) {
       Token dummy = node.getNameInfo().getToken();
-      std::unique_ptr<Node> exprNode = VarNode::createCurArg0(dummy);
-      auto nameDeclNode = std::make_unique<VarDeclNode>(
-          dummy.pos, NameInfo(dummy, "%name"), VarNode::createCurArg0(dummy), VarDeclNode::VAR);
+      std::unique_ptr<Node> exprNode;
+      if (auto attr = cast<CLIRecordType>(node.getResolvedType())->getAttr();
+          hasFlag(attr, CLIRecordType::Attr::TOPLEVEL)) {
+        auto varNode = std::make_unique<VarNode>(Token{0, 0}, CVAR_ARG0);
+        auto handle = this->curScope->getGlobalScope()->lookup(CVAR_ARG0).take();
+        varNode->setHandle(handle);
+        varNode->setType(this->typePool().get(TYPE::String));
+        exprNode = std::move(varNode);
+      } else {
+        exprNode = VarNode::createCurArg0(dummy);
+      }
+      auto nameDeclNode = std::make_unique<VarDeclNode>(dummy.pos, NameInfo(dummy, "%name"),
+                                                        std::move(exprNode), VarDeclNode::VAR);
       node.getBlockNode().insertNodeToFirst(std::move(nameDeclNode));
     }
     this->checkTypeWithCurrentScope(

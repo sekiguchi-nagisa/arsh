@@ -24,6 +24,7 @@
 #### Core
 
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
+- add ``toplevel`` parameter to ``CLI`` attribute
 - in io redirection, allow file descriptor number greater than 4 (up to 0)
     - now support like the following bash idiom
   ```shell
@@ -44,8 +45,8 @@
     - ``reply``, ``PIPESTATUS``
 - **Breaking Change**: ``FD#dup`` method inherit ``CLOEXEC`` flag from original file descriptor
 - **Breaking Change**: change default value of ``CLI#name`` method
-    - if ``name`` attribute is not specified or specified empty string, return get current arg0
-    - otherwise, return specified value of ``name`` attribute
+    - if ``toplevel`` attribute param is specified, return toplevel arg0
+    - otherwise, return current arg0 (normally current user-defined command name)
 
 #### API
 

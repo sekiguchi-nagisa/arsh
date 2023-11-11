@@ -346,15 +346,7 @@ static bool completeModule(const SysConfig &config, const char *scriptDir,
 
 void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdArg,
                      CompCandidateConsumer &consumer) {
-  int offset = ({
-    const NameScope *cur = &scope;
-    while (!cur->isGlobal()) {
-      cur = cur->parent.get();
-      assert(cur);
-    }
-    static_cast<int>(cur->getMaxGlobalVarIndex() * 10);
-  });
-
+  const int offset = static_cast<int>(scope.getGlobalScope()->getMaxGlobalVarIndex() * 10);
   unsigned int funcScopeDepth = 0;
   for (const auto *cur = &scope; cur != nullptr; cur = cur->parent.get()) {
     for (auto &e : cur->getHandles()) {

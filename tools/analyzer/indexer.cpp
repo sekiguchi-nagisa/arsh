@@ -782,10 +782,17 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
       if (node.getParamNode()) {
         auto &exprType = node.getParamNode()->getExprNode()->getType();
         if (isa<CLIRecordType>(exprType)) {
+          StringRef cliName;
+          if (auto attr = cast<CLIRecordType>(exprType).getAttr();
+              hasFlag(attr, CLIRecordType::Attr::TOPLEVEL)) {
+            cliName = "<$ARG0>";
+          } else {
+            cliName = node.getCmdName();
+          }
           auto &entries = cast<CLIRecordType>(exprType).getEntries();
           if (!entries.empty()) {
             hover += "---"; // dummy
-            hover += ArgParser::create(node.getCmdName(), entries).formatUsage("", true);
+            hover += ArgParser::create(cliName, entries).formatUsage("", true);
           }
         }
       }

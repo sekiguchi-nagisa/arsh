@@ -378,13 +378,10 @@ Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, 
 
 const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvType,
                                             const std::string &methodName) const {
-  auto scope = this;
-  while (!scope->isGlobal()) {
-    scope = scope->parent.get();
-  }
+  auto *globalScope = this->getGlobalScope();
   for (const DSType *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
-    if (auto handle = scope->find(name)) {
+    if (auto handle = globalScope->find(name)) {
       assert(handle->isMethodHandle());
       if (handle->isVisibleInMod(this->modId, methodName)) {
         return cast<MethodHandle>(handle.get());
