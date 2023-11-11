@@ -25,7 +25,7 @@
 
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
 - add ``toplevel`` parameter to ``CLI`` attribute
-- in io redirection, allow file descriptor number greater than 4 (up to 0)
+- in io redirection, allow file descriptor number greater than 4 (up to 9)
     - now support like the following bash idiom
   ```shell
   do-something 3>&1 1>&2 2>&3   # swap stdout and stderr
@@ -38,15 +38,15 @@
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version
 - **Breaking Change**: check iterator invalidation of Array object
-    - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs``
+    - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs`` commands
     - check object modification in ``sortWith`` method
     - check object modification in ``LineEditor#readLine`` method
 - **Breaking Change**: assign new object to the following builtin variables at internal modification
     - ``reply``, ``PIPESTATUS``
 - **Breaking Change**: ``FD#dup`` method inherit ``CLOEXEC`` flag from original file descriptor
 - **Breaking Change**: change default value of ``CLI#name`` method
-    - if ``toplevel`` attribute param is specified, return toplevel arg0
-    - otherwise, return current arg0 (normally current user-defined command name)
+    - if ``toplevel`` attribute param is specified, return toplevel ``ARG0``
+    - otherwise, return current ``0`` (normally current user-defined command name)
 
 #### API
 
@@ -59,14 +59,14 @@
     - index builtin type or type template
 - improve ``textDocument/rename``
     - rewrite scope-aware name conflict checking
-- ``textDocument/didClose`` always synchronizes analyzer state
+- ``textDocument/didClose`` always synchronizes analyzer state before actual close operation
 - ``textDocument/semanticTokens`` supports dynamic registration
-- ``textDocument/publishDiagnostics`` emit undefined sub-command warning
+- ``textDocument/publishDiagnostics`` emits undefined sub-command warning
 
 ### Fixed
 
 - not truncate ``Error#show`` message having null characters
-- not allow number before ``&>``, ``&>|``, ``&>>`` op
+- not allow file descriptor number before ``&>``, ``&>|``, ``&>>`` redirections
 
 ## [0.31.0] - 2023-09-30
 
