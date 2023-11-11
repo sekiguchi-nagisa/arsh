@@ -2529,15 +2529,15 @@ void TypeChecker::visitFuncListNode(FuncListNode &node) {
 }
 
 void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
-  assert(this->ccHandler);
+  assert(this->compCtx);
   this->reachComp = true;
   node.setType(this->typePool().get(TYPE::Void));
   switch (node.getKind()) {
   case CodeCompNode::VAR:
   case CodeCompNode::VAR_IN_CMD_ARG:
-    this->ccHandler->addVarNameRequest(this->lexer.get().toName(node.getTypingToken()),
-                                       node.getKind() == CodeCompNode::VAR_IN_CMD_ARG,
-                                       this->curScope);
+    this->compCtx->addVarNameRequest(this->lexer.get().toName(node.getTypingToken()),
+                                     node.getKind() == CodeCompNode::VAR_IN_CMD_ARG,
+                                     this->curScope);
     break;
   case CodeCompNode::MEMBER: {
     assert(node.getExprNode());
@@ -2545,8 +2545,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     if (recvType.isRecordOrDerived() && !cast<RecordType>(recvType).isFinalized()) {
       break; // ignore non-finalized record type
     }
-    this->ccHandler->addMemberRequest(recvType,
-                                      this->lexer.get().toTokenText(node.getTypingToken()));
+    this->compCtx->addMemberRequest(recvType, this->lexer.get().toTokenText(node.getTypingToken()));
     break;
   }
   case CodeCompNode::TYPE: {
@@ -2554,8 +2553,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     if (node.getExprNode()) {
       recvType = &this->checkTypeExactly(*node.getExprNode());
     }
-    this->ccHandler->addTypeNameRequest(this->lexer.get().toName(node.getTypingToken()), recvType,
-                                        this->curScope);
+    this->compCtx->addTypeNameRequest(this->lexer.get().toName(node.getTypingToken()), recvType,
+                                      this->curScope);
     break;
   }
   case CodeCompNode::CALL_SIGNATURE:
@@ -2576,8 +2575,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
         targetParamSet.add(e.second);
       }
     }
-    this->ccHandler->addAttrParamRequest(this->lexer.get().toName(node.getTypingToken()),
-                                         targetParamSet);
+    this->compCtx->addAttrParamRequest(this->lexer.get().toName(node.getTypingToken()),
+                                       targetParamSet);
     break;
   }
   }

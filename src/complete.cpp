@@ -36,6 +36,18 @@ namespace ydsh {
 
 // for input completion
 
+static bool mayBeQuoted(CompCandidateKind kind) {
+  switch (kind) {
+  case CompCandidateKind::COMMAND_NAME:
+  case CompCandidateKind::COMMAND_NAME_PART:
+  case CompCandidateKind::COMMAND_ARG:
+  case CompCandidateKind::ENV_NAME:
+    return true;
+  default:
+    return false;
+  }
+}
+
 std::string CompCandidate::quote() const {
   std::string ret;
   auto ref = this->value;
@@ -47,9 +59,9 @@ std::string CompCandidate::quote() const {
   return ret;
 }
 
-// ###################################
-// ##     CodeCompletionHandler     ##
-// ###################################
+// ###########################
+// ##     CodeCompleter     ##
+// ###########################
 
 static bool isExprKeyword(TokenKind kind) {
   switch (kind) {
@@ -225,7 +237,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
   return true;
 }
 
-static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCompOp op,
+static bool completeFileName(const std::string &baseDir, StringRef prefix, const CodeCompOp op,
                              CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
   const auto s = prefix.lastIndexOf("/");
 
@@ -260,9 +272,9 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
     if (hasFlag(op, CodeCompOp::TILDE)) {
       expandTilde(targetDir, true, nullptr);
     }
-    targetDir = expandDots(baseDir, targetDir.c_str());
+    targetDir = expandDots(baseDir.c_str(), targetDir.c_str());
   } else {
-    targetDir = expandDots(baseDir, ".");
+    targetDir = expandDots(baseDir.c_str(), ".");
   }
   LOG(DUMP_CONSOLE, "targetDir = %s", targetDir.c_str());
 
@@ -322,7 +334,7 @@ static bool completeFileName(const char *baseDir, StringRef prefix, const CodeCo
   return true;
 }
 
-static bool completeModule(const SysConfig &config, const char *scriptDir,
+static bool completeModule(const SysConfig &config, const std::string &scriptDir,
                            const std::string &prefix, bool tilde, CompCandidateConsumer &consumer,
                            ObserverPtr<CancelToken> cancel) {
   CodeCompOp op{};
@@ -338,10 +350,10 @@ static bool completeModule(const SysConfig &config, const char *scriptDir,
   }
 
   // complete from local module dir
-  TRY(completeFileName(config.getModuleHome().c_str(), prefix, op, consumer, cancel));
+  TRY(completeFileName(config.getModuleHome(), prefix, op, consumer, cancel));
 
   // complete from system module dir
-  return completeFileName(config.getModuleDir().c_str(), prefix, op, consumer, cancel);
+  return completeFileName(config.getModuleDir(), prefix, op, consumer, cancel);
 }
 
 void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdArg,
@@ -533,7 +545,7 @@ static bool hasCmdArg(const CmdNode &node) {
   return false;
 }
 
-static bool completeSubcommand(const TypePool &pool, NameScope &scope, const CmdNode &cmdNode,
+static bool completeSubcommand(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
                                const std::string &word, CompCandidateConsumer &consumer) {
   if (hasCmdArg(cmdNode)) {
     return false;
@@ -562,105 +574,81 @@ static bool completeSubcommand(const TypePool &pool, NameScope &scope, const Cmd
   return true;
 }
 
-bool CodeCompletionHandler::invoke(CompCandidateConsumer &consumer) {
-  if (!this->hasCompRequest()) {
+bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
+  if (!ctx.hasCompRequest()) {
     return true; // do nothing
   }
 
-  if (hasFlag(this->compOp, CodeCompOp::ENV) || hasFlag(this->compOp, CodeCompOp::VALID_ENV)) {
-    completeEnvName(this->compWord, consumer, !hasFlag(this->compOp, CodeCompOp::ENV));
+  if (ctx.has(CodeCompOp::ENV) || ctx.has(CodeCompOp::VALID_ENV)) {
+    completeEnvName(ctx.getCompWord(), this->consumer, !ctx.has(CodeCompOp::ENV));
   }
-  if (hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
-    completeSigName(this->compWord, consumer);
+  if (ctx.has(CodeCompOp::SIGNAL)) {
+    completeSigName(ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::EXTERNAL) || hasFlag(this->compOp, CodeCompOp::UDC) ||
-      hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-    TRY(completeCmdName(*this->scope, this->compWord, this->compOp, consumer, this->cancel));
+  if (ctx.has(CodeCompOp::EXTERNAL) || ctx.has(CodeCompOp::UDC) || ctx.has(CodeCompOp::BUILTIN)) {
+    TRY(completeCmdName(ctx.getScope(), ctx.getCompWord(), ctx.getCompOp(), this->consumer,
+                        this->cancel));
   }
-  if (hasFlag(this->compOp, CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
-    this->dynaUdcComp(this->compWord, consumer);
+  if (ctx.has(CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
+    this->dynaUdcComp(ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::USER)) {
-    completeUserName(this->compWord, consumer);
+  if (ctx.has(CodeCompOp::USER)) {
+    completeUserName(ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::GROUP)) {
-    completeGroupName(this->compWord, consumer);
+  if (ctx.has(CodeCompOp::GROUP)) {
+    completeGroupName(ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
-      hasFlag(this->compOp, CodeCompOp::DIR)) {
-    auto prefix = StringRef(this->compWord).substr(this->compWordOffset);
-    TRY(completeFileName(this->logicalWorkdir.c_str(), prefix, this->compOp, consumer,
+  if (ctx.has(CodeCompOp::FILE) || ctx.has(CodeCompOp::EXEC) || ctx.has(CodeCompOp::DIR)) {
+    auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
+    TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getCompOp(), this->consumer,
                          this->cancel));
   }
-  if (hasFlag(this->compOp, CodeCompOp::MODULE)) {
-    TRY(completeModule(this->config, this->scriptDir.c_str(), this->compWord,
-                       hasFlag(this->compOp, CodeCompOp::TILDE), consumer, this->cancel));
+  if (ctx.has(CodeCompOp::MODULE)) {
+    TRY(completeModule(this->config, ctx.getScriptDir(), ctx.getCompWord(),
+                       ctx.has(CodeCompOp::TILDE), consumer, this->cancel));
   }
-  if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
-    completeKeyword(this->compWord, this->compOp, consumer);
+  if (ctx.has(CodeCompOp::STMT_KW) || ctx.has(CodeCompOp::EXPR_KW)) {
+    completeKeyword(ctx.getCompWord(), ctx.getCompOp(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::VAR)) {
-    bool inCmdArg = hasFlag(this->compOp, CodeCompOp::CMD_ARG);
-    completeVarName(*this->scope, this->compWord, inCmdArg, consumer);
+  if (ctx.has(CodeCompOp::VAR)) {
+    bool inCmdArg = ctx.has(CodeCompOp::CMD_ARG);
+    completeVarName(ctx.getScope(), ctx.getCompWord(), inCmdArg, this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::EXPECT)) {
-    completeExpected(this->extraWords, this->compWord, consumer);
+  if (ctx.has(CodeCompOp::EXPECT)) {
+    completeExpected(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::MEMBER)) {
-    completeMember(this->pool, *this->scope, *this->recvType, this->compWord, consumer);
+  if (ctx.has(CodeCompOp::MEMBER)) {
+    completeMember(this->pool, ctx.getScope(), *ctx.getRecvType(), ctx.getCompWord(),
+                   this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::TYPE)) {
-    completeType(this->pool, *this->scope, this->recvType, this->compWord, consumer);
+  if (ctx.has(CodeCompOp::TYPE)) {
+    completeType(this->pool, ctx.getScope(), ctx.getRecvType(), ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::ATTR)) {
-    completeAttribute(this->compWord, consumer);
+  if (ctx.has(CodeCompOp::ATTR)) {
+    completeAttribute(ctx.getCompWord(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::ATTR_PARAM)) {
-    completeAttributeParam(this->compWord, this->targetAttrParams, consumer);
+  if (ctx.has(CodeCompOp::ATTR_PARAM)) {
+    completeAttributeParam(ctx.getCompWord(), ctx.getTargetAttrParams(), this->consumer);
   }
-  if (hasFlag(this->compOp, CodeCompOp::HOOK)) {
+  if (ctx.has(CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {
-      int s = this->userDefinedComp(*this->lex, *this->cmdNode, this->compWord,
-                                    hasFlag(this->fallbackOp, CodeCompOp::TILDE), consumer);
+      int s =
+          this->userDefinedComp(*ctx.getLexer(), *ctx.getCmdNode(), ctx.getCompWord(),
+                                hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE), this->consumer);
       if (s < 0 && errno == EINTR) {
         return false;
       } else if (s > -1) {
         return true;
       }
     }
-    if (!completeSubcommand(this->pool, *this->scope, *this->cmdNode, this->compWord, consumer)) {
-      auto prefix = StringRef(this->compWord).substr(this->compWordOffset);
-      TRY(completeFileName(this->logicalWorkdir.c_str(), prefix, this->fallbackOp, consumer,
+    if (!completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
+                            this->consumer)) {
+      auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
+      TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getFallbackOp(), this->consumer,
                            this->cancel));
     }
   }
   return true;
-}
-
-void CodeCompletionHandler::addTypeNameRequest(std::string &&value, const DSType *type,
-                                               NameScopePtr curScope) {
-  this->scope = std::move(curScope);
-  this->recvType = type;
-  this->addCompRequest(CodeCompOp::TYPE, std::move(value));
-}
-
-void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP cmdOrKwOp) {
-  // add command request
-  bool tilde = hasFlag(cmdOrKwOp, CMD_OR_KW_OP::TILDE);
-  bool isDir = strchr(value.c_str(), '/') != nullptr;
-  if (tilde || isDir) {
-    CodeCompOp op = CodeCompOp::EXEC;
-    if (tilde) {
-      setFlag(op, CodeCompOp::TILDE);
-    }
-    this->addCompRequest(op, std::move(value));
-  } else {
-    this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
-  }
-
-  // add keyword request
-  setFlag(this->compOp,
-          hasFlag(cmdOrKwOp, CMD_OR_KW_OP::STMT) ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
 }
 
 static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
@@ -688,23 +676,19 @@ static std::string toScriptDir(const std::string &scriptName) {
 bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                                CodeCompOp option) {
   auto scriptDir = toScriptDir(scriptName);
-  CodeCompletionHandler handler(this->config, this->pool, this->logicalWorkingDir, std::move(scope),
-                                scriptDir);
-  handler.setUserDefinedComp(this->userDefinedComp);
-  handler.setDynaUdcComp(this->dynaUdcComp);
-  handler.setCancel(this->cancel);
+  CodeCompletionContext compCtx(std::move(scope), scriptDir);
   if (this->provider) {
     // prepare
     FrontEnd frontEnd(*this->provider, lex(scriptName, ref, scriptDir),
-                      FrontEndOption::ERROR_RECOVERY, makeObserver(handler));
+                      FrontEndOption::ERROR_RECOVERY, makeObserver(compCtx));
 
     // perform completion
     consumeAllInput(frontEnd);
-    handler.ignore(option);
-    return handler.invoke(this->consumer);
+    compCtx.ignore(option);
+    return this->invoke(compCtx);
   } else {
-    handler.addCompRequest(option, ref.toString());
-    return handler.invoke(this->consumer);
+    compCtx.addCompRequest(option, ref.toString());
+    return this->invoke(compCtx);
   }
 }
 

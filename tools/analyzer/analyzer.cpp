@@ -534,11 +534,10 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
 
   auto &ctx = this->addNew(src);
   auto workDir = toDirName(src->getPath());
-  CodeCompletionHandler handler(this->getSysConfig(), ctx->getPool(), workDir, ctx->getScope(),
-                                workDir); // dummy
+  CodeCompletionContext dummyCtx(ctx->getScope(), workDir); // dummy
   FrontEnd frontEnd(static_cast<FrontEnd::ModuleProvider &>(*this), lex(*src, offset),
                     FrontEndOption::ERROR_RECOVERY | FrontEndOption::COLLECT_SIGNATURE,
-                    makeObserver(handler));
+                    makeObserver(dummyCtx));
   Optional<SignatureInformation> info;
   frontEnd.setSignatureHandler([&](const CallSignature &signature, const unsigned int paramIndex) {
     Optional<unsigned int> activeParamIndex;

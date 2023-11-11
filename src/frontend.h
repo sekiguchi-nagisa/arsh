@@ -122,11 +122,11 @@ private:
 
 public:
   FrontEnd(ModuleProvider &provider, LexerPtr lexer, FrontEndOption option = {},
-           ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-      : FrontEnd(provider, provider.newContext(std::move(lexer)), option, ccHandler) {}
+           ObserverPtr<CodeCompletionContext> compCtx = nullptr)
+      : FrontEnd(provider, provider.newContext(std::move(lexer)), option, compCtx) {}
 
   FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option,
-           ObserverPtr<CodeCompletionHandler> ccHandler);
+           ObserverPtr<CodeCompletionContext> compCtx);
 
   void setErrorListener(ErrorListener &r) { this->listener.reset(&r); }
 

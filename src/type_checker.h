@@ -277,7 +277,7 @@ public:
   }
 };
 
-class CodeCompletionHandler;
+class CodeCompletionContext;
 
 enum class TildeExpandStatus;
 
@@ -305,7 +305,7 @@ protected:
 
   std::reference_wrapper<const Lexer> lexer;
 
-  ObserverPtr<CodeCompletionHandler> ccHandler;
+  ObserverPtr<CodeCompletionContext> compCtx;
 
   SignatureHandler signatureHandler;
 
@@ -333,11 +333,11 @@ public:
 
   void setLexer(const Lexer &lex) { this->lexer = lex; }
 
-  void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
-    this->ccHandler = handler;
+  void setCodeCompletionHandler(ObserverPtr<CodeCompletionContext> handler) {
+    this->compCtx = handler;
   }
 
-  ObserverPtr<CodeCompletionHandler> getCodeCompletionHandler() const { return this->ccHandler; }
+  ObserverPtr<CodeCompletionContext> getCodeCompletionHandler() const { return this->compCtx; }
 
   void setSignatureHandler(SignatureHandler &&handler) {
     this->signatureHandler = std::move(handler);

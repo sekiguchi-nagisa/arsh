@@ -16,7 +16,7 @@
 
 #include "parser.h"
 #include "brace.h"
-#include "complete.h"
+#include "comp_context.h"
 #include "signals.h"
 
 // helper macro
@@ -68,11 +68,11 @@ namespace ydsh {
 // ##     Parser     ##
 // ####################
 
-Parser::Parser(Lexer &lexer, ParserOption option, ObserverPtr<CodeCompletionHandler> handler)
-    : ccHandler(handler), option(option) {
+Parser::Parser(Lexer &lexer, ParserOption option, ObserverPtr<CodeCompletionContext> compCtx)
+    : compCtx(compCtx), option(option) {
   this->consumedKind = TokenKind::EOS;
   this->lexer = &lexer;
-  if (this->ccHandler) {
+  if (this->compCtx) {
     this->lexer->setComplete(true);
   }
   this->fetchNext();
@@ -199,8 +199,8 @@ void Parser::changeLexerModeToSTMT() {
 }
 
 Token Parser::expect(TokenKind kind, bool fetchNext) {
-  if (this->inCompletionPoint() && !this->ccHandler->hasCompRequest()) {
-    this->ccHandler->addExpectedTokenRequest(this->lexer->toTokenText(this->curToken), kind);
+  if (this->inCompletionPoint() && !this->compCtx->hasCompRequest()) {
+    this->compCtx->addExpectedTokenRequest(this->lexer->toTokenText(this->curToken), kind);
   }
   if (isUnclosedToken(this->curKind)) {
     this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
@@ -320,7 +320,7 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
       if (this->lexer->startsWith(token, '~')) {
         setFlag(op, CodeCompOp::TILDE);
       }
-      this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+      this->compCtx->addCompRequest(op, this->lexer->toCmdArg(token));
     }
   } else if (hasFlag(opt, CmdArgParseOpt::FIRST)) {
     auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
@@ -330,7 +330,7 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
 
     if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE) ||
         hasFlag(op, CodeCompOp::TILDE)) {
-      this->ccHandler->addCompRequest(op, this->lexer->toCmdArg(token));
+      this->compCtx->addCompRequest(op, this->lexer->toCmdArg(token));
     } else {
       assert(op == CodeCompOp::FILE);
       Token prefixToken = token;
@@ -347,21 +347,20 @@ void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
           if (this->lexer->startsWith(remainToken, '~')) {
             setFlag(op, CodeCompOp::TILDE);
           }
-          this->ccHandler->setCompWordOffset(compWord.size());
+          this->compCtx->setCompWordOffset(compWord.size());
         }
         compWord += this->lexer->toCmdArg(remainToken);
       } else if (lastSplit && prefixToken.size > 1) { // for `echo AAA=' (except for `echo =')
-        this->ccHandler->setCompWordOffset(compWord.size());
+        this->compCtx->setCompWordOffset(compWord.size());
       }
-      this->ccHandler->addCompRequest(op, std::move(compWord));
+      this->compCtx->addCompRequest(op, std::move(compWord));
     }
   }
 }
 
 void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
   if (allowComp && this->inCompletionPoint()) {
-    this->ccHandler->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size,
-                                              alters);
+    this->compCtx->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size, alters);
   }
   if (isUnclosedToken(this->curKind)) {
     this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
@@ -703,8 +702,8 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     unsigned int startPos = START_POS();
     this->consume();                                        // IMPORT_ENV
     if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) { // complete env name
-      this->ccHandler->addCompRequest(CodeCompOp::VALID_ENV,
-                                      this->lexer->toTokenText(this->curToken));
+      this->compCtx->addCompRequest(CodeCompOp::VALID_ENV,
+                                    this->lexer->toTokenText(this->curToken));
     }
     auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
     Token token = nameInfo.getToken();
@@ -1242,9 +1241,8 @@ std::unique_ptr<Node> Parser::parse_command() {
       {
         auto argNode = this->parse_cmdArg();
         if (this->hasError()) {
-          if (this->inCompletionPoint() &&
-              hasFlag(this->ccHandler->getCompOp(), CodeCompOp::FILE)) {
-            this->ccHandler->addCompHookRequest(*this->lexer, std::move(node));
+          if (this->inCompletionPoint() && hasFlag(this->compCtx->getCompOp(), CodeCompOp::FILE)) {
+            this->compCtx->addCompHookRequest(*this->lexer, std::move(node));
           }
           return nullptr;
         }
@@ -1424,7 +1422,7 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
             this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
           } else if (this->inCompletionPointAt(TokenKind::EOS)) {
             TokenKind kinds[] = {EACH_LA_hereExpand(GEN_LA_ALTER)};
-            this->ccHandler->addExpectedTokenRequests(std::string(), kinds);
+            this->compCtx->addExpectedTokenRequests(std::string(), kinds);
           }
         }
         E_ALTER(EACH_LA_hereExpand(GEN_LA_ALTER)); // FIXME: completion in no-expand
@@ -2083,14 +2081,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
       } else if (!this->inCompletionPointAt(TokenKind::EOS) ||
                  this->consumedKind != TokenKind::EOS) {
-        CodeCompletionHandler::CMD_OR_KW_OP op{};
-        if (this->lexer->startsWith(this->curToken, '~')) {
-          setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::TILDE);
-        }
-        if (this->inStmtCompCtx) {
-          setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::STMT);
-        }
-        this->ccHandler->addCmdOrKeywordRequest(this->lexer->toCmdArg(this->curToken), op);
+        CodeCompletionContext::CmdOrKeywordParam param = {
+            .stmt = this->inStmtCompCtx,
+            .tilde = this->lexer->startsWith(this->curToken, '~'),
+        };
+        this->compCtx->addCmdOrKeywordRequest(this->lexer->toCmdArg(this->curToken), param);
       }
     }
     E_DETAILED(ParseErrorKind::EXPR, EACH_LA_primary(GEN_LA_ALTER));
@@ -2272,7 +2267,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
       } else if (this->inCompletionPointAt(TokenKind::EOS)) {
         TokenKind kinds[] = {EACH_LA_stringExpression(GEN_LA_ALTER)};
-        this->ccHandler->addExpectedTokenRequests(std::string(), kinds);
+        this->compCtx->addExpectedTokenRequests(std::string(), kinds);
       }
       E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER));
     }
@@ -2489,7 +2484,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
     auto ctx = this->inIgnorableNLCtx();
     Token open = TRY(this->expect(TokenKind::ATTR_OPEN));
     if (this->inCompletionPointAt(TokenKind::ATTR_NAME)) {
-      this->ccHandler->addCompRequest(CodeCompOp::ATTR, this->lexer->toTokenText(this->curToken));
+      this->compCtx->addCompRequest(CodeCompOp::ATTR, this->lexer->toTokenText(this->curToken));
     }
     auto attrNode = std::make_unique<AttributeNode>(
         TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName)));

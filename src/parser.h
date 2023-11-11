@@ -56,7 +56,7 @@ struct TokenTracker {
   virtual void operator()(TokenKind kind, Token token) = 0;
 };
 
-class CodeCompletionHandler;
+class CodeCompletionContext;
 
 #define EACH_PARSE_ERROR_KIND(OP)                                                                  \
   OP(EXPR, "expression")                                                                           \
@@ -85,7 +85,7 @@ private:
   static constexpr const char *INVALID_HERE_START = "InvalidHereStart";
   static constexpr const char *HERE_START_NEED_SPACE = "HereStartNeedSpace";
 
-  ObserverPtr<CodeCompletionHandler> ccHandler;
+  ObserverPtr<CodeCompletionContext> compCtx;
 
   std::unique_ptr<Node> incompleteNode; // for code completion
 
@@ -104,7 +104,7 @@ private:
 
 public:
   explicit Parser(Lexer &lexer, ParserOption option = {},
-                  ObserverPtr<CodeCompletionHandler> handler = nullptr);
+                  ObserverPtr<CodeCompletionContext> compCtx = nullptr);
 
   ~Parser() = default;
 

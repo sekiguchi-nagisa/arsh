@@ -38,13 +38,13 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
 }
 
 FrontEnd::FrontEnd(ModuleProvider &provider, std::unique_ptr<Context> &&ctx, FrontEndOption option,
-                   ObserverPtr<CodeCompletionHandler> ccHandler)
+                   ObserverPtr<CodeCompletionContext> compCtx)
     : checker(provider.getSysConfig(), provider.getCancelToken(), ctx->pool,
               hasFlag(option, FrontEndOption::TOPLEVEL), *ctx->lexer),
       provider(provider), option(option) {
   this->contexts.push_back(std::move(ctx));
   this->curScope()->clearLocalSize();
-  this->checker.setCodeCompletionHandler(ccHandler);
+  this->checker.setCodeCompletionHandler(compCtx);
   if (hasFlag(this->option, FrontEndOption::REPORT_WARN)) {
     this->checker.setAllowWarning(true);
   }
@@ -60,7 +60,7 @@ bool FrontEnd::tryToParse() {
     if (hasFlag(this->option, FrontEndOption::COLLECT_SIGNATURE)) {
       setFlag(parserOption, ParserOption::COLLECT_SIGNATURE);
     }
-    ObserverPtr<CodeCompletionHandler> handler;
+    ObserverPtr<CodeCompletionContext> handler;
     if (this->contexts.size() == 1) { // code completion is disabled in sourced scripts
       handler = this->checker.getCodeCompletionHandler();
     }
