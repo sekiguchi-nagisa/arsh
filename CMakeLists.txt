@@ -245,6 +245,7 @@ set(YDSH_SRC
         src/ordered_map.cpp
         src/arg_parser_base.cpp
         src/arg_parser.cpp
+        src/attribute.cpp
         src/line_buffer.cpp
         ${lexer_src}
         ${bind_src}
