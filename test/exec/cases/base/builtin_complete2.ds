@@ -140,7 +140,7 @@ $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["sortWith"], $(complete '[[34],[67]].so'))
 $assertArray(["BASH_COMPLETION_PATH",
               '_fullname', '_func', '_scriptDir', '_scriptName',
-               "compAdd", 'compDelegate', 'findBashCompScript'], 
+               "compAdd", 'compDelegate', 'extractCompTarget', 'findBashCompScript'],
                 $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; \$CP."))
 $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))

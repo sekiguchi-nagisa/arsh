@@ -217,26 +217,29 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     return $ret.empty() ? $none : $ret
 }
 
+# extract completion target (func, cmd). ex `complete -o default -F func cmd`
+# if found, return (func, cmd)
+function extractCompTarget(path : String) : (String, String)? {
+    var func : String?
+    var cmd : String?
+
+    for line in $STDIN {
+        var rr = $/ *complete( +.+)? +-F +([^ ]+) +([^ ]+)/.match($line)
+        if !$rr.empty() {
+            $func = $rr.get(2) ?? continue
+            $cmd = $rr.get(3) ?? continue
+            break
+        }
+    } with < $path
+    return $func && $cmd ? ($func!, $cmd!) : $none
+}
+
 # for lazy loading bash completion script
 function _comp_autoload(cmd : String) : String? {
     var path = $findBashCompScript($cmd) ?? return $none
-
-    # find actual completion target
-    var target = for line in $STDIN {
-        if $/ *complete( +.+)? +-F +/ =~ $line {
-            var foundF = $false
-            break for ss in $line.split(' ') {
-                if $foundF {
-                    $ss.startsWith('_') && break $ss
-                } elif $ss == '-F' {
-                    $foundF = $true
-                }
-            }
-        }
-    } with < $path
-
-    if let t = $target {
-        call compdef --cmd $cmd --comp-path $cmd --comp-target $t && return $cmd
+    var target = $extractCompTarget($path)
+    if let tt = $target {
+        call compdef --cmd $cmd --comp-path $cmd --comp-target ${tt._0} && return $cmd
     }
     return $none
 }
