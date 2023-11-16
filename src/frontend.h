@@ -115,7 +115,7 @@ private:
   std::vector<std::unique_ptr<Context>> contexts;
   ModuleProvider &provider;
   const FrontEndOption option;
-  const DSType *prevType{nullptr};
+  bool prevIsNothing{false};
   ObserverPtr<ErrorListener> listener;
   ObserverPtr<NodeDumper> uastDumper;
   ObserverPtr<NodeDumper> astDumper;
@@ -162,7 +162,7 @@ public:
 
   ModId getCurModId() const { return this->curScope()->modId; }
 
-  const DSType *getPrevType() const { return this->prevType; }
+  bool isPrevTypeNothing() const { return this->prevIsNothing; }
 
   bool hasUnconsumedPath() const {
     auto &e = this->getCurSrcListNode();

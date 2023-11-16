@@ -144,7 +144,7 @@ public:
   template <typename T>
   const DSType &toType() {
     auto t = TypeFactory<T>{}();
-    auto node = this->checker(nullptr, std::move(t), this->scope);
+    auto node = this->checker(false, std::move(t), this->scope);
     assert(node->is(NodeKind::TypeOp));
     return static_cast<TypeOpNode &>(*node).getExprNode().getType();
   }

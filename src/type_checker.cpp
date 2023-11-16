@@ -2608,8 +2608,8 @@ static bool isCmdLike(const Node &node) {
   }
 }
 
-std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
-                                              NameScopePtr global) {
+std::unique_ptr<Node> TypeChecker::operator()(const bool prevIsNothing,
+                                              std::unique_ptr<Node> &&node, NameScopePtr global) {
   // reset state
   this->visitingDepth = 0;
   this->funcCtx->clear();
@@ -2620,7 +2620,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   // set scope
   this->curScope = std::move(global);
 
-  if (prevType != nullptr && prevType->isNothingType()) {
+  if (prevIsNothing) {
     this->reportError<Unreachable>(*node);
   }
   if (this->toplevelPrinting && this->curScope->inRootModule() && !isCmdLike(*node)) {

@@ -261,8 +261,7 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
   this->frontEnd.teardownASTDump();
   assert(this->frontEnd.getContext().size() == 1);
   {
-    auto *prevType = this->frontEnd.getPrevType();
-    if (prevType && prevType->isNothingType()) {
+    if (this->frontEnd.isPrevTypeNothing()) {
       this->frontEnd.getContext().back()->scope->updateModAttr(ModAttr::UNREACHABLE);
     }
     auto &modType = hasFlag(this->compileOption, CompileOption::SINGLE_EXPR)
