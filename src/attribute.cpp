@@ -66,7 +66,7 @@ const Attribute *AttributeMap::lookup(StringRef name) const {
 
 static void defineAttribute(StrRefMap<std::unique_ptr<Attribute>> &values, AttributeKind kind,
                             Attribute::Loc loc, std::vector<Attribute::Param> &&params,
-                            std::vector<const DSType *> &&types) {
+                            std::vector<TYPE> &&types) {
   StrRefMap<Attribute::Param> paramMap;
   for (auto &p : params) {
     paramMap.emplace(toString(p), p);
@@ -76,7 +76,7 @@ static void defineAttribute(StrRefMap<std::unique_ptr<Attribute>> &values, Attri
   values.emplace(attrName, std::move(attr));
 }
 
-AttributeMap AttributeMap::create(const TypePool &pool) {
+AttributeMap AttributeMap::create() {
   StrRefMap<std::unique_ptr<Attribute>> values;
 
   defineAttribute(values, AttributeKind::CLI, Attribute::Loc::CONSTRUCTOR,
@@ -94,7 +94,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
                       Attribute::Param::STORE,
                       Attribute::Param::HELP,
                   },
-                  {&pool.get(TYPE::Bool)});
+                  {TYPE::Bool});
   defineAttribute(values, AttributeKind::OPTION, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::SHORT,
@@ -108,7 +108,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
                       Attribute::Param::CHOICE,
                       Attribute::Param::HELP,
                   },
-                  {&pool.get(TYPE::String), &pool.get(TYPE::Int)});
+                  {TYPE::String, TYPE::Int});
   defineAttribute(values, AttributeKind::ARG, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::REQUIRED,
@@ -116,7 +116,7 @@ AttributeMap AttributeMap::create(const TypePool &pool) {
                       Attribute::Param::RANGE,
                       Attribute::Param::CHOICE,
                   },
-                  {&pool.get(TYPE::StringArray), &pool.get(TYPE::String), &pool.get(TYPE::Int)});
+                  {TYPE::StringArray, TYPE::String, TYPE::Int});
   return AttributeMap(std::move(values));
 }
 

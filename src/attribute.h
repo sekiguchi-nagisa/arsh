@@ -69,12 +69,11 @@ private:
   const AttributeKind kind;
   const Loc loc;
   const StrRefMap<Param> params;
-  const std::vector<const DSType *> types; // for field attributes
+  const std::vector<TYPE> typeIds; // for field attributes
 
 public:
-  Attribute(AttributeKind kind, Loc loc, StrRefMap<Param> &&params,
-            std::vector<const DSType *> &&types)
-      : kind(kind), loc(loc), params(std::move(params)), types(std::move(types)) {}
+  Attribute(AttributeKind kind, Loc loc, StrRefMap<Param> &&params, std::vector<TYPE> &&typeIds)
+      : kind(kind), loc(loc), params(std::move(params)), typeIds(std::move(typeIds)) {}
 
   const char *getName() const { return toString(this->getKind()); }
 
@@ -86,7 +85,7 @@ public:
 
   const Param *lookupParam(StringRef paramName) const;
 
-  const auto &getTypes() const { return this->types; }
+  const auto &getTypeIds() const { return this->typeIds; }
 };
 
 constexpr unsigned int getNumOfAttributeParams() {
@@ -107,7 +106,7 @@ private:
   StrRefMap<std::unique_ptr<Attribute>> values;
 
 public:
-  static AttributeMap create(const TypePool &pool);
+  static AttributeMap create();
 
   explicit AttributeMap(StrRefMap<std::unique_ptr<Attribute>> &&values)
       : values(std::move(values)) {}

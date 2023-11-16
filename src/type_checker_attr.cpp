@@ -118,15 +118,15 @@ void TypeChecker::checkAttributes(const std::vector<std::unique_ptr<AttributeNod
   }
 }
 
-static std::string concatTypeNames(const std::vector<const DSType *> &types) {
+static std::string concatTypeNames(const TypePool &pool, const std::vector<TYPE> &typeIds) {
   std::string value;
-  unsigned int size = types.size();
+  unsigned int size = typeIds.size();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
       value += ", ";
     }
     value += '`';
-    value += types[i]->getNameRef();
+    value += pool.get(typeIds[i]).getNameRef();
     value += '\'';
   }
   return value;
@@ -152,14 +152,14 @@ void TypeChecker::checkFieldAttributes(const VarDeclNode &varDeclNode) {
       break;
     }
 
-    for (auto &t : attribute->getTypes()) {
-      if (fieldType.isSameOrBaseTypeOf(*t)) {
+    for (auto &t : attribute->getTypeIds()) {
+      if (fieldType.isSameOrBaseTypeOf(this->typePool().get(t))) {
         e->setValidType(true);
         break;
       }
     }
     if (!e->isValidType()) {
-      auto value = concatTypeNames(attribute->getTypes());
+      auto value = concatTypeNames(this->typePool(), attribute->getTypeIds());
       this->reportError<FieldAttrType>(*e, e->getAttrName().c_str(), value.c_str());
     }
   }

@@ -319,8 +319,8 @@ public:
   TypeChecker(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
               TypePool &pool, bool toplevelPrinting, const Lexer &lex)
       : config(config), cancelToken(cancelToken), pool(pool), toplevelPrinting(toplevelPrinting),
-        funcCtx(std::make_unique<FuncContext>()), lexer(lex),
-        attributeMap(AttributeMap::create(this->pool)) {}
+        funcCtx(std::make_unique<FuncContext>()), lexer(lex), attributeMap(AttributeMap::create()) {
+  }
 
   ~TypeChecker() override = default;
 
