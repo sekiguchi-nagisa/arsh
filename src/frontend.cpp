@@ -97,8 +97,8 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   }
   this->checker.setTypePool(this->contexts.back()->pool);
   this->checker.setLexer(*this->contexts.back()->lexer);
-  node = this->checker(this->prevType, std::move(node), this->curScope());
-  this->prevType = &node->getType();
+  node = this->checker(this->prevIsNothing, std::move(node), this->curScope());
+  this->prevIsNothing = node->getType().isNothingType();
 
   auto &errors = this->checker.getErrors();
   unsigned int actualErrorCount = 0;
@@ -233,9 +233,9 @@ FrontEndResult FrontEnd::enterModule() {
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
   assert(!this->contexts.empty());
   const unsigned int varNum = this->curScope()->getMaxLocalVarIndex();
-  if (this->prevType != nullptr && this->prevType->isNothingType()) {
+  if (this->prevIsNothing) {
     this->curScope()->updateModAttr(ModAttr::UNREACHABLE);
-    this->prevType = &this->getTypePool().get(TYPE::Void);
+    this->prevIsNothing = false;
   }
   auto &modType = this->provider.newModTypeFromCurContext(this->contexts);
   this->contexts.pop_back();

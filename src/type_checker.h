@@ -324,7 +324,7 @@ public:
 
   ~TypeChecker() override = default;
 
-  std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
+  std::unique_ptr<Node> operator()(bool prevIsNothing, std::unique_ptr<Node> &&node,
                                    NameScopePtr global);
 
   void setTypePool(TypePool &p) { this->pool = p; }

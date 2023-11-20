@@ -245,7 +245,7 @@ ModuleArchivePtr Analyzer::analyze(const SourcePtr &src, AnalyzerAction &action)
   frontEnd.teardownASTDump();
   action.pass &&action.pass->exitModule(nullptr);
   action.emitter &&action.emitter->exitModule();
-  if (auto *prevType = frontEnd.getPrevType(); prevType && prevType->isNothingType()) {
+  if (frontEnd.isPrevTypeNothing()) {
     this->current()->getScope()->updateModAttr(ModAttr::UNREACHABLE);
   }
   return std::move(*this->current()).buildArchive(this->archives);
