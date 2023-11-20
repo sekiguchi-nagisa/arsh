@@ -64,13 +64,13 @@ CompiledCode CodeBuilder::build(const std::string &name) {
   }
 
   const unsigned int codeSize = this->codeBuffer.size();
-  DSCode code{
+  DSCode code({
       .codeKind = this->kind,
       .localVarNum = this->localVarNum,
       .stackDepth = static_cast<unsigned short>(this->maxStackDepth),
       .size = codeSize,
       .code = this->codeBuffer.take(),
-  };
+  });
 
   // create constant pool
   this->constBuffer.append(nullptr); // sentinel

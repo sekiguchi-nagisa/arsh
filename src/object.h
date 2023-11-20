@@ -1021,28 +1021,36 @@ enum class CodeKind : unsigned char {
   NATIVE,
 };
 
-struct DSCode {
-  CodeKind codeKind;
+class DSCode {
+protected:
+  struct Base {
+    const CodeKind codeKind{CodeKind::NATIVE};
 
-  unsigned char localVarNum;
+    const unsigned char localVarNum{0};
 
-  unsigned short stackDepth;
+    const unsigned short stackDepth{0};
 
-  unsigned int size;
+    const unsigned int size{0};
 
-  unsigned char *code;
+    unsigned char *code{nullptr};
+  } base;
 
-  const unsigned char *getCode() const { return this->code; }
+public:
+  DSCode() = default;
 
-  CodeKind getKind() const { return this->codeKind; }
+  DSCode(Base base) : base(base) {} // NOLINT
+
+  const unsigned char *getCode() const { return this->base.code; }
+
+  CodeKind getKind() const { return this->base.codeKind; }
 
   bool is(CodeKind kind) const { return this->getKind() == kind; }
 
-  unsigned short getLocalVarNum() const { return this->localVarNum; }
+  unsigned short getLocalVarNum() const { return this->base.localVarNum; }
 
-  unsigned short getStackDepth() const { return this->stackDepth; }
+  unsigned short getStackDepth() const { return this->base.stackDepth; }
 
-  unsigned int getCodeSize() const { return this->size; }
+  unsigned int getCodeSize() const { return this->base.size; }
 };
 
 class NativeCode : public DSCode {
@@ -1053,12 +1061,14 @@ private:
   ArrayType value;
 
 public:
-  NativeCode() noexcept {
-    this->codeKind = CodeKind::NATIVE;
-    this->localVarNum = 4;
-    this->stackDepth = 4;
-    this->size = 0;
-  }
+  NativeCode() noexcept
+      : DSCode({
+            .codeKind = CodeKind::NATIVE,
+            .localVarNum = 4,
+            .stackDepth = 4,
+            .size = 0,
+            .code = nullptr,
+        }) {}
 
   explicit NativeCode(const ArrayType &value) noexcept : NativeCode() {
     this->value = value;
@@ -1073,20 +1083,17 @@ public:
   NON_COPYABLE(NativeCode);
 
   NativeCode &operator=(NativeCode &&o) noexcept {
-    this->swap(o);
+    if (this != std::addressof(o)) {
+      this->~NativeCode();
+      new (this) NativeCode(std::move(o));
+    }
     return *this;
-  }
-
-  void swap(NativeCode &o) noexcept {
-    this->value.swap(o.value);
-    this->setCode();
-    o.setCode();
   }
 
   static bool classof(const DSCode *code) { return code->is(CodeKind::NATIVE); }
 
 private:
-  void setCode() { this->code = reinterpret_cast<unsigned char *>(this->value.data()); }
+  void setCode() { this->base.code = reinterpret_cast<unsigned char *>(this->value.data()); }
 };
 
 struct LineNumEntry {
@@ -1161,18 +1168,18 @@ public:
         exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
     c.sourceName = nullptr;
-    c.code = nullptr;
+    c.base.code = nullptr;
     c.constPool = nullptr;
     c.lineNumEntries = nullptr;
     c.exceptionEntries = nullptr;
   }
 
-  CompiledCode() noexcept : DSCode() { this->code = nullptr; }
+  CompiledCode() noexcept : DSCode() { this->base.code = nullptr; }
 
   ~CompiledCode() {
     free(this->sourceName);
     free(this->name);
-    free(this->code);
+    free(this->base.code);
     delete[] this->constPool;
     free(this->lineNumEntries);
     delete[] this->exceptionEntries;
@@ -1203,7 +1210,7 @@ public:
 
   const ExceptionEntry *getExceptionEntries() const { return this->exceptionEntries; }
 
-  explicit operator bool() const noexcept { return this->code != nullptr; }
+  explicit operator bool() const noexcept { return this->base.code != nullptr; }
 
   StackTraceElement toTraceElement(unsigned int index) const;
 

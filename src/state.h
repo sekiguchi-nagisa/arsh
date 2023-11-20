@@ -55,7 +55,7 @@ struct ControlFrame {
 
   unsigned int getIPOffset() const { return this->ip - this->code->getCode(); }
 
-  void setIPByOffset(unsigned int offset) { this->ip = this->code->code + offset; }
+  void setIPByOffset(unsigned int offset) { this->ip = this->code->getCode() + offset; }
 };
 
 class FinallyEntry {
