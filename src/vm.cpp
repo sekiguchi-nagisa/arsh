@@ -805,7 +805,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
         break;
       }
     }
-    close(selfPipe[READ_PIPE]);=
+    close(selfPipe[READ_PIPE]);
     if (readSize > 0 && errNum == ENOENT) {
       // remove cached path
       state.pathCache.removePath(argv[0]);
