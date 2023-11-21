@@ -44,11 +44,11 @@ Optional<PCRECompileFlag> PCRE::parseCompileFlag(StringRef value, std::string &e
   PCRECompileFlag flag{};
   for (char ch : value) {
     switch (ch) {
-      // clang-format off
+    // clang-format off
 #define GEN_CASE(E, B, C) case C: setFlag(flag, PCRECompileFlag::E); break;
     EACH_PCRE_COMPILE_FLAG(GEN_CASE)
 #undef GEN_CASE
-      // clang-format on
+    // clang-format on
     default:
       errorStr = "unsupported regex flag: `";
       errorStr += ch;
@@ -76,7 +76,9 @@ static uint32_t toRegexFlag(PCRECompileFlag flag) {
 
 static auto createCompileCtx() {
   struct Deleter {
-    void operator()(pcre2_compile_context *ctx) const { pcre2_compile_context_free(ctx); }
+    void operator()(pcre2_compile_context *ctx) const {
+      pcre2_compile_context_free(ctx);
+    }
   };
 
   auto ctx = std::unique_ptr<pcre2_compile_context, Deleter>(pcre2_compile_context_create(nullptr));
@@ -87,7 +89,8 @@ static auto createCompileCtx() {
 #endif
 
   auto version = PCRE::version();
-  if (version.major >= 10 && version.minor >= 38) { // for backward-compatibility
+  if (version.major >= 10 && version.minor >= 38) {
+    // for backward-compatibility
     pcre2_set_compile_extra_options(ctx.get(), PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK);
   }
   return ctx;
@@ -108,7 +111,8 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
   int errcode;
   PCRE2_SIZE erroffset;
-  pcre2_code *code = pcre2_compile((PCRE2_SPTR)pattern.data(), PCRE2_ZERO_TERMINATED, option,
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()),
+                                   PCRE2_ZERO_TERMINATED, option,
                                    &errcode, &erroffset, compileCtx.get());
   pcre2_match_data *data = nullptr;
   if (code) {
@@ -229,7 +233,8 @@ int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool g
   size_t outputLen = std::size(buf);
 
   int ret = this->substituteImpl(target, replacement, option, buf, outputLen);
-  if (ret >= 0) { // // substitution success (maybe no match)
+  if (ret >= 0) {
+    // // substitution success (maybe no match)
     output = std::string(buf, outputLen);
     return ret;
   } else if (ret == PCRE2_ERROR_NOMEMORY && outputLen <= bufLimit) {

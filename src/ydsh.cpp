@@ -87,7 +87,9 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
 struct BindingConsumer {
   DSState &state;
 
-  explicit BindingConsumer(DSState &st) : state(st) {}
+  explicit BindingConsumer(DSState &st)
+    : state(st) {
+  }
 
   void operator()(const Handle &handle, int64_t v) {
     this->state.setGlobal(handle.getIndex(), DSValue::createInt(v));
@@ -459,7 +461,7 @@ const char *DSState_config(const DSState *st, DSConfig config) {
   case DS_CONFIG_##E:                                                                              \
     key = SysConfig::E;                                                                            \
     break;
-    EACH_SYSCONFIG(GEN_CASE2)
+  EACH_SYSCONFIG(GEN_CASE2)
 #undef GEN_CASE2
   }
   if (auto *value = st->sysConfig.lookup(key)) {
@@ -542,12 +544,10 @@ const char *DSState_initExecutablePath(DSState *st) {
 
   auto handle = st->rootModScope->lookup(VAR_YDSH_BIN);
   assert(handle);
-  const char *ret = st->getGlobal(handle.asOk()->getIndex()).asCStr();
-  if (*ret) {
+  if (const char *ret = st->getGlobal(handle.asOk()->getIndex()).asCStr(); *ret) {
     return ret;
   }
-  char *path = getExecutablePath();
-  if (path) {
+  if (char *path = getExecutablePath()) {
     st->setGlobal(handle.asOk()->getIndex(), DSValue::createStr(path));
     free(path);
   }

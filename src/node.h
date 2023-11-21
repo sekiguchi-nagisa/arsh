@@ -453,7 +453,7 @@ public:
 
 class StringNode : public WithRtti<Node, NodeKind::String> {
 public:
-  enum StringKind {
+  enum StringKind : unsigned char {
     STRING,
     TILDE,
     BACKQUOTE,
@@ -655,7 +655,7 @@ public:
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 public:
-  enum ExtraOp : unsigned int {
+  enum ExtraOp : unsigned char {
     NONE,
     ARGS_LEN,
     POSITIONAL_ARG,
@@ -691,7 +691,7 @@ public:
 
 class AccessNode : public WithRtti<AssignableNode, NodeKind::Access> {
 public:
-  enum AdditionalOp {
+  enum AdditionalOp : unsigned char {
     NOP,
     DUP_RECV,
   };
@@ -842,13 +842,13 @@ public:
  */
 class ApplyNode : public WithRtti<Node, NodeKind::Apply> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     UNRESOLVED,
     FUNC_CALL,
     METHOD_CALL,
   };
 
-  enum Attr : unsigned int {
+  enum Attr : unsigned char {
     DEFAULT,
     INDEX,
     UNARY,
@@ -1052,7 +1052,7 @@ public:
  */
 class EmbedNode : public WithRtti<Node, NodeKind::Embed> {
 public:
-  enum Kind {
+  enum Kind : unsigned char {
     STR_EXPR,
     CMD_ARG,
   };
@@ -1900,7 +1900,7 @@ public:
 
 class CaseNode : public WithRtti<Node, NodeKind::Case> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     MAP = 0,
     IF_ELSE = 1,
   };
@@ -2765,7 +2765,7 @@ public:
 
 class CodeCompNode : public WithRtti<Node, NodeKind::CodeComp> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     VAR,            // complete variable names
     VAR_IN_CMD_ARG, // complete variable names (within command argument)
     MEMBER,         // complete members (field or method)

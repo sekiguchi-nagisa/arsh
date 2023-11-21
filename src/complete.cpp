@@ -66,7 +66,8 @@ std::string CompCandidate::quote() const {
 static bool isExprKeyword(TokenKind kind) {
   switch (kind) {
 #define GEN_CASE(T) case TokenKind::T:
-    EACH_LA_expression(GEN_CASE) return true;
+  EACH_LA_expression(GEN_CASE)
+    return true;
 #undef GEN_CASE
   default:
     return false;
@@ -165,13 +166,12 @@ template <typename T>
 static constexpr bool iterate_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<T, const std::string &>>;
 
-template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
+template <typename Func, enable_when<iterate_requirement_v<Func>>  = nullptr>
 static bool iteratePathList(const char *value, Func func) {
   StringRef ref = value;
-  std::string path;
   for (StringRef::size_type pos = 0;;) {
     auto ret = ref.find(':', pos);
-    path = "";
+    std::string path;
     path += ref.slice(pos, ret);
     TRY(func(path));
     if (ret == StringRef::npos) {
@@ -211,28 +211,28 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     TRY(iteratePathList(pathEnv, [&](const std::string &path) {
       DIR *dir = opendir(path.c_str());
       if (dir == nullptr) {
-        return true;
+      return true;
       }
       auto cleanup = finally([dir] { closedir(dir); });
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
-        if (cancel && cancel()) {
-          return false;
-        }
+      if (cancel && cancel()) {
+      return false;
+      }
 
-        StringRef cmd = entry->d_name;
-        if (cmd.startsWith(cmdPrefix)) {
-          std::string fullPath = path;
-          if (fullPath.back() != '/') {
-            fullPath += '/';
-          }
-          fullPath += cmd.data();
-          if (isExecutable(fullPath.c_str())) {
-            consumer(cmd, CompCandidateKind::COMMAND_NAME);
-          }
-        }
+      StringRef cmd = entry->d_name;
+      if (cmd.startsWith(cmdPrefix)) {
+      std::string fullPath = path;
+      if (fullPath.back() != '/') {
+      fullPath += '/';
+      }
+      fullPath += cmd.data();
+      if (isExecutable(fullPath.c_str())) {
+      consumer(cmd, CompCandidateKind::COMMAND_NAME);
+      }
+      }
       }
       return true;
-    }));
+      }));
   }
   return true;
 }
@@ -327,8 +327,9 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
         len++;
       }
       fileName.removePrefix(fileName.size() - len);
-      consumer(fileName, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
-                                                       : CompCandidateKind::COMMAND_ARG);
+      consumer(fileName, hasFlag(op, CodeCompOp::EXEC)
+                           ? CompCandidateKind::COMMAND_NAME_PART
+                           : CompCandidateKind::COMMAND_ARG);
     }
   }
   return true;
@@ -401,7 +402,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
                     const StringRef word, CompCandidateConsumer &consumer) {
   // complete field
   std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
-                                                                   const Handle &handle) {
+    const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.isVisibleInMod(scope.modId, name)) {
         CompCandidate candidate(name, CompCandidateKind::FIELD, 0);
@@ -461,7 +462,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
                   const StringRef word, CompCandidateConsumer &consumer) {
   if (recvType) {
     std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
-                                                                     const Handle &handle) {
+      const Handle &handle) {
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
         if (handle.isVisibleInMod(scope.modId, name)) {
           name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
@@ -510,7 +511,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
 }
 
 static void completeAttribute(const std::string &prefix, CompCandidateConsumer &consumer) {
-  const AttributeKind kinds[] = {
+  constexpr AttributeKind kinds[] = {
 #define GEN_TABLE(E, S) AttributeKind::E,
       EACH_ATTRIBUTE_KIND(GEN_TABLE)
 #undef GEN_TABLE
@@ -587,7 +588,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   }
   if (ctx.has(CodeCompOp::EXTERNAL) || ctx.has(CodeCompOp::UDC) || ctx.has(CodeCompOp::BUILTIN)) {
     TRY(completeCmdName(ctx.getScope(), ctx.getCompWord(), ctx.getCompOp(), this->consumer,
-                        this->cancel));
+      this->cancel));
   }
   if (ctx.has(CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
     this->dynaUdcComp(ctx.getCompWord(), this->consumer);
@@ -601,11 +602,11 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   if (ctx.has(CodeCompOp::FILE) || ctx.has(CodeCompOp::EXEC) || ctx.has(CodeCompOp::DIR)) {
     auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
     TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getCompOp(), this->consumer,
-                         this->cancel));
+      this->cancel));
   }
   if (ctx.has(CodeCompOp::MODULE)) {
     TRY(completeModule(this->config, ctx.getScriptDir(), ctx.getCompWord(),
-                       ctx.has(CodeCompOp::TILDE), consumer, this->cancel));
+      ctx.has(CodeCompOp::TILDE), consumer, this->cancel));
   }
   if (ctx.has(CodeCompOp::STMT_KW) || ctx.has(CodeCompOp::EXPR_KW)) {
     completeKeyword(ctx.getCompWord(), ctx.getCompOp(), this->consumer);
@@ -645,7 +646,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
                             this->consumer)) {
       auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
       TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getFallbackOp(), this->consumer,
-                           this->cancel));
+        this->cancel));
     }
   }
   return true;
@@ -701,7 +702,9 @@ private:
   ObserverPtr<const SuggestMemberType> targetMemberType;
 
 public:
-  explicit SuggestionCollector(StringRef name) : editDistance(3), src(name) {}
+  explicit SuggestionCollector(StringRef name)
+    : editDistance(3), src(name) {
+  }
 
   void setTargetMemberType(const SuggestMemberType &memberType) {
     this->targetMemberType = makeObserver(memberType);

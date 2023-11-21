@@ -246,8 +246,7 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
     auto value = argvObj.getValues()[index].asStrRef();
-    auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
-    if (pair) {
+    if (auto pair = convertToDecimal<int64_t>(value.begin(), value.end())) {
       ret = pair.value;
     }
   }
@@ -368,10 +367,12 @@ END:
   OP(OT, "-ot", %)                                                                                 \
   OP(EF, "-ef", %)
 
-enum class BinaryOp : unsigned int {
+enum class BinaryOp : unsigned char {
   INVALID,
 #define GEN_ENUM(E, S, O) E,
-  EACH_STR_COMP_OP(GEN_ENUM) EACH_INT_COMP_OP(GEN_ENUM) EACH_FILE_COMP_OP(GEN_ENUM)
+  EACH_STR_COMP_OP(GEN_ENUM)
+  EACH_INT_COMP_OP(GEN_ENUM)
+  EACH_FILE_COMP_OP(GEN_ENUM)
 #undef GEN_ENUM
 };
 
@@ -381,9 +382,9 @@ static BinaryOp resolveBinaryOp(StringRef opStr) {
     BinaryOp op;
   } table[] = {
 #define GEN_ENTRY(E, S, O) {S, BinaryOp::E},
-      EACH_INT_COMP_OP(GEN_ENTRY) EACH_STR_COMP_OP(GEN_ENTRY) EACH_FILE_COMP_OP(GEN_ENTRY)
+          EACH_INT_COMP_OP(GEN_ENTRY) EACH_STR_COMP_OP(GEN_ENTRY) EACH_FILE_COMP_OP(GEN_ENTRY)
 #undef GEN_ENTRY
-  };
+      };
   for (auto &e : table) {
     if (opStr == e.k) {
       return e.op;
@@ -397,7 +398,7 @@ static bool compareStr(StringRef left, BinaryOp op, StringRef right) {
 #define GEN_CASE(E, S, O)                                                                          \
   case BinaryOp::E:                                                                                \
     return left O right;
-    EACH_STR_COMP_OP(GEN_CASE)
+  EACH_STR_COMP_OP(GEN_CASE)
 #undef GEN_CASE
   default:
     break;
@@ -410,7 +411,7 @@ static bool compareInt(int64_t x, BinaryOp op, int64_t y) {
 #define GEN_CASE(E, S, O)                                                                          \
   case BinaryOp::E:                                                                                \
     return x O y;
-    EACH_INT_COMP_OP(GEN_CASE)
+  EACH_INT_COMP_OP(GEN_CASE)
 #undef GEN_CASE
   default:
     break;
@@ -513,7 +514,7 @@ static int testFile(char op, const char *value) {
     result = access(value, R_OK) == 0; // check if file is readable
     break;
   case 's': {
-    struct stat st;                                    // NOLINT
+    struct stat st; // NOLINT
     result = stat(value, &st) == 0 && st.st_size != 0; // check if file is not empty
     break;
   }
@@ -535,7 +536,7 @@ static int testFile(char op, const char *value) {
     result = access(value, X_OK) == 0; // check if file is executable
     break;
   case 'O': {
-    struct stat st;                                           // NOLINT
+    struct stat st; // NOLINT
     result = stat(value, &st) == 0 && st.st_uid == geteuid(); // check if file is effectively owned
     break;
   }
@@ -553,10 +554,8 @@ static int testFile(char op, const char *value) {
 
 static int builtin_test(DSState &, ArrayObject &argvObj) {
   bool result = false;
-  unsigned int argc = argvObj.getValues().size();
-  const unsigned int argSize = argc - 1;
-
-  switch (argSize) {
+  const unsigned int argc = argvObj.getValues().size();
+  switch (const unsigned int argSize = argc - 1) {
   case 0: {
     result = false;
     break;
@@ -565,7 +564,8 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     result = !argvObj.getValues()[1].asStrRef().empty(); // check if string is not empty
     break;
   }
-  case 2: { // unary op
+  case 2: {
+    // unary op
     auto op = argvObj.getValues()[1].asStrRef();
     auto ref = argvObj.getValues()[2].asStrRef();
     if (op.size() != 2 || op[0] != '-') {
@@ -574,9 +574,11 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
 
     const char opKind = op[1]; // ignore -
-    if (opKind == 'z') {       // check if string is empty
+    if (opKind == 'z') {
+      // check if string is empty
       result = ref.empty();
-    } else if (opKind == 'n') { // check if string not empty
+    } else if (opKind == 'n') {
+      // check if string not empty
       result = !ref.empty();
     } else {
       if (ref.hasNullChar()) {
@@ -591,7 +593,8 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
     break;
   }
-  case 3: { // binary op
+  case 3: {
+    // binary op
     auto left = argvObj.getValues()[1].asStrRef();
     auto op = argvObj.getValues()[2].asStrRef();
     auto opKind = resolveBinaryOp(op);
@@ -599,32 +602,32 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
 
     switch (opKind) {
 #define GEN_CASE(E, S, O) case BinaryOp::E:
-      EACH_STR_COMP_OP(GEN_CASE) {
-        result = compareStr(left, opKind, right);
-        break;
+    EACH_STR_COMP_OP(GEN_CASE) {
+      result = compareStr(left, opKind, right);
+      break;
+    }
+    EACH_INT_COMP_OP(GEN_CASE) {
+      auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
+      int64_t n1 = pair.value;
+      if (!pair) {
+        ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
+        return 2;
       }
-      EACH_INT_COMP_OP(GEN_CASE) {
-        auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
-        int64_t n1 = pair.value;
-        if (!pair) {
-          ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
-          return 2;
-        }
 
-        pair = convertToDecimal<int64_t>(right.begin(), right.end());
-        int64_t n2 = pair.value;
-        if (!pair) {
-          ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
-          return 2;
-        }
+      pair = convertToDecimal<int64_t>(right.begin(), right.end());
+      int64_t n2 = pair.value;
+      if (!pair) {
+        ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
+        return 2;
+      }
 
-        result = compareInt(n1, opKind, n2);
-        break;
-      }
-      EACH_FILE_COMP_OP(GEN_CASE) {
-        result = compareFile(left, opKind, right);
-        break;
-      }
+      result = compareInt(n1, opKind, n2);
+      break;
+    }
+    EACH_FILE_COMP_OP(GEN_CASE) {
+      result = compareFile(left, opKind, right);
+      break;
+    }
 #undef GEN_CASE
     case BinaryOp::INVALID:
       ERROR(argvObj, "%s: invalid binary operator", toPrintable(op).c_str()); // FIXME:
@@ -680,9 +683,11 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
       }
     }
   } else {
-    if (remove) { // remove all cache
+    if (remove) {
+      // remove all cache
       state.pathCache.clear();
-    } else { // show all cache
+    } else {
+      // show all cache
       errno = 0;
       if (state.pathCache.begin() == state.pathCache.end()) {
         TRY(printf("hash: file path cache is empty\n") > -1);
@@ -1078,8 +1083,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
 
   // parse remain
   if (table.count == 0) {
-    int ret = table.tryToUpdate(optState, argvObj, 'f');
-    if (ret) {
+    if (int ret = table.tryToUpdate(optState, argvObj, 'f')) {
       return ret;
     }
   }
@@ -1140,14 +1144,15 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
     }                                                                                              \
   } while (false)
 
-enum class PrintMaskOp : unsigned int {
+enum class PrintMaskOp : unsigned char {
   ONLY_PRINT = 1 << 0,
   REUSE = 1 << 1,
   SYMBOLIC = 1 << 2,
 };
 
 template <>
-struct allow_enum_bitop<PrintMaskOp> : std::true_type {};
+struct allow_enum_bitop<PrintMaskOp> : std::true_type {
+};
 
 static int printMask(mode_t mask, PrintMaskOp op) {
   errno = 0;
@@ -1287,7 +1292,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
     return ret;
   }
   while (*value) {
-    if (*(value++) == ',' && parseMode(value, ret.mode)) {
+    if (char ch = *(value++); ch == ',' && parseMode(value, ret.mode)) {
       continue;
     }
     ret.success = false;

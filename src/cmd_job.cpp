@@ -372,13 +372,13 @@ int builtin_wait(DSState &state, ArrayObject &argvObj) {
   return lastStatus;
 }
 
-enum class JobsTarget {
+enum class JobsTarget : unsigned char {
   ALL,
   RUNNING,
   STOPPED,
 };
 
-enum class JobsOutput {
+enum class JobsOutput : unsigned char {
   DEFAULT,
   PID_ONLY,
   VERBOSE,
