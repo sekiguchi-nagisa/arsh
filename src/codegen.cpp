@@ -206,7 +206,7 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
 
 void ByteCodeGenerator::emitJumpIns(const Label &label, OpCode op) {
   assert(op == OpCode::GOTO || op == OpCode::JUMP_LOOP || op == OpCode::JUMP_LOOP_V ||
-      op == OpCode::JUMP_TRY || op == OpCode::JUMP_TRY_V || op == OpCode::ENTER_FINALLY);
+         op == OpCode::JUMP_TRY || op == OpCode::JUMP_TRY_V || op == OpCode::ENTER_FINALLY);
   const unsigned int index = this->currentCodeOffset();
   this->emit4byteIns(op, 0);
   this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
@@ -343,8 +343,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
 
   this->markLabel(labels.back());
 
-  if (lastPipe) {
-    // generate last pipe
+  if (lastPipe) { // generate last pipe
     this->generateBlock(node.getBaseIndex(), 1, true, [&] {
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
       this->visit(*node.getNodes().back(), CmdCallCtx::AUTO);
@@ -360,13 +359,10 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
   }
 
   unsigned int offset = this->currentCodeOffset();
-  this->emitIns(lastPipe
-                  ? OpCode::PIPELINE_LP
-                  : forkKind == ForkKind::NONE
-                  ? OpCode::PIPELINE_SILENT
-                  : forkKind == ForkKind::PIPE_FAIL
-                  ? OpCode::PIPELINE
-                  : OpCode::PIPELINE_ASYNC);
+  this->emitIns(lastPipe                          ? OpCode::PIPELINE_LP
+                : forkKind == ForkKind::NONE      ? OpCode::PIPELINE_SILENT
+                : forkKind == ForkKind::PIPE_FAIL ? OpCode::PIPELINE
+                                                  : OpCode::PIPELINE_ASYNC);
   if (forkKind != ForkKind::NONE && forkKind != ForkKind::PIPE_FAIL) {
     offset++;
     this->curBuilder().append(toUnderlying(forkKind));
@@ -545,11 +541,9 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     this->emit0byteIns(OpCode::LOAD_CUR_MOD);
 
     unsigned int index = node.getIndex();
-    const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)
-                       ? METHOD_SCRIPT_NAME
-                       : index == toIndex(BuiltinVarOffset::SCRIPT_DIR)
-                       ? METHOD_SCRIPT_DIR
-                       : "";
+    const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)  ? METHOD_SCRIPT_NAME
+                     : index == toIndex(BuiltinVarOffset::SCRIPT_DIR) ? METHOD_SCRIPT_DIR
+                                                                      : "";
     auto *handle = this->typePool.lookupMethod(this->typePool.get(TYPE::Module), op);
     this->emitMethodCallIns(*handle);
   } else if (node.getHandle()->is(HandleKind::SMALL_CONST)) {
@@ -841,10 +835,10 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
       this->emitTypeIns(OpCode::NEW, node.getType());
     }
 
-  // push arguments
+    // push arguments
     this->visit(node.getArgsNode());
 
-  // call constructor
+    // call constructor
     this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(handle);
     break;
@@ -877,8 +871,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->emit0byteIns(OpCode::DO_REDIR);
   }
 
-  if (node.getHandle()) {
-    // user-defined command
+  if (node.getHandle()) { // user-defined command
     OpCode ins = this->inStmtCtx() ? OpCode::CALL_UDC : OpCode::CALL_UDC_SILENT;
     this->emit2byteIns(ins, node.getHandle()->getIndex());
   } else {
@@ -927,15 +920,15 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
   if (int newFd = node.getNewFd();
-    newFd >= 0 && static_cast<unsigned int>(newFd) < RESERVED_FD_LIMIT) {
+      newFd >= 0 && static_cast<unsigned int>(newFd) < RESERVED_FD_LIMIT) {
     if (int targetFd = node.getTargetFd();
-      targetFd >= 0 && static_cast<unsigned int>(targetFd) < RESERVED_FD_LIMIT) {
+        targetFd >= 0 && static_cast<unsigned int>(targetFd) < RESERVED_FD_LIMIT) {
       this->emitInt(targetFd);
     } else {
       this->generateCmdArg(node.getTargetNode());
     }
     if (newFd < 3) {
-      constexpr auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
+      const auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
       auto op = static_cast<OpCode>(offset + newFd);
       this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
     } else {
@@ -1091,8 +1084,7 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
   });
 }
 
-void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {
-} // do nothing
+void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
 
 void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
   auto &e = this->tryFinallyLabels().back();
@@ -1276,8 +1268,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     this->generateIfElseArm(*node.getArmNodes()[index], eqHandle, matchHandle, mergeLabel);
   }
   this->markLabel(defaultLabel);
-  if (defaultIndex > -1) {
-    // generate default
+  if (defaultIndex > -1) {           // generate default
     this->emit0byteIns(OpCode::POP); // pop stack top 'expr'
     this->visit(*node.getArmNodes()[static_cast<unsigned int>(defaultIndex)], CmdCallCtx::AUTO);
   }
@@ -1430,9 +1421,8 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     if (hasFinally) {
       this->enterFinally(finallyLabel);
     }
-    this->emitJumpIns(mergeLabel, node.getExprNode().getType().isVoidType()
-                                    ? OpCode::JUMP_TRY
-                                    : OpCode::JUMP_TRY_V);
+    this->emitJumpIns(mergeLabel, node.getExprNode().getType().isVoidType() ? OpCode::JUMP_TRY
+                                                                            : OpCode::JUMP_TRY_V);
   }
 
   // generate catch
@@ -1505,8 +1495,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitAttributeNode(AttributeNode &) {
-} // do nothing
+void ByteCodeGenerator::visitAttributeNode(AttributeNode &) {} // do nothing
 
 void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
   auto &assignableNode = cast<AssignableNode>(node.getLeftNode());
@@ -1543,8 +1532,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     if (node.isSelfAssignment()) {
       this->visit(node.getLeftNode());
     }
-    if (isa<CmdArgNode>(node.getRightNode())) {
-      // for prefix assign
+    if (isa<CmdArgNode>(node.getRightNode())) { // for prefix assign
       this->generateCmdArg(cast<CmdArgNode>(node.getRightNode()));
     } else {
       this->visit(node.getRightNode());
@@ -1690,20 +1678,15 @@ void ByteCodeGenerator::visitFuncListNode(FuncListNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitSourceNode(SourceNode &) {
-} // do nothing
+void ByteCodeGenerator::visitSourceNode(SourceNode &) {} // do nothing
 
-void ByteCodeGenerator::visitSourceListNode(SourceListNode &) {
-} // do nothing
+void ByteCodeGenerator::visitSourceListNode(SourceListNode &) {} // do nothing
 
-void ByteCodeGenerator::visitCodeCompNode(CodeCompNode &) {
-} // do nothing
+void ByteCodeGenerator::visitCodeCompNode(CodeCompNode &) {} // do nothing
 
-void ByteCodeGenerator::visitErrorNode(ErrorNode &) {
-} // do nothing
+void ByteCodeGenerator::visitErrorNode(ErrorNode &) {} // do nothing
 
-void ByteCodeGenerator::visitEmptyNode(EmptyNode &) {
-} // do nothing
+void ByteCodeGenerator::visitEmptyNode(EmptyNode &) {} // do nothing
 
 void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {
   va_list arg;
@@ -1738,8 +1721,8 @@ bool ByteCodeGenerator::generate(std::unique_ptr<Node> &&node) {
 }
 
 ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
-  unsigned int maxVarIndex,
-  const ModType &modType) {
+                                                                  unsigned int maxVarIndex,
+                                                                  const ModType &modType) {
   if (!this->toplevelDeferNodes().empty()) {
     this->enterMultiFinally(this->toplevelDeferNodes().size());
   }
@@ -1926,7 +1909,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
   fputs("Constant Pool:\n", this->fp);
   {
     unsigned int constSize;
-    for (constSize = 0; c.getConstPool()[constSize]; constSize++);
+    for (constSize = 0; c.getConstPool()[constSize]; constSize++)
+      ;
     for (unsigned int i = 0; c.getConstPool()[i]; i++) {
       fprintf(this->fp, "  %s: ", formatNum(constSize, i).c_str());
       auto &v = c.getConstPool()[i];

@@ -246,7 +246,8 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
     auto value = argvObj.getValues()[index].asStrRef();
-    if (auto pair = convertToDecimal<int64_t>(value.begin(), value.end())) {
+    auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
+    if (pair) {
       ret = pair.value;
     }
   }
@@ -367,7 +368,7 @@ END:
   OP(OT, "-ot", %)                                                                                 \
   OP(EF, "-ef", %)
 
-enum class BinaryOp : unsigned char {
+enum class BinaryOp : unsigned int {
   INVALID,
 #define GEN_ENUM(E, S, O) E,
   EACH_STR_COMP_OP(GEN_ENUM) EACH_INT_COMP_OP(GEN_ENUM) EACH_FILE_COMP_OP(GEN_ENUM)
@@ -552,7 +553,9 @@ static int testFile(char op, const char *value) {
 
 static int builtin_test(DSState &, ArrayObject &argvObj) {
   bool result = false;
-  const unsigned int argSize = argvObj.getValues().size() - 1;
+  unsigned int argc = argvObj.getValues().size();
+  const unsigned int argSize = argc - 1;
+
   switch (argSize) {
   case 0: {
     result = false;
@@ -562,8 +565,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     result = !argvObj.getValues()[1].asStrRef().empty(); // check if string is not empty
     break;
   }
-  case 2: {
-    // unary op
+  case 2: { // unary op
     auto op = argvObj.getValues()[1].asStrRef();
     auto ref = argvObj.getValues()[2].asStrRef();
     if (op.size() != 2 || op[0] != '-') {
@@ -572,11 +574,9 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
 
     const char opKind = op[1]; // ignore -
-    if (opKind == 'z') {
-      // check if string is empty
+    if (opKind == 'z') {       // check if string is empty
       result = ref.empty();
-    } else if (opKind == 'n') {
-      // check if string not empty
+    } else if (opKind == 'n') { // check if string not empty
       result = !ref.empty();
     } else {
       if (ref.hasNullChar()) {
@@ -591,8 +591,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
     break;
   }
-  case 3: {
-    // binary op
+  case 3: { // binary op
     auto left = argvObj.getValues()[1].asStrRef();
     auto op = argvObj.getValues()[2].asStrRef();
     auto opKind = resolveBinaryOp(op);
@@ -681,11 +680,9 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
       }
     }
   } else {
-    if (remove) {
-      // remove all cache
+    if (remove) { // remove all cache
       state.pathCache.clear();
-    } else {
-      // show all cache
+    } else { // show all cache
       errno = 0;
       if (state.pathCache.begin() == state.pathCache.end()) {
         TRY(printf("hash: file path cache is empty\n") > -1);
@@ -1081,7 +1078,8 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
 
   // parse remain
   if (table.count == 0) {
-    if (int ret = table.tryToUpdate(optState, argvObj, 'f')) {
+    int ret = table.tryToUpdate(optState, argvObj, 'f');
+    if (ret) {
       return ret;
     }
   }
@@ -1142,7 +1140,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
     }                                                                                              \
   } while (false)
 
-enum class PrintMaskOp : unsigned char {
+enum class PrintMaskOp : unsigned int {
   ONLY_PRINT = 1 << 0,
   REUSE = 1 << 1,
   SYMBOLIC = 1 << 2,
@@ -1289,7 +1287,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
     return ret;
   }
   while (*value) {
-    if (char ch = *(value++); ch == ',' && parseMode(value, ret.mode)) {
+    if (*(value++) == ',' && parseMode(value, ret.mode)) {
       continue;
     }
     ret.success = false;

@@ -2279,8 +2279,10 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 }
 
 std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
+  std::unique_ptr<Node> node;
   std::vector<NameInfo> names;
-  const auto ref = this->lexer->toStrRef(token);
+
+  auto ref = this->lexer->toStrRef(token);
   for (unsigned int index = token.size - 1; index != 0; index--) {
     if (ref[index] == '.') {
       Token fieldToken = token.sliceFrom(index + 1);
@@ -2288,7 +2290,7 @@ std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
       token = token.slice(0, index);
     }
   }
-  std::unique_ptr<Node> node = this->newVarNode(token);
+  node = this->newVarNode(token);
   for (; !names.empty(); names.pop_back()) {
     node = std::make_unique<AccessNode>(std::move(node), std::move(names.back()));
   }

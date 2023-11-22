@@ -150,7 +150,7 @@ public:
   OP(SPACE, (1u << 3u), ' ')                                                                       \
   OP(SIGN, (1u << 4u), '+')
 
-enum class FormatFlag : unsigned char {
+enum class FormatFlag {
 #define GEN_ENUM(E, F, C) E = (F),
   EACH_FORMAT_FLAG(GEN_ENUM)
 #undef GEN_ENUM

@@ -466,8 +466,7 @@ YDSH_METHOD float_toInt(RuntimeContext &ctx) {
    * see. (https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.d2l)
    */
   int64_t v = 0;
-  if (std::isnan(d)) {
-    // if the value is NaN, convert to 0
+  if (std::isnan(d)) { // if the value is NaN, convert to 0
     v = 0;
   } else if (!std::isinf(d) && d <= static_cast<double>(INT64_MAX) &&
              d >= static_cast<double>(INT64_MIN)) {
@@ -583,8 +582,7 @@ YDSH_METHOD string_empty(RuntimeContext &ctx) {
 //!bind: function count($this : String) : Int
 YDSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
-  size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeCluster &) {
-  });
+  size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeCluster &) {});
   assert(count <= StringObject::MAX_SIZE);
   RET(DSValue::createInt(count));
 }
@@ -636,13 +634,10 @@ YDSH_METHOD string_width(RuntimeContext &ctx) {
 
   // resolve east-asian width option
   auto n = v.isInvalid() ? 0 : v.asInt();
-  auto eaw = n == 2
-               ? AmbiguousCharWidth::FULL
-               : n == 1
-               ? AmbiguousCharWidth::HALF
-               : UnicodeUtil::isCJKLocale()
-               ? AmbiguousCharWidth::FULL
-               : AmbiguousCharWidth::HALF;
+  auto eaw = n == 2                       ? AmbiguousCharWidth::FULL
+             : n == 1                     ? AmbiguousCharWidth::HALF
+             : UnicodeUtil::isCJKLocale() ? AmbiguousCharWidth::FULL
+                                          : AmbiguousCharWidth::HALF;
 
   CharWidthProperties ps = {
       .eaw = eaw,
@@ -913,8 +908,7 @@ YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
   for (const auto end = ref.end(); begin != end;) {
     int codePoint = 0;
     unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(begin, end, codePoint);
-    if (byteSize == 0 || codePoint == 0) {
-      // replace invalid utf8 byte or nul char
+    if (byteSize == 0 || codePoint == 0) { // replace invalid utf8 byte or nul char
       if (!ret.appendAsStr(ctx, StringRef(old, begin - old)) || !ret.appendAsStr(ctx, repl)) {
         RET_ERROR;
       }
@@ -941,8 +935,7 @@ YDSH_METHOD string_toInt(RuntimeContext &ctx) {
   auto ref = LOCAL(0).asStrRef();
   auto &v = LOCAL(1);
   if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
-    const auto ret = convertToNum<
-      int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
+    auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
     if (ret) {
       RET(DSValue::createInt(ret.value));
     }
@@ -1186,8 +1179,8 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 
   auto ret = DSValue::create<ArrayObject>(
       *ctx.typePool
-          .createArrayType(*ctx.typePool.createOptionType(ctx.typePool.get(TYPE::String)).take())
-          .take());
+           .createArrayType(*ctx.typePool.createOptionType(ctx.typePool.get(TYPE::String)).take())
+           .take());
   TRY(re.match(ctx, ref, &typeAs<ArrayObject>(ret)));
   RET(ret);
 }
@@ -1383,7 +1376,8 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
   auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());
   auto &modType = cast<ModType>(type);
-  if (auto ret = loadExprAsFunc(ctx, ref, modType)) {
+  auto ret = loadExprAsFunc(ctx, ref, modType);
+  if (ret) {
     RET(DSValue(ret.asOk()));
   } else {
     ctx.throwObject(std::move(ret).takeError());

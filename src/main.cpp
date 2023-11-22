@@ -87,7 +87,7 @@ static void showFeature(FILE *fp) {
   }
 }
 
-enum class OptionKind : unsigned char {
+enum class OptionKind {
   DUMP_UAST,
   DUMP_AST,
   DUMP_CODE,
@@ -145,7 +145,7 @@ static const OptParser<OptionKind>::Option options[] = {
     {OptionKind::XTRACE, 'x', "", OptParseOp::NO_ARG, "trace execution of commands"},
 };
 
-enum class InvocationKind : unsigned char {
+enum class InvocationKind {
   FROM_FILE,
   FROM_STDIN,
   FROM_STRING,

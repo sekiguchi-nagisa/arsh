@@ -94,7 +94,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
   }
 }
 
-enum class RedirOpenFlag : unsigned char {
+enum class RedirOpenFlag {
   READ,
   WRITE,   // if file exists, error
   CLOBBER, // if file exists, truncate 0

@@ -143,8 +143,7 @@ struct linenoiseState {
 };
 
 enum KEY_ACTION {
-  ESC = 27,
-  /* Escape */
+  ESC = 27, /* Escape */
 };
 
 /* Debugging macro. */
@@ -345,8 +344,7 @@ static bool linenoiseEditDeleteNextWord(LineBuffer &buf, KillRing &killRing) {
 }
 
 static bool linenoiseEditSwapChars(LineBuffer &buf) {
-  if (buf.getCursor() == 0) {
-    //  does not swap
+  if (buf.getCursor() == 0) { //  does not swap
     return false;
   } else if (buf.getCursor() == buf.getUsedSize()) {
     buf.moveCursorToLeftByChar();
@@ -397,14 +395,12 @@ namespace ydsh {
 // ##     LineEditorObject     ##
 // ##############################
 
-LineEditorObject::LineEditorObject()
-  : ObjectWithRtti(TYPE::LineEditor) {
+LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
   if (int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
     this->inFd = ttyFd;
     remapFDCloseOnExec(this->inFd);
     this->outFd = this->inFd;
-  } else {
-    // fallback
+  } else { // fallback
     this->inFd = dupFDCloseOnExec(STDIN_FILENO);
     this->outFd = STDOUT_FILENO;
   }
@@ -513,8 +509,7 @@ static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l,
   bool continueLine = false;
   LineRenderer renderer(l.ps, promptCols, out, escapeSeqMap);
   renderer.setMaxCols(l.cols);
-  if (escapeSeqMap) {
-    // FIXME: cache previous rendered content
+  if (escapeSeqMap) { // FIXME: cache previous rendered content
     continueLine = !renderer.renderScript(lineRef);
   } else {
     renderer.renderLines(lineRef);
@@ -606,14 +601,14 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   /* Go up till we reach the expected position. */
   if (rows - cursorRows > 0) {
     lndebug("go-up %d", (int)rows - (int)cursorRows);
-    snprintf(seq, 64, "\x1b[%dA", static_cast<int>(rows) - static_cast<int>(cursorRows));
+    snprintf(seq, 64, "\x1b[%dA", (int)rows - (int)cursorRows);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
   lndebug("set col %d", 1 + (int)cursorCols);
   if (cursorCols) {
-    snprintf(seq, 64, "\r\x1b[%dC", static_cast<int>(cursorCols));
+    snprintf(seq, 64, "\r\x1b[%dC", (int)cursorCols);
   } else {
     snprintf(seq, 64, "\r");
   }
@@ -832,9 +827,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
       break;
     case EditActionType::PREV_HISTORY:
     case EditActionType::NEXT_HISTORY: {
-      auto op = action->type == EditActionType::PREV_HISTORY
-                  ? HistRotator::Op::PREV
-                  : HistRotator::Op::NEXT;
+      auto op = action->type == EditActionType::PREV_HISTORY ? HistRotator::Op::PREV
+                                                             : HistRotator::Op::NEXT;
       if (rotateHistory(histRotate, prevRotating, l.buf, op, true)) {
         l.rotating = true;
         this->refreshLine(l);
@@ -843,9 +837,8 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
     }
     case EditActionType::UP_OR_HISTORY:
     case EditActionType::DOWN_OR_HISTORY: {
-      auto op = action->type == EditActionType::UP_OR_HISTORY
-                  ? HistRotator::Op::PREV
-                  : HistRotator::Op::NEXT;
+      auto op = action->type == EditActionType::UP_OR_HISTORY ? HistRotator::Op::PREV
+                                                              : HistRotator::Op::NEXT;
       if (rotateHistoryOrUpDown(histRotate, l, op, prevRotating)) {
         this->refreshLine(l);
       }
@@ -1186,7 +1179,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
       goto END;
     }
     if (auto *action = this->keyBindings.findAction(reader.get());
-      !action || action->type != EditActionType::COMPLETE) {
+        !action || action->type != EditActionType::COMPLETE) {
       status = CompStatus::OK;
       goto END;
     }

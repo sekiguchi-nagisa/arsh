@@ -48,7 +48,8 @@ static BraceInt toBraceInt(StringRef ref) {
 
   bool ok = false;
   int64_t value = 0;
-  if (const auto ret = convertToDecimal<uint64_t>(ref.begin(), ref.end())) {
+  auto ret = convertToDecimal<uint64_t>(ref.begin(), ref.end());
+  if (ret) {
     if (negate) {
       if (ret.value < LIMIT) {
         ok = true;
@@ -63,8 +64,7 @@ static BraceInt toBraceInt(StringRef ref) {
     }
   }
 
-  if (ok && digits > 0) {
-    // resolve digits
+  if (ok && digits > 0) { // resolve digits
     auto v = static_cast<uint64_t>(value == INT64_MIN ? INT64_MAX : std::abs(value));
     digits += countDigits(v) + (negate ? 1 : 0);
   }
@@ -188,7 +188,9 @@ std::string formatSeqValue(int64_t v, unsigned int digits, bool isChar) {
 bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
   assert(range.step > 0);
   assert(!range.hasError());
-  if (range.begin <= range.end) { // increment
+
+  const bool inc = range.begin <= range.end;
+  if (inc) {
     int64_t ret;
     if (unlikely(sadd_overflow(cur, range.step, ret))) {
       return false;
@@ -197,7 +199,7 @@ bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
       return false;
     }
     cur = ret;
-  } else { // decrement
+  } else {
     int64_t ret;
     if (unlikely(ssub_overflow(cur, range.step, ret))) {
       return false;
