@@ -552,8 +552,8 @@ static int testFile(char op, const char *value) {
 
 static int builtin_test(DSState &, ArrayObject &argvObj) {
   bool result = false;
-  const unsigned int argc = argvObj.getValues().size();
-  switch (const unsigned int argSize = argc - 1) {
+  const unsigned int argSize = argvObj.getValues().size() - 1;
+  switch (argSize) {
   case 0: {
     result = false;
     break;
