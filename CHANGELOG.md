@@ -59,7 +59,7 @@
 - improve indexing
     - index builtin type or type template
 - improve ``textDocument/rename``
-    - rewrite scope-aware name conflict checking
+    - overhaul scope-aware name conflict checking
 - ``textDocument/didClose`` always synchronizes analyzer state before actual close operation
 - ``textDocument/semanticTokens`` supports dynamic registration
 - ``textDocument/publishDiagnostics`` emits undefined sub-command warning

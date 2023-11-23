@@ -59,35 +59,42 @@ static std::string quoteCommandName(StringRef name) {
   return "";
 }
 
-static void resolveGlobalImportedIndexes(const SymbolIndexes &indexes,
-                                         const SymbolIndexPtr &thisIndex, SymbolIndexes &resolved) {
-  for (auto &e : thisIndex->getLinks()) {
-    auto &link = e.second;
-    if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::GLOBAL)) {
-      auto importedIndex = indexes.find(link.getModId());
-      assert(importedIndex);
-      resolved.add(std::move(importedIndex));
-      if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
-        resolveGlobalImportedIndexes(indexes, importedIndex, resolved);
-      }
+static void
+resolveInlinedImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex,
+                              const SymbolRef ref, std::unordered_set<ModId> &foundModSet,
+                              std::vector<std::pair<SymbolRef, SymbolIndexPtr>> &results) {
+  for (auto &pair : thisIndex->getLinks()) {
+    const auto attr = pair.second.getImportAttr();
+    if (!hasFlag(attr, IndexLink::ImportAttr::INLINED)) {
+      continue;
     }
+    const auto modId = pair.second.getModId();
+    if (foundModSet.find(modId) != foundModSet.end()) { // already found
+      continue;
+    } else {
+      foundModSet.emplace(modId);
+    }
+    auto index = indexes.find(modId);
+    results.emplace_back(ref, index);
+    resolveInlinedImportedIndexes(indexes, index, ref, foundModSet, results);
   }
 }
 
-/**
- * get imported modules at this module
- * @param indexes
- * @param thisIndex
- * @return
- */
-static SymbolIndexes resolveGlobalImportedIndexes(const SymbolIndexes &indexes,
-                                                  const SymbolIndexPtr &thisIndex) {
-  SymbolIndexes resolved;
-  auto builtin = indexes.find(BUILTIN_MOD_ID);
-  assert(builtin);
-  resolved.add(builtin);
-  resolveGlobalImportedIndexes(indexes, thisIndex, resolved);
-  return resolved;
+static std::vector<std::pair<SymbolRef, SymbolIndexPtr>>
+resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex) {
+  std::vector<std::pair<SymbolRef, SymbolIndexPtr>> results;
+  results.emplace_back(SymbolRef(0, 0, BUILTIN_MOD_ID), indexes.find(BUILTIN_MOD_ID));
+  for (auto &pair : thisIndex->getLinks()) {
+    const auto attr = pair.second.getImportAttr();
+    if (!hasFlag(attr, IndexLink::ImportAttr::GLOBAL)) {
+      continue;
+    }
+    auto index = indexes.find(pair.second.getModId());
+    results.emplace_back(pair.first, index);
+    std::unordered_set<ModId> idSet;
+    resolveInlinedImportedIndexes(indexes, index, pair.first, idSet, results);
+  }
+  return results;
 }
 
 /**
@@ -125,6 +132,40 @@ static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDecl
     }
   }
   return target != decl && target.getMangledName() == mangledNewDeclName;
+}
+
+static bool mayBeConflict(const ScopeInterval &declScope, const SymbolRef declRef,
+                          const ScopeInterval &targetScope, const SymbolRef targetRef) {
+  /**
+   * should check name conflict in the following case
+   *
+   * { { decl } { target } } => no check
+   * { { target } { decl } } => no check
+   * { decl { target } } => check name conflict
+   * { { decl } target } => no check
+   * { target { decl } } => check name conflict
+   * { { target } decl } => no check
+   */
+  if (declScope.isIncluding(targetScope) || targetScope.isIncluding(declScope)) {
+    if (!declScope.isIncluding(targetScope) && targetRef.getPos() > declRef.getPos()) {
+      /**
+       * ignore the following case
+       *
+       * { { decl } target }
+       */
+      return false;
+    }
+    if (!targetScope.isIncluding(declScope) && declRef.getPos() > targetRef.getPos()) {
+      /**
+       * ignore the following case
+       *
+       * { { target } decl }
+       */
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &decl,
@@ -165,13 +206,24 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     }
   }
 
-  auto declIndex = indexes.find(decl.getModId());
+  const auto declIndex = indexes.find(decl.getModId());
   assert(declIndex);
 
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
-  for (auto &importedIndex : importedIndexes) { // FIXME: import order aware conflict check
+  for (auto &[ref, importedIndex] : importedIndexes) {
+    if (!isBuiltinMod(importedIndex->getModId())) {
+      auto &declScope = declIndex->getScopes()[decl.getScopeId()];
+      auto &targetScope = declIndex->getScopes()[0]; // always global scope
+      if (!mayBeConflict(declScope, decl.toRef(), targetScope, ref)) {
+        continue;
+      }
+    }
+
     for (auto &mangledNewName : mangledNewNames) {
+      if (!isBuiltinMod(importedIndex->getModId()) && mangledNewName[0] == '_') {
+        continue; // ignore private symbol
+      }
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
         if (consumer) {
           consumer(Err(RenameConflict(*r)));
@@ -192,42 +244,15 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   for (auto &target : declIndex->getDecls()) { // FIXME: check constructor field
     auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     auto &targetScope = declIndex->getScopes()[target.getScopeId()];
-
-    /**
-     * check name conflict in the following case
-     *
-     * { { decl } { target } } => no check
-     * { { target } { decl } } => no check
-     * { decl { target } } => check name conflict
-     * { { decl } target } => no check
-     * { target { decl } } => check name conflict
-     * { { target } decl } => no check
-     */
-    if (declScope.isIncluding(targetScope) || targetScope.isIncluding(declScope)) {
-      if (!declScope.isIncluding(targetScope) && target.getPos() > decl.getPos()) {
-        /**
-         * ignore the following case
-         *
-         * { { decl } target }
-         */
-        continue;
-      }
-      if (!targetScope.isIncluding(declScope) && decl.getPos() > target.getPos()) {
-        /**
-         * ignore the following case
-         *
-         * { { target } decl }
-         */
-        continue;
-      }
-
-      for (auto &mangledNewName : mangledNewNames) {
-        if (equalsName(decl, mangledNewName, target)) {
-          if (consumer) {
-            consumer(Err(RenameConflict(target.toRef())));
-          }
-          return false;
+    if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
+      continue;
+    }
+    for (auto &mangledNewName : mangledNewNames) {
+      if (equalsName(decl, mangledNewName, target)) {
+        if (consumer) {
+          consumer(Err(RenameConflict(target.toRef())));
         }
+        return false;
       }
     }
   }

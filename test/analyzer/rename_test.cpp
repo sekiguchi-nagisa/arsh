@@ -668,6 +668,184 @@ source %s as
                                        RenameValidationStatus::KEYWORD));
 }
 
+TEST_F(RenameTest, import1) { // for global imported index
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
+var AAA = 34;
+typedef _Int = Bool
+)");
+
+  auto content = format(R"(
+var DDD = $false
+{ var BBB = 34;
+$BBB; }
+source %s
+function CCC(){}
+$CCC()
+typedef TTT(){}
+234 is TTT
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "AAA",
+                                       {{1, "(2:6~2:9)"}, {1, "(3:1~3:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 7, .character = 10}, "_Int",
+                                       {{1, "(7:8~7:11)"}, {1, "(8:7~8:10)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "AAA", {2, "(1:4~1:7)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 2},
+                                                   "AAA", {2, "(1:4~1:7)"}));
+}
+
+TEST_F(RenameTest, import2) { // for named imported index
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
+var AAA = 34;
+typedef _Int = Bool
+)");
+
+  auto content = format(R"(
+var DDD = $false
+{ var BBB = 34;
+$BBB; }
+source %s as mod; $mod.AAA
+function CCC(){}
+$CCC()
+typedef TTT(){}
+234 is TTT
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "AAA",
+                                       {{1, "(2:6~2:9)"}, {1, "(3:1~3:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 1, .character = 6}, "AAA", {{1, "(1:4~1:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 2}, "AAA",
+                                       {{1, "(5:9~5:12)"}, {1, "(6:1~6:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 7, .character = 10}, "_Int",
+                                       {{1, "(7:8~7:11)"}, {1, "(8:7~8:10)"}}));
+}
+
+TEST_F(RenameTest, import3) { // for inlined imported index
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
+var EEE = 34
+eee() {}
+)");
+
+  auto fileName2 = tempFileFactory.createTempFile("mod2.ds", R"(
+var  XXX = 23
+function _ZZZ() {}
+fff() {}
+)");
+
+  auto fileName1 = tempFileFactory.createTempFile(
+      "mod1.ds", format(R"(
+source %s inlined
+var AAA = 34;
+typedef _Int = Bool
+source %s
+source %s
+)",
+                        fileName2.c_str(), fileName2.c_str(), fileName3.c_str()));
+
+  auto content = format(R"(
+var DDD = $false
+{ var BBB = 34;
+$BBB; }
+source %s
+function CCC(){}
+$CCC()
+typedef TTT(){}
+234 is TTT
+ggg() {}
+)",
+                        fileName1.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 10}, "_ZZZ",
+                                       {{1, "(5:9~5:12)"}, {1, "(6:1~6:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "XXX",
+                                       {{1, "(2:6~2:9)"}, {1, "(3:1~3:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 9, .character = 1}, "_ZZZ", {{1, "(9:0~9:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 9, .character = 1}, "eee", {{1, "(9:0~9:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 1, .character = 6}, "EEE", {{1, "(1:4~1:7)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "AAA", {2, "(2:4~2:7)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "XXX", {3, "(1:5~1:8)"}));
+
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 1},
+                                                   "fff", {3, "(3:0~3:3)"}));
+}
+
+TEST_F(RenameTest, import4) { // for inlined imported index
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
+var EEE = 34
+eee() {}
+)");
+
+  auto fileName2 = tempFileFactory.createTempFile("mod2.ds", R"(
+var  XXX = 23
+function _ZZZ() {}
+fff() {}
+)");
+
+  auto fileName1 = tempFileFactory.createTempFile(
+      "mod1.ds", format(R"(
+source %s inlined
+var AAA = 34;
+typedef _Int = Bool
+source %s
+source %s
+)",
+                        fileName2.c_str(), fileName2.c_str(), fileName3.c_str()));
+
+  auto content = format(R"(
+var DDD = $false
+{ var BBB = 34;
+$BBB; }
+source %s inlined
+function CCC(){}
+$CCC()
+typedef TTT(){}
+234 is TTT
+ggg() {}
+)",
+                        fileName1.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 10}, "_ZZZ",
+                                       {{1, "(5:9~5:12)"}, {1, "(6:1~6:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "XXX",
+                                       {{1, "(2:6~2:9)"}, {1, "(3:1~3:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 9, .character = 1}, "_ZZZ", {{1, "(9:0~9:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 9, .character = 1}, "eee", {{1, "(9:0~9:3)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 1, .character = 6}, "EEE", {{1, "(1:4~1:7)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "AAA", {2, "(2:4~2:7)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 6},
+                                                   "XXX", {3, "(1:5~1:8)"}));
+
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 9, .character = 1},
+                                                   "fff", {3, "(3:0~3:3)"}));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
