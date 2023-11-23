@@ -1023,95 +1023,84 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
 
   unsigned int index = optState.index;
   const unsigned int argc = arrayObj.getValues().size();
-  if (index < argc) {
-    if (showDesc == 0) { // execute command
-      if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
-        auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
-        ERROR(arrayObj, "contains null characters: %s", name.c_str());
-        pushExitStatus(state, 1);
-        return true;
-      }
-
-      auto &values = arrayObj.refValues();
-      values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
-
-      auto resolve =
-          CmdResolver(CmdResolver::NO_UDC,
-                      useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
-      return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
-    }
-
-    // show command description
-    unsigned int successCount = 0;
-    for (; index < argc; index++) {
-      const auto &cmdName = arrayObj.getValues()[index];
-      const auto ref = cmdName.asStrRef();
-      auto cmd = CmdResolver(CmdResolver::NO_FALLBACK | CmdResolver::FROM_FQN_UDC,
-                             FilePathCache::DIRECT_SEARCH)(state, cmdName);
-      switch (cmd.kind()) {
-      case ResolvedCmd::USER_DEFINED:
-      case ResolvedCmd::MODULE: {
-        successCount++;
-        fputs(toPrintable(ref).c_str(), stdout);
-        if (showDesc == 2) {
-          fputs(" is a user-defined command", stdout);
-        }
-        fputc('\n', stdout);
-        continue;
-      }
-      case ResolvedCmd::BUILTIN_S:
-      case ResolvedCmd::BUILTIN: {
-        successCount++;
-        fputs(ref.data(), stdout);
-        if (showDesc == 2) {
-          fputs(" is a shell builtin command", stdout);
-        }
-        fputc('\n', stdout);
-        continue;
-      }
-      case ResolvedCmd::CMD_OBJ: {
-        successCount++;
-        fputs(toPrintable(ref).c_str(), stdout);
-        if (showDesc == 2) {
-          fputs(" is a dynamic registered command", stdout);
-        }
-        fputc('\n', stdout);
-        continue;
-      }
-      case ResolvedCmd::EXTERNAL: {
-        const char *path = cmd.filePath();
-        if (path != nullptr && isExecutable(path)) {
-          successCount++;
-          const char *commandName = ref.data();
-          if (showDesc == 1) {
-            printf("%s\n", path);
-          } else if (state.pathCache.isCached(commandName)) {
-            printf("%s is hashed (%s)\n", commandName, path);
-          } else {
-            printf("%s is %s\n", commandName, path);
-          }
-          continue;
-        }
-        break;
-      }
-      case ResolvedCmd::FALLBACK:
-      case ResolvedCmd::INVALID:
-      case ResolvedCmd::ILLEGAL_UDC:
-        break;
-      }
-
-      if (showDesc == 2) {
-        if (cmd.kind() == ResolvedCmd::ILLEGAL_UDC) {
-          ERROR(arrayObj, "%s: uninitialized", toPrintable(ref).c_str());
-        } else {
-          ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
-        }
-      }
-    }
-    pushExitStatus(state, successCount > 0 ? 0 : 1);
+  if (index == argc) { // do nothing
+    pushExitStatus(state, 0);
     return true;
   }
-  pushExitStatus(state, 0);
+
+  if (showDesc == 0) { // execute command
+    if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
+      auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
+      ERROR(arrayObj, "contains null characters: %s", name.c_str());
+      pushExitStatus(state, 1);
+      return true;
+    }
+
+    auto &values = arrayObj.refValues();
+    values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
+
+    auto resolve = CmdResolver(CmdResolver::NO_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH
+                                                                   : FilePathCache::NON);
+    return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
+  }
+
+  // show command description
+  unsigned int successCount = 0;
+  for (; index < argc; index++) {
+    const auto &cmdName = arrayObj.getValues()[index];
+    const auto ref = cmdName.asStrRef();
+    auto cmd = CmdResolver(CmdResolver::NO_FALLBACK | CmdResolver::FROM_FQN_UDC,
+                           FilePathCache::DIRECT_SEARCH)(state, cmdName);
+    switch (cmd.kind()) {
+    case ResolvedCmd::USER_DEFINED:
+    case ResolvedCmd::MODULE: {
+      successCount++;
+      printf("%s%s\n", toPrintable(ref).c_str(), showDesc == 2 ? " is a user-defined command" : "");
+      continue;
+    }
+    case ResolvedCmd::BUILTIN_S:
+    case ResolvedCmd::BUILTIN: {
+      successCount++;
+      printf("%s%s\n", ref.data(), showDesc == 2 ? " is a shell builtin command" : "");
+      continue;
+    }
+    case ResolvedCmd::CMD_OBJ: {
+      successCount++;
+      printf("%s%s\n", toPrintable(ref).c_str(),
+             showDesc == 2 ? " is a dynamic registered command" : "");
+      continue;
+    }
+    case ResolvedCmd::EXTERNAL: {
+      const char *path = cmd.filePath();
+      if (path != nullptr && isExecutable(path)) {
+        successCount++;
+        const char *commandName = ref.data();
+        if (showDesc == 1) {
+          printf("%s\n", path);
+        } else if (state.pathCache.isCached(commandName)) {
+          printf("%s is hashed (%s)\n", commandName, path);
+        } else {
+          printf("%s is %s\n", commandName, path);
+        }
+        continue;
+      }
+      break;
+    }
+    case ResolvedCmd::FALLBACK:
+    case ResolvedCmd::INVALID:
+    case ResolvedCmd::ILLEGAL_UDC:
+      break;
+    }
+
+    if (showDesc == 2) {
+      if (cmd.kind() == ResolvedCmd::ILLEGAL_UDC) {
+        ERROR(arrayObj, "%s: uninitialized", toPrintable(ref).c_str());
+      } else {
+        ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
+      }
+    }
+  }
+  pushExitStatus(state, successCount > 0 ? 0 : 1);
   return true;
 }
 
