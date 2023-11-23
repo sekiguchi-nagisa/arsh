@@ -809,8 +809,9 @@ public:
    */
   bool checkIteratorInvalidation(DSState &state, const char *name = nullptr) const;
 
-  DSValue copy() const {
-    return DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(this->values));
+  ObjPtr<ArrayObject> copy() const {
+    return toObjPtr<ArrayObject>(
+        DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(this->values)));
   }
 
   DSValue takeFirst() {

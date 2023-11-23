@@ -435,7 +435,7 @@ class CmdArgsBuilder {
 private:
   DSState &state;
   ObjPtr<ArrayObject> argv;
-  DSValue redir; // may be null
+  DSValue redir; // may be null, invalid, RedirObject
 
 public:
   explicit CmdArgsBuilder(DSState &state, ObjPtr<ArrayObject> argv, DSValue &&redir)
@@ -554,8 +554,9 @@ private:
    * +-----------+---------------+--------------+
    *             |     offset    |
    */
-  static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
-                                            DSValue &&redirConfig, CmdCallAttr attr);
+  static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
+                                            ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig,
+                                            CmdCallAttr attr);
 
   static bool attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize,
                              const Proc *procs, ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
@@ -565,18 +566,19 @@ private:
   static bool forkAndExec(DSState &state, const char *filePath, char *const *argv,
                           DSValue &&redirConfig);
 
-  static bool prepareSubCommand(DSState &state, const ModType &modType, DSValue &&argvObj,
-                                DSValue &&redirConfig);
+  static bool prepareSubCommand(DSState &state, const ModType &modType,
+                                ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig);
 
-  static bool callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj,
+  static bool callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                           DSValue &&redirConfig, CmdCallAttr attr = {});
 
-  static bool callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
+  static bool callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                           DSValue &&redirConfig, CmdCallAttr attr);
 
-  static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr);
+  static bool builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &&redir,
+                             CmdCallAttr attr);
 
-  static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
+  static void builtinExec(DSState &state, const ArrayObject &argObj, DSValue &&redir);
 
   static bool returnFromUserDefinedCommand(DSState &state, int64_t status);
 

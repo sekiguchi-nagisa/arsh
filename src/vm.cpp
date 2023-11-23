@@ -237,8 +237,9 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
   state.stack.push(std::move(value));
 }
 
-bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
-                                       DSValue &&redirConfig, const CmdCallAttr attr) {
+bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
+                                       ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig,
+                                       const CmdCallAttr attr) {
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) {
     // reset exit status
     state.setExitStatus(0);
@@ -248,7 +249,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
   state.stack.reserve(UDC_PARAM_N);
   state.stack.push(DSValue::createNum(toUnderlying(attr)));
   state.stack.push(std::move(redirConfig));
-  state.stack.push(std::move(argvObj));
+  state.stack.push(argvObj);
 
   const unsigned int stackTopOffset = UDC_PARAM_N + (hasFlag(attr, CmdCallAttr::CLOSURE) ? 1 : 0);
   if (unlikely(!windStackFrame(state, stackTopOffset, UDC_PARAM_N, code))) {
@@ -829,9 +830,9 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
   }
 }
 
-bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&argvObj,
+bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayObject> &&argvObj,
                            DSValue &&redirConfig) {
-  auto &array = typeAs<ArrayObject>(argvObj);
+  auto &array = *argvObj;
   if (array.size() == 1) {
     ERROR(array, "require subcommand");
     pushExitStatus(state, 2);
@@ -858,10 +859,9 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
                                        CmdCallAttr::SET_VAR);
 }
 
-bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig,
-                     CmdCallAttr attr) {
-  auto &array = typeAs<ArrayObject>(argvObj);
-  auto cmd = resolver(state, array.getValues()[0]);
+bool VM::callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
+                     DSValue &&redirConfig, CmdCallAttr attr) {
+  auto cmd = resolver(state, argvObj->getValues()[0]);
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
@@ -884,9 +884,9 @@ static void traceCmd(const DSState &state, const ArrayObject &argv) {
   }
 }
 
-bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
+bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                      DSValue &&redirConfig, CmdCallAttr attr) {
-  auto &array = typeAs<ArrayObject>(argvObj);
+  auto &array = *argvObj;
   if (cmd.hasNullChar()) { // adjust command name
     StringRef name = array.getValues()[0].asStrRef();
     auto pos = name.find('\0');
@@ -987,9 +987,9 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
   return true; // normally unreachable, but need to suppress gcc warning.
 }
 
-bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
-  auto &arrayObj = typeAs<ArrayObject>(argvObj);
-
+bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &&redir,
+                        CmdCallAttr attr) {
+  auto &arrayObj = *argvObj;
   bool useDefaultPath = false;
 
   /**
@@ -1129,8 +1129,7 @@ END:
   return true;
 }
 
-void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
-  auto &argvObj = typeAs<ArrayObject>(array);
+void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir) {
   bool clearEnv = false;
   StringRef progName;
   GetOptState optState("hca:");
@@ -2393,7 +2392,7 @@ bool VM::mainLoop(DSState &state) {
         }
 
         auto redir = state.stack.pop();
-        auto argv = state.stack.pop();
+        auto argv = toObjPtr<ArrayObject>(state.stack.pop());
 
         TRY(callCommand(state, CmdResolver(CmdResolver::NO_STATIC_UDC, FilePathCache::NON),
                         std::move(argv), std::move(redir), attr));
@@ -2408,7 +2407,7 @@ bool VM::mainLoop(DSState &state) {
         }
 
         auto redir = state.stack.pop();
-        auto argv = state.stack.pop();
+        auto argv = toObjPtr<ArrayObject>(state.stack.pop());
 
         ResolvedCmd cmd = lookupUdcFromIndex(state, BUILTIN_MOD_ID, index);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
@@ -2417,7 +2416,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(CALL_CMD_COMMON) {
         auto redir = state.stack.pop();
-        auto argv = state.stack.pop();
+        auto argv = toObjPtr<ArrayObject>(state.stack.pop());
 
         TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
                         CmdCallAttr::NEED_FORK));
@@ -2426,15 +2425,15 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(CALL_CMD_OBJ) {
         auto redir = state.stack.pop();
-        auto argv = state.stack.pop();
+        auto argv = toObjPtr<ArrayObject>(state.stack.pop());
         if (argv.get()->getRefcount() > 1) {
-          argv = typeAs<ArrayObject>(argv).copy();
+          argv = argv->copy();
         }
         auto obj = state.stack.pop();
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
-        if (auto &argvObj = typeAs<ArrayObject>(argv); argvObj.size() == 0) {
+        if (argv->size() == 0) {
           // add dummy
-          argvObj.refValues().push_back(DSValue::createStr()); // not check iterator invalidation
+          argv->refValues().push_back(DSValue::createStr()); // not check iterator invalidation
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         CHECK_SIGNAL();
@@ -2444,7 +2443,7 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         auto attr = static_cast<CmdCallAttr>(v);
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-        DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+        auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
         flushStdFD();
         TRY(ret);
@@ -2454,11 +2453,10 @@ bool VM::mainLoop(DSState &state) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         auto attr = static_cast<CmdCallAttr>(v);
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-        DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+        auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
 
-        typeAs<ArrayObject>(argv).takeFirst(); // not check iterator invalidation
-        auto &array = typeAs<ArrayObject>(argv);
-        if (!array.getValues().empty()) {
+        argv->takeFirst(); // not check iterator invalidation
+        if (!argv->getValues().empty()) {
           TRY(callCommand(state,
                           CmdResolver(CmdResolver::FROM_DEFAULT_WITH_FQN, FilePathCache::NON),
                           std::move(argv), std::move(redir), attr));
@@ -2469,8 +2467,8 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(BUILTIN_EXEC) {
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-        DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-        builtinExec(state, std::move(argv), std::move(redir));
+        auto argv = state.stack.getLocal(UDC_PARAM_ARGV);
+        builtinExec(state, typeAs<ArrayObject>(argv), std::move(redir));
         vmnext;
       }
       vmcase(NEW_REDIR) {
