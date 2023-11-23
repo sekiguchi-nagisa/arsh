@@ -67,6 +67,7 @@
 
 - not truncate ``Error#show`` message having null characters
 - not allow file descriptor number before ``&>``, ``&>|``, ``&>>`` redirections
+- fix typo of builtin ``command`` message
 
 ## [0.31.0] - 2023-09-30
 

@@ -66,7 +66,7 @@ assert "$(command -V call)" == "call is a shell builtin command"
 assert "$(command -V eval)" == "eval is a shell builtin command"
 assert "$(command -V exec)" == "exec is a shell builtin command"
 assert "$(command -V command)" == "command is a shell builtin command"
-assert("$(command -V hoge)" == "hoge is an user-defined command")   # user-defined
+assert("$(command -V hoge)" == "hoge is a user-defined command")   # user-defined
 env 2>&1 > /dev/null
 assert("$(command -V env)" == "env is hashed (/usr/bin/env)")          # hashed
 

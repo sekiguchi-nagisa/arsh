@@ -1,7 +1,7 @@
 
 source ../../_module4test/command.ds as m
 
-assert "$(command -V m)" == 'm is an user-defined command'
+assert "$(command -V m)" == 'm is a user-defined command'
 assert $? == 0
 
 assert "$(m 2>&1)" == "ydsh: m: require subcommand"

@@ -106,6 +106,6 @@ assert "$(command -V test)" == 'test is a shell builtin command'
 
 ### does not override user-defined command
 udc1() {}
-assert "$(command -V udc1)" == 'udc1 is an user-defined command'
+assert "$(command -V udc1)" == 'udc1 is a user-defined command'
 $DYNA_UDCS['udc1'] = (){}
-assert "$(command -V udc1)" == 'udc1 is an user-defined command'
+assert "$(command -V udc1)" == 'udc1 is a user-defined command'

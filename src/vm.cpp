@@ -1054,7 +1054,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         successCount++;
         fputs(toPrintable(ref).c_str(), stdout);
         if (showDesc == 2) {
-          fputs(" is an user-defined command", stdout);
+          fputs(" is a user-defined command", stdout);
         }
         fputc('\n', stdout);
         continue;
