@@ -86,7 +86,25 @@ assert(command -V hferure cd hoge fjer)                             # multiple
 command -V hferure fhaueirnv
 assert($? != 0)
 
-# invalid
+# io error
+if $OSTYPE == 'linux' {
+    ## external
+    assert "$(command -V ls 2>&1 > /dev/full)" =~ $/command: io error:.+/
+    assert $? == 1
+    ## builtin
+    assert "$(command -V exit 2>&1 > /dev/full)" =~ $/command: io error:.+/
+    assert $? == 1
+    assert "$(command -V printf 2>&1 > /dev/full)" =~ $/command: io error:.+/
+    assert $? == 1
+    ## user-defined
+    assert "$(command -V hoge 2>&1 > /dev/full)" =~ $/command: io error:.+/
+    assert $? == 1
+    ## dynamic registered
+    assert "$({ $DYNA_UDCS['@@@'] = (){}; command -V @@@ 2>&1 > /dev/full; })" =~ $/command: io error:.+/
+    assert $? == 1
+}
+
+# invalid option
 assert(command -i 2>&1 | grep '^ydsh: command: -i: invalid option$')
 assert(command) # do nothing, but success
 

@@ -34,9 +34,6 @@
 
 #### Builtin
 
-- ``LineEditor#setColor`` method ignore invalid ansi escape sequence (only accept SGR sequence)
-- ``LineEditor#readLine`` method correctly report out-of-memory error
-- ``shctl info`` sub-command show unicode version
 - **Breaking Change**: check iterator invalidation of Array object
     - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs`` commands
     - check object modification in ``sortWith`` method
@@ -47,6 +44,10 @@
 - **Breaking Change**: change default value of ``CLI#name`` method
     - if ``toplevel`` attribute param is specified, return toplevel ``ARG0``
     - otherwise, return current ``0`` (normally current user-defined command name)
+- ``LineEditor#setColor`` method ignore invalid ansi escape sequence (only accept SGR sequence)
+- ``LineEditor#readLine`` method correctly report out-of-memory error
+- ``shctl info`` sub-command show unicode version
+- check io error in builtin ``command``
 
 #### API
 

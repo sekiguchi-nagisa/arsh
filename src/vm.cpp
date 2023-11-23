@@ -1055,32 +1055,47 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
     case ResolvedCmd::USER_DEFINED:
     case ResolvedCmd::MODULE: {
       successCount++;
-      printf("%s%s\n", toPrintable(ref).c_str(), showDesc == 2 ? " is a user-defined command" : "");
+      errno = 0;
+      if (printf("%s%s\n", toPrintable(ref).c_str(),
+                 showDesc == 2 ? " is a user-defined command" : "") < 0) {
+        goto END;
+      }
       continue;
     }
     case ResolvedCmd::BUILTIN_S:
     case ResolvedCmd::BUILTIN: {
       successCount++;
-      printf("%s%s\n", ref.data(), showDesc == 2 ? " is a shell builtin command" : "");
+      errno = 0;
+      if (printf("%s%s\n", ref.data(), showDesc == 2 ? " is a shell builtin command" : "") < 0) {
+        goto END;
+      }
       continue;
     }
     case ResolvedCmd::CMD_OBJ: {
       successCount++;
-      printf("%s%s\n", toPrintable(ref).c_str(),
-             showDesc == 2 ? " is a dynamic registered command" : "");
+      errno = 0;
+      if (printf("%s%s\n", toPrintable(ref).c_str(),
+                 showDesc == 2 ? " is a dynamic registered command" : "") < 0) {
+        goto END;
+      }
       continue;
     }
     case ResolvedCmd::EXTERNAL: {
       const char *path = cmd.filePath();
       if (path != nullptr && isExecutable(path)) {
         successCount++;
+        errno = 0;
         const char *commandName = ref.data();
+        int r;
         if (showDesc == 1) {
-          printf("%s\n", path);
+          r = printf("%s\n", path);
         } else if (state.pathCache.isCached(commandName)) {
-          printf("%s is hashed (%s)\n", commandName, path);
+          r = printf("%s is hashed (%s)\n", commandName, path);
         } else {
-          printf("%s is %s\n", commandName, path);
+          r = printf("%s is %s\n", commandName, path);
+        }
+        if (r < 0) {
+          goto END;
         }
         continue;
       }
@@ -1099,8 +1114,18 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
       }
     }
+    errno = 0; // always ignore error
   }
-  pushExitStatus(state, successCount > 0 ? 0 : 1);
+
+END:
+  int status;
+  if (errno != 0 || fflush(stdout) == EOF) {
+    PERROR(arrayObj, "io error");
+    status = 1;
+  } else {
+    status = successCount > 0 ? 0 : 1;
+  }
+  pushExitStatus(state, status);
   return true;
 }
 
