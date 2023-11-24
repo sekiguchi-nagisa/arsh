@@ -458,7 +458,7 @@ TEST_F(InteractiveTest, history2) {
   {
     auto cleanup = this->withTimeout(400);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var c = \"$(" HIGHLIGHTER_PATH " --dump)\""));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setColor($c)"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('color', $c)"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int = 3"));

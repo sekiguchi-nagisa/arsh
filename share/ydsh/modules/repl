@@ -25,7 +25,7 @@ $ISDIR_HOOK = function($s : String) => cd $s && pwd
 if(command -v dscolorize &>> /dev/null) {
     var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
     if $? == 0 {
-        $LINE_EDIT.setColor($color)
+        $LINE_EDIT.config('color', $color)
     }
 }
 

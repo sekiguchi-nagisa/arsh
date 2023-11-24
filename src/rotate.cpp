@@ -98,8 +98,12 @@ bool HistRotator::save(ssize_t index, StringRef curBuf) {
 // ##     KillRing     ##
 // ######################
 
-void KillRing::expand(unsigned int afterSize) {
-  RingBuffer<std::string> newBuf(afterSize);
+void KillRing::expand(unsigned int afterCap) {
+  if (this->buf.capacity() == RingBuffer<std::string>::alignCapacity(afterCap)) {
+    return; // do nothing
+  }
+
+  RingBuffer<std::string> newBuf(afterCap);
   while (!this->buf.empty()) {
     newBuf.push_back(std::move(this->buf.front()));
     this->buf.pop_front();

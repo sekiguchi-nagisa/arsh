@@ -435,6 +435,11 @@ int LineEditorObject::enableRawMode(int fd) {
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
+  if (this->useFlowControl) {
+    raw.c_iflag |= IXON;
+  } else {
+    raw.c_iflag &= ~IXON;
+  }
   /* output modes - disable post processing */
   //    raw.c_oflag &= ~(OPOST);
   /* control modes - set 8 bit chars */
@@ -452,7 +457,11 @@ int LineEditorObject::enableRawMode(int fd) {
     goto fatal;
   }
   this->rawMode = true;
-  enableBracketPasteMode(fd);
+  if (this->useBracketedPaste) {
+    enableBracketPasteMode(fd);
+  } else {
+    disableBracketPasteMode(fd);
+  }
   return 0;
 
 fatal:
@@ -1321,86 +1330,6 @@ bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, Custo
   }
   auto ref = ret.asStrRef();
   return buf.insertToCursor(ref);
-}
-
-bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
-  auto s = this->keyBindings.addBinding(key, name);
-  std::string message;
-  switch (s) {
-  case KeyBindings::AddStatus::OK:
-    break;
-  case KeyBindings::AddStatus::UNDEF:
-    message = "undefined edit action: `";
-    message += toPrintable(name);
-    message += "'";
-    break;
-  case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
-    message = "cannot change binding of bracket start code `";
-    message += KeyBindings::toCaret(KeyBindings::BRACKET_START);
-    message += "'";
-    break;
-  case KeyBindings::AddStatus::FORBID_BRACKET_ACTION:
-    message = "cannot bind to `";
-    message += toString(EditActionType::BRACKET_PASTE);
-    message += "'";
-    break;
-  case KeyBindings::AddStatus::INVALID_START_CHAR:
-    message = "keycode must start with control character: `";
-    message += toPrintable(key);
-    message += "'";
-    break;
-  case KeyBindings::AddStatus::INVALID_ASCII:
-    message = "keycode must be ascii characters: `";
-    message += toPrintable(key);
-    message += "'";
-    break;
-  case KeyBindings::AddStatus::LIMIT:
-    message = "number of key bindings reaches limit (up to ";
-    message += std::to_string(SYS_LIMIT_KEY_BINDING_MAX);
-    message += ")";
-    break;
-  }
-  if (!message.empty()) {
-    raiseError(state, TYPE::ArgumentError, std::move(message));
-    return false;
-  }
-  return true;
-}
-
-bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, StringRef type,
-                                          ObjPtr<DSObject> callback) {
-  auto s = this->keyBindings.defineCustomAction(name, type);
-  if (s) {
-    assert(this->customCallbacks.size() == s.asOk());
-    this->customCallbacks.push_back(std::move(callback));
-    return true;
-  }
-
-  std::string message;
-  switch (s.asErr()) {
-  case KeyBindings::DefineError::INVALID_NAME:
-    message += "invalid action name, must [a-zA-Z_-]: `";
-    message += toPrintable(name);
-    message += "'";
-    break;
-  case KeyBindings::DefineError::INVALID_TYPE:
-    message += "unsupported custom action type: `";
-    message += toPrintable(type);
-    message += "'";
-    break;
-  case KeyBindings::DefineError::DEFINED:
-    message += "already defined action: `";
-    message += name;
-    message += "'";
-    break;
-  case KeyBindings::DefineError::LIMIT:
-    message += "number of custom actions reaches limit (up to ";
-    message += std::to_string(SYS_LIMIT_CUSTOM_ACTION_MAX);
-    message += ")";
-    break;
-  }
-  raiseError(state, TYPE::ArgumentError, std::move(message));
-  return false;
 }
 
 } // namespace ydsh

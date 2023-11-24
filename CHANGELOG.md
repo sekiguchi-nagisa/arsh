@@ -11,6 +11,10 @@
     - atl-/: redo
 - add ``ARG0``, ``ARGS`` variables
     - indicate top level ``0`` and ``@``
+- add some internal configuration methods to ``LineEditor``
+    - ``config``: set internal line editor configuration
+        - enable/disable software flow control, bracketed paste mode, change kill-ring size
+    - ``configs``: get internal configurations
 
 #### LSP
 
@@ -44,6 +48,7 @@
 - **Breaking Change**: change default value of ``CLI#name`` method
     - if ``toplevel`` attribute param is specified, return toplevel ``ARG0``
     - otherwise, return current ``0`` (normally current user-defined command name)
+- **Breaking Change**: remove ``LineEditor#setColor`` method. use ``LineEditor#config`` instead
 - ``LineEditor#setColor`` method ignore invalid ansi escape sequence (only accept SGR sequence)
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version

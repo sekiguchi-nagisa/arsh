@@ -67,7 +67,7 @@ private:
 
 class KillRing {
 private:
-  static constexpr size_t INIT_SIZE = 16;
+  static constexpr size_t INIT_SIZE = 15;
 
   static_assert(INIT_SIZE <= SYS_LIMIT_KILL_RING_MAX);
   static_assert(SYS_LIMIT_KILL_RING_MAX <= UINT32_MAX);
@@ -103,9 +103,9 @@ public:
 
   /**
    * re-allocate internal ring buffer
-   * @param afterSize
+   * @param afterCap
    */
-  void expand(unsigned int afterSize);
+  void expand(unsigned int afterCap);
 
   ObjPtr<ArrayObject> toObj(const TypePool &pool) const;
 };

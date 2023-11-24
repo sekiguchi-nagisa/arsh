@@ -2239,16 +2239,6 @@ YDSH_METHOD edit_histSync(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function setColor($this : LineEditor, $setting : String) : Void
-YDSH_METHOD edit_color(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(edit_color);
-  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  CHECK_EDITOR_LOCK(editor);
-  auto setting = LOCAL(1).asStrRef();
-  editor.setColor(setting);
-  RET_VOID;
-}
-
 //!bind: function bind($this : LineEditor, $key : String, $action : String) : Void
 YDSH_METHOD edit_bind(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_bind);
@@ -2299,6 +2289,24 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
   array.sortAsStrArray(); // not check iterator invalidation
   ASSERT_ARRAY_SIZE(array);
   RET(value);
+}
+
+//!bind: function config($this : LineEditor, $name : String, $value : Any) : Void
+YDSH_METHOD edit_config(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_config);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
+  auto name = LOCAL(1).asStrRef();
+  auto &value = LOCAL(2);
+  editor.setConfig(ctx, name, value);
+  RET_VOID;
+}
+
+//!bind: function configs($this : LineEditor) : Map<String, Any>
+YDSH_METHOD edit_configs(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_configs);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  RET(editor.getConfigs(ctx));
 }
 
 //!bind: function name($this : CLI) : String

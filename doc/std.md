@@ -322,8 +322,6 @@ function setHistory(hist: [String]?): Void for LineEditor
 
 function setHistSync(sync: ((String, [String]) -> Void)?): Void for LineEditor
 
-function setColor(setting: String): Void for LineEditor
-
 function bind(key: String, action: String): Void for LineEditor
 
 function bindings(): [String : String] for LineEditor
@@ -331,6 +329,10 @@ function bindings(): [String : String] for LineEditor
 function action(name: String, type: String, action: (String, [String]?) -> String?): Void for LineEditor
 
 function actions(): [String] for LineEditor
+
+function config(name: String, value: Any): Void for LineEditor
+
+function configs(): [String : Any] for LineEditor
 ```
 
 ## CLI type

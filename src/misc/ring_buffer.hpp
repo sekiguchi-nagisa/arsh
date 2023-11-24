@@ -39,7 +39,18 @@ private:
   Storage storage_;
 
 public:
-  explicit RingBuffer(unsigned int cap) : storage_(adjustCap(cap)) {}
+  static constexpr unsigned int alignCapacity(unsigned int cap) {
+    if (cap == 0) {
+      cap = 1;
+    }
+    unsigned int count = 0;
+    for (; cap; count++) {
+      cap = cap >> 1;
+    }
+    return 1 << std::min(count, 31u);
+  }
+
+  explicit RingBuffer(unsigned int cap) : storage_(alignCapacity(cap)) {}
 
   RingBuffer() : RingBuffer(0) {}
 
@@ -109,17 +120,6 @@ public:
   }
 
 private:
-  static unsigned int adjustCap(unsigned int cap) {
-    if (cap == 0) {
-      cap = 1;
-    }
-    unsigned int count = 0;
-    for (; cap; count++) {
-      cap = cap >> 1;
-    }
-    return 1 << std::min(count, 31u);
-  }
-
   T *values() { return this->storage_.ptr; }
 
   const T *values() const { return this->storage_.ptr; }

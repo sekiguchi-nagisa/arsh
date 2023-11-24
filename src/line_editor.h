@@ -42,6 +42,10 @@ private:
 
   bool continueLine{false};
 
+  bool useBracketedPaste{true};
+
+  bool useFlowControl{true};
+
   ANSIEscapeSeqMap escapeSeqMap;
 
   termios orgTermios{};
@@ -124,6 +128,10 @@ public:
                           ObjPtr<DSObject> callback);
 
   const auto &getKeyBindings() const { return this->keyBindings; }
+
+  bool setConfig(DSState &state, StringRef name, const DSValue &value);
+
+  DSValue getConfigs(DSState &state) const;
 
   enum class CompStatus {
     OK,
