@@ -172,7 +172,8 @@ bool LineEditorObject::setConfig(DSState &state, StringRef name, const DSValue &
       message += "' config only accept positive number";
       break;
     } else {
-      unsigned int cap = std::min(static_cast<uint64_t>(v), SYS_LIMIT_KILL_RING_MAX);
+      unsigned int cap = static_cast<unsigned int>(
+          std::min(static_cast<uint64_t>(v), static_cast<uint64_t>(SYS_LIMIT_KILL_RING_MAX)));
       this->killRing.expand(cap);
       return true;
     }
