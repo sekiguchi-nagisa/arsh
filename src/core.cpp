@@ -86,7 +86,7 @@ void raiseShellExit(DSState &st, int64_t status) {
   raiseError(st, TYPE::ShellExit_, std::move(str), s);
 }
 
-bool printErrorAt(const DSState &state, int errNum, const char *fmt, ...) {
+bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const char *fmt, ...) {
   // get current frame
   std::string sourceName;
   unsigned int lineNum = 0;
@@ -106,6 +106,10 @@ bool printErrorAt(const DSState &state, int errNum, const char *fmt, ...) {
     out += ref;
     out += ":";
     out += std::to_string(lineNum);
+    out += ": ";
+  }
+  if (!cmdName.empty()) {
+    out += toPrintable(cmdName);
     out += ": ";
   }
 

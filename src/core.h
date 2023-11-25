@@ -74,14 +74,15 @@ void raiseShellExit(DSState &st, int64_t status);
  * print error message with current location (source:lineno)
  * emit newline
  * @param state
+ * @param cmdName
  * @param errNum
  * may be 0
  * @param fmt
  * @param ...
  * @return
  */
-bool printErrorAt(const DSState &state, int errNum, const char *fmt, ...)
-    __attribute__((format(printf, 3, 4)));
+bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const char *fmt, ...)
+    __attribute__((format(printf, 4, 5)));
 
 /**
  * get and set signal handler.

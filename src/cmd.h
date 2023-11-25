@@ -84,10 +84,10 @@ inline int maskExitStatus(int64_t status) {
 } // namespace ydsh
 
 #define ERROR(ctx, obj, fmt, ...)                                                                  \
-  printErrorAt(ctx, 0, "%s: " fmt, obj.getValues()[0].asCStr(), ##__VA_ARGS__)
+  printErrorAt(ctx, obj.getValues()[0].asStrRef(), 0, fmt, ##__VA_ARGS__)
 
 #define PERROR(ctx, obj, fmt, ...)                                                                 \
-  printErrorAt(ctx, errno, "%s: " fmt, obj.getValues()[0].asCStr(), ##__VA_ARGS__)
+  printErrorAt(ctx, obj.getValues()[0].asStrRef(), errno, fmt, ##__VA_ARGS__)
 
 #define CHECK_STDOUT_ERROR(ctx, obj, errNum)                                                       \
   do {                                                                                             \
