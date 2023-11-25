@@ -128,3 +128,43 @@ try {
     $ex = $e
 }
 assert ($ex as ArgumentError).message() == "number of custom actions reaches limit (up to 255)"
+
+# configuration
+## config list
+var configs = $editor.configs()
+assert $configs.size() == 4
+assert $configs['killring-size'] as Int == 15
+assert $configs['bracketed-paste'] as Bool
+assert $configs['flow-control'] as Bool
+assert $configs['color'] as String == ''
+
+## invalid config
+$ex = 34
+try { $editor.config('aaaa', 34); } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "undefined config: \`aaaa'"
+
+$ex = 34
+try { $editor.config('killring-size', '222'); } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "\`killring-size' config require \`Int' type value"
+
+$ex = 34
+try { $editor.config('killring-size', -34); } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "\`killring-size' config only accept positive number"
+
+## change config
+$editor.config('killring-size', 18888888888888)
+$editor.config('bracketed-paste', $false)
+$editor.config('flow-control', $false)
+$editor.config('color', $'comment=\e[31m hoge=\e[31m type=111')
+
+## previous config list is not changed
+assert $configs['killring-size'] as Int == 15
+assert $configs['bracketed-paste'] as Bool
+assert $configs['flow-control'] as Bool
+assert $configs['color'] as String == ''
+
+$configs = $editor.configs()
+assert $configs['killring-size'] as Int == 255
+assert ! ($configs['bracketed-paste'] as Bool)
+assert ! ($configs['flow-control'] as Bool)
+assert $configs['color'] as String == $'comment=\e[31m'

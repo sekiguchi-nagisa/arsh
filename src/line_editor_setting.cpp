@@ -114,7 +114,7 @@ enum class EditConfig : unsigned char {
 };
 
 static const EditConfig *toEditConfig(StringRef name) {
-  static StrRefMap<EditConfig> configs = {
+  static const StrRefMap<EditConfig> configs = {
 #define GEN_ENTRY(E, S, T) {S, EditConfig::E},
       EACH_EDIT_CONFIG(GEN_ENTRY)
 #undef GEN_ENTRY
@@ -136,7 +136,7 @@ static const char *toString(EditConfig config) {
 }
 
 static const DSType &toType(const TypePool &pool, EditConfig config) {
-  TYPE types[] = {
+  const TYPE types[] = {
 #define GEN_TABLE(E, S, T) T,
       EACH_EDIT_CONFIG(GEN_TABLE)
 #undef GEN_TABLE
