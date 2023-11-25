@@ -14,7 +14,7 @@ assert dirs --help| grep 'Display directory stack'
 assert $PIPESTATUS[0] == 2
 
 ## invalid option
-assert dirs -u 2>&1 | grep '^ydsh: dirs: -u: invalid option'
+assert dirs -u 2>&1 | grep ': dirs: -u: invalid option'
 assert dirs -u 2>&1 | grep -E '^dirs: dirs \[-clpv]'
 assert $PIPESTATUS[0] == 2
 
@@ -40,7 +40,7 @@ assert $DIRSTACK.empty()
 let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
 assert cd $tmp_dir && rm -rf $tmp_dir
 assert dirs 2>&1 | 
-    grep '^ydsh: dirs: cannot resolve current working dir: No such file or directory'
+    grep ': dirs: cannot resolve current working dir: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
 ## iteration invalidation

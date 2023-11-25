@@ -37,20 +37,20 @@ int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
   auto workdir = state.getWorkingDir(useLogical);
   if (!workdir) {
-    PERROR(argvObj, ".");
+    PERROR(state, argvObj, ".");
     return 1;
   }
   int errNum = 0;
   if (printf("%s\n", workdir.get()) < 0) {
     errNum = errno;
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
@@ -68,7 +68,7 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -80,7 +80,7 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
     if (dest == "-") {
       const char *v = getenv(ENV_OLDPWD);
       if (v == nullptr) {
-        ERROR(argvObj, "OLDPWD not set");
+        ERROR(state, argvObj, "OLDPWD not set");
         return 1;
       }
       dest = v;
@@ -89,7 +89,7 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
   } else {
     const char *v = getenv(ENV_HOME);
     if (v == nullptr) {
-      ERROR(argvObj, "HOME not set");
+      ERROR(state, argvObj, "HOME not set");
       return 1;
     }
     dest = v;
@@ -104,12 +104,12 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
   }
 
   if (!changeWorkingDir(state.logicalWorkingDir, dest, useLogical)) {
-    PERROR(argvObj, "%s", toPrintable(dest).c_str());
+    PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
     return 1;
   }
 
 END:
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
@@ -212,17 +212,17 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
   auto cwd = state.getWorkingDir();
   if (!cwd) {
-    PERROR(argvObj, "cannot resolve current working dir");
+    PERROR(state, argvObj, "cannot resolve current working dir");
     return 1;
   }
   int errNum = printDirStack(dirStack, cwd.get(), dirOp);
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
@@ -244,7 +244,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
           ref.size() > 1 && isDecimal(ref[1])) {
         break;
       }
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -256,11 +256,11 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     if (dest.startsWith("+") || dest.startsWith("-")) {
       auto pair = convertToDecimal<uint64_t>(dest.begin() + 1, dest.end());
       if (!pair) {
-        ERROR(argvObj, "%s: invalid number", toPrintable(dest).c_str());
+        ERROR(state, argvObj, "%s: invalid number", toPrintable(dest).c_str());
         return 1;
       }
       if (pair.value > dirStack.size()) {
-        ERROR(argvObj, "%s: directory stack index out of range (up to %zu)",
+        ERROR(state, argvObj, "%s: directory stack index out of range (up to %zu)",
               toPrintable(dest).c_str(), dirStack.size());
         return 1;
       }
@@ -275,24 +275,25 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   if (argvObj.getValues()[0].asStrRef() == "pushd") {
     auto cwd = state.getWorkingDir();
     if (!cwd) {
-      PERROR(argvObj, "cannot resolve current working dir");
+      PERROR(state, argvObj, "cannot resolve current working dir");
       return 1;
     }
     if (!rotate) {
       if (optState.index < argvObj.size()) { // if specify DIR, push current and change to DIR
         if (dirStack.size() + 1 > SYS_LIMIT_DIRSTACK_SIZE) {
-          ERROR(argvObj, "directory stack size reaches limit (up to %zu)", SYS_LIMIT_DIRSTACK_SIZE);
+          ERROR(state, argvObj, "directory stack size reaches limit (up to %zu)",
+                SYS_LIMIT_DIRSTACK_SIZE);
           return 1;
         }
       } else { // swap stack top and current
         if (dirStack.size() == 0) {
-          ERROR(argvObj, "no other directory");
+          ERROR(state, argvObj, "no other directory");
           return 1;
         }
         dest = dirStack.getValues().back().asStrRef();
       }
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
-        PERROR(argvObj, "%s", toPrintable(dest).c_str());
+        PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
       if (optState.index == argvObj.size()) {
@@ -302,7 +303,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     } else if (rotateIndex < dirStack.size()) {
       dest = dirStack.getValues()[rotateIndex].asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
-        PERROR(argvObj, "%s", toPrintable(dest).c_str());
+        PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
       const size_t limit = dirStack.size();
@@ -316,7 +317,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     }
   } else { // popd
     if (dirStack.size() == 0) {
-      ERROR(argvObj, "directory stack empty");
+      ERROR(state, argvObj, "directory stack empty");
       return 1;
     }
     if (rotate && rotateIndex < dirStack.size()) {
@@ -324,7 +325,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
     } else {
       dest = dirStack.getValues().back().asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
-        PERROR(argvObj, "%s", toPrintable(dest).c_str());
+        PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
       dirStack.refValues().pop_back();
@@ -333,7 +334,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   auto cwd = state.getWorkingDir();
   assert(cwd);
   int errNum = printDirStack(dirStack, cwd.get(), PrintDirOp{});
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 

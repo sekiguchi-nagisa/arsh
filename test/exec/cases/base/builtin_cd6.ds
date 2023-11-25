@@ -3,4 +3,4 @@ unsetenv HOME
 cd
 assert $? == 1
 
-assert test "$(cd  2>&1)" = $'ydsh: cd: HOME not set'
+assert test "$(cd  2>&1)" = $'builtin_cd6.ds:6: cd: HOME not set'

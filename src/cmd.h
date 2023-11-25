@@ -50,7 +50,7 @@ int showUsage(const ArrayObject &obj);
 
 int showHelp(const ArrayObject &obj);
 
-int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
+int invalidOptionError(const DSState &st, const ArrayObject &obj, const GetOptState &s);
 
 int parseFD(StringRef value);
 
@@ -83,17 +83,17 @@ inline int maskExitStatus(int64_t status) {
 
 } // namespace ydsh
 
-#define PERROR(obj, fmt, ...)                                                                      \
-  fprintf(stderr, "ydsh: %s: " fmt ": %s\n", obj.getValues()[0].asCStr(), ##__VA_ARGS__,           \
-          strerror(errno))
-#define ERROR(obj, fmt, ...)                                                                       \
-  fprintf(stderr, "ydsh: %s: " fmt "\n", obj.getValues()[0].asCStr(), ##__VA_ARGS__)
+#define ERROR(ctx, obj, fmt, ...)                                                                  \
+  printErrorAt(ctx, 0, "%s: " fmt, obj.getValues()[0].asCStr(), ##__VA_ARGS__)
 
-#define CHECK_STDOUT_ERROR(obj, errNum)                                                            \
+#define PERROR(ctx, obj, fmt, ...)                                                                 \
+  printErrorAt(ctx, errno, "%s: " fmt, obj.getValues()[0].asCStr(), ##__VA_ARGS__)
+
+#define CHECK_STDOUT_ERROR(ctx, obj, errNum)                                                       \
   do {                                                                                             \
     errno = (errNum);                                                                              \
     if (errno != 0 || fflush(stdout) == EOF) {                                                     \
-      PERROR(obj, "io error");                                                                     \
+      PERROR(ctx, obj, "io error");                                                                \
       return 1;                                                                                    \
     }                                                                                              \
   } while (false)

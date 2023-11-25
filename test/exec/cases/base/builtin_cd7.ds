@@ -3,4 +3,4 @@ unsetenv OLDPWD
 cd -
 assert $? == 1
 
-assert test "$(cd - 2>&1)" = $'ydsh: cd: OLDPWD not set'
+assert test "$(cd - 2>&1)" = $'builtin_cd7.ds:6: cd: OLDPWD not set'

@@ -3,7 +3,7 @@
 
 ## io error
 if $OSTYPE == 'linux' {
-    assert "$(echo hekllo world 2>&1 > /dev/full)" =~ $/ydsh: echo: io error: .+/
+    assert "$(echo hekllo world 2>&1 > /dev/full)" =~ $/: echo: io error: .+/
 }
 
 echo hello world

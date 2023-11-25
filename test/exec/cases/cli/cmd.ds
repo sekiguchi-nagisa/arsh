@@ -36,7 +36,7 @@ $expect("$(ds -c 'lajfeoifreo' 2>&1)", 127, $msg)
 
 
 # normal
-$expect("$(ds -c '__puts -3' 2>&1)", 2, $'ydsh: __puts: -3: invalid option\n__puts: __puts [-1 arg1] [-2 arg2]')
+$expect("$(ds -c '__puts -3' 2>&1)", 2, $'(string):1: __puts: -3: invalid option\n__puts: __puts [-1 arg1] [-2 arg2]')
 
 $expect("$(ds -c 'echo hello' 2>&1)", 0, 'hello')
 

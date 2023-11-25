@@ -834,14 +834,14 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayO
                            DSValue &&redirConfig) {
   auto &array = *argvObj;
   if (array.size() == 1) {
-    ERROR(array, "require subcommand");
+    ERROR(state, array, "require subcommand");
     pushExitStatus(state, 2);
     return true;
   }
 
   auto subCmd = array.getValues()[1].asStrRef();
   if (subCmd[0] == '_') {
-    ERROR(array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
+    ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 1);
     return true;
   }
@@ -849,7 +849,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayO
   std::string key = toCmdFullName(subCmd);
   auto handle = modType.lookup(state.typePool, key);
   if (!handle) {
-    ERROR(array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
+    ERROR(state, array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 2);
     return true;
   }
@@ -1015,7 +1015,7 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
       pushExitStatus(state, showHelp(arrayObj));
       return true;
     default:
-      int s = invalidOptionError(arrayObj, optState);
+      int s = invalidOptionError(state, arrayObj, optState);
       pushExitStatus(state, s);
       return true;
     }
@@ -1031,7 +1031,7 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
   if (showDesc == 0) { // execute command
     if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
       auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
-      ERROR(arrayObj, "contains null characters: %s", name.c_str());
+      ERROR(state, arrayObj, "contains null characters: %s", name.c_str());
       pushExitStatus(state, 1);
       return true;
     }
@@ -1110,9 +1110,9 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
 
     if (showDesc == 2) {
       if (cmd.kind() == ResolvedCmd::ILLEGAL_UDC) {
-        ERROR(arrayObj, "%s: uninitialized", toPrintable(ref).c_str());
+        ERROR(state, arrayObj, "%s: uninitialized", toPrintable(ref).c_str());
       } else {
-        ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
+        ERROR(state, arrayObj, "%s: not found", toPrintable(ref).c_str());
       }
     }
   }
@@ -1121,7 +1121,7 @@ END:
   int status;
   errno = errNum;
   if (errno != 0 || fflush(stdout) == EOF) {
-    PERROR(arrayObj, "io error");
+    PERROR(state, arrayObj, "io error");
     status = 1;
   } else {
     status = successCount > 0 ? 0 : 1;
@@ -1151,7 +1151,7 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
       pushExitStatus(state, showHelp(argvObj));
       return;
     default:
-      int s = invalidOptionError(argvObj, optState);
+      int s = invalidOptionError(state, argvObj, optState);
       pushExitStatus(state, s);
       return;
     }
@@ -1162,7 +1162,7 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
   if (index < argc) { // exec
     if (argvObj.getValues()[index].asStrRef().hasNullChar()) {
       auto name = toPrintable(argvObj.getValues()[index].asStrRef());
-      ERROR(argvObj, "contains null characters: %s", name.c_str());
+      ERROR(state, argvObj, "contains null characters: %s", name.c_str());
       pushExitStatus(state, 1);
       return;
     }
@@ -1180,7 +1180,7 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
 
     char *envp[] = {nullptr};
     xexecve(filePath, argv2, clearEnv ? envp : nullptr);
-    PERROR(argvObj, "%s", argvObj.getValues()[index].asCStr());
+    PERROR(state, argvObj, "%s", argvObj.getValues()[index].asCStr());
     exit(1);
   }
   pushExitStatus(state, 0);

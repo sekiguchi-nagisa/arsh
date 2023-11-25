@@ -11,7 +11,7 @@ let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
 assert(cd $tmp_dir)
 assert(rm -rf $tmp_dir)
 
-assert pwd 2>&1 | grep '^ydsh: pwd: \.: No such file or directory'
+assert pwd 2>&1 | grep ': pwd: \.: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
 # io error
@@ -21,8 +21,8 @@ if $OSTYPE == 'linux' {
 }
 
 # invalid option
-assert(pwd --- 2>&1 | grep 'ydsh: pwd: ---: invalid option')
-assert(pwd --we 2>&1 | grep 'ydsh: pwd: --we: invalid option')
+assert(pwd --- 2>&1 | grep "${$SCRIPT_NAME.basename()}:24: pwd: ---: invalid option")
+assert(pwd --we 2>&1 | grep "${$SCRIPT_NAME.basename()}:25: pwd: --we: invalid option")
 
 # help
 help pwd | grep "pwd: pwd \[-LP]"

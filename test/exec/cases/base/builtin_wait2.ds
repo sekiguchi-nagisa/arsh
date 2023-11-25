@@ -2,7 +2,7 @@
 ## invalid option
 wait -g
 assert $? == 2
-assert "$(wait -q 2>&1)" == $'ydsh: wait: -q: invalid option\nwait: wait [-n] [id ...]'
+assert "$(wait -q 2>&1)" == "${$SCRIPT_NAME.basename()}:5: " +$'wait: -q: invalid option\nwait: wait [-n] [id ...]'
 
 ## help
 assert help wait | grep '^wait: wait \[-n] \[id ...]'

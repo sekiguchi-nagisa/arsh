@@ -51,6 +51,8 @@
     - if ``toplevel`` attribute param is specified, return toplevel ``ARG0``
     - otherwise, return current ``0`` (normally current user-defined command name)
 - **Breaking Change**: remove ``LineEditor#setColor`` method. use ``LineEditor#config`` instead
+- **Breaking Change**: change error message of builtin commands
+    - now show current source name and line number
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version
 - check io error in builtin ``command``

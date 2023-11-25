@@ -327,9 +327,9 @@ TEST_F(InteractiveTest, wait3) {
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$(wait $j); assert $? == 255", ": [String] = []"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$(fg $j); assert $? == 1", ": [String] = []",
-                                                  "ydsh: fg: no job control in this shell\n"));
+                                                  "(stdin):3: fg: no job control in this shell\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$(bg $j); assert $? == 1", ": [String] = []",
-                                                  "ydsh: bg: no job control in this shell\n"));
+                                                  "(stdin):4: bg: no job control in this shell\n"));
 
   std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.raise($SIGKILL); wait $j", "", err));
@@ -342,11 +342,12 @@ TEST_F(InteractiveTest, wait4) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &!"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs")); // disowned job is not printed
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs $j", "", "ydsh: jobs: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$(jobs $j)", ": [String] = []", "ydsh: jobs: %1: no such job\n"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("wait $j; assert $? == 127", "", "ydsh: wait: %1: no such job\n"));
+      this->sendLineAndExpect("jobs $j", "", "(stdin):3: jobs: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$(jobs $j)", ": [String] = []",
+                                                  "(stdin):4: jobs: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait $j; assert $? == 127", "",
+                                                  "(stdin):5: wait: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); $j.wait()", ": Int = 137"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
@@ -395,11 +396,13 @@ TEST_F(InteractiveTest, bg2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &|", ": Job = %1"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "", "ydsh: fg: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("fg", "", "(stdin):2: fg: current: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &!", ": Job = %2"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "", "ydsh: fg: current: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("fg", "", "(stdin):5: fg: current: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   // disable monitor option
@@ -415,19 +418,19 @@ TEST_F(InteractiveTest, disown1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("disown", "", "ydsh: disown: current: no such job\n"));
+      this->sendLineAndExpect("disown", "", "(stdin):1: disown: current: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j1 = while(true 1){} &"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j2 = while(true 2){} &"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("disown hoge %1", "", "ydsh: disown: hoge: no such job\n"));
+      this->sendLineAndExpect("disown hoge %1", "", "(stdin):4: disown: hoge: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] - Running  while(true 1){}\n"
                                                           "[2] + Running  while(true 2){}"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown %1 %2; assert $? == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("disown %1", "", "ydsh: disown: %1: no such job\n"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("wait $j1; assert $? == 127", "", "ydsh: wait: %1: no such job\n"));
+      this->sendLineAndExpect("disown %1", "", "(stdin):8: disown: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait $j1; assert $? == 127", "",
+                                                  "(stdin):9: wait: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$j1.raise($SIGKILL); $j1.wait()", ": Int = 137"));
   ASSERT_NO_FATAL_FAILURE(
@@ -440,7 +443,7 @@ TEST_F(InteractiveTest, disown2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("disown", "", "ydsh: disown: current: no such job\n"));
+      this->sendLineAndExpect("disown", "", "(stdin):1: disown: current: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j1 = while(true 1){} &"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] + Running  while(true 1){}"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown; assert $? == 0"));

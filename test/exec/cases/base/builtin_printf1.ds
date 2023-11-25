@@ -1,33 +1,33 @@
 # for printf command
 
 ## no format
-assert "$(printf 2>&1)" == "ydsh: printf: need format string
+assert "$(printf 2>&1)" == "${$SCRIPT_NAME.basename()}:4: printf: need format string
 printf: printf [-v var] format [arguments]"
 assert $? == 2
 
-assert "$(printf -v tt 2>&1)" == "ydsh: printf: need format string
+assert "$(printf -v tt 2>&1)" == "${$SCRIPT_NAME.basename()}:8: printf: need format string
 printf: printf [-v var] format [arguments]"
 assert $? == 2
 
 ## invalid option
-assert "$(printf -w 2>&1)" == "ydsh: printf: -w: invalid option
+assert "$(printf -w 2>&1)" == "${$SCRIPT_NAME.basename()}:13: printf: -w: invalid option
 printf: printf [-v var] format [arguments]"
 assert $? == 2
 
 ## -v option no-arg
-assert "$(printf -v 2>&1)" == "ydsh: printf: -v: option requires argument"
+assert "$(printf -v 2>&1)" == "${$SCRIPT_NAME.basename()}:18: printf: -v: option requires argument"
 assert $? == 1
 
 ## -v option invalid name
-assert "$(printf -v '' 2>&1)" == "ydsh: printf: must be valid identifier"
+assert "$(printf -v '' 2>&1)" == "${$SCRIPT_NAME.basename()}:22: printf: must be valid identifier"
 assert $? == 1
 
 ## missing conversion specifier
-assert "$(printf '12%' 2>&1)" == "ydsh: printf: require at-least one directive after %
+assert "$(printf '12%' 2>&1)" == "${$SCRIPT_NAME.basename()}:26: printf: require at-least one directive after %
 12"
 assert $? == 1
 
-assert "$(printf '12%#' 2>&1)" == "ydsh: printf: \`%#': missing conversion specifier
+assert "$(printf '12%#' 2>&1)" == "${$SCRIPT_NAME.basename()}:30: printf: \`%#': missing conversion specifier
 12"
 assert $? == 1
 
@@ -35,16 +35,18 @@ assert $? == 1
 printf -v val '23%y'
 assert $? == 1
 assert ! $reply.get('val')
-assert "$(printf '@@%y' 2>&1)" == "ydsh: printf: \`y': invalid conversion specifier
+assert "$(printf '@@%y' 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:38: printf: \`y': invalid conversion specifier
 @@"
 assert $? == 1
 
-assert "$(printf $'%\x00' 34 2>&1)" == "ydsh: printf: \`\x00': invalid conversion specifier"
+assert "$(printf $'%\x00' 34 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:43: printf: \`\x00': invalid conversion specifier"
 
 ## io error
 if $OSTYPE == 'linux' {
-    assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/ydsh: printf: format failed, .+/
-    assert "$(printf '%9999d' 12 2>&1 > /dev/full)" =~ $/ydsh: printf: format failed, .+/
+    assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
+    assert "$(printf '%9999d' 12 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
 }
 
 ## just print

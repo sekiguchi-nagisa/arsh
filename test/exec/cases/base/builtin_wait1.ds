@@ -17,7 +17,7 @@ assert $? == 78 : "$?"
 var ppid = $PPID
 wait $ppid 423
 assert $? == 127
-assert "$(wait $ppid 423 2>&1)" == "ydsh: wait: $ppid: not a child of this shell"
+assert "$(wait $ppid 423 2>&1)" == "${$SCRIPT_NAME.basename()}:20: wait: $ppid: not a child of this shell"
 
 ## wait disowned
 $j1 = { sleep 1; exit 33; } &!

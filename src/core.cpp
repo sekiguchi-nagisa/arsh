@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdarg>
 
 #include "compiler.h"
 #include "logger.h"
@@ -83,6 +84,47 @@ void raiseShellExit(DSState &st, int64_t status) {
   std::string str = "terminated by exit ";
   str += std::to_string(s);
   raiseError(st, TYPE::ShellExit_, std::move(str), s);
+}
+
+bool printErrorAt(const DSState &state, int errNum, const char *fmt, ...) {
+  // get current frame
+  std::string sourceName;
+  unsigned int lineNum = 0;
+  state.getCallStack().fillStackTrace([&sourceName, &lineNum](StackTraceElement &&f) {
+    sourceName = f.getSourceName();
+    lineNum = f.getLineNum();
+    return false; // get current frame only
+  });
+  std::string out;
+  if (sourceName.empty()) {
+    out += "ydsh: ";
+  } else {
+    StringRef ref = sourceName;
+    if (auto r = ref.lastIndexOf("/"); r != StringRef ::npos) {
+      ref = ref.substr(r + 1);
+    }
+    out += ref;
+    out += ":";
+    out += std::to_string(lineNum);
+    out += ": ";
+  }
+
+  va_list arg;
+  va_start(arg, fmt);
+  char *str = nullptr;
+  if (vasprintf(&str, fmt, arg) == -1) {
+    fatal_perror("");
+  }
+  va_end(arg);
+
+  out += str;
+  free(str);
+  if (errNum) {
+    out += ": ";
+    out += strerror(errNum);
+  }
+  out += "\n";
+  return fwrite(out.c_str(), sizeof(char), out.size(), stderr) == 0;
 }
 
 static bool isUnhandledSignal(int sigNum) {

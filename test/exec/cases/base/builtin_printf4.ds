@@ -3,51 +3,51 @@
 
 ## invalid format
 assert "$(printf -v var '% (T' -2147483648 @@@@@@@@@@@@ 2>&1)" ==
-    "ydsh: printf: \`(' specifier must end with \`)T'"
+    "${$SCRIPT_NAME.basename()}:5: printf: \`(' specifier must end with \`)T'"
 
 ## invalid argument
 assert "$(printf -v var '% ()T' @@@@@@@@@@@@ 2>&1)" ==
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
+    "${$SCRIPT_NAME.basename()}:9: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
 assert "$(printf -v var '% (aaa)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
+    "${$SCRIPT_NAME.basename()}:12: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
 assert "$(printf -v var '%(%&)T' @@@@@@@@@@@@ 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
+    "${$SCRIPT_NAME.basename()}:15: printf: \`@@@@@@@@@@@@': \`(' specifier needs INT64 decimal number"
 
 assert "$(printf -v var '%(%c)T' 999.fa 2>&1)" ==  # always check argument even if no valid time specifier
-    "ydsh: printf: \`999.fa': \`(' specifier needs valid fractional part (0-999999999)"
+    "${$SCRIPT_NAME.basename()}:18: printf: \`999.fa': \`(' specifier needs valid fractional part (0-999999999)"
 
 ## invalid specifier
 assert "$(printf -v var '%(%)T' 2>&1)" == 
-    "ydsh: printf: require at-least one conversion specifier after %"
+    "${$SCRIPT_NAME.basename()}:22: printf: require at-least one conversion specifier after %"
 
 assert "$(printf -v var '%(%@)T' 2>&1)" == 
-    "ydsh: printf: \`@': invalid time conversion specifier"
+    "${$SCRIPT_NAME.basename()}:25: printf: \`@': invalid time conversion specifier"
 
 assert "$(printf -v var $'%(%\x00)T' 2>&1)" == 
-    "ydsh: printf: \`\x00': invalid time conversion specifier"
+    "${$SCRIPT_NAME.basename()}:28: printf: \`\x00': invalid time conversion specifier"
 
 ## invalid specifier (only glibc support)
 for invalid in "P_-0^#" {
     assert "$(printf -v var "%(%${invalid}X)T" 2>&1)" == 
-        "ydsh: printf: \`$invalid': invalid time conversion specifier" : "for invalid \`%$invalid'"
+        "${$SCRIPT_NAME.basename()}:33: printf: \`$invalid': invalid time conversion specifier" : "for invalid \`%$invalid'"
 }
 
 ## invalid E, O specifier
 for i in "12@!B" {
     assert "$(printf -v var "%(%E$i)T" 2>&1)" == 
-        "ydsh: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
+        "${$SCRIPT_NAME.basename()}:39: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
 
     assert "$(printf -v var "%(%O$i)T" 2>&1)" == 
-        "ydsh: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
+        "${$SCRIPT_NAME.basename()}:42: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
 }
 
 assert "$(printf -v var "%(%E)T" 2>&1)" == 
-    "ydsh: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
+    "${$SCRIPT_NAME.basename()}:46: printf: need one of \`c', \`C', \`x', \`X', \`y', \`Y' specifiers after \`E'"
 
 assert "$(printf -v var "%(%O)T" 2>&1)" == 
-    "ydsh: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
+    "${$SCRIPT_NAME.basename()}:49: printf: need one of \`d', \`e', \`H', \`I', \`m', \`M', \`S', \`u', \`U', \`V', \`w', \`W', \`y' specifiers after \`O'"
 
 
 ## no-arg, -1, -2

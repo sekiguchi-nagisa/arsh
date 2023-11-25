@@ -350,7 +350,7 @@ TEST_F(InteractiveTest, pipestatus) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[2] == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("kill -s CONT %1"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg %1", "", "ydsh: fg: %1: no such job\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg %1", "", "(stdin):8: fg: %1: no such job\n"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -478,7 +478,7 @@ TEST_F(InteractiveTest, illegalcmd) {
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("command -v f; assert $? == 1"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("command -V f", "", "ydsh: command: f: uninitialized\n"));
+      this->sendLineAndExpect("command -V f", "", "(stdin):5: command: f: uninitialized\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $MODULE._fullname('f')"));
 
   this->send(CTRL_D);

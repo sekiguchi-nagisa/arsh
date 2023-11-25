@@ -4,16 +4,17 @@ source ../../_module4test/command.ds as m
 assert "$(command -V m)" == 'm is a user-defined command'
 assert $? == 0
 
-assert "$(m 2>&1)" == "ydsh: m: require subcommand"
+assert "$(m 2>&1)" == "${$SCRIPT_NAME.basename()}:7: m: require subcommand"
 assert $? == 2
 
-assert "$(m _huga 2>&1)" == "ydsh: m: cannot resolve private subcommand: _huga"
+assert "$(m _huga 2>&1)" == "${$SCRIPT_NAME.basename()}:10: m: cannot resolve private subcommand: _huga"
 assert $? == 1
 
-assert "$(m huga 2>&1)" == "ydsh: m: undefined subcommand: huga"
+assert "$(m huga 2>&1)" == "${$SCRIPT_NAME.basename()}:13: m: undefined subcommand: huga"
 assert $? == 2
 
-assert "$(m $'call_cmd\x00' 2>&1)" == "ydsh: m: undefined subcommand: call_cmd\x00"
+assert "$(m $'call_cmd\x00' 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:16: m: undefined subcommand: call_cmd\x00"
 assert $? == 2
 
 assert "$(m call_cmd false)" == $'call false'

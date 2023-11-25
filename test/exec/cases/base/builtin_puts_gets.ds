@@ -7,7 +7,7 @@ assert __gets --help | grep '^__gets: __gets'
 assert __gets --help | grep 'Read standard input and write to standard output'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert __gets -s 2>&1 > /dev/null | grep 'ydsh: __gets: -s: invalid option'
+assert __gets -s 2>&1 > /dev/null | grep ': __gets: -s: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # __puts
@@ -18,11 +18,11 @@ assert __puts --help | grep '^__puts: __puts \[-1 arg1] \[-2 arg2]'
 assert __puts --help | grep 'Print specified argument to standard output/error and print new line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert __puts -3 hoge 2>&1 > /dev/null | grep '^ydsh: __puts: -3: invalid option'
+assert __puts -3 hoge 2>&1 > /dev/null | grep ': __puts: -3: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 if $OSTYPE == 'linux' {
-    assert "$(__puts -1 2>&1 hello > /dev/full)" =~ $/ydsh: __puts: io error:/
+    assert "$(__puts -1 2>&1 hello > /dev/full)" =~ $/: __puts: io error:/
     assert $? == 1
 
     assert "$(__puts -2 hello 2> /dev/full)".empty()

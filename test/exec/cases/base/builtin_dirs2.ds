@@ -14,7 +14,7 @@ assert popd --help | grep 'Remove an entry from directory stack and change curre
 assert $PIPESTATUS[0] == 2
 
 ## invalid option
-assert popd -r 2>&1 | grep '^ydsh: popd: -r: invalid option'
+assert popd -r 2>&1 | grep ': popd: -r: invalid option'
 assert popd -r 2>&1 | grep -E '^popd: popd \[\+N | -N]'
 assert $PIPESTATUS[0] == 2
 
@@ -25,36 +25,36 @@ if $OSTYPE == 'linux' {
 }
 
 ## invalid
-assert popd -999999999999999999999 2>&1 | grep '^ydsh: popd: -999999999999999999999: invalid number'
+assert popd -999999999999999999999 2>&1 | grep ': popd: -999999999999999999999: invalid number'
 assert $PIPESTATUS[0] == 1
 
-assert popd +999999999999999999999 2>&1 | grep '^ydsh: popd: +999999999999999999999: invalid number'
+assert popd +999999999999999999999 2>&1 | grep ': popd: +999999999999999999999: invalid number'
 assert $PIPESTATUS[0] == 1
 
-assert popd -10 2>&1 | grep '^ydsh: popd: -10: directory stack index out of range (up to 0)'
+assert popd -10 2>&1 | grep ': popd: -10: directory stack index out of range (up to 0)'
 assert $PIPESTATUS[0] == 1
 
-assert popd +10 2>&1 | grep '^ydsh: popd: +10: directory stack index out of range (up to 0)'
+assert popd +10 2>&1 | grep ': popd: +10: directory stack index out of range (up to 0)'
 assert $PIPESTATUS[0] == 1
 
-assert popd 2>&1 | grep '^ydsh: popd: directory stack empty'
+assert popd 2>&1 | grep ': popd: directory stack empty'
 assert $PIPESTATUS[0] == 1
 
 $DIRSTACK.add("/fjreifreiareafr")
-assert popd 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert popd 2>&1 | grep ': popd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
-assert popd +0 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert popd +0 2>&1 | grep ': popd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
-assert popd -1 2>&1 | grep '^ydsh: popd: /fjreifreiareafr: No such file or directory' 
+assert popd -1 2>&1 | grep ': popd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
 ## iteration invalidation
 $DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))
 var ex = 34 as Any
 try {
-    for a in $DIRSTACK {
+    for _ in $DIRSTACK {
         popd
     }
 } catch e { $ex = $e; }

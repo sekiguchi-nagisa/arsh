@@ -80,7 +80,7 @@ TEST_F(InteractiveTest, ctrlc4) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
 
-  std::string err = format(R"(ydsh: read: 0: %s
+  std::string err = format(R"((stdin):1: read: 0: %s
 [runtime error]
 SystemError: %s
     from (builtin):8 'function _DEF_SIGINT()'

@@ -3,39 +3,41 @@
 # invalid file descriptor
 read -u 89899
 assert $? == 1
-assert "$(read -u 89899 2>&1)" == "ydsh: read: 89899: Bad file descriptor"
+assert "$(read -u 89899 2>&1)" == "${$SCRIPT_NAME.basename()}:6: read: 89899: Bad file descriptor"
 
 read -u 68719476735
 assert $? == 1
-assert "$(read -u 68719476735 2>&1)" == "ydsh: read: 68719476735: invalid file descriptor"
+assert "$(read -u 68719476735 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:10: read: 68719476735: invalid file descriptor"
 
 # invalid timeout specification
 read -t -1
 assert $? == 1
-assert "$(read -t -1 2>&1)" == "ydsh: read: -1: invalid timeout specification"
+assert "$(read -t -1 2>&1)" == "${$SCRIPT_NAME.basename()}:16: read: -1: invalid timeout specification"
 
 read -t 9999999999999999
 assert $? == 1
-assert "$(read -t 9999999999999999 2>&1)" == "ydsh: read: 9999999999999999: invalid timeout specification"
+assert "$(read -t 9999999999999999 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:20: read: 9999999999999999: invalid timeout specification"
 
 # invalid option
 read -q
 assert $? == 2
 assert "$(read -q 2>&1)" ==
 "\
-ydsh: read: -q: invalid option
+${$SCRIPT_NAME.basename()}:26: read: -q: invalid option
 read: read [-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]\
 "
 
 read -p
 assert $? == 2
-assert "$(read -p 2>&1)" == "ydsh: read: -p: option require argument"
+assert "$(read -p 2>&1)" == "${$SCRIPT_NAME.basename()}:34: read: -p: option require argument"
 
 read -:
 assert $? == 2
 assert "$(read -q 2>&1)" ==
 "\
-ydsh: read: -q: invalid option
+${$SCRIPT_NAME.basename()}:38: read: -q: invalid option
 read: read [-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]\
 "
 

@@ -1,5 +1,5 @@
 # invalid option
-assert hash -e 2>&1 | grep '^ydsh: hash: -e: invalid option'
+assert hash -e 2>&1 | grep ': hash: -e: invalid option'
 assert $PIPESTATUS[0] == 2
 
 # help
@@ -29,11 +29,11 @@ assert(hash | grep "ps=")
 # add cache (not found)
 hash hfreiufre
 assert($? == 1)
-assert("$(hash hfreiufre 2>&1)" == "ydsh: hash: hfreiufre: not found")
+assert("$(hash hfreiufre 2>&1)" == "${$SCRIPT_NAME.basename()}:32: hash: hfreiufre: not found")
 
 hash $'ls\x00ww'
 assert($? == 1)
-assert("$(hash $'ls\x00ww' 2>&1)" == "ydsh: hash: ls\x00ww: not found")
+assert("$(hash $'ls\x00ww' 2>&1)" == "${$SCRIPT_NAME.basename()}:36: hash: ls\x00ww: not found")
 
 # remove cache
 hash -r cat ps

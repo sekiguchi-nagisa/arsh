@@ -183,25 +183,25 @@ assert $COMPREPLY[0] == 'echo\\\\\  '
 
 
 ## invalid
-assert "$(complete -A 2>&1)" == "ydsh: complete: -A: option requires argument"
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:186: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
-assert "$(complete -A hgorahe 2>&1)" == "ydsh: complete: hgorahe: invalid action
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:190: complete: hgorahe: invalid action
 complete: complete [-A action] [-m descriptor] [-qs] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
-assert "$(complete -m $MODULE$'\000' 2>&1)" == "ydsh: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:195: complete: ${MODULE}\x00: unrecognized module descriptor"
 assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
-    "ydsh: complete: ${MODULE}3q4324: unrecognized module descriptor"
+    "${$SCRIPT_NAME.basename()}:196: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
-assert "$(complete -m 'TMD(34)' 2>&1)" == "ydsh: complete: TMD(34): unrecognized module descriptor"
-assert "$(complete -m 'TMD(hoge)' 2>&1)" == "ydsh: complete: TMD(hoge): unrecognized module descriptor"
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:200: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:201: complete: TMD(hoge): unrecognized module descriptor"
 
 if $OSTYPE == 'linux' {
-    assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/ydsh: complete: io error:.+/
+    assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/
     assert $? == 1
 }
 

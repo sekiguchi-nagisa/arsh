@@ -105,7 +105,7 @@ $IFS = $'\n'
 # error
 complete '-Q' 2> /dev/null
 assert($? == 2)
-assert complete -Q 2>&1 | grep 'ydsh: complete: -Q: invalid option'
+assert complete -Q 2>&1 | grep ': complete: -Q: invalid option'
 
 
 # empty string

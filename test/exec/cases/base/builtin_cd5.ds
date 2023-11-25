@@ -1,4 +1,4 @@
 cd -z
 assert $? == 2
 
-assert test "$(cd -z 2>&1)" = $'ydsh: cd: -z: invalid option\ncd: cd [-LP] [dir]'
+assert test "$(cd -z 2>&1)" = $'builtin_cd5.ds:4: cd: -z: invalid option\ncd: cd [-LP] [dir]'

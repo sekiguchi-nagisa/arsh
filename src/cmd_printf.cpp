@@ -944,7 +944,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
   return directiveCount == 0 ? end : begin;
 }
 
-int builtin_echo(DSState &, ArrayObject &argvObj) {
+int builtin_echo(DSState &st, ArrayObject &argvObj) {
   bool newline = true;
   bool interpEscape = false;
 
@@ -1027,7 +1027,7 @@ DO_ECHO:
   }
 
 END:
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(st, argvObj, errNum);
   return 0;
 }
 
@@ -1044,21 +1044,21 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     case ':':
-      ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+      ERROR(state, argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
   if (setVar && target.empty()) {
-    ERROR(argvObj, "must be valid identifier"); // FIXME: check var name format?
+    ERROR(state, argvObj, "must be valid identifier"); // FIXME: check var name format?
     return 1;
   }
 
   const unsigned int index = optState.index;
   if (index == argvObj.size()) {
-    ERROR(argvObj, "need format string");
+    ERROR(state, argvObj, "need format string");
     return showUsage(argvObj);
   }
 
@@ -1087,7 +1087,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
       }
 #endif
 
-      ERROR(argvObj, "%s", printer.getError().c_str());
+      ERROR(state, argvObj, "%s", printer.getError().c_str());
       return 1;
     }
   } while (begin != end);
@@ -1101,7 +1101,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     }
   }
   if (fflush(stdout) == EOF) {
-    PERROR(argvObj, "io error");
+    PERROR(state, argvObj, "io error");
     return 1;
   }
   return 0;

@@ -3,16 +3,16 @@
 
 ## error
 
-assert "$(jobs -q 2>&1)" == "ydsh: jobs: -q: invalid option
+assert "$(jobs -q 2>&1)" == "${$SCRIPT_NAME.basename()}:6: jobs: -q: invalid option
 jobs: jobs [-lprs] [jobspec ...]"
 assert $? == 2
 
-assert "$(jobs aaa bbb 2>&1)" == "ydsh: jobs: aaa: no such job
-ydsh: jobs: bbb: no such job"
+assert "$(jobs aaa bbb 2>&1)" == "${$SCRIPT_NAME.basename()}:10: jobs: aaa: no such job
+${$SCRIPT_NAME.basename()}:10: jobs: bbb: no such job"
 assert $? == 1
 
-assert "$(jobs aaa %bbb 2>&1)" == "ydsh: jobs: aaa: no such job
-ydsh: jobs: %bbb: no such job"
+assert "$(jobs aaa %bbb 2>&1)" == "${$SCRIPT_NAME.basename()}:14: jobs: aaa: no such job
+${$SCRIPT_NAME.basename()}:14: jobs: %bbb: no such job"
 assert $? == 1
 
 ## job info format

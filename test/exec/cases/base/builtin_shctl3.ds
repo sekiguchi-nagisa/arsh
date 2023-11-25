@@ -37,6 +37,6 @@ $a = $(cd $SCRIPT_DIR && shctl module ../../_module4test/module4.ds hogehoge $'h
 assert $? == 0
 assert $a.size() == 4
 assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()
-assert $a[1] == 'ydsh: shctl: hogehoge: No such file or directory'
-assert $a[2] == 'ydsh: shctl: contains null characters: hoge\x0034'
+assert $a[1] == "${$SCRIPT_NAME.basename()}:36: shctl: hogehoge: No such file or directory"
+assert $a[2] == "${$SCRIPT_NAME.basename()}:36: shctl: contains null characters: hoge\x0034"
 assert $a[3] == "$SCRIPT_DIR/../../_module4test/module1.ds".realpath()

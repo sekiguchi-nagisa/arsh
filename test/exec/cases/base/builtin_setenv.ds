@@ -2,7 +2,7 @@
 
 # set env
 ## invalid option
-assert setenv -d 2>&1 | grep '^ydsh: setenv: -d: invalid option'
+assert setenv -d 2>&1 | grep ': setenv: -d: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
@@ -22,7 +22,7 @@ assert $PIPESTATUS[0] == 2
 assert setenv > /dev/null
 assert "$(setenv | grep -v '^_=')" == "$(env | grep -v '^_=')"
 if $OSTYPE == 'linux' {
-    assert "$(setenv 2>&1 > /dev/full)" =~ $/ydsh: setenv: io error:.+/
+    assert "$(setenv 2>&1 > /dev/full)" =~ $/: setenv: io error:.+/
     assert $? == 1
 }
 setenv AAA=aaa BBB=bbb
@@ -40,12 +40,12 @@ assert ! checkenv EEE
 assert { importenv EEE; $EEE; }.empty()
 assert ! checkenv DDD
 
-assert "$(setenv CCC 2>&1)" == "ydsh: setenv: CCC: Invalid argument"
-assert "$(setenv =CCC 2>&1)" == "ydsh: setenv: =CCC: Invalid argument"
+assert "$(setenv CCC 2>&1)" == "${$SCRIPT_NAME.basename()}:43: setenv: CCC: Invalid argument"
+assert "$(setenv =CCC 2>&1)" == "${$SCRIPT_NAME.basename()}:44: setenv: =CCC: Invalid argument"
 
 # unset env
 ## invalid option
-assert unsetenv -o 2>&1 | grep '^ydsh: unsetenv: -o: invalid option'
+assert unsetenv -o 2>&1 | grep ': unsetenv: -o: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
@@ -64,7 +64,7 @@ assert $PIPESTATUS[0] == 2
 assert unsetenv
 unsetenv H=
 assert $? == 1
-assert "$(unsetenv =CCC 2>&1)" == "ydsh: unsetenv: =CCC: Invalid argument"
+assert "$(unsetenv =CCC 2>&1)" == "${$SCRIPT_NAME.basename()}:67: unsetenv: =CCC: Invalid argument"
 
 $? = 0
 unsetenv -- $'HOME\x00'

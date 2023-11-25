@@ -77,11 +77,13 @@ assert($? == 2)
 
 test -9223372036854775809 -lt 1
 assert($? == 2)
-assert "$(test -9223372036854775809 -lt 1 2>&1)" == "ydsh: test: -9223372036854775809: must be integer"
+assert "$(test -9223372036854775809 -lt 1 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:80: test: -9223372036854775809: must be integer"
 
 test 1 -eq -9223372036854775809
 assert $? == 2
-assert "$(test 1 -eq -9223372036854775809 2>&1)" == "ydsh: test: -9223372036854775809: must be integer"
+assert "$(test 1 -eq -9223372036854775809 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:85: test: -9223372036854775809: must be integer"
 
 test 23 -eq 23
 assert($? == 0)

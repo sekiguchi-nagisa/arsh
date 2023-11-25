@@ -10,5 +10,5 @@ assert exec --help| grep '^exec: exec \[-c] \[-a name] file \[args ...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # invalid
-assert exec -q 2>&1 | grep '^ydsh: exec: -q: invalid option'
+assert exec -q 2>&1 | grep ': exec: -q: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

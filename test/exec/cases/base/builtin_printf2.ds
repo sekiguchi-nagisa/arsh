@@ -1,16 +1,18 @@
 # for number conversion
 
 ## invalid integer
-assert "$(printf '<>%i' @ 2>&1)" == "ydsh: printf: \`@': \`i' specifier needs valid INT64 (decimal, octal or hex number)
+assert "$(printf '<>%i' @ 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:4: printf: \`@': \`i' specifier needs valid INT64 (decimal, octal or hex number)
 <>" 
 assert $? == 1
 
-assert "$(printf 'ww%o' --12 2>&1)" == "ydsh: printf: \`--12': \`o' specifier needs valid INT64 (decimal, octal or hex number)
+assert "$(printf 'ww%o' --12 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:9: printf: \`--12': \`o' specifier needs valid INT64 (decimal, octal or hex number)
 ww" 
 assert $? == 1
 
 assert "$(printf 'ww%u' 99999999999999999999999999999 2>&1)" == 
-"ydsh: printf: \`99999999999999999999999999999': \`u' specifier needs valid INT64 (decimal, octal or hex number)
+"${$SCRIPT_NAME.basename()}:14: printf: \`99999999999999999999999999999': \`u' specifier needs valid INT64 (decimal, octal or hex number)
 ww" 
 assert $? == 1
 
@@ -21,17 +23,17 @@ assert ! $reply.get("var")
 
 ## invalid float
 assert "$(printf 'ww%f' aaa 2>&1)" == 
-"ydsh: printf: \`aaa': \`f' specifier needs valid float number
+"${$SCRIPT_NAME.basename()}:25: printf: \`aaa': \`f' specifier needs valid float number
 ww" 
 assert $? == 1
 
 assert "$(printf 'qw%G' NAN2222 2>&1)" == 
-"ydsh: printf: \`NAN2222': \`G' specifier needs valid float number
+"${$SCRIPT_NAME.basename()}:30: printf: \`NAN2222': \`G' specifier needs valid float number
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%e' hoge 2>&1)" == 
-"ydsh: printf: \`hoge': \`e' specifier needs valid float number
+"${$SCRIPT_NAME.basename()}:35: printf: \`hoge': \`e' specifier needs valid float number
 qw" 
 assert $? == 1
 
@@ -226,32 +228,32 @@ assert $reply['varq'] == '12345='
 
 ## invalid width/precision
 assert "$(printf 'qw%*d' hoge 12 2>&1)" == 
-"ydsh: printf: \`hoge': invalid number, must be INT32
+"${$SCRIPT_NAME.basename()}:230: printf: \`hoge': invalid number, must be INT32
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%*d' 2147483648 12 2>&1)" == 
-"ydsh: printf: \`2147483648': invalid number, must be INT32
+"${$SCRIPT_NAME.basename()}:235: printf: \`2147483648': invalid number, must be INT32
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%9999999999999999999d' hoge 12 2>&1)" == 
-"ydsh: printf: \`9999999999999999999': invalid number, must be decimal INT32
+"${$SCRIPT_NAME.basename()}:240: printf: \`9999999999999999999': invalid number, must be decimal INT32
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%.*d' hoge 12 2>&1)" == 
-"ydsh: printf: \`hoge': invalid number, must be INT32
+"${$SCRIPT_NAME.basename()}:245: printf: \`hoge': invalid number, must be INT32
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%.*d' 2147483648 12 2>&1)" == 
-"ydsh: printf: \`2147483648': invalid number, must be INT32
+"${$SCRIPT_NAME.basename()}:250: printf: \`2147483648': invalid number, must be INT32
 qw" 
 assert $? == 1
 
 assert "$(printf 'qw%.2147483648d' 12 2>&1)" == 
-"ydsh: printf: \`2147483648': invalid number, must be decimal INT32
+"${$SCRIPT_NAME.basename()}:255: printf: \`2147483648': invalid number, must be decimal INT32
 qw" 
 assert $? == 1
 

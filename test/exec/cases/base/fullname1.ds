@@ -47,7 +47,8 @@ assert "$(call "$ret" say0 456)" == '_say!! 456'
 $ret = $f._fullname('m')!
 assert $ret == $'%mod3\x00m'
 assert "$(command -V "$ret")" =~ $/user-defined/
-assert "$(call "$ret" _say0 456 2>&1)" == 'ydsh: m: cannot resolve private subcommand: _say0'
+assert "$(call "$ret" _say0 456 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:50: m: cannot resolve private subcommand: _say0"
 assert $? == 1
 
 # resolve builtin, external

@@ -1,15 +1,15 @@
 
 assert { fg; $?; } == 1
-assert "$(fg 2>&1)" == 'ydsh: fg: no job control in this shell'
+assert "$(fg 2>&1)" == 'builtin_fg_bg.ds:3: fg: no job control in this shell'
 
 assert { bg; $?; } == 1
-assert "$(bg 2>&1)" == 'ydsh: bg: no job control in this shell'
+assert "$(bg 2>&1)" == 'builtin_fg_bg.ds:6: bg: no job control in this shell'
 
 # invalid option (disabled)
-assert fg -q 2>&1 | grep '^ydsh: fg: no job control in this shell'
+assert fg -q 2>&1 | grep ': fg: no job control in this shell'
 assert $PIPESTATUS[0] == 1 && $PIPESTATUS[1] == 0
 
-assert bg -q 2>&1 | grep '^ydsh: bg: no job control in this shell'
+assert bg -q 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1 && $PIPESTATUS[1] == 0
 
 # help
@@ -19,14 +19,14 @@ assert help bg | grep '^bg: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
 ## disable help if job control is disabled
-assert fg -h 2>&1| grep '^ydsh: fg: no job control in this shell'
+assert fg -h 2>&1| grep ': fg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
-assert fg --help 2>&1| grep '^ydsh: fg: no job control in this shell'
+assert fg --help 2>&1| grep ': fg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
 
-assert bg -h 2>&1 | grep '^ydsh: bg: no job control in this shell'
+assert bg -h 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
-assert bg --help 2>&1 | grep '^ydsh: bg: no job control in this shell'
+assert bg --help 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
 
 ## show help if job control is enabled
@@ -41,10 +41,10 @@ assert exec $YDSH_BIN -c 'shctl set monitor; bg --help' | grep '^bg: bg \[job_sp
 assert $PIPESTATUS[0] == 2
 
 ## show invalid option if job control is enabled
-assert exec $YDSH_BIN -c 'shctl set monitor; fg -q' 2>&1 | grep '^ydsh: fg: -q: invalid option'
+assert exec $YDSH_BIN -c 'shctl set monitor; fg -q' 2>&1 | grep ': fg: -q: invalid option'
 assert $PIPESTATUS[0] == 2
 
-assert exec $YDSH_BIN -c 'shctl set monitor; bg -q' 2>&1 | grep '^ydsh: bg: -q: invalid option'
+assert exec $YDSH_BIN -c 'shctl set monitor; bg -q' 2>&1 | grep ': bg: -q: invalid option'
 assert $PIPESTATUS[0] == 2
 
 true

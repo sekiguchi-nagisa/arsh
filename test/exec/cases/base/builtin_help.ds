@@ -18,7 +18,7 @@ help -s help | grep 'Display helpful information about builtin commands.'
 assert($? != 0)
 
 # invalid option
-assert help --we 2>&1 | grep '^ydsh: help: --we: invalid option'
+assert help --we 2>&1 | grep ': help: --we: invalid option'
 assert help --we 2>&1 | grep 'help: help \[-s] \[pattern ...]'
 assert $PIPESTATUS[0] == 2
 
@@ -26,7 +26,8 @@ assert $PIPESTATUS[0] == 2
 help fheurb
 assert($? == 1)
 
-assert "$(help hoge 2>&1)" == "ydsh: help: no help topics match \`hoge'.  Try \`help help'."
+assert "$(help hoge 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:29: help: no help topics match \`hoge'.  Try \`help help'."
 
 # multiple
 help hugew gkrtp

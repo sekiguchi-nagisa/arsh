@@ -20,9 +20,9 @@
 
 namespace ydsh {
 
-static int printBacktrace(const VMState &state, const ArrayObject &argvObj) {
+static int printBacktrace(const DSState &state, const ArrayObject &argvObj) {
   int errNum = 0;
-  state.fillStackTrace([&errNum](StackTraceElement &&s) {
+  state.getCallStack().fillStackTrace([&errNum](StackTraceElement &&s) {
     if (printf("from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
                s.getCallerName().c_str()) < 0) {
       errNum = errno;
@@ -30,12 +30,12 @@ static int printBacktrace(const VMState &state, const ArrayObject &argvObj) {
     }
     return true;
   });
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
-static int printFuncName(const VMState &state, const ArrayObject &argvObj) {
-  auto *code = state.getFrame().code;
+static int printFuncName(const DSState &state, const ArrayObject &argvObj) {
+  auto *code = state.getCallStack().getFrame().code;
   const char *name = nullptr;
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
     name = cast<CompiledCode>(code)->getName();
@@ -44,7 +44,7 @@ static int printFuncName(const VMState &state, const ArrayObject &argvObj) {
   if (printf("%s\n", name != nullptr ? name : "<toplevel>") < 0) {
     errNum = errno;
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return name != nullptr ? 0 : 1;
 }
 
@@ -120,12 +120,12 @@ static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef 
       set = false;
       sub.removeSuffix(4);
     } else {
-      ERROR(argvObj, "invalid option format: %s", toPrintable(sub).c_str());
+      ERROR(state, argvObj, "invalid option format: %s", toPrintable(sub).c_str());
       return 1;
     }
     const auto option = recognizeRuntimeOption(sub);
     if (empty(option)) {
-      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(sub).c_str());
+      ERROR(state, argvObj, "unrecognized runtime option: %s", toPrintable(sub).c_str());
       return 1;
     }
 
@@ -148,10 +148,10 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
   if (offset == size) {
     if (set) {
       int errNum = showOptions(state);
-      CHECK_STDOUT_ERROR(argvObj, errNum);
+      CHECK_STDOUT_ERROR(state, argvObj, errNum);
       return 0;
     } else {
-      ERROR(argvObj, "`unset' subcommand requires argument");
+      ERROR(state, argvObj, "`unset' subcommand requires argument");
       return 2;
     }
   }
@@ -168,9 +168,9 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
       restore = true;
       break;
     case '?':
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     case ':':
-      ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+      ERROR(state, argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;
     default:
       break;
@@ -198,7 +198,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
     auto name = argvObj.getValues()[i].asStrRef();
     auto option = recognizeRuntimeOption(name);
     if (empty(option)) {
-      ERROR(argvObj, "unrecognized runtime option: %s", toPrintable(name).c_str());
+      ERROR(state, argvObj, "unrecognized runtime option: %s", toPrintable(name).c_str());
       return 1;
     }
     if (option == RuntimeOption::MONITOR && !foundMonitor) {
@@ -225,7 +225,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
         break;
       }
     }
-    CHECK_STDOUT_ERROR(argvObj, errNum);
+    CHECK_STDOUT_ERROR(state, argvObj, errNum);
     return 0;
   }
 
@@ -236,7 +236,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
   for (unsigned int i = offset; i < size; i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
     if (ref.hasNullChar()) {
-      ERROR(argvObj, "contains null characters: %s", toPrintable(ref).c_str());
+      ERROR(state, argvObj, "contains null characters: %s", toPrintable(ref).c_str());
       lastStatus = 1;
       continue;
     }
@@ -256,11 +256,11 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
       auto &e = get<ModLoadingError>(ret);
       assert(e.getErrNo() > 0); // always return valid errno
       errno = e.getErrNo();
-      PERROR(argvObj, "%s", ref.data());
+      PERROR(state, argvObj, "%s", ref.data());
       lastStatus = 1;
     }
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return lastStatus;
 }
 
@@ -321,7 +321,7 @@ static int showInfo(DSState &state, const ArrayObject &argvObj) {
       break;
     }
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
@@ -331,20 +331,20 @@ int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
   if (unsigned int index = optState.index; index < argvObj.size()) {
     auto ref = argvObj.getValues()[index].asStrRef();
     if (ref == "backtrace") {
-      return printBacktrace(state.getCallStack(), argvObj);
+      return printBacktrace(state, argvObj);
     } else if (ref == "is-sourced") {
       return isSourced(state.getCallStack());
     } else if (ref == "is-interactive") {
       return state.isInteractive ? 0 : 1;
     } else if (ref == "function") {
-      return printFuncName(state.getCallStack(), argvObj);
+      return printFuncName(state, argvObj);
     } else if (ref == "set") {
       return setOption(state, argvObj, index + 1, true);
     } else if (ref == "unset") {
@@ -354,7 +354,7 @@ int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     } else if (ref == "info") {
       return showInfo(state, argvObj);
     } else {
-      ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
+      ERROR(state, argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
       return 2;
     }
   }

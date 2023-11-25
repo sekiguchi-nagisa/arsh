@@ -7,7 +7,7 @@ assert($? != 0)
 # invalid option
 checkenv -s 
 assert $? == 2
-assert checkenv -s 2>&1 | grep 'ydsh: checkenv: -s: invalid option'
+assert checkenv -s 2>&1 | grep 'builtin_check_env.ds:10: checkenv: -s: invalid option'
 
 # ignore option
 checkenv -- -s

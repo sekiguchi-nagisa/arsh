@@ -1,6 +1,6 @@
 
 ## invalid option
-assert getenv -d 2>&1 | grep '^ydsh: getenv: -d: invalid option'
+assert getenv -d 2>&1 | grep ': getenv: -d: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
@@ -32,7 +32,8 @@ assert $REPLY == "dummy"
 $REPLY = "dummy"
 getenv $'HOME\x00 12'
 assert $REPLY.empty()
-assert "$(getenv $'HOME\x00 12' 2>&1)" == 'ydsh: getenv: contains null characters: HOME\x00 12'
+assert "$(getenv $'HOME\x00 12' 2>&1)" == 
+    'builtin_getenv.ds:35: getenv: contains null characters: HOME\x00 12'
 assert $? == 1
 
 ## error (not found)

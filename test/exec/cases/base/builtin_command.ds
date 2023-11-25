@@ -39,7 +39,7 @@ assert ($ex as Error).message() == 'execution error: hoge: command not found'
 
 command $'ls\x00A'
 assert $? == 1
-assert "$(command $'ls\x00A' 2>&1)" == 'ydsh: command: contains null characters: ls\x00A'
+assert "$(command $'ls\x00A' 2>&1)" == 'builtin_command.ds:42: command: contains null characters: ls\x00A'
 
 # show command information
 hash -r
@@ -71,16 +71,16 @@ env 2>&1 > /dev/null
 assert("$(command -V env)" == "env is hashed (/usr/bin/env)")          # hashed
 
 assert("$(command -V hfiureaf 2>&1)" ==
-       "ydsh: command: hfiureaf: not found")       # invalid
+       "builtin_command.ds:73: command: hfiureaf: not found")       # invalid
 command -V hfueirf
 assert($? != 0)
 
 assert("$(command -V . 2>&1)" ==
-       "ydsh: command: .: not found")       # invalid
+       "builtin_command.ds:78: command: .: not found")       # invalid
 command -V .
 assert($? != 0)
 
-assert "$(command -V $'ls\x00' 2>&1)" == 'ydsh: command: ls\x00: not found' # invalid
+assert "$(command -V $'ls\x00' 2>&1)" == 'builtin_command.ds:83: command: ls\x00: not found' # invalid
 
 assert(command -V hferure cd hoge fjer)                             # multiple
 command -V hferure fhaueirnv
@@ -105,7 +105,7 @@ if $OSTYPE == 'linux' {
 }
 
 # invalid option
-assert(command -i 2>&1 | grep '^ydsh: command: -i: invalid option$')
+assert(command -i 2>&1 | grep 'command: -i: invalid option$')
 assert(command) # do nothing, but success
 
 # help

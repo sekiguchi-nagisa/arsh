@@ -7,7 +7,7 @@ function assertEQ($e : String, $a : String) {
 # invalid option
 umask -P 2> /dev/null
 assert $? == 2
-$assertEQ("ydsh: umask: -y: invalid option
+$assertEQ("${$SCRIPT_NAME.basename()}:11: umask: -y: invalid option
 umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
 
 if $OSTYPE == 'linux' {
@@ -47,46 +47,55 @@ $assertEQ("$(sh -c 'umask u=wxr,g= && umask -S')", "$(umask -S u=wxr,g=)")
 $? =0
 umask $'777\x00' 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 777\x00: octal number out of range (0000~0777)", "$(umask $'777\x00' 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:51: umask: 777\x00: octal number out of range (0000~0777)", 
+    "$(umask $'777\x00' 2>&1)")
 
 $? = 0
 umask 99999 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 99999: octal number out of range (0000~0777)", "$(umask 99999 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:57: umask: 99999: octal number out of range (0000~0777)", 
+    "$(umask 99999 2>&1)")
 
 $? = 0
 umask 9e9 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 9e9: octal number out of range (0000~0777)", "$(umask 9e9 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:63: umask: 9e9: octal number out of range (0000~0777)", 
+    "$(umask 9e9 2>&1)")
 
 $? = 0
 umask $'r\x00' 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 0x00: invalid symbolic operator", "$(umask $'r\x00' 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:69: umask: 0x00: invalid symbolic operator", 
+    "$(umask $'r\x00' 2>&1)")
 
 $? = 0
 umask r 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: r: invalid symbolic operator", "$(umask r 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:75: umask: r: invalid symbolic operator", 
+    "$(umask r 2>&1)")
 
 $? = 0
 umask o1 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 1: invalid symbolic operator", "$(umask o1 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:81: umask: 1: invalid symbolic operator", 
+    "$(umask o1 2>&1)")
 
 $? = 0
 umask o++ 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: +: invalid symbolic operator", "$(umask o++ 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:87: umask: +: invalid symbolic operator", 
+    "$(umask o++ 2>&1)")
 
 $? = 0
 umask o=r1 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 1: invalid symbolic operator", "$(umask o=r1 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:93: umask: 1: invalid symbolic operator", 
+    "$(umask o=r1 2>&1)")
 
 $? = 0
 umask o=r, 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 0x00: invalid symbolic operator", "$(umask o=r, 2>&1)")
+$assertEQ("${$SCRIPT_NAME.basename()}:99: umask: 0x00: invalid symbolic operator", 
+    "$(umask o=r, 2>&1)")
 
 true

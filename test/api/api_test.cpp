@@ -963,7 +963,7 @@ struct Executor {
       if (this->jobctrl) {
         DSState_setOption(state, DS_OPTION_JOB_CONTROL);
       }
-      int ret = DSState_eval(state, nullptr, this->str.c_str(), this->str.size(), nullptr);
+      int ret = DSState_eval(state, "(string)", this->str.c_str(), this->str.size(), nullptr);
       DSState_delete(&state);
       return ret;
     });
@@ -1124,15 +1124,15 @@ TEST_F(JobTest, jobctrl1) {
   // invalid
   auto result = EXEC("fg");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: current: no such job"));
+      this->expect(result, 1, WaitStatus::EXITED, "", "(string):1: fg: current: no such job"));
 
   result = EXEC("fg %hoge");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %hoge: no such job"));
+      this->expect(result, 1, WaitStatus::EXITED, "", "(string):1: fg: %hoge: no such job"));
 
   result = EXEC("fg %1");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %1: no such job"));
+      this->expect(result, 1, WaitStatus::EXITED, "", "(string):1: fg: %1: no such job"));
 
   const char *str = R"(
         sh -c 'kill -s STOP $$; exit 180'
@@ -1144,7 +1144,7 @@ TEST_F(JobTest, jobctrl1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(result, 1, WaitStatus::EXITED,
                                        "sh -c kill -s STOP $$; exit 180",
                                        "[1] + Stopped  sh -c kill -s STOP $$; exit 180\n"
-                                       "ydsh: fg: %1: no such job"));
+                                       "(string):5: fg: %1: no such job"));
 
   str = R"(
         sh -c 'kill -s STOP $$; exit 18'
@@ -1161,11 +1161,12 @@ TEST_F(JobTest, jobctrl2) {
   // invalid
   auto result = EXEC("bg");
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: bg: current: no such job"));
+      this->expect(result, 1, WaitStatus::EXITED, "", "(string):1: bg: current: no such job"));
 
   result = EXEC("bg hoge %1");
-  ASSERT_NO_FATAL_FAILURE(this->expect(result, 1, WaitStatus::EXITED, "",
-                                       "ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(result, 1, WaitStatus::EXITED, "",
+                   "(string):1: bg: hoge: no such job\n(string):1: bg: %1: no such job"));
 
   const char *str = R"(
 var j = {
@@ -1198,7 +1199,7 @@ true
   result = EXEC(str);
   ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED,
                                        "[1]  {\\n     $SIGSTOP.kill($PID)\\n     exit 99\\n}",
-                                       "ydsh: bg: %2: no such job"));
+                                       "(string):8: bg: %2: no such job"));
 }
 
 int main(int argc, char **argv) {

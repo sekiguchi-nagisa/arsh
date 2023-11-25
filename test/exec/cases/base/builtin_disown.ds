@@ -1,6 +1,6 @@
 
 # invalid option
-assert disown  -g 2>&1 | grep '^ydsh: disown: -g: invalid option'
+assert disown  -g 2>&1 | grep ': disown: -g: invalid option'
 assert disown  -g 2>&1 | grep 'disown: disown \[jobspec ...]'
 assert $PIPESTATUS[0] == 2
 

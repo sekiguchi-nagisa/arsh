@@ -65,12 +65,13 @@ static bool printNumOrName(StringRef str, int &errNum) {
 
 using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
 
-static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
+static ProcOrJob parseProcOrJob(const DSState &state, const ArrayObject &argvObj, StringRef arg,
                                 bool allowNoChild) {
+  auto &jobTable = state.jobTable;
   bool isJob = arg.startsWith("%");
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair) {
-    ERROR(argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
+    ERROR(state, argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
     return {};
   }
   int id = pair.value;
@@ -82,7 +83,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
         return {std::move(job)};
       }
     }
-    ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
+    ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
     return {};
   } else {
     if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
@@ -90,15 +91,15 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
     } else if (allowNoChild) {
       return {id};
     } else {
-      ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
+      ERROR(state, argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
       return {};
     }
   }
 }
 
-static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
+static bool killProcOrJob(const DSState &state, const ArrayObject &argvObj, StringRef arg,
                           int sigNum) {
-  auto target = parseProcOrJob(jobTable, argvObj, arg, true);
+  auto target = parseProcOrJob(state, argvObj, arg, true);
   if (!target.hasValue()) {
     return false;
   }
@@ -106,7 +107,7 @@ static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, 
     pid_t pid =
         is<pid_t>(target) ? get<pid_t>(target) : get<const ProcTable::Entry *>(target)->pid();
     if (kill(pid, sigNum) < 0) {
-      PERROR(argvObj, "%s", toPrintable(arg).c_str());
+      PERROR(state, argvObj, "%s", toPrintable(arg).c_str());
       return false;
     }
   } else if (is<Job>(target)) {
@@ -141,7 +142,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
     }
     sigNum = toSigNum(sigStr);
     if (sigNum == -1) {
-      ERROR(argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
+      ERROR(state, argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
       return 1;
     }
     break;
@@ -149,7 +150,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
   case 'h':
     return showHelp(argvObj);
   case ':':
-    ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+    ERROR(state, argvObj, "-%c: option requires argument", optState.optOpt);
     return 1;
   default:
     break;
@@ -171,7 +172,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
           break;
         }
       }
-      CHECK_STDOUT_ERROR(argvObj, errNum);
+      CHECK_STDOUT_ERROR(state, argvObj, errNum);
       return 0;
     }
     return showUsage(argvObj);
@@ -184,13 +185,13 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
     if (listing) {
       if (!printNumOrName(arg, errNum)) {
         count++;
-        ERROR(argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
+        ERROR(state, argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
       }
       if (errNum != 0) {
         break;
       }
     } else {
-      if (killProcOrJob(state.jobTable, argvObj, arg, sigNum)) {
+      if (killProcOrJob(state, argvObj, arg, sigNum)) {
         count++;
       }
     }
@@ -203,7 +204,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
   if (!listing && count == 0) {
     return 1;
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
 
@@ -223,7 +224,7 @@ static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
 
 int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   if (!state.isJobControl()) {
-    ERROR(argvObj, "no job control in this shell");
+    ERROR(state, argvObj, "no job control in this shell");
     return 1;
   }
 
@@ -232,7 +233,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -260,7 +261,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     job->send(SIGCONT);
     state.jobTable.waitForAny();
   } else {
-    ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
+    ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
     ret = 1;
     if (fg) {
       return ret;
@@ -279,7 +280,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     state.tryToBeForeground();
     if (errNum != 0) {
       errno = errNum;
-      PERROR(argvObj, "wait failed");
+      PERROR(state, argvObj, "wait failed");
     }
     return s;
   }
@@ -292,7 +293,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
       job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
       job->send(SIGCONT);
     } else {
-      ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
+      ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
       ret = 1;
     }
   }
@@ -311,7 +312,7 @@ int builtin_wait(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -329,7 +330,7 @@ int builtin_wait(DSState &state, ArrayObject &argvObj) {
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
     auto ref = argvObj.getValues()[i].asStrRef();
-    auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
+    auto target = parseProcOrJob(state, argvObj, ref, false);
     Job job;
     int offset = -1;
     if (is<Job>(target)) {
@@ -441,7 +442,7 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -459,7 +460,7 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
     auto ref = argvObj.getValues()[i].asStrRef();
     auto job = tryToGetJob(state.jobTable, ref, true);
     if (!job) {
-      ERROR(argvObj, "%s: no such job", toPrintable(ref).c_str());
+      ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
       hasError = true;
       continue;
     }
@@ -474,14 +475,14 @@ int builtin_disown(DSState &state, ArrayObject &argvObj) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
   if (optState.index == argvObj.size()) {
     auto job = state.jobTable.syncAndGetCurPrevJobs().cur;
     if (!job) {
-      ERROR(argvObj, "current: no such job");
+      ERROR(state, argvObj, "current: no such job");
       return 1;
     }
     job->disown();
@@ -491,7 +492,7 @@ int builtin_disown(DSState &state, ArrayObject &argvObj) {
     auto ref = argvObj.getValues()[i].asStrRef();
     auto job = tryToGetJob(state.jobTable, ref, true);
     if (!job) {
-      ERROR(argvObj, "%s: no such job", toPrintable(ref).c_str());
+      ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
       return 1;
     }
     job->disown();

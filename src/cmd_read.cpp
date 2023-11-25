@@ -142,7 +142,7 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
       StringRef value = optState.optArg;
       fd = parseFD(value);
       if (fd < 0) {
-        ERROR(argvObj, "%s: invalid file descriptor", toPrintable(value).c_str());
+        ERROR(state, argvObj, "%s: invalid file descriptor", toPrintable(value).c_str());
         return 1;
       }
       break;
@@ -159,16 +159,17 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
           }
         }
       }
-      ERROR(argvObj, "%s: invalid timeout specification", toPrintable(optState.optArg).c_str());
+      ERROR(state, argvObj, "%s: invalid timeout specification",
+            toPrintable(optState.optArg).c_str());
       return 1;
     }
     case 'h':
       return showHelp(argvObj);
     case ':':
-      ERROR(argvObj, "-%c: option require argument", optState.optOpt);
+      ERROR(state, argvObj, "-%c: option require argument", optState.optOpt);
       return 2;
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -204,7 +205,7 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
 
   // report error
   if (!ret && errno != 0) {
-    PERROR(argvObj, "%d", fd);
+    PERROR(state, argvObj, "%d", fd);
   }
   return ret ? 0 : 1;
 }

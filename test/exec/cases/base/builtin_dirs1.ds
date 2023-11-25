@@ -14,7 +14,7 @@ assert pushd --help | grep -E 'Change the current directory and push the old cur
 assert $PIPESTATUS[0] == 2
 
 ## invalid option
-assert pushd -q 2>&1 | grep '^ydsh: pushd: -q: invalid option'
+assert pushd -q 2>&1 | grep ': pushd: -q: invalid option'
 assert pushd -q 2>&1 | grep -E 'pushd: pushd \[\+N | -N | dir]'
 assert $PIPESTATUS[0] == 2
 
@@ -25,29 +25,29 @@ if $OSTYPE == 'linux' {
 }
 
 ## invalid
-assert pushd 2>&1 | grep '^ydsh: pushd: no other directory$'
+assert pushd 2>&1 | grep '^builtin_dirs1.ds:28: pushd: no other directory$'
 assert $PIPESTATUS[0] == 1
 
-assert pushd -999999999999999999999 2>&1 | grep '^ydsh: pushd: -999999999999999999999: invalid number'
+assert pushd -999999999999999999999 2>&1 | grep ': pushd: -999999999999999999999: invalid number'
 assert $PIPESTATUS[0] == 1
 
-assert pushd +999999999999999999999 2>&1 | grep '^ydsh: pushd: +999999999999999999999: invalid number'
+assert pushd +999999999999999999999 2>&1 | grep ': pushd: +999999999999999999999: invalid number'
 assert $PIPESTATUS[0] == 1
 
-assert pushd -10 2>&1 | grep '^ydsh: pushd: -10: directory stack index out of range (up to 0)'
+assert pushd -10 2>&1 | grep ': pushd: -10: directory stack index out of range (up to 0)'
 assert $PIPESTATUS[0] == 1
 
-assert pushd +10 2>&1 | grep '^ydsh: pushd: +10: directory stack index out of range (up to 0)'
+assert pushd +10 2>&1 | grep ': pushd: +10: directory stack index out of range (up to 0)'
 assert $PIPESTATUS[0] == 1
 
 $DIRSTACK.add("/fjreifreiareafr")
-assert pushd -0 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert pushd -0 2>&1 | grep ': pushd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
-assert pushd +1 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert pushd +1 2>&1 | grep ': pushd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
-assert pushd 2>&1 | grep '^ydsh: pushd: /fjreifreiareafr: No such file or directory' 
+assert pushd 2>&1 | grep '^builtin_dirs1.ds:50: pushd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
 ## truncate DIRSTACK
@@ -60,7 +60,8 @@ assert pushd +0
 assert $DIRSTACK.size() == 255
 
 ## limit
-assert "$(pushd 2>&1 /home)" == "ydsh: pushd: directory stack size reaches limit (up to 255)"
+assert "$(pushd 2>&1 /home)" == 
+    "${$SCRIPT_NAME.basename()}:63: pushd: directory stack size reaches limit (up to 255)"
 
 ## iteration invalidation
 $DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))
@@ -77,7 +78,7 @@ $DIRSTACK.clear()
 let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
 assert cd $tmp_dir && rm -rf $tmp_dir
 assert pushd / 2>&1 | 
-    grep '^ydsh: pushd: cannot resolve current working dir: No such file or directory'
+    grep 'pushd: cannot resolve current working dir: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
 true

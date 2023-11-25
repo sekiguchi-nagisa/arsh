@@ -157,12 +157,13 @@ int showHelp(const ArrayObject &obj) {
   return 2;
 }
 
-int invalidOptionError(const ArrayObject &obj, const GetOptState &s) {
+int invalidOptionError(const DSState &st, const ArrayObject &obj, const GetOptState &s) {
+  char buf[] = {'-', static_cast<char>(s.optOpt)};
+  StringRef opt(buf, std::size(buf));
   if (s.foundLongOption) {
-    ERROR(obj, "%s: invalid option", toPrintable(s.nextChar).c_str());
-  } else {
-    ERROR(obj, "-%c: invalid option", s.optOpt);
+    opt = s.nextChar;
   }
+  ERROR(st, obj, "%s: invalid option", toPrintable(opt).c_str());
   return showUsage(obj);
 }
 
@@ -174,7 +175,7 @@ static void printAllUsage(FILE *fp) {
   }
 }
 
-static int builtin_help(DSState &, ArrayObject &argvObj) {
+static int builtin_help(DSState &st, ArrayObject &argvObj) {
   GetOptState optState("sh");
   bool shortHelp = false;
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -185,7 +186,7 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
@@ -203,20 +204,20 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
     }
   }
   if (count == 0) {
-    ERROR(argvObj, "no help topics match `%s'.  Try `help help'.",
+    ERROR(st, argvObj, "no help topics match `%s'.  Try `help help'.",
           argvObj.getValues()[size - 1].asCStr());
     return 1;
   }
   return 0;
 }
 
-static int builtin_check_env(DSState &, ArrayObject &argvObj) {
+static int builtin_check_env(DSState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
   unsigned int index = optState.index;
@@ -237,8 +238,8 @@ static int builtin_check_env(DSState &, ArrayObject &argvObj) {
   return 0;
 }
 
-static int builtin_eval(DSState &, ArrayObject &argvObj) {
-  ERROR(argvObj, "currently does not support eval command");
+static int builtin_eval(DSState &st, ArrayObject &argvObj) {
+  ERROR(st, argvObj, "currently does not support eval command");
   return 1;
 }
 
@@ -281,13 +282,13 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
 /**
  * for stdin redirection test
  */
-static int builtin_gets(DSState &, ArrayObject &argvObj) {
+static int builtin_gets(DSState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
@@ -318,7 +319,7 @@ static int writeLine(StringRef ref, FILE *fp, bool flush) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin_puts(DSState &, ArrayObject &argvObj) {
+static int builtin_puts(DSState &st, ArrayObject &argvObj) {
   int errNum = 0;
   GetOptState optState("1:2:h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -338,12 +339,12 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
 END:
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(st, argvObj, errNum);
   return 0;
 }
 
@@ -550,7 +551,7 @@ static int testFile(char op, const char *value) {
   return result ? 0 : 1;
 }
 
-static int builtin_test(DSState &, ArrayObject &argvObj) {
+static int builtin_test(DSState &st, ArrayObject &argvObj) {
   bool result = false;
   unsigned int argc = argvObj.getValues().size();
   const unsigned int argSize = argc - 1;
@@ -568,7 +569,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     auto op = argvObj.getValues()[1].asStrRef();
     auto ref = argvObj.getValues()[2].asStrRef();
     if (op.size() != 2 || op[0] != '-') {
-      ERROR(argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
+      ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
       return 2;
     }
 
@@ -579,12 +580,12 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
       result = !ref.empty();
     } else {
       if (ref.hasNullChar()) {
-        ERROR(argvObj, "file path contains null characters");
+        ERROR(st, argvObj, "file path contains null characters");
         return 2;
       }
       int r = testFile(opKind, ref.data());
       if (r == 2) {
-        ERROR(argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
+        ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
       }
       return r;
     }
@@ -606,14 +607,14 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
         int64_t n1 = pair.value;
         if (!pair) {
-          ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
+          ERROR(st, argvObj, "%s: must be integer", toPrintable(left).c_str());
           return 2;
         }
 
         pair = convertToDecimal<int64_t>(right.begin(), right.end());
         int64_t n2 = pair.value;
         if (!pair) {
-          ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
+          ERROR(st, argvObj, "%s: must be integer", toPrintable(right).c_str());
           return 2;
         }
 
@@ -626,13 +627,13 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
       }
 #undef GEN_CASE
     case BinaryOp::INVALID:
-      ERROR(argvObj, "%s: invalid binary operator", toPrintable(op).c_str()); // FIXME:
+      ERROR(st, argvObj, "%s: invalid binary operator", toPrintable(op).c_str()); // FIXME:
       return 2;
     }
     break;
   }
   default: {
-    ERROR(argvObj, "too many arguments");
+    ERROR(st, argvObj, "too many arguments");
     return 2;
   }
   }
@@ -659,7 +660,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -674,7 +675,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
         state.pathCache.removePath(hasNul ? nullptr : name);
       } else {
         if (hasNul || state.pathCache.searchPath(name) == nullptr) {
-          ERROR(argvObj, "%s: not found", toPrintable(ref).c_str());
+          ERROR(state, argvObj, "%s: not found", toPrintable(ref).c_str());
           return 1;
         }
       }
@@ -692,7 +693,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
       }
 
     END:
-      CHECK_STDOUT_ERROR(argvObj, errNum);
+      CHECK_STDOUT_ERROR(state, argvObj, errNum);
     }
   }
   return 0;
@@ -737,7 +738,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     case 'A': {
       auto iter = actionMap.find(optState.optArg);
       if (iter == actionMap.end()) {
-        ERROR(argvObj, "%s: invalid action", toPrintable(optState.optArg).c_str());
+        ERROR(state, argvObj, "%s: invalid action", toPrintable(optState.optArg).c_str());
         return showUsage(argvObj);
       }
       setFlag(compOp, iter->second);
@@ -755,10 +756,10 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     case ':':
-      ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+      ERROR(state, argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -769,7 +770,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 
   if (doCodeCompletion(state, moduleDesc, line, insertSpace, compOp) < 0) {
     if (errno == EINVAL) {
-      ERROR(argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
+      ERROR(state, argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
     }
     return 1;
   }
@@ -782,7 +783,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         break;
       }
     }
-    CHECK_STDOUT_ERROR(argvObj, errNum);
+    CHECK_STDOUT_ERROR(state, argvObj, errNum);
   }
   return 0;
 }
@@ -793,7 +794,7 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -805,7 +806,7 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
   state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
   auto envName = argvObj.getValues()[index].asStrRef();
   if (envName.hasNullChar()) {
-    ERROR(argvObj, "contains null characters: %s", toPrintable(envName).c_str());
+    ERROR(state, argvObj, "contains null characters: %s", toPrintable(envName).c_str());
     return 1;
   }
   if (const char *env = getenv(envName.data())) {
@@ -818,13 +819,13 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
   }
 }
 
-static int builtin_setenv(DSState &, ArrayObject &argvObj) {
+static int builtin_setenv(DSState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
@@ -839,7 +840,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
         break;
       }
     }
-    CHECK_STDOUT_ERROR(argvObj, errNum);
+    CHECK_STDOUT_ERROR(st, argvObj, errNum);
     return 0;
   }
 
@@ -854,19 +855,19 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
         continue;
       }
     }
-    PERROR(argvObj, "%s", toPrintable(kv).c_str());
+    PERROR(st, argvObj, "%s", toPrintable(kv).c_str());
     return 1;
   }
   return 0;
 }
 
-static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
+static int builtin_unsetenv(DSState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
     } else {
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
@@ -874,7 +875,7 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
   for (unsigned int index = optState.index; index < size; index++) {
     auto envName = argvObj.getValues()[index].asStrRef();
     if (unsetenv(envName.hasNullChar() ? "" : envName.data()) != 0) {
-      PERROR(argvObj, "%s", toPrintable(envName).c_str());
+      PERROR(st, argvObj, "%s", toPrintable(envName).c_str());
       return 1;
     }
   }
@@ -1003,14 +1004,14 @@ struct UlimitOptEntryTable {
   std::array<UlimitOptEntry, std::size(ulimitOps)> entries;
   unsigned int count{0};
 
-  int tryToUpdate(GetOptState &optState, ArrayObject &argvObj, int opt) {
+  int tryToUpdate(const DSState &st, GetOptState &optState, ArrayObject &argvObj, int opt) {
     DSValue arg;
     if (optState.index < argvObj.getValues().size() &&
         *argvObj.getValues()[optState.index].asCStr() != '-') {
       arg = argvObj.getValues()[optState.index++];
     }
     if (!this->update(opt, arg)) {
-      ERROR(argvObj, "%s: invalid number", arg.asCStr());
+      ERROR(st, argvObj, "%s: invalid number", arg.asCStr());
       return 1;
     }
     return 0;
@@ -1036,7 +1037,7 @@ private:
   }
 };
 
-static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
+static int builtin_ulimit(DSState &st, ArrayObject &argvObj) {
   flag8_set_t limOpt = 0;
   bool showAll = false;
 
@@ -1064,9 +1065,9 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     case '?':
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     default:
-      int ret = table.tryToUpdate(optState, argvObj, opt);
+      int ret = table.tryToUpdate(st, optState, argvObj, opt);
       if (ret) {
         return ret;
       }
@@ -1076,7 +1077,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
 
   // parse remain
   if (table.count == 0) {
-    int ret = table.tryToUpdate(optState, argvObj, 'f');
+    int ret = table.tryToUpdate(st, optState, argvObj, 'f');
     if (ret) {
       return ret;
     }
@@ -1095,7 +1096,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
         break;
       }
     }
-    CHECK_STDOUT_ERROR(argvObj, errNum);
+    CHECK_STDOUT_ERROR(st, argvObj, errNum);
     return 0;
   }
 
@@ -1118,7 +1119,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
         limit.rlim_max = value;
       }
       if (setrlimit(op.resource, &limit) < 0) {
-        PERROR(argvObj, "%s: cannot change limit", op.name);
+        PERROR(st, argvObj, "%s: cannot change limit", op.name);
         return 1;
       }
     }
@@ -1129,7 +1130,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
       }
     }
   }
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(st, argvObj, errNum);
   return 0;
 }
 
@@ -1298,7 +1299,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
   return ret;
 }
 
-static int builtin_umask(DSState &, ArrayObject &argvObj) {
+static int builtin_umask(DSState &st, ArrayObject &argvObj) {
   auto op = PrintMaskOp::ONLY_PRINT;
 
   GetOptState optState("pSh");
@@ -1313,7 +1314,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     case 'h':
       return showHelp(argvObj);
     default:
-      return invalidOptionError(argvObj, optState);
+      return invalidOptionError(st, argvObj, optState);
     }
   }
 
@@ -1327,7 +1328,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
       auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
       int num = pair.value;
       if (!pair || num < 0 || num > 0777) {
-        ERROR(argvObj, "%s: octal number out of range (0000~0777)", toPrintable(value).c_str());
+        ERROR(st, argvObj, "%s: octal number out of range (0000~0777)", toPrintable(value).c_str());
         return 1;
       }
       mask = num;
@@ -1337,9 +1338,9 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
       if (!ret.success) {
         int ch = static_cast<unsigned char>(ret.invalid);
         if (isascii(ch) && ch != 0) {
-          ERROR(argvObj, "%c: invalid symbolic operator", ch);
+          ERROR(st, argvObj, "%c: invalid symbolic operator", ch);
         } else {
-          ERROR(argvObj, "0x%02x: invalid symbolic operator", ch);
+          ERROR(st, argvObj, "0x%02x: invalid symbolic operator", ch);
         }
         return 1;
       }
@@ -1347,7 +1348,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     umask(mask);
   }
   const int errNum = printMask(mask, op);
-  CHECK_STDOUT_ERROR(argvObj, errNum);
+  CHECK_STDOUT_ERROR(st, argvObj, errNum);
   return 0;
 }
 

@@ -1,12 +1,12 @@
 #$test($ignored = 'cygwin|msys')
 
 # invalid option
-assert "$(ulimit -f hgoe 2>&1)" == "ydsh: ulimit: hgoe: invalid number"
+assert "$(ulimit -f hgoe 2>&1)" == "${$SCRIPT_NAME.basename()}:4: ulimit: hgoe: invalid number"
 ulimit -f hgoe
 assert $? == 1
 
 var expect =
-"ydsh: ulimit: -X: invalid option
+"${$SCRIPT_NAME.basename()}:12: ulimit: -X: invalid option
 $(help -s ulimit)"
 
 assert "$(ulimit -X 2>&1)" == $expect
@@ -50,9 +50,10 @@ assert "$(ulimit -S -f -f 5000)" == '5000'
 assert "$(ulimit -S -f -f unLimiTed)" == "unlimited"
 assert "$(ulimit -S -f HarD -f)" == "$(ulimit -f -H)"
 assert "$(ulimit -S -f sOft -f)" == "$(ulimit -f -S)"
-assert "$(ulimit -S -f $'HarD\x00' -f 2>&1)" == "ydsh: ulimit: HarD: invalid number"
+assert "$(ulimit -S -f $'HarD\x00' -f 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:53: ulimit: HarD: invalid number"
 assert {ulimit -S -f $'HarD\x00' -f; $?} == 1
-assert "$(ulimit $'HarD\x00' 2>&1)" == "ydsh: ulimit: HarD: invalid number"
+assert "$(ulimit $'HarD\x00' 2>&1)" == "${$SCRIPT_NAME.basename()}:56: ulimit: HarD: invalid number"
 assert {ulimit $'HarD\x00'; $?} == 1
 
 assert ulimit -S -f 5000
@@ -61,6 +62,6 @@ assert "$(ulimit -H)" == "6000"
 assert !ulimit -S 7000
 assert $? == 1
 assert "$(ulimit -S 7000 2>&1)" ==
-       "ydsh: ulimit: file size (blocks): cannot change limit: Invalid argument"
+       "${$SCRIPT_NAME.basename()}:64: ulimit: file size (blocks): cannot change limit: Invalid argument"
 
 true

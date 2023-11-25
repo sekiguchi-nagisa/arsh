@@ -7,21 +7,21 @@ assert "$(kill 2>&1)" == "$(help -s kill 2>&1)"
 assert { kill; $?; } == 2
 
 ## invalid sig
-assert "$(kill -1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
+assert "$(kill -1234 2>&1)" == "${$SCRIPT_NAME.basename()}:10: kill: 1234: invalid signal specification"
 assert {kill -1234; $? } == 1
 
-assert "$(kill -s 1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
+assert "$(kill -s 1234 2>&1)" == "${$SCRIPT_NAME.basename()}:13: kill: 1234: invalid signal specification"
 assert {kill -s 1234; $? } == 1
 
 assert "$(kill -s 99999999999999999999999999999 2>&1)" == 
-       "ydsh: kill: 99999999999999999999999999999: invalid signal specification"
+       "${$SCRIPT_NAME.basename()}:16: kill: 99999999999999999999999999999: invalid signal specification"
 assert {kill -s 99999999999999999999999999999; $? } == 1
 
-assert "$(kill -: 2>&1)" == "ydsh: kill: :: invalid signal specification"
+assert "$(kill -: 2>&1)" == "${$SCRIPT_NAME.basename()}:20: kill: :: invalid signal specification"
 assert {kill -: ; $? } == 1
 
 ## '-s' has no arg
-assert "$(kill -s 2>&1)" == "ydsh: kill: -s: option requires argument"
+assert "$(kill -s 2>&1)" == "${$SCRIPT_NAME.basename()}:24: kill: -s: option requires argument"
 assert {kill -s; $?; } == 1
 
 ## '-s' require pids
@@ -49,10 +49,11 @@ if $OSTYPE == 'linux' {
 }
 
 # list specified signal
-assert "$(kill -l hoge 999 2>&1)" == $'ydsh: kill: hoge: invalid signal specification\nydsh: kill: 999: invalid signal specification'
+assert "$(kill -l hoge 999 2>&1)" == 
+        $'builtin_kill.ds:52: kill: hoge: invalid signal specification\nbuiltin_kill.ds:52: kill: 999: invalid signal specification'
 assert {kill -l hoge 999; $?; } == 1
 
-assert "$(kill -l hup hoge 2>&1)" == $'1\nydsh: kill: hoge: invalid signal specification'
+assert "$(kill -l hup hoge 2>&1)" == $'1\nbuiltin_kill.ds:56: kill: hoge: invalid signal specification'
 assert { kill -l hup hoge; $?; } == 1
 
 assert "$(kill -l 1 hup)" == $'HUP\n1'
@@ -62,11 +63,11 @@ assert "$(kill -l 9)" == 'KILL'
 assert "$(kill -l 00009)" == 'KILL'
 
 assert "$(kill -l 9999999999999999999999999999999 2>&1)" == 
-       "ydsh: kill: 9999999999999999999999999999999: invalid signal specification"
+       "${$SCRIPT_NAME.basename()}:65: kill: 9999999999999999999999999999999: invalid signal specification"
 assert {kill -l 9999999999999999999999999999999; $?} == 1
 
 assert "$(kill -l 9 hoge 1 2>&1)" == "KILL
-ydsh: kill: hoge: invalid signal specification
+${$SCRIPT_NAME.basename()}:69: kill: hoge: invalid signal specification
 HUP"
 assert {kill -l 9 hoge 1; $?} == 1
 
@@ -82,7 +83,7 @@ if $OSTYPE == 'linux' {
 
 
 # kill specified proc
-assert "$(kill hoge 2>&1)" == "ydsh: kill: hoge: arguments must be pid or job id"
+assert "$(kill hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:86: kill: hoge: arguments must be pid or job id"
 assert { kill hoge; $?; } == 1
 
 var j = for(;;) { true; } &
@@ -95,7 +96,7 @@ $j = for(;;) { true; } &
 kill -9 ${$j.pid(0)!}
 assert $? == 0
 assert $j.wait() == 128 + $SIGKILL.value()
-assert "$(kill -9 999999999 2>&1)" == "ydsh: kill: 999999999: No such process"
+assert "$(kill -9 999999999 2>&1)" == "${$SCRIPT_NAME.basename()}:99: kill: 999999999: No such process"
 assert { kill -9 999999999; $?; } == 1
 
 $j = for(;;) { true; } &
@@ -103,10 +104,10 @@ assert { kill -9 999999999 ${$j.pid(0)!}; $?; } == 0
 assert $j.wait() == 128 + $SIGKILL.value()
 
 # kill specified job
-assert "$(kill %-456 2>&1)" == 'ydsh: kill: %-456: no such job'
+assert "$(kill %-456 2>&1)" == "${$SCRIPT_NAME.basename()}:107: kill: %-456: no such job"
 assert { kill %-234; $?; } == 1
 
-assert "$(kill %hoge 2>&1)" == 'ydsh: kill: %hoge: arguments must be pid or job id'
+assert "$(kill %hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:110: kill: %hoge: arguments must be pid or job id"
 assert { kill %hoge; $?; } == 1
 
 $j = for(;;) { true; } &
