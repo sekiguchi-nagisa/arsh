@@ -1027,8 +1027,7 @@ DO_ECHO:
   }
 
 END:
-  errno = errNum; // explicitly set errno (some function set errno despite success)
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 

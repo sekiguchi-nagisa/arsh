@@ -22,14 +22,6 @@
 
 namespace ydsh {
 
-#define TRY(E)                                                                                     \
-  do {                                                                                             \
-    errno = 0;                                                                                     \
-    if (!(E)) {                                                                                    \
-      goto END;                                                                                    \
-    }                                                                                              \
-  } while (false)
-
 int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   bool useLogical = true;
 
@@ -54,10 +46,11 @@ int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     PERROR(argvObj, ".");
     return 1;
   }
-  TRY(printf("%s\n", workdir.get()) > -1);
-
-END:
-  CHECK_STDOUT_ERROR(argvObj);
+  int errNum = 0;
+  if (printf("%s\n", workdir.get()) < 0) {
+    errNum = errno;
+  }
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -102,8 +95,12 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
     dest = v;
   }
 
+  int errNum = 0;
   if (useOldpwd) {
-    TRY(printf("%s\n", toPrintable(dest).c_str()) > -1);
+    if (printf("%s\n", toPrintable(dest).c_str()) < 0) {
+      errNum = errno;
+      goto END;
+    }
   }
 
   if (!changeWorkingDir(state.logicalWorkingDir, dest, useLogical)) {
@@ -112,7 +109,7 @@ int builtin_cd(DSState &state, ArrayObject &argvObj) {
   }
 
 END:
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -224,8 +221,8 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
     PERROR(argvObj, "cannot resolve current working dir");
     return 1;
   }
-  errno = printDirStack(dirStack, cwd.get(), dirOp);
-  CHECK_STDOUT_ERROR(argvObj);
+  int errNum = printDirStack(dirStack, cwd.get(), dirOp);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -335,8 +332,8 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   }
   auto cwd = state.getWorkingDir();
   assert(cwd);
-  errno = printDirStack(dirStack, cwd.get(), PrintDirOp{});
-  CHECK_STDOUT_ERROR(argvObj);
+  int errNum = printDirStack(dirStack, cwd.get(), PrintDirOp{});
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 

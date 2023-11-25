@@ -30,8 +30,7 @@ static int printBacktrace(const VMState &state, const ArrayObject &argvObj) {
     }
     return true;
   });
-  errno = errNum;
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -41,9 +40,11 @@ static int printFuncName(const VMState &state, const ArrayObject &argvObj) {
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
     name = cast<CompiledCode>(code)->getName();
   }
-  errno = 0;
-  printf("%s\n", name != nullptr ? name : "<toplevel>");
-  CHECK_STDOUT_ERROR(argvObj);
+  int errNum = 0;
+  if (printf("%s\n", name != nullptr ? name : "<toplevel>") < 0) {
+    errNum = errno;
+  }
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return name != nullptr ? 0 : 1;
 }
 
@@ -146,8 +147,8 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
   const unsigned int size = argvObj.size();
   if (offset == size) {
     if (set) {
-      errno = showOptions(state);
-      CHECK_STDOUT_ERROR(argvObj);
+      int errNum = showOptions(state);
+      CHECK_STDOUT_ERROR(argvObj, errNum);
       return 0;
     } else {
       ERROR(argvObj, "`unset' subcommand requires argument");
@@ -224,8 +225,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
         break;
       }
     }
-    errno = errNum;
-    CHECK_STDOUT_ERROR(argvObj);
+    CHECK_STDOUT_ERROR(argvObj, errNum);
     return 0;
   }
 
@@ -260,8 +260,7 @@ static int showModule(const DSState &state, const ArrayObject &argvObj, const un
       lastStatus = 1;
     }
   }
-  errno = errNum;
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return lastStatus;
 }
 
@@ -322,8 +321,7 @@ static int showInfo(DSState &state, const ArrayObject &argvObj) {
       break;
     }
   }
-  errno = errNum;
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 

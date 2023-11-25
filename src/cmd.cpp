@@ -343,8 +343,7 @@ static int builtin_puts(DSState &, ArrayObject &argvObj) {
   }
 
 END:
-  errno = errNum;
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -643,6 +642,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (!(E)) {                                                                                    \
+      errNum = errno;                                                                              \
       goto END;                                                                                    \
     }                                                                                              \
   } while (false)
@@ -683,7 +683,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     if (remove) { // remove all cache
       state.pathCache.clear();
     } else { // show all cache
-      errno = 0;
+      int errNum = 0;
       if (state.pathCache.begin() == state.pathCache.end()) {
         TRY(printf("hash: file path cache is empty\n") > -1);
       }
@@ -692,7 +692,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
       }
 
     END:
-      CHECK_STDOUT_ERROR(argvObj);
+      CHECK_STDOUT_ERROR(argvObj, errNum);
     }
   }
   return 0;
@@ -782,8 +782,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         break;
       }
     }
-    errno = errNum;
-    CHECK_STDOUT_ERROR(argvObj);
+    CHECK_STDOUT_ERROR(argvObj, errNum);
   }
   return 0;
 }
@@ -840,8 +839,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
         break;
       }
     }
-    errno = errNum;
-    CHECK_STDOUT_ERROR(argvObj);
+    CHECK_STDOUT_ERROR(argvObj, errNum);
     return 0;
   }
 
@@ -1090,12 +1088,14 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
 
   if (showAll) {
     unsigned int maxDescLen = computeMaxNameLen();
+    int errNum = 0;
     for (auto &e : ulimitOps) {
       if (!e.print(limOpt, maxDescLen)) {
+        errNum = errno;
         break;
       }
     }
-    CHECK_STDOUT_ERROR(argvObj);
+    CHECK_STDOUT_ERROR(argvObj, errNum);
     return 0;
   }
 
@@ -1104,6 +1104,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
   if (table.printSet > 0 && (table.printSet & (table.printSet - 1)) != 0) {
     maxNameLen = computeMaxNameLen();
   }
+  int errNum = 0;
   for (unsigned int index = 0; index < static_cast<unsigned int>(table.entries.size()); index++) {
     if (table.entries[index]) {
       const auto &op = ulimitOps[index];
@@ -1121,14 +1122,14 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
         return 1;
       }
     }
-    errno = 0;
     if (hasFlag(table.printSet, static_cast<uint64_t>(1) << index)) {
       if (!ulimitOps[index].print(limOpt, maxNameLen)) {
+        errNum = errno;
         break;
       }
     }
   }
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
@@ -1345,8 +1346,8 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
     }
     umask(mask);
   }
-  errno = printMask(mask, op);
-  CHECK_STDOUT_ERROR(argvObj);
+  const int errNum = printMask(mask, op);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 

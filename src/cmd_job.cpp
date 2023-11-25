@@ -171,8 +171,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
           break;
         }
       }
-      errno = errNum;
-      CHECK_STDOUT_ERROR(argvObj);
+      CHECK_STDOUT_ERROR(argvObj, errNum);
       return 0;
     }
     return showUsage(argvObj);
@@ -204,8 +203,7 @@ int builtin_kill(DSState &state, ArrayObject &argvObj) {
   if (!listing && count == 0) {
     return 1;
   }
-  errno = errNum;
-  CHECK_STDOUT_ERROR(argvObj);
+  CHECK_STDOUT_ERROR(argvObj, errNum);
   return 0;
 }
 
