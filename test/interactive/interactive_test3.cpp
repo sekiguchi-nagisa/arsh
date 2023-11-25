@@ -378,6 +378,10 @@ TEST_F(InteractiveTest, bg1) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read", err.c_str()));
 
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read | __gets &", ": Job = %1"));
+
+    err = "(stdin):3: read: 0: ";
+    err += strerror(EINTR);
+    err += "\n";
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read | __gets", err.c_str()));
   }
 
