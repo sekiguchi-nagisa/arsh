@@ -1046,6 +1046,7 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
 
   // show command description
   unsigned int successCount = 0;
+  int errNum = 0;
   for (; index < argc; index++) {
     const auto &cmdName = arrayObj.getValues()[index];
     const auto ref = cmdName.asStrRef();
@@ -1055,9 +1056,9 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
     case ResolvedCmd::USER_DEFINED:
     case ResolvedCmd::MODULE: {
       successCount++;
-      errno = 0;
       if (printf("%s%s\n", toPrintable(ref).c_str(),
                  showDesc == 2 ? " is a user-defined command" : "") < 0) {
+        errNum = errno;
         goto END;
       }
       continue;
@@ -1065,17 +1066,17 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
     case ResolvedCmd::BUILTIN_S:
     case ResolvedCmd::BUILTIN: {
       successCount++;
-      errno = 0;
       if (printf("%s%s\n", ref.data(), showDesc == 2 ? " is a shell builtin command" : "") < 0) {
+        errNum = errno;
         goto END;
       }
       continue;
     }
     case ResolvedCmd::CMD_OBJ: {
       successCount++;
-      errno = 0;
       if (printf("%s%s\n", toPrintable(ref).c_str(),
                  showDesc == 2 ? " is a dynamic registered command" : "") < 0) {
+        errNum = errno;
         goto END;
       }
       continue;
@@ -1084,7 +1085,6 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
       const char *path = cmd.filePath();
       if (path != nullptr && isExecutable(path)) {
         successCount++;
-        errno = 0;
         const char *commandName = ref.data();
         int r;
         if (showDesc == 1) {
@@ -1095,6 +1095,7 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
           r = printf("%s is %s\n", commandName, path);
         }
         if (r < 0) {
+          errNum = errno;
           goto END;
         }
         continue;
@@ -1114,11 +1115,11 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
         ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
       }
     }
-    errno = 0; // always ignore error
   }
 
 END:
   int status;
+  errno = errNum;
   if (errno != 0 || fflush(stdout) == EOF) {
     PERROR(arrayObj, "io error");
     status = 1;
