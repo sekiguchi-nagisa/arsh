@@ -372,7 +372,7 @@ TEST_F(InteractiveTest, bg1) {
     ASSERT_NO_FATAL_FAILURE(this->expect("false\n" + PROMPT));
   } else if (platform::platform() == platform::PlatformType::DARWIN) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("read &", ": Job = %1"));
-    std::string err = "ydsh: read: 0: ";
+    std::string err = "(stdin):1: read: 0: ";
     err += strerror(EINTR);
     err += "\n";
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg", "read", err.c_str()));
