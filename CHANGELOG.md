@@ -16,6 +16,7 @@
         - enable/disable software flow control, bracketed paste mode
         - change kill-ring size
         - set syntax highlight color (only accept valid SGR sequence)
+        - set east asian width
     - ``configs``: get internal configurations
 
 #### LSP

@@ -103,6 +103,7 @@ bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, String
 
 #define EACH_EDIT_CONFIG(OP)                                                                       \
   OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
+  OP(EAW, "eaw", TYPE::Int)                                                                        \
   OP(USE_BRACKETED_PASTE, "bracketed-paste", TYPE::Bool)                                           \
   OP(USE_FLOW_CONTROL, "flow-control", TYPE::Bool)                                                 \
   OP(COLOR, "color", TYPE::String)
@@ -177,6 +178,13 @@ bool LineEditorObject::setConfig(DSState &state, StringRef name, const DSValue &
       this->killRing.expand(cap);
       return true;
     }
+  case EditConfig::EAW:
+    if (auto v = value.asInt(); v == 1 || v == 2) {
+      this->eaw = static_cast<unsigned char>(v);
+    } else {
+      this->eaw = 0;
+    }
+    return true;
   case EditConfig::USE_BRACKETED_PASTE:
     this->useBracketedPaste = value.asBool();
     return true;
@@ -209,6 +217,9 @@ DSValue LineEditorObject::getConfigs(DSState &state) const {
     switch (e) {
     case EditConfig::KILL_RING_SIZE:
       value = DSValue::createInt(this->killRing.get().capacity());
+      break;
+    case EditConfig::EAW:
+      value = DSValue::createInt(this->eaw);
       break;
     case EditConfig::USE_BRACKETED_PASTE:
       value = DSValue::createBool(this->useBracketedPaste);

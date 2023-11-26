@@ -481,14 +481,13 @@ void LineEditorObject::disableRawMode(int fd) {
  * if current cursor is not head of line. write % symbol like zsh
  * @param l
  */
-static int preparePrompt(struct linenoiseState &l) {
+static int preparePrompt(const struct linenoiseState &l) {
   if (getCursorPosition(l.ifd, l.ofd) > 1) {
     const char *s = "\x1b[7m%\x1b[0m\r\n";
     if (write(l.ofd, s, strlen(s)) == -1) {
       return -1;
     }
   }
-  checkProperty(l);
   return 0;
 }
 
@@ -734,6 +733,10 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
   HistRotator histRotate(this->history);
 
   preparePrompt(l);
+  checkProperty(l);
+  if (this->eaw != 0) { // force set east asin width
+    l.ps.eaw = this->eaw == 1 ? AmbiguousCharWidth::HALF : AmbiguousCharWidth::FULL;
+  }
   this->refreshLine(l);
 
   KeyCodeReader reader(l.ifd);

@@ -46,6 +46,8 @@ private:
 
   bool useFlowControl{true};
 
+  unsigned char eaw{0}; // must be 0-2. if 0, auto-detect east asian width
+
   ANSIEscapeSeqMap escapeSeqMap;
 
   termios orgTermios{};
