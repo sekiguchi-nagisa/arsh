@@ -1,0 +1,27 @@
+
+# for builtin commands
+shctl set errraise
+
+## command
+var ex = 34 as Any
+try { command -W; } catch e { $ex = $e; }
+assert ($ex as ExecError).status() == 2
+assert ($ex as ExecError).lineno() == 7
+
+$ex = 34
+try { command -V fjreifae; } catch e { $ex = $e; }
+assert ($ex as ExecError).status() == 1
+assert ($ex as ExecError).lineno() == 12
+
+## exec
+$ex = 45
+try { exec -T; } catch e { $ex = $e; }
+assert ($ex as ExecError).status() == 2
+assert ($ex as ExecError).lineno() == 18
+
+$ex = 45
+try { exec $'ls\x00'; } catch e { $ex = $e; }
+assert ($ex as ExecError).status() == 1
+assert ($ex as ExecError).lineno() == 23
+
+true

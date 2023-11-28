@@ -55,11 +55,6 @@ enum class RuntimeOption : unsigned short {
 #undef GEN_ENUM
 };
 
-enum class VMEvent : unsigned int {
-  SIGNAL = 1u << 0u,
-  MASK = 1u << 1u,
-};
-
 enum class EvalOP : unsigned int {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
 };
@@ -72,9 +67,6 @@ enum class EvalRet : unsigned int {
 
 template <>
 struct allow_enum_bitop<RuntimeOption> : std::true_type {};
-
-template <>
-struct allow_enum_bitop<VMEvent> : std::true_type {};
 
 template <>
 struct allow_enum_bitop<EvalOP> : std::true_type {};
@@ -575,10 +567,35 @@ private:
   static bool callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                           DSValue &&redirConfig, CmdCallAttr attr);
 
-  static bool builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &&redir,
-                             CmdCallAttr attr);
+  struct BuiltinCmdResult {
+    enum Kind : unsigned char {
+      DISPLAY, // display command info
+      CALL,    // call command
+    } kind;
+    bool r;
+    int status;
 
-  static void builtinExec(DSState &state, const ArrayObject &argObj, DSValue &&redir);
+    static BuiltinCmdResult display(int status) {
+      return {
+          .kind = DISPLAY,
+          .r = true,
+          .status = status,
+      };
+    }
+
+    static BuiltinCmdResult call(bool r) {
+      return {
+          .kind = CALL,
+          .r = r,
+          .status = 0,
+      };
+    }
+  };
+
+  static BuiltinCmdResult builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
+                                         DSValue &&redir, CmdCallAttr attr);
+
+  static int builtinExec(DSState &state, const ArrayObject &argObj, DSValue &&redir);
 
   static bool returnFromUserDefinedCommand(DSState &state, int64_t status);
 
