@@ -683,7 +683,7 @@ bool ErrorObject::opStr(StrBuilder &builder) const {
          builder.add(": ") && builder.add(ref);
 }
 
-void ErrorObject::printStackTrace(DSState &state, PrintOp op) {
+void ErrorObject::printStackTrace(const DSState &state, PrintOp op) const {
   // print header
   switch (op) {
   case PrintOp::DEFAULT:

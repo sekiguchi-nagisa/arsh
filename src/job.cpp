@@ -646,7 +646,7 @@ std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
   return {nullptr, 0};
 }
 
-void JobTable::notifyTermination(const ydsh::Job &job) {
+void JobTable::notifyTermination(const Job &job) {
   assert(job);
   if (!this->notifyCallback || !job->isTerminated() || job->isDisowned() || job->isLastPipe()) {
     return;

@@ -804,9 +804,8 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     }
 
     // wait process or job termination
-    int status;
-    auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-    status = proc.wait(waitOp);
+    const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+    const int status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
       auto job = state.jobTable.attach(
@@ -815,7 +814,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
         job->showInfo();
       }
     }
-    int ret = state.tryToBeForeground();
+    const int ret = state.tryToBeForeground();
     LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
     state.jobTable.waitForAny();
     if (errNum != 0) {

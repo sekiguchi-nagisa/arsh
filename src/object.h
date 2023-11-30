@@ -999,7 +999,7 @@ public:
    * @param ctx
    * @param op
    */
-  void printStackTrace(DSState &ctx, PrintOp op = PrintOp::DEFAULT);
+  void printStackTrace(const DSState &ctx, PrintOp op = PrintOp::DEFAULT) const;
 
   const std::vector<StackTraceElement> &getStackTrace() const { return this->stackTrace; }
 

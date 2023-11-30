@@ -137,7 +137,7 @@ static const char *toString(EditConfig config) {
 }
 
 static const DSType &toType(const TypePool &pool, EditConfig config) {
-  const TYPE types[] = {
+  constexpr TYPE types[] = {
 #define GEN_TABLE(E, S, T) T,
       EACH_EDIT_CONFIG(GEN_TABLE)
 #undef GEN_TABLE
@@ -204,7 +204,7 @@ DSValue LineEditorObject::getConfigs(DSState &state) const {
       state.typePool.createMapType(state.typePool.get(TYPE::String), state.typePool.get(TYPE::Any));
   auto ret = DSValue::create<OrderedMapObject>(*typeOrError.asOk(), state.getRng().next());
 
-  const EditConfig configs[] = {
+  constexpr EditConfig configs[] = {
 #define GEN_TABLE(E, S, T) EditConfig::E,
       EACH_EDIT_CONFIG(GEN_TABLE)
 #undef GEN_TABLE

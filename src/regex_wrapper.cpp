@@ -108,8 +108,9 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
   int errcode;
   PCRE2_SIZE erroffset;
-  pcre2_code *code = pcre2_compile((PCRE2_SPTR)pattern.data(), PCRE2_ZERO_TERMINATED, option,
-                                   &errcode, &erroffset, compileCtx.get());
+  pcre2_code *code =
+      pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), PCRE2_ZERO_TERMINATED, option,
+                    &errcode, &erroffset, compileCtx.get());
   pcre2_match_data *data = nullptr;
   if (code) {
     data = pcre2_match_data_create_from_pattern(code, nullptr);

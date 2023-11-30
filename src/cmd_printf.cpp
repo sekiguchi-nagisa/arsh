@@ -259,7 +259,7 @@ private:
     setFlag(flags, FormatFlag::E);                                                                 \
     continue;
 
-  FormatFlag parseFlags(StringRef::size_type &pos) {
+  FormatFlag parseFlags(StringRef::size_type &pos) const {
     FormatFlag flags{};
     for (const StringRef::size_type size = this->format.size(); pos < size; pos++) {
       switch (this->format[pos]) {
@@ -278,7 +278,7 @@ private:
    * ignore any length modifiers
    * @param pos
    */
-  void consumeLengthModifier(StringRef::size_type &pos) {
+  void consumeLengthModifier(StringRef::size_type &pos) const {
     for (const StringRef::size_type size = this->format.size(); pos < size; pos++) {
       switch (this->format[pos]) {
       case 'h':

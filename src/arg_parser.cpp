@@ -28,8 +28,7 @@ namespace ydsh {
 RequiredOptionSet::RequiredOptionSet(const std::vector<ArgEntry> &entries) {
   const size_t size = entries.size();
   for (size_t i = 0; i < size; i++) {
-    auto &e = entries[i];
-    if (e.isRequire() || e.isPositional()) {
+    if (auto &e = entries[i]; e.isRequire() || e.isPositional()) {
       assert(i <= SYS_LIMIT_ARG_ENTRY_MAX);
       auto v = static_cast<unsigned short>(i);
       assert(this->values.empty() || this->values.back() < v);
@@ -52,9 +51,8 @@ static bool verboseUsage(const DSState &st, const BaseObject &out) {
 
 static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEntry &entry,
                            StringRef arg, bool shortOpt, BaseObject &out) {
-  std::string err;
   int64_t v = 0;
-  if (entry.checkArg(arg, shortOpt, v, err)) {
+  if (std::string err; entry.checkArg(arg, shortOpt, v, err)) {
     unsigned int offset = entry.getFieldOffset();
     if (entry.getCheckerKind() == ArgEntry::CheckerKind::INT) {
       out[offset] = DSValue::createInt(v);

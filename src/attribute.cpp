@@ -38,7 +38,7 @@ const char *toString(Attribute::Param p) {
 }
 
 const DSType &getRequiredParamType(const TypePool &pool, Attribute::Param p) {
-  const TYPE table[] = {
+  constexpr  TYPE table[] = {
 #define GEN_TABLE(E, S, T) T,
       EACH_ATTRIBUTE_PARAM(GEN_TABLE)
 #undef GEN_TABLE

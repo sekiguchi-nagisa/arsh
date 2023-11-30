@@ -167,11 +167,10 @@ static constexpr bool iterate_requirement_v =
 
 template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
 static bool iteratePathList(const char *value, Func func) {
-  StringRef ref = value;
-  std::string path;
+  const StringRef ref = value;
   for (StringRef::size_type pos = 0;;) {
-    auto ret = ref.find(':', pos);
-    path = "";
+    const auto ret = ref.find(':', pos);
+    std::string path;
     path += ref.slice(pos, ret);
     TRY(func(path));
     if (ret == StringRef::npos) {
@@ -510,7 +509,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
 }
 
 static void completeAttribute(const std::string &prefix, CompCandidateConsumer &consumer) {
-  const AttributeKind kinds[] = {
+  constexpr  AttributeKind kinds[] = {
 #define GEN_TABLE(E, S) AttributeKind::E,
       EACH_ATTRIBUTE_KIND(GEN_TABLE)
 #undef GEN_TABLE

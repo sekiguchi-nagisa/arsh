@@ -928,7 +928,7 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
       this->generateCmdArg(node.getTargetNode());
     }
     if (newFd < 3) {
-      const auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
+      constexpr auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
       auto op = static_cast<OpCode>(offset + newFd);
       this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
     } else {
@@ -1228,7 +1228,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   this->markLabel(mergeLabel);
 }
 
-void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, OrderedMapObject &obj) {
+void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, OrderedMapObject &obj) const {
   unsigned int offset = this->currentCodeOffset();
   for (auto &e : node.getConstPatternNodes()) {
     auto pair = obj.insert(newObject(*e), DSValue::createNum(offset));
