@@ -742,13 +742,6 @@ static void raiseInvalidCmdError(DSState &state, StringRef ref) {
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
-static void raiseCmdExecError(DSState &state, int64_t status) {
-  std::string message = "command exits with non-zero status: `";
-  message += std::to_string(status);
-  message += "'";
-  raiseError(state, TYPE::ExecError, std::move(message), status);
-}
-
 static DSValue toCmdDesc(char *const *argv) {
   std::string value;
   for (; *argv != nullptr; argv++) {
@@ -883,6 +876,18 @@ static void traceCmd(const DSState &state, const ArrayObject &argv) {
   }
 }
 
+static bool checkCmdExecError(DSState &state, CmdCallAttr attr, int64_t status) {
+  if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
+      hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+    std::string message = "command exits with non-zero status: `";
+    message += std::to_string(status);
+    message += "'";
+    raiseError(state, TYPE::ExecError, std::move(message), status);
+    return false;
+  }
+  return true;
+}
+
 bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                      DSValue &&redirConfig, CmdCallAttr attr) {
   auto &array = *argvObj;
@@ -911,13 +916,12 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     if (state.hasError()) {
       return false;
     }
-    if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
-        hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-      raiseCmdExecError(state, status);
+    if (checkCmdExecError(state, attr, status)) {
+      pushExitStatus(state, status);
+      return true;
+    } else {
       return false;
     }
-    pushExitStatus(state, status);
-    return true;
   }
   case ResolvedCmd::MODULE:
     return prepareSubCommand(state, cmd.modType(), std::move(argvObj), std::move(redirConfig));
@@ -948,9 +952,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
       bool ret = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
       if (ret) {
         int status = state.getMaskedExitStatus();
-        if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
-            hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-          raiseCmdExecError(state, status);
+        if (!checkCmdExecError(state, attr, status)) {
           return false;
         }
       }
@@ -986,8 +988,8 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
   return true; // normally unreachable, but need to suppress gcc warning.
 }
 
-bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &&redir,
-                        CmdCallAttr attr) {
+VM::BuiltinCmdResult VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
+                                        DSValue &&redir, CmdCallAttr attr) {
   auto &arrayObj = *argvObj;
   bool useDefaultPath = false;
 
@@ -1011,28 +1013,24 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
       showDesc = 2;
       break;
     case 'h':
-      pushExitStatus(state, showHelp(arrayObj));
-      return true;
+      return BuiltinCmdResult::display(showHelp(arrayObj));
     default:
       int s = invalidOptionError(state, arrayObj, optState);
-      pushExitStatus(state, s);
-      return true;
+      return BuiltinCmdResult::display(s);
     }
   }
 
   unsigned int index = optState.index;
   const unsigned int argc = arrayObj.getValues().size();
   if (index == argc) { // do nothing
-    pushExitStatus(state, 0);
-    return true;
+    return BuiltinCmdResult::display(0);
   }
 
   if (showDesc == 0) { // execute command
     if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
       auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
       ERROR(state, arrayObj, "contains null characters: %s", name.c_str());
-      pushExitStatus(state, 1);
-      return true;
+      return BuiltinCmdResult::display(1);
     }
 
     auto &values = arrayObj.refValues();
@@ -1040,7 +1038,8 @@ bool VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj, DSValue &
 
     auto resolve = CmdResolver(CmdResolver::NO_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH
                                                                    : FilePathCache::NON);
-    return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
+    bool r = callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
+    return BuiltinCmdResult::call(r);
   }
 
   // show command description
@@ -1125,11 +1124,10 @@ END:
   } else {
     status = successCount > 0 ? 0 : 1;
   }
-  pushExitStatus(state, status);
-  return true;
+  return BuiltinCmdResult::display(status);
 }
 
-void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir) {
+int VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir) {
   bool clearEnv = false;
   StringRef progName;
   GetOptState optState("hca:");
@@ -1147,12 +1145,9 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
       progName = optState.optArg;
       break;
     case 'h':
-      pushExitStatus(state, showHelp(argvObj));
-      return;
+      return showHelp(argvObj);
     default:
-      int s = invalidOptionError(state, argvObj, optState);
-      pushExitStatus(state, s);
-      return;
+      return invalidOptionError(state, argvObj, optState);
     }
   }
 
@@ -1162,8 +1157,7 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
     if (argvObj.getValues()[index].asStrRef().hasNullChar()) {
       auto name = toPrintable(argvObj.getValues()[index].asStrRef());
       ERROR(state, argvObj, "contains null characters: %s", name.c_str());
-      pushExitStatus(state, 1);
-      return;
+      return 1;
     }
 
     char *argv2[argc - index + 1];
@@ -1182,15 +1176,13 @@ void VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir
     PERROR(state, argvObj, "%s", argvObj.getValues()[index].asCStr());
     exit(1);
   }
-  pushExitStatus(state, 0);
+  return 0;
 }
 
 bool VM::returnFromUserDefinedCommand(DSState &state, int64_t status) {
   auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
   state.stack.unwind();
-  if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
-      hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
-    raiseCmdExecError(state, status);
+  if (!checkCmdExecError(state, attr, status)) {
     return false;
   }
   pushExitStatus(state, status);
@@ -2444,9 +2436,14 @@ bool VM::mainLoop(DSState &state) {
         auto attr = static_cast<CmdCallAttr>(v);
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
+        const auto ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
         flushStdFD();
-        TRY(ret);
+        if (ret.kind == BuiltinCmdResult::CALL) {
+          TRY(ret.r);
+        } else {
+          TRY(checkCmdExecError(state, attr, ret.status));
+          pushExitStatus(state, ret.status);
+        }
         vmnext;
       }
       vmcase(BUILTIN_CALL) {
@@ -2466,9 +2463,13 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(BUILTIN_EXEC) {
+        auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+        const auto attr = static_cast<CmdCallAttr>(v);
         DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = state.stack.getLocal(UDC_PARAM_ARGV);
-        builtinExec(state, typeAs<ArrayObject>(argv), std::move(redir));
+        int status = builtinExec(state, typeAs<ArrayObject>(argv), std::move(redir));
+        TRY(checkCmdExecError(state, attr, status));
+        pushExitStatus(state, status);
         vmnext;
       }
       vmcase(NEW_REDIR) {
