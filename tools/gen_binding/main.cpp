@@ -1134,7 +1134,7 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
   fclose(fp);
 }
 
-enum class OptionSet : unsigned int {
+enum class OptionSet : unsigned char {
   DOC,
   BIND,
   HEADER,

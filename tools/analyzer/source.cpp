@@ -101,8 +101,8 @@ Optional<Range> Source::toRange(Token token) const {
 
 SourcePtr SourceManager::findById(ModId id) const {
   auto v = toUnderlying(id);
-  if (v > 0 && --v < this->entries.size()) {
-    return this->entries[v];
+  if (v > 0 && v - 1 < this->entries.size()) {
+    return this->entries[v - 1];
   }
   return nullptr;
 }

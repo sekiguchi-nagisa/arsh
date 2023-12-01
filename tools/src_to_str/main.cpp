@@ -23,7 +23,7 @@
 
 using namespace ydsh;
 
-enum class OptionKind {
+enum class OptionKind : unsigned char {
   VAR_NAME,
   FILE_NAME,
   OUTPUT,

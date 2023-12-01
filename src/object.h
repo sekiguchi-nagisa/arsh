@@ -204,7 +204,7 @@ public:
   void append(StringRef v) { this->value += v; }
 };
 
-enum class StackGuardType : unsigned int {
+enum class StackGuardType : unsigned char {
   LOOP,
   TRY,
 };
@@ -988,7 +988,7 @@ public:
 
   int64_t getStatus() const { return this->status; }
 
-  enum class PrintOp {
+  enum class PrintOp : unsigned char {
     DEFAULT,  // only print stack trace
     UNCAUGHT, // show uncaught exception message header
     IGNORED,  // show ignored exception message header

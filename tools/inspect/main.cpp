@@ -28,7 +28,7 @@
 
 using namespace ydsh;
 
-enum class OptionSet : unsigned int {
+enum class OptionSet : unsigned char {
   OUT,
   HELP,
 };

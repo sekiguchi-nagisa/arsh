@@ -25,7 +25,7 @@ using namespace lsp;
 #define XSTR(E) #E
 #define STR(E) XSTR(E)
 
-enum class OptionKind {
+enum class OptionKind : unsigned char {
   LOG,
   HELP,
   LSP,

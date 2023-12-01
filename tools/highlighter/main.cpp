@@ -26,7 +26,7 @@ namespace {
 using namespace ydsh;
 using namespace ydsh::highlighter;
 
-enum class OptionSet : unsigned int {
+enum class OptionSet : unsigned char {
   HELP,
   OUTPUT,
   FORMAT,
