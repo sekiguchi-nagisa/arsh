@@ -97,21 +97,32 @@ resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr 
   return results;
 }
 
-static bool isImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
-                             const IndexLink &link) {
-  if (targetModId == link.getModId() &&
-      hasFlag(link.getImportAttr(), IndexLink::ImportAttr::GLOBAL)) {
-    return true;
-  }
-  if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
-    auto index = indexes.find(link.getModId());
-    for (auto &e : index->getLinks()) {
-      if (isImportingIndex(indexes, targetModId, e.second)) {
-        return true;
-      }
+static bool isInlinedImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
+                                    const SymbolIndexPtr &index) {
+  for (auto &e : index->getLinks()) {
+    if (!hasFlag(e.second.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
+      continue;
+    }
+    if (e.second.getModId() == targetModId) {
+      return true;
+    }
+    if (isInlinedImportingIndex(indexes, targetModId, indexes.find(e.second.getModId()))) {
+      return true;
     }
   }
   return false;
+}
+
+static bool isImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
+                             const IndexLink &link) {
+  if (!hasFlag(link.getImportAttr(), IndexLink::ImportAttr::GLOBAL)) {
+    return false;
+  }
+  if (targetModId == link.getModId()) {
+    return true;
+  }
+  auto index = indexes.find(link.getModId());
+  return isInlinedImportingIndex(indexes, targetModId, index);
 }
 
 static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDeclName,
