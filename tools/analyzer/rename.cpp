@@ -97,18 +97,21 @@ resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr 
   return results;
 }
 
-/**
- * get modules that import this module
- * @param indexes
- * @param thisIndex
- * @return
- */
-static SymbolIndexes collectGlobalImportingIndexes(const SymbolIndexes &indexes,
-                                                   const SymbolIndexPtr &thisIndex) {
-  SymbolIndexes importing;
-  (void)indexes;
-  (void)thisIndex;
-  return importing;
+static bool isImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
+                             const IndexLink &link) {
+  if (targetModId == link.getModId() &&
+      hasFlag(link.getImportAttr(), IndexLink::ImportAttr::GLOBAL)) {
+    return true;
+  }
+  if (hasFlag(link.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
+    auto index = indexes.find(link.getModId());
+    for (auto &e : index->getLinks()) {
+      if (isImportingIndex(indexes, targetModId, e.second)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDeclName,
@@ -132,6 +135,20 @@ static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDecl
     }
   }
   return target != decl && target.getMangledName() == mangledNewDeclName;
+}
+
+static bool checkMangledNames(const DeclSymbol &decl, const DeclSymbol &target,
+                              const std::vector<std::string> &mangledNewNames,
+                              const std::function<void(const RenameResult &)> &consumer) {
+  for (auto &mangledNewName : mangledNewNames) {
+    if (equalsName(decl, mangledNewName, target)) {
+      if (consumer) {
+        consumer(Err(RenameConflict(target.toRef())));
+      }
+      return false;
+    }
+  }
+  return true;
 }
 
 static bool mayBeConflict(const ScopeInterval &declScope, const SymbolRef declRef,
@@ -247,19 +264,34 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
       continue;
     }
-    for (auto &mangledNewName : mangledNewNames) {
-      if (equalsName(decl, mangledNewName, target)) {
-        if (consumer) {
-          consumer(Err(RenameConflict(target.toRef())));
-        }
-        return false;
-      }
+    if (!checkMangledNames(decl, target, mangledNewNames, consumer)) {
+      return false;
     }
   }
 
   // check name conflict in other indexes that importing this index
-  if (hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
-    auto importing = collectGlobalImportingIndexes(indexes, declIndex);
+  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
+    return true;
+  }
+  for (auto &index : indexes) {
+    if (index->getModId() == decl.getModId()) {
+      continue; // ignore this index
+    }
+    for (auto &e : index->getLinks()) {
+      if (!isImportingIndex(indexes, decl.getModId(), e.second)) {
+        continue;
+      }
+      for (auto &target : index->getDecls()) {
+        auto &declScope = index->getScopes()[0]; // always global scope
+        auto &targetScope = index->getScopes()[target.getScopeId()];
+        if (!mayBeConflict(declScope, e.first, targetScope, target.toRef())) {
+          continue;
+        }
+        if (!checkMangledNames(decl, target, mangledNewNames, consumer)) {
+          return false;
+        }
+      }
+    }
   }
   return true;
 }
