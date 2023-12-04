@@ -30,7 +30,7 @@
 | variable (upper variable)             | ✔️             | ✔️                    | ✔️              | ✔️         |
 | variable (global import)              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | variable (inlined import)             | ✔️             | ✔️                    | ✔️              | ✔️         |
-| variable (named import)               | ✔️             | ✔️                    | ✔️              | ❌          |
+| variable (named import)               | ✔️             | ✔️                    | ✔️              | ✔️         |
 | variable (positional parameter)       | -              | -                     | ❌ (show code)   | -          |
 | variable (if-let)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
 | builtin variable                      | -              | -                     | ✔️              | -          |
@@ -38,17 +38,17 @@
 | function                              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | function (global import)              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | function (inlined import)             | ✔️             | ✔️                    | ✔️              | ✔️         |
-| function (named import)               | ✔️             | ✔️                    | ✔️              | ❌          |
+| function (named import)               | ✔️             | ✔️                    | ✔️              | ✔️         |
 | user-defined command                  | ✔️             | ✔️                    | ✔️              | ✔️         |
 | user-defined command (global import)  | ✔️             | ✔️                    | ✔️              | ✔️         |
 | user-defined command (inlined import) | ✔️             | ✔️️                   | ✔️              | ✔️         |
-| user-defined command (named import)   | ✔️             | ✔️️️                  | ✔️️             | ❌          |
+| user-defined command (named import)   | ✔️             | ✔️️️                  | ✔️️             | ✔️         |
 | builtin command                       | -              | ✔️                    | ✔️️ (show help) | -          |
 | type (builtin)                        | -              | ✔️️️                  | ✔️️️            | -          |
 | type (alias)                          | ✔️             | ✔️                    | ✔️              | ✔️         |
 | type (global import)                  | ✔️             | ✔️                    | ✔️              | ✔️         |
 | type (inlined import)                 | ✔️             | ✔️️                   | ✔️              | ✔️         |
-| type (named import)                   | ✔️             | ✔️                    | ✔️              | ❌          |
+| type (named import)                   | ✔️             | ✔️                    | ✔️              | ✔️         |
 | type (user-defined type)              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | field (tuple)                         | -              | ✔️ (same module only) | ✔️              | -          |
 | field (user-defined type)             | ✔️             | ✔️                    | ✔️              | ❌          |

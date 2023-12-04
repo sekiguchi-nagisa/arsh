@@ -955,6 +955,68 @@ $fff()
                                                    "DDD", {1, "(1:5~1:8)"}));
 }
 
+TEST_F(RenameTest, namedImported) {
+  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
+var EEE = 34
+{ var WWW : Int? }
+eee() {}
+typedef TTT : Error
+function size() : Int for TTT { return 234; }
+function fff() {}
+)");
+
+  auto content = format(R"(
+var  DDD = ''
+ddd() {}
+typedef DDD = Int
+{ var CCC = 34; }
+source %s as mod
+{ var FFF = 34; }
+$mod.EEE
+mod eee
+new mod.TTT().size()
+$mod.fff()
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
+
+  // rename field access via module
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 1, .character = 5}, "CCC",
+                                       {{2, "(1:4~1:7)"}, {1, "(7:5~7:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 1, .character = 5}, "DDD",
+                                       {{2, "(1:4~1:7)"}, {1, "(7:5~7:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 1, .character = 5}, "FFF",
+                                       {{2, "(1:4~1:7)"}, {1, "(7:5~7:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 1, .character = 5}, "mod",
+                                       {{2, "(1:4~1:7)"}, {1, "(7:5~7:8)"}}));
+
+  // rename sub-command
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 3, .character = 1}, "fff",
+                                       {{2, "(3:0~3:3)"}, {1, "(8:4~8:7)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 3, .character = 1}, "ddd",
+                                       {{2, "(3:0~3:3)"}, {1, "(8:4~8:7)"}}));
+
+  // rename type field access via mod
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "UUU",
+                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "DDD",
+                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "mod",
+                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 5, .character = 9}, "empty",
+                                       {{2, "(5:9~5:13)"}, {1, "(9:14~9:18)"}}));
+
+  // rename method call (function via module)
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "ggg",
+                                       {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "CCC",
+                                       {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "mod",
+                                       {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
