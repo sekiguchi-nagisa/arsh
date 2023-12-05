@@ -1,0 +1,8 @@
+#$test($result = 'parse', $lineNum = 8, $chars = 9, $errorKind = 'InterpNumNeedSpace', $status = 1)
+
+echo ${
+23
+}
+echo ${(52345)}
+
+echo "${34245.0}"

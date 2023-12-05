@@ -2325,7 +2325,20 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     auto ctx = this->inIgnorableNLCtx();
     unsigned int pos = START_POS();
     TRY(this->expect(TokenKind::START_INTERP));
+    bool mayNeedSpace = false;
+    const Token oldToken = this->curToken;
+    const TokenKind oldKind = this->curKind;
+    if (oldKind == TokenKind::INT_LITERAL || oldKind == TokenKind::FLOAT_LITERAL) {
+      if (!this->hasSpace() && !this->hasNewline()) {
+        mayNeedSpace = true;
+      }
+    }
     auto node = TRY(this->parse_expression());
+    if (mayNeedSpace && isa<NumberNode>(*node)) {
+      this->createError(oldKind, oldToken, START_INTERP_NUM_NEED_SPACE,
+                        "require space between `${' and number");
+      return nullptr;
+    }
     auto endToken = TRY(this->expect(TokenKind::RBC));
     return std::make_unique<EmbedNode>(pos, kind, std::move(node), endToken);
   }

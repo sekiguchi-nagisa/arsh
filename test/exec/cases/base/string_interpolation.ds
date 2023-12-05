@@ -24,7 +24,7 @@ assert("this is true" == "this is ${true}")
 assert("this is false" == "this is ${false}")
 
 ## Float
-assert "${3.14}" == 3.14 as String
+assert "${ 3.14 }" == 3.14 as String
 assert "${3.14/0.0}" == (3.14/0.0) as String
 assert "${-3.1/0.0}" == (-3.1/0.0) as String
 assert "${0.0/0.0}" == (0.0/0.0) as String

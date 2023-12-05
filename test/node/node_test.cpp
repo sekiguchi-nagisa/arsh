@@ -504,36 +504,36 @@ nodes:
     resolvedType: null
 )"},
 
-    {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"EOF(
+    {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${ 34.1} &).poll())", 1, 0, R"EOF(
 nodes:
   - nodeKind: Assert
     token:
       pos: 0
-      size: 46
+      size: 47
     type:
     condNode:
       nodeKind: Apply
       token:
         pos: 7
-        size: 39
+        size: 40
       type:
       exprNode:
         nodeKind: Access
         token:
           pos: 7
-          size: 37
+          size: 38
         type:
         recvNode:
           nodeKind: Fork
           token:
             pos: 7
-            size: 32
+            size: 33
           type:
           exprNode:
             nodeKind: Pipeline
             token:
               pos: 8
-              size: 28
+              size: 29
             type:
             nodes:
               - nodeKind: UnaryOp
@@ -598,7 +598,7 @@ nodes:
               - nodeKind: With
                 token:
                   pos: 19
-                  size: 17
+                  size: 18
                 type:
                 exprNode:
                   nodeKind: Number
@@ -613,7 +613,7 @@ nodes:
                   - nodeKind: Redir
                     token:
                       pos: 27
-                      size: 9
+                      size: 10
                     type:
                     fdName: "0"
                     newFd: -1
@@ -622,7 +622,7 @@ nodes:
                       nodeKind: CmdArg
                       token:
                         pos: 29
-                        size: 7
+                        size: 8
                       type:
                       expansionSize: 0
                       expansionError: false
@@ -631,13 +631,13 @@ nodes:
                         - nodeKind: Embed
                           token:
                             pos: 29
-                            size: 7
+                            size: 8
                           type:
                           kind: "CMD_ARG"
                           exprNode:
                             nodeKind: Number
                             token:
-                              pos: 31
+                              pos: 32
                               size: 4
                             type:
                             kind: "Float"
@@ -657,7 +657,7 @@ nodes:
           opKind: "ForkKind::JOB"
         nameInfo:
           token:
-            pos: 40
+            pos: 41
             size: 4
           name: "poll"
         handle: null
@@ -665,7 +665,7 @@ nodes:
       argsNode:
         nodeKind: Args
         token:
-          pos: 44
+          pos: 45
           size: 2
         type:
         nodes:
@@ -676,11 +676,11 @@ nodes:
       nodeKind: String
       token:
         pos: 7
-        size: 39
+        size: 40
       type:
       kind: "STRING"
       init: true
-      value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
+      value: "`(!ls > 34 | 34 with < ${ 34.1} &).poll()'"
 )EOF"},
 
     {DumpOp::typed, R"(case $SIGINT { $SIGINT => [34:34]; else => (34,)})", 0, 0, R"EOF(

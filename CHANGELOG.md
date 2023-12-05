@@ -31,6 +31,9 @@
 #### Core
 
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
+- **Breaking Change**: need spaces between `${` and number
+    - due to suppress potential syntax ambiguity
+    - now ``${345 }``, ``${3.14}`` notations are syntax error
 - add ``toplevel`` parameter to ``CLI`` attribute
 - in io redirection, allow file descriptor number greater than 4 (up to 9)
     - now support like the following bash idiom
