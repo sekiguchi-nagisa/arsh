@@ -83,6 +83,16 @@ $out = IFS=$'\n' $(jobs -l $j)
 assert $out.size() == 1
 assert $out[0] == "[1] - ${$j.pid(0)!} Stopped  {\n    while(true 1) {}\n}"
 
+# -l option (pipeline)
+var j3 = while(true) {} | true &
+defer { $j3.raise($SIGKILL); }
+sleep 0.5
+$j3.poll()
+$out = IFS=$'\n' $(jobs -l $j3)
+assert $out.size() == 2
+assert $out[0] =~ $/^\[3\] \+ +[0-9]+ +Running  while\(true\) {} \|$/ : ">> ${$out[0]}"
+assert $out[1] =~ $/^ +[0-9]+ +Done  +true$/ : ">> ${$out[1]}"
+
 # help
 assert help jobs | grep '^jobs: jobs \[-lprs] \[jobspec ...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0

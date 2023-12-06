@@ -335,17 +335,9 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
       if (i > 0) {
         value.append(prefixLen, ' ');
       }
-      value += ' ';
-      auto &pid = fragments[i].first;
-      value += pid;
-      value.append(pidLen - pid.size(), ' ');
-      value += ' ';
-      auto &state = fragments[i].second;
-      value += state;
-      value.append(stateLen - state.size(), ' ');
-      value += "  ";
-      value += descs[i];
-      value += '\n';
+      auto &[pid, state] = fragments[i];
+      formatTo(value, " %-*s %-*s  %s\n", static_cast<int>(pidLen), pid.c_str(),
+               static_cast<int>(stateLen), state.c_str(), descs[i].c_str());
     }
   }
   return value;
