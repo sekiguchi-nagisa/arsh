@@ -87,7 +87,7 @@ command -V hferure fhaueirnv
 assert($? != 0)
 
 # io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     ## external
     assert "$(command -V ls 2>&1 > /dev/full)" =~ $/command: io error:.+/
     assert $? == 1

@@ -43,7 +43,7 @@ for(var i = 0; $i < $expect.size(); $i++) {
     assert $e_str == $actual[$i] : "\`$e_str', \`${$actual[$i]}'"
 }
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(kill -l 2>&1 > /dev/full)" =~ $/kill: io error: .+/
     assert $? == 1
 }

@@ -7,7 +7,7 @@ assert shctl set | grep 'monitor *  off'
 assert shctl set | grep 'clobber *  on'
 shctl set | grep 'assert.*  on' || _exit
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(shctl set 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1
 }

@@ -21,7 +21,7 @@ assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 assert __puts -3 hoge 2>&1 > /dev/null | grep ': __puts: -3: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(__puts -1 2>&1 hello > /dev/full)" =~ $/: __puts: io error:/
     assert $? == 1
 

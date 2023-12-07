@@ -200,7 +200,7 @@ assert $? == 1
 assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:200: complete: TMD(34): unrecognized module descriptor"
 assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:201: complete: TMD(hoge): unrecognized module descriptor"
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/
     assert $? == 1
 }

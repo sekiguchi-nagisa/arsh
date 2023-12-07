@@ -42,7 +42,7 @@ assert "$(shctl function)" == "<toplevel>"
 shctl function
 assert $? == 1
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(shctl function 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1
 }
@@ -53,7 +53,7 @@ shctl is-interactive
 assert $? == 1
 assert shctl backtrace
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(shctl backtrace 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1
 }
@@ -85,7 +85,7 @@ assert $reply["DATA_HOME"] == $DATA_HOME
 assert $reply["MODULE_DIR"] == $MODULE_DIR
 assert $reply["DATA_DIR"] == $DATA_DIR
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(shctl info 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1
 }

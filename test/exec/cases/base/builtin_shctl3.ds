@@ -14,7 +14,7 @@ assert $a[2] == "${$SCRIPT_NAME.realpath()}"
 assert $a[3] == "${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()}"
 assert $a[4] == "${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()}"
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(shctl module 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1
 }
@@ -27,7 +27,7 @@ assert $? == 1
 assert $a.size() == 1
 assert $a[0] == "$SCRIPT_DIR/../../_module4test/module4.ds".realpath()
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(cd $SCRIPT_DIR && 
         shctl module ../../_module4test/module4.ds hogehoge 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
     assert $? == 1

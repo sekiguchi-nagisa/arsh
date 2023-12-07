@@ -37,7 +37,7 @@ assert "$(ulimit -a)" == "$(ulimit $opts)"
 assert "$(ulimit -a -H)" == "$(ulimit $opts -H)"
 assert "$(ulimit -a -S)" == "$(ulimit $opts -S)"
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(ulimit -a 2>&1 > /dev/full)" =~ $/ulimit: io error: .+/
     assert $? == 1
 

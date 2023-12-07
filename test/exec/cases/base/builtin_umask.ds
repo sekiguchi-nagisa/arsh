@@ -10,7 +10,7 @@ assert $? == 2
 $assertEQ("${$SCRIPT_NAME.basename()}:11: umask: -y: invalid option
 umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
 
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(umask 2>&1 > /dev/full)" =~ $/umask: io error: .+/
     assert $? == 1
 }

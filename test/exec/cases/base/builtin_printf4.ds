@@ -112,8 +112,8 @@ function assertFormat(c : String) {
 }
 
 let conversions = 'aAbBcCdDeFgGhHIjmMnprRsStTuUVwWxXyYzZ%'
-for converion in $conversions {
-    $assertFormat($converion)
+for conversion in $conversions {
+    $assertFormat($conversion)
 }
 
 ## 'k', 'l' specifiers are not implemented musl

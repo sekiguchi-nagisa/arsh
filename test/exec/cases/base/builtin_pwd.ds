@@ -15,7 +15,7 @@ assert pwd 2>&1 | grep ': pwd: \.: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
 # io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(cd && pwd 2>&1 > /dev/full )" =~ $/pwd: io error:.+/
     assert $? == 1
 }

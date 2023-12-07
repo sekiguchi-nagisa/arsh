@@ -19,7 +19,7 @@ assert popd -r 2>&1 | grep -E '^popd: popd \[\+N | -N]'
 assert $PIPESTATUS[0] == 2
 
 # io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(pushd / && popd 2>&1 > /dev/full )" =~ $/popd: io error:.+/
     assert $? == 1
 }

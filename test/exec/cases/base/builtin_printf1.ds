@@ -44,7 +44,7 @@ assert "$(printf $'%\x00' 34 2>&1)" ==
     "${$SCRIPT_NAME.basename()}:43: printf: \`\x00': invalid conversion specifier"
 
 ## io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
     assert "$(printf '%9999d' 12 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
 }

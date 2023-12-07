@@ -59,7 +59,7 @@ assert("$(hash)" == "hash: file path cache is empty")
 assert(hash -r)
 
 ## error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     var a = "$(hash 2>&1 > /dev/full)"
     assert $a =~ $/hash: io error: .+/ : $a
     assert $? == 1

@@ -19,7 +19,7 @@ assert pushd -q 2>&1 | grep -E 'pushd: pushd \[\+N | -N | dir]'
 assert $PIPESTATUS[0] == 2
 
 # io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(pushd / 2>&1 > /dev/full )" =~ $/pushd: io error:.+/
     assert $? == 1
 }

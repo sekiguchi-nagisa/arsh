@@ -2,7 +2,7 @@
 #$test($out = $'hello world\n', $err = $'hogehoge\n')
 
 ## io error
-if $OSTYPE == 'linux' {
+if (test -e /dev/full) {
     assert "$(echo hekllo world 2>&1 > /dev/full)" =~ $/: echo: io error: .+/
 }
 
