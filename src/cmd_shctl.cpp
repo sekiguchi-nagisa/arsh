@@ -35,7 +35,7 @@ static int printBacktrace(const DSState &state, const ArrayObject &argvObj) {
 }
 
 static int printFuncName(const DSState &state, const ArrayObject &argvObj) {
-  auto *code = state.getCallStack().getFrame().code;
+  const auto *code = state.getCallStack().getFrame().code;
   const char *name = nullptr;
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
     name = cast<CompiledCode>(code)->getName();

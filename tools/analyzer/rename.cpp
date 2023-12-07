@@ -23,12 +23,12 @@ namespace ydsh::lsp {
 
 static std::unordered_set<StringRef, StrRefHash> initStatementKeywordSet() {
   std::unordered_set<StringRef, StrRefHash> set;
-  TokenKind table[] = {
+  constexpr TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
 #undef GEN_ITEM
   };
-  for (auto &e : table) {
+  for (const auto &e : table) {
     StringRef keyword = toString(e);
     if (isValidIdentifier(keyword)) {
       set.emplace(keyword);
@@ -63,7 +63,7 @@ static void
 resolveInlinedImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex,
                               const SymbolRef ref, std::unordered_set<ModId> &foundModSet,
                               std::vector<std::pair<SymbolRef, SymbolIndexPtr>> &results) {
-  for (auto &pair : thisIndex->getLinks()) {
+  for (const auto &pair : thisIndex->getLinks()) {
     const auto attr = pair.second.getImportAttr();
     if (!hasFlag(attr, IndexLink::ImportAttr::INLINED)) {
       continue;
@@ -71,9 +71,8 @@ resolveInlinedImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr
     const auto modId = pair.second.getModId();
     if (foundModSet.find(modId) != foundModSet.end()) { // already found
       continue;
-    } else {
-      foundModSet.emplace(modId);
     }
+    foundModSet.emplace(modId);
     auto index = indexes.find(modId);
     results.emplace_back(ref, index);
     resolveInlinedImportedIndexes(indexes, index, ref, foundModSet, results);
@@ -84,7 +83,7 @@ static std::vector<std::pair<SymbolRef, SymbolIndexPtr>>
 resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex) {
   std::vector<std::pair<SymbolRef, SymbolIndexPtr>> results;
   results.emplace_back(SymbolRef(0, 0, BUILTIN_MOD_ID), indexes.find(BUILTIN_MOD_ID));
-  for (auto &pair : thisIndex->getLinks()) {
+  for (const auto &pair : thisIndex->getLinks()) {
     const auto attr = pair.second.getImportAttr();
     if (!hasFlag(attr, IndexLink::ImportAttr::GLOBAL)) {
       continue;
@@ -99,7 +98,7 @@ resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr 
 
 static bool isInlinedImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
                                     const SymbolIndexPtr &index) {
-  for (auto &e : index->getLinks()) {
+  for (const auto &e : index->getLinks()) {
     if (!hasFlag(e.second.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
       continue;
     }
@@ -151,7 +150,7 @@ static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDecl
 static bool checkMangledNames(const DeclSymbol &decl, const DeclSymbol &target,
                               const std::vector<std::string> &mangledNewNames,
                               const std::function<void(const RenameResult &)> &consumer) {
-  for (auto &mangledNewName : mangledNewNames) {
+  for (const auto &mangledNewName : mangledNewNames) {
     if (equalsName(decl, mangledNewName, target)) {
       if (consumer) {
         consumer(Err(RenameConflict(target.toRef())));
@@ -241,8 +240,8 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
   for (auto &[ref, importedIndex] : importedIndexes) {
     if (!isBuiltinMod(importedIndex->getModId())) {
-      auto &declScope = declIndex->getScopes()[decl.getScopeId()];
-      auto &targetScope = declIndex->getScopes()[0]; // always global scope
+      const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
+      const auto &targetScope = declIndex->getScopes()[0]; // always global scope
       if (!mayBeConflict(declScope, decl.toRef(), targetScope, ref)) {
         continue;
       }
@@ -269,9 +268,9 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       return false;
     }
   }
-  for (auto &target : declIndex->getDecls()) { // FIXME: check constructor field
-    auto &declScope = declIndex->getScopes()[decl.getScopeId()];
-    auto &targetScope = declIndex->getScopes()[target.getScopeId()];
+  for (const auto &target : declIndex->getDecls()) { // FIXME: check constructor field
+    const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
+    const auto &targetScope = declIndex->getScopes()[target.getScopeId()];
     if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
       continue;
     }
@@ -284,17 +283,17 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
     return true;
   }
-  for (auto &index : indexes) {
+  for (const auto &index : indexes) {
     if (index->getModId() == decl.getModId()) {
       continue; // ignore this index
     }
-    for (auto &e : index->getLinks()) {
+    for (const auto &e : index->getLinks()) {
       if (!isImportingIndex(indexes, decl.getModId(), e.second)) {
         continue;
       }
-      for (auto &target : index->getDecls()) {
-        auto &declScope = index->getScopes()[0]; // always global scope
-        auto &targetScope = index->getScopes()[target.getScopeId()];
+      for (const auto &target : index->getDecls()) {
+        const auto &declScope = index->getScopes()[0]; // always global scope
+        const auto &targetScope = index->getScopes()[target.getScopeId()];
         if (!mayBeConflict(declScope, e.first, targetScope, target.toRef())) {
           continue;
         }
@@ -364,7 +363,7 @@ Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes,
     decl = &r.decl;
     symbol = &r.request;
   });
-  if (!decl || decl->getKind() == DeclSymbol::Kind::HERE_START) {
+  if ((decl == nullptr) || decl->getKind() == DeclSymbol::Kind::HERE_START) {
     return {};
   }
   return FindDeclResult{

@@ -247,8 +247,9 @@ void SymbolIndexes::remove(ModId id) {
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(const FindDeclResult &)> &consumer) {
   if (auto index = indexes.find(request.modId)) {
-    if (auto *symbol = index->findSymbol(request.pos)) {
-      auto *decl = indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
+    if (const auto *symbol = index->findSymbol(request.pos)) {
+      const auto *decl =
+          indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
       if (!decl) {
         return false;
       }
@@ -284,7 +285,7 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
   }
 
   // search local ref
-  for (auto &e : decl.getRefs()) {
+  for (const auto &e : decl.getRefs()) {
     count++;
     if (consumer) {
       FindRefsResult ret = {
@@ -300,12 +301,12 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
       .modId = decl.getModId(),
       .pos = decl.getPos(),
   };
-  for (auto &index : indexes) {
+  for (const auto &index : indexes) {
     if (index->getModId() == request.modId) {
       continue;
     }
-    if (auto *foreign = index->findForeignDecl(request)) {
-      for (auto &e : foreign->getRefs()) {
+    if (const auto *foreign = index->findForeignDecl(request)) {
+      for (const auto &e : foreign->getRefs()) {
         count++;
         if (consumer) {
           FindRefsResult ret = {
