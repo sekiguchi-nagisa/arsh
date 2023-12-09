@@ -41,8 +41,8 @@ TEST(BufferTest, case1) {
   msg += std::to_string(buffer.size());
   msg += ", but index is: ";
   msg += std::to_string(buffer.size() + 2);
-  ASSERT_EXIT({ buffer.at(buffer.size() + 2) = 999; }, ::testing::KilledBySignal(SIGABRT),
-              msg.c_str());
+  ASSERT_EXIT(
+      { buffer.at(buffer.size() + 2) = 999; }, ::testing::KilledBySignal(SIGABRT), msg.c_str());
 #endif
 }
 

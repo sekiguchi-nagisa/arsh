@@ -341,7 +341,7 @@ TEST_F(InteractiveTest, keybind) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, killRing) {
+TEST_F(InteractiveTest, killRing1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -405,6 +405,55 @@ TEST_F(InteractiveTest, killRing) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900"));
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900\n: Int = 999900\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, killRing2) { // resize kill-ring
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var killed : [String]"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.action('action1', 'kill-ring-select', function(q, l) => "
+                              "{ $killed = $l!.copy(); '12'; })"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^R', 'action1')"));
+
+  // kill-ring-select (not work)
+  this->send(CTRL_R "34\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "34\n: Int = 34\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $killed.size() == 0"));
+
+  // set size (to 7)
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('killring-size', 4)"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.configs()['killring-size'] as Int", ": Int = 7"));
+
+  this->send("12345" CTRL_U "abcde" CTRL_U "ABCDE" CTRL_U "67890" CTRL_U "FGHIJ" CTRL_U);
+  this->send(CTRL_R);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", ": Int = 12"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed.size()", ": Int = 5"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[0]", ": String = 12345"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[1]", ": String = abcde"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[2]", ": String = ABCDE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[3]", ": String = 67890"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[4]", ": String = FGHIJ"));
+
+  // resize (shrink to 3)
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('killring-size', 2)"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.configs()['killring-size'] as Int", ": Int = 3"));
+
+  this->send(CTRL_R);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", ": Int = 12"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed.size()", ": Int = 3"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[0]", ": String = ABCDE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[1]", ": String = 67890"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$killed[2]", ": String = FGHIJ"));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

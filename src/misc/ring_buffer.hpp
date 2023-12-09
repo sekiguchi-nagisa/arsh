@@ -39,7 +39,7 @@ private:
   Storage storage_;
 
 public:
-  static constexpr unsigned int alignCapacity(unsigned int cap) {
+  static constexpr unsigned int alignAllocSize(unsigned int cap) {
     if (cap == 0) {
       cap = 1;
     }
@@ -50,7 +50,7 @@ public:
     return 1 << std::min(count, 31u);
   }
 
-  explicit RingBuffer(unsigned int cap) : storage_(alignCapacity(cap)) {}
+  explicit RingBuffer(unsigned int allocSize) : storage_(alignAllocSize(allocSize)) {}
 
   RingBuffer() : RingBuffer(0) {}
 
@@ -75,6 +75,8 @@ public:
     }
     return *this;
   }
+
+  unsigned int allocSize() const { return static_cast<unsigned int>(this->storage_.size); }
 
   unsigned int capacity() const { return this->allocSize() - 1; }
 
@@ -123,8 +125,6 @@ private:
   T *values() { return this->storage_.ptr; }
 
   const T *values() const { return this->storage_.ptr; }
-
-  size_t allocSize() const { return this->storage_.size; }
 
   unsigned int actualIndex(unsigned int index) const { return index & this->capacity(); }
 };
