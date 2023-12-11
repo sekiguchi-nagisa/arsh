@@ -4,6 +4,13 @@
 
 ### Added
 
+#### Core
+
+- add `failtilde` runtime option
+    - enable/disable tilde expansion error check
+        - if disabled, not throw ``TildeError`` even if tilde expansion failed
+    - ``failtilde`` option is enabled by default
+
 #### Builtin
 
 - ``LineEditor`` support undo/redo op

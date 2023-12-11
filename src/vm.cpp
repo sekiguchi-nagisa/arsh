@@ -1465,9 +1465,10 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
       nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
   DefaultDirStackProvider provider(state);
   TildeExpandStatus tildeExpandStatus{};
-  auto expander = [&provider, &tildeExpandStatus](std::string &path) {
+  const bool failTilde = hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE);
+  auto expander = [&provider, &tildeExpandStatus, failTilde](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, &provider);
-    return tildeExpandStatus == TildeExpandStatus::OK;
+    return tildeExpandStatus == TildeExpandStatus::OK || !failTilde;
   };
   auto ret = matcher(std::move(expander), appender);
   switch (ret) {
@@ -1653,7 +1654,9 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         if (tilde) {
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
-          if (auto s = expandTilde(str, true, &dirStackProvider); s != TildeExpandStatus::OK) {
+          if (auto s = expandTilde(str, true, &dirStackProvider);
+              s != TildeExpandStatus::OK &&
+              hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE)) {
             raiseTildeError(state, dirStackProvider, str, s);
             return false;
           }
@@ -2325,7 +2328,8 @@ bool VM::mainLoop(DSState &state) {
       vmcase(EXPAND_TILDE) {
         std::string str = state.stack.pop().asStrRef().toString();
         DefaultDirStackProvider dirStackProvider(state);
-        if (auto s = expandTilde(str, true, &dirStackProvider); s != TildeExpandStatus::OK) {
+        if (auto s = expandTilde(str, true, &dirStackProvider);
+            s != TildeExpandStatus::OK && hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE)) {
           raiseTildeError(state, dirStackProvider, str, s);
           vmerror;
         }

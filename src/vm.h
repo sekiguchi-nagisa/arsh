@@ -40,13 +40,14 @@ namespace ydsh {
   OP(CLOBBER, (1u << 1u), "clobber")                                                               \
   OP(DOTGLOB, (1u << 2u), "dotglob")                                                               \
   OP(ERR_RAISE, (1u << 3u), "errraise")                                                            \
-  OP(FASTGLOB, (1u << 4u), "fastglob")                                                             \
-  OP(FAIL_SIGPIPE, (1u << 5u), "failsigpipe")                                                      \
-  OP(HUP_EXIT, (1u << 6u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 7u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 8u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 9u), "traceonexit")                                                        \
-  OP(XTRACE, (1u << 10u), "xtrace")
+  OP(FAIL_SIGPIPE, (1u << 4u), "failsigpipe")                                                      \
+  OP(FAIL_TILDE, (1u << 5u), "failtilde")                                                          \
+  OP(FASTGLOB, (1u << 6u), "fastglob")                                                             \
+  OP(HUP_EXIT, (1u << 7u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 8u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 9u), "nullglob")                                                             \
+  OP(TRACE_EXIT, (1u << 10u), "traceonexit")                                                       \
+  OP(XTRACE, (1u << 11u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -100,7 +101,7 @@ public:
   bool isInteractive{false};
 
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |
-                              RuntimeOption::CLOBBER};
+                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_TILDE};
 
   DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 

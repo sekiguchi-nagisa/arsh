@@ -191,3 +191,32 @@ assert ($ex as TildeError).message() =~ $/~if=~/
 assert "if=~" == "$(echo ${34}if=~)"
 assert "=~" == "$(echo \=~)"
 assert "=~" == "$(echo =~)"
+
+## suppress tilde error
+shctl unset fail_tilde
+$ex = 34
+try { assert echo ~hogehoge | grep '~hogehoge'; } catch e { $ex = $e; }
+assert $ex is Int
+
+try { assert echo ~hogehoge | grep '~hogehoge'; } catch e { $ex = $e; }
+assert $ex is Int
+
+shctl set fail_tilde
+$ex = 34
+try { echo ~jferif/*; } catch e { $ex = $e; }
+assert $ex is TildeError   # checl tilde expansion before glob
+
+shctl unset fail_tilde
+$ex = 34
+try { echo ~jferif/*; } catch e { $ex = $e; }
+assert $ex is GlobbingError   # ignore tilde expansion error, but still has error (glob)
+
+shctl unset fail_tilde
+$ex = 34
+var rr = try { @(~{hogehoge,}); } catch e { $ex = $e; ['']; }
+assert $ex is Int
+assert $rr.size() == 2
+assert $rr[0] == '~hogehoge'
+assert $rr[1] == @(~)[0]
+
+true
