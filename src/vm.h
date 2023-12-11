@@ -55,11 +55,11 @@ enum class RuntimeOption : unsigned short {
 #undef GEN_ENUM
 };
 
-enum class EvalOP : unsigned int {
+enum class EvalOP : unsigned char {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
 };
 
-enum class EvalRet : unsigned int {
+enum class EvalRet : unsigned char {
   SUCCESS,       // normal termination
   HAS_ERROR,     // still has uncaught error
   HANDLED_ERROR, // already handled uncaught error
@@ -370,7 +370,7 @@ public:
 
 class CmdResolver {
 public:
-  enum ResolveOp {
+  enum ResolveOp : unsigned short {
     FROM_UDC = 1u << 0u,
     FROM_BUILTIN = 1u << 1u,
     FROM_EXTERNAL = 1u << 2u,
@@ -412,7 +412,7 @@ public:
 template <>
 struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
 
-enum class CmdCallAttr : unsigned int {
+enum class CmdCallAttr : unsigned char {
   SET_VAR = 1u << 0u,
   NEED_FORK = 1u << 1u, // for external command
   RAISE = 1u << 2u,
