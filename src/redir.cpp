@@ -225,7 +225,7 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
 bool RedirObject::redirect(DSState &state) {
   this->saveFDs();
   for (auto &entry : this->entries) {
-    int r = redirectImpl(entry, hasFlag(state.runtimeOption, RuntimeOption::CLOBBER));
+    int r = redirectImpl(entry, state.has(RuntimeOption::CLOBBER));
     if (this->backupFDSet > 0 && r != 0) {
       std::string msg = ERROR_REDIR;
       if (entry.value) {

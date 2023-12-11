@@ -274,13 +274,13 @@ unsigned int DSState_option(const DSState *st) {
   }
 
   // get runtime option
-  if (hasFlag(st->runtimeOption, RuntimeOption::ASSERT)) {
+  if (st->has(RuntimeOption::ASSERT)) {
     setFlag(option, DS_OPTION_ASSERT);
   }
-  if (hasFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT)) {
+  if (st->has(RuntimeOption::TRACE_EXIT)) {
     setFlag(option, DS_OPTION_TRACE_EXIT);
   }
-  if (hasFlag(st->runtimeOption, RuntimeOption::MONITOR)) {
+  if (st->has(RuntimeOption::MONITOR)) {
     setFlag(option, DS_OPTION_JOB_CONTROL);
   }
   return option;
@@ -296,19 +296,21 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
   }
 
   // set runtime option
+  auto option = st->getOption();
   if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
-    setFlag(st->runtimeOption, RuntimeOption::ASSERT);
+    setFlag(option, RuntimeOption::ASSERT);
   }
   if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
-    setFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
+    setFlag(option, RuntimeOption::TRACE_EXIT);
   }
   if (hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
-    setFlag(st->runtimeOption, RuntimeOption::MONITOR);
+    setFlag(option, RuntimeOption::MONITOR);
     setJobControlSignalSetting(*st, true);
   }
   if (hasFlag(optionSet, DS_OPTION_XTRACE)) {
-    setFlag(st->runtimeOption, RuntimeOption::XTRACE);
+    setFlag(option, RuntimeOption::XTRACE);
   }
+  st->setOption(option);
 }
 
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {
@@ -321,16 +323,18 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
   }
 
   // unset runtime option
+  auto option = st->getOption();
   if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
-    unsetFlag(st->runtimeOption, RuntimeOption::ASSERT);
+    unsetFlag(option, RuntimeOption::ASSERT);
   }
   if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
-    unsetFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
+    unsetFlag(option, RuntimeOption::TRACE_EXIT);
   }
   if (hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
-    unsetFlag(st->runtimeOption, RuntimeOption::MONITOR);
+    unsetFlag(option, RuntimeOption::MONITOR);
     setJobControlSignalSetting(*st, false);
   }
+  st->setOption(option);
 }
 
 void DSError_release(DSError *e) {

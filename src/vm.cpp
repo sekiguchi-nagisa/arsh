@@ -399,13 +399,13 @@ bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, c
       raiseSystemError(state, errNum, "wait failed");
       return false;
     }
-    if (forkKind == ForkKind::PIPE_FAIL && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+    if (forkKind == ForkKind::PIPE_FAIL && state.has(RuntimeOption::ERR_RAISE)) {
       for (unsigned int index = 0; index < entry->getProcSize(); index++) {
         auto &proc = entry->getProcs()[index];
         int s = proc.exitStatus();
         if (s != 0) {
           if (index < entry->getProcSize() - 1 && proc.signaled() && proc.asSigNum() == SIGPIPE) {
-            if (!hasFlag(state.runtimeOption, RuntimeOption::FAIL_SIGPIPE)) {
+            if (!state.has(RuntimeOption::FAIL_SIGPIPE)) {
               continue;
             }
           }
@@ -554,7 +554,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
         raiseSystemError(state, errNum, "wait failed");
         return false;
       }
-      if (status != 0 && hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+      if (status != 0 && state.has(RuntimeOption::ERR_RAISE)) {
         std::string message = "child process exits with non-zero status: `";
         message += std::to_string(status);
         message += "'";
@@ -877,8 +877,7 @@ static void traceCmd(const DSState &state, const ArrayObject &argv) {
 }
 
 static bool checkCmdExecError(DSState &state, CmdCallAttr attr, int64_t status) {
-  if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) &&
-      hasFlag(state.runtimeOption, RuntimeOption::ERR_RAISE)) {
+  if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) && state.has(RuntimeOption::ERR_RAISE)) {
     std::string message = "command exits with non-zero status: `";
     message += std::to_string(status);
     message += "'";
@@ -898,7 +897,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     name = name.substr(pos + 1);
     array.refValues()[0] = DSValue::createStr(name); // not check iterator invalidation
   }
-  if (hasFlag(state.runtimeOption, RuntimeOption::XTRACE)) {
+  if (state.has(RuntimeOption::XTRACE)) {
     traceCmd(state, array);
   }
   switch (cmd.kind()) {
@@ -1455,17 +1454,17 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   if (tilde) {
     setFlag(option, GlobMatchOption::TILDE);
   }
-  if (hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
+  if (state.has(RuntimeOption::DOTGLOB)) {
     setFlag(option, GlobMatchOption::DOTGLOB);
   }
-  if (hasFlag(state.runtimeOption, RuntimeOption::FASTGLOB)) {
+  if (state.has(RuntimeOption::FASTGLOB)) {
     setFlag(option, GlobMatchOption::FASTGLOB);
   }
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
       nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
   DefaultDirStackProvider provider(state);
   TildeExpandStatus tildeExpandStatus{};
-  const bool failTilde = hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE);
+  const bool failTilde = state.has(RuntimeOption::FAIL_TILDE);
   auto expander = [&provider, &tildeExpandStatus, failTilde](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, &provider);
     return tildeExpandStatus == TildeExpandStatus::OK || !failTilde;
@@ -1474,7 +1473,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   switch (ret) {
   case GlobMatchResult::MATCH:
   case GlobMatchResult::NOMATCH:
-    if (ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+    if (ret == GlobMatchResult::MATCH || state.has(RuntimeOption::NULLGLOB)) {
       argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
     } else {
@@ -1655,8 +1654,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
           if (auto s = expandTilde(str, true, &dirStackProvider);
-              s != TildeExpandStatus::OK &&
-              hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE)) {
+              s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
             raiseTildeError(state, dirStackProvider, str, s);
             return false;
           }
@@ -1806,7 +1804,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(HALT) { return true; }
       vmcase(ASSERT_ENABLED) {
         unsigned short offset = read16(state.stack.ip());
-        if (hasFlag(state.runtimeOption, RuntimeOption::ASSERT)) {
+        if (state.has(RuntimeOption::ASSERT)) {
           state.stack.ip() += 2;
         } else {
           state.stack.ip() += offset - 1;
@@ -2329,7 +2327,7 @@ bool VM::mainLoop(DSState &state) {
         std::string str = state.stack.pop().asStrRef().toString();
         DefaultDirStackProvider dirStackProvider(state);
         if (auto s = expandTilde(str, true, &dirStackProvider);
-            s != TildeExpandStatus::OK && hasFlag(state.runtimeOption, RuntimeOption::FAIL_TILDE)) {
+            s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
           raiseTildeError(state, dirStackProvider, str, s);
           vmerror;
         }
@@ -2841,7 +2839,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
 
   // print error message
   if (kind == DS_ERROR_KIND_RUNTIME_ERROR || kind == DS_ERROR_KIND_ASSERTION_ERROR ||
-      hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
+      state.has(RuntimeOption::TRACE_EXIT)) {
     typeAs<ErrorObject>(except).printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
   }
 

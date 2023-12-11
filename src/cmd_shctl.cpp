@@ -96,7 +96,7 @@ static int showOptions(const DSState &state) {
   for (auto &e : runtimeOptions) {
     errno = 0;
     if (printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
-               hasFlag(state.runtimeOption, e.option) ? "on" : "off") < 0) {
+               state.has(e.option) ? "on" : "off") < 0) {
       return errno;
     }
   }
@@ -133,11 +133,13 @@ static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef 
     if (option == RuntimeOption::MONITOR) {
       setJobControlSignalSetting(state, set);
     }
+    auto opt = state.getOption();
     if (set) {
-      setFlag(state.runtimeOption, option);
+      setFlag(opt, option);
     } else {
-      unsetFlag(state.runtimeOption, option);
+      unsetFlag(opt, option);
     }
+    state.setOption(opt);
   }
   return 0;
 }
@@ -182,7 +184,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
     for (auto &e : runtimeOptions) {
       value += e.name;
       value += "=";
-      value += hasFlag(state.runtimeOption, e.option) ? "on" : "off";
+      value += state.has(e.option) ? "on" : "off";
       value += " ";
     }
     state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
@@ -205,11 +207,13 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
       foundMonitor = true;
       setJobControlSignalSetting(state, set);
     }
+    auto opt = state.getOption();
     if (set) {
-      setFlag(state.runtimeOption, option);
+      setFlag(opt, option);
     } else {
-      unsetFlag(state.runtimeOption, option);
+      unsetFlag(opt, option);
     }
+    state.setOption(opt);
   }
   return 0;
 }

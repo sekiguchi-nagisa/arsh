@@ -77,7 +77,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
 }
 
 void raiseShellExit(DSState &st, int64_t status) {
-  if (hasFlag(st.runtimeOption, RuntimeOption::HUP_EXIT)) {
+  if (st.has(RuntimeOption::HUP_EXIT)) {
     st.jobTable.send(SIGHUP);
   }
   int s = maskExitStatus(status);

@@ -96,12 +96,14 @@ public:
 
   const timestamp initTime; // for builtin printf command
 
+private:
+  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |
+                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_TILDE};
+
+public:
   const bool support_strftime_plus; // if support strftime '%+' specifier
 
   bool isInteractive{false};
-
-  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |
-                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_TILDE};
 
   DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
@@ -216,9 +218,7 @@ public:
 
   bool isRootShell() const { return this->subshellLevel == 0; }
 
-  bool isJobControl() const {
-    return this->isRootShell() && hasFlag(this->runtimeOption, RuntimeOption::MONITOR);
-  }
+  bool isJobControl() const { return this->isRootShell() && this->has(RuntimeOption::MONITOR); }
 
   /**
    *
@@ -247,6 +247,12 @@ public:
   }
 
   L64X128MixRNG &getRng() { return this->rng; }
+
+  bool has(RuntimeOption option) const { return hasFlag(this->runtimeOption, option); }
+
+  RuntimeOption getOption() const { return this->runtimeOption; }
+
+  void setOption(RuntimeOption option) { this->runtimeOption = option; }
 };
 
 namespace ydsh {
