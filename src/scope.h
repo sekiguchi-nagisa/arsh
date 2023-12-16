@@ -28,7 +28,7 @@ namespace ydsh {
 
 // for name lookup
 
-enum class NameRegisterError {
+enum class NameRegisterError : unsigned char {
   DEFINED,
   LOCAL_LIMIT,
   GLOBAL_LIMIT,
@@ -37,7 +37,7 @@ enum class NameRegisterError {
 
 using NameRegisterResult = Result<HandlePtr, NameRegisterError>;
 
-enum class NameLookupError {
+enum class NameLookupError : unsigned char {
   NOT_FOUND,
   MOD_PRIVATE,
   UPVAR_LIMIT,
@@ -45,7 +45,7 @@ enum class NameLookupError {
   UNCAPTURE_FIELD,
 };
 
-enum class NameRegisterOp : unsigned int {
+enum class NameRegisterOp : unsigned char {
   AS_ALIAS = 1u << 0u,
   IGNORE_CONFLICT = 1u << 1u,
 };
@@ -127,6 +127,7 @@ public:
    * for module scope construction
    * normally called from ModuleLoader
    * @param gvarCount
+   * @param modIndex
    * @param modId
    */
   NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned int modIndex, ModId modId)
@@ -136,6 +137,7 @@ public:
    * for module scope construction.
    * normally called from ModuleLoader
    * @param parent
+   * @param modIndex
    * @param modId
    */
   NameScope(const NameScopePtr &parent, unsigned int modIndex, ModId modId)

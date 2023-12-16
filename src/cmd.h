@@ -28,7 +28,7 @@ namespace ydsh {
 
 class ArrayObject;
 
-struct GetOptState : public opt::GetOptState {
+struct GetOptState : opt::GetOptState {
   /**
    * index of next processing argument
    */

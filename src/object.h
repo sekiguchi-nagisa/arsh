@@ -27,12 +27,10 @@
 #include <tuple>
 
 #include "constant.h"
-#include "misc/buffer.hpp"
 #include "misc/files.hpp"
 #include "misc/grapheme.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
-#include "opcode.h"
 #include "regex_wrapper.h"
 #include "type.h"
 #include <config.h>
@@ -93,7 +91,8 @@ protected:
   NON_COPYABLE(DSObject);
 
   DSObject(ObjectKind kind, unsigned int typeID)
-      : tag(typeID << 8 | static_cast<unsigned char>(kind)) {}
+    : tag(typeID << 8 | static_cast<unsigned char>(kind)) {
+  }
 
   ~DSObject() = default;
 
@@ -115,9 +114,17 @@ struct ObjectWithRtti : public DSObject {
 protected:
   static_assert(sizeof(DSObject) == 8);
 
-  explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.typeId()) {}
-  explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(toUnderlying(type)) {}
-  explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
+  explicit ObjectWithRtti(const DSType &type)
+    : ObjectWithRtti(type.typeId()) {
+  }
+
+  explicit ObjectWithRtti(TYPE type)
+    : ObjectWithRtti(toUnderlying(type)) {
+  }
+
+  explicit ObjectWithRtti(unsigned int id)
+    : DSObject(K, id) {
+  }
 
 public:
   static constexpr auto KIND = K;
@@ -149,7 +156,10 @@ private:
   int fd;
 
 public:
-  explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::FD), fd(fd) {}
+  explicit UnixFdObject(int fd)
+    : ObjectWithRtti(TYPE::FD), fd(fd) {
+  }
+
   ~UnixFdObject();
 
   int tryToClose(bool forceClose) {
@@ -193,9 +203,12 @@ public:
   static_assert(MAX_SIZE <= SIZE_MAX);
 
   explicit StringObject(std::string &&value)
-      : ObjectWithRtti(TYPE::String), value(std::move(value)) {}
+    : ObjectWithRtti(TYPE::String), value(std::move(value)) {
+  }
 
-  explicit StringObject(StringRef ref) : StringObject(ref.toString()) {}
+  explicit StringObject(StringRef ref)
+    : StringObject(ref.toString()) {
+  }
 
   const char *getValue() const { return this->value.c_str(); }
 
@@ -211,17 +224,26 @@ enum class StackGuardType : unsigned char {
 
 enum class DSValueKind : unsigned char {
   EMPTY,
-  OBJECT,      // not null
-  NUMBER,      // uint64_t
-  NUM_LIST,    // [uint32_t uint32_t, uint32_t]
-  STACK_GUARD, // [uint32_t uint32_t, uint32_t]
-  DUMMY,       // DSType(uint32_t), uint32_t, uint32_t
-  EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
+  OBJECT,
+  // not null
+  NUMBER,
+  // uint64_t
+  NUM_LIST,
+  // [uint32_t uint32_t, uint32_t]
+  STACK_GUARD,
+  // [uint32_t uint32_t, uint32_t]
+  DUMMY,
+  // DSType(uint32_t), uint32_t, uint32_t
+  EXPAND_META,
+  // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
   INVALID,
   BOOL,
-  SIG,   // int64_t
-  INT,   // int64_t
-  FLOAT, // double
+  SIG,
+  // int64_t
+  INT,
+  // int64_t
+  FLOAT,
+  // double
 
   // for small string (up to 14 characters)
   SSTR0,
@@ -310,7 +332,7 @@ public:
 
 template <typename T, typename... Arg>
 struct ObjectConstructor {
-  static DSObject *construct(Arg &&...arg) { return new T(std::forward<Arg>(arg)...); }
+  static DSObject *construct(Arg &&... arg) { return new T(std::forward<Arg>(arg)...); }
 };
 
 class StrBuilder;
@@ -365,9 +387,12 @@ public:
    */
   DSValue() noexcept { this->value.kind = DSValueKind::EMPTY; }
 
-  DSValue(std::nullptr_t) noexcept : DSValue() {} // NOLINT
+  DSValue(std::nullptr_t) noexcept
+    : DSValue() {
+  } // NOLINT
 
-  DSValue(const DSValue &value) noexcept : DSValueBase(value) {
+  DSValue(const DSValue &value) noexcept
+    : DSValueBase(value) {
     if (this->isObject()) {
       this->value.obj->refCount++;
     }
@@ -376,10 +401,13 @@ public:
   /**
    * not increment refCount
    */
-  DSValue(DSValue &&value) noexcept : DSValueBase(value) { value.value.kind = DSValueKind::EMPTY; }
+  DSValue(DSValue &&value) noexcept
+    : DSValueBase(value) { value.value.kind = DSValueKind::EMPTY; }
 
-  template <typename T, enable_when<std::is_base_of_v<DSObject, T>> = nullptr>
-  DSValue(const ObjPtr<T> &o) noexcept : DSValue(DSValue(o.get())) {} // NOLINT
+  template <typename T, enable_when<std::is_base_of_v<DSObject, T>>  = nullptr>
+  DSValue(const ObjPtr<T> &o) noexcept
+    : DSValue(DSValue(o.get())) {
+  } // NOLINT
 
   ~DSValue() {
     if (this->isObject()) {
@@ -392,7 +420,7 @@ public:
   DSValue &operator=(const DSValue &value) noexcept {
     if (this != std::addressof(value)) {
       this->~DSValue();
-      new (this) DSValue(value);
+      new(this) DSValue(value);
     }
     return *this;
   }
@@ -400,7 +428,7 @@ public:
   DSValue &operator=(DSValue &&value) noexcept {
     if (this != std::addressof(value)) {
       this->~DSValue();
-      new (this) DSValue(std::move(value));
+      new(this) DSValue(std::move(value));
     }
     return *this;
   }
@@ -548,7 +576,7 @@ public:
   bool appendAsStr(DSState &state, StringRef value);
 
   template <typename T, typename... A>
-  static DSValue create(A &&...args) {
+  static DSValue create(A &&... args) {
     static_assert(std::is_base_of_v<DSObject, T>, "must be subtype of DSObject");
 
     return DSValue(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
@@ -693,7 +721,9 @@ private:
   DSValue buf; // must be String
 
 public:
-  explicit StrBuilder(DSState &st) : state(st), buf(DSValue::createStr("")) {}
+  explicit StrBuilder(DSState &st)
+    : state(st), buf(DSValue::createStr("")) {
+  }
 
   bool add(StringRef value) { return this->buf.appendAsStr(this->state, value); }
 
@@ -711,7 +741,9 @@ private:
   PCRE re;
 
 public:
-  explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
+  explicit RegexObject(PCRE &&re)
+    : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {
+  }
 
   bool search(DSState &state, StringRef ref) { return this->match(state, ref, nullptr) > 0; }
 
@@ -754,13 +786,17 @@ public:
 
   using IterType = std::vector<DSValue>::const_iterator;
 
-  explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) {}
+  explicit ArrayObject(const DSType &type)
+    : ObjectWithRtti(type) {
+  }
 
   ArrayObject(const DSType &type, std::vector<DSValue> &&values)
-      : ArrayObject(type.typeId(), std::move(values)) {}
+    : ArrayObject(type.typeId(), std::move(values)) {
+  }
 
   ArrayObject(unsigned int typeID, std::vector<DSValue> &&values)
-      : ObjectWithRtti(typeID), values(std::move(values)) {}
+    : ObjectWithRtti(typeID), values(std::move(values)) {
+  }
 
   void lock(LockType t) {
     if (this->lockCount == 0) {
@@ -841,7 +877,7 @@ private:
 
 public:
   explicit ArrayIterObject(ObjPtr<ArrayObject> obj)
-      : ObjectWithRtti(obj->getTypeID()), arrayObj(std::move(obj)) {
+    : ObjectWithRtti(obj->getTypeID()), arrayObj(std::move(obj)) {
     this->arrayObj->lock(ArrayObject::LockType::ITER);
   }
 
@@ -855,7 +891,9 @@ public:
 struct StrArrayIter {
   ArrayObject::IterType actual;
 
-  explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
+  explicit StrArrayIter(ArrayObject::IterType actual)
+    : actual(actual) {
+  }
 
   auto operator*() const { return this->actual->asStrRef(); }
 
@@ -869,6 +907,7 @@ struct StrArrayIter {
     ++this->actual;
     return *this;
   }
+
   StrArrayIter &operator--() {
     --this->actual;
     return *this;
@@ -882,16 +921,17 @@ private:
   unsigned int fieldSize;
   DSValueBase fields[];
 
-  BaseObject(const DSType &type, unsigned int size) : ObjectWithRtti(type), fieldSize(size) {
+  BaseObject(const DSType &type, unsigned int size)
+    : ObjectWithRtti(type), fieldSize(size) {
     for (unsigned int i = 0; i < this->fieldSize; i++) {
-      new (&this->fields[i]) DSValue();
+      new(&this->fields[i]) DSValue();
     }
   }
 
 public:
   static BaseObject *create(const DSType &type, unsigned int size) {
     void *ptr = malloc(sizeof(BaseObject) + sizeof(DSValueBase) * size);
-    return new (ptr) BaseObject(type, size);
+    return new(ptr) BaseObject(type, size);
   }
 
   /**
@@ -911,7 +951,8 @@ public:
     return static_cast<const DSValue &>(this->fields[index]);
   }
 
-  static void operator delete(void *ptr) noexcept { // NOLINT
+  static void operator delete(void *ptr) noexcept {
+    // NOLINT
     free(ptr);
   }
 
@@ -925,7 +966,9 @@ public:
 
 template <typename... Arg>
 struct ObjectConstructor<BaseObject, Arg...> {
-  static DSObject *construct(Arg &&...arg) { return BaseObject::create(std::forward<Arg>(arg)...); }
+  static DSObject *construct(Arg &&... arg) {
+    return BaseObject::create(std::forward<Arg>(arg)...);
+  }
 };
 
 class StackTraceElement {
@@ -936,7 +979,8 @@ private:
 
 public:
   StackTraceElement(const char *sourceName, unsigned int lineNum, std::string &&callerName)
-      : sourceName(sourceName), lineNum(lineNum), callerName(std::move(callerName)) {}
+    : sourceName(sourceName), lineNum(lineNum), callerName(std::move(callerName)) {
+  }
 
   ~StackTraceElement() = default;
 
@@ -977,8 +1021,9 @@ private:
 public:
   ErrorObject(const DSType &type, DSValue &&message, DSValue &&name, int64_t status,
               std::vector<StackTraceElement> &&stackTrace)
-      : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
-        stackTrace(std::move(stackTrace)) {}
+    : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
+      stackTrace(std::move(stackTrace)) {
+  }
 
   bool opStr(StrBuilder &builder) const;
 
@@ -989,9 +1034,12 @@ public:
   int64_t getStatus() const { return this->status; }
 
   enum class PrintOp : unsigned char {
-    DEFAULT,  // only print stack trace
-    UNCAUGHT, // show uncaught exception message header
-    IGNORED,  // show ignored exception message header
+    DEFAULT,
+    // only print stack trace
+    UNCAUGHT,
+    // show uncaught exception message header
+    IGNORED,
+    // show ignored exception message header
   };
 
   /**
@@ -1039,7 +1087,9 @@ protected:
 public:
   DSCode() = default;
 
-  DSCode(Base base) : base(base) {} // NOLINT
+  DSCode(Base base)
+    : base(base) {
+  } // NOLINT
 
   const unsigned char *getCode() const { return this->base.code; }
 
@@ -1063,20 +1113,23 @@ private:
 
 public:
   NativeCode() noexcept
-      : DSCode({
-            .codeKind = CodeKind::NATIVE,
-            .localVarNum = 4,
-            .stackDepth = 4,
-            .size = 0,
-            .code = nullptr,
-        }) {}
+    : DSCode({
+        .codeKind = CodeKind::NATIVE,
+        .localVarNum = 4,
+        .stackDepth = 4,
+        .size = 0,
+        .code = nullptr,
+    }) {
+  }
 
-  explicit NativeCode(const ArrayType &value) noexcept : NativeCode() {
+  explicit NativeCode(const ArrayType &value) noexcept
+    : NativeCode() {
     this->value = value;
     this->setCode();
   }
 
-  NativeCode(NativeCode &&o) noexcept : NativeCode() {
+  NativeCode(NativeCode &&o) noexcept
+    : NativeCode() {
     this->value = o.value;
     this->setCode();
   }
@@ -1086,7 +1139,7 @@ public:
   NativeCode &operator=(NativeCode &&o) noexcept {
     if (this != std::addressof(o)) {
       this->~NativeCode();
-      new (this) NativeCode(std::move(o));
+      new(this) NativeCode(std::move(o));
     }
     return *this;
   }
@@ -1159,14 +1212,15 @@ public:
   CompiledCode(const std::string &sourceName, ModId modId, const std::string &name, DSCode code,
                DSValue *constPool, LineNumEntry *sourcePosEntries,
                ExceptionEntry *exceptionEntries) noexcept
-      : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
-        name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
-        exceptionEntries(exceptionEntries) {}
+    : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
+      name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
+      exceptionEntries(exceptionEntries) {
+  }
 
   CompiledCode(CompiledCode &&c) noexcept
-      : DSCode(c), belongedModId(c.belongedModId), sourceName(c.sourceName), name(c.name),
-        constPool(c.constPool), lineNumEntries(c.lineNumEntries),
-        exceptionEntries(c.exceptionEntries) {
+    : DSCode(c), belongedModId(c.belongedModId), sourceName(c.sourceName), name(c.name),
+      constPool(c.constPool), lineNumEntries(c.lineNumEntries),
+      exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
     c.sourceName = nullptr;
     c.base.code = nullptr;
@@ -1175,7 +1229,8 @@ public:
     c.exceptionEntries = nullptr;
   }
 
-  CompiledCode() noexcept : DSCode() { this->base.code = nullptr; }
+  CompiledCode() noexcept
+    : DSCode() { this->base.code = nullptr; }
 
   ~CompiledCode() {
     free(this->sourceName);
@@ -1189,7 +1244,7 @@ public:
   CompiledCode &operator=(CompiledCode &&o) noexcept {
     if (this != std::addressof(o)) {
       this->~CompiledCode();
-      new (this) CompiledCode(std::move(o));
+      new(this) CompiledCode(std::move(o));
     }
     return *this;
   }
@@ -1224,7 +1279,8 @@ private:
 
 public:
   FuncObject(const DSType &funcType, CompiledCode &&callable)
-      : ObjectWithRtti(funcType), code(std::move(callable)) {}
+    : ObjectWithRtti(funcType), code(std::move(callable)) {
+  }
 
   const CompiledCode &getCode() const { return this->code; }
 
@@ -1239,16 +1295,16 @@ private:
   DSValueBase upvars[];
 
   ClosureObject(ObjPtr<FuncObject> func, unsigned int size)
-      : ObjectWithRtti(func->getTypeID()), func(std::move(func)), upvarSize(size) {
+    : ObjectWithRtti(func->getTypeID()), func(std::move(func)), upvarSize(size) {
     for (unsigned int i = 0; i < this->upvarSize; i++) {
-      new (&this->upvars[i]) DSValue();
+      new(&this->upvars[i]) DSValue();
     }
   }
 
 public:
   static ClosureObject *create(ObjPtr<FuncObject> func, unsigned int size, const DSValue *values) {
     void *ptr = malloc(sizeof(ClosureObject) + sizeof(DSValueBase) * size);
-    auto *closure = new (ptr) ClosureObject(std::move(func), size);
+    auto *closure = new(ptr) ClosureObject(std::move(func), size);
     for (unsigned int i = 0; i < size; i++) {
       (*closure)[i] = values[i];
     }
@@ -1265,14 +1321,15 @@ public:
     return static_cast<const DSValue &>(this->upvars[index]);
   }
 
-  static void operator delete(void *ptr) noexcept { // NOLINT
+  static void operator delete(void *ptr) noexcept {
+    // NOLINT
     free(ptr);
   }
 };
 
 template <typename... Arg>
 struct ObjectConstructor<ClosureObject, Arg...> {
-  static DSObject *construct(Arg &&...arg) {
+  static DSObject *construct(Arg &&... arg) {
     return ClosureObject::create(std::forward<Arg>(arg)...);
   }
 };
@@ -1280,7 +1337,7 @@ struct ObjectConstructor<ClosureObject, Arg...> {
 using CallArgs = std::pair<unsigned int, std::array<DSValue, 3>>;
 
 template <typename... T>
-inline CallArgs makeArgs(T &&...arg) {
+inline CallArgs makeArgs(T &&... arg) {
   static_assert(sizeof...(arg) <= 3, "too long");
   return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
 }
@@ -1290,7 +1347,9 @@ private:
   DSValue value;
 
 public:
-  explicit BoxObject(DSValue &&value) : ObjectWithRtti(TYPE::Any), value(std::move(value)) {}
+  explicit BoxObject(DSValue &&value)
+    : ObjectWithRtti(TYPE::Any), value(std::move(value)) {
+  }
 
   const DSValue &getValue() const { return this->value; }
 
@@ -1310,7 +1369,9 @@ private:
   std::vector<std::pair<DSValue, DSValue>> envs;
 
 public:
-  explicit EnvCtxObject(DSState &state) : ObjectWithRtti(TYPE::Any), state(state) {}
+  explicit EnvCtxObject(DSState &state)
+    : ObjectWithRtti(TYPE::Any), state(state) {
+  }
 
   ~EnvCtxObject();
 
@@ -1334,7 +1395,7 @@ private:
 
 public:
   explicit ReaderObject(ObjPtr<UnixFdObject> &&fdObj)
-      : ObjectWithRtti(TYPE::Reader), fdObj(std::move(fdObj)) {
+    : ObjectWithRtti(TYPE::Reader), fdObj(std::move(fdObj)) {
     if (this->fdObj->getRawFd() == -1) {
       this->available = false;
     }
@@ -1346,8 +1407,8 @@ public:
 };
 
 struct UserSysTime {
-  struct timeval user {};
-  struct timeval sys {};
+  struct timeval user{};
+  struct timeval sys{};
 };
 
 class TimerObject : public ObjectWithRtti<ObjectKind::Timer> {

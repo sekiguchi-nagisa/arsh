@@ -18,7 +18,6 @@
 #define YDSH_PARSER_H
 
 #include <memory>
-#include <tuple>
 #include <utility>
 
 #include "lexer.h"

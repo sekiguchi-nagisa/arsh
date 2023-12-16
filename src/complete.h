@@ -17,19 +17,16 @@
 #ifndef YDSH_COMPLETE_H
 #define YDSH_COMPLETE_H
 
-#include <vector>
-
 #include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
-#include "attribute.h"
 #include "comp_context.h"
 #include "frontend.h"
 
 namespace ydsh {
 
-enum class CompCandidateKind {
+enum class CompCandidateKind : unsigned char {
   COMMAND_NAME,
   COMMAND_NAME_PART,
   COMMAND_ARG,
@@ -207,7 +204,7 @@ StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned
 StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
                              const DSType *recvType, unsigned int threshold = 3);
 
-enum class SuggestMemberType {
+enum class SuggestMemberType : unsigned char {
   FIELD = 1u << 0u,
   METHOD = 1u << 1u,
 };

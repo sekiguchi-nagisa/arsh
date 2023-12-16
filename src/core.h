@@ -17,7 +17,6 @@
 #ifndef YDSH_CORE_H
 #define YDSH_CORE_H
 
-#include <array>
 #include <string>
 #include <vector>
 
