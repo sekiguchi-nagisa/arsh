@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 
-#include <ydsh/arsh.h>
+#include <arsh/arsh.h>
 
 enum class FuzzPolicy {
   EVAL, // default
