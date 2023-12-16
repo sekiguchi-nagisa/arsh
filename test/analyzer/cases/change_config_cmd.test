@@ -49,7 +49,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "commandArgumentCompletion": "disabled",
         "commandCompletion": "disabled",
         "logLevel": "error"
@@ -78,7 +78,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "commandArgumentCompletion": "disabled",
         "commandCompletion": "all",
         "logLevel": "error"

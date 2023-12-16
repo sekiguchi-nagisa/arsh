@@ -494,7 +494,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
 }
 
 static const char *configSections[] = {
-#define GEN_TABLE(N, T) "ydshd." #N,
+#define GEN_TABLE(N, T) "arshd." #N,
     EACH_CONFIG_SETTING(GEN_TABLE)
 #undef GEN_TABLE
 };
@@ -744,7 +744,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
 void LSPServer::didChangeConfiguration(const DidChangeConfigurationParams &params) {
   getOrShowError(
       this->logger, params.settings, "settings", [&](const ConfigSettingWrapper &wrapper) {
-        getOrShowError(this->logger, wrapper.ydshd, "ydshd",
+        getOrShowError(this->logger, wrapper.arshd, "arshd",
                        [&](const ConfigSetting &setting) { this->loadConfigSetting(setting); });
       });
 }

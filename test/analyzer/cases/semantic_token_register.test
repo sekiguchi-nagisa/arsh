@@ -22,7 +22,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "commandArgumentCompletion": "disabled",
         "commandCompletion": "default",
         "logLevel": "error",
@@ -72,7 +72,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "semanticHighlight": "enabled"
       }
     }

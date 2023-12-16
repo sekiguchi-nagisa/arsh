@@ -18,19 +18,19 @@
 #    CHECK:   "params": {
 #    CHECK:     "items": [
 #    CHECK:       {
-#    CHECK:         "section": "ydshd.logLevel"
+#    CHECK:         "section": "arshd.logLevel"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "ydshd.commandCompletion"
+#    CHECK:         "section": "arshd.commandCompletion"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "ydshd.commandArgumentCompletion"
+#    CHECK:         "section": "arshd.commandArgumentCompletion"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "ydshd.semanticHighlight"
+#    CHECK:         "section": "arshd.semanticHighlight"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "ydshd.rename"
+#    CHECK:         "section": "arshd.rename"
 #    CHECK:       }
 #    CHECK:     ]
 #    CHECK:   }
@@ -51,11 +51,11 @@
 
 # CHECKERR_RE_IF: ^.+ <debug> .+ response of 'workspace/configuration':
 #       CHECKERR: {
-#       CHECKERR:   "ydshd.commandArgumentCompletion": "disabled",
-#       CHECKERR:   "ydshd.commandCompletion": "default",
-#       CHECKERR:   "ydshd.logLevel": "debug",
-#       CHECKERR:   "ydshd.rename": "enabled",
-#       CHECKERR:   "ydshd.semanticHighlight": "enabled"
+#       CHECKERR:   "arshd.commandArgumentCompletion": "disabled",
+#       CHECKERR:   "arshd.commandCompletion": "default",
+#       CHECKERR:   "arshd.logLevel": "debug",
+#       CHECKERR:   "arshd.rename": "enabled",
+#       CHECKERR:   "arshd.semanticHighlight": "enabled"
 #       CHECKERR: }
 
 # CHECKERR_RE_IF: .*

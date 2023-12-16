@@ -13,7 +13,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "commandArgumentCompletion": "enabled",
         "commandCompletion": "all",
         "logLevel": "error"

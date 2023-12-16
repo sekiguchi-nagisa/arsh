@@ -22,7 +22,7 @@
   "method": "workspace/didChangeConfiguration",
   "params": {
     "settings": {
-      "ydshd": {
+      "arshd": {
         "rename": "enabled"
       }
     }

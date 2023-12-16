@@ -1021,11 +1021,11 @@ struct ConfigSetting {
 };
 
 struct ConfigSettingWrapper {
-  Optional<Union<ConfigSetting, JSON>> ydshd;
+  Optional<Union<ConfigSetting, JSON>> arshd;
 
   template <typename T>
   void jsonify(T &t) {
-    JSONIFY(ydshd);
+    JSONIFY(arshd);
   }
 };
 
