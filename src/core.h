@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CORE_H
-#define YDSH_CORE_H
+#ifndef ARSH_CORE_H
+#define ARSH_CORE_H
 
 #include <string>
 #include <vector>
@@ -249,4 +249,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_CORE_H
+#endif // ARSH_CORE_H

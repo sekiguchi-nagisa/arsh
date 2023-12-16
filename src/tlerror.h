@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TLERROR_H
-#define YDSH_TLERROR_H
+#ifndef ARSH_TLERROR_H
+#define ARSH_TLERROR_H
 
 #include "misc/resource.hpp"
 
@@ -80,4 +80,4 @@ inline std::unique_ptr<TypeLookupError> createTLError(Arg &&...arg) {
 
 } // namespace arsh
 
-#endif // YDSH_TLERROR_H
+#endif // ARSH_TLERROR_H

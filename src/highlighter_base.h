@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_HIGHLIGHTER_BASE_H
-#define YDSH_HIGHLIGHTER_BASE_H
+#ifndef ARSH_HIGHLIGHTER_BASE_H
+#define ARSH_HIGHLIGHTER_BASE_H
 
 #include <array>
 
@@ -96,4 +96,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_HIGHLIGHTER_BASE_H
+#endif // ARSH_HIGHLIGHTER_BASE_H

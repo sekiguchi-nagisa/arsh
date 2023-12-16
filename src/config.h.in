@@ -1,5 +1,5 @@
-#ifndef YDSH_CONFIG_H
-#define YDSH_CONFIG_H
+#ifndef ARSH_CONFIG_H
+#define ARSH_CONFIG_H
 
 // clang-format off
 
@@ -38,4 +38,4 @@
 
 #cmakedefine USE_PCRE
 
-#endif //YDSH_CONFIG_H
+#endif //ARSH_CONFIG_H

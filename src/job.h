@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_JOB_H
-#define YDSH_JOB_H
+#ifndef ARSH_JOB_H
+#define ARSH_JOB_H
 
 #include <type_traits>
 #include <vector>
@@ -637,4 +637,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_JOB_H
+#endif // ARSH_JOB_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_FRONTEND_H
-#define YDSH_FRONTEND_H
+#ifndef ARSH_FRONTEND_H
+#define ARSH_FRONTEND_H
 
 #include "parser.h"
 #include "type_checker.h"
@@ -272,4 +272,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_FRONTEND_H
+#endif // ARSH_FRONTEND_H

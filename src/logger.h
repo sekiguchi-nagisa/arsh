@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LOGGER_H
-#define YDSH_LOGGER_H
+#ifndef ARSH_LOGGER_H
+#define ARSH_LOGGER_H
 
 #include "misc/flag_util.hpp"
 #include "misc/logger_base.hpp"
@@ -47,10 +47,10 @@ public:
 #undef GEN_ENUM
   };
 
-  Logger() : SingletonLogger<Logger>("YDSH") {
+  Logger() : SingletonLogger<Logger>("ARSH") {
     this->sync([&] {
       const char *policies[] = {
-#define GEN_STR(E) "YDSH_" #E,
+#define GEN_STR(E) "ARSH_" #E,
           EACH_LOGGING_POLICY(GEN_STR)
 #undef GEN_STR
       };
@@ -90,4 +90,4 @@ public:
 
 #define LOG_EXPR(P, FUNC) LOG_IF(P, { LOG(P, "%s", FUNC().c_str()); })
 
-#endif // YDSH_LOGGER_H
+#endif // ARSH_LOGGER_H

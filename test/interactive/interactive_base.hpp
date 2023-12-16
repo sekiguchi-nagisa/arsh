@@ -1,6 +1,6 @@
 
-#ifndef YDSH_TEST_INTERACTIVE_BASE_HPP
-#define YDSH_TEST_INTERACTIVE_BASE_HPP
+#ifndef ARSH_TEST_INTERACTIVE_BASE_HPP
+#define ARSH_TEST_INTERACTIVE_BASE_HPP
 
 #include "gtest/gtest.h"
 
@@ -102,4 +102,4 @@ inline const char *ctrlZChar() {
   return !platform::isCygwinOrMsys(platform::platform()) ? "^Z" : "";
 }
 
-#endif // YDSH_TEST_INTERACTIVE_BASE_HPP
+#endif // ARSH_TEST_INTERACTIVE_BASE_HPP

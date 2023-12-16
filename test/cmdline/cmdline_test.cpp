@@ -346,20 +346,20 @@ TEST_F(CmdlineTest, logger) {
   if (useLogging) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_LOGGING\n"));
 
-    auto builder = ds("-c", "sh -c true").addEnv("YDSH_DUMP_EXEC", "on");
+    auto builder = ds("-c", "sh -c true").addEnv("ARSH_DUMP_EXEC", "on");
     const char *re = ".+\\(xexecve\\).+";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", re));
 
     // specify appender
     builder = ds("-c", "var a = 0; exit $a")
-                  .addEnv("YDSH_TRACE_TOKEN", "on")
-                  .addEnv("YDSH_APPENDER", "/dev/stdout");
+                  .addEnv("ARSH_TRACE_TOKEN", "on")
+                  .addEnv("ARSH_APPENDER", "/dev/stdout");
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, ".+"));
 
     // specify appender (not found)
     builder = ds("-c", "var a = 0; exit $a")
-                  .addEnv("YDSH_TRACE_TOKEN", "on")
-                  .addEnv("YDSH_APPENDER", "/dev/null/hogehu");
+                  .addEnv("ARSH_TRACE_TOKEN", "on")
+                  .addEnv("ARSH_APPENDER", "/dev/null/hogehu");
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", ".+"));
   } else {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));

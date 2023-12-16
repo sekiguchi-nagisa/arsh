@@ -63,8 +63,8 @@ INIT:
   /*!re2c
     "//!bind:"             { RET(DESC_PREFIX); }
     "function"             { RET(FUNC); }
-    "YDSH_METHOD"          { RET(YDSH_METHOD); }
-    "YDSH_METHOD_DECL"     { RET(YDSH_METHOD_DECL); }
+    "ARSH_METHOD"          { RET(ARSH_METHOD); }
+    "ARSH_METHOD_DECL"     { RET(ARSH_METHOD_DECL); }
     "RuntimeContext"       { RET(RCTX); }
     "where"                { RET(WHERE); }
     IDENTIFIER             { RET(IDENTIFIER); }

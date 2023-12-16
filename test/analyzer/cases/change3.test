@@ -10,7 +10,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
                      "text": "echo hello"}
  }
 }
@@ -38,7 +38,7 @@
 <<< 1500
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test2.ds",
                      "text": "var a = 34;"}
  }
 }

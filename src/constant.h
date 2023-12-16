@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SYMBOL_H
-#define YDSH_SYMBOL_H
+#ifndef ARSH_SYMBOL_H
+#define ARSH_SYMBOL_H
 
 #include <cstddef>
 #include <cstdint>
@@ -482,4 +482,4 @@ constexpr size_t SYS_LIMIT_ATTR_CHOICE_SIZE = 16;
 #endif
 } // namespace arsh
 
-#endif // YDSH_SYMBOL_H
+#endif // ARSH_SYMBOL_H

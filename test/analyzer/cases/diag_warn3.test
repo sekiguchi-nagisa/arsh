@@ -10,7 +10,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
         "text": "typedef AAA = Int; { typedef AAA = String; typedef BBB = Void; 345 as BBB; }; typedef TTT() { typedef T = Int; }"}
  }
 }
@@ -56,7 +56,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test2.ds",
         "text": "typedef QQQ = String;\ntypedef AAA() { typedef QQQ = Int; }"}
  }
 }

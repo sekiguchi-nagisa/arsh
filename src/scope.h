@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SCOPE_H
-#define YDSH_SCOPE_H
+#ifndef ARSH_SCOPE_H
+#define ARSH_SCOPE_H
 
 #include <cassert>
 #include <functional>
@@ -580,4 +580,4 @@ inline void discardAll(ModuleLoader &loader, NameScope &scope, TypePool &typePoo
 
 } // namespace arsh
 
-#endif // YDSH_SCOPE_H
+#endif // ARSH_SCOPE_H

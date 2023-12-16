@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CGERROR_H
-#define YDSH_CGERROR_H
+#ifndef ARSH_CGERROR_H
+#define ARSH_CGERROR_H
 
 #include "misc/resource.hpp"
 #include "node.h"
@@ -84,4 +84,4 @@ DEFINE_CGError(TooLargeToplevel, "too large top-level script: `%s'");
 
 } // namespace arsh
 
-#endif // YDSH_CGERROR_H
+#endif // ARSH_CGERROR_H

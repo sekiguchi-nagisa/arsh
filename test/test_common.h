@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TEST_COMMON_H
-#define YDSH_TEST_COMMON_H
+#ifndef ARSH_TEST_COMMON_H
+#define ARSH_TEST_COMMON_H
 
 #include <chrono>
 #include <thread>
@@ -282,6 +282,6 @@ protected:
   }
 };
 
-#define INIT_TEMP_FILE_FACTORY(NAME) arsh::TempFileFactory("ydsh_" #NAME)
+#define INIT_TEMP_FILE_FACTORY(NAME) arsh::TempFileFactory("arsh_" #NAME)
 
-#endif // YDSH_TEST_COMMON_H
+#endif // ARSH_TEST_COMMON_H

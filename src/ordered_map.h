@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ORDERED_MAP_H
-#define YDSH_ORDERED_MAP_H
+#ifndef ARSH_ORDERED_MAP_H
+#define ARSH_ORDERED_MAP_H
 
 #include "object.h"
 
@@ -301,4 +301,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_ORDERED_MAP_H
+#endif // ARSH_ORDERED_MAP_H

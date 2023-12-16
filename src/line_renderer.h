@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LINE_RENDERER_H
-#define YDSH_LINE_RENDERER_H
+#ifndef ARSH_LINE_RENDERER_H
+#define ARSH_LINE_RENDERER_H
 
 #include "highlighter_base.h"
 #include "misc/grapheme.hpp"
@@ -409,4 +409,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_LINE_RENDERER_H
+#endif // ARSH_LINE_RENDERER_H

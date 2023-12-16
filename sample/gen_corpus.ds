@@ -21,7 +21,7 @@ for $d in $(ls $exec_test_dir) {
 }
 
 # copy from module dir
-let mod = "$SCRIPT_DIR/../share/ydsh/modules".realpath()
+let mod = "$SCRIPT_DIR/../share/arsh/modules".realpath()
 echo copy scripts from $mod
 for $d in $(ls $mod) {
     cp $mod/$d $dir/mod_$d
@@ -33,7 +33,7 @@ for $d in $(ls $mod/repl_impl) {
 }
 
 # copy from completion dir
-let comp = "$SCRIPT_DIR/../share/ydsh/completions".realpath()
+let comp = "$SCRIPT_DIR/../share/arsh/completions".realpath()
 echo copy scripts from $comp
 for $d in $(ls $comp) {
     cp $comp/$d $dir/comp_$d
@@ -54,8 +54,8 @@ for $d in $(ls $sample) {
 }
 
 # copy current rcfile
-echo copy ydshrc
-cp $CONFIG_HOME/ydshrc $dir/rcfile_ydshrc
+echo copy arshrc
+cp $CONFIG_HOME/arshrc $dir/rcfile_arshrc
 
 # copy tools/scrips
 let scripts = "$SCRIPT_DIR/../tools/scripts"

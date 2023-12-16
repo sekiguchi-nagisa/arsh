@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TCERROR_H
-#define YDSH_TCERROR_H
+#ifndef ARSH_TCERROR_H
+#define ARSH_TCERROR_H
 
 #include "node.h"
 #include "tlerror.h"
@@ -250,4 +250,4 @@ inline void addSuggestionSuffix(std::string &value, StringRef suggestion) {
 
 } // namespace arsh
 
-#endif // YDSH_TCERROR_H
+#endif // ARSH_TCERROR_H

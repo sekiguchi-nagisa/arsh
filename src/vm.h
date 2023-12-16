@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_VM_H
-#define YDSH_VM_H
+#ifndef ARSH_VM_H
+#define ARSH_VM_H
 
 #include <cstdio>
 
@@ -715,4 +715,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_VM_H
+#endif // ARSH_VM_H

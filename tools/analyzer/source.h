@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SOURCE_H
-#define YDSH_TOOLS_ANALYZER_SOURCE_H
+#ifndef ARSH_TOOLS_ANALYZER_SOURCE_H
+#define ARSH_TOOLS_ANALYZER_SOURCE_H
 
 #include <string>
 #include <unordered_map>
@@ -160,4 +160,4 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_SOURCE_H
+#endif // ARSH_TOOLS_ANALYZER_SOURCE_H

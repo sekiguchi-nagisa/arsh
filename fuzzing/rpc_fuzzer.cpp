@@ -4,12 +4,12 @@
 
 #include "jsonrpc.h"
 
-struct NullLogger : public ydsh::LoggerBase {
+struct NullLogger : public arsh::LoggerBase {
   NullLogger() : LoggerBase("") {}
 };
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  using namespace ydsh;
+  using namespace arsh;
   using namespace rpc;
 
   ::NullLogger logger;

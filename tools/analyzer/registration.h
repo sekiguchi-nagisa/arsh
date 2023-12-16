@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_REGISTRATION_H
-#define YDSH_TOOLS_ANALYZER_REGISTRATION_H
+#ifndef ARSH_TOOLS_ANALYZER_REGISTRATION_H
+#define ARSH_TOOLS_ANALYZER_REGISTRATION_H
 
 #include <memory>
 #include <string>
@@ -101,4 +101,4 @@ private:
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_REGISTRATION_H
+#endif // ARSH_TOOLS_ANALYZER_REGISTRATION_H

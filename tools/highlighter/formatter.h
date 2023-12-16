@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_HIGHLIGHTER_FORMATTER_H
-#define YDSH_TOOLS_HIGHLIGHTER_FORMATTER_H
+#ifndef ARSH_TOOLS_HIGHLIGHTER_FORMATTER_H
+#define ARSH_TOOLS_HIGHLIGHTER_FORMATTER_H
 
 #include <ostream>
 
@@ -161,4 +161,4 @@ struct allow_enum_bitop<highlighter::HTMLFormatOp> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_HIGHLIGHTER_FORMATTER_H
+#endif // ARSH_TOOLS_HIGHLIGHTER_FORMATTER_H

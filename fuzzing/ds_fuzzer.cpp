@@ -22,7 +22,7 @@ static FuzzPolicy getFuzzPolicy() {
       {"comp", FuzzPolicy::COMPLETE},
   };
 
-  if (const char *env = getenv("YDSH_FUZZ_POLICY"); env && *env) {
+  if (const char *env = getenv("ARSH_FUZZ_POLICY"); env && *env) {
     for (auto &e : table) {
       if (strcasecmp(env, e.value) == 0) {
         return e.policy;

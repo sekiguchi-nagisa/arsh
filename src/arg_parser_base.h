@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ARG_PARSER_BASE_H
-#define YDSH_ARG_PARSER_BASE_H
+#ifndef ARSH_ARG_PARSER_BASE_H
+#define ARSH_ARG_PARSER_BASE_H
 
 #include <limits>
 
@@ -216,4 +216,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_ARG_PARSER_BASE_H
+#endif // ARSH_ARG_PARSER_BASE_H

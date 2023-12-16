@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_OBJECT_H
-#define YDSH_OBJECT_H
+#ifndef ARSH_OBJECT_H
+#define ARSH_OBJECT_H
 
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -1389,4 +1389,4 @@ bool formatJobDesc(StringRef ref, std::string &out);
 
 }; // namespace arsh
 
-#endif // YDSH_OBJECT_H
+#endif // ARSH_OBJECT_H

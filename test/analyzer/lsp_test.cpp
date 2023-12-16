@@ -318,7 +318,7 @@ TEST(ClientTest, parse1) {
   ASSERT_FALSE(ret);
   ASSERT_EQ("cannot read: hogehoge", ret.asErr());
 
-  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  TempFileFactory tempFileFactory("arsh_lsp_client");
   auto fileName = tempFileFactory.createTempFile("script.test", R"(
 # this is a comment1 (skip empty section)
 ---
@@ -345,7 +345,7 @@ false
 }
 
 TEST(ClientTest, parse2) {
-  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  TempFileFactory tempFileFactory("arsh_lsp_client");
   auto fileName = tempFileFactory.createTempFile("script.test", R"(
 # this is a comment1 (skip empty section)
 ---
@@ -370,7 +370,7 @@ false
 }
 
 TEST(ClientTest, parse3) {
-  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  TempFileFactory tempFileFactory("arsh_lsp_client");
   auto fileName = tempFileFactory.createTempFile("script.test", R"(
 1234
 # this is a comment2
@@ -389,7 +389,7 @@ false ,
 }
 
 TEST(ClientTest, parse4) {
-  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  TempFileFactory tempFileFactory("arsh_lsp_client");
   auto fileName = tempFileFactory.createTempFile("script.test", R"(
 1234
 # this is a comment2
@@ -408,7 +408,7 @@ false ,
 }
 
 TEST(ClientTest, run) {
-  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  TempFileFactory tempFileFactory("arsh_lsp_client");
   auto fileName = tempFileFactory.createTempFile("script.test", R"(
 1234
 # this is a comment2

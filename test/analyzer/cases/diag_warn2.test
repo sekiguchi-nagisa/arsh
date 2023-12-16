@@ -10,7 +10,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
         "text": "{ var OSTYPE = 34; exportenv BBB = 'hey'; importenv ZZZZ: ''; FFF2=24 {}; try{34/0;}catch e{}}"}
  }
 }
@@ -55,7 +55,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test2.ds",
         "text": "function f(a : Int){}; typedef A(aa : Int) { var b = 34; }; typedef BB{ var c : Int }"}
  }
 }
@@ -71,7 +71,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test22.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test22.ds",
         "text": "for _ in [1,2,3] {}"}
  }
 }
@@ -88,7 +88,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test3.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test3.ds",
         "text": "typedef AAA() { var true = $true; }"}
  }
 }
@@ -103,7 +103,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test4.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test4.ds",
         "text": "IFS=~/ {}; var AAA=23; AAA= {}"}
  }
 }
@@ -118,7 +118,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test5.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test5.ds",
         "text": "var _ = 34; { var _ = ''; $_; }"}
  }
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LINE_BUFFER_H
-#define YDSH_LINE_BUFFER_H
+#ifndef ARSH_LINE_BUFFER_H
+#define ARSH_LINE_BUFFER_H
 
 #include "misc/buffer.hpp"
 #include "misc/ring_buffer.hpp"
@@ -340,4 +340,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_LINE_BUFFER_H
+#endif // ARSH_LINE_BUFFER_H

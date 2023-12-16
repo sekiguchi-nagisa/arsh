@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_LSP_H
-#define YDSH_TOOLS_ANALYZER_LSP_H
+#ifndef ARSH_TOOLS_ANALYZER_LSP_H
+#define ARSH_TOOLS_ANALYZER_LSP_H
 
 #include <misc/logger_base.hpp>
 
@@ -449,7 +449,7 @@ struct StaticRegistrationOptions {
 };
 
 struct DocumentFilter {
-  std::string language{"ydsh"};
+  std::string language{"arsh"};
 
   template <typename T>
   void jsonify(T &t) {
@@ -1359,4 +1359,4 @@ void jsonify(T &t, LogLevel &level) {
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_ANALYZER_LSP_H
+#endif // ARSH_TOOLS_ANALYZER_LSP_H

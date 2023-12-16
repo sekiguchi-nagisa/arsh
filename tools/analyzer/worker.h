@@ -19,8 +19,8 @@
 #include <queue>
 #include <thread>
 
-#ifndef YDSH_TOOLS_ANALYZER_WORKER_H
-#define YDSH_TOOLS_ANALYZER_WORKER_H
+#ifndef ARSH_TOOLS_ANALYZER_WORKER_H
+#define ARSH_TOOLS_ANALYZER_WORKER_H
 
 namespace arsh::lsp {
 
@@ -57,4 +57,4 @@ private:
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_WORKER_H
+#endif // ARSH_TOOLS_ANALYZER_WORKER_H

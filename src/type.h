@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPE_H
-#define YDSH_TYPE_H
+#ifndef ARSH_TYPE_H
+#define ARSH_TYPE_H
 
 #include <array>
 #include <cassert>
@@ -1079,4 +1079,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_TYPE_H
+#endif // ARSH_TYPE_H

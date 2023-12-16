@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_HANDLE_INFO_H
-#define YDSH_HANDLE_INFO_H
+#ifndef ARSH_HANDLE_INFO_H
+#define ARSH_HANDLE_INFO_H
 
 namespace arsh {
 
@@ -133,4 +133,4 @@ struct native_type_info_t {
 
 } // namespace arsh
 
-#endif // YDSH_HANDLE_INFO_H
+#endif // ARSH_HANDLE_INFO_H

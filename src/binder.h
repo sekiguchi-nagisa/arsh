@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BINDER_H
-#define YDSH_BINDER_H
+#ifndef ARSH_BINDER_H
+#define ARSH_BINDER_H
 
 #include <cassert>
 
@@ -284,4 +284,4 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
 } // namespace arsh
 
-#endif // YDSH_BINDER_H
+#endif // ARSH_BINDER_H

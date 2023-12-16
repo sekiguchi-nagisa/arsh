@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_JSON_JSON_H
-#define YDSH_TOOLS_JSON_JSON_H
+#ifndef ARSH_TOOLS_JSON_JSON_H
+#define ARSH_TOOLS_JSON_JSON_H
 
 #include <cstdlib>
 #include <cstring>
@@ -245,4 +245,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_JSON_JSON_H
+#endif // ARSH_TOOLS_JSON_JSON_H

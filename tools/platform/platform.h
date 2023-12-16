@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_PLATFORM_PLATFORM_H
-#define YDSH_TOOLS_PLATFORM_PLATFORM_H
+#ifndef ARSH_TOOLS_PLATFORM_PLATFORM_H
+#define ARSH_TOOLS_PLATFORM_PLATFORM_H
 
 namespace arsh::platform {
 
@@ -98,4 +98,4 @@ inline bool contain(const std::string &text) {
 
 } // namespace arsh::platform
 
-#endif // YDSH_TOOLS_PLATFORM_PLATFORM_H
+#endif // ARSH_TOOLS_PLATFORM_PLATFORM_H

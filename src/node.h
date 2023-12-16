@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_NODE_H
-#define YDSH_NODE_H
+#ifndef ARSH_NODE_H
+#define ARSH_NODE_H
 
 #include <cassert>
 #include <list>
@@ -3134,4 +3134,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_NODE_H
+#endif // ARSH_NODE_H

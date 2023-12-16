@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_OPCODE_H
-#define YDSH_OPCODE_H
+#ifndef ARSH_OPCODE_H
+#define ARSH_OPCODE_H
 
 namespace arsh {
 
@@ -155,4 +155,4 @@ bool isTypeOp(OpCode code);
 
 } // namespace arsh
 
-#endif // YDSH_OPCODE_H
+#endif // ARSH_OPCODE_H

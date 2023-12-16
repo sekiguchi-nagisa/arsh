@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_TRANSPORT_H
-#define YDSH_TOOLS_ANALYZER_TRANSPORT_H
+#ifndef ARSH_TOOLS_ANALYZER_TRANSPORT_H
+#define ARSH_TOOLS_ANALYZER_TRANSPORT_H
 
 #include "../json/jsonrpc.h"
 
@@ -48,4 +48,4 @@ public:
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_TRANSPORT_H
+#endif // ARSH_TOOLS_ANALYZER_TRANSPORT_H

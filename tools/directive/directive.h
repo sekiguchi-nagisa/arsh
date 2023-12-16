@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_DIRECTIVE_DIRECTIVE_H
-#define YDSH_TOOLS_DIRECTIVE_DIRECTIVE_H
+#ifndef ARSH_TOOLS_DIRECTIVE_DIRECTIVE_H
+#define ARSH_TOOLS_DIRECTIVE_DIRECTIVE_H
 
 #include <cstring>
 #include <iostream>
@@ -147,4 +147,4 @@ const char *toString(DSErrorKind kind);
 
 } // namespace arsh::directive
 
-#endif // YDSH_TOOLS_DIRECTIVE_DIRECTIVE_H
+#endif // ARSH_TOOLS_DIRECTIVE_DIRECTIVE_H

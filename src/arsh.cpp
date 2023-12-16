@@ -40,7 +40,7 @@ static DSError initDSError() {
 
 static DefaultErrorConsumer newErrorConsumer(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
-  bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
+  bool ignore = getenv("ARSH_SUPPRESS_COMPILE_ERROR") != nullptr;
   return {e, ignore ? nullptr : stderr};
 #else
   return {e, stderr};

@@ -17,7 +17,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
     "text": "var ZA=$false;{var Z1=3;var Z2=3;var Z3=3;{var Z4=1;var Z5=2;{var Z6=1;var Z7=0;var Z8=9;var Z9=9;var Z10=9;var ZAA=8;\n$Z"
     }
  }
@@ -138,7 +138,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test2.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test2.ds",
     "text": "function Z0(): Int {return 0;}; function Z1(ss:String): String{return $a;}; function Z2(aA:Float,b:Float){}\n$Z"
     }
  }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_INDEX_H
-#define YDSH_TOOLS_ANALYZER_INDEX_H
+#ifndef ARSH_TOOLS_ANALYZER_INDEX_H
+#define ARSH_TOOLS_ANALYZER_INDEX_H
 
 #include <functional>
 #include <vector>
@@ -503,4 +503,4 @@ struct allow_enum_bitop<lsp::IndexLink::ImportAttr> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_ANALYZER_INDEX_H
+#endif // ARSH_TOOLS_ANALYZER_INDEX_H

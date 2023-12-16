@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CODEGEN_H
-#define YDSH_CODEGEN_H
+#ifndef ARSH_CODEGEN_H
+#define ARSH_CODEGEN_H
 
 #include <cmath>
 #include <functional>
@@ -627,4 +627,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_CODEGEN_H
+#endif // ARSH_CODEGEN_H

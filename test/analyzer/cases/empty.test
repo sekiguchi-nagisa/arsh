@@ -1,7 +1,7 @@
 
 # RUN: call $cmd --test $self
 
-#    CHECKERR: start ydsh code analyzer with the following options
+#    CHECKERR: start arsh code analyzer with the following options
 # CHECKERR_RE:     .*/tools/analyzer/arshd --test .*/test/analyzer/cases/empty\.test
 
 # STATUS: 137

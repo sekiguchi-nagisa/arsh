@@ -1,6 +1,6 @@
 #!/usr/bin/env arsh
 
-# git completion for ydsh
+# git completion for arsh
 
 source $SCRIPT_DIR/../modules/completion
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SERVER_H
-#define YDSH_TOOLS_ANALYZER_SERVER_H
+#ifndef ARSH_TOOLS_ANALYZER_SERVER_H
+#define ARSH_TOOLS_ANALYZER_SERVER_H
 
 #include "../json/jsonrpc.h"
 #include "analyzer.h"
@@ -31,7 +31,7 @@ namespace arsh::lsp {
 using namespace rpc;
 
 struct LSPLogger : public LoggerBase {
-  LSPLogger() : LoggerBase("YDSHD") {}
+  LSPLogger() : LoggerBase("ARSHD") {}
 };
 
 class AnalyzerResult {
@@ -247,4 +247,4 @@ struct allow_enum_bitop<lsp::SupportedCapability> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_ANALYZER_SERVER_H
+#endif // ARSH_TOOLS_ANALYZER_SERVER_H

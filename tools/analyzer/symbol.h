@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SYMBOL_H
-#define YDSH_TOOLS_ANALYZER_SYMBOL_H
+#ifndef ARSH_TOOLS_ANALYZER_SYMBOL_H
+#define ARSH_TOOLS_ANALYZER_SYMBOL_H
 
 #include "index.h"
 #include "lsp.h"
@@ -68,4 +68,4 @@ std::string toString(ConstEntry entry);
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_SYMBOL_H
+#endif // ARSH_TOOLS_ANALYZER_SYMBOL_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PARSER_H
-#define YDSH_PARSER_H
+#ifndef ARSH_PARSER_H
+#define ARSH_PARSER_H
 
 #include <memory>
 #include <utility>
@@ -381,4 +381,4 @@ protected:
 
 } // namespace arsh
 
-#endif // YDSH_PARSER_H
+#endif // ARSH_PARSER_H

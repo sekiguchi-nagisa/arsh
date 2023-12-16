@@ -10,7 +10,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "file:///test/test.ds",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
                      "text": "var ZZZ = 34;\n$ZZZ"}
  }
 }

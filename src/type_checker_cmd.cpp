@@ -437,7 +437,7 @@ static bool isDirPattern(SourceListNode::path_iterator begin, SourceListNode::pa
 
 static unsigned int getExpansionLimit() {
 #ifdef FUZZING_BUILD_MODE
-  if (const char *env = getenv("YDSH_SUPPRESS_MOD_LOADING")) {
+  if (const char *env = getenv("ARSH_SUPPRESS_MOD_LOADING")) {
     return 512;
   }
 #endif

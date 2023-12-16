@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_ANALYZER_H
-#define YDSH_TOOLS_ANALYZER_ANALYZER_H
+#ifndef ARSH_TOOLS_ANALYZER_ANALYZER_H
+#define ARSH_TOOLS_ANALYZER_ANALYZER_H
 
 #include <atomic>
 
@@ -194,4 +194,4 @@ struct allow_enum_bitop<lsp::Analyzer::ExtraCompOp> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_ANALYZER_ANALYZER_H
+#endif // ARSH_TOOLS_ANALYZER_ANALYZER_H

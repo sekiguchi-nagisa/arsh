@@ -18,4 +18,4 @@ if !(call $BIN --feature | grep USE_LOGGING) {
     exit 1
 }
 
-YDSH_APPENDER=$FILE YDSH_DUMP_CONSOLE=on exec -a "$(basename $0)" $BIN $@
+ARSH_APPENDER=$FILE ARSH_DUMP_CONSOLE=on exec -a "$(basename $0)" $BIN $@

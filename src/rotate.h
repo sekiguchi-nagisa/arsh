@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ROTATE_H
-#define YDSH_ROTATE_H
+#ifndef ARSH_ROTATE_H
+#define ARSH_ROTATE_H
 
 #include "misc/ring_buffer.hpp"
 #include "object.h"
@@ -112,4 +112,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_ROTATE_H
+#endif // ARSH_ROTATE_H

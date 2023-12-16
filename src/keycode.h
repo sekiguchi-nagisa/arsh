@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_KEYCODE_H
-#define YDSH_KEYCODE_H
+#ifndef ARSH_KEYCODE_H
+#define ARSH_KEYCODE_H
 
 #include <functional>
 #include <unordered_map>
@@ -355,4 +355,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_KEYCODE_H
+#endif // ARSH_KEYCODE_H

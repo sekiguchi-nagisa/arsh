@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PATHS_H
-#define YDSH_PATHS_H
+#ifndef ARSH_PATHS_H
+#define ARSH_PATHS_H
 
 #include "misc/flag_util.hpp"
 #include "misc/resource.hpp"
@@ -141,4 +141,4 @@ bool changeWorkingDir(std::string &logicalWorkingDir, StringRef dest, bool useLo
 
 } // namespace arsh
 
-#endif // YDSH_PATHS_H
+#endif // ARSH_PATHS_H

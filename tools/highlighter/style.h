@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_HIGHLIGHTER_STYLE_H
-#define YDSH_TOOLS_HIGHLIGHTER_STYLE_H
+#ifndef ARSH_TOOLS_HIGHLIGHTER_STYLE_H
+#define ARSH_TOOLS_HIGHLIGHTER_STYLE_H
 
 #include <stdexcept>
 #include <string_view>
@@ -215,4 +215,4 @@ public:
 
 } // namespace arsh::highlighter
 
-#endif // YDSH_TOOLS_HIGHLIGHTER_STYLE_H
+#endif // ARSH_TOOLS_HIGHLIGHTER_STYLE_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPE_POOL_H
-#define YDSH_TYPE_POOL_H
+#ifndef ARSH_TYPE_POOL_H
+#define ARSH_TYPE_POOL_H
 
 #include "constant.h"
 #include "misc/buffer.hpp"
@@ -341,4 +341,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_TYPE_POOL_H
+#endif // ARSH_TYPE_POOL_H

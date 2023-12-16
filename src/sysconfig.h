@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SYSCONFIG_H
-#define YDSH_SYSCONFIG_H
+#ifndef ARSH_SYSCONFIG_H
+#define ARSH_SYSCONFIG_H
 
 #include "constant.h"
 
@@ -83,4 +83,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_SYSCONFIG_H
+#endif // ARSH_SYSCONFIG_H

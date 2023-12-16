@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPE_CHECKER_H
-#define YDSH_TYPE_CHECKER_H
+#ifndef ARSH_TYPE_CHECKER_H
+#define ARSH_TYPE_CHECKER_H
 
 #include <functional>
 
@@ -793,4 +793,4 @@ struct allow_enum_bitop<TypeChecker::FuncCheckOp> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TYPE_CHECKER_H
+#endif // ARSH_TYPE_CHECKER_H

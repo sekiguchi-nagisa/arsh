@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_YDSH_H
-#define YDSH_YDSH_H
+#ifndef ARSH_ARSH_H
+#define ARSH_ARSH_H
 
 #include <stdio.h>
 
@@ -384,4 +384,4 @@ DS_PUBLIC_API(ssize_t) DSState_readLine(DSState *st, char *buf, size_t bufSize, 
 }
 #endif
 
-#endif /* YDSH_YDSH_H */
+#endif /* ARSH_ARSH_H */

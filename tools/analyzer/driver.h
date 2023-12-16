@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_DRIVER_H
-#define YDSH_TOOLS_ANALYZER_DRIVER_H
+#ifndef ARSH_TOOLS_ANALYZER_DRIVER_H
+#define ARSH_TOOLS_ANALYZER_DRIVER_H
 
 #include <functional>
 
@@ -48,4 +48,4 @@ int run(const DriverOptions &options, char **argv, Driver &driver);
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_DRIVER_H
+#endif // ARSH_TOOLS_ANALYZER_DRIVER_H

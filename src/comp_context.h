@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_COMP_CONTEXT_H
-#define YDSH_COMP_CONTEXT_H
+#ifndef ARSH_COMP_CONTEXT_H
+#define ARSH_COMP_CONTEXT_H
 
 #include "node.h"
 #include "scope.h"
@@ -230,4 +230,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_COMP_CONTEXT_H
+#endif // ARSH_COMP_CONTEXT_H

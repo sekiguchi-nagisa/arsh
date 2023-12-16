@@ -1067,7 +1067,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
 
 #ifdef FUZZING_BUILD_MODE
   auto nullFIle = createFilePtr(fopen, "/dev/null", "w");
-  if (getenv("YDSH_PRINTF_FUZZ")) {
+  if (getenv("ARSH_PRINTF_FUZZ")) {
     printer.setOutput(nullFIle.get());
   }
 #endif
@@ -1082,7 +1082,7 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
     begin = printer(begin, end);
     if (!printer.getError().empty()) {
 #ifdef FUZZING_BUILD_MODE
-      if (getenv("YDSH_PRINTF_FUZZ")) {
+      if (getenv("ARSH_PRINTF_FUZZ")) {
         return 1; // ignore error message
       }
 #endif

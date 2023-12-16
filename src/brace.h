@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BRACE_H
-#define YDSH_BRACE_H
+#ifndef ARSH_BRACE_H
+#define ARSH_BRACE_H
 
 #include "misc/string_ref.hpp"
 
@@ -69,4 +69,4 @@ bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range);
 
 } // namespace arsh
 
-#endif // YDSH_BRACE_H
+#endif // ARSH_BRACE_H

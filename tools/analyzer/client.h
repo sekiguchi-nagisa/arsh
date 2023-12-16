@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_CLIENT_H
-#define YDSH_TOOLS_ANALYZER_CLIENT_H
+#ifndef ARSH_TOOLS_ANALYZER_CLIENT_H
+#define ARSH_TOOLS_ANALYZER_CLIENT_H
 
 #include "../directive/directive.h"
 
@@ -44,7 +44,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
                                                  unsigned int waitTime = 10);
 
 struct ClientLogger : public LoggerBase {
-  ClientLogger() : LoggerBase("YDSHD_CLIENT") {}
+  ClientLogger() : LoggerBase("ARSHD_CLIENT") {}
 };
 
 class Client {
@@ -90,4 +90,4 @@ private:
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_CLIENT_H
+#endif // ARSH_TOOLS_ANALYZER_CLIENT_H

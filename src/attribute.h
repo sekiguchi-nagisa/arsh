@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ATTRIBUTE_H
-#define YDSH_ATTRIBUTE_H
+#ifndef ARSH_ATTRIBUTE_H
+#define ARSH_ATTRIBUTE_H
 
 #include "type.h"
 
@@ -151,4 +151,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_ATTRIBUTE_H
+#endif // ARSH_ATTRIBUTE_H

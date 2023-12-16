@@ -426,7 +426,7 @@ new [typeof(new StrArray())]()
 }
 
 TEST_F(IndexTest, globalImport) {
-  TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -505,7 +505,7 @@ new FFF().HHH()
 }
 
 TEST_F(IndexTest, namedImport) {
-  TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -597,7 +597,7 @@ new mod.FFF().HHH()
 }
 
 TEST_F(IndexTest, namedImportInlined) {
-  TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -692,7 +692,7 @@ new mod.FFF().HHH()
 }
 
 TEST_F(IndexTest, inlinedImport) {
-  TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
 var _AAA = 34
@@ -1362,33 +1362,33 @@ TEST_F(IndexTest, invalidBackref) {
 
 TEST_F(IndexTest, hover) {
   // variable or function
-  ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```ydsh\nlet A: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("let A = 34\n$A", 1, "```arsh\nlet A: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("import-env HOME\n$HOME", 1, "```ydsh\nimportenv HOME: String\n```"));
+      this->hover("import-env HOME\n$HOME", 1, "```arsh\nimportenv HOME: String\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```ydsh\nexportenv ZZZ: String\n```"));
+      this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```arsh\nexportenv ZZZ: String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
-                                      "```ydsh\nfunction hoge(s: Int): Void\n```"));
+                                      "```arsh\nfunction hoge(s: Int): Void\n```"));
 
   // user-defined command
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```ydsh\nhoge(): Bool\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```arsh\nhoge(): Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```ydsh\nusage(): Nothing\n```"));
+      this->hover("usage() : Nothing { throw 34; }\nusage", 1, "```arsh\nusage(): Nothing\n```"));
 
   // user-defined error type
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2,
-                                      "```ydsh\ntypedef App: OutOfRangeError\n```"));
+                                      "```arsh\ntypedef App: OutOfRangeError\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
-                  "```ydsh\ntypedef API: AppError\n```"));
+                  "```arsh\ntypedef API: AppError\n```"));
 
   // user-defined type with explicit constructor
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef Interval() { var begin = 34; }; var a = new Interval();\n$a",
-                  Position{.line = 1, .character = 0}, "```ydsh\nvar a: Interval\n```"));
+                  Position{.line = 1, .character = 0}, "```arsh\nvar a: Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
                                       "Interval?(); }\nvar a = new Interval();",
-                                      Position{.line = 1, .character = 15}, R"(```ydsh
+                                      Position{.line = 1, .character = 15}, R"(```arsh
 typedef Interval(s: Int) {
     var n: Int
     let value: Interval?
@@ -1396,21 +1396,21 @@ typedef Interval(s: Int) {
 ```)"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { var begin = 34; }\nnew AAA().\nbegin",
                                       Position{.line = 2, .character = 1},
-                                      "```ydsh\nvar begin: Int for AAA\n```"));
+                                      "```arsh\nvar begin: Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { var begin = 34; \n$begin;}",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar begin: Int for AAA\n```"));
+                                      "```arsh\nvar begin: Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; }\n23 is AAA.\nType",
                                       Position{.line = 2, .character = 3},
-                                      "```ydsh\ntypedef Type = Int for AAA\n```"));
+                                      "```arsh\ntypedef Type = Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; 34 is \nType; }",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\ntypedef Type = Int for AAA\n```"));
+                                      "```arsh\ntypedef Type = Int for AAA\n```"));
 
   // user-defined type with implicit constructor
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
                                       "}\nvar aaaa = new Interval(2, $none);",
-                                      Position{.line = 1, .character = 20}, R"(```ydsh
+                                      Position{.line = 1, .character = 20}, R"(```arsh
 typedef Interval(n: Int, next: Interval?) {
     var n: Int
     let next: Interval?
@@ -1419,21 +1419,21 @@ typedef Interval(n: Int, next: Interval?) {
 
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval { var value : Interval?; }; var a = new Interval($none);\n$a.value",
-      Position{.line = 1, .character = 3}, "```ydsh\nvar value: Interval? for Interval\n```"));
+      Position{.line = 1, .character = 3}, "```arsh\nvar value: Interval? for Interval\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval() { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
-      Position{.line = 1, .character = 2}, "```ydsh\nvar aaa: [[Interval]]\n```"));
+      Position{.line = 1, .character = 2}, "```arsh\nvar aaa: [[Interval]]\n```"));
 
   // user-defined method
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef INT(a : Int) { var v = $a; }\n"
                                       "function value():Int for INT { return $this.v; }\n"
                                       "new INT(12).value()",
                                       Position{.line = 2, .character = 13},
-                                      "```ydsh\nfunction value(): Int for INT\n```"));
+                                      "```arsh\nfunction value(): Int for INT\n```"));
 
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
                                       Position{.line = 1, .character = 8},
-                                      "```ydsh\nlet this: String\n```"));
+                                      "```arsh\nlet this: String\n```"));
 
   // here doc
   ASSERT_NO_FATAL_FAILURE(this->hover(R"(cat << EOF
@@ -1453,19 +1453,19 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nInt", 1, ""));
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, ""));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("34 is\nArithmeticError", 1, "```ydsh\ntypedef ArithmeticError: Error\n```"));
+      this->hover("34 is\nArithmeticError", 1, "```arsh\ntypedef ArithmeticError: Error\n```"));
 
   // builtin variable or type alias
-  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ?: Int\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @: [String]\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```arsh\nvar ?: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```arsh\nlet @: [String]\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$VERSION", 0,
-                                      "```ydsh\nconst VERSION = '" X_INFO_VERSION_CORE "'"
+                                      "```arsh\nconst VERSION = '" X_INFO_VERSION_CORE "'"
                                       "\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("$true is\nBoolean", 1, "```ydsh\ntypedef Boolean = Bool\n```"));
+      this->hover("$true is\nBoolean", 1, "```arsh\ntypedef Boolean = Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("$SCRIPT_NAME", 0, "```ydsh\nconst SCRIPT_NAME = '/dummy_8'\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```ydsh\nconst SCRIPT_DIR = '/'\n```"));
+      this->hover("$SCRIPT_NAME", 0, "```arsh\nconst SCRIPT_NAME = '/dummy_8'\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```arsh\nconst SCRIPT_DIR = '/'\n```"));
 
   // builtin command
   ASSERT_NO_FATAL_FAILURE(
@@ -1477,18 +1477,18 @@ TEST_F(IndexTest, hoverBuiltin) {
   // builtin tuple or method
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '');$a._2\n$a._2",
                                       Position{.line = 1, .character = 3},
-                                      "```ydsh\nvar _2: String for (Int, Bool, String)\n```"));
+                                      "```arsh\nvar _2: String for (Int, Bool, String)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("''.size();[1].size()\n[0].size()",
                                       Position{.line = 1, .character = 5},
-                                      "```ydsh\nfunction size(): Int for [Int]\n```"));
+                                      "```arsh\nfunction size(): Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```ydsh\nfunction slice(start: Int, stop: Int?): String for String\n```"));
+                  "```arsh\nfunction slice(start: Int, stop: Int?): String for String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {
   // source
-  TempFileFactory tempFileFactory("ydsh_index");
+  TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile(X_INFO_VERSION_CORE "_.ds",
                                                  R"(
 var AAA = 'hello'
@@ -1497,7 +1497,7 @@ var AAA = 'hello'
   src += fileName;
   src += " as mod\n$mod";
   ASSERT_NO_FATAL_FAILURE(
-      this->hover(src.c_str(), 1, format("```ydsh\nsource %s as mod\n```", fileName.c_str())));
+      this->hover(src.c_str(), 1, format("```arsh\nsource %s as mod\n```", fileName.c_str())));
 
   src = "source ";
   src += tempFileFactory.getTempDirName();
@@ -1505,23 +1505,23 @@ var AAA = 'hello'
   int chars = static_cast<int>(src.size()) + 5;
   src += "${VERSION}_.ds";
   ASSERT_NO_FATAL_FAILURE(this->hover(src.c_str(), Position{.line = 0, .character = chars},
-                                      "```ydsh\nconst VERSION = '" X_INFO_VERSION_CORE "'\n```"));
+                                      "```arsh\nconst VERSION = '" X_INFO_VERSION_CORE "'\n```"));
 }
 
 TEST_F(IndexTest, hoverConst) {
-  ASSERT_NO_FATAL_FAILURE(this->hover("$TRUE", 0, "```ydsh\nconst TRUE = true\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$True", 0, "```ydsh\nconst True = true\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$true", 0, "```ydsh\nconst true = true\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$FALSE", 0, "```ydsh\nconst FALSE = false\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$False", 0, "```ydsh\nconst False = false\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$false", 0, "```ydsh\nconst false = false\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$TRUE", 0, "```arsh\nconst TRUE = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$True", 0, "```arsh\nconst True = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$true", 0, "```arsh\nconst true = true\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$FALSE", 0, "```arsh\nconst FALSE = false\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$False", 0, "```arsh\nconst False = false\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$false", 0, "```arsh\nconst false = false\n```"));
 
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ASSERT", 0, "```ydsh\nconst ON_ASSERT = 4\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ERR", 0, "```ydsh\nconst ON_ERR = 2\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_EXIT", 0, "```ydsh\nconst ON_EXIT = 1\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ASSERT", 0, "```arsh\nconst ON_ASSERT = 4\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ERR", 0, "```arsh\nconst ON_ERR = 2\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_EXIT", 0, "```arsh\nconst ON_EXIT = 1\n```"));
 
-  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGHUP", 0, "```ydsh\nconst SIGHUP = signal(1)\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```ydsh\nconst SIGKILL = signal(9)\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGHUP", 0, "```arsh\nconst SIGHUP = signal(1)\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```arsh\nconst SIGKILL = signal(9)\n```"));
 }
 
 TEST_F(IndexTest, hoverUsage1) {
@@ -1542,7 +1542,7 @@ typedef AAA() {
 new AAA()
 )";
 
-  const char *out = R"(```ydsh
+  const char *out = R"(```arsh
 typedef AAA() {
     var %name: String
     var s: Bool
@@ -1584,7 +1584,7 @@ fff($p : Param) { echo $p; }
 fff
 )";
 
-  const char *out = R"(```ydsh
+  const char *out = R"(```arsh
 fff(): Bool
 ```
 
@@ -1607,7 +1607,7 @@ fff($p : Param) { echo $p; }
 fff
 )";
 
-  const char *out = R"(```ydsh
+  const char *out = R"(```arsh
 fff(): Bool
 ```
 

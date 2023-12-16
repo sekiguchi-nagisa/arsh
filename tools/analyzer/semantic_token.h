@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
-#define YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
+#ifndef ARSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
+#define ARSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
 
 #include "source.h"
 #include <highlighter_base.h>
@@ -91,4 +91,4 @@ private:
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H
+#endif // ARSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H

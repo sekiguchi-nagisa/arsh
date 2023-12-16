@@ -1,4 +1,4 @@
-# Grammar specification of ydsh
+# Grammar specification of arsh
 ## Lexer specification
 ```
 NUM = "0" | [1-9] [0-9]*

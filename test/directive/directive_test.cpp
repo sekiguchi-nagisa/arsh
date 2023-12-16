@@ -30,7 +30,7 @@ public:
  * check default result
  */
 TEST_F(DirectiveTest, empty1) {
-  ASSERT_NO_FATAL_FAILURE(this->parse("#!/usr/bin/ydsh", true));
+  ASSERT_NO_FATAL_FAILURE(this->parse("#!/usr/bin/arsh", true));
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getKind());
   ASSERT_EQ(0u, this->getDirective().getParams().size());
   ASSERT_EQ(0u, this->getDirective().getLineNum());

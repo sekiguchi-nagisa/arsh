@@ -9,8 +9,8 @@
 #error require ANALYZ_PATH
 #endif
 
-#ifndef YDSH_OPEN_TEST_HPP
-#define YDSH_OPEN_TEST_HPP
+#ifndef ARSH_OPEN_TEST_HPP
+#define ARSH_OPEN_TEST_HPP
 
 using namespace arsh;
 
@@ -65,4 +65,4 @@ inline std::vector<std::string> getSortedFileList(const char *dir, const char *i
   return ret;
 }
 
-#endif // YDSH_OPEN_TEST_HPP
+#endif // ARSH_OPEN_TEST_HPP

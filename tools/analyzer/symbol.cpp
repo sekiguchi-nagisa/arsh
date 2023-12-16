@@ -371,7 +371,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     }
   }
 
-  std::string content = markup ? "```ydsh\n" : "";
+  std::string content = markup ? "```arsh\n" : "";
   std::string name = decl.toDemangledName();
   switch (decl.getKind()) {
   case DeclSymbol::Kind::VAR:

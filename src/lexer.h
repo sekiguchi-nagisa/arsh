@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LEXER_H
-#define YDSH_LEXER_H
+#ifndef ARSH_LEXER_H
+#define ARSH_LEXER_H
 
 #include <cstdint>
 #include <cstdlib>
@@ -389,4 +389,4 @@ std::string toPrintable(StringRef ref);
 
 } // namespace arsh
 
-#endif // YDSH_LEXER_H
+#endif // ARSH_LEXER_H

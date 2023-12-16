@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BUILTIN_H
-#define YDSH_BUILTIN_H
+#ifndef ARSH_BUILTIN_H
+#define ARSH_BUILTIN_H
 
 #include <sys/file.h>
 
@@ -45,8 +45,8 @@
 
 #define SUPPRESS_WARNING(a) (void)a
 
-#define YDSH_METHOD static DSValue
-#define YDSH_METHOD_DECL DSValue
+#define ARSH_METHOD static DSValue
+#define ARSH_METHOD_DECL DSValue
 
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
@@ -63,7 +63,7 @@ using RuntimeContext = DSState;
 // #################
 
 //!bind: function $OP_STR($this : Any) : String
-YDSH_METHOD to_str(RuntimeContext &ctx) {
+ARSH_METHOD to_str(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_str);
   StrBuilder builder(ctx);
   if (!LOCAL(0).opStr(builder)) {
@@ -73,7 +73,7 @@ YDSH_METHOD to_str(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_INTERP($this : Any) : String
-YDSH_METHOD to_interp(RuntimeContext &ctx) {
+ARSH_METHOD to_interp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_interp);
   StrBuilder builder(ctx);
   if (!LOCAL(0).opInterp(builder)) {
@@ -89,13 +89,13 @@ YDSH_METHOD to_interp(RuntimeContext &ctx) {
 // =====  unary op  =====
 
 //!bind: function $OP_PLUS($this : Int) : Int
-YDSH_METHOD int_plus(RuntimeContext &ctx) {
+ARSH_METHOD int_plus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_plus);
   RET(LOCAL(0));
 }
 
 //!bind: function $OP_MINUS($this : Int) : Int
-YDSH_METHOD int_minus(RuntimeContext &ctx) {
+ARSH_METHOD int_minus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_minus);
   int64_t v = LOCAL(0).asInt();
   if (v == INT64_MIN) {
@@ -106,7 +106,7 @@ YDSH_METHOD int_minus(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_NOT($this : Int) : Int
-YDSH_METHOD int_not(RuntimeContext &ctx) {
+ARSH_METHOD int_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_not);
   uint64_t v = ~static_cast<uint64_t>(LOCAL(0).asInt());
   RET(DSValue::createInt(static_cast<int64_t>(v)));
@@ -117,7 +117,7 @@ YDSH_METHOD int_not(RuntimeContext &ctx) {
 //   =====  arithmetic  =====
 
 //!bind: function $OP_ADD($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_add(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_add);
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
@@ -131,7 +131,7 @@ YDSH_METHOD int_2_int_add(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_SUB($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_sub(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_sub(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_sub);
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
@@ -145,7 +145,7 @@ YDSH_METHOD int_2_int_sub(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_MUL($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_mul(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_mul(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_mul);
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
@@ -159,7 +159,7 @@ YDSH_METHOD int_2_int_mul(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_DIV($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_div(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_div(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_div);
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
@@ -175,7 +175,7 @@ YDSH_METHOD int_2_int_div(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_MOD($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_mod);
   int64_t left = LOCAL(0).asInt();
   int64_t right = LOCAL(1).asInt();
@@ -190,7 +190,7 @@ YDSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
 //   =====  equality  =====
 
 //!bind: function $OP_EQ($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_eq(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_eq);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -198,7 +198,7 @@ YDSH_METHOD int_2_int_eq(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_NE($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_ne(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_ne);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -208,7 +208,7 @@ YDSH_METHOD int_2_int_ne(RuntimeContext &ctx) {
 //   =====  relational  =====
 
 //!bind: function $OP_LT($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_lt(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_lt);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -216,7 +216,7 @@ YDSH_METHOD int_2_int_lt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GT($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_gt(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_gt);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -224,7 +224,7 @@ YDSH_METHOD int_2_int_gt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_LE($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_le(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_le);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -232,7 +232,7 @@ YDSH_METHOD int_2_int_le(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GE($this : Int, $target : Int) : Bool
-YDSH_METHOD int_2_int_ge(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_ge);
   auto left = LOCAL(0).asInt();
   auto right = LOCAL(1).asInt();
@@ -242,7 +242,7 @@ YDSH_METHOD int_2_int_ge(RuntimeContext &ctx) {
 //   =====  logical  =====
 
 //!bind: function $OP_AND($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_and(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_and(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_and);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
@@ -250,7 +250,7 @@ YDSH_METHOD int_2_int_and(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_OR($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_or(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_or(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_or);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
@@ -258,7 +258,7 @@ YDSH_METHOD int_2_int_or(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_XOR($this : Int, $target : Int) : Int
-YDSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
+ARSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_xor);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
@@ -266,7 +266,7 @@ YDSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
 }
 
 //!bind: function abs($this : Int) : Int
-YDSH_METHOD int_abs(RuntimeContext &ctx) {
+ARSH_METHOD int_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_abs);
   int64_t value = LOCAL(0).asInt();
   if (unlikely(value == INT64_MIN)) {
@@ -277,7 +277,7 @@ YDSH_METHOD int_abs(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_TO_FLOAT($this : Int) : Float
-YDSH_METHOD int_toFloat(RuntimeContext &ctx) {
+ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_toFloat);
   int64_t v = LOCAL(0).asInt();
   auto d = static_cast<double>(v);
@@ -291,13 +291,13 @@ YDSH_METHOD int_toFloat(RuntimeContext &ctx) {
 // =====  unary op  =====
 
 //!bind: function $OP_PLUS($this : Float) : Float
-YDSH_METHOD float_plus(RuntimeContext &ctx) {
+ARSH_METHOD float_plus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_plus);
   RET(LOCAL(0));
 }
 
 //!bind: function $OP_MINUS($this : Float) : Float
-YDSH_METHOD float_minus(RuntimeContext &ctx) {
+ARSH_METHOD float_minus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_minus);
   RET(DSValue::createFloat(-LOCAL(0).asFloat()));
 }
@@ -307,7 +307,7 @@ YDSH_METHOD float_minus(RuntimeContext &ctx) {
 //   =====  arithmetic  =====
 
 //!bind: function $OP_ADD($this : Float, $target : Float) : Float
-YDSH_METHOD float_2_float_add(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_add);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -315,7 +315,7 @@ YDSH_METHOD float_2_float_add(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
-YDSH_METHOD float_2_float_sub(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_sub(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_sub);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -323,7 +323,7 @@ YDSH_METHOD float_2_float_sub(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
-YDSH_METHOD float_2_float_mul(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_mul(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_mul);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -331,7 +331,7 @@ YDSH_METHOD float_2_float_mul(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
-YDSH_METHOD float_2_float_div(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_div(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_div);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -342,7 +342,7 @@ YDSH_METHOD float_2_float_div(RuntimeContext &ctx) {
 //   =====  equality  =====
 
 //!bind: function $OP_EQ($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_eq(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_eq);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -350,7 +350,7 @@ YDSH_METHOD float_2_float_eq(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_ne(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_ne);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -360,7 +360,7 @@ YDSH_METHOD float_2_float_ne(RuntimeContext &ctx) {
 //   =====  relational  =====
 
 //!bind: function $OP_LT($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_lt(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_lt);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -368,7 +368,7 @@ YDSH_METHOD float_2_float_lt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_gt(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_gt);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -376,7 +376,7 @@ YDSH_METHOD float_2_float_gt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_le(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_le);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -384,7 +384,7 @@ YDSH_METHOD float_2_float_le(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Bool
-YDSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
+ARSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_ge);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
@@ -394,70 +394,70 @@ YDSH_METHOD float_2_float_ge(RuntimeContext &ctx) {
 // =====  additional float op  ======
 
 //!bind: function isNaN($this : Float): Bool
-YDSH_METHOD float_isNaN(RuntimeContext &ctx) {
+ARSH_METHOD float_isNaN(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isNaN);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isnan(value));
 }
 
 //!bind: function isInf($this : Float): Bool
-YDSH_METHOD float_isInf(RuntimeContext &ctx) {
+ARSH_METHOD float_isInf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isInf);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isinf(value));
 }
 
 //!bind: function isFinite($this : Float): Bool
-YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
+ARSH_METHOD float_isFinite(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isFinite);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isfinite(value));
 }
 
 //!bind: function isNormal($this : Float) : Bool
-YDSH_METHOD float_isNormal(RuntimeContext &ctx) {
+ARSH_METHOD float_isNormal(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_isNormal);
   double value = LOCAL(0).asFloat();
   RET_BOOL(std::isnormal(value));
 }
 
 //!bind: function round($this : Float) : Float
-YDSH_METHOD float_round(RuntimeContext &ctx) {
+ARSH_METHOD float_round(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_round);
   double value = LOCAL(0).asFloat();
   RET(DSValue::createFloat(std::round(value)));
 }
 
 //!bind: function trunc($this : Float) : Float
-YDSH_METHOD float_trunc(RuntimeContext &ctx) {
+ARSH_METHOD float_trunc(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_trunc);
   double value = LOCAL(0).asFloat();
   RET(DSValue::createFloat(std::trunc(value)));
 }
 
 //!bind: function floor($this : Float) : Float
-YDSH_METHOD float_floor(RuntimeContext &ctx) {
+ARSH_METHOD float_floor(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_floor);
   double value = LOCAL(0).asFloat();
   RET(DSValue::createFloat(std::floor(value)));
 }
 
 //!bind: function ceil($this : Float) : Float
-YDSH_METHOD float_ceil(RuntimeContext &ctx) {
+ARSH_METHOD float_ceil(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_ceil);
   double value = LOCAL(0).asFloat();
   RET(DSValue::createFloat(std::ceil(value)));
 }
 
 //!bind: function abs($this : Float) : Float
-YDSH_METHOD float_abs(RuntimeContext &ctx) {
+ARSH_METHOD float_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_abs);
   double value = LOCAL(0).asFloat();
   RET(DSValue::createFloat(std::fabs(value)));
 }
 
 //!bind: function $OP_TO_INT($this : Float): Int
-YDSH_METHOD float_toInt(RuntimeContext &ctx) {
+ARSH_METHOD float_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_toInt);
   double d = LOCAL(0).asFloat();
 
@@ -482,7 +482,7 @@ YDSH_METHOD float_toInt(RuntimeContext &ctx) {
 }
 
 //!bind: function compare($this : Float, $target : Float) : Int
-YDSH_METHOD float_compare(RuntimeContext &ctx) {
+ARSH_METHOD float_compare(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_compare);
   double x = LOCAL(0).asFloat();
   double y = LOCAL(1).asFloat();
@@ -495,19 +495,19 @@ YDSH_METHOD float_compare(RuntimeContext &ctx) {
 // ##################
 
 //!bind: function $OP_NOT($this : Bool) : Bool
-YDSH_METHOD boolean_not(RuntimeContext &ctx) {
+ARSH_METHOD boolean_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_not);
   RET_BOOL(!LOCAL(0).asBool());
 }
 
 //!bind: function $OP_EQ($this : Bool, $target : Bool) : Bool
-YDSH_METHOD boolean_eq(RuntimeContext &ctx) {
+ARSH_METHOD boolean_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_eq);
   RET_BOOL(LOCAL(0).asBool() == LOCAL(1).asBool());
 }
 
 //!bind: function $OP_NE($this : Bool, $target : Bool) : Bool
-YDSH_METHOD boolean_ne(RuntimeContext &ctx) {
+ARSH_METHOD boolean_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_ne);
   RET_BOOL(LOCAL(0).asBool() != LOCAL(1).asBool());
 }
@@ -517,7 +517,7 @@ YDSH_METHOD boolean_ne(RuntimeContext &ctx) {
 // ####################
 
 //!bind: function $OP_EQ($this : String, $target : String) : Bool
-YDSH_METHOD string_eq(RuntimeContext &ctx) {
+ARSH_METHOD string_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_eq);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -525,7 +525,7 @@ YDSH_METHOD string_eq(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_NE($this : String, $target : String) : Bool
-YDSH_METHOD string_ne(RuntimeContext &ctx) {
+ARSH_METHOD string_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_ne);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -533,7 +533,7 @@ YDSH_METHOD string_ne(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_LT($this : String, $target : String) : Bool
-YDSH_METHOD string_lt(RuntimeContext &ctx) {
+ARSH_METHOD string_lt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_lt);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -541,7 +541,7 @@ YDSH_METHOD string_lt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GT($this : String, $target : String) : Bool
-YDSH_METHOD string_gt(RuntimeContext &ctx) {
+ARSH_METHOD string_gt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_gt);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -549,7 +549,7 @@ YDSH_METHOD string_gt(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_LE($this : String, $target : String) : Bool
-YDSH_METHOD string_le(RuntimeContext &ctx) {
+ARSH_METHOD string_le(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_le);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -557,7 +557,7 @@ YDSH_METHOD string_le(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_GE($this : String, $target : String) : Bool
-YDSH_METHOD string_ge(RuntimeContext &ctx) {
+ARSH_METHOD string_ge(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_ge);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -565,7 +565,7 @@ YDSH_METHOD string_ge(RuntimeContext &ctx) {
 }
 
 //!bind: function size($this : String) : Int
-YDSH_METHOD string_size(RuntimeContext &ctx) {
+ARSH_METHOD string_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_size);
   size_t size = LOCAL(0).asStrRef().size();
   assert(size <= StringObject::MAX_SIZE);
@@ -573,14 +573,14 @@ YDSH_METHOD string_size(RuntimeContext &ctx) {
 }
 
 //!bind: function empty($this : String) : Bool
-YDSH_METHOD string_empty(RuntimeContext &ctx) {
+ARSH_METHOD string_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_empty);
   bool empty = LOCAL(0).asStrRef().empty();
   RET_BOOL(empty);
 }
 
 //!bind: function count($this : String) : Int
-YDSH_METHOD string_count(RuntimeContext &ctx) {
+ARSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
   size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeCluster &) {});
   assert(count <= StringObject::MAX_SIZE);
@@ -588,7 +588,7 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
 }
 
 //!bind: function chars($this : String) : Array<String>
-YDSH_METHOD string_chars(RuntimeContext &ctx) {
+ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
   auto ref = LOCAL(0).asStrRef();
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
@@ -602,7 +602,7 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
 }
 
 //!bind: function words($this : String) : Array<String>
-YDSH_METHOD string_words(RuntimeContext &ctx) {
+ARSH_METHOD string_words(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_words);
   auto ref = LOCAL(0).asStrRef();
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
@@ -627,7 +627,7 @@ YDSH_METHOD string_words(RuntimeContext &ctx) {
 }
 
 //!bind: function width($this : String, $eaw : Option<Int>) : Int
-YDSH_METHOD string_width(RuntimeContext &ctx) {
+ARSH_METHOD string_width(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_width);
   auto ref = LOCAL(0).asStrRef();
   auto &v = LOCAL(1);
@@ -699,7 +699,7 @@ static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size,
 }
 
 //!bind: function $OP_GET($this : String, $index : Int) : String
-YDSH_METHOD string_get(RuntimeContext &ctx) {
+ARSH_METHOD string_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_get);
   auto ref = LOCAL(0).asStrRef();
   const size_t size = ref.size();
@@ -710,7 +710,7 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 }
 
 //!bind: function charAt($this : String, $index : Int) : String
-YDSH_METHOD string_charAt(RuntimeContext &ctx) {
+ARSH_METHOD string_charAt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_charAt);
 
   StringRef ref = LOCAL(0).asStrRef();
@@ -784,7 +784,7 @@ static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
 }
 
 //!bind: function slice($this : String, $start : Int, $stop : Option<Int>) : String
-YDSH_METHOD string_slice(RuntimeContext &ctx) {
+ARSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
   auto ref = LOCAL(0).asStrRef();
   auto start = LOCAL(1).asInt();
@@ -795,7 +795,7 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
 }
 
 //!bind: function startsWith($this : String, $target : String) : Bool
-YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
+ARSH_METHOD string_startsWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_startsWith);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -803,7 +803,7 @@ YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
 }
 
 //!bind: function endsWith($this : String, $target : String) : Bool
-YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
+ARSH_METHOD string_endsWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_endsWith);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -811,7 +811,7 @@ YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
 }
 
 //!bind: function indexOf($this : String, $target : String, $index : Option<Int>) : Int
-YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
+ARSH_METHOD string_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_indexOf);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -824,7 +824,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int
-YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
+ARSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_lastIndexOf);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -835,7 +835,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
 }
 
 //!bind: function contains($this : String, $target : String) : Bool
-YDSH_METHOD string_contains(RuntimeContext &ctx) {
+ARSH_METHOD string_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_contains);
   auto left = LOCAL(0).asStrRef();
   auto right = LOCAL(1).asStrRef();
@@ -843,7 +843,7 @@ YDSH_METHOD string_contains(RuntimeContext &ctx) {
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
-YDSH_METHOD string_split(RuntimeContext &ctx) {
+ARSH_METHOD string_split(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_split);
   auto results = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &ptr = typeAs<ArrayObject>(results);
@@ -865,7 +865,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 }
 
 //!bind: function replace($this : String, $target : String, $rep : String) : String
-YDSH_METHOD string_replace(RuntimeContext &ctx) {
+ARSH_METHOD string_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_replace);
 
   auto delimStr = LOCAL(1).asStrRef();
@@ -896,7 +896,7 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 }
 
 //!bind: function sanitize($this : String, $repl : Option<String>) : String
-YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
+ARSH_METHOD string_sanitize(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_sanitize);
   auto ref = LOCAL(0).asStrRef();
   auto v = LOCAL(1);
@@ -930,7 +930,7 @@ YDSH_METHOD string_sanitize(RuntimeContext &ctx) {
 }
 
 //!bind: function toInt($this : String, $radix : Option<Int>) : Option<Int>
-YDSH_METHOD string_toInt(RuntimeContext &ctx) {
+ARSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);
   auto ref = LOCAL(0).asStrRef();
   auto &v = LOCAL(1);
@@ -944,7 +944,7 @@ YDSH_METHOD string_toInt(RuntimeContext &ctx) {
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
-YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
+ARSH_METHOD string_toFloat(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toFloat);
   auto ref = LOCAL(0).asStrRef();
   if (!ref.hasNullChar()) {
@@ -973,7 +973,7 @@ static DSValue asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
-YDSH_METHOD string_iter(RuntimeContext &ctx) {
+ARSH_METHOD string_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_iter);
 
   /**
@@ -997,7 +997,7 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Bool
-YDSH_METHOD string_match(RuntimeContext &ctx) {
+ARSH_METHOD string_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_match);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
@@ -1006,7 +1006,7 @@ YDSH_METHOD string_match(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_UNMATCH($this : String, $re : Regex) : Bool
-YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
+ARSH_METHOD string_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_unmatch);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
@@ -1015,7 +1015,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 }
 
 //!bind: function realpath($this : String) : String
-YDSH_METHOD string_realpath(RuntimeContext &ctx) {
+ARSH_METHOD string_realpath(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_realpath);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
@@ -1038,7 +1038,7 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
 }
 
 //!bind: function basename($this : String) : String
-YDSH_METHOD string_basename(RuntimeContext &ctx) {
+ARSH_METHOD string_basename(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_basename);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
@@ -1050,7 +1050,7 @@ YDSH_METHOD string_basename(RuntimeContext &ctx) {
 }
 
 //!bind: function dirname($this : String) : String
-YDSH_METHOD string_dirname(RuntimeContext &ctx) {
+ARSH_METHOD string_dirname(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_dirname);
   auto ref = LOCAL(0).asStrRef();
   if (ref.hasNullChar()) {
@@ -1062,7 +1062,7 @@ YDSH_METHOD string_dirname(RuntimeContext &ctx) {
 }
 
 //!bind: function lower($this : String) : String
-YDSH_METHOD string_lower(RuntimeContext &ctx) {
+ARSH_METHOD string_lower(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_lower);
   auto ret = DSValue::createStr(LOCAL(0).asStrRef());
   auto ref = ret.asStrRef();
@@ -1071,7 +1071,7 @@ YDSH_METHOD string_lower(RuntimeContext &ctx) {
 }
 
 //!bind: function upper($this : String) : String
-YDSH_METHOD string_upper(RuntimeContext &ctx) {
+ARSH_METHOD string_upper(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_upper);
   auto ret = DSValue::createStr(LOCAL(0).asStrRef());
   auto ref = ret.asStrRef();
@@ -1080,7 +1080,7 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
 }
 
 //!bind: function quote($this : String) : String
-YDSH_METHOD string_quote(RuntimeContext &ctx) {
+ARSH_METHOD string_quote(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_quote);
   auto ref = LOCAL(0).asStrRef();
   auto ret = quoteAsShellArg(ref);
@@ -1096,7 +1096,7 @@ YDSH_METHOD string_quote(RuntimeContext &ctx) {
 // ########################
 
 //!bind: function $OP_NEXT($this : StringIter) : String
-YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
+ARSH_METHOD stringIter_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(stringIter_next);
   auto &iter = typeAs<BaseObject>(LOCAL(0));
   auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
@@ -1114,7 +1114,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
 // ###################
 
 //!bind: function $OP_INIT($this : Regex, $str : String, $flag : Option<String>) : Regex
-YDSH_METHOD regex_init(RuntimeContext &ctx) {
+ARSH_METHOD regex_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_init);
   auto pattern = LOCAL(1).asStrRef();
   auto v = LOCAL(2);
@@ -1130,7 +1130,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
 }
 
 //!bind: function isCaseless($this : Regex) : Bool
-YDSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
+ARSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isCaseless);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto flag = re.getCompileFlag();
@@ -1138,7 +1138,7 @@ YDSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
 }
 
 //!bind: function isMultiLine($this : Regex) : Bool
-YDSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
+ARSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isMultiLine);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto flag = re.getCompileFlag();
@@ -1146,7 +1146,7 @@ YDSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
 }
 
 //!bind: function isDotAll($this : Regex) : Bool
-YDSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
+ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isDotAll);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto flag = re.getCompileFlag();
@@ -1154,7 +1154,7 @@ YDSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Bool
-YDSH_METHOD regex_search(RuntimeContext &ctx) {
+ARSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
@@ -1163,7 +1163,7 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_UNMATCH($this : Regex, $target : String) : Bool
-YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
+ARSH_METHOD regex_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_unmatch);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
@@ -1172,7 +1172,7 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
 }
 
 //!bind: function match($this: Regex, $target : String) : Array<Option<String>>
-YDSH_METHOD regex_match(RuntimeContext &ctx) {
+ARSH_METHOD regex_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_match);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
@@ -1186,7 +1186,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 }
 
 //!bind: function replace($this: Regex, $target : String, $repl : String) : String
-YDSH_METHOD regex_replace(RuntimeContext &ctx) {
+ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_replace);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   std::string out;
@@ -1204,7 +1204,7 @@ YDSH_METHOD regex_replace(RuntimeContext &ctx) {
 // ####################
 
 //!bind: function name($this : Signal) : String
-YDSH_METHOD signal_name(RuntimeContext &ctx) {
+ARSH_METHOD signal_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_name);
   const char *name = getSignalName(LOCAL(0).asSig());
   assert(name != nullptr);
@@ -1212,13 +1212,13 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
 }
 
 //!bind: function value($this : Signal) : Int
-YDSH_METHOD signal_value(RuntimeContext &ctx) {
+ARSH_METHOD signal_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_value);
   RET(DSValue::createInt(LOCAL(0).asSig()));
 }
 
 //!bind: function message($this : Signal) : String
-YDSH_METHOD signal_message(RuntimeContext &ctx) {
+ARSH_METHOD signal_message(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_message);
   const char *value = strsignal(LOCAL(0).asSig());
   RET(DSValue::createStr(value));
@@ -1233,7 +1233,7 @@ static bool checkPidLimit(int64_t value) {
 }
 
 //!bind: function kill($this : Signal, $pid : Int) : Void
-YDSH_METHOD signal_kill(RuntimeContext &ctx) {
+ARSH_METHOD signal_kill(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_kill);
   int sigNum = LOCAL(0).asSig();
   int64_t pid = LOCAL(1).asInt();
@@ -1252,7 +1252,7 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
 }
 
 //!bind: function trap($this: Signal, $handler: Option<Func<Void,[Signal]>>): Func<Void,[Signal]>
-YDSH_METHOD signal_trap(RuntimeContext &ctx) {
+ARSH_METHOD signal_trap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_trap);
   int sigNum = LOCAL(0).asSig();
   auto value = LOCAL(1);
@@ -1266,13 +1266,13 @@ YDSH_METHOD signal_trap(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_EQ($this : Signal, $target : Signal) : Bool
-YDSH_METHOD signal_eq(RuntimeContext &ctx) {
+ARSH_METHOD signal_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_eq);
   RET_BOOL(LOCAL(0).asSig() == LOCAL(1).asSig());
 }
 
 //!bind: function $OP_NE($this : Signal, $target : Signal) : Bool
-YDSH_METHOD signal_ne(RuntimeContext &ctx) {
+ARSH_METHOD signal_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_ne);
   RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
 }
@@ -1282,7 +1282,7 @@ YDSH_METHOD signal_ne(RuntimeContext &ctx) {
 // #####################
 
 //!bind: function $OP_GET($this : Signals, $key : String) : Signal
-YDSH_METHOD signals_get(RuntimeContext &ctx) {
+ARSH_METHOD signals_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_get);
   auto key = LOCAL(1).asStrRef();
   int sigNum = getSignalNum(key);
@@ -1296,7 +1296,7 @@ YDSH_METHOD signals_get(RuntimeContext &ctx) {
 }
 
 //!bind: function get($this : Signals, $key : String) : Option<Signal>
-YDSH_METHOD signals_signal(RuntimeContext &ctx) {
+ARSH_METHOD signals_signal(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_signal);
   auto key = LOCAL(1).asStrRef();
   int sigNum = getSignalNum(key);
@@ -1307,7 +1307,7 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
-YDSH_METHOD signals_list(RuntimeContext &ctx) {
+ARSH_METHOD signals_list(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_list);
 
   auto ret = ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Signal));
@@ -1346,7 +1346,7 @@ static bool checkModLayout(DSState &state, const DSValue &value) {
   } while (false)
 
 //!bind: function _scriptName($this : Module) : String
-YDSH_METHOD module_name(RuntimeContext &ctx) {
+ARSH_METHOD module_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_name);
 
   CHECK_MOD_LAYOUT(LOCAL(0));
@@ -1355,7 +1355,7 @@ YDSH_METHOD module_name(RuntimeContext &ctx) {
 }
 
 //!bind: function _scriptDir($this : Module) : String
-YDSH_METHOD module_dir(RuntimeContext &ctx) {
+ARSH_METHOD module_dir(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_dir);
 
   CHECK_MOD_LAYOUT(LOCAL(0));
@@ -1364,7 +1364,7 @@ YDSH_METHOD module_dir(RuntimeContext &ctx) {
 }
 
 //!bind: function _func($this : Module, $expr : String) : Func<Option<Any>>
-YDSH_METHOD module_func(RuntimeContext &ctx) {
+ARSH_METHOD module_func(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_func);
 
   if (!ctx.tempModScope.empty()) {
@@ -1386,7 +1386,7 @@ YDSH_METHOD module_func(RuntimeContext &ctx) {
 }
 
 //!bind: function _fullname($this : Module, $name : String) : Option<String>
-YDSH_METHOD module_fullname(RuntimeContext &ctx) {
+ARSH_METHOD module_fullname(RuntimeContext &ctx) {
   SUPPRESS_WARNING(module_fullname);
 
   CHECK_MOD_LAYOUT(LOCAL(0));
@@ -1414,7 +1414,7 @@ YDSH_METHOD module_fullname(RuntimeContext &ctx) {
   } while (false)
 
 //!bind: function $OP_GET($this : Array<T0>, $index : Int) : T0
-YDSH_METHOD array_get(RuntimeContext &ctx) {
+ARSH_METHOD array_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_get);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1425,7 +1425,7 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
 }
 
 //!bind: function get($this : Array<T0>, $index : Int) : Option<T0>
-YDSH_METHOD array_get2(RuntimeContext &ctx) {
+ARSH_METHOD array_get2(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_get2);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1439,7 +1439,7 @@ YDSH_METHOD array_get2(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_SET($this : Array<T0>, $index : Int, $value : T0) : Void
-YDSH_METHOD array_set(RuntimeContext &ctx) {
+ARSH_METHOD array_set(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_set);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1452,7 +1452,7 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
 }
 
 //!bind: function remove($this : Array<T0>, $index : Int) : T0
-YDSH_METHOD array_remove(RuntimeContext &ctx) {
+ARSH_METHOD array_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_remove);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1466,7 +1466,7 @@ YDSH_METHOD array_remove(RuntimeContext &ctx) {
 }
 
 //!bind: function removeRange($this : Array<T0>, $from : Int, $to : Option<Int>) : Void
-YDSH_METHOD array_removeRange(RuntimeContext &ctx) {
+ARSH_METHOD array_removeRange(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_removeRange);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1493,7 +1493,7 @@ static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = tr
 }
 
 //!bind: function peek($this : Array<T0>) : T0
-YDSH_METHOD array_peek(RuntimeContext &ctx) {
+ARSH_METHOD array_peek(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_peek);
   DSValue value;
   array_fetch(ctx, value);
@@ -1525,14 +1525,14 @@ static bool array_pushImpl(RuntimeContext &ctx) {
 }
 
 //!bind: function push($this : Array<T0>, $value : T0) : Void
-YDSH_METHOD array_push(RuntimeContext &ctx) {
+ARSH_METHOD array_push(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_push);
   TRY(array_pushImpl(ctx));
   RET_VOID;
 }
 
 //!bind: function pop($this : Array<T0>) : T0
-YDSH_METHOD array_pop(RuntimeContext &ctx) {
+ARSH_METHOD array_pop(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_pop);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1544,7 +1544,7 @@ YDSH_METHOD array_pop(RuntimeContext &ctx) {
 }
 
 //!bind: function shift($this : Array<T0>) : T0
-YDSH_METHOD array_shift(RuntimeContext &ctx) {
+ARSH_METHOD array_shift(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_shift);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1557,28 +1557,28 @@ YDSH_METHOD array_shift(RuntimeContext &ctx) {
 }
 
 //!bind: function unshift($this : Array<T0>, $value : T0) : Void
-YDSH_METHOD array_unshift(RuntimeContext &ctx) {
+ARSH_METHOD array_unshift(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_unshift);
   TRY(array_insertImpl(ctx, 0, LOCAL(1)));
   RET_VOID;
 }
 
 //!bind: function insert($this : Array<T0>, $index : Int, $value : T0) : Void
-YDSH_METHOD array_insert(RuntimeContext &ctx) {
+ARSH_METHOD array_insert(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_insert);
   TRY(array_insertImpl(ctx, LOCAL(1).asInt(), LOCAL(2)));
   RET_VOID;
 }
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
-YDSH_METHOD array_add(RuntimeContext &ctx) {
+ARSH_METHOD array_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_add);
   TRY(array_pushImpl(ctx));
   RET(LOCAL(0));
 }
 
 //!bind: function addAll($this : Array<T0>, $value : Array<T0>) : Array<T0>
-YDSH_METHOD array_addAll(RuntimeContext &ctx) {
+ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_addAll);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1593,7 +1593,7 @@ YDSH_METHOD array_addAll(RuntimeContext &ctx) {
 }
 
 //!bind: function swap($this : Array<T0>, $index : Int, $value : T0) : T0
-YDSH_METHOD array_swap(RuntimeContext &ctx) {
+ARSH_METHOD array_swap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_swap);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1605,7 +1605,7 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
 }
 
 //!bind: function slice($this : Array<T0>, $from : Int, $to : Option<Int>) : Array<T0>
-YDSH_METHOD array_slice(RuntimeContext &ctx) {
+ARSH_METHOD array_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_slice);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto start = LOCAL(1).asInt();
@@ -1616,14 +1616,14 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
 }
 
 //!bind: function copy($this : Array<T0>) : Array<T0>
-YDSH_METHOD array_copy(RuntimeContext &ctx) {
+ARSH_METHOD array_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_copy);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   RET(obj.copy());
 }
 
 //!bind: function reverse($this : Array<T0>) : Array<T0>
-YDSH_METHOD array_reverse(RuntimeContext &ctx) {
+ARSH_METHOD array_reverse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_reverse);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1632,7 +1632,7 @@ YDSH_METHOD array_reverse(RuntimeContext &ctx) {
 }
 
 //!bind: function sort($this : Array<T0>) : Array<T0> where T0 : Value_
-YDSH_METHOD array_sort(RuntimeContext &ctx) {
+ARSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1642,7 +1642,7 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
 }
 
 //!bind: function sortWith($this : Array<T0>, $comp : Func<Bool, [T0, T0]>) : Array<T0>
-YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
+ARSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1655,7 +1655,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
 }
 
 //!bind: function join($this : Array<T0>, $delim : Option<String>) : String
-YDSH_METHOD array_join(RuntimeContext &ctx) {
+ARSH_METHOD array_join(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_join);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto v = LOCAL(1);
@@ -1673,7 +1673,7 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
 }
 
 /*//!bind: function map($this : Array<T0>, $mapper : Func<T1,[T0]>) : Array<T1>
-YDSH_METHOD array_map(RuntimeContext &ctx) {
+ARSH_METHOD array_map(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_map);  //FIXME: need to fix method handle instantiation bug
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto &mapper = LOCAL(1);
@@ -1700,7 +1700,7 @@ YDSH_METHOD array_map(RuntimeContext &ctx) {
 }*/
 
 //!bind: function indexOf($this : Array<T0>, $target : T0, $index : Option<Int>) : Int where T0 : Value_
-YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
+ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_indexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
@@ -1720,7 +1720,7 @@ YDSH_METHOD array_indexOf(RuntimeContext &ctx) {
 }
 
 //!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
-YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
+ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_lastIndexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
@@ -1737,7 +1737,7 @@ YDSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
 }
 
 //!bind: function contains($this : Array<T0>, $target : T0) : Bool where T0 : Value_
-YDSH_METHOD array_contains(RuntimeContext &ctx) {
+ARSH_METHOD array_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_contains);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
@@ -1754,7 +1754,7 @@ YDSH_METHOD array_contains(RuntimeContext &ctx) {
 }
 
 //!bind: function trap($this : Array<T0>, $handler : Func<Void,[Signal]>) : Void where T0 : Signal
-YDSH_METHOD array_trap(RuntimeContext &ctx) {
+ARSH_METHOD array_trap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_trap);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto handler = LOCAL(1).toPtr();
@@ -1767,7 +1767,7 @@ YDSH_METHOD array_trap(RuntimeContext &ctx) {
 }
 
 //!bind: function size($this : Array<T0>) : Int
-YDSH_METHOD array_size(RuntimeContext &ctx) {
+ARSH_METHOD array_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_size);
   size_t size = typeAs<ArrayObject>(LOCAL(0)).getValues().size();
   assert(size <= ArrayObject::MAX_SIZE);
@@ -1775,14 +1775,14 @@ YDSH_METHOD array_size(RuntimeContext &ctx) {
 }
 
 //!bind: function empty($this : Array<T0>) : Bool
-YDSH_METHOD array_empty(RuntimeContext &ctx) {
+ARSH_METHOD array_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_empty);
   bool empty = typeAs<ArrayObject>(LOCAL(0)).getValues().empty();
   RET_BOOL(empty);
 }
 
 //!bind: function clear($this : Array<T0>) : Void
-YDSH_METHOD array_clear(RuntimeContext &ctx) {
+ARSH_METHOD array_clear(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_clear);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1791,13 +1791,13 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
-YDSH_METHOD array_iter(RuntimeContext &ctx) {
+ARSH_METHOD array_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_iter);
   RET(DSValue::create<ArrayIterObject>(toObjPtr<ArrayObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
-YDSH_METHOD array_next(RuntimeContext &ctx) {
+ARSH_METHOD array_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_next);
   auto &obj = typeAs<ArrayIterObject>(LOCAL(0));
   if (obj.hasNext()) {
@@ -1812,7 +1812,7 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
 // #################
 
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
-YDSH_METHOD map_get(RuntimeContext &ctx) {
+ARSH_METHOD map_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_get);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   auto retIndex = obj.lookup(LOCAL(1));
@@ -1826,7 +1826,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_SET($this : Map<T0, T1>, $key : T0, $value : T1) : Void
-YDSH_METHOD map_set(RuntimeContext &ctx) {
+ARSH_METHOD map_set(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_set);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1835,7 +1835,7 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
 }
 
 //!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Option<T1>
-YDSH_METHOD map_put(RuntimeContext &ctx) {
+ARSH_METHOD map_put(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_put);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1844,7 +1844,7 @@ YDSH_METHOD map_put(RuntimeContext &ctx) {
 }
 
 //!bind: function putIfAbsent($this : Map<T0, T1>, $key : T0, $value : T1) : T1
-YDSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
+ARSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_putIfAbsent);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1857,7 +1857,7 @@ YDSH_METHOD map_putIfAbsent(RuntimeContext &ctx) {
 }
 
 //!bind: function size($this : Map<T0, T1>) : Int
-YDSH_METHOD map_size(RuntimeContext &ctx) {
+ARSH_METHOD map_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_size);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   unsigned int value = obj.size();
@@ -1865,14 +1865,14 @@ YDSH_METHOD map_size(RuntimeContext &ctx) {
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Bool
-YDSH_METHOD map_empty(RuntimeContext &ctx) {
+ARSH_METHOD map_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_empty);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   RET_BOOL(obj.size() == 0);
 }
 
 //!bind: function get($this : Map<T0, T1>, $key : T0) : Option<T1>
-YDSH_METHOD map_find(RuntimeContext &ctx) {
+ARSH_METHOD map_find(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_find);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   auto retIndex = obj.lookup(LOCAL(1));
@@ -1880,7 +1880,7 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
 }
 
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Option<T1>
-YDSH_METHOD map_remove(RuntimeContext &ctx) {
+ARSH_METHOD map_remove(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_remove);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1889,7 +1889,7 @@ YDSH_METHOD map_remove(RuntimeContext &ctx) {
 }
 
 //!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1
-YDSH_METHOD map_swap(RuntimeContext &ctx) {
+ARSH_METHOD map_swap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_swap);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1906,7 +1906,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
 }
 
 //!bind: function addAll($this : Map<T0, T1>, $value : Map<T0, T1>) : Map<T0, T1>
-YDSH_METHOD map_addAll(RuntimeContext &ctx) {
+ARSH_METHOD map_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_addAll);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   auto &value = typeAs<OrderedMapObject>(LOCAL(1));
@@ -1920,7 +1920,7 @@ YDSH_METHOD map_addAll(RuntimeContext &ctx) {
 }
 
 //!bind: function copy($this : Map<T0, T1>) : Map<T0, T1>
-YDSH_METHOD map_copy(RuntimeContext &ctx) {
+ARSH_METHOD map_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_copy);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   const auto &type = ctx.typePool.get(obj.getTypeID());
@@ -1933,7 +1933,7 @@ YDSH_METHOD map_copy(RuntimeContext &ctx) {
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void
-YDSH_METHOD map_clear(RuntimeContext &ctx) {
+ARSH_METHOD map_clear(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_clear);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
@@ -1942,13 +1942,13 @@ YDSH_METHOD map_clear(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
-YDSH_METHOD map_iter(RuntimeContext &ctx) {
+ARSH_METHOD map_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_iter);
   RET(DSValue::create<OrderedMapIterObject>(toObjPtr<OrderedMapObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
-YDSH_METHOD map_next(RuntimeContext &ctx) {
+ARSH_METHOD map_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_next);
   auto &obj = typeAs<OrderedMapIterObject>(LOCAL(0));
   if (obj.hasNext()) {
@@ -1963,7 +1963,7 @@ YDSH_METHOD map_next(RuntimeContext &ctx) {
 // ###################
 
 //!bind: function $OP_INIT($this : Error, $message : String, $status : Option<Int>) : Error
-YDSH_METHOD error_init(RuntimeContext &ctx) {
+ARSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto &v = LOCAL(2);
@@ -1976,33 +1976,33 @@ YDSH_METHOD error_init(RuntimeContext &ctx) {
 }
 
 //!bind: function message($this : Error) : String
-YDSH_METHOD error_message(RuntimeContext &ctx) {
+ARSH_METHOD error_message(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_message);
   RET(typeAs<ErrorObject>(LOCAL(0)).getMessage());
 }
 
 //!bind: function show($this : Error) : Void
-YDSH_METHOD error_show(RuntimeContext &ctx) {
+ARSH_METHOD error_show(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_show);
   typeAs<ErrorObject>(LOCAL(0)).printStackTrace(ctx);
   RET_VOID;
 }
 
 //!bind: function name($this : Error) : String
-YDSH_METHOD error_name(RuntimeContext &ctx) {
+ARSH_METHOD error_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_name);
   RET(typeAs<ErrorObject>(LOCAL(0)).getName());
 }
 
 //!bind: function status($this : Error) : Int
-YDSH_METHOD error_status(RuntimeContext &ctx) {
+ARSH_METHOD error_status(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_status);
   auto status = typeAs<ErrorObject>(LOCAL(0)).getStatus();
   RET(DSValue::createInt(status));
 }
 
 //!bind: function lineno($this : Error) : Int
-YDSH_METHOD error_lineno(RuntimeContext &ctx) {
+ARSH_METHOD error_lineno(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_lineno);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
   unsigned int lineNum = getOccurredLineNum(stackTraces);
@@ -2010,7 +2010,7 @@ YDSH_METHOD error_lineno(RuntimeContext &ctx) {
 }
 
 //!bind: function source($this : Error) : String
-YDSH_METHOD error_source(RuntimeContext &ctx) {
+ARSH_METHOD error_source(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_source);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
   const char *source = getOccurredSourceName(stackTraces);
@@ -2022,7 +2022,7 @@ YDSH_METHOD error_source(RuntimeContext &ctx) {
 // ################
 
 //!bind: function $OP_INIT($this : FD, $path : String) : FD
-YDSH_METHOD fd_init(RuntimeContext &ctx) {
+ARSH_METHOD fd_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_init);
   auto ref = LOCAL(1).asStrRef();
   if (ref.hasNullChar()) {
@@ -2045,7 +2045,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
 }
 
 //!bind: function close($this : FD) : Void
-YDSH_METHOD fd_close(RuntimeContext &ctx) {
+ARSH_METHOD fd_close(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_close);
   auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
   int fd = fdObj.getRawFd();
@@ -2058,7 +2058,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
 }
 
 //!bind: function dup($this : FD) : FD
-YDSH_METHOD fd_dup(RuntimeContext &ctx) {
+ARSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   int newFd = dupFDExactly(fd);
@@ -2071,14 +2071,14 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
 }
 
 //!bind: function value($this : FD) : Int
-YDSH_METHOD fd_value(RuntimeContext &ctx) {
+ARSH_METHOD fd_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_value);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET(DSValue::createInt(fd));
 }
 
 //!bind: function lock($this : FD) : FD
-YDSH_METHOD fd_lock(RuntimeContext &ctx) {
+ARSH_METHOD fd_lock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_lock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   if (unlikely(flock(fd, LOCK_EX) == -1)) {
@@ -2089,7 +2089,7 @@ YDSH_METHOD fd_lock(RuntimeContext &ctx) {
 }
 
 //!bind: function unlock($this : FD) : FD
-YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
+ARSH_METHOD fd_unlock(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_unlock);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   if (unlikely(flock(fd, LOCK_UN) == -1)) {
@@ -2100,21 +2100,21 @@ YDSH_METHOD fd_unlock(RuntimeContext &ctx) {
 }
 
 //!bind: function $OP_BOOL($this : FD) : Bool
-YDSH_METHOD fd_bool(RuntimeContext &ctx) {
+ARSH_METHOD fd_bool(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_bool);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET_BOOL(fd != -1);
 }
 
 //!bind: function $OP_NOT($this : FD) : Bool
-YDSH_METHOD fd_not(RuntimeContext &ctx) {
+ARSH_METHOD fd_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_not);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
   RET_BOOL(fd == -1);
 }
 
 //!bind: function $OP_ITER($this : FD) : Reader
-YDSH_METHOD fd_iter(RuntimeContext &ctx) {
+ARSH_METHOD fd_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_iter);
   auto &v = LOCAL(0);
   RET(DSValue::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
@@ -2125,7 +2125,7 @@ YDSH_METHOD fd_iter(RuntimeContext &ctx) {
 // ####################
 
 //!bind: function $OP_NEXT($this : Reader) : String
-YDSH_METHOD reader_next(RuntimeContext &ctx) {
+ARSH_METHOD reader_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(reader_next);
   auto &reader = typeAs<ReaderObject>(LOCAL(0));
   if (reader.nextLine()) {
@@ -2140,7 +2140,7 @@ YDSH_METHOD reader_next(RuntimeContext &ctx) {
 // #####################
 
 //!bind: function call($this : Command, $argv : Array<String>) : Bool
-YDSH_METHOD cmd_call(RuntimeContext &ctx) {
+ARSH_METHOD cmd_call(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cmd_call);
   (void)ctx;
   RET_VOID; // dummy
@@ -2159,7 +2159,7 @@ YDSH_METHOD cmd_call(RuntimeContext &ctx) {
   } while (false)
 
 //!bind: function $OP_INIT($this : LineEditor) : LineEditor
-YDSH_METHOD edit_init(RuntimeContext &ctx) {
+ARSH_METHOD edit_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_init);
   auto ret = DSValue::create<LineEditorObject>();
   (void)ctx;
@@ -2167,7 +2167,7 @@ YDSH_METHOD edit_init(RuntimeContext &ctx) {
 }
 
 //!bind: function readLine($this : LineEditor, $p : Option<String>) : Option<String>
-YDSH_METHOD edit_read(RuntimeContext &ctx) {
+ARSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2188,7 +2188,7 @@ YDSH_METHOD edit_read(RuntimeContext &ctx) {
 }
 
 //!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void
-YDSH_METHOD edit_comp(RuntimeContext &ctx) {
+ARSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2201,7 +2201,7 @@ YDSH_METHOD edit_comp(RuntimeContext &ctx) {
 }
 
 //!bind: function setPrompt($this : LineEditor, $prompt : Option<Func<String,[String]>>) : Void
-YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
+ARSH_METHOD edit_prompt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_prompt);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2214,7 +2214,7 @@ YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
 }
 
 //!bind: function setHistory($this : LineEditor, $hist : Option<Array<String>>) : Void
-YDSH_METHOD edit_hist(RuntimeContext &ctx) {
+ARSH_METHOD edit_hist(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_hist);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2227,7 +2227,7 @@ YDSH_METHOD edit_hist(RuntimeContext &ctx) {
 }
 
 //!bind: function setHistSync($this : LineEditor, $sync : Option<Func<Void,[String,Array<String>]>>) : Void
-YDSH_METHOD edit_histSync(RuntimeContext &ctx) {
+ARSH_METHOD edit_histSync(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_histSync);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2240,7 +2240,7 @@ YDSH_METHOD edit_histSync(RuntimeContext &ctx) {
 }
 
 //!bind: function bind($this : LineEditor, $key : String, $action : String) : Void
-YDSH_METHOD edit_bind(RuntimeContext &ctx) {
+ARSH_METHOD edit_bind(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_bind);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2251,7 +2251,7 @@ YDSH_METHOD edit_bind(RuntimeContext &ctx) {
 }
 
 //!bind: function bindings($this : LineEditor) : Map<String,String>
-YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
+ARSH_METHOD edit_bindings(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_bindings);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   auto &stringType = ctx.typePool.get(TYPE::String);
@@ -2266,7 +2266,7 @@ YDSH_METHOD edit_bindings(RuntimeContext &ctx) {
 }
 
 //!bind: function action($this : LineEditor, $name : String, $type : String, $action : Func<Option<String>,[String, Option<Array<String>>]>) : Void
-YDSH_METHOD edit_action(RuntimeContext &ctx) {
+ARSH_METHOD edit_action(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_action);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2278,7 +2278,7 @@ YDSH_METHOD edit_action(RuntimeContext &ctx) {
 }
 
 //!bind: function actions($this : LineEditor) : Array<String>
-YDSH_METHOD edit_actions(RuntimeContext &ctx) {
+ARSH_METHOD edit_actions(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_actions);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
@@ -2292,7 +2292,7 @@ YDSH_METHOD edit_actions(RuntimeContext &ctx) {
 }
 
 //!bind: function config($this : LineEditor, $name : String, $value : Any) : Void
-YDSH_METHOD edit_config(RuntimeContext &ctx) {
+ARSH_METHOD edit_config(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_config);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
@@ -2303,14 +2303,14 @@ YDSH_METHOD edit_config(RuntimeContext &ctx) {
 }
 
 //!bind: function configs($this : LineEditor) : Map<String, Any>
-YDSH_METHOD edit_configs(RuntimeContext &ctx) {
+ARSH_METHOD edit_configs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_configs);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   RET(editor.getConfigs(ctx));
 }
 
 //!bind: function name($this : CLI) : String
-YDSH_METHOD cli_get(RuntimeContext &ctx) {
+ARSH_METHOD cli_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_get);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto v = obj[0];
@@ -2318,7 +2318,7 @@ YDSH_METHOD cli_get(RuntimeContext &ctx) {
 }
 
 //!bind: function setName($this : CLI, $arg0 : String) : Void
-YDSH_METHOD cli_set(RuntimeContext &ctx) {
+ARSH_METHOD cli_set(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_set);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   obj[0] = LOCAL(1);
@@ -2326,7 +2326,7 @@ YDSH_METHOD cli_set(RuntimeContext &ctx) {
 }
 
 //!bind: function parse($this : CLI, $args : Array<String>) : Int
-YDSH_METHOD cli_parse(RuntimeContext &ctx) {
+ARSH_METHOD cli_parse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parse);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(1));
@@ -2338,7 +2338,7 @@ YDSH_METHOD cli_parse(RuntimeContext &ctx) {
 }
 
 //!bind: function parseOrExit($this : CLI, $args: Array<String>) : Int
-YDSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
+ARSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parseOrExit);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(1));
@@ -2353,7 +2353,7 @@ YDSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
 }
 
 //!bind: function usage($this : CLI, $message : Option<String>, $verbose : Option<Bool>) : String
-YDSH_METHOD cli_usage(RuntimeContext &ctx) {
+ARSH_METHOD cli_usage(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_usage);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   StringRef message = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
@@ -2369,21 +2369,21 @@ YDSH_METHOD cli_usage(RuntimeContext &ctx) {
 // #################
 
 //!bind: function in($this : Job) : FD
-YDSH_METHOD job_in(RuntimeContext &ctx) {
+ARSH_METHOD job_in(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_in);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   RET(obj.getInObj());
 }
 
 //!bind: function out($this : Job) : FD
-YDSH_METHOD job_out(RuntimeContext &ctx) {
+ARSH_METHOD job_out(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_out);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   RET(obj.getOutObj());
 }
 
 //!bind: function $OP_GET($this : Job, $index : Int) : FD
-YDSH_METHOD job_get(RuntimeContext &ctx) {
+ARSH_METHOD job_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_get);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   auto index = LOCAL(1).asInt();
@@ -2399,7 +2399,7 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
 }
 
 //!bind: function poll($this : Job) : Bool
-YDSH_METHOD job_poll(RuntimeContext &ctx) {
+ARSH_METHOD job_poll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_poll);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   ctx.jobTable.waitForJob(job, WaitOp::NONBLOCKING);
@@ -2407,7 +2407,7 @@ YDSH_METHOD job_poll(RuntimeContext &ctx) {
 }
 
 //!bind: function wait($this : Job) : Int
-YDSH_METHOD job_wait(RuntimeContext &ctx) {
+ARSH_METHOD job_wait(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_wait);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   int s =
@@ -2422,7 +2422,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
 }
 
 //!bind: function raise($this : Job, $s : Signal) : Void
-YDSH_METHOD job_raise(RuntimeContext &ctx) {
+ARSH_METHOD job_raise(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_raise);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   obj.send(LOCAL(1).asSig());
@@ -2431,7 +2431,7 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
 }
 
 //!bind: function detach($this : Job) : Void
-YDSH_METHOD job_detach(RuntimeContext &ctx) {
+ARSH_METHOD job_detach(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_detach);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   job->disown();
@@ -2439,14 +2439,14 @@ YDSH_METHOD job_detach(RuntimeContext &ctx) {
 }
 
 //!bind: function size($this : Job) : Int
-YDSH_METHOD job_size(RuntimeContext &ctx) {
+ARSH_METHOD job_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_size);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   RET(DSValue::createInt(obj.getProcSize()));
 }
 
 //!bind: function pid($this : Job, $index : Int) : Option<Int>
-YDSH_METHOD job_pid(RuntimeContext &ctx) {
+ARSH_METHOD job_pid(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_pid);
   auto &job = typeAs<JobObject>(LOCAL(0));
   auto index = LOCAL(1).asInt();
@@ -2467,7 +2467,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 }
 
 //!bind: function status($this : Job, $index : Int) : Option<Int>
-YDSH_METHOD job_status(RuntimeContext &ctx) {
+ARSH_METHOD job_status(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_status);
   auto &job = typeAs<JobObject>(LOCAL(0));
   auto index = LOCAL(1).asInt();
@@ -2490,4 +2490,4 @@ YDSH_METHOD job_status(RuntimeContext &ctx) {
 
 } // namespace arsh
 
-#endif // YDSH_BUILTIN_H
+#endif // ARSH_BUILTIN_H

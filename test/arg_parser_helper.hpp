@@ -1,6 +1,6 @@
 
-#ifndef YDSH_TEST_ARG_PARSER_HELPER_HPP
-#define YDSH_TEST_ARG_PARSER_HELPER_HPP
+#ifndef ARSH_TEST_ARG_PARSER_HELPER_HPP
+#define ARSH_TEST_ARG_PARSER_HELPER_HPP
 
 #include "arg_parser_base.h"
 #include "type_pool.h"
@@ -64,4 +64,4 @@ inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeNam
 
 } // namespace arsh
 
-#endif // YDSH_TEST_ARG_PARSER_HELPER_HPP
+#endif // ARSH_TEST_ARG_PARSER_HELPER_HPP

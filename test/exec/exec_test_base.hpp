@@ -1,6 +1,6 @@
 
-#ifndef YDSH_EXEC_TEST_BASE_HPP
-#define YDSH_EXEC_TEST_BASE_HPP
+#ifndef ARSH_EXEC_TEST_BASE_HPP
+#define ARSH_EXEC_TEST_BASE_HPP
 
 #include "gtest/gtest.h"
 
@@ -178,4 +178,4 @@ public:
   }
 };
 
-#endif // YDSH_EXEC_TEST_BASE_HPP
+#endif // ARSH_EXEC_TEST_BASE_HPP

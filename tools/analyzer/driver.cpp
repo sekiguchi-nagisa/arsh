@@ -49,7 +49,7 @@ static void showInfo(char **const argv, LSPLogger &logger) {
     }
     cmdline += argv[i];
   }
-  fprintf(stderr, "start ydsh code analyzer with the following options\n");
+  fprintf(stderr, "start arsh code analyzer with the following options\n");
   fprintf(stderr, "    %s\n", cmdline.c_str());
   fflush(stderr);
   logger(LogLevel::INFO, "working directory: %s", getCWD().get());

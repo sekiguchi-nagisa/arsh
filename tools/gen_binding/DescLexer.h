@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_GEN_BINDING_DESCLEXER_H
-#define YDSH_TOOLS_GEN_BINDING_DESCLEXER_H
+#ifndef ARSH_TOOLS_GEN_BINDING_DESCLEXER_H
+#define ARSH_TOOLS_GEN_BINDING_DESCLEXER_H
 
 #include <ostream>
 
@@ -26,8 +26,8 @@
   OP(EOS)                                                                                          \
   OP(DESC_PREFIX)      /* //!bind: */                                                              \
   OP(FUNC)             /* function */                                                              \
-  OP(YDSH_METHOD)      /* YDSH_METHOD */                                                           \
-  OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */                                                      \
+  OP(ARSH_METHOD)      /* ARSH_METHOD */                                                           \
+  OP(ARSH_METHOD_DECL) /* ARSH_METHOD_DECL */                                                      \
   OP(RCTX)             /* RuntimeContext */                                                        \
   OP(WHERE)            /* where */                                                                 \
   OP(AND)              /* & */                                                                     \
@@ -66,4 +66,4 @@ inline bool isEOSToken(DescTokenKind kind) { return kind == DescTokenKind::EOS; 
 
 const char *toString(DescTokenKind kind);
 
-#endif // YDSH_TOOLS_GEN_BINDING_DESCLEXER_H
+#endif // ARSH_TOOLS_GEN_BINDING_DESCLEXER_H

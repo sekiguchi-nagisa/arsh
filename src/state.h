@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_STATE_H
-#define YDSH_STATE_H
+#ifndef ARSH_STATE_H
+#define ARSH_STATE_H
 
 #include "object.h"
 
@@ -367,4 +367,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_STATE_H
+#endif // ARSH_STATE_H

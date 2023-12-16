@@ -570,7 +570,7 @@ ggg && ps
 }
 
 TEST_F(RenameTest, source1) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");
 
   auto content = format(R"(
@@ -607,7 +607,7 @@ source %s as
 }
 
 TEST_F(RenameTest, source2) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");
 
   auto content = format(R"(
@@ -669,7 +669,7 @@ source %s as
 }
 
 TEST_F(RenameTest, import1) { // for global imported index
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -701,7 +701,7 @@ typedef TTT(){}
 }
 
 TEST_F(RenameTest, import2) { // for named imported index
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -731,7 +731,7 @@ typedef TTT(){}
 }
 
 TEST_F(RenameTest, import3) { // for inlined imported index
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
 var EEE = 34
 eee() {}
@@ -789,7 +789,7 @@ ggg() {}
 }
 
 TEST_F(RenameTest, import4) { // for inlined imported index
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
 var EEE = 34
 eee() {}
@@ -847,7 +847,7 @@ ggg() {}
 }
 
 TEST_F(RenameTest, globalImported) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -899,7 +899,7 @@ $fff()
 }
 
 TEST_F(RenameTest, inlinedImported) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -956,7 +956,7 @@ $fff()
 }
 
 TEST_F(RenameTest, namedImported) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -1018,7 +1018,7 @@ $mod.fff()
 }
 
 TEST_F(RenameTest, importModSymbol1) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -1061,7 +1061,7 @@ fff() {}
 }
 
 TEST_F(RenameTest, importModSymbol2) {
-  arsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool

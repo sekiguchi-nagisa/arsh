@@ -5,7 +5,7 @@
 #include "../src/misc/string_ref.hpp"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  using namespace ydsh;
+  using namespace arsh;
 
   // prepare
   FlexBuffer<char *> argv;
@@ -30,7 +30,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
   argv.push_back(nullptr);
 
-  setenv("YDSH_PRINTF_FUZZ", "on", 1);
+  setenv("ARSH_PRINTF_FUZZ", "on", 1);
   auto *state = DSState_create();
 
   // just print

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SIGNAL_LIST_H
-#define YDSH_SIGNAL_LIST_H
+#ifndef ARSH_SIGNAL_LIST_H
+#define ARSH_SIGNAL_LIST_H
 
 #include <cerrno>
 #include <csignal>
@@ -113,4 +113,4 @@ public:
 
 } // namespace arsh
 
-#endif // YDSH_SIGNAL_LIST_H
+#endif // ARSH_SIGNAL_LIST_H

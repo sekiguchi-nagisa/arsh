@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_REGEX_WRAPPER_H
-#define YDSH_REGEX_WRAPPER_H
+#ifndef ARSH_REGEX_WRAPPER_H
+#define ARSH_REGEX_WRAPPER_H
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -138,4 +138,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_REGEX_WRAPPER_H
+#endif // ARSH_REGEX_WRAPPER_H

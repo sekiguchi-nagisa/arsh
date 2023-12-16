@@ -1,4 +1,4 @@
-## ydshrc sample
+## arshrc sample
 
 function __test_each($data : Array<String>, $test : Func<Boolean, [String]>): Boolean {
     var c = 0

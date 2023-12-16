@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_REDIR_H
-#define YDSH_REDIR_H
+#ifndef ARSH_REDIR_H
+#define ARSH_REDIR_H
 
 #include <cstdio>
 
@@ -220,4 +220,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_REDIR_H
+#endif // ARSH_REDIR_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_EXTRA_CHECKER_H
-#define YDSH_TOOLS_ANALYZER_EXTRA_CHECKER_H
+#ifndef ARSH_TOOLS_ANALYZER_EXTRA_CHECKER_H
+#define ARSH_TOOLS_ANALYZER_EXTRA_CHECKER_H
 
 #include <tcerror.h>
 
@@ -74,4 +74,4 @@ DEFINE_TCWarn(UndefinedSubCmd, "may be undefined sub-command: `%s'");
 
 } // namespace arsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_EXTRA_CHECKER_H
+#endif // ARSH_TOOLS_ANALYZER_EXTRA_CHECKER_H

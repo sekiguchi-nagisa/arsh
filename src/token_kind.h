@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOKEN_KIND_H
-#define YDSH_TOKEN_KIND_H
+#ifndef ARSH_TOKEN_KIND_H
+#define ARSH_TOKEN_KIND_H
 
 #include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
@@ -455,4 +455,4 @@ std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref);
 
 } // namespace arsh
 
-#endif // YDSH_TOKEN_KIND_H
+#endif // ARSH_TOKEN_KIND_H

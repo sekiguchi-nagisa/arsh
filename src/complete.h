@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_COMPLETE_H
-#define YDSH_COMPLETE_H
+#ifndef ARSH_COMPLETE_H
+#define ARSH_COMPLETE_H
 
 #include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
@@ -229,4 +229,4 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
 
 } // namespace arsh
 
-#endif // YDSH_COMPLETE_H
+#endif // ARSH_COMPLETE_H

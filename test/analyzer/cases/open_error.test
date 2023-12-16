@@ -10,7 +10,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
-    "textDocument": {"languageId": "ydsh", "version": 1, "uri": "hoge hohge",
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "hoge hohge",
                      "text": "echo hello;"}
  }
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ARG_PARSER_H
-#define YDSH_ARG_PARSER_H
+#ifndef ARSH_ARG_PARSER_H
+#define ARSH_ARG_PARSER_H
 
 #include "arg_parser_base.h"
 #include "object.h"
@@ -64,4 +64,4 @@ inline void showCommandLineUsage(const ErrorObject &obj) {
 
 } // namespace arsh
 
-#endif // YDSH_ARG_PARSER_H
+#endif // ARSH_ARG_PARSER_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LINE_EDITOR_H
-#define YDSH_LINE_EDITOR_H
+#ifndef ARSH_LINE_EDITOR_H
+#define ARSH_LINE_EDITOR_H
 
 #include <termios.h>
 
@@ -186,4 +186,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_LINE_EDITOR_H
+#endif // ARSH_LINE_EDITOR_H

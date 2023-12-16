@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP
-#define YDSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP
+#ifndef ARSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP
+#define ARSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP
 
 #include "../style.h"
 
@@ -25,4 +25,4 @@ DEFINE_HIGHLIGHT_STYLE(null) { return {}; }
 
 } // namespace arsh::highlighter
 
-#endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP
+#endif // ARSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP

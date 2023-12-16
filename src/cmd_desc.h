@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CMD_DESC_H
-#define YDSH_CMD_DESC_H
+#ifndef ARSH_CMD_DESC_H
+#define ARSH_CMD_DESC_H
 
 namespace arsh {
 
@@ -31,4 +31,4 @@ const BuiltinCmdDesc *getBuiltinCmdDescList();
 
 } // namespace arsh
 
-#endif // YDSH_CMD_DESC_H
+#endif // ARSH_CMD_DESC_H

@@ -943,11 +943,11 @@ std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line,
   DescLexer lexer(line.c_str());
   this->init(lexer);
 
-  const bool isDecl = CUR_KIND() == DescTokenKind::YDSH_METHOD_DECL;
+  const bool isDecl = CUR_KIND() == DescTokenKind::ARSH_METHOD_DECL;
   if (isDecl) {
-    TRY(this->expect(DescTokenKind::YDSH_METHOD_DECL));
+    TRY(this->expect(DescTokenKind::ARSH_METHOD_DECL));
   } else {
-    TRY(this->expect(DescTokenKind::YDSH_METHOD));
+    TRY(this->expect(DescTokenKind::ARSH_METHOD));
   }
 
   Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
@@ -1018,8 +1018,8 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
 
   // write header
   OUT("// this is an auto-generated file. not change it directly\n");
-  OUT("#ifndef YDSH_BIND_H\n");
-  OUT("#define YDSH_BIND_H\n");
+  OUT("#ifndef ARSH_BIND_H\n");
+  OUT("#define ARSH_BIND_H\n");
   OUT("\n");
   OUT("#include <constant.h>\n");
   OUT("\n");
@@ -1067,7 +1067,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
 
   OUT("} // namespace arsh\n");
   OUT("\n");
-  OUT("#endif //YDSH_BIND_H\n");
+  OUT("#endif //ARSH_BIND_H\n");
   fclose(fp);
 }
 

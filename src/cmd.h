@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CMD_H
-#define YDSH_CMD_H
+#ifndef ARSH_CMD_H
+#define ARSH_CMD_H
 
 #include <algorithm>
 
@@ -98,4 +98,4 @@ inline int maskExitStatus(int64_t status) {
     }                                                                                              \
   } while (false)
 
-#endif // YDSH_CMD_H
+#endif // ARSH_CMD_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_COMPILER_H
-#define YDSH_COMPILER_H
+#ifndef ARSH_COMPILER_H
+#define ARSH_COMPILER_H
 
 #include "cgerror.h"
 #include "codegen.h"
@@ -172,4 +172,4 @@ private:
 
 } // namespace arsh
 
-#endif // YDSH_COMPILER_H
+#endif // ARSH_COMPILER_H

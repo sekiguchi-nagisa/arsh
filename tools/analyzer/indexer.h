@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_INDEXER_H
-#define YDSH_TOOLS_ANALYZER_INDEXER_H
+#ifndef ARSH_TOOLS_ANALYZER_INDEXER_H
+#define ARSH_TOOLS_ANALYZER_INDEXER_H
 
 #include <sysconfig.h>
 
@@ -323,4 +323,4 @@ struct allow_enum_bitop<lsp::SymbolIndexer::FuncVisitOp> : std::true_type {};
 
 } // namespace arsh
 
-#endif // YDSH_TOOLS_ANALYZER_INDEXER_H
+#endif // ARSH_TOOLS_ANALYZER_INDEXER_H

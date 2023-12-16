@@ -111,7 +111,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
 
     params.textDocument = TextDocumentItem{
         .uri = std::move(uri),
-        .languageId = "ydsh",
+        .languageId = "arsh",
         .version = 1,
         .text = std::move(content),
     };
