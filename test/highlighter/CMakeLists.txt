@@ -9,6 +9,6 @@ add_definitions("-DHIGHLIGHTER_PATH=\"${CMAKE_BINARY_DIR}/tools/highlighter/dsco
 add_executable(${TEST_NAME}
         highlighter_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main ydsh_static highlighter test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main arsh_static highlighter test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME} dscolorize)
 add_test(${TEST_NAME} ${TEST_NAME})

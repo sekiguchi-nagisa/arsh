@@ -204,7 +204,7 @@ include_directories(src)
 include_directories(include)
 include_directories(/usr/local/include) # for osx Catalina
 
-set(YDSH_SRC
+set(ARSH_SRC
         src/arsh.cpp
         src/node.cpp
         src/object.cpp
@@ -270,21 +270,21 @@ set(CMAKE_MACOSX_RPATH ON)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-add_library(ydsh_obj OBJECT ${YDSH_SRC})
-add_dependencies(ydsh_obj gen_lexer)
-set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_library(arsh_obj OBJECT ${ARSH_SRC})
+add_dependencies(arsh_obj gen_lexer)
+set_target_properties(arsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
-target_link_libraries(${YDSH_STATIC} ${PCRE2_LIBRARY})
+set(ARSH_STATIC arsh_static)
+add_library(${ARSH_STATIC} STATIC $<TARGET_OBJECTS:arsh_obj>)
+target_link_libraries(${ARSH_STATIC} ${PCRE2_LIBRARY})
 
 if (BUILD_SHARED_LIB)
-    set(YDSH_LIB ydsh_lib)
-    add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
-    set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
-    target_link_libraries(${YDSH_LIB} ${PCRE2_LIBRARY})
+    set(ARSH_LIB arsh_lib)
+    add_library(${ARSH_LIB} SHARED $<TARGET_OBJECTS:arsh_obj>)
+    set_target_properties(${ARSH_LIB} PROPERTIES OUTPUT_NAME arsh)
+    target_link_libraries(${ARSH_LIB} ${PCRE2_LIBRARY})
 else ()
-    set(YDSH_LIB ydsh_static)
+    set(ARSH_LIB arsh_static)
 endif ()
 
 #==============#
@@ -292,7 +292,7 @@ endif ()
 #==============#
 
 add_executable(${BIN_NAME} src/main.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_LIB})
+target_link_libraries(${BIN_NAME} ${ARSH_LIB})
 
 if (USE_LTO)
     check_ipo_supported(RESULT ipo_supported OUTPUT output)
@@ -300,7 +300,7 @@ if (USE_LTO)
         if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             check_program(lld)
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
-            set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+            set_property(TARGET ${ARSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
             set_property(TARGET ${BIN_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
         endif ()
     else ()
@@ -309,7 +309,7 @@ if (USE_LTO)
 endif ()
 
 if (BUILD_SHARED_LIB)  # also install shared library / header
-    install(TARGETS ${BIN_NAME} ${YDSH_LIB}
+    install(TARGETS ${BIN_NAME} ${ARSH_LIB}
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -356,7 +356,7 @@ set(CPACK_BUILD_SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_D
 set(CPACK_RPM_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}.${CMAKE_SYSTEM_PROCESSOR}.rpm")
 set(CPACK_RPM_PACKAGE_GROUP "Development/Tools")
 set(CPACK_RPM_PACKAGE_LICENSE "Apache-2.0")
-set(CPACK_RPM_PACKAGE_URL "https://github.com/sekiguchi-nagisa/ydsh")
+set(CPACK_RPM_PACKAGE_URL "https://github.com/sekiguchi-nagisa/arsh")
 set(CPACK_RPM_DEBUGINFO_PACKAGE ON)
 set(CPACK_RPM_DEBUGINFO_SINGLE_PACKAGE ON)
 set(CPACK_RPM_DEBUGINFO_FILE_NAME

@@ -12,7 +12,7 @@ add_executable(${TEST_NAME}
         exec_test1.cpp
 )
 add_dependencies(${TEST_NAME} ${BIN_NAME})
-target_link_libraries(${TEST_NAME} gtest gtest_main directive ${YDSH_STATIC} test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main directive ${ARSH_STATIC} test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
 
 # test2
@@ -21,7 +21,7 @@ add_executable(${TEST_NAME}
         exec_test2.cpp
 )
 add_dependencies(${TEST_NAME} ${BIN_NAME})
-target_link_libraries(${TEST_NAME} gtest gtest_main directive ${YDSH_STATIC} test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main directive ${ARSH_STATIC} test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
 
 
@@ -31,5 +31,5 @@ add_executable(${TEST_NAME}
         exec_test3.cpp
 )
 add_dependencies(${TEST_NAME} ${BIN_NAME})
-target_link_libraries(${TEST_NAME} gtest gtest_main directive ${YDSH_STATIC} test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main directive ${ARSH_STATIC} test_common)
 add_test(${TEST_NAME} ${TEST_NAME})

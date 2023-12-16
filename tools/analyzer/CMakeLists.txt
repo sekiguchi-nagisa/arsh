@@ -23,10 +23,10 @@ add_library(arshd_static STATIC
         extra_checker.cpp
         registration.cpp
 )
-target_link_libraries(arshd_static ydsh_static jsonrpc uri directive)
+target_link_libraries(arshd_static arsh_static jsonrpc uri directive)
 
 add_executable(${LSP_SRV} main.cpp)
-target_link_libraries(${LSP_SRV} arshd_static ydsh_static jsonrpc uri process highlighter Threads::Threads)
+target_link_libraries(${LSP_SRV} arshd_static arsh_static jsonrpc uri process highlighter Threads::Threads)
 
 install(TARGETS ${LSP_SRV}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
