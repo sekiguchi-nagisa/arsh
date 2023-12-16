@@ -279,7 +279,7 @@ private:
     const DSCode *udc_;
     const ModType *modType_;
     builtin_command_t builtinCmd_;
-    DSObject *cmdObj_;
+    Object *cmdObj_;
     const char *filePath_;
   };
 
@@ -318,7 +318,7 @@ public:
     return cmd;
   }
 
-  static ResolvedCmd fromCmdObj(DSObject *obj) {
+  static ResolvedCmd fromCmdObj(Object *obj) {
     ResolvedCmd cmd; // NOLINT
     cmd.kind_ = CmdKind::CMD_OBJ;
     cmd.belongModId_ = BUILTIN_MOD_ID;
@@ -370,7 +370,7 @@ public:
 
   builtin_command_t builtinCmd() const { return this->builtinCmd_; }
 
-  DSObject *cmdObj() const { return this->cmdObj_; }
+  Object *cmdObj() const { return this->cmdObj_; }
 
   const char *filePath() const { return this->filePath_; }
 };

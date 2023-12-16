@@ -1400,13 +1400,12 @@ public:
 struct DSValueGlobMeta {
   static bool isAny(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ANY;
+    return v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ANY;
   }
 
   static bool isZeroOrMore(GlobIter iter) {
     auto &v = *iter.getIter();
-    return v.kind() == DSValueKind::EXPAND_META &&
-           v.asExpandMeta().first == ExpandMeta::ZERO_OR_MORE;
+    return v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ZERO_OR_MORE;
   }
 };
 
@@ -1521,7 +1520,7 @@ struct ExpandState {
 static bool needGlob(const DSValue *begin, const DSValue *end) {
   for (; begin != end; ++begin) {
     auto &v = *begin;
-    if (v.kind() == DSValueKind::EXPAND_META) {
+    if (v.kind() == ValueKind::EXPAND_META) {
       return true;
     }
   }
@@ -1558,14 +1557,14 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
 
   for (unsigned int i = 0; i < size; i++) {
     auto &v = begin[i];
-    if (v.kind() == DSValueKind::EXPAND_META) {
+    if (v.kind() == ValueKind::EXPAND_META) {
       auto meta = v.asExpandMeta();
       switch (meta.first) {
       case ExpandMeta::BRACE_OPEN: {
         // find close index
         unsigned int closeIndex = i + 1;
         for (int level = 1; closeIndex < size; closeIndex++) {
-          if (begin[closeIndex].kind() == DSValueKind::EXPAND_META) {
+          if (begin[closeIndex].kind() == ValueKind::EXPAND_META) {
             auto next = begin[closeIndex].asExpandMeta();
             if (next.first == ExpandMeta::BRACE_CLOSE) {
               if (--level == 0) {
@@ -1638,7 +1637,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
       auto *vbegin = values.get();
       auto *vend = vbegin + usedSize;
       bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
-      if (!tilde && usedSize > 0 && vbegin->kind() == DSValueKind::EXPAND_META &&
+      if (!tilde && usedSize > 0 && vbegin->kind() == ValueKind::EXPAND_META &&
           vbegin->asExpandMeta().first == ExpandMeta::BRACE_TILDE) {
         tilde = true;
         ++vbegin; // skip meta
@@ -1670,7 +1669,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
       while (!stack.empty()) {
         unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
-        assert(old.kind() == DSValueKind::EXPAND_META);
+        assert(old.kind() == ValueKind::EXPAND_META);
         auto meta = old.asExpandMeta().first;
         if (meta == ExpandMeta::BRACE_CLOSE) {
           stack.pop_back();
@@ -2268,7 +2267,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(EXIT_FINALLY) {
         auto v = state.stack.pop();
-        assert(v.kind() == DSValueKind::INT);
+        assert(v.kind() == ValueKind::INT);
         state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         auto entry = state.stack.exitFinally();
         if (entry.hasError()) {
@@ -2286,7 +2285,7 @@ bool VM::mainLoop(DSState &state) {
           auto &mapObj = typeAs<OrderedMapObject>(map);
           if (auto retIndex = mapObj.lookup(key); retIndex != -1) {
             auto &v = mapObj[retIndex].getValue();
-            assert(v.kind() == DSValueKind::NUMBER);
+            assert(v.kind() == ValueKind::NUMBER);
             unsigned int index = v.asNum();
             state.stack.updateIPByOffset(index);
           }
@@ -2555,14 +2554,14 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(UNWRAP) {
-        if (state.stack.peek().kind() == DSValueKind::INVALID) {
+        if (state.stack.peek().kind() == ValueKind::INVALID) {
           raiseError(state, TYPE::UnwrappingError, "invalid value");
           vmerror;
         }
         vmnext;
       }
       vmcase(CHECK_INVALID) {
-        bool b = state.stack.pop().kind() != DSValueKind::INVALID;
+        bool b = state.stack.pop().kind() != ValueKind::INVALID;
         state.stack.push(DSValue::createBool(b));
         vmnext;
       }
@@ -2858,7 +2857,7 @@ bool VM::callTermHook(DSState &state) {
   auto except = state.stack.takeThrownObject();
   assert(state.termHookIndex != 0);
   auto funcObj = state.getGlobal(state.termHookIndex);
-  if (funcObj.kind() == DSValueKind::INVALID) {
+  if (funcObj.kind() == ValueKind::INVALID) {
     return false;
   }
 

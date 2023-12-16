@@ -79,16 +79,16 @@ static unsigned int hash(const DSValue &value, uint64_t seed) {
   const void *ptr = nullptr;
   size_t size = 0;
   switch (value.kind()) {
-  case DSValueKind::BOOL:
+  case ValueKind::BOOL:
     u64 = value.asBool() ? 1 : 0;
     break;
-  case DSValueKind::SIG:
+  case ValueKind::SIG:
     u64 = value.asSig();
     break;
-  case DSValueKind::INT:
+  case ValueKind::INT:
     u64 = value.asInt();
     break;
-  case DSValueKind::FLOAT:
+  case ValueKind::FLOAT:
     u64 = doubleToBits(value.asFloat());
     break;
   default:

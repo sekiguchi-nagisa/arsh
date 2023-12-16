@@ -63,13 +63,13 @@ private:
    * must be `(String) -> String` type
    * may be null
    */
-  ObjPtr<DSObject> promptCallback;
+  ObjPtr<Object> promptCallback;
 
   /**
    * must be `(Module, String) -> [String]` type
    * may be null
    */
-  ObjPtr<DSObject> completionCallback;
+  ObjPtr<Object> completionCallback;
 
   /**
    * must be `[String]' type
@@ -81,13 +81,13 @@ private:
    * must be `(String, [String]) -> Void' type
    * may be null
    */
-  ObjPtr<DSObject> histSyncCallback;
+  ObjPtr<Object> histSyncCallback;
 
   /**
    * for custom actions
    * must be `(String, [String]!) -> String!' type
    */
-  std::vector<ObjPtr<DSObject>> customCallbacks;
+  std::vector<ObjPtr<Object>> customCallbacks;
 
 public:
   LineEditorObject();
@@ -98,15 +98,15 @@ public:
 
   bool locked() const { return this->lock; }
 
-  void setPromptCallback(ObjPtr<DSObject> callback) { this->promptCallback = std::move(callback); }
+  void setPromptCallback(ObjPtr<Object> callback) { this->promptCallback = std::move(callback); }
 
-  void setCompletionCallback(ObjPtr<DSObject> callback) {
+  void setCompletionCallback(ObjPtr<Object> callback) {
     this->completionCallback = std::move(callback);
   }
 
   void setHistory(ObjPtr<ArrayObject> hist) { this->history = std::move(hist); }
 
-  void setHistSyncCallback(ObjPtr<DSObject> callback) {
+  void setHistSyncCallback(ObjPtr<Object> callback) {
     this->histSyncCallback = std::move(callback);
   }
 
@@ -126,8 +126,7 @@ public:
    */
   bool addKeyBind(DSState &state, StringRef key, StringRef name);
 
-  bool defineCustomAction(DSState &state, StringRef name, StringRef type,
-                          ObjPtr<DSObject> callback);
+  bool defineCustomAction(DSState &state, StringRef name, StringRef type, ObjPtr<Object> callback);
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 

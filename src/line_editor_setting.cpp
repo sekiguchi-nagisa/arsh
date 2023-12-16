@@ -66,7 +66,7 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
 }
 
 bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, StringRef type,
-                                          ObjPtr<DSObject> callback) {
+                                          ObjPtr<Object> callback) {
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
     assert(this->customCallbacks.size() == s.asOk());

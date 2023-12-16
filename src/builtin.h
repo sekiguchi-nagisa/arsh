@@ -1256,7 +1256,7 @@ YDSH_METHOD signal_trap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_trap);
   int sigNum = LOCAL(0).asSig();
   auto value = LOCAL(1);
-  ObjPtr<DSObject> handler;
+  ObjPtr<Object> handler;
   if (!value.isInvalid()) {
     handler = value.toPtr();
   }
@@ -2192,7 +2192,7 @@ YDSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
-  ObjPtr<DSObject> callback;
+  ObjPtr<Object> callback;
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();
   }
@@ -2205,7 +2205,7 @@ YDSH_METHOD edit_prompt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_prompt);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
-  ObjPtr<DSObject> callback;
+  ObjPtr<Object> callback;
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();
   }
@@ -2231,7 +2231,7 @@ YDSH_METHOD edit_histSync(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_histSync);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
-  ObjPtr<DSObject> callback;
+  ObjPtr<Object> callback;
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();
   }

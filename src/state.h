@@ -164,7 +164,7 @@ public:
     while (this->frame.stackTopIndex > this->frame.stackBottomIndex) {
       auto &top = this->operands[this->frame.stackTopIndex];
       bool stop = false;
-      if (top.kind() == DSValueKind::STACK_GUARD) {
+      if (top.kind() == ValueKind::STACK_GUARD) {
         auto [k, l] = top.asStackGuard();
         if (k == t && (l == level || level == 0)) {
           stop = true;

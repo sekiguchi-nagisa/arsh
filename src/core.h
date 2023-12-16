@@ -93,9 +93,9 @@ bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const cha
  * @return
  * old signal handler
  */
-ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> handler);
+ObjPtr<Object> installSignalHandler(DSState &st, int sigNum, ObjPtr<Object> handler);
 
-void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<DSObject> &handler);
+void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<Object> &handler);
 
 /**
  * if set is true, ignore some signals.
@@ -160,7 +160,7 @@ private:
   /**
    * pair.second must be FuncObject
    */
-  std::vector<std::pair<int, ObjPtr<DSObject>>> data;
+  std::vector<std::pair<int, ObjPtr<Object>>> data;
 
 public:
   SignalVector() = default;
@@ -172,7 +172,7 @@ public:
    * @param value
    * may be null
    */
-  void insertOrUpdate(int sigNum, ObjPtr<DSObject> value);
+  void insertOrUpdate(int sigNum, ObjPtr<Object> value);
 
   /**
    *
@@ -180,7 +180,7 @@ public:
    * @return
    * if not found, return null obj.
    */
-  ObjPtr<DSObject> lookup(int sigNum) const;
+  ObjPtr<Object> lookup(int sigNum) const;
 
   const auto &getData() const { return this->data; };
 

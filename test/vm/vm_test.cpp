@@ -212,7 +212,7 @@ TEST_F(VMTest, stacktop) {
 
 TEST_F(VMTest, sig1) {
   ASSERT_NO_FATAL_FAILURE(this->eval("function f($s : Signal) {}"));
-  auto func = ObjPtr<DSObject>(this->getValue("f").get());
+  auto func = ObjPtr<Object>(this->getValue("f").get());
   ASSERT_TRUE(func != nullptr);
 
   SignalVector v;
@@ -238,7 +238,7 @@ TEST_F(VMTest, sig1) {
   ASSERT_TRUE(v.lookup(-3) == nullptr);
 
   // update
-  auto func1 = ObjPtr<DSObject>(this->getValue("SIG_DFL").get());
+  auto func1 = ObjPtr<Object>(this->getValue("SIG_DFL").get());
   ASSERT_EQ(func, v.lookup(3));
   ASSERT_NE(func, func1);
   v.insertOrUpdate(3, func1);

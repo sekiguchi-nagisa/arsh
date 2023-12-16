@@ -1916,10 +1916,10 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
       auto &v = c.getConstPool()[i];
       std::string value = v.toString();
       switch (v.kind()) {
-      case DSValueKind::NUMBER:
+      case ValueKind::NUMBER:
         fprintf(this->fp, "%s", value.c_str());
         break;
-      case DSValueKind::INVALID:
+      case ValueKind::INVALID:
         break;
       default: {
         const auto &type = this->typePool.get(v.getTypeID());

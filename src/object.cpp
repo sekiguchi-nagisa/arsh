@@ -27,7 +27,7 @@
 
 namespace ydsh {
 
-void DSObject::destroy() {
+void Object::destroy() {
   switch (this->getKind()) {
 #define GEN_CASE(K)                                                                                \
   case ObjectKind::K:                                                                              \
@@ -53,21 +53,21 @@ const char *toString(ObjectKind kind) {
 
 unsigned int DSValue::getTypeID() const {
   switch (this->kind()) {
-  case DSValueKind::DUMMY:
+  case ValueKind::DUMMY:
     return this->asTypeId();
-  case DSValueKind::BOOL:
+  case ValueKind::BOOL:
     return toUnderlying(TYPE::Bool);
-  case DSValueKind::SIG:
+  case ValueKind::SIG:
     return toUnderlying(TYPE::Signal);
-  case DSValueKind::INT:
+  case ValueKind::INT:
     return toUnderlying(TYPE::Int);
-  case DSValueKind::FLOAT:
+  case ValueKind::FLOAT:
     return toUnderlying(TYPE::Float);
   default:
     if (isSmallStr(this->kind())) {
       return toUnderlying(TYPE::String);
     }
-    assert(this->kind() == DSValueKind::OBJECT);
+    assert(this->kind() == ValueKind::OBJECT);
     return this->get()->getTypeID();
   }
 }
@@ -82,13 +82,13 @@ StringRef DSValue::asStrRef() const {
 }
 
 DSValue DSValue::withMetaData(uint32_t metaData) const {
-  assert(this->kind() != DSValueKind::EXPAND_META && this->kind() != DSValueKind::NUM_LIST &&
-         this->kind() != DSValueKind::STACK_GUARD && this->kind() != DSValueKind::DUMMY);
+  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
+         this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
   DSValue newValue = *this;
   if (isSmallStr(newValue.kind())) {
     StringRef ref{newValue.str.value, smallStrSize(newValue.kind())};
-    if (newValue.kind() <= DSValueKind::SSTR10) {
+    if (newValue.kind() <= ValueKind::SSTR10) {
       union {
         char i8[4];
         uint32_t u32;
@@ -106,8 +106,8 @@ DSValue DSValue::withMetaData(uint32_t metaData) const {
 }
 
 uint32_t DSValue::getMetaData() const {
-  assert(this->kind() != DSValueKind::EXPAND_META && this->kind() != DSValueKind::NUM_LIST &&
-         this->kind() != DSValueKind::STACK_GUARD && this->kind() != DSValueKind::DUMMY);
+  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
+         this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
   if (isSmallStr(this->kind())) {
     assert(smallStrSize(this->kind()) <= 10);
@@ -123,15 +123,15 @@ uint32_t DSValue::getMetaData() const {
 
 std::string DSValue::toString() const {
   switch (this->kind()) {
-  case DSValueKind::NUMBER:
+  case ValueKind::NUMBER:
     return std::to_string(this->asNum());
-  case DSValueKind::NUM_LIST: {
+  case ValueKind::NUM_LIST: {
     auto &nums = this->asNumList();
     char buf[256];
     snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
     return {buf};
   }
-  case DSValueKind::DUMMY: {
+  case ValueKind::DUMMY: {
     unsigned int typeId = this->asTypeId();
     if (typeId == toUnderlying(TYPE::Module)) {
       std::string str = OBJ_TEMP_MOD_PREFIX; // for temporary module descriptor
@@ -145,15 +145,15 @@ std::string DSValue::toString() const {
       return str;
     }
   }
-  case DSValueKind::EXPAND_META:
+  case ValueKind::EXPAND_META:
     return ::toString(this->asExpandMeta().first);
-  case DSValueKind::BOOL:
+  case ValueKind::BOOL:
     return this->asBool() ? "true" : "false";
-  case DSValueKind::SIG:
+  case ValueKind::SIG:
     return std::to_string(this->asSig());
-  case DSValueKind::INT:
+  case ValueKind::INT:
     return std::to_string(this->asInt());
-  case DSValueKind::FLOAT: {
+  case ValueKind::FLOAT: {
     double d = this->asFloat();
     if (std::isnan(d)) {
       return "NaN";
@@ -167,7 +167,7 @@ std::string DSValue::toString() const {
     if (this->hasStrRef()) {
       return this->asStrRef().toString();
     }
-    assert(this->kind() == DSValueKind::OBJECT);
+    assert(this->kind() == ValueKind::OBJECT);
     break;
   }
 
@@ -313,18 +313,18 @@ bool DSValue::equals(const DSValue &o) const {
     return false;
   }
   switch (this->kind()) {
-  case DSValueKind::EMPTY:
+  case ValueKind::EMPTY:
     return true;
-  case DSValueKind::BOOL:
+  case ValueKind::BOOL:
     return this->asBool() == o.asBool();
-  case DSValueKind::SIG:
+  case ValueKind::SIG:
     return this->asSig() == o.asSig();
-  case DSValueKind::INT:
+  case ValueKind::INT:
     return this->asInt() == o.asInt();
-  case DSValueKind::FLOAT:
+  case ValueKind::FLOAT:
     return compareByTotalOrder(this->asFloat(), o.asFloat()) == 0;
   default:
-    assert(this->kind() == DSValueKind::OBJECT);
+    assert(this->kind() == ValueKind::OBJECT);
     if (this->get()->getKind() != o.get()->getKind()) {
       return false;
     }
@@ -342,14 +342,14 @@ int DSValue::compare(const DSValue &o) const {
 
   assert(this->kind() == o.kind());
   switch (this->kind()) {
-  case DSValueKind::BOOL: {
+  case ValueKind::BOOL: {
     int left = this->asBool() ? 1 : 0;
     int right = o.asBool() ? 1 : 0;
     return left - right;
   }
-  case DSValueKind::SIG:
+  case ValueKind::SIG:
     return this->asSig() - o.asSig();
-  case DSValueKind::INT: {
+  case ValueKind::INT: {
     int64_t left = this->asInt();
     int64_t right = o.asInt();
     if (left == right) {
@@ -357,7 +357,7 @@ int DSValue::compare(const DSValue &o) const {
     }
     return left < right ? -1 : 1;
   }
-  case DSValueKind::FLOAT:
+  case ValueKind::FLOAT:
     return compareByTotalOrder(this->asFloat(), o.asFloat());
   default:
     return 1; // normally unreachable
@@ -376,7 +376,7 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
 
   if (small) {
     size_t newSize = size + value.size();
-    if (newSize <= smallStrSize(DSValueKind::SSTR14)) {
+    if (newSize <= smallStrSize(ValueKind::SSTR14)) {
       memcpy(this->str.value + size, value.data(), value.size());
       this->str.kind = toSmallStrKind(newSize);
       this->str.value[newSize] = '\0';

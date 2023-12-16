@@ -172,7 +172,7 @@ static struct sigaction newSigaction(int sigNum) {
   return action;
 }
 
-static ObjPtr<DSObject> installUnblock(DSState &st, int sigNum, ObjPtr<DSObject> handler) {
+static ObjPtr<Object> installUnblock(DSState &st, int sigNum, ObjPtr<Object> handler) {
   auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
   auto IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN).toPtr();
 
@@ -208,12 +208,12 @@ static ObjPtr<DSObject> installUnblock(DSState &st, int sigNum, ObjPtr<DSObject>
   return oldHandler;
 }
 
-ObjPtr<DSObject> installSignalHandler(DSState &st, int sigNum, ObjPtr<DSObject> handler) {
+ObjPtr<Object> installSignalHandler(DSState &st, int sigNum, ObjPtr<Object> handler) {
   SignalGuard guard;
   return installUnblock(st, sigNum, std::move(handler));
 }
 
-void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<DSObject> &handler) {
+void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<Object> &handler) {
   SignalGuard guard;
   while (!sigSet.empty()) {
     int sigNum = sigSet.popPendingSig();
@@ -606,14 +606,14 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool inse
 // ##########################
 
 struct SigEntryComp {
-  using Entry = std::pair<int, ObjPtr<DSObject>>;
+  using Entry = std::pair<int, ObjPtr<Object>>;
 
   bool operator()(const Entry &x, int y) const { return x.first < y; }
 
   bool operator()(int x, const Entry &y) const { return x < y.first; }
 };
 
-void SignalVector::insertOrUpdate(int sigNum, ObjPtr<DSObject> value) {
+void SignalVector::insertOrUpdate(int sigNum, ObjPtr<Object> value) {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
     if (value) {
@@ -626,7 +626,7 @@ void SignalVector::insertOrUpdate(int sigNum, ObjPtr<DSObject> value) {
   }
 }
 
-ObjPtr<DSObject> SignalVector::lookup(int sigNum) const {
+ObjPtr<Object> SignalVector::lookup(int sigNum) const {
   auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
   if (iter != this->data.end() && iter->first == sigNum) {
     return iter->second;
