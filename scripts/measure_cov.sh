@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-ROOT=$SCRIPT_DIR/../..
+ROOT=$SCRIPT_DIR/..
 
 check_cmd() {
     which "$1"

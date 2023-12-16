@@ -6,7 +6,7 @@ if [ -z "$CC" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-ROOT=$SCRIPT_DIR/../..
+ROOT=$SCRIPT_DIR/..
 
 mkdir -p build-ubsan/app
 cd build-ubsan || exit 1

@@ -16,13 +16,13 @@ test -d $INSTALL_PREFIX/share/arsh/modules || {
 
 
 # copy local
-let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()
+let local = "$SCRIPT_DIR/../test/extra/_mod4extra/local/".realpath()
 for a in @($local/*) {
     echo copy $a to $MODULE_HOME/
     cp $a $MODULE_HOME/
 }
 
-let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()
+let system = "$SCRIPT_DIR/../test/extra/_mod4extra/system/".realpath()
 for a in @($system/*) {
     echo copy $a to $INSTALL_PREFIX/share/arsh/modules/
     sudo cp $a $INSTALL_PREFIX/share/arsh/modules/

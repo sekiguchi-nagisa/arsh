@@ -1,6 +1,6 @@
 #!/usr/bin/env arsh
 
-var src = "$SCRIPT_DIR/../../src".realpath()
+var src = "$SCRIPT_DIR/../src".realpath()
 
 echo try update $src/misc/unicode_version.in
 call $BIN_NAME $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
@@ -18,7 +18,7 @@ echo try update $src/word_break_property.in
 call $BIN_NAME $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_property.in
 
 ## for test case
-var test = "$SCRIPT_DIR/../../test"
+var test = "$SCRIPT_DIR/../test"
 
 echo try update $test/unicode/grapheme_break_test.in
 call $BIN_NAME $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.in

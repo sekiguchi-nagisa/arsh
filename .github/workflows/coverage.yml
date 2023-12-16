@@ -27,14 +27,14 @@ jobs:
           cd build
           ninja
           sudo ninja install
-          ./arsh ../tools/scripts/copy_mod4extra.ds
+          ./arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build
           ctest --output-on-failure
       - name: generate lcov
         run: |
-          ./tools/scripts/report_cov.ds build
+          ./scripts/report_cov.ds build
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@2.2.3 
         with:

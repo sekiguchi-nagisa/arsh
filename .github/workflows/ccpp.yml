@@ -173,7 +173,7 @@ jobs:
           cd build
           ninja
           sudo ninja install
-          ./arsh ../tools/scripts/copy_mod4extra.ds
+          ./arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |
           cd build

@@ -9,8 +9,8 @@ for a in @($SCRIPT_DIR/*) {
     echo ${$r ? "[OK]" : "[NG]"} $a
 }
 
-## check tools/scripts
-for ss in @($SCRIPT_DIR/../tools/scripts/*.ds) {
+## check scripts
+for ss in @($SCRIPT_DIR/../scripts/*.ds) {
     var r = call $BIN_NAME --compile-only $ss
     echo ${$r ? "[OK]" : "[NG]"} $ss
 }

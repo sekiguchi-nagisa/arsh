@@ -10,7 +10,7 @@ jobs:
       - run: uname -a
       - run: sudo apt update
       - run: sudo apt install -y g++ cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
-      - run: sh tools/scripts/run_all_test.sh g++
+      - run: sh scripts/run_all_test.sh g++
   build-on-clang:
     machine:
       image: ubuntu-2004:202101-01
@@ -20,7 +20,7 @@ jobs:
       - run: uname -a
       - run: sudo apt update
       - run: sudo apt install -y g++ clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
-      - run: sh tools/scripts/run_all_test.sh clang++
+      - run: sh scripts/run_all_test.sh clang++
 workflows:
   build:
     jobs:

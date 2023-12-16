@@ -15,7 +15,7 @@ if !(test -d $root) {
     $root = $root.dirname()
 }
 
-let workdir = "$SCRIPT_DIR/../../".realpath()
+let workdir = "$SCRIPT_DIR/../".realpath()
 
 var name = "build_${$root.basename()}:1"
 echo Dockfile path: "'$root/Dockerfile'"

@@ -8,4 +8,4 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
 USER tux
 WORKDIR /home/tux/dev
-CMD cat /proc/1/cgroup && sh tools/scripts/em.sh
+CMD cat /proc/1/cgroup && sh scripts/em.sh

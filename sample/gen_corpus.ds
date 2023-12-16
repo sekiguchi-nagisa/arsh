@@ -58,7 +58,7 @@ echo copy arshrc
 cp $CONFIG_HOME/arshrc $dir/rcfile_arshrc
 
 # copy tools/scrips
-let scripts = "$SCRIPT_DIR/../tools/scripts"
+let scripts = "$SCRIPT_DIR/../scripts"
 echo copy scripts from $scripts
 for $d in @($scripts/*.ds) {
     cp $d $dir/scripts_${$d.basename()}

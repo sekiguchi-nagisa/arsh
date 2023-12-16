@@ -13,6 +13,6 @@ cmake .. -G Ninja -DCMAKE_CXX_COMPILER=$CC -DUSE_EXTRA_TEST=on
 ninja || exit 1
 sudo ninja install
 
-../tools/scripts/copy_mod4extra.ds
+../scripts/copy_mod4extra.ds
 
 exec ctest -j4 --output-on-failure
