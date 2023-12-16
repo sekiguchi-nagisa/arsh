@@ -295,7 +295,7 @@ TEST_F(HighlightTest, factory) {
 
 TEST_F(HighlightTest, nullFormatter) {
   std::stringstream stream;
-  std::string content = R"(#!/usr/bin/env ydsh
+  std::string content = R"(#!/usr/bin/env arsh
   function sum($a : Int) : Int for Int {
     return $this + $a
   }
@@ -315,7 +315,7 @@ TEST_F(HighlightTest, nullFormatter) {
 
 TEST_F(HighlightTest, ansiFormatter1) {
   std::stringstream stream;
-  std::string content = R"(#!/usr/bin/env ydsh
+  std::string content = R"(#!/usr/bin/env arsh
 # this is a comment
 )";
 
@@ -326,7 +326,7 @@ TEST_F(HighlightTest, ansiFormatter1) {
 
   ASSERT_NO_FATAL_FAILURE(tokenize(factory, content, stream));
 
-  const char *expected = "\033[38;2;128;128;128m#!/usr/bin/env ydsh\033[0m\n"
+  const char *expected = "\033[38;2;128;128;128m#!/usr/bin/env arsh\033[0m\n"
                          "\033[38;2;128;128;128m# this is a comment\033[0m\n";
   ASSERT_EQ(expected, stream.str());
 }
@@ -334,7 +334,7 @@ TEST_F(HighlightTest, ansiFormatter1) {
 TEST_F(HighlightTest, ansiFormatter2) {
   std::stringstream stream;
   std::string content = R"(
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 assert $OSTYPE == 'Linux'
 )";
 
@@ -347,7 +347,7 @@ assert $OSTYPE == 'Linux'
 
   const char *expected =
       "\n"
-      "\033[38;2;136;136;136m\033[3m#!/usr/bin/env ydsh\033[0m\n"
+      "\033[38;2;136;136;136m\033[3m#!/usr/bin/env arsh\033[0m\n"
       "\033[1m\033[4massert\033[0m \033[38;2;102;102;102m\033[1m\033[3m$OSTYPE\033[0m == "
       "\033[38;2;102;102;102m\033[3m'Linux'\033[0m\n";
   ASSERT_EQ(expected, stream.str());
@@ -406,7 +406,7 @@ TEST_F(HighlightTest, htmlFormatter1) {
 TEST_F(HighlightTest, htmlFormatter2) {
   std::stringstream stream;
   std::string content = R"(
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 assert $OSTYPE == 'Linux'
 )";
 
@@ -419,7 +419,7 @@ assert $OSTYPE == 'Linux'
 
   const char *expected = R"EOF(<div class="highlight"><pre style="tab-size:4">
 <code>
-<span style="color:#888888;font-style:italic">#!/usr/bin/env ydsh</span>
+<span style="color:#888888;font-style:italic">#!/usr/bin/env arsh</span>
 <span style="font-weight:bold;text-decoration:underline">assert</span> <span style="color:#666666;font-weight:bold;font-style:italic">$OSTYPE</span> == <span style="color:#666666;font-style:italic">&#39;Linux&#39;</span>
 </code></pre></div>)EOF";
   ASSERT_EQ(expected, stream.str());
@@ -471,7 +471,7 @@ TEST_F(HighlightTest, htmlFormatter3) {
 TEST_F(HighlightTest, htmlFormatter4) {
   std::stringstream stream;
   std::string content = R"(
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 assert $OSTYPE == 'Linux'
 )";
 
@@ -491,7 +491,7 @@ assert $OSTYPE == 'Linux'
 </pre></div></td><td class="code">
 <div class="highlight"><pre style="tab-size:4">
 <code>
-<span style="color:#888888;font-style:italic">#!/usr/bin/env ydsh</span>
+<span style="color:#888888;font-style:italic">#!/usr/bin/env arsh</span>
 <span style="font-weight:bold;text-decoration:underline">assert</span> <span style="color:#666666;font-weight:bold;font-style:italic">$OSTYPE</span> == <span style="color:#666666;font-style:italic">&#39;Linux&#39;</span>
 </code></pre></div>
 </td></tr></table>)EOF";

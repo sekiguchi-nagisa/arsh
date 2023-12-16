@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 if $# != 1 {
     echo "[usage] $0 [corpus dir]" 1>&2

@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 usage() : Nothing {
     echo 1>&2 [error] $1

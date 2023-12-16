@@ -7,7 +7,7 @@
 
 var b = 34
 
-{cat << EOF;#!/usr/bin/env ydsh
+{cat << EOF;#!/usr/bin/env arsh
 aaaaa
 $(ls | grep "$(date +'%Y%m')${$b < 10 ? '0' + $b : $b as String}")
 ssssss

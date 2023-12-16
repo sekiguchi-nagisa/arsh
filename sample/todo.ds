@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 let today = "$(date +'%Y%m%d').md"
 

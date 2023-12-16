@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 var src = "$SCRIPT_DIR/../../src".realpath()
 

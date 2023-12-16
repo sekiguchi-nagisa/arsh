@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 if $# < 2 {
     echo usage: $0 [YDSH_BIN] [file] [ARGS...]

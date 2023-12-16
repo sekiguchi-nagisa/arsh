@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 function fib($n : Int) : Int {
     if($n < 3) {

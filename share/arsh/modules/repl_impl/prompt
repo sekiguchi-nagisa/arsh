@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 # for prompt
 var PS1 = '\u@\h:\W> '

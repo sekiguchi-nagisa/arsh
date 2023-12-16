@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 # load default prompt setting
 source $SCRIPT_DIR/repl_impl/prompt inlined

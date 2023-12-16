@@ -1,4 +1,4 @@
-#!/usr/bin/env ydsh
+#!/usr/bin/env arsh
 
 let _TERM_HOOKS : [(Int, typeof($TERM_HOOK!))]
 
