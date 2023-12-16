@@ -19,7 +19,7 @@
 
 #include <cstdio>
 
-#include <ydsh/ydsh.h>
+#include <arsh/arsh.h>
 
 #include "cmd.h"
 #include "core.h"

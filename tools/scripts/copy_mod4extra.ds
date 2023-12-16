@@ -10,8 +10,8 @@ test -d $MODULE_HOME || {
     mkdir -p $MODULE_HOME || $error("failed!!")
 }
 
-test -d $INSTALL_PREFIX/share/ydsh/modules || {
-    sudo mkdir -p $INSTALL_PREFIX/share/ydsh/modules || $error("failed!!")
+test -d $INSTALL_PREFIX/share/arsh/modules || {
+    sudo mkdir -p $INSTALL_PREFIX/share/arsh/modules || $error("failed!!")
 }
 
 
@@ -24,8 +24,8 @@ for a in @($local/*) {
 
 let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()
 for a in @($system/*) {
-    echo copy $a to $INSTALL_PREFIX/share/ydsh/modules/
-    sudo cp $a $INSTALL_PREFIX/share/ydsh/modules/
+    echo copy $a to $INSTALL_PREFIX/share/arsh/modules/
+    sudo cp $a $INSTALL_PREFIX/share/arsh/modules/
 }
 
 # generate dummy files for glob limit checking

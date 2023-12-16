@@ -20,7 +20,7 @@
 
 #include "misc/flag_util.hpp"
 #include "misc/opt_parser.hpp"
-#include <ydsh/ydsh.h>
+#include <arsh/arsh.h>
 
 using namespace ydsh;
 
@@ -162,7 +162,7 @@ static std::string getRCFilePath(DSState *state, const char *path) {
     auto *ptr = DSState_config(state, DS_CONFIG_CONFIG_HOME);
     assert(ptr);
     value = ptr;
-    value += "/ydshrc";
+    value += "/arshrc";
 
     if (access(value.c_str(), F_OK) != 0) {
       const char *argv[] = {

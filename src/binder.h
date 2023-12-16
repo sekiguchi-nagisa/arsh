@@ -182,7 +182,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * represent shell or shell script name.
    * must be String_Object
    */
-  binder.bind(CVAR_ARG0, "ydsh");
+  binder.bind(CVAR_ARG0, "arsh");
 
   /**
    * process id of root shell. ($$)

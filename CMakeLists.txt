@@ -4,7 +4,7 @@ if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
 endif ()
 
-project(ydsh VERSION 0.32.0)
+project(arsh VERSION 0.32.0)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
@@ -195,17 +195,17 @@ add_custom_command(OUTPUT ${embed_src}
 
 
 #=================#
-#     libydsh     #
+#     libarsh     #
 #=================#
 
-set(BIN_NAME ydsh)
+set(BIN_NAME arsh)
 
 include_directories(src)
 include_directories(include)
 include_directories(/usr/local/include) # for osx Catalina
 
 set(YDSH_SRC
-        src/ydsh.cpp
+        src/arsh.cpp
         src/node.cpp
         src/object.cpp
         src/type.cpp
@@ -288,7 +288,7 @@ else ()
 endif ()
 
 #==============#
-#     ydsh     #
+#     arsh     #
 #==============#
 
 add_executable(${BIN_NAME} src/main.cpp)

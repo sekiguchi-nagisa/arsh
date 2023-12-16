@@ -173,7 +173,7 @@ TEST_F(InteractiveTest, rc7) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "assert $RC_VAR == 'rcfile loaded: " INTERACTIVE_TEST_WORK_DIR "/ydsh/ydshrc'"));
+      "assert $RC_VAR == 'rcfile loaded: " INTERACTIVE_TEST_WORK_DIR "/arsh/arshrc'"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

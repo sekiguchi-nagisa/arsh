@@ -141,7 +141,7 @@ $assertArray(["sortWith"], $(complete '[[34],[67]].so'))
 $assertArray(["BASH_COMPLETION_PATH",
               '_fullname', '_func', '_scriptDir', '_scriptName',
                "compAdd", 'compDelegate', 'extractCompTarget', 'findBashCompScript'],
-                $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; \$CP."))
+                $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; \$CP."))
 $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
@@ -192,8 +192,8 @@ $assertArray(['Func','Func0'], $(complete '
         assert 45 is Func'))
 $assertArray(["Type0", "Type1", '_AAA', ], $(complete "typedef AAA(){ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA."))
 $assertArray(["Type0", "Type1"], $(complete "typedef AAA(){ typedef Type0 = Int; typedef Type1 = String; typedef _AAA = Bool; }; 34 is AAA.T"))
-$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; 23 is CP."))
-$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; 23 is CP . C"))
+$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; 23 is CP."))
+$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; 23 is CP . C"))
 $assertArray(['APIError', "BoolArray", "FloatArray", 'Interval', "StrArray"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; 23 is mod."))
 $assertArray(["Dist"], $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; 23 is mod.Interval."))
@@ -202,9 +202,9 @@ $assertArray(['AAA0', 'AAA1'], $(complete '
     typedef AAA0(param : AA'))
 
 # subcommand
-$assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; CP "))
-$assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/completion as CP; CP c"))
-assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/modules/cnf as P; P ").empty()
+$assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; CP "))
+$assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; CP c"))
+assert $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/cnf as P; P ").empty()
 $assertArray(["say0", "say1", "say2"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
 assert $(complete "aaa(){}; aaa .l").empty()

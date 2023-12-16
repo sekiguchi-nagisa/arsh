@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <unordered_map>
 
-#include <ydsh/ydsh.h>
+#include <arsh/arsh.h>
 
 #include "cmd_desc.h"
 #include "misc/files.hpp"

@@ -1,7 +1,7 @@
 
 # for temp file creation
 
-source ../../../share/ydsh/modules/atexit
+source ../../../share/arsh/modules/atexit
 
 let _TEMPS = new [String]()
 

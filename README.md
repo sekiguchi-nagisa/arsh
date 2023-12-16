@@ -1,9 +1,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/ydsh/badge.svg?branch=master)](https://coveralls.io/github/sekiguchi-nagisa/ydsh?branch=master)
-[![Actions Status](https://github.com/sekiguchi-nagisa/ydsh/workflows/GitHub%20Actions/badge.svg)](https://github.com/sekiguchi-nagisa/ydsh/actions)
-[![CircleCI](https://circleci.com/gh/sekiguchi-nagisa/ydsh.svg?style=shield)](https://circleci.com/gh/sekiguchi-nagisa/ydsh)
+[![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/arsh/badge.svg?branch=master)](https://coveralls.io/github/sekiguchi-nagisa/arsh?branch=master)
+[![Actions Status](https://github.com/sekiguchi-nagisa/arsh/workflows/GitHub%20Actions/badge.svg)](https://github.com/sekiguchi-nagisa/arsh/actions)
+[![CircleCI](https://circleci.com/gh/sekiguchi-nagisa/arsh.svg?style=shield)](https://circleci.com/gh/sekiguchi-nagisa/arsh)
 
-# ydsh
+# arsh
 
 A statically typed scripting language with shell-like features.
 
@@ -49,8 +49,8 @@ Currently, under heavy development. Language specification is subject to change 
 1. build and install
 
 ```sh
-$ git clone https://github.com/sekiguchi-nagisa/ydsh.git
-$ cd ydsh && mkdir build && cd build
+$ git clone https://github.com/sekiguchi-nagisa/arsh.git
+$ cd arsh && mkdir build && cd build
 $ cmake ..    # default install dir is /usr/local/bin
 $ make -j4
 $ sudo make install
@@ -59,5 +59,5 @@ $ sudo make install
 2. run in interactive mode
 
 ```sh
-$ ydsh
+$ arsh
 ```

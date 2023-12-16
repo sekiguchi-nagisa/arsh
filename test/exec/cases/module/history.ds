@@ -1,5 +1,5 @@
 
-source ../../../../share/ydsh/modules/repl_impl/history
+source ../../../../share/arsh/modules/repl_impl/history
 $HISTORY.clear()
 
 

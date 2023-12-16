@@ -46,10 +46,10 @@ SysConfig::SysConfig() {
     std::string configHome;
     if (auto ptr = getRealpath(getenv("XDG_CONFIG_HOME"))) {
       configHome = ptr.get();
-      configHome += "/ydsh";
+      configHome += "/arsh";
     } else {
       configHome = home;
-      configHome += "/.config/ydsh";
+      configHome += "/.config/arsh";
     }
     this->values.emplace(CONFIG_HOME, std::move(configHome));
   }
@@ -58,10 +58,10 @@ SysConfig::SysConfig() {
     std::string dataHome;
     if (auto ptr = getRealpath(getenv("XDG_DATA_HOME"))) {
       dataHome = ptr.get();
-      dataHome += "/ydsh";
+      dataHome += "/arsh";
     } else {
       dataHome = home;
-      dataHome += "/.local/share/ydsh";
+      dataHome += "/.local/share/arsh";
     }
 
     std::string moduleHome = dataHome;

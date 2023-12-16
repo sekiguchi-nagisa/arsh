@@ -2,12 +2,12 @@
 
 #include <array>
 
+#include <arsh/arsh.h>
 #include <config.h>
 #include <constant.h>
 #include <misc/fatal.h>
 #include <misc/format.hpp>
 #include <misc/resource.hpp>
-#include <ydsh/ydsh.h>
 
 #include <sys/utsname.h>
 
@@ -171,10 +171,10 @@ TEST_F(APITest, config) {
   ASSERT_EQ(ydsh::BUILD_ARCH, value);
 
   value = DSState_config(this->state, DS_CONFIG_CONFIG_HOME);
-  ASSERT_TRUE(value.endsWith("/ydsh"));
+  ASSERT_TRUE(value.endsWith("/arsh"));
 
   value = DSState_config(this->state, DS_CONFIG_DATA_HOME);
-  ASSERT_TRUE(value.endsWith("/ydsh"));
+  ASSERT_TRUE(value.endsWith("/arsh"));
 
   value = DSState_config(this->state, DS_CONFIG_MODULE_HOME);
   {
@@ -249,7 +249,7 @@ echoechodwe \
 
 TEST_F(APITest, shellName) {
   auto e = newError();
-  const char *src = "assert $0 == 'ydsh'";
+  const char *src = "assert $0 == 'arsh'";
   int s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
   ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);

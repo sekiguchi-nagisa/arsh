@@ -8,8 +8,8 @@
 #include "../../src/constant.h"
 #include "../../src/misc/fatal.h"
 #include "../test_common.h"
+#include <arsh/arsh.h>
 #include <config.h>
-#include <ydsh/ydsh.h>
 
 #ifndef BIN_PATH
 #error require BIN_PATH

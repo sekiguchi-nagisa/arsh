@@ -21,7 +21,7 @@
 #include "codegen.h"
 #include "frontend.h"
 #include "misc/flag_util.hpp"
-#include <ydsh/ydsh.h>
+#include <arsh/arsh.h>
 
 namespace ydsh {
 

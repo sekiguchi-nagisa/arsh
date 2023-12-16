@@ -1,7 +1,7 @@
 # for interactive test
 # for history test
 
-source ../../share/ydsh/modules/repl_impl/history
+source ../../share/arsh/modules/repl_impl/history
 
 $HISTSIZE = 500
 $HISTFILE = ""

@@ -1,5 +1,5 @@
 
-source ../../../../share/ydsh/completions/builtin
+source ../../../../share/arsh/completions/builtin
 
 $PATH = "/usr/bin:/bin:"
 

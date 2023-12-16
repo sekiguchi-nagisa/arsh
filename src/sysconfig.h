@@ -61,20 +61,20 @@ public:
   const std::string *lookup(StringRef key) const;
 
   /**
-   * if defined `XDG_CONFIG_HOME`, indicates $XDG_CONFIG_HOME/ydsh
-   * otherwise, indicates $HOME/.config/ydsh
+   * if defined `XDG_CONFIG_HOME`, indicates $XDG_CONFIG_HOME/arsh
+   * otherwise, indicates $HOME/.config/arsh
    */
   const std::string &getConfigHome() const { return *this->lookup(CONFIG_HOME); }
 
   /**
-   * if defined `XDG_DATA_HOME`, indicates $XGD_DATA_HOME/ydsh
-   * otherwise, indicates $HOME/.local/share/ydsh
+   * if defined `XDG_DATA_HOME`, indicates $XGD_DATA_HOME/arsh
+   * otherwise, indicates $HOME/.local/share/arsh
    */
   const std::string &getDataHome() const { return *this->lookup(DATA_HOME); }
 
   /**
-   * if defined `XDG_DATA_HOME`, indicates $XDG_DATA_HOME/ydsh/modules
-   * otherwise, indicates $HOME/.local/share/ydsh/modules
+   * if defined `XDG_DATA_HOME`, indicates $XDG_DATA_HOME/arsh/modules
+   * otherwise, indicates $HOME/.local/share/arsh/modules
    */
   const std::string &getModuleHome() const { return *this->lookup(MODULE_HOME); }
 

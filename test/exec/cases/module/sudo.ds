@@ -1,7 +1,7 @@
 #$test($ignored = 'cygwin|msys')
 
-source ../../../../share/ydsh/completions/sudo
-source ../../../../share/ydsh/completions/printenv
+source ../../../../share/arsh/completions/sudo
+source ../../../../share/arsh/completions/printenv
 
 PATH=/usr/bin:/bin:
 
@@ -30,7 +30,7 @@ assert complete 'sudo -A -E printenv HO' | grep HOME
 
 ## change PATH
 
-source ../../../../share/ydsh/modules/completion as comp
+source ../../../../share/arsh/modules/completion as comp
 
 comp compdef --cmd halt --arg-action signal
 

@@ -3,7 +3,7 @@
 #include "../test_common.h"
 
 #ifndef BIN_PATH
-#define BIN_PATH "./ydsh"
+#define BIN_PATH "./arsh"
 #endif
 
 using namespace ydsh;

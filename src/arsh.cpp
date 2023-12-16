@@ -26,8 +26,8 @@
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "vm.h"
+#include <arsh/arsh.h>
 #include <embed.h>
-#include <ydsh/ydsh.h>
 
 using namespace ydsh;
 

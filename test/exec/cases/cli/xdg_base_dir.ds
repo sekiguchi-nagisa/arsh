@@ -2,22 +2,22 @@
 source $SCRIPT_DIR/expect.ds
 
 var dir = $SCRIPT_DIR
-$expect("$(XDG_CONFIG_HOME=$dir ds -c 'echo -n $CONFIG_HOME')", 0, "$SCRIPT_DIR/ydsh")
-$expect("$(XDG_DATA_HOME=$dir ds -c 'echo -n $DATA_HOME')", 0, "$SCRIPT_DIR/ydsh")
-$expect("$(XDG_DATA_HOME=$dir ds -c 'echo -n $MODULE_HOME')", 0, "$SCRIPT_DIR/ydsh/modules")
+$expect("$(XDG_CONFIG_HOME=$dir ds -c 'echo -n $CONFIG_HOME')", 0, "$SCRIPT_DIR/arsh")
+$expect("$(XDG_DATA_HOME=$dir ds -c 'echo -n $DATA_HOME')", 0, "$SCRIPT_DIR/arsh")
+$expect("$(XDG_DATA_HOME=$dir ds -c 'echo -n $MODULE_HOME')", 0, "$SCRIPT_DIR/arsh/modules")
 
 ## empty
 dir=~
-$expect("$(XDG_CONFIG_HOME= ds -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/ydsh")
-$expect("$(XDG_DATA_HOME= ds -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/ydsh")
-$expect("$(XDG_DATA_HOME= ds -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/ydsh/modules")
+$expect("$(XDG_CONFIG_HOME= ds -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")
+$expect("$(XDG_DATA_HOME= ds -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/arsh")
+$expect("$(XDG_DATA_HOME= ds -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
 
 ## unset
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/ydsh")
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/ydsh")
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/ydsh/modules")
+$expect("$(exec -c $YDSH_BIN -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")
+$expect("$(exec -c $YDSH_BIN -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/arsh")
+$expect("$(exec -c $YDSH_BIN -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
 
 ## invalid path
-$expect("$(XDG_CONFIG_HOME=faieurhjofije ds -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/ydsh")
-$expect("$(XDG_DATA_HOME=jfaireojfa ds -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/ydsh")
-$expect("$(XDG_DATA_HOME=fhaeruiht ds -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/ydsh/modules")
+$expect("$(XDG_CONFIG_HOME=faieurhjofije ds -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")
+$expect("$(XDG_DATA_HOME=jfaireojfa ds -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/arsh")
+$expect("$(XDG_DATA_HOME=fhaeruiht ds -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
