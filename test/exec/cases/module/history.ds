@@ -4,7 +4,7 @@ $HISTORY.clear()
 
 
 # default value
-assert $HISTFILE == "$DATA_HOME/ydsh_history"
+assert $HISTFILE == "$DATA_HOME/arsh_history"
 
 # invalid option
 history -x
