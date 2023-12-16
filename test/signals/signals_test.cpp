@@ -65,13 +65,13 @@ static std::vector<std::string> toSignalList(const std::string &str) {
     if (v.empty() || !std::isalpha(v[0]) || isRT(v)) {
       continue;
     }
-    int num = ydsh::getSignalNum(v.c_str());
+    int num = arsh::getSignalNum(v.c_str());
     if (num < 0) {
       invalidCount++;
       num = -invalidCount;
     }
     if (num > -1) {
-      v = ydsh::getSignalName(num);
+      v = arsh::getSignalName(num);
     }
     entries.push_back({.name = std::move(v), .num = num});
   }
@@ -87,8 +87,8 @@ static std::vector<std::string> toSignalList(const std::string &str) {
 
 static std::vector<std::string> getSignalList() {
   std::vector<std::string> values;
-  for (auto &e : ydsh::getUniqueSignalList()) {
-    values.push_back(format(ydsh::getSignalName(e), e));
+  for (auto &e : arsh::getUniqueSignalList()) {
+    values.push_back(format(arsh::getSignalName(e), e));
   }
   return values;
 }
@@ -115,7 +115,7 @@ TEST(Signal, all) {
 }
 
 TEST(Signal, base) {
-  using namespace ydsh;
+  using namespace arsh;
 
   ASSERT_EQ(SIGQUIT, getSignalNum("quit"));
   ASSERT_EQ(SIGQUIT, getSignalNum("Sigquit"));
@@ -132,7 +132,7 @@ TEST(Signal, base) {
 }
 
 TEST(Signal, sigset) {
-  using namespace ydsh;
+  using namespace arsh;
 
   SigSet set;
 

@@ -24,8 +24,8 @@
 #error LITECHECK_PATH
 #endif
 
-using namespace ydsh;
-using namespace ydsh::directive;
+using namespace arsh;
+using namespace arsh::directive;
 
 // parse config(key = value)
 template <typename... T>

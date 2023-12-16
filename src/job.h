@@ -22,7 +22,7 @@
 
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 inline int beForeground(pid_t pid) {
   errno = 0;
@@ -635,6 +635,6 @@ private:
   void removeTerminatedJobs();
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_JOB_H

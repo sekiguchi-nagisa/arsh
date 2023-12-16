@@ -50,9 +50,9 @@ enum class DescTokenKind : unsigned int {
 #undef GEN_ENUM
 };
 
-using Token = ydsh::Token;
+using Token = arsh::Token;
 
-class DescLexer : public ydsh::LexerBase {
+class DescLexer : public arsh::LexerBase {
 public:
   explicit DescLexer(const char *line) : LexerBase("", line) {}
   ~DescLexer() = default;

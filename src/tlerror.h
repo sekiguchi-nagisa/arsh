@@ -19,7 +19,7 @@
 
 #include "misc/resource.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 class TypeLookupError {
 private:
@@ -78,6 +78,6 @@ inline std::unique_ptr<TypeLookupError> createTLError(Arg &&...arg) {
 
 #define RAISE_TL_ERROR(e, ...) return Err(createTLError<e>(__VA_ARGS__))
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TLERROR_H

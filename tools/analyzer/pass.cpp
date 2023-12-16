@@ -16,7 +16,7 @@
 
 #include "pass.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // ######################
 // ##     NodePass     ##
@@ -295,4 +295,4 @@ bool MultipleNodePass::consume(const std::unique_ptr<Node> &node) {
   return true;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

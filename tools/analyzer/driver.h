@@ -22,7 +22,7 @@
 #include <misc/logger_base.hpp>
 #include <misc/result.hpp>
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 #define DEFAULT_DEBOUNCE_TIME 800
 
@@ -46,6 +46,6 @@ Result<std::unique_ptr<Driver>, std::string> createDriver(const DriverOptions &o
 
 int run(const DriverOptions &options, char **argv, Driver &driver);
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_DRIVER_H

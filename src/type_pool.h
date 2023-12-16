@@ -24,7 +24,7 @@
 #include "tlerror.h"
 #include "type.h"
 
-namespace ydsh {
+namespace arsh {
 
 using TypeOrError = Result<const DSType *, std::unique_ptr<TypeLookupError>>;
 
@@ -339,6 +339,6 @@ private:
   void registerHandles(const BuiltinType &type);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TYPE_POOL_H

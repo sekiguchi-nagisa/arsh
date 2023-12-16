@@ -8,7 +8,7 @@
 #error require BIN_PATH
 #endif
 
-using namespace ydsh;
+using namespace arsh;
 
 #define EACH_DUMP_OP(OP)                                                                           \
   OP(untyped, "--dump-untyped-ast")                                                                \

@@ -149,10 +149,10 @@ public:
     std::vector<std::string> values = {std::forward<T>(args)...};
     this->invokeImpl(values);
     auto sleepTime = std::chrono::milliseconds(100);
-    switch (ydsh::platform::platform()) {
-    case ydsh::platform::PlatformType::DARWIN:
-    case ydsh::platform::PlatformType::CYGWIN:
-    case ydsh::platform::PlatformType::MSYS:
+    switch (arsh::platform::platform()) {
+    case arsh::platform::PlatformType::DARWIN:
+    case arsh::platform::PlatformType::CYGWIN:
+    case arsh::platform::PlatformType::MSYS:
       sleepTime = std::chrono::milliseconds(200);
       break;
     default:
@@ -178,7 +178,7 @@ public:
   auto withTimeout(int time) {
     auto old = this->timeout;
     this->timeout = time;
-    return ydsh::finally([&, old] { this->timeout = old; });
+    return arsh::finally([&, old] { this->timeout = old; });
   }
 
   void expectRegex(const std::string &out = "", const std::string &err = "") {
@@ -278,10 +278,10 @@ private:
 protected:
   auto reuseScreen() {
     this->resetBeforeRead = false;
-    return ydsh::finally([&] { this->resetBeforeRead = true; });
+    return arsh::finally([&] { this->resetBeforeRead = true; });
   }
 };
 
-#define INIT_TEMP_FILE_FACTORY(NAME) ydsh::TempFileFactory("ydsh_" #NAME)
+#define INIT_TEMP_FILE_FACTORY(NAME) arsh::TempFileFactory("ydsh_" #NAME)
 
 #endif // YDSH_TEST_COMMON_H

@@ -17,7 +17,7 @@
 #include "attribute.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 const char *toString(AttributeKind k) {
   const char *table[] = {
@@ -38,7 +38,7 @@ const char *toString(Attribute::Param p) {
 }
 
 const DSType &getRequiredParamType(const TypePool &pool, Attribute::Param p) {
-  constexpr  TYPE table[] = {
+  constexpr TYPE table[] = {
 #define GEN_TABLE(E, S, T) T,
       EACH_ATTRIBUTE_PARAM(GEN_TABLE)
 #undef GEN_TABLE
@@ -120,4 +120,4 @@ AttributeMap AttributeMap::create() {
   return AttributeMap(std::move(values));
 }
 
-} // namespace ydsh
+} // namespace arsh

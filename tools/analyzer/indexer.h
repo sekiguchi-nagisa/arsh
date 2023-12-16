@@ -22,7 +22,7 @@
 #include "index.h"
 #include "pass.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 enum class ScopeKind {
   GLOBAL,
@@ -314,13 +314,13 @@ private:
   void addBuiltinSymbols();
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<lsp::SymbolIndexer::FuncVisitOp> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_ANALYZER_INDEXER_H

@@ -19,7 +19,7 @@
 #include "paths.h"
 #include "type_checker.h"
 
-namespace ydsh {
+namespace arsh {
 
 void TypeChecker::visitCmdNode(CmdNode &node) {
   this->checkType(this->typePool().get(TYPE::String), node.getNameNode());
@@ -785,4 +785,4 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
   this->resolvePathList(node);
 }
 
-} // namespace ydsh
+} // namespace arsh

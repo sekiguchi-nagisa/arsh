@@ -21,7 +21,7 @@
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 const char *toString(TokenKind kind) {
   const char *table[] = {
@@ -649,4 +649,4 @@ std::string toPrintable(StringRef ref) {
   return ret;
 }
 
-} // namespace ydsh
+} // namespace arsh

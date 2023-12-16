@@ -19,7 +19,7 @@
 
 #include "source.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content,
                int version)
@@ -253,4 +253,4 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
   return true;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

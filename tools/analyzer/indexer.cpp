@@ -20,7 +20,7 @@
 #include "indexer.h"
 #include "symbol.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // ##########################
 // ##     IndexBuilder     ##
@@ -1008,4 +1008,4 @@ void SymbolIndexer::addBuiltinSymbols() {
   }
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

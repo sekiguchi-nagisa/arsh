@@ -17,7 +17,7 @@
 #include "rotate.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 // #########################
 // ##     HistRotator     ##
@@ -123,4 +123,4 @@ ObjPtr<ArrayObject> KillRing::toObj(const TypePool &pool) const {
   return obj;
 }
 
-} // namespace ydsh
+} // namespace arsh

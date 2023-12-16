@@ -19,7 +19,7 @@
 #include "analyzer.h"
 #include "extra_checker.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // ##########################
 // ##     ExtraChecker     ##
@@ -99,4 +99,4 @@ void ExtraChecker::visitCmdNode(CmdNode &node) {
   this->visitEach(node.getArgNodes());
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

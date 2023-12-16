@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(colorful) {
   constexpr auto TEXT = ValidRule("#bbbbbb");
@@ -44,6 +44,6 @@ DEFINE_HIGHLIGHT_STYLE(colorful) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_COLORFUL_HPP

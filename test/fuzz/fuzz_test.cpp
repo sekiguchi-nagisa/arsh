@@ -3,7 +3,7 @@
 #include "../test_common.h"
 #include <misc/files.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 class FuzzTest : public ::testing::TestWithParam<std::string> {
 private:

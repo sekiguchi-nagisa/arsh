@@ -41,7 +41,7 @@
     RET(INVALID);                                                                                  \
   } while (false)
 
-namespace ydsh::json {
+namespace arsh::json {
 
 JSONTokenKind JSONLexer::nextToken(Token &token) {
   /*!re2c
@@ -99,4 +99,4 @@ EOS:
   return JSONTokenKind::EOS;
 }
 
-} // namespace ydsh::json
+} // namespace arsh::json

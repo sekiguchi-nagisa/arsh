@@ -16,7 +16,7 @@
 
 #include "worker.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // ##############################
 // ##     BackgroundWorker     ##
@@ -61,4 +61,4 @@ bool BackgroundWorker::addTaskImpl(std::function<void()> &&task) {
   return true;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

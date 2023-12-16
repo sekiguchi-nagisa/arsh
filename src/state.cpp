@@ -16,7 +16,7 @@
 
 #include "state.h"
 
-namespace ydsh {
+namespace arsh {
 
 bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code) {
   const unsigned int maxVarSize = code.getLocalVarNum();
@@ -74,4 +74,4 @@ void VMState::resize(unsigned int afterSize) {
   this->operandsSize = newSize;
 }
 
-} // namespace ydsh
+} // namespace arsh

@@ -5,7 +5,7 @@
 #include "arg_parser_base.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 class ArgEntriesBuilder {
 private:
@@ -62,6 +62,6 @@ inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeNam
   return type;
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TEST_ARG_PARSER_HELPER_HPP

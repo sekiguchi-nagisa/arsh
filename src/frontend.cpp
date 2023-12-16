@@ -17,7 +17,7 @@
 #include "frontend.h"
 #include <cerrno>
 
-namespace ydsh {
+namespace arsh {
 
 // ######################
 // ##     FrontEnd     ##
@@ -306,4 +306,4 @@ std::reference_wrapper<CancelToken> DefaultModuleProvider::getCancelToken() cons
   return std::ref(*this->cancelToken);
 }
 
-} // namespace ydsh
+} // namespace arsh

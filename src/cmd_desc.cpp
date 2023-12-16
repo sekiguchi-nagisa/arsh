@@ -20,7 +20,7 @@
 
 #include "cmd_desc.h"
 
-namespace ydsh {
+namespace arsh {
 
 static BuiltinCmdDesc table[] = {
     {":", "", "    Null command.  Always success (exit status is 0)."},
@@ -292,4 +292,4 @@ unsigned int getBuiltinCmdSize() { return std::size(table); }
 
 const BuiltinCmdDesc *getBuiltinCmdDescList() { return table; }
 
-} // namespace ydsh
+} // namespace arsh

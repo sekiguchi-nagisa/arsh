@@ -19,7 +19,7 @@
 
 #include <uri.h>
 
-namespace ydsh::uri {
+namespace arsh::uri {
 
 #define ERROR()                                                                                    \
   do {                                                                                             \
@@ -161,4 +161,4 @@ ERROR:
   return {};
 }
 
-} // namespace ydsh::uri
+} // namespace arsh::uri

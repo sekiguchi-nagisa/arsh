@@ -26,7 +26,7 @@
 #include "transport.h"
 #include "worker.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 using namespace rpc;
 
@@ -238,13 +238,13 @@ public:
   }
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<lsp::SupportedCapability> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_ANALYZER_SERVER_H

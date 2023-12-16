@@ -37,7 +37,7 @@
 
 struct DSState;
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_OBJECT_KIND(OP)                                                                       \
   OP(String)                                                                                       \
@@ -1387,6 +1387,6 @@ public:
  */
 bool formatJobDesc(StringRef ref, std::string &out);
 
-}; // namespace ydsh
+}; // namespace arsh
 
 #endif // YDSH_OBJECT_H

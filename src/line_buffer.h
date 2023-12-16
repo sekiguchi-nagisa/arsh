@@ -21,7 +21,7 @@
 #include "misc/ring_buffer.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 class LineBuffer {
 public:
@@ -338,6 +338,6 @@ private:
   void trackChange(ChangeOp op, std::string &&delta, bool merge);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_LINE_BUFFER_H

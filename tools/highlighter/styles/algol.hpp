@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(algol) {
   constexpr auto COMMENT = ValidRule("italic #888");
@@ -35,6 +35,6 @@ DEFINE_HIGHLIGHT_STYLE(algol) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_ALGOL_HPP

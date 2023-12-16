@@ -20,7 +20,7 @@
 #include "index.h"
 #include "source.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes, SymbolRequest request);
 
@@ -49,12 +49,12 @@ struct RenameConflict {
   explicit RenameConflict(SymbolRef symbol) : symbol(symbol) {}
 };
 
-using RenameResult = ydsh::Result<RenameTarget, RenameConflict>;
+using RenameResult = arsh::Result<RenameTarget, RenameConflict>;
 
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
                                       StringRef newName,
                                       const std::function<void(const RenameResult &)> &consumer);
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_RENAME_H

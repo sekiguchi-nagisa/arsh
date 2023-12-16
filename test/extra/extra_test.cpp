@@ -24,7 +24,7 @@
  * and have side effect on directory structures
  */
 
-using namespace ydsh;
+using namespace arsh;
 
 struct ModLoadTest : public ExpectOutput, public TempFileFactory {
   ModLoadTest() : INIT_TEMP_FILE_FACTORY(extra_test) {}

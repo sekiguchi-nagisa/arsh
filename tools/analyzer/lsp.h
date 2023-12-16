@@ -26,7 +26,7 @@
 /**
  * LSP definition 3.16
  */
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 using namespace json;
 
@@ -1339,9 +1339,9 @@ struct UnregistrationParam {
 
 #undef JSONIFY
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 bool toEnum(const char *str, LogLevel &level);
 
@@ -1357,6 +1357,6 @@ void jsonify(T &t, LogLevel &level) {
   }
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_ANALYZER_LSP_H

@@ -19,7 +19,7 @@
 #include "arg_parser.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 // ###############################
 // ##     RequiredOptionSet     ##
@@ -195,4 +195,4 @@ END:
   };
 }
 
-} // namespace ydsh
+} // namespace arsh

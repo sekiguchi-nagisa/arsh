@@ -18,7 +18,7 @@
 #include "misc/num_util.hpp"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 // job control related builtin commands
 
@@ -500,4 +500,4 @@ int builtin_disown(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

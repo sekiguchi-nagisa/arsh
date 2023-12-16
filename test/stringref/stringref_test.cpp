@@ -2,7 +2,7 @@
 
 #include <misc/string_ref.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 struct StringRefTest : public ::testing::Test {
   template <size_t N>

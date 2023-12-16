@@ -6,7 +6,7 @@
 #define BIN_PATH "./arsh"
 #endif
 
-using namespace ydsh;
+using namespace arsh;
 
 class RedirectTest : public ExpectOutput, public TempFileFactory {
 private:

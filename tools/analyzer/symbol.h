@@ -20,14 +20,14 @@
 #include "index.h"
 #include "lsp.h"
 
-namespace ydsh {
+namespace arsh {
 class DSType;
 class FunctionType;
 class FuncHandle;
 class MethodHandle;
-} // namespace ydsh
+} // namespace arsh
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 class SourceManager;
 class Source;
@@ -66,6 +66,6 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind);
 
 std::string toString(ConstEntry entry);
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_SYMBOL_H

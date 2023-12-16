@@ -17,7 +17,7 @@
 #include "compiler.h"
 #include "misc/format.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 // ##################################
 // ##     DefaultErrorConsumer     ##
@@ -304,4 +304,4 @@ END:
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

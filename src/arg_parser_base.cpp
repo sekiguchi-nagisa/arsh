@@ -19,7 +19,7 @@
 #include "arg_parser_base.h"
 #include "misc/num_util.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 // ######################
 // ##     ArgEntry     ##
@@ -183,4 +183,4 @@ std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
   return out;
 }
 
-} // namespace ydsh
+} // namespace arsh

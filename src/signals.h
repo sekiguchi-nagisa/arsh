@@ -24,7 +24,7 @@
 #include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 struct SignalPair {
   const char *name;
@@ -111,6 +111,6 @@ public:
   int popPendingSig();
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_SIGNAL_LIST_H

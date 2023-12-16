@@ -24,7 +24,7 @@
 #include "source.h"
 #include "symbol.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 static std::string normalizeTypeName(StringRef typeName) {
   static std::regex re(R"(%mod\d+\.)", std::regex_constants::ECMAScript);
@@ -557,4 +557,4 @@ std::string toString(ConstEntry entry) {
   return value;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

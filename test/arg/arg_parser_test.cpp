@@ -6,7 +6,7 @@
 
 #include "../arg_parser_helper.hpp"
 
-using namespace ydsh;
+using namespace arsh;
 
 template <typename... T>
 static ObjPtr<ArrayObject> createArgs(T &&...args) {

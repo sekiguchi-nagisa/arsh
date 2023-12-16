@@ -29,7 +29,7 @@
 
 namespace {
 
-using namespace ydsh;
+using namespace arsh;
 
 HandleInfo fromNum(unsigned int num) {
   // check range
@@ -672,7 +672,7 @@ public:
   }
 };
 
-using ParseError = ydsh::ParseErrorBase<DescTokenKind>;
+using ParseError = arsh::ParseErrorBase<DescTokenKind>;
 
 #define CUR_KIND() (this->curKind)
 
@@ -685,7 +685,7 @@ using ParseError = ydsh::ParseErrorBase<DescTokenKind>;
     std::forward<decltype(v)>(v);                                                                  \
   })
 
-class Parser : public ydsh::ParserBase<DescTokenKind, DescLexer> {
+class Parser : public arsh::ParserBase<DescTokenKind, DescLexer> {
 public:
   Parser() = default;
 
@@ -1023,7 +1023,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   OUT("\n");
   OUT("#include <constant.h>\n");
   OUT("\n");
-  OUT("namespace ydsh {\n");
+  OUT("namespace arsh {\n");
   OUT("\n");
 
   // generate NativeFuncInfo table
@@ -1065,7 +1065,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
     offsetCount += methodSize;
   }
 
-  OUT("} // namespace ydsh\n");
+  OUT("} // namespace arsh\n");
   OUT("\n");
   OUT("#endif //YDSH_BIND_H\n");
   fclose(fp);
@@ -1081,7 +1081,7 @@ void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   OUT("// this is an auto-generated file. not change it directly\n");
   OUT("#include <builtin.h>\n");
   OUT("\n");
-  OUT("namespace ydsh {\n");
+  OUT("namespace arsh {\n");
   OUT("\n");
 
   // generate NativeFuncPtrTable
@@ -1098,7 +1098,7 @@ void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
       "}\n");
   OUT("\n");
 
-  OUT("} // namespace ydsh\n");
+  OUT("} // namespace arsh\n");
   OUT("\n");
   fclose(fp);
 }

@@ -30,7 +30,7 @@
 #include "misc/num_util.hpp"
 #include "regex_wrapper.h"
 
-namespace ydsh {
+namespace arsh {
 
 PCRE::~PCRE() {
   free(this->pattern);
@@ -220,8 +220,8 @@ bool PCRE::getCaptureAt(unsigned int index, PCRECapture &capture) {
 #endif
 }
 
-int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool global,
-                     const size_t bufLimit, std::string &output) {
+int PCRE::substitute(StringRef target, StringRef replacement, bool global, const size_t bufLimit,
+                     std::string &output) {
 #ifdef USE_PCRE
   const unsigned int option = PCRE2_SUBSTITUTE_OVERFLOW_LENGTH | PCRE2_SUBSTITUTE_UNSET_EMPTY |
                               (global ? PCRE2_SUBSTITUTE_GLOBAL : 0);
@@ -266,8 +266,8 @@ int PCRE::substitute(ydsh::StringRef target, ydsh::StringRef replacement, bool g
 #endif
 }
 
-int PCRE::substituteImpl(ydsh::StringRef target, ydsh::StringRef replacement, unsigned int option,
-                         char *output, size_t &outputLen) {
+int PCRE::substituteImpl(StringRef target, StringRef replacement, unsigned int option, char *output,
+                         size_t &outputLen) {
 #ifdef USE_PCRE
   return pcre2_substitute(static_cast<pcre2_code *>(this->code),
                           reinterpret_cast<PCRE2_SPTR>(target.data()), target.size(), 0, option,
@@ -285,4 +285,4 @@ int PCRE::substituteImpl(ydsh::StringRef target, ydsh::StringRef replacement, un
 #endif
 }
 
-} // namespace ydsh
+} // namespace arsh

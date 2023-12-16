@@ -20,7 +20,7 @@
 #include "node.h"
 #include "scope.h"
 
-namespace ydsh {
+namespace arsh {
 
 enum class CodeCompOp : unsigned int {
   FILE = 1u << 0u,        /* complete file names (including directory) */
@@ -228,6 +228,6 @@ public:
   const auto &getScriptDir() const { return this->scriptDir; }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_COMP_CONTEXT_H

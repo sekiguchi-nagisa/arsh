@@ -22,7 +22,7 @@
 #include "ordered_map.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 static bool setToReplyMap(DSState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
                           unsigned int index, std::string &&buf) {
@@ -210,4 +210,4 @@ int builtin_read(DSState &state, ArrayObject &argvObj) {
   return ret ? 0 : 1;
 }
 
-} // namespace ydsh
+} // namespace arsh

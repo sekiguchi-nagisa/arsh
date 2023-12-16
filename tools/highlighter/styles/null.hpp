@@ -19,10 +19,10 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(null) { return {}; }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_NULL_HPP

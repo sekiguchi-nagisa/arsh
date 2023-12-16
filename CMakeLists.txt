@@ -46,7 +46,7 @@ endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_definitions(-DBEGIN_MISC_LIB_NAMESPACE_DECL=namespace\ ydsh\ {)
+add_definitions(-DBEGIN_MISC_LIB_NAMESPACE_DECL=namespace\ arsh\ {)
 add_definitions(-DEND_MISC_LIB_NAMESPACE_DECL=})
 add_definitions(-D_GNU_SOURCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")

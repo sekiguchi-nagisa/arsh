@@ -24,7 +24,7 @@
 #include "misc/string_ref.hpp"
 #include <config.h>
 
-namespace ydsh {
+namespace arsh {
 
 /**
  * enum order is corresponding to builtin variable declaration order.
@@ -480,6 +480,6 @@ constexpr size_t SYS_LIMIT_ATTR_CHOICE_SIZE = 16;
 #define unlikely(x) (x)
 
 #endif
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_SYMBOL_H

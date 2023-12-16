@@ -20,7 +20,7 @@
 #include "paths.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   bool useLogical = true;
@@ -338,4 +338,4 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

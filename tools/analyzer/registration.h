@@ -25,7 +25,7 @@
 
 #include "lsp.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 class IDGenerator {
 private:
@@ -99,6 +99,6 @@ private:
   bool registerCapability(Capability capability, const std::string &id);
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_REGISTRATION_H

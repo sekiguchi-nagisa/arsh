@@ -25,7 +25,7 @@
 
 #include <highlighter_base.h>
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 /**
  * true color
@@ -213,6 +213,6 @@ public:
   };                                                                                               \
   style_wrapper_##name::Rules style_wrapper_##name::buildRules()
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLE_H

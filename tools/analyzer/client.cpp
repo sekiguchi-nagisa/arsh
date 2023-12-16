@@ -30,7 +30,7 @@
 #include "client.h"
 #include "lsp.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 static Result<JSON, std::string> parseJSON(const std::string &fileName, const std::string &content,
                                            unsigned int lineNumOffset) {
@@ -388,4 +388,4 @@ int TestClientServerDriver::run(const DriverOptions &options,
   return ret.toShellStatus();
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

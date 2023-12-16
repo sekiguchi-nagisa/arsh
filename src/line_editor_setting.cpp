@@ -19,7 +19,7 @@
 #include "ordered_map.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
   auto s = this->keyBindings.addBinding(key, name);
@@ -250,4 +250,4 @@ DSValue LineEditorObject::getConfigs(DSState &state) const {
   return ret;
 }
 
-} // namespace ydsh
+} // namespace arsh

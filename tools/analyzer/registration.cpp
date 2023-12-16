@@ -20,7 +20,7 @@
 
 #include "registration.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 static const char *toString(RegistrationMap::Capability capability) {
   const char *table[] = {
@@ -75,4 +75,4 @@ Unregistration RegistrationMap::unregisterCapability(Capability capability) {
   return unregistration;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

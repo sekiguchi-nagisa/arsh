@@ -23,7 +23,7 @@
 #include "misc/num_util.hpp"
 #include "type_checker.h"
 
-namespace ydsh {
+namespace arsh {
 
 // #########################
 // ##     TypeChecker     ##
@@ -452,7 +452,7 @@ void TypeChecker::reportNameRegisterError(Token token, ErrorSymbolKind kind,
   }
 }
 
-void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const ydsh::AccessNode &node) {
+void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const AccessNode &node) {
   const char *methodName = node.getFieldName().c_str();
   switch (attr) {
   case ApplyNode::DEFAULT:
@@ -2277,7 +2277,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
   node.getBlockNode().addNode(std::move(returnNode));
 }
 
-void TypeChecker::inferParamTypes(ydsh::FunctionNode &node) {
+void TypeChecker::inferParamTypes(FunctionNode &node) {
   assert(node.isAnonymousFunc());
 
   // resolve required func type
@@ -2632,4 +2632,4 @@ std::unique_ptr<Node> TypeChecker::operator()(const bool prevIsNothing,
   return std::move(node);
 }
 
-} // namespace ydsh
+} // namespace arsh

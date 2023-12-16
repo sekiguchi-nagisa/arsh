@@ -370,7 +370,7 @@
   OP(FUNC)                                                                                         \
   OP(TYPEOF)
 
-namespace ydsh {
+namespace arsh {
 
 enum class TokenKind : unsigned int {
 #define GEN_ENUM(ENUM, STR) ENUM,
@@ -453,6 +453,6 @@ enum class RedirOp : unsigned char;
 
 std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOKEN_KIND_H

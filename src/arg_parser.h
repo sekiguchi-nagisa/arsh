@@ -20,7 +20,7 @@
 #include "arg_parser_base.h"
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 class RequiredOptionSet {
 private:
@@ -62,6 +62,6 @@ inline void showCommandLineUsage(const ErrorObject &obj) {
   fflush(fp);
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_ARG_PARSER_H

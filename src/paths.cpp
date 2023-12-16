@@ -21,7 +21,7 @@
 #include "misc/num_util.hpp"
 #include "paths.h"
 
-namespace ydsh {
+namespace arsh {
 
 // ###########################
 // ##     FilePathCache     ##
@@ -330,4 +330,4 @@ bool changeWorkingDir(std::string &logicalWorkingDir, StringRef dest, const bool
   return true;
 }
 
-} // namespace ydsh
+} // namespace arsh

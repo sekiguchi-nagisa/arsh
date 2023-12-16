@@ -22,7 +22,7 @@
 
 #include "json.h"
 
-namespace ydsh::json {
+namespace arsh::json {
 
 // ##################
 // ##     JSON     ##
@@ -542,4 +542,4 @@ void JSONParser::showError(FILE *fp) const {
   fflush(fp);
 }
 
-} // namespace ydsh::json
+} // namespace arsh::json

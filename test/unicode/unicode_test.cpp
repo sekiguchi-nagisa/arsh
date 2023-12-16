@@ -8,7 +8,7 @@
 
 #include "../test_common.h"
 
-using namespace ydsh;
+using namespace arsh;
 
 class UnicodeTest : public ::testing::Test {
 public:

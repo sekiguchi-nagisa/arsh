@@ -17,7 +17,7 @@
 #include "arg_parser_base.h"
 #include "type_checker.h"
 
-namespace ydsh {
+namespace arsh {
 
 static const DSType &createIntPairType(TypePool &pool) {
   auto ret = pool.createTupleType({&pool.get(TYPE::Int), &pool.get(TYPE::Int)});
@@ -462,4 +462,4 @@ std::vector<ArgEntry> TypeChecker::resolveArgEntries(const FunctionNode &node,
   return entries;
 }
 
-} // namespace ydsh
+} // namespace arsh

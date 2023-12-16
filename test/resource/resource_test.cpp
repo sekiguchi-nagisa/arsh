@@ -2,7 +2,7 @@
 
 #include <misc/resource.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 struct AAAOp;
 

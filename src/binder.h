@@ -25,7 +25,7 @@
 #include "signals.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 template <typename Consumer>
 class Binder {
@@ -282,6 +282,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   }
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_BINDER_H

@@ -28,7 +28,7 @@
 #include <misc/parser_base.hpp>
 #include <misc/result.hpp>
 
-namespace ydsh {
+namespace arsh {
 namespace json {
 
 class JSON;
@@ -243,6 +243,6 @@ public:
   const json::JSON &unwrap() const noexcept { return static_cast<const base_type &>(*this); }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_JSON_JSON_H

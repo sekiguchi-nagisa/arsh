@@ -16,7 +16,7 @@
 
 #include "lsp.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 const char *toString(TraceValue setting) {
   switch (setting) {
@@ -220,9 +220,9 @@ bool toEnum(const char *str, BinaryFlag &kind) {
   return false;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 bool toEnum(const char *str, LogLevel &level) {
   LogLevel levels[] = {LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR,
@@ -238,4 +238,4 @@ bool toEnum(const char *str, LogLevel &level) {
   return false;
 }
 
-} // namespace ydsh
+} // namespace arsh

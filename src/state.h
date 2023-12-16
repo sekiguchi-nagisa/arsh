@@ -19,7 +19,7 @@
 
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 struct ControlFrame {
   /**
@@ -365,6 +365,6 @@ private:
   void resize(unsigned int afterSize);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_STATE_H

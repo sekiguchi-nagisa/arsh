@@ -18,7 +18,7 @@
 
 #include "formatter.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 // #######################
 // ##     Formatter     ##
@@ -414,4 +414,4 @@ void HTMLFormatter::finalize() {
   this->output.flush();
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter

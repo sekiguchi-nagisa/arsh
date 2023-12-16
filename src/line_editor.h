@@ -25,7 +25,7 @@
 
 struct linenoiseState;
 
-namespace ydsh {
+namespace arsh {
 
 class LineBuffer;
 
@@ -184,6 +184,6 @@ private:
                           unsigned int index);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_LINE_EDITOR_H

@@ -24,7 +24,7 @@
 #include "comp_context.h"
 #include "frontend.h"
 
-namespace ydsh {
+namespace arsh {
 
 enum class CompCandidateKind : unsigned char {
   COMMAND_NAME,
@@ -227,6 +227,6 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
                                const DSType &recvType, SuggestMemberType targetType,
                                unsigned int threshold = 3);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_COMPLETE_H

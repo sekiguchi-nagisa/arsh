@@ -20,7 +20,7 @@
 #include "misc/num_util.hpp"
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 const CharWidthPropertyList &getCharWidthPropertyList() {
   static CharWidthPropertyList table = {{
@@ -542,4 +542,4 @@ void ArrayPager::render(std::string &out) const {
   }
 }
 
-} // namespace ydsh
+} // namespace arsh

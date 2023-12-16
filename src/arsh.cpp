@@ -28,7 +28,7 @@
 #include <arsh/arsh.h>
 #include <embed.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 static DSError initDSError() {
   return DSError{.kind = DS_ERROR_KIND_SUCCESS,

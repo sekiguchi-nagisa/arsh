@@ -21,7 +21,7 @@
 
 #include "transport.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 #define LOG(L, ...)                                                                                \
   do {                                                                                             \
@@ -163,4 +163,4 @@ bool LSPTransport::poll(int timeout) {
   return true;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

@@ -29,7 +29,7 @@
 #include <misc/string_ref.hpp>
 #include <misc/token.hpp>
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 class SymbolRef {
 private:
@@ -491,9 +491,9 @@ inline bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest reques
   return findAllReferences(indexes, *decl, ignoreBuiltin, consumer) > 0;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<lsp::DeclSymbol::Attr> : std::true_type {};
@@ -501,6 +501,6 @@ struct allow_enum_bitop<lsp::DeclSymbol::Attr> : std::true_type {};
 template <>
 struct allow_enum_bitop<lsp::IndexLink::ImportAttr> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_ANALYZER_INDEX_H

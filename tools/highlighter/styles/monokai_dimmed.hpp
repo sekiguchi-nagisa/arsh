@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   constexpr auto COMMENT = ValidRule("#9A9B99");
@@ -45,6 +45,6 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_MONOKAI_DIMMED_HPP

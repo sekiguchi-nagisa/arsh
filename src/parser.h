@@ -25,7 +25,7 @@
 #include "misc/parser_base.hpp"
 #include "node.h"
 
-namespace ydsh {
+namespace arsh {
 
 enum class ParserOption : unsigned char {
   SINGLE_EXPR = 1u << 0u,
@@ -68,9 +68,9 @@ class CodeCompletionContext;
   OP(MOD_PATH, "module path")                                                                      \
   OP(HERE_END, "here doc end word")
 
-class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
+class Parser : public ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
-  using parse_base_type = ydsh::ParserBase<TokenKind, Lexer, TokenTracker>;
+  using parse_base_type = ParserBase<TokenKind, Lexer, TokenTracker>;
 
   static constexpr unsigned int MAX_NESTING_DEPTH = 1024;
 
@@ -379,6 +379,6 @@ protected:
   std::unique_ptr<Node> parse_attributes();
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_PARSER_H

@@ -30,7 +30,7 @@
 
 extern char **environ; // NOLINT
 
-namespace ydsh {
+namespace arsh {
 
 // builtin command definition
 static int builtin_gets(DSState &state, ArrayObject &argvObj);
@@ -1352,4 +1352,4 @@ static int builtin_umask(DSState &st, ArrayObject &argvObj) {
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

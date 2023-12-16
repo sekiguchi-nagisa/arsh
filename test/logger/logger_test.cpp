@@ -5,10 +5,10 @@
 #include "../test_common.h"
 #include <misc/logger_base.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
-struct TestLogger : public ydsh::LoggerBase {
-  TestLogger() : ydsh::LoggerBase("testlog") {}
+struct TestLogger : public arsh::LoggerBase {
+  TestLogger() : arsh::LoggerBase("testlog") {}
 };
 
 struct LoggerTest : public ExpectOutput {

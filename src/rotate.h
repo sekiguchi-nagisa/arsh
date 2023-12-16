@@ -20,7 +20,7 @@
 #include "misc/ring_buffer.hpp"
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 class HistRotator {
 private:
@@ -110,6 +110,6 @@ public:
   ObjPtr<ArrayObject> toObj(const TypePool &pool) const;
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_ROTATE_H

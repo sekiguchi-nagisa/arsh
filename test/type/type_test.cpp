@@ -3,7 +3,7 @@
 #include <scope.h>
 #include <type_checker.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 struct Type {};
 

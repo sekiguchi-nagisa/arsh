@@ -21,7 +21,7 @@
 #include "paths.h"
 #include "scope.h"
 
-namespace ydsh {
+namespace arsh {
 
 // #######################
 // ##     NameScope     ##
@@ -644,4 +644,4 @@ ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   return key.data();
 }
 
-} // namespace ydsh
+} // namespace arsh

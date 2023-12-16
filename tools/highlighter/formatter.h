@@ -21,7 +21,7 @@
 
 #include "style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 class Formatter : public TokenEmitter {
 protected:
@@ -152,13 +152,13 @@ public:
   void finalize() override;
 };
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<highlighter::HTMLFormatOp> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_FORMATTER_H

@@ -9,8 +9,8 @@
 
 #include "../test_common.h"
 
-using namespace ydsh::lsp;
-using namespace ydsh;
+using namespace arsh::lsp;
+using namespace arsh;
 
 struct IndexSize {
   unsigned int declSize;

@@ -2,7 +2,7 @@
 
 #include <scope.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 struct Entry {
   TYPE type;

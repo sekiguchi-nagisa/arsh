@@ -19,7 +19,7 @@
 
 #include "rename.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 static std::unordered_set<StringRef, StrRefHash> initStatementKeywordSet() {
   std::unordered_set<StringRef, StrRefHash> set;
@@ -382,4 +382,4 @@ TextEdit RenameTarget::toTextEdit(const SourceManager &srcMan) const {
   };
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

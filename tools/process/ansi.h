@@ -31,7 +31,7 @@ namespace process {
  * see. http://bkclass.web.fc2.com/doc_vt100.html
  *      https://vt100.net/docs/vt100-ug/chapter3.html
  */
-class Screen : public ydsh::LexerBase {
+class Screen : public arsh::LexerBase {
 private:
   unsigned int maxRows; // y
   unsigned int maxCols; // x
@@ -41,11 +41,11 @@ private:
   unsigned int row{0};
   unsigned int col{0};
 
-  std::vector<ydsh::FlexBuffer<int>> bufs;
+  std::vector<arsh::FlexBuffer<int>> bufs;
 
   std::function<void(std::string &&)> reporter;
 
-  ydsh::AmbiguousCharWidth eaw{ydsh::AmbiguousCharWidth::HALF};
+  arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::HALF};
 
   unsigned char yych{0};
   unsigned int yyaccept{0};
@@ -78,7 +78,7 @@ public:
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
-  void setEAW(ydsh::AmbiguousCharWidth v) { this->eaw = v; }
+  void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
 
   /**
    * entry point

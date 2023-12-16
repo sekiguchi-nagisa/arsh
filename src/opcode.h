@@ -17,7 +17,7 @@
 #ifndef YDSH_OPCODE_H
 #define YDSH_OPCODE_H
 
-namespace ydsh {
+namespace arsh {
 
 /**
  * see (doc/opcode.md)
@@ -153,6 +153,6 @@ int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_OPCODE_H

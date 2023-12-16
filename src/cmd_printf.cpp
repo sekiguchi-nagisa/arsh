@@ -25,7 +25,7 @@
 #include "ordered_map.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 template <typename T>
 static constexpr bool interpret_consumer_requirement_v =
@@ -1107,4 +1107,4 @@ int builtin_printf(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

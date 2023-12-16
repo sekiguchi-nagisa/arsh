@@ -21,7 +21,7 @@
 #include "driver.h"
 #include "server.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 struct SimpleDriver : public Driver {
   int run(const DriverOptions &options, std::function<int(const DriverOptions &)> &&func) override {
@@ -82,4 +82,4 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
   });
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

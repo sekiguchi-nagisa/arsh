@@ -20,7 +20,7 @@
 #include "misc/resource.hpp"
 #include "node.h"
 
-namespace ydsh {
+namespace arsh {
 /**
  * for code generation error reporting
  */
@@ -82,6 +82,6 @@ DEFINE_CGError(TooLargeToplevel, "too large top-level script: `%s'");
 
 #undef DEFINE_CGError
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_CGERROR_H

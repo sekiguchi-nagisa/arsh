@@ -2,7 +2,7 @@
 
 #include <brace.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 TEST(BraceSeqTest, base1) {
   {

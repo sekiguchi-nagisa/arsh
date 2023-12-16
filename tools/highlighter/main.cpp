@@ -23,8 +23,8 @@
 
 namespace {
 
-using namespace ydsh;
-using namespace ydsh::highlighter;
+using namespace arsh;
+using namespace arsh::highlighter;
 
 enum class OptionSet : unsigned char {
   HELP,

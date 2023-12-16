@@ -17,7 +17,7 @@
 #ifndef YDSH_CMD_DESC_H
 #define YDSH_CMD_DESC_H
 
-namespace ydsh {
+namespace arsh {
 
 struct BuiltinCmdDesc {
   const char *name;
@@ -29,6 +29,6 @@ unsigned int getBuiltinCmdSize();
 
 const BuiltinCmdDesc *getBuiltinCmdDescList();
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_CMD_DESC_H

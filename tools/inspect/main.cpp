@@ -26,7 +26,7 @@
 #include "../platform/platform.h"
 #include <signals.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 enum class OptionSet : unsigned char {
   OUT,

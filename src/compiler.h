@@ -23,7 +23,7 @@
 #include "misc/flag_util.hpp"
 #include <arsh/arsh.h>
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_TERM_COLOR(C)                                                                         \
   C(Reset, 0)                                                                                      \
@@ -170,6 +170,6 @@ private:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_COMPILER_H

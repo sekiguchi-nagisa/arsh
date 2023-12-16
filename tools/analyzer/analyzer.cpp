@@ -23,7 +23,7 @@
 #include "analyzer.h"
 #include "symbol.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // #############################
 // ##     AnalyzerContext     ##
@@ -608,4 +608,4 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
   return info;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

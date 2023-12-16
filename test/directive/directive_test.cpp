@@ -5,7 +5,7 @@
 #include "../../src/constant.h"
 #include <directive.h>
 
-using namespace ydsh::directive;
+using namespace arsh::directive;
 
 class DirectiveTest : public ::testing::Test {
 private:
@@ -269,7 +269,7 @@ TEST_F(DirectiveTest, ignored2) {
 TEST_F(DirectiveTest, ignored3) {
   ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
 
-  printf("arch: %s\n", ydsh::BUILD_ARCH);
+  printf("arch: %s\n", arsh::BUILD_ARCH);
 
 #ifdef __x86_64__
   ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'x86-64')", true));

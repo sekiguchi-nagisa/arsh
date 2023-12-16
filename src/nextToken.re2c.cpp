@@ -116,7 +116,7 @@
     }                                                                                              \
   } while (false)
 
-namespace ydsh {
+namespace arsh {
 
 TokenKind Lexer::nextToken(Token &token) {
   /*!re2c
@@ -448,4 +448,4 @@ RET:
   return kind;
 }
 
-} // namespace ydsh
+} // namespace arsh

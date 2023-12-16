@@ -106,5 +106,5 @@ const char *toString(DescTokenKind kind) {
 #undef GEN_NAME
   };
 
-  return names[ydsh::toUnderlying(kind)];
+  return names[arsh::toUnderlying(kind)];
 }

@@ -21,7 +21,7 @@
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 class FilePathCache {
 private:
@@ -139,6 +139,6 @@ CStrPtr getWorkingDir(const std::string &logicalWorkingDir, bool useLogical);
  */
 bool changeWorkingDir(std::string &logicalWorkingDir, StringRef dest, bool useLogical);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_PATHS_H

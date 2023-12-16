@@ -17,7 +17,7 @@
 #ifndef YDSH_HANDLE_INFO_H
 #define YDSH_HANDLE_INFO_H
 
-namespace ydsh {
+namespace arsh {
 
 // builtin type
 #define EACH_HANDLE_INFO_TYPE(OP)                                                                  \
@@ -131,6 +131,6 @@ struct native_type_info_t {
   bool operator!=(native_type_info_t info) const { return !(*this == info); }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_HANDLE_INFO_H

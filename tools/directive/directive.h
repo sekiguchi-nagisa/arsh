@@ -27,7 +27,7 @@
 
 #include <arsh/arsh.h>
 
-namespace ydsh::directive {
+namespace arsh::directive {
 
 class Directive {
 private:
@@ -145,6 +145,6 @@ public:
  */
 const char *toString(DSErrorKind kind);
 
-} // namespace ydsh::directive
+} // namespace arsh::directive
 
 #endif // YDSH_TOOLS_DIRECTIVE_DIRECTIVE_H

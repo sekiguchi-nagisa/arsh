@@ -18,14 +18,14 @@
 
 #include "signals.h"
 
-namespace ydsh {
+namespace arsh {
 
 const SignalPair *getSignalList() {
 #define SIG_(E) {#E, SIG##E},
 
   static const SignalPair signalList[] = {
 
-// clang-format off
+  // clang-format off
 // POSIX.1-1990 standard
 #ifdef SIGHUP
       SIG_(HUP)
@@ -214,4 +214,4 @@ int SigSet::popPendingSig() {
   return sigNum;
 }
 
-} // namespace ydsh
+} // namespace arsh

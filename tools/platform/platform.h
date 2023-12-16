@@ -17,7 +17,7 @@
 #ifndef YDSH_TOOLS_PLATFORM_PLATFORM_H
 #define YDSH_TOOLS_PLATFORM_PLATFORM_H
 
-namespace ydsh::platform {
+namespace arsh::platform {
 
 // for platform detection
 
@@ -96,6 +96,6 @@ inline bool contain(const std::string &text) {
   return containPlatform(text, platform()) || containArch(text, arch());
 }
 
-} // namespace ydsh::platform
+} // namespace arsh::platform
 
 #endif // YDSH_TOOLS_PLATFORM_PLATFORM_H

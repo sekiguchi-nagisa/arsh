@@ -54,7 +54,7 @@
     std::forward<decltype(v)>(v);                                                                  \
   })
 
-namespace ydsh {
+namespace arsh {
 
 #define GUARD_DEEP_NESTING(name)                                                                   \
   CallCounter name(this->callCount);                                                               \
@@ -2557,4 +2557,4 @@ std::unique_ptr<Node> Parser::parse_attributes() {
   return node;
 }
 
-} // namespace ydsh
+} // namespace arsh

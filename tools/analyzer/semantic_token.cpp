@@ -17,7 +17,7 @@
 #include "semantic_token.h"
 #include "source.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 SemanticTokenEncoder::SemanticTokenEncoder(const SemanticTokensLegend &legend) {
   unsigned int index = 0;
@@ -133,4 +133,4 @@ void SemanticTokenEmitter::emit(HighlightTokenClass tokenClass, Token token) {
   });
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

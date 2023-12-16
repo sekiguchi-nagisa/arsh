@@ -22,7 +22,7 @@
 #include "misc/opt_parser.hpp"
 #include <arsh/arsh.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 struct Deleter {
   void operator()(DSState *state) const { DSState_delete(&state); }

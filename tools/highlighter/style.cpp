@@ -25,7 +25,7 @@
 #include "styles/monokai_dimmed.hpp"
 #include "styles/null.hpp"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 // ###################
 // ##     Color     ##
@@ -239,4 +239,4 @@ bool StyleMap::defineStyle(const char *name,
   return this->add(Style(name, foreground, background, std::move(map)));
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter

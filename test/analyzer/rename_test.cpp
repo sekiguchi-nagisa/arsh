@@ -7,14 +7,14 @@
 
 #include "../test_common.h"
 
-using namespace ydsh::lsp;
+using namespace arsh::lsp;
 
 struct Request {
   unsigned short modId;
   int line;
   int character;
 
-  ydsh::ModId getModId() const { return static_cast<ydsh::ModId>(this->modId); }
+  arsh::ModId getModId() const { return static_cast<arsh::ModId>(this->modId); }
 
   Position toPosition() const {
     return {
@@ -25,33 +25,33 @@ struct Request {
 };
 
 struct Result {
-  ydsh::ModId modId;
+  arsh::ModId modId;
   std::string rangeStr;
   std::string newName;
 
-  Result(ydsh::ModId modId, std::string &&rangeStr, std::string &&newName)
+  Result(arsh::ModId modId, std::string &&rangeStr, std::string &&newName)
       : modId(modId), rangeStr(rangeStr), newName(newName) {}
 
   Result(unsigned short modId, std::string &&rangeStr, std::string &&newName)
-      : Result(static_cast<ydsh::ModId>(modId), std::move(rangeStr), std::move(newName)) {}
+      : Result(static_cast<arsh::ModId>(modId), std::move(rangeStr), std::move(newName)) {}
 
   Result(unsigned short modId, std::string &&rangeStr) : Result(modId, std::move(rangeStr), "") {}
 };
 
 struct Conflict {
-  ydsh::ModId modId;
+  arsh::ModId modId;
   std::string rangeStr;
 
-  Conflict(ydsh::ModId modId, std::string &&rangeStr)
+  Conflict(arsh::ModId modId, std::string &&rangeStr)
       : modId(modId), rangeStr(std::move(rangeStr)) {}
 
   Conflict(unsigned short modId, std::string &&rangeStr)
-      : Conflict(static_cast<ydsh::ModId>(modId), std::move(rangeStr)) {}
+      : Conflict(static_cast<arsh::ModId>(modId), std::move(rangeStr)) {}
 };
 
 class RenameTest : public ::testing::Test {
 private:
-  ydsh::SysConfig sysConfig;
+  arsh::SysConfig sysConfig;
   SourceManager srcMan;
   ModuleArchives archives;
   SymbolIndexes indexes;
@@ -69,7 +69,7 @@ public:
     Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
     auto ret = analyzer.analyze(src, action);
     ASSERT_TRUE(ret);
-    ASSERT_EQ(modId, ydsh::toUnderlying(ret->getModId()));
+    ASSERT_EQ(modId, arsh::toUnderlying(ret->getModId()));
   }
 
   void rename(Request req, const char *newName, RenameValidationStatus status) {
@@ -77,7 +77,7 @@ public:
   }
 
   void renameWithConflict(Request req, const char *newName, Conflict &&expect) {
-    ydsh::Optional<Conflict> actual;
+    arsh::Optional<Conflict> actual;
     this->renameImpl(req, newName, RenameValidationStatus::NAME_CONFLICT,
                      [&](const RenameResult &ret) {
                        ASSERT_FALSE(ret);
@@ -570,7 +570,7 @@ ggg && ps
 }
 
 TEST_F(RenameTest, source1) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");
 
   auto content = format(R"(
@@ -607,7 +607,7 @@ source %s as
 }
 
 TEST_F(RenameTest, source2) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");
 
   auto content = format(R"(
@@ -669,7 +669,7 @@ source %s as
 }
 
 TEST_F(RenameTest, import1) { // for global imported index
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -701,7 +701,7 @@ typedef TTT(){}
 }
 
 TEST_F(RenameTest, import2) { // for named imported index
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -731,7 +731,7 @@ typedef TTT(){}
 }
 
 TEST_F(RenameTest, import3) { // for inlined imported index
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
 var EEE = 34
 eee() {}
@@ -789,7 +789,7 @@ ggg() {}
 }
 
 TEST_F(RenameTest, import4) { // for inlined imported index
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName3 = tempFileFactory.createTempFile("mod3.ds", R"(
 var EEE = 34
 eee() {}
@@ -847,7 +847,7 @@ ggg() {}
 }
 
 TEST_F(RenameTest, globalImported) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -899,7 +899,7 @@ $fff()
 }
 
 TEST_F(RenameTest, inlinedImported) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -956,7 +956,7 @@ $fff()
 }
 
 TEST_F(RenameTest, namedImported) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod1.ds", R"(
 var EEE = 34
 { var WWW : Int? }
@@ -1018,7 +1018,7 @@ $mod.fff()
 }
 
 TEST_F(RenameTest, importModSymbol1) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool
@@ -1061,7 +1061,7 @@ fff() {}
 }
 
 TEST_F(RenameTest, importModSymbol2) {
-  ydsh::TempFileFactory tempFileFactory("ydsh_rename");
+  arsh::TempFileFactory tempFileFactory("ydsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", R"(
 var AAA = 34;
 typedef _Int = Bool

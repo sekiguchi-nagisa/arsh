@@ -3,7 +3,7 @@
 
 #include "jsonrpc.h"
 
-using namespace ydsh;
+using namespace arsh;
 using namespace json;
 
 TEST(JSON, type) {
@@ -12,7 +12,7 @@ TEST(JSON, type) {
 
   json = nullptr;
   ASSERT_TRUE(json.isNull());
-  ASSERT_TRUE(ydsh::get<std::nullptr_t>(json) == nullptr);
+  ASSERT_TRUE(arsh::get<std::nullptr_t>(json) == nullptr);
   ASSERT_EQ(0, json.size());
 
   json = true;
@@ -474,7 +474,7 @@ struct AAA {
   BBB a2;
 };
 
-namespace ydsh::json {
+namespace arsh::json {
 
 template <typename T>
 void jsonify(T &t, AAA &v) {
@@ -482,7 +482,7 @@ void jsonify(T &t, AAA &v) {
   t("a2", v.a2);
 }
 
-} // namespace ydsh::json
+} // namespace arsh::json
 
 TEST(SerializeTest, object) {
   AAA v = {.a1 = 190,
@@ -890,8 +890,8 @@ TEST(DeserializeTest, error) {
   ASSERT_EQ("undefined field `b1'", des.getValidationError().formatError());
 }
 
-struct SingleNullLogger : ydsh::SingletonLogger<SingleNullLogger> {
-  SingleNullLogger() : ydsh::SingletonLogger<SingleNullLogger>("") {}
+struct SingleNullLogger : arsh::SingletonLogger<SingleNullLogger> {
+  SingleNullLogger() : arsh::SingletonLogger<SingleNullLogger>("") {}
 };
 
 TEST(ReqTest, parse) {

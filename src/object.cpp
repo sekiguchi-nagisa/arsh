@@ -25,7 +25,7 @@
 #include "redir.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 void Object::destroy() {
   switch (this->getKind()) {
@@ -1003,4 +1003,4 @@ bool formatJobDesc(const StringRef ref, std::string &out) {
   });
 }
 
-} // namespace ydsh
+} // namespace arsh

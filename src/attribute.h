@@ -41,7 +41,7 @@
   OP(RANGE, "range", TYPE::Void /* dummy type */)                                                  \
   OP(CHOICE, "choice", TYPE::StringArray)
 
-namespace ydsh {
+namespace arsh {
 
 enum class AttributeKind : unsigned char {
 #define GEN_ENUM(E, S) E,
@@ -149,6 +149,6 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_ATTRIBUTE_H

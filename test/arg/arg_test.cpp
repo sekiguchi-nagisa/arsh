@@ -3,7 +3,7 @@
 #include <misc/opt.hpp>
 #include <misc/opt_parser.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 enum class Kind : unsigned int {
   A,

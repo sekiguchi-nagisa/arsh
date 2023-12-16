@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(github) {
   constexpr auto COMMENT = ValidRule("#6e7781");
@@ -45,6 +45,6 @@ DEFINE_HIGHLIGHT_STYLE(github) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_GITHUB_HPP

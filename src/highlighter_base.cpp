@@ -16,7 +16,7 @@
 
 #include "highlighter_base.h"
 
-namespace ydsh {
+namespace arsh {
 
 HighlightTokenClass toTokenClass(TokenKind kind) {
   switch (kind) {
@@ -179,4 +179,4 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   return nullptr;
 }
 
-} // namespace ydsh
+} // namespace arsh

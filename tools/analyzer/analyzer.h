@@ -28,7 +28,7 @@
 #include "pass.h"
 #include "source.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 using DiagnosticCallback = std::function<void(PublishDiagnosticsParams &&)>;
 
@@ -185,13 +185,13 @@ public:
   Optional<SignatureInformation> collectSignature(const SourcePtr &src, unsigned int offset);
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<lsp::Analyzer::ExtraCompOp> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TOOLS_ANALYZER_ANALYZER_H

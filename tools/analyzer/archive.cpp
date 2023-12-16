@@ -18,9 +18,9 @@
 
 #include "archive.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
-using namespace ydsh;
+using namespace arsh;
 
 // ######################
 // ##     Archiver     ##
@@ -595,4 +595,4 @@ bool ModuleArchives::removeIfUnused(ModId id) {
   return false;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

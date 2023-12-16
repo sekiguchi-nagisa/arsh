@@ -20,7 +20,7 @@
 #include <constant.h>
 #include <misc/num_util.hpp>
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // ######################
 // ##     DeclBase     ##
@@ -321,4 +321,4 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
   return count;
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

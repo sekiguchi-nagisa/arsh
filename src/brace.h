@@ -19,7 +19,7 @@
 
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 // for sequence style brace expansion
 
@@ -67,6 +67,6 @@ std::string formatSeqValue(int64_t v, unsigned int digits, bool isChar);
 
 bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_BRACE_H

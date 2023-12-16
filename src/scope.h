@@ -24,7 +24,7 @@
 #include "sysconfig.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 // for name lookup
 
@@ -578,6 +578,6 @@ inline void discardAll(ModuleLoader &loader, NameScope &scope, TypePool &typePoo
   typePool.discard(discardPoint.type);
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_SCOPE_H

@@ -6,8 +6,8 @@
 #include "analyzer.h"
 #include "archive.h"
 
-using namespace ydsh::lsp;
-using namespace ydsh;
+using namespace arsh::lsp;
+using namespace arsh;
 
 TEST(SourceTest, base) {
   SourceManager srcMan;

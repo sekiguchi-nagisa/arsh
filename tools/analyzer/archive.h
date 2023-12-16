@@ -23,7 +23,7 @@
 #include <misc/result.hpp>
 #include <type.h>
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 enum class ArchiveType : uint8_t {
   PREDEFINED,
@@ -309,6 +309,6 @@ private:
   iterator_type reserveImpl(ModId modId);
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_ARCHIVE_H

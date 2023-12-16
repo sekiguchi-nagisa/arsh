@@ -29,7 +29,7 @@
 
 extern char **environ; // NOLINT
 
-namespace ydsh {
+namespace arsh {
 
 // core api definition
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
@@ -845,4 +845,4 @@ ModResult FakeModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   return this->path.get();
 }
 
-} // namespace ydsh
+} // namespace arsh

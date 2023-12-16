@@ -24,7 +24,7 @@
 #include <misc/logger_base.hpp>
 #include <misc/split_random.hpp>
 
-namespace ydsh::rpc {
+namespace arsh::rpc {
 
 using namespace json;
 
@@ -424,6 +424,6 @@ protected:
                 ResponseCallback &&func);
 };
 
-} // namespace ydsh::rpc
+} // namespace arsh::rpc
 
 #endif // YDSH_TOOLS_JSON_JSONRPC_H

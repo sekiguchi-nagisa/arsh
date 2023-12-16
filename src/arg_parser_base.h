@@ -25,7 +25,7 @@
 #include "misc/opt_parser.hpp"
 #include "misc/resource.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 enum class ArgEntryAttr : unsigned short {
   REQUIRE = 1u << 0u,     // require option
@@ -214,6 +214,6 @@ public:
   std::string formatUsage(StringRef message, bool verbose) const;
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_ARG_PARSER_BASE_H

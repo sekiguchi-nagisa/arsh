@@ -44,8 +44,8 @@ static unsigned int toNum(const char *begin, const char *end) {
   unsigned int value = 0;
   for (; begin != end; ++begin) {
     char ch = *begin;
-    assert(ydsh::isDecimal(ch));
-    unsigned int n = ydsh::hexToNum(ch);
+    assert(arsh::isDecimal(ch));
+    unsigned int n = arsh::hexToNum(ch);
     value *= 10;
     value += n;
   }

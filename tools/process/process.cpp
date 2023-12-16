@@ -365,7 +365,7 @@ static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
     }
     masterFD = fd;
     fd = open(ptsname(masterFD), O_RDWR | O_NOCTTY);
-    ydsh::remapFD(fd);
+    arsh::remapFD(fd);
     if (fd == -1) {
       fatal_perror("open pty slave failed");
     }
@@ -394,9 +394,9 @@ public:
    * @param config
    */
   explicit StreamBuilder(const IOConfig &config)
-      : config(config), inpipe{ydsh::dupFD(this->config.in.fd), -1},
-        outpipe{-1, ydsh::dupFD(this->config.out.fd)},
-        errpipe{-1, ydsh::dupFD(this->config.err.fd)} {
+      : config(config), inpipe{arsh::dupFD(this->config.in.fd), -1},
+        outpipe{-1, arsh::dupFD(this->config.out.fd)},
+        errpipe{-1, arsh::dupFD(this->config.err.fd)} {
     openPTY(this->config, this->masterFD, this->slaveFD);
     this->initPipe();
   }
@@ -406,13 +406,13 @@ public:
     this->closeInParent();
     if (this->masterFD > -1) {
       if (this->config.in.is(IOConfig::PTY)) {
-        this->inpipe[WRITE_PIPE] = ydsh::dupFD(this->masterFD);
+        this->inpipe[WRITE_PIPE] = arsh::dupFD(this->masterFD);
       }
       if (this->config.out.is(IOConfig::PTY)) {
-        this->outpipe[READ_PIPE] = ydsh::dupFD(this->masterFD);
+        this->outpipe[READ_PIPE] = arsh::dupFD(this->masterFD);
       }
       if (this->config.err.is(IOConfig::PTY)) {
-        this->errpipe[READ_PIPE] = ydsh::dupFD(this->masterFD);
+        this->errpipe[READ_PIPE] = arsh::dupFD(this->masterFD);
       }
       close(this->masterFD);
     }
@@ -480,13 +480,13 @@ private:
     loginPTY(fd);
 
     if (this->config.in.is(IOConfig::PTY)) {
-      this->inpipe[READ_PIPE] = ydsh::dupFD(fd);
+      this->inpipe[READ_PIPE] = arsh::dupFD(fd);
     }
     if (this->config.out.is(IOConfig::PTY)) {
-      this->outpipe[WRITE_PIPE] = ydsh::dupFD(fd);
+      this->outpipe[WRITE_PIPE] = arsh::dupFD(fd);
     }
     if (this->config.err.is(IOConfig::PTY)) {
-      this->errpipe[WRITE_PIPE] = ydsh::dupFD(fd);
+      this->errpipe[WRITE_PIPE] = arsh::dupFD(fd);
     }
     close(fd);
   }
@@ -537,7 +537,7 @@ void ProcBuilder::syncPWD() const {
   if (dir == nullptr) {
     fatal_perror("current working directory is broken!!");
   }
-  setenv(ydsh::ENV_PWD, dir, 1);
+  setenv(arsh::ENV_PWD, dir, 1);
   free(dir);
 }
 
@@ -583,11 +583,11 @@ void Screen::addChar(int ch) {
 }
 
 void Screen::addCodePoint(const char *begin, const char *end) {
-  int code = ydsh::UnicodeUtil::utf8ToCodePoint(begin, end);
+  int code = arsh::UnicodeUtil::utf8ToCodePoint(begin, end);
   if (isascii(code)) {
     this->addChar(code);
   } else {
-    int width = ydsh::UnicodeUtil::width(code, this->eaw);
+    int width = arsh::UnicodeUtil::width(code, this->eaw);
     switch (width) {
     case 1:
       this->setChar(code);
@@ -639,14 +639,14 @@ void Screen::clearLine() {
   }
 }
 
-static std::string toStringAtLine(const ydsh::FlexBuffer<int> &buf) {
+static std::string toStringAtLine(const arsh::FlexBuffer<int> &buf) {
   std::string ret;
   for (int ch : buf) {
     if (ch == -1) {
       continue;
     }
     char data[8] = {};
-    unsigned int r = ydsh::UnicodeUtil::codePointToUtf8(ch, data);
+    unsigned int r = arsh::UnicodeUtil::codePointToUtf8(ch, data);
     ret.append(data, r);
   }
   for (; !ret.empty() && ret.back() == '\0'; ret.pop_back())

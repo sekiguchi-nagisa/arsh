@@ -63,7 +63,7 @@
     dumper.dump(NAME(val), ___str__);                                                              \
   } while (false)
 
-namespace ydsh {
+namespace arsh {
 
 // ##################
 // ##     Node     ##
@@ -225,7 +225,7 @@ void TupleNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 // ##     VarNode     ##
 // #####################
 
-VarNode::VarNode(ydsh::Token token, std::string &&varName)
+VarNode::VarNode(Token token, std::string &&varName)
     : WithRtti(token), varName(std::move(varName)) {
   assert(!this->varName.empty());
   char ch = this->varName[0];
@@ -368,7 +368,7 @@ void NewNode::dump(NodeDumper &dumper) const {
 // ##     EmbedNode     ##
 // #######################
 
-void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
+void EmbedNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(STR_EXPR)                                                                                     \
   OP(CMD_ARG)
@@ -741,7 +741,7 @@ void CaseNode::dump(NodeDumper &dumper) const {
 // ##     ArmNode     ##
 // #####################
 
-void ArmNode::dump(ydsh::NodeDumper &dumper) const {
+void ArmNode::dump(NodeDumper &dumper) const {
   DUMP(this->patternNodes);
   DUMP(this->constPatternNodes);
   DUMP_PTR(this->actionNode);
@@ -997,7 +997,7 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ##     FuncListNode     ##
 // ##########################
 
-void FuncListNode::dump(ydsh::NodeDumper &dumper) const { DUMP(nodes); }
+void FuncListNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 
 // ########################
 // ##     SourceNode     ##
@@ -1347,4 +1347,4 @@ void NodeDumper::finalize(const NameScope &scope) {
   }
 }
 
-} // namespace ydsh
+} // namespace arsh

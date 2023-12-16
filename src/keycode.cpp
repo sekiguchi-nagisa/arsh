@@ -85,7 +85,7 @@ static int waitForInputReady(int fd, int timeoutMSec) {
 
 #endif
 
-namespace ydsh {
+namespace arsh {
 
 // ###########################
 // ##     KeyCodeReader     ##
@@ -485,4 +485,4 @@ Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(S
   return Ok(ret->second.customActionIndex);
 }
 
-} // namespace ydsh
+} // namespace arsh

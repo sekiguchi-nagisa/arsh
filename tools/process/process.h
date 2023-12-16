@@ -219,11 +219,11 @@ struct IOConfig {
     int fd;
 
     FDWrapper(int fd) : fd(fd) {}                            // NOLINT
-    FDWrapper(FDType type) : fd(ydsh::toUnderlying(type)) {} // NOLINT
+    FDWrapper(FDType type) : fd(arsh::toUnderlying(type)) {} // NOLINT
 
     explicit operator bool() const { return this->fd > -1; }
 
-    bool is(FDType type) const { return this->fd == ydsh::toUnderlying(type); }
+    bool is(FDType type) const { return this->fd == arsh::toUnderlying(type); }
   };
 
   FDWrapper in;

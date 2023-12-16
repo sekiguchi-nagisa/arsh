@@ -22,7 +22,7 @@
 #include "tcerror.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 // ####################
 // ##     DSType     ##
@@ -226,8 +226,7 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 // ##     CLIRecordType     ##
 // ###########################
 
-CLIRecordType::CLIRecordType(unsigned int id, ydsh::StringRef ref, const ydsh::DSType &superType,
-                             Attr attr)
+CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr)
     : RecordType(TypeKind::CLIRecord, id, ref, superType) {
   this->setExtraAttr(toUnderlying(attr));
 }
@@ -386,4 +385,4 @@ StringRef MethodHandle::getPackedParamNames() const {
   return ref;
 }
 
-} // namespace ydsh
+} // namespace arsh

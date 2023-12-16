@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 /**
  * intellij darcula theme
  */
@@ -46,6 +46,6 @@ DEFINE_HIGHLIGHT_STYLE(darcula) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_DARCULA_HPP

@@ -19,7 +19,7 @@
 
 #include "constant.h"
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_SYSCONFIG_UNEXPORTED(OP)                                                              \
   OP(COMPILER, "%compiler")                                                                        \
@@ -81,6 +81,6 @@ public:
   const std::string &getModuleDir() const { return *this->lookup(MODULE_DIR); }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_SYSCONFIG_H

@@ -29,7 +29,7 @@
 #include <paths.h>
 #include <type_checker.h>
 
-namespace ydsh::directive {
+namespace arsh::directive {
 
 #define TRY(expr)                                                                                  \
   ({                                                                                               \
@@ -477,4 +477,4 @@ const char *toString(DSErrorKind kind) {
   return "";
 }
 
-} // namespace ydsh::directive
+} // namespace arsh::directive

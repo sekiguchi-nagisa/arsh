@@ -21,7 +21,7 @@
 #include "redir.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 PipelineObject::~PipelineObject() {
   /**
@@ -249,4 +249,4 @@ bool RedirObject::redirect(DSState &state) {
   return true;
 }
 
-} // namespace ydsh
+} // namespace arsh

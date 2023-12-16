@@ -20,7 +20,7 @@
 #include "misc/num_util.hpp"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 // ###############################
 // ##     OrderedMapEntries     ##
@@ -363,4 +363,4 @@ DSValue OrderedMapIterObject::next(TypePool &pool) {
   return value;
 }
 
-} // namespace ydsh
+} // namespace arsh

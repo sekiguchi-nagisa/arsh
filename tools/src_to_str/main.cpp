@@ -21,7 +21,7 @@
 #include <misc/fatal.h>
 #include <misc/opt_parser.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 enum class OptionKind : unsigned char {
   VAR_NAME,

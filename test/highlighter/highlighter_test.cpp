@@ -12,7 +12,7 @@
 #define "require HIGHLIGHTER_PATH"
 #endif
 
-using namespace ydsh;
+using namespace arsh;
 using namespace highlighter;
 
 class TokenCollector : public TokenEmitter {

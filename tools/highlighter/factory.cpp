@@ -16,7 +16,7 @@
 
 #include "factory.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 // ##############################
 // ##     FormatterFactory     ##
@@ -95,4 +95,4 @@ FormatterFactory::create(std::ostream &stream) const {
   fatal("unreachable"); // normally unreachable, but suppress gcc warning
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter

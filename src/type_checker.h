@@ -27,7 +27,7 @@
 #include "scope.h"
 #include "tcerror.h"
 
-namespace ydsh {
+namespace arsh {
 
 struct CancelToken {
   virtual ~CancelToken() = default;
@@ -791,6 +791,6 @@ struct allow_enum_bitop<TypeChecker::GlobOp> : std::true_type {};
 template <>
 struct allow_enum_bitop<TypeChecker::FuncCheckOp> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TYPE_CHECKER_H

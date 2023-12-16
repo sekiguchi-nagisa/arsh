@@ -23,7 +23,7 @@
 #include "misc/lexer_base.hpp"
 #include "token_kind.h"
 
-namespace ydsh {
+namespace arsh {
 
 #include <yycond.h>
 
@@ -105,7 +105,7 @@ public:
 template <>
 struct allow_enum_bitop<HereDocState::Attr> : std::true_type {};
 
-class Lexer : public ydsh::LexerBase, public RefCount<Lexer> {
+class Lexer : public LexerBase, public RefCount<Lexer> {
 private:
   static_assert(sizeof(LexerMode) == sizeof(unsigned int));
   static_assert(std::is_trivially_copyable_v<LexerMode>);
@@ -387,6 +387,6 @@ inline std::string quoteAsShellArg(StringRef ref) {
  */
 std::string toPrintable(StringRef ref);
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_LEXER_H

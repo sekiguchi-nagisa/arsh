@@ -19,7 +19,7 @@
 #include "redir.h"
 #include "type_pool.h"
 
-namespace ydsh {
+namespace arsh {
 
 int getByteSize(OpCode code) {
   int table[] = {
@@ -1807,7 +1807,7 @@ void ByteCodeDumper::dumpModule(const CompiledCode &code) {
   }
 }
 
-void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
+void ByteCodeDumper::dumpCode(const CompiledCode &c) {
   fputs("DSCode: ", this->fp);
   switch (c.getKind()) {
   case CodeKind::TOPLEVEL:
@@ -1959,4 +1959,4 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
   fflush(this->fp);
 }
 
-} // namespace ydsh
+} // namespace arsh

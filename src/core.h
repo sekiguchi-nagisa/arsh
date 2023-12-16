@@ -29,7 +29,7 @@
 
 struct DSState;
 
-namespace ydsh {
+namespace arsh {
 
 struct VMHook {
   /**
@@ -247,6 +247,6 @@ private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_CORE_H

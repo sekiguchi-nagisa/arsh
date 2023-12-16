@@ -20,7 +20,7 @@
 #include "source.h"
 #include <highlighter_base.h>
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 class SemanticTokenEncoder {
 private:
@@ -89,6 +89,6 @@ private:
   void emit(HighlightTokenClass tokenClass, Token token) override;
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_SEMANTIC_TOKEN_H

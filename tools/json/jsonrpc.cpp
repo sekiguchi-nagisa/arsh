@@ -18,7 +18,7 @@
 
 #include <misc/format.hpp>
 
-namespace ydsh::rpc {
+namespace arsh::rpc {
 
 std::string Error::toString() const {
   std::string ret = "[";
@@ -284,4 +284,4 @@ void Handler::callImpl(Transport &transport, const std::string &methodName, JSON
   transport.call(std::move(id), methodName, std::move(json));
 }
 
-} // namespace ydsh::rpc
+} // namespace arsh::rpc

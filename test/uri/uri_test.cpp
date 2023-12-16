@@ -2,7 +2,7 @@
 
 #include "uri.h"
 
-using namespace ydsh;
+using namespace arsh;
 using namespace uri;
 
 TEST(URITest, base1) {

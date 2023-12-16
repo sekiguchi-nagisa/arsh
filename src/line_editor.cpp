@@ -389,7 +389,7 @@ static ssize_t linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
-namespace ydsh {
+namespace arsh {
 
 // ##############################
 // ##     LineEditorObject     ##
@@ -1335,4 +1335,4 @@ bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, Custo
   return buf.insertToCursor(ref);
 }
 
-} // namespace ydsh
+} // namespace arsh

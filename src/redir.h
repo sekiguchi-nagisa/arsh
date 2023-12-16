@@ -23,7 +23,7 @@
 #include "misc/files.hpp"
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 constexpr unsigned int READ_PIPE = 0;
 constexpr unsigned int WRITE_PIPE = 1;
@@ -218,6 +218,6 @@ private:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_REDIR_H

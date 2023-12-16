@@ -32,7 +32,7 @@
 
 extern char **environ; // NOLINT
 
-namespace ydsh {
+namespace arsh {
 
 // for input completion
 
@@ -509,7 +509,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
 }
 
 static void completeAttribute(const std::string &prefix, CompCandidateConsumer &consumer) {
-  constexpr  AttributeKind kinds[] = {
+  constexpr AttributeKind kinds[] = {
 #define GEN_TABLE(E, S) AttributeKind::E,
       EACH_ATTRIBUTE_KIND(GEN_TABLE)
 #undef GEN_TABLE
@@ -782,4 +782,4 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
   return "";
 }
 
-} // namespace ydsh
+} // namespace arsh

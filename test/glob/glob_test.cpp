@@ -11,7 +11,7 @@
 #error "require EXEC_TEST_DIR"
 #endif
 
-using namespace ydsh;
+using namespace arsh;
 
 // for testing
 struct StrMetaChar {

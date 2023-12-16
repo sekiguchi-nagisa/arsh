@@ -33,7 +33,7 @@
 #include "state.h"
 #include "sysconfig.h"
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_RUNTIME_OPTION(OP)                                                                    \
   OP(ASSERT, (1u << 0u), "assert")                                                                 \
@@ -76,9 +76,9 @@ class VM;
 
 struct PipeSet;
 
-} // namespace ydsh
+} // namespace arsh
 
-using namespace ydsh;
+using namespace arsh;
 
 struct DSState {
 public:
@@ -137,7 +137,7 @@ public:
   JobNotifyCallback notifyCallback;
 
 private:
-  friend class ydsh::VM;
+  friend class arsh::VM;
 
   VMHook *hook{nullptr};
 
@@ -243,7 +243,7 @@ public:
   VMState &getCallStack() { return this->stack; }
 
   auto getWorkingDir(bool useLogical = true) const {
-    return ydsh::getWorkingDir(this->logicalWorkingDir, useLogical);
+    return arsh::getWorkingDir(this->logicalWorkingDir, useLogical);
   }
 
   L64X128MixRNG &getRng() { return this->rng; }
@@ -255,7 +255,7 @@ public:
   void setOption(RuntimeOption option) { this->runtimeOption = option; }
 };
 
-namespace ydsh {
+namespace arsh {
 
 class ResolvedCmd {
 public:
@@ -713,6 +713,6 @@ public:
   static bool callTermHook(DSState &state);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_VM_H

@@ -25,7 +25,7 @@ std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T... args) {
 
 TEST(BuiltinExecTest, case1) {
   DSState *state = DSState_create();
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("echo", "hello").data());
   ASSERT_EQ(0, ret);
@@ -33,7 +33,7 @@ TEST(BuiltinExecTest, case1) {
 
 TEST(BuiltinExecTest, case2) {
   DSState *state = DSState_create();
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("./", "hello").data());
   ASSERT_EQ(126, ret);
@@ -41,7 +41,7 @@ TEST(BuiltinExecTest, case2) {
 
 TEST(BuiltinExecTest, case3) {
   DSState *state = DSState_create();
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("exit", "12000").data());
   ASSERT_EQ(224, ret);
@@ -49,7 +49,7 @@ TEST(BuiltinExecTest, case3) {
 
 TEST(BuiltinExecTest, case4) {
   DSState *state = DSState_create();
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, nullptr);
   ASSERT_EQ(-1, ret);
@@ -60,7 +60,7 @@ TEST(BuiltinExecTest, case4) {
 
 TEST(BuiltinExecTest, shctl) {
   DSState *state = DSState_create();
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
   ASSERT_EQ(1, ret);
@@ -72,7 +72,7 @@ TEST(BuiltinExecTest, shctl) {
 
 TEST(BuiltinExecTest, donothing1) {
   DSState *state = DSState_createWithMode(DS_EXEC_MODE_CHECK_ONLY);
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
@@ -80,7 +80,7 @@ TEST(BuiltinExecTest, donothing1) {
 
 TEST(BuiltinExecTest, donothing2) {
   DSState *state = DSState_createWithMode(DS_EXEC_MODE_PARSE_ONLY);
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
@@ -88,13 +88,13 @@ TEST(BuiltinExecTest, donothing2) {
 
 TEST(BuiltinExecTest, donothing3) {
   DSState *state = DSState_createWithMode(DS_EXEC_MODE_COMPILE_ONLY);
-  auto cleanup = ydsh::finally([&] { DSState_delete(&state); });
+  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
 
   int ret = DSState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
 }
 
-struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
+struct APITest : public ExpectOutput, public arsh::TempFileFactory {
   DSState *state{nullptr};
 
   APITest() : INIT_TEMP_FILE_FACTORY(api_test) { this->state = DSState_create(); }
@@ -129,7 +129,7 @@ TEST_F(APITest, mode) {
   };
   for (auto &m : modes) {
     auto st = DSState_createWithMode(m);
-    auto cleaup = ydsh::finally([&] { DSState_delete(&st); });
+    auto cleaup = arsh::finally([&] { DSState_delete(&st); });
     ASSERT_EQ(m, DSState_mode(st));
   }
   ASSERT_EQ(0, DSState_mode(nullptr));
@@ -143,15 +143,15 @@ TEST_F(APITest, version) {
   ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor);
   ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch);
   ASSERT_TRUE(v);
-  ASSERT_TRUE(ydsh::StringRef(v).startsWith("arsh, version "));
+  ASSERT_TRUE(arsh::StringRef(v).startsWith("arsh, version "));
 
   v = DSState_version(nullptr);
   ASSERT_TRUE(v);
-  ASSERT_TRUE(ydsh::StringRef(v).startsWith("arsh, version "));
+  ASSERT_TRUE(arsh::StringRef(v).startsWith("arsh, version "));
 }
 
 TEST_F(APITest, config) {
-  ydsh::StringRef value = DSState_config(this->state, DS_CONFIG_COMPILER);
+  arsh::StringRef value = DSState_config(this->state, DS_CONFIG_COMPILER);
   ASSERT_EQ(X_INFO_CPP " " X_INFO_CPP_V, value);
 
   value = DSState_config(this->state, DS_CONFIG_REGEX);
@@ -165,10 +165,10 @@ TEST_F(APITest, config) {
   }
 
   value = DSState_config(this->state, DS_CONFIG_OSTYPE);
-  ASSERT_EQ(ydsh::BUILD_OS, value);
+  ASSERT_EQ(arsh::BUILD_OS, value);
 
   value = DSState_config(this->state, DS_CONFIG_MACHTYPE);
-  ASSERT_EQ(ydsh::BUILD_ARCH, value);
+  ASSERT_EQ(arsh::BUILD_ARCH, value);
 
   value = DSState_config(this->state, DS_CONFIG_CONFIG_HOME);
   ASSERT_TRUE(value.endsWith("/arsh"));
@@ -816,7 +816,7 @@ TEST_F(APITest, module5) {
 }
 
 TEST_F(APITest, module6) {
-  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
+  if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
     return;
   }
 
@@ -851,10 +851,10 @@ TEST_F(APITest, module7) {
 
 TEST_F(APITest, moduleLimit) {
   constexpr unsigned int limit = 0x8FFF;
-  const unsigned int digits = ydsh::countDigits(limit);
+  const unsigned int digits = arsh::countDigits(limit);
   for (unsigned int i = 0; i < limit; i++) {
     std::string name = "mod_";
-    name += ydsh::padLeft(i, digits, '0');
+    name += arsh::padLeft(i, digits, '0');
     this->createTempFile(name.c_str(), "true");
   }
 
@@ -900,10 +900,10 @@ source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, r
 
 TEST_F(APITest, globalLimit) {
   constexpr unsigned int limit = 0x8FFF;
-  const unsigned int digits = ydsh::countDigits(limit);
+  const unsigned int digits = arsh::countDigits(limit);
   for (unsigned int i = 0; i < limit; i++) {
     std::string name = "mod_";
-    name += ydsh::padLeft(i, digits, '0');
+    name += arsh::padLeft(i, digits, '0');
     std::string value = "var var_";
     value += name;
     value += " = true";

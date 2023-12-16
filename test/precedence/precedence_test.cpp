@@ -4,7 +4,7 @@
 #include <node.h>
 #include <parser.h>
 
-using namespace ydsh;
+using namespace arsh;
 
 static std::vector<std::string> tokenize(const char *str) {
   std::vector<std::string> tokens;

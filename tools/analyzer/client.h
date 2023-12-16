@@ -23,7 +23,7 @@
 #include "lsp.h"
 #include "transport.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // LSP client for testing
 
@@ -88,6 +88,6 @@ private:
   }
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_CLIENT_H

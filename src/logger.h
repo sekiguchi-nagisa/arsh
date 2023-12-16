@@ -28,7 +28,7 @@
   E(DUMP_WAIT)                                                                                     \
   E(TRACE_MODULE)
 
-namespace ydsh {
+namespace arsh {
 
 #ifdef USE_LOGGING
 constexpr bool useLogging = true;
@@ -36,7 +36,7 @@ constexpr bool useLogging = true;
 constexpr bool useLogging = false;
 #endif
 
-class Logger : public ydsh::SingletonLogger<Logger> {
+class Logger : public SingletonLogger<Logger> {
 private:
   unsigned int whiteList{0};
 
@@ -47,7 +47,7 @@ public:
 #undef GEN_ENUM
   };
 
-  Logger() : ydsh::SingletonLogger<Logger>("YDSH") {
+  Logger() : SingletonLogger<Logger>("YDSH") {
     this->sync([&] {
       const char *policies[] = {
 #define GEN_STR(E) "YDSH_" #E,
@@ -68,11 +68,11 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #define LOG(P, fmt, ...)                                                                           \
   do {                                                                                             \
-    using namespace ydsh;                                                                          \
+    using namespace arsh;                                                                          \
     if (useLogging && Logger::instance().checkPolicy(Logger::P)) {                                 \
       int __old = errno;                                                                           \
       Logger::Info("%s(%s):%d: " fmt, __FILE_NAME__, __func__, __LINE__, ##__VA_ARGS__);           \
@@ -82,7 +82,7 @@ public:
 
 #define LOG_IF(P, B)                                                                               \
   do {                                                                                             \
-    using namespace ydsh;                                                                          \
+    using namespace arsh;                                                                          \
     if (useLogging && Logger::instance().checkPolicy(Logger::P)) {                                 \
       B                                                                                            \
     }                                                                                              \

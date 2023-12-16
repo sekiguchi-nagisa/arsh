@@ -21,7 +21,7 @@
 
 #include "pass.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 class DiagnosticEmitter;
 
@@ -72,6 +72,6 @@ DEFINE_TCWarn(UnusedLocal, "local variable `%s' is never used");
 DEFINE_TCWarn(UnusedTypeAlias, "type alias `%s' is never used");
 DEFINE_TCWarn(UndefinedSubCmd, "may be undefined sub-command: `%s'");
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_EXTRA_CHECKER_H

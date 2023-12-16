@@ -22,7 +22,7 @@
 #include "misc/result.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 struct PCRECapture {
   size_t begin;
@@ -136,6 +136,6 @@ private:
                      size_t &outputLen);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_REGEX_WRAPPER_H

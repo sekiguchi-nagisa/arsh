@@ -3,7 +3,7 @@
 #include "misc/detect.hpp"
 #include "misc/result.hpp"
 
-using namespace ydsh;
+using namespace arsh;
 
 TEST(result, tag) {
   static_assert(TypeTag<int, std::string, int>::value == 1, "must be 1");

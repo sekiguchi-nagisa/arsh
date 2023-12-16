@@ -18,7 +18,7 @@
 #include "ordered_map.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 static int printBacktrace(const DSState &state, const ArrayObject &argvObj) {
   int errNum = 0;
@@ -365,4 +365,4 @@ int builtin_shctl(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-} // namespace ydsh
+} // namespace arsh

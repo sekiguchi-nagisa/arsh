@@ -12,7 +12,7 @@
 #ifndef YDSH_OPEN_TEST_HPP
 #define YDSH_OPEN_TEST_HPP
 
-using namespace ydsh;
+using namespace arsh;
 
 struct OpenTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {

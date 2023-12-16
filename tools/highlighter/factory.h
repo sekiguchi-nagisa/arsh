@@ -19,7 +19,7 @@
 
 #include "formatter.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 enum class FormatterType {
   NULL_,
@@ -66,6 +66,6 @@ public:
   Result<std::unique_ptr<Formatter>, std::string> create(std::ostream &stream) const;
 };
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_FACTORY_H

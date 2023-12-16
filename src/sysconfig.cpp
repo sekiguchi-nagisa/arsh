@@ -21,7 +21,7 @@
 #include "regex_wrapper.h"
 #include "sysconfig.h"
 
-namespace ydsh {
+namespace arsh {
 
 SysConfig::SysConfig() {
   this->values = {
@@ -93,4 +93,4 @@ const std::string *SysConfig::lookup(StringRef key) const {
   return nullptr;
 }
 
-} // namespace ydsh
+} // namespace arsh

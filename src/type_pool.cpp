@@ -17,7 +17,7 @@
 #include "type_pool.h"
 #include "bind.h"
 
-namespace ydsh {
+namespace arsh {
 
 // ######################
 // ##     TypePool     ##
@@ -599,7 +599,7 @@ bool TypePool::hasMethod(const DSType &recvType, const std::string &methodName) 
   return false;
 }
 
-std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
+std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate,
                                         const std::vector<const DSType *> &elementTypes) const {
   if (typeTemplate == this->getArrayTemplate()) {
     std::string str = "[";
@@ -709,8 +709,8 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
   return Ok(static_cast<DSType *>(nullptr));
 }
 
-void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool, const ydsh::DSType *super,
-                               ydsh::native_type_info_t info) {
+void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const DSType *super,
+                               native_type_info_t info) {
   // create and register type
   auto *type = this->newType<BuiltinType>(typeName, super, info);
   assert(type);
@@ -757,4 +757,4 @@ void TypePool::registerHandles(const BuiltinType &type) {
   }
 }
 
-} // namespace ydsh
+} // namespace arsh

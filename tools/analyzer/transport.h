@@ -19,7 +19,7 @@
 
 #include "../json/jsonrpc.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 using namespace json;
 
@@ -46,6 +46,6 @@ public:
   bool poll(int timeout) override;
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_TRANSPORT_H

@@ -19,7 +19,7 @@
 
 #include "../style.h"
 
-namespace ydsh::highlighter {
+namespace arsh::highlighter {
 
 DEFINE_HIGHLIGHT_STYLE(monokai) {
   constexpr auto COMMENT = ValidRule("#88846f");
@@ -44,6 +44,6 @@ DEFINE_HIGHLIGHT_STYLE(monokai) {
   };
 }
 
-} // namespace ydsh::highlighter
+} // namespace arsh::highlighter
 
 #endif // YDSH_TOOLS_HIGHLIGHTER_STYLES_MONOKAI_HPP

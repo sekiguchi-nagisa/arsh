@@ -19,7 +19,7 @@
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 struct BraceInt {
   int64_t value;
@@ -212,4 +212,4 @@ bool tryUpdateSeqValue(int64_t &cur, const BraceRange &range) {
   return true;
 }
 
-} // namespace ydsh
+} // namespace arsh

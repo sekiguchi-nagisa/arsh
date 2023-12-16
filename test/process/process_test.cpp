@@ -72,7 +72,7 @@ TEST_F(ProcTest, pty1) {
 }
 
 TEST_F(ProcTest, pty2) {
-  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
+  if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
     return; // workaround for Cygwin
   }
 
@@ -99,7 +99,7 @@ TEST_F(ProcTest, pty2) {
 }
 
 TEST_F(ProcTest, pty3) {
-  if (ydsh::platform::isCygwinOrMsys(ydsh::platform::platform())) {
+  if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
     return; // workaround for Cygwin
   }
 
@@ -158,7 +158,7 @@ TEST_F(ProcTest, pty4) {
   (void)r;
   fsync(handle.in());
   auto ret2 = handle.waitAndGetResult(false);
-  if (ydsh::platform::isWindows(ydsh::platform::platform())) {
+  if (arsh::platform::isWindows(arsh::platform::platform())) {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED);
   } else {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C");
@@ -252,7 +252,7 @@ TEST(ANSITest, width) {
   ASSERT_EQ("\x1b[1;3R", rep);
 
   screen = Screen();
-  screen.setEAW(ydsh::AmbiguousCharWidth::FULL);
+  screen.setEAW(arsh::AmbiguousCharWidth::FULL);
   rep = "";
   screen.setReporter([&](std::string &&m) { rep = std::move(m); });
   screen.interpret(line.c_str(), line.size());

@@ -18,7 +18,7 @@
 #include "misc/grapheme.hpp"
 #include "misc/word.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 // ########################
 // ##     LineBuffer     ##
@@ -301,4 +301,4 @@ void LineBuffer::trackChange(ChangeOp op, std::string &&delta, bool merge) {
   this->changeIndex = this->changes.size();
 }
 
-} // namespace ydsh
+} // namespace arsh

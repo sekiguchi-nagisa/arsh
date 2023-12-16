@@ -24,7 +24,7 @@
 #include "redir.h"
 #include "vm.h"
 
-namespace ydsh {
+namespace arsh {
 
 Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
   SignalGuard guard;
@@ -690,4 +690,4 @@ void JobTable::removeTerminatedJobs() {
   }
 }
 
-} // namespace ydsh
+} // namespace arsh

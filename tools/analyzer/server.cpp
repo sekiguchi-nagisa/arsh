@@ -21,7 +21,7 @@
 #include "source.h"
 #include "symbol.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 // #######################
 // ##     LSPServer     ##
@@ -889,4 +889,4 @@ LSPServer::prepareRename(const PrepareRenameParams &params) {
   }
 }
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp

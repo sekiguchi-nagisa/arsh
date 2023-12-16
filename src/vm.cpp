@@ -153,7 +153,7 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
   ASSERT_ARRAY_SIZE(obj);
 }
 
-namespace ydsh {
+namespace arsh {
 
 bool VM::checkCast(DSState &state, const DSType &targetType) {
   if (!instanceOf(state.typePool, state.stack.peek(), targetType)) {
@@ -2888,4 +2888,4 @@ bool VM::callTermHook(DSState &state) {
   return true;
 }
 
-} // namespace ydsh
+} // namespace arsh

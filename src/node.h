@@ -33,7 +33,7 @@
 #include "token_kind.h"
 #include "type.h"
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_NODE_KIND(OP)                                                                         \
   OP(Type)                                                                                         \
@@ -3132,6 +3132,6 @@ private:
   void writeName(const char *fieldName);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_NODE_H

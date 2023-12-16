@@ -22,13 +22,13 @@
 
 #include "source.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 /**
  * for common class for node traverse
  * if a node is untyped, not visit it
  */
-class NodePass : protected ydsh::NodeVisitor {
+class NodePass : protected arsh::NodeVisitor {
 protected:
   int64_t visitingDepth{0};
 
@@ -138,6 +138,6 @@ public:
   void add(ObserverPtr<NodePass> v) { this->passes.push_back(v); }
 };
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_CONSUMER_H

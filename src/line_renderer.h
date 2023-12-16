@@ -20,7 +20,7 @@
 #include "highlighter_base.h"
 #include "misc/grapheme.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 // high level api for unicode-aware character op
 
@@ -407,6 +407,6 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_LINE_RENDERER_H

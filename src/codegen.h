@@ -31,7 +31,7 @@
 
 #define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
 
-namespace ydsh {
+namespace arsh {
 
 class CatchBuilder {
 private:
@@ -625,6 +625,6 @@ private:
   void dumpCode(const CompiledCode &c);
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_CODEGEN_H

@@ -20,7 +20,7 @@
 #include "parser.h"
 #include "type_checker.h"
 
-namespace ydsh {
+namespace arsh {
 
 enum class FrontEndOption {
   PARSE_ONLY = 1 << 0,
@@ -270,6 +270,6 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_FRONTEND_H

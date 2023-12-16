@@ -19,7 +19,7 @@
 
 #include <string>
 
-namespace ydsh::uri {
+namespace arsh::uri {
 
 class Authority {
 private:
@@ -121,6 +121,6 @@ public:
   static std::string decode(const char *begin, const char *end);
 };
 
-} // namespace ydsh::uri
+} // namespace arsh::uri
 
 #endif // YDSH_TOOLS_URI_URI_H

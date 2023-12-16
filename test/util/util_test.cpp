@@ -7,7 +7,7 @@
 #include <misc/num_util.hpp>
 #include <misc/time_util.hpp>
 
-using namespace ydsh;
+using namespace arsh;
 
 enum class Flag : unsigned int {
   AAA = 1 << 0,
@@ -15,12 +15,12 @@ enum class Flag : unsigned int {
   CCC = 1 << 2,
 };
 
-namespace ydsh {
+namespace arsh {
 
 template <>
 struct allow_enum_bitop<Flag> : std::true_type {};
 
-} // namespace ydsh
+} // namespace arsh
 
 TEST(EnumTest, base) {
   Flag f = Flag::AAA | Flag::BBB;

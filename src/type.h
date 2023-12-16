@@ -35,7 +35,7 @@
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 enum class TYPE : unsigned int {
   Unresolved_, // for type error
@@ -1077,6 +1077,6 @@ public:
   static bool classof(const Handle *handle) { return handle->isMethodHandle(); }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TYPE_H

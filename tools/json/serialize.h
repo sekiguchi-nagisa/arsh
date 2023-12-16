@@ -19,7 +19,7 @@
 
 #include "json.h"
 
-namespace ydsh::json {
+namespace arsh::json {
 
 template <typename T>
 struct is_array : std::false_type {};
@@ -179,7 +179,7 @@ private:
         serializer.append(fieldName, JSON());
       } else if (value.tag() == N) {
         using T = typename TypeByIndex<N, R...>::type;
-        serializer(fieldName, ydsh::get<T>(value));
+        serializer(fieldName, arsh::get<T>(value));
       } else {
         ToJSON<N - 1, R...>()(serializer, fieldName, value);
       }
@@ -431,6 +431,6 @@ void jsonify(S &s, T &v) {
   }
 }
 
-} // namespace ydsh::json
+} // namespace arsh::json
 
 #endif // YDSH_TOOLS_JSON_SERIALIZE_H

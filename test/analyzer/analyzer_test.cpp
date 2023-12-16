@@ -25,8 +25,8 @@
 #error require ANALYZ_PATH
 #endif
 
-using namespace ydsh::lsp;
-using namespace ydsh;
+using namespace arsh::lsp;
+using namespace arsh;
 
 /**
  * compare analyzer output with frontend output

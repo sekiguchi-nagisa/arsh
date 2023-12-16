@@ -26,7 +26,7 @@
 #include "misc/result.hpp"
 #include "misc/string_ref.hpp"
 
-namespace ydsh {
+namespace arsh {
 
 inline bool isControlChar(int ch) { return (ch >= 0 && ch <= 31) || ch == 127; }
 
@@ -353,6 +353,6 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_KEYCODE_H

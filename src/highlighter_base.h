@@ -21,7 +21,7 @@
 
 #include "parser.h"
 
-namespace ydsh {
+namespace arsh {
 
 #define EACH_HIGHLIGHT_TOKEN_CLASS(OP)                                                             \
   OP(NONE, "none")                                                                                 \
@@ -94,6 +94,6 @@ private:
   virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_HIGHLIGHTER_BASE_H

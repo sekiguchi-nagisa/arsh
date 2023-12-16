@@ -20,7 +20,7 @@
 #include "node.h"
 #include "tlerror.h"
 
-namespace ydsh {
+namespace arsh {
 
 /**
  * for type error reporting
@@ -248,6 +248,6 @@ inline void addSuggestionSuffix(std::string &value, StringRef suggestion) {
   value += "' ?";
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_TCERROR_H

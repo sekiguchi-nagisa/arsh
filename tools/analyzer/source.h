@@ -24,7 +24,7 @@
 
 #include "lsp.h"
 
-namespace ydsh::lsp {
+namespace arsh::lsp {
 
 struct TextDocumentContentChangeEvent;
 
@@ -154,10 +154,10 @@ Optional<unsigned int> toTokenPos(StringRef content, const Position &position);
  * @param range
  * @return
  */
-Optional<ydsh::Token> toToken(StringRef content, const Range &range);
+Optional<arsh::Token> toToken(StringRef content, const Range &range);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 
-} // namespace ydsh::lsp
+} // namespace arsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_SOURCE_H

@@ -19,7 +19,7 @@
 
 #include "object.h"
 
-namespace ydsh {
+namespace arsh {
 
 class OrderedMapEntries {
 public:
@@ -299,6 +299,6 @@ public:
   }
 };
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_ORDERED_MAP_H

@@ -54,7 +54,7 @@
  *   $<param name>?  has default value
  */
 
-namespace ydsh {
+namespace arsh {
 
 using RuntimeContext = DSState;
 
@@ -2488,6 +2488,6 @@ YDSH_METHOD job_status(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #endif // YDSH_BUILTIN_H

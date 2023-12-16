@@ -24,7 +24,7 @@
 
 struct DSState;
 
-namespace ydsh {
+namespace arsh {
 
 class ArrayObject;
 
@@ -81,7 +81,7 @@ inline int maskExitStatus(int64_t status) {
   return static_cast<int>(static_cast<uint64_t>(status) & 0xFF);
 }
 
-} // namespace ydsh
+} // namespace arsh
 
 #define ERROR(ctx, obj, fmt, ...)                                                                  \
   printErrorAt(ctx, obj.getValues()[0].asStrRef(), 0, fmt, ##__VA_ARGS__)
