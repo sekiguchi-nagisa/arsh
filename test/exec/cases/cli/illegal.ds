@@ -1,6 +1,6 @@
 
 source $SCRIPT_DIR/expect.ds
 
-var out = $/^invalid option: --ho\nydsh, version .+, build by .+\nOptions:\n.+/
+var out = $/^invalid option: --ho\narsh, version .+, build by .+\nOptions:\n.+/
 
 $expectRegex("$(ds --ho 2>&1)", 1, $out)

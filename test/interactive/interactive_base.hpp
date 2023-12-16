@@ -58,7 +58,7 @@ using namespace ydsh;
 #define PROMPT this->prompt
 
 inline std::string initPrompt() {
-  std::string v = "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
+  std::string v = "arsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
   v += (getuid() == 0 ? "# " : "$ ");
   return v;
 }

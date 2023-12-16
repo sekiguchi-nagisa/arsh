@@ -328,7 +328,7 @@ assert $false
 }
 
 TEST_F(CmdlineTest, version) {
-  std::string msg = "^ydsh, version ";
+  std::string msg = "^arsh, version ";
   msg += X_INFO_VERSION;
   msg += ", build by .+\n";
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg));
@@ -447,14 +447,14 @@ TEST_F(CmdlineTest, signal) {
   str += " (core dumped)\n";
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
-        echo | call $YDSH_BIN -c 'kill -s quit $$'
+        echo | call $BIN_NAME -c 'kill -s quit $$'
         exit $?
 )");
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
 }
 
 TEST_F(CmdlineTest, execPath) {
-  ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo -n $YDSH_BIN"), 0, BIN_PATH));
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo -n $BIN_NAME"), 0, BIN_PATH));
 }
 
 TEST_F(CmdlineTest, locale) {
@@ -490,7 +490,7 @@ TEST_F(CmdlineTest2, script) {
   ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str(), "A"), 0));
   ASSERT_NO_FATAL_FAILURE(this->expect(ds("--", fileName.c_str(), "A"), 0));
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("hogehogehuga"), 1, "",
-                                            "^ydsh: cannot load file: hogehogehuga, by .+$"));
+                                            "^arsh: cannot load file: hogehogehuga, by .+$"));
 
   // script dir
   fileName =

@@ -3,25 +3,25 @@
 var src = "$SCRIPT_DIR/../../src".realpath()
 
 echo try update $src/misc/unicode_version.in
-call $YDSH_BIN $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
+call $BIN_NAME $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
 
 echo try update $src/misc/unicode_width.in
-call $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.in
+call $BIN_NAME $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.in
 
 echo try update $src/grapheme_break_property.in
-call $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_property.ds $src/misc/grapheme_break_property.in
+call $BIN_NAME $SCRIPT_DIR/gen_grapheme_break_property.ds $src/misc/grapheme_break_property.in
 
 echo try update $src/incb_property.in
-call $YDSH_BIN $SCRIPT_DIR/gen_incb_property.ds $src/misc/incb_property.in
+call $BIN_NAME $SCRIPT_DIR/gen_incb_property.ds $src/misc/incb_property.in
 
 echo try update $src/word_break_property.in
-call $YDSH_BIN $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_property.in
+call $BIN_NAME $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_property.in
 
 ## for test case
 var test = "$SCRIPT_DIR/../../test"
 
 echo try update $test/unicode/grapheme_break_test.in
-call $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.in
+call $BIN_NAME $SCRIPT_DIR/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.in
 
 echo try update $test/unicode/word_break_test.in
-call $YDSH_BIN $SCRIPT_DIR/gen_word_break_test.ds $test/unicode/word_break_test.in
+call $BIN_NAME $SCRIPT_DIR/gen_word_break_test.ds $test/unicode/word_break_test.in

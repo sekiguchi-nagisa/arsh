@@ -61,7 +61,7 @@ if (test -e /dev/full) {
 # info
 assert $reply.empty()
 assert shctl info | grep %regex | grep PCRE2
-assert shctl info | grep YDSH_VERSION | grep $YDSH_VERSION
+assert shctl info | grep VERSION | grep $VERSION
 assert shctl info | grep %compiler
 assert shctl info | grep MACHTYPE | grep $MACHTYPE
 assert shctl info | grep OSTYPE | grep $OSTYPE
@@ -75,7 +75,7 @@ assert shctl info
 assert !$reply.empty()
 assert !$reply['%regex'].empty()
 assert $reply['%regex'] =~ $/PCRE2 \d+\.\d+/
-assert $reply['YDSH_VERSION'] == $YDSH_VERSION
+assert $reply['VERSION'] == $VERSION
 assert !$reply['%compiler'].empty()
 assert $reply["MACHTYPE"] == $MACHTYPE
 assert $reply["OSTYPE"] == $OSTYPE

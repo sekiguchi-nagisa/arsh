@@ -1458,8 +1458,8 @@ TEST_F(IndexTest, hoverBuiltin) {
   // builtin variable or type alias
   ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```ydsh\nvar ?: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("hoge() { \n$@;}", 1, "```ydsh\nlet @: [String]\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$YDSH_VERSION", 0,
-                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE "'"
+  ASSERT_NO_FATAL_FAILURE(this->hover("$VERSION", 0,
+                                      "```ydsh\nconst VERSION = '" X_INFO_VERSION_CORE "'"
                                       "\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$true is\nBoolean", 1, "```ydsh\ntypedef Boolean = Bool\n```"));
@@ -1503,10 +1503,9 @@ var AAA = 'hello'
   src += tempFileFactory.getTempDirName();
   src += "/";
   int chars = static_cast<int>(src.size()) + 5;
-  src += "${YDSH_VERSION}_.ds";
+  src += "${VERSION}_.ds";
   ASSERT_NO_FATAL_FAILURE(this->hover(src.c_str(), Position{.line = 0, .character = chars},
-                                      "```ydsh\nconst YDSH_VERSION = '" X_INFO_VERSION_CORE
-                                      "'\n```"));
+                                      "```ydsh\nconst VERSION = '" X_INFO_VERSION_CORE "'\n```"));
 }
 
 TEST_F(IndexTest, hoverConst) {

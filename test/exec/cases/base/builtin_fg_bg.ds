@@ -30,21 +30,21 @@ assert bg --help 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
 
 ## show help if job control is enabled
-assert exec $YDSH_BIN -c 'shctl set monitor; fg -h' | grep '^fg: fg \[job_spec]'
+assert exec $BIN_NAME -c 'shctl set monitor; fg -h' | grep '^fg: fg \[job_spec]'
 assert $PIPESTATUS[0] == 2
-assert exec $YDSH_BIN -c 'shctl set monitor; fg --help' | grep '^fg: fg \[job_spec]'
+assert exec $BIN_NAME -c 'shctl set monitor; fg --help' | grep '^fg: fg \[job_spec]'
 assert $PIPESTATUS[0] == 2
 
-assert exec $YDSH_BIN -c 'shctl set monitor; bg -h' | grep '^bg: bg \[job_spec ...]'
+assert exec $BIN_NAME -c 'shctl set monitor; bg -h' | grep '^bg: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 2
-assert exec $YDSH_BIN -c 'shctl set monitor; bg --help' | grep '^bg: bg \[job_spec ...]'
+assert exec $BIN_NAME -c 'shctl set monitor; bg --help' | grep '^bg: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 2
 
 ## show invalid option if job control is enabled
-assert exec $YDSH_BIN -c 'shctl set monitor; fg -q' 2>&1 | grep ': fg: -q: invalid option'
+assert exec $BIN_NAME -c 'shctl set monitor; fg -q' 2>&1 | grep ': fg: -q: invalid option'
 assert $PIPESTATUS[0] == 2
 
-assert exec $YDSH_BIN -c 'shctl set monitor; bg -q' 2>&1 | grep ': bg: -q: invalid option'
+assert exec $BIN_NAME -c 'shctl set monitor; bg -q' 2>&1 | grep ': bg: -q: invalid option'
 assert $PIPESTATUS[0] == 2
 
 true

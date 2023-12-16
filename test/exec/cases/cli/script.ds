@@ -1,9 +1,9 @@
 
 source $SCRIPT_DIR/expect.ds
 
-$expect("$(call $YDSH_BIN <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
+$expect("$(call $BIN_NAME <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
 
 $expect("$(ds <(echo 'echo -n hello world!!'))", 0, 'hello world!!')
 
 ## large file
-$expectRegex("$(ds <(yes) 2>&1)", 1, $/ydsh: cannot load file: \/.+, by \`File too large'/)
+$expectRegex("$(ds <(yes) 2>&1)", 1, $/arsh: cannot load file: \/.+, by \`File too large'/)

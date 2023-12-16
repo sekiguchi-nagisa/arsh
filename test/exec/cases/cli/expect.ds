@@ -6,10 +6,10 @@ let OLD_IFS = $IFS
 $IFS = ''
 
 ds() {
-    call $YDSH_BIN $@
+    call $BIN_NAME $@
 }
 
-assert test -x $YDSH_BIN
+assert test -x $BIN_NAME
 
 function expect($out : String, $es : Int, $eout : String) {
     let s = $?

@@ -37,6 +37,8 @@
 
 #### Core
 
+- **Breaking Change**: rename project name with arsh.
+    - rename binary (`ydsh`, `ydshd`) with `arsh`, `arshd`
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
 - **Breaking Change**: need spaces between `${` and number
     - due to suppress potential syntax ambiguity
@@ -51,6 +53,9 @@
 
 #### Builtin
 
+- **Breaking Change**: rename some builtin variables
+    - `YDSH_BIN` to `BIN_NAME`
+    - `YDSH_VERSION` to `VERSION`
 - **Breaking Change**: check iterator invalidation of Array object
     - also check ``DIRSTACK`` in builtin ``pushd``, ``popd``, ``dirs`` commands
     - check object modification in ``sortWith`` method

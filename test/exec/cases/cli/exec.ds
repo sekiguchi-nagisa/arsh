@@ -33,25 +33,25 @@ $expect("$(ds -e exit 999 2>&1)", 231, $'')
 $expect("$(ds -e exec 2>&1)", 0, '')
 $expect("$(ds -e exec echo hello 2>&1)", 0, $'hello')
 $expect("$(ds -e exec -a echo echo hello 2>&1)", 0, 'hello')  # -a PROGNAME
-$expect("$(ds -e exec -a TEST $YDSH_BIN -c 'echo $0' 2>&1)", 0, 'TEST')  # -a PROGNAME
-$expect("$(ds -e exec -aca $YDSH_BIN -c 'echo $0' 2>&1)", 0, 'ca')  # -a PROGNAME
+$expect("$(ds -e exec -a TEST $BIN_NAME -c 'echo $0' 2>&1)", 0, 'TEST')  # -a PROGNAME
+$expect("$(ds -e exec -aca $BIN_NAME -c 'echo $0' 2>&1)", 0, 'ca')  # -a PROGNAME
 
 # default env
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv SHLVL)" == "1"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv PATH)" == "/bin:/usr/bin:/usr/local/bin"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv LOGNAME)" == "$(basename ~)"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv USER)" == "$(basename ~)"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv HOME)" == "$(echo ~)"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv _)" == "$(command -v printenv)"' 2>&1)", 0, '')
-$expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv PWD)" == "$(printenv OLDPWD)"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv SHLVL)" == "1"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv PATH)" == "/bin:/usr/bin:/usr/local/bin"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv LOGNAME)" == "$(basename ~)"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv USER)" == "$(basename ~)"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv HOME)" == "$(echo ~)"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv _)" == "$(command -v printenv)"' 2>&1)", 0, '')
+$expect("$(ds -e exec -c $BIN_NAME -c 'assert "$(printenv PWD)" == "$(printenv OLDPWD)"' 2>&1)", 0, '')
 
 if $OSTYPE =~ $/cygwin/i {
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert (checkenv WINDIR)' 2>&1)", 0, '')
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert (checkenv SYSTEMROOT)' 2>&1)", 0, '')
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 10' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $BIN_NAME -c 'assert (checkenv WINDIR)' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $BIN_NAME -c 'assert (checkenv SYSTEMROOT)' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $BIN_NAME -c 'assert $(printenv).size() == 10' 2>&1)", 0, '')
 } else {
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 8' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $BIN_NAME -c 'assert $(printenv).size() == 8' 2>&1)", 0, '')
 }
 
 # invalid option
-$expect("$(ds -e exec -u 2>&1)", 2, $'ydsh: exec: -u: invalid option\nexec: exec [-c] [-a name] file [args ...]')
+$expect("$(ds -e exec -u 2>&1)", 2, $'arsh: exec: -u: invalid option\nexec: exec [-c] [-a name] file [args ...]')

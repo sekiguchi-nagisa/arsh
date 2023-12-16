@@ -238,9 +238,9 @@ TEST_F(InteractiveTest, cmdsub_ctrlz2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  // launch new ydsh (new process group)
-  this->sendLine("call $YDSH_BIN --quiet --norc");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "call $YDSH_BIN --quiet --norc\n" + PROMPT));
+  // launch new arsh (new process group)
+  this->sendLine("call $BIN_NAME --quiet --norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "call $BIN_NAME --quiet --norc\n" + PROMPT));
 
   const char *line = "var a = $(while(true){})";
   this->sendLine(line);
@@ -277,8 +277,8 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  // launch new ydsh with force interactive
-  const char *line = "var aa = $(call $YDSH_BIN -i --quiet --norc < /dev/null)";
+  // launch new arsh with force interactive
+  const char *line = "var aa = $(call $BIN_NAME -i --quiet --norc < /dev/null)";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
 
@@ -386,9 +386,9 @@ TEST_F(InteractiveTest, bg1) {
   }
 
   // disable monitor option
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read &'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read | __gets &'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
@@ -410,9 +410,9 @@ TEST_F(InteractiveTest, bg2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   // disable monitor option
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read &!'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &!'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $YDSH_BIN -c 'read | __gets &|'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &|'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }

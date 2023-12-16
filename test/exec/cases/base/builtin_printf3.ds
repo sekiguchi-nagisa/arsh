@@ -8,7 +8,7 @@ assert "$(printf -v var '%#*x' -2147483648 9999 2>&1)" ==
     "${$SCRIPT_NAME.basename()}:7: printf: INT32_MIN is not allowed in width"
 
 # assert "$(printf -v va '%.212374823d%.2123741823e' 2>&1)" =~
-#     $/ydsh: printf: format failed, caused by .+memory.*/
+#     $/arsh: printf: format failed, caused by .+memory.*/
 
 assert "$(printf -v va '%212374823s%2123741823d' a 2>&1)" =~
     $/: printf: format failed, caused by .+memory.*/

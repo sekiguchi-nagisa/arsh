@@ -19,8 +19,8 @@ let _cache = [
     'H' : $_escape("$(uname -n)"),
     's' : $_escape($0.basename()),
     'u' : $_escape("$(whoami)"),
-    'v' : $YDSH_VERSION.slice(0, $YDSH_VERSION.lastIndexOf('.')),
-    'V' : $YDSH_VERSION,
+    'v' : $VERSION.slice(0, $VERSION.lastIndexOf('.')),
+    'V' : $VERSION,
     '$' : $UID == 0 ? '#' : '$',
 ]
 

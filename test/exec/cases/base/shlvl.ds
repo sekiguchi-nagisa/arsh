@@ -3,22 +3,22 @@
 ## unlike to bash, SHLVL is up to INT64_MAX (in bash 4.4, up to 999)
 
 ## increment if within range (0〜INT64_MAX)
-assert "$(SHLVL=0 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL=1 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=2"
-assert "$(SHLVL=9223372036854775805 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=9223372036854775806"
-assert "$(SHLVL=9223372036854775806 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=9223372036854775807"
+assert "$(SHLVL=0 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=1 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=2"
+assert "$(SHLVL=9223372036854775805 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=9223372036854775806"
+assert "$(SHLVL=9223372036854775806 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=9223372036854775807"
 
 ## if SHLVL is greater than INT64_MAX, reset to 1
-assert "$(SHLVL=9223372036854775807 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=9223372036854775807 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
 
 ## if SHLVL is not number (also include not set, empty, out-of-range number), reset to 1
-assert "$(SHLVL=9223372036854775808 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range
-assert "$(SHLVL=hgiare call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL='' call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL= call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=9223372036854775808 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range
+assert "$(SHLVL=hgiare call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL='' call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL= call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
 
 ## if SHLVL is negative number, reset to 1
-assert "$(SHLVL=-1 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL=-9223372036854775808 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL=-9223372036854775807 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"
-assert "$(SHLVL=-9223372036854775809 call $YDSH_BIN -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range
+assert "$(SHLVL=-1 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=-9223372036854775808 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=-9223372036854775807 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
+assert "$(SHLVL=-9223372036854775809 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range

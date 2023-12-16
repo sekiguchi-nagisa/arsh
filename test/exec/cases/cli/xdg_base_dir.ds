@@ -13,9 +13,9 @@ $expect("$(XDG_DATA_HOME= ds -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/ar
 $expect("$(XDG_DATA_HOME= ds -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
 
 ## unset
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/arsh")
-$expect("$(exec -c $YDSH_BIN -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
+$expect("$(exec -c $BIN_NAME -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")
+$expect("$(exec -c $BIN_NAME -c 'echo -n $DATA_HOME')", 0, "$dir/.local/share/arsh")
+$expect("$(exec -c $BIN_NAME -c 'echo -n $MODULE_HOME')", 0, "$dir/.local/share/arsh/modules")
 
 ## invalid path
 $expect("$(XDG_CONFIG_HOME=faieurhjofije ds -c 'echo -n $CONFIG_HOME')", 0, "$dir/.config/arsh")

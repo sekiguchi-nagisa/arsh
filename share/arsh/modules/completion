@@ -114,7 +114,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             }
             1 => {
                 var ret : [String]
-                for line in <(call $YDSH_BIN -c "$arg") {
+                for line in <(call $BIN_NAME -c "$arg") {
                     if $line.startsWith($prefix) {
                         $ret.add($line)
                     }

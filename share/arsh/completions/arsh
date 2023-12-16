@@ -3,7 +3,7 @@
 source $SCRIPT_DIR/../modules/completion
 
 ## arsh completion
-call $YDSH_BIN --help | grep '  -' | cut -d ' ' -f 3 | cut -d '[' -f 1 |
+call $BIN_NAME --help | grep '  -' | cut -d ' ' -f 3 | cut -d '[' -f 1 |
 for $line in $STDIN {
     var k = $line.startsWith('--') ? "--long" : "--short"
     var o = $line.startsWith('--') ? $line.slice(2) : $line.slice(1)

@@ -84,7 +84,7 @@ constexpr const char *VAR_SIG_IGN = "SIG_IGN";
 constexpr const char *VAR_TERM_HOOK = "TERM_HOOK";
 constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 
-constexpr const char *VAR_YDSH_BIN = "YDSH_BIN";
+constexpr const char *VAR_BIN_NAME = "BIN_NAME";
 constexpr const char *VAR_IFS = "IFS";
 constexpr const char *VAR_THIS = "this"; // for method receiver
 constexpr const char *VAR_ARGS = "ARGS";

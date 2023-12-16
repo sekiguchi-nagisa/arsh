@@ -21,10 +21,10 @@ include(GenLexer)
 #     project version      #
 #++++++++++++++++++++++++++#
 
-set(YDSH_STABLE_RELEASE off)
-set(YDSH_VERSION ${PROJECT_VERSION})
-if (NOT ${YDSH_STABLE_RELEASE})
-    set(YDSH_VERSION ${YDSH_VERSION}-unstable)
+set(ARSH_STABLE_RELEASE off)
+set(ARSH_VERSION ${PROJECT_VERSION})
+if (NOT ${ARSH_STABLE_RELEASE})
+    set(ARSH_VERSION ${ARSH_VERSION}-unstable)
 endif ()
 
 

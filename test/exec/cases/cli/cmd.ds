@@ -1,7 +1,7 @@
 
 source $SCRIPT_DIR/expect.ds
 
-$expect("$(ds -c 'assert $0 == "$YDSH_BIN"' 2>&1)", 0, '')
+$expect("$(ds -c 'assert $0 == "$BIN_NAME"' 2>&1)", 0, '')
 
 $expect("$(ds -c 'assert $000 == "A"; assert $@.size() == 1; assert $@[0] == "G"' A G 2>&1)", 0, '')
 

@@ -97,7 +97,7 @@ bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const cha
   });
   std::string out;
   if (sourceName.empty()) {
-    out += "ydsh: ";
+    out += "arsh: ";
   } else {
     StringRef ref = sourceName;
     if (auto r = ref.lastIndexOf("/"); r != StringRef ::npos) {

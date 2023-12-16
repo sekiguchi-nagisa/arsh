@@ -51,6 +51,6 @@ sleep 1
 
 assert $SECONDS != $sec
 
-# YDSH_BIN
-assert !$YDSH_BIN.empty()
-assert test -e "$YDSH_BIN"
+# BIN_NAME
+assert !$BIN_NAME.empty()
+assert test -e "$BIN_NAME"

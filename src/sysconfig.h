@@ -27,7 +27,7 @@ namespace ydsh {
   OP(UNICODE, "%unicode")
 
 #define EACH_SYSCONFIG_EXPORTED(OP)                                                                \
-  OP(VERSION, "YDSH_VERSION")                                                                      \
+  OP(VERSION, "VERSION")                                                                           \
   OP(OSTYPE, "OSTYPE")                                                                             \
   OP(MACHTYPE, "MACHTYPE")                                                                         \
   OP(CONFIG_HOME, "CONFIG_HOME")                                                                   \

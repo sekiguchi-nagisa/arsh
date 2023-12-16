@@ -9,7 +9,7 @@ echo hello; true' 2>&1 > /dev/null)", 0,
 
 $expect("$(ds -x -e echo hello 2>&1 > /dev/null)", 0, "+ echo hello")
 
-var stdin = "$(echo 'echo $SCRIPT_NAME'| call $YDSH_BIN)"
+var stdin = "$(echo 'echo $SCRIPT_NAME'| call $BIN_NAME)"
 $expect("$(echo echo hello | ds -x 2>&1 > /dev/null)", 0, "+ $stdin:1> echo hello")
 
 ## disable

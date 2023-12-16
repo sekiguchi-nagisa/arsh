@@ -4,7 +4,7 @@ TEST_F(InteractiveTest, ctrld1) {
   this->invoke("--norc");
 
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  std::string re = "ydsh, version .+, build by .+\nCopy.+\nydsh-.+";
+  std::string re = "arsh, version .+, build by .+\nCopy.+\narsh-.+";
   re += (getuid() == 0 ? "# " : "\\$ ");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(re););
   this->send(CTRL_D);

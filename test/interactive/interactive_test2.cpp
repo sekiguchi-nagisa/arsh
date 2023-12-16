@@ -137,7 +137,7 @@ TEST_F(InteractiveTest, rc3) {
 TEST_F(InteractiveTest, rc4) {
   this->invoke("--quiet", "--rcfile", ".");
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "",
-                                              "ydsh: cannot load file: ., by `Is a directory'\n"));
+                                              "arsh: cannot load file: ., by `Is a directory'\n"));
 }
 
 TEST_F(InteractiveTest, rc5) {

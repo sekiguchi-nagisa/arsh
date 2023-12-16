@@ -225,7 +225,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   /**
    * must be StringObject
    */
-  binder.bind(VAR_YDSH_BIN, "");
+  binder.bind(VAR_BIN_NAME, "");
 
   // builtin system constant
 #define GEN_BIND(E, S) binder.bindSysConst(config, SysConfig::E);

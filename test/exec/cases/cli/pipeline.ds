@@ -1,17 +1,17 @@
 
 source $SCRIPT_DIR/expect.ds
 
-$expect("$(echo -n 'assert $0 == "$YDSH_BIN"' | ds 2>&1)", 0, "")
+$expect("$(echo -n 'assert $0 == "$BIN_NAME"' | ds 2>&1)", 0, "")
 
 $expect("$(echo -n '\' | ds 2>&1)", 0, "")
 
 # with arguments
 var cmd = '
-assert $0 == "$YDSH_BIN"
+assert $0 == "$BIN_NAME"
 assert $1 == "hoge"
 assert $2 == "123"
 '
 $expect("$(echo -n $cmd | ds -s hoge 123 2>&1)", 0, "")
 
 ## large input
-$expectRegex("$(yes | ds 2>&1)", 1, $/ydsh: cannot load file: \/.+, by \`File too large'/)
+$expectRegex("$(yes | ds 2>&1)", 1, $/arsh: cannot load file: \/.+, by \`File too large'/)

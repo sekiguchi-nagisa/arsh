@@ -143,11 +143,11 @@ TEST_F(APITest, version) {
   ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor);
   ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch);
   ASSERT_TRUE(v);
-  ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
+  ASSERT_TRUE(ydsh::StringRef(v).startsWith("arsh, version "));
 
   v = DSState_version(nullptr);
   ASSERT_TRUE(v);
-  ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
+  ASSERT_TRUE(ydsh::StringRef(v).startsWith("arsh, version "));
 }
 
 TEST_F(APITest, config) {
@@ -742,7 +742,7 @@ TEST_F(APITest, module2) {
   });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
-                   "ydsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
+                   "arsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
 
   auto e = newError();
   int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, e.get());
@@ -812,7 +812,7 @@ TEST_F(APITest, module5) {
   });
   ASSERT_NO_FATAL_FAILURE(
       this->expect(ret, 1, WaitStatus::EXITED, "",
-                   "ydsh: cannot load file: freijjfeir, by `No such file or directory'"));
+                   "arsh: cannot load file: freijjfeir, by `No such file or directory'"));
 }
 
 TEST_F(APITest, module6) {

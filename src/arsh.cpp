@@ -22,7 +22,6 @@
 #include "binder.h"
 #include "compiler.h"
 #include "line_editor.h"
-#include "logger.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "vm.h"
@@ -367,7 +366,7 @@ static CompileOption getCompileOption(const DSState &st) {
 }
 
 static void reportFileError(const char *sourceName, int errNum, DSError *e) {
-  fprintf(stderr, "ydsh: cannot load file: %s, by `%s'\n", sourceName, strerror(errNum));
+  fprintf(stderr, "arsh: cannot load file: %s, by `%s'\n", sourceName, strerror(errNum));
   if (e) {
     *e = {.kind = DS_ERROR_KIND_FILE_ERROR,
           .fileName = strdup(sourceName),
@@ -478,7 +477,7 @@ const char *DSState_version(DSVersion *version) {
     version->minor = X_INFO_MINOR_VERSION;
     version->patch = X_INFO_PATCH_VERSION;
   }
-  return "ydsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
+  return "arsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
 const char *DSState_copyright() { return "Copyright (C) 2015-2023 Nagisa Sekiguchi"; }
@@ -544,7 +543,7 @@ static char *getExecutablePath() {
 const char *DSState_initExecutablePath(DSState *st) {
   GUARD_NULL(st, nullptr);
 
-  auto handle = st->rootModScope->lookup(VAR_YDSH_BIN);
+  auto handle = st->rootModScope->lookup(VAR_BIN_NAME);
   assert(handle);
   const char *ret = st->getGlobal(handle.asOk()->getIndex()).asCStr();
   if (*ret) {
@@ -563,9 +562,9 @@ static const char *defaultPrompt() {
 #define STR(v) XSTR(v)
 
   if (getuid()) {
-    return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
+    return "arsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
   } else {
-    return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "# ";
+    return "arsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "# ";
   }
 
 #undef XSTR
