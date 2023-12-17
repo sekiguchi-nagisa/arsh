@@ -108,9 +108,9 @@ const char *resolveBinaryOpName(TokenKind op) {
   case TokenKind::XOR:
     return OP_XOR;
   case TokenKind::MATCH:
-    return OP_SEARCH;
+    return OP_MATCH;
   case TokenKind::UNMATCH:
-    return OP_UNSEARCH;
+    return OP_UNMATCH;
   default:
     fatal("unsupported binary op: %s\n", toString(op));
   }

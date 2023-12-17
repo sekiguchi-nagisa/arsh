@@ -136,8 +136,8 @@ constexpr const char *OP_AND = DEFINE_BINARY_OP_NAME("and");
 constexpr const char *OP_OR = DEFINE_BINARY_OP_NAME("or");
 constexpr const char *OP_XOR = DEFINE_BINARY_OP_NAME("xor");
 
-constexpr const char *OP_SEARCH = DEFINE_BINARY_OP_NAME("=~");
-constexpr const char *OP_UNSEARCH = DEFINE_BINARY_OP_NAME("!~");
+constexpr const char *OP_MATCH = DEFINE_BINARY_OP_NAME("=~");
+constexpr const char *OP_UNMATCH = DEFINE_BINARY_OP_NAME("!~");
 
 #undef DEFINE_BINARY_OP_NAME
 

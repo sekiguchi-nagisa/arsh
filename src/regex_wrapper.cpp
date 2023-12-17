@@ -106,17 +106,17 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
 
   uint32_t option = toRegexFlag(flag);
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
-  int errorCode;
-  PCRE2_SIZE errorOffset;
+  int errcode;
+  PCRE2_SIZE erroffset;
   pcre2_code *code =
-      pcre2_compile(reinterpret_cast<const PCRE2_SPTR>(pattern.data()), PCRE2_ZERO_TERMINATED,
-                    option, &errorCode, &errorOffset, compileCtx.get());
+      pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), PCRE2_ZERO_TERMINATED, option,
+                    &errcode, &erroffset, compileCtx.get());
   pcre2_match_data *data = nullptr;
   if (code) {
     data = pcre2_match_data_create_from_pattern(code, nullptr);
   } else {
     PCRE2_UCHAR buffer[256];
-    pcre2_get_error_message(errorCode, buffer, sizeof(buffer));
+    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
     errorStr = reinterpret_cast<const char *>(buffer);
   }
   return PCRE(strdup(pattern.data()), code, data);
@@ -166,7 +166,7 @@ PCRECompileFlag PCRE::getCompileFlag() const {
 
 #ifdef USE_PCRE
   uint32_t option = 0;
-  pcre2_pattern_info(static_cast<const pcre2_code *>(this->code), PCRE2_INFO_ARGOPTIONS, &option);
+  pcre2_pattern_info(static_cast<pcre2_code *>(this->code), PCRE2_INFO_ARGOPTIONS, &option);
 
 #define GEN_FLAG(E, B, C)                                                                          \
   if (hasFlag(option, PCRE2_##E)) {                                                                \
@@ -181,9 +181,9 @@ PCRECompileFlag PCRE::getCompileFlag() const {
 
 int PCRE::match(StringRef ref, std::string &errorStr) {
 #ifdef USE_PCRE
-  int matchCount = pcre2_match(static_cast<const pcre2_code *>(this->code),
-                               reinterpret_cast<const PCRE2_SPTR>(ref.data()), ref.size(), 0, 0,
-                               static_cast<pcre2_match_data *>(this->data), nullptr);
+  int matchCount =
+      pcre2_match(static_cast<pcre2_code *>(this->code), reinterpret_cast<PCRE2_SPTR>(ref.data()),
+                  ref.size(), 0, 0, static_cast<pcre2_match_data *>(this->data), nullptr);
   if (matchCount == PCRE2_ERROR_NOMATCH) {
     matchCount = 0;
   }
@@ -269,11 +269,11 @@ int PCRE::substitute(StringRef target, StringRef replacement, bool global, const
 int PCRE::substituteImpl(StringRef target, StringRef replacement, unsigned int option, char *output,
                          size_t &outputLen) {
 #ifdef USE_PCRE
-  return pcre2_substitute(static_cast<const pcre2_code *>(this->code),
-                          reinterpret_cast<const PCRE2_SPTR>(target.data()), target.size(), 0,
-                          option, static_cast<pcre2_match_data *>(this->data), nullptr,
-                          reinterpret_cast<const PCRE2_SPTR>(replacement.data()),
-                          replacement.size(), reinterpret_cast<PCRE2_UCHAR *>(output), &outputLen);
+  return pcre2_substitute(static_cast<pcre2_code *>(this->code),
+                          reinterpret_cast<PCRE2_SPTR>(target.data()), target.size(), 0, option,
+                          static_cast<pcre2_match_data *>(this->data), nullptr,
+                          reinterpret_cast<PCRE2_SPTR>(replacement.data()), replacement.size(),
+                          reinterpret_cast<PCRE2_UCHAR *>(output), &outputLen);
 
 #else
   (void)target;

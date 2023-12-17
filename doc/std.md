@@ -159,9 +159,9 @@ function toFloat(): Float? for String
 
 function %OP_ITER(): StringIter for String
 
-function %OP_SEARCH(re: Regex): Bool for String
+function %OP_MATCH(re: Regex): Bool for String
 
-function %OP_UNSEARCH(re: Regex): Bool for String
+function %OP_UNMATCH(re: Regex): Bool for String
 
 function realpath(): String for String
 
@@ -252,9 +252,9 @@ function isMultiLine(): Bool for Regex
 
 function isDotAll(): Bool for Regex
 
-function %OP_SEARCH(target: String): Bool for Regex
+function %OP_MATCH(target: String): Bool for Regex
 
-function %OP_UNSEARCH(target: String): Bool for Regex
+function %OP_UNMATCH(target: String): Bool for Regex
 
 function match(target: String): [String?] for Regex
 
