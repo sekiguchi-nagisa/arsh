@@ -179,14 +179,70 @@ std::string DSValue::toString() const {
   }
   case ObjectKind::Regex:
     return typeAs<RegexObject>(*this).getStr();
-  case ObjectKind::Array:
-    return typeAs<ArrayObject>(*this).toString();
-  case ObjectKind::OrderedMap:
-    return typeAs<OrderedMapObject>(*this).toString();
-  case ObjectKind::Base:
-    return typeAs<BaseObject>(*this).toString();
-  case ObjectKind::Func:
-    return typeAs<FuncObject>(*this).toString();
+  case ObjectKind::Array: {
+    auto &values = typeAs<ArrayObject>(*this).getValues();
+    std::string str = "[";
+    unsigned int size = values.size();
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        str += ", ";
+      }
+      str += values[i].toString();
+    }
+    str += "]";
+    return str;
+  }
+  case ObjectKind::OrderedMap: {
+    auto &entries = typeAs<OrderedMapObject>(*this).getEntries();
+    std::string ret = "[";
+    unsigned int count = 0;
+    for (auto &e : entries) {
+      if (!e) {
+        continue;
+      }
+      if (count++ > 0) {
+        ret += ", ";
+      }
+      ret += e.getKey().toString();
+      ret += " : ";
+      ret += e.getValue().toString();
+    }
+    ret += "]";
+    return ret;
+  }
+  case ObjectKind::Base: { // for tuple
+    auto &obj = typeAs<BaseObject>(*this);
+    unsigned int fieldSize = obj.getFieldSize();
+    std::string value = "(";
+    for (unsigned int i = 0; i < fieldSize; i++) {
+      if (i > 0) {
+        value += ", ";
+      }
+      value += obj[i].toString();
+    }
+    value += ")";
+    return value;
+  }
+  case ObjectKind::Func: {
+    auto &obj = typeAs<FuncObject>(*this);
+    std::string str;
+    switch (obj.getCode().getKind()) {
+    case CodeKind::TOPLEVEL:
+      str += OBJ_MOD_PREFIX;
+      break;
+    case CodeKind::FUNCTION:
+      str += "function(";
+      break;
+    case CodeKind::USER_DEFINED_CMD:
+      str += "command(";
+      break;
+    default:
+      break;
+    }
+    str += obj.getCode().getName();
+    str += ")";
+    return str;
+  }
   case ObjectKind::Closure: {
     char buf[32]; // hex of 64bit pointer is up to 16 chars
     snprintf(buf, std::size(buf), "closure(0x%zx)",
@@ -501,19 +557,6 @@ int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
 // ##     Array_Object     ##
 // ##########################
 
-std::string ArrayObject::toString() const {
-  std::string str = "[";
-  unsigned int size = this->values.size();
-  for (unsigned int i = 0; i < size; i++) {
-    if (i > 0) {
-      str += ", ";
-    }
-    str += this->values[i].toString();
-  }
-  str += "]";
-  return str;
-}
-
 bool ArrayObject::append(DSState &state, DSValue &&obj) {
   if (unlikely(!this->checkIteratorInvalidation(state))) {
     return false;
@@ -603,18 +646,6 @@ BaseObject::~BaseObject() {
   for (unsigned int i = 0; i < this->fieldSize; i++) {
     (*this)[this->fieldSize - 1 - i].~DSValue(); // destruct object reverse order
   }
-}
-
-std::string BaseObject::toString() const {
-  std::string value = "(";
-  for (unsigned int i = 0; i < this->fieldSize; i++) {
-    if (i > 0) {
-      value += ", ";
-    }
-    value += (*this)[i].toString();
-  }
-  value += ")";
-  return value;
 }
 
 bool CmdArgsBuilder::add(DSValue &&arg) {
@@ -787,30 +818,6 @@ StackTraceElement CompiledCode::toTraceElement(unsigned int index) const {
     break;
   }
   return {this->sourceName, lineNum, std::move(callableName)};
-}
-
-// ########################
-// ##     FuncObject     ##
-// ########################
-
-std::string FuncObject::toString() const {
-  std::string str;
-  switch (this->code.getKind()) {
-  case CodeKind::TOPLEVEL:
-    str += OBJ_MOD_PREFIX;
-    break;
-  case CodeKind::FUNCTION:
-    str += "function(";
-    break;
-  case CodeKind::USER_DEFINED_CMD:
-    str += "command(";
-    break;
-  default:
-    break;
-  }
-  str += this->code.getName();
-  str += ")";
-  return str;
 }
 
 // ###########################

@@ -793,8 +793,6 @@ public:
 
   size_t size() const { return this->values.size(); }
 
-  std::string toString() const;
-
   void append(DSValue &&obj) { this->values.push_back(std::move(obj)); }
 
   void append(const DSValue &obj) { this->values.push_back(obj); }
@@ -927,9 +925,6 @@ public:
   }
 
   unsigned int getFieldSize() const { return this->fieldSize; }
-
-  // for tuple type
-  std::string toString() const;
 };
 
 template <typename... Arg>
@@ -1237,8 +1232,6 @@ public:
       : ObjectWithRtti(funcType), code(std::move(callable)) {}
 
   const CompiledCode &getCode() const { return this->code; }
-
-  std::string toString() const;
 };
 
 class ClosureObject : public ObjectWithRtti<ObjectKind::Closure> {

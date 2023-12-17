@@ -309,24 +309,6 @@ DSValue OrderedMapObject::put(DSState &st, DSValue &&key, DSValue &&value) {
   }
 }
 
-std::string OrderedMapObject::toString() const {
-  std::string ret = "[";
-  unsigned int count = 0;
-  for (auto &e : this->entries) {
-    if (!e) {
-      continue;
-    }
-    if (count++ > 0) {
-      ret += ", ";
-    }
-    ret += e.getKey().toString();
-    ret += " : ";
-    ret += e.getValue().toString();
-  }
-  ret += "]";
-  return ret;
-}
-
 DSValue OrderedMapIterObject::next(TypePool &pool) {
   auto &entry = this->nextEntry();
   const auto *keyType = &pool.get(entry.getKey().getTypeID());

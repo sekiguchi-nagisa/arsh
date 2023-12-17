@@ -250,8 +250,6 @@ public:
    */
   [[nodiscard]] DSValue put(DSState &st, DSValue &&key, DSValue &&value);
 
-  std::string toString() const;
-
 private:
   struct ProbeState {
     unsigned int keyHash;
