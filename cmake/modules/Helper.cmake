@@ -24,3 +24,12 @@ macro(assert_type_size TYPE SIZE VAR)
         message(FATAL_ERROR "expect ${SIZE}")
     endif ()
 endmacro()
+
+macro(install_symlink_bindir old_bin new_bin)
+    install(CODE "execute_process(\
+        COMMAND ${CMAKE_COMMAND} -E create_symlink \
+        ${CMAKE_INSTALL_FULL_BINDIR}/${old_bin} \
+        ${CMAKE_INSTALL_FULL_BINDIR}/${new_bin})")
+    install(CODE
+            "message(STATUS \"Create symlink: ${old_bin} to ${CMAKE_INSTALL_FULL_BINDIR}/${new_bin}\")")
+endmacro()

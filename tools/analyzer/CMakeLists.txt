@@ -31,3 +31,4 @@ target_link_libraries(${LSP_SRV} arshd_static arsh_static jsonrpc uri process hi
 install(TARGETS ${LSP_SRV}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install_symlink_bindir(${LSP_SRV} "ydshd")

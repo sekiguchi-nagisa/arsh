@@ -320,7 +320,7 @@ endif ()
 
 #install(DIRECTORY etc/ DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR})
 install(DIRECTORY share/ DESTINATION ${CMAKE_INSTALL_FULL_DATADIR})
-
+install_symlink_bindir(${BIN_NAME} "ydsh")
 
 #++++++++++++++++++++#
 #     setup test     #
