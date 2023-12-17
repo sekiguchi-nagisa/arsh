@@ -251,7 +251,6 @@ public:
   [[nodiscard]] DSValue put(DSState &st, DSValue &&key, DSValue &&value);
 
   std::string toString() const;
-  bool opStr(StrBuilder &builder) const;
 
 private:
   struct ProbeState {

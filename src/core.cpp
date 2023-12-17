@@ -51,6 +51,7 @@ void reassignReplyVar(DSState &st) {
 }
 
 void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
+  assert(message.size() <= SYS_LIMIT_STRING_MAX);
   auto except = ErrorObject::newError(st, st.typePool.get(type),
                                       DSValue::createStr(std::move(message)), status);
   st.throwObject(std::move(except));

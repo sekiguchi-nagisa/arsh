@@ -230,14 +230,81 @@ bool DSValue::opStr(StrBuilder &builder) const {
   }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
-    case ObjectKind::Array:
-      return typeAs<ArrayObject>(*this).opStr(builder);
-    case ObjectKind::OrderedMap:
-      return typeAs<OrderedMapObject>(*this).opStr(builder);
-    case ObjectKind::Base:
-      return typeAs<BaseObject>(*this).opStrAsTupleRecord(builder);
-    case ObjectKind::Error:
-      return typeAs<ErrorObject>(*this).opStr(builder);
+    case ObjectKind::Array: {
+      auto &values = typeAs<ArrayObject>(*this).getValues();
+      TRY(builder.add("["));
+      unsigned int size = values.size();
+      for (unsigned int i = 0; i < size; i++) {
+        if (i > 0) {
+          TRY(builder.add(", "));
+        }
+        TRY(values[i].opStr(builder));
+      }
+      return builder.add("]");
+    }
+    case ObjectKind::OrderedMap: {
+      auto &entries = typeAs<OrderedMapObject>(*this).getEntries();
+      TRY(builder.add("["));
+      unsigned int count = 0;
+      for (auto &e : entries) {
+        if (!e) {
+          continue;
+        }
+        if (count++ > 0) {
+          TRY(builder.add(", "));
+        }
+        TRY(e.getKey().opStr(builder));
+        TRY(builder.add(" : "));
+        TRY(e.getValue().opStr(builder));
+      }
+      return builder.add("]");
+    }
+    case ObjectKind::Base: {
+      auto &obj = typeAs<BaseObject>(*this);
+      auto &type = builder.getState().typePool.get(this->getTypeID());
+      if (type.isTupleType()) {
+        TRY(builder.add("("));
+        unsigned int size = obj.getFieldSize();
+        for (unsigned int i = 0; i < size; i++) {
+          if (i > 0) {
+            TRY(builder.add(", "));
+          }
+          TRY(obj[i].opStr(builder));
+        }
+        if (size == 1) {
+          TRY(builder.add(","));
+        }
+        return builder.add(")");
+      } else {
+        assert(type.isRecordOrDerived());
+        auto &recordType = cast<RecordType>(type);
+        TRY(builder.add("{"));
+        unsigned int size = obj.getFieldSize();
+        std::vector<StringRef> buf;
+        buf.resize(size);
+        for (auto &e : recordType.getHandleMap()) {
+          if (e.second->is(HandleKind::TYPE_ALIAS)) {
+            continue;
+          }
+          buf[e.second->getIndex()] = e.first;
+        }
+        for (unsigned int i = 0; i < size; i++) {
+          if (i > 0) {
+            TRY(builder.add(", "));
+          }
+          TRY(builder.add(buf[i]));
+          TRY(builder.add(" : "));
+          TRY(obj[i].opStr(builder));
+        }
+        return builder.add("}");
+      }
+    }
+    case ObjectKind::Error: {
+      auto &obj = typeAs<ErrorObject>(*this);
+      auto ref = obj.getMessage().asStrRef();
+      return builder.add(builder.getState().typePool.get(this->getTypeID()).getNameRef()) &&
+             builder.add(": ") && builder.add(ref);
+    }
     default:
       break;
     }
@@ -447,18 +514,6 @@ std::string ArrayObject::toString() const {
   return str;
 }
 
-bool ArrayObject::opStr(StrBuilder &builder) const {
-  TRY(builder.add("["));
-  unsigned int size = this->values.size();
-  for (unsigned int i = 0; i < size; i++) {
-    if (i > 0) {
-      TRY(builder.add(", "));
-    }
-    TRY(this->values[i].opStr(builder));
-  }
-  return builder.add("]");
-}
-
 bool ArrayObject::append(DSState &state, DSValue &&obj) {
   if (unlikely(!this->checkIteratorInvalidation(state))) {
     return false;
@@ -562,46 +617,6 @@ std::string BaseObject::toString() const {
   return value;
 }
 
-bool BaseObject::opStrAsTupleRecord(StrBuilder &builder) const {
-  auto &type = builder.getState().typePool.get(this->getTypeID());
-  if (type.isTupleType()) {
-    TRY(builder.add("("));
-    unsigned int size = this->getFieldSize();
-    for (unsigned int i = 0; i < size; i++) {
-      if (i > 0) {
-        TRY(builder.add(", "));
-      }
-      TRY((*this)[i].opStr(builder));
-    }
-    if (size == 1) {
-      TRY(builder.add(","));
-    }
-    return builder.add(")");
-  } else {
-    assert(type.isRecordOrDerived());
-    auto &recordType = cast<RecordType>(type);
-    TRY(builder.add("{"));
-    unsigned int size = this->getFieldSize();
-    std::vector<StringRef> buf;
-    buf.resize(size);
-    for (auto &e : recordType.getHandleMap()) {
-      if (e.second->is(HandleKind::TYPE_ALIAS)) {
-        continue;
-      }
-      buf[e.second->getIndex()] = e.first;
-    }
-    for (unsigned int i = 0; i < size; i++) {
-      if (i > 0) {
-        TRY(builder.add(", "));
-      }
-      TRY(builder.add(buf[i]));
-      TRY(builder.add(" : "));
-      TRY((*this)[i].opStr(builder));
-    }
-    return builder.add("}");
-  }
-}
-
 bool CmdArgsBuilder::add(DSValue &&arg) {
   GUARD_RECURSION(this->state);
 
@@ -676,12 +691,6 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
 // ##########################
 // ##     Error_Object     ##
 // ##########################
-
-bool ErrorObject::opStr(StrBuilder &builder) const {
-  auto ref = this->message.asStrRef();
-  return builder.add(builder.getState().typePool.get(this->getTypeID()).getNameRef()) &&
-         builder.add(": ") && builder.add(ref);
-}
 
 void ErrorObject::printStackTrace(const DSState &state, PrintOp op) const {
   // print header

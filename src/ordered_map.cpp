@@ -327,30 +327,6 @@ std::string OrderedMapObject::toString() const {
   return ret;
 }
 
-#define TRY(E)                                                                                     \
-  do {                                                                                             \
-    if (unlikely(!(E))) {                                                                          \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
-
-bool OrderedMapObject::opStr(StrBuilder &builder) const {
-  TRY(builder.add("["));
-  unsigned int count = 0;
-  for (auto &e : this->entries) {
-    if (!e) {
-      continue;
-    }
-    if (count++ > 0) {
-      TRY(builder.add(", "));
-    }
-    TRY(e.getKey().opStr(builder));
-    TRY(builder.add(" : "));
-    TRY(e.getValue().opStr(builder));
-  }
-  return builder.add("]");
-}
-
 DSValue OrderedMapIterObject::next(TypePool &pool) {
   auto &entry = this->nextEntry();
   const auto *keyType = &pool.get(entry.getKey().getTypeID());

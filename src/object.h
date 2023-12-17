@@ -794,7 +794,6 @@ public:
   size_t size() const { return this->values.size(); }
 
   std::string toString() const;
-  bool opStr(StrBuilder &builder) const;
 
   void append(DSValue &&obj) { this->values.push_back(std::move(obj)); }
 
@@ -931,8 +930,6 @@ public:
 
   // for tuple type
   std::string toString() const;
-
-  bool opStrAsTupleRecord(StrBuilder &builder) const;
 };
 
 template <typename... Arg>
@@ -991,8 +988,6 @@ public:
               std::vector<StackTraceElement> &&stackTrace)
       : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
         stackTrace(std::move(stackTrace)) {}
-
-  bool opStr(StrBuilder &builder) const;
 
   const DSValue &getMessage() const { return this->message; }
 
