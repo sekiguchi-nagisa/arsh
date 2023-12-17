@@ -39,4 +39,5 @@ jobs:
         uses: coverallsapp/github-action@v2.2.3 
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          format: lcov
           path-to-lcov: ./build/coverage_report-cleaned.info
