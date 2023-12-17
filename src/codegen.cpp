@@ -1250,7 +1250,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
 
   // generate if-else chain
   auto &eqHandle = *this->typePool.lookupMethod(*exprType, OP_EQ);
-  auto &matchHandle = *this->typePool.lookupMethod(*exprType, OP_MATCH);
+  auto &matchHandle = *this->typePool.lookupMethod(*exprType, OP_SEARCH);
 
   int defaultIndex = -1;
   auto defaultLabel = makeLabel();

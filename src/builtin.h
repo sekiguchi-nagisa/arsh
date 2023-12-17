@@ -996,18 +996,18 @@ ARSH_METHOD string_iter(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function $OP_MATCH($this : String, $re : Regex) : Bool
-ARSH_METHOD string_match(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_match);
+//!bind: function $OP_SEARCH($this : String, $re : Regex) : Bool
+ARSH_METHOD string_search(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_search);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
   bool r = TRY(re.search(ctx, str));
   RET_BOOL(r);
 }
 
-//!bind: function $OP_UNMATCH($this : String, $re : Regex) : Bool
-ARSH_METHOD string_unmatch(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_unmatch);
+//!bind: function $OP_UNSEARCH($this : String, $re : Regex) : Bool
+ARSH_METHOD string_unsearch(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_unsearch);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
   bool r = !TRY(re.search(ctx, str));
@@ -1153,7 +1153,7 @@ ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   RET_BOOL(hasFlag(flag, PCRECompileFlag::DOTALL));
 }
 
-//!bind: function $OP_MATCH($this : Regex, $target : String) : Bool
+//!bind: function $OP_SEARCH($this : Regex, $target : String) : Bool
 ARSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1162,9 +1162,9 @@ ARSH_METHOD regex_search(RuntimeContext &ctx) {
   RET_BOOL(r);
 }
 
-//!bind: function $OP_UNMATCH($this : Regex, $target : String) : Bool
-ARSH_METHOD regex_unmatch(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(regex_unmatch);
+//!bind: function $OP_UNSEARCH($this : Regex, $target : String) : Bool
+ARSH_METHOD regex_unsearch(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_unsearch);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
   bool r = !TRY(re.search(ctx, ref));
