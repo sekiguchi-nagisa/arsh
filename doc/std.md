@@ -256,9 +256,16 @@ function %OP_MATCH(target: String): Bool for Regex
 
 function %OP_UNMATCH(target: String): Bool for Regex
 
-function match(target: String): [String?] for Regex
+function match(target: String): RegexMatch? for Regex
 
 function replace(target: String, repl: String): String for Regex
+```
+
+## RegexMatch type
+```
+function count(): Int for RegexMatch
+
+function group(index: Int): String? for RegexMatch
 ```
 
 ## Signal type

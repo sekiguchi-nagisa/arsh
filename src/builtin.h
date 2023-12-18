@@ -1171,17 +1171,18 @@ ARSH_METHOD regex_unmatch(RuntimeContext &ctx) {
   RET_BOOL(r);
 }
 
-//!bind: function match($this: Regex, $target : String) : Array<Option<String>>
+//!bind: function match($this: Regex, $target : String) : Option<RegexMatch>
 ARSH_METHOD regex_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_match);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
 
-  auto ret = DSValue::create<ArrayObject>(
-      *ctx.typePool
-           .createArrayType(*ctx.typePool.createOptionType(ctx.typePool.get(TYPE::String)).take())
-           .take());
-  TRY(re.match(ctx, ref, &typeAs<ArrayObject>(ret)));
+  std::vector<DSValue> values;
+  const int count = TRY(re.match(ctx, ref, &values));
+  if (count == 0) {
+    RET(DSValue::createInvalid());
+  }
+  auto ret = DSValue::create<RegexMatchObject>(toObjPtr<RegexObject>(LOCAL(0)), std::move(values));
   RET(ret);
 }
 
@@ -1197,6 +1198,28 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::RegexMatchError, std::move(out));
     RET_ERROR;
   }
+}
+
+// ########################
+// ##     RegexMatch     ##
+// ########################
+
+//!bind: function count($this : RegexMatch) : Int
+ARSH_METHOD match_count(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_count);
+  const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
+  RET(DSValue::createInt(static_cast<int64_t>(match.getGroups().size())));
+}
+
+//!bind: function group($this : RegexMatch, $index: Int) : Option<String>
+ARSH_METHOD match_group(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_group);
+  const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
+  if (int64_t index = LOCAL(1).asInt();
+      index > -1 && static_cast<uint64_t>(index) < match.getGroups().size()) {
+    RET(match.getGroups()[index]);
+  }
+  RET(DSValue::createInvalid());
 }
 
 // ####################

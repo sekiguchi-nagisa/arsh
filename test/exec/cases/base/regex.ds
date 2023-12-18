@@ -112,26 +112,27 @@ try {
 }
 
 var a = $/hello (world)\(!!/.match("hello world(!!")
-assert $a.size() == 2
-assert $a[0]! == "hello world(!!"
-assert $a[1]! == "world"
+assert $a
+assert $a!.count() == 2
+assert $a!.group(0)! == "hello world(!!"
+assert $a!.group(1)! == "world"
 
-assert $/hufure/.match("").empty()
+assert ! $/hufure/.match("")
 
-assert $/a|(b)/.match('a').size() == 1
+assert $/a|(b)/.match('a')!.count() == 1
 
 $a = $/(a|(b))c/.match('ac')
-assert $a.size() == 2
-assert $a[0]! == 'ac'
-assert $a[1]! == 'a'
+assert $a!.count() == 2
+assert $a!.group(0)! == 'ac'
+assert $a!.group(1)! == 'a'
 
 $a = $/(a|(b))(c)()/.match('ac')
-assert $a.size() == 5
-assert $a[0]! == 'ac'
-assert $a[1]! == 'a'
-assert !$a[2]
-assert $a[3]! == 'c'
-assert $a[4]!.empty()
+assert $a!.count() == 5
+assert $a!.group(0)! == 'ac'
+assert $a!.group(1)! == 'a'
+assert !$a!.group(2)
+assert $a!.group(3)! == 'c'
+assert $a!.group(4)!.empty()
 
 # toString
 assert $/\/de/ as String == '\/de'

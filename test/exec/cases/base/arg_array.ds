@@ -92,6 +92,17 @@ try { $args = @(${$STDIN as Any}) } catch e { $ex = $e; }
 assert $ex is ArgumentError
 assert ($ex as ArgumentError).message() == 'cannot pass FD object to argument array'
 
+## RegexMatch
+{
+    var m = $/(\d+)(a|(b))(c)/.match('343445ac')!  # 343445ac 343445 a c
+    $args = @($m)
+    assert $args.size() == 4
+    assert $args[0] == '343445ac'
+    assert $args[1] == '343445'
+    assert $args[2] == 'a'
+    assert $args[3] == 'c'
+}
+
 ## Array
 $args = @( ${new [Int]()} )
 assert $args.empty()

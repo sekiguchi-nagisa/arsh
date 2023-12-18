@@ -1075,7 +1075,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         !this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(
             exprType)) { // call __STR__ or __CMD__ARG
       if (exprType.isArrayType() || exprType.isMapType() || exprType.isTupleType() ||
-          exprType.isRecordOrDerived() || exprType.is(TYPE::Any)) {
+          exprType.isRecordOrDerived() || exprType.is(TYPE::Any) || exprType.is(TYPE::RegexMatch)) {
         node.setType(this->typePool().get(TYPE::StringArray));
       } else if (auto *handle = this->typePool().lookupMethod(exprType, OP_STR)) {
         node.setHandle(handle);

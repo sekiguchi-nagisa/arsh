@@ -36,6 +36,10 @@
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 7,
+#    CHECK:       "label": "RegexMatch"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 7,
 #    CHECK:       "label": "RegexMatchError"
 #    CHECK:     },
 #    CHECK:     {

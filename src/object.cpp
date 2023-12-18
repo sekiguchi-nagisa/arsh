@@ -286,6 +286,21 @@ bool DSValue::opStr(StrBuilder &builder) const {
   }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
+    case ObjectKind::RegexMatch: {
+      const auto &obj = typeAs<RegexMatchObject>(*this);
+      const auto &values = obj.getGroups();
+      TRY(builder.add("["));
+      const unsigned int size = values.size();
+      for (unsigned int i = 0; i < size; i++) {
+        if (i > 0) {
+          TRY(builder.add(", "));
+        }
+        if (auto &v = values[i]; !v.isInvalid()) {
+          TRY(v.opStr(builder));
+        }
+      }
+      return builder.add("]");
+    }
     case ObjectKind::Array: {
       auto &values = typeAs<ArrayObject>(*this).getValues();
       TRY(builder.add("["));
@@ -373,9 +388,13 @@ bool DSValue::opInterp(StrBuilder &builder) const {
 
   if (this->isObject()) {
     switch (this->get()->getKind()) {
+    case ObjectKind::RegexMatch:
     case ObjectKind::Array: {
       unsigned int count = 0;
-      for (auto &e : typeAs<ArrayObject>(*this).getValues()) {
+      const auto &values = isa<ArrayObject>(this->get())
+                               ? typeAs<ArrayObject>(*this).getValues()
+                               : typeAs<RegexMatchObject>(*this).getGroups();
+      for (auto &e : values) {
         if (e.isInvalid()) {
           continue;
         }
@@ -533,20 +552,20 @@ UnixFdObject::~UnixFdObject() {
 // ##     RegexObject     ##
 // #########################
 
-int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
+int RegexObject::match(DSState &state, StringRef ref, std::vector<DSValue> *out) {
   std::string errorStr;
   int matchCount = this->re.match(ref, errorStr);
   if (!errorStr.empty()) {
     raiseError(state, TYPE::RegexMatchError, std::move(errorStr));
   }
   if (out && matchCount > 0) {
-    out->refValues().reserve(matchCount); // not check iterator invalidation
+    out->reserve(matchCount); // not check iterator invalidation
     for (int i = 0; i < matchCount; i++) {
       PCRECapture capture; // NOLINT
       bool set = this->re.getCaptureAt(i, capture);
       auto v = set ? DSValue::createStr(ref.slice(capture.begin, capture.end))
                    : DSValue::createInvalid();
-      out->append(std::move(v)); // not check iterator invalidation
+      out->push_back(std::move(v)); // not check size
     }
     ASSERT_ARRAY_SIZE(*out);
   }
@@ -689,11 +708,15 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       }
       return r;
     }
-    case ObjectKind::Array:
-      for (auto &e : typeAs<ArrayObject>(arg).getValues()) {
+    case ObjectKind::RegexMatch:
+    case ObjectKind::Array: {
+      auto &values = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).getValues()
+                                                 : typeAs<RegexMatchObject>(arg).getGroups();
+      for (auto &e : values) {
         TRY(this->add(DSValue(e)));
       }
       return true;
+    }
     case ObjectKind::OrderedMap:
       for (auto &e : typeAs<OrderedMapObject>(arg).getEntries()) {
         if (!e || e.getValue().isInvalid()) {

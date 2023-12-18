@@ -225,9 +225,9 @@ function extractCompTarget(path : String) : (String, String)? {
 
     for line in $STDIN {
         var rr = $/ *complete( +.+)? +-F +([^ ]+) +([^ ]+)/.match($line)
-        if !$rr.empty() {
-            $func = $rr.get(2) ?? continue
-            $cmd = $rr.get(3) ?? continue
+        if let r = $rr {
+            $func = $r.group(2) ?? continue
+            $cmd = $r.group(3) ?? continue
             break
         }
     } with < $path

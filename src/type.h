@@ -54,6 +54,7 @@ enum class TYPE : unsigned int {
   String,
 
   Regex,
+  RegexMatch,
   Signal,
   Signals,
   Error,

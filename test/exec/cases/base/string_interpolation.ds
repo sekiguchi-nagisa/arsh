@@ -43,6 +43,16 @@ assert "${new Error("hello")}" == (new Error("hello")) as String
 ## Regex
 assert "${$/34/}" == $/34/ as String
 
+## RegexMatch
+{
+    var m = $/(12(34))/.match('1234')!
+    assert "$m" == '1234 1234 34'
+    assert $m as String == "[1234, 1234, 34]"
+    $m = $/(\d+)(a|(b))(c)/.match('343445ac')!
+    assert "$m" == "343445ac 343445 a c"
+    assert $m as String == '[343445ac, 343445, a, , c]'
+}
+
 ## UnixFD
 assert "$STDIN" == $STDIN as String
 

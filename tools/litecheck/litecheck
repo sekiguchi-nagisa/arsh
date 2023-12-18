@@ -53,10 +53,9 @@ let REQUIRE = "REQUIRE"
 let SHEBANG = "#!"
 
 function _parse_num(v : String) : Int? {
-    var m = $/^ *(0|[1-9][0-9]*) *$/.match($v)
     var r : Int?
-    if !$m.empty() {
-        $r = $m[1]!.toInt()
+    if let m = $/^ *(0|[1-9][0-9]*) *$/.match($v) {
+        $r = $m.group(1)!.toInt()
     }
     return $r
 }
@@ -89,11 +88,11 @@ function _parse_directives(path : String) : [String: [Directive]] {
         var line = $lines[$i]
         var ln = $i + 1
         var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE):(.*)/.match($line)
-        if !$matched.empty() {
-            var type = $matched[1]!
-            $line = $matched[2]!
+        if let m = $matched {
+            var type = $m.group(1)!
+            $line = $m.group(2)!
             if !$line.startsWith(" ") {
-                var prefix = $matched[0]!
+                var prefix = $m.group(0)!
                 if !$line.empty() {
                     $prefix = $prefix.slice(0, $prefix.lastIndexOf($line))
                 }

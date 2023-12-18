@@ -33,6 +33,7 @@ namespace arsh {
   OP(Job)                                                                                          \
   OP(StringIter)                                                                                   \
   OP(Regex)                                                                                        \
+  OP(RegexMatch)                                                                                   \
   OP(Signal)                                                                                       \
   OP(Signals)                                                                                      \
   OP(Module)                                                                                       \

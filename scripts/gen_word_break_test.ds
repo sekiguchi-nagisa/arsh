@@ -35,8 +35,8 @@ cat ./WordBreakTest.txt | for(var count = 0; read -f $'\n'; $count++) {
         continue
     }
     try {
-        var m = $/^([^#]+)\s+#.*$/.match($REPLY)
-        $ret.add($m[1]!)
+        var m = $/^([^#]+)\s+#.*$/.match($REPLY)!
+        $ret.add($m.group(1)!)
     } catch $e : Error {
         $e.show();
         echo 1>&2 $count $REPLY;

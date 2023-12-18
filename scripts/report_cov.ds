@@ -42,7 +42,7 @@ if "$1" != "" {
 # generate coverage report
 var OUTPUT="coverage_report"
 var OPT : [String]
-if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")[1]!.toInt()! > 1{
+if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")!.group(1)!.toInt()! > 1{
     $OPT.add("--keep-going")
 }
 

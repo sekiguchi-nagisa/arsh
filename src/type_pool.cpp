@@ -56,6 +56,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::String, "String", false, TYPE::Value_, info_StringType());
 
   this->initBuiltinType(TYPE::Regex, "Regex", false, TYPE::Any, info_RegexType());
+  this->initBuiltinType(TYPE::RegexMatch, "RegexMatch", false, TYPE::Any, info_RegexMatchType());
   this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::Value_, info_SignalType());
   this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
   this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());

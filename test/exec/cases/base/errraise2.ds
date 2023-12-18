@@ -10,7 +10,7 @@ function assertStatus($s : Int, $e : Any, $ln : Int) {
     var m = ($e as ExecError).message()
     var lineno = ($e as ExecError).lineno()
     var r = $/\d+/.match($m)
-    var actual = $r[0]!.toInt()!
+    var actual = $r!.group(0)!.toInt()!
     assert $s == $actual : "mismatch status, expect: $s, actual: $actual"
     assert $lineno == $ln : "mismatch lineno, expect: $ln, actual: $lineno"
 }

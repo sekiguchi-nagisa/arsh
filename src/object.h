@@ -43,6 +43,7 @@ namespace arsh {
   OP(String)                                                                                       \
   OP(UnixFd)                                                                                       \
   OP(Regex)                                                                                        \
+  OP(RegexMatch)                                                                                   \
   OP(Array)                                                                                        \
   OP(ArrayIter)                                                                                    \
   OP(OrderedMap)                                                                                   \
@@ -734,7 +735,7 @@ public:
    * @return
    * if not matched, return negative number
    */
-  int match(DSState &state, StringRef ref, ArrayObject *out);
+  int match(DSState &state, StringRef ref, std::vector<DSValue> *out);
 
   bool replace(StringRef target, StringRef replacement, std::string &output) {
     return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
@@ -743,6 +744,20 @@ public:
   const char *getStr() const { return this->re.getPattern(); }
 
   PCRECompileFlag getCompileFlag() const { return this->re.getCompileFlag(); }
+};
+
+class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
+private:
+  ObjPtr<RegexObject> reObj;
+  std::vector<DSValue> groups;
+
+public:
+  RegexMatchObject(ObjPtr<RegexObject> &&reObj, std::vector<DSValue> &&groups)
+      : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)), groups(std::move(groups)) {}
+
+  const auto &getRegexObj() const { return this->reObj; }
+
+  const auto &getGroups() const { return this->groups; }
 };
 
 class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {

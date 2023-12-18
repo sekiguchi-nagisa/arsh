@@ -73,8 +73,8 @@ function fzf_proc_select() : [String] {
     (command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
       command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
       for line in $STDIN {
-        var r = $/^[^ ]+[ ]+([0-9]+)/.match($line).get(1) ?? continue
-        $ret.add($r)
+        var r = $/^[^ ]+[ ]+([0-9]+)/.match($line) ?? continue
+        $ret.add($r.group(1)!)
       }
     return $ret
 }

@@ -69,6 +69,11 @@
 - **Breaking Change**: remove ``LineEditor#setColor`` method. use ``LineEditor#config`` instead
 - **Breaking Change**: change error message of builtin commands
     - now show current source name and line number
+- **Breaking Change**: change return value of ``Regex#match`` method
+    - now return ``RegexMatch?`` type value
+    - ``RegexMatch`` type provide the following methods
+        - ``count``: get group count
+        - ``group``: get group by index
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version
 - check io error in builtin ``command``

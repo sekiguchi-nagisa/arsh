@@ -45,10 +45,10 @@ function try_merge(o : Range) : Range? for Range {
 }
 
 function parse_incb($line : String) : Range {
-    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+;[ ]+InCB;[ ]+([a-zA-Z0-9_]+)[ ]*#.+$/.match($line)
-    var begin = "0x${$m[1]!}"
-    var end = "0x${$m[3] ?? $m[1]!}"
-    var p = "InCB_" + $m[4]!
+    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+;[ ]+InCB;[ ]+([a-zA-Z0-9_]+)[ ]*#.+$/.match($line)!
+    var begin = "0x${$m.group(1)!}"
+    var end = "0x${$m.group(3) ?? $m.group(1)!}"
+    var p = "InCB_" + $m.group(4)!
 
     var ret = new Range(
         $begin.toInt()!,

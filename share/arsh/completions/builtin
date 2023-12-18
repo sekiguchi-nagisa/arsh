@@ -28,8 +28,8 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : [String]? {
 _extract_sub() {
     for $line in $STDIN {
         var matched = $/^      ([-a-z]+) +.+/.match($line)
-        if !$matched.empty() {
-            echo ${$matched[1]!}
+        if let m = $matched {
+            echo ${$m.group(1)!}
         }
     }
 }

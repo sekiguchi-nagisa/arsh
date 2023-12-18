@@ -20,9 +20,8 @@ test -f ReadMe.txt ||
 ## gen version string
 var version : String?
 cat ./ReadMe.txt | for l in $STDIN {
-  var m = $/Version ([0-9]+\.[0-9]+\.[0-9]+)/.match($l)
-  $m.empty() && continue
-  $version = $m[1]!
+  var m = $/Version ([0-9]+\.[0-9]+\.[0-9]+)/.match($l) ?? continue
+  $version = $m.group(1)!
   break
 }
 
