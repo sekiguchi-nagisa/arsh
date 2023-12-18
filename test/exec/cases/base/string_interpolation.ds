@@ -45,7 +45,7 @@ assert "${$/34/}" == $/34/ as String
 
 ## RegexMatch
 {
-    var m = $/(12(34))/.match('1234')!
+    var m = $/(12(?<a>34))/.match('1234')!
     assert "$m" == '1234 1234 34'
     assert $m as String == "[1234, 1234, 34]"
     $m = $/(\d+)(a|(b))(c)/.match('343445ac')!

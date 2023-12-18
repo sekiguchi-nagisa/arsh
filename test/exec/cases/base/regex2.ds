@@ -1,0 +1,31 @@
+
+# for named capture group
+
+var line = "0600..0605    ; Prepend # Cf   [6] ARABIC NUMBER SIGN..ARABIC NUMBER MARK ABOVE"
+
+var re = $/^(?<begin>[0-9A-F]+)(?<with_space>\.\.(?<end>[0-9A-F]+))?[ ]+;[ ]+(?<p>[a-zA-Z0-9_]+)[ ]*#.+$/
+
+var m = $re.match($line)!
+assert $m.count() == 5
+assert $m.group(1)! == '0600'
+assert $m.named('begin')! == '0600'
+assert $m.group(3)! == '0605'
+assert $m.named('end')! == '0605'
+assert $m.group(4)! == 'Prepend'
+assert $m.named('p')! == 'Prepend'
+
+assert ! $m.group(111)
+assert ! $m.named('aaa')
+assert ! $m.named($'p\x00q')
+
+var names = $m.names()
+assert $names.size() == 4
+$names.clear()
+$names = $m.names()
+assert $names.size() == 4
+assert $names[0] == 'begin'
+assert $names[1] == 'end'
+assert $names[2] == 'p'
+assert $names[3] == 'with_space'
+
+assert $/.*/.match('aa')!.names().empty()

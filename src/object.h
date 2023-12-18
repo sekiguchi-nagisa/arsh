@@ -741,9 +741,9 @@ public:
     return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
   }
 
-  const char *getStr() const { return this->re.getPattern(); }
+  const PCRE &getRE() const { return this->re; }
 
-  PCRECompileFlag getCompileFlag() const { return this->re.getCompileFlag(); }
+  const char *getStr() const { return this->re.getPattern(); }
 };
 
 class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
@@ -755,7 +755,7 @@ public:
   RegexMatchObject(ObjPtr<RegexObject> &&reObj, std::vector<DSValue> &&groups)
       : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)), groups(std::move(groups)) {}
 
-  const auto &getRegexObj() const { return this->reObj; }
+  const auto &getRE() const { return this->reObj->getRE(); }
 
   const auto &getGroups() const { return this->groups; }
 };

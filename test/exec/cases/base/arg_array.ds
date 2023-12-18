@@ -94,7 +94,7 @@ assert ($ex as ArgumentError).message() == 'cannot pass FD object to argument ar
 
 ## RegexMatch
 {
-    var m = $/(\d+)(a|(b))(c)/.match('343445ac')!  # 343445ac 343445 a c
+    var m = $/(\d+)(a|(b))(?<end>c)/.match('343445ac')!  # 343445ac 343445 a c
     $args = @($m)
     assert $args.size() == 4
     assert $args[0] == '343445ac'

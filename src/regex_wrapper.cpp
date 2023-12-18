@@ -179,6 +179,40 @@ PCRECompileFlag PCRE::getCompileFlag() const {
   return flag;
 }
 
+PCRENamedGroupTable PCRE::getNamedGroupTable() const {
+  unsigned int count = 0;
+  unsigned int entrySize = 0;
+  void *ptr = nullptr;
+
+#ifdef USE_PCRE
+  pcre2_pattern_info(static_cast<pcre2_code *>(this->code), PCRE2_INFO_NAMECOUNT, &count);
+  if (count) {
+    pcre2_pattern_info(static_cast<pcre2_code *>(this->code), PCRE2_INFO_NAMETABLE, &ptr);
+    pcre2_pattern_info(static_cast<pcre2_code *>(this->code), PCRE2_INFO_NAMEENTRYSIZE, &entrySize);
+  }
+
+#endif
+
+  return {.size = count, .entrySize = entrySize, .ptr = static_cast<const char *>(ptr)};
+}
+
+int PCRE::getGroupIndexByName(StringRef name) const {
+  if (name.hasNullChar()) {
+    return -1;
+  }
+
+#ifdef USE_PCRE
+  if (const int r = pcre2_substring_number_from_name(static_cast<pcre2_code *>(this->code),
+                                                     reinterpret_cast<PCRE2_SPTR>(name.data()));
+      r > -1) {
+    return r;
+  }
+
+#endif
+
+  return -1;
+}
+
 int PCRE::match(StringRef ref, std::string &errorStr) {
 #ifdef USE_PCRE
   int matchCount =

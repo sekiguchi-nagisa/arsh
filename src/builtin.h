@@ -1133,7 +1133,7 @@ ARSH_METHOD regex_init(RuntimeContext &ctx) {
 ARSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isCaseless);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getCompileFlag();
+  auto flag = re.getRE().getCompileFlag();
   RET_BOOL(hasFlag(flag, PCRECompileFlag::CASELESS));
 }
 
@@ -1141,7 +1141,7 @@ ARSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
 ARSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isMultiLine);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getCompileFlag();
+  auto flag = re.getRE().getCompileFlag();
   RET_BOOL(hasFlag(flag, PCRECompileFlag::MULTILINE));
 }
 
@@ -1149,7 +1149,7 @@ ARSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
 ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isDotAll);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getCompileFlag();
+  auto flag = re.getRE().getCompileFlag();
   RET_BOOL(hasFlag(flag, PCRECompileFlag::DOTALL));
 }
 
@@ -1220,6 +1220,30 @@ ARSH_METHOD match_group(RuntimeContext &ctx) {
     RET(match.getGroups()[index]);
   }
   RET(DSValue::createInvalid());
+}
+
+//!bind: function named($this : RegexMatch, $name : String) : Option<String>
+ARSH_METHOD match_named(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_named);
+  const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
+  const int index = obj.getRE().getGroupIndexByName(LOCAL(1).asStrRef());
+  if (index > -1 && static_cast<uint64_t>(index) < obj.getGroups().size()) {
+    RET(obj.getGroups()[index]);
+  }
+  RET(DSValue::createInvalid());
+}
+
+//!bind: function names($this : RegexMatch) : Array<String>
+ARSH_METHOD match_names(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_names);
+  const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
+  const auto table = obj.getRE().getNamedGroupTable();
+  std::vector<DSValue> values(table.size);
+  for (unsigned int i = 0; i < table.size; i++) {
+    values[i] = DSValue::createStr(table[i].second);
+  }
+  auto ret = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray), std::move(values));
+  RET(ret);
 }
 
 // ####################

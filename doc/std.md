@@ -266,6 +266,10 @@ function replace(target: String, repl: String): String for Regex
 function count(): Int for RegexMatch
 
 function group(index: Int): String? for RegexMatch
+
+function named(name: String): String? for RegexMatch
+
+function names(): [String] for RegexMatch
 ```
 
 ## Signal type

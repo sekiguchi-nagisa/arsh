@@ -24,6 +24,18 @@
 
 namespace arsh {
 
+struct PCRENamedGroupTable {
+  const unsigned int size;
+  const unsigned int entrySize;
+  const char *ptr;
+
+  std::pair<unsigned int, const char *> operator[](unsigned int index) const {
+    const char *p = this->ptr + (this->entrySize * static_cast<size_t>(index));
+    int n = (p[0] << 8) | p[1];
+    return {static_cast<unsigned int>(n), p + 2};
+  }
+};
+
 struct PCRECapture {
   size_t begin;
   size_t end;
@@ -90,6 +102,10 @@ public:
   const char *getPattern() const { return this->pattern; }
 
   PCRECompileFlag getCompileFlag() const;
+
+  PCRENamedGroupTable getNamedGroupTable() const;
+
+  int getGroupIndexByName(StringRef name) const;
 
   /**
    *

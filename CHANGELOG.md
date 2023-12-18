@@ -74,6 +74,8 @@
     - ``RegexMatch`` type provide the following methods
         - ``count``: get group count
         - ``group``: get group by index
+        - ``named``: get group by name
+        - ``names``: get names of named group
 - **Breaking Change**: change to-string of collection having invalid value
     - now emit ``(invalid)`` instead of throwing ``UnwrappingError``
 - ``LineEditor#readLine`` method correctly report out-of-memory error
