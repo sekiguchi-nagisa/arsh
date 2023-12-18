@@ -50,7 +50,7 @@ assert "${$/34/}" == $/34/ as String
     assert $m as String == "[1234, 1234, 34]"
     $m = $/(\d+)(a|(b))(c)/.match('343445ac')!
     assert "$m" == "343445ac 343445 a c"
-    assert $m as String == '[343445ac, 343445, a, , c]'
+    assert $m as String == '[343445ac, 343445, a, (invalid), c]'
 }
 
 ## UnixFD

@@ -192,8 +192,7 @@ assert $r2.remove(-1) == 6
 assert "1,2,".split(",").join(",") == "1,2,"
 assert [[["h", "l"].join("e"), "lo"].join(), "world", "!!"].join(" ") == "hello world !!"
 $ex = 12
-try { ["hoge".toInt()].join("a"); assert false; } catch $e { $ex = $e; }
-assert $ex is UnwrappingError
+assert ["hoge".toInt()] as String == "[(invalid)]"
 
 # copy
 var cc1 = [3, 4, 6]

@@ -281,30 +281,17 @@ bool DSValue::opStr(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
   if (this->isInvalid()) {
-    raiseError(builder.getState(), TYPE::UnwrappingError, "invalid value");
-    return false;
+    return builder.add("(invalid)");
   }
   if (this->isObject()) {
     switch (this->get()->getKind()) {
-    case ObjectKind::RegexMatch: {
-      const auto &obj = typeAs<RegexMatchObject>(*this);
-      const auto &values = obj.getGroups();
+    case ObjectKind::RegexMatch:
+    case ObjectKind::Array: {
+      const auto &values = isa<ArrayObject>(this->get())
+                               ? typeAs<ArrayObject>(*this).getValues()
+                               : typeAs<RegexMatchObject>(*this).getGroups();
       TRY(builder.add("["));
       const unsigned int size = values.size();
-      for (unsigned int i = 0; i < size; i++) {
-        if (i > 0) {
-          TRY(builder.add(", "));
-        }
-        if (auto &v = values[i]; !v.isInvalid()) {
-          TRY(v.opStr(builder));
-        }
-      }
-      return builder.add("]");
-    }
-    case ObjectKind::Array: {
-      auto &values = typeAs<ArrayObject>(*this).getValues();
-      TRY(builder.add("["));
-      unsigned int size = values.size();
       for (unsigned int i = 0; i < size; i++) {
         if (i > 0) {
           TRY(builder.add(", "));

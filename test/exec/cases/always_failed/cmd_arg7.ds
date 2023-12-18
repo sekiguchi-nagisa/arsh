@@ -1,7 +1,0 @@
-
-#$test($result = 'parse', $lineNum = 7, $chars = 6, $errorKind = 'CMD_ARG', $status = 1)
-
-echo a \
-     b \
-     c \
-     ()

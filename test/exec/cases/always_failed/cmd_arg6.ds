@@ -1,7 +1,0 @@
-# not allow void expression in command arguments
-
-#$test($result = 'type', $lineNum = 7, $chars = 6, $errorKind = 'Unacceptable', $status = 1)
-
-function ge()  {}
-
-echo $ge()   # illegal target

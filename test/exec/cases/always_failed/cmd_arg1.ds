@@ -1,6 +1,7 @@
-# not allow command argument concatenation of Array type
+# not allow void expression in command arguments
 
-#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'ConcatParam', $status = 1)
+#$test($result = 'type', $lineNum = 7, $chars = 6, $errorKind = 'Unacceptable', $status = 1)
 
+function ge()  {}
 
-echo hello${[34, 54]}   # illegal concatenation.
+echo $ge()   # illegal target

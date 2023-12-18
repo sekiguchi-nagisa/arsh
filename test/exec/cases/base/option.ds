@@ -62,15 +62,11 @@ assert ($o ? $o!.size() : 0) == 2
 
 # collection with option value
 assert [23 as Int?] as String == '[23]'
-var ex = 34 as Any
-try { [34 : new Int?()] as String } catch $e { $ex = $e }
-assert $ex is UnwrappingError
-$ex = 2
-try { (34, new Boolean?()) as String } catch $e { $ex = $e }
-assert $ex is UnwrappingError
-
+assert [34 : new Int?()] as String == "[34 : (invalid)]"
+assert (34, new Bool?()) as String == "(34, (invalid))"
 assert "${[3 as Int?]}" == '3'
-$ex = 0
+
+var ex = 34 as Any
 try { assert "${(2, $false, new Error?())}" == '2 false'; }  catch $e { $ex = $e}
 # assert $ex is UnwrappingError
 

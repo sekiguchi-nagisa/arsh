@@ -1,0 +1,8 @@
+# not allow command argument concatenation of UnixFD type
+
+#$test($result = 'type', $lineNum = 8, $chars = 14, $errorKind = 'ConcatParam', $status = 1)
+
+var m = $/2345/.match('aa')!
+assert $m is RegexMatch
+
+echo fajrifar${m}

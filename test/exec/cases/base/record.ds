@@ -106,6 +106,5 @@ assert ! $ddd.next!.next!.next!.next!.next
 ## string representation
 assert (new Empty() as String) == "{}"
 assert (new AAA() as String) == "{a : 34, b : c}"
-var ex : Any?
-try { assert !($ddd as String).empty(); } catch $e { $ex = $e; }
-assert $ex is UnwrappingError
+assert $ddd as String == "{data : @@@@, next : {data : @@@, next : {data : @@, next : {data : @, next : {data : , next : (invalid)}}}}}"
+assert "$ddd" == "@@@@ @@@ @@ @ "
