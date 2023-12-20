@@ -39,14 +39,14 @@
 #define LOCAL(index) (ctx.getLocal(index))
 #define EXTRACT_LOCAL(index) (ctx.moveLocal(index))
 #define RET(value) return value
-#define RET_BOOL(value) return DSValue::createBool(value)
-#define RET_VOID return DSValue()
-#define RET_ERROR return DSValue()
+#define RET_BOOL(value) return Value::createBool(value)
+#define RET_VOID return Value()
+#define RET_ERROR return Value()
 
 #define SUPPRESS_WARNING(a) (void)a
 
-#define ARSH_METHOD static DSValue
-#define ARSH_METHOD_DECL DSValue
+#define ARSH_METHOD static Value
+#define ARSH_METHOD_DECL Value
 
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
@@ -102,14 +102,14 @@ ARSH_METHOD int_minus(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "negative value of INT_MIN is not defined");
     RET_ERROR;
   }
-  RET(DSValue::createInt(-v));
+  RET(Value::createInt(-v));
 }
 
 //!bind: function $OP_NOT($this : Int) : Int
 ARSH_METHOD int_not(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_not);
   uint64_t v = ~static_cast<uint64_t>(LOCAL(0).asInt());
-  RET(DSValue::createInt(static_cast<int64_t>(v)));
+  RET(Value::createInt(static_cast<int64_t>(v)));
 }
 
 // =====  binary op  =====
@@ -127,7 +127,7 @@ ARSH_METHOD int_2_int_add(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
-  RET(DSValue::createInt(ret));
+  RET(Value::createInt(ret));
 }
 
 //!bind: function $OP_SUB($this : Int, $target : Int) : Int
@@ -141,7 +141,7 @@ ARSH_METHOD int_2_int_sub(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
-  RET(DSValue::createInt(ret));
+  RET(Value::createInt(ret));
 }
 
 //!bind: function $OP_MUL($this : Int, $target : Int) : Int
@@ -155,7 +155,7 @@ ARSH_METHOD int_2_int_mul(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
-  RET(DSValue::createInt(ret));
+  RET(Value::createInt(ret));
 }
 
 //!bind: function $OP_DIV($this : Int, $target : Int) : Int
@@ -171,7 +171,7 @@ ARSH_METHOD int_2_int_div(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
     RET_ERROR;
   }
-  RET(DSValue::createInt(left / right));
+  RET(Value::createInt(left / right));
 }
 
 //!bind: function $OP_MOD($this : Int, $target : Int) : Int
@@ -184,7 +184,7 @@ ARSH_METHOD int_2_int_mod(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "zero modulo");
     RET_ERROR;
   }
-  RET(DSValue::createInt(left % right));
+  RET(Value::createInt(left % right));
 }
 
 //   =====  equality  =====
@@ -246,7 +246,7 @@ ARSH_METHOD int_2_int_and(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_and);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
-  RET(DSValue::createInt(left & right));
+  RET(Value::createInt(left & right));
 }
 
 //!bind: function $OP_OR($this : Int, $target : Int) : Int
@@ -254,7 +254,7 @@ ARSH_METHOD int_2_int_or(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_or);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
-  RET(DSValue::createInt(left | right));
+  RET(Value::createInt(left | right));
 }
 
 //!bind: function $OP_XOR($this : Int, $target : Int) : Int
@@ -262,7 +262,7 @@ ARSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_2_int_xor);
   auto left = static_cast<uint64_t>(LOCAL(0).asInt());
   auto right = static_cast<uint64_t>(LOCAL(1).asInt());
-  RET(DSValue::createInt(left ^ right));
+  RET(Value::createInt(left ^ right));
 }
 
 //!bind: function abs($this : Int) : Int
@@ -273,7 +273,7 @@ ARSH_METHOD int_abs(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::ArithmeticError, "absolute value of INT_MIN is not defined");
     RET_ERROR;
   }
-  RET(DSValue::createInt(std::abs(value)));
+  RET(Value::createInt(std::abs(value)));
 }
 
 //!bind: function $OP_TO_FLOAT($this : Int) : Float
@@ -281,7 +281,7 @@ ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_toFloat);
   int64_t v = LOCAL(0).asInt();
   auto d = static_cast<double>(v);
-  RET(DSValue::createFloat(d));
+  RET(Value::createFloat(d));
 }
 
 // ###################
@@ -299,7 +299,7 @@ ARSH_METHOD float_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this : Float) : Float
 ARSH_METHOD float_minus(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_minus);
-  RET(DSValue::createFloat(-LOCAL(0).asFloat()));
+  RET(Value::createFloat(-LOCAL(0).asFloat()));
 }
 
 // =====  binary op  =====
@@ -311,7 +311,7 @@ ARSH_METHOD float_2_float_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_add);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
-  RET(DSValue::createFloat(left + right));
+  RET(Value::createFloat(left + right));
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
@@ -319,7 +319,7 @@ ARSH_METHOD float_2_float_sub(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_sub);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
-  RET(DSValue::createFloat(left - right));
+  RET(Value::createFloat(left - right));
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
@@ -327,7 +327,7 @@ ARSH_METHOD float_2_float_mul(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_2_float_mul);
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
-  RET(DSValue::createFloat(left * right));
+  RET(Value::createFloat(left * right));
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
@@ -336,7 +336,7 @@ ARSH_METHOD float_2_float_div(RuntimeContext &ctx) {
   double left = LOCAL(0).asFloat();
   double right = LOCAL(1).asFloat();
   double value = left / right;
-  RET(DSValue::createFloat(value));
+  RET(Value::createFloat(value));
 }
 
 //   =====  equality  =====
@@ -425,35 +425,35 @@ ARSH_METHOD float_isNormal(RuntimeContext &ctx) {
 ARSH_METHOD float_round(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_round);
   double value = LOCAL(0).asFloat();
-  RET(DSValue::createFloat(std::round(value)));
+  RET(Value::createFloat(std::round(value)));
 }
 
 //!bind: function trunc($this : Float) : Float
 ARSH_METHOD float_trunc(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_trunc);
   double value = LOCAL(0).asFloat();
-  RET(DSValue::createFloat(std::trunc(value)));
+  RET(Value::createFloat(std::trunc(value)));
 }
 
 //!bind: function floor($this : Float) : Float
 ARSH_METHOD float_floor(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_floor);
   double value = LOCAL(0).asFloat();
-  RET(DSValue::createFloat(std::floor(value)));
+  RET(Value::createFloat(std::floor(value)));
 }
 
 //!bind: function ceil($this : Float) : Float
 ARSH_METHOD float_ceil(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_ceil);
   double value = LOCAL(0).asFloat();
-  RET(DSValue::createFloat(std::ceil(value)));
+  RET(Value::createFloat(std::ceil(value)));
 }
 
 //!bind: function abs($this : Float) : Float
 ARSH_METHOD float_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(float_abs);
   double value = LOCAL(0).asFloat();
-  RET(DSValue::createFloat(std::fabs(value)));
+  RET(Value::createFloat(std::fabs(value)));
 }
 
 //!bind: function $OP_TO_INT($this : Float): Int
@@ -478,7 +478,7 @@ ARSH_METHOD float_toInt(RuntimeContext &ctx) {
   } else {
     fatal("unreachable\n");
   }
-  RET(DSValue::createInt(v));
+  RET(Value::createInt(v));
 }
 
 //!bind: function compare($this : Float, $target : Float) : Int
@@ -487,7 +487,7 @@ ARSH_METHOD float_compare(RuntimeContext &ctx) {
   double x = LOCAL(0).asFloat();
   double y = LOCAL(1).asFloat();
   int ret = compareByTotalOrder(x, y);
-  RET(DSValue::createInt(ret));
+  RET(Value::createInt(ret));
 }
 
 // ##################
@@ -569,7 +569,7 @@ ARSH_METHOD string_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_size);
   size_t size = LOCAL(0).asStrRef().size();
   assert(size <= StringObject::MAX_SIZE);
-  RET(DSValue::createInt(size));
+  RET(Value::createInt(size));
 }
 
 //!bind: function empty($this : String) : Bool
@@ -584,18 +584,18 @@ ARSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
   size_t count = iterateGrapheme(LOCAL(0).asStrRef(), [](const GraphemeCluster &) {});
   assert(count <= StringObject::MAX_SIZE);
-  RET(DSValue::createInt(count));
+  RET(Value::createInt(count));
 }
 
 //!bind: function chars($this : String) : Array<String>
 ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
   auto ref = LOCAL(0).asStrRef();
-  auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
 
   iterateGrapheme(ref, [&array](const GraphemeCluster &ret) {
-    array.append(DSValue::createStr(ret)); // not check iterator invalidation
+    array.append(Value::createStr(ret)); // not check iterator invalidation
   });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
@@ -605,7 +605,7 @@ ARSH_METHOD string_chars(RuntimeContext &ctx) {
 ARSH_METHOD string_words(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_words);
   auto ref = LOCAL(0).asStrRef();
-  auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
   iterateWord(ref, [&array](StringRef wordRef) {
     std::string word;
@@ -620,7 +620,7 @@ ARSH_METHOD string_words(RuntimeContext &ctx) {
         iter += size;
       }
     }
-    array.append(DSValue::createStr(std::move(word))); // not check iterator invalidation
+    array.append(Value::createStr(std::move(word))); // not check iterator invalidation
   });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
@@ -649,7 +649,7 @@ ARSH_METHOD string_width(RuntimeContext &ctx) {
   iterateGrapheme(
       ref, [&value, &ps](const GraphemeCluster &ret) { value += getGraphemeWidth(ps, ret); });
 
-  RET(DSValue::createInt(value));
+  RET(Value::createInt(value));
 }
 
 /**
@@ -706,7 +706,7 @@ ARSH_METHOD string_get(RuntimeContext &ctx) {
   const auto index = LOCAL(1).asInt();
 
   auto value = TRY(resolveIndex(ctx, index, size));
-  RET(DSValue::createStr(ref.substr(value.index, 1)));
+  RET(Value::createStr(ref.substr(value.index, 1)));
 }
 
 //!bind: function charAt($this : String, $index : Int) : String
@@ -721,7 +721,7 @@ ARSH_METHOD string_charAt(RuntimeContext &ctx) {
   for (; scanner.hasNext(); count++) {
     GraphemeCluster ret = scanner.next();
     if (count == pos) {
-      RET(DSValue::createStr(ret));
+      RET(Value::createStr(ret));
     }
   }
   std::string msg = "character count is ";
@@ -732,14 +732,14 @@ ARSH_METHOD string_charAt(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-static DSValue sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
+static Value sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
   auto b = obj.getValues().begin() + begin;
   auto e = obj.getValues().begin() + end;
-  return DSValue::create<ArrayObject>(obj.getTypeID(), std::vector<DSValue>(b, e));
+  return Value::create<ArrayObject>(obj.getTypeID(), std::vector<Value>(b, e));
 }
 
-static DSValue sliceImpl(const StringRef &ref, size_t begin, size_t end) {
-  return DSValue::createStr(ref.slice(begin, end));
+static Value sliceImpl(const StringRef &ref, size_t begin, size_t end) {
+  return Value::createStr(ref.slice(begin, end));
 }
 
 static std::pair<uint64_t, uint64_t> resolveSliceRange(uint64_t objSize, int64_t startIndex,
@@ -820,7 +820,7 @@ ARSH_METHOD string_indexOf(RuntimeContext &ctx) {
   auto index = left.find(right, offset.index);
   assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
   auto actual = static_cast<ssize_t>(index); // for integer promotion
-  RET(DSValue::createInt(static_cast<int64_t>(actual)));
+  RET(Value::createInt(static_cast<int64_t>(actual)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int
@@ -831,7 +831,7 @@ ARSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
   auto index = left.lastIndexOf(right);
   assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
   auto actual = static_cast<ssize_t>(index); // for integer promotion
-  RET(DSValue::createInt(static_cast<int64_t>(actual)));
+  RET(Value::createInt(static_cast<int64_t>(actual)));
 }
 
 //!bind: function contains($this : String, $target : String) : Bool
@@ -845,7 +845,7 @@ ARSH_METHOD string_contains(RuntimeContext &ctx) {
 //!bind: function split($this : String, $delim : String) : Array<String>
 ARSH_METHOD string_split(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_split);
-  auto results = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto results = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &ptr = typeAs<ArrayObject>(results);
 
   auto thisStr = LOCAL(0).asStrRef();
@@ -856,7 +856,7 @@ ARSH_METHOD string_split(RuntimeContext &ctx) {
   } else {
     for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
       auto ret = thisStr.find(delimStr, pos);
-      ptr.append(DSValue::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
+      ptr.append(Value::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
       pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
     }
   }
@@ -875,7 +875,7 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
 
   auto thisStr = LOCAL(0).asStrRef();
   auto repStr = LOCAL(2).asStrRef();
-  auto buf = DSValue::createStr();
+  auto buf = Value::createStr();
 
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto ret = thisStr.find(delimStr, pos);
@@ -902,7 +902,7 @@ ARSH_METHOD string_sanitize(RuntimeContext &ctx) {
   auto v = LOCAL(1);
   auto repl = v.isInvalid() ? "" : v.asStrRef();
 
-  auto ret = DSValue::createStr();
+  auto ret = Value::createStr();
   auto begin = ref.begin();
   auto old = begin;
   for (const auto end = ref.end(); begin != end;) {
@@ -937,10 +937,10 @@ ARSH_METHOD string_toInt(RuntimeContext &ctx) {
   if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
     auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
     if (ret) {
-      RET(DSValue::createInt(ret.value));
+      RET(Value::createInt(ret.value));
     }
   }
-  RET(DSValue::createInvalid());
+  RET(Value::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
@@ -949,10 +949,10 @@ ARSH_METHOD string_toFloat(RuntimeContext &ctx) {
   auto ref = LOCAL(0).asStrRef();
   if (!ref.hasNullChar()) {
     if (auto ret = convertToDouble(ref.data(), false)) {
-      RET(DSValue::createFloat(ret.value));
+      RET(Value::createFloat(ret.value));
     }
   }
-  RET(DSValue::createInvalid());
+  RET(Value::createInvalid());
 }
 
 static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
@@ -963,13 +963,13 @@ static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&val
                              static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta()));
 }
 
-static DSValue asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
+static Value asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
   unsigned int prevPos = scanner.getCharBegin() - ref.begin();
   unsigned int curPos = scanner.getStream().iter - ref.begin();
   unsigned int v =
       CodePointWithMeta(scanner.getCodePoint(), toUnderlying(scanner.getProperty())).getValue();
 
-  return DSValue::createNumList(prevPos, curPos, v);
+  return Value::createNumList(prevPos, curPos, v);
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
@@ -987,7 +987,7 @@ ARSH_METHOD string_iter(RuntimeContext &ctx) {
    * }
    *
    */
-  auto value = DSValue::create<BaseObject>(ctx.typePool.get(TYPE::StringIter), 2);
+  auto value = Value::create<BaseObject>(ctx.typePool.get(TYPE::StringIter), 2);
   auto &obj = typeAs<BaseObject>(value);
   StringRef ref = LOCAL(0).asStrRef();
   Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
@@ -1026,7 +1026,7 @@ ARSH_METHOD string_realpath(RuntimeContext &ctx) {
   errno = 0;
   auto buf = getRealpath(ref.data());
   if (buf) {
-    RET(DSValue::createStr(buf.get()));
+    RET(Value::createStr(buf.get()));
   } else {
     int errNum = errno;
     std::string value = "cannot resolve realpath of `";
@@ -1046,7 +1046,7 @@ ARSH_METHOD string_basename(RuntimeContext &ctx) {
     RET_ERROR;
   }
   auto ret = getBasename(ref);
-  RET(DSValue::createStr(ret));
+  RET(Value::createStr(ret));
 }
 
 //!bind: function dirname($this : String) : String
@@ -1058,13 +1058,13 @@ ARSH_METHOD string_dirname(RuntimeContext &ctx) {
     RET_ERROR;
   }
   auto ret = getDirname(ref);
-  RET(DSValue::createStr(ret));
+  RET(Value::createStr(ret));
 }
 
 //!bind: function lower($this : String) : String
 ARSH_METHOD string_lower(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_lower);
-  auto ret = DSValue::createStr(LOCAL(0).asStrRef());
+  auto ret = Value::createStr(LOCAL(0).asStrRef());
   auto ref = ret.asStrRef();
   std::transform(ref.begin(), ref.end(), const_cast<char *>(ref.begin()), ::tolower);
   RET(ret);
@@ -1073,7 +1073,7 @@ ARSH_METHOD string_lower(RuntimeContext &ctx) {
 //!bind: function upper($this : String) : String
 ARSH_METHOD string_upper(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_upper);
-  auto ret = DSValue::createStr(LOCAL(0).asStrRef());
+  auto ret = Value::createStr(LOCAL(0).asStrRef());
   auto ref = ret.asStrRef();
   std::transform(ref.begin(), ref.end(), const_cast<char *>(ref.begin()), ::toupper);
   RET(ret);
@@ -1088,7 +1088,7 @@ ARSH_METHOD string_quote(RuntimeContext &ctx) {
     raiseOutOfRangeError(ctx, ERROR_STRING_LIMIT);
     RET_ERROR;
   }
-  RET(DSValue::createStr(std::move(ret)));
+  RET(Value::createStr(std::move(ret)));
 }
 
 // ########################
@@ -1103,7 +1103,7 @@ ARSH_METHOD stringIter_next(RuntimeContext &ctx) {
   if (scanner.hasNext()) {
     GraphemeCluster ret = scanner.next();
     iter[1] = asDSValue(iter[0].asStrRef(), scanner);
-    RET(DSValue::createStr(ret));
+    RET(Value::createStr(ret));
   } else {
     RET_VOID;
   }
@@ -1122,7 +1122,7 @@ ARSH_METHOD regex_init(RuntimeContext &ctx) {
   std::string errorStr;
   if (auto flag = PCRE::parseCompileFlag(flagStr, errorStr); flag.hasValue()) {
     if (auto re = PCRE::compile(pattern, flag.unwrap(), errorStr)) {
-      RET(DSValue::create<RegexObject>(std::move(re)));
+      RET(Value::create<RegexObject>(std::move(re)));
     }
   }
   raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
@@ -1177,12 +1177,12 @@ ARSH_METHOD regex_match(RuntimeContext &ctx) {
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
 
-  std::vector<DSValue> values;
+  std::vector<Value> values;
   const int count = TRY(re.match(ctx, ref, &values));
   if (count == 0) {
-    RET(DSValue::createInvalid());
+    RET(Value::createInvalid());
   }
-  auto ret = DSValue::create<RegexMatchObject>(toObjPtr<RegexObject>(LOCAL(0)), std::move(values));
+  auto ret = Value::create<RegexMatchObject>(toObjPtr<RegexObject>(LOCAL(0)), std::move(values));
   RET(ret);
 }
 
@@ -1193,7 +1193,7 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   std::string out;
   if (re.replace(LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), out)) {
     assert(out.size() <= StringObject::MAX_SIZE);
-    RET(DSValue::createStr(std::move(out)));
+    RET(Value::createStr(std::move(out)));
   } else {
     raiseError(ctx, TYPE::RegexMatchError, std::move(out));
     RET_ERROR;
@@ -1208,7 +1208,7 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
 ARSH_METHOD match_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_count);
   const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
-  RET(DSValue::createInt(static_cast<int64_t>(match.getGroups().size())));
+  RET(Value::createInt(static_cast<int64_t>(match.getGroups().size())));
 }
 
 //!bind: function group($this : RegexMatch, $index: Int) : Option<String>
@@ -1219,7 +1219,7 @@ ARSH_METHOD match_group(RuntimeContext &ctx) {
       index > -1 && static_cast<uint64_t>(index) < match.getGroups().size()) {
     RET(match.getGroups()[index]);
   }
-  RET(DSValue::createInvalid());
+  RET(Value::createInvalid());
 }
 
 //!bind: function named($this : RegexMatch, $name : String) : Option<String>
@@ -1230,7 +1230,7 @@ ARSH_METHOD match_named(RuntimeContext &ctx) {
   if (index > -1 && static_cast<uint64_t>(index) < obj.getGroups().size()) {
     RET(obj.getGroups()[index]);
   }
-  RET(DSValue::createInvalid());
+  RET(Value::createInvalid());
 }
 
 //!bind: function names($this : RegexMatch) : Array<String>
@@ -1238,11 +1238,11 @@ ARSH_METHOD match_names(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_names);
   const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
   const auto table = obj.getRE().getNamedGroupTable();
-  std::vector<DSValue> values(table.size);
+  std::vector<Value> values(table.size);
   for (unsigned int i = 0; i < table.size; i++) {
-    values[i] = DSValue::createStr(table[i].second);
+    values[i] = Value::createStr(table[i].second);
   }
-  auto ret = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray), std::move(values));
+  auto ret = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray), std::move(values));
   RET(ret);
 }
 
@@ -1255,20 +1255,20 @@ ARSH_METHOD signal_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_name);
   const char *name = getSignalName(LOCAL(0).asSig());
   assert(name != nullptr);
-  RET(DSValue::createStr(name));
+  RET(Value::createStr(name));
 }
 
 //!bind: function value($this : Signal) : Int
 ARSH_METHOD signal_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_value);
-  RET(DSValue::createInt(LOCAL(0).asSig()));
+  RET(Value::createInt(LOCAL(0).asSig()));
 }
 
 //!bind: function message($this : Signal) : String
 ARSH_METHOD signal_message(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_message);
   const char *value = strsignal(LOCAL(0).asSig());
-  RET(DSValue::createStr(value));
+  RET(Value::createStr(value));
 }
 
 static bool checkPidLimit(int64_t value) {
@@ -1339,7 +1339,7 @@ ARSH_METHOD signals_get(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
-  RET(DSValue::createSig(sigNum));
+  RET(Value::createSig(sigNum));
 }
 
 //!bind: function get($this : Signals, $key : String) : Option<Signal>
@@ -1348,9 +1348,9 @@ ARSH_METHOD signals_signal(RuntimeContext &ctx) {
   auto key = LOCAL(1).asStrRef();
   int sigNum = getSignalNum(key);
   if (sigNum < 0) {
-    RET(DSValue::createInvalid());
+    RET(Value::createInvalid());
   }
-  RET(DSValue::createSig(sigNum));
+  RET(Value::createSig(sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
@@ -1360,10 +1360,10 @@ ARSH_METHOD signals_list(RuntimeContext &ctx) {
   auto ret = ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Signal));
   assert(ret);
   auto type = std::move(ret).take();
-  auto v = DSValue::create<ArrayObject>(*type);
+  auto v = Value::create<ArrayObject>(*type);
   auto &array = typeAs<ArrayObject>(v);
   for (auto &e : getUniqueSignalList()) {
-    array.append(DSValue::createSig(e)); // not check iterator invalidation
+    array.append(Value::createSig(e)); // not check iterator invalidation
   }
   ASSERT_ARRAY_SIZE(array);
   RET(v);
@@ -1377,7 +1377,7 @@ static void raiseInvalidOperationError(DSState &st, std::string &&m) {
   raiseError(st, TYPE::InvalidOperationError, std::move(m));
 }
 
-static bool checkModLayout(DSState &state, const DSValue &value) {
+static bool checkModLayout(DSState &state, const Value &value) {
   if (value.isObject() && isa<FuncObject>(value.get())) {
     return true;
   }
@@ -1425,7 +1425,7 @@ ARSH_METHOD module_func(RuntimeContext &ctx) {
   auto &modType = cast<ModType>(type);
   auto ret = loadExprAsFunc(ctx, ref, modType);
   if (ret) {
-    RET(DSValue(ret.asOk()));
+    RET(Value(ret.asOk()));
   } else {
     ctx.throwObject(std::move(ret).takeError());
     RET_ERROR;
@@ -1443,9 +1443,9 @@ ARSH_METHOD module_fullname(RuntimeContext &ctx) {
   auto &modType = cast<ModType>(type);
   auto path = resolveFullCommandName(ctx, cmdName, modType);
   if (path.empty()) {
-    RET(DSValue::createInvalid());
+    RET(Value::createInvalid());
   } else {
-    RET(DSValue::createStr(std::move(path)));
+    RET(Value::createStr(std::move(path)));
   }
 }
 
@@ -1480,7 +1480,7 @@ ARSH_METHOD array_get2(RuntimeContext &ctx) {
   auto index = LOCAL(1).asInt();
   auto ret = resolveIndex(index, size, false);
   if (!ret) {
-    RET(DSValue::createInvalid());
+    RET(Value::createInvalid());
   }
   RET(obj.getValues()[ret.index]);
 }
@@ -1529,7 +1529,7 @@ ARSH_METHOD array_removeRange(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = true) {
+static bool array_fetch(RuntimeContext &ctx, Value &value, bool fetchLast = true) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   if (obj.getValues().empty()) {
     raiseOutOfRangeError(ctx, std::string("Array size is 0"));
@@ -1542,12 +1542,12 @@ static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = tr
 //!bind: function peek($this : Array<T0>) : T0
 ARSH_METHOD array_peek(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_peek);
-  DSValue value;
+  Value value;
   array_fetch(ctx, value);
   return value;
 }
 
-static bool array_insertImpl(DSState &ctx, int64_t index, const DSValue &v) {
+static bool array_insertImpl(DSState &ctx, int64_t index, const Value &v) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   if (unlikely(!obj.checkIteratorInvalidation(ctx))) {
     return false;
@@ -1584,7 +1584,7 @@ ARSH_METHOD array_pop(RuntimeContext &ctx) {
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  DSValue v;
+  Value v;
   TRY(array_fetch(ctx, v));
   obj.refValues().pop_back();
   RET(v);
@@ -1596,7 +1596,7 @@ ARSH_METHOD array_shift(RuntimeContext &ctx) {
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  DSValue v;
+  Value v;
   TRY(array_fetch(ctx, v, false));
   auto &values = obj.refValues();
   values.erase(values.begin());
@@ -1633,7 +1633,7 @@ ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   if (&obj != &value) {
     size_t valueSize = value.getValues().size();
     for (size_t i = 0; i < valueSize; i++) {
-      TRY(obj.append(ctx, DSValue(value.getValues()[i])));
+      TRY(obj.append(ctx, Value(value.getValues()[i])));
     }
   }
   RET(LOCAL(0));
@@ -1646,7 +1646,7 @@ ARSH_METHOD array_swap(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, obj.getValues().size()));
-  DSValue value = LOCAL(2);
+  Value value = LOCAL(2);
   std::swap(obj.refValues()[ret.index], value);
   RET(value);
 }
@@ -1684,7 +1684,7 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   std::sort(obj.refValues().begin(), obj.refValues().end(),
-            [](const DSValue &x, const DSValue &y) { return x.compare(y) < 0; });
+            [](const Value &x, const Value &y) { return x.compare(y) < 0; });
   RET(LOCAL(0));
 }
 
@@ -1763,7 +1763,7 @@ ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
       break;
     }
   }
-  RET(DSValue::createInt(index));
+  RET(Value::createInt(index));
 }
 
 //!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
@@ -1780,7 +1780,7 @@ ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
       break;
     }
   }
-  RET(DSValue::createInt(index));
+  RET(Value::createInt(index));
 }
 
 //!bind: function contains($this : Array<T0>, $target : T0) : Bool where T0 : Value_
@@ -1818,7 +1818,7 @@ ARSH_METHOD array_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_size);
   size_t size = typeAs<ArrayObject>(LOCAL(0)).getValues().size();
   assert(size <= ArrayObject::MAX_SIZE);
-  RET(DSValue::createInt(size));
+  RET(Value::createInt(size));
 }
 
 //!bind: function empty($this : Array<T0>) : Bool
@@ -1840,7 +1840,7 @@ ARSH_METHOD array_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
 ARSH_METHOD array_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_iter);
-  RET(DSValue::create<ArrayIterObject>(toObjPtr<ArrayObject>(LOCAL(0))));
+  RET(Value::create<ArrayIterObject>(toObjPtr<ArrayObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
@@ -1908,7 +1908,7 @@ ARSH_METHOD map_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_size);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   unsigned int value = obj.size();
-  RET(DSValue::createInt(value));
+  RET(Value::createInt(value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Bool
@@ -1923,7 +1923,7 @@ ARSH_METHOD map_find(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_find);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   auto retIndex = obj.lookup(LOCAL(1));
-  RET(retIndex != -1 ? obj[retIndex].getValue() : DSValue::createInvalid());
+  RET(retIndex != -1 ? obj[retIndex].getValue() : Value::createInvalid());
 }
 
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Option<T1>
@@ -1932,7 +1932,7 @@ ARSH_METHOD map_remove(RuntimeContext &ctx) {
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   auto e = obj.remove(LOCAL(1));
-  RET(e ? std::move(e.refValue()) : DSValue::createInvalid());
+  RET(e ? std::move(e.refValue()) : Value::createInvalid());
 }
 
 //!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1
@@ -1940,7 +1940,7 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_swap);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  DSValue value = LOCAL(2);
+  Value value = LOCAL(2);
   auto retIndex = obj.lookup(LOCAL(1));
   if (retIndex == -1) {
     std::string msg("not found key: ");
@@ -1960,7 +1960,7 @@ ARSH_METHOD map_addAll(RuntimeContext &ctx) {
   if (&obj != &value) {
     CHECK_ITER_INVALIDATION(obj);
     for (auto &e : value.getEntries()) {
-      TRY(obj.put(ctx, DSValue(e.getKey()), DSValue(e.getValue())));
+      TRY(obj.put(ctx, Value(e.getKey()), Value(e.getValue())));
     }
   }
   RET(LOCAL(0));
@@ -1971,10 +1971,10 @@ ARSH_METHOD map_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_copy);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   const auto &type = ctx.typePool.get(obj.getTypeID());
-  auto ret = DSValue::create<OrderedMapObject>(type, ctx.getRng().next());
+  auto ret = Value::create<OrderedMapObject>(type, ctx.getRng().next());
   auto &newMap = typeAs<OrderedMapObject>(ret);
   for (auto &e : obj.getEntries()) {
-    newMap.insert(e.getKey(), DSValue(e.getValue()));
+    newMap.insert(e.getKey(), Value(e.getValue()));
   }
   RET(ret);
 }
@@ -1991,7 +1991,7 @@ ARSH_METHOD map_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
 ARSH_METHOD map_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_iter);
-  RET(DSValue::create<OrderedMapIterObject>(toObjPtr<OrderedMapObject>(LOCAL(0))));
+  RET(Value::create<OrderedMapIterObject>(toObjPtr<OrderedMapObject>(LOCAL(0))));
 }
 
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
@@ -2019,7 +2019,7 @@ ARSH_METHOD error_init(RuntimeContext &ctx) {
     raiseInvalidOperationError(ctx, "Error constructor only allow non-zero status");
     RET_ERROR;
   }
-  RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1), status)));
+  RET(Value(ErrorObject::newError(ctx, type, LOCAL(1), status)));
 }
 
 //!bind: function message($this : Error) : String
@@ -2045,7 +2045,7 @@ ARSH_METHOD error_name(RuntimeContext &ctx) {
 ARSH_METHOD error_status(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_status);
   auto status = typeAs<ErrorObject>(LOCAL(0)).getStatus();
-  RET(DSValue::createInt(status));
+  RET(Value::createInt(status));
 }
 
 //!bind: function lineno($this : Error) : Int
@@ -2053,7 +2053,7 @@ ARSH_METHOD error_lineno(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_lineno);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
   unsigned int lineNum = getOccurredLineNum(stackTraces);
-  RET(DSValue::createInt(lineNum));
+  RET(Value::createInt(lineNum));
 }
 
 //!bind: function source($this : Error) : String
@@ -2061,7 +2061,7 @@ ARSH_METHOD error_source(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_source);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
   const char *source = getOccurredSourceName(stackTraces);
-  RET(DSValue::createStr(source));
+  RET(Value::createStr(source));
 }
 
 // ################
@@ -2081,7 +2081,7 @@ ARSH_METHOD fd_init(RuntimeContext &ctx) {
   int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
   remapFD(fd);
   if (fd != -1) {
-    RET(DSValue::create<UnixFdObject>(fd));
+    RET(Value::create<UnixFdObject>(fd));
   } else {
     int e = errno;
     std::string msg = "open failed: ";
@@ -2114,14 +2114,14 @@ ARSH_METHOD fd_dup(RuntimeContext &ctx) {
     raiseSystemError(ctx, e, std::to_string(fd));
     RET_ERROR;
   }
-  RET(DSValue::create<UnixFdObject>(newFd));
+  RET(Value::create<UnixFdObject>(newFd));
 }
 
 //!bind: function value($this : FD) : Int
 ARSH_METHOD fd_value(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_value);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
-  RET(DSValue::createInt(fd));
+  RET(Value::createInt(fd));
 }
 
 //!bind: function lock($this : FD) : FD
@@ -2164,7 +2164,7 @@ ARSH_METHOD fd_not(RuntimeContext &ctx) {
 ARSH_METHOD fd_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_iter);
   auto &v = LOCAL(0);
-  RET(DSValue::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
+  RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
 }
 
 // ####################
@@ -2208,7 +2208,7 @@ ARSH_METHOD cmd_call(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : LineEditor) : LineEditor
 ARSH_METHOD edit_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_init);
-  auto ret = DSValue::create<LineEditorObject>();
+  auto ret = Value::create<LineEditorObject>();
   (void)ctx;
   RET(ret);
 }
@@ -2222,12 +2222,12 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   char buf[4096];
   auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf, std::size(buf));
   if (readSize > -1) {
-    auto ret = DSValue::createStr(StringRef(buf, static_cast<size_t>(readSize)));
+    auto ret = Value::createStr(StringRef(buf, static_cast<size_t>(readSize)));
     RET(ret);
   } else if (ctx.hasError()) {
     RET_ERROR;
   } else if (errno == EAGAIN || errno == 0) {
-    RET(DSValue::createInvalid());
+    RET(Value::createInvalid());
   } else {
     raiseSystemError(ctx, errno, ERROR_READLINE);
     RET_ERROR;
@@ -2305,9 +2305,9 @@ ARSH_METHOD edit_bindings(RuntimeContext &ctx) {
   auto ret = ctx.typePool.createMapType(stringType, stringType);
   assert(ret);
   auto &mapType = cast<MapType>(*ret.asOk());
-  auto value = DSValue::create<OrderedMapObject>(mapType, ctx.getRng().next());
+  auto value = Value::create<OrderedMapObject>(mapType, ctx.getRng().next());
   editor.getKeyBindings().fillBindings([&value](StringRef key, StringRef action) {
-    typeAs<OrderedMapObject>(value).insert(DSValue::createStr(key), DSValue::createStr(action));
+    typeAs<OrderedMapObject>(value).insert(Value::createStr(key), Value::createStr(action));
   });
   RET(value);
 }
@@ -2328,10 +2328,10 @@ ARSH_METHOD edit_action(RuntimeContext &ctx) {
 ARSH_METHOD edit_actions(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_actions);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
   editor.getKeyBindings().fillActions([&array](StringRef action) {
-    array.append(DSValue::createStr(action)); // not check iterator invalidation
+    array.append(Value::createStr(action)); // not check iterator invalidation
   });
   array.sortAsStrArray(); // not check iterator invalidation
   ASSERT_ARRAY_SIZE(array);
@@ -2378,7 +2378,7 @@ ARSH_METHOD cli_parse(RuntimeContext &ctx) {
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(1));
   if (auto ret = parseCommandLine(ctx, args, obj)) {
-    RET(DSValue::createInt(ret.index));
+    RET(Value::createInt(ret.index));
   } else {
     RET_ERROR;
   }
@@ -2390,7 +2390,7 @@ ARSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   auto &args = typeAs<ArrayObject>(LOCAL(1));
   if (auto ret = parseCommandLine(ctx, args, obj)) {
-    RET(DSValue::createInt(ret.index));
+    RET(Value::createInt(ret.index));
   } else {
     auto error = ctx.getCallStack().takeThrownObject();
     showCommandLineUsage(*error);
@@ -2408,7 +2408,7 @@ ARSH_METHOD cli_usage(RuntimeContext &ctx) {
   auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
   auto value =
       ArgParser::create(obj[0].asStrRef(), type.getEntries()).formatUsage(message, verbose);
-  RET(DSValue::createStr(std::move(value)));
+  RET(Value::createStr(std::move(value)));
 }
 
 // #################
@@ -2465,7 +2465,7 @@ ARSH_METHOD job_wait(RuntimeContext &ctx) {
     raiseSystemError(ctx, errNum, "wait failed");
     RET_ERROR;
   }
-  RET(DSValue::createInt(s));
+  RET(Value::createInt(s));
 }
 
 //!bind: function raise($this : Job, $s : Signal) : Void
@@ -2489,7 +2489,7 @@ ARSH_METHOD job_detach(RuntimeContext &ctx) {
 ARSH_METHOD job_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_size);
   auto &obj = typeAs<JobObject>(LOCAL(0));
-  RET(DSValue::createInt(obj.getProcSize()));
+  RET(Value::createInt(obj.getProcSize()));
 }
 
 //!bind: function pid($this : Job, $index : Int) : Option<Int>
@@ -2501,9 +2501,9 @@ ARSH_METHOD job_pid(RuntimeContext &ctx) {
   if (index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
     int pid = job.getValidPid(index);
     if (pid < 0 || !job.isRunning()) {
-      RET(DSValue::createInvalid());
+      RET(Value::createInvalid());
     }
-    RET(DSValue::createInt(pid));
+    RET(Value::createInt(pid));
   }
   std::string msg = "number of processes is: ";
   msg += std::to_string(job.getProcSize());
@@ -2522,9 +2522,9 @@ ARSH_METHOD job_status(RuntimeContext &ctx) {
   if (index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
     auto &proc = job.getProcs()[index];
     if (!proc.is(Proc::State::RUNNING)) {
-      RET(DSValue::createInt(proc.exitStatus()));
+      RET(Value::createInt(proc.exitStatus()));
     } else {
-      RET(DSValue::createInvalid());
+      RET(Value::createInvalid());
     }
   }
   std::string msg = "number of processes is: ";

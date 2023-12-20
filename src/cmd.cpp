@@ -803,7 +803,7 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
+  state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
   auto envName = argvObj.getValues()[index].asStrRef();
   if (envName.hasNullChar()) {
     ERROR(state, argvObj, "contains null characters: %s", toPrintable(envName).c_str());
@@ -812,7 +812,7 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
   if (const char *env = getenv(envName.data())) {
     std::string value = env;
     assert(value.size() <= SYS_LIMIT_STRING_MAX);
-    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
+    state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr(std::move(value)));
     return 0;
   } else {
     return 1;
@@ -1005,7 +1005,7 @@ struct UlimitOptEntryTable {
   unsigned int count{0};
 
   int tryToUpdate(const DSState &st, GetOptState &optState, ArrayObject &argvObj, int opt) {
-    DSValue arg;
+    Value arg;
     if (optState.index < argvObj.getValues().size() &&
         *argvObj.getValues()[optState.index].asCStr() != '-') {
       arg = argvObj.getValues()[optState.index++];
@@ -1018,7 +1018,7 @@ struct UlimitOptEntryTable {
   }
 
 private:
-  bool update(int ch, const DSValue &value) {
+  bool update(int ch, const Value &value) {
     this->count++;
     // search entry
     for (unsigned int index = 0; index < std::size(ulimitOps); index++) {

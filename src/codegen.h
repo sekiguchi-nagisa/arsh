@@ -96,18 +96,18 @@ struct LoopState {
 
 class ConstBuffer {
 private:
-  std::unique_ptr<DSValue[]> values;
+  std::unique_ptr<Value[]> values;
   unsigned int size{0};
   unsigned int cap{8};
 
 public:
-  ConstBuffer() : values(new DSValue[8]) {}
+  ConstBuffer() : values(new Value[8]) {}
 
   unsigned int getSize() const { return this->size; }
 
-  void append(DSValue &&value);
+  void append(Value &&value);
 
-  DSValue *take() && {
+  Value *take() && {
     this->size = 0;
     this->cap = 0;
     return this->values.release();
@@ -313,17 +313,17 @@ private:
 
   unsigned int currentCodeOffset() const { return this->curBuilder().codeBuffer.size(); }
 
-  unsigned int emitConstant(DSValue &&value);
+  unsigned int emitConstant(Value &&value);
 
-  void emitLdcIns(const DSValue &value) { this->emitLdcIns(DSValue(value)); }
+  void emitLdcIns(const Value &value) { this->emitLdcIns(Value(value)); }
 
-  void emitLdcIns(DSValue &&value);
+  void emitLdcIns(Value &&value);
 
   void emitInt(int64_t v) {
     if (v >= 0 && v <= UINT8_MAX) {
       this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(v));
     } else {
-      this->emitLdcIns(DSValue::createInt(v));
+      this->emitLdcIns(Value::createInt(v));
     }
   }
 
@@ -480,8 +480,8 @@ private:
     this->builders.emplace_back(modId, std::move(lex), kind, localVarNum);
     if (kind == CodeKind::TOPLEVEL) {
       auto &lexer = *this->curBuilder().lexer;
-      this->curBuilder().constBuffer.append(DSValue::createStr(lexer.getSourceName()));
-      this->curBuilder().constBuffer.append(DSValue::createStr(lexer.getScriptDir()));
+      this->curBuilder().constBuffer.append(Value::createStr(lexer.getSourceName()));
+      this->curBuilder().constBuffer.append(Value::createStr(lexer.getScriptDir()));
     }
   }
 

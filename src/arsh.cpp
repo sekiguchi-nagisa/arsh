@@ -89,26 +89,26 @@ struct BindingConsumer {
   explicit BindingConsumer(DSState &st) : state(st) {}
 
   void operator()(const Handle &handle, int64_t v) {
-    this->state.setGlobal(handle.getIndex(), DSValue::createInt(v));
+    this->state.setGlobal(handle.getIndex(), Value::createInt(v));
   }
 
   void operator()(const Handle &handle, const std::string &v) {
-    this->state.setGlobal(handle.getIndex(), DSValue::createStr(v));
+    this->state.setGlobal(handle.getIndex(), Value::createStr(v));
   }
 
   void operator()(const Handle &handle, FILE *fp) {
     assert(fp);
     int fd = fileno(fp);
     assert(fd > -1);
-    this->state.setGlobal(handle.getIndex(), DSValue::create<UnixFdObject>(fd));
+    this->state.setGlobal(handle.getIndex(), Value::create<UnixFdObject>(fd));
   }
 
   void operator()(const Handle &handle, const DSType &type) {
-    auto value = DSValue::createDummy(type);
+    auto value = Value::createDummy(type);
     if (type.isArrayType()) {
-      value = DSValue::create<ArrayObject>(type);
+      value = Value::create<ArrayObject>(type);
     } else if (type.isMapType()) {
-      value = DSValue::create<OrderedMapObject>(type, this->state.getRng().next());
+      value = Value::create<OrderedMapObject>(type, this->state.getRng().next());
     }
     this->state.setGlobal(handle.getIndex(), std::move(value));
   }
@@ -209,18 +209,18 @@ unsigned int DSState_lineNum(const DSState *st) {
 void DSState_setShellName(DSState *st, const char *shellName) {
   GUARD_NULL(st);
   if (shellName != nullptr) {
-    st->setGlobal(BuiltinVarOffset::POS_0, DSValue::createStr(shellName));
+    st->setGlobal(BuiltinVarOffset::POS_0, Value::createStr(shellName));
   }
 }
 
 int DSState_setArguments(DSState *st, char *const *args) {
   GUARD_NULL(st, 0);
 
-  auto value = DSValue::create<ArrayObject>(st->typePool.get(TYPE::StringArray));
+  auto value = Value::create<ArrayObject>(st->typePool.get(TYPE::StringArray));
   if (args) {
     auto &argsObj = typeAs<ArrayObject>(value);
     for (unsigned int i = 0; args[i] != nullptr; i++) {
-      if (!argsObj.append(*st, DSValue::createStr(args[i]))) {
+      if (!argsObj.append(*st, Value::createStr(args[i]))) {
         return -1;
       }
     }
@@ -445,9 +445,9 @@ int DSState_exec(DSState *st, char *const *argv) {
   GUARD_TRUE(st->execMode != DS_EXEC_MODE_NORMAL, 0);
   GUARD_NULL(argv, -1);
 
-  std::vector<DSValue> values;
+  std::vector<Value> values;
   for (; *argv != nullptr; argv++) {
-    values.push_back(DSValue::createStr(*argv));
+    values.push_back(Value::createStr(*argv));
   }
   VM::execCommand(*st, std::move(values), false);
   return st->getMaskedExitStatus();
@@ -551,7 +551,7 @@ const char *DSState_initExecutablePath(DSState *st) {
   }
   char *path = getExecutablePath();
   if (path) {
-    st->setGlobal(handle.asOk()->getIndex(), DSValue::createStr(path));
+    st->setGlobal(handle.asOk()->getIndex(), Value::createStr(path));
     free(path);
   }
   return nullptr;

@@ -26,7 +26,7 @@ namespace arsh {
 // ##     OrderedMapEntries     ##
 // ###############################
 
-unsigned int OrderedMapEntries::add(DSValue &&key, DSValue &&value) {
+unsigned int OrderedMapEntries::add(Value &&key, Value &&value) {
   if (this->usedSize == this->capacity) {
     unsigned int newCap = this->capacity;
     newCap += (newCap >> 1);
@@ -73,7 +73,7 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
-static unsigned int hash(const DSValue &value, uint64_t seed) {
+static unsigned int hash(const Value &value, uint64_t seed) {
   bool isStr = false;
   uint64_t u64 = 0;
   const void *ptr = nullptr;
@@ -113,7 +113,7 @@ static unsigned int hash(const DSValue &value, uint64_t seed) {
   }
 }
 
-std::pair<int, bool> OrderedMapObject::insert(const DSValue &key, DSValue &&value) {
+std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
   if (unlikely(!this->buckets)) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
   }
@@ -180,7 +180,7 @@ void OrderedMapObject::insertEntryIndex(unsigned int entryIndex, const ProbeStat
   }
 }
 
-OrderedMapEntries::Entry OrderedMapObject::remove(const DSValue &key) {
+OrderedMapEntries::Entry OrderedMapObject::remove(const Value &key) {
   if (this->bucketLen.size() == 0) {
     return {};
   }
@@ -222,12 +222,12 @@ void OrderedMapObject::clear() {
   this->entries.clear();
 }
 
-bool OrderedMapObject::probeBuckets(const DSValue &key, ProbeState &state) const {
+bool OrderedMapObject::probeBuckets(const Value &key, ProbeState &state) const {
   const auto keyHash = hash(key, this->seed);
   return this->probeBuckets(key, keyHash, state);
 }
 
-bool OrderedMapObject::probeBuckets(const DSValue &key, unsigned int keyHash,
+bool OrderedMapObject::probeBuckets(const Value &key, unsigned int keyHash,
                                     ProbeState &state) const {
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
@@ -296,10 +296,10 @@ bool OrderedMapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar
   return true;
 }
 
-DSValue OrderedMapObject::put(DSState &st, DSValue &&key, DSValue &&value) {
-  auto pair = this->insert(key, DSValue(value));
+Value OrderedMapObject::put(DSState &st, Value &&key, Value &&value) {
+  auto pair = this->insert(key, Value(value));
   if (pair.second) { // success insertion
-    return DSValue::createInvalid();
+    return Value::createInvalid();
   } else if (pair.first == -1) { // insertion failed (reach limit)
     raiseError(st, TYPE::OutOfRangeError, ERROR_MAP_LIMIT);
     return {};
@@ -309,13 +309,13 @@ DSValue OrderedMapObject::put(DSState &st, DSValue &&key, DSValue &&value) {
   }
 }
 
-DSValue OrderedMapIterObject::next(TypePool &pool) {
+Value OrderedMapIterObject::next(TypePool &pool) {
   auto &entry = this->nextEntry();
   const auto *keyType = &pool.get(entry.getKey().getTypeID());
   const auto *valueType = &pool.get(entry.getValue().getTypeID());
 
   auto *type = pool.createTupleType({keyType, valueType}).take();
-  auto value = DSValue::create<BaseObject>(cast<TupleType>(*type));
+  auto value = Value::create<BaseObject>(cast<TupleType>(*type));
   typeAs<BaseObject>(value)[0] = entry.getKey();
   typeAs<BaseObject>(value)[1] = entry.getValue();
   return value;

@@ -75,7 +75,7 @@ protected:
     this->eval(code, kind);
   }
 
-  DSValue getValue(const char *name) const {
+  Value getValue(const char *name) const {
     auto handle = this->state->rootModScope->lookup(name);
     if (!handle) {
       return nullptr;
@@ -358,7 +358,7 @@ static JobTable::ConstEntryIter getEndIter(const JobTable &table) { return table
 struct JobTableTest : public VMTest {
   Job newJob() {
     return JobObject::create(Proc(), this->state->emptyFDObj, this->state->emptyFDObj,
-                             DSValue::createStr());
+                             Value::createStr());
   }
 
   template <typename Func>
@@ -369,7 +369,7 @@ struct JobTableTest : public VMTest {
       exit(s);
     }
     return JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
-                             DSValue::createStr());
+                             Value::createStr());
   }
 
   template <typename Func>
@@ -380,7 +380,7 @@ struct JobTableTest : public VMTest {
       exit(s);
     }
     auto job = JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
-                                 DSValue::createStr());
+                                 Value::createStr());
     this->state->jobTable.attach(job);
     return job;
   }
@@ -546,7 +546,7 @@ struct ObjectTest : ::testing::Test {
   };
 
   static void checkMetaData(const Param &p) {
-    auto v = DSValue::createStr(p.ref);
+    auto v = Value::createStr(p.ref);
 
     ASSERT_EQ(p.ref, v.asStrRef());
     ASSERT_EQ(p.ref.size(), v.asStrRef().size());
@@ -593,17 +593,17 @@ TEST(MapTest, base) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
+  auto value = Value::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value);
 
   ASSERT_EQ(0, obj->size());
 
-  auto pair = obj->insert(DSValue::createStr("ABC"), DSValue::createInt(12));
+  auto pair = obj->insert(Value::createStr("ABC"), Value::createInt(12));
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ(1, obj->getEntries().getUsedSize());
-  int retIndex = obj->lookup(DSValue::createStr("ABCD"));
+  int retIndex = obj->lookup(Value::createStr("ABCD"));
   ASSERT_EQ(-1, retIndex);
-  retIndex = obj->lookup(DSValue::createStr("ABC"));
+  retIndex = obj->lookup(Value::createStr("ABC"));
   ASSERT_EQ(0, retIndex);
   ASSERT_EQ(retIndex, pair.first);
   ASSERT_TRUE(pair.second);
@@ -611,28 +611,28 @@ TEST(MapTest, base) {
   ASSERT_EQ(12, (*obj)[retIndex].getValue().asInt());
 
   // insert already defined key
-  pair = obj->insert(DSValue::createStr("ABC"), DSValue::createInt(1232));
+  pair = obj->insert(Value::createStr("ABC"), Value::createInt(1232));
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ(1, obj->getEntries().getUsedSize());
   ASSERT_EQ(0, pair.first);
   ASSERT_FALSE(pair.second);
 
-  pair = obj->insert(DSValue::createStr("1234"), DSValue::createInt(-99));
+  pair = obj->insert(Value::createStr("1234"), Value::createInt(-99));
   ASSERT_EQ(2, obj->size());
   ASSERT_EQ(2, obj->getEntries().getUsedSize());
   ASSERT_EQ(1, pair.first);
   ASSERT_TRUE(pair.second);
-  retIndex = obj->lookup(DSValue::createStr("1234"));
+  retIndex = obj->lookup(Value::createStr("1234"));
   ASSERT_EQ(1, retIndex);
   ASSERT_EQ("1234", (*obj)[retIndex].getKey().asStrRef());
   ASSERT_EQ(-99, (*obj)[retIndex].getValue().asInt());
 
-  pair = obj->insert(DSValue::createStr("***"), DSValue::createInt(9876));
+  pair = obj->insert(Value::createStr("***"), Value::createInt(9876));
   ASSERT_EQ(3, obj->size());
   ASSERT_EQ(3, obj->getEntries().getUsedSize());
   ASSERT_EQ(2, pair.first);
   ASSERT_TRUE(pair.second);
-  retIndex = obj->lookup(DSValue::createStr("***"));
+  retIndex = obj->lookup(Value::createStr("***"));
   ASSERT_EQ(2, retIndex);
   ASSERT_EQ("***", (*obj)[retIndex].getKey().asStrRef());
   ASSERT_EQ(9876, (*obj)[retIndex].getValue().asInt());
@@ -660,7 +660,7 @@ TEST(MapTest, rand1) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
+  auto value = Value::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value);
 
   ASSERT_EQ(0, obj->size());
@@ -684,8 +684,8 @@ TEST(MapTest, rand1) {
     SCOPED_TRACE(location(i, keyValues));
 
     const auto &keyValue = keyValues[i];
-    auto pair = obj->insert(DSValue::createStr(keyValue.first),
-                            DSValue::createInt(static_cast<int64_t>(keyValue.second)));
+    auto pair = obj->insert(Value::createStr(keyValue.first),
+                            Value::createInt(static_cast<int64_t>(keyValue.second)));
     ASSERT_TRUE(pair.second);
     ASSERT_EQ(i, pair.first);
     ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
@@ -700,7 +700,7 @@ TEST(MapTest, rand1) {
     SCOPED_TRACE(location(i, keyValues));
 
     const auto &keyValue = keyValues[i];
-    auto retIndex = obj->lookup(DSValue::createStr(keyValue.first));
+    auto retIndex = obj->lookup(Value::createStr(keyValue.first));
     ASSERT_EQ(i, retIndex);
     ASSERT_EQ(keyValue.first, (*obj)[retIndex].getKey().asStrRef());
     ASSERT_EQ(keyValue.second, (*obj)[retIndex].getValue().asInt());
@@ -712,8 +712,8 @@ TEST(MapTest, rand1) {
     SCOPED_TRACE(location(i, keyValues));
 
     const auto &keyValue = keyValues[i];
-    auto pair = obj->insert(DSValue::createStr(keyValue.first),
-                            DSValue::createInt(static_cast<int64_t>(keyValue.second + 9999)));
+    auto pair = obj->insert(Value::createStr(keyValue.first),
+                            Value::createInt(static_cast<int64_t>(keyValue.second + 9999)));
     ASSERT_FALSE(pair.second);
     ASSERT_EQ(i, pair.first);
     ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
@@ -731,7 +731,7 @@ TEST(MapTest, rand1) {
 
     SCOPED_TRACE("at " + std::to_string(i) + " " + key);
 
-    auto retIndex = obj->lookup(DSValue::createStr(key));
+    auto retIndex = obj->lookup(Value::createStr(key));
     ASSERT_EQ(-1, retIndex);
   }
 
@@ -763,7 +763,7 @@ TEST(MapTest, rand1) {
     if (removeTargets.find(e.first) != removeTargets.end()) {
       SCOPED_TRACE("(" + e.first + ", " + std::to_string(e.second) + ")");
 
-      auto entry = obj->remove(DSValue::createStr(e.first));
+      auto entry = obj->remove(Value::createStr(e.first));
       ASSERT_TRUE(entry);
       ASSERT_EQ(e.first, entry.getKey().asStrRef());
       ASSERT_EQ(e.second, entry.getValue().asInt());
@@ -778,14 +778,14 @@ TEST(MapTest, rand1) {
   for (auto &e : removeTargets) {
     SCOPED_TRACE(e);
 
-    auto retIndex = obj->lookup(DSValue::createStr(e));
+    auto retIndex = obj->lookup(Value::createStr(e));
     ASSERT_EQ(-1, retIndex);
   }
   // lookup remain entry
   for (auto &e : keyValues) {
     SCOPED_TRACE("(" + e.first + ", " + std::to_string(e.second) + ")");
 
-    auto retIndex = obj->lookup(DSValue::createStr(e.first));
+    auto retIndex = obj->lookup(Value::createStr(e.first));
     ASSERT_NE(-1, retIndex);
     ASSERT_EQ(e.first, (*obj)[retIndex].getKey().asStrRef());
     ASSERT_EQ(e.second, (*obj)[retIndex].getValue().asInt());
@@ -817,7 +817,7 @@ TEST(MapTest, rand1) {
 
     SCOPED_TRACE("(" + key + ", " + std::to_string(v) + ")");
 
-    auto pair = obj->insert(DSValue::createStr(key), DSValue::createInt(static_cast<int64_t>(v)));
+    auto pair = obj->insert(Value::createStr(key), Value::createInt(static_cast<int64_t>(v)));
     ASSERT_TRUE(pair.second);
     ASSERT_NE(-1, pair.first);
 
@@ -846,7 +846,7 @@ TEST(MapTest, rand2) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
 
-  auto value = DSValue::create<OrderedMapObject>(mapType, 42);
+  auto value = Value::create<OrderedMapObject>(mapType, 42);
   auto obj = toObjPtr<OrderedMapObject>(value); // FIXME:
 }
 

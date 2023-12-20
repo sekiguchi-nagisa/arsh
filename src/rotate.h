@@ -27,7 +27,7 @@ private:
   static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
   static_assert(SYS_LIMIT_HIST_SIZE < UINT32_MAX);
 
-  std::unordered_map<unsigned int, DSValue> oldEntries;
+  std::unordered_map<unsigned int, Value> oldEntries;
   ObjPtr<ArrayObject> history;
   int histIndex{0};
   unsigned int maxSize{SYS_LIMIT_HIST_SIZE};

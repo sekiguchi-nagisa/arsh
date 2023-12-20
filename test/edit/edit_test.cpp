@@ -299,14 +299,14 @@ TEST(KillRingTest, pop) {
 }
 
 TEST(HistRotatorTest, base) {
-  auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<DSValue>());
+  auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
+                                            std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
-  obj->append(DSValue::createStr("AAA"));
-  obj->append(DSValue::createStr("BBB"));
-  obj->append(DSValue::createStr("CCC"));
-  obj->append(DSValue::createStr("DDD"));
-  obj->append(DSValue::createStr("EEE"));
+  obj->append(Value::createStr("AAA"));
+  obj->append(Value::createStr("BBB"));
+  obj->append(Value::createStr("CCC"));
+  obj->append(Value::createStr("DDD"));
+  obj->append(Value::createStr("EEE"));
 
   HistRotator rotate(obj);
   rotate.setMaxSize(4);
@@ -414,14 +414,14 @@ TEST(HistRotatorTest, base) {
 }
 
 TEST(HistRotatorTest, broken1) {
-  auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<DSValue>());
+  auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
+                                            std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
-  obj->append(DSValue::createStr("AAA"));
-  obj->append(DSValue::createStr("BBB"));
-  obj->append(DSValue::createStr("CCC"));
-  obj->append(DSValue::createStr("DDD"));
-  obj->append(DSValue::createStr("EEE"));
+  obj->append(Value::createStr("AAA"));
+  obj->append(Value::createStr("BBB"));
+  obj->append(Value::createStr("CCC"));
+  obj->append(Value::createStr("DDD"));
+  obj->append(Value::createStr("EEE"));
 
   HistRotator rotate(obj);
   rotate.setMaxSize(4);
@@ -461,14 +461,14 @@ TEST(HistRotatorTest, broken1) {
 }
 
 TEST(HistRotator, broken2) {
-  auto value = DSValue::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<DSValue>());
+  auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
+                                            std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
-  obj->append(DSValue::createStr("AAA"));
-  obj->append(DSValue::createStr("BBB"));
-  obj->append(DSValue::createStr("CCC"));
-  obj->append(DSValue::createStr("DDD"));
-  obj->append(DSValue::createStr("EEE"));
+  obj->append(Value::createStr("AAA"));
+  obj->append(Value::createStr("BBB"));
+  obj->append(Value::createStr("CCC"));
+  obj->append(Value::createStr("DDD"));
+  obj->append(Value::createStr("EEE"));
 
   HistRotator rotate(obj);
   rotate.setMaxSize(4);

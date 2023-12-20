@@ -47,7 +47,7 @@ struct VMHook {
   virtual void vmThrowHook(DSState &st) = 0;
 };
 
-const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
+const Value &getBuiltinGlobal(const DSState &st, const char *varName);
 
 void reassignReplyVar(DSState &st);
 
@@ -209,7 +209,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const DSState &state, const DSValue &name,
+std::string resolveFullCommandName(const DSState &state, const Value &name,
                                    const ModType &modType);
 
 /**
@@ -221,7 +221,7 @@ std::string resolveFullCommandName(const DSState &state, const DSValue &name,
  * @return
  * if has error, return false
  */
-bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc);
+bool mergeSort(DSState &state, ArrayObject &arrayObj, const Value &compFunc);
 
 /**
  *

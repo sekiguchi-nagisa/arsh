@@ -163,7 +163,7 @@ public:
 class RedirObject : public ObjectWithRtti<ObjectKind::Redir> {
 public:
   struct Entry {
-    DSValue value;
+    Value value;
     RedirOp op;
     int newFd; // ignore it when op is REDIR_OUT_ERR, APPEND_OUT_ERR or CLOBBER_OUT_ERR
   };
@@ -188,7 +188,7 @@ public:
 
   ~RedirObject();
 
-  void addEntry(DSValue &&value, RedirOp op, int newFd);
+  void addEntry(Value &&value, RedirOp op, int newFd);
 
   void ignoreBackup() { this->backupFDSet = 0; }
 

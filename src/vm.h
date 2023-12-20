@@ -141,7 +141,7 @@ private:
 
   VMHook *hook{nullptr};
 
-  std::vector<DSValue> globals{64};
+  std::vector<Value> globals{64};
 
   VMState stack;
 
@@ -182,25 +182,23 @@ public:
   void throwObject(ObjPtr<ErrorObject> &&except) { this->stack.setErrorObj(std::move(except)); }
 
   // variable manipulation
-  void setGlobal(unsigned int index, const DSValue &obj) { this->setGlobal(index, DSValue(obj)); }
+  void setGlobal(unsigned int index, const Value &obj) { this->setGlobal(index, Value(obj)); }
 
-  void setGlobal(BuiltinVarOffset offset, DSValue &&obj) {
+  void setGlobal(BuiltinVarOffset offset, Value &&obj) {
     this->setGlobal(toIndex(offset), std::move(obj));
   }
 
-  void setGlobal(unsigned int index, DSValue &&obj) { this->globals[index] = std::move(obj); }
+  void setGlobal(unsigned int index, Value &&obj) { this->globals[index] = std::move(obj); }
 
-  const DSValue &getGlobal(unsigned int index) const { return this->globals[index]; }
+  const Value &getGlobal(unsigned int index) const { return this->globals[index]; }
 
-  const DSValue &getGlobal(BuiltinVarOffset offset) const {
-    return this->getGlobal(toIndex(offset));
-  }
+  const Value &getGlobal(BuiltinVarOffset offset) const { return this->getGlobal(toIndex(offset)); }
 
-  void setLocal(unsigned char index, DSValue &&obj) { this->stack.setLocal(index, std::move(obj)); }
+  void setLocal(unsigned char index, Value &&obj) { this->stack.setLocal(index, std::move(obj)); }
 
-  const DSValue &getLocal(unsigned char index) const { return this->stack.getLocal(index); }
+  const Value &getLocal(unsigned char index) const { return this->stack.getLocal(index); }
 
-  DSValue moveLocal(unsigned char index) { return this->stack.moveLocal(index); }
+  Value moveLocal(unsigned char index) { return this->stack.moveLocal(index); }
 
   /**
    * get exit status ($? & 0xFF)
@@ -211,7 +209,7 @@ public:
   }
 
   void setExitStatus(int64_t status) {
-    this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
+    this->setGlobal(BuiltinVarOffset::EXIT_STATUS, Value::createInt(status));
   }
 
   void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
@@ -412,7 +410,7 @@ public:
    * if specified USE_FQN, always ignore
    * @return
    */
-  ResolvedCmd operator()(const DSState &state, const DSValue &cmdName,
+  ResolvedCmd operator()(const DSState &state, const Value &cmdName,
                          const ModType *modType = nullptr) const;
 };
 
@@ -434,10 +432,10 @@ class CmdArgsBuilder {
 private:
   DSState &state;
   ObjPtr<ArrayObject> argv;
-  DSValue redir; // may be null, invalid, RedirObject
+  Value redir; // may be null, invalid, RedirObject
 
 public:
-  explicit CmdArgsBuilder(DSState &state, ObjPtr<ArrayObject> argv, DSValue &&redir)
+  explicit CmdArgsBuilder(DSState &state, ObjPtr<ArrayObject> argv, Value &&redir)
       : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
 
   /**
@@ -447,9 +445,9 @@ public:
    * @return
    * if has error, return false
    */
-  bool add(DSValue &&arg);
+  bool add(Value &&arg);
 
-  DSValue takeRedir() && { return std::move(this->redir); }
+  Value takeRedir() && { return std::move(this->redir); }
 };
 
 class RecursionGuard {
@@ -464,7 +462,7 @@ public:
   bool checkLimit();
 };
 
-using native_func_t = DSValue (*)(DSState &);
+using native_func_t = Value (*)(DSState &);
 
 class VM {
 private:
@@ -483,7 +481,7 @@ private:
   }
 
   // runtime api
-  static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
+  static bool instanceOf(const TypePool &pool, const Value &value, const DSType &targetType) {
     if (value.isInvalid()) {
       return targetType.isOptionType();
     }
@@ -554,25 +552,25 @@ private:
    *             |     offset    |
    */
   static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
-                                            ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig,
+                                            ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                             CmdCallAttr attr);
 
-  static bool attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize,
-                             const Proc *procs, ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
+  static bool attachAsyncJob(DSState &state, Value &&desc, unsigned int procSize, const Proc *procs,
+                             ForkKind forkKind, PipeSet &pipeSet, Value &ret);
 
-  static bool forkAndEval(DSState &state, DSValue &&desc);
+  static bool forkAndEval(DSState &state, Value &&desc);
 
   static bool forkAndExec(DSState &state, const char *filePath, char *const *argv,
-                          DSValue &&redirConfig);
+                          Value &&redirConfig);
 
   static bool prepareSubCommand(DSState &state, const ModType &modType,
-                                ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig);
+                                ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig);
 
   static bool callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
-                          DSValue &&redirConfig, CmdCallAttr attr = {});
+                          Value &&redirConfig, CmdCallAttr attr = {});
 
   static bool callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
-                          DSValue &&redirConfig, CmdCallAttr attr);
+                          Value &&redirConfig, CmdCallAttr attr);
 
   struct BuiltinCmdResult {
     enum Kind : unsigned char {
@@ -600,9 +598,9 @@ private:
   };
 
   static BuiltinCmdResult builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
-                                         DSValue &&redir, CmdCallAttr attr);
+                                         Value &&redir, CmdCallAttr attr);
 
-  static int builtinExec(DSState &state, const ArrayObject &argObj, DSValue &&redir);
+  static int builtinExec(DSState &state, const ArrayObject &argObj, Value &&redir);
 
   static bool returnFromUserDefinedCommand(DSState &state, int64_t status);
 
@@ -613,17 +611,17 @@ private:
    * @return
    * if has error, return false.
    */
-  static bool callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind forkKind);
+  static bool callPipeline(DSState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
-  static bool addGlobbingPath(DSState &state, ArrayObject &arv, const DSValue *begin,
-                              const DSValue *end, bool tilde);
+  static bool addGlobbingPath(DSState &state, ArrayObject &arv, const Value *begin,
+                              const Value *end, bool tilde);
 
-  static bool applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *begin,
-                                  const DSValue *end, ExpandOp expandOp);
+  static bool applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *begin,
+                                  const Value *end, ExpandOp expandOp);
 
   static bool addExpandingPath(DSState &state, unsigned int size, ExpandOp expandOp);
 
-  static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
+  static bool kickSignalHandler(DSState &state, int sigNum, Value &&func);
 
   static void kickVMHook(DSState &state);
 
@@ -653,10 +651,10 @@ private:
    * if has error or not value, return null
    * otherwise, return value
    */
-  static EvalRet startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value);
+  static EvalRet startEval(DSState &state, EvalOP op, DSError *dsError, Value &value);
 
-  static unsigned int prepareArguments(VMState &state, DSValue &&recv,
-                                       std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+  static unsigned int prepareArguments(VMState &state, Value &&recv,
+                                       std::pair<unsigned int, std::array<Value, 3>> &&args);
 
 public:
   // entry point
@@ -674,14 +672,14 @@ public:
   /**
    * execute command.
    * @param argv
-   * DSValue must be String_Object
+   * Value must be String_Object
    * @param propagate
    * if true, not handle uncaught exception
    * @return
    * if exit status is 0, return true.
    * otherwise, return false
    */
-  static DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate);
+  static Value execCommand(DSState &state, std::vector<Value> &&argv, bool propagate);
 
   /**
    *
@@ -690,7 +688,7 @@ public:
    * @return
    * return value of method (if no return value, return null).
    */
-  static DSValue callFunction(DSState &state, DSValue &&funcObj, CallArgs &&args);
+  static Value callFunction(DSState &state, Value &&funcObj, CallArgs &&args);
 
   /**
    * print uncaught exception information. (not clear thrown object)

@@ -71,7 +71,7 @@ enum class ObjectKind : unsigned char {
 #undef GEN_ENUM
 };
 
-class DSValue;
+class Value;
 
 struct ObjectRefCount;
 
@@ -85,7 +85,7 @@ protected:
    */
   const unsigned int tag{0};
 
-  friend class DSValue;
+  friend class Value;
 
   friend struct ObjectRefCount;
 
@@ -326,26 +326,26 @@ struct ObjectConstructor {
 
 class StrBuilder;
 
-class DSValue : public RawValue {
+class Value : public RawValue {
 private:
   static_assert(sizeof(RawValue) == 16);
 
-  explicit DSValue(uint64_t value) noexcept {
+  explicit Value(uint64_t value) noexcept {
     this->value.kind = ValueKind::NUMBER;
     this->value.u64 = value;
   }
 
-  explicit DSValue(int64_t value) noexcept {
+  explicit Value(int64_t value) noexcept {
     this->value.kind = ValueKind::INT;
     this->value.i64 = value;
   }
 
-  explicit DSValue(bool value) noexcept {
+  explicit Value(bool value) noexcept {
     this->value.kind = ValueKind::BOOL;
     this->value.b = value;
   }
 
-  explicit DSValue(double value) noexcept {
+  explicit Value(double value) noexcept {
     this->value.kind = ValueKind::FLOAT;
     this->value.f64 = value;
   }
@@ -353,7 +353,7 @@ private:
   /**
    * for small string construction
    */
-  DSValue(const char *data, unsigned int size) noexcept {
+  Value(const char *data, unsigned int size) noexcept {
     assert(data || size == 0);
     assert(size <= smallStrSize(ValueKind::SSTR14));
     this->str.kind = toSmallStrKind(size);
@@ -364,7 +364,7 @@ private:
   }
 
 public:
-  explicit DSValue(Object *o) noexcept {
+  explicit Value(Object *o) noexcept {
     assert(o);
     this->value.kind = ValueKind::OBJECT;
     this->value.obj = o;
@@ -372,13 +372,13 @@ public:
   }
 
   /**
-   * equivalent to DSValue(nullptr)
+   * equivalent to Value(nullptr)
    */
-  DSValue() noexcept { this->value.kind = ValueKind::EMPTY; }
+  Value() noexcept { this->value.kind = ValueKind::EMPTY; }
 
-  DSValue(std::nullptr_t) noexcept : DSValue() {} // NOLINT
+  Value(std::nullptr_t) noexcept : Value() {} // NOLINT
 
-  DSValue(const DSValue &value) noexcept : RawValue(value) {
+  Value(const Value &value) noexcept : RawValue(value) {
     if (this->isObject()) {
       this->value.obj->refCount++;
     }
@@ -387,12 +387,12 @@ public:
   /**
    * not increment refCount
    */
-  DSValue(DSValue &&value) noexcept : RawValue(value) { value.value.kind = ValueKind::EMPTY; }
+  Value(Value &&value) noexcept : RawValue(value) { value.value.kind = ValueKind::EMPTY; }
 
   template <typename T, enable_when<std::is_base_of_v<Object, T>> = nullptr>
-  DSValue(const ObjPtr<T> &o) noexcept : DSValue(DSValue(o.get())) {} // NOLINT
+  Value(const ObjPtr<T> &o) noexcept : Value(Value(o.get())) {} // NOLINT
 
-  ~DSValue() {
+  ~Value() {
     if (this->isObject()) {
       if (--this->value.obj->refCount == 0) {
         this->value.obj->destroy();
@@ -400,18 +400,18 @@ public:
     }
   }
 
-  DSValue &operator=(const DSValue &value) noexcept {
+  Value &operator=(const Value &value) noexcept {
     if (this != std::addressof(value)) {
-      this->~DSValue();
-      new (this) DSValue(value);
+      this->~Value();
+      new (this) Value(value);
     }
     return *this;
   }
 
-  DSValue &operator=(DSValue &&value) noexcept {
+  Value &operator=(Value &&value) noexcept {
     if (this != std::addressof(value)) {
-      this->~DSValue();
-      new (this) DSValue(std::move(value));
+      this->~Value();
+      new (this) Value(std::move(value));
     }
     return *this;
   }
@@ -420,7 +420,7 @@ public:
    * release current pointer.
    */
   void reset() noexcept {
-    this->~DSValue();
+    this->~Value();
     this->value.kind = ValueKind::EMPTY;
   }
 
@@ -431,9 +431,9 @@ public:
 
   ObjPtr<Object> toPtr() const { return ObjPtr<Object>(this->get()); }
 
-  bool operator==(const DSValue &v) const noexcept { return this->equals(v); }
+  bool operator==(const Value &v) const noexcept { return this->equals(v); }
 
-  bool operator!=(const DSValue &v) const noexcept { return !this->equals(v); }
+  bool operator!=(const Value &v) const noexcept { return !this->equals(v); }
 
   explicit operator bool() const noexcept { return this->kind() != ValueKind::EMPTY; }
 
@@ -507,7 +507,7 @@ public:
    * @param metaData
    * @return
    */
-  DSValue withMetaData(uint32_t metaData) const;
+  Value withMetaData(uint32_t metaData) const;
 
   uint32_t getMetaData() const;
 
@@ -536,7 +536,7 @@ public:
   /**
    * for HashMap
    */
-  bool equals(const DSValue &o) const;
+  bool equals(const Value &o) const;
 
   /**
    * three-way compare for Array#sort
@@ -546,7 +546,7 @@ public:
    * if this == o, return 0
    * if this > o, return positive number
    */
-  int compare(const DSValue &o) const;
+  int compare(const Value &o) const;
 
   /**
    * force mutate string.
@@ -559,16 +559,16 @@ public:
   bool appendAsStr(DSState &state, StringRef value);
 
   template <typename T, typename... A>
-  static DSValue create(A &&...args) {
+  static Value create(A &&...args) {
     static_assert(std::is_base_of_v<Object, T>, "must be subtype of DSObject");
 
-    return DSValue(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
+    return Value(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
   }
 
-  static DSValue createNum(unsigned int v) { return DSValue(static_cast<uint64_t>(v)); }
+  static Value createNum(unsigned int v) { return Value(static_cast<uint64_t>(v)); }
 
-  static DSValue createStackGuard(StackGuardType t, unsigned int level = 0) {
-    DSValue ret;
+  static Value createStackGuard(StackGuardType t, unsigned int level = 0) {
+    Value ret;
     ret.u32s.kind = ValueKind::STACK_GUARD;
     ret.u32s.values[0] = static_cast<uint32_t>(t);
     ret.u32s.values[1] = level;
@@ -576,8 +576,8 @@ public:
     return ret;
   }
 
-  static DSValue createDummy(const DSType &type, unsigned int v1 = 0, unsigned int v2 = 0) {
-    DSValue ret;
+  static Value createDummy(const DSType &type, unsigned int v1 = 0, unsigned int v2 = 0) {
+    Value ret;
     ret.u32s.kind = ValueKind::DUMMY;
     ret.u32s.values[0] = static_cast<uint32_t>(type.typeId());
     ret.u32s.values[1] = v1;
@@ -585,16 +585,16 @@ public:
     return ret;
   }
 
-  static DSValue createExpandMeta(ExpandMeta meta, unsigned int v) {
-    DSValue ret;
+  static Value createExpandMeta(ExpandMeta meta, unsigned int v) {
+    Value ret;
     ret.u32s.kind = ValueKind::EXPAND_META;
     ret.u32s.values[0] = static_cast<unsigned int>(meta);
     ret.u32s.values[1] = v;
     return ret;
   }
 
-  static DSValue createNumList(uint32_t v1, uint32_t v2, uint32_t v3) {
-    DSValue ret;
+  static Value createNumList(uint32_t v1, uint32_t v2, uint32_t v3) {
+    Value ret;
     ret.u32s.kind = ValueKind::NUM_LIST;
     ret.u32s.values[0] = v1;
     ret.u32s.values[1] = v2;
@@ -602,44 +602,44 @@ public:
     return ret;
   }
 
-  static DSValue createInvalid() {
-    DSValue ret;
+  static Value createInvalid() {
+    Value ret;
     ret.value.kind = ValueKind::INVALID;
     return ret;
   }
 
-  static DSValue createBool(bool v) { return DSValue(v); }
+  static Value createBool(bool v) { return Value(v); }
 
-  static DSValue createSig(int num) {
-    DSValue ret(static_cast<int64_t>(num));
+  static Value createSig(int num) {
+    Value ret(static_cast<int64_t>(num));
     ret.value.kind = ValueKind::SIG;
     return ret;
   }
 
-  static DSValue createInt(int64_t num) { return DSValue(num); }
+  static Value createInt(int64_t num) { return Value(num); }
 
-  static DSValue createFloat(double v) { return DSValue(v); }
+  static Value createFloat(double v) { return Value(v); }
 
   // for string construction
-  static DSValue createStr() { return DSValue("", 0); }
+  static Value createStr() { return Value("", 0); }
 
-  static DSValue createStr(const char *str) {
+  static Value createStr(const char *str) {
     assert(str);
     return createStr(StringRef(str));
   }
 
-  static DSValue createStr(StringRef ref) {
+  static Value createStr(StringRef ref) {
     if (ref.size() <= smallStrSize(ValueKind::SSTR14)) {
-      return DSValue(ref.data(), ref.size());
+      return Value(ref.data(), ref.size());
     }
-    return DSValue::create<StringObject>(ref);
+    return Value::create<StringObject>(ref);
   }
 
-  static DSValue createStr(std::string &&value) {
+  static Value createStr(std::string &&value) {
     if (value.size() <= smallStrSize(ValueKind::SSTR14)) {
-      return DSValue(value.data(), value.size());
+      return Value(value.data(), value.size());
     }
-    return DSValue::create<StringObject>(std::move(value));
+    return Value::create<StringObject>(std::move(value));
   }
 
   /**
@@ -648,11 +648,11 @@ public:
    * @param ret
    * @return
    */
-  static DSValue createStr(const GraphemeCluster &ret);
+  static Value createStr(const GraphemeCluster &ret);
 };
 
 template <typename T>
-inline T &typeAs(const DSValue &value) noexcept {
+inline T &typeAs(const Value &value) noexcept {
   static_assert(std::is_base_of_v<Object, T>, "must be subtype of DSObject");
 
 #ifdef USE_SAFE_CAST
@@ -677,12 +677,12 @@ inline T &typeAs(const DSValue &value) noexcept {
 }
 
 template <typename T>
-inline ObjPtr<T> toObjPtr(const DSValue &value) noexcept {
+inline ObjPtr<T> toObjPtr(const Value &value) noexcept {
   auto &ref = typeAs<T>(value);
   return ObjPtr<T>(&ref);
 }
 
-inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, bool selfConcat) {
+inline bool concatAsStr(DSState &state, Value &left, const Value &right, bool selfConcat) {
   assert(right.hasStrRef());
   if (right.kind() == ValueKind::SSTR0) {
     return true;
@@ -693,7 +693,7 @@ inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, boo
   }
   int copyCount = selfConcat ? 2 : 1;
   if (left.isObject() && left.get()->getRefcount() > copyCount) {
-    left = DSValue::createStr(left.asStrRef());
+    left = Value::createStr(left.asStrRef());
   }
   return left.appendAsStr(state, right.asStrRef());
 }
@@ -701,19 +701,19 @@ inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, boo
 class StrBuilder {
 private:
   DSState &state;
-  DSValue buf; // must be String
+  Value buf; // must be String
 
 public:
-  explicit StrBuilder(DSState &st) : state(st), buf(DSValue::createStr("")) {}
+  explicit StrBuilder(DSState &st) : state(st), buf(Value::createStr("")) {}
 
   bool add(StringRef value) { return this->buf.appendAsStr(this->state, value); }
 
   DSState &getState() const { return this->state; }
 
-  DSValue take() && { return std::move(this->buf); }
+  Value take() && { return std::move(this->buf); }
 };
 
-inline DSValue exitStatusToBool(int64_t s) { return DSValue::createBool(s == 0); }
+inline Value exitStatusToBool(int64_t s) { return Value::createBool(s == 0); }
 
 class ArrayObject;
 
@@ -735,7 +735,7 @@ public:
    * @return
    * if not matched, return negative number
    */
-  int match(DSState &state, StringRef ref, std::vector<DSValue> *out);
+  int match(DSState &state, StringRef ref, std::vector<Value> *out);
 
   bool replace(StringRef target, StringRef replacement, std::string &output) {
     return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
@@ -749,10 +749,10 @@ public:
 class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
 private:
   ObjPtr<RegexObject> reObj;
-  std::vector<DSValue> groups;
+  std::vector<Value> groups;
 
 public:
-  RegexMatchObject(ObjPtr<RegexObject> &&reObj, std::vector<DSValue> &&groups)
+  RegexMatchObject(ObjPtr<RegexObject> &&reObj, std::vector<Value> &&groups)
       : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)), groups(std::move(groups)) {}
 
   const auto &getRE() const { return this->reObj->getRE(); }
@@ -770,21 +770,21 @@ public:
   };
 
 private:
-  std::vector<DSValue> values;
+  std::vector<Value> values;
   LockType lockType{LockType::NONE};
   int lockCount{0};
 
 public:
   static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
 
-  using IterType = std::vector<DSValue>::const_iterator;
+  using IterType = std::vector<Value>::const_iterator;
 
   explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) {}
 
-  ArrayObject(const DSType &type, std::vector<DSValue> &&values)
+  ArrayObject(const DSType &type, std::vector<Value> &&values)
       : ArrayObject(type.typeId(), std::move(values)) {}
 
-  ArrayObject(unsigned int typeID, std::vector<DSValue> &&values)
+  ArrayObject(unsigned int typeID, std::vector<Value> &&values)
       : ObjectWithRtti(typeID), values(std::move(values)) {}
 
   void lock(LockType t) {
@@ -802,15 +802,15 @@ public:
 
   bool locking() const { return this->lockCount > 0; }
 
-  const std::vector<DSValue> &getValues() const { return this->values; }
+  const std::vector<Value> &getValues() const { return this->values; }
 
-  std::vector<DSValue> &refValues() { return this->values; }
+  std::vector<Value> &refValues() { return this->values; }
 
   size_t size() const { return this->values.size(); }
 
-  void append(DSValue &&obj) { this->values.push_back(std::move(obj)); }
+  void append(Value &&obj) { this->values.push_back(std::move(obj)); }
 
-  void append(const DSValue &obj) { this->values.push_back(obj); }
+  void append(const Value &obj) { this->values.push_back(obj); }
 
   /**
    * append and check array size limit
@@ -819,7 +819,7 @@ public:
    * @return
    * if has error (reach array size limit), return false
    */
-  [[nodiscard]] bool append(DSState &state, DSValue &&obj);
+  [[nodiscard]] bool append(DSState &state, Value &&obj);
 
   /**
    *
@@ -833,10 +833,10 @@ public:
 
   ObjPtr<ArrayObject> copy() const {
     return toObjPtr<ArrayObject>(
-        DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(this->values)));
+        Value::create<ArrayObject>(this->getTypeID(), std::vector<Value>(this->values)));
   }
 
-  DSValue takeFirst() {
+  Value takeFirst() {
     auto v = this->values.front();
     this->values.erase(values.begin());
     return v;
@@ -844,7 +844,7 @@ public:
 
   void sortAsStrArray(unsigned int beginOffset = 0) {
     std::sort(this->values.begin() + beginOffset, this->values.end(),
-              [](const DSValue &x, const DSValue &y) { return x.asStrRef() < y.asStrRef(); });
+              [](const Value &x, const Value &y) { return x.asStrRef() < y.asStrRef(); });
   }
 
   /**
@@ -871,7 +871,7 @@ public:
 
   bool hasNext() const { return this->index < this->arrayObj->size(); }
 
-  DSValue next() { return this->arrayObj->getValues()[this->index++]; }
+  Value next() { return this->arrayObj->getValues()[this->index++]; }
 };
 
 struct StrArrayIter {
@@ -907,7 +907,7 @@ private:
 
   BaseObject(const DSType &type, unsigned int size) : ObjectWithRtti(type), fieldSize(size) {
     for (unsigned int i = 0; i < this->fieldSize; i++) {
-      new (&this->fields[i]) DSValue();
+      new (&this->fields[i]) Value();
     }
   }
 
@@ -928,10 +928,10 @@ public:
 
   ~BaseObject();
 
-  DSValue &operator[](unsigned int index) { return static_cast<DSValue &>(this->fields[index]); }
+  Value &operator[](unsigned int index) { return static_cast<Value &>(this->fields[index]); }
 
-  const DSValue &operator[](unsigned int index) const {
-    return static_cast<const DSValue &>(this->fields[index]);
+  const Value &operator[](unsigned int index) const {
+    return static_cast<const Value &>(this->fields[index]);
   }
 
   static void operator delete(void *ptr) noexcept {
@@ -988,20 +988,20 @@ inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &e
 
 class ErrorObject : public ObjectWithRtti<ObjectKind::Error> {
 private:
-  DSValue message;
-  DSValue name;
+  Value message;
+  Value name;
   int64_t status;
   std::vector<StackTraceElement> stackTrace;
 
 public:
-  ErrorObject(const DSType &type, DSValue &&message, DSValue &&name, int64_t status,
+  ErrorObject(const DSType &type, Value &&message, Value &&name, int64_t status,
               std::vector<StackTraceElement> &&stackTrace)
       : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
         stackTrace(std::move(stackTrace)) {}
 
-  const DSValue &getMessage() const { return this->message; }
+  const Value &getMessage() const { return this->message; }
 
-  const DSValue &getName() const { return this->name; }
+  const Value &getName() const { return this->name; }
 
   int64_t getStatus() const { return this->status; }
 
@@ -1027,11 +1027,11 @@ public:
    * create new Error_Object and create stack trace
    */
   static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type,
-                                      const DSValue &message, int64_t status) {
-    return newError(state, type, DSValue(message), status);
+                                      const Value &message, int64_t status) {
+    return newError(state, type, Value(message), status);
   }
 
-  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type, DSValue &&message,
+  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type, Value &&message,
                                       int64_t status);
 };
 
@@ -1161,7 +1161,7 @@ private:
   /**
    * last element is sentinel (nullptr)
    */
-  DSValue *constPool{nullptr};
+  Value *constPool{nullptr};
 
   /**
    * last element is sentinel ({0, 0})
@@ -1177,7 +1177,7 @@ public:
   NON_COPYABLE(CompiledCode);
 
   CompiledCode(const std::string &sourceName, ModId modId, const std::string &name, DSCode code,
-               DSValue *constPool, LineNumEntry *sourcePosEntries,
+               Value *constPool, LineNumEntry *sourcePosEntries,
                ExceptionEntry *exceptionEntries) noexcept
       : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
         name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
@@ -1223,7 +1223,7 @@ public:
    */
   const char *getName() const { return this->name; }
 
-  const DSValue *getConstPool() const { return this->constPool; }
+  const Value *getConstPool() const { return this->constPool; }
 
   const LineNumEntry *getLineNumEntries() const { return this->lineNumEntries; }
 
@@ -1259,12 +1259,12 @@ private:
   ClosureObject(ObjPtr<FuncObject> func, unsigned int size)
       : ObjectWithRtti(func->getTypeID()), func(std::move(func)), upvarSize(size) {
     for (unsigned int i = 0; i < this->upvarSize; i++) {
-      new (&this->upvars[i]) DSValue();
+      new (&this->upvars[i]) Value();
     }
   }
 
 public:
-  static ClosureObject *create(ObjPtr<FuncObject> func, unsigned int size, const DSValue *values) {
+  static ClosureObject *create(ObjPtr<FuncObject> func, unsigned int size, const Value *values) {
     void *ptr = malloc(sizeof(ClosureObject) + sizeof(RawValue) * size);
     auto *closure = new (ptr) ClosureObject(std::move(func), size);
     for (unsigned int i = 0; i < size; i++) {
@@ -1277,10 +1277,10 @@ public:
 
   const FuncObject &getFuncObj() const { return *this->func; }
 
-  DSValue &operator[](unsigned int index) { return static_cast<DSValue &>(this->upvars[index]); }
+  Value &operator[](unsigned int index) { return static_cast<Value &>(this->upvars[index]); }
 
-  const DSValue &operator[](unsigned int index) const {
-    return static_cast<const DSValue &>(this->upvars[index]);
+  const Value &operator[](unsigned int index) const {
+    return static_cast<const Value &>(this->upvars[index]);
   }
 
   static void operator delete(void *ptr) noexcept {
@@ -1296,24 +1296,24 @@ struct ObjectConstructor<ClosureObject, Arg...> {
   }
 };
 
-using CallArgs = std::pair<unsigned int, std::array<DSValue, 3>>;
+using CallArgs = std::pair<unsigned int, std::array<Value, 3>>;
 
 template <typename... T>
 inline CallArgs makeArgs(T &&...arg) {
   static_assert(sizeof...(arg) <= 3, "too long");
-  return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
+  return std::make_pair(sizeof...(arg), std::array<Value, 3>{{std::forward<T>(arg)...}});
 }
 
 class BoxObject : public ObjectWithRtti<ObjectKind::Box> {
 private:
-  DSValue value;
+  Value value;
 
 public:
-  explicit BoxObject(DSValue &&value) : ObjectWithRtti(TYPE::Any), value(std::move(value)) {}
+  explicit BoxObject(Value &&value) : ObjectWithRtti(TYPE::Any), value(std::move(value)) {}
 
-  const DSValue &getValue() const { return this->value; }
+  const Value &getValue() const { return this->value; }
 
-  void setValue(DSValue &&v) { this->value = std::move(v); }
+  void setValue(Value &&v) { this->value = std::move(v); }
 };
 
 class EnvCtxObject : public ObjectWithRtti<ObjectKind::EnvCtx> {
@@ -1326,7 +1326,7 @@ private:
    * second is old value
    * if old value is invalid, unset env
    */
-  std::vector<std::pair<DSValue, DSValue>> envs;
+  std::vector<std::pair<Value, Value>> envs;
 
 public:
   explicit EnvCtxObject(DSState &state) : ObjectWithRtti(TYPE::Any), state(state) {}
@@ -1339,7 +1339,7 @@ public:
    * @param name
    * @param value
    */
-  void setAndSaveEnv(DSValue &&name, DSValue &&value);
+  void setAndSaveEnv(Value &&name, Value &&value);
 };
 
 class ReaderObject : public ObjectWithRtti<ObjectKind::Reader> {
@@ -1349,7 +1349,7 @@ private:
   unsigned short usedSize{0};
   char buf[256]; // NOLINT
   ObjPtr<UnixFdObject> fdObj;
-  DSValue value; // actual read line
+  Value value; // actual read line
 
 public:
   explicit ReaderObject(ObjPtr<UnixFdObject> &&fdObj)
@@ -1361,7 +1361,7 @@ public:
 
   bool nextLine();
 
-  DSValue takeLine() { return std::move(this->value); }
+  Value takeLine() { return std::move(this->value); }
 };
 
 struct UserSysTime {

@@ -62,14 +62,14 @@ class FinallyEntry {
 private:
   unsigned int addr;   // finally block start address
   unsigned int depth;  // control frame depth
-  DSValue errorOrAddr; // Error or return address of try block
+  Value errorOrAddr; // Error or return address of try block
 
 public:
   FinallyEntry(unsigned int addr, unsigned int depth, ObjPtr<ErrorObject> &&error)
       : addr(addr), depth(depth), errorOrAddr(error) {}
 
   FinallyEntry(unsigned int addr, unsigned int depth, unsigned int retAddr)
-      : addr(addr), depth(depth), errorOrAddr(DSValue::createNum(retAddr)) {}
+      : addr(addr), depth(depth), errorOrAddr(Value::createNum(retAddr)) {}
 
   bool hasError() const {
     return this->errorOrAddr.isObject() && isa<ErrorObject>(this->errorOrAddr.get());
@@ -115,7 +115,7 @@ private:
    *   +-----------------+   +-----------------+-----------+   +-------+--------------+
    *   |                           local variable                      | operand stack
    */
-  DSValue *operands;
+  Value *operands;
 
   /**
    * for exception handling
@@ -125,22 +125,22 @@ private:
   std::vector<FinallyEntry> finallyEntries;
 
 public:
-  VMState() : operands(new DSValue[this->operandsSize]) {}
+  VMState() : operands(new Value[this->operandsSize]) {}
 
   ~VMState() { delete[] this->operands; }
 
   // for stack manipulation op
-  const DSValue &peek() const { return this->operands[this->frame.stackTopIndex]; }
+  const Value &peek() const { return this->operands[this->frame.stackTopIndex]; }
 
-  const DSValue &peekByOffset(unsigned int offset) const {
+  const Value &peekByOffset(unsigned int offset) const {
     return this->operands[this->frame.stackTopIndex - offset];
   }
 
-  void push(const DSValue &value) { this->push(DSValue(value)); }
+  void push(const Value &value) { this->push(Value(value)); }
 
-  void push(DSValue &&value) { this->operands[++this->frame.stackTopIndex] = std::move(value); }
+  void push(Value &&value) { this->operands[++this->frame.stackTopIndex] = std::move(value); }
 
-  DSValue pop() { return std::move(this->operands[this->frame.stackTopIndex--]); }
+  Value pop() { return std::move(this->operands[this->frame.stackTopIndex--]); }
 
   void popNoReturn() { this->operands[this->frame.stackTopIndex--].reset(); }
 
@@ -224,17 +224,17 @@ public:
   }
 
   // for local variable access
-  void setLocal(unsigned char index, const DSValue &obj) { this->setLocal(index, DSValue(obj)); }
+  void setLocal(unsigned char index, const Value &obj) { this->setLocal(index, Value(obj)); }
 
-  void setLocal(unsigned char index, DSValue &&obj) {
+  void setLocal(unsigned char index, Value &&obj) {
     this->operands[this->frame.localVarOffset + index] = std::move(obj);
   }
 
-  const DSValue &getLocal(unsigned char index) const {
+  const Value &getLocal(unsigned char index) const {
     return this->operands[this->frame.localVarOffset + index];
   }
 
-  DSValue moveLocal(unsigned char index) {
+  Value moveLocal(unsigned char index) {
     return std::move(this->operands[this->frame.localVarOffset + index]);
   }
 
@@ -250,7 +250,7 @@ public:
    * @param offset
    * @return
    */
-  const DSValue &unsafeGetOperand(unsigned int offset) const { return this->operands[offset]; }
+  const Value &unsafeGetOperand(unsigned int offset) const { return this->operands[offset]; }
 
   ClosureObject &getCurrentClosure() const {
     return typeAs<ClosureObject>(this->operands[this->frame.localVarOffset - 1]);

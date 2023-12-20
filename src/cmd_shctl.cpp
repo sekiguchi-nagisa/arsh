@@ -187,7 +187,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
       value += state.has(e.option) ? "on" : "off";
       value += " ";
     }
-    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(value)));
+    state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr(std::move(value)));
     return 0;
   }
   if (restore) {
@@ -293,7 +293,7 @@ static int setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, Str
   if (s < 0) {
     return errno;
   }
-  auto pair = mapObj.insert(DSValue::createStr(key), DSValue::createStr(value));
+  auto pair = mapObj.insert(Value::createStr(key), Value::createStr(value));
   assert(pair.second);
   (void)pair;
   return 0;

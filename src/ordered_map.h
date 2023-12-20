@@ -25,26 +25,26 @@ class OrderedMapEntries {
 public:
   class Entry {
   private:
-    DSValue key;
-    DSValue value;
+    Value key;
+    Value value;
 
   public:
     Entry() = default;
 
-    void reset(DSValue &&k, DSValue &&v) {
+    void reset(Value &&k, Value &&v) {
       this->key = std::move(k);
       this->value = std::move(v);
     }
 
     explicit operator bool() const { return static_cast<bool>(this->key); }
 
-    const DSValue &getKey() const { return this->key; }
+    const Value &getKey() const { return this->key; }
 
     unsigned int getKeyHash() const { return this->key.getMetaData(); }
 
-    const DSValue &getValue() const { return this->value; }
+    const Value &getValue() const { return this->value; }
 
-    DSValue &refValue() { return this->value; }
+    Value &refValue() { return this->value; }
   };
 
 private:
@@ -73,7 +73,7 @@ public:
    * @param value
    * @return
    */
-  unsigned int add(DSValue &&key, DSValue &&value);
+  unsigned int add(Value &&key, Value &&value);
 
   Entry del(unsigned int index) {
     Entry tmp;
@@ -198,7 +198,7 @@ public:
    * if insertion failed (reach size limit), return (-1, false)
    * otherwise, return (entry index, true)
    */
-  std::pair<int, bool> insert(const DSValue &key, DSValue &&value);
+  std::pair<int, bool> insert(const Value &key, Value &&value);
 
   /**
    * lookup map entry index by key
@@ -207,7 +207,7 @@ public:
    * if not found, return -1.
    * otherwise, return entry index
    */
-  int lookup(const DSValue &key) const {
+  int lookup(const Value &key) const {
     if (this->bucketLen.size() == 0) {
       return -1;
     }
@@ -225,7 +225,7 @@ public:
    * if not found, return empty entry
    * otherwise, return removed entry
    */
-  OrderedMapEntries::Entry remove(const DSValue &key);
+  OrderedMapEntries::Entry remove(const Value &key);
 
   void clear();
 
@@ -248,7 +248,7 @@ public:
    * if insertion failed (reach limit), return empty and raise error
    * otherwise, return old value
    */
-  [[nodiscard]] DSValue put(DSState &st, DSValue &&key, DSValue &&value);
+  [[nodiscard]] Value put(DSState &st, Value &&key, Value &&value);
 
 private:
   struct ProbeState {
@@ -257,9 +257,9 @@ private:
     int dist;
   };
 
-  bool probeBuckets(const DSValue &key, ProbeState &state) const;
+  bool probeBuckets(const Value &key, ProbeState &state) const;
 
-  bool probeBuckets(const DSValue &key, unsigned int keyHash, ProbeState &state) const;
+  bool probeBuckets(const Value &key, unsigned int keyHash, ProbeState &state) const;
 
   void insertEntryIndex(unsigned int entryIndex, const ProbeState &state);
 
@@ -286,7 +286,7 @@ public:
 
   bool hasNext() const { return this->index < this->mapObj->getEntries().getUsedSize(); }
 
-  DSValue next(TypePool &pool);
+  Value next(TypePool &pool);
 
   const OrderedMapEntries::Entry &nextEntry() {
     while (!(*this->mapObj)[this->index]) {

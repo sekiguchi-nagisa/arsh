@@ -299,7 +299,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
       if (optState.index == argvObj.size()) {
         dirStack.refValues().pop_back();
       }
-      dirStack.append(DSValue::createStr(cwd.get()));
+      dirStack.append(Value::createStr(cwd.get()));
     } else if (rotateIndex < dirStack.size()) {
       dest = dirStack.getValues()[rotateIndex].asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
@@ -307,7 +307,7 @@ int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
         return 1;
       }
       const size_t limit = dirStack.size();
-      dirStack.refValues().insert(dirStack.refValues().begin(), DSValue::createStr(cwd.get()));
+      dirStack.refValues().insert(dirStack.refValues().begin(), Value::createStr(cwd.get()));
       for (size_t count = static_cast<size_t>(rotateIndex) + 1; count < limit; count++) {
         auto top = dirStack.refValues().back();
         dirStack.refValues().pop_back();

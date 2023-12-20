@@ -143,7 +143,7 @@ static int redirectToFile(StringRef fileName, RedirOpenFlag openFlag, int newFd)
   return 0;
 }
 
-void RedirObject::addEntry(DSValue &&value, RedirOp op, int newFd) {
+void RedirObject::addEntry(Value &&value, RedirOp op, int newFd) {
   if (op == RedirOp::REDIR_OUT_ERR || op == RedirOp::APPEND_OUT_ERR ||
       op == RedirOp::CLOBBER_OUT_ERR) {
     this->backupFDSet |= 1u << 1u;

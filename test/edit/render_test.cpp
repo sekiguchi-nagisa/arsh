@@ -421,7 +421,7 @@ static void append(ArrayObject &) {}
 
 template <typename... T>
 static void append(ArrayObject &obj, const char *first, T &&...remain) {
-  obj.refValues().push_back(DSValue::createStr(first));
+  obj.refValues().push_back(Value::createStr(first));
   append(obj, std::forward<T>(remain)...);
 }
 
@@ -435,7 +435,7 @@ public:
 
   template <typename... T>
   ObjPtr<ArrayObject> create(T &&...args) const {
-    auto v = DSValue::create<ArrayObject>(this->pool.get(TYPE::StringArray));
+    auto v = Value::create<ArrayObject>(this->pool.get(TYPE::StringArray));
     auto &obj = typeAs<ArrayObject>(v);
     append(obj, std::forward<T>(args)...);
     return toObjPtr<ArrayObject>(v);

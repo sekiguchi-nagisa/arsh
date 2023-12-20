@@ -229,7 +229,7 @@ private:
 
   unsigned char procSize;
 
-  DSValue desc; // for jobs command output. must be String
+  Value desc; // for jobs command output. must be String
 
   /**
    * initial size is procSize
@@ -241,12 +241,12 @@ private:
   NON_COPYABLE(JobObject);
 
   JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
-            ObjPtr<UnixFdObject> outObj, DSValue &&desc);
+            ObjPtr<UnixFdObject> outObj, Value &&desc);
 
 public:
   static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
-                                  DSValue &&desc) {
+                                  Value &&desc) {
     void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
     auto *entry = new (ptr)
         JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
@@ -254,7 +254,7 @@ public:
   }
 
   static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj,
-                                  ObjPtr<UnixFdObject> outObj, DSValue &&desc) {
+                                  ObjPtr<UnixFdObject> outObj, Value &&desc) {
     Proc procs[1] = {proc};
     return create(1, procs, false, std::move(inObj), std::move(outObj), std::move(desc));
   }
@@ -310,9 +310,9 @@ public:
 
   bool isControlled() const { return !this->is(State::UNCONTROLLED); }
 
-  DSValue getInObj() const { return this->inObj; }
+  Value getInObj() const { return this->inObj; }
 
-  DSValue getOutObj() const { return this->outObj; }
+  Value getOutObj() const { return this->outObj; }
 
   std::string formatInfo(JobInfoFormat fmt) const;
 

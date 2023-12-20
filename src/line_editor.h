@@ -130,9 +130,9 @@ public:
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 
-  bool setConfig(DSState &state, StringRef name, const DSValue &value);
+  bool setConfig(DSState &state, StringRef name, const Value &value);
 
-  DSValue getConfigs(DSState &state) const;
+  Value getConfigs(DSState &state) const;
 
   enum class CompStatus {
     OK,
@@ -165,7 +165,7 @@ private:
 
   CompStatus completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 
-  DSValue kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs);
+  Value kickCallback(DSState &state, Value &&callback, CallArgs &&callArgs);
 
   ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
 

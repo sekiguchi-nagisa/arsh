@@ -1024,10 +1024,10 @@ ssize_t LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, 
   auto cleanup = finally([&] { this->lock = false; });
 
   // prepare prompt
-  DSValue promptVal;
+  Value promptVal;
   if (this->promptCallback) {
-    auto args = makeArgs(DSValue::createStr(prompt));
-    DSValue callback = this->promptCallback;
+    auto args = makeArgs(Value::createStr(prompt));
+    Value callback = this->promptCallback;
     promptVal = this->kickCallback(state, std::move(callback), std::move(args));
     if (state.hasError()) {
       errno = EAGAIN;
@@ -1226,7 +1226,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
   }
 }
 
-DSValue LineEditorObject::kickCallback(DSState &state, DSValue &&callback, CallArgs &&callArgs) {
+Value LineEditorObject::kickCallback(DSState &state, Value &&callback, CallArgs &&callArgs) {
   int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
@@ -1255,8 +1255,8 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
     modType = state.typePool.getModTypeById(ROOT_MOD_ID);
   }
   auto mod = state.getGlobal(modType->getIndex());
-  auto args = makeArgs(std::move(mod), DSValue::createStr(line));
-  DSValue callback = this->completionCallback;
+  auto args = makeArgs(std::move(mod), Value::createStr(line));
+  Value callback = this->completionCallback;
   auto ret = this->kickCallback(state, std::move(callback), std::move(args));
   if (state.hasError()) {
     return nullptr;
@@ -1270,17 +1270,17 @@ bool LineEditorObject::kickHistSyncCallback(DSState &state, const LineBuffer &bu
   }
   if (this->histSyncCallback) {
     this->kickCallback(state, this->histSyncCallback,
-                       makeArgs(DSValue::createStr(buf.get()), this->history));
+                       makeArgs(Value::createStr(buf.get()), this->history));
     return !state.hasError();
   } else {
-    return this->history->append(state, DSValue::createStr(buf.get()));
+    return this->history->append(state, Value::createStr(buf.get()));
   }
 }
 
 bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, CustomActionType type,
                                           unsigned int index) {
   StringRef line;
-  auto optArg = DSValue::createInvalid();
+  auto optArg = Value::createInvalid();
   switch (type) {
   case CustomActionType::REPLACE_WHOLE:
   case CustomActionType::REPLACE_WHOLE_ACCEPT:
@@ -1310,7 +1310,7 @@ bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, Custo
   }
 
   auto ret = this->kickCallback(state, this->customCallbacks[index],
-                                makeArgs(DSValue::createStr(line), std::move(optArg)));
+                                makeArgs(Value::createStr(line), std::move(optArg)));
   if (state.hasError()) {
     return false;
   }

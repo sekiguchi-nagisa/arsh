@@ -44,11 +44,11 @@ bool isTypeOp(OpCode code) {
   }
 }
 
-void ConstBuffer::append(DSValue &&value) {
+void ConstBuffer::append(Value &&value) {
   if (this->size == this->cap) {
     unsigned int newSize = this->size;
     newSize += (newSize >> 1u);
-    auto newValues = std::make_unique<DSValue[]>(newSize);
+    auto newValues = std::make_unique<Value[]>(newSize);
     for (unsigned int i = 0; i < this->size; i++) {
       newValues[i] = std::move(this->values[i]);
     }
@@ -120,7 +120,7 @@ void ByteCodeGenerator::emitIns(OpCode op) {
   }
 }
 
-unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
+unsigned int ByteCodeGenerator::emitConstant(Value &&value) {
   this->curBuilder().constBuffer.append(std::move(value));
   unsigned int index = this->curBuilder().constBuffer.getSize() - 1;
   if (index > 0xFFFFFF) {
@@ -152,7 +152,7 @@ void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
   }
 }
 
-void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
+void ByteCodeGenerator::emitLdcIns(Value &&value) {
   unsigned int index = this->emitConstant(std::move(value));
   if (index <= UINT8_MAX) {
     this->emit1byteIns(OpCode::LOAD_CONST, index);
@@ -178,7 +178,7 @@ void ByteCodeGenerator::emitString(std::string &&value) {
     this->emit3byteIns(OpCode::PUSH_STR3, value[0], value[1], value[2]);
     break;
   default:
-    this->emitLdcIns(DSValue::createStr(std::move(value)));
+    this->emitLdcIns(Value::createStr(std::move(value)));
     break;
   }
 }
@@ -298,7 +298,7 @@ unsigned int ByteCodeGenerator::concatCmdArgSegment(CmdArgNode &node, unsigned i
   return index;
 }
 
-static DSValue toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
+static Value toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
   std::string value;
   for (auto &e : node.getNodes()) {
     if (!value.empty()) {
@@ -306,7 +306,7 @@ static DSValue toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
     }
     formatJobDesc(lexer.toStrRef(e->getToken()), value);
   }
-  return DSValue::createStr(std::move(value));
+  return Value::createStr(std::move(value));
 }
 
 void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) {
@@ -465,7 +465,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     this->emitInt(node.getIntValue());
     break;
   case NumberNode::Float: {
-    auto value = DSValue::createFloat(node.getFloatValue());
+    auto value = Value::createFloat(node.getFloatValue());
     this->emitLdcIns(std::move(value));
     break;
   }
@@ -487,7 +487,7 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) { this->emitString(nod
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) { this->generateConcat(node); }
 
 void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
-  this->emitLdcIns(DSValue::create<RegexObject>(node.extractRE()));
+  this->emitLdcIns(Value::create<RegexObject>(node.extractRE()));
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
@@ -679,7 +679,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
       auto thenLabel = makeLabel();
       auto mergeLabel = makeLabel();
       this->emitBranchIns(OpCode::IF_NOT_INVALID, thenLabel);
-      this->emitLdcIns(DSValue::createStr("(invalid)"));
+      this->emitLdcIns(Value::createStr("(invalid)"));
       this->emitJumpIns(mergeLabel);
 
       this->markLabel(thenLabel);
@@ -953,13 +953,13 @@ void ByteCodeGenerator::visitBraceSeqNode(BraceSeqNode &node) {
   /**
    * (begin, end, step, (digits, kind))
    */
-  auto value = DSValue::create<BaseObject>(this->typePool.get(TYPE::Any), 4);
+  auto value = Value::create<BaseObject>(this->typePool.get(TYPE::Any), 4);
   auto &obj = typeAs<BaseObject>(value);
   auto &range = node.getRange();
-  obj[0] = DSValue::createInt(range.begin);
-  obj[1] = DSValue::createInt(range.end);
-  obj[2] = DSValue::createInt(range.step);
-  obj[3] = DSValue::createNumList(range.digits, toUnderlying(range.kind), 0);
+  obj[0] = Value::createInt(range.begin);
+  obj[1] = Value::createInt(range.end);
+  obj[2] = Value::createInt(range.step);
+  obj[3] = Value::createNumList(range.digits, toUnderlying(range.kind), 0);
   this->emitLdcIns(std::move(value));
 }
 
@@ -989,10 +989,10 @@ void ByteCodeGenerator::visitTimeNode(TimeNode &node) {
   });
 }
 
-static DSValue toForkDesc(const Lexer &lexer, const ForkNode &node) {
+static Value toForkDesc(const Lexer &lexer, const ForkNode &node) {
   std::string value;
   formatJobDesc(lexer.toStrRef(node.getExprNode().getToken()), value);
-  return DSValue::createStr(std::move(value));
+  return Value::createStr(std::move(value));
 }
 
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
@@ -1180,23 +1180,23 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
   this->markLabel(mergeLabel);
 }
 
-static DSValue newObject(Node &constNode) {
+static Value newObject(Node &constNode) {
   auto kind = constNode.getNodeKind();
   assert(kind == NodeKind::Number || kind == NodeKind::String);
   if (kind == NodeKind::Number) {
     if (constNode.getType().is(TYPE::Signal)) {
-      return DSValue::createSig(static_cast<int>(cast<NumberNode>(constNode).getIntValue()));
+      return Value::createSig(static_cast<int>(cast<NumberNode>(constNode).getIntValue()));
     }
-    return DSValue::createInt(cast<NumberNode>(constNode).getIntValue());
+    return Value::createInt(cast<NumberNode>(constNode).getIntValue());
   }
-  return DSValue::createStr(cast<StringNode>(constNode).getValue());
+  return Value::createStr(cast<StringNode>(constNode).getValue());
 }
 
 void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   bool hasDefault = node.hasDefault();
   auto mergeLabel = makeLabel();
   auto elseLabel = makeLabel();
-  auto value = DSValue::create<OrderedMapObject>(this->typePool.get(TYPE::Void),
+  auto value = Value::create<OrderedMapObject>(this->typePool.get(TYPE::Void),
                                                  reinterpret_cast<uintptr_t>(&node));
   auto &map = typeAs<OrderedMapObject>(value);
 
@@ -1231,7 +1231,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
 void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, OrderedMapObject &obj) const {
   unsigned int offset = this->currentCodeOffset();
   for (auto &e : node.getConstPatternNodes()) {
-    auto pair = obj.insert(newObject(*e), DSValue::createNum(offset));
+    auto pair = obj.insert(newObject(*e), Value::createNum(offset));
     if (!pair.second) {
       fatal("map insertion failed\n");
     }
@@ -1465,7 +1465,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     this->visit(*node.getExprNode());
     break;
   case VarDeclNode::IMPORT_ENV: {
-    this->emitLdcIns(DSValue::createStr(node.getVarName()));
+    this->emitLdcIns(Value::createStr(node.getVarName()));
     this->emit0byteIns(OpCode::DUP);
     const bool hashDefault = node.getExprNode() != nullptr;
     if (hashDefault) {
@@ -1477,7 +1477,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     break;
   }
   case VarDeclNode::EXPORT_ENV: {
-    this->emitLdcIns(DSValue::createStr(node.getVarName()));
+    this->emitLdcIns(Value::createStr(node.getVarName()));
     this->emit0byteIns(OpCode::DUP);
     this->visit(*node.getExprNode());
     this->emit0byteIns(OpCode::STORE_ENV);
@@ -1586,7 +1586,7 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
       this->emit0byteIns(OpCode::NEW_ENV_CTX);
       for (auto &e : node.getAssignNodes()) {
         auto &leftNode = cast<VarNode>(e->getLeftNode());
-        this->emitLdcIns(DSValue::createStr(leftNode.getVarName()));
+        this->emitLdcIns(Value::createStr(leftNode.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         this->emit1byteIns(OpCode::STORE_LOCAL, leftNode.getIndex());
         assert(isa<CmdArgNode>(e->getRightNode()));
@@ -1617,7 +1617,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
   if (!code) {
     this->reportError<TooLargeFunc>(node, node.getFuncName().c_str());
   }
-  auto func = DSValue::create<FuncObject>(*node.getResolvedType(), std::move(code));
+  auto func = Value::create<FuncObject>(*node.getResolvedType(), std::move(code));
 
   this->emitLdcIns(func);
   if (!node.getCaptures().empty()) {
@@ -1651,7 +1651,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!code) {
     this->reportError<TooLargeUdc>(node, node.getCmdName().c_str());
   }
-  auto func = DSValue::create<FuncObject>(this->typePool.get(TYPE::Command), std::move(code));
+  auto func = Value::create<FuncObject>(this->typePool.get(TYPE::Command), std::move(code));
 
   this->emitLdcIns(func);
   if (!node.getCaptures().empty()) {
@@ -1742,7 +1742,7 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
   auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {
-    auto v = DSValue::create<FuncObject>(modType, std::move(code));
+    auto v = Value::create<FuncObject>(modType, std::move(code));
     func = ObjPtr<FuncObject>(&typeAs<FuncObject>(v));
   } else {
     this->reportError<TooLargeToplevel>(token, lex->getSourceName().c_str());

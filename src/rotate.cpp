@@ -26,7 +26,7 @@ namespace arsh {
 HistRotator::HistRotator(ObjPtr<ArrayObject> history) : history(std::move(history)) {
   if (this->history) {
     this->truncateUntilLimit(true);
-    this->history->append(DSValue::createStr()); // not check iterator invalidation
+    this->history->append(Value::createStr()); // not check iterator invalidation
     this->history->lock(ArrayObject::LockType::HISTORY);
   }
 }
@@ -88,7 +88,7 @@ bool HistRotator::save(ssize_t index, StringRef curBuf) {
     auto org = this->history->getValues()[actualIndex];
     this->oldEntries.emplace(actualIndex, std::move(org));
     this->history->refValues()[actualIndex] =
-        DSValue::createStr(curBuf); // not check iterator invalidation
+        Value::createStr(curBuf); // not check iterator invalidation
     return true;
   }
   return false;
@@ -115,10 +115,10 @@ void KillRing::expand(unsigned int afterCap) {
 }
 
 ObjPtr<ArrayObject> KillRing::toObj(const TypePool &pool) const {
-  auto obj = toObjPtr<ArrayObject>(DSValue::create<ArrayObject>(pool.get(TYPE::StringArray)));
+  auto obj = toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::StringArray)));
   unsigned int size = this->buf.size();
   for (unsigned int i = 0; i < size; i++) {
-    obj->append(DSValue::createStr(this->buf[i])); // not check iterator invalidation
+    obj->append(Value::createStr(this->buf[i])); // not check iterator invalidation
   }
   return obj;
 }

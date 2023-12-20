@@ -32,7 +32,7 @@ extern char **environ; // NOLINT
 namespace arsh {
 
 // core api definition
-const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
+const Value &getBuiltinGlobal(const DSState &st, const char *varName) {
   auto &modType = st.typePool.getBuiltinModType();
   auto handle = modType.lookup(st.typePool, varName);
   assert(handle != nullptr);
@@ -44,7 +44,7 @@ void reassignReplyVar(DSState &st) {
       obj.getRefcount() > 1) {
     auto &type = st.typePool.get(obj.getTypeID());
     st.setGlobal(BuiltinVarOffset::REPLY_VAR,
-                 DSValue::create<OrderedMapObject>(type, st.getRng().next()));
+                 Value::create<OrderedMapObject>(type, st.getRng().next()));
   } else { // reuse existing object
     obj.clear();
   }
@@ -53,7 +53,7 @@ void reassignReplyVar(DSState &st) {
 void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
   assert(message.size() <= SYS_LIMIT_STRING_MAX);
   auto except = ErrorObject::newError(st, st.typePool.get(type),
-                                      DSValue::createStr(std::move(message)), status);
+                                      Value::createStr(std::move(message)), status);
   st.throwObject(std::move(except));
 }
 
@@ -305,14 +305,14 @@ bool RuntimeCancelToken::operator()() {
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   DSState &state;
-  DSValue reply;
+  Value reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
 
 public:
   explicit DefaultCompConsumer(DSState &state)
       : state(state),
-        reply(DSValue::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
+        reply(Value::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
 
   void operator()(const CompCandidate &candidate) override {
     if (candidate.value.empty()) {
@@ -320,7 +320,7 @@ public:
     }
     if (!this->overflow) {
       auto &obj = typeAs<ArrayObject>(this->reply);
-      if (!obj.append(this->state, DSValue::createStr(candidate.quote()))) {
+      if (!obj.append(this->state, Value::createStr(candidate.quote()))) {
         this->overflow = true;
         return;
       }
@@ -330,10 +330,10 @@ public:
 
   CompCandidateKind getKind() const { return this->kind; }
 
-  DSValue finalize() && {
+  Value finalize() && {
     if (auto &values = typeAs<ArrayObject>(this->reply).refValues(); values.size() > 1) {
       typeAs<ArrayObject>(this->reply).sortAsStrArray(); // not check iterator invalidation
-      auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+      auto iter = std::unique(values.begin(), values.end(), [](const Value &x, const Value &y) {
         return x.asStrRef() == y.asStrRef();
       });
       values.erase(iter, values.end());
@@ -342,19 +342,19 @@ public:
   }
 };
 
-static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
+static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
                           const std::string &word, bool tilde) {
-  std::vector<DSValue> values;
+  std::vector<Value> values;
 
   // add cmd
-  values.push_back(DSValue::createStr(cmdNode.getNameNode().getValue()));
+  values.push_back(Value::createStr(cmdNode.getNameNode().getValue()));
 
   // add args
   for (auto &e : cmdNode.getArgNodes()) {
     if (isa<RedirNode>(*e)) {
       continue;
     }
-    values.push_back(DSValue::createStr(lex.toStrRef(e->getToken())));
+    values.push_back(Value::createStr(lex.toStrRef(e->getToken())));
   }
 
   // add last arg
@@ -364,10 +364,10 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex, const CmdNode 
       actual += "\\";
     }
     actual += word;
-    values.push_back(DSValue::createStr(std::move(actual)));
+    values.push_back(Value::createStr(std::move(actual)));
   }
 
-  return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
+  return Value::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
 static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
@@ -380,7 +380,7 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
   }
 
   // prepare argument
-  auto ctx = DSValue::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
+  auto ctx = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
   auto argv = createArgv(state.typePool, lex, cmdNode, word, tilde);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
@@ -390,9 +390,9 @@ static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &
   // kick hook
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
-  state.setGlobal(BuiltinVarOffset::IFS, DSValue::createStr(VAL_DEFAULT_IFS)); // set to default
+  state.setGlobal(BuiltinVarOffset::IFS, Value::createStr(VAL_DEFAULT_IFS)); // set to default
   auto ret = VM::callFunction(state, std::move(hook),
-                              makeArgs(std::move(ctx), std::move(argv), DSValue::createInt(index)));
+                              makeArgs(std::move(ctx), std::move(argv), Value::createInt(index)));
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
   state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   if (state.hasError()) {
@@ -596,7 +596,7 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool inse
       auto ref = reply.getValues()[0].asStrRef();
       auto v = ref.toString();
       v += " ";
-      reply.refValues()[0] = DSValue::createStr(std::move(v)); // not check iterator invalidation
+      reply.refValues()[0] = Value::createStr(std::move(v)); // not check iterator invalidation
     }
     return static_cast<int>(size);
   }
@@ -697,13 +697,13 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   if (errorConsumer.value.empty()) { // has no error, but empty code
     errorConsumer.value = "require expression";
   }
-  auto message = DSValue::createStr(std::move(errorConsumer.value));
+  auto message = Value::createStr(std::move(errorConsumer.value));
   auto error =
       ErrorObject::newError(state, state.typePool.get(TYPE::ArgumentError), std::move(message), 1);
   return Err(toObjPtr<ErrorObject>(error));
 }
 
-std::string resolveFullCommandName(const DSState &state, const DSValue &name,
+std::string resolveFullCommandName(const DSState &state, const Value &name,
                                    const ModType &modType) {
   CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
   auto cmd = resolver(state, name, &modType);
@@ -735,8 +735,8 @@ std::string resolveFullCommandName(const DSState &state, const DSValue &name,
   return "";
 }
 
-static bool compare(DSState &state, const DSValue &x, const DSValue &y, const DSValue &compFunc) {
-  auto ret = VM::callFunction(state, DSValue(compFunc), makeArgs(x, y));
+static bool compare(DSState &state, const Value &x, const Value &y, const Value &compFunc) {
+  auto ret = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
   if (state.hasError()) {
     return false;
   }
@@ -744,7 +744,7 @@ static bool compare(DSState &state, const DSValue &x, const DSValue &y, const DS
   return ret.asBool();
 }
 
-static bool merge(DSState &state, ArrayObject &arrayObj, DSValue *buf, const DSValue &compFunc,
+static bool merge(DSState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
                   size_t left, size_t mid, size_t right) {
   size_t i = left;
   size_t j = mid;
@@ -780,8 +780,8 @@ static bool merge(DSState &state, ArrayObject &arrayObj, DSValue *buf, const DSV
   return true;
 }
 
-static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, DSValue *buf,
-                          const DSValue &compFunc, size_t left, size_t right) {
+static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, Value *buf,
+                          const Value &compFunc, size_t left, size_t right) {
   if (left + 1 >= right) {
     return true;
   }
@@ -792,8 +792,8 @@ static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, DSValue *buf,
          merge(state, arrayObj, buf, compFunc, left, mid, right);
 }
 
-bool mergeSort(DSState &state, ArrayObject &arrayObj, const DSValue &compFunc) {
-  auto buf = std::make_unique<DSValue[]>(arrayObj.size());
+bool mergeSort(DSState &state, ArrayObject &arrayObj, const Value &compFunc) {
+  auto buf = std::make_unique<Value[]>(arrayObj.size());
   assert(!arrayObj.locking());
   arrayObj.lock(ArrayObject::LockType::SORT_WITH);
   bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());

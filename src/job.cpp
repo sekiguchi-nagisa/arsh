@@ -59,11 +59,11 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
 
     // clear termination hook
     assert(st.termHookIndex != 0);
-    st.setGlobal(st.termHookIndex, DSValue::createInvalid());
+    st.setGlobal(st.termHookIndex, Value::createInvalid());
 
     // update PID, PPID
-    st.setGlobal(BuiltinVarOffset::PID, DSValue::createInt(getpid()));
-    st.setGlobal(BuiltinVarOffset::PPID, DSValue::createInt(getppid()));
+    st.setGlobal(BuiltinVarOffset::PID, Value::createInt(getpid()));
+    st.setGlobal(BuiltinVarOffset::PPID, Value::createInt(getppid()));
 
     // no inherit parent process RNG (due to prevent duplicated random numbers)
     st.getRng() = childRng;
@@ -217,7 +217,7 @@ int Proc::send(int sigNum) const {
 // #######################
 
 JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
-                     ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj, DSValue &&desc)
+                     ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj, Value &&desc)
     : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size),
       desc(std::move(desc)) {
   assert(size <= UINT8_MAX);

@@ -51,7 +51,7 @@ const char *toString(ObjectKind kind) {
 // ##     DSValue     ##
 // #####################
 
-unsigned int DSValue::getTypeID() const {
+unsigned int Value::getTypeID() const {
   switch (this->kind()) {
   case ValueKind::DUMMY:
     return this->asTypeId();
@@ -72,7 +72,7 @@ unsigned int DSValue::getTypeID() const {
   }
 }
 
-StringRef DSValue::asStrRef() const {
+StringRef Value::asStrRef() const {
   assert(this->hasStrRef());
   if (isSmallStr(this->kind())) {
     return {this->str.value, smallStrSize(this->kind())};
@@ -81,11 +81,11 @@ StringRef DSValue::asStrRef() const {
   return {obj.getValue(), obj.size()};
 }
 
-DSValue DSValue::withMetaData(uint32_t metaData) const {
+Value Value::withMetaData(uint32_t metaData) const {
   assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
          this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
-  DSValue newValue = *this;
+  Value newValue = *this;
   if (isSmallStr(newValue.kind())) {
     StringRef ref{newValue.str.value, smallStrSize(newValue.kind())};
     if (newValue.kind() <= ValueKind::SSTR10) {
@@ -98,14 +98,14 @@ DSValue DSValue::withMetaData(uint32_t metaData) const {
       memcpy(newValue.str.value + 11, conv.i8, 4);
       return newValue;
     } else {
-      newValue = DSValue::create<StringObject>(ref);
+      newValue = Value::create<StringObject>(ref);
     }
   }
   newValue.value.meta = metaData;
   return newValue;
 }
 
-uint32_t DSValue::getMetaData() const {
+uint32_t Value::getMetaData() const {
   assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
          this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
@@ -121,7 +121,7 @@ uint32_t DSValue::getMetaData() const {
   return this->value.meta;
 }
 
-std::string DSValue::toString() const {
+std::string Value::toString() const {
   switch (this->kind()) {
   case ValueKind::NUMBER:
     return std::to_string(this->asNum());
@@ -277,7 +277,7 @@ std::string DSValue::toString() const {
     }                                                                                              \
   } while (false)
 
-bool DSValue::opStr(StrBuilder &builder) const {
+bool Value::opStr(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
   if (this->isInvalid()) {
@@ -370,7 +370,7 @@ bool DSValue::opStr(StrBuilder &builder) const {
   return builder.add(this->toString());
 }
 
-bool DSValue::opInterp(StrBuilder &builder) const {
+bool Value::opInterp(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
   if (this->isObject()) {
@@ -430,7 +430,7 @@ bool DSValue::opInterp(StrBuilder &builder) const {
   return this->opStr(builder);
 }
 
-bool DSValue::equals(const DSValue &o) const {
+bool Value::equals(const Value &o) const {
   // for String
   if (this->hasStrRef() && o.hasStrRef()) {
     auto left = this->asStrRef();
@@ -461,7 +461,7 @@ bool DSValue::equals(const DSValue &o) const {
   }
 }
 
-int DSValue::compare(const DSValue &o) const {
+int Value::compare(const Value &o) const {
   // for String
   if (this->hasStrRef() && o.hasStrRef()) {
     auto left = this->asStrRef();
@@ -493,7 +493,7 @@ int DSValue::compare(const DSValue &o) const {
   }
 }
 
-bool DSValue::appendAsStr(DSState &state, StringRef value) {
+bool Value::appendAsStr(DSState &state, StringRef value) {
   assert(this->hasStrRef());
 
   const bool small = isSmallStr(this->kind());
@@ -511,17 +511,17 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
       this->str.value[newSize] = '\0';
       return true;
     }
-    (*this) = DSValue::create<StringObject>(StringRef(this->str.value, size));
+    (*this) = Value::create<StringObject>(StringRef(this->str.value, size));
   }
   typeAs<StringObject>(*this).append(value);
   return true;
 }
 
-DSValue DSValue::createStr(const GraphemeCluster &ret) {
+Value Value::createStr(const GraphemeCluster &ret) {
   if (ret.hasInvalid()) {
-    return DSValue::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
+    return Value::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
   } else {
-    return DSValue::createStr(ret.getRef());
+    return Value::createStr(ret.getRef());
   }
 }
 
@@ -539,7 +539,7 @@ UnixFdObject::~UnixFdObject() {
 // ##     RegexObject     ##
 // #########################
 
-int RegexObject::match(DSState &state, StringRef ref, std::vector<DSValue> *out) {
+int RegexObject::match(DSState &state, StringRef ref, std::vector<Value> *out) {
   std::string errorStr;
   int matchCount = this->re.match(ref, errorStr);
   if (!errorStr.empty()) {
@@ -550,8 +550,8 @@ int RegexObject::match(DSState &state, StringRef ref, std::vector<DSValue> *out)
     for (int i = 0; i < matchCount; i++) {
       PCRECapture capture; // NOLINT
       bool set = this->re.getCaptureAt(i, capture);
-      auto v = set ? DSValue::createStr(ref.slice(capture.begin, capture.end))
-                   : DSValue::createInvalid();
+      auto v =
+          set ? Value::createStr(ref.slice(capture.begin, capture.end)) : Value::createInvalid();
       out->push_back(std::move(v)); // not check size
     }
     ASSERT_ARRAY_SIZE(*out);
@@ -563,7 +563,7 @@ int RegexObject::match(DSState &state, StringRef ref, std::vector<DSValue> *out)
 // ##     Array_Object     ##
 // ##########################
 
-bool ArrayObject::append(DSState &state, DSValue &&obj) {
+bool ArrayObject::append(DSState &state, Value &&obj) {
   if (unlikely(!this->checkIteratorInvalidation(state))) {
     return false;
   }
@@ -650,11 +650,11 @@ StringRef ArrayObject::getCommonPrefixStr() const {
 
 BaseObject::~BaseObject() {
   for (unsigned int i = 0; i < this->fieldSize; i++) {
-    (*this)[this->fieldSize - 1 - i].~DSValue(); // destruct object reverse order
+    (*this)[this->fieldSize - 1 - i].~Value(); // destruct object reverse order
   }
 }
 
-bool CmdArgsBuilder::add(DSValue &&arg) {
+bool CmdArgsBuilder::add(Value &&arg) {
   GUARD_RECURSION(this->state);
 
   if (arg.isInvalid()) {
@@ -673,7 +673,7 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
        * unset close-on-exec and add pseudo redirection entry
        */
       if (!this->redir) {
-        this->redir = DSValue::create<RedirObject>();
+        this->redir = Value::create<RedirObject>();
       } else if (this->redir.isInvalid()) {
         raiseError(this->state, TYPE::ArgumentError, "cannot pass FD object to argument array");
         return false;
@@ -681,13 +681,13 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
 
       if (arg.get()->getRefcount() > 1) {
         if (int newFd = dupFD(typeAs<UnixFdObject>(arg).getRawFd()); newFd > -1) {
-          arg = DSValue::create<UnixFdObject>(newFd);
+          arg = Value::create<UnixFdObject>(newFd);
         } else {
           raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
           return false;
         }
       }
-      auto strObj = DSValue::createStr(arg.toString());
+      auto strObj = Value::createStr(arg.toString());
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
         typeAs<UnixFdObject>(arg).closeOnExec(false);
@@ -700,7 +700,7 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
       auto &values = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).getValues()
                                                  : typeAs<RegexMatchObject>(arg).getGroups();
       for (auto &e : values) {
-        TRY(this->add(DSValue(e)));
+        TRY(this->add(Value(e)));
       }
       return true;
     }
@@ -709,14 +709,14 @@ bool CmdArgsBuilder::add(DSValue &&arg) {
         if (!e || e.getValue().isInvalid()) {
           continue;
         }
-        TRY(this->add(DSValue(e.getKey())) && this->add(DSValue(e.getValue())));
+        TRY(this->add(Value(e.getKey())) && this->add(Value(e.getValue())));
       }
       return true;
     case ObjectKind::Base: {
       auto &obj = typeAs<BaseObject>(arg);
       unsigned int size = obj.getFieldSize();
       for (unsigned int i = 0; i < size; i++) {
-        TRY(this->add(DSValue(obj[i])));
+        TRY(this->add(Value(obj[i])));
       }
       return true;
     }
@@ -783,16 +783,16 @@ void ErrorObject::printStackTrace(const DSState &state, PrintOp op) const {
   fflush(stderr);
 }
 
-ObjPtr<ErrorObject> ErrorObject::newError(const DSState &state, const DSType &type,
-                                          DSValue &&message, int64_t status) {
+ObjPtr<ErrorObject> ErrorObject::newError(const DSState &state, const DSType &type, Value &&message,
+                                          int64_t status) {
   std::vector<StackTraceElement> traces;
   state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {
     traces.push_back(std::move(e));
     return true;
   });
-  auto name = DSValue::createStr(type.getName());
-  return toObjPtr<ErrorObject>(DSValue::create<ErrorObject>(
-      type, std::move(message), std::move(name), status, std::move(traces)));
+  auto name = Value::createStr(type.getName());
+  return toObjPtr<ErrorObject>(Value::create<ErrorObject>(type, std::move(message), std::move(name),
+                                                          status, std::move(traces)));
 }
 
 // ##########################
@@ -836,7 +836,7 @@ StackTraceElement CompiledCode::toTraceElement(unsigned int index) const {
 
 ClosureObject::~ClosureObject() {
   for (unsigned int i = 0; i < this->upvarSize; i++) {
-    (*this)[this->upvarSize - 1 - i].~DSValue(); // destruct object reverse order
+    (*this)[this->upvarSize - 1 - i].~Value(); // destruct object reverse order
   }
 }
 
@@ -865,21 +865,21 @@ EnvCtxObject::~EnvCtxObject() {
   }
 }
 
-void EnvCtxObject::setAndSaveEnv(DSValue &&name, DSValue &&value) {
+void EnvCtxObject::setAndSaveEnv(Value &&name, Value &&value) {
   assert(!name.asStrRef().hasNullChar());
 
   const char *envName = name.asCStr();
   const char *oldEnv = getenv(envName);
 
   // save old env
-  this->envs.emplace_back(name, oldEnv ? DSValue::createStr(oldEnv) : DSValue::createInvalid());
+  this->envs.emplace_back(name, oldEnv ? Value::createStr(oldEnv) : Value::createInvalid());
 
   // overwrite env
   setenv(envName, value.asCStr(), 1);
 
   if (name.asStrRef() == VAR_IFS) { // if env name is IFS, also save and set IFS global variable
     // save old IFS
-    auto ifsIndex = DSValue::createInt(toIndex(BuiltinVarOffset::IFS));
+    auto ifsIndex = Value::createInt(toIndex(BuiltinVarOffset::IFS));
     this->envs.emplace_back(ifsIndex, this->state.getGlobal(BuiltinVarOffset::IFS));
 
     // overwrite IFS
@@ -918,7 +918,7 @@ bool ReaderObject::nextLine() {
       line += ref.slice(pos, ret);
       pos = ret;
       if (ret != StringRef::npos) {
-        this->value = DSValue::createStr(std::move(line));
+        this->value = Value::createStr(std::move(line));
         this->remainPos += pos + 1;
         return true;
       } else {
@@ -927,7 +927,7 @@ bool ReaderObject::nextLine() {
     }
   }
   if (!line.empty()) {
-    this->value = DSValue::createStr(std::move(line));
+    this->value = Value::createStr(std::move(line));
     return true;
   }
   return false;

@@ -27,7 +27,7 @@ namespace arsh {
 static bool setToReplyMap(DSState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
                           unsigned int index, std::string &&buf) {
   auto varObj = argvObj.getValues()[index];
-  auto valueObj = DSValue::createStr(std::move(buf));
+  auto valueObj = Value::createStr(std::move(buf));
   auto ret = mapObj.put(state, std::move(varObj), std::move(valueObj));
   return static_cast<bool>(ret);
 }
@@ -36,7 +36,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
                      StringRef ifs, int timeoutMSec, bool backslash) {
   // clear REPL/reply before read
   errno = 0;
-  state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
+  state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
   reassignReplyVar(state);
 
   auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
@@ -102,7 +102,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
   }
 
   if (varSize == 0) {
-    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr(std::move(strBuf)));
+    state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr(std::move(strBuf)));
   } else {
     for (; index < size; index++) { // set rest variable
       if (unlikely(!setToReplyMap(state, mapObj, argvObj, index, std::move(strBuf)))) {

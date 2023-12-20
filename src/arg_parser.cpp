@@ -55,9 +55,9 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
   if (std::string err; entry.checkArg(arg, shortOpt, v, err)) {
     unsigned int offset = entry.getFieldOffset();
     if (entry.getCheckerKind() == ArgEntry::CheckerKind::INT) {
-      out[offset] = DSValue::createInt(v);
+      out[offset] = Value::createInt(v);
     } else {
-      out[offset] = DSValue::createStr(arg);
+      out[offset] = Value::createStr(arg);
     }
     return true;
   } else {
@@ -99,15 +99,15 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
       ++begin;
       if (e.isRemainArg() && out[e.getFieldOffset()].isInvalid()) {
         out[e.getFieldOffset()] =
-            DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+            Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
       }
       if (e.isRemainArg()) {
         auto &obj = typeAs<ArrayObject>(out[e.getFieldOffset()]);
-        if (!obj.append(state, DSValue::createStr(arg))) {
+        if (!obj.append(state, Value::createStr(arg))) {
           return false;
         }
         for (; begin != end; ++begin) {
-          if (!obj.append(state, DSValue::createStr(*begin))) {
+          if (!obj.append(state, Value::createStr(*begin))) {
             return false;
           }
         }
@@ -153,7 +153,7 @@ CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObj
     }
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG: // set flag
-      out[entry.getFieldOffset()] = DSValue::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
+      out[entry.getFieldOffset()] = Value::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
       break;
     case OptParseOp::HAS_ARG:
     case OptParseOp::OPT_ARG:

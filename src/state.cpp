@@ -65,7 +65,7 @@ void VMState::resize(unsigned int afterSize) {
     newSize += (newSize >> 1u);
   } while (newSize < afterSize);
 
-  auto newStack = new DSValue[newSize];
+  auto newStack = new Value[newSize];
   for (unsigned int i = 0; i < this->frame.stackTopIndex + 1; i++) {
     newStack[i] = std::move(this->operands[i]);
   }

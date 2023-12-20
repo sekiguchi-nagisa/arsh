@@ -10,8 +10,8 @@ using namespace arsh;
 
 template <typename... T>
 static ObjPtr<ArrayObject> createArgs(T &&...args) {
-  std::vector<DSValue> values = {DSValue::createStr(args)...};
-  auto v = DSValue::create<ArrayObject>(toUnderlying(TYPE::StringArray), std::move(values));
+  std::vector<Value> values = {Value::createStr(args)...};
+  auto v = Value::create<ArrayObject>(toUnderlying(TYPE::StringArray), std::move(values));
   return toObjPtr<ArrayObject>(v);
 }
 
@@ -21,7 +21,7 @@ static std::string toStringAt(const ArrayObject &obj, size_t index) {
 
 static void fillWithInvalid(BaseObject &obj) {
   for (unsigned int i = 0; i < obj.getFieldSize(); i++) {
-    obj[i] = DSValue::createInvalid();
+    obj[i] = Value::createInvalid();
   }
 }
 
@@ -86,13 +86,13 @@ TEST_F(ArgParserTest, base) {
   ASSERT_EQ("BBB", toStringAt(*args, 4));
   ASSERT_EQ("CCC", toStringAt(*args, 5));
 
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   ASSERT_EQ(4, out->getFieldSize());
   ASSERT_FALSE((*out)[0]);
   ASSERT_FALSE((*out)[1]);
   ASSERT_FALSE((*out)[2]);
   ASSERT_FALSE((*out)[3]);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_TRUE(ret);
   ASSERT_EQ(4, ret.index);
@@ -137,9 +137,9 @@ TEST_F(ArgParserTest, opt) {
 
   //
   auto args = createArgs("-d", "AAA");
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_TRUE(ret);
   ASSERT_EQ(2, ret.index);
@@ -150,9 +150,9 @@ TEST_F(ArgParserTest, opt) {
 
   //
   args = createArgs("-d/dev/log", "111", "AAA", "BBB", "CCC");
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_TRUE(ret);
   ASSERT_EQ(5, ret.index);
@@ -201,9 +201,9 @@ TEST_F(ArgParserTest, stop) {
   auto &recordType = this->createRecordType("type1", std::move(builder));
 
   //
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   auto args = createArgs("-c", "invoke", "-d", "-h", "-2");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_TRUE(ret);
@@ -245,9 +245,9 @@ TEST_F(ArgParserTest, range) {
   auto &recordType = this->createRecordType("type1", std::move(builder));
 
   //
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   auto args = createArgs("--time=1000", "info");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_TRUE(ret);
@@ -257,9 +257,9 @@ TEST_F(ArgParserTest, range) {
   ASSERT_EQ("info", (*out)[2].asStrRef().toString());
 
   // validation error (num format)
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   args = createArgs("-t", "qq", "AAA");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -276,9 +276,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // validation error (int range)
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   args = createArgs("-t", "0", "--time=1001", "AAA");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -297,9 +297,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // validation error (choice)
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   args = createArgs("-t", "0", "--time=1000", "Info");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -317,9 +317,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // missing required options
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd2");
+  (*out)[0] = Value::createStr("cmd2");
   args = createArgs("Info");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -337,9 +337,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // missing require arguments
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd1");
+  (*out)[0] = Value::createStr("cmd1");
   args = createArgs("-t", "009");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -369,9 +369,9 @@ TEST_F(ArgParserTest, help) {
   auto &recordType = this->createRecordType("type1", std::move(builder));
 
   //
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd11");
+  (*out)[0] = Value::createStr("cmd11");
   auto args = createArgs("-h", "AAA");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -386,9 +386,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // help with invalid options
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd11");
+  (*out)[0] = Value::createStr("cmd11");
   args = createArgs("-h", "-A");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -415,9 +415,9 @@ TEST_F(ArgParserTest, shortUsage1) {
   auto &recordType = this->createRecordType("type1", std::move(builder), CLIRecordType::Attr{});
 
   // help (always show verbose usage without verbose attr)
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd11");
+  (*out)[0] = Value::createStr("cmd11");
   auto args = createArgs("-h", "AAA");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -431,9 +431,9 @@ Options:
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // invalid option
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd11");
+  (*out)[0] = Value::createStr("cmd11");
   args = createArgs("-A");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -465,9 +465,9 @@ TEST_F(ArgParserTest, shortUsage2) {
   auto &recordType = this->createRecordType("type1", std::move(builder), CLIRecordType::Attr{});
 
   // missing option
-  auto out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd11");
+  (*out)[0] = Value::createStr("cmd11");
   auto args = createArgs("AAA");
   auto ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -479,9 +479,9 @@ See `cmd11 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // missing positional
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd12");
+  (*out)[0] = Value::createStr("cmd12");
   args = createArgs("-t", "12");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
@@ -493,9 +493,9 @@ See `cmd12 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
   // option arg format
-  out = toObjPtr<BaseObject>(DSValue::create<BaseObject>(recordType));
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
-  (*out)[0] = DSValue::createStr("cmd22");
+  (*out)[0] = Value::createStr("cmd22");
   args = createArgs("-t", "121111111");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);

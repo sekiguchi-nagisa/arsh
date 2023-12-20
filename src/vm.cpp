@@ -121,7 +121,7 @@ static bool check_strftime_plus(timestamp ts) {
 
 DSState::DSState()
     : modLoader(this->sysConfig),
-      emptyFDObj(toObjPtr<UnixFdObject>(DSValue::create<UnixFdObject>(-1))),
+      emptyFDObj(toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1))),
       initTime(getCurrentTimestamp()), support_strftime_plus(check_strftime_plus(this->initTime)),
       baseTime(this->initTime), rng(this->baseTime.time_since_epoch().count()) {
   // init envs
@@ -137,7 +137,7 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
   if (auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
       obj.getRefcount() > 1) {
     auto &type = this->typePool.get(obj.getTypeID());
-    this->setGlobal(BuiltinVarOffset::PIPESTATUS, DSValue::create<ArrayObject>(type));
+    this->setGlobal(BuiltinVarOffset::PIPESTATUS, Value::create<ArrayObject>(type));
   } else { // reuse existing object
     obj.refValues().clear();
     obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
@@ -145,7 +145,7 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
   auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
   for (unsigned int i = 0; i < size; i++) {
-    obj.append(DSValue::createInt(procs[i].exitStatus())); // not check iterator invalidation
+    obj.append(Value::createInt(procs[i].exitStatus())); // not check iterator invalidation
   }
   if (mergeExitStatus) {
     obj.append(this->getGlobal(BuiltinVarOffset::EXIT_STATUS)); // not check iterator invalidation
@@ -170,7 +170,7 @@ bool VM::checkCast(DSState &state, const DSType &targetType) {
 }
 
 const char *VM::loadEnv(DSState &state, bool hasDefault) {
-  DSValue dValue;
+  Value dValue;
   if (hasDefault) {
     dValue = state.stack.pop();
   }
@@ -215,30 +215,30 @@ bool VM::storeEnv(DSState &state) {
 }
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
-  DSValue value;
+  Value value;
   switch (type.typeKind()) {
   case TypeKind::Array:
-    value = DSValue::create<ArrayObject>(type);
+    value = Value::create<ArrayObject>(type);
     break;
   case TypeKind::Map:
-    value = DSValue::create<OrderedMapObject>(type, state.getRng().next());
+    value = Value::create<OrderedMapObject>(type, state.getRng().next());
     break;
   case TypeKind::Tuple:
-    value = DSValue::create<BaseObject>(cast<TupleType>(type));
+    value = Value::create<BaseObject>(cast<TupleType>(type));
     break;
   case TypeKind::Record:
   case TypeKind::CLIRecord:
-    value = DSValue::create<BaseObject>(cast<RecordType>(type));
+    value = Value::create<BaseObject>(cast<RecordType>(type));
     break;
   default:
-    value = DSValue::createDummy(type);
+    value = Value::createDummy(type);
     break;
   }
   state.stack.push(std::move(value));
 }
 
 bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
-                                       ObjPtr<ArrayObject> &&argvObj, DSValue &&redirConfig,
+                                       ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                        const CmdCallAttr attr) {
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) {
     // reset exit status
@@ -247,7 +247,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
 
   // set parameter
   state.stack.reserve(UDC_PARAM_N);
-  state.stack.push(DSValue::createNum(toUnderlying(attr)));
+  state.stack.push(Value::createNum(toUnderlying(attr)));
   state.stack.push(std::move(redirConfig));
   state.stack.push(argvObj);
 
@@ -269,7 +269,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
 
 /* for substitution */
 
-static bool readAsStr(DSState &state, int fd, DSValue &ret) {
+static bool readAsStr(DSState &state, int fd, Value &ret) {
   std::string str;
   while (true) {
     char buf[256];
@@ -295,15 +295,15 @@ static bool readAsStr(DSState &state, int fd, DSValue &ret) {
   for (; !str.empty() && str.back() == '\n'; str.pop_back())
     ;
 
-  ret = DSValue::createStr(std::move(str));
+  ret = Value::createStr(std::move(str));
   return true;
 }
 
-static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
+static bool readAsStrArray(DSState &state, int fd, Value &ret) {
   auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   unsigned int skipCount = 1;
   std::string str;
-  auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+  auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(obj);
 
   while (true) {
@@ -333,7 +333,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
       }
       skipCount = 0;
       if (fieldSep) {
-        if (unlikely(!array.append(state, DSValue::createStr(std::move(str))))) {
+        if (unlikely(!array.append(state, Value::createStr(std::move(str))))) {
           return false;
         }
         str = "";
@@ -354,7 +354,7 @@ static bool readAsStrArray(DSState &state, int fd, DSValue &ret) {
 
   // append remain
   if (!str.empty() || !hasSpace(ifsRef)) {
-    if (unlikely(!array.append(state, DSValue::createStr(std::move(str))))) {
+    if (unlikely(!array.append(state, Value::createStr(std::move(str))))) {
       return false;
     }
   }
@@ -370,12 +370,12 @@ static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
   int v = fd;
   fd = -1;
   setCloseOnExec(v, true);
-  auto value = DSValue::create<UnixFdObject>(v);
+  auto value = Value::create<UnixFdObject>(v);
   return toObjPtr<UnixFdObject>(value);
 }
 
-bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, const Proc *procs,
-                        ForkKind forkKind, PipeSet &pipeSet, DSValue &ret) {
+bool VM::attachAsyncJob(DSState &state, Value &&desc, unsigned int procSize, const Proc *procs,
+                        ForkKind forkKind, PipeSet &pipeSet, Value &ret) {
   switch (forkKind) {
   case ForkKind::NONE:
   case ForkKind::PIPE_FAIL: {
@@ -440,7 +440,7 @@ bool VM::attachAsyncJob(DSState &state, DSValue &&desc, unsigned int procSize, c
     auto entry = JobObject::create(procSize, procs, false, newFD(state, pipeSet.in[WRITE_PIPE]),
                                    newFD(state, pipeSet.out[READ_PIPE]), std::move(desc));
     state.jobTable.attach(entry, disown);
-    ret = DSValue(entry.get());
+    ret = Value(entry.get());
     break;
   }
   default:
@@ -504,7 +504,7 @@ static Proc::Op resolveProcOp(const DSState &st, ForkKind kind) {
   return op;
 }
 
-bool VM::forkAndEval(DSState &state, DSValue &&desc) {
+bool VM::forkAndEval(DSState &state, Value &&desc) {
   const auto forkKind = static_cast<ForkKind>(read8(state.stack.ip()));
   const unsigned short offset = read16(state.stack.ip() + 1);
 
@@ -518,7 +518,7 @@ bool VM::forkAndEval(DSState &state, DSValue &&desc) {
     tryToClose(pipeSet.in[READ_PIPE]);
     tryToClose(pipeSet.out[WRITE_PIPE]);
 
-    DSValue obj;
+    Value obj;
 
     switch (forkKind) {
     case ForkKind::STR:
@@ -638,7 +638,7 @@ static bool lookupUdc(const DSState &state, const ModType &modType, const char *
   return false;
 }
 
-ResolvedCmd CmdResolver::operator()(const DSState &state, const DSValue &name,
+ResolvedCmd CmdResolver::operator()(const DSState &state, const Value &name,
                                     const ModType *modType) const {
   const StringRef ref = name.asStrRef();
 
@@ -742,7 +742,7 @@ static void raiseInvalidCmdError(DSState &state, StringRef ref) {
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
-static DSValue toCmdDesc(char *const *argv) {
+static Value toCmdDesc(char *const *argv) {
   std::string value;
   for (; *argv != nullptr; argv++) {
     if (!value.empty()) {
@@ -752,11 +752,10 @@ static DSValue toCmdDesc(char *const *argv) {
       break;
     }
   }
-  return DSValue::createStr(std::move(value));
+  return Value::createStr(std::move(value));
 }
 
-bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
-                     DSValue &&redirConfig) {
+bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, Value &&redirConfig) {
   // setup self pipe
   int selfPipe[2];
   if (pipe(selfPipe) < 0) {
@@ -823,7 +822,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
 }
 
 bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayObject> &&argvObj,
-                           DSValue &&redirConfig) {
+                           Value &&redirConfig) {
   auto &array = *argvObj;
   if (array.size() == 1) {
     ERROR(state, array, "require subcommand");
@@ -852,7 +851,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayO
 }
 
 bool VM::callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
-                     DSValue &&redirConfig, CmdCallAttr attr) {
+                     Value &&redirConfig, CmdCallAttr attr) {
   auto cmd = resolver(state, argvObj->getValues()[0]);
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
@@ -888,14 +887,14 @@ static bool checkCmdExecError(DSState &state, CmdCallAttr attr, int64_t status) 
 }
 
 bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
-                     DSValue &&redirConfig, CmdCallAttr attr) {
+                     Value &&redirConfig, CmdCallAttr attr) {
   auto &array = *argvObj;
   if (cmd.hasNullChar()) { // adjust command name
     StringRef name = array.getValues()[0].asStrRef();
     auto pos = name.find('\0');
     assert(pos != StringRef::npos);
     name = name.substr(pos + 1);
-    array.refValues()[0] = DSValue::createStr(name); // not check iterator invalidation
+    array.refValues()[0] = Value::createStr(name); // not check iterator invalidation
   }
   if (state.has(RuntimeOption::XTRACE)) {
     traceCmd(state, array);
@@ -934,7 +933,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
       code = &cast<ClosureObject>(obj)->getFuncObj().getCode();
     }
     setFlag(attr, CmdCallAttr::SET_VAR | CmdCallAttr::CLOSURE);
-    state.stack.push(DSValue(obj));
+    state.stack.push(Value(obj));
     return prepareUserDefinedCommandCall(state, *code, std::move(argvObj), std::move(redirConfig),
                                          attr);
   }
@@ -988,7 +987,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
 }
 
 VM::BuiltinCmdResult VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
-                                        DSValue &&redir, CmdCallAttr attr) {
+                                        Value &&redir, CmdCallAttr attr) {
   auto &arrayObj = *argvObj;
   bool useDefaultPath = false;
 
@@ -1126,7 +1125,7 @@ END:
   return BuiltinCmdResult::display(status);
 }
 
-int VM::builtinExec(DSState &state, const ArrayObject &argvObj, DSValue &&redir) {
+int VM::builtinExec(DSState &state, const ArrayObject &argvObj, Value &&redir) {
   bool clearEnv = false;
   StringRef progName;
   GetOptState optState("hca:");
@@ -1189,7 +1188,7 @@ bool VM::returnFromUserDefinedCommand(DSState &state, int64_t status) {
   return true;
 }
 
-bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind forkKind) {
+bool VM::callPipeline(DSState &state, Value &&desc, bool lastPipe, ForkKind forkKind) {
   /**
    * ls | grep .
    * ==> pipeSize == 1, procSize == 2
@@ -1263,12 +1262,12 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
       state.jobTable.attach(jobEntry);
       ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
       closeAllPipe(pipeSize, pipeFds);
-      state.stack.push(DSValue::create<PipelineObject>(state, std::move(jobEntry)));
+      state.stack.push(Value::create<PipelineObject>(state, std::move(jobEntry)));
     } else {
       tryToClose(pipeSet.in[READ_PIPE]);
       tryToClose(pipeSet.out[WRITE_PIPE]);
       closeAllPipe(pipeSize, pipeFds);
-      DSValue obj;
+      Value obj;
       if (!attachAsyncJob(state, std::move(desc), procSize, children, forkKind, pipeSet, obj)) {
         return false;
       }
@@ -1293,11 +1292,11 @@ bool VM::callPipeline(DSState &state, DSValue &&desc, bool lastPipe, ForkKind fo
 
 class GlobIter {
 private:
-  const DSValue *cur;
+  const Value *cur;
   const char *ptr{nullptr};
 
 public:
-  explicit GlobIter(const DSValue *value) : cur(value) {
+  explicit GlobIter(const Value *value) : cur(value) {
     if (this->cur->hasStrRef()) {
       this->ptr = this->cur->asStrRef().begin();
     }
@@ -1327,7 +1326,7 @@ public:
     return *this;
   }
 
-  const DSValue *getIter() const { return this->cur; }
+  const Value *getIter() const { return this->cur; }
 };
 
 static const char *toMessagePrefix(TildeExpandStatus status) {
@@ -1409,7 +1408,7 @@ struct DSValueGlobMeta {
   }
 };
 
-static void raiseGlobbingError(DSState &state, const DSValue *begin, const DSValue *end,
+static void raiseGlobbingError(DSState &state, const Value *begin, const Value *end,
                                const char *message) {
   std::string value = message;
   value += " `";
@@ -1431,8 +1430,8 @@ static void raiseGlobbingError(DSState &state, const DSValue *begin, const DSVal
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
-bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin,
-                         const DSValue *end, bool tilde) {
+bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const Value *begin, const Value *end,
+                         bool tilde) {
   // check if glob path fragments have null character
   for (auto *iter = begin; iter != end; ++iter) {
     auto &v = *iter;
@@ -1447,7 +1446,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
 
   const unsigned int oldSize = argv.size();
   auto appender = [&](std::string &&path) {
-    return argv.append(state, DSValue::createStr(std::move(path)));
+    return argv.append(state, Value::createStr(std::move(path)));
   };
   GlobMatchOption option{};
   if (tilde) {
@@ -1494,8 +1493,8 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const DSValue *begin
   }
 }
 
-static DSValue concatPath(DSState &state, const DSValue *begin, const DSValue *end) {
-  auto ret = DSValue::createStr();
+static Value concatPath(DSState &state, const Value *begin, const Value *end) {
+  auto ret = Value::createStr();
   for (; begin != end; ++begin) {
     if (!ret.appendAsStr(state, begin->asStrRef())) {
       return {};
@@ -1517,7 +1516,7 @@ struct ExpandState {
   };
 };
 
-static bool needGlob(const DSValue *begin, const DSValue *end) {
+static bool needGlob(const Value *begin, const Value *end) {
   for (; begin != end; ++begin) {
     auto &v = *begin;
     if (v.kind() == ValueKind::EXPAND_META) {
@@ -1546,12 +1545,12 @@ static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
   return tryUpdateSeqValue(cur, range);
 }
 
-bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *begin,
-                             const DSValue *end, ExpandOp expandOp) {
+bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *begin,
+                             const Value *end, ExpandOp expandOp) {
   const unsigned int size = end - begin;
   assert(size <= UINT8_MAX);
   FlexBuffer<ExpandState> stack;
-  auto values = std::make_unique<DSValue[]>(size + 1); // reserve sentinel
+  auto values = std::make_unique<Value[]>(size + 1); // reserve sentinel
   FlexBuffer<int64_t> seqStack;
   unsigned int usedSize = 0;
 
@@ -1615,7 +1614,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         auto &nums = typeAs<BaseObject>(begin[i - 1])[3].asNumList();
         unsigned int digits = nums[0];
         auto kind = static_cast<BraceRange::Kind>(nums[1]);
-        values[usedSize++] = DSValue::createStr(
+        values[usedSize++] = Value::createStr(
             formatSeqValue(seqStack.back(), digits, kind == BraceRange::Kind::CHAR));
         goto CONTINUE;
       }
@@ -1632,7 +1631,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
         return false;
       }
 
-      values[usedSize] = DSValue(); // sentinel
+      values[usedSize] = Value(); // sentinel
 
       auto *vbegin = values.get();
       auto *vend = vbegin + usedSize;
@@ -1648,7 +1647,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
           return false;
         }
       } else {
-        DSValue path = concatPath(state, vbegin, vend);
+        Value path = concatPath(state, vbegin, vend);
         if (tilde) {
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
@@ -1657,7 +1656,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const DSValue *b
             raiseTildeError(state, dirStackProvider, str, s);
             return false;
           }
-          path = DSValue::createStr(std::move(str));
+          path = Value::createStr(std::move(str));
         }
         if (!path.asStrRef().empty()) { // skip empty string
           if (!argv.append(state, std::move(path))) {
@@ -1739,11 +1738,11 @@ static NativeCode initSignalTrampoline() noexcept {
 
 static auto signalTrampoline = initSignalTrampoline();
 
-bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
+bool VM::kickSignalHandler(DSState &state, int sigNum, Value &&func) {
   state.stack.reserve(3);
   state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
   state.stack.push(std::move(func));
-  state.stack.push(DSValue::createSig(sigNum));
+  state.stack.push(Value::createSig(sigNum));
 
   return windStackFrame(state, 3, 3, signalTrampoline);
 }
@@ -1836,7 +1835,7 @@ bool VM::mainLoop(DSState &state) {
         auto &targetType = state.typePool.get(v);
         auto value = state.stack.pop();
         bool ret = instanceOf(state.typePool, value, targetType);
-        state.stack.push(DSValue::createBool(ret));
+        state.stack.push(Value::createBool(ret));
         vmnext;
       }
       vmcase(CHECK_CAST) {
@@ -1849,7 +1848,7 @@ bool VM::mainLoop(DSState &state) {
         const auto &targetType = state.typePool.get(v);
         if (!instanceOf(state.typePool, state.stack.peek(), targetType)) {
           state.stack.popNoReturn();
-          state.stack.push(DSValue::createInvalid());
+          state.stack.push(Value::createInvalid());
         }
         vmnext;
       }
@@ -1858,25 +1857,25 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(PUSH_TRUE) {
-        state.stack.push(DSValue::createBool(true));
+        state.stack.push(Value::createBool(true));
         vmnext;
       }
       vmcase(PUSH_FALSE) {
-        state.stack.push(DSValue::createBool(false));
+        state.stack.push(Value::createBool(false));
         vmnext;
       }
       vmcase(PUSH_SIG) {
         unsigned int value = consume8(state.stack.ip());
-        state.stack.push(DSValue::createSig(static_cast<int>(value)));
+        state.stack.push(Value::createSig(static_cast<int>(value)));
         vmnext;
       }
       vmcase(PUSH_INT) {
         unsigned int value = consume8(state.stack.ip());
-        state.stack.push(DSValue::createInt(value));
+        state.stack.push(Value::createInt(value));
         vmnext;
       }
       vmcase(PUSH_STR0) {
-        state.stack.push(DSValue::createStr());
+        state.stack.push(Value::createStr());
         vmnext;
       }
       vmcase(PUSH_STR1) vmcase(PUSH_STR2) vmcase(PUSH_STR3) {
@@ -1885,17 +1884,17 @@ bool VM::mainLoop(DSState &state) {
         for (unsigned int i = 0; i < size; i++) {
           data[i] = static_cast<char>(consume8(state.stack.ip()));
         }
-        state.stack.push(DSValue::createStr(StringRef(data, size)));
+        state.stack.push(Value::createStr(StringRef(data, size)));
         vmnext;
       }
       vmcase(PUSH_META) {
         unsigned int meta = consume8(state.stack.ip());
         unsigned int v = consume8(state.stack.ip());
-        state.stack.push(DSValue::createExpandMeta(static_cast<ExpandMeta>(meta), v));
+        state.stack.push(Value::createExpandMeta(static_cast<ExpandMeta>(meta), v));
         vmnext;
       }
       vmcase(PUSH_INVALID) {
-        state.stack.push(DSValue::createInvalid());
+        state.stack.push(Value::createInvalid());
         vmnext;
       }
       vmcase(LOAD_CONST) {
@@ -1957,7 +1956,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(LOAD_ENV) {
         const char *value = loadEnv(state, false);
         TRY(value);
-        state.stack.push(DSValue::createStr(value));
+        state.stack.push(Value::createStr(value));
         vmnext;
       }
       vmcase(STORE_ENV) {
@@ -1965,7 +1964,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(NEW_ENV_CTX) {
-        state.stack.push(DSValue::create<EnvCtxObject>(state));
+        state.stack.push(Value::create<EnvCtxObject>(state));
         vmnext;
       }
       vmcase(ADD2ENV_CTX) {
@@ -1975,13 +1974,13 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(NEW_TIMER) {
-        state.stack.push(DSValue::create<TimerObject>());
+        state.stack.push(Value::create<TimerObject>());
         vmnext;
       }
       vmcase(BOX_LOCAL) {
         unsigned char index = consume8(state.stack.ip());
         auto v = state.stack.getLocal(index);
-        auto boxed = DSValue::create<BoxObject>(std::move(v));
+        auto boxed = Value::create<BoxObject>(std::move(v));
         state.stack.setLocal(index, std::move(boxed));
         vmnext;
       }
@@ -2001,8 +2000,8 @@ bool VM::mainLoop(DSState &state) {
       vmcase(NEW_CLOSURE) {
         const unsigned int paramSize = consume8(state.stack.ip());
         auto funcObj = toObjPtr<FuncObject>(state.stack.peekByOffset(paramSize));
-        const DSValue *values = &state.stack.peekByOffset(paramSize) + 1;
-        auto value = DSValue::create<ClosureObject>(std::move(funcObj), paramSize, values);
+        const Value *values = &state.stack.peekByOffset(paramSize) + 1;
+        auto value = Value::create<ClosureObject>(std::move(funcObj), paramSize, values);
         for (unsigned int i = 0; i <= paramSize; i++) {
           state.stack.popNoReturn();
         }
@@ -2053,13 +2052,13 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(APPEND_ARRAY) {
-        DSValue v = state.stack.pop();
+        Value v = state.stack.pop();
         TRY(typeAs<ArrayObject>(state.stack.peek()).append(state, std::move(v)));
         vmnext;
       }
       vmcase(APPEND_MAP) {
-        DSValue value = state.stack.pop();
-        DSValue key = state.stack.pop();
+        Value value = state.stack.pop();
+        Value key = state.stack.pop();
         auto &map = typeAs<OrderedMapObject>(state.stack.peek());
         TRY(map.put(state, std::move(key), std::move(value)));
         vmnext;
@@ -2130,7 +2129,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(RETURN) {
-        DSValue v = state.stack.pop();
+        Value v = state.stack.pop();
         state.stack.unwind();
         state.stack.push(std::move(v));
         if (state.stack.checkVMReturn()) {
@@ -2219,7 +2218,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(LOOP_GUARD) {
-        state.stack.push(DSValue::createStackGuard(StackGuardType::LOOP));
+        state.stack.push(Value::createStackGuard(StackGuardType::LOOP));
         vmnext;
       }
       vmcase(JUMP_TRY) {
@@ -2240,16 +2239,16 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(TRY_GUARD) {
         unsigned int level = consume32(state.stack.ip());
-        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, level));
+        state.stack.push(Value::createStackGuard(StackGuardType::TRY, level));
         vmnext;
       }
       vmcase(TRY_GUARD0) {
-        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, 1));
+        state.stack.push(Value::createStackGuard(StackGuardType::TRY, 1));
         vmnext;
       }
       vmcase(TRY_GUARD1) {
         unsigned int level = consume8(state.stack.ip());
-        state.stack.push(DSValue::createStackGuard(StackGuardType::TRY, level));
+        state.stack.push(Value::createStackGuard(StackGuardType::TRY, level));
         vmnext;
       }
       vmcase(THROW) {
@@ -2295,13 +2294,13 @@ bool VM::mainLoop(DSState &state) {
       vmcase(REF_EQ) {
         auto v1 = state.stack.pop();
         auto v2 = state.stack.pop();
-        state.stack.push(DSValue::createBool(v1 == v2));
+        state.stack.push(Value::createBool(v1 == v2));
         vmnext;
       }
       vmcase(REF_NE) {
         auto v1 = state.stack.pop();
         auto v2 = state.stack.pop();
-        state.stack.push(DSValue::createBool(v1 != v2));
+        state.stack.push(Value::createBool(v1 != v2));
         vmnext;
       }
       vmcase(FORK) {
@@ -2330,7 +2329,7 @@ bool VM::mainLoop(DSState &state) {
           raiseTildeError(state, dirStackProvider, str, s);
           vmerror;
         }
-        state.stack.push(DSValue::createStr(std::move(str)));
+        state.stack.push(Value::createStr(std::move(str)));
         vmnext;
       }
       vmcase(PARSE_CLI) {
@@ -2347,7 +2346,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(NEW_CMD) {
         auto v = state.stack.pop();
-        auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+        auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
         auto &argv = typeAs<ArrayObject>(obj);
         argv.append(std::move(v)); // not check iterator invalidation
         state.stack.push(std::move(obj));
@@ -2426,7 +2425,7 @@ bool VM::mainLoop(DSState &state) {
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
         if (argv->size() == 0) {
           // add dummy
-          argv->refValues().push_back(DSValue::createStr()); // not check iterator invalidation
+          argv->refValues().push_back(Value::createStr()); // not check iterator invalidation
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         CHECK_SIGNAL();
@@ -2435,7 +2434,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(BUILTIN_CMD) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         auto attr = static_cast<CmdCallAttr>(v);
-        DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+        Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         const auto ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
         flushStdFD();
@@ -2450,7 +2449,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(BUILTIN_CALL) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         auto attr = static_cast<CmdCallAttr>(v);
-        DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+        Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
 
         argv->takeFirst(); // not check iterator invalidation
@@ -2466,7 +2465,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(BUILTIN_EXEC) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         const auto attr = static_cast<CmdCallAttr>(v);
-        DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+        Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = state.stack.getLocal(UDC_PARAM_ARGV);
         int status = builtinExec(state, typeAs<ArrayObject>(argv), std::move(redir));
         TRY(checkCmdExecError(state, attr, status));
@@ -2474,7 +2473,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(NEW_REDIR) {
-        state.stack.push(DSValue::create<RedirObject>());
+        state.stack.push(Value::create<RedirObject>());
         vmnext;
       }
       vmcase(ADD_REDIR_OP) {
@@ -2512,7 +2511,7 @@ bool VM::mainLoop(DSState &state) {
           }
           return true;
         });
-        DSValue arg0;
+        Value arg0;
         if (frame) {
           unsigned int localOffset = frame->localVarOffset;
           arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_N);
@@ -2523,7 +2522,7 @@ bool VM::mainLoop(DSState &state) {
         vmnext;
       }
       vmcase(RAND) {
-        state.stack.push(DSValue::createInt(state.getRng().nextInt64()));
+        state.stack.push(Value::createInt(state.getRng().nextInt64()));
         vmnext;
       }
       vmcase(GET_SECOND) {
@@ -2532,7 +2531,7 @@ bool VM::mainLoop(DSState &state) {
         auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
         int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
         v += sec.count();
-        state.stack.push(DSValue::createInt(v));
+        state.stack.push(Value::createInt(v));
         vmnext;
       }
       vmcase(SET_SECOND) {
@@ -2544,7 +2543,7 @@ bool VM::mainLoop(DSState &state) {
       vmcase(GET_POS_ARG) {
         auto pos = state.stack.pop().asInt();
         auto args = state.stack.pop();
-        auto v = DSValue::createStr();
+        auto v = Value::createStr();
         assert(pos > 0 && static_cast<uint64_t>(pos) <= ArrayObject::MAX_SIZE);
         unsigned int index = static_cast<uint64_t>(pos) - 1;
         if (index < typeAs<ArrayObject>(args).size()) {
@@ -2562,7 +2561,7 @@ bool VM::mainLoop(DSState &state) {
       }
       vmcase(CHECK_INVALID) {
         bool b = state.stack.pop().kind() != ValueKind::INVALID;
-        state.stack.push(DSValue::createBool(b));
+        state.stack.push(Value::createBool(b));
         vmnext;
       }
       vmcase(RECLAIM_LOCAL) {
@@ -2673,7 +2672,7 @@ bool VM::handleException(DSState &state) {
   return false;
 }
 
-EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
+EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, Value &value) {
   assert(state.stack.recDepth() > 0);
   if (state.stack.recDepth() == 1) {
     setLocaleSetting();
@@ -2717,7 +2716,7 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
     assert(isa<ModType>(type));
     auto &modType = cast<ModType>(type);
     unsigned int index = modType.getIndex();
-    state.setGlobal(index, DSValue(func));
+    state.setGlobal(index, Value(func));
   }
 
   // prepare stack
@@ -2725,13 +2724,13 @@ bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *d
   RecursionGuard guard(state);
   state.stack.wind(0, 0, func->getCode());
 
-  DSValue ret;
+  Value ret;
   auto s = startEval(state, op, dsError, ret);
   assert(s != EvalRet::HAS_ERROR);
   return s == EvalRet::SUCCESS;
 }
 
-unsigned int VM::prepareArguments(VMState &state, DSValue &&recv, CallArgs &&args) {
+unsigned int VM::prepareArguments(VMState &state, Value &&recv, CallArgs &&args) {
   state.clearThrownObject();
 
   // push arguments
@@ -2770,14 +2769,14 @@ static NativeCode initCmdTrampoline() noexcept {
   return NativeCode(code);
 }
 
-DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
+Value VM::execCommand(DSState &state, std::vector<Value> &&argv, bool propagate) {
   GUARD_RECURSION(state);
 
   static auto cmdTrampoline = initCmdTrampoline();
 
   const auto op = propagate ? EvalOP::PROPAGATE : EvalOP{};
-  DSValue ret;
-  auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
+  Value ret;
+  auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
   prepareArguments(state.stack, std::move(obj), {0, {}});
   if (windStackFrame(state, 1, 1, cmdTrampoline)) {
     startEval(state, op, nullptr, ret);
@@ -2785,19 +2784,19 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
   return ret;
 }
 
-DSValue VM::callFunction(DSState &state, DSValue &&funcObj, CallArgs &&args) {
+Value VM::callFunction(DSState &state, Value &&funcObj, CallArgs &&args) {
   GUARD_RECURSION(state);
 
   auto &type = state.typePool.get(funcObj.getTypeID());
   unsigned int size = prepareArguments(state.stack, std::move(funcObj), std::move(args));
 
-  DSValue ret;
+  Value ret;
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
     startEval(state, EvalOP::PROPAGATE, nullptr, ret);
   }
   if (cast<FunctionType>(type).getReturnType().isVoidType()) {
-    ret = DSValue(); // clear return value
+    ret = Value(); // clear return value
   }
   return ret;
 }
@@ -2873,7 +2872,7 @@ bool VM::callTermHook(DSState &state) {
 
   auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto args =
-      makeArgs(DSValue::createInt(termKind), termKind == TERM_ON_ERR ? except : oldExitStatus);
+      makeArgs(Value::createInt(termKind), termKind == TERM_ON_ERR ? except : oldExitStatus);
 
   state.canHandleSignal = false;
   VM::callFunction(state, std::move(funcObj), std::move(args)); // ignore exception
@@ -2884,7 +2883,7 @@ bool VM::callTermHook(DSState &state) {
   state.canHandleSignal = true;
 
   // clear TERM_HOOK
-  state.setGlobal(state.termHookIndex, DSValue::createInvalid());
+  state.setGlobal(state.termHookIndex, Value::createInvalid());
   return true;
 }
 

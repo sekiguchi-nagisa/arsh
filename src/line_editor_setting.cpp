@@ -145,7 +145,7 @@ static const DSType &toType(const TypePool &pool, EditConfig config) {
   return pool.get(types[toUnderlying(config)]);
 }
 
-bool LineEditorObject::setConfig(DSState &state, StringRef name, const DSValue &value) {
+bool LineEditorObject::setConfig(DSState &state, StringRef name, const Value &value) {
   auto *config = toEditConfig(name);
   if (!config) {
     std::string message = "undefined config: `";
@@ -199,10 +199,10 @@ bool LineEditorObject::setConfig(DSState &state, StringRef name, const DSValue &
   return false;
 }
 
-DSValue LineEditorObject::getConfigs(DSState &state) const {
+Value LineEditorObject::getConfigs(DSState &state) const {
   auto typeOrError =
       state.typePool.createMapType(state.typePool.get(TYPE::String), state.typePool.get(TYPE::Any));
-  auto ret = DSValue::create<OrderedMapObject>(*typeOrError.asOk(), state.getRng().next());
+  auto ret = Value::create<OrderedMapObject>(*typeOrError.asOk(), state.getRng().next());
 
   constexpr EditConfig configs[] = {
 #define GEN_TABLE(E, S, T) EditConfig::E,
@@ -212,20 +212,20 @@ DSValue LineEditorObject::getConfigs(DSState &state) const {
 
   auto &map = typeAs<OrderedMapObject>(ret);
   for (auto &e : configs) {
-    auto key = DSValue::createStr(toString(e));
-    DSValue value;
+    auto key = Value::createStr(toString(e));
+    Value value;
     switch (e) {
     case EditConfig::KILL_RING_SIZE:
-      value = DSValue::createInt(this->killRing.get().capacity());
+      value = Value::createInt(this->killRing.get().capacity());
       break;
     case EditConfig::EAW:
-      value = DSValue::createInt(this->eaw);
+      value = Value::createInt(this->eaw);
       break;
     case EditConfig::USE_BRACKETED_PASTE:
-      value = DSValue::createBool(this->useBracketedPaste);
+      value = Value::createBool(this->useBracketedPaste);
       break;
     case EditConfig::USE_FLOW_CONTROL:
-      value = DSValue::createBool(this->useFlowControl);
+      value = Value::createBool(this->useFlowControl);
       break;
     case EditConfig::COLOR: {
       std::string code;
@@ -241,7 +241,7 @@ DSValue LineEditorObject::getConfigs(DSState &state) const {
           code += iter->second;
         }
       }
-      value = DSValue::createStr(std::move(code));
+      value = Value::createStr(std::move(code));
       break;
     }
     }
