@@ -31,10 +31,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   argv.push_back(nullptr);
 
   setenv("ARSH_PRINTF_FUZZ", "on", 1);
-  auto *state = DSState_create();
+  auto *state = ARState_create();
 
   // just print
-  DSState_exec(state, argv.data());
+  ARState_exec(state, argv.data());
 
   // -v var
   argv.insert(argv.begin() + 1, strdup("-v"));
@@ -43,10 +43,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   assert(StringRef(argv[1]) == "-v");
   assert(StringRef(argv[2]) == "var");
   assert(StringRef(argv[3]) == "--");
-  DSState_exec(state, argv.data());
+  ARState_exec(state, argv.data());
 
   // release resource
-  DSState_delete(&state);
+  ARState_delete(&state);
   for (auto &e : argv) {
     free(e);
   }

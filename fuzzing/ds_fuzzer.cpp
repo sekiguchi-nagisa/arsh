@@ -35,12 +35,12 @@ static FuzzPolicy getFuzzPolicy() {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   static auto policy = getFuzzPolicy();
 
-  auto *state = DSState_createWithMode(DS_EXEC_MODE_COMPILE_ONLY);
+  auto *state = ARState_createWithMode(AR_EXEC_MODE_COMPILE_ONLY);
   switch (policy) {
   case FuzzPolicy::EVAL: {
-    DSError dsError;
-    DSState_eval(state, "<dummy>", (const char *)data, size, &dsError);
-    DSError_release(&dsError);
+    ARError dsError;
+    ARState_eval(state, "<dummy>", (const char *)data, size, &dsError);
+    ARError_release(&dsError);
     break;
   }
   case FuzzPolicy::COMPLETE: {
@@ -51,10 +51,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         "--",
         buf.c_str(),
     };
-    DSState_exec(state, (char **)argv);
+    ARState_exec(state, (char **)argv);
     break;
   }
   }
-  DSState_delete(&state);
+  ARState_delete(&state);
   return 0;
 }
