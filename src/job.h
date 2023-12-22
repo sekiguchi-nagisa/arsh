@@ -158,7 +158,7 @@ public:
    * @return
    * if Proc#pid() is -1, fork failed due to EAGAIN.
    */
-  static Proc fork(DSState &st, pid_t pgid, Op op);
+  static Proc fork(ARState &st, pid_t pgid, Op op);
 };
 
 template <>

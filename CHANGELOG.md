@@ -84,8 +84,10 @@
 
 #### API
 
-- ``DSState_setArguments`` api always assign new object
-- add ``DS_CONFIG_UNICODE`` constant to ``DSState_config`` for unicode version detection
+- **Breaking Change**: rename public api
+    - replace prefix ``DS`` with ``AR``
+- ``ARState_setArguments`` api always assign new object
+- add ``AR_CONFIG_UNICODE`` constant to ``ARState_config`` for unicode version detection
 
 #### LSP
 

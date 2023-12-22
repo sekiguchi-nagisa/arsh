@@ -94,7 +94,7 @@ public:
 
   ~LineEditorObject();
 
-  ssize_t readline(DSState &state, StringRef prompt, char *buf, size_t bufLen);
+  ssize_t readline(ARState &state, StringRef prompt, char *buf, size_t bufLen);
 
   bool locked() const { return this->lock; }
 
@@ -124,15 +124,15 @@ public:
    * @return
    * if error, return false
    */
-  bool addKeyBind(DSState &state, StringRef key, StringRef name);
+  bool addKeyBind(ARState &state, StringRef key, StringRef name);
 
-  bool defineCustomAction(DSState &state, StringRef name, StringRef type, ObjPtr<Object> callback);
+  bool defineCustomAction(ARState &state, StringRef name, StringRef type, ObjPtr<Object> callback);
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 
-  bool setConfig(DSState &state, StringRef name, const Value &value);
+  bool setConfig(ARState &state, StringRef name, const Value &value);
 
-  Value getConfigs(DSState &state) const;
+  Value getConfigs(ARState &state) const;
 
   enum class CompStatus {
     OK,
@@ -149,7 +149,7 @@ private:
   void refreshLine(struct linenoiseState &l, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
-  ssize_t accept(DSState &state, struct linenoiseState &l);
+  ssize_t accept(ARState &state, struct linenoiseState &l);
 
   /**
    * entry point of actual line edit function
@@ -159,17 +159,17 @@ private:
    * @param prompt
    * @return
    */
-  ssize_t editLine(DSState &state, StringRef prompt, char *buf, size_t bufSize);
+  ssize_t editLine(ARState &state, StringRef prompt, char *buf, size_t bufSize);
 
-  ssize_t editInRawMode(DSState &state, struct linenoiseState &l);
+  ssize_t editInRawMode(ARState &state, struct linenoiseState &l);
 
-  CompStatus completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader);
+  CompStatus completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 
-  Value kickCallback(DSState &state, Value &&callback, CallArgs &&callArgs);
+  Value kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs);
 
-  ObjPtr<ArrayObject> kickCompletionCallback(DSState &state, StringRef line);
+  ObjPtr<ArrayObject> kickCompletionCallback(ARState &state, StringRef line);
 
-  bool kickHistSyncCallback(DSState &state, const LineBuffer &buf);
+  bool kickHistSyncCallback(ARState &state, const LineBuffer &buf);
 
   /**
    *
@@ -180,7 +180,7 @@ private:
    * @return
    * if has error or does not insert, return false
    */
-  bool kickCustomCallback(DSState &state, LineBuffer &buf, CustomActionType type,
+  bool kickCustomCallback(ARState &state, LineBuffer &buf, CustomActionType type,
                           unsigned int index);
 };
 

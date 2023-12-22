@@ -374,8 +374,8 @@ int TestClientServerDriver::run(const DriverOptions &options,
 
   if (options.open) {
     assert(!receivedDiagnostics.empty());
-    auto kind = static_cast<DSErrorKind>(this->clientInput.directive.unwrap().getKind());
-    if (kind == DS_ERROR_KIND_PARSE_ERROR || kind == DS_ERROR_KIND_TYPE_ERROR) {
+    auto kind = static_cast<ARErrorKind>(this->clientInput.directive.unwrap().getKind());
+    if (kind == AR_ERROR_KIND_PARSE_ERROR || kind == AR_ERROR_KIND_TYPE_ERROR) {
       auto targetFile =
           getTargetFileName(this->clientInput.directive.unwrap(), this->clientInput.fileName);
       if (!expectDiagnostic(receivedDiagnostics, this->clientInput.directive.unwrap(), targetFile,

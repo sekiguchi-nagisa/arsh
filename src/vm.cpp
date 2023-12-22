@@ -32,10 +32,10 @@
 #include "vm.h"
 
 // #####################
-// ##     DSState     ##
+// ##     ARState     ##
 // #####################
 
-SigSet DSState::pendingSigSet;
+SigSet ARState::pendingSigSet;
 
 /**
  * if environmental variable SHLVL dose not exist, set 0.
@@ -119,7 +119,7 @@ static bool check_strftime_plus(timestamp ts) {
   return false;
 }
 
-DSState::DSState()
+ARState::ARState()
     : modLoader(this->sysConfig),
       emptyFDObj(toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1))),
       initTime(getCurrentTimestamp()), support_strftime_plus(check_strftime_plus(this->initTime)),
@@ -133,7 +133,7 @@ DSState::DSState()
   }
 }
 
-void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
+void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
   if (auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
       obj.getRefcount() > 1) {
     auto &type = this->typePool.get(obj.getTypeID());
@@ -155,7 +155,7 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace arsh {
 
-bool VM::checkCast(DSState &state, const DSType &targetType) {
+bool VM::checkCast(ARState &state, const DSType &targetType) {
   if (!instanceOf(state.typePool, state.stack.peek(), targetType)) {
     auto &stackTopType = state.typePool.get(state.stack.pop().getTypeID());
     std::string str("cannot cast `");
@@ -169,7 +169,7 @@ bool VM::checkCast(DSState &state, const DSType &targetType) {
   return true;
 }
 
-const char *VM::loadEnv(DSState &state, bool hasDefault) {
+const char *VM::loadEnv(ARState &state, bool hasDefault) {
   Value dValue;
   if (hasDefault) {
     dValue = state.stack.pop();
@@ -199,7 +199,7 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
   return env;
 }
 
-bool VM::storeEnv(DSState &state) {
+bool VM::storeEnv(ARState &state) {
   auto value = state.stack.pop();
   auto name = state.stack.pop();
   auto nameRef = name.asStrRef();
@@ -214,7 +214,7 @@ bool VM::storeEnv(DSState &state) {
   return false;
 }
 
-void VM::pushNewObject(DSState &state, const DSType &type) {
+void VM::pushNewObject(ARState &state, const DSType &type) {
   Value value;
   switch (type.typeKind()) {
   case TypeKind::Array:
@@ -237,7 +237,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
   state.stack.push(std::move(value));
 }
 
-bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
+bool VM::prepareUserDefinedCommandCall(ARState &state, const DSCode &code,
                                        ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                        const CmdCallAttr attr) {
   if (hasFlag(attr, CmdCallAttr::SET_VAR)) {
@@ -269,7 +269,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
 
 /* for substitution */
 
-static bool readAsStr(DSState &state, int fd, Value &ret) {
+static bool readAsStr(ARState &state, int fd, Value &ret) {
   std::string str;
   while (true) {
     char buf[256];
@@ -299,7 +299,7 @@ static bool readAsStr(DSState &state, int fd, Value &ret) {
   return true;
 }
 
-static bool readAsStrArray(DSState &state, int fd, Value &ret) {
+static bool readAsStrArray(ARState &state, int fd, Value &ret) {
   auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   unsigned int skipCount = 1;
   std::string str;
@@ -363,7 +363,7 @@ static bool readAsStrArray(DSState &state, int fd, Value &ret) {
   return true;
 }
 
-static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
+static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   if (fd < 0) {
     return st.emptyFDObj;
   }
@@ -374,7 +374,7 @@ static ObjPtr<UnixFdObject> newFD(const DSState &st, int &fd) {
   return toObjPtr<UnixFdObject>(value);
 }
 
-bool VM::attachAsyncJob(DSState &state, Value &&desc, unsigned int procSize, const Proc *procs,
+bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
                         ForkKind forkKind, PipeSet &pipeSet, Value &ret) {
   switch (forkKind) {
   case ForkKind::NONE:
@@ -487,7 +487,7 @@ static pid_t resolvePGID(bool rootShell, ForkKind kind) {
   return getpgid(0);
 }
 
-static Proc::Op resolveProcOp(const DSState &st, ForkKind kind) {
+static Proc::Op resolveProcOp(const ARState &st, ForkKind kind) {
   Proc::Op op{};
   if (st.isJobControl()) {
     if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
@@ -504,7 +504,7 @@ static Proc::Op resolveProcOp(const DSState &st, ForkKind kind) {
   return op;
 }
 
-bool VM::forkAndEval(DSState &state, Value &&desc) {
+bool VM::forkAndEval(ARState &state, Value &&desc) {
   const auto forkKind = static_cast<ForkKind>(read8(state.stack.ip()));
   const unsigned short offset = read16(state.stack.ip() + 1);
 
@@ -527,7 +527,7 @@ bool VM::forkAndEval(DSState &state, Value &&desc) {
       tryToClose(pipeSet.in[WRITE_PIPE]);
       bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
                                            : readAsStrArray(state, pipeSet.out[READ_PIPE], obj);
-      if (!ret || DSState::isInterrupted()) {
+      if (!ret || ARState::isInterrupted()) {
         /**
          * if read failed, not wait termination (always attach to job table)
          */
@@ -535,10 +535,10 @@ bool VM::forkAndEval(DSState &state, Value &&desc) {
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
 
-        if (ret && DSState::isInterrupted()) {
+        if (ret && ARState::isInterrupted()) {
           raiseSystemError(state, EINTR, ERROR_CMD_SUB);
         }
-        DSState::clearPendingSignal(SIGINT); // always clear SIGINT
+        ARState::clearPendingSignal(SIGINT); // always clear SIGINT
         return false;
       }
 
@@ -598,7 +598,7 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigned int index,
+static ResolvedCmd lookupUdcFromIndex(const ARState &state, ModId modId, unsigned int index,
                                       bool nullChar = false) {
   const FuncObject *udcObj = nullptr;
   auto &v = state.getGlobal(index);
@@ -627,7 +627,7 @@ static ResolvedCmd lookupUdcFromIndex(const DSState &state, ModId modId, unsigne
  * @param cmd
  * @return
  */
-static bool lookupUdc(const DSState &state, const ModType &modType, const char *name, bool nullChar,
+static bool lookupUdc(const ARState &state, const ModType &modType, const char *name, bool nullChar,
                       ResolvedCmd &cmd) {
   std::string fullname = toCmdFullName(name);
   auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
@@ -638,7 +638,7 @@ static bool lookupUdc(const DSState &state, const ModType &modType, const char *
   return false;
 }
 
-ResolvedCmd CmdResolver::operator()(const DSState &state, const Value &name,
+ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
                                     const ModType *modType) const {
   const StringRef ref = name.asStrRef();
 
@@ -714,7 +714,7 @@ ResolvedCmd CmdResolver::operator()(const DSState &state, const Value &name,
   return cmd;
 }
 
-static void raiseCmdError(DSState &state, const char *cmdName, int errNum) {
+static void raiseCmdError(ARState &state, const char *cmdName, int errNum) {
   std::string str = ERROR_EXEC;
   str += toPrintable(cmdName);
   if (errNum == ENOENT) {
@@ -729,7 +729,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errNum) {
   }
 }
 
-static void raiseInvalidCmdError(DSState &state, StringRef ref) {
+static void raiseInvalidCmdError(ARState &state, StringRef ref) {
   std::string message = "command contains null character: `";
   for (char ch : ref) {
     if (ch == '\0') {
@@ -755,7 +755,7 @@ static Value toCmdDesc(char *const *argv) {
   return Value::createStr(std::move(value));
 }
 
-bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, Value &&redirConfig) {
+bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Value &&redirConfig) {
   // setup self pipe
   int selfPipe[2];
   if (pipe(selfPipe) < 0) {
@@ -821,7 +821,7 @@ bool VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, Va
   }
 }
 
-bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayObject> &&argvObj,
+bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayObject> &&argvObj,
                            Value &&redirConfig) {
   auto &array = *argvObj;
   if (array.size() == 1) {
@@ -850,13 +850,13 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, ObjPtr<ArrayO
                                        CmdCallAttr::SET_VAR);
 }
 
-bool VM::callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
+bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
   auto cmd = resolver(state, argvObj->getValues()[0]);
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
-static void traceCmd(const DSState &state, const ArrayObject &argv) {
+static void traceCmd(const ARState &state, const ArrayObject &argv) {
   std::string value;
   for (auto &e : argv.getValues()) {
     value += " ";
@@ -875,7 +875,7 @@ static void traceCmd(const DSState &state, const ArrayObject &argv) {
   }
 }
 
-static bool checkCmdExecError(DSState &state, CmdCallAttr attr, int64_t status) {
+static bool checkCmdExecError(ARState &state, CmdCallAttr attr, int64_t status) {
   if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) && state.has(RuntimeOption::ERR_RAISE)) {
     std::string message = "command exits with non-zero status: `";
     message += std::to_string(status);
@@ -886,7 +886,7 @@ static bool checkCmdExecError(DSState &state, CmdCallAttr attr, int64_t status) 
   return true;
 }
 
-bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
+bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
   auto &array = *argvObj;
   if (cmd.hasNullChar()) { // adjust command name
@@ -986,7 +986,7 @@ bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
   return true; // normally unreachable, but need to suppress gcc warning.
 }
 
-VM::BuiltinCmdResult VM::builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
+VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&argvObj,
                                         Value &&redir, CmdCallAttr attr) {
   auto &arrayObj = *argvObj;
   bool useDefaultPath = false;
@@ -1125,7 +1125,7 @@ END:
   return BuiltinCmdResult::display(status);
 }
 
-int VM::builtinExec(DSState &state, const ArrayObject &argvObj, Value &&redir) {
+int VM::builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir) {
   bool clearEnv = false;
   StringRef progName;
   GetOptState optState("hca:");
@@ -1177,7 +1177,7 @@ int VM::builtinExec(DSState &state, const ArrayObject &argvObj, Value &&redir) {
   return 0;
 }
 
-bool VM::returnFromUserDefinedCommand(DSState &state, int64_t status) {
+bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
   auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
   state.stack.unwind();
   if (!checkCmdExecError(state, attr, status)) {
@@ -1188,7 +1188,7 @@ bool VM::returnFromUserDefinedCommand(DSState &state, int64_t status) {
   return true;
 }
 
-bool VM::callPipeline(DSState &state, Value &&desc, bool lastPipe, ForkKind forkKind) {
+bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind) {
   /**
    * ls | grep .
    * ==> pipeSize == 1, procSize == 2
@@ -1351,7 +1351,7 @@ static const char *toMessagePrefix(TildeExpandStatus status) {
   return "";
 }
 
-static void raiseTildeError(DSState &state, const DirStackProvider &provider,
+static void raiseTildeError(ARState &state, const DirStackProvider &provider,
                             const std::string &path, TildeExpandStatus status) {
   assert(status != TildeExpandStatus::OK);
   StringRef ref = path;
@@ -1370,7 +1370,7 @@ static void raiseTildeError(DSState &state, const DirStackProvider &provider,
 
 class DefaultDirStackProvider : public DirStackProvider {
 private:
-  const DSState &state;
+  const ARState &state;
   CStrPtr cwd;
 
   const ArrayObject &dirStack() const {
@@ -1378,7 +1378,7 @@ private:
   }
 
 public:
-  explicit DefaultDirStackProvider(const DSState &state) : state(state) {}
+  explicit DefaultDirStackProvider(const ARState &state) : state(state) {}
 
   size_t size() const override {
     return std::min(this->dirStack().size(), SYS_LIMIT_DIRSTACK_SIZE);
@@ -1408,7 +1408,7 @@ struct DSValueGlobMeta {
   }
 };
 
-static void raiseGlobbingError(DSState &state, const Value *begin, const Value *end,
+static void raiseGlobbingError(ARState &state, const Value *begin, const Value *end,
                                const char *message) {
   std::string value = message;
   value += " `";
@@ -1430,7 +1430,7 @@ static void raiseGlobbingError(DSState &state, const Value *begin, const Value *
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
-bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const Value *begin, const Value *end,
+bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
                          bool tilde) {
   // check if glob path fragments have null character
   for (auto *iter = begin; iter != end; ++iter) {
@@ -1459,7 +1459,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const Value *begin, 
     setFlag(option, GlobMatchOption::FASTGLOB);
   }
   auto matcher = createGlobMatcher<DSValueGlobMeta>(
-      nullptr, GlobIter(begin), GlobIter(end), [] { return DSState::isInterrupted(); }, option);
+      nullptr, GlobIter(begin), GlobIter(end), [] { return ARState::isInterrupted(); }, option);
   DefaultDirStackProvider provider(state);
   TildeExpandStatus tildeExpandStatus{};
   const bool failTilde = state.has(RuntimeOption::FAIL_TILDE);
@@ -1493,7 +1493,7 @@ bool VM::addGlobbingPath(DSState &state, ArrayObject &argv, const Value *begin, 
   }
 }
 
-static Value concatPath(DSState &state, const Value *begin, const Value *end) {
+static Value concatPath(ARState &state, const Value *begin, const Value *end) {
   auto ret = Value::createStr();
   for (; begin != end; ++begin) {
     if (!ret.appendAsStr(state, begin->asStrRef())) {
@@ -1545,7 +1545,7 @@ static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
   return tryUpdateSeqValue(cur, range);
 }
 
-bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *begin,
+bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *begin,
                              const Value *end, ExpandOp expandOp) {
   const unsigned int size = end - begin;
   assert(size <= UINT8_MAX);
@@ -1626,7 +1626,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *beg
 
   CONTINUE:
     if (i == size - 1) {
-      if (unlikely(DSState::isInterrupted())) {
+      if (unlikely(ARState::isInterrupted())) {
         raiseSystemError(state, EINTR, "brace expansion is canceled");
         return false;
       }
@@ -1692,7 +1692,7 @@ bool VM::applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *beg
   return true;
 }
 
-bool VM::addExpandingPath(DSState &state, const unsigned int size, ExpandOp expandOp) {
+bool VM::addExpandingPath(ARState &state, const unsigned int size, ExpandOp expandOp) {
   /**
    * stack layout
    *
@@ -1738,7 +1738,7 @@ static NativeCode initSignalTrampoline() noexcept {
 
 static auto signalTrampoline = initSignalTrampoline();
 
-bool VM::kickSignalHandler(DSState &state, int sigNum, Value &&func) {
+bool VM::kickSignalHandler(ARState &state, int sigNum, Value &&func) {
   state.stack.reserve(3);
   state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
   state.stack.push(std::move(func));
@@ -1747,7 +1747,7 @@ bool VM::kickSignalHandler(DSState &state, int sigNum, Value &&func) {
   return windStackFrame(state, 3, 3, signalTrampoline);
 }
 
-void VM::kickVMHook(DSState &state) {
+void VM::kickVMHook(ARState &state) {
   assert(state.hook);
   auto op = static_cast<OpCode>(*state.stack.ip());
   state.hook->vmFetchHook(state, op);
@@ -1778,12 +1778,12 @@ const native_func_t *nativeFuncPtrTable();
 
 #define CHECK_SIGNAL()                                                                             \
   do {                                                                                             \
-    if (unlikely(DSState::hasSignals())) {                                                         \
+    if (unlikely(ARState::hasSignals())) {                                                         \
       goto SIGNAL;                                                                                 \
     }                                                                                              \
   } while (false)
 
-bool VM::mainLoop(DSState &state) {
+bool VM::mainLoop(ARState &state) {
   bool hook = state.getVMHook() != nullptr;
   OpCode op;
 
@@ -2573,13 +2573,13 @@ bool VM::mainLoop(DSState &state) {
     }
 
   SIGNAL: {
-    assert(DSState::hasSignals());
-    if (DSState::pendingSigSet.has(SIGCHLD)) {
+    assert(ARState::hasSignals());
+    if (ARState::pendingSigSet.has(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
-    if (state.canHandleSignal && DSState::hasSignals()) {
+    if (state.canHandleSignal && ARState::hasSignals()) {
       SignalGuard guard;
-      int sigNum = DSState::popPendingSignal();
+      int sigNum = ARState::popPendingSignal();
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
         state.canHandleSignal = false;
         if (!kickSignalHandler(state, sigNum, handler)) {
@@ -2600,7 +2600,7 @@ bool VM::mainLoop(DSState &state) {
   }
 }
 
-void VM::rethrowFromFinally(DSState &state) {
+void VM::rethrowFromFinally(ARState &state) {
   auto entry = state.stack.exitFinally();
   if (entry.hasError()) { // ignore current exception and rethrow
     auto curError = state.stack.takeThrownObject();
@@ -2609,7 +2609,7 @@ void VM::rethrowFromFinally(DSState &state) {
   }
 }
 
-bool VM::handleException(DSState &state) {
+bool VM::handleException(ARState &state) {
   if (unlikely(state.hook != nullptr)) {
     state.hook->vmThrowHook(state);
   }
@@ -2672,7 +2672,7 @@ bool VM::handleException(DSState &state) {
   return false;
 }
 
-EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, Value &value) {
+EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value) {
   assert(state.stack.recDepth() > 0);
   if (state.stack.recDepth() == 1) {
     setLocaleSetting();
@@ -2704,7 +2704,7 @@ EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, Value &value)
   return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
 }
 
-bool VM::callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError) {
+bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError) {
   assert(state.stack.recDepth() == 0);
 
   EvalOP op{};
@@ -2769,7 +2769,7 @@ static NativeCode initCmdTrampoline() noexcept {
   return NativeCode(code);
 }
 
-Value VM::execCommand(DSState &state, std::vector<Value> &&argv, bool propagate) {
+Value VM::execCommand(ARState &state, std::vector<Value> &&argv, bool propagate) {
   GUARD_RECURSION(state);
 
   static auto cmdTrampoline = initCmdTrampoline();
@@ -2784,7 +2784,7 @@ Value VM::execCommand(DSState &state, std::vector<Value> &&argv, bool propagate)
   return ret;
 }
 
-Value VM::callFunction(DSState &state, Value &&funcObj, CallArgs &&args) {
+Value VM::callFunction(ARState &state, Value &&funcObj, CallArgs &&args) {
   GUARD_RECURSION(state);
 
   auto &type = state.typePool.get(funcObj.getTypeID());
@@ -2801,23 +2801,23 @@ Value VM::callFunction(DSState &state, Value &&funcObj, CallArgs &&args) {
   return ret;
 }
 
-DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
+ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   if (!state.hasError()) {
-    return DS_ERROR_KIND_SUCCESS;
+    return AR_ERROR_KIND_SUCCESS;
   }
 
   auto except = state.stack.takeThrownObject();
   auto &errorType = state.typePool.get(except->getTypeID());
-  DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
+  ARErrorKind kind = AR_ERROR_KIND_RUNTIME_ERROR;
   if (errorType.is(TYPE::ShellExit_)) {
-    kind = DS_ERROR_KIND_EXIT;
+    kind = AR_ERROR_KIND_EXIT;
   } else if (errorType.is(TYPE::AssertFail_)) {
-    kind = DS_ERROR_KIND_ASSERTION_ERROR;
+    kind = AR_ERROR_KIND_ASSERTION_ERROR;
   }
   switch (kind) {
-  case DS_ERROR_KIND_RUNTIME_ERROR:
-  case DS_ERROR_KIND_ASSERTION_ERROR:
-  case DS_ERROR_KIND_EXIT:
+  case AR_ERROR_KIND_RUNTIME_ERROR:
+  case AR_ERROR_KIND_ASSERTION_ERROR:
+  case AR_ERROR_KIND_EXIT:
     state.setExitStatus(typeAs<ErrorObject>(except).getStatus());
     break;
   default:
@@ -2828,7 +2828,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   unsigned int errorLineNum = 0;
   std::string sourceName;
   if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
-      kind != DS_ERROR_KIND_RUNTIME_ERROR) {
+      kind != AR_ERROR_KIND_RUNTIME_ERROR) {
     auto &obj = typeAs<ErrorObject>(except);
     errorLineNum = getOccurredLineNum(obj.getStackTrace());
     const char *ptr = getOccurredSourceName(obj.getStackTrace());
@@ -2836,7 +2836,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
   }
 
   // print error message
-  if (kind == DS_ERROR_KIND_RUNTIME_ERROR || kind == DS_ERROR_KIND_ASSERTION_ERROR ||
+  if (kind == AR_ERROR_KIND_RUNTIME_ERROR || kind == AR_ERROR_KIND_ASSERTION_ERROR ||
       state.has(RuntimeOption::TRACE_EXIT)) {
     typeAs<ErrorObject>(except).printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
   }
@@ -2846,13 +2846,13 @@ DSErrorKind VM::handleUncaughtException(DSState &state, DSError *dsError) {
                 .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
                 .lineNum = errorLineNum,
                 .chars = 0,
-                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
+                .name = strdup(kind == AR_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
   }
   state.stack.setErrorObj(std::move(except)); // restore thrown object
   return kind;
 }
 
-bool VM::callTermHook(DSState &state) {
+bool VM::callTermHook(ARState &state) {
   auto except = state.stack.takeThrownObject();
   assert(state.termHookIndex != 0);
   auto funcObj = state.getGlobal(state.termHookIndex);

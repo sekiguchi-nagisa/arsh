@@ -35,7 +35,7 @@
 #include "type.h"
 #include <config.h>
 
-struct DSState;
+struct ARState;
 
 namespace arsh {
 
@@ -556,7 +556,7 @@ public:
    * @return
    * if new size is greater than limit, return false
    */
-  bool appendAsStr(DSState &state, StringRef value);
+  bool appendAsStr(ARState &state, StringRef value);
 
   template <typename T, typename... A>
   static Value create(A &&...args) {
@@ -682,7 +682,7 @@ inline ObjPtr<T> toObjPtr(const Value &value) noexcept {
   return ObjPtr<T>(&ref);
 }
 
-inline bool concatAsStr(DSState &state, Value &left, const Value &right, bool selfConcat) {
+inline bool concatAsStr(ARState &state, Value &left, const Value &right, bool selfConcat) {
   assert(right.hasStrRef());
   if (right.kind() == ValueKind::SSTR0) {
     return true;
@@ -700,15 +700,15 @@ inline bool concatAsStr(DSState &state, Value &left, const Value &right, bool se
 
 class StrBuilder {
 private:
-  DSState &state;
+  ARState &state;
   Value buf; // must be String
 
 public:
-  explicit StrBuilder(DSState &st) : state(st), buf(Value::createStr("")) {}
+  explicit StrBuilder(ARState &st) : state(st), buf(Value::createStr("")) {}
 
   bool add(StringRef value) { return this->buf.appendAsStr(this->state, value); }
 
-  DSState &getState() const { return this->state; }
+  ARState &getState() const { return this->state; }
 
   Value take() && { return std::move(this->buf); }
 };
@@ -724,7 +724,7 @@ private:
 public:
   explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
 
-  bool search(DSState &state, StringRef ref) { return this->match(state, ref, nullptr) > 0; }
+  bool search(ARState &state, StringRef ref) { return this->match(state, ref, nullptr) > 0; }
 
   /**
    * @param state
@@ -735,7 +735,7 @@ public:
    * @return
    * if not matched, return negative number
    */
-  int match(DSState &state, StringRef ref, std::vector<Value> *out);
+  int match(ARState &state, StringRef ref, std::vector<Value> *out);
 
   bool replace(StringRef target, StringRef replacement, std::string &output) {
     return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
@@ -819,7 +819,7 @@ public:
    * @return
    * if has error (reach array size limit), return false
    */
-  [[nodiscard]] bool append(DSState &state, Value &&obj);
+  [[nodiscard]] bool append(ARState &state, Value &&obj);
 
   /**
    *
@@ -829,7 +829,7 @@ public:
    * @return
    * if in locking, return false
    */
-  bool checkIteratorInvalidation(DSState &state, const char *name = nullptr) const;
+  bool checkIteratorInvalidation(ARState &state, const char *name = nullptr) const;
 
   ObjPtr<ArrayObject> copy() const {
     return toObjPtr<ArrayObject>(
@@ -1019,19 +1019,19 @@ public:
    * @param ctx
    * @param op
    */
-  void printStackTrace(const DSState &ctx, PrintOp op = PrintOp::DEFAULT) const;
+  void printStackTrace(const ARState &ctx, PrintOp op = PrintOp::DEFAULT) const;
 
   const std::vector<StackTraceElement> &getStackTrace() const { return this->stackTrace; }
 
   /**
    * create new Error_Object and create stack trace
    */
-  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type,
+  static ObjPtr<ErrorObject> newError(const ARState &state, const DSType &type,
                                       const Value &message, int64_t status) {
     return newError(state, type, Value(message), status);
   }
 
-  static ObjPtr<ErrorObject> newError(const DSState &state, const DSType &type, Value &&message,
+  static ObjPtr<ErrorObject> newError(const ARState &state, const DSType &type, Value &&message,
                                       int64_t status);
 };
 
@@ -1318,7 +1318,7 @@ public:
 
 class EnvCtxObject : public ObjectWithRtti<ObjectKind::EnvCtx> {
 private:
-  DSState &state;
+  ARState &state;
 
   /**
    * maintains old env
@@ -1329,7 +1329,7 @@ private:
   std::vector<std::pair<Value, Value>> envs;
 
 public:
-  explicit EnvCtxObject(DSState &state) : ObjectWithRtti(TYPE::Any), state(state) {}
+  explicit EnvCtxObject(ARState &state) : ObjectWithRtti(TYPE::Any), state(state) {}
 
   ~EnvCtxObject();
 

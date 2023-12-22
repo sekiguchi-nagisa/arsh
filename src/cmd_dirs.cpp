@@ -22,7 +22,7 @@
 
 namespace arsh {
 
-int builtin_pwd(DSState &state, ArrayObject &argvObj) {
+int builtin_pwd(ARState &state, ArrayObject &argvObj) {
   bool useLogical = true;
 
   GetOptState optState("LPh");
@@ -54,7 +54,7 @@ int builtin_pwd(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-int builtin_cd(DSState &state, ArrayObject &argvObj) {
+int builtin_cd(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("PLh");
   bool useLogical = true;
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -184,7 +184,7 @@ static int printDirStack(const ArrayObject &dirStack, const char *cwd, const Pri
   return 0;
 }
 
-int builtin_dirs(DSState &state, ArrayObject &argvObj) {
+int builtin_dirs(ARState &state, ArrayObject &argvObj) {
   auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
   if (unlikely(!dirStack.checkIteratorInvalidation(state, "DIRSTACK"))) {
     return 1;
@@ -226,7 +226,7 @@ int builtin_dirs(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-int builtin_pushd_popd(DSState &state, ArrayObject &argvObj) {
+int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
   auto &dirStack = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::DIRSTACK));
   if (unlikely(!dirStack.checkIteratorInvalidation(state, "DIRSTACK"))) {
     return 1;

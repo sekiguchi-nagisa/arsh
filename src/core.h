@@ -27,7 +27,7 @@
 #include "opcode.h"
 #include "signals.h"
 
-struct DSState;
+struct ARState;
 
 namespace arsh {
 
@@ -38,18 +38,18 @@ struct VMHook {
    * @param op
    * fetched opcode
    */
-  virtual void vmFetchHook(DSState &st, OpCode op) = 0;
+  virtual void vmFetchHook(ARState &st, OpCode op) = 0;
 
   /**
    * hook for exception handle event
    * @param st
    */
-  virtual void vmThrowHook(DSState &st) = 0;
+  virtual void vmThrowHook(ARState &st) = 0;
 };
 
-const Value &getBuiltinGlobal(const DSState &st, const char *varName);
+const Value &getBuiltinGlobal(const ARState &st, const char *varName);
 
-void reassignReplyVar(DSState &st);
+void reassignReplyVar(ARState &st);
 
 /**
  * raise Error Object and update exit status
@@ -58,16 +58,16 @@ void reassignReplyVar(DSState &st);
  * @param message
  * @param status
  */
-void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status = 1);
+void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status = 1);
 
-void raiseSystemError(DSState &st, int errorNum, std::string &&message);
+void raiseSystemError(ARState &st, int errorNum, std::string &&message);
 
 /**
  * actual implementation of exit command
  * @param st
  * @param status
  */
-void raiseShellExit(DSState &st, int64_t status);
+void raiseShellExit(ARState &st, int64_t status);
 
 /**
  * print error message with current location (source:lineno)
@@ -80,7 +80,7 @@ void raiseShellExit(DSState &st, int64_t status);
  * @param ...
  * @return
  */
-bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const char *fmt, ...)
+bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const char *fmt, ...)
     __attribute__((format(printf, 4, 5)));
 
 /**
@@ -93,36 +93,36 @@ bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const cha
  * @return
  * old signal handler
  */
-ObjPtr<Object> installSignalHandler(DSState &st, int sigNum, ObjPtr<Object> handler);
+ObjPtr<Object> installSignalHandler(ARState &st, int sigNum, ObjPtr<Object> handler);
 
-void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<Object> &handler);
+void installSignalHandler(ARState &st, SigSet sigSet, const ObjPtr<Object> &handler);
 
 /**
  * if set is true, ignore some signals.
  * if set is false, reset some signal setting.
  * @param set
  */
-void setJobControlSignalSetting(DSState &st, bool set);
+void setJobControlSignalSetting(ARState &st, bool set);
 
 /**
  * synchronize actual signal handler setting with SignalVector
  * also set SIGCHLD handler.
  * @param st
  */
-void setSignalSetting(DSState &st);
+void setSignalSetting(ARState &st);
 
 /**
  * clear installed signal handlers and set to SIG_DFL (except for SIGCHLD).
  * not block signal
  * @param state
  */
-void resetSignalSettingUnblock(DSState &state);
+void resetSignalSettingUnblock(ARState &state);
 
 void setLocaleSetting();
 
-const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
+const ModType *getRuntimeModuleByLevel(const ARState &state, unsigned int callLevel);
 
-inline const ModType *getCurRuntimeModule(const DSState &state) {
+inline const ModType *getCurRuntimeModule(const ARState &state) {
   return getRuntimeModuleByLevel(state, 0);
 }
 
@@ -152,7 +152,7 @@ public:
  * if interrupted, return -1 and set EINTR
  * return size of completion result. (equivalent to size of $COMPREPLY)
  */
-int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool insertSpace,
+int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool insertSpace,
                      CodeCompOp option = {});
 
 class SignalVector {
@@ -197,7 +197,7 @@ public:
  * compiled FuncObject.
  * if compilation failed, return ErrorObject
  */
-Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, StringRef expr,
+Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, StringRef expr,
                                                                const ModType &modType);
 
 /**
@@ -209,7 +209,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const DSState &state, const Value &name,
+std::string resolveFullCommandName(const ARState &state, const Value &name,
                                    const ModType &modType);
 
 /**
@@ -221,7 +221,7 @@ std::string resolveFullCommandName(const DSState &state, const Value &name,
  * @return
  * if has error, return false
  */
-bool mergeSort(DSState &state, ArrayObject &arrayObj, const Value &compFunc);
+bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
 
 /**
  *

@@ -26,7 +26,7 @@
 
 namespace arsh {
 
-Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
+Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
   SignalGuard guard;
 
   // flush standard stream due to prevent mixing io buffer
@@ -49,7 +49,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, const Proc::Op op) {
     }
 
     // reset signal setting
-    DSState::clearPendingSignal();
+    ARState::clearPendingSignal();
     st.canHandleSignal = true;
     resetSignalSettingUnblock(st);
 
@@ -478,7 +478,7 @@ Job JobTable::attach(Job job, bool disowned) {
 
 void JobTable::waitForAny() {
   SignalGuard guard;
-  DSState::clearPendingSignal(SIGCHLD);
+  ARState::clearPendingSignal(SIGCHLD);
 
   for (WaitResult ret{}; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
     if (ret.pid == -1) {

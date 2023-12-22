@@ -80,7 +80,7 @@ struct PipeSet;
 
 using namespace arsh;
 
-struct DSState {
+struct ARState {
 public:
   const SysConfig sysConfig;
 
@@ -105,7 +105,7 @@ public:
 
   bool isInteractive{false};
 
-  DSExecMode execMode{DS_EXEC_MODE_NORMAL};
+  ARExecMode execMode{AR_EXEC_MODE_NORMAL};
 
   struct DumpTarget {
     FilePtr files[3];
@@ -152,7 +152,7 @@ private:
 public:
   static SigSet pendingSigSet;
 
-  static int popPendingSignal() { return DSState::pendingSigSet.popPendingSig(); }
+  static int popPendingSignal() { return ARState::pendingSigSet.popPendingSig(); }
 
   /**
    *
@@ -161,21 +161,21 @@ public:
    */
   static void clearPendingSignal(int sigNum = 0) {
     if (sigNum > 0) {
-      DSState::pendingSigSet.del(sigNum);
+      ARState::pendingSigSet.del(sigNum);
     } else {
-      DSState::pendingSigSet.clear();
+      ARState::pendingSigSet.clear();
     }
   }
 
-  static bool isInterrupted() { return DSState::pendingSigSet.has(SIGINT); }
+  static bool isInterrupted() { return ARState::pendingSigSet.has(SIGINT); }
 
   static bool hasSignals() { return !pendingSigSet.empty(); }
 
-  NON_COPYABLE(DSState);
+  NON_COPYABLE(ARState);
 
-  DSState();
+  ARState();
 
-  ~DSState() = default;
+  ~ARState() = default;
 
   bool hasError() const { return this->stack.hasError(); }
 
@@ -222,7 +222,7 @@ public:
    *
    * @return
    * if success, return 0.
-   * if not DSState::isForeground is false, return 1.
+   * if not ARState::isForeground is false, return 1.
    * if error, return -1 and set errno
    */
   int tryToBeForeground() const {
@@ -410,7 +410,7 @@ public:
    * if specified USE_FQN, always ignore
    * @return
    */
-  ResolvedCmd operator()(const DSState &state, const Value &cmdName,
+  ResolvedCmd operator()(const ARState &state, const Value &cmdName,
                          const ModType *modType = nullptr) const;
 };
 
@@ -430,12 +430,12 @@ struct allow_enum_bitop<CmdCallAttr> : std::true_type {};
 // for command argument construction
 class CmdArgsBuilder {
 private:
-  DSState &state;
+  ARState &state;
   ObjPtr<ArrayObject> argv;
   Value redir; // may be null, invalid, RedirObject
 
 public:
-  explicit CmdArgsBuilder(DSState &state, ObjPtr<ArrayObject> argv, Value &&redir)
+  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
       : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
 
   /**
@@ -452,26 +452,26 @@ public:
 
 class RecursionGuard {
 private:
-  DSState &state;
+  ARState &state;
 
 public:
-  explicit RecursionGuard(DSState &st) : state(st) { this->state.getCallStack().incRecDepth(); }
+  explicit RecursionGuard(ARState &st) : state(st) { this->state.getCallStack().incRecDepth(); }
 
   ~RecursionGuard() { this->state.getCallStack().decRecDepth(); }
 
   bool checkLimit();
 };
 
-using native_func_t = Value (*)(DSState &);
+using native_func_t = Value (*)(ARState &);
 
 class VM {
 private:
-  static void pushExitStatus(DSState &state, int64_t status) {
+  static void pushExitStatus(ARState &state, int64_t status) {
     state.setExitStatus(status);
     state.stack.push(exitStatusToBool(status));
   }
 
-  static bool windStackFrame(DSState &state, unsigned int stackTopOffset, unsigned int paramSize,
+  static bool windStackFrame(ARState &state, unsigned int stackTopOffset, unsigned int paramSize,
                              const DSCode &code) {
     auto ret = state.stack.wind(stackTopOffset, paramSize, code);
     if (unlikely(!ret)) {
@@ -488,13 +488,13 @@ private:
     return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
   }
 
-  static bool checkCast(DSState &state, const DSType &targetType);
+  static bool checkCast(ARState &state, const DSType &targetType);
 
-  static const char *loadEnv(DSState &state, bool hasDefault);
+  static const char *loadEnv(ARState &state, bool hasDefault);
 
-  static bool storeEnv(DSState &state);
+  static bool storeEnv(ARState &state);
 
-  static void pushNewObject(DSState &state, const DSType &type);
+  static void pushNewObject(ARState &state, const DSType &type);
 
   /**
    * stack state in function apply    stack grow ===>
@@ -504,7 +504,7 @@ private:
    * +-----------+---------+--------+   +--------+
    *                       | offset |   |        |
    */
-  static bool prepareFuncCall(DSState &state, unsigned int paramSize) {
+  static bool prepareFuncCall(ARState &state, unsigned int paramSize) {
     const DSCode *code;
     auto *obj = state.stack.peekByOffset(paramSize).get();
     if (isa<FuncObject>(obj)) {
@@ -531,7 +531,7 @@ private:
    * actual param size (also include receiver)
    * @return
    */
-  static bool prepareMethodCall(DSState &state, unsigned short index,
+  static bool prepareMethodCall(ARState &state, unsigned short index,
                                 unsigned short actualParamSize) {
     auto value = state.getGlobal(index);
     if (unlikely(!value)) {
@@ -551,25 +551,25 @@ private:
    * +-----------+---------------+--------------+
    *             |     offset    |
    */
-  static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code,
+  static bool prepareUserDefinedCommandCall(ARState &state, const DSCode &code,
                                             ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                             CmdCallAttr attr);
 
-  static bool attachAsyncJob(DSState &state, Value &&desc, unsigned int procSize, const Proc *procs,
+  static bool attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
                              ForkKind forkKind, PipeSet &pipeSet, Value &ret);
 
-  static bool forkAndEval(DSState &state, Value &&desc);
+  static bool forkAndEval(ARState &state, Value &&desc);
 
-  static bool forkAndExec(DSState &state, const char *filePath, char *const *argv,
+  static bool forkAndExec(ARState &state, const char *filePath, char *const *argv,
                           Value &&redirConfig);
 
-  static bool prepareSubCommand(DSState &state, const ModType &modType,
+  static bool prepareSubCommand(ARState &state, const ModType &modType,
                                 ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig);
 
-  static bool callCommand(DSState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
+  static bool callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                           Value &&redirConfig, CmdCallAttr attr = {});
 
-  static bool callCommand(DSState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
+  static bool callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                           Value &&redirConfig, CmdCallAttr attr);
 
   struct BuiltinCmdResult {
@@ -597,12 +597,12 @@ private:
     }
   };
 
-  static BuiltinCmdResult builtinCommand(DSState &state, ObjPtr<ArrayObject> &&argvObj,
+  static BuiltinCmdResult builtinCommand(ARState &state, ObjPtr<ArrayObject> &&argvObj,
                                          Value &&redir, CmdCallAttr attr);
 
-  static int builtinExec(DSState &state, const ArrayObject &argObj, Value &&redir);
+  static int builtinExec(ARState &state, const ArrayObject &argObj, Value &&redir);
 
-  static bool returnFromUserDefinedCommand(DSState &state, int64_t status);
+  static bool returnFromUserDefinedCommand(ARState &state, int64_t status);
 
   /**
    *
@@ -611,34 +611,34 @@ private:
    * @return
    * if has error, return false.
    */
-  static bool callPipeline(DSState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
+  static bool callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
-  static bool addGlobbingPath(DSState &state, ArrayObject &arv, const Value *begin,
+  static bool addGlobbingPath(ARState &state, ArrayObject &arv, const Value *begin,
                               const Value *end, bool tilde);
 
-  static bool applyBraceExpansion(DSState &state, ArrayObject &argv, const Value *begin,
+  static bool applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *begin,
                                   const Value *end, ExpandOp expandOp);
 
-  static bool addExpandingPath(DSState &state, unsigned int size, ExpandOp expandOp);
+  static bool addExpandingPath(ARState &state, unsigned int size, ExpandOp expandOp);
 
-  static bool kickSignalHandler(DSState &state, int sigNum, Value &&func);
+  static bool kickSignalHandler(ARState &state, int sigNum, Value &&func);
 
-  static void kickVMHook(DSState &state);
+  static void kickVMHook(ARState &state);
 
   /**
    *
    * @return
    * if has exception, return false.
    */
-  static bool mainLoop(DSState &state);
+  static bool mainLoop(ARState &state);
 
-  static void rethrowFromFinally(DSState &state);
+  static void rethrowFromFinally(ARState &state);
 
   /**
    * if found exception handler, return true.
    * otherwise return false.
    */
-  static bool handleException(DSState &state);
+  static bool handleException(ARState &state);
 
   /**
    * actual entry point of interpreter.
@@ -651,7 +651,7 @@ private:
    * if has error or not value, return null
    * otherwise, return value
    */
-  static EvalRet startEval(DSState &state, EvalOP op, DSError *dsError, Value &value);
+  static EvalRet startEval(ARState &state, EvalOP op, ARError *dsError, Value &value);
 
   static unsigned int prepareArguments(VMState &state, Value &&recv,
                                        std::pair<unsigned int, std::array<Value, 3>> &&args);
@@ -667,7 +667,7 @@ public:
    * @return
    * if had uncaught exception, return false.
    */
-  static bool callToplevel(DSState &state, const ObjPtr<FuncObject> &func, DSError *dsError);
+  static bool callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError);
 
   /**
    * execute command.
@@ -679,7 +679,7 @@ public:
    * if exit status is 0, return true.
    * otherwise, return false
    */
-  static Value execCommand(DSState &state, std::vector<Value> &&argv, bool propagate);
+  static Value execCommand(ARState &state, std::vector<Value> &&argv, bool propagate);
 
   /**
    *
@@ -688,7 +688,7 @@ public:
    * @return
    * return value of method (if no return value, return null).
    */
-  static Value callFunction(DSState &state, Value &&funcObj, CallArgs &&args);
+  static Value callFunction(ARState &state, Value &&funcObj, CallArgs &&args);
 
   /**
    * print uncaught exception information. (not clear thrown object)
@@ -696,9 +696,9 @@ public:
    * @param dsError
    * if not null, set error information
    * @return
-   * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
+   * if except is null, return always AR_ERROR_KIND_SUCCESS and not set error info
    */
-  static DSErrorKind handleUncaughtException(DSState &state, DSError *dsError);
+  static ARErrorKind handleUncaughtException(ARState &state, ARError *dsError);
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.
@@ -708,7 +708,7 @@ public:
    * if call term hook, return true.
    * if not call (not found hook), return false
    */
-  static bool callTermHook(DSState &state);
+  static bool callTermHook(ARState &state);
 };
 
 } // namespace arsh

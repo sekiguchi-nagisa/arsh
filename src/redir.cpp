@@ -222,7 +222,7 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
   return 0;
 }
 
-bool RedirObject::redirect(DSState &state) {
+bool RedirObject::redirect(ARState &state) {
   this->saveFDs();
   for (auto &entry : this->entries) {
     int r = redirectImpl(entry, state.has(RuntimeOption::CLOBBER));

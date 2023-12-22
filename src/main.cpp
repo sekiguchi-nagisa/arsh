@@ -25,14 +25,14 @@
 using namespace arsh;
 
 struct Deleter {
-  void operator()(DSState *state) const { DSState_delete(&state); }
+  void operator()(ARState *state) const { ARState_delete(&state); }
 };
 
-using DSStateHandle = std::unique_ptr<DSState, Deleter>;
+using ARStateHandle = std::unique_ptr<ARState, Deleter>;
 
 template <typename... Arg>
 static auto createState(Arg &&...arg) {
-  return DSStateHandle(DSState_createWithMode(std::forward<Arg>(arg)...));
+  return ARStateHandle(ARState_createWithMode(std::forward<Arg>(arg)...));
 }
 
 static const char *statusLogPath = nullptr;
@@ -51,7 +51,7 @@ static std::string escape(const char *str) {
   return value;
 }
 
-static void writeStatusLog(DSError &error) {
+static void writeStatusLog(ARError &error) {
   if (statusLogPath == nullptr) {
     return;
   }
@@ -65,11 +65,11 @@ static void writeStatusLog(DSError &error) {
 }
 
 template <typename Func, typename... T>
-static int apply(Func func, const DSStateHandle &handle, T &&...args) {
-  DSError error{};
+static int apply(Func func, const ARStateHandle &handle, T &&...args) {
+  ARError error{};
   int ret = func(handle.get(), std::forward<T>(args)..., &error);
   writeStatusLog(error);
-  DSError_release(&error);
+  ARError_release(&error);
   return ret;
 }
 
@@ -79,7 +79,7 @@ static void showFeature(FILE *fp) {
       "USE_SAFE_CAST",
   };
 
-  const unsigned int featureBit = DSState_featureBit();
+  const unsigned int featureBit = ARState_featureBit();
   for (unsigned int i = 0; i < std::size(featureNames); i++) {
     if (hasFlag(featureBit, static_cast<unsigned int>(1u << i))) {
       fprintf(fp, "%s\n", featureNames[i]);
@@ -152,14 +152,14 @@ enum class InvocationKind : unsigned char {
   BUILTIN,
 };
 
-static const char *version() { return DSState_version(nullptr); }
+static const char *version() { return ARState_version(nullptr); }
 
-static std::string getRCFilePath(DSState *state, const char *path) {
+static std::string getRCFilePath(ARState *state, const char *path) {
   std::string value;
   if (path) {
     value = path;
   } else { // use default
-    auto *ptr = DSState_config(state, DS_CONFIG_CONFIG_HOME);
+    auto *ptr = ARState_config(state, AR_CONFIG_CONFIG_HOME);
     assert(ptr);
     value = ptr;
     value += "/arshrc";
@@ -171,7 +171,7 @@ static std::string getRCFilePath(DSState *state, const char *path) {
           ptr,
           nullptr,
       };
-      DSState_exec(state, const_cast<char **>(argv));
+      ARState_exec(state, const_cast<char **>(argv));
 
       if (FILE *fp = fopen(value.c_str(), "w")) {
         fprintf(fp, "## default interactive mode setting\n"
@@ -185,41 +185,41 @@ static std::string getRCFilePath(DSState *state, const char *path) {
   return value;
 }
 
-static std::pair<DSErrorKind, int> loadRC(DSState *state, const char *rcfile) {
+static std::pair<ARErrorKind, int> loadRC(ARState *state, const char *rcfile) {
   std::string path = getRCFilePath(state, rcfile);
   if (path.empty()) { // for --norc option
-    return {DS_ERROR_KIND_SUCCESS, 0};
+    return {AR_ERROR_KIND_SUCCESS, 0};
   }
 
-  DSError e{};
-  int ret = DSState_loadModule(state, path.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+  ARError e{};
+  int ret = ARState_loadModule(state, path.c_str(), AR_MOD_FULLPATH | AR_MOD_IGNORE_ENOENT, &e);
   auto kind = e.kind;
-  DSError_release(&e);
+  ARError_release(&e);
 
   // reset line num
-  DSState_setLineNum(state, 1);
+  ARState_setLineNum(state, 1);
 
   return {kind, ret};
 }
 
-static int exec_interactive(DSState *state, const char *rcpath) {
-  unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
-  DSState_setOption(state, option);
+static int exec_interactive(ARState *state, const char *rcpath) {
+  unsigned int option = AR_OPTION_JOB_CONTROL | AR_OPTION_INTERACTIVE;
+  ARState_setOption(state, option);
 
   auto ret = loadRC(state, rcpath);
-  if (ret.first != DS_ERROR_KIND_SUCCESS) {
+  if (ret.first != AR_ERROR_KIND_SUCCESS) {
     return ret.second;
   }
 
   int status = 0;
   while (true) {
-    DSError e; // NOLINT
+    ARError e; // NOLINT
     char buf[4096];
-    auto readSize = DSState_readLine(state, buf, std::size(buf), &e);
+    auto readSize = ARState_readLine(state, buf, std::size(buf), &e);
     auto kind = e.kind;
-    DSError_release(&e);
-    if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
-      status = DSState_exitStatus(state);
+    ARError_release(&e);
+    if (kind == AR_ERROR_KIND_EXIT || kind == AR_ERROR_KIND_ASSERTION_ERROR) {
+      status = ARState_exitStatus(state);
       break;
     }
     if (readSize < 0) {
@@ -229,7 +229,7 @@ static int exec_interactive(DSState *state, const char *rcpath) {
         fprintf(stderr, "[fatal] readLine failed, caused by `%s'\n", strerror(errno));
         return 1;
       }
-      if (DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
+      if (ARState_mode(state) != AR_EXEC_MODE_NORMAL) {
         break;
       }
       const char *str = "exit";
@@ -240,10 +240,10 @@ static int exec_interactive(DSState *state, const char *rcpath) {
       readSize = static_cast<ssize_t>(size);
     }
 
-    status = DSState_eval(state, nullptr, buf, static_cast<size_t>(readSize), &e);
+    status = ARState_eval(state, nullptr, buf, static_cast<size_t>(readSize), &e);
     kind = e.kind;
-    DSError_release(&e);
-    if (kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+    ARError_release(&e);
+    if (kind == AR_ERROR_KIND_EXIT || kind == AR_ERROR_KIND_ASSERTION_ERROR) {
       break;
     }
   }
@@ -261,16 +261,16 @@ int main(int argc, char **argv) {
   const char *rcfile = nullptr;
   bool quiet = false;
   bool forceInteractive = false;
-  DSExecMode mode = DS_EXEC_MODE_NORMAL;
+  ARExecMode mode = AR_EXEC_MODE_NORMAL;
   unsigned int option = 0;
   bool noAssert = false;
   struct {
-    const DSDumpKind kind;
+    const ARDumpKind kind;
     const char *path;
   } dumpTarget[3] = {
-      {DS_DUMP_KIND_UAST, nullptr},
-      {DS_DUMP_KIND_AST, nullptr},
-      {DS_DUMP_KIND_CODE, nullptr},
+      {AR_DUMP_KIND_UAST, nullptr},
+      {AR_DUMP_KIND_AST, nullptr},
+      {AR_DUMP_KIND_CODE, nullptr},
   };
 
   while ((result = parser(begin, end))) {
@@ -285,20 +285,20 @@ int main(int argc, char **argv) {
       dumpTarget[2].path = result.hasArg() ? result.getValue().data() : "";
       break;
     case OptionKind::PARSE_ONLY:
-      mode = DS_EXEC_MODE_PARSE_ONLY;
+      mode = AR_EXEC_MODE_PARSE_ONLY;
       break;
     case OptionKind::CHECK_ONLY:
-      mode = DS_EXEC_MODE_CHECK_ONLY;
+      mode = AR_EXEC_MODE_CHECK_ONLY;
       break;
     case OptionKind::COMPILE_ONLY:
     case OptionKind::NOEXEC:
-      mode = DS_EXEC_MODE_COMPILE_ONLY;
+      mode = AR_EXEC_MODE_COMPILE_ONLY;
       break;
     case OptionKind::DISABLE_ASSERT:
       noAssert = true;
       break;
     case OptionKind::TRACE_EXIT:
-      setFlag(option, DS_OPTION_TRACE_EXIT);
+      setFlag(option, AR_OPTION_TRACE_EXIT);
       break;
     case OptionKind::VERSION:
       fprintf(stdout, "%s\n", version());
@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
       forceInteractive = true;
       break;
     case OptionKind::XTRACE:
-      setFlag(option, DS_OPTION_XTRACE);
+      setFlag(option, AR_OPTION_XTRACE);
       break;
     }
   }
@@ -351,15 +351,15 @@ INIT:
 
   // init state
   auto state = createState(mode);
-  DSState_initExecutablePath(state.get());
-  DSState_setOption(state.get(), option);
+  ARState_initExecutablePath(state.get());
+  ARState_setOption(state.get(), option);
   for (auto &e : dumpTarget) {
     if (e.path != nullptr) {
-      DSState_setDumpTarget(state.get(), e.kind, e.path);
+      ARState_setDumpTarget(state.get(), e.kind, e.path);
     }
   }
   if (noAssert) {
-    DSState_unsetOption(state.get(), DS_OPTION_ASSERT);
+    ARState_unsetOption(state.get(), AR_OPTION_ASSERT);
   }
 
   // set rest argument
@@ -373,30 +373,30 @@ INIT:
   switch (invocationKind) {
   case InvocationKind::FROM_FILE: {
     const char *scriptName = shellArgs[0];
-    DSState_setShellName(state.get(), scriptName);
-    DSState_setArguments(state.get(), shellArgs + 1);
-    return apply(DSState_loadAndEval, state, scriptName);
+    ARState_setShellName(state.get(), scriptName);
+    ARState_setArguments(state.get(), shellArgs + 1);
+    return apply(ARState_loadAndEval, state, scriptName);
   }
   case InvocationKind::FROM_STDIN: {
-    DSState_setShellName(state.get(), argv[0]);
-    DSState_setArguments(state.get(), shellArgs);
+    ARState_setShellName(state.get(), argv[0]);
+    ARState_setArguments(state.get(), shellArgs);
 
     if (isatty(STDIN_FILENO) || forceInteractive) {
       if (!quiet) {
-        fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
+        fprintf(stdout, "%s\n%s\n", version(), ARState_copyright());
       }
       return exec_interactive(state.get(), rcfile);
     } else {
-      return apply(DSState_loadAndEval, state, "/dev/stdin");
+      return apply(ARState_loadAndEval, state, "/dev/stdin");
     }
   }
   case InvocationKind::FROM_STRING: {
     const char *shellName = shellArgs[0];
-    DSState_setShellName(state.get(), shellName != nullptr ? shellName : argv[0]);
-    DSState_setArguments(state.get(), shellName == nullptr ? nullptr : shellArgs + 1);
-    return apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
+    ARState_setShellName(state.get(), shellName != nullptr ? shellName : argv[0]);
+    ARState_setArguments(state.get(), shellName == nullptr ? nullptr : shellArgs + 1);
+    return apply(ARState_eval, state, "(string)", evalText, strlen(evalText));
   }
   case InvocationKind::BUILTIN:
-    return DSState_exec(state.get(), shellArgs);
+    return ARState_exec(state.get(), shellArgs);
   }
 }

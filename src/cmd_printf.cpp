@@ -944,7 +944,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
   return directiveCount == 0 ? end : begin;
 }
 
-int builtin_echo(DSState &st, ArrayObject &argvObj) {
+int builtin_echo(ARState &st, ArrayObject &argvObj) {
   bool newline = true;
   bool interpEscape = false;
 
@@ -1031,7 +1031,7 @@ END:
   return 0;
 }
 
-int builtin_printf(DSState &state, ArrayObject &argvObj) {
+int builtin_printf(ARState &state, ArrayObject &argvObj) {
   GetOptState optState(":v:h");
   bool setVar = false;
   StringRef target;

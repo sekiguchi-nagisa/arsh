@@ -236,7 +236,7 @@ public:
    * @return
    * if in iteration, return false
    */
-  bool checkIteratorInvalidation(DSState &state, bool isReplyVar = false) const;
+  bool checkIteratorInvalidation(ARState &state, bool isReplyVar = false) const;
 
   /**
    * insert key-value even if already inserted
@@ -248,7 +248,7 @@ public:
    * if insertion failed (reach limit), return empty and raise error
    * otherwise, return old value
    */
-  [[nodiscard]] Value put(DSState &st, Value &&key, Value &&value);
+  [[nodiscard]] Value put(ARState &st, Value &&key, Value &&value);
 
 private:
   struct ProbeState {

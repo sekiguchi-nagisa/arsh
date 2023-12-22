@@ -33,40 +33,40 @@ extern char **environ; // NOLINT
 namespace arsh {
 
 // builtin command definition
-static int builtin_gets(DSState &state, ArrayObject &argvObj);
-static int builtin_puts(DSState &state, ArrayObject &argvObj);
-static int builtin_check_env(DSState &state, ArrayObject &argvObj);
-static int builtin_complete(DSState &state, ArrayObject &argvObj);
-static int builtin_eval(DSState &state, ArrayObject &argvObj);
-static int builtin_exit(DSState &state, ArrayObject &argvObj);
-static int builtin_false(DSState &state, ArrayObject &argvObj);
-static int builtin_getenv(DSState &state, ArrayObject &argvObj);
-static int builtin_hash(DSState &state, ArrayObject &argvObj);
-static int builtin_help(DSState &state, ArrayObject &argvObj);
-static int builtin_setenv(DSState &state, ArrayObject &argvObj);
-static int builtin_test(DSState &state, ArrayObject &argvObj);
-static int builtin_true(DSState &state, ArrayObject &argvObj);
-static int builtin_ulimit(DSState &state, ArrayObject &argvObj);
-static int builtin_umask(DSState &state, ArrayObject &argvObj);
-static int builtin_unsetenv(DSState &state, ArrayObject &argvObj);
+static int builtin_gets(ARState &state, ArrayObject &argvObj);
+static int builtin_puts(ARState &state, ArrayObject &argvObj);
+static int builtin_check_env(ARState &state, ArrayObject &argvObj);
+static int builtin_complete(ARState &state, ArrayObject &argvObj);
+static int builtin_eval(ARState &state, ArrayObject &argvObj);
+static int builtin_exit(ARState &state, ArrayObject &argvObj);
+static int builtin_false(ARState &state, ArrayObject &argvObj);
+static int builtin_getenv(ARState &state, ArrayObject &argvObj);
+static int builtin_hash(ARState &state, ArrayObject &argvObj);
+static int builtin_help(ARState &state, ArrayObject &argvObj);
+static int builtin_setenv(ARState &state, ArrayObject &argvObj);
+static int builtin_test(ARState &state, ArrayObject &argvObj);
+static int builtin_true(ARState &state, ArrayObject &argvObj);
+static int builtin_ulimit(ARState &state, ArrayObject &argvObj);
+static int builtin_umask(ARState &state, ArrayObject &argvObj);
+static int builtin_unsetenv(ARState &state, ArrayObject &argvObj);
 
-int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
-int builtin_jobs(DSState &state, ArrayObject &argvObj);
-int builtin_kill(DSState &state, ArrayObject &argvObj);
-int builtin_wait(DSState &state, ArrayObject &argvObj);
-int builtin_disown(DSState &state, ArrayObject &argvObj);
+int builtin_fg_bg(ARState &state, ArrayObject &argvObj);
+int builtin_jobs(ARState &state, ArrayObject &argvObj);
+int builtin_kill(ARState &state, ArrayObject &argvObj);
+int builtin_wait(ARState &state, ArrayObject &argvObj);
+int builtin_disown(ARState &state, ArrayObject &argvObj);
 
-int builtin_read(DSState &state, ArrayObject &argvObj);
+int builtin_read(ARState &state, ArrayObject &argvObj);
 
-int builtin_shctl(DSState &state, ArrayObject &argvObj);
+int builtin_shctl(ARState &state, ArrayObject &argvObj);
 
-int builtin_pwd(DSState &state, ArrayObject &argvObj);
-int builtin_cd(DSState &state, ArrayObject &argvObj);
-int builtin_dirs(DSState &state, ArrayObject &argvObj);
-int builtin_pushd_popd(DSState &state, ArrayObject &argvObj);
+int builtin_pwd(ARState &state, ArrayObject &argvObj);
+int builtin_cd(ARState &state, ArrayObject &argvObj);
+int builtin_dirs(ARState &state, ArrayObject &argvObj);
+int builtin_pushd_popd(ARState &state, ArrayObject &argvObj);
 
-int builtin_echo(DSState &state, ArrayObject &argvObj);
-int builtin_printf(DSState &state, ArrayObject &argvObj);
+int builtin_echo(ARState &state, ArrayObject &argvObj);
+int builtin_printf(ARState &state, ArrayObject &argvObj);
 
 static auto initBuiltinMap() {
   return StrRefMap<builtin_command_t>{
@@ -157,7 +157,7 @@ int showHelp(const ArrayObject &obj) {
   return 2;
 }
 
-int invalidOptionError(const DSState &st, const ArrayObject &obj, const GetOptState &s) {
+int invalidOptionError(const ARState &st, const ArrayObject &obj, const GetOptState &s) {
   char buf[] = {'-', static_cast<char>(s.optOpt)};
   StringRef opt(buf, std::size(buf));
   if (s.foundLongOption) {
@@ -175,7 +175,7 @@ static void printAllUsage(FILE *fp) {
   }
 }
 
-static int builtin_help(DSState &st, ArrayObject &argvObj) {
+static int builtin_help(ARState &st, ArrayObject &argvObj) {
   GetOptState optState("sh");
   bool shortHelp = false;
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -211,7 +211,7 @@ static int builtin_help(DSState &st, ArrayObject &argvObj) {
   return 0;
 }
 
-static int builtin_check_env(DSState &st, ArrayObject &argvObj) {
+static int builtin_check_env(ARState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -238,12 +238,12 @@ static int builtin_check_env(DSState &st, ArrayObject &argvObj) {
   return 0;
 }
 
-static int builtin_eval(DSState &st, ArrayObject &argvObj) {
+static int builtin_eval(ARState &st, ArrayObject &argvObj) {
   ERROR(st, argvObj, "currently does not support eval command");
   return 1;
 }
 
-static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, unsigned int index) {
+static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, unsigned int index) {
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
     auto value = argvObj.getValues()[index].asStrRef();
@@ -255,7 +255,7 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj, uns
   return maskExitStatus(ret);
 }
 
-static int builtin_exit(DSState &state, ArrayObject &argvObj) {
+static int builtin_exit(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -275,14 +275,14 @@ END:
   return ret;
 }
 
-static int builtin_true(DSState &, ArrayObject &) { return 0; }
+static int builtin_true(ARState &, ArrayObject &) { return 0; }
 
-static int builtin_false(DSState &, ArrayObject &) { return 1; }
+static int builtin_false(ARState &, ArrayObject &) { return 1; }
 
 /**
  * for stdin redirection test
  */
-static int builtin_gets(DSState &st, ArrayObject &argvObj) {
+static int builtin_gets(ARState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -319,7 +319,7 @@ static int writeLine(StringRef ref, FILE *fp, bool flush) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin_puts(DSState &st, ArrayObject &argvObj) {
+static int builtin_puts(ARState &st, ArrayObject &argvObj) {
   int errNum = 0;
   GetOptState optState("1:2:h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -551,7 +551,7 @@ static int testFile(char op, const char *value) {
   return result ? 0 : 1;
 }
 
-static int builtin_test(DSState &st, ArrayObject &argvObj) {
+static int builtin_test(ARState &st, ArrayObject &argvObj) {
   bool result = false;
   unsigned int argc = argvObj.getValues().size();
   const unsigned int argSize = argc - 1;
@@ -648,7 +648,7 @@ static int builtin_test(DSState &st, ArrayObject &argvObj) {
     }                                                                                              \
   } while (false)
 
-static int builtin_hash(DSState &state, ArrayObject &argvObj) {
+static int builtin_hash(ARState &state, ArrayObject &argvObj) {
   bool remove = false;
 
   GetOptState optState("rh");
@@ -725,7 +725,7 @@ static StrRefMap<CodeCompOp> initCompActions() {
   };
 }
 
-static int builtin_complete(DSState &state, ArrayObject &argvObj) {
+static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   static auto actionMap = initCompActions();
 
   CodeCompOp compOp{};
@@ -788,7 +788,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
   return 0;
 }
 
-static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
+static int builtin_getenv(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -819,7 +819,7 @@ static int builtin_getenv(DSState &state, ArrayObject &argvObj) {
   }
 }
 
-static int builtin_setenv(DSState &st, ArrayObject &argvObj) {
+static int builtin_setenv(ARState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -861,7 +861,7 @@ static int builtin_setenv(DSState &st, ArrayObject &argvObj) {
   return 0;
 }
 
-static int builtin_unsetenv(DSState &st, ArrayObject &argvObj) {
+static int builtin_unsetenv(ARState &st, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
@@ -1004,7 +1004,7 @@ struct UlimitOptEntryTable {
   std::array<UlimitOptEntry, std::size(ulimitOps)> entries;
   unsigned int count{0};
 
-  int tryToUpdate(const DSState &st, GetOptState &optState, ArrayObject &argvObj, int opt) {
+  int tryToUpdate(const ARState &st, GetOptState &optState, ArrayObject &argvObj, int opt) {
     Value arg;
     if (optState.index < argvObj.getValues().size() &&
         *argvObj.getValues()[optState.index].asCStr() != '-') {
@@ -1037,7 +1037,7 @@ private:
   }
 };
 
-static int builtin_ulimit(DSState &st, ArrayObject &argvObj) {
+static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
   flag8_set_t limOpt = 0;
   bool showAll = false;
 
@@ -1299,7 +1299,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
   return ret;
 }
 
-static int builtin_umask(DSState &st, ArrayObject &argvObj) {
+static int builtin_umask(ARState &st, ArrayObject &argvObj) {
   auto op = PrintMaskOp::ONLY_PRINT;
 
   GetOptState optState("pSh");

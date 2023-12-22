@@ -30,15 +30,15 @@
 
 using namespace arsh;
 
-static DSError initDSError() {
-  return DSError{.kind = DS_ERROR_KIND_SUCCESS,
+static ARError initARError() {
+  return ARError{.kind = AR_ERROR_KIND_SUCCESS,
                  .fileName = nullptr,
                  .lineNum = 0,
                  .chars = 0,
                  .name = nullptr};
 }
 
-static DefaultErrorConsumer newErrorConsumer(DSError *e) {
+static DefaultErrorConsumer newErrorConsumer(ARError *e) {
 #ifdef FUZZING_BUILD_MODE
   bool ignore = getenv("ARSH_SUPPRESS_COMPILE_ERROR") != nullptr;
   return {e, ignore ? nullptr : stderr};
@@ -47,11 +47,11 @@ static DefaultErrorConsumer newErrorConsumer(DSError *e) {
 #endif
 }
 
-static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
+static int compile(ARState &state, DefaultModuleProvider &moduleProvider,
                    std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
-                   DSError *dsError, ObjPtr<FuncObject> &func) {
+                   ARError *dsError, ObjPtr<FuncObject> &func) {
   if (dsError) {
-    *dsError = initDSError();
+    *dsError = initARError();
   }
 
   CompileDumpTarget dumpTarget(state.dumpTarget.files);
@@ -64,9 +64,9 @@ static int compile(DSState &state, DefaultModuleProvider &moduleProvider,
   return ret;
 }
 
-static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
+static int evalScript(ARState &state, DefaultModuleProvider &moduleProvider,
                       std::unique_ptr<FrontEnd::Context> &&ctx, CompileOption compileOption,
-                      const DiscardPoint &point, DSError *dsError) {
+                      const DiscardPoint &point, ARError *dsError) {
   ObjPtr<FuncObject> func;
   int ret = compile(state, moduleProvider, std::move(ctx), compileOption, dsError, func);
   if (ret != 0) {
@@ -76,7 +76,7 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
     return ret;
   }
 
-  if (state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
+  if (state.execMode == AR_EXEC_MODE_COMPILE_ONLY) {
     return 0;
   }
   VM::callToplevel(state, func, dsError);
@@ -84,9 +84,9 @@ static int evalScript(DSState &state, DefaultModuleProvider &moduleProvider,
 }
 
 struct BindingConsumer {
-  DSState &state;
+  ARState &state;
 
-  explicit BindingConsumer(DSState &st) : state(st) {}
+  explicit BindingConsumer(ARState &st) : state(st) {}
 
   void operator()(const Handle &handle, int64_t v) {
     this->state.setGlobal(handle.getIndex(), Value::createInt(v));
@@ -114,10 +114,10 @@ struct BindingConsumer {
   }
 };
 
-static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
+static void loadEmbeddedScript(ARState *state, const NameScopePtr &builtin) {
   state->rootModScope = builtin; // eval script in builtin module
 
-  int ret = DSState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
+  int ret = ARState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
   (void)ret;
   assert(ret == 0);
 
@@ -128,13 +128,13 @@ static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
   state->termHookIndex = handle.asOk()->getIndex();
   state->rootModScope = state->modLoader.createGlobalScope(state->typePool, "(root)", &modType);
   state->modLoader.createModType(state->typePool, *state->rootModScope);
-  DSState_eval(state, "(root)", "", 0, nullptr); // dummy
+  ARState_eval(state, "(root)", "", 0, nullptr); // dummy
   state->lineNum = 1;
   state->setExitStatus(0);
 }
 
 // ###################################
-// ##     public api of DSState     ##
+// ##     public api of ARState     ##
 // ###################################
 
 #define GUARD_TRUE(C, ...)                                                                         \
@@ -162,17 +162,17 @@ static void loadEmbeddedScript(DSState *state, const NameScopePtr &builtin) {
 
 #define GUARD_NULL(arg, ...) GUARD_TRUE(arg == nullptr, ##__VA_ARGS__)
 
-DSState *DSState_createWithMode(DSExecMode mode) {
-#define EACH_DS_EXEC_MODE(OP)                                                                      \
-  OP(DS_EXEC_MODE_NORMAL)                                                                          \
-  OP(DS_EXEC_MODE_PARSE_ONLY)                                                                      \
-  OP(DS_EXEC_MODE_CHECK_ONLY)                                                                      \
-  OP(DS_EXEC_MODE_COMPILE_ONLY)
+ARState *ARState_createWithMode(ARExecMode mode) {
+#define EACH_AR_EXEC_MODE(OP)                                                                      \
+  OP(AR_EXEC_MODE_NORMAL)                                                                          \
+  OP(AR_EXEC_MODE_PARSE_ONLY)                                                                      \
+  OP(AR_EXEC_MODE_CHECK_ONLY)                                                                      \
+  OP(AR_EXEC_MODE_COMPILE_ONLY)
 
-  GUARD_ENUM_RANGE(mode, EACH_DS_EXEC_MODE, nullptr);
-#undef EACH_DS_EXEC_MODE
+  GUARD_ENUM_RANGE(mode, EACH_AR_EXEC_MODE, nullptr);
+#undef EACH_AR_EXEC_MODE
 
-  auto *ctx = new DSState();
+  auto *ctx = new ARState();
   auto builtin = ctx->modLoader.createGlobalScope(ctx->typePool, "(builtin)");
   BindingConsumer bindingConsumer(*ctx);
   bindBuiltins(bindingConsumer, ctx->sysConfig, ctx->typePool, *builtin);
@@ -183,7 +183,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
   return ctx;
 }
 
-void DSState_delete(DSState **st) {
+void ARState_delete(ARState **st) {
   if (st != nullptr) {
     VM::callTermHook(**st);
     delete (*st);
@@ -191,29 +191,29 @@ void DSState_delete(DSState **st) {
   }
 }
 
-DSExecMode DSState_mode(const DSState *st) {
-  GUARD_NULL(st, DS_EXEC_MODE_NORMAL);
+ARExecMode ARState_mode(const ARState *st) {
+  GUARD_NULL(st, AR_EXEC_MODE_NORMAL);
   return st->execMode;
 }
 
-void DSState_setLineNum(DSState *st, unsigned int lineNum) {
+void ARState_setLineNum(ARState *st, unsigned int lineNum) {
   GUARD_NULL(st);
   st->lineNum = lineNum;
 }
 
-unsigned int DSState_lineNum(const DSState *st) {
+unsigned int ARState_lineNum(const ARState *st) {
   GUARD_NULL(st, 0);
   return st->lineNum;
 }
 
-void DSState_setShellName(DSState *st, const char *shellName) {
+void ARState_setShellName(ARState *st, const char *shellName) {
   GUARD_NULL(st);
   if (shellName != nullptr) {
     st->setGlobal(BuiltinVarOffset::POS_0, Value::createStr(shellName));
   }
 }
 
-int DSState_setArguments(DSState *st, char *const *args) {
+int ARState_setArguments(ARState *st, char *const *args) {
   GUARD_NULL(st, 0);
 
   auto value = Value::create<ArrayObject>(st->typePool.get(TYPE::StringArray));
@@ -229,18 +229,18 @@ int DSState_setArguments(DSState *st, char *const *args) {
   return 0;
 }
 
-int DSState_exitStatus(const DSState *st) {
+int ARState_exitStatus(const ARState *st) {
   GUARD_NULL(st, 0);
   return st->getMaskedExitStatus();
 }
 
-int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
+int ARState_setDumpTarget(ARState *st, ARDumpKind kind, const char *target) {
   GUARD_NULL(st, -1);
 
 #define EACH_DSDUMP_KIND(OP)                                                                       \
-  OP(DS_DUMP_KIND_UAST)                                                                            \
-  OP(DS_DUMP_KIND_AST)                                                                             \
-  OP(DS_DUMP_KIND_CODE)
+  OP(AR_DUMP_KIND_UAST)                                                                            \
+  OP(AR_DUMP_KIND_AST)                                                                             \
+  OP(AR_DUMP_KIND_CODE)
 
   GUARD_ENUM_RANGE(kind, EACH_DSDUMP_KIND, -1);
 #undef EACH_DSDUMP_KIND
@@ -262,81 +262,81 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
   return 0;
 }
 
-unsigned int DSState_option(const DSState *st) {
+unsigned int ARState_option(const ARState *st) {
   GUARD_NULL(st, 0);
 
   unsigned int option = 0;
 
   // get compile option
   if (st->isInteractive) {
-    setFlag(option, DS_OPTION_INTERACTIVE);
+    setFlag(option, AR_OPTION_INTERACTIVE);
   }
 
   // get runtime option
   if (st->has(RuntimeOption::ASSERT)) {
-    setFlag(option, DS_OPTION_ASSERT);
+    setFlag(option, AR_OPTION_ASSERT);
   }
   if (st->has(RuntimeOption::TRACE_EXIT)) {
-    setFlag(option, DS_OPTION_TRACE_EXIT);
+    setFlag(option, AR_OPTION_TRACE_EXIT);
   }
   if (st->has(RuntimeOption::MONITOR)) {
-    setFlag(option, DS_OPTION_JOB_CONTROL);
+    setFlag(option, AR_OPTION_JOB_CONTROL);
   }
   return option;
 }
 
-void DSState_setOption(DSState *st, unsigned int optionSet) {
+void ARState_setOption(ARState *st, unsigned int optionSet) {
   GUARD_NULL(st);
 
   // set compile option
-  if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+  if (hasFlag(optionSet, AR_OPTION_INTERACTIVE)) {
     st->isInteractive = true;
     st->jobTable.setNotifyCallback(makeObserver(st->notifyCallback));
   }
 
   // set runtime option
   auto option = st->getOption();
-  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
+  if (hasFlag(optionSet, AR_OPTION_ASSERT)) {
     setFlag(option, RuntimeOption::ASSERT);
   }
-  if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
+  if (hasFlag(optionSet, AR_OPTION_TRACE_EXIT)) {
     setFlag(option, RuntimeOption::TRACE_EXIT);
   }
-  if (hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
+  if (hasFlag(optionSet, AR_OPTION_JOB_CONTROL)) {
     setFlag(option, RuntimeOption::MONITOR);
     setJobControlSignalSetting(*st, true);
   }
-  if (hasFlag(optionSet, DS_OPTION_XTRACE)) {
+  if (hasFlag(optionSet, AR_OPTION_XTRACE)) {
     setFlag(option, RuntimeOption::XTRACE);
   }
   st->setOption(option);
 }
 
-void DSState_unsetOption(DSState *st, unsigned int optionSet) {
+void ARState_unsetOption(ARState *st, unsigned int optionSet) {
   GUARD_NULL(st);
 
   // unset compile option
-  if (hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+  if (hasFlag(optionSet, AR_OPTION_INTERACTIVE)) {
     st->isInteractive = false;
     st->jobTable.setNotifyCallback(nullptr);
   }
 
   // unset runtime option
   auto option = st->getOption();
-  if (hasFlag(optionSet, DS_OPTION_ASSERT)) {
+  if (hasFlag(optionSet, AR_OPTION_ASSERT)) {
     unsetFlag(option, RuntimeOption::ASSERT);
   }
-  if (hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
+  if (hasFlag(optionSet, AR_OPTION_TRACE_EXIT)) {
     unsetFlag(option, RuntimeOption::TRACE_EXIT);
   }
-  if (hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
+  if (hasFlag(optionSet, AR_OPTION_JOB_CONTROL)) {
     unsetFlag(option, RuntimeOption::MONITOR);
     setJobControlSignalSetting(*st, false);
   }
   st->setOption(option);
 }
 
-void DSError_release(DSError *e) {
+void ARError_release(ARError *e) {
   int old = errno;
   if (e != nullptr) {
     free(e->fileName);
@@ -347,16 +347,16 @@ void DSError_release(DSError *e) {
   errno = old;
 }
 
-static CompileOption getCompileOption(const DSState &st) {
+static CompileOption getCompileOption(const ARState &st) {
   CompileOption option{};
   if (st.isInteractive) {
     setFlag(option, CompileOption::PRINT_TOPLEVEL);
   }
   switch (st.execMode) {
-  case DS_EXEC_MODE_PARSE_ONLY:
+  case AR_EXEC_MODE_PARSE_ONLY:
     setFlag(option, CompileOption::PARSE_ONLY);
     break;
-  case DS_EXEC_MODE_CHECK_ONLY:
+  case AR_EXEC_MODE_CHECK_ONLY:
     setFlag(option, CompileOption::CHECK_ONLY);
     break;
   default:
@@ -365,10 +365,10 @@ static CompileOption getCompileOption(const DSState &st) {
   return option;
 }
 
-static void reportFileError(const char *sourceName, int errNum, DSError *e) {
+static void reportFileError(const char *sourceName, int errNum, ARError *e) {
   fprintf(stderr, "arsh: cannot load file: %s, by `%s'\n", sourceName, strerror(errNum));
   if (e) {
-    *e = {.kind = DS_ERROR_KIND_FILE_ERROR,
+    *e = {.kind = AR_ERROR_KIND_FILE_ERROR,
           .fileName = strdup(sourceName),
           .lineNum = 0,
           .chars = 0,
@@ -377,7 +377,7 @@ static void reportFileError(const char *sourceName, int errNum, DSError *e) {
   errno = errNum;
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *data, size_t size, DSError *e) {
+int ARState_eval(ARState *st, const char *sourceName, const char *data, size_t size, ARError *e) {
   GUARD_NULL(st, -1);
   GUARD_NULL(data, -1);
 
@@ -400,7 +400,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, size_t s
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
-int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
+int ARState_loadModule(ARState *st, const char *fileName, unsigned int option, ARError *e) {
   GUARD_NULL(st, -1);
   GUARD_NULL(fileName, -1);
 
@@ -408,13 +408,13 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
   DefaultModuleProvider moduleProvider(st->modLoader, st->typePool, st->rootModScope,
                                        std::make_unique<RuntimeCancelToken>(true));
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
-  CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
+  CStrPtr scriptDir = hasFlag(option, AR_MOD_FULLPATH) ? nullptr : getCWD();
   auto ret = moduleProvider.load(scriptDir.get(), fileName, ModLoadOption{});
   if (is<ModLoadingError>(ret)) {
     auto error = get<ModLoadingError>(ret);
-    if (error.isFileNotFound() && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {
+    if (error.isFileNotFound() && hasFlag(option, AR_MOD_IGNORE_ENOENT)) {
       if (e) {
-        *e = initDSError();
+        *e = initARError();
       }
       return 0;
     }
@@ -428,21 +428,21 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     return 1;
   } else if (is<const ModType *>(ret)) {
     if (e) {
-      *e = initDSError();
+      *e = initARError();
     }
     return 0; // do nothing
   }
   assert(is<std::unique_ptr<FrontEnd::Context>>(ret));
   auto &ctx = get<std::unique_ptr<FrontEnd::Context>>(ret);
-  if (!hasFlag(option, DS_MOD_SEPARATE_CTX)) {
+  if (!hasFlag(option, AR_MOD_SEPARATE_CTX)) {
     setFlag(compileOption, CompileOption::LOAD_TO_ROOT);
   }
   return evalScript(*st, moduleProvider, std::move(ctx), compileOption, discardPoint, e);
 }
 
-int DSState_exec(DSState *st, char *const *argv) {
+int ARState_exec(ARState *st, char *const *argv) {
   GUARD_NULL(st, -1);
-  GUARD_TRUE(st->execMode != DS_EXEC_MODE_NORMAL, 0);
+  GUARD_TRUE(st->execMode != AR_EXEC_MODE_NORMAL, 0);
   GUARD_NULL(argv, -1);
 
   std::vector<Value> values;
@@ -453,13 +453,13 @@ int DSState_exec(DSState *st, char *const *argv) {
   return st->getMaskedExitStatus();
 }
 
-const char *DSState_config(const DSState *st, DSConfig config) {
+const char *ARState_config(const ARState *st, ARConfig config) {
   GUARD_NULL(st, nullptr);
 
   const char *key = nullptr;
   switch (config) {
 #define GEN_CASE2(E, S)                                                                            \
-  case DS_CONFIG_##E:                                                                              \
+  case AR_CONFIG_##E:                                                                              \
     key = SysConfig::E;                                                                            \
     break;
     EACH_SYSCONFIG(GEN_CASE2)
@@ -471,7 +471,7 @@ const char *DSState_config(const DSState *st, DSConfig config) {
   return nullptr;
 }
 
-const char *DSState_version(DSVersion *version) {
+const char *ARState_version(ARVersion *version) {
   if (version != nullptr) {
     version->major = X_INFO_MAJOR_VERSION;
     version->minor = X_INFO_MINOR_VERSION;
@@ -480,22 +480,22 @@ const char *DSState_version(DSVersion *version) {
   return "arsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
-const char *DSState_copyright() { return "Copyright (C) 2015-2023 Nagisa Sekiguchi"; }
+const char *ARState_copyright() { return "Copyright (C) 2015-2023 Nagisa Sekiguchi"; }
 
 static constexpr unsigned int featureBit() {
   unsigned int featureBit = 0;
 
 #ifdef USE_LOGGING
-  setFlag(featureBit, DS_FEATURE_LOGGING);
+  setFlag(featureBit, AR_FEATURE_LOGGING);
 #endif
 
 #ifdef USE_SAFE_CAST
-  setFlag(featureBit, DS_FEATURE_SAFE_CAST);
+  setFlag(featureBit, AR_FEATURE_SAFE_CAST);
 #endif
   return featureBit;
 }
 
-unsigned int DSState_featureBit() {
+unsigned int ARState_featureBit() {
   constexpr auto flag = featureBit();
   return flag;
 }
@@ -540,7 +540,7 @@ static char *getExecutablePath() {
 
 #endif
 
-const char *DSState_initExecutablePath(DSState *st) {
+const char *ARState_initExecutablePath(ARState *st) {
   GUARD_NULL(st, nullptr);
 
   auto handle = st->rootModScope->lookup(VAR_BIN_NAME);
@@ -571,12 +571,12 @@ static const char *defaultPrompt() {
 #undef STR
 }
 
-ssize_t DSState_readLine(DSState *st, char *buf, size_t bufSize, DSError *e) {
+ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
   GUARD_NULL(st, 0);
   st->getCallStack().clearThrownObject();
   st->notifyCallback.showAndClear();
   if (e) {
-    *e = initDSError();
+    *e = initARError();
   }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   editor.enableHighlight();

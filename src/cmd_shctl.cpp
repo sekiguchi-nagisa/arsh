@@ -20,7 +20,7 @@
 
 namespace arsh {
 
-static int printBacktrace(const DSState &state, const ArrayObject &argvObj) {
+static int printBacktrace(const ARState &state, const ArrayObject &argvObj) {
   int errNum = 0;
   state.getCallStack().fillStackTrace([&errNum](StackTraceElement &&s) {
     if (printf("from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
@@ -34,7 +34,7 @@ static int printBacktrace(const DSState &state, const ArrayObject &argvObj) {
   return 0;
 }
 
-static int printFuncName(const DSState &state, const ArrayObject &argvObj) {
+static int printFuncName(const ARState &state, const ArrayObject &argvObj) {
   const auto *code = state.getCallStack().getFrame().code;
   const char *name = nullptr;
   if (!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
@@ -91,7 +91,7 @@ static unsigned int computeMaxOptionNameSize() {
   return maxSize;
 }
 
-static int showOptions(const DSState &state) {
+static int showOptions(const ARState &state) {
   const unsigned int maxNameSize = computeMaxOptionNameSize();
   for (auto &e : runtimeOptions) {
     errno = 0;
@@ -103,7 +103,7 @@ static int showOptions(const DSState &state) {
   return 0;
 }
 
-static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef restoreStr) {
+static int restoreOptions(ARState &state, const ArrayObject &argvObj, StringRef restoreStr) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = restoreStr.find(' ', pos);
     auto sub = restoreStr.slice(pos, r);
@@ -144,7 +144,7 @@ static int restoreOptions(DSState &state, const ArrayObject &argvObj, StringRef 
   return 0;
 }
 
-static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned int offset,
+static int setOption(ARState &state, const ArrayObject &argvObj, const unsigned int offset,
                      const bool set) {
   const unsigned int size = argvObj.size();
   if (offset == size) {
@@ -218,7 +218,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const unsigned 
   return 0;
 }
 
-static int showModule(const DSState &state, const ArrayObject &argvObj, const unsigned int offset) {
+static int showModule(const ARState &state, const ArrayObject &argvObj, const unsigned int offset) {
   const unsigned int size = argvObj.size();
   if (offset == size) {
     int errNum = 0;
@@ -299,7 +299,7 @@ static int setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, Str
   return 0;
 }
 
-static int showInfo(DSState &state, const ArrayObject &argvObj) {
+static int showInfo(ARState &state, const ArrayObject &argvObj) {
   const char *table[] = {
 #define GEN_STR(E, S) S,
       EACH_SYSCONFIG(GEN_STR)
@@ -329,7 +329,7 @@ static int showInfo(DSState &state, const ArrayObject &argvObj) {
   return 0;
 }
 
-int builtin_shctl(DSState &state, ArrayObject &argvObj) {
+int builtin_shctl(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {

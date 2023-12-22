@@ -154,7 +154,7 @@ public:
   }
 
   static std::string formatKind(int kind) {
-    const char *s = toString(static_cast<DSErrorKind>(kind));
+    const char *s = toString(static_cast<ARErrorKind>(kind));
     std::string ret;
     if (*s) {
       ret = split(s, '_')[3];

@@ -145,13 +145,13 @@ inline void flushStdFD() {
  */
 class PipelineObject : public ObjectWithRtti<ObjectKind::Pipeline> {
 private:
-  DSState &state;
+  ARState &state;
   Job entry;
 
 public:
   NON_COPYABLE(PipelineObject);
 
-  PipelineObject(DSState &state, Job &&entry)
+  PipelineObject(ARState &state, Job &&entry)
       : ObjectWithRtti(TYPE::Void), state(state), entry(std::move(entry)) {}
 
   ~PipelineObject();
@@ -192,7 +192,7 @@ public:
 
   void ignoreBackup() { this->backupFDSet = 0; }
 
-  bool redirect(DSState &state);
+  bool redirect(ARState &state);
 
 private:
   void saveFDs() {

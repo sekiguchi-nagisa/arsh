@@ -31,7 +31,7 @@ static bool isSupportedTerminal(int fd) {
   return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
-DefaultErrorConsumer::DefaultErrorConsumer(DSError *error, FILE *fp)
+DefaultErrorConsumer::DefaultErrorConsumer(ARError *error, FILE *fp)
     : dsError(error), fp(fp), tty(fp ? isSupportedTerminal(fileno(fp)) : false) {}
 
 bool DefaultErrorConsumer::colorSupported() const { return this->tty; }
@@ -43,11 +43,11 @@ void DefaultErrorConsumer::consume(std::string &&message) {
   }
 }
 
-void DefaultErrorConsumer::consume(DSError &&error) {
+void DefaultErrorConsumer::consume(ARError &&error) {
   if (this->dsError) {
     *this->dsError = error;
   } else {
-    DSError_release(&error);
+    ARError_release(&error);
   }
 }
 
@@ -71,13 +71,13 @@ static std::vector<std::string> split(const std::string &str) {
   return bufs;
 }
 
-static const char *toString(DSErrorKind kind) {
+static const char *toString(ARErrorKind kind) {
   switch (kind) {
-  case DS_ERROR_KIND_PARSE_ERROR:
+  case AR_ERROR_KIND_PARSE_ERROR:
     return "syntax error";
-  case DS_ERROR_KIND_TYPE_ERROR:
+  case AR_ERROR_KIND_TYPE_ERROR:
     return "semantic error";
-  case DS_ERROR_KIND_CODEGEN_ERROR:
+  case AR_ERROR_KIND_CODEGEN_ERROR:
     return "codegen error";
   default:
     return "";
@@ -154,7 +154,7 @@ void ErrorReporter::printErrorLine(std::string &out, const Lexer &lexer, Token e
 
 bool ErrorReporter::handleParseError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                      const ParseError &parseError) {
-  return this->handleError(ctx, DS_ERROR_KIND_PARSE_ERROR, parseError.getErrorKind(),
+  return this->handleError(ctx, AR_ERROR_KIND_PARSE_ERROR, parseError.getErrorKind(),
                            parseError.getErrorToken(), parseError.getMessage().c_str());
 }
 
@@ -163,18 +163,18 @@ bool ErrorReporter::handleTypeError(const std::vector<std::unique_ptr<FrontEnd::
   if (!firstAppear) {
     return false;
   }
-  return this->handleError(ctx, DS_ERROR_KIND_TYPE_ERROR, checkError.getKind(),
+  return this->handleError(ctx, AR_ERROR_KIND_TYPE_ERROR, checkError.getKind(),
                            checkError.getToken(), checkError.getMessage());
 }
 
 bool ErrorReporter::handleCodeGenError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
                                        const CodeGenError &codeGenError) {
-  return this->handleError(ctx, DS_ERROR_KIND_CODEGEN_ERROR, codeGenError.getKind(),
+  return this->handleError(ctx, AR_ERROR_KIND_CODEGEN_ERROR, codeGenError.getKind(),
                            codeGenError.getToken(), codeGenError.getMessage());
 }
 
 bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx,
-                                DSErrorKind type, const char *errorKind, Token errorToken,
+                                ARErrorKind type, const char *errorKind, Token errorToken,
                                 const char *message) {
   auto &lexer = ctx.back()->lexer;
   errorToken = lexer->shiftEOS(errorToken);
@@ -194,7 +194,7 @@ bool ErrorReporter::handleError(const std::vector<std::unique_ptr<FrontEnd::Cont
 
   auto srcPos = lexer->getSrcPos(errorToken);
   const char *sourceName = lexer->getSourceName().c_str();
-  this->consumer.consume(DSError{.kind = type,
+  this->consumer.consume(ARError{.kind = type,
                                  .fileName = strdup(sourceName),
                                  .lineNum = srcPos.lineNum,
                                  .chars = srcPos.chars,
@@ -212,10 +212,10 @@ Compiler::Compiler(DefaultModuleProvider &moduleProvider, std::unique_ptr<FrontE
     : compileOption(compileOption),
       frontEnd(moduleProvider, std::move(ctx), toOption(this->compileOption), nullptr),
       errorReporter(consumer),
-      uastDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_UAST] : nullptr),
-      astDumper(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_AST] : nullptr),
+      uastDumper(dumpTarget ? dumpTarget->fps[AR_DUMP_KIND_UAST] : nullptr),
+      astDumper(dumpTarget ? dumpTarget->fps[AR_DUMP_KIND_AST] : nullptr),
       codegen(moduleProvider.getPool()),
-      codeDumpFile(dumpTarget ? dumpTarget->fps[DS_DUMP_KIND_CODE] : nullptr) {
+      codeDumpFile(dumpTarget ? dumpTarget->fps[AR_DUMP_KIND_CODE] : nullptr) {
   if (this->uastDumper) {
     this->frontEnd.setUASTDumper(this->uastDumper);
   }

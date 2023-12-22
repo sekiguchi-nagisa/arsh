@@ -21,7 +21,7 @@
 
 namespace arsh {
 
-bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name) {
+bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name) {
   auto s = this->keyBindings.addBinding(key, name);
   std::string message;
   switch (s) {
@@ -65,7 +65,7 @@ bool LineEditorObject::addKeyBind(DSState &state, StringRef key, StringRef name)
   return true;
 }
 
-bool LineEditorObject::defineCustomAction(DSState &state, StringRef name, StringRef type,
+bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, StringRef type,
                                           ObjPtr<Object> callback) {
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
@@ -145,7 +145,7 @@ static const DSType &toType(const TypePool &pool, EditConfig config) {
   return pool.get(types[toUnderlying(config)]);
 }
 
-bool LineEditorObject::setConfig(DSState &state, StringRef name, const Value &value) {
+bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &value) {
   auto *config = toEditConfig(name);
   if (!config) {
     std::string message = "undefined config: `";
@@ -199,7 +199,7 @@ bool LineEditorObject::setConfig(DSState &state, StringRef name, const Value &va
   return false;
 }
 
-Value LineEditorObject::getConfigs(DSState &state) const {
+Value LineEditorObject::getConfigs(ARState &state) const {
   auto typeOrError =
       state.typePool.createMapType(state.typePool.get(TYPE::String), state.typePool.get(TYPE::Any));
   auto ret = Value::create<OrderedMapObject>(*typeOrError.asOk(), state.getRng().next());

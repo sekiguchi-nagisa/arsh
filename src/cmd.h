@@ -22,7 +22,7 @@
 #include "misc/opt.hpp"
 #include "misc/string_ref.hpp"
 
-struct DSState;
+struct ARState;
 
 namespace arsh {
 
@@ -50,7 +50,7 @@ int showUsage(const ArrayObject &obj);
 
 int showHelp(const ArrayObject &obj);
 
-int invalidOptionError(const DSState &st, const ArrayObject &obj, const GetOptState &s);
+int invalidOptionError(const ARState &st, const ArrayObject &obj, const GetOptState &s);
 
 int parseFD(StringRef value);
 
@@ -58,7 +58,7 @@ int parseFD(StringRef value);
  * return exit status.
  * argvObj must be Array_Object
  */
-using builtin_command_t = int (*)(DSState &state, ArrayObject &argvObj);
+using builtin_command_t = int (*)(ARState &state, ArrayObject &argvObj);
 
 builtin_command_t lookupBuiltinCommand(StringRef commandName);
 

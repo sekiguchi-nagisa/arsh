@@ -56,7 +56,7 @@
 
 namespace arsh {
 
-using RuntimeContext = DSState;
+using RuntimeContext = ARState;
 
 // #################
 // ##     Any     ##
@@ -1373,11 +1373,11 @@ ARSH_METHOD signals_list(RuntimeContext &ctx) {
 // ##     Module     ##
 // ####################
 
-static void raiseInvalidOperationError(DSState &st, std::string &&m) {
+static void raiseInvalidOperationError(ARState &st, std::string &&m) {
   raiseError(st, TYPE::InvalidOperationError, std::move(m));
 }
 
-static bool checkModLayout(DSState &state, const Value &value) {
+static bool checkModLayout(ARState &state, const Value &value) {
   if (value.isObject() && isa<FuncObject>(value.get())) {
     return true;
   }
@@ -1547,7 +1547,7 @@ ARSH_METHOD array_peek(RuntimeContext &ctx) {
   return value;
 }
 
-static bool array_insertImpl(DSState &ctx, int64_t index, const Value &v) {
+static bool array_insertImpl(ARState &ctx, int64_t index, const Value &v) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   if (unlikely(!obj.checkIteratorInvalidation(ctx))) {
     return false;

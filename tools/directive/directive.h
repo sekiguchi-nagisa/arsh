@@ -32,11 +32,11 @@ namespace arsh::directive {
 class Directive {
 private:
   /**
-   * kind of status.(DS_ERROR_KIND_*)
+   * kind of status.(AR_ERROR_KIND_*)
    *
-   * if -1, invalid DS_ERROR_KIND
+   * if -1, invalid AR_ERROR_KIND
    */
-  int result{DS_ERROR_KIND_SUCCESS};
+  int result{AR_ERROR_KIND_SUCCESS};
 
   /**
    * for command exit status
@@ -143,7 +143,7 @@ public:
  * @param kind
  * @return
  */
-const char *toString(DSErrorKind kind);
+const char *toString(ARErrorKind kind);
 
 } // namespace arsh::directive
 

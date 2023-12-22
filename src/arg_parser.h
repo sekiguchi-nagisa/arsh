@@ -52,7 +52,7 @@ struct CLIParseResult {
  * must be CLIRecordType
  * @return
  */
-CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out);
+CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out);
 
 inline void showCommandLineUsage(const ErrorObject &obj) {
   FILE *fp = obj.getStatus() == 0 ? stdout : stderr;

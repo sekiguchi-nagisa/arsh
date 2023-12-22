@@ -65,7 +65,7 @@ static bool printNumOrName(StringRef str, int &errNum) {
 
 using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
 
-static ProcOrJob parseProcOrJob(const DSState &state, const ArrayObject &argvObj, StringRef arg,
+static ProcOrJob parseProcOrJob(const ARState &state, const ArrayObject &argvObj, StringRef arg,
                                 bool allowNoChild) {
   auto &jobTable = state.jobTable;
   bool isJob = arg.startsWith("%");
@@ -97,7 +97,7 @@ static ProcOrJob parseProcOrJob(const DSState &state, const ArrayObject &argvObj
   }
 }
 
-static bool killProcOrJob(const DSState &state, const ArrayObject &argvObj, StringRef arg,
+static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, StringRef arg,
                           int sigNum) {
   auto target = parseProcOrJob(state, argvObj, arg, true);
   if (!target.hasValue()) {
@@ -120,7 +120,7 @@ static bool killProcOrJob(const DSState &state, const ArrayObject &argvObj, Stri
 
 // -s sig (pid | jobspec ...)
 // -l
-int builtin_kill(DSState &state, ArrayObject &argvObj) {
+int builtin_kill(ARState &state, ArrayObject &argvObj) {
   int sigNum = SIGTERM;
   bool listing = false;
 
@@ -222,7 +222,7 @@ static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
   return job;
 }
 
-int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
+int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
   if (!state.isJobControl()) {
     ERROR(state, argvObj, "no job control in this shell");
     return 1;
@@ -301,7 +301,7 @@ int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
   return ret;
 }
 
-int builtin_wait(DSState &state, ArrayObject &argvObj) {
+int builtin_wait(ARState &state, ArrayObject &argvObj) {
   bool breakNext = false;
   GetOptState optState("nh");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -420,7 +420,7 @@ static void showJobInfo(const JobTable::CurPrevJobs &entry, JobsTarget target, J
   job->showInfo(stdout, fmt);
 }
 
-int builtin_jobs(DSState &state, ArrayObject &argvObj) {
+int builtin_jobs(ARState &state, ArrayObject &argvObj) {
   auto target = JobsTarget::ALL;
   auto output = JobsOutput::DEFAULT;
 
@@ -469,7 +469,7 @@ int builtin_jobs(DSState &state, ArrayObject &argvObj) {
   return hasError ? 1 : 0;
 }
 
-int builtin_disown(DSState &state, ArrayObject &argvObj) {
+int builtin_disown(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("lprsh");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {

@@ -27,12 +27,12 @@ static void fillWithInvalid(BaseObject &obj) {
 
 class ArgParserTest : public ::testing::Test {
 protected:
-  DSState *state{nullptr};
+  ARState *state{nullptr};
 
 public:
-  void SetUp() override { this->state = DSState_create(); }
+  void SetUp() override { this->state = ARState_create(); }
 
-  void TearDown() override { DSState_delete(&this->state); }
+  void TearDown() override { ARState_delete(&this->state); }
 
   TypePool &typePool() { return this->state->typePool; }
 

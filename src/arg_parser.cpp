@@ -44,12 +44,12 @@ void RequiredOptionSet::del(unsigned char n) {
   }
 }
 
-static bool verboseUsage(const DSState &st, const BaseObject &out) {
+static bool verboseUsage(const ARState &st, const BaseObject &out) {
   auto &type = st.typePool.get(out.getTypeID());
   return hasFlag(cast<CLIRecordType>(type).getAttr(), CLIRecordType::Attr::VERBOSE);
 }
 
-static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEntry &entry,
+static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEntry &entry,
                            StringRef arg, bool shortOpt, BaseObject &out) {
   int64_t v = 0;
   if (std::string err; entry.checkArg(arg, shortOpt, v, err)) {
@@ -67,7 +67,7 @@ static bool checkAndSetArg(DSState &state, const ArgParser &parser, const ArgEnt
   }
 }
 
-static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser,
+static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser,
                                          const RequiredOptionSet &requiredSet, StrArrayIter &begin,
                                          const StrArrayIter end, BaseObject &out) {
   const bool verbose = verboseUsage(state, out);
@@ -129,7 +129,7 @@ static bool checkRequireOrPositionalArgs(DSState &state, const ArgParser &parser
   return true;
 }
 
-CLIParseResult parseCommandLine(DSState &state, const ArrayObject &args, BaseObject &out) {
+CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
   auto &type = state.typePool.get(out.getTypeID());
   assert(isa<CLIRecordType>(type));
   auto instance = ArgParser::create(out[0].asStrRef(), cast<CLIRecordType>(type).getEntries());

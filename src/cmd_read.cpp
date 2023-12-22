@@ -24,7 +24,7 @@
 
 namespace arsh {
 
-static bool setToReplyMap(DSState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
+static bool setToReplyMap(ARState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
                           unsigned int index, std::string &&buf) {
   auto varObj = argvObj.getValues()[index];
   auto valueObj = Value::createStr(std::move(buf));
@@ -32,7 +32,7 @@ static bool setToReplyMap(DSState &state, OrderedMapObject &mapObj, const ArrayO
   return static_cast<bool>(ret);
 }
 
-static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigned int offset,
+static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigned int offset,
                      StringRef ifs, int timeoutMSec, bool backslash) {
   // clear REPL/reply before read
   errno = 0;
@@ -115,7 +115,7 @@ static bool readLine(DSState &state, int fd, const ArrayObject &argvObj, unsigne
   return readSize == 1;
 }
 
-int builtin_read(DSState &state, ArrayObject &argvObj) {
+int builtin_read(ARState &state, ArrayObject &argvObj) {
   StringRef prompt;
   StringRef ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   bool backslash = true;

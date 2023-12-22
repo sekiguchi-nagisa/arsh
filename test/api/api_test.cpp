@@ -24,120 +24,120 @@ std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T... args) {
 }
 
 TEST(BuiltinExecTest, case1) {
-  DSState *state = DSState_create();
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("echo", "hello").data());
+  int ret = ARState_exec(state, make_argv("echo", "hello").data());
   ASSERT_EQ(0, ret);
 }
 
 TEST(BuiltinExecTest, case2) {
-  DSState *state = DSState_create();
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("./", "hello").data());
+  int ret = ARState_exec(state, make_argv("./", "hello").data());
   ASSERT_EQ(126, ret);
 }
 
 TEST(BuiltinExecTest, case3) {
-  DSState *state = DSState_create();
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("exit", "12000").data());
+  int ret = ARState_exec(state, make_argv("exit", "12000").data());
   ASSERT_EQ(224, ret);
 }
 
 TEST(BuiltinExecTest, case4) {
-  DSState *state = DSState_create();
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, nullptr);
+  int ret = ARState_exec(state, nullptr);
   ASSERT_EQ(-1, ret);
 
-  ret = DSState_exec(nullptr, make_argv("exit", "12000").data());
+  ret = ARState_exec(nullptr, make_argv("exit", "12000").data());
   ASSERT_EQ(-1, ret);
 }
 
 TEST(BuiltinExecTest, shctl) {
-  DSState *state = DSState_create();
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
+  int ret = ARState_exec(state, make_argv("shctl", "is-interactive").data());
   ASSERT_EQ(1, ret);
 
-  DSState_setOption(state, DS_OPTION_INTERACTIVE);
-  ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
+  ARState_setOption(state, AR_OPTION_INTERACTIVE);
+  ret = ARState_exec(state, make_argv("shctl", "is-interactive").data());
   ASSERT_EQ(0, ret);
 }
 
 TEST(BuiltinExecTest, donothing1) {
-  DSState *state = DSState_createWithMode(DS_EXEC_MODE_CHECK_ONLY);
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_createWithMode(AR_EXEC_MODE_CHECK_ONLY);
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+  int ret = ARState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
 }
 
 TEST(BuiltinExecTest, donothing2) {
-  DSState *state = DSState_createWithMode(DS_EXEC_MODE_PARSE_ONLY);
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_createWithMode(AR_EXEC_MODE_PARSE_ONLY);
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+  int ret = ARState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
 }
 
 TEST(BuiltinExecTest, donothing3) {
-  DSState *state = DSState_createWithMode(DS_EXEC_MODE_COMPILE_ONLY);
-  auto cleanup = arsh::finally([&] { DSState_delete(&state); });
+  ARState *state = ARState_createWithMode(AR_EXEC_MODE_COMPILE_ONLY);
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
 
-  int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+  int ret = ARState_exec(state, make_argv("jfriejfieori").data());
   ASSERT_EQ(0, ret);
 }
 
 struct APITest : public ExpectOutput, public arsh::TempFileFactory {
-  DSState *state{nullptr};
+  ARState *state{nullptr};
 
-  APITest() : INIT_TEMP_FILE_FACTORY(api_test) { this->state = DSState_create(); }
+  APITest() : INIT_TEMP_FILE_FACTORY(api_test) { this->state = ARState_create(); }
 
-  ~APITest() override { DSState_delete(&this->state); }
+  ~APITest() override { ARState_delete(&this->state); }
 };
 
 struct Deleter {
-  void operator()(DSError *e) const {
-    DSError_release(e);
+  void operator()(ARError *e) const {
+    ARError_release(e);
     delete e;
   }
 };
 
-static auto newError() { return std::unique_ptr<DSError, Deleter>(new DSError()); }
+static auto newError() { return std::unique_ptr<ARError, Deleter>(new ARError()); }
 
 TEST_F(APITest, create) {
-  DSState *st = DSState_createWithMode(static_cast<DSExecMode>(100));
+  ARState *st = ARState_createWithMode(static_cast<ARExecMode>(100));
   ASSERT_FALSE(st);
 }
 
 TEST_F(APITest, del) {
-  DSState_delete(nullptr); // do nothing
+  ARState_delete(nullptr); // do nothing
 }
 
 TEST_F(APITest, mode) {
-  DSExecMode modes[] = {
-      DS_EXEC_MODE_NORMAL,
-      DS_EXEC_MODE_PARSE_ONLY,
-      DS_EXEC_MODE_CHECK_ONLY,
-      DS_EXEC_MODE_COMPILE_ONLY,
+  ARExecMode modes[] = {
+      AR_EXEC_MODE_NORMAL,
+      AR_EXEC_MODE_PARSE_ONLY,
+      AR_EXEC_MODE_CHECK_ONLY,
+      AR_EXEC_MODE_COMPILE_ONLY,
   };
   for (auto &m : modes) {
-    auto st = DSState_createWithMode(m);
-    auto cleaup = arsh::finally([&] { DSState_delete(&st); });
-    ASSERT_EQ(m, DSState_mode(st));
+    auto st = ARState_createWithMode(m);
+    auto cleaup = arsh::finally([&] { ARState_delete(&st); });
+    ASSERT_EQ(m, ARState_mode(st));
   }
-  ASSERT_EQ(0, DSState_mode(nullptr));
+  ASSERT_EQ(0, ARState_mode(nullptr));
 }
 
 TEST_F(APITest, version) {
-  DSVersion version;
-  const char *v = DSState_version(&version);
+  ARVersion version;
+  const char *v = ARState_version(&version);
 
   ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major);
   ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor);
@@ -145,88 +145,88 @@ TEST_F(APITest, version) {
   ASSERT_TRUE(v);
   ASSERT_TRUE(arsh::StringRef(v).startsWith("arsh, version "));
 
-  v = DSState_version(nullptr);
+  v = ARState_version(nullptr);
   ASSERT_TRUE(v);
   ASSERT_TRUE(arsh::StringRef(v).startsWith("arsh, version "));
 }
 
 TEST_F(APITest, config) {
-  arsh::StringRef value = DSState_config(this->state, DS_CONFIG_COMPILER);
+  arsh::StringRef value = ARState_config(this->state, AR_CONFIG_COMPILER);
   ASSERT_EQ(X_INFO_CPP " " X_INFO_CPP_V, value);
 
-  value = DSState_config(this->state, DS_CONFIG_REGEX);
+  value = ARState_config(this->state, AR_CONFIG_REGEX);
   ASSERT_TRUE(value.startsWith("PCRE"));
 
-  value = DSState_config(this->state, DS_CONFIG_VERSION);
+  value = ARState_config(this->state, AR_CONFIG_VERSION);
   {
-    DSVersion version;
-    DSState_version(&version);
+    ARVersion version;
+    ARState_version(&version);
     ASSERT_EQ(format("%d.%d.%d", version.major, version.minor, version.patch), value);
   }
 
-  value = DSState_config(this->state, DS_CONFIG_OSTYPE);
+  value = ARState_config(this->state, AR_CONFIG_OSTYPE);
   ASSERT_EQ(arsh::BUILD_OS, value);
 
-  value = DSState_config(this->state, DS_CONFIG_MACHTYPE);
+  value = ARState_config(this->state, AR_CONFIG_MACHTYPE);
   ASSERT_EQ(arsh::BUILD_ARCH, value);
 
-  value = DSState_config(this->state, DS_CONFIG_CONFIG_HOME);
+  value = ARState_config(this->state, AR_CONFIG_CONFIG_HOME);
   ASSERT_TRUE(value.endsWith("/arsh"));
 
-  value = DSState_config(this->state, DS_CONFIG_DATA_HOME);
+  value = ARState_config(this->state, AR_CONFIG_DATA_HOME);
   ASSERT_TRUE(value.endsWith("/arsh"));
 
-  value = DSState_config(this->state, DS_CONFIG_MODULE_HOME);
+  value = ARState_config(this->state, AR_CONFIG_MODULE_HOME);
   {
-    const char *base = DSState_config(this->state, DS_CONFIG_DATA_HOME);
+    const char *base = ARState_config(this->state, AR_CONFIG_DATA_HOME);
     ASSERT_EQ(format("%s/modules", base), value);
   }
 
-  value = DSState_config(this->state, DS_CONFIG_DATA_DIR);
+  value = ARState_config(this->state, AR_CONFIG_DATA_DIR);
   ASSERT_EQ(X_DATA_DIR, value);
 
-  value = DSState_config(this->state, DS_CONFIG_MODULE_DIR);
+  value = ARState_config(this->state, AR_CONFIG_MODULE_DIR);
   ASSERT_EQ(X_MODULE_DIR, value);
 
   // invalid
-  const char *v = DSState_config(this->state, (DSConfig)9999);
+  const char *v = ARState_config(this->state, (ARConfig)9999);
   ASSERT_EQ(nullptr, v);
 
-  v = DSState_config(nullptr, DS_CONFIG_MACHTYPE);
+  v = ARState_config(nullptr, AR_CONFIG_MACHTYPE);
   ASSERT_EQ(nullptr, v);
 }
 
 TEST_F(APITest, lineNum1) {
-  ASSERT_EQ(0u, DSState_lineNum(nullptr));
-  ASSERT_EQ(1u, DSState_lineNum(this->state));
+  ASSERT_EQ(0u, ARState_lineNum(nullptr));
+  ASSERT_EQ(1u, ARState_lineNum(this->state));
 
   const char *str = "12 + 32\n $true\n";
-  DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-  ASSERT_EQ(3u, DSState_lineNum(this->state));
+  ARState_eval(this->state, nullptr, str, strlen(str), nullptr);
+  ASSERT_EQ(3u, ARState_lineNum(this->state));
 
-  DSState_setLineNum(this->state, 49);
+  ARState_setLineNum(this->state, 49);
   str = "23";
-  DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-  ASSERT_EQ(50u, DSState_lineNum(this->state));
+  ARState_eval(this->state, nullptr, str, strlen(str), nullptr);
+  ASSERT_EQ(50u, ARState_lineNum(this->state));
 
-  DSState_setLineNum(nullptr, 1000);
-  ASSERT_EQ(50u, DSState_lineNum(this->state));
+  ARState_setLineNum(nullptr, 1000);
+  ASSERT_EQ(50u, ARState_lineNum(this->state));
 }
 
 TEST_F(APITest, lineNum2) {
   auto e = newError();
   auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
-  DSState_loadAndEval(this->state, fileName1.c_str(), e.get());
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
-  ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
+  ARState_loadAndEval(this->state, fileName1.c_str(), e.get());
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(1, ARState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
   e = newError();
 
   fileName1 = this->createTempFile("targe2.ds", "45/'de'");
-  DSState_loadAndEval(this->state, fileName1.c_str(), e.get());
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ARState_loadAndEval(this->state, fileName1.c_str(), e.get());
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   ASSERT_EQ(1, e->lineNum);
   ASSERT_EQ(4, e->chars);
-  ASSERT_EQ(1, DSState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
+  ASSERT_EQ(1, ARState_lineNum(this->state)); // loadAndEval api does not update internal lineNum
   e = newError();
 }
 
@@ -239,9 +239,9 @@ echoechodwe \
     $a
 )";
   auto e = newError();
-  int s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  int s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(127, s);
-  ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_RUNTIME_ERROR, e->kind);
   ASSERT_EQ(5, e->lineNum);
   ASSERT_EQ(0, e->chars);
   e = newError();
@@ -250,26 +250,26 @@ echoechodwe \
 TEST_F(APITest, shellName) {
   auto e = newError();
   const char *src = "assert $0 == 'arsh'";
-  int s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  int s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  DSState_setShellName(this->state, "12345");
+  ARState_setShellName(this->state, "12345");
   src = "assert $0 == '12345'";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  DSState_setShellName(this->state, nullptr); // do nothing
+  ARState_setShellName(this->state, nullptr); // do nothing
   src = "assert $0 == '12345'";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  DSState_setShellName(nullptr, "ddd"); // do nothing
+  ARState_setShellName(nullptr, "ddd"); // do nothing
 }
 
 TEST_F(APITest, arg) {
@@ -286,16 +286,16 @@ TEST_F(APITest, arg) {
     assert $8.empty()
     assert $9.empty()
 )";
-  int s = DSState_eval(this->state, "(string)", init, strlen(init), e.get());
+  int s = ARState_eval(this->state, "(string)", init, strlen(init), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   ASSERT_EQ(0, e->chars);
   ASSERT_EQ(0, e->lineNum);
   e = newError();
 
   // set arguments
-  DSState_setArguments(nullptr, nullptr); // do nothing
-  DSState_setArguments(this->state, make_argv("a", "b", "c", "d", "e").data());
+  ARState_setArguments(nullptr, nullptr); // do nothing
+  ARState_setArguments(this->state, make_argv("a", "b", "c", "d", "e").data());
 
   const char *src = R"(
     assert $@.size() == 5
@@ -309,22 +309,22 @@ TEST_F(APITest, arg) {
     assert $8.empty()
     assert $9.empty()
 )";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   ASSERT_EQ(0, e->chars);
   ASSERT_EQ(0, e->lineNum);
   e = newError();
 
   // clear
-  DSState_setArguments(this->state, nullptr);
-  s = DSState_eval(this->state, "(string)", init, strlen(init), e.get());
+  ARState_setArguments(this->state, nullptr);
+  s = ARState_eval(this->state, "(string)", init, strlen(init), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   // set arguments
-  DSState_setArguments(
+  ARState_setArguments(
       this->state,
       make_argv("aa", "bb", "ccc", "ddd", "eee", "f", "ggg", "hhhh", "i", "100", "hey").data());
   src = R"(
@@ -342,15 +342,15 @@ TEST_F(APITest, arg) {
     assert $@[10] == 'hey'
     var old = $@  # save old arguments
 )";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   ASSERT_EQ(0, e->chars);
   ASSERT_EQ(0, e->lineNum);
   e = newError();
 
   // clear arguments, but still maintain old (allocate new object)
-  DSState_setArguments(this->state, nullptr);
+  ARState_setArguments(this->state, nullptr);
   src = R"(
     assert $old.size() == 11
     assert $old[0] == 'aa'
@@ -366,9 +366,9 @@ TEST_F(APITest, arg) {
     assert $old[10] == 'hey'
     assert $@.empty()
 )";
-  s = DSState_eval(this->state, "(string)", src, strlen(src), e.get());
+  s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   ASSERT_EQ(0, e->chars);
   ASSERT_EQ(0, e->lineNum);
   e = newError();
@@ -376,9 +376,9 @@ TEST_F(APITest, arg) {
 
 TEST_F(APITest, size) {
   auto e = newError();
-  int s = DSState_eval(this->state, "(string)", "echo hello", UINT32_MAX, e.get());
+  int s = ARState_eval(this->state, "(string)", "echo hello", UINT32_MAX, e.get());
   ASSERT_EQ(1, s);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
   ASSERT_EQ(0, e->chars);
   ASSERT_EQ(0, e->lineNum);
   ASSERT_STREQ("(string)", e->fileName);
@@ -386,101 +386,101 @@ TEST_F(APITest, size) {
 }
 
 TEST_F(APITest, dump) {
-  int s = DSState_setDumpTarget(this->state, DS_DUMP_KIND_AST, "./fjreijfreoai/jfraeijfriea/53452");
+  int s = ARState_setDumpTarget(this->state, AR_DUMP_KIND_AST, "./fjreijfreoai/jfraeijfriea/53452");
   ASSERT_EQ(-1, s);
 
-  s = DSState_setDumpTarget(nullptr, DS_DUMP_KIND_AST, "hoge");
+  s = ARState_setDumpTarget(nullptr, AR_DUMP_KIND_AST, "hoge");
   ASSERT_EQ(-1, s);
 
-  s = DSState_setDumpTarget(this->state, static_cast<DSDumpKind>(10000), "hoge");
+  s = ARState_setDumpTarget(this->state, static_cast<ARDumpKind>(10000), "hoge");
   ASSERT_EQ(-1, s);
 }
 
 TEST_F(APITest, eval) {
-  int ret = DSState_eval(nullptr, nullptr, "echo hello", strlen("echo hello"), nullptr);
+  int ret = ARState_eval(nullptr, nullptr, "echo hello", strlen("echo hello"), nullptr);
   ASSERT_EQ(-1, ret);
 
-  ret = DSState_eval(this->state, nullptr, nullptr, strlen("echo hello"), nullptr);
+  ret = ARState_eval(this->state, nullptr, nullptr, strlen("echo hello"), nullptr);
   ASSERT_EQ(-1, ret);
 
-  ret = DSState_loadAndEval(this->state, nullptr, nullptr);
+  ret = ARState_loadAndEval(this->state, nullptr, nullptr);
   ASSERT_EQ(-1, ret);
 
-  ret = DSState_loadAndEval(nullptr, nullptr, nullptr);
+  ret = ARState_loadAndEval(nullptr, nullptr, nullptr);
   ASSERT_EQ(-1, ret);
 }
 
 TEST_F(APITest, option) {
-  ASSERT_EQ(0, DSState_option(nullptr));
-  ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state));
-  DSState_unsetOption(this->state, DS_OPTION_ASSERT);
-  ASSERT_EQ(0, DSState_option(this->state));
-  DSState_setOption(nullptr, 0);   // do nothing
-  DSState_unsetOption(nullptr, 0); // do nothing
+  ASSERT_EQ(0, ARState_option(nullptr));
+  ASSERT_EQ(AR_OPTION_ASSERT, ARState_option(this->state));
+  ARState_unsetOption(this->state, AR_OPTION_ASSERT);
+  ASSERT_EQ(0, ARState_option(this->state));
+  ARState_setOption(nullptr, 0);   // do nothing
+  ARState_unsetOption(nullptr, 0); // do nothing
 
   const unsigned short option =
-      DS_OPTION_ASSERT | DS_OPTION_INTERACTIVE | DS_OPTION_TRACE_EXIT | DS_OPTION_JOB_CONTROL;
-  DSState_setOption(this->state, option);
-  ASSERT_EQ(option, DSState_option(this->state));
-  DSState_unsetOption(this->state, DS_OPTION_TRACE_EXIT);
-  ASSERT_EQ(DS_OPTION_ASSERT | DS_OPTION_INTERACTIVE | DS_OPTION_JOB_CONTROL,
-            DSState_option(this->state));
-  DSState_unsetOption(this->state, option);
-  ASSERT_EQ(0, DSState_option(this->state));
+      AR_OPTION_ASSERT | AR_OPTION_INTERACTIVE | AR_OPTION_TRACE_EXIT | AR_OPTION_JOB_CONTROL;
+  ARState_setOption(this->state, option);
+  ASSERT_EQ(option, ARState_option(this->state));
+  ARState_unsetOption(this->state, AR_OPTION_TRACE_EXIT);
+  ASSERT_EQ(AR_OPTION_ASSERT | AR_OPTION_INTERACTIVE | AR_OPTION_JOB_CONTROL,
+            ARState_option(this->state));
+  ARState_unsetOption(this->state, option);
+  ASSERT_EQ(0, ARState_option(this->state));
 }
 
 TEST_F(APITest, status) {
-  int s = DSState_exitStatus(this->state);
+  int s = ARState_exitStatus(this->state);
   ASSERT_EQ(0, s); // initial exit status is 0
 
   std::string src = "$? = 98";
-  int ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+  int ret = ARState_eval(this->state, "", src.c_str(), src.size(), nullptr);
   ASSERT_EQ(98, ret);
-  ASSERT_EQ(ret, DSState_exitStatus(this->state));
+  ASSERT_EQ(ret, ARState_exitStatus(this->state));
 
   // truncate
   src = "$? = 9876";
-  ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+  ret = ARState_eval(this->state, "", src.c_str(), src.size(), nullptr);
   ASSERT_EQ(148, ret);
-  ASSERT_EQ(ret, DSState_exitStatus(this->state));
+  ASSERT_EQ(ret, ARState_exitStatus(this->state));
 
   // negative number
   src = "$? = -1";
-  ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+  ret = ARState_eval(this->state, "", src.c_str(), src.size(), nullptr);
   ASSERT_EQ(255, ret);
-  ASSERT_EQ(ret, DSState_exitStatus(this->state));
+  ASSERT_EQ(ret, ARState_exitStatus(this->state));
 }
 
 TEST_F(APITest, abort) {
   std::string src = "function f( $a : String, $b : String) : Int { exit 54; }";
   auto e = newError();
-  int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  int s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
 
   src = R"(["d", ""].sortBy($f))";
   e = newError();
-  s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(1, s);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
 
   src = R"(["d", ""].sortWith($f))";
   e = newError();
-  s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(1, s);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
 
   src = R"(function g( $a : String, $b : String) : Boolean { exit 54; })";
   e = newError();
-  s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
 
   src = R"(["d", ""].sortWith($g))";
   e = newError();
-  s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(54, s);
-  ASSERT_EQ(DS_ERROR_KIND_EXIT, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_EXIT, e->kind);
 }
 
 TEST_F(APITest, pid) {
@@ -490,31 +490,31 @@ TEST_F(APITest, pid) {
   src += ")";
 
   auto e = newError();
-  int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+  int s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   auto kind = e->kind;
   e = newError();
   ASSERT_EQ(0, s);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, kind);
 }
 
 TEST_F(APITest, load1) {
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, "hogehuga", e.get());
+  int r = ARState_loadAndEval(this->state, "hogehuga", e.get());
   int errorNum = errno;
   ASSERT_EQ(1, r);
   ASSERT_EQ(ENOENT, errorNum);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
 
   e = newError();
 }
 
 TEST_F(APITest, load2) {
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, ".", e.get());
+  int r = ARState_loadAndEval(this->state, ".", e.get());
   int errorNum = errno;
   ASSERT_EQ(1, r);
   ASSERT_EQ(EISDIR, errorNum);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
 
   e = newError();
 }
@@ -523,14 +523,14 @@ TEST_F(APITest, load3) {
   auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
+  int r = ARState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  r = DSState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
+  r = ARState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 }
 
@@ -541,14 +541,14 @@ TEST_F(APITest, load4) {
   line += modName;
 
   auto e = newError();
-  int r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
+  int r = ARState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  r = DSState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
+  r = ARState_loadAndEval(this->state, modName.c_str(), e.get()); // file is already loaded
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 }
 
@@ -556,9 +556,9 @@ TEST_F(APITest, load5) {
   auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
+  int r = ARState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   // use loaded module
@@ -569,9 +569,9 @@ assert $m.mod_load_success
 )",
                             modName.c_str());
 
-  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
+  r = ARState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 }
 
@@ -579,9 +579,9 @@ TEST_F(APITest, load6) {
   auto modName = this->createTempFile("mod.ds", "var aaa = 34; \nexit $aaa");
 
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
+  int r = ARState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(34, r);
-  ASSERT_EQ(DS_ERROR_KIND_EXIT, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_EXIT, e->kind);
   ASSERT_EQ(2, e->lineNum);
   e = newError();
 
@@ -592,9 +592,9 @@ echo hello
 )",
                             modName.c_str());
 
-  r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
+  r = ARState_eval(this->state, "(string)", line.c_str(), line.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   ASSERT_STREQ("Unreachable", e->name);
   ASSERT_EQ(3, e->lineNum);
   ASSERT_EQ(1, e->chars);
@@ -613,13 +613,13 @@ TEST_F(APITest, cmdfallback) {
 )");
 
   auto e = newError();
-  int r = DSState_loadAndEval(this->state, modName.c_str(), e.get());
+  int r = ARState_loadAndEval(this->state, modName.c_str(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   const char *argv[] = {"jfirejfoaei", nullptr};
-  r = DSState_exec(this->state, (char **)argv);
+  r = ARState_exec(this->state, (char **)argv);
   ASSERT_EQ(99, r);
 }
 
@@ -652,9 +652,9 @@ TEST_F(APITest, scriptDir) {
 )";
 
   auto error = newError();
-  int ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+  int ret = ARState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
   ASSERT_EQ(0, ret);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, error->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, error->kind);
   error = newError();
 
   /**
@@ -666,8 +666,8 @@ TEST_F(APITest, scriptDir) {
       fatal_perror("chdir failed");
     }
     text = "assert $test1()";
-    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
-    DSState_delete(&this->state);
+    ret = ARState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_EQ(1, output.status.value);
@@ -682,8 +682,8 @@ Assertion Error: `$test1()'
       fatal_perror("chdir failed");
     }
     text = "assert $test2()";
-    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
-    DSState_delete(&this->state);
+    ret = ARState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_EQ(1, output.status.value);
@@ -698,8 +698,8 @@ Assertion Error: `$test2()'
       fatal_perror("chdir failed");
     }
     text = "assert $check($MODULE._scriptDir())";
-    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
-    DSState_delete(&this->state);
+    ret = ARState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_EQ(1, output.status.value);
@@ -714,8 +714,8 @@ Assertion Error: `$check($MODULE._scriptDir())'
       fatal_perror("chdir failed");
     }
     text = "assert $check($SCRIPT_DIR)";
-    ret = DSState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
-    DSState_delete(&this->state);
+    ret = ARState_eval(this->state, "(string)", text.c_str(), text.size(), error.get());
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_EQ(1, output.status.value);
@@ -727,17 +727,17 @@ Assertion Error: `$check($SCRIPT_DIR)'
 }
 
 TEST_F(APITest, module1) {
-  int ret = DSState_loadModule(nullptr, "helllo", 0, nullptr);
+  int ret = ARState_loadModule(nullptr, "helllo", 0, nullptr);
   ASSERT_EQ(-1, ret);
 
-  ret = DSState_loadModule(this->state, nullptr, 0, nullptr);
+  ret = ARState_loadModule(this->state, nullptr, 0, nullptr);
   ASSERT_EQ(-1, ret);
 }
 
 TEST_F(APITest, module2) {
   auto ret = invoke([&] {
-    int ret = DSState_loadModule(this->state, "fhjreuhfurie", 0, nullptr);
-    DSState_delete(&this->state);
+    int ret = ARState_loadModule(this->state, "fhjreuhfurie", 0, nullptr);
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_NO_FATAL_FAILURE(
@@ -745,17 +745,17 @@ TEST_F(APITest, module2) {
                    "arsh: cannot load file: fhjreuhfurie, by `No such file or directory'"));
 
   auto e = newError();
-  int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, e.get());
+  int r = ARState_loadModule(this->state, "fhuahfuiefer", 0, e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
   ASSERT_STREQ(strerror(ENOENT), e->name);
   ASSERT_EQ(0, e->lineNum);
   ASSERT_EQ(0, e->chars);
   e = newError();
 
   ret = invoke([&] {
-    int ret = DSState_loadModule(this->state, "fhjreuhfurie", DS_MOD_IGNORE_ENOENT, nullptr);
-    DSState_delete(&this->state);
+    int ret = ARState_loadModule(this->state, "fhjreuhfurie", AR_MOD_IGNORE_ENOENT, nullptr);
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED));
@@ -764,20 +764,20 @@ TEST_F(APITest, module2) {
 TEST_F(APITest, module3) {
   auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
 
-  int r = DSState_loadModule(this->state, fileName.c_str(), 0, nullptr);
+  int r = ARState_loadModule(this->state, fileName.c_str(), 0, nullptr);
   ASSERT_EQ(0, r);
   std::string src = "assert $OK_LOADING";
-  r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
+  r = ARState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
   ASSERT_EQ(0, r);
 }
 
 TEST_F(APITest, module4) {
   auto fileName = this->createTempFile("target.ds", "source  hoghreua");
   auto e = newError();
-  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT,
+  int r = ARState_loadModule(this->state, fileName.c_str(), AR_MOD_FULLPATH | AR_MOD_IGNORE_ENOENT,
                              e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   ASSERT_STREQ("NotFoundMod", e->name);
   ASSERT_EQ(1, e->lineNum);
   ASSERT_EQ(9, e->chars);
@@ -785,9 +785,9 @@ TEST_F(APITest, module4) {
 
   // check error message
   auto ret = invoke([&] {
-    int ret = DSState_loadModule(this->state, fileName.c_str(),
-                                 DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, nullptr);
-    DSState_delete(&this->state);
+    int ret = ARState_loadModule(this->state, fileName.c_str(),
+                                 AR_MOD_FULLPATH | AR_MOD_IGNORE_ENOENT, nullptr);
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(
@@ -796,9 +796,9 @@ TEST_F(APITest, module4) {
 
 TEST_F(APITest, module5) {
   auto e = newError();
-  int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", DS_MOD_FULLPATH, e.get());
+  int r = ARState_loadModule(this->state, "hfeurhfiurhefuie", AR_MOD_FULLPATH, e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
   ASSERT_STREQ(strerror(ENOENT), e->name);
   ASSERT_EQ(0, e->lineNum);
   ASSERT_EQ(0, e->chars);
@@ -806,8 +806,8 @@ TEST_F(APITest, module5) {
 
   // check error message
   auto ret = invoke([&] {
-    int ret = DSState_loadModule(this->state, "freijjfeir", DS_MOD_FULLPATH, nullptr);
-    DSState_delete(&this->state);
+    int ret = ARState_loadModule(this->state, "freijjfeir", AR_MOD_FULLPATH, nullptr);
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_NO_FATAL_FAILURE(
@@ -825,8 +825,8 @@ TEST_F(APITest, module6) {
 )",
                                        "echo moduel!!; exit 56");
   auto ret = invoke([&] {
-    int ret = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, nullptr);
-    DSState_delete(&this->state);
+    int ret = ARState_loadModule(this->state, fileName.c_str(), AR_MOD_FULLPATH, nullptr);
+    ARState_delete(&this->state);
     return ret;
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(ret, 56, WaitStatus::EXITED, "moduel!!"));
@@ -835,17 +835,17 @@ TEST_F(APITest, module6) {
 TEST_F(APITest, module7) {
   auto fileName = this->createTempFile("mod1", "var AAA = 34");
   auto e = newError();
-  int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, e.get());
+  int r = ARState_loadModule(this->state, fileName.c_str(), AR_MOD_FULLPATH, e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   fileName = this->createTempFile("mod2", "var AAA = $false");
-  r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, e.get());
+  r = ARState_loadModule(this->state, fileName.c_str(), AR_MOD_FULLPATH, e.get());
   ASSERT_EQ(1, r);
   ASSERT_EQ(1, e->lineNum);
   ASSERT_EQ(1, e->chars);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   e = newError();
 }
 
@@ -873,15 +873,15 @@ source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, r
                               dir, dir, dir, dir, dir, dir, dir, dir, dir);
 
   auto e = newError();
-  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
+  int r = ARState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   source = format("source %s/mod_32765", dir);
-  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
+  r = ARState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   ASSERT_STREQ("ModLimit", e->name);
   ASSERT_EQ(11, e->lineNum);
   ASSERT_EQ(8, e->chars);
@@ -891,9 +891,9 @@ source %s/mod_{32762..32764}   # max module num is INT16_MAX (include builtin, r
   std::string src = dir;
   src += "/mod_32770";
 
-  r = DSState_loadAndEval(this->state, src.c_str(), e.get());
+  r = ARState_loadAndEval(this->state, src.c_str(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e->kind);
   ASSERT_STREQ(strerror(EPERM), e->name);
   e = newError();
 }
@@ -923,15 +923,15 @@ source %s/mod_{24572..28666}
                               dir, dir, dir, dir, dir, dir, dir);
 
   auto e = newError();
-  int r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
+  int r = ARState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
   source = format("source %s/mod_{28667..32760}", dir);
-  r = DSState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
+  r = ARState_eval(this->state, "(string)", source.c_str(), source.size(), e.get());
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+  ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
   ASSERT_STREQ("GlobalLimit", e->name);
   ASSERT_EQ(1, e->lineNum);
   ASSERT_EQ(5, e->chars);
@@ -959,12 +959,12 @@ struct Executor {
         setenv(e.first.c_str(), e.second.c_str(), 1);
       }
 
-      DSState *state = DSState_create();
+      ARState *state = ARState_create();
       if (this->jobctrl) {
-        DSState_setOption(state, DS_OPTION_JOB_CONTROL);
+        ARState_setOption(state, AR_OPTION_JOB_CONTROL);
       }
-      int ret = DSState_eval(state, "(string)", this->str.c_str(), this->str.size(), nullptr);
-      DSState_delete(&state);
+      int ret = ARState_eval(state, "(string)", this->str.c_str(), this->str.size(), nullptr);
+      ARState_delete(&state);
       return ret;
     });
   }

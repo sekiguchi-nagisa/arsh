@@ -24,7 +24,7 @@ public:
 
   bool getCalled() const { return this->called; }
 
-  void vmFetchHook(DSState &, OpCode op) override {
+  void vmFetchHook(ARState &, OpCode op) override {
     if (this->breakOp == op) {
       if (this->handler) {
         this->handler();
@@ -33,26 +33,26 @@ public:
     }
   }
 
-  void vmThrowHook(DSState &) override {}
+  void vmThrowHook(ARState &) override {}
 };
 
 class VMTest : public ExpectOutput {
 protected:
-  DSState *state{nullptr};
+  ARState *state{nullptr};
   VMInspector inspector{};
 
 public:
   ~VMTest() override = default;
 
   void SetUp() override {
-    this->state = DSState_create();
+    this->state = ARState_create();
     this->state->setVMHook(&this->inspector);
   }
 
   void TearDown() override {
     this->state->jobTable.send(SIGCONT);
     this->state->jobTable.send(SIGKILL);
-    DSState_delete(&this->state);
+    ARState_delete(&this->state);
   }
 
 private:
@@ -61,16 +61,16 @@ private:
   }
 
 protected:
-  void eval(const char *code, DSErrorKind kind = DS_ERROR_KIND_SUCCESS) {
-    DSError e;
-    DSState_eval(this->state, "(dummy)", code, strlen(code), &e);
+  void eval(const char *code, ARErrorKind kind = AR_ERROR_KIND_SUCCESS) {
+    ARError e;
+    ARState_eval(this->state, "(dummy)", code, strlen(code), &e);
     auto actualKind = e.kind;
-    DSError_release(&e);
+    ARError_release(&e);
     ASSERT_EQ(kind, actualKind);
     ASSERT_TRUE(this->inspector.getCalled());
   }
 
-  void eval(const char *code, DSErrorKind kind, OpCode breakOp, BreakPointHandler &&handler) {
+  void eval(const char *code, ARErrorKind kind, OpCode breakOp, BreakPointHandler &&handler) {
     this->setBreakPointHandler(breakOp, std::move(handler));
     this->eval(code, kind);
   }
@@ -99,8 +99,8 @@ protected:
     IOConfig config{IOConfig::INHERIT, IOConfig::PIPE, IOConfig::PIPE};
     auto handle = ProcBuilder::spawn(config, [&] {
       this->setBreakPointHandler(breakOp, std::move(handler));
-      int r = DSState_eval(this->state, "<dummy>", code, strlen(code), nullptr);
-      DSState_delete(&this->state);
+      int r = ARState_eval(this->state, "<dummy>", code, strlen(code), nullptr);
+      ARState_delete(&this->state);
       return r;
     });
     return handle.waitAndGetResult(true);
@@ -108,7 +108,7 @@ protected:
 };
 
 TEST_F(VMTest, base) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("12", DS_ERROR_KIND_SUCCESS, OpCode::POP, [&] {
+  ASSERT_NO_FATAL_FAILURE(this->eval("12", AR_ERROR_KIND_SUCCESS, OpCode::POP, [&] {
     ASSERT_EQ(12, this->state->getCallStack().peek().asInt());
   }));
 }
@@ -121,18 +121,18 @@ TEST_F(VMTest, deinit1) {
   ASSERT_NO_FATAL_FAILURE(RefCount("a", 1));
 
   ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }",
-                                     DS_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("a", 2)); }));
 }
 
 TEST_F(VMTest, deinit2) {
   ASSERT_NO_FATAL_FAILURE(
-      this->eval("{ var b = $@; throw new Error(''); }", DS_ERROR_KIND_RUNTIME_ERROR));
+      this->eval("{ var b = $@; throw new Error(''); }", AR_ERROR_KIND_RUNTIME_ERROR));
   ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
   ASSERT_NO_FATAL_FAILURE(
       this->eval("{ var a = $@; { var b = $@; var c = $b; throw new Error(''); }}",
-                 DS_ERROR_KIND_RUNTIME_ERROR));
+                 AR_ERROR_KIND_RUNTIME_ERROR));
   ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 }
 
@@ -152,20 +152,20 @@ TEST_F(VMTest, deinit3) {
 
 TEST_F(VMTest, deinit4) {
   ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)",
-                                     DS_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 2)); }));
 }
 
 TEST_F(VMTest, deinit5) {
   ASSERT_NO_FATAL_FAILURE(this->eval(
       "function f($a : [String]) { var b = $a; { var c = $b; $RANDOM; }; var c = $b; }; $f($@)",
-      DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 4)); }));
+      AR_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 4)); }));
 }
 
 TEST_F(VMTest, deinit6) {
   ASSERT_NO_FATAL_FAILURE(this->eval(
       "function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
-      DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 3)); }));
+      AR_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 3)); }));
 }
 
 TEST_F(VMTest, deinit7) {
@@ -173,20 +173,20 @@ TEST_F(VMTest, deinit7) {
   ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
   ASSERT_NO_FATAL_FAILURE(this->eval(
-      "try { while $true { var a = $@; break; } } finally {  $RANDOM; }", DS_ERROR_KIND_SUCCESS,
+      "try { while $true { var a = $@; break; } } finally {  $RANDOM; }", AR_ERROR_KIND_SUCCESS,
       OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, deinit8) {
   ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }",
-                                     DS_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, deinit9) {
   ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw new "
                                      "Error('34'); } finally {  $RANDOM; }",
-                                     DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                                     AR_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -194,7 +194,7 @@ TEST_F(VMTest, deinit10) {
   ASSERT_NO_FATAL_FAILURE(
       this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : RegexMatchError { var "
                  "b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
-                 DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                 AR_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
                  [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -206,7 +206,7 @@ TEST_F(VMTest, stacktop) {
 }
 )";
 
-  ASSERT_NO_FATAL_FAILURE(this->eval(text, DS_ERROR_KIND_SUCCESS, OpCode::RAND,
+  ASSERT_NO_FATAL_FAILURE(this->eval(text, AR_ERROR_KIND_SUCCESS, OpCode::RAND,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -257,18 +257,18 @@ TEST_F(VMTest, sig1) {
 }
 
 TEST_F(VMTest, error) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("var a = 45 / 0;", DS_ERROR_KIND_RUNTIME_ERROR));
-  ASSERT_NO_FATAL_FAILURE(this->eval("$a;", DS_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(this->eval("var a = 45 / 0;", AR_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(this->eval("$a;", AR_ERROR_KIND_RUNTIME_ERROR));
 }
 
 TEST_F(VMTest, abort) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("assert $false; var b = 34", DS_ERROR_KIND_ASSERTION_ERROR));
-  ASSERT_NO_FATAL_FAILURE(this->eval("$b;", DS_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(this->eval("assert $false; var b = 34", AR_ERROR_KIND_ASSERTION_ERROR));
+  ASSERT_NO_FATAL_FAILURE(this->eval("$b;", AR_ERROR_KIND_RUNTIME_ERROR));
 }
 
 TEST_F(VMTest, exit) {
-  ASSERT_NO_FATAL_FAILURE(this->eval("false || exit; var c = 34", DS_ERROR_KIND_EXIT));
-  ASSERT_NO_FATAL_FAILURE(this->eval("$c;", DS_ERROR_KIND_RUNTIME_ERROR));
+  ASSERT_NO_FATAL_FAILURE(this->eval("false || exit; var c = 34", AR_ERROR_KIND_EXIT));
+  ASSERT_NO_FATAL_FAILURE(this->eval("$c;", AR_ERROR_KIND_RUNTIME_ERROR));
 }
 
 TEST_F(VMTest, compCancel) {
@@ -280,7 +280,7 @@ complete -A file ''
 SystemError: code completion is cancelled, caused by `Interrupted system call'
     from <dummy>:2 '<toplevel>()')";
   auto output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
-    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    ARState_setOption(this->state, AR_OPTION_JOB_CONTROL);
     raise(SIGINT);
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
@@ -290,7 +290,7 @@ SystemError: code completion is cancelled, caused by `Interrupted system call'
 complete -A module ''
 )";
   output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
-    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    ARState_setOption(this->state, AR_OPTION_JOB_CONTROL);
     raise(SIGINT);
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
@@ -300,7 +300,7 @@ complete -A module ''
 complete -A cmd ''
 )";
   output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
-    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    ARState_setOption(this->state, AR_OPTION_JOB_CONTROL);
     raise(SIGINT);
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
@@ -310,7 +310,7 @@ complete -A cmd ''
 complete 'echo '
 )";
   output = this->evalInChild(code, OpCode::CALL_CMD, [&] {
-    DSState_setOption(this->state, DS_OPTION_JOB_CONTROL);
+    ARState_setOption(this->state, AR_OPTION_JOB_CONTROL);
     raise(SIGINT);
   });
   ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));

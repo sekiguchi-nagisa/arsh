@@ -32,14 +32,14 @@ extern char **environ; // NOLINT
 namespace arsh {
 
 // core api definition
-const Value &getBuiltinGlobal(const DSState &st, const char *varName) {
+const Value &getBuiltinGlobal(const ARState &st, const char *varName) {
   auto &modType = st.typePool.getBuiltinModType();
   auto handle = modType.lookup(st.typePool, varName);
   assert(handle != nullptr);
   return st.getGlobal(handle->getIndex());
 }
 
-void reassignReplyVar(DSState &st) {
+void reassignReplyVar(ARState &st) {
   if (auto &obj = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::REPLY_VAR));
       obj.getRefcount() > 1) {
     auto &type = st.typePool.get(obj.getTypeID());
@@ -50,14 +50,14 @@ void reassignReplyVar(DSState &st) {
   }
 }
 
-void raiseError(DSState &st, TYPE type, std::string &&message, int64_t status) {
+void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status) {
   assert(message.size() <= SYS_LIMIT_STRING_MAX);
   auto except = ErrorObject::newError(st, st.typePool.get(type),
                                       Value::createStr(std::move(message)), status);
   st.throwObject(std::move(except));
 }
 
-void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
+void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
   assert(errorNum != 0);
   if (errorNum == EINTR) {
     /**
@@ -65,7 +65,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
      * due to eliminate redundant SystemError, force clear SIGINT
      */
     SignalGuard guard;
-    DSState::clearPendingSignal(SIGINT);
+    ARState::clearPendingSignal(SIGINT);
   }
   std::string str(std::move(message));
   if (!str.empty()) {
@@ -77,7 +77,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
-void raiseShellExit(DSState &st, int64_t status) {
+void raiseShellExit(ARState &st, int64_t status) {
   if (st.has(RuntimeOption::HUP_EXIT)) {
     st.jobTable.send(SIGHUP);
   }
@@ -87,7 +87,7 @@ void raiseShellExit(DSState &st, int64_t status) {
   raiseError(st, TYPE::ShellExit_, std::move(str), s);
 }
 
-bool printErrorAt(const DSState &state, StringRef cmdName, int errNum, const char *fmt, ...) {
+bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const char *fmt, ...) {
   // get current frame
   std::string sourceName;
   unsigned int lineNum = 0;
@@ -162,7 +162,7 @@ static bool isUnhandledSignal(int sigNum) {
 }
 
 // when called this handler, all signals are blocked due to signal mask
-static void signalHandler(int sigNum) { DSState::pendingSigSet.add(sigNum); }
+static void signalHandler(int sigNum) { ARState::pendingSigSet.add(sigNum); }
 
 static struct sigaction newSigaction(int sigNum) {
   struct sigaction action {};
@@ -173,7 +173,7 @@ static struct sigaction newSigaction(int sigNum) {
   return action;
 }
 
-static ObjPtr<Object> installUnblock(DSState &st, int sigNum, ObjPtr<Object> handler) {
+static ObjPtr<Object> installUnblock(ARState &st, int sigNum, ObjPtr<Object> handler) {
   auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
   auto IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN).toPtr();
 
@@ -209,12 +209,12 @@ static ObjPtr<Object> installUnblock(DSState &st, int sigNum, ObjPtr<Object> han
   return oldHandler;
 }
 
-ObjPtr<Object> installSignalHandler(DSState &st, int sigNum, ObjPtr<Object> handler) {
+ObjPtr<Object> installSignalHandler(ARState &st, int sigNum, ObjPtr<Object> handler) {
   SignalGuard guard;
   return installUnblock(st, sigNum, std::move(handler));
 }
 
-void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<Object> &handler) {
+void installSignalHandler(ARState &st, SigSet sigSet, const ObjPtr<Object> &handler) {
   SignalGuard guard;
   while (!sigSet.empty()) {
     int sigNum = sigSet.popPendingSig();
@@ -222,7 +222,7 @@ void installSignalHandler(DSState &st, SigSet sigSet, const ObjPtr<Object> &hand
   }
 }
 
-void setJobControlSignalSetting(DSState &st, bool set) {
+void setJobControlSignalSetting(ARState &st, bool set) {
   SignalGuard guard;
 
   auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
@@ -240,7 +240,7 @@ void setJobControlSignalSetting(DSState &st, bool set) {
   installUnblock(st, SIGTTOU, handle);
 }
 
-void setSignalSetting(DSState &state) {
+void setSignalSetting(ARState &state) {
   SignalGuard guard;
 
   for (auto &e : state.sigVector.getData()) {
@@ -255,7 +255,7 @@ void setSignalSetting(DSState &state) {
   sigaction(SIGCHLD, &action, nullptr);
 }
 
-void resetSignalSettingUnblock(DSState &state) {
+void resetSignalSettingUnblock(ARState &state) {
   for (auto &e : state.sigVector.getData()) {
     struct sigaction action {};
     action.sa_handler = SIG_DFL;
@@ -271,7 +271,7 @@ void setLocaleSetting() {
   Locale::restore();
 }
 
-const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int callLevel) {
+const ModType *getRuntimeModuleByLevel(const ARState &state, const unsigned int callLevel) {
   const CompiledCode *code = nullptr;
   unsigned int depth = 0;
   state.getCallStack().walkFrames([&](const ControlFrame &frame) {
@@ -295,22 +295,22 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
 }
 
 bool RuntimeCancelToken::operator()() {
-  bool s = DSState::isInterrupted();
+  bool s = ARState::isInterrupted();
   if (s && this->clearSignal) {
-    DSState::clearPendingSignal(SIGINT);
+    ARState::clearPendingSignal(SIGINT);
   }
   return s;
 }
 
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
-  DSState &state;
+  ARState &state;
   Value reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
 
 public:
-  explicit DefaultCompConsumer(DSState &state)
+  explicit DefaultCompConsumer(ARState &state)
       : state(state),
         reply(Value::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
 
@@ -370,7 +370,7 @@ static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &c
   return Value::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
-static int kickCompHook(DSState &state, unsigned int tempModIndex, const Lexer &lex,
+static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &lex,
                         const CmdNode &cmdNode, const std::string &word, bool tilde,
                         CompCandidateConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
@@ -418,7 +418,7 @@ struct ResolvedTempMod {
   explicit operator bool() const { return this->valid; }
 };
 
-static ResolvedTempMod resolveTempModScope(DSState &state, StringRef desc, bool dupMod) {
+static ResolvedTempMod resolveTempModScope(ARState &state, StringRef desc, bool dupMod) {
   if (desc.startsWith(OBJ_TEMP_MOD_PREFIX) && desc.endsWith(")")) {
     auto id = desc;
     id.removePrefix(strlen(OBJ_TEMP_MOD_PREFIX));
@@ -474,7 +474,7 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
   }
 }
 
-static bool completeImpl(DSState &st, ResolvedTempMod resolvedMod, StringRef source,
+static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef source,
                          const CodeCompOp option, DefaultCompConsumer &consumer) {
   auto scope = st.tempModScope[resolvedMod.index];
   DefaultModuleProvider provider(st.modLoader, st.typePool, scope,
@@ -563,7 +563,7 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   return true;
 }
 
-int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool insertSpace,
+int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool insertSpace,
                      const CodeCompOp option) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
   if (!resolvedMod) {
@@ -578,14 +578,14 @@ int doCodeCompletion(DSState &st, StringRef modDesc, StringRef source, bool inse
 
   // check space insertion
   auto &reply = typeAs<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
-  if (!ret || DSState::isInterrupted() || st.hasError()) {
+  if (!ret || ARState::isInterrupted() || st.hasError()) {
     // if cancelled, force clear completion results (not check iterator invalidation)
     reply.refValues().clear();
     reply.refValues().shrink_to_fit();
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
-    DSState::clearPendingSignal(SIGINT);
+    ARState::clearPendingSignal(SIGINT);
     errno = EINTR;
     return -1;
   } else {
@@ -642,7 +642,7 @@ struct StrErrorConsumer : public ErrorConsumer {
 
   void consume(std::string &&message) override { this->value += message; }
 
-  void consume(DSError &&error) override { DSError_release(&error); }
+  void consume(ARError &&error) override { ARError_release(&error); }
 };
 
 static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
@@ -664,7 +664,7 @@ static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
  * compiled FuncObject.
  * if compilation failed, return ErrorObject
  */
-Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, StringRef expr,
+Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, StringRef expr,
                                                                const ModType &modType) {
   // prepare
   auto scope = NameScope::reopen(state.typePool, *state.rootModScope, modType);
@@ -703,7 +703,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(DSState &state, S
   return Err(toObjPtr<ErrorObject>(error));
 }
 
-std::string resolveFullCommandName(const DSState &state, const Value &name,
+std::string resolveFullCommandName(const ARState &state, const Value &name,
                                    const ModType &modType) {
   CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
   auto cmd = resolver(state, name, &modType);
@@ -735,7 +735,7 @@ std::string resolveFullCommandName(const DSState &state, const Value &name,
   return "";
 }
 
-static bool compare(DSState &state, const Value &x, const Value &y, const Value &compFunc) {
+static bool compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
   auto ret = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
   if (state.hasError()) {
     return false;
@@ -744,7 +744,7 @@ static bool compare(DSState &state, const Value &x, const Value &y, const Value 
   return ret.asBool();
 }
 
-static bool merge(DSState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
+static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
                   size_t left, size_t mid, size_t right) {
   size_t i = left;
   size_t j = mid;
@@ -780,7 +780,7 @@ static bool merge(DSState &state, ArrayObject &arrayObj, Value *buf, const Value
   return true;
 }
 
-static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, Value *buf,
+static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf,
                           const Value &compFunc, size_t left, size_t right) {
   if (left + 1 >= right) {
     return true;
@@ -792,7 +792,7 @@ static bool mergeSortImpl(DSState &state, ArrayObject &arrayObj, Value *buf,
          merge(state, arrayObj, buf, compFunc, left, mid, right);
 }
 
-bool mergeSort(DSState &state, ArrayObject &arrayObj, const Value &compFunc) {
+bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   auto buf = std::make_unique<Value[]>(arrayObj.size());
   assert(!arrayObj.locking());
   arrayObj.lock(ArrayObject::LockType::SORT_WITH);

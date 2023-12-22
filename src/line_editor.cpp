@@ -630,7 +630,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   } /* Can't recover from write error. */
 }
 
-ssize_t LineEditorObject::accept(DSState &state, struct linenoiseState &l) {
+ssize_t LineEditorObject::accept(ARState &state, struct linenoiseState &l) {
   this->kickHistSyncCallback(state, l.buf);
   l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
   if (l.buf.moveCursorToEndOfLine()) {
@@ -684,7 +684,7 @@ static bool rotateHistoryOrUpDown(HistRotator &histRotate, struct linenoiseState
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, size_t bufSize) {
+ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, size_t bufSize) {
   if (this->enableRawMode(this->inFd)) {
     return -1;
   }
@@ -723,7 +723,7 @@ ssize_t LineEditorObject::editLine(DSState &state, StringRef prompt, char *buf, 
   return count;
 }
 
-ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l) {
+ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
   if (unlikely(this->history && !this->history->checkIteratorInvalidation(state))) {
@@ -1006,7 +1006,7 @@ ssize_t LineEditorObject::editInRawMode(DSState &state, struct linenoiseState &l
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-ssize_t LineEditorObject::readline(DSState &state, StringRef prompt, char *buf, size_t bufLen) {
+ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, size_t bufLen) {
   if (bufLen == 0 || bufLen > INT32_MAX) {
     errno = EINVAL;
     return -1;
@@ -1147,7 +1147,7 @@ static LineEditorObject::CompStatus waitPagerAction(ArrayPager &pager, const Key
 }
 
 LineEditorObject::CompStatus
-LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
+LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
   reader.clear();
 
   auto candidates = this->kickCompletionCallback(state, ls.buf.getToCursor());
@@ -1226,7 +1226,7 @@ LineEditorObject::completeLine(DSState &state, struct linenoiseState &ls, KeyCod
   }
 }
 
-Value LineEditorObject::kickCallback(DSState &state, Value &&callback, CallArgs &&callArgs) {
+Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs) {
   int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
@@ -1247,7 +1247,7 @@ Value LineEditorObject::kickCallback(DSState &state, Value &&callback, CallArgs 
   return ret;
 }
 
-ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, StringRef line) {
+ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, StringRef line) {
   assert(this->completionCallback);
 
   const auto *modType = getCurRuntimeModule(state);
@@ -1264,7 +1264,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(DSState &state, Str
   return toObjPtr<ArrayObject>(ret);
 }
 
-bool LineEditorObject::kickHistSyncCallback(DSState &state, const LineBuffer &buf) {
+bool LineEditorObject::kickHistSyncCallback(ARState &state, const LineBuffer &buf) {
   if (!this->history) {
     return true;
   }
@@ -1277,7 +1277,7 @@ bool LineEditorObject::kickHistSyncCallback(DSState &state, const LineBuffer &bu
   }
 }
 
-bool LineEditorObject::kickCustomCallback(DSState &state, LineBuffer &buf, CustomActionType type,
+bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, CustomActionType type,
                                           unsigned int index) {
   StringRef line;
   auto optArg = Value::createInvalid();

@@ -317,7 +317,7 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
     const char *name;
     int kind;
   } resultTable[] = {
-#define DEFINE_ERROR(K) DS_ERROR_KIND_##K
+#define DEFINE_ERROR(K) AR_ERROR_KIND_##K
       {"success", DEFINE_ERROR(SUCCESS)},
       {"parse_error", DEFINE_ERROR(PARSE_ERROR)},
       {"parse", DEFINE_ERROR(PARSE_ERROR)},
@@ -456,22 +456,22 @@ bool Directive::init(const char *sourceName, const char *src, Directive &d) {
   return initDirective(sourceName, input, d);
 }
 
-#define EACH_DS_ERROR_KIND(E)                                                                      \
-  E(DS_ERROR_KIND_SUCCESS)                                                                         \
-  E(DS_ERROR_KIND_FILE_ERROR)                                                                      \
-  E(DS_ERROR_KIND_PARSE_ERROR)                                                                     \
-  E(DS_ERROR_KIND_TYPE_ERROR)                                                                      \
-  E(DS_ERROR_KIND_CODEGEN_ERROR)                                                                   \
-  E(DS_ERROR_KIND_RUNTIME_ERROR)                                                                   \
-  E(DS_ERROR_KIND_ASSERTION_ERROR)                                                                 \
-  E(DS_ERROR_KIND_EXIT)
+#define EACH_AR_ERROR_KIND(E)                                                                      \
+  E(AR_ERROR_KIND_SUCCESS)                                                                         \
+  E(AR_ERROR_KIND_FILE_ERROR)                                                                      \
+  E(AR_ERROR_KIND_PARSE_ERROR)                                                                     \
+  E(AR_ERROR_KIND_TYPE_ERROR)                                                                      \
+  E(AR_ERROR_KIND_CODEGEN_ERROR)                                                                   \
+  E(AR_ERROR_KIND_RUNTIME_ERROR)                                                                   \
+  E(AR_ERROR_KIND_ASSERTION_ERROR)                                                                 \
+  E(AR_ERROR_KIND_EXIT)
 
-const char *toString(DSErrorKind kind) {
+const char *toString(ARErrorKind kind) {
   switch (kind) {
 #define GEN_CASE(K)                                                                                \
-  case DSErrorKind::K:                                                                             \
+  case ARErrorKind::K:                                                                             \
     return #K;
-    EACH_DS_ERROR_KIND(GEN_CASE)
+    EACH_AR_ERROR_KIND(GEN_CASE)
 #undef GEN_CASE
   }
   return "";

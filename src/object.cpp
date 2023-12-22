@@ -493,7 +493,7 @@ int Value::compare(const Value &o) const {
   }
 }
 
-bool Value::appendAsStr(DSState &state, StringRef value) {
+bool Value::appendAsStr(ARState &state, StringRef value) {
   assert(this->hasStrRef());
 
   const bool small = isSmallStr(this->kind());
@@ -539,7 +539,7 @@ UnixFdObject::~UnixFdObject() {
 // ##     RegexObject     ##
 // #########################
 
-int RegexObject::match(DSState &state, StringRef ref, std::vector<Value> *out) {
+int RegexObject::match(ARState &state, StringRef ref, std::vector<Value> *out) {
   std::string errorStr;
   int matchCount = this->re.match(ref, errorStr);
   if (!errorStr.empty()) {
@@ -563,7 +563,7 @@ int RegexObject::match(DSState &state, StringRef ref, std::vector<Value> *out) {
 // ##     Array_Object     ##
 // ##########################
 
-bool ArrayObject::append(DSState &state, Value &&obj) {
+bool ArrayObject::append(ARState &state, Value &&obj) {
   if (unlikely(!this->checkIteratorInvalidation(state))) {
     return false;
   }
@@ -575,7 +575,7 @@ bool ArrayObject::append(DSState &state, Value &&obj) {
   return true;
 }
 
-bool ArrayObject::checkIteratorInvalidation(DSState &state, const char *message) const {
+bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message) const {
   if (this->locking()) {
     std::string value = "cannot modify array object";
     StringRef ref = message;
@@ -733,7 +733,7 @@ bool CmdArgsBuilder::add(Value &&arg) {
 // ##     Error_Object     ##
 // ##########################
 
-void ErrorObject::printStackTrace(const DSState &state, PrintOp op) const {
+void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   // print header
   switch (op) {
   case PrintOp::DEFAULT:
@@ -783,7 +783,7 @@ void ErrorObject::printStackTrace(const DSState &state, PrintOp op) const {
   fflush(stderr);
 }
 
-ObjPtr<ErrorObject> ErrorObject::newError(const DSState &state, const DSType &type, Value &&message,
+ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const DSType &type, Value &&message,
                                           int64_t status) {
   std::vector<StackTraceElement> traces;
   state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {

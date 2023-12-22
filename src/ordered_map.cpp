@@ -283,7 +283,7 @@ void OrderedMapObject::rehash(bool grow) {
   }
 }
 
-bool OrderedMapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar) const {
+bool OrderedMapObject::checkIteratorInvalidation(ARState &state, bool isReplyVar) const {
   if (this->inIteration()) {
     std::string value = "cannot modify map object";
     if (isReplyVar) {
@@ -296,7 +296,7 @@ bool OrderedMapObject::checkIteratorInvalidation(DSState &state, bool isReplyVar
   return true;
 }
 
-Value OrderedMapObject::put(DSState &st, Value &&key, Value &&value) {
+Value OrderedMapObject::put(ARState &st, Value &&key, Value &&value) {
   auto pair = this->insert(key, Value(value));
   if (pair.second) { // success insertion
     return Value::createInvalid();

@@ -50,12 +50,12 @@ struct ErrorConsumer {
 
   virtual void consume(std::string &&message) = 0;
 
-  virtual void consume(DSError &&error) = 0;
+  virtual void consume(ARError &&error) = 0;
 };
 
 class DefaultErrorConsumer : public ErrorConsumer {
 private:
-  DSError *dsError;
+  ARError *dsError;
   FILE *fp;
   bool tty;
 
@@ -67,7 +67,7 @@ public:
    * may be null
    * @param close
    */
-  DefaultErrorConsumer(DSError *error, FILE *fp);
+  DefaultErrorConsumer(ARError *error, FILE *fp);
 
   ~DefaultErrorConsumer() override = default;
 
@@ -75,7 +75,7 @@ public:
 
   void consume(std::string &&message) override;
 
-  void consume(DSError &&error) override;
+  void consume(ARError &&error) override;
 };
 
 class ErrorReporter : public FrontEnd::ErrorListener {
@@ -95,7 +95,7 @@ public:
                           const CodeGenError &codeGenError);
 
 private:
-  bool handleError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx, DSErrorKind type,
+  bool handleError(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx, ARErrorKind type,
                    const char *errorKind, Token errorToken, const char *message);
 
   void printError(const Lexer &lexer, const char *kind, Token token, TermColor c,

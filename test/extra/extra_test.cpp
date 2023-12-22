@@ -124,30 +124,30 @@ TEST_F(ModLoadTest, system) {
 }
 
 struct APITest : public ExpectOutput {
-  DSState *state{nullptr};
+  ARState *state{nullptr};
 
-  APITest() { this->state = DSState_create(); }
+  APITest() { this->state = ARState_create(); }
 
-  ~APITest() override { DSState_delete(&this->state); }
+  ~APITest() override { ARState_delete(&this->state); }
 };
 
 TEST_F(APITest, modFullpath) {
-  DSError e;
-  int r = DSState_loadModule(this->state, "repl", DS_MOD_FULLPATH, &e); // not load 'repl'
+  ARError e;
+  int r = ARState_loadModule(this->state, "repl", AR_MOD_FULLPATH, &e); // not load 'repl'
   ASSERT_EQ(1, r);
-  ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+  ASSERT_EQ(AR_ERROR_KIND_FILE_ERROR, e.kind);
   ASSERT_STREQ(strerror(ENOENT), e.name);
   ASSERT_EQ(0, e.lineNum);
-  DSError_release(&e);
+  ARError_release(&e);
 }
 
 TEST_F(APITest, mod) {
-  DSError e;
-  int r = DSState_loadModule(this->state, "repl", 0, &e);
+  ARError e;
+  int r = ARState_loadModule(this->state, "repl", 0, &e);
   ASSERT_EQ(0, r);
-  ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+  ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e.kind);
   ASSERT_EQ(0, e.lineNum);
-  DSError_release(&e);
+  ARError_release(&e);
 }
 
 int main(int argc, char **argv) {
