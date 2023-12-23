@@ -105,6 +105,7 @@
 - not allow file descriptor number before ``&>``, ``&>|``, ``&>>`` redirections
 - fix typo of builtin ``command`` message
 - fix ``errraise`` option handling in builtin ``command``, ``exec``
+- fix ``-g`` unary op behavior of builtin test command
 
 ## [0.31.0] - 2023-09-30
 

@@ -203,7 +203,7 @@ static UnaryFileOp resolveFileOp(const char ch) {
   const struct {
     char s;
     UnaryFileOp op;
-  } table[] = {{'e', UnaryFileOp::IS_EXIST},  // alias for '-a'
+  } table[] = {{'e', UnaryFileOp::IS_EXIST},   // alias for '-a'
                {'L', UnaryFileOp::IS_SYMLINK}, // alias for '-h'
 #define GEN_TABLE(E, S) {S, UnaryFileOp::E},
                EACH_UNARY_FILE_OP(GEN_TABLE)
@@ -239,9 +239,9 @@ static bool testFile(const UnaryFileOp op, const char *value) {
   case UnaryFileOp::IS_DIR:
     return S_ISDIR(getStMode(value)); // check if file is directory
   case UnaryFileOp::IS_FILE:
-    return S_ISREG(getStMode(value));             // check if file is regular file.
-  case UnaryFileOp::HAS_GID_BIT:                  // FIXME: set gid
-    return S_IS_PERM_(getStMode(value), S_ISUID); // check if file has set-uid-bit
+    return S_ISREG(getStMode(value)); // check if file is regular file.
+  case UnaryFileOp::HAS_GID_BIT:
+    return S_IS_PERM_(getStMode(value), S_ISGID); // check if file has set-gid-bit
   case UnaryFileOp::IS_SYMLINK: {
     mode_t mode = 0;
     struct stat st; // NOLINT
