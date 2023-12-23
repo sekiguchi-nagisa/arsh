@@ -21,157 +21,11 @@
 
 namespace arsh {
 
-#define EACH_BINARY_STR_COMP_OP(OP)                                                                \
-  OP(STR_EQ, "==", ==) /* also accept '=' */                                                       \
-  OP(STR_NE, "!=", !=)                                                                             \
-  OP(STR_LT, "<", <)                                                                               \
-  OP(STR_GT, ">", >)
-
-#define EACH_BINARY_INT_COMP_OP(OP)                                                                \
-  OP(EQ, "-eq", ==)                                                                                \
-  OP(NE, "-ne", !=)                                                                                \
-  OP(LT, "-lt", <)                                                                                 \
-  OP(GT, "-gt", >)                                                                                 \
-  OP(LE, "-le", <=)                                                                                \
-  OP(GE, "-ge", >=)
-
-#define EACH_BINARY_FILE_COMP_OP(OP)                                                               \
-  OP(NT, "-nt", %)                                                                                 \
-  OP(OT, "-ot", %)                                                                                 \
-  OP(EF, "-ef", %)
-
-enum class BinaryOp : unsigned char {
-  INVALID,
-#define GEN_ENUM(E, S, O) E,
-  EACH_BINARY_STR_COMP_OP(GEN_ENUM) EACH_BINARY_INT_COMP_OP(GEN_ENUM)
-      EACH_BINARY_FILE_COMP_OP(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-static BinaryOp resolveBinaryOp(StringRef opStr) {
-  const struct {
-    const char *k;
-    BinaryOp op;
-  } table[] = {{"=", BinaryOp::STR_EQ}, // alias for '=='
-#define GEN_ENTRY(E, S, O) {S, BinaryOp::E},
-               EACH_BINARY_INT_COMP_OP(GEN_ENTRY) EACH_BINARY_STR_COMP_OP(GEN_ENTRY)
-                   EACH_BINARY_FILE_COMP_OP(GEN_ENTRY)
-#undef GEN_ENTRY
-  };
-  for (auto &e : table) {
-    if (opStr == e.k) {
-      return e.op;
-    }
-  }
-  return BinaryOp::INVALID;
+static int eval1ArgExpr(const StringRef arg) {
+  return !arg.empty() ? 0 : 1; // check if string is not empty
 }
 
-static bool compareStr(StringRef left, BinaryOp op, StringRef right) {
-  switch (op) {
-#define GEN_CASE(E, S, O)                                                                          \
-  case BinaryOp::E:                                                                                \
-    return left O right;
-    EACH_BINARY_STR_COMP_OP(GEN_CASE)
-#undef GEN_CASE
-  default:
-    break;
-  }
-  return false;
-}
-
-static bool compareInt(int64_t x, BinaryOp op, int64_t y) {
-  switch (op) {
-#define GEN_CASE(E, S, O)                                                                          \
-  case BinaryOp::E:                                                                                \
-    return x O y;
-    EACH_BINARY_INT_COMP_OP(GEN_CASE)
-#undef GEN_CASE
-  default:
-    break;
-  }
-  return false;
-}
-
-static bool operator<(const timespec &left, const timespec &right) {
-  if (left.tv_sec == right.tv_sec) {
-    return left.tv_nsec < right.tv_nsec;
-  }
-  return left.tv_sec < right.tv_sec;
-}
-
-static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
-  if (x.hasNullChar() || y.hasNullChar()) {
-    return false;
-  }
-
-  struct stat st1; // NOLINT
-  struct stat st2; // NOLINT
-
-  if (stat(x.data(), &st1) != 0) {
-    return false;
-  }
-  if (stat(y.data(), &st2) != 0) {
-    return false;
-  }
-
-  switch (op) {
-  case BinaryOp::NT:
-#ifdef __APPLE__
-    return st2.st_mtimespec < st1.st_mtimespec;
-#else
-    return st2.st_mtim < st1.st_mtim;
-#endif
-  case BinaryOp::OT:
-#ifdef __APPLE__
-    return st1.st_mtimespec < st2.st_mtimespec;
-#else
-    return st1.st_mtim < st2.st_mtim;
-#endif
-  case BinaryOp::EF:
-    return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
-  default:
-    return false;
-  }
-}
-
-static int evalBinaryOp(const ARState &st, const ArrayObject &argvObj, StringRef left, BinaryOp op,
-                        StringRef right) {
-  bool result = false;
-  switch (op) {
-#define GEN_CASE(E, S, O) case BinaryOp::E:
-    EACH_BINARY_STR_COMP_OP(GEN_CASE) {
-      result = compareStr(left, op, right);
-      break;
-    }
-    EACH_BINARY_INT_COMP_OP(GEN_CASE) {
-      auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
-      const int64_t n1 = pair.value;
-      if (!pair) {
-        ERROR(st, argvObj, "%s: must be integer", toPrintable(left).c_str());
-        return 2;
-      }
-
-      pair = convertToDecimal<int64_t>(right.begin(), right.end());
-      const int64_t n2 = pair.value;
-      if (!pair) {
-        ERROR(st, argvObj, "%s: must be integer", toPrintable(right).c_str());
-        return 2;
-      }
-
-      result = compareInt(n1, op, n2);
-      break;
-    }
-    EACH_BINARY_FILE_COMP_OP(GEN_CASE) {
-      result = compareFile(left, op, right);
-      break;
-    }
-#undef GEN_CASE
-  case BinaryOp::INVALID:
-    break; // unreachable
-  }
-  return result ? 0 : 1;
-}
-
+// for unary op
 #define EACH_UNARY_FILE_OP(OP)                                                                     \
   OP(IS_EXIST, 'a') /* also accept '-e' */                                                         \
   OP(IS_BLOCK, 'b')                                                                                \
@@ -288,69 +142,285 @@ static bool testFile(const UnaryFileOp op, const char *value) {
   return false;
 }
 
-static int evalUnaryOp(const ARState &st, const ArrayObject &argvObj, const StringRef op,
-                       const StringRef arg) {
-  if (op.size() != 2 || op[0] != '-') {
-    ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
-    return 2;
+static int negateStatus(int status) {
+  if (status == 0) {
+    return 1;
+  }
+  if (status == 1) {
+    return 0;
+  }
+  return status;
+}
+
+static int eval2ArgsExpr(const ARState &st, const ArrayObject &argvObj, const StringRef op,
+                         const StringRef arg) {
+  if (op == "!") {
+    return negateStatus(eval1ArgExpr(arg));
+  }
+  if (op.size() == 2 && op[0] == '-') {
+    const char opKind = op[1]; // ignore -
+    if (opKind == 'z') {       // check if string is empty
+      return arg.empty() ? 0 : 1;
+    }
+    if (opKind == 'n') { // check if string not empty
+      return !arg.empty() ? 0 : 1;
+    }
+    if (const auto fileOp = resolveFileOp(opKind); fileOp != UnaryFileOp::INVALID) {
+      if (arg.hasNullChar()) {
+        ERROR(st, argvObj, "file path contains null characters");
+        return 2;
+      }
+      return testFile(fileOp, arg.data()) ? 0 : 1;
+    }
+  }
+  ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
+  return 2;
+}
+
+// for binary op
+
+#define EACH_BINARY_STR_COMP_OP(OP)                                                                \
+  OP(STR_EQ, "==", ==) /* also accept '=' */                                                       \
+  OP(STR_NE, "!=", !=)                                                                             \
+  OP(STR_LT, "<", <)                                                                               \
+  OP(STR_GT, ">", >)
+
+#define EACH_BINARY_INT_COMP_OP(OP)                                                                \
+  OP(EQ, "-eq", ==)                                                                                \
+  OP(NE, "-ne", !=)                                                                                \
+  OP(LT, "-lt", <)                                                                                 \
+  OP(GT, "-gt", >)                                                                                 \
+  OP(LE, "-le", <=)                                                                                \
+  OP(GE, "-ge", >=)
+
+#define EACH_BINARY_FILE_COMP_OP(OP)                                                               \
+  OP(NT, "-nt", %)                                                                                 \
+  OP(OT, "-ot", %)                                                                                 \
+  OP(EF, "-ef", %)
+
+enum class BinaryOp : unsigned char {
+  INVALID,
+#define GEN_ENUM(E, S, O) E,
+  EACH_BINARY_STR_COMP_OP(GEN_ENUM) EACH_BINARY_INT_COMP_OP(GEN_ENUM)
+      EACH_BINARY_FILE_COMP_OP(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+static BinaryOp resolveBinaryOp(StringRef opStr) {
+  const struct {
+    const char *k;
+    BinaryOp op;
+  } table[] = {{"=", BinaryOp::STR_EQ}, // alias for '=='
+#define GEN_ENTRY(E, S, O) {S, BinaryOp::E},
+               EACH_BINARY_INT_COMP_OP(GEN_ENTRY) EACH_BINARY_STR_COMP_OP(GEN_ENTRY)
+                   EACH_BINARY_FILE_COMP_OP(GEN_ENTRY)
+#undef GEN_ENTRY
+  };
+  for (auto &e : table) {
+    if (opStr == e.k) {
+      return e.op;
+    }
+  }
+  return BinaryOp::INVALID;
+}
+
+static bool compareStr(StringRef left, BinaryOp op, StringRef right) {
+  switch (op) {
+#define GEN_CASE(E, S, O)                                                                          \
+  case BinaryOp::E:                                                                                \
+    return left O right;
+    EACH_BINARY_STR_COMP_OP(GEN_CASE)
+#undef GEN_CASE
+  default:
+    break;
+  }
+  return false;
+}
+
+static bool compareInt(int64_t x, BinaryOp op, int64_t y) {
+  switch (op) {
+#define GEN_CASE(E, S, O)                                                                          \
+  case BinaryOp::E:                                                                                \
+    return x O y;
+    EACH_BINARY_INT_COMP_OP(GEN_CASE)
+#undef GEN_CASE
+  default:
+    break;
+  }
+  return false;
+}
+
+static bool operator<(const timespec &left, const timespec &right) {
+  if (left.tv_sec == right.tv_sec) {
+    return left.tv_nsec < right.tv_nsec;
+  }
+  return left.tv_sec < right.tv_sec;
+}
+
+static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
+  if (x.hasNullChar() || y.hasNullChar()) {
+    return false;
   }
 
-  const char opKind = op[1]; // ignore -
-  if (opKind == 'z') {       // check if string is empty
-    return arg.empty() ? 0 : 1;
-  } else if (opKind == 'n') { // check if string not empty
-    return !arg.empty() ? 0 : 1;
-  } else {
-    if (arg.hasNullChar()) {
-      ERROR(st, argvObj, "file path contains null characters");
-      return 2;
-    }
-    const auto fileOp = resolveFileOp(opKind);
-    if (fileOp == UnaryFileOp::INVALID) {
-      ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
-      return 2;
-    }
-    return testFile(fileOp, arg.data()) ? 0 : 1;
+  struct stat st1; // NOLINT
+  struct stat st2; // NOLINT
+
+  if (stat(x.data(), &st1) != 0) {
+    return false;
+  }
+  if (stat(y.data(), &st2) != 0) {
+    return false;
+  }
+
+  switch (op) {
+  case BinaryOp::NT:
+#ifdef __APPLE__
+    return st2.st_mtimespec < st1.st_mtimespec;
+#else
+    return st2.st_mtim < st1.st_mtim;
+#endif
+  case BinaryOp::OT:
+#ifdef __APPLE__
+    return st1.st_mtimespec < st2.st_mtimespec;
+#else
+    return st1.st_mtim < st2.st_mtim;
+#endif
+  case BinaryOp::EF:
+    return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
+  default:
+    return false;
   }
 }
 
-int builtin_test(ARState &st, ArrayObject &argvObj) {
-  bool result = false;
-  unsigned int argc = argvObj.getValues().size();
-  const unsigned int argSize = argc - 1;
+static int needCloseParen(const ARState &st, const ArrayObject &argvObj, const StringRef actual) {
+  ERROR(st, argvObj, "expect: `)', but actual: %s", toPrintable(actual).c_str());
+  return 2;
+}
 
-  switch (argSize) {
-  case 0: {
-    result = false;
-    break;
-  }
-  case 1: {
-    result = !argvObj.getValues()[1].asStrRef().empty(); // check if string is not empty
-    break;
-  }
-  case 2: { // unary op
-    auto op = argvObj.getValues()[1].asStrRef();
-    auto ref = argvObj.getValues()[2].asStrRef();
-    return evalUnaryOp(st, argvObj, op, ref);
-  }
-  case 3: { // binary op
-    auto left = argvObj.getValues()[1].asStrRef();
-    auto op = argvObj.getValues()[2].asStrRef();
-    auto opKind = resolveBinaryOp(op);
-    auto right = argvObj.getValues()[3].asStrRef();
+static int eval3ArgsExpr(const ARState &st, const ArrayObject &argvObj, const StringRef left,
+                         const StringRef opStr, const StringRef right) {
+  const auto op = resolveBinaryOp(opStr);
+  switch (op) {
+#define GEN_CASE(E, S, O) case BinaryOp::E:
+    EACH_BINARY_STR_COMP_OP(GEN_CASE) { return compareStr(left, op, right) ? 0 : 1; }
+    EACH_BINARY_INT_COMP_OP(GEN_CASE) {
+      auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
+      const int64_t n1 = pair.value;
+      if (!pair) {
+        ERROR(st, argvObj, "%s: must be integer", toPrintable(left).c_str());
+        return 2;
+      }
 
-    if (opKind == BinaryOp::INVALID) {
-      ERROR(st, argvObj, "%s: invalid binary operator", toPrintable(op).c_str()); // FIXME:
-      return 2;
+      pair = convertToDecimal<int64_t>(right.begin(), right.end());
+      const int64_t n2 = pair.value;
+      if (!pair) {
+        ERROR(st, argvObj, "%s: must be integer", toPrintable(right).c_str());
+        return 2;
+      }
+
+      return compareInt(n1, op, n2) ? 0 : 1;
     }
-    return evalBinaryOp(st, argvObj, left, opKind, right);
+    EACH_BINARY_FILE_COMP_OP(GEN_CASE) { return compareFile(left, op, right) ? 0 : 1; }
+#undef GEN_CASE
+  case BinaryOp::INVALID:
+    break;
   }
-  default: {
-    ERROR(st, argvObj, "too many arguments");
-    return 2;
+
+  if (opStr == "-a") {
+    const int s1 = eval1ArgExpr(left);
+    const int s2 = eval1ArgExpr(right);
+    return s1 == 0 && s2 == 0 ? 0 : 1;
   }
+  if (opStr == "-o") {
+    const int s1 = eval1ArgExpr(left);
+    const int s2 = eval1ArgExpr(right);
+    return s1 == 0 || s2 == 0 ? 0 : 1;
   }
-  return result ? 0 : 1;
+
+  if (left == "!") {
+    return negateStatus(eval2ArgsExpr(st, argvObj, opStr, right));
+  }
+  if (left == "(") {
+    if (right == ")") {
+      return eval1ArgExpr(opStr);
+    }
+    return needCloseParen(st, argvObj, right);
+  }
+  ERROR(st, argvObj, "%s: invalid binary operator", toPrintable(opStr).c_str());
+  return 2;
+}
+
+class Evaluator {
+private:
+  ARState &st;
+  const ArrayObject &argvObj;
+  unsigned int offset{1};
+  unsigned int depth{0}; // check deep recursion
+
+  static constexpr unsigned int RECURSION_LIMIT = 16;
+
+public:
+  Evaluator(ARState &st, const ArrayObject &argvObj) : st(st), argvObj(argvObj) {}
+
+  int eval(unsigned int limitOffset);
+
+private:
+  StringRef get(unsigned int index) const { return this->argvObj.getValues()[index].asStrRef(); }
+
+  StringRef consume() { return this->get(this->offset++); }
+};
+
+int Evaluator::eval(const unsigned limitOffset) {
+  if (++this->depth == RECURSION_LIMIT) {
+    return 3; // FIXME: raise error ?
+  }
+  assert(this->offset <= limitOffset);
+  switch (limitOffset - this->offset) {
+  case 0:
+    return 1;
+  case 1: {
+    const auto arg = this->consume();
+    return eval1ArgExpr(arg);
+  }
+  case 2: {
+    const auto arg1 = this->consume();
+    const auto arg2 = this->consume();
+    return eval2ArgsExpr(this->st, this->argvObj, arg1, arg2);
+  }
+  case 3: {
+    const auto arg1 = this->consume();
+    const auto arg2 = this->consume();
+    const auto arg3 = this->consume();
+    return eval3ArgsExpr(this->st, this->argvObj, arg1, arg2, arg3);
+  }
+  case 4: {
+    const unsigned int oldOffset = this->offset;
+    const auto arg1 = this->consume();
+    const auto arg2 = this->consume();
+    const auto arg3 = this->consume();
+    const auto arg4 = this->consume();
+    if (arg1 == "!") {
+      return negateStatus(eval3ArgsExpr(this->st, this->argvObj, arg2, arg3, arg4));
+    }
+    if (arg1 == "(") {
+      if (arg4 == ")") {
+        return eval2ArgsExpr(this->st, this->argvObj, arg2, arg3);
+      }
+      return needCloseParen(this->st, this->argvObj, arg4);
+    }
+    this->offset = oldOffset; // restore offset
+    break;
+  }
+  default:
+    break;
+  }
+  ERROR(this->st, this->argvObj, "too many arguments");
+  return 2;
+}
+
+int builtin_test(ARState &st, ArrayObject &argvObj) {
+  Evaluator evaluator(st, argvObj);
+  return evaluator.eval(argvObj.size());
 }
 
 } // namespace arsh

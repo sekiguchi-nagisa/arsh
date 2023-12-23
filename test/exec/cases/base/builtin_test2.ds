@@ -1,0 +1,64 @@
+
+# for complex expression
+# ! expr
+# ( expr )
+# expr1 -a expr2
+# expr1 -o expr2
+
+## 2 arguments
+assert ! (test '!' a)
+assert $? == 1
+assert (test '!' "")
+assert $? == 0
+
+## 3 arguments
+assert (test '(' a ')' )
+assert $? == 0
+assert ! (test '(' "" ')' )
+assert $? == 1
+assert "$(test '(' "a" 'a' 2>&1)" == "${$SCRIPT_NAME.basename()}:19: test: expect: \`)', but actual: a"
+assert $? == 2
+
+assert "$(test '!' a ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:22: test: a: invalid unary operator"
+assert $? == 2
+assert (test '!' '!' ')' )
+assert $? == 0
+assert ! (test '!' '!' '' )
+assert $? == 1
+assert ! (test '!' '-z' '' )
+assert $? == 1
+assert  (test '!' '-z' '1' )
+assert $? == 0
+assert  (test '!' '-n' '' )
+assert $? == 0
+
+assert (test 'aa' -a 'aa')
+assert $? == 0
+assert ! (test '' -a 'aa')
+assert $? == 1
+assert ! (test 'aa' -a '')
+assert $? == 1
+
+assert (test '' -o 'aa')
+assert $? == 0
+assert (test 'a' -o '')
+assert $? == 0
+assert (test 'a' -o 'aa')
+assert $? == 0
+assert ! (test '' -o '')
+assert $? == 1
+
+## 4 arguments
+assert ! (test '!' 12 '-lt' 34)
+assert $? == 1
+assert "$(test '!' 12 'lt' 34 2>&1)" == "${$SCRIPT_NAME.basename()}:54: test: lt: invalid binary operator"
+assert $? == 2
+assert (test '!' 12 '-gt' 34)
+assert $? == 0
+
+assert (test '(' -z "" ")")
+assert $? == 0
+assert "$(test '(' -n "33" "a" 2>&1)" == "${$SCRIPT_NAME.basename()}:61: test: expect: \`)', but actual: a"
+assert $? == 2
+assert (test '(' -n "33" ")")
+assert $? == 0
