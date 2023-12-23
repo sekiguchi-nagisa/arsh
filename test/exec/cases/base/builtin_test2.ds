@@ -12,7 +12,7 @@ assert (test '!' "")
 assert $? == 0
 assert "$(test '(' ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:13: test: expect arguments within \`( )'"
 assert $? == 2
-assert "$(test '(' 'aaa' 2>&1)" == "${$SCRIPT_NAME.basename()}:15: test: expect: \`)', but actual: "
+assert "$(test '(' 'aaa' 2>&1)" == "${$SCRIPT_NAME.basename()}:15: test: expect: \`)'"
 assert $? == 2
 
 ## 3 arguments
@@ -68,5 +68,34 @@ assert (test '(' -n "33" ")")
 assert $? == 0
 assert "$(test '(' '(' ')' ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:69: test: expect arguments within \`( )'"
 assert $? == 2
+assert "$(test '123' '==' 123 'aaa' 2>&1)" == "${$SCRIPT_NAME.basename()}:71: test: too many arguments"
+assert $? == 2
+
+## 5 or more arguments
+assert (test '(' '(' 1234 ')' ')')
+assert (test '(' '(' '(' 1234 ')' ')' ')')
+assert ! (test '(' '(' '' ')' ')')
+assert $? == 1
+assert ! (test  '(' '(' '(' '' ')' ')' ')')
+assert $? == 1
+
+assert (test '(' '123' -eq '123' ')' -a 1234)
+assert ! (test '(' '123' -eq '123' ')' -a )
+assert $? == 1
+
+assert "$(test '(' '(' -n ')' ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:86: test: expect: \`)'"
+
+## nest
+var opens : [String]
+for(var i = 0; $i < 20; $i++) {
+    $opens.add('(')
+}
+var closes : [String]
+for(var i = 0; $i < $opens.size(); $i++) {
+    $closes.add(')')
+}
+
+assert "$(test $opens aaa $closes 2>&1)" == "${$SCRIPT_NAME.basename()}:98: test: too many nesting"
+assert $? == 3
 
 true

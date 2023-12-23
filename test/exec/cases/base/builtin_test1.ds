@@ -166,6 +166,10 @@ test -k .
 assert($? == 1)
 
 let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+defer {
+    rm -rf $tmp_dir
+    true
+}
 var pipe = "$tmp_dir/hogefaefpdew_pipe"
 mkfifo $pipe
 test -p $pipe
@@ -307,5 +311,4 @@ assert($? == 2)
 test hoge hoge
 assert($? == 2)
 
-rm -rf $tmp_dir
 true

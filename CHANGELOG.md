@@ -81,6 +81,8 @@
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version
 - check io error in builtin ``command``
+- builtin ``test`` command support more than 3 arguments
+    - also support ``!``, ``( )``,``-o``, ``-a`` expressions
 
 #### API
 

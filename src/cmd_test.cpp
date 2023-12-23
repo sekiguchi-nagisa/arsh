@@ -153,7 +153,8 @@ static int negateStatus(int status) {
 }
 
 static int needCloseParen(const ARState &st, const ArrayObject &argvObj, const StringRef actual) {
-  ERROR(st, argvObj, "expect: `)', but actual: %s", toPrintable(actual).c_str());
+  const char *suffix = actual.empty() ? "" : ", but actual: ";
+  ERROR(st, argvObj, "expect: `)'%s%s", suffix, toPrintable(actual).c_str());
   return 2;
 }
 
@@ -187,6 +188,14 @@ static int eval2ArgsExpr(const ARState &st, const ArrayObject &argvObj, const St
   }
   ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
   return 2;
+}
+
+static bool isUnaryOp(const StringRef op) {
+  if (op.size() == 2 && op[0] == '-') {
+    const char o = op[1];
+    return o == 'z' || o == 'n' || resolveFileOp(o) != UnaryFileOp::INVALID;
+  }
+  return false;
 }
 
 // for binary op
@@ -357,6 +366,15 @@ static int eval3ArgsExpr(const ARState &st, const ArrayObject &argvObj, const St
   return 2;
 }
 
+#define TRY(E)                                                                                     \
+  ({                                                                                               \
+    int s = (E);                                                                                   \
+    if (s != 0 && s != 1) {                                                                        \
+      return s;                                                                                    \
+    }                                                                                              \
+    s;                                                                                             \
+  })
+
 class Evaluator {
 private:
   ARState &st;
@@ -369,18 +387,64 @@ private:
 public:
   Evaluator(ARState &st, const ArrayObject &argvObj) : st(st), argvObj(argvObj) {}
 
-  int eval(unsigned int limitOffset);
+  int eval() {
+    const unsigned int size = this->argvObj.size();
+    int s = TRY(this->evalOrExpr(size, 0));
+    if (this->offset < size) {
+      ERROR(this->st, this->argvObj, "too many arguments");
+      return 2;
+    }
+    return s;
+  }
 
 private:
   StringRef get(unsigned int index) const { return this->argvObj.getValues()[index].asStrRef(); }
 
   StringRef consume() { return this->get(this->offset++); }
+
+  StringRef current() const { return this->get(this->offset); }
+
+  int evalOrExpr(unsigned int limitOffset, unsigned int level) {
+    int s1 = 1;
+    unsigned int count = 0;
+    do {
+      if (count++ > 0) {
+        this->consume();
+      }
+      const int s2 = TRY(this->evalAndExpr(limitOffset, level));
+      s1 = s1 == 0 || s2 == 0 ? 0 : 1;
+    } while (this->offset < limitOffset && this->current() == "-o");
+    return s1;
+  }
+
+  int evalAndExpr(unsigned int limitOffset, unsigned int level) {
+    int s1 = 0;
+    unsigned int count = 0;
+    do {
+      if (count++ > 0) {
+        this->consume();
+      }
+      const int s2 = TRY(this->evalBase(limitOffset, level));
+      s1 = s1 == 0 && s2 == 0 ? 0 : 1;
+    } while (this->offset < limitOffset && this->current() == "-a");
+    return s1;
+  }
+
+  int evalBase(unsigned int limitOffset, unsigned int level);
 };
 
-int Evaluator::eval(const unsigned limitOffset) {
+int Evaluator::evalBase(unsigned int limitOffset, const unsigned int level) {
+  const auto cleanup = finally([&] { this->depth--; });
   if (++this->depth == RECURSION_LIMIT) {
-    return 3; // FIXME: raise error ?
+    ERROR(this->st, this->argvObj, "too many nesting");
+    return 3;
   }
+
+  if (level) {
+    goto OTHER;
+  }
+
+INIT:
   assert(this->offset <= limitOffset);
   switch (limitOffset - this->offset) {
   case 0:
@@ -421,13 +485,53 @@ int Evaluator::eval(const unsigned limitOffset) {
   default:
     break;
   }
-  ERROR(this->st, this->argvObj, "too many arguments");
-  return 2;
+
+OTHER:
+  if (this->current() == "!") {
+    this->consume();
+    goto INIT;
+    /*return this->evalBase(limitOffset, level);*/
+  }
+  if (this->current() == "(") {
+    this->consume();
+    int s = TRY(this->evalOrExpr(limitOffset, level + 1));
+    StringRef close;
+    if (this->offset < limitOffset) {
+      close = this->consume();
+    }
+    if (close != ")") {
+      return needCloseParen(this->st, this->argvObj, close);
+    }
+    return s;
+  }
+
+  assert(this->offset <= limitOffset);
+  const unsigned int remain = limitOffset - this->offset;
+  if (remain >= 3) {
+    if (resolveBinaryOp(this->get(this->offset + 1)) != BinaryOp::INVALID) {
+      limitOffset = this->offset + 3;
+      goto INIT;
+      /*return this->evalBase(this->offset + 3, level);*/
+    }
+  }
+  if (remain >= 2) {
+    if (isUnaryOp(this->get(this->offset))) {
+      limitOffset = this->offset + 2;
+      goto INIT;
+      /*return this->evalBase(this->offset + 2, level);*/
+    }
+  }
+  if (remain >= 1) {
+    limitOffset = this->offset + 1;
+    goto INIT;
+    /*return this->evalBase(this->offset + 1, level);*/
+  }
+  return 1;
 }
 
 int builtin_test(ARState &st, ArrayObject &argvObj) {
   Evaluator evaluator(st, argvObj);
-  return evaluator.eval(argvObj.size());
+  return evaluator.eval();
 }
 
 } // namespace arsh
