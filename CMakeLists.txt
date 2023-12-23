@@ -216,6 +216,7 @@ set(ARSH_SRC
         src/cmd_shctl.cpp
         src/cmd_dirs.cpp
         src/cmd_printf.cpp
+        src/cmd_test.cpp
         src/core.cpp
         src/scope.cpp
         src/type_pool.cpp
