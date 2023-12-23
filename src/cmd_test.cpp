@@ -152,6 +152,11 @@ static int negateStatus(int status) {
   return status;
 }
 
+static int needCloseParen(const ARState &st, const ArrayObject &argvObj, const StringRef actual) {
+  ERROR(st, argvObj, "expect: `)', but actual: %s", toPrintable(actual).c_str());
+  return 2;
+}
+
 static int eval2ArgsExpr(const ARState &st, const ArrayObject &argvObj, const StringRef op,
                          const StringRef arg) {
   if (op == "!") {
@@ -172,6 +177,13 @@ static int eval2ArgsExpr(const ARState &st, const ArrayObject &argvObj, const St
       }
       return testFile(fileOp, arg.data()) ? 0 : 1;
     }
+  }
+  if (op == "(") {
+    if (arg == ")") {
+      ERROR(st, argvObj, "expect arguments within `( )'");
+      return 2;
+    }
+    return needCloseParen(st, argvObj, "");
   }
   ERROR(st, argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
   return 2;
@@ -290,11 +302,6 @@ static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
   default:
     return false;
   }
-}
-
-static int needCloseParen(const ARState &st, const ArrayObject &argvObj, const StringRef actual) {
-  ERROR(st, argvObj, "expect: `)', but actual: %s", toPrintable(actual).c_str());
-  return 2;
 }
 
 static int eval3ArgsExpr(const ARState &st, const ArrayObject &argvObj, const StringRef left,

@@ -10,16 +10,20 @@ assert ! (test '!' a)
 assert $? == 1
 assert (test '!' "")
 assert $? == 0
+assert "$(test '(' ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:13: test: expect arguments within \`( )'"
+assert $? == 2
+assert "$(test '(' 'aaa' 2>&1)" == "${$SCRIPT_NAME.basename()}:15: test: expect: \`)', but actual: "
+assert $? == 2
 
 ## 3 arguments
 assert (test '(' a ')' )
 assert $? == 0
 assert ! (test '(' "" ')' )
 assert $? == 1
-assert "$(test '(' "a" 'a' 2>&1)" == "${$SCRIPT_NAME.basename()}:19: test: expect: \`)', but actual: a"
+assert "$(test '(' "a" 'a' 2>&1)" == "${$SCRIPT_NAME.basename()}:23: test: expect: \`)', but actual: a"
 assert $? == 2
 
-assert "$(test '!' a ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:22: test: a: invalid unary operator"
+assert "$(test '!' a ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:26: test: a: invalid unary operator"
 assert $? == 2
 assert (test '!' '!' ')' )
 assert $? == 0
@@ -51,14 +55,18 @@ assert $? == 1
 ## 4 arguments
 assert ! (test '!' 12 '-lt' 34)
 assert $? == 1
-assert "$(test '!' 12 'lt' 34 2>&1)" == "${$SCRIPT_NAME.basename()}:54: test: lt: invalid binary operator"
+assert "$(test '!' 12 'lt' 34 2>&1)" == "${$SCRIPT_NAME.basename()}:58: test: lt: invalid binary operator"
 assert $? == 2
 assert (test '!' 12 '-gt' 34)
 assert $? == 0
 
 assert (test '(' -z "" ")")
 assert $? == 0
-assert "$(test '(' -n "33" "a" 2>&1)" == "${$SCRIPT_NAME.basename()}:61: test: expect: \`)', but actual: a"
+assert "$(test '(' -n "33" "a" 2>&1)" == "${$SCRIPT_NAME.basename()}:65: test: expect: \`)', but actual: a"
 assert $? == 2
 assert (test '(' -n "33" ")")
 assert $? == 0
+assert "$(test '(' '(' ')' ')' 2>&1)" == "${$SCRIPT_NAME.basename()}:69: test: expect arguments within \`( )'"
+assert $? == 2
+
+true
