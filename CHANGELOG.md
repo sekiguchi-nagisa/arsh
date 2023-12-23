@@ -17,7 +17,7 @@
     - ctrl-z: undo
     - atl-/: redo
 - add ``ARG0``, ``ARGS`` variables
-    - indicate top level ``0`` and ``@``
+    - indicate toplevel ``0`` and ``@``
 - add some internal configuration methods to ``LineEditor``
     - ``config``: set internal line editor configuration
         - enable/disable software flow control, bracketed paste mode
@@ -37,7 +37,7 @@
 
 #### Core
 
-- **Breaking Change**: rename project name with arsh.
+- **Breaking Change**: rename project name with `arsh`
     - rename binary (`ydsh`, `ydshd`) with `arsh`, `arshd`
 - **Breaking Change**: remove ``name`` parameter from ``CLI`` attribute
 - **Breaking Change**: need spaces between `${` and number
