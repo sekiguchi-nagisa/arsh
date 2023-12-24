@@ -22,6 +22,20 @@ static bool matchPattern(const char *name, const char *p, GlobMatchOption option
   return matchPatternRaw(name, p, option) != WildMatchResult::FAILED;
 }
 
+class Consumer {
+private:
+  std::vector<std::string> &ret;
+
+public:
+  explicit Consumer(std::vector<std::string> &ret) : ret(ret) { this->ret.clear(); }
+
+  bool operator()(std::string &&value) {
+    this->ret.push_back(std::move(value));
+    std::sort(this->ret.begin(), this->ret.end());
+    return true;
+  }
+};
+
 class GlobTest : public ::testing::Test {
 protected:
   std::vector<std::string> ret; // result paths
@@ -34,14 +48,10 @@ public:
   }
 
   unsigned int testGlobBase(const char *dir, const char *pattern, GlobMatchOption option = {}) {
-    this->ret.clear();
     CancelToken cancel;
     Glob glob(pattern, option, dir);
     glob.setCancelToken(cancel);
-    glob.setConsumer([&](std::string &&value) {
-      this->ret.push_back(std::move(value));
-      return true;
-    });
+    glob.setConsumer(Consumer(this->ret));
     glob.matchExactly();
     return glob.getMatchCount();
   }
@@ -51,14 +61,10 @@ public:
   }
 
   unsigned int testGlobAt(const char *baseDir, const char *pattern, GlobMatchOption option = {}) {
-    this->ret.clear();
     CancelToken cancel;
     Glob glob(pattern, option, baseDir);
     glob.setCancelToken(cancel);
-    glob.setConsumer([&](std::string &&value) {
-      this->ret.push_back(std::move(value));
-      return true;
-    });
+    glob.setConsumer(Consumer(this->ret));
     glob();
     return glob.getMatchCount();
   }
